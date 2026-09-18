@@ -6,7 +6,7 @@ import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import { repoRootFrom } from "../shared/repo-root.mjs";
+import { repoRootFrom } from "../deployment/cloudflare-operator.mjs";
 
 const execFile = promisify(execFileCallback);
 const SERVICES = Object.freeze([
