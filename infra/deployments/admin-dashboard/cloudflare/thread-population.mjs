@@ -103,6 +103,39 @@ function registryFindings(entry) {
       }),
     }));
   }
+  const languages = Array.isArray(entry.languages)
+    ? entry.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+    : [];
+  const languageAction = Object.freeze({
+    id:languages.length === 0 ? "set_languages" : "change_languages",
+    label:languages.length === 0 ? "Set languages" : "Change languages",
+    input:Object.freeze({ fields:Object.freeze([
+      Object.freeze({
+        name:"languages",
+        label:"Languages",
+        kind:"string_list",
+        required:true,
+        ...(languages.length === 0 ? {} : { default:languages.join(", ") }),
+        placeholder:"Hebrew, Russian, English",
+      }),
+    ]) }),
+  });
+  if (languages.length === 0 || languages.length > 3) {
+    findings.push(Object.freeze({
+      code:languages.length === 0 ? "LANGUAGES_MISSING" : "LANGUAGES_NEED_REVIEW",
+      state:"operator_decision_required",
+      reason:languages.length === 0
+        ? "This Thread has no authoritative personal language path"
+        : "Legacy language list needs review as an individual household/civic/schooling path",
+      identityAction:languageAction,
+    }));
+  } else {
+    findings.push(Object.freeze({
+      code:"LANGUAGES",
+      state:"healthy",
+      identityAction:languageAction,
+    }));
+  }
   if (clean(entry.fibreIdentityNumber) === null) findings.push(Object.freeze({ code:"FIN_MISSING", state:"attention" }));
   return Object.freeze(findings);
 }
