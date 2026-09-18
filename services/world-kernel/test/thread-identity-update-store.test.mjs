@@ -50,6 +50,29 @@ test("birth date accepts paste-friendly forms and stores canonical ISO", () => {
   }
 });
 
+test("language correction stores one to three personal languages and replays", () => {
+  withWorld(({ world, identity }) => {
+    const source = structuredClone(fixture);
+    source.identity.languages = ["Hebrew", "Arabic", "English", "Russian", "Amharic"];
+    const seeded = world.seedThread(source).thread;
+    const result = identity.update(seeded, {
+      languages:["Hebrew", "Russian", "English"],
+      operationKey:"admin_languages_1",
+      changedAt:"2026-09-18T19:30:00.000Z",
+    });
+    assert.deepEqual(result.changes.languages, ["Hebrew", "Russian", "English"]);
+    assert.deepEqual(result.thread.identity.languages, ["Hebrew", "Russian", "English"]);
+    assert.deepEqual(world.replayThread(seeded.threadId).identity.languages, ["Hebrew", "Russian", "English"]);
+    assert.throws(
+      () => identity.update(result.thread, {
+        languages:["Hebrew", "Arabic", "English", "Russian"],
+        operationKey:"admin_languages_too_many",
+      }),
+      /1 to 3 languages/u,
+    );
+  });
+});
+
 test("explicit Admin identity decisions are one replayable World event", () => {
   withWorld(({ world, identity }) => {
     const source = structuredClone(fixture);
