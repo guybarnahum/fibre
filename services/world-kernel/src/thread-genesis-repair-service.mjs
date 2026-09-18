@@ -137,6 +137,11 @@ function nameFinding(identity, projected) {
     projectionAction:"reconcile_identity_projection",
     conflictState:"repairable",
     conflictAction:"reconcile_identity_projection",
+    detail:{
+      identityAction:identityAction("change_name", "Change name", [
+        { name:"name", label:"Name", kind:"text", required:true, default:name },
+      ]),
+    },
   });
 }
 
