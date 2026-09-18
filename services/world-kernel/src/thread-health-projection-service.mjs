@@ -1,3 +1,5 @@
+const THREAD_HEALTH_PROJECTION_VERSION = "thread-health-v0.1";
+
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") {
     throw new TypeError(`${name} must expose ${method}()`);
@@ -33,6 +35,7 @@ export function createThreadHealthProjectionService({
     return Object.freeze({
       reconciliation:world.reconciliation,
       witness:Object.freeze({
+        projectionVersion:THREAD_HEALTH_PROJECTION_VERSION,
         world:world.diagnosis,
         presentationSnapshotDigest:presentationSnapshotDigest ?? null,
       }),
@@ -66,3 +69,5 @@ export function createThreadHealthProjectionService({
     },
   });
 }
+
+export { THREAD_HEALTH_PROJECTION_VERSION };
