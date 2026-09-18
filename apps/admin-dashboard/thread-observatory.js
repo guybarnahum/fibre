@@ -374,6 +374,8 @@ function memoriesSection(memories, birthDate, memoryError = null) {
     if (movement) card.classList.add(movement === "right" ? "slide-from-right" : "slide-from-left");
     detail.replaceChildren(card);
     selectedIndex = index;
+    detail.dataset.hasPrevious = index > 0 ? "true" : "false";
+    detail.dataset.hasNext = index < ordered.length - 1 ? "true" : "false";
   };
 
   detail.addEventListener("click", (event) => {
