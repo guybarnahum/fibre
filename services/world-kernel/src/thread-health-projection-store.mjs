@@ -90,22 +90,24 @@ export class ThreadHealthProjectionStore {
       : undefined;
 
     return Object.freeze({
-      thread:Object.freeze({
-        version:Number(thread.version),
-        stateHash:thread.state_hash,
-        updatedAt:thread.updated_at,
+      diagnosis:Object.freeze({
+        thread:Object.freeze({
+          version:Number(thread.version),
+          stateHash:thread.state_hash,
+          updatedAt:thread.updated_at,
+        }),
+        civilRegistrationDigest:civil?.record_digest ?? null,
+        embodimentHeads:Object.freeze(embodiments),
+        genesisPublication:genesis === undefined ? null : Object.freeze({
+          genesisId:genesis.genesis_id,
+          requestDigest:genesis.request_digest,
+          publishedAt:genesis.published_at,
+        }),
       }),
-      civilRegistrationDigest:civil?.record_digest ?? null,
-      embodimentHeads:Object.freeze(embodiments),
       reconciliation:reconciliation === undefined ? null : Object.freeze({
         state:reconciliation.state,
         lastError:reconciliation.last_error_json === null ? null : parseJson(reconciliation.last_error_json),
         updatedAt:reconciliation.updated_at,
-      }),
-      genesisPublication:genesis === undefined ? null : Object.freeze({
-        genesisId:genesis.genesis_id,
-        requestDigest:genesis.request_digest,
-        publishedAt:genesis.published_at,
       }),
     });
   }
