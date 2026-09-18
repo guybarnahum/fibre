@@ -1,4 +1,5 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
+import { decorateActionButton, iconForIdentityAction } from "./fa-icons.js";
 
 const $ = (selector) => document.querySelector(selector);
 const view = $("#threads-view");
@@ -89,7 +90,12 @@ function button(label, spec, thread) {
   const control = document.createElement("button");
   control.type = "button";
   control.className = spec.kind === "recover" ? "secondary" : "primary";
-  control.textContent = label;
+  decorateActionButton(control, {
+    icon:spec.icon ?? null,
+    label,
+    tooltip:spec.tooltip ?? `${label} — ${spec.description}`,
+    iconOnly:spec.iconOnly === true,
+  });
   control.addEventListener("click", (event) => {
     event.stopPropagation();
     openThreadActionDialog({
@@ -126,10 +132,16 @@ function actionCell(thread) {
   controls.className = "thread-action-stack";
   for (const action of identityActions(thread)) {
     const label = action.label ?? human(action.id);
+    const isAdmission = action.id === "admit_name" || action.id === "admit_birth_date";
+    const description = isAdmission
+      ? "Admit preserved identity evidence into authoritative World identity. Presentation is evidence, not authority."
+      : "Record an explicit operator identity decision in World history. Fibre will re-read authoritative state before returning to Threads.";
     controls.append(button(label, {
       kind:"identity",
+      icon:iconForIdentityAction(action.id),
+      iconOnly:true,
       eyebrow:"Authoritative identity",
-      description:"Record an explicit operator identity decision in World history. Fibre will re-read authoritative state before returning to Threads.",
+      description,
       fields:actionFields(action),
       body:(input) => ({
         action:"identity",
@@ -144,6 +156,8 @@ function actionCell(thread) {
     const label = `Migrate · ${migration.label ?? human(migration.id)}`;
     controls.append(button(label, {
       kind:"migration",
+      icon:"arrow-up-from-bracket",
+      iconOnly:true,
       eyebrow:"Identity migration",
       description:"Apply the named migration using preserved evidence, then re-diagnose the Thread from authoritative World state.",
       fields:actionFields(migration),
@@ -162,6 +176,8 @@ function actionCell(thread) {
     const label = deadLetter ? "Repair & recover" : "Repair";
     controls.append(button(label, {
       kind:"repair",
+      icon:deadLetter ? "heart-pulse" : "wrench",
+      iconOnly:true,
       eyebrow:"Thread repair",
       description:deadLetter
         ? "Repair derived state from authoritative World facts and recover this Thread from reconciliation quarantine."
@@ -171,6 +187,8 @@ function actionCell(thread) {
   } else if (pending && thread.health === "healthy") {
     controls.append(button("Resolve reconciliation", {
       kind:"repair",
+      icon:"rotate",
+      iconOnly:true,
       eyebrow:"Reconciliation cleanup",
       description:"Retire stale pending reconciliation now that authoritative Thread health is complete. This does not change identity or Genesis.",
       body:() => ({ repairKey:`admin_reconcile_${Date.now().toString(36)}` }),
@@ -178,6 +196,8 @@ function actionCell(thread) {
   } else if (deadLetter && thread.health === "healthy") {
     controls.append(button("Recover", {
       kind:"recover",
+      icon:"heart-pulse",
+      iconOnly:true,
       eyebrow:"Reconciliation recovery",
       description:"Return this healthy Thread from dead-letter quarantine to reconciliation processing.",
       body:() => ({ action:"recover" }),
