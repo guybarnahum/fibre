@@ -42,20 +42,42 @@ export class ThreadHealthProjectionStore {
   close() { this.#database.close(); }
 
   worldWitness(threadId) {
-    const thread = this.#database.prepare(`
-      SELECT version,state_hash,updated_at
-      FROM threads
-      WHERE thread_id=?
-    `).get(threadId);
-    if (thread === undefined) return null;
+    const civilSelect = this.#tables.has("fibre_civil_registrations")
+      ? "(SELECT record_digest FROM fibre_civil_registrations WHERE thread_id=t.thread_id)"
+      : "NULL";
+    const reconciliationStateSelect = this.#tables.has("thread_visual_publication_work")
+      ? "(SELECT state FROM thread_visual_publication_work WHERE thread_id=t.thread_id)"
+      : "NULL";
+    const reconciliationErrorSelect = this.#tables.has("thread_visual_publication_work")
+      ? "(SELECT last_error_json FROM thread_visual_publication_work WHERE thread_id=t.thread_id)"
+      : "NULL";
+    const reconciliationUpdatedSelect = this.#tables.has("thread_visual_publication_work")
+      ? "(SELECT updated_at FROM thread_visual_publication_work WHERE thread_id=t.thread_id)"
+      : "NULL";
+    const genesisIdSelect = this.#tables.has("genesis_birth_publications")
+      ? "(SELECT genesis_id FROM genesis_birth_publications WHERE thread_id=t.thread_id LIMIT 1)"
+      : "NULL";
+    const genesisDigestSelect = this.#tables.has("genesis_birth_publications")
+      ? "(SELECT request_digest FROM genesis_birth_publications WHERE thread_id=t.thread_id LIMIT 1)"
+      : "NULL";
+    const genesisPublishedSelect = this.#tables.has("genesis_birth_publications")
+      ? "(SELECT published_at FROM genesis_birth_publications WHERE thread_id=t.thread_id LIMIT 1)"
+      : "NULL";
 
-    const civil = this.#tables.has("fibre_civil_registrations")
-      ? this.#database.prepare(`
-          SELECT record_digest
-          FROM fibre_civil_registrations
-          WHERE thread_id=?
-        `).get(threadId)
-      : undefined;
+    const row = this.#database.prepare(`
+      SELECT
+        t.version,t.state_hash,t.updated_at,
+        ${civilSelect} AS civil_registration_digest,
+        ${reconciliationStateSelect} AS reconciliation_state,
+        ${reconciliationErrorSelect} AS reconciliation_error_json,
+        ${reconciliationUpdatedSelect} AS reconciliation_updated_at,
+        ${genesisIdSelect} AS genesis_id,
+        ${genesisDigestSelect} AS genesis_request_digest,
+        ${genesisPublishedSelect} AS genesis_published_at
+      FROM threads t
+      WHERE t.thread_id=?
+    `).get(threadId);
+    if (row === undefined) return null;
 
     const embodiments = this.#tables.has("embodiment_current_heads")
       ? this.#database.prepare(`
@@ -63,52 +85,38 @@ export class ThreadHealthProjectionStore {
           FROM embodiment_current_heads
           WHERE thread_id=?
           ORDER BY embodiment_id
-        `).all(threadId).map((row) => Object.freeze({
-          embodimentId:row.embodiment_id,
-          revision:Number(row.revision),
-          recordDigest:row.record_digest,
-          headDigest:row.head_digest,
-          recordedAt:row.recorded_at,
+        `).all(threadId).map((entry) => Object.freeze({
+          embodimentId:entry.embodiment_id,
+          revision:Number(entry.revision),
+          recordDigest:entry.record_digest,
+          headDigest:entry.head_digest,
+          recordedAt:entry.recorded_at,
         }))
       : [];
 
-    const reconciliation = this.#tables.has("thread_visual_publication_work")
-      ? this.#database.prepare(`
-          SELECT state,last_error_json,updated_at
-          FROM thread_visual_publication_work
-          WHERE thread_id=?
-        `).get(threadId)
-      : undefined;
-
-    const genesis = this.#tables.has("genesis_birth_publications")
-      ? this.#database.prepare(`
-          SELECT genesis_id,request_digest,published_at
-          FROM genesis_birth_publications
-          WHERE thread_id=?
-          LIMIT 1
-        `).get(threadId)
-      : undefined;
+    const reconciliation = row.reconciliation_state === null ? null : Object.freeze({
+      state:row.reconciliation_state,
+      lastError:row.reconciliation_error_json === null ? null : parseJson(row.reconciliation_error_json),
+      updatedAt:row.reconciliation_updated_at,
+    });
+    const genesisPublication = row.genesis_id === null ? null : Object.freeze({
+      genesisId:row.genesis_id,
+      requestDigest:row.genesis_request_digest,
+      publishedAt:row.genesis_published_at,
+    });
 
     return Object.freeze({
       diagnosis:Object.freeze({
         thread:Object.freeze({
-          version:Number(thread.version),
-          stateHash:thread.state_hash,
-          updatedAt:thread.updated_at,
+          version:Number(row.version),
+          stateHash:row.state_hash,
+          updatedAt:row.updated_at,
         }),
-        civilRegistrationDigest:civil?.record_digest ?? null,
+        civilRegistrationDigest:row.civil_registration_digest ?? null,
         embodimentHeads:Object.freeze(embodiments),
-        genesisPublication:genesis === undefined ? null : Object.freeze({
-          genesisId:genesis.genesis_id,
-          requestDigest:genesis.request_digest,
-          publishedAt:genesis.published_at,
-        }),
+        genesisPublication,
       }),
-      reconciliation:reconciliation === undefined ? null : Object.freeze({
-        state:reconciliation.state,
-        lastError:reconciliation.last_error_json === null ? null : parseJson(reconciliation.last_error_json),
-        updatedAt:reconciliation.updated_at,
-      }),
+      reconciliation,
     });
   }
 
