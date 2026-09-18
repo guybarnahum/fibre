@@ -312,8 +312,12 @@ function attach() {
   if (view.querySelector(".thread-repair-section")) return;
 
   const host = el("section", "thread-person-section thread-repair-section");
+  const head = el("div", "thread-person-section-head");
+  head.append(el("h3", null, "Thread health"), el("span", null, "not checked"));
+  const actions = el("div", "thread-repair-actions");
+  actions.append(actionButton("Check health", () => renderThreadHealth(host, threadId)));
+  host.append(head, actions);
   view.querySelector(".thread-person-hero")?.after(host);
-  void renderThreadHealth(host, threadId);
 }
 
 if (dialogBody) {
