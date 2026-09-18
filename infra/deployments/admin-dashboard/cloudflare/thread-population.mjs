@@ -77,6 +77,32 @@ function registryFindings(entry) {
     }));
   }
   if (clean(entry.sex) === null) findings.push(Object.freeze({ code:"SEX_MISSING", state:"attention" }));
+  if (clean(entry.birthDate) === null) {
+    findings.push(Object.freeze({
+      code:"BIRTH_DATE_MISSING",
+      state:"operator_decision_required",
+      reason:"This Thread does not yet have an authoritative birth date",
+      identityAction:Object.freeze({
+        id:"set_birth_date",
+        label:"Set birth date",
+        input:Object.freeze({ fields:Object.freeze([
+          Object.freeze({ name:"birthDate", label:"Birth date", kind:"date", required:true }),
+        ]) }),
+      }),
+    }));
+  } else {
+    findings.push(Object.freeze({
+      code:"BIRTH_DATE",
+      state:"healthy",
+      identityAction:Object.freeze({
+        id:"change_birth_date",
+        label:"Change birth date",
+        input:Object.freeze({ fields:Object.freeze([
+          Object.freeze({ name:"birthDate", label:"Birth date", kind:"date", required:true, default:clean(entry.birthDate) }),
+        ]) }),
+      }),
+    }));
+  }
   if (clean(entry.fibreIdentityNumber) === null) findings.push(Object.freeze({ code:"FIN_MISSING", state:"attention" }));
   return Object.freeze(findings);
 }
