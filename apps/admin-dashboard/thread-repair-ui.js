@@ -258,6 +258,12 @@ function renderRecoveryAction(host, threadId, diagnosis, reconciliation) {
   host.append(bar);
 }
 
+function renderHealthRefresh(host, threadId) {
+  const bar = el("div", "thread-repair-actions");
+  bar.append(actionButton("Refresh health", () => renderThreadHealth(host, threadId)));
+  host.append(bar);
+}
+
 function renderHealth(host, threadId, health, message = null) {
   const { diagnosis, reconciliation } = health;
   host.replaceChildren();
@@ -274,6 +280,7 @@ function renderHealth(host, threadId, health, message = null) {
 
   if (diagnosis.exists === false) {
     host.append(el("p", "thread-repair-note", "Activity observed this identifier, but World never admitted it as a Thread. There is no person state to repair or recover."));
+    renderHealthRefresh(host, threadId);
     return;
   }
 
@@ -285,6 +292,7 @@ function renderHealth(host, threadId, health, message = null) {
   if (reconciliation?.state === "dead_letter" && unresolved(diagnosis).length > 0) {
     host.append(el("p", "thread-repair-note", "Quarantined until the identity or authority findings above are resolved."));
   }
+  renderHealthRefresh(host, threadId);
 }
 
 export async function renderThreadHealth(host, threadId, message = null) {
