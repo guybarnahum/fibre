@@ -48,9 +48,8 @@ function labelFor(code) {
 
 function stateText(finding) {
   if (finding.state === "healthy") return "healthy";
-  if (finding.identityAction?.id) return "input required";
-  if (finding.migration?.id) return `migration · ${finding.migration.label ?? human(finding.migration.id)}`;
   if (finding.state === "repairable") return "repairable";
+  if (finding.migration?.id) return `migration · ${finding.migration.label ?? human(finding.migration.id)}`;
   if (finding.state === "migration_required") return "migration required";
   if (finding.state === "operator_decision_required") return "input required";
   if (finding.state === "integrity_error") return "authority conflict";
