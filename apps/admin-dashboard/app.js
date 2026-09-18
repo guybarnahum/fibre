@@ -1,3 +1,5 @@
+import { decorateActionButton } from "./fa-icons.js";
+
 const $ = (selector) => document.querySelector(selector);
 const form = $("#filters");
 const kind = $("#kind");
@@ -17,6 +19,8 @@ let timer = null;
 let lastInteractionAt = 0;
 let lastUiSignalAt = 0;
 let nav = { edge:"first", direction:"next", cursor:null, page:1 };
+
+decorateActionButton($("#export-button"), { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
 
 function text(node, input) { node.textContent = input ?? "—"; }
 function titleCase(input) { return String(input ?? "").split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" "); }
@@ -230,16 +234,23 @@ function activityCopyAction(record) {
   actions.className = "activity-record-actions";
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "secondary";
-  button.textContent = "Copy details";
+  button.className = "secondary icon-only-action";
+  decorateActionButton(button, {
+    icon:"copy",
+    label:"Copy activity details",
+    tooltip:"Copy activity details",
+    iconOnly:true,
+  });
   button.addEventListener("click", async () => {
     try {
       await copyText(record);
-      button.textContent = "Copied";
+      decorateActionButton(button, { icon:"copy", label:"Activity details copied", tooltip:"Activity details copied", iconOnly:true });
     } catch {
-      button.textContent = "Copy failed";
+      decorateActionButton(button, { icon:"copy", label:"Copy activity details failed", tooltip:"Copy activity details failed", iconOnly:true });
     }
-    window.setTimeout(() => { button.textContent = "Copy details"; }, 1200);
+    window.setTimeout(() => {
+      decorateActionButton(button, { icon:"copy", label:"Copy activity details", tooltip:"Copy activity details", iconOnly:true });
+    }, 1200);
   });
   actions.append(button);
   return actions;
@@ -397,12 +408,22 @@ async function copyExport() {
   const exportText = JSON.stringify(await activityExport(currentPayload), null, 2);
   try {
     await navigator.clipboard.writeText(exportText);
-    button.textContent = "Copied";
+    decorateActionButton(button, { icon:"file-export", label:"Activity export copied", tooltip:"Activity export copied", iconOnly:true });
   } catch {
     const area = document.createElement("textarea"); area.value = exportText; area.setAttribute("readonly", ""); area.style.position = "fixed"; area.style.opacity = "0";
-    document.body.append(area); area.select(); button.textContent = document.execCommand("copy") ? "Copied" : "Copy failed"; area.remove();
+    document.body.append(area); area.select();
+    const copied = document.execCommand("copy");
+    area.remove();
+    decorateActionButton(button, {
+      icon:"file-export",
+      label:copied ? "Activity export copied" : "Copy / Export activity failed",
+      tooltip:copied ? "Activity export copied" : "Copy / Export activity failed",
+      iconOnly:true,
+    });
   }
-  setTimeout(() => { button.textContent = "Copy export"; }, 1600);
+  setTimeout(() => {
+    decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
+  }, 1600);
 }
 
 function firstPage() {
