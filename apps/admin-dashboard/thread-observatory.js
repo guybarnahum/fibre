@@ -26,6 +26,59 @@ function firstText(...values) {
   return values.find((value) => typeof value === "string" && value.trim() !== "")?.trim() ?? null;
 }
 
+function utcDateParts(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return Object.freeze({
+    year:date.getUTCFullYear(),
+    month:date.getUTCMonth(),
+    day:date.getUTCDate(),
+  });
+}
+
+function ageMonths(birthValue, momentValue) {
+  const birth = utcDateParts(birthValue);
+  const moment = utcDateParts(momentValue);
+  if (birth === null || moment === null) return null;
+  let months = (moment.year - birth.year) * 12 + (moment.month - birth.month);
+  if (moment.day < birth.day) months -= 1;
+  return months < 0 ? null : months;
+}
+
+function memoryMoment(memory) {
+  return firstText(memory?.subjectPeriod?.startAt, memory?.subjectPeriod?.endAt, memory?.recordedAt);
+}
+
+function memoryAgeLabel(memory, birthDate) {
+  const months = ageMonths(birthDate, memoryMoment(memory));
+  if (months === null) return "Age —";
+  const years = Math.floor(months / 12);
+  const remainder = months % 12;
+  if (years === 0) return `Age ${remainder}m`;
+  return remainder === 0 ? `Age ${years}` : `Age ${years}y ${remainder}m`;
+}
+
+function copyPayload(value) {
+  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
+async function copyToClipboard(value) {
+  const payload = copyPayload(value);
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(payload);
+    return;
+  }
+  const textarea = el("textarea");
+  textarea.value = payload;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
 function uniqueStrings(...values) {
   return [...new Set(values.flatMap((value) => Array.isArray(value) ? value : []).filter((value) => typeof value === "string" && value.trim() !== ""))];
 }
@@ -83,10 +136,29 @@ function dataTree(value) {
   return list;
 }
 
-function disclosure(label, value, { open = false } = {}) {
+function disclosure(label, value, { open = false, prose = false } = {}) {
   const details = el("details", "thread-data-section"); details.open = open;
-  details.append(el("summary", null, label));
-  const content = el("div", "thread-data-content"); content.append(dataTree(value));
+  const summary = el("summary", "thread-data-summary");
+  summary.append(el("span", null, label));
+  const copy = el("button", "thread-copy-button", "Copy");
+  copy.type = "button";
+  copy.title = `Copy ${label}`;
+  copy.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    try {
+      await copyToClipboard(value);
+      copy.textContent = "Copied";
+    } catch {
+      copy.textContent = "Copy failed";
+    }
+    window.setTimeout(() => { copy.textContent = "Copy"; }, 1200);
+  });
+  summary.append(copy);
+  details.append(summary);
+  const content = el("div", "thread-data-content");
+  if (prose && typeof value === "string") content.append(el("p", "thread-data-prose", value));
+  else content.append(dataTree(value));
   details.append(content); return details;
 }
 
@@ -205,7 +277,7 @@ function identitySection(identity, threadId) {
     fact("Origin", identity.originOrientation ? human(identity.originOrientation) : null),
     fact("Raised cultural context", raised.culturalContext, { long:true }),
     fact("Schooling / community", raised.schoolingOrCommunityContext, { long:true }),
-    fact("Thread ID", threadId, { mono:true, long:true }),
+    fact("Thread ID", threadId, { mono:true }),
   );
   wrap.append(grid);
   return wrap;
@@ -228,11 +300,13 @@ function nowSection(identity) {
   wrap.append(grid); return wrap;
 }
 
-function memoryCard(memory) {
+function memoryCard(memory, birthDate) {
   const card = el("article", "thread-memory-card");
   const head = el("div", "thread-memory-head");
-  const when = prettyDate(memory.subjectPeriod?.endAt ?? memory.subjectPeriod?.startAt ?? memory.recordedAt) ?? "Undated";
-  head.append(el("strong", null, when), el("span", null, [memory.retentionState, memory.accessibility].filter(Boolean).map(human).join(" · ")));
+  head.append(
+    el("strong", null, memoryAgeLabel(memory, birthDate)),
+    el("span", null, [memory.retentionState, memory.accessibility].filter(Boolean).map(human).join(" · ")),
+  );
   card.append(head);
   if (memory.rememberedContent) card.append(el("p", "thread-memory-content", memory.rememberedContent));
   if (memory.rememberedMeaning) {
@@ -253,7 +327,7 @@ function memoryCard(memory) {
   return card;
 }
 
-function memoriesSection(memories, memoryError = null) {
+function memoriesSection(memories, birthDate, memoryError = null) {
   const records = Array.isArray(memories) ? memories : [];
   const wrap = section("Memories", records.length ? `${records.length} current autobiographical ${records.length === 1 ? "memory" : "memories"}` : null);
   if (memoryError) {
@@ -264,46 +338,114 @@ function memoriesSection(memories, memoryError = null) {
     wrap.append(el("p", "thread-empty-note", "No current autobiographical memories are recorded."));
     return wrap;
   }
-  const list = el("div", "thread-memory-list");
-  for (const memory of records) list.append(memoryCard(memory));
-  wrap.append(list);
+
+  const ordered = [...records].sort((left, right) => {
+    const leftTime = Date.parse(memoryMoment(left) ?? "");
+    const rightTime = Date.parse(memoryMoment(right) ?? "");
+    if (!Number.isFinite(leftTime) && !Number.isFinite(rightTime)) return String(left.memoryId ?? "").localeCompare(String(right.memoryId ?? ""));
+    if (!Number.isFinite(leftTime)) return 1;
+    if (!Number.isFinite(rightTime)) return -1;
+    return leftTime - rightTime;
+  });
+
+  const timeline = el("div", "thread-memory-timeline");
+  timeline.setAttribute("aria-label", "Autobiographical memory timeline");
+  const track = el("div", "thread-memory-track");
+  track.setAttribute("role", "tablist");
+  const detail = el("div", "thread-memory-selected");
+  detail.setAttribute("role", "tabpanel");
+  const markers = [];
+
+  const selectMemory = (index) => {
+    markers.forEach((marker, markerIndex) => {
+      const selected = markerIndex === index;
+      marker.classList.toggle("active", selected);
+      marker.setAttribute("aria-selected", selected ? "true" : "false");
+      marker.tabIndex = selected ? 0 : -1;
+    });
+    detail.replaceChildren(memoryCard(ordered[index], birthDate));
+  };
+
+  ordered.forEach((memory, index) => {
+    const marker = el("button", "thread-memory-marker");
+    marker.type = "button";
+    marker.setAttribute("role", "tab");
+    marker.setAttribute("aria-selected", "false");
+    marker.tabIndex = -1;
+    marker.title = memory.rememberedContent ?? memory.memoryId ?? "Memory";
+    marker.append(
+      el("span", "thread-memory-dot"),
+      el("span", "thread-memory-age", memoryAgeLabel(memory, birthDate)),
+    );
+    marker.addEventListener("click", () => selectMemory(index));
+    markers.push(marker);
+    track.append(marker);
+  });
+
+  timeline.append(track);
+  wrap.append(timeline, detail);
+  selectMemory(ordered.length - 1);
   return wrap;
 }
 
 function fidSection(identity) {
   const presentation = identity.presentation?.presentation ?? null;
   const card = presentation?.identityCard ?? null;
-  const wrap = section("Fibre Identity Card", card ? `Revision ${card.revision ?? "—"} · ${human(card.status ?? "unknown")}` : "Not issued");
-  if (card === null) {
-    wrap.append(el("p", "thread-empty-note", "No active Fibre Identity Card is projected for this Thread."));
-    return wrap;
-  }
-
+  const wrap = section("Fibre Identity Card", card ? `Revision ${card.revision ?? "—"} · ${human(card.status ?? "unknown")}` : "Card not issued");
   const assets = Array.isArray(identity.assets) ? identity.assets : [];
-  const refs = [card.frontMediaRef, card.backMediaRef].filter((value) => typeof value === "string");
-  const cardAssets = refs.map((mediaId) => assets.find((asset) => asset.mediaId === mediaId && asset.url)).filter(Boolean);
-  if (cardAssets.length) {
-    const grid = el("div", "thread-fid-grid");
-    for (const asset of cardAssets) {
-      const side = asset.role === "fibre_identity_card_back" ? "Back" : "Front";
-      const pane = el("article", "thread-fid-card");
-      pane.append(imageButton(asset, `Fibre Identity Card ${side.toLowerCase()}`, "thread-fid-preview"), el("strong", null, side));
-      grid.append(pane);
-    }
-    wrap.append(grid);
+  const officialPhoto = assets.find((asset) => asset?.role === "official_id_photo" && asset?.url)
+    ?? assets.find((asset) => asset?.mediaId === card?.officialPhotoMediaRef && asset?.url)
+    ?? null;
+
+  const visuals = el("div", "thread-fid-visuals");
+  const photoPane = el("article", "thread-fid-photo");
+  if (officialPhoto) {
+    photoPane.append(
+      imageButton(officialPhoto, "Official identity photo", "thread-fid-photo-preview"),
+      el("strong", null, "Official ID photo"),
+    );
   } else {
-    wrap.append(el("p", "thread-empty-note", card.credentialVersion === "fibre-identity-card-credential-v0.1"
-      ? "Legacy identity credential metadata exists; rendered front/back card media has not been issued."
-      : "Identity credential exists, but rendered card media is not currently available to Admin."));
+    photoPane.append(
+      el("div", "thread-fid-photo-missing", "No published official ID photo"),
+      el("strong", null, "Official ID photo"),
+    );
   }
-  const meta = el("div", "thread-person-facts");
-  meta.append(
-    fact("FIN", identity.fibreIdentityNumber, { mono:true }),
-    fact("Credential", card.credentialId, { mono:true }),
-    fact("Issued", prettyDate(card.issuedAt)),
-    fact("Visibility", card.visibility ? human(card.visibility) : null),
-  );
-  wrap.append(meta);
+  visuals.append(photoPane);
+
+  const cardPane = el("div", "thread-fid-cards");
+  if (card === null) {
+    cardPane.append(el("p", "thread-empty-note", "No active Fibre Identity Card is projected for this Thread."));
+  } else {
+    const refs = [card.frontMediaRef, card.backMediaRef].filter((value) => typeof value === "string");
+    const cardAssets = refs.map((mediaId) => assets.find((asset) => asset.mediaId === mediaId && asset.url)).filter(Boolean);
+    if (cardAssets.length) {
+      const grid = el("div", "thread-fid-grid");
+      for (const asset of cardAssets) {
+        const side = asset.role === "fibre_identity_card_back" ? "Back" : "Front";
+        const pane = el("article", "thread-fid-card");
+        pane.append(imageButton(asset, `Fibre Identity Card ${side.toLowerCase()}`, "thread-fid-preview"), el("strong", null, side));
+        grid.append(pane);
+      }
+      cardPane.append(grid);
+    } else {
+      cardPane.append(el("p", "thread-empty-note", card.credentialVersion === "fibre-identity-card-credential-v0.1"
+        ? "Legacy identity credential metadata exists; rendered front/back card media has not been issued."
+        : "Identity credential exists, but rendered card media is not currently available to Admin."));
+    }
+  }
+  visuals.append(cardPane);
+  wrap.append(visuals);
+
+  if (card !== null) {
+    const meta = el("div", "thread-person-facts thread-fid-meta");
+    meta.append(
+      fact("FIN", identity.fibreIdentityNumber, { mono:true }),
+      fact("Credential", card.credentialId, { mono:true }),
+      fact("Issued", prettyDate(card.issuedAt)),
+      fact("Visibility", card.visibility ? human(card.visibility) : null),
+    );
+    wrap.append(meta);
+  }
   return wrap;
 }
 
@@ -329,7 +471,7 @@ function appearanceSection(identity) {
     fact("Renderer", identity.world?.thread?.identity?.canonicalVisualIdentity?.specification?.model ?? "—"),
   );
   wrap.append(grid);
-  if (rule) wrap.append(disclosure("Identity continuity rule", rule));
+  if (rule) wrap.append(disclosure("Identity continuity rule", rule, { prose:true }));
   return wrap;
 }
 
@@ -415,7 +557,13 @@ export async function fetchThreadObservatory(threadId) {
 
 export function renderThreadObservatory({ identity, threadId, memories = [], memoryError = null } = {}) {
   const view = el("div", "thread-person-view");
-  view.append(hero(identity, threadId), identitySection(identity, threadId), fidSection(identity), nowSection(identity), memoriesSection(memories, memoryError));
+  view.append(
+    hero(identity, threadId),
+    identitySection(identity, threadId),
+    fidSection(identity),
+    nowSection(identity),
+    memoriesSection(memories, firstText(identity.birthDate, identity.world?.thread?.identity?.birthDate), memoryError),
+  );
   const who = whoSection(identity); if (who) view.append(who);
   const appearance = appearanceSection(identity); if (appearance) view.append(appearance);
   const media = mediaSection(identity); if (media) view.append(media);
