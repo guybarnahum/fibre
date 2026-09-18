@@ -26,6 +26,30 @@ function withWorld(run) {
   }
 }
 
+test("birth date accepts paste-friendly forms and stores canonical ISO", () => {
+  const cases = [
+    ["08202004", "2004-08-20"],
+    ["08/20/2004", "2004-08-20"],
+    ["8/20/2004", "2004-08-20"],
+    ["20040820", "2004-08-20"],
+    ["2004/08/20", "2004-08-20"],
+    ["2004-08-20", "2004-08-20"],
+  ];
+
+  for (const [input, expected] of cases) {
+    withWorld(({ world, identity }) => {
+      const seeded = world.seedThread(structuredClone(fixture)).thread;
+      const result = identity.update(seeded, {
+        birthDate:input,
+        operationKey:`admin_birth_${input.replace(/\D/gu, "_")}`,
+        changedAt:"2026-09-16T17:30:00.000Z",
+      });
+      assert.equal(result.thread.identity.birthDate, expected);
+      assert.equal(world.replayThread(seeded.threadId).identity.birthDate, expected);
+    });
+  }
+});
+
 test("explicit Admin identity decisions are one replayable World event", () => {
   withWorld(({ world, identity }) => {
     const source = structuredClone(fixture);
