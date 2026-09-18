@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v2";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v3";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
@@ -32,7 +32,14 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
   ],
   properties: {
     timeZone: { type: "string", minLength: 1 },
-    languages: { type: "array", minItems: 1, uniqueItems: true, items: { type: "string", minLength: 1 } },
+    languages: {
+      type: "array",
+      minItems: 1,
+      maxItems: 3,
+      uniqueItems: true,
+      description:"Languages this one subject plausibly uses across home, civic life, or schooling by the end of the Genesis chronology; never a list of languages present in the country or city.",
+      items: { type: "string", minLength: 1 },
+    },
     nameOrder: { type: "string", enum: ["given_family", "family_given"] },
     femaleGivenNames: { type: "array", minItems: 6, uniqueItems: true, items: { type: "string", minLength: 1 } },
     maleGivenNames: { type: "array", minItems: 6, uniqueItems: true, items: { type: "string", minLength: 1 } },
@@ -202,6 +209,16 @@ function assertTimeZone(value) {
   return value;
 }
 
+function subjectLanguages(value) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 3) {
+    throw new TypeError("authored Genesis world must give this subject 1 to 3 personally plausible languages");
+  }
+  const languages = value.map((item) => nonEmpty("authored world language", item));
+  const keys = languages.map((item) => item.toLocaleLowerCase("en-US"));
+  if (new Set(keys).size !== keys.length) throw new TypeError("authored Genesis world returned duplicate subject languages");
+  return Object.freeze(languages);
+}
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
@@ -217,6 +234,7 @@ function appearancePrior({ selector, heritage, value }) {
 
 function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEndsAt, createdAt }) {
   const timeZone = assertTimeZone(nonEmpty("authored world timeZone", authored.timeZone));
+  const languages = subjectLanguages(authored.languages);
   const sourceDigest = digest({ selector, heritage, authored }).slice(0, 12);
   const worldSpecId = `world_modern_${selector.slug}_${heritage?.slug ?? "default"}_${sourceDigest}`;
   const place = (kind) => `place_${selector.slug}_${sourceDigest}_${kind}`;
@@ -239,7 +257,7 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
     ]),
     householdShape,
     familyRelations: Object.freeze(["The sibling is two years older than the subject."]),
-    languages: Object.freeze([...authored.languages]),
+    languages,
     materialCircumstances: "Housing, food, schooling and routine mobility are stable enough for ordinary daily life; household spending choices matter without assigning the family a fixed socioeconomic identity.",
     mobilityPattern: authored.mobilityPattern,
     schoolingOrCommunityContext: authored.schoolingOrCommunityContext,
@@ -307,7 +325,11 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "Author bounded ordinary-life material for a Fibre Genesis World.",
       "The operator explicitly supplies place and may supply household heritage. Treat both as input, never as an inference about the operator.",
       "Keep two causal layers distinct: place defines the surrounding civic/physical world; heritage defines inherited household/community cultural context inside that place.",
-      "When heritage is supplied, make naming material, plausible household/community languages, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
+      "The languages field is personal, not demographic: list only languages this one subject plausibly uses by the end of the Genesis chronology. Never return a city's or country's language inventory.",
+      "Choose a coherent household language path. A minority or ancestry language belongs in languages only when this household plausibly uses it; unrelated minority languages must not be combined merely because their communities exist in the same country.",
+      "Use at most three personal languages. A typical path is the household/civic language, optionally one heritage/home language, and optionally one language learned through school or sustained public exposure. Do not imply equal fluency.",
+      "Keep language domains realistic: heritage/ancestry languages are ordinarily home/family/community languages unless the local civic context independently uses them; school languages may become usable without becoming home languages. Put broader regional multilingualism in culturalContext, not in the subject's languages.",
+      "When heritage is supplied, make naming material, the household language path, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
       "Do not infer the future subject's religion, religious observance, politics, ethnicity, personality, class identity, profession, competence, trauma or values. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
       "Return appearanceContext as a broad family-appearance prior only. It must not repeat the heritage label, country, city, religion, nationality or community name; describe only a broad plausible physical range. If heritage is culturally broad, mixed, diasporic, or does not imply one ancestry, preserve broad physical variation rather than inventing a single stereotyped phenotype. Never connect appearance to personality or worth.",
       "Names are reusable local/heritage naming material only, never pre-authored people. Supply at least six distinct female given names, six distinct male given names and six family names.",
