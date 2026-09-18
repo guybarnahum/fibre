@@ -10,6 +10,7 @@ function ensureDialog() {
     '<figure><img alt=""><figcaption></figcaption></figure>',
   ].join("");
   dialog.querySelector(".thread-image-close").addEventListener("click", () => dialog.close());
+  dialog.querySelector("img").addEventListener("click", () => dialog.close());
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog) dialog.close();
   });
@@ -29,5 +30,9 @@ document.addEventListener("click", (event) => {
   image.src = src;
   image.alt = trigger.dataset.lightboxAlt ?? "Thread image";
   caption.textContent = trigger.dataset.lightboxAlt ?? "";
+  if (dialog.open && image.getAttribute("src") === src) {
+    dialog.close();
+    return;
+  }
   if (!dialog.open) dialog.showModal();
 });
