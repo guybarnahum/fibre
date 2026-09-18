@@ -51,6 +51,7 @@ function stateText(finding) {
   if (finding.state === "repairable") return "repairable";
   if (finding.migration?.id) return `migration · ${finding.migration.label ?? human(finding.migration.id)}`;
   if (finding.state === "migration_required") return "migration required";
+  if (finding.state === "operator_decision_required" && finding.identityAction?.id === "admit_name") return "admission required";
   if (finding.state === "operator_decision_required") return "input required";
   if (finding.state === "integrity_error") return "authority conflict";
   if (finding.state === "unrecoverable") return "not admitted";
@@ -175,7 +176,9 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
         threadName:diagnosis.identity?.name ?? null,
         label,
         eyebrow:"Authoritative identity",
-        description:"Record an explicit operator identity decision in World history.",
+        description:action.id === "admit_name"
+          ? "Admit the preserved public name into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
+          : "Record an explicit operator identity decision in World history.",
         fields:actionFields(action),
         run:async (input) => {
           await post(threadId, {
