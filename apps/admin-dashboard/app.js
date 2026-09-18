@@ -299,8 +299,11 @@ async function resolveThreadIdentity(threadId) {
     return payload.identity ?? {};
   })();
   threadIdentityCache.set(threadId, pending);
-  try { return await pending; }
-  catch (error) { threadIdentityCache.delete(threadId); throw error; }
+  try {
+    return await pending;
+  } finally {
+    if (threadIdentityCache.get(threadId) === pending) threadIdentityCache.delete(threadId);
+  }
 }
 
 function threadAssetCard(asset) {
