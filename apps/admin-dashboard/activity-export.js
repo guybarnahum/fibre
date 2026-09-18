@@ -1,3 +1,5 @@
+import { decorateActionButton } from "./fa-icons.js";
+
 function singleValue(values) {
   const unique = [...new Set(values.filter(Boolean))];
   return unique.length === 1 ? unique[0] : null;
@@ -128,6 +130,7 @@ async function copyText(value) {
 }
 
 const button = typeof document === "undefined" ? null : document.querySelector("#export-button");
+if (button) decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
 button?.addEventListener("click", async (event) => {
   event.stopImmediatePropagation();
   if (button.disabled) return;
@@ -135,17 +138,26 @@ button?.addEventListener("click", async (event) => {
   button.title = "";
   try {
     const payload = await completeExport((count, total) => {
-      button.textContent = `Collecting ${count}/${total}`;
+      decorateActionButton(button, {
+        icon:"file-export",
+        label:`Collecting activity ${count} of ${total}`,
+        tooltip:`Collecting activity ${count} of ${total}`,
+        iconOnly:true,
+      });
     });
     const copied = await copyText(JSON.stringify(payload, null, 2));
-    button.textContent = copied ? `Copied ${payload.records.length}` : "Copy failed";
+    decorateActionButton(button, {
+      icon:"file-export",
+      label:copied ? `Copied ${payload.records.length} activity records` : "Copy / Export activity failed",
+      tooltip:copied ? `Copied ${payload.records.length} activity records` : "Copy / Export activity failed",
+      iconOnly:true,
+    });
   } catch (error) {
-    button.textContent = "Export failed";
-    button.title = error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? error.message : String(error);
+    decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity failed", tooltip:`Copy / Export failed — ${message}`, iconOnly:true });
   }
   setTimeout(() => {
-    button.textContent = "Copy export";
-    button.title = "";
+    decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
     button.disabled = false;
   }, 1600);
 }, { capture: true });
