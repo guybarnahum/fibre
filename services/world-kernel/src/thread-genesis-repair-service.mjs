@@ -103,15 +103,26 @@ function identityFinding({
 
 function nameFinding(identity, projected) {
   const name = text(identity.name);
-  const action = identityAction(
-    unfinishedName(name) ? "set_name" : "change_name",
-    unfinishedName(name) ? "Set name" : "Change name",
-    [{ name:"name", label:"Name", kind:"text", required:true, ...(unfinishedName(name) ? {} : { default:name }) }],
-  );
+  const projectedName = text(projected?.subject?.displayName);
   if (unfinishedName(name)) {
+    const preservedCandidate = projectedName !== null && !unfinishedName(projectedName) ? projectedName : null;
+    const action = identityAction(
+      preservedCandidate === null ? "set_name" : "admit_name",
+      preservedCandidate === null ? "Set name" : "Admit name",
+      [{
+        name:"name",
+        label:"Name",
+        kind:"text",
+        required:true,
+        ...(preservedCandidate === null ? {} : { default:preservedCandidate }),
+      }],
+    );
     return finding("NAME_UNFINISHED", "operator_decision_required", null, {
       authoritative:name,
-      reason:"Fibre Thread is a bootstrap placeholder, not a finished personal name",
+      presentation:preservedCandidate,
+      reason:preservedCandidate === null
+        ? "Fibre Thread is a bootstrap placeholder, not a finished personal name"
+        : "World still has the bootstrap placeholder; current Presentation preserves a name that requires explicit operator admission",
       identityAction:action,
     });
   }
@@ -126,7 +137,6 @@ function nameFinding(identity, projected) {
     projectionAction:"reconcile_identity_projection",
     conflictState:"repairable",
     conflictAction:"reconcile_identity_projection",
-    detail:{ identityAction:action },
   });
 }
 
