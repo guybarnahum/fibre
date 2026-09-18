@@ -26,7 +26,7 @@ export function createThreadIdentityCommandService({
   const activity = optionalActivity(activityRecorder);
 
   return Object.freeze({
-    async update(threadId, { operationKey, name, sex, birthDate } = {}) {
+    async update(threadId, { operationKey, name, sex, birthDate, languages } = {}) {
       const thread = worldReader.getThread(threadId, { required:false });
       if (thread === null) return Object.freeze({
         threadId,
@@ -46,7 +46,7 @@ export function createThreadIdentityCommandService({
         }
       }
 
-      const result = identityUpdater.update(thread, { name, sex, birthDate, operationKey });
+      const result = identityUpdater.update(thread, { name, sex, birthDate, languages, operationKey });
       await record(activity, {
         threadId,
         operationId:operationKey,
@@ -66,6 +66,7 @@ export function createThreadIdentityCommandService({
           name:result.thread.identity?.name ?? null,
           sex:result.thread.identity?.sex ?? null,
           birthDate:result.thread.identity?.birthDate ?? null,
+          languages:Object.freeze([...(result.thread.identity?.languages ?? [])]),
         }),
         version:result.thread.version,
       });
