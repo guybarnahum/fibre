@@ -27,6 +27,21 @@ test("D1 migration runner visibly applies missing migrations once and then skips
         ledgerExists = true;
         return { stdout:"[]", stderr:"" };
       }
+      if (sql.includes("SELECT type,name FROM sqlite_master")) {
+        return {
+          stdout:JSON.stringify([{ results:[
+            { type:"table", name:"fibre_activity_log" },
+            { type:"table", name:"fibre_admin_entitlements" },
+            { type:"table", name:"fibre_activity_thread_heads" },
+            { type:"index", name:"fibre_activity_request_idx" },
+            { type:"index", name:"fibre_activity_genesis_idx" },
+            { type:"index", name:"fibre_activity_thread_idx" },
+            { type:"index", name:"fibre_activity_service_stage_idx" },
+            { type:"trigger", name:"fibre_activity_thread_head_insert" },
+          ] }]),
+          stderr:"",
+        };
+      }
       const match = /VALUES \('ACTIVITY_LOG','([^']+)'/u.exec(sql);
       if (match) applied.add(match[1]);
       return { stdout:"[]", stderr:"" };
@@ -59,4 +74,24 @@ test("D1 migration runner visibly applies missing migrations once and then skips
   await ensureCloudflareD1Migrations(input);
   assert.deepEqual(files, [], "already-recorded migrations must not execute again");
   assert.ok(printed.includes("D1 OK     ACTIVITY_LOG 0003_activity_thread_heads.sql"));
+  assert.ok(printed.includes("D1 VERIFIED ACTIVITY_LOG -> fibre-activity-log-staging"));
+});
+
+test("D1 migration dry-run is explicit without touching remote D1", async () => {
+  const printed = [];
+  let calls = 0;
+  await ensureCloudflareD1Migrations({
+    repoRoot:"/repo",
+    databases:[{ binding:"ACTIVITY_LOG", name:"fibre-activity-log-staging" }],
+    dryRun:true,
+    async runner() {
+      calls += 1;
+      throw new Error("dry-run must not reach Cloudflare");
+    },
+    print:(line) => printed.push(line),
+  });
+
+  assert.equal(calls, 0);
+  assert.ok(printed.includes("D1 PLAN   ACTIVITY_LOG 0003_activity_thread_heads.sql"));
+  assert.ok(printed.includes("D1 DRY READY ACTIVITY_LOG -> fibre-activity-log-staging migrations=3"));
 });
