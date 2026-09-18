@@ -267,8 +267,12 @@ async function main(argv) {
     `Fibre infra measure · ${options.environment}\nbranch ${git.branch}\nhead   ${git.head}\nworking tree ${git.clean ? "clean" : "DIRTY (measurement continues)"}\n\n`,
   );
 
+  let failure = null;
   try {
     await sleep(3000);
+    if (tails.some((child) => child.exitCode !== null)) {
+      throw new Error("Cloudflare tail failed to start; check the messages above");
+    }
 
     phase = "idle";
     process.stdout.write(`Idle baseline: ${options.idleSeconds}s. Do not use staging during this window.\n`);
@@ -289,6 +293,8 @@ async function main(argv) {
       phase = "activity";
       await promptAction(terminal, "Open the Admin Activity page once.");
     }
+  } catch (error) {
+    failure = error;
   } finally {
     phase = "settle";
     await sleep(2000);
@@ -304,10 +310,12 @@ async function main(argv) {
     observedAt:new Date().toISOString(),
     events,
     summary,
+    failure:failure === null ? null : String(failure?.message ?? failure),
   });
   await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`);
   process.stdout.write(render(summary));
   process.stdout.write(`\nEvidence: ${outputPath}\n`);
+  if (failure !== null) throw failure;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
