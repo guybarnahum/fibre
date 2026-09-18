@@ -27,6 +27,7 @@ function fixture() {
       sex:"female",
       originOrientation:"original",
       selfDescription:"I persist.",
+      birthDate:"2004-08-20",
       canonicalVisualIdentity:{ specification:{ subject:{ description:"stable face" } } },
     },
   };
@@ -217,6 +218,31 @@ test("Fibre Thread and missing sex require explicit operator identity decisions 
   assert.equal(sex.migration, undefined);
   assert.equal(sex.evidenceAvailable, false);
   assert.equal(sex.identityAction.id, "set_sex");
+});
+
+test("missing birth date requires explicit operator admission and preserves Presentation evidence", async () => {
+  const { service, state, threadId, thread } = fixture();
+  delete thread.identity.birthDate;
+  state.presentation = {
+    presentation:{
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20" },
+      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
+      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
+      identityCard:{ officialPhotoMediaRef:"media_identity_1" },
+    },
+    media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
+  };
+
+  const diagnosis = await service.diagnose(threadId);
+  const birthDate = diagnosis.findings.find((entry) => entry.code === "BIRTH_DATE_MISSING");
+  assert.equal(diagnosis.health, "operator_decision_required");
+  assert.equal(birthDate.presentation, "2004-08-20");
+  assert.equal(birthDate.identityAction.id, "admit_birth_date");
+  assert.equal(birthDate.identityAction.input.fields[0].default, "2004-08-20");
+
+  const repair = await service.repair(threadId, { repairKey:"repair_preserved_birth_date_1" });
+  assert.equal(thread.identity.birthDate, undefined, "repair promoted Presentation birth date into World");
+  assert.deepEqual(repair.actions, [], "repair bypassed operator birth-date admission");
 });
 
 test("preserved public name requires explicit World admission instead of being lost or silently promoted", async () => {
