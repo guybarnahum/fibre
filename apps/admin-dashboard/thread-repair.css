@@ -58,6 +58,38 @@
 }
 .thread-repair-note { max-width:760px; }
 
+.thread-operator-decisions {
+  display:grid;
+  gap:7px;
+  max-width:760px;
+  margin-top:10px;
+  padding:9px 10px;
+  border:1px solid color-mix(in srgb,#f79009 42%,var(--border));
+  border-radius:8px;
+  background:color-mix(in srgb,#f79009 7%,var(--surface-subtle));
+}
+.thread-operator-decisions > strong {
+  font-size:10px;
+  color:#b54708;
+}
+.thread-operator-decision {
+  display:grid;
+  gap:2px;
+}
+.thread-operator-decision-title {
+  font-size:10px;
+  font-weight:700;
+}
+.thread-operator-decision p {
+  margin:0;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.45;
+}
+.thread-required-action {
+  box-shadow:0 0 0 1px color-mix(in srgb,#f79009 30%,transparent);
+}
+
 .thread-population-metrics {
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(92px,1fr));
