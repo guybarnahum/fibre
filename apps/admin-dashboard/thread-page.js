@@ -1,4 +1,10 @@
 import { renderThreadHealth } from "./thread-repair-ui.js";
+import {
+  fetchThreadObservatory,
+  portraitAsset,
+  renderThreadObservatory,
+  threadName,
+} from "./thread-observatory.js";
 
 function node(tag, className = null, text = null) {
   const element = document.createElement(tag);
@@ -15,22 +21,17 @@ function statusOrigin(environment) {
   return environment === "staging" ? "https://status.staging.insidefibre.com" : "https://status.insidefibre.com";
 }
 
-function identityItem(label, content, { mono = false } = {}) {
-  const item = node("div", "thread-identity-item");
-  item.append(node("span", "thread-identity-label", label));
-  item.append(node("div", mono ? "thread-identity-value mono" : "thread-identity-value", content ?? "—"));
-  return item;
-}
-
-function listText(value) {
-  return Array.isArray(value) && value.length > 0 ? value.join(", ") : null;
-}
-
-function portraitAsset(identity) {
-  const assets = Array.isArray(identity?.assets) ? identity.assets : [];
-  return assets.find((asset) => asset?.role === "canonical_portrait" && asset?.url)
-    ?? assets.find((asset) => asset?.mediaType?.startsWith?.("image/") && asset?.url)
-    ?? null;
+function healthSection(threadId) {
+  const health = node("section", "thread-person-section thread-repair-section");
+  const head = node("div", "thread-person-section-head");
+  head.append(node("h3", null, "Thread health"), node("span", null, "not checked"));
+  const actions = node("div", "thread-repair-actions");
+  const button = node("button", "secondary thread-repair-button", "Check health");
+  button.type = "button";
+  button.addEventListener("click", () => renderThreadHealth(health, threadId), { once:true });
+  actions.append(button);
+  health.append(head, actions);
+  return health;
 }
 
 export async function renderThreadPage(threadId) {
@@ -41,8 +42,9 @@ export async function renderThreadPage(threadId) {
   main.replaceChildren();
   const topbar = node("header", "topbar");
   const crumbs = node("div", "crumbs");
-  const home = node("a", "crumb-link", "Threads"); home.href = "/activity?mode=threads";
-  crumbs.append(home, node("span", null, "/"), node("strong", null, "Thread"));
+  const home = node("a", "crumb-link", "Threads");
+  home.href = "/activity?mode=threads";
+  crumbs.append(home, node("span", null, "/"), node("strong", null, "Thread Observatory"));
   const actions = node("div", "topbar-actions");
   const environmentPill = node("span", "environment-pill", "—");
   actions.append(environmentPill, node("span", "admin-pill", "Admin"));
@@ -56,8 +58,10 @@ export async function renderThreadPage(threadId) {
   const copy = node("div");
   copy.append(node("p", "eyebrow", "Thread Observatory"), node("h1", null, "Loading Thread…"), node("p", "lede mono", threadId));
   person.append(portrait, copy);
+
   const pageActions = node("div", "page-actions");
-  const back = node("a", "button-link secondary", "← Threads"); back.href = "/activity?mode=threads";
+  const back = node("a", "button-link secondary", "← Threads");
+  back.href = "/activity?mode=threads";
   const viewer = node("a", "button-link primary", "Open as visitor ↗");
   const activity = node("a", "button-link secondary", "Activity ↗");
   activity.href = `/activity?kind=thread&value=${encodeURIComponent(threadId)}&limit=100&mode=raw`;
@@ -65,72 +69,46 @@ export async function renderThreadPage(threadId) {
   pageHead.append(person, pageActions);
   main.append(pageHead);
 
-  const panel = node("section", "panel thread-identity-panel");
-  const panelHead = node("div", "panel-head");
-  const panelCopy = node("div");
-  panelCopy.append(node("h2", null, "Identity"), node("p", null, "Authoritative World identity with current public media."));
-  panelHead.append(panelCopy);
-  panel.append(panelHead);
-  const grid = node("div", "thread-identity-grid");
-  grid.append(identityItem("Thread ID", threadId, { mono:true }));
-  panel.append(grid);
-  main.append(panel);
-
-  const health = node("section", "panel thread-repair-section");
-  const healthHead = node("div", "panel-head");
-  const healthCopy = node("div");
-  healthCopy.append(
-    node("h2", null, "Thread health"),
-    node("p", null, "Run forensic diagnosis only when needed."),
-  );
-  const healthButton = node("button", "secondary", "Check health");
-  healthButton.type = "button";
-  healthButton.addEventListener("click", async () => {
-    healthButton.disabled = true;
-    try { await renderThreadHealth(health, threadId); }
-    catch { healthButton.disabled = false; }
-  }, { once:true });
-  healthHead.append(healthCopy, healthButton);
-  health.append(healthHead);
-  main.append(health);
+  const host = node("section", "panel thread-observatory-page");
+  host.append(node("div", "thread-loading", "Loading Thread Observatory…"));
+  main.append(host);
 
   try {
-    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
+    const payload = await fetchThreadObservatory(threadId);
     environmentPill.textContent = payload.environment;
-    const name = payload.identity.displayName ?? "Unnamed Thread";
+    const identity = payload.identity ?? {};
+    const name = threadName(identity) ?? "Unnamed Thread";
     document.title = `Fibre Admin · ${name}`;
     copy.querySelector("h1").textContent = name;
     viewer.href = `${viewerOrigin(payload.environment)}/meet?thread=${encodeURIComponent(threadId)}`;
-    const status = document.querySelector("#status-link"); if (status) status.href = statusOrigin(payload.environment);
+    const status = document.querySelector("#status-link");
+    if (status) status.href = statusOrigin(payload.environment);
 
-    const photo = portraitAsset(payload.identity);
+    const photo = portraitAsset(identity);
     if (photo) {
+      const button = node("button", "thread-page-avatar-button");
+      button.type = "button";
+      button.dataset.lightboxSrc = photo.url;
+      button.dataset.lightboxAlt = `${name} portrait`;
       const image = node("img");
       image.src = photo.url;
       image.alt = `${name} portrait`;
-      portrait.replaceChildren(image);
+      button.append(image);
+      portrait.replaceChildren(button);
       portrait.classList.add("has-image");
     }
 
-    grid.replaceChildren(
-      identityItem("Name", payload.identity.displayName),
-      identityItem("FIN", payload.identity.fibreIdentityNumber),
-      identityItem("Sex", payload.identity.sex),
-      identityItem("Birth date", payload.identity.birthDate),
-      identityItem("Birth place", payload.identity.birthPlace),
-      identityItem("Raised cultural context", payload.identity.raisedAs?.culturalContext),
-      identityItem("Raised languages", listText(payload.identity.raisedAs?.languages)),
-      identityItem("Schooling / community", payload.identity.raisedAs?.schoolingOrCommunityContext),
-      identityItem("Culture", listText(payload.identity.culture)),
-      identityItem("Languages", listText(payload.identity.languages)),
-      identityItem("Lifecycle", payload.identity.lifecycleStatus),
-      identityItem("Thread ID", payload.identity.threadId, { mono:true }),
-    );
+    const observatory = renderThreadObservatory({
+      identity,
+      threadId,
+      memories:payload.memories,
+      memoryError:payload.memoryError,
+    });
+    observatory.querySelector(".thread-person-hero")?.after(healthSection(threadId));
+    host.replaceChildren(observatory);
   } catch (error) {
     copy.querySelector("h1").textContent = "Thread unavailable";
-    panelCopy.querySelector("p").textContent = `Identity unavailable: ${error.message}`;
+    host.replaceChildren(node("div", "error-box", `Thread identity unavailable: ${error instanceof Error ? error.message : String(error)}`));
     viewer.removeAttribute("href");
   }
 }
