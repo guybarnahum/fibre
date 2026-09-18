@@ -3,13 +3,17 @@ import { DurableObject } from "cloudflare:workers";
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { ThreadDirectoryStore } from "#services/world-kernel/src/thread-directory-store.mjs";
 import { createThreadDirectoryService } from "#services/world-kernel/src/thread-directory-service.mjs";
+import { ThreadHealthProjectionStore } from "#services/world-kernel/src/thread-health-projection-store.mjs";
+import { createThreadHealthProjectionService } from "#services/world-kernel/src/thread-health-projection-service.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { createWorldCloudflareRuntime } from "./runtime.mjs";
 
 const WORLD_SCOPE_ID = "world";
 const TOKEN_ENCODER = new TextEncoder();
 const THREAD_IDENTITY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/identity$/u;
+const THREAD_REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
 const THREAD_DIRECTORY_ROUTE = "/internal/thread-directory/search";
+const THREAD_REPAIR_CONTRACT = "fibre-thread-repair-v0.5";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -23,6 +27,32 @@ function constantTimeEqual(left, right) {
 
 function privateOperatorAuthorized(request, env) {
   return constantTimeEqual(request.headers.get("x-fibre-private-token"), env?.FIBRE_PRIVATE_TOKEN);
+}
+
+function repairJson(status, payload, cacheHit) {
+  return Response.json(payload, {
+    status,
+    headers:{
+      "cache-control":"no-store",
+      "x-content-type-options":"nosniff",
+      "content-security-policy":"default-src 'none'",
+      "x-fibre-health-projection":cacheHit ? "hit" : "miss",
+    },
+  });
+}
+
+async function presentationSnapshotDigest(env, threadId) {
+  const binding = env?.THREAD_PRESENTATION;
+  if (!binding || typeof binding.fetch !== "function") return undefined;
+  const response = await binding.fetch(new Request(
+    `https://thread-presentation.internal/api/threads/${encodeURIComponent(threadId)}/snapshot`,
+    { method:"HEAD", headers:{ Accept:"application/json" } },
+  ));
+  if (response.status === 404) return null;
+  if (response.status === 405) return undefined;
+  if (!response.ok) throw new Error(`Thread Presentation witness failed with HTTP ${response.status}`);
+  const digest = response.headers.get("x-fibre-snapshot-digest");
+  return typeof digest === "string" && digest !== "" ? digest : undefined;
 }
 
 function directorySearch(url) {
@@ -75,9 +105,12 @@ export class FibreWorldDurableObject extends DurableObject {
     super(ctx, env);
     this.runtime = null;
     this.infraDriver = createCloudflareInfraDriver({ stateScopes:{ [WORLD_SCOPE_ID]:ctx.storage } });
+    this.worldStorage = Object.freeze({ infraDriver:this.infraDriver, stateScopeId:WORLD_SCOPE_ID });
     this.health = this.infraDriver.health;
     this.threadDirectoryStore = null;
     this.threadDirectory = null;
+    this.threadHealthProjectionStore = null;
+    this.threadHealthProjection = null;
   }
 
   runtimeForRequest() {
@@ -96,6 +129,20 @@ export class FibreWorldDurableObject extends DurableObject {
       this.threadDirectory = createThreadDirectoryService({ directoryStore:this.threadDirectoryStore });
     }
     return this.threadDirectory;
+  }
+
+  healthProjectionForRequest() {
+    if (this.threadHealthProjection === null) {
+      this.threadHealthProjectionStore = new ThreadHealthProjectionStore(this.worldStorage);
+      this.threadHealthProjection = createThreadHealthProjectionService({
+        projectionStore:this.threadHealthProjectionStore,
+        presentationWitnessReader:{
+          getSnapshotDigest:(threadId) => presentationSnapshotDigest(this.env, threadId),
+        },
+        diagnose:(threadId) => this.runtimeForRequest().repairService.diagnose(threadId),
+      });
+    }
+    return this.threadHealthProjection;
   }
 
   async withStateCost(operation, run) {
@@ -135,6 +182,20 @@ export class FibreWorldDurableObject extends DurableObject {
       const identity = this.directoryForRequest().get(decodeURIComponent(identityMatch[1]));
       if (identity === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({ contract:"fibre-world-thread-identity-v0.3", identity });
+    }
+    const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
+    if (repairMatch !== null && request.method === "GET") {
+      if (url.search !== "") return repairJson(400, { error:{ code:"QUERY_NOT_SUPPORTED" } }, false);
+      if (!privateOperatorAuthorized(request, this.env)) {
+        return repairJson(403, { error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, false);
+      }
+      const threadId = decodeURIComponent(repairMatch[1]);
+      const health = await this.healthProjectionForRequest().inspect(threadId);
+      return repairJson(health.diagnosis.exists ? 200 : 404, {
+        contract:THREAD_REPAIR_CONTRACT,
+        diagnosis:health.diagnosis,
+        reconciliation:health.reconciliation,
+      }, health.cacheHit);
     }
     const runtime = this.runtimeForRequest();
     if (url.pathname === "/internal/reconciliation/stop" || url.pathname === "/internal/reconciliation/wake") {
