@@ -18,17 +18,39 @@ function normalizeName(value) {
   return normalized;
 }
 
+function canonicalBirthDate(year, month, day) {
+  const normalized = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(normalized) || Number(year) < 1000) return null;
+  const instant = new Date(`${normalized}T00:00:00.000Z`);
+  if (!Number.isFinite(instant.getTime()) || instant.toISOString().slice(0, 10) !== normalized) return null;
+  return normalized;
+}
+
 function normalizeBirthDate(value) {
   if (value === undefined) return undefined;
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/u.test(value.trim())) {
-    throw new TypeError("Thread birth date must use YYYY-MM-DD");
+  if (typeof value !== "string" || value.trim() === "") throw new TypeError("Thread birth date is required");
+  const raw = value.trim();
+
+  let match = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/u.exec(raw);
+  if (match !== null) {
+    const normalized = canonicalBirthDate(match[1], match[2], match[3]);
+    if (normalized !== null) return normalized;
   }
-  const normalized = value.trim();
-  const instant = new Date(`${normalized}T00:00:00.000Z`);
-  if (!Number.isFinite(instant.getTime()) || instant.toISOString().slice(0, 10) !== normalized) {
-    throw new TypeError("Thread birth date is invalid");
+
+  match = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/u.exec(raw);
+  if (match !== null) {
+    const normalized = canonicalBirthDate(match[3], match[1], match[2]);
+    if (normalized !== null) return normalized;
   }
-  return normalized;
+
+  if (/^\d{8}$/u.test(raw)) {
+    const ymd = canonicalBirthDate(raw.slice(0, 4), raw.slice(4, 6), raw.slice(6, 8));
+    if (ymd !== null) return ymd;
+    const mdy = canonicalBirthDate(raw.slice(4, 8), raw.slice(0, 2), raw.slice(2, 4));
+    if (mdy !== null) return mdy;
+  }
+
+  throw new TypeError("Thread birth date must be YYYY-MM-DD, YYYYMMDD, MM/DD/YYYY, or MMDDYYYY");
 }
 
 function normalizeOperationKey(value) {
