@@ -287,12 +287,15 @@ async function main(argv) {
 
     if (!options.skipAdmin) {
       terminal = createInterface({ input:process.stdin, output:process.stdout });
+      process.stdout.write("\nUse one Admin tab for these measurements; leave other Admin tabs closed or idle.\n");
       phase = "threads";
       await promptAction(terminal, "Open the Admin Threads page once.");
       phase = "thread";
-      await promptAction(terminal, "Open one Thread once.");
+      await promptAction(terminal, "Open one Thread once. Do not press Check health yet.");
+      phase = "health";
+      await promptAction(terminal, "Optional: click Check health once, or type s to skip.");
       phase = "activity";
-      await promptAction(terminal, "From the Thread page, click Activity ↗ once.");
+      await promptAction(terminal, "From the Thread page, click Activity ↗ once. It should open Raw Activity.");
     }
   } catch (error) {
     failure = error;
