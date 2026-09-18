@@ -32,8 +32,9 @@ async function repairBody(request) {
       if (typeof value.operationKey !== "string" || value.operationKey.trim() === "") throw new TypeError();
       const name = value.name === undefined ? undefined : value.name;
       const sex = value.sex === undefined ? undefined : value.sex;
-      if (name === undefined && sex === undefined) throw new TypeError();
-      return Object.freeze({ action:"identity", operationKey:value.operationKey.trim(), name, sex });
+      const birthDate = value.birthDate === undefined ? undefined : value.birthDate;
+      if (name === undefined && sex === undefined && birthDate === undefined) throw new TypeError();
+      return Object.freeze({ action:"identity", operationKey:value.operationKey.trim(), name, sex, birthDate });
     }
     if (value.action === "migrate") {
       if (typeof value.migrationId !== "string" || value.migrationId.trim() === "") throw new TypeError();
