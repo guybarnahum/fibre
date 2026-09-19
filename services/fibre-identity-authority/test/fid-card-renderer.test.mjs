@@ -162,6 +162,55 @@ test("FID render identity changes when authorized material changes", async () =>
   assert.notEqual(versionRender.backRenderDigest, baseline.backRenderDigest, "template version did not move back render");
 });
 
+function region(surface, { x, y, width, height }) {
+  const bytes = new Uint8Array(width * height * 4);
+  for (let row = 0; row < height; row += 1) {
+    const from = ((y + row) * surface.width + x) * 4;
+    bytes.set(surface.rgba.subarray(from, from + width * 4), row * width * 4);
+  }
+  return bytes;
+}
+
+test("FID card visibly preserves the authorized spelling and case of a Thread name", async () => {
+  const w = workflow();
+  const p = photo();
+  const a = admission(w, p);
+  const template = await oceanFidTemplate();
+  const mixed = await decodePngRgba(renderFidCard({
+    workflow:w,
+    photoAdmission:a,
+    photo:p,
+    authorizedIdentity:identity("Mira Vale"),
+    template,
+  }).files["front.png"]);
+  const upper = await decodePngRgba(renderFidCard({
+    workflow:w,
+    photoAdmission:a,
+    photo:p,
+    authorizedIdentity:identity("MIRA VALE"),
+    template,
+  }).files["front.png"]);
+  const field = template.layout.front.name;
+  const bounds = { x:field.valueX, y:field.valueY, width:field.width, height:40 };
+  assert.notDeepEqual(region(mixed, bounds), region(upper, bounds), "name case disappeared from card");
+});
+
+test("FID card rejects identity text that cannot fit its designed field", async () => {
+  const w = workflow();
+  const p = photo();
+  const template = await oceanFidTemplate();
+  assert.throws(
+    () => renderFidCard({
+      workflow:w,
+      photoAdmission:admission(w, p),
+      photo:p,
+      authorizedIdentity:identity("A".repeat(80)),
+      template,
+    }),
+    /FID name does not fit/,
+  );
+});
+
 test("FID renderer refuses a substituted or unadmitted portrait", async () => {
   const w = workflow();
   const admitted = photo();

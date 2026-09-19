@@ -21,36 +21,36 @@
     },
     "fin": {
       "labelX": 350,
-      "labelY": 145,
+      "labelY": 144,
       "valueX": 350,
-      "valueY": 174,
-      "valueScale": 4,
+      "valueY": 171,
       "typography": {
         "label": "label",
         "value": "finValue"
-      }
+      },
+      "width": 288
     },
     "name": {
       "labelX": 350,
-      "labelY": 238,
+      "labelY": 237,
       "valueX": 350,
-      "valueY": 267,
-      "valueScale": 2,
+      "valueY": 264,
       "typography": {
         "label": "label",
         "value": "identityValue"
-      }
+      },
+      "width": 288
     },
     "date": {
       "labelX": 350,
-      "labelY": 320,
+      "labelY": 321,
       "valueX": 350,
-      "valueY": 349,
-      "valueScale": 3,
+      "valueY": 348,
       "typography": {
         "label": "label",
         "value": "dateValue"
-      }
+      },
+      "width": 200
     },
     "verification": {
       "x": 350,
@@ -79,42 +79,41 @@
     "credentialId": {
       "x": 384,
       "y": 164,
-      "scale": 2,
       "typography": {
         "value": "backValue"
-      }
+      },
+      "width": 390
     },
     "revision": {
       "x": 384,
       "y": 225,
-      "scale": 3,
       "typography": {
         "value": "backStrong"
-      }
+      },
+      "width": 80
     },
     "templateVersion": {
       "x": 600,
       "y": 225,
-      "scale": 1,
       "typography": {
         "value": "backMicro"
-      }
+      },
+      "width": 180
     },
     "issuer": {
       "x": 384,
       "y": 286,
-      "scale": 2,
       "typography": {
         "value": "backValue"
-      }
+      },
+      "width": 390
     },
     "renderPair": {
       "x": 384,
       "y": 382,
       "width": 390,
       "height": 18
-    },
-    "drawLabels": false
+    }
   },
   "typography": {
     "fonts": {
@@ -128,39 +127,39 @@
     "styles": {
       "label": {
         "font": "regular",
-        "sizePx": 11,
-        "letterSpacingPx": 1,
+        "sizePx": 10,
+        "letterSpacingPx": 0.8,
         "textTransform": "uppercase"
       },
       "finValue": {
         "font": "medium",
-        "sizePx": 28,
-        "letterSpacingPx": 0.5
+        "sizePx": 30,
+        "letterSpacingPx": 0.4
       },
       "identityValue": {
+        "font": "medium",
+        "sizePx": 22,
+        "letterSpacingPx": 0.1
+      },
+      "dateValue": {
         "font": "medium",
         "sizePx": 19,
         "letterSpacingPx": 0.2
       },
-      "dateValue": {
-        "font": "medium",
-        "sizePx": 20,
-        "letterSpacingPx": 0.25
-      },
       "backValue": {
         "font": "regular",
         "sizePx": 12,
-        "letterSpacingPx": 0.2
+        "letterSpacingPx": 0.15
       },
       "backStrong": {
         "font": "medium",
-        "sizePx": 18,
-        "letterSpacingPx": 0.2
+        "sizePx": 17,
+        "letterSpacingPx": 0.15
       },
       "backMicro": {
         "font": "regular",
         "sizePx": 9,
-        "letterSpacingPx": 0.15
+        "letterSpacingPx": 0.1
       }
     }
   }

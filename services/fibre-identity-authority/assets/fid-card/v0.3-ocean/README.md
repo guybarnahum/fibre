@@ -24,7 +24,7 @@ The three PNG assets are renderer inputs only. Public issuance still produces ex
 
 The ocean template bundles Noto Sans SemiCondensed Regular and Medium from the Noto Project. They are redistributed under SIL Open Font License 1.1; the complete license text is retained in `OFL.txt`.
 
-The bundled font bytes are part of the versioned credential template. Local Node and provider deployments must consume these exact assets rather than an operating-system or browser font stack.
+The bundled font bytes are part of the versioned credential template. Human-readable identity values preserve the authorized spelling and case; only labels explicitly request uppercase. Each text field also owns a hard presentation width so a credential fails visibly rather than clipping or shrinking identity material unpredictably. Local Node and provider deployments must consume these exact assets rather than an operating-system or browser font stack.
 
 ## Integrity
 

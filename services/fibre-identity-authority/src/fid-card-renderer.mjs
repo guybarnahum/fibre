@@ -3,7 +3,7 @@ import { deflateSync } from "node:zlib";
 
 import { normalizeFidIssuanceWorkflowRecord } from "./fid-card-issuance-domain.mjs";
 import { assertFidPhotoAdmissionReceipt } from "./fid-photo-admission.mjs";
-import { drawFidText } from "./fid-card-typography.mjs";
+import { drawFidText, measureFidText } from "./fid-card-typography.mjs";
 
 export const FID_CARD_SIZE = Object.freeze({ width:856, height:540 });
 
@@ -224,9 +224,14 @@ function layoutFor(template) {
   return layout;
 }
 
-function drawStyled(surface, template, value, x, y, styleName, color) {
+function drawStyled(surface, template, value, x, y, styleName, color, maxWidth, fieldName) {
   const style = template.layout.typography.styles[styleName];
   if (!style) throw new TypeError(`FID typography style ${String(styleName)} is unavailable`);
+  const font = template.fonts?.[style.font]?.font;
+  if (!font) throw new TypeError(`FID font role ${String(style.font)} is unavailable`);
+  if (maxWidth !== undefined && measureFidText(font, value, style) > maxWidth) {
+    throw new TypeError(`FID ${fieldName} does not fit`);
+  }
   drawFidText(surface, value, x, y, style, template.fonts, color);
 }
 
@@ -296,6 +301,8 @@ export function renderFidCard({
     frontLayout.fin.labelY,
     frontLayout.fin.typography?.label,
     CARD_PALETTE.inkSoft,
+    frontLayout.fin.width,
+    "FIN label",
   );
   drawStyled(
     front,
@@ -305,19 +312,21 @@ export function renderFidCard({
     frontLayout.fin.valueY,
     frontLayout.fin.typography?.value,
     CARD_PALETTE.ink,
+    frontLayout.fin.width,
+    "FIN",
   );
   if (frontLayout.divider) {
     rect(front, frontLayout.divider.x, frontLayout.divider.y, frontLayout.divider.width, frontLayout.divider.height, CARD_PALETTE.paperWarm);
   }
 
   if (identitySnapshot.displayName !== undefined && identitySnapshot.displayName !== null && frontLayout.name) {
-    drawStyled(front, template, "NAME", frontLayout.name.labelX, frontLayout.name.labelY, frontLayout.name.typography?.label, CARD_PALETTE.inkSoft);
-    drawStyled(front, template, identitySnapshot.displayName, frontLayout.name.valueX, frontLayout.name.valueY, frontLayout.name.typography?.value, CARD_PALETTE.ink);
+    drawStyled(front, template, "NAME", frontLayout.name.labelX, frontLayout.name.labelY, frontLayout.name.typography?.label, CARD_PALETTE.inkSoft, frontLayout.name.width, "name label");
+    drawStyled(front, template, identitySnapshot.displayName, frontLayout.name.valueX, frontLayout.name.valueY, frontLayout.name.typography?.value, CARD_PALETTE.ink, frontLayout.name.width, "name");
   }
   if (identitySnapshot.dateField !== undefined && identitySnapshot.dateField !== null && frontLayout.date) {
     const label = identitySnapshot.dateField.kind === "birth_date" ? "BIRTH DATE" : "ENTRY DATE";
-    drawStyled(front, template, label, frontLayout.date.labelX, frontLayout.date.labelY, frontLayout.date.typography?.label, CARD_PALETTE.inkSoft);
-    drawStyled(front, template, identitySnapshot.dateField.value, frontLayout.date.valueX, frontLayout.date.valueY, frontLayout.date.typography?.value, CARD_PALETTE.ink);
+    drawStyled(front, template, label, frontLayout.date.labelX, frontLayout.date.labelY, frontLayout.date.typography?.label, CARD_PALETTE.inkSoft, frontLayout.date.width, "date label");
+    drawStyled(front, template, identitySnapshot.dateField.value, frontLayout.date.valueX, frontLayout.date.valueY, frontLayout.date.typography?.value, CARD_PALETTE.ink, frontLayout.date.width, "date");
   }
   drawStyled(
     front,
@@ -327,6 +336,8 @@ export function renderFidCard({
     frontLayout.verification.labelY ?? frontLayout.verification.y - 28,
     frontLayout.verification.typography?.label,
     CARD_PALETTE.inkSoft,
+    frontLayout.verification.width,
+    "verification label",
   );
   fingerprint(
     front,
@@ -351,7 +362,7 @@ export function renderFidCard({
   const backLayout = layout.back;
   const back = clone(template.back);
   if (backLayout.verification) fingerprintGrid(back, identitySnapshotDigest, backLayout.verification, CARD_PALETTE.inkSoft);
-  const drawBackValue = (field, value) => drawStyled(
+  const drawBackValue = (field, value, fieldName) => drawStyled(
     back,
     template,
     value,
@@ -359,11 +370,13 @@ export function renderFidCard({
     field.y,
     field.typography?.value,
     CARD_PALETTE.ink,
+    field.width,
+    fieldName,
   );
-  drawBackValue(backLayout.credentialId, workflow.proposedCredentialId.slice(-20));
-  drawBackValue(backLayout.revision, String(workflow.proposedRevision).padStart(2, "0"));
-  drawBackValue(backLayout.templateVersion, template.version);
-  if (backLayout.issuer) drawBackValue(backLayout.issuer, "FIBRE IDENTITY AUTHORITY");
+  drawBackValue(backLayout.credentialId, workflow.proposedCredentialId.slice(-20), "credential id");
+  drawBackValue(backLayout.revision, String(workflow.proposedRevision).padStart(2, "0"), "revision");
+  drawBackValue(backLayout.templateVersion, template.version, "template version");
+  if (backLayout.issuer) drawBackValue(backLayout.issuer, "FIBRE IDENTITY AUTHORITY", "issuer");
 
   fingerprint(
     back,
