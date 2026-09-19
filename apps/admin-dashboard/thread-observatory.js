@@ -83,6 +83,89 @@ async function copyToClipboard(value) {
   textarea.remove();
 }
 
+export function threadObservatoryCopyPayload({
+  threadId,
+  identity,
+  memories = [],
+  memoryError = null,
+  repair = null,
+  repairError = null,
+} = {}) {
+  return Object.freeze({
+    contract:"fibre-thread-observatory-copy-v0.1",
+    threadId:threadId ?? null,
+    identity:identity ?? null,
+    memories:Object.freeze(Array.isArray(memories) ? [...memories] : []),
+    memoryError:memoryError ?? null,
+    repair:repair ?? null,
+    repairError:repairError ?? null,
+  });
+}
+
+async function fetchThreadRepairSnapshot(threadId) {
+  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
+    headers:{ Accept:"application/json" },
+    cache:"no-store",
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok && !(response.status === 404 && payload?.diagnosis)) {
+    throw new Error(payload?.error?.detail ?? payload?.error?.code ?? payload?.error ?? `HTTP ${response.status}`);
+  }
+  return payload;
+}
+
+function observatoryCopyAction({ identity, threadId, memories, memoryError }) {
+  const actions = el("div", "thread-observatory-actions");
+  const button = el("button", "secondary thread-observatory-copy");
+  button.type = "button";
+  const normal = () => decorateActionButton(button, {
+    icon:"copy",
+    label:"Copy Thread Observatory",
+    tooltip:"Copy Thread Observatory with current repair diagnosis",
+    iconOnly:true,
+  });
+  normal();
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    let repair = null;
+    let repairError = null;
+    try {
+      repair = await fetchThreadRepairSnapshot(threadId);
+    } catch (error) {
+      repairError = error instanceof Error ? error.message : String(error);
+    }
+    try {
+      await copyToClipboard(threadObservatoryCopyPayload({
+        threadId,
+        identity,
+        memories,
+        memoryError,
+        repair,
+        repairError,
+      }));
+      decorateActionButton(button, {
+        icon:"copy",
+        label:"Copied Thread Observatory",
+        tooltip:"Copied Thread Observatory",
+        iconOnly:true,
+      });
+    } catch {
+      decorateActionButton(button, {
+        icon:"copy",
+        label:"Copy Thread Observatory failed",
+        tooltip:"Copy Thread Observatory failed",
+        iconOnly:true,
+      });
+    }
+    window.setTimeout(() => {
+      button.disabled = false;
+      normal();
+    }, 1200);
+  });
+  actions.append(button);
+  return actions;
+}
+
 function uniqueStrings(...values) {
   return [...new Set(values.flatMap((value) => Array.isArray(value) ? value : []).filter((value) => typeof value === "string" && value.trim() !== ""))];
 }
@@ -645,6 +728,7 @@ export async function fetchThreadObservatory(threadId) {
 export function renderThreadObservatory({ identity, threadId, memories = [], memoryError = null } = {}) {
   const view = el("div", "thread-person-view");
   view.append(
+    observatoryCopyAction({ identity, threadId, memories, memoryError }),
     hero(identity, threadId),
     identitySection(identity, threadId),
     fidSection(identity),
