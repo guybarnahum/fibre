@@ -72,9 +72,8 @@ function identityCredentialVisible(snapshot, media) {
     || media.identityCredentialMedia;
   if (!credentialMedia) return true;
   if (card === null || card.visibility !== "public" || card.status !== "active") return false;
-  return [card.officialPhotoMediaRef, card.frontMediaRef, card.backMediaRef]
-    .filter(Boolean)
-    .includes(media.mediaId);
+  if (media.role === "official_id_photo") return true;
+  return [card.frontMediaRef, card.backMediaRef].filter(Boolean).includes(media.mediaId);
 }
 
 export function createPublicPresentationAssetResolver({

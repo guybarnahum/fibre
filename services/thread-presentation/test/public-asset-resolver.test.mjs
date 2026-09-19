@@ -140,6 +140,24 @@ test("current presentation state defeats stale roles and private identity-photo 
   assert.equal(await privatePhoto.resolver.resolve(OBJECT_REF), null);
 });
 
+test("current FIA card keeps the Thread official ID photo publicly resolvable", async () => {
+  const { resolver } = await fixture({
+    mediaRole:"official_id_photo",
+    currentRole:"official_id_photo",
+    identityCredentialMedia:true,
+    card:{
+      credentialVersion:"fibre-identity-card-credential-v0.2",
+      credentialId:"fidc_active",
+      status:"active",
+      visibility:"public",
+      frontMediaRef:"media_fid_front",
+      backMediaRef:"media_fid_back",
+    },
+  });
+  assert.notEqual(await resolver.resolve(OBJECT_REF), null, "active FID hid official ID photo");
+});
+
+
 test("published catalog digest must match immutable object storage", async () => {
   const { resolver } = await fixture({
     mediaDigest: DIGEST,

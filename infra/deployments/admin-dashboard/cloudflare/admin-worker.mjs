@@ -158,16 +158,16 @@ export async function proxyFidReissue(request, env, threadId) {
     return json(400, { error:"invalid_fid_reissue", detail:"FID reissue request must contain exactly idempotencyKey" });
   }
   const idempotencyKey = id("idempotencyKey", input.idempotencyKey);
-  let authority;
-  try { authority = serviceBinding(env, "FIBRE_IDENTITY_AUTHORITY"); }
+  let presentation;
+  try { presentation = serviceBinding(env, "THREAD_PRESENTATION"); }
   catch {
     return json(503, {
       error:"fid_reissue_not_configured",
-      detail:"Fibre Identity Authority is not deployed in this environment.",
+      detail:"Thread Presentation is not deployed in this environment.",
     });
   }
-  const upstream = await authority.fetch(new Request(
-    "https://fibre-identity-authority.internal/internal/fid/cards/reissue",
+  const upstream = await presentation.fetch(new Request(
+    "https://thread-presentation.internal/internal/fid/reconcile",
     {
       method:"POST",
       headers:{
@@ -175,19 +175,14 @@ export async function proxyFidReissue(request, env, threadId) {
         "Content-Type":"application/json",
         "x-fibre-private-token":privateToken(env),
       },
-      body:JSON.stringify({ threadId, idempotencyKey }),
+      body:JSON.stringify({ threadId, idempotencyKey, mode:"reissue" }),
     },
   ));
-  const payload = await upstream.text();
-  return new Response(payload, {
-    status:upstream.status,
-    headers:{
-      "Content-Type":"application/json; charset=utf-8",
-      "Cache-Control":"no-store",
-      "X-Content-Type-Options":"nosniff",
-      "Referrer-Policy":"no-referrer",
-    },
-  });
+  const payload = await upstream.json().catch(() => null);
+  if (!upstream.ok || payload?.ok !== true || !payload.result) {
+    return json(upstream.status, payload ?? { error:"fid_reissue_invalid_response" });
+  }
+  return json(upstream.status, payload.result);
 }
 
 async function threadRegistry(env, limit) {

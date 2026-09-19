@@ -30,10 +30,6 @@
     {
       "binding": "ASSET_GENERATOR",
       "service": "fibre-asset-generator"
-    },
-    {
-      "binding": "FIBRE_IDENTITY_AUTHORITY",
-      "service": "fibre-identity-authority"
     }
   ],
   "d1_databases": [

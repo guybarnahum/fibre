@@ -6,7 +6,7 @@ import {
 } from "fibre/world-kernel/thread-presentation-contracts";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
 
-const CARD_ROLES = new Set(["fibre_identity_card_front", "fibre_identity_card_back", "official_id_photo"]);
+const CARD_ROLES = new Set(["fibre_identity_card_front", "fibre_identity_card_back"]);
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
@@ -46,7 +46,6 @@ function withoutPriorCard(bundle) {
   const card = bundle.presentation.identityCard;
   if (card === null) return bundle;
   const cardMedia = new Set([
-    card.officialPhotoMediaRef,
     card.frontMediaRef,
     card.backMediaRef,
   ].filter(Boolean));
@@ -165,24 +164,21 @@ async function requireStoredMedia(infra, active) {
   }
 }
 
-export function createFidPresentationProjectionService({ presentationServer, infra, fidService } = {}) {
+export function createFidPresentationProjectionService({ presentationServer, infra } = {}) {
   requireInfraCapabilities(infra, "objects", "catalog");
   if (!presentationServer || typeof presentationServer.getSnapshot !== "function"
     || typeof presentationServer.publishSnapshot !== "function" || typeof presentationServer.appendEvent !== "function") {
     throw new TypeError("FID presentation projection requires a PresentationServer");
   }
-  if (!fidService || typeof fidService.getActivePresentation !== "function") {
-    throw new TypeError("FID presentation projection requires Fibre Identity Authority service");
-  }
 
   return Object.freeze({
-    async reconcile({ threadId: candidateThreadId, projectedAt, visibility = "public" } = {}) {
+    async reconcile({ threadId: candidateThreadId, activeFid: candidateFid, projectedAt, visibility = "public" } = {}) {
       const threadId = nonEmpty("threadId", candidateThreadId);
+      const active = activeFid(candidateFid, threadId);
       const at = iso("FID projectedAt", projectedAt);
       const channelId = threadPresentationChannelId(threadId);
       const current = await presentationServer.getSnapshot(channelId);
       if (current === null) return Object.freeze({ changed: false, active: false, reason: "presentation_missing" });
-      const active = fidService.getActivePresentation(threadId);
       await requireStoredMedia(infra, active);
       const currentBundle = {
         presentation: current.snapshot.presentation,
