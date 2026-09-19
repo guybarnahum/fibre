@@ -99,9 +99,11 @@ The earlier staging failure (`POST /api/threads/:threadId/fid/reissue -> 405`) w
 
 ### Staging C2PA posture
 
-For current staging, Fibre uses its own C2PA signer and its own verification policy. Public C2PA Trust List acceptance is deliberately deferred.
+The intended C2PA staging composition remains Fibre's own signer and verification policy, with public C2PA Trust List acceptance deliberately deferred. D1 staging closure may temporarily use `--no-c2pa` while Cloudflare Containers authorization is resolved.
 
-The Cloudflare composition is:
+In `--no-c2pa` mode, FIA still renders deterministically, signs/encrypts the protected machine credential, verifies that protected credential against the raw front/back render digests, stores both PNGs immutably, and performs normal atomic activation/supersession. The issuance record explicitly stores `c2pa.validationStatus = "disabled"`; it does not claim C2PA verification. The signer Worker/Container and FIA signer binding are omitted from that deployment.
+
+The C2PA-enabled Cloudflare composition remains:
 
 ```text
 FIA Worker
@@ -112,7 +114,7 @@ FIA Worker
 
 The Container is required because `@contentauth/c2pa-node` depends on native Linux binaries. This is deployment composition, not a new `InfraDriver` capability. The signer is configured as `fibre-c2pa-self-v1` with `fibre_signature_only`; signing succeeds only under Fibre's configured certificate chain. Public Trust List/conformance work remains deferred.
 
-The operator path now bootstraps missing Workers while configuring secrets and deploys the signer before dependent services. Cloud deployment does not require an operator-supplied public `C2PA_SIGNER_URL`; FIA reaches the signer through the Cloudflare service binding.
+With C2PA enabled, the operator path bootstraps missing Workers while configuring secrets and deploys the signer before dependent services. Cloud deployment does not require an operator-supplied public `C2PA_SIGNER_URL`; FIA reaches the signer through the Cloudflare service binding. With `--no-c2pa`, signer secrets, Containers access, signer deployment, and that service binding are all skipped.
 
 ## Closure invariants
 
