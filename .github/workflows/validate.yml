@@ -52,6 +52,16 @@ jobs:
             cat "$log"
             exit 1
           fi
+      - name: dry-run content credential signer
+        run: |
+          log="$RUNNER_TEMP/content-credential-signer.log"
+          echo "=== dry-run content credential signer ==="
+          if npm run deploy:content-credential-signer:cloudflare:dry > "$log" 2>&1; then
+            echo "✓ content credential signer dry-run passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: dry-run asset generator
         run: |
           log="$RUNNER_TEMP/asset-generator.log"
