@@ -6,8 +6,8 @@ function decodeAssertionData(value) {
 
 function normalizedAssertionLabel(value) {
   if (typeof value !== "string" || value.length === 0) return null;
-  const withoutInstance = value.replace(/__\\d+$/, "");
-  const versioned = withoutInstance.match(/^(.*)\\.v([1-9]\\d*)$/);
+  const withoutInstance = value.replace(/__\d+$/, "");
+  const versioned = withoutInstance.match(/^(.*)\.v([1-9]\d*)$/);
   return versioned === null
     ? { base: withoutInstance, version: 1 }
     : { base: versioned[1], version: Number(versioned[2]) };
