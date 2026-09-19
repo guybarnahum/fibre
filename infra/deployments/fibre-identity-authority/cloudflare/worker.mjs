@@ -13,6 +13,7 @@ import {
   buildFidPhotoDerivationJob,
   createFibreIdentityAuthority,
   createFidCardIssuanceExecutor,
+  createFidCardTemplateFromPngAssets,
   decodePngRgba,
   fidRenderPhotoDigest,
 } from "#services/fibre-identity-authority/src/index.mjs";
@@ -25,12 +26,29 @@ import {
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { createFidCredentialCrypto } from "#integrations/fid-credentials/webcrypto.mjs";
 
+import oceanFrontBase from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/front-base.png";
+import oceanFrontForeground from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/front-foreground.png";
+import oceanBackBase from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/back-base.png";
+import oceanLayoutText from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/layout.json";
+
 const FID_SCOPE_ID = "fid";
 const ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const ACTIVE_ROUTE = /^\/internal\/fid\/threads\/([^/]+)\/active$/u;
 const REISSUE_ROUTE = "/internal/fid/cards/reissue";
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
 const ASSET_DEPLOYMENT = resolveServiceDeployment(DEPLOYMENT, "asset-generator");
+const FID_TEMPLATE_VERSION = "fid-card-template-v0.3-ocean";
+const FID_TEMPLATE_LAYOUT = Object.freeze(JSON.parse(oceanLayoutText));
+
+function loadFidTemplate() {
+  return createFidCardTemplateFromPngAssets({
+    version:FID_TEMPLATE_VERSION,
+    layout:FID_TEMPLATE_LAYOUT,
+    frontBasePng:oceanFrontBase,
+    frontForegroundPng:oceanFrontForeground,
+    backBasePng:oceanBackBase,
+  });
+}
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
@@ -332,6 +350,7 @@ function createRuntime(ctx, env) {
     contentCredentialSigner,
     issuerSigner,
     credentialProtector,
+    loadTemplate:loadFidTemplate,
     async loadPhoto(objectRef) {
       const stored = await infra.objects.get(objectRef);
       if (stored === null) throw new Error(`FID photo ${objectRef} is missing from immutable object storage`);
