@@ -1,7 +1,7 @@
 ---
 id: fibre-cloud-runtime-infradriver-plan
 status: accepted
-last-reviewed: 2026-08-31
+last-reviewed: 2026-09-19
 canonical: true
 ---
 
@@ -116,7 +116,9 @@ World
  -> insidefibre.com Viewer
 ```
 
-World Kernel and Birth Center now both have provider-neutral local/cloud runtime compositions in code. Authoritative World relational persistence and Birth Center provisional/provider-call durability use `InfraDriver.state`; both cloud runtimes map state and scheduler wakes to SQLite-backed Durable Object storage/alarms. These slices prove restart-safe runtime behavior and Wrangler deployment shape, but do not claim that the services are already provisioned or deployed to a live Cloudflare environment.
+World Kernel and Birth Center now both have provider-neutral local/cloud runtime compositions in code. Authoritative World relational persistence and Birth Center provisional/provider-call durability use `InfraDriver.state`; both cloud runtimes map state and scheduler wakes to SQLite-backed Durable Object storage/alarms. Fibre Identity Authority also has a Cloudflare runtime using `InfraDriver.state`, objects and workflows, and Thread Presentation now owns the private FID lifecycle reconciliation seam used by Admin Dashboard.
+
+The repository also contains a Fibre-hosted Content Credential Signer deployment: a Cloudflare Worker fronts a Cloudflare Container running `@contentauth/c2pa-node`. FIA reaches it through a Cloudflare service binding. This closes the staging hosting shape without turning signing into an `InfraDriver` capability. These implementations prove deployment shape and local/dry-run acceptance; they do not yet claim that the complete current stack has passed live staging acceptance.
 
 ## Target cloud topology
 
@@ -146,7 +148,9 @@ World Kernel [Cloudflare]
                   insidefibre.com
 ```
 
-The production C2PA signer may remain an external trusted cryptographic service. "All Fibre application runtimes on Cloudflare" does not require private signing-key custody to move into Workers.
+The current staging composition keeps the C2PA signer inside the Cloudflare deployment boundary: a Worker provides the service edge and a Container runs the native `@contentauth/c2pa-node` implementation. The signer remains an integration service, not an `InfraDriver` capability. FIA calls it through the `CONTENT_CREDENTIAL_SIGNER` service binding.
+
+Staging uses Fibre trust (`fibre-c2pa-self-v1` / `fibre_signature_only`) rather than claiming public C2PA Trust List acceptance. Public trust-list/conformance work and a production certificate authority remain deferred until Fibre needs them.
 
 ## InfraDriver capability profile
 
@@ -408,6 +412,8 @@ Asset Generation Workflow
 asset completion Queue
 asset completion DLQ
 Workers and service bindings
+Fibre Identity Authority Durable Object
+Content Credential Signer Worker + Container
 insidefibre.com custom domain
 api.insidefibre.com custom domain
 ```
@@ -441,6 +447,10 @@ GEMINI_API_KEY              when a selected runtime integration uses Gemini
 FIBRE_PRIVATE_TOKEN
 FIBRE_ADMIN_TOKEN
 C2PA_SIGNER_TOKEN
+C2PA_SIGNER_CERT_BASE64
+C2PA_SIGNER_KEY_BASE64
+FIA_ISSUER_JWK
+FIA_CREDENTIAL_KEY_BASE64
 ```
 
 Each secret is exposed only to services that require it.
@@ -450,7 +460,6 @@ Each secret is exposed only to services that require it.
 Examples:
 
 ```text
-C2PA_SIGNER_URL
 C2PA_SIGNER_ID
 C2PA_TRUST_POLICY
 VIEWER_ORIGIN
@@ -461,7 +470,7 @@ queue names
 custom domains
 ```
 
-A URL may still be operationally sensitive in some environments, but it is not a credential and should not be conflated with an authentication secret.
+In local/legacy HTTP composition, `C2PA_SIGNER_URL` remains ordinary configuration rather than a credential. The Cloudflare FIA runtime does not require an operator-supplied signer URL: its transport uses the `CONTENT_CREDENTIAL_SIGNER` service binding while the checked Wrangler config retains an internal locator for the provider-neutral HTTP signer adapter.
 
 ### Deployment-only credentials
 
@@ -488,16 +497,20 @@ Do not reuse provider API keys or the private service token as the admin credent
 
 ### C2PA signer
 
-The production signer contract is:
+The current Cloudflare signer contract is:
 
 ```text
-C2PA_SIGNER_URL       configuration
-C2PA_SIGNER_TOKEN     secret
-C2PA_SIGNER_ID        configuration
-C2PA_TRUST_POLICY     configuration
+CONTENT_CREDENTIAL_SIGNER   Cloudflare service binding from FIA
+C2PA_SIGNER_TOKEN           secret shared only with authenticated signer clients
+C2PA_SIGNER_CERT_BASE64     signer Worker secret
+C2PA_SIGNER_KEY_BASE64      signer Worker secret
+C2PA_SIGNER_ID              checked signer configuration
+C2PA_TRUST_POLICY           checked signer configuration
 ```
 
-Private signing-key custody is owned by the signer deployment, not by Fibre application configuration.
+The checked staging identity is `fibre-c2pa-self-v1` with `fibre_signature_only`. The certificate secret contains the signer certificate plus its issuing Fibre CA certificate; verification succeeds only when the credential chains to that configured Fibre CA. Public C2PA Trust List validation is deliberately deferred.
+
+Private signing-key custody is owned by the signer deployment. FIA holds no C2PA private key and reaches the signer through the service binding. The native C2PA dependency runs in the Cloudflare Container rather than in the Worker isolate.
 
 ## Secret configuration tool
 
@@ -535,7 +548,7 @@ npm run cloud:configure-secrets -- --file .env --env staging
 
 but `.env` is simply the caller-selected input file.
 
-**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:configure-secrets` requires an explicit file, validates every mandatory service value before any upload, sends only each Worker's secret subset through Wrangler stdin, and never writes secret values into repository or generated config files. `C2PA_SIGNER_URL` is correctly treated as non-secret runtime configuration; generated resolved Wrangler configs carry non-secret environment configuration separately. Wrangler version-secret bulk is used so secret configuration creates a Worker version without intentionally switching traffic. The focused operator suite, broad local gates and exact-head validation passed; first empty-environment behavior still requires the Slice I rebuild proof.
+**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:configure-secrets` requires an explicit file, validates every mandatory service value before any upload, sends only each Worker's secret subset through Wrangler stdin, and never writes secret values into repository or generated config files. The cloud signer token/certificate/key and FIA credential keys are topology-declared secrets; signer identity/trust policy are checked non-secret configuration. Cloud FIA uses the signer service binding, so operators do not provide a public `C2PA_SIGNER_URL` for staging. Wrangler version-secret bulk is used so secret configuration creates a Worker version without intentionally switching traffic. The focused operator suite, broad local gates and exact-head validation passed; first empty-environment behavior still requires the Slice I rebuild proof.
 
 ## Cloud Slice F — deploy command and health closure
 
@@ -552,20 +565,21 @@ The implemented deployment/health order is:
 2. Cloudflare operator authentication check
 3. idempotent Slice E resource provisioning verification
 4. required remote secret-name verification
-5. production C2PA signer health/identity/trust verification
+5. Content Credential Signer deploy + /healthz identity/trust acceptance
 6. Asset Generator deploy + /healthz
 7. Thread Presentation deploy + /healthz
 8. World Kernel deploy + /healthz
-9. Birth Center deploy + /healthz
-10. non-mutating Thread Presentation discovery acceptance
-11. external Viewer reachability verification
+9. Fibre Identity Authority deploy + /healthz
+10. Birth Center deploy + /healthz
+11. non-mutating Thread Presentation discovery acceptance
+12. external Viewer reachability verification
 ```
 
 Wrangler automatic resource provisioning is disabled during deploy so Slice E remains the resource authority. Deployment must not print secret values.
 
 The separate `insidefibre.com` Viewer repository is not mutated by this command; Fibre verifies the configured Viewer endpoint as an external dependency. A genuine new Thread birth and full birth-to-Viewer acceptance proof belong to Slice G rather than being hidden inside deployment orchestration.
 
-**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:deploy` enforces validation/auth/resource/secret/signer preflight, deploys the four Fibre Cloudflare services in service-binding dependency order, checks each service health, then checks the public Presentation discovery API and Viewer reachability. Focused Slice F tests passed locally, broad local validation passed (`1045/1045` active and `1050/1050` all), and exact-head GitHub validation including all four Wrangler dry-runs passed. This slice does not claim that a live staging deployment has actually been executed or that a genuine cloud Thread has been born; those are Slice G acceptance work.
+**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:deploy` enforces validation/auth/resource/secret preflight, deploys the Content Credential Signer first and then the five dependent Fibre Cloudflare services in service-binding dependency order, checks each service health, then checks the public Presentation discovery API and Viewer reachability. Focused Slice F tests passed locally, broad local validation passed (`1045/1045` active and `1050/1050` all), and exact-head GitHub validation including all four Wrangler dry-runs passed. This slice does not claim that a live staging deployment has actually been executed or that a genuine cloud Thread has been born; those are Slice G acceptance work.
 
 ## Cloud Slice G — full cloud in-vivo E2E
 
@@ -755,7 +769,7 @@ Birth Cloudflare runtime                        EXISTS
 explicit resource provisioning                  EXISTS
 explicit secret-file configuration tool         EXISTS
 cloud deploy/health orchestration               EXISTS
-production C2PA deployment/health resolution    EXISTS AS PREFLIGHT CONTRACT; LIVE STAGING NOT YET RUN
+Fibre C2PA Worker+Container deployment       EXISTS; LIVE STAGING ACCEPTANCE NOT YET RUN
 full cloud one-Thread in-vivo E2E               GAP
 cloud failure/restart acceptance                GAP
 empty-environment rebuild proof                 GAP
