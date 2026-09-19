@@ -21,6 +21,7 @@ import {
   finalizeFidCardIssuance,
   renderFidCard,
   sealFidMachineCredential,
+  storeFidCardWithoutContentCredentials,
   verifyFidCard,
   verifyFidC2paSide,
 } from "../src/index.mjs";
@@ -235,6 +236,51 @@ test("D2 rejects altered or mismatched cards and never stores a half-verified pa
   assert.equal(await rejectedInfra.objects.head(`fidcard_${first.machineCredential.routing.credentialId}_front`), null);
   assert.equal(await rejectedInfra.objects.head(`fidcard_${first.machineCredential.routing.credentialId}_back`), null);
 });
+
+test("staging may activate a protected FID with C2PA explicitly disabled", async () => withRegistry(async (registry) => {
+  const infra = createMemoryInfraDriver();
+  const prepared = await fixture();
+  const storedCard = await storeFidCardWithoutContentCredentials({ infra, ...prepared });
+  const { front, back } = await storedBytes(infra, storedCard);
+
+  assert.equal(front.digest, prepared.render.frontRenderDigest);
+  assert.equal(back.digest, prepared.render.backRenderDigest);
+  assert.equal(storedCard.front.manifestDigest, null);
+  assert.equal(storedCard.back.manifestDigest, null);
+
+  const finalized = await finalizeFidCardIssuance({
+    infra,
+    registry,
+    workflow:prepared.workflow,
+    storedCard,
+    machineCredential:prepared.machineCredential,
+    contentCredentialMode:"disabled",
+    issuerSigner:prepared.issuerSigner,
+    credentialProtector:prepared.credentialProtector,
+    activatedAt:"2026-09-09T20:05:00.000Z",
+  });
+
+  assert.equal(finalized.status, "active");
+  const issuance = registry.getIssuanceByCredentialId(prepared.machineCredential.routing.credentialId).record;
+  assert.deepEqual(issuance.c2pa, {
+    signerId:null,
+    trustPolicy:null,
+    validationStatus:"disabled",
+  });
+
+  const verified = await verifyFidCard({
+    contentCredentialMode:"disabled",
+    machineCredential:prepared.machineCredential,
+    frontBytes:front.bytes,
+    backBytes:back.bytes,
+    issuerSigner:prepared.issuerSigner,
+    credentialProtector:prepared.credentialProtector,
+    statusAuthority:registry,
+  });
+  assert.equal(verified.authenticity.protectedCredentialVerified, true);
+  assert.equal(verified.authenticity.c2paSignerId, null);
+  assert.deepEqual(verified.currentValidity, { known:true, status:"active", active:true });
+}));
 
 test("E1 preserves an authentic history while active status moves atomically", async () => withRegistry(async (registry) => {
   const infra = createMemoryInfraDriver();
