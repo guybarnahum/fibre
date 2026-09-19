@@ -51,3 +51,14 @@ The derivation identity is deliberately independent of FID credential/workflow i
 ## Runtime composition
 
 FIA remains provider-neutral. Executable provider composition belongs under `infra/deployments/fibre-identity-authority/`; the Cloudflare host injects an `InfraDriver` for FIA state/objects/workflows plus World, Thread Presentation, Asset Generation, content-credential, issuer-signing, and credential-protection boundaries. A different provider can compose the same FIA service contracts without changing FIA domain code.
+
+
+## Cloudflare operator secrets
+
+The Cloudflare runtime uses the same operator path as the other Fibre Workers; FIA has no separate secret-provisioning mechanism.
+
+```sh
+npm run cloud:configure-secrets -- --file .env --env staging
+```
+
+The FIA Wrangler contract declares `FIBRE_PRIVATE_TOKEN`, `C2PA_SIGNER_TOKEN`, `FIA_ISSUER_JWK`, and `FIA_CREDENTIAL_KEY_BASE64` as Worker secrets. `C2PA_SIGNER_URL` is resolved as ordinary runtime configuration. The shared operator reads those names from the Wrangler file and uploads only the values declared for FIA.
