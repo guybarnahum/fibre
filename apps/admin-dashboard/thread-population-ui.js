@@ -167,7 +167,7 @@ async function command(threadId, body) {
 
 function setPopulationControlsDisabled(disabled) {
   for (const control of document.querySelectorAll(".thread-population-actions button")) control.disabled = disabled;
-  if (disabled) $("#refresh-button").disabled = true;
+  $("#refresh-button").disabled = disabled || loading;
 }
 
 function button(label, spec, thread) {
