@@ -2,12 +2,14 @@ import { renderThreadHealth } from "./thread-repair-ui.js";
 import {
   fetchThreadObservatory,
   portraitAsset,
+  renderFidSection,
   renderThreadObservatory,
   threadName,
 } from "./thread-observatory.js";
 
 let renderedThreadId = null;
 let threadPageLoad = 0;
+let fidSectionLoad = 0;
 
 function node(tag, className = null, text = null) {
   const element = document.createElement(tag);
@@ -118,6 +120,30 @@ export async function renderThreadPage(threadId) {
     viewer.removeAttribute("href");
   }
 }
+
+async function refreshFidSection(threadId) {
+  const load = ++fidSectionLoad;
+  const current = document.querySelector(".thread-observatory-page .thread-fid-section");
+  if (!current) return;
+  try {
+    const payload = await fetchThreadObservatory(threadId);
+    if (renderedThreadId !== threadId || load !== fidSectionLoad || !current.isConnected) return;
+    current.replaceWith(renderFidSection(payload.identity ?? {}, threadId));
+  } catch (error) {
+    if (renderedThreadId !== threadId || load !== fidSectionLoad || !current.isConnected) return;
+    const status = current.querySelector(".thread-repair-actions")?.nextElementSibling;
+    if (status) {
+      status.hidden = false;
+      status.textContent = `FIN Card refresh failed: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+}
+
+window.addEventListener("fibre:fid-card-reissued", (event) => {
+  const threadId = event?.detail?.threadId ?? null;
+  if (threadId === null || threadId !== renderedThreadId) return;
+  void refreshFidSection(threadId);
+});
 
 window.addEventListener("fibre:thread-identity-updated", (event) => {
   const threadId = event?.detail?.threadId ?? null;
