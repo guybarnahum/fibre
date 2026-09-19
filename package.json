@@ -115,5 +115,8 @@
   },
   "devDependencies": {
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "opentype.js": "^2.0.0"
   }
 }

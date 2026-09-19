@@ -24,27 +24,42 @@
       "labelY": 145,
       "valueX": 350,
       "valueY": 174,
-      "valueScale": 4
+      "valueScale": 4,
+      "typography": {
+        "label": "label",
+        "value": "finValue"
+      }
     },
     "name": {
       "labelX": 350,
       "labelY": 238,
       "valueX": 350,
       "valueY": 267,
-      "valueScale": 2
+      "valueScale": 2,
+      "typography": {
+        "label": "label",
+        "value": "identityValue"
+      }
     },
     "date": {
       "labelX": 350,
       "labelY": 320,
       "valueX": 350,
       "valueY": 349,
-      "valueScale": 3
+      "valueScale": 3,
+      "typography": {
+        "label": "label",
+        "value": "dateValue"
+      }
     },
     "verification": {
       "x": 350,
       "y": 445,
       "width": 280,
-      "height": 14
+      "height": 14,
+      "typography": {
+        "label": "label"
+      }
     },
     "watermark": {
       "x": 685,
@@ -64,22 +79,34 @@
     "credentialId": {
       "x": 384,
       "y": 164,
-      "scale": 2
+      "scale": 2,
+      "typography": {
+        "value": "backValue"
+      }
     },
     "revision": {
       "x": 384,
       "y": 225,
-      "scale": 3
+      "scale": 3,
+      "typography": {
+        "value": "backStrong"
+      }
     },
     "templateVersion": {
       "x": 600,
       "y": 225,
-      "scale": 1
+      "scale": 1,
+      "typography": {
+        "value": "backMicro"
+      }
     },
     "issuer": {
       "x": 384,
       "y": 286,
-      "scale": 2
+      "scale": 2,
+      "typography": {
+        "value": "backValue"
+      }
     },
     "renderPair": {
       "x": 384,
@@ -88,5 +115,66 @@
       "height": 18
     },
     "drawLabels": false
+  },
+  "typography": {
+    "fonts": {
+      "regular": {
+        "asset": "NotoSans-SemiCondensed.ttf"
+      },
+      "medium": {
+        "asset": "NotoSans-SemiCondensedMedium.ttf"
+      }
+    },
+    "styles": {
+      "label": {
+        "font": "regular",
+        "sizePx": 11,
+        "letterSpacingPx": 1,
+        "align": "left",
+        "textTransform": "uppercase"
+      },
+      "finValue": {
+        "font": "medium",
+        "sizePx": 28,
+        "letterSpacingPx": 0.5,
+        "align": "left",
+        "textTransform": "none"
+      },
+      "identityValue": {
+        "font": "medium",
+        "sizePx": 19,
+        "letterSpacingPx": 0.2,
+        "align": "left",
+        "textTransform": "none"
+      },
+      "dateValue": {
+        "font": "medium",
+        "sizePx": 20,
+        "letterSpacingPx": 0.25,
+        "align": "left",
+        "textTransform": "none"
+      },
+      "backValue": {
+        "font": "regular",
+        "sizePx": 12,
+        "letterSpacingPx": 0.2,
+        "align": "left",
+        "textTransform": "none"
+      },
+      "backStrong": {
+        "font": "medium",
+        "sizePx": 18,
+        "letterSpacingPx": 0.2,
+        "align": "left",
+        "textTransform": "none"
+      },
+      "backMicro": {
+        "font": "regular",
+        "sizePx": 9,
+        "letterSpacingPx": 0.15,
+        "align": "left",
+        "textTransform": "none"
+      }
+    }
   }
 }
