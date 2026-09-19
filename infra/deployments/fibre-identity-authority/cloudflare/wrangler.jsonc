@@ -7,8 +7,7 @@
     {
       "type": "Text",
       "globs": [
-        "**/*.yaml",
-        "**/assets/fid-card/v0.3-ocean/layout.json"
+        "**/*.yaml"
       ],
       "fallthrough": true
     },
