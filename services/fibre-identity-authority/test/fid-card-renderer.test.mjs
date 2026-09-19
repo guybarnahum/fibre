@@ -11,9 +11,9 @@ import {
 } from "../src/fid-card-issuance-domain.mjs";
 import { buildFidPhotoAdmission } from "../src/fid-photo-admission.mjs";
 import { decodePngRgba } from "../src/fid-photo-surface.mjs";
+import { createFidCardTemplateFromPngAssets } from "../src/fid-card-template-assets.mjs";
 import {
   createFidCardTemplate,
-  createFidCardTemplateFromPngAssets,
   FID_CARD_SIZE,
   FID_CARD_TEMPLATE_VERSION,
   fidRenderPhotoDigest,
