@@ -23,6 +23,25 @@ test("C2PA assertion lookup accepts SDK-assigned label suffixes", () => {
   assert.deepEqual(findC2paAssertion(store, LABEL), assertion);
 });
 
+test("C2PA v1 lookup accepts the SDK's unversioned v1 label", () => {
+  const fidAssertion = { schema: "com.insidefibre.fid-card.v1" };
+  const store = {
+    assertions: [
+      { label: "com.insidefibre.fid-card", data: fidAssertion },
+    ],
+  };
+  assert.deepEqual(findC2paAssertion(store, "com.insidefibre.fid-card.v1"), fidAssertion);
+});
+
+test("C2PA v1 lookup does not accept a v2 assertion", () => {
+  const store = {
+    assertions: [
+      { label: "com.insidefibre.fid-card.v2", data: assertion },
+    ],
+  };
+  assert.equal(findC2paAssertion(store, "com.insidefibre.fid-card.v1"), null);
+});
+
 test("C2PA assertion lookup still accepts exact keyed assertion objects", () => {
   const store = { [LABEL]: { data: assertion } };
   assert.deepEqual(findC2paAssertion(store, LABEL), assertion);

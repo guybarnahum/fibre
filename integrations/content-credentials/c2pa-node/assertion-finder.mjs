@@ -4,8 +4,22 @@ function decodeAssertionData(value) {
   catch { return value; }
 }
 
+function normalizedAssertionLabel(value) {
+  if (typeof value !== "string" || value.length === 0) return null;
+  const withoutInstance = value.replace(/__\\d+$/, "");
+  const versioned = withoutInstance.match(/^(.*)\\.v([1-9]\\d*)$/);
+  return versioned === null
+    ? { base: withoutInstance, version: 1 }
+    : { base: versioned[1], version: Number(versioned[2]) };
+}
+
 function labelMatches(observed, expected) {
-  return typeof observed === "string" && observed.startsWith(expected);
+  const left = normalizedAssertionLabel(observed);
+  const right = normalizedAssertionLabel(expected);
+  return left !== null
+    && right !== null
+    && left.base === right.base
+    && left.version === right.version;
 }
 
 export function activeManifestFromStore(store) {

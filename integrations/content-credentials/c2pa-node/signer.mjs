@@ -178,7 +178,7 @@ export async function createC2paNodeSigner({
       throw new Error(`Fibre local C2PA sign/read self-test failed: ${verification.failureReason ?? "assertion mismatch"}`);
     }
 
-    const credentialLabel = "com.insidefibre.credential-self-test";
+    const credentialLabel = "com.insidefibre.credential-self-test.v1";
     const credentialAssertion = {
       selfTestVersion: "fibre-c2pa-local-credential-self-test-v1",
       purpose: "credentialed-asset-sign-read-round-trip",
