@@ -250,19 +250,6 @@ function segmentsFor(contour, scale, originX, baselineY) {
   return lines;
 }
 
-function inside(lines, x, y) {
-  let winding = 0;
-  for (const [a, b] of lines) {
-    const cross = (b.x - a.x) * (y - a.y) - (x - a.x) * (b.y - a.y);
-    if (a.y <= y) {
-      if (b.y > y && cross > 0) winding += 1;
-    } else if (b.y <= y && cross < 0) {
-      winding -= 1;
-    }
-  }
-  return winding !== 0;
-}
-
 function blendPixel(surface, x, y, color, coverage) {
   if (coverage <= 0 || x < 0 || y < 0 || x >= surface.width || y >= surface.height) return;
   const offset = (y * surface.width + x) * 4;
@@ -280,18 +267,65 @@ function blendPixel(surface, x, y, color, coverage) {
 function drawGlyph(surface, font, glyph, x, baselineY, scale, color) {
   const lines = font.glyphContours(glyph).flatMap((contour) => segmentsFor(contour, scale, x, baselineY));
   if (lines.length === 0) return;
-  const points = lines.flat();
-  const left = Math.max(0, Math.floor(Math.min(...points.map((point) => point.x))));
-  const right = Math.min(surface.width - 1, Math.ceil(Math.max(...points.map((point) => point.x))));
-  const top = Math.max(0, Math.floor(Math.min(...points.map((point) => point.y))));
-  const bottom = Math.min(surface.height - 1, Math.ceil(Math.max(...points.map((point) => point.y))));
+
+  let left = Infinity;
+  let right = -Infinity;
+  let top = Infinity;
+  let bottom = -Infinity;
+  for (const [a, b] of lines) {
+    left = Math.min(left, a.x, b.x);
+    right = Math.max(right, a.x, b.x);
+    top = Math.min(top, a.y, b.y);
+    bottom = Math.max(bottom, a.y, b.y);
+  }
+  const x0 = Math.max(0, Math.floor(left));
+  const x1 = Math.min(surface.width - 1, Math.ceil(right));
+  const y0 = Math.max(0, Math.floor(top));
+  const y1 = Math.min(surface.height - 1, Math.ceil(bottom));
+  if (x1 < x0 || y1 < y0) return;
+
+  const width = x1 - x0 + 1;
+  const coverage = new Uint8Array(width * (y1 - y0 + 1));
   const samples = [0.125, 0.375, 0.625, 0.875];
 
-  for (let py = top; py <= bottom; py += 1) {
-    for (let px = left; px <= right; px += 1) {
-      let hits = 0;
-      for (const sy of samples) for (const sx of samples) if (inside(lines, px + sx, py + sy)) hits += 1;
-      blendPixel(surface, px, py, color, hits / 16);
+  for (let py = y0; py <= y1; py += 1) {
+    for (const sy of samples) {
+      const scanY = py + sy;
+      const events = [];
+      for (const [a, b] of lines) {
+        if (a.y <= scanY && b.y > scanY) {
+          events.push({ x:a.x + (scanY - a.y) * (b.x - a.x) / (b.y - a.y), delta:1 });
+        } else if (b.y <= scanY && a.y > scanY) {
+          events.push({ x:b.x + (scanY - b.y) * (a.x - b.x) / (a.y - b.y), delta:-1 });
+        }
+      }
+      events.sort((a, b) => a.x - b.x || a.delta - b.delta);
+      let winding = 0;
+      let start = null;
+      for (const event of events) {
+        const prior = winding;
+        winding += event.delta;
+        if (prior === 0 && winding !== 0) {
+          start = event.x;
+        } else if (prior !== 0 && winding === 0 && start !== null) {
+          const from = Math.max(x0, Math.floor(start));
+          const to = Math.min(x1, Math.floor(event.x));
+          for (let px = from; px <= to; px += 1) {
+            for (const sx of samples) {
+              const sampleX = px + sx;
+              if (sampleX >= start && sampleX < event.x) coverage[(py - y0) * width + px - x0] += 1;
+            }
+          }
+          start = null;
+        }
+      }
+    }
+  }
+
+  for (let py = y0; py <= y1; py += 1) {
+    for (let px = x0; px <= x1; px += 1) {
+      const hits = coverage[(py - y0) * width + px - x0];
+      if (hits > 0) blendPixel(surface, px, py, color, hits / 16);
     }
   }
 }
