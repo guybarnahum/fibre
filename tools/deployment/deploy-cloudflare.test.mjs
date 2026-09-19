@@ -132,6 +132,54 @@ test("Slice F deployment accepts services only after shallow and durable state h
   assert.equal(calls.at(-1), "viewer:https://staging.insidefibre.com");
 });
 
+test("no-C2PA deployment skips Containers and deploys FIA without the signer binding", async () => {
+  const { root, state } = await fixtureRepo();
+  const calls = [];
+  const client = {
+    async assertAuthenticated() { calls.push("auth"); },
+    async listSecretNames(workerName) {
+      calls.push(`secrets:${workerName}`);
+      const present = allSecrets();
+      if (workerName === "fibre-identity-authority-staging") present.delete("C2PA_SIGNER_TOKEN");
+      return present;
+    },
+    async deployService({ serviceId, resolvedConfig }) {
+      calls.push(`deploy:${serviceId}`);
+      if (serviceId === "fibre-identity-authority") {
+        assert.equal(resolvedConfig.vars.FIA_CONTENT_CREDENTIAL_MODE, "disabled");
+        assert.equal(resolvedConfig.services.some((binding) => binding.binding === "CONTENT_CREDENTIAL_SIGNER"), false);
+        assert.equal(Object.hasOwn(resolvedConfig.vars, "C2PA_SIGNER_URL"), false);
+      }
+      return { output:`Published\nhttps://${serviceId}.account.workers.dev` };
+    },
+    async checkServiceHealth({ serviceId }) { return { ok:true, service:serviceId }; },
+    async checkStateHealth({ serviceId }) { return { ok:true, service:serviceId, stateChecked:true }; },
+    async checkPresentationAcceptance() { return { threads:[] }; },
+    async checkViewer() { return { ok:true }; },
+  };
+
+  const result = await deployCloudflareStack({
+    repoRoot:root,
+    environment:"staging",
+    noC2pa:true,
+    client,
+    validateRepository:async () => calls.push("validate"),
+    provision:async () => { calls.push("provision"); return state; },
+    wait:async () => {},
+  });
+
+  assert.equal(result.contentCredentialMode, "disabled");
+  assert.deepEqual(result.deployments.map((item) => item.serviceId), [
+    "asset-generator",
+    "thread-presentation",
+    "world-kernel",
+    "fibre-identity-authority",
+    "birth-center",
+  ]);
+  assert.equal(calls.some((call) => call.includes("content-credential-signer")), false);
+  assert.deepEqual(calls.slice(0, 3), ["validate", "auth", "provision"]);
+});
+
 test("Slice F fails before deploy when Fibre signer credentials are incomplete", async () => {
   const { root, state } = await fixtureRepo();
   let signerCalls = 0;
