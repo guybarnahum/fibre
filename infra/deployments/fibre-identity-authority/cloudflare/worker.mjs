@@ -77,6 +77,12 @@ function privateToken(env) {
   return nonEmpty("FIBRE_PRIVATE_TOKEN", env?.FIBRE_PRIVATE_TOKEN);
 }
 
+function contentCredentialMode(env) {
+  const mode = env?.FIA_CONTENT_CREDENTIAL_MODE ?? "c2pa";
+  if (mode !== "c2pa" && mode !== "disabled") throw new TypeError(`unsupported FIA_CONTENT_CREDENTIAL_MODE ${String(mode)}`);
+  return mode;
+}
+
 function createContentCredentialSigner(env) {
   const signer = binding(env, "CONTENT_CREDENTIAL_SIGNER");
   return selectContentCredentialIntegration(null, {
@@ -355,13 +361,15 @@ function createRuntime(ctx, env) {
     photoGenerationProviderProfile:providerProfile,
   });
   const { issuerSigner, credentialProtector } = createFidCredentialCrypto(env);
-  const contentCredentialSigner = createContentCredentialSigner(env);
+  const fidContentCredentialMode = contentCredentialMode(env);
+  const contentCredentialSigner = fidContentCredentialMode === "c2pa" ? createContentCredentialSigner(env) : null;
   const executor = createFidCardIssuanceExecutor({
     authority,
     threadRegistry:createWorldThreadRegistry(env),
     registry,
     infra,
     contentCredentialSigner,
+    contentCredentialMode:fidContentCredentialMode,
     issuerSigner,
     credentialProtector,
     loadTemplate:loadFidTemplate,
