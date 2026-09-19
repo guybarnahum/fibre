@@ -16,6 +16,16 @@ function pngSize(bytes) {
   };
 }
 
+function assertTtf(name, bytes) {
+  if (bytes.length < 12 || bytes.readUInt32BE(0) !== 0x00010000) {
+    throw new Error(`${name} is not a TrueType font`);
+  }
+}
+
+if (manifest.fontLicense?.spdx !== "OFL-1.1" || manifest.fontLicense?.file !== "OFL.txt") {
+  throw new Error("FID ocean font license metadata is invalid");
+}
+
 for (const [name, expected] of Object.entries(manifest.assets)) {
   let bytes;
   try {
@@ -30,9 +40,17 @@ for (const [name, expected] of Object.entries(manifest.assets)) {
   if (bytes.length !== expected.bytes) {
     throw new Error(`${name} byte length mismatch`);
   }
-  const size = pngSize(bytes);
-  if (size.width !== manifest.canvas.width || size.height !== manifest.canvas.height) {
-    throw new Error(`${name} must be ${manifest.canvas.width}x${manifest.canvas.height}`);
+  if (name.endsWith(".png")) {
+    const size = pngSize(bytes);
+    if (size.width !== manifest.canvas.width || size.height !== manifest.canvas.height) {
+      throw new Error(`${name} must be ${manifest.canvas.width}x${manifest.canvas.height}`);
+    }
+  }
+  if (name.endsWith(".ttf")) {
+    assertTtf(name, bytes);
+    if (expected.license !== manifest.fontLicense.spdx) {
+      throw new Error(`${name} license metadata mismatch`);
+    }
   }
 }
 

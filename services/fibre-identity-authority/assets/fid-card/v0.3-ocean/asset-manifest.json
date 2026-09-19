@@ -1,6 +1,12 @@
 {
   "templateVersion": "fid-card-template-v0.3-ocean",
   "canvas": { "width": 856, "height": 540 },
+  "fontLicense": {
+    "spdx": "OFL-1.1",
+    "file": "OFL.txt",
+    "copyright": "Copyright 2018 The Noto Project Authors (github.com/googlei18n/noto-fonts)",
+    "sourceRepository": "https://github.com/notofonts/noto-fonts"
+  },
   "assets": {
     "front-base.png": {
       "sha256": "bf3dbbfebe60d5731ebaf0fa95beb4da8a9d34fe9871d6ff69546fc6ee430087",
@@ -13,6 +19,27 @@
     "back-base.png": {
       "sha256": "564882e2dd1e233c8da8f64183cc4ca526bc9f19094edb31ad80a84fa0b9aff3",
       "bytes": 269239
+    },
+    "NotoSans-SemiCondensed.ttf": {
+      "sha256": "bd22a96ce6761ddaf062f12b972dad1ae3f45e19981bee6dd9638d4db856d6da",
+      "bytes": 565760,
+      "gitBlobSha": "52b9947ead946a407171aadaa6d6f0be56c977df",
+      "sourcePath": "hinted/ttf/NotoSans/NotoSans-SemiCondensed.ttf",
+      "license": "OFL-1.1"
+    },
+    "NotoSans-SemiCondensedMedium.ttf": {
+      "sha256": "3e688192da9b04861d12f7101169c292f2a24c53573ffb87c6f479da4bc4023d",
+      "bytes": 565084,
+      "gitBlobSha": "b564072c430493f026eadafc9c7080d4990fd9f5",
+      "sourcePath": "hinted/ttf/NotoSans/NotoSans-SemiCondensedMedium.ttf",
+      "license": "OFL-1.1"
+    },
+    "OFL.txt": {
+      "sha256": "0dab92d0544f7b233403f14b84a663bdbfa746982eda629e7f4f9ffe1b036feb",
+      "bytes": 4377,
+      "gitBlobSha": "c82d72e422e2d08c5ab439b6bac7c2177ea0c565",
+      "sourcePath": "LICENSE",
+      "license": "OFL-1.1"
     }
   }
 }
