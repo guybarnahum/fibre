@@ -14,7 +14,8 @@
     {
       "type": "Data",
       "globs": [
-        "**/assets/fid-card/v0.3-ocean/*.png"
+        "**/assets/fid-card/v0.3-ocean/*.png",
+        "**/assets/fid-card/v0.3-ocean/*.ttf"
       ],
       "fallthrough": true
     }

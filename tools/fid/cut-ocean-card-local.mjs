@@ -77,11 +77,13 @@ async function loadPhoto() {
 }
 
 async function loadTemplate() {
-  const [layoutText, frontBasePng, frontForegroundPng, backBasePng] = await Promise.all([
+  const [layoutText, frontBasePng, frontForegroundPng, backBasePng, regularFont, mediumFont] = await Promise.all([
     readFile(new URL("layout.json", ASSET_ROOT), "utf8"),
     readFile(new URL("front-base.png", ASSET_ROOT)),
     readFile(new URL("front-foreground.png", ASSET_ROOT)),
     readFile(new URL("back-base.png", ASSET_ROOT)),
+    readFile(new URL("NotoSans-SemiCondensed.ttf", ASSET_ROOT)),
+    readFile(new URL("NotoSans-SemiCondensedMedium.ttf", ASSET_ROOT)),
   ]);
   return createFidCardTemplateFromPngAssets({
     version:TEMPLATE_VERSION,
@@ -89,6 +91,10 @@ async function loadTemplate() {
     frontBasePng,
     frontForegroundPng,
     backBasePng,
+    fontAssets:{
+      "NotoSans-SemiCondensed.ttf":regularFont,
+      "NotoSans-SemiCondensedMedium.ttf":mediumFont,
+    },
   });
 }
 

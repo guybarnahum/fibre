@@ -29,6 +29,8 @@ import { createFidCredentialCrypto } from "#integrations/fid-credentials/webcryp
 import oceanFrontBase from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/front-base.png";
 import oceanFrontForeground from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/front-foreground.png";
 import oceanBackBase from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/back-base.png";
+import oceanRegularFont from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/NotoSans-SemiCondensed.ttf";
+import oceanMediumFont from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/NotoSans-SemiCondensedMedium.ttf";
 import oceanLayout from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/layout.json" with { type:"json" };
 
 const FID_SCOPE_ID = "fid";
@@ -47,6 +49,10 @@ function loadFidTemplate() {
     frontBasePng:oceanFrontBase,
     frontForegroundPng:oceanFrontForeground,
     backBasePng:oceanBackBase,
+    fontAssets:{
+      "NotoSans-SemiCondensed.ttf":oceanRegularFont,
+      "NotoSans-SemiCondensedMedium.ttf":oceanMediumFont,
+    },
   });
 }
 
