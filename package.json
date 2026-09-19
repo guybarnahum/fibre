@@ -106,7 +106,8 @@
     "inspect:identity": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-thread-identity.mjs",
     "inspect:genesis": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-genesis.mjs",
     "inspect:genome": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-symbolic-genome.mjs",
-    "inspect:activity": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-runtime-activity.mjs"
+    "inspect:activity": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-runtime-activity.mjs",
+    "fid:template:verify": "node tools/fid/verify-ocean-template-assets.mjs"
   },
   "engines": {
     "node": ">=22.13"
