@@ -13,6 +13,7 @@ function deploymentResult() {
   return {
     environment: "staging",
     deployments: [
+      { serviceId: "content-credential-signer", workerName: "fibre-content-credential-signer-staging", baseUrl: "https://signer.example.workers.dev", health: { ok: true, service: "content-credential-signer", format: "c2pa", signerId: "fibre-c2pa-self-v1", trustPolicy: "fibre_signature_only" } },
       { serviceId: "asset-generator", workerName: "fibre-asset-generator-staging", baseUrl: "https://asset.example.workers.dev", health: { ok: true, service: "asset-generator" } },
       { serviceId: "thread-presentation", workerName: "fibre-thread-presentation-staging", baseUrl: "https://api.staging.insidefibre.com", health: { ok: true, service: "thread-presentation" } },
       { serviceId: "world-kernel", workerName: "fibre-world-kernel-staging", baseUrl: "https://world.example.workers.dev", health: { ok: true, service: "world-kernel" } },
@@ -35,7 +36,7 @@ test("cloud deployment evidence binds accepted remote topology to an exact clean
   assert.equal(evidence.contract, CLOUDFLARE_DEPLOYMENT_EVIDENCE_VERSION);
   assert.equal(evidence.sourceGitSha, SHA);
   assert.equal(evidence.sourceTreeClean, true);
-  assert.equal(evidence.deployments.length, 5);
+  assert.equal(evidence.deployments.length, 6);
   assert.equal(evidence.externalViewerOrigin, "https://staging.insidefibre.com");
   assert.equal(JSON.stringify(evidence).includes("TOKEN"), false);
   assert.equal(JSON.stringify(evidence).includes("API_KEY"), false);
