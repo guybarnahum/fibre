@@ -16,6 +16,8 @@ infra/deployments/
   environments/
   asset-generator/
     cloudflare/
+  content-credential-signer/
+    cloudflare/
   fibre-identity-authority/
     cloudflare/
   thread-presentation/
@@ -37,7 +39,7 @@ npm run cloud:configure-secrets -- --file <operator-selected-file> --env staging
 
 Staging resource names are isolated with a `-staging` suffix and use `api.staging.insidefibre.com`. The Viewer's `staging.insidefibre.com` / `insidefibre.com` deployment remains owned by the separate Viewer repository and is recorded as an external required domain rather than mutated here.
 
-`cloud:configure-secrets` requires an explicit input file and never reads `.env` implicitly. It validates all mandatory values before any upload, sends only each Worker's required secret subset to Wrangler through stdin, and writes only non-secret runtime configuration into the ignored resolved Wrangler configs. `C2PA_SIGNER_URL`, signer ID/trust policy and Viewer origin are configuration; authentication/provider tokens remain secrets. Cloudflare operator credentials remain process/CI credentials and are not copied into Worker configuration.
+`cloud:configure-secrets` requires an explicit input file and never reads `.env` implicitly. It validates all mandatory values before any upload, sends only each Worker's required secret subset to Wrangler through stdin, and writes only non-secret runtime configuration into the ignored resolved Wrangler configs. The Fibre C2PA signer is a Cloudflare Worker + Container deployment. Its signer identity/trust policy are checked configuration; its token and signing certificate/key are Worker secrets. Viewer origin remains non-secret configuration. Cloudflare operator credentials remain process/CI credentials and are not copied into Worker configuration.
 
 ## Cloudflare deployment acceptance
 
@@ -47,9 +49,10 @@ After resources and service configuration are prepared, deploy the Fibre cloud s
 npm run cloud:deploy -- --env staging
 ```
 
-The command runs repository/deployment validation, verifies Wrangler authentication, re-runs idempotent resource provisioning, verifies every required remote secret name, verifies the configured production C2PA signer `/healthz` identity and `c2pa_trust_list` policy, then deploys in service-binding dependency order:
+The command runs repository/deployment validation, verifies Wrangler authentication, re-runs idempotent resource provisioning, verifies every required remote secret name, then deploys and accepts the Fibre C2PA signer before the services that depend on it. The signer `/healthz` must report the configured signer identity and trust policy. Deployment proceeds in service-binding dependency order:
 
 ```text
+Content Credential Signer
 Asset Generator
 Thread Presentation
 World Kernel
