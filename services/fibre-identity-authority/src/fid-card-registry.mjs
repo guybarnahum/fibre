@@ -227,12 +227,18 @@ function assertSupersedes(database, record) {
   }
 }
 
-function normalizedSide(name, value) {
+function normalizedSide(name, value, c2paStatus) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError(`FID issuance ${name} is required`);
+  const manifestDigest = c2paStatus === "verified"
+    ? digest(`FID issuance ${name}.manifestDigest`, value.manifestDigest)
+    : value.manifestDigest;
+  if (c2paStatus === "disabled" && manifestDigest !== null) {
+    throw new TypeError(`FID issuance ${name}.manifestDigest must be null when C2PA is disabled`);
+  }
   return Object.freeze({
     objectRef: nonEmpty(`FID issuance ${name}.objectRef`, value.objectRef),
     finalDigest: digest(`FID issuance ${name}.finalDigest`, value.finalDigest),
-    manifestDigest: digest(`FID issuance ${name}.manifestDigest`, value.manifestDigest),
+    manifestDigest,
   });
 }
 
@@ -241,7 +247,10 @@ function normalizeIssuanceRecord(value, credential) {
   if (value.credentialId !== credential.credentialId || value.revision !== credential.revision) {
     throw new TypeError("verified FID issuance record identifies a different credential");
   }
-  if (value.c2pa?.validationStatus !== "verified") throw new TypeError("FID issuance must have verified C2PA status");
+  const c2paStatus = value.c2pa?.validationStatus;
+  if (c2paStatus !== "verified" && c2paStatus !== "disabled") {
+    throw new TypeError("FID issuance C2PA status must be verified or disabled");
+  }
   return Object.freeze({
     credentialId: credential.credentialId,
     revision: credential.revision,
@@ -263,12 +272,16 @@ function normalizeIssuanceRecord(value, credential) {
     credentialPayloadDigest: digest("FID issuance credentialPayloadDigest", value.credentialPayloadDigest),
     encryptedCredentialDigest: digest("FID issuance encryptedCredentialDigest", value.encryptedCredentialDigest),
     machineCredentialDigest: digest("FID issuance machineCredentialDigest", value.machineCredentialDigest),
-    front: normalizedSide("front", value.front),
-    back: normalizedSide("back", value.back),
-    c2pa: Object.freeze({
+    front: normalizedSide("front", value.front, c2paStatus),
+    back: normalizedSide("back", value.back, c2paStatus),
+    c2pa: Object.freeze(c2paStatus === "verified" ? {
       signerId: nonEmpty("FID issuance c2pa.signerId", value.c2pa?.signerId),
       trustPolicy: nonEmpty("FID issuance c2pa.trustPolicy", value.c2pa?.trustPolicy),
       validationStatus: "verified",
+    } : {
+      signerId: null,
+      trustPolicy: null,
+      validationStatus: "disabled",
     }),
   });
 }
