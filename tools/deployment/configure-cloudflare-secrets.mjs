@@ -14,36 +14,12 @@ import {
   writeCloudflareRuntimeConfig,
 } from "./cloudflare-operator.mjs";
 
-const CONTENT_CREDENTIAL_SERVICES = Object.freeze(["asset-generator", "thread-presentation", "fibre-identity-authority"]);
-const DEFAULT_C2PA_SIGNER_ID = "fibre-c2pa-production-v1";
-const DEFAULT_C2PA_TRUST_POLICY = "c2pa_trust_list";
-
 function present(value) {
   return typeof value === "string" && value.trim() !== "" && !/^<.*>$/u.test(value.trim());
 }
 
-function optionalContentCredentialsEnabled(values) {
-  return present(values?.C2PA_SIGNER_URL) && present(values?.C2PA_SIGNER_TOKEN);
-}
-
-function withOptionalContentCredentialSecrets(baseSecrets, values) {
-  const enabled = optionalContentCredentialsEnabled(values);
-  return Object.freeze(Object.fromEntries(Object.entries(baseSecrets).map(([serviceId, names]) => {
-    const selected = [...names];
-    if (enabled && CONTENT_CREDENTIAL_SERVICES.includes(serviceId) && !selected.includes("C2PA_SIGNER_TOKEN")) {
-      const privateTokenIndex = selected.indexOf("FIBRE_PRIVATE_TOKEN");
-      selected.splice(privateTokenIndex < 0 ? selected.length : privateTokenIndex, 0, "C2PA_SIGNER_TOKEN");
-    }
-    return [serviceId, Object.freeze(selected)];
-  })));
-}
-
-function contentCredentialsEnabled(secrets, serviceId) {
-  return (secrets?.[serviceId] ?? []).includes("C2PA_SIGNER_TOKEN");
-}
-
-function runtimeRequirementApplies(secrets, serviceId, name) {
-  return !name.startsWith("C2PA_") || contentCredentialsEnabled(secrets, serviceId);
+function runtimeRequirementApplies() {
+  return true;
 }
 
 export function validateOperatorConfiguration({ values, secrets, runtimeConfig }) {
@@ -67,10 +43,6 @@ export function serviceConfiguration({ serviceId, values, runtimeConfig, secrets
     const value = present(values[name]) ? values[name] : runtimeConfig[serviceId].existing[name];
     if (present(value)) result[name] = value;
   }
-  if (contentCredentialsEnabled(secrets, serviceId)) {
-    result.C2PA_SIGNER_ID ??= DEFAULT_C2PA_SIGNER_ID;
-    result.C2PA_TRUST_POLICY ??= DEFAULT_C2PA_TRUST_POLICY;
-  }
   return Object.freeze(result);
 }
 
@@ -86,7 +58,7 @@ export async function configureCloudflareSecrets({
   const source = await readFile(resolve(process.cwd(), filePath), "utf8");
   const values = parseOperatorEnv(source);
   const configs = await loadCloudflareWranglerConfigs(repoRoot);
-  const secrets = withOptionalContentCredentialSecrets(secretInventory(configs), values);
+  const secrets = secretInventory(configs);
   const runtimeConfig = runtimeConfigInventory(configs);
   const missing = validateOperatorConfiguration({ values, secrets, runtimeConfig });
   if (missing.length > 0) {
