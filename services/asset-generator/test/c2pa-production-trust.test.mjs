@@ -100,6 +100,36 @@ test("production HTTP C2PA signer authenticates requests and accepts only explic
   assert.equal("trust" in verification, false);
 });
 
+test("Fibre-only C2PA trust requires Fibre signer evidence", async () => {
+  const signerId = "fibre-c2pa-self-v1";
+  const trusted = createHttpContentCredentialSigner({
+    baseUrl: "https://content-credential-signer.internal",
+    signerId,
+    trustPolicy: "fibre_signature_only",
+    authorizationToken: "test-token",
+    fetchImpl: async () => response({ payload: validVerification({
+      signerId,
+      trust: { policy: "fibre_signature_only", trusted: true },
+    }) }),
+  });
+  assert.equal((await trusted.verify({ bytes: encoder.encode("credentialed"), mediaType: "image/png" })).valid, true);
+
+  const untrusted = createHttpContentCredentialSigner({
+    baseUrl: "https://content-credential-signer.internal",
+    signerId,
+    trustPolicy: "fibre_signature_only",
+    authorizationToken: "test-token",
+    fetchImpl: async () => response({ payload: validVerification({
+      signerId,
+      trust: { policy: "fibre_signature_only", trusted: false },
+    }) }),
+  });
+  await assert.rejects(
+    () => untrusted.verify({ bytes: encoder.encode("credentialed"), mediaType: "image/png" }),
+    /not trusted by Fibre/,
+  );
+});
+
 test("valid signature from an untrusted C2PA signer fails closed and is terminal", async () => {
   const signer = createHttpContentCredentialSigner({
     baseUrl: "https://signer.example.test",
