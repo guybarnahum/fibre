@@ -25,7 +25,10 @@
     "FIA_ISSUER_KEY_ID": "fibre-fia-production-v1",
     "FIA_ISSUER_TRUST_POLICY": "fibre_fid_issuer_v1",
     "FIA_CREDENTIAL_KEY_ID": "fibre-fid-private-v1",
-    "FIA_CREDENTIAL_POLICY_ID": "fid_private_v1"
+    "FIA_CREDENTIAL_POLICY_ID": "fid_private_v1",
+    "C2PA_SIGNER_URL": "https://content-credential-signer.internal",
+    "C2PA_SIGNER_ID": "fibre-c2pa-self-v1",
+    "C2PA_TRUST_POLICY": "fibre_signature_only"
   },
   "secrets": {
     "required": [
@@ -65,6 +68,10 @@
     {
       "binding": "THREAD_PRESENTATION",
       "service": "fibre-thread-presentation"
+    },
+    {
+      "binding": "CONTENT_CREDENTIAL_SIGNER",
+      "service": "fibre-content-credential-signer"
     }
   ],
   "exports": {

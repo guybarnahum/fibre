@@ -25,5 +25,13 @@ export function relocateWranglerMain(config, {
   if (relocated === "") relocated = `./${sourceMain.split(/[\\/]/u).at(-1)}`;
   else if (!relocated.startsWith(".")) relocated = `./${relocated}`;
   config.main = relocated;
+  for (const container of config.containers ?? []) {
+    if (typeof container?.image !== "string" || !container.image.trim().startsWith(".")) continue;
+    const sourceImage = resolve(dirname(sourceConfig), container.image);
+    let relocatedImage = portablePath(relative(dirname(generatedConfig), sourceImage));
+    if (relocatedImage === "") relocatedImage = `./${sourceImage.split(/[\\/]/u).at(-1)}`;
+    else if (!relocatedImage.startsWith(".")) relocatedImage = `./${relocatedImage}`;
+    container.image = relocatedImage;
+  }
   return config;
 }

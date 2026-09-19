@@ -77,6 +77,14 @@ function privateToken(env) {
   return nonEmpty("FIBRE_PRIVATE_TOKEN", env?.FIBRE_PRIVATE_TOKEN);
 }
 
+function createContentCredentialSigner(env) {
+  const signer = binding(env, "CONTENT_CREDENTIAL_SIGNER");
+  return selectContentCredentialIntegration(null, {
+    environment:env,
+    fetchImpl:(input, init) => signer.fetch(input instanceof Request ? input : new Request(input, init)),
+  });
+}
+
 async function jsonFrom(response, label) {
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
@@ -347,7 +355,7 @@ function createRuntime(ctx, env) {
     photoGenerationProviderProfile:providerProfile,
   });
   const { issuerSigner, credentialProtector } = createFidCredentialCrypto(env);
-  const contentCredentialSigner = selectContentCredentialIntegration(null, { environment:env });
+  const contentCredentialSigner = createContentCredentialSigner(env);
   const executor = createFidCardIssuanceExecutor({
     authority,
     threadRegistry:createWorldThreadRegistry(env),
