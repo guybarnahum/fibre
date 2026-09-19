@@ -1,5 +1,3 @@
-import { parse as parseOpenType } from "opentype.js";
-
 import { FID_CARD_SIZE } from "./fid-card-renderer.mjs";
 import { decodePngRgba } from "./fid-photo-surface.mjs";
 
@@ -46,29 +44,16 @@ function layout(value, version) {
   return structuredClone(value);
 }
 
-function arrayBuffer(value) {
-  if (value instanceof ArrayBuffer) return value.slice(0);
-  const view = value instanceof Uint8Array ? value : new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-  return view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength);
-}
-
 function loadFonts(candidateLayout, fontAssets) {
-  if (fontAssets == null) return Object.freeze({});
   const definitions = candidateLayout.typography?.fonts;
-  if (!definitions || typeof definitions !== "object" || Array.isArray(definitions)) {
-    throw new TypeError("FID template font declarations are required");
-  }
+  if (fontAssets == null || definitions == null) return Object.freeze({});
 
   const fonts = {};
   for (const [role, definition] of Object.entries(definitions)) {
     const asset = definition?.asset;
     if (typeof asset !== "string" || asset === "") throw new TypeError(`FID font ${role} asset is required`);
     if (!Object.hasOwn(fontAssets, asset)) throw new TypeError(`FID font asset ${asset} is required`);
-    try {
-      fonts[role] = Object.freeze({ asset, font:parseOpenType(arrayBuffer(bytes(`FID font asset ${asset}`, fontAssets[asset]))) });
-    } catch (cause) {
-      throw new TypeError(`FID font asset ${asset} is invalid`, { cause });
-    }
+    fonts[role] = Object.freeze({ asset, bytes:bytes(`FID font asset ${asset}`, fontAssets[asset]) });
   }
   return Object.freeze(fonts);
 }

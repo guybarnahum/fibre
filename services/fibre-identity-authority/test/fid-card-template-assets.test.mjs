@@ -28,16 +28,13 @@ async function oceanAssets() {
   };
 }
 
-test("ocean FID template resolves its versioned typography assets", async () => {
-  const template = await createFidCardTemplateFromPngAssets({ version:VERSION, ...await oceanAssets() });
-  assert.deepEqual(
-    Object.fromEntries(Object.entries(template.fonts).map(([role, value]) => [role, value.asset])),
-    {
-      regular:"NotoSans-SemiCondensed.ttf",
-      medium:"NotoSans-SemiCondensedMedium.ttf",
-    },
-    "FID typography assets drifted",
-  );
+test("ocean FID template carries its exact versioned font assets", async () => {
+  const assets = await oceanAssets();
+  const template = await createFidCardTemplateFromPngAssets({ version:VERSION, ...assets });
+  assert.equal(template.fonts.regular.asset, "NotoSans-SemiCondensed.ttf", "regular font role drifted");
+  assert.equal(template.fonts.medium.asset, "NotoSans-SemiCondensedMedium.ttf", "medium font role drifted");
+  assert.deepEqual(template.fonts.regular.bytes, assets.fontAssets["NotoSans-SemiCondensed.ttf"], "regular font bytes drifted");
+  assert.deepEqual(template.fonts.medium.bytes, assets.fontAssets["NotoSans-SemiCondensedMedium.ttf"], "medium font bytes drifted");
 });
 
 test("FID template rejects a missing declared font asset", async () => {
