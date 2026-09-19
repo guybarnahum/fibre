@@ -105,14 +105,15 @@ async function fixture(issuer) {
     admittedAt: "2026-09-09T20:01:00.000Z",
   });
   const template = await oceanFidTemplate();
-  const render = renderFidCard({ workflow, photoAdmission:admission, photo, template });
+  const issuedAt = "2026-09-09T20:02:00.000Z";
+  const render = renderFidCard({ workflow, photoAdmission:admission, photo, issuedAt, template });
   const payload = buildFidMachineCredentialPayload({
     workflow,
     photoAdmission: admission,
     photo,
     render,
     issuer: issuer.profile,
-    issuedAt: "2026-09-09T20:02:00.000Z",
+    issuedAt,
   });
   return { admission, payload, photo, template };
 }

@@ -117,6 +117,8 @@ export function buildFidMachineCredentialPayload({
   digest("FID front render digest", render.frontRenderDigest);
   digest("FID back render digest", render.backRenderDigest);
   const templateVersion = nonEmpty("FID templateVersion", render.templateVersion);
+  const normalizedIssuedAt = iso("FID issuedAt", issuedAt);
+  if (render.issuedAt !== normalizedIssuedAt) throw new TypeError("FID render issue date does not match credential issue date");
 
   return Object.freeze({
     schema: FID_MACHINE_CREDENTIAL_SCHEMA,
@@ -140,7 +142,7 @@ export function buildFidMachineCredentialPayload({
       admissionId: admission.admissionId,
       derivationReceiptRef: admission.derivationReceiptRef,
     }),
-    issuedAt: iso("FID issuedAt", issuedAt),
+    issuedAt: normalizedIssuedAt,
     expiresAt: expiresAt == null ? null : iso("FID expiresAt", expiresAt),
     issuer: profile,
     frontRenderDigest: render.frontRenderDigest,

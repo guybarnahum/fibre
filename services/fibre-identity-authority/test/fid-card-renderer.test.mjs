@@ -15,6 +15,8 @@ import {
 } from "../src/fid-card-renderer.mjs";
 import { oceanFidTemplate } from "./fid-card-test-template.mjs";
 
+const ISSUED_AT = "2026-09-09T20:02:00.000Z";
+
 function registration() {
   return buildFibreCivilRegistration({
     threadId:"thread_fid_render_001",
@@ -98,8 +100,8 @@ test("FID card rendering is deterministic for the same authorized identity", asy
   const p = photo();
   const a = admission(w, p);
   const template = await oceanFidTemplate();
-  const first = renderFidCard({ workflow:w, photoAdmission:a, photo:p, authorizedIdentity:identity(), template });
-  const second = renderFidCard({ workflow:w, photoAdmission:a, photo:p, authorizedIdentity:identity(), template });
+  const first = renderFidCard({ issuedAt:ISSUED_AT, workflow:w, photoAdmission:a, photo:p, authorizedIdentity:identity(), template });
+  const second = renderFidCard({ issuedAt:ISSUED_AT, workflow:w, photoAdmission:a, photo:p, authorizedIdentity:identity(), template });
 
   assert.deepEqual(first.files["front.png"], second.files["front.png"], "front render changed");
   assert.deepEqual(first.files["back.png"], second.files["back.png"], "back render changed");
@@ -110,7 +112,7 @@ test("FID card rendering is deterministic for the same authorized identity", asy
 test("FID card presents the admitted portrait in black and white without changing photo identity", async () => {
   const w = workflow();
   const p = photo();
-  const rendered = renderFidCard({
+  const rendered = renderFidCard({ issuedAt:ISSUED_AT,
     workflow:w,
     photoAdmission:admission(w, p),
     photo:p,
@@ -130,10 +132,10 @@ test("FID render identity changes when authorized material changes", async () =>
   const w = workflow();
   const p = photo();
   const template = await oceanFidTemplate();
-  const baseline = renderFidCard({ workflow:w, photoAdmission:admission(w, p), photo:p, authorizedIdentity:identity(), template });
+  const baseline = renderFidCard({ issuedAt:ISSUED_AT, workflow:w, photoAdmission:admission(w, p), photo:p, authorizedIdentity:identity(), template });
 
   const p2 = photo(18);
-  const photoRender = renderFidCard({
+  const photoRender = renderFidCard({ issuedAt:ISSUED_AT,
     workflow:w,
     photoAdmission:admission(w, p2),
     photo:p2,
@@ -142,7 +144,7 @@ test("FID render identity changes when authorized material changes", async () =>
   });
   assert.notEqual(photoRender.frontRenderDigest, baseline.frontRenderDigest, "photo change did not move front render");
 
-  const identityRender = renderFidCard({
+  const identityRender = renderFidCard({ issuedAt:ISSUED_AT,
     workflow:w,
     photoAdmission:admission(w, p),
     photo:p,
@@ -151,8 +153,19 @@ test("FID render identity changes when authorized material changes", async () =>
   });
   assert.notEqual(identityRender.frontRenderDigest, baseline.frontRenderDigest, "identity change did not move front render");
 
+  const issueDateRender = renderFidCard({
+    issuedAt:"2026-09-10T20:02:00.000Z",
+    workflow:w,
+    photoAdmission:admission(w, p),
+    photo:p,
+    authorizedIdentity:identity(),
+    template,
+  });
+  assert.notEqual(issueDateRender.frontRenderDigest, baseline.frontRenderDigest, "issue date did not move front render");
+  assert.notEqual(issueDateRender.backRenderDigest, baseline.backRenderDigest, "issue date did not move back render");
+
   const versionedTemplate = await oceanFidTemplate({ version:"fid-card-template-v0.3-ocean-test" });
-  const versionRender = renderFidCard({
+  const versionRender = renderFidCard({ issuedAt:ISSUED_AT,
     workflow:w,
     photoAdmission:admission(w, p),
     photo:p,
@@ -176,14 +189,14 @@ test("FID card visibly preserves the authorized spelling and case of a Thread na
   const p = photo();
   const a = admission(w, p);
   const template = await oceanFidTemplate();
-  const mixed = await decodePngRgba(renderFidCard({
+  const mixed = await decodePngRgba(renderFidCard({ issuedAt:ISSUED_AT,
     workflow:w,
     photoAdmission:a,
     photo:p,
     authorizedIdentity:identity("Mira Vale"),
     template,
   }).files["front.png"]);
-  const upper = await decodePngRgba(renderFidCard({
+  const upper = await decodePngRgba(renderFidCard({ issuedAt:ISSUED_AT,
     workflow:w,
     photoAdmission:a,
     photo:p,
@@ -200,7 +213,7 @@ test("FID card rejects identity text that cannot fit its designed field", async 
   const p = photo();
   const template = await oceanFidTemplate();
   assert.throws(
-    () => renderFidCard({
+    () => renderFidCard({ issuedAt:ISSUED_AT,
       workflow:w,
       photoAdmission:admission(w, p),
       photo:p,
@@ -218,7 +231,7 @@ test("FID renderer refuses a substituted or unadmitted portrait", async () => {
   const template = await oceanFidTemplate();
 
   assert.throws(
-    () => renderFidCard({ workflow:w, photoAdmission:a, photo:photo(99), authorizedIdentity:identity(), template }),
+    () => renderFidCard({ issuedAt:ISSUED_AT, workflow:w, photoAdmission:a, photo:photo(99), authorizedIdentity:identity(), template }),
     /does not match the admitted photo digest/,
   );
 
@@ -238,7 +251,7 @@ test("FID renderer refuses a substituted or unadmitted portrait", async () => {
     admittedAt:"2026-09-09T20:01:00.000Z",
   });
   assert.throws(
-    () => renderFidCard({ workflow:w, photoAdmission:rejected, photo:admitted, authorizedIdentity:identity(), template }),
+    () => renderFidCard({ issuedAt:ISSUED_AT, workflow:w, photoAdmission:rejected, photo:admitted, authorizedIdentity:identity(), template }),
     /requires an accepted photo admission/,
   );
 });

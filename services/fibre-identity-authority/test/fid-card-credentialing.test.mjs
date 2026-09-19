@@ -152,7 +152,8 @@ async function fixture({ revision = 1, idempotencyKey = "d2_mira", priorActiveCr
     },
     admittedAt: "2026-09-09T20:01:00.000Z",
   });
-  const render = renderFidCard({ workflow, photoAdmission:admission, photo, template:await oceanFidTemplate() });
+  const issuedAt = "2026-09-09T20:02:00.000Z";
+  const render = renderFidCard({ workflow, photoAdmission:admission, photo, issuedAt, template:await oceanFidTemplate() });
   const issuerSigner = issuer();
   const credentialProtector = protector();
   const payload = buildFidMachineCredentialPayload({
@@ -161,7 +162,7 @@ async function fixture({ revision = 1, idempotencyKey = "d2_mira", priorActiveCr
     photo,
     render,
     issuer: issuerSigner.profile,
-    issuedAt: "2026-09-09T20:02:00.000Z",
+    issuedAt,
   });
   const machineCredential = await sealFidMachineCredential({ payload, issuerSigner, credentialProtector });
   return { workflow, render, machineCredential, issuerSigner, credentialProtector };

@@ -10,7 +10,6 @@ export const FID_CARD_SIZE = Object.freeze({ width:856, height:540 });
 const CARD_PALETTE = Object.freeze({
   ink:[24, 29, 29, 255],
   inkSoft:[75, 81, 78, 255],
-  paperWarm:[227, 223, 209, 255],
 });
 
 function sha256(bytes) {
@@ -94,21 +93,6 @@ function blend(dst, src, dx = 0, dy = 0, opacity = 1) {
         dst.rgba[di + channel] = Math.round(src.rgba[si + channel] * alpha + dst.rgba[di + channel] * (1 - alpha));
       }
       dst.rgba[di + 3] = 255;
-    }
-  }
-}
-
-function blendRect(surface, box, color = [248, 249, 246, 255]) {
-  const opacity = typeof box?.opacity === "number" ? box.opacity : 1;
-  for (let y = Math.max(0, box.y); y < Math.min(surface.height, box.y + box.height); y += 1) {
-    for (let x = Math.max(0, box.x); x < Math.min(surface.width, box.x + box.width); x += 1) {
-      const offset = (y * surface.width + x) * 4;
-      for (let channel = 0; channel < 3; channel += 1) {
-        surface.rgba[offset + channel] = Math.round(
-          color[channel] * opacity + surface.rgba[offset + channel] * (1 - opacity),
-        );
-      }
-      surface.rgba[offset + 3] = 255;
     }
   }
 }
@@ -217,8 +201,9 @@ function layoutFor(template) {
   const layout = template?.layout;
   if (!layout || layout.canvas?.width !== FID_CARD_SIZE.width || layout.canvas?.height !== FID_CARD_SIZE.height
     || !layout.typography?.styles || !layout.front?.portrait || !layout.front?.fin
-    || !layout.front?.verification || !layout.front?.watermark || !layout.back?.credentialId
-    || !layout.back?.revision || !layout.back?.templateVersion || !layout.back?.renderPair) {
+    || !layout.front?.issueDate || !layout.front?.verification || !layout.front?.watermark
+    || !layout.back?.credentialId || !layout.back?.revision || !layout.back?.templateVersion
+    || !layout.back?.issuer || !layout.back?.renderPair) {
     throw new TypeError("FID template layout is invalid");
   }
   return layout;
@@ -235,6 +220,19 @@ function drawStyled(surface, template, value, x, y, styleName, color, maxWidth, 
   drawFidText(surface, value, x, y, style, template.fonts, color);
 }
 
+function centeredValueY(template, field) {
+  const style = template.layout.typography.styles[field.typography?.value];
+  const font = template.fonts?.[style?.font]?.font;
+  if (!style || !font || !(field.height > 0)) throw new TypeError("FID back field layout is invalid");
+  const lineHeight = (font.ascender - font.descender) * style.sizePx / font.unitsPerEm;
+  return field.y + (field.height - lineHeight) / 2;
+}
+
+function iso(name, value) {
+  if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) throw new TypeError(`${name} must be an ISO timestamp`);
+  return new Date(value).toISOString();
+}
+
 export function fidRenderPhotoDigest(photo) {
   const value = requireSurface("FID render photo", photo);
   const dimensions = Buffer.alloc(8);
@@ -248,9 +246,11 @@ export function renderFidCard({
   photoAdmission:candidateAdmission,
   photo,
   authorizedIdentity = null,
+  issuedAt:candidateIssuedAt,
   template,
 }) {
   const workflow = normalizeFidIssuanceWorkflowRecord(candidateWorkflow);
+  const issuedAt = iso("FID render issuedAt", candidateIssuedAt);
   const admission = assertFidPhotoAdmissionReceipt(candidateAdmission);
   if (admission.decision !== "accepted") throw new TypeError("FID renderer requires an accepted photo admission");
   if (admission.workflowId !== workflow.workflowId || admission.threadId !== workflow.threadId) {
@@ -279,11 +279,11 @@ export function renderFidCard({
     identitySnapshotDigest,
     photoAdmissionId:admission.admissionId,
     photoDigest:admission.candidatePhotoDigest,
+    issuedAt,
   }))));
 
   const frontLayout = layout.front;
   const front = clone(template.frontBaseLayer);
-  if (frontLayout.bodyPanel) blendRect(front, frontLayout.bodyPanel);
   placeCover(
     front,
     grayscale(admittedPhoto),
@@ -315,10 +315,6 @@ export function renderFidCard({
     frontLayout.fin.width,
     "FIN",
   );
-  if (frontLayout.divider) {
-    rect(front, frontLayout.divider.x, frontLayout.divider.y, frontLayout.divider.width, frontLayout.divider.height, CARD_PALETTE.paperWarm);
-  }
-
   if (identitySnapshot.displayName !== undefined && identitySnapshot.displayName !== null && frontLayout.name) {
     drawStyled(front, template, "NAME", frontLayout.name.labelX, frontLayout.name.labelY, frontLayout.name.typography?.label, CARD_PALETTE.inkSoft, frontLayout.name.width, "name label");
     drawStyled(front, template, identitySnapshot.displayName, frontLayout.name.valueX, frontLayout.name.valueY, frontLayout.name.typography?.value, CARD_PALETTE.ink, frontLayout.name.width, "name");
@@ -328,6 +324,8 @@ export function renderFidCard({
     drawStyled(front, template, label, frontLayout.date.labelX, frontLayout.date.labelY, frontLayout.date.typography?.label, CARD_PALETTE.inkSoft, frontLayout.date.width, "date label");
     drawStyled(front, template, identitySnapshot.dateField.value, frontLayout.date.valueX, frontLayout.date.valueY, frontLayout.date.typography?.value, CARD_PALETTE.ink, frontLayout.date.width, "date");
   }
+  drawStyled(front, template, "ISSUE DATE", frontLayout.issueDate.labelX, frontLayout.issueDate.labelY, frontLayout.issueDate.typography?.label, CARD_PALETTE.inkSoft, frontLayout.issueDate.width, "issue date label");
+  drawStyled(front, template, issuedAt.slice(0, 10), frontLayout.issueDate.valueX, frontLayout.issueDate.valueY, frontLayout.issueDate.typography?.value, CARD_PALETTE.ink, frontLayout.issueDate.width, "issue date");
   drawStyled(
     front,
     template,
@@ -367,7 +365,7 @@ export function renderFidCard({
     template,
     value,
     field.x,
-    field.y,
+    centeredValueY(template, field),
     field.typography?.value,
     CARD_PALETTE.ink,
     field.width,
@@ -392,6 +390,7 @@ export function renderFidCard({
   const backPng = encodePng(back);
   return Object.freeze({
     templateVersion:template.version,
+    issuedAt,
     credentialId:workflow.proposedCredentialId,
     revision:workflow.proposedRevision,
     identitySnapshot,

@@ -79,14 +79,15 @@ export function createFidCardIssuanceExecutor({
       loadPhoto(admission.candidatePhotoRef),
       templateForCut(),
     ]);
+    const issuedAt = now();
     const render = renderFidCard({
       workflow,
       photoAdmission: admission,
       photo,
       authorizedIdentity: identity,
+      issuedAt,
       template,
     });
-    const issuedAt = now();
     const payload = buildFidMachineCredentialPayload({
       workflow,
       photoAdmission: admission,
