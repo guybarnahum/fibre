@@ -478,7 +478,7 @@ function memoriesSection(memories, birthDate, memoryError = null) {
   return wrap;
 }
 
-async function reissueFidCard(threadId) {
+export async function reissueFidCard(threadId) {
   const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/fid/reissue`, {
     method:"POST",
     headers:{ Accept:"application/json", "Content-Type":"application/json" },
@@ -489,10 +489,11 @@ async function reissueFidCard(threadId) {
   return payload;
 }
 
-function fidSection(identity, threadId) {
+export function renderFidSection(identity, threadId) {
   const presentation = identity.presentation?.presentation ?? null;
   const card = presentation?.identityCard ?? null;
   const wrap = section("Fibre Identity Card", card ? `Revision ${card.revision ?? "—"} · ${human(card.status ?? "unknown")}` : "Card not issued");
+  wrap.classList.add("thread-fid-section");
   const assets = Array.isArray(identity.assets) ? identity.assets : [];
   const officialPhotoMediaRef = typeof card?.officialPhotoMediaRef === "string" ? card.officialPhotoMediaRef : null;
   const officialPhoto = assets.find((asset) => asset?.role === "official_id_photo" && asset?.url)
@@ -544,7 +545,7 @@ function fidSection(identity, threadId) {
   const reissue = el("button", "secondary thread-repair-button");
   reissue.type = "button";
   decorateActionButton(reissue, {
-    icon:"rotate",
+    icon:"id-card",
     label:"Re-issue FIN Card",
     tooltip:"Cut a new FIN Card from the current authoritative Thread identity",
   });
@@ -692,7 +693,7 @@ export function renderThreadObservatory({ identity, threadId, memories = [], mem
   view.append(
     hero(identity, threadId),
     identitySection(identity, threadId),
-    fidSection(identity, threadId),
+    renderFidSection(identity, threadId),
     nowSection(identity),
     memoriesSection(memories, firstText(identity.birthDate, identity.world?.thread?.identity?.birthDate), memoryError),
   );
