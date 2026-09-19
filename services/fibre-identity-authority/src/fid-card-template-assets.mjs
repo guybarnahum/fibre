@@ -1,5 +1,6 @@
 import { FID_CARD_SIZE } from "./fid-card-renderer.mjs";
 import { decodePngRgba } from "./fid-photo-surface.mjs";
+import { createFidTrueTypeFont } from "./fid-card-typography.mjs";
 
 function bytes(name, value) {
   if (value instanceof Uint8Array || value instanceof ArrayBuffer || ArrayBuffer.isView(value)) return value;
@@ -53,7 +54,12 @@ function loadFonts(candidateLayout, fontAssets) {
     const asset = definition?.asset;
     if (typeof asset !== "string" || asset === "") throw new TypeError(`FID font ${role} asset is required`);
     if (!Object.hasOwn(fontAssets, asset)) throw new TypeError(`FID font asset ${asset} is required`);
-    fonts[role] = Object.freeze({ asset, bytes:bytes(`FID font asset ${asset}`, fontAssets[asset]) });
+    const fontBytes = bytes(`FID font asset ${asset}`, fontAssets[asset]);
+    try {
+      fonts[role] = Object.freeze({ asset, font:createFidTrueTypeFont(fontBytes) });
+    } catch (cause) {
+      throw new TypeError(`FID font asset ${asset} is invalid`, { cause });
+    }
   }
   return Object.freeze(fonts);
 }

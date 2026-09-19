@@ -9,6 +9,7 @@ import { buildFibreCivilRegistration } from "#core/src/fibre-civil-identity.mjs"
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
 import { buildFidIssuanceWorkflowRecord } from "../src/fid-card-issuance-domain.mjs";
+import { oceanFidTemplate } from "./fid-card-test-template.mjs";
 import {
   FIBRE_IDENTITY_AUTHORITY_ID,
   FID_C2PA_ASSERTION_LABEL,
@@ -151,7 +152,7 @@ async function fixture({ revision = 1, idempotencyKey = "d2_mira", priorActiveCr
     },
     admittedAt: "2026-09-09T20:01:00.000Z",
   });
-  const render = renderFidCard({ workflow, photoAdmission: admission, photo });
+  const render = renderFidCard({ workflow, photoAdmission:admission, photo, template:await oceanFidTemplate() });
   const issuerSigner = issuer();
   const credentialProtector = protector();
   const payload = buildFidMachineCredentialPayload({

@@ -20,7 +20,7 @@ export function createFidCardIssuanceExecutor({
   issuerSigner,
   credentialProtector,
   loadPhoto,
-  loadTemplate = null,
+  loadTemplate,
   now = () => new Date().toISOString(),
 } = {}) {
   requiredMethod(authority, "prepareFidCard", "Fibre Identity Authority");
@@ -28,11 +28,10 @@ export function createFidCardIssuanceExecutor({
   requiredMethod(threadRegistry, "get", "Thread Registry");
   requiredMethod(registry, "getByCredentialId", "FID registry");
   if (typeof loadPhoto !== "function") throw new TypeError("FID issuance requires loadPhoto()");
-  if (loadTemplate !== null && typeof loadTemplate !== "function") throw new TypeError("FID issuance loadTemplate must be null or a function");
+  if (typeof loadTemplate !== "function") throw new TypeError("FID issuance requires loadTemplate()");
   if (typeof now !== "function") throw new TypeError("FID issuance now must be a function");
   let templatePromise = null;
   const templateForCut = () => {
-    if (loadTemplate === null) return null;
     templatePromise ??= Promise.resolve(loadTemplate()).then((template) => {
       if (!template || typeof template.version !== "string") throw new TypeError("FID template loader returned an invalid template");
       return template;
@@ -85,7 +84,7 @@ export function createFidCardIssuanceExecutor({
       photoAdmission: admission,
       photo,
       authorizedIdentity: identity,
-      ...(template === null ? {} : { template }),
+      template,
     });
     const issuedAt = now();
     const payload = buildFidMachineCredentialPayload({

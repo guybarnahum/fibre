@@ -48,8 +48,6 @@ export {
 
 export {
   FID_CARD_SIZE,
-  FID_CARD_TEMPLATE_VERSION,
-  createFidCardTemplate,
   fidRenderPhotoDigest,
   renderFidCard,
 } from "./fid-card-renderer.mjs";

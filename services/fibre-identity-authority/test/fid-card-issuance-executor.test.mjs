@@ -16,9 +16,9 @@ import {
   FidPhotoAdmissionStore,
   createFibreIdentityAuthority,
   createFidCardIssuanceExecutor,
-  createFidCardTemplate,
   fidRenderPhotoDigest,
 } from "../src/index.mjs";
+import { oceanFidTemplate } from "./fid-card-test-template.mjs";
 
 const FIN = "8PKH-A4-VH5R";
 const sha256 = (value) => `sha256:${createHash("sha256").update(value).digest("hex")}`;
@@ -120,7 +120,7 @@ test("cutting by Thread then FIN reissues one civil identity and preserves card 
       loadPhoto: async () => photo,
       loadTemplate: async () => {
         templateLoads += 1;
-        return createFidCardTemplate({ version: "fid-card-template-executor-test" });
+        return oceanFidTemplate({ version:"fid-card-template-executor-test" });
       },
       now,
     });

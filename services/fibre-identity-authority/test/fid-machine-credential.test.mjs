@@ -15,7 +15,6 @@ import {
   FIBRE_IDENTITY_AUTHORITY_ID,
   buildFidMachineCredentialPayload,
   buildFidPhotoAdmission,
-  createFidCardTemplate,
   fidMachineCredentialBytes,
   fidRenderPhotoDigest,
   openFidMachineCredential,
@@ -24,6 +23,7 @@ import {
   signFidMachineCredentialPayload,
   verifyFidMachineCredentialSignature,
 } from "../src/index.mjs";
+import { oceanFidTemplate } from "./fid-card-test-template.mjs";
 
 function signer(keyId = "fia-test-key-1") {
   const { publicKey, privateKey } = generateKeyPairSync("ed25519");
@@ -59,7 +59,7 @@ function protector(key = randomBytes(32)) {
   };
 }
 
-function fixture(issuer) {
+async function fixture(issuer) {
   const registration = buildFibreCivilRegistration({
     threadId: "thr_mira",
     fibreIdentityNumber: "8PKH-A4-VH5R",
@@ -104,7 +104,8 @@ function fixture(issuer) {
     },
     admittedAt: "2026-09-09T20:01:00.000Z",
   });
-  const render = renderFidCard({ workflow, photoAdmission: admission, photo, template: createFidCardTemplate() });
+  const template = await oceanFidTemplate();
+  const render = renderFidCard({ workflow, photoAdmission:admission, photo, template });
   const payload = buildFidMachineCredentialPayload({
     workflow,
     photoAdmission: admission,
@@ -113,13 +114,13 @@ function fixture(issuer) {
     issuer: issuer.profile,
     issuedAt: "2026-09-09T20:02:00.000Z",
   });
-  return { admission, payload, photo };
+  return { admission, payload, photo, template };
 }
 
 test("D1 canonical credential bytes are stable and issuer signature rejects payload or issuer-profile tampering", async () => {
   const issuer = signer();
-  const { payload } = fixture(issuer);
-  assert.equal(payload.templateVersion, createFidCardTemplate().version);
+  const { payload, template } = await fixture(issuer);
+  assert.equal(payload.templateVersion, template.version);
   const reordered = Object.fromEntries(Object.entries(payload).reverse());
   assert.deepEqual(fidMachineCredentialBytes(reordered), fidMachineCredentialBytes(payload));
 
@@ -143,7 +144,7 @@ test("D1 canonical credential bytes are stable and issuer signature rejects payl
 test("D1 envelope hides private identity and authenticates its public routing", async () => {
   const issuer = signer();
   const reader = protector();
-  const { admission, payload, photo } = fixture(issuer);
+  const { admission, payload, photo } = await fixture(issuer);
   const envelope = await sealFidMachineCredential({ payload, issuerSigner: issuer, credentialProtector: reader });
 
   assert.equal("fin" in envelope.routing, false);

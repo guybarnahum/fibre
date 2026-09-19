@@ -3,42 +3,33 @@ import test from "node:test";
 
 import {
   buildFibreCivilRegistration,
-  fibreCivilRegistrationDigest,
   fibreIdentityNumberFromPayload,
 } from "#core/src/fibre-civil-identity.mjs";
-import {
-  buildFidIssuanceWorkflowRecord,
-} from "../src/fid-card-issuance-domain.mjs";
+import { buildFidIssuanceWorkflowRecord } from "../src/fid-card-issuance-domain.mjs";
 import { buildFidPhotoAdmission } from "../src/fid-photo-admission.mjs";
 import { decodePngRgba } from "../src/fid-photo-surface.mjs";
-import { createFidCardTemplateFromPngAssets } from "../src/fid-card-template-assets.mjs";
 import {
-  createFidCardTemplate,
   FID_CARD_SIZE,
-  FID_CARD_TEMPLATE_VERSION,
   fidRenderPhotoDigest,
   renderFidCard,
 } from "../src/fid-card-renderer.mjs";
+import { oceanFidTemplate } from "./fid-card-test-template.mjs";
 
 function registration() {
   return buildFibreCivilRegistration({
-    threadId: "thread_fid_render_001",
-    fibreIdentityNumber: fibreIdentityNumberFromPayload("012345678"),
-    registeredAt: "2026-09-01T12:00:00.000Z",
-    birthEventRef: "birth_fid_render_001",
-    worldRef: "world_fibre",
+    threadId:"thread_fid_render_001",
+    fibreIdentityNumber:fibreIdentityNumberFromPayload("012345678"),
+    registeredAt:"2026-09-01T12:00:00.000Z",
+    birthEventRef:"birth_fid_render_001",
+    worldRef:"world_fibre",
   });
 }
 
 function workflow({ requestedAt = "2026-09-09T20:00:00.000Z" } = {}) {
   return buildFidIssuanceWorkflowRecord({
-    request: {
-      threadId: "thread_fid_render_001",
-      reason: "initial",
-      idempotencyKey: "fid-render-001",
-    },
-    civilRegistration: registration(),
-    proposedRevision: 1,
+    request:{ threadId:"thread_fid_render_001", reason:"initial", idempotencyKey:"fid-render-001" },
+    civilRegistration:registration(),
+    proposedRevision:1,
     requestedAt,
   });
 }
@@ -47,165 +38,158 @@ function photo(seed = 17) {
   const width = 80;
   const height = 100;
   const rgba = new Uint8Array(width * height * 4);
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const i = (y * width + x) * 4;
-      rgba[i] = (seed + x * 2) % 256;
-      rgba[i + 1] = (80 + y * 2) % 256;
-      rgba[i + 2] = (160 + x + y) % 256;
-      rgba[i + 3] = 255;
-    }
+  for (let y = 0; y < height; y += 1) for (let x = 0; x < width; x += 1) {
+    const index = (y * width + x) * 4;
+    rgba[index] = (seed + x * 2) % 256;
+    rgba[index + 1] = (80 + y * 2) % 256;
+    rgba[index + 2] = (160 + x + y) % 256;
+    rgba[index + 3] = 255;
   }
   return { width, height, rgba };
 }
 
 const goodInspection = Object.freeze({
-  faceCount: 1,
-  faceVisible: true,
-  occlusionAcceptable: true,
-  cropCompliant: true,
-  dimensionsCompliant: true,
-  poseCompliant: true,
-  framingCompliant: true,
-  visualIdentityConsistent: true,
-  ageConsistent: true,
+  faceCount:1,
+  faceVisible:true,
+  occlusionAcceptable:true,
+  cropCompliant:true,
+  dimensionsCompliant:true,
+  poseCompliant:true,
+  framingCompliant:true,
+  visualIdentityConsistent:true,
+  ageConsistent:true,
 });
 
 function admission(forWorkflow, admittedPhoto) {
   return buildFidPhotoAdmission({
-    workflow: forWorkflow,
-    source: {
-      role: "official_id_photo",
-      threadId: forWorkflow.threadId,
-      candidatePhotoRef: `media_${fidRenderPhotoDigest(admittedPhoto).slice(-16)}`,
-      candidatePhotoDigest: fidRenderPhotoDigest(admittedPhoto),
-      canonicalVisualReferenceRef: "media_canonical_fid_render_001",
-      canonicalVisualReferenceDigest: `sha256:${"1".repeat(64)}`,
-      derivationReceiptRef: "derivation_fid_render_001",
-      sourceReferences: ["media_canonical_fid_render_001"],
-      targetAgeYears: 24,
+    workflow:forWorkflow,
+    source:{
+      role:"official_id_photo",
+      threadId:forWorkflow.threadId,
+      candidatePhotoRef:`media_${fidRenderPhotoDigest(admittedPhoto).slice(-16)}`,
+      candidatePhotoDigest:fidRenderPhotoDigest(admittedPhoto),
+      canonicalVisualReferenceRef:"media_canonical_fid_render_001",
+      canonicalVisualReferenceDigest:`sha256:${"1".repeat(64)}`,
+      derivationReceiptRef:"derivation_fid_render_001",
+      sourceReferences:["media_canonical_fid_render_001"],
+      targetAgeYears:24,
     },
-    inspection: goodInspection,
-    admittedAt: "2026-09-09T20:01:00.000Z",
+    inspection:goodInspection,
+    admittedAt:"2026-09-09T20:01:00.000Z",
   });
+}
+
+function identity(displayName = "Mira Vale") {
+  return {
+    threadId:"thread_fid_render_001",
+    fibreIdentityNumber:registration().fibreIdentityNumber,
+    displayName,
+    birthDate:"1996-03-18",
+  };
 }
 
 function pngDimensions(bytes) {
   assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
-  return {
-    width: bytes.readUInt32BE(16),
-    height: bytes.readUInt32BE(20),
-  };
+  return { width:bytes.readUInt32BE(16), height:bytes.readUInt32BE(20) };
 }
 
-test("Slice C renders identical front/back PNG bytes from the same authorized issuance material", () => {
+test("FID card rendering is deterministic for the same authorized identity", async () => {
   const w = workflow();
   const p = photo();
   const a = admission(w, p);
+  const template = await oceanFidTemplate();
+  const first = renderFidCard({ workflow:w, photoAdmission:a, photo:p, authorizedIdentity:identity(), template });
+  const second = renderFidCard({ workflow:w, photoAdmission:a, photo:p, authorizedIdentity:identity(), template });
 
-  const first = renderFidCard({ workflow: w, photoAdmission: a, photo: p });
-  const second = renderFidCard({ workflow: w, photoAdmission: a, photo: p });
-
-  assert.equal(first.templateVersion, FID_CARD_TEMPLATE_VERSION);
-  assert.deepEqual(Object.keys(first.files).sort(), ["back.png", "front.png"]);
-  assert.deepEqual(first.files["front.png"], second.files["front.png"]);
-  assert.deepEqual(first.files["back.png"], second.files["back.png"]);
-  assert.equal(first.frontRenderDigest, second.frontRenderDigest);
-  assert.equal(first.backRenderDigest, second.backRenderDigest);
-  assert.notEqual(first.frontRenderDigest, first.backRenderDigest);
+  assert.deepEqual(first.files["front.png"], second.files["front.png"], "front render changed");
+  assert.deepEqual(first.files["back.png"], second.files["back.png"], "back render changed");
   assert.deepEqual(pngDimensions(first.files["front.png"]), FID_CARD_SIZE);
   assert.deepEqual(pngDimensions(first.files["back.png"]), FID_CARD_SIZE);
 });
 
-test("Slice C presents the admitted portrait in black and white without changing admission identity", async () => {
+test("FID card presents the admitted portrait in black and white without changing photo identity", async () => {
   const w = workflow();
   const p = photo();
-  const rendered = renderFidCard({ workflow: w, photoAdmission: admission(w, p), photo: p });
+  const rendered = renderFidCard({
+    workflow:w,
+    photoAdmission:admission(w, p),
+    photo:p,
+    authorizedIdentity:identity(),
+    template:await oceanFidTemplate(),
+  });
   const front = await decodePngRgba(rendered.files["front.png"]);
-  const x = 48 + Math.floor(248 / 2);
-  const y = 118 + Math.floor(340 / 2);
-  const i = (y * front.width + x) * 4;
-  assert.equal(front.rgba[i], front.rgba[i + 1], "rendered portrait red/green channels differ");
-  assert.equal(front.rgba[i + 1], front.rgba[i + 2], "rendered portrait green/blue channels differ");
-  assert.equal(fidRenderPhotoDigest(p), admission(w, p).candidatePhotoDigest, "presentation treatment changed admitted photo identity");
+  const x = 45 + Math.floor(264 / 2);
+  const y = 106 + Math.floor(340 / 2);
+  const index = (y * front.width + x) * 4;
+  assert.equal(front.rgba[index], front.rgba[index + 1], "portrait is not grayscale");
+  assert.equal(front.rgba[index + 1], front.rgba[index + 2], "portrait is not grayscale");
+  assert.equal(fidRenderPhotoDigest(p), admission(w, p).candidatePhotoDigest, "presentation changed admitted photo identity");
 });
 
-test("Slice C can hydrate a versioned template from PNG assets without provider-specific IO", async () => {
+test("FID render identity changes when authorized material changes", async () => {
   const w = workflow();
   const p = photo();
-  const a = admission(w, p);
-  const procedural = renderFidCard({ workflow:w, photoAdmission:a, photo:p });
-  const layout = structuredClone(createFidCardTemplate().layout);
-  layout.templateVersion = "fid-card-template-test-assets";
-  const template = await createFidCardTemplateFromPngAssets({
-    version:"fid-card-template-test-assets",
-    layout,
-    frontBasePng:procedural.files["front.png"],
-    frontForegroundPng:procedural.files["front.png"],
-    backBasePng:procedural.files["back.png"],
-  });
-  const rendered = renderFidCard({ workflow:w, photoAdmission:a, photo:p, template });
-  assert.equal(rendered.templateVersion, "fid-card-template-test-assets");
-  assert.deepEqual(pngDimensions(rendered.files["front.png"]), FID_CARD_SIZE);
-  assert.deepEqual(pngDimensions(rendered.files["back.png"]), FID_CARD_SIZE);
-});
-
-test("Slice C render digests move when authorized identity, admitted photo, or template version moves", () => {
-  const w = workflow();
-  const p = photo();
-  const baseline = renderFidCard({ workflow: w, photoAdmission: admission(w, p), photo: p });
-
-  const movedIdentity = workflow({ requestedAt: "2026-09-09T20:00:01.000Z" });
-  const identityRender = renderFidCard({
-    workflow: movedIdentity,
-    photoAdmission: admission(movedIdentity, p),
-    photo: p,
-  });
-  assert.notEqual(identityRender.frontRenderDigest, baseline.frontRenderDigest);
-  assert.notEqual(identityRender.backRenderDigest, baseline.backRenderDigest);
+  const template = await oceanFidTemplate();
+  const baseline = renderFidCard({ workflow:w, photoAdmission:admission(w, p), photo:p, authorizedIdentity:identity(), template });
 
   const p2 = photo(18);
-  const photoRender = renderFidCard({ workflow: w, photoAdmission: admission(w, p2), photo: p2 });
-  assert.notEqual(photoRender.frontRenderDigest, baseline.frontRenderDigest);
-  assert.notEqual(photoRender.backRenderDigest, baseline.backRenderDigest);
-
-  const templateRender = renderFidCard({
-    workflow: w,
-    photoAdmission: admission(w, p),
-    photo: p,
-    template: createFidCardTemplate({ version: "fid-card-template-v0.4" }),
+  const photoRender = renderFidCard({
+    workflow:w,
+    photoAdmission:admission(w, p2),
+    photo:p2,
+    authorizedIdentity:identity(),
+    template,
   });
-  assert.equal(templateRender.frontRenderDigest, baseline.frontRenderDigest);
-  assert.notEqual(templateRender.backRenderDigest, baseline.backRenderDigest);
+  assert.notEqual(photoRender.frontRenderDigest, baseline.frontRenderDigest, "photo change did not move front render");
+
+  const identityRender = renderFidCard({
+    workflow:w,
+    photoAdmission:admission(w, p),
+    photo:p,
+    authorizedIdentity:identity("Mira Vele"),
+    template,
+  });
+  assert.notEqual(identityRender.frontRenderDigest, baseline.frontRenderDigest, "identity change did not move front render");
+
+  const versionedTemplate = await oceanFidTemplate({ version:"fid-card-template-v0.3-ocean-test" });
+  const versionRender = renderFidCard({
+    workflow:w,
+    photoAdmission:admission(w, p),
+    photo:p,
+    authorizedIdentity:identity(),
+    template:versionedTemplate,
+  });
+  assert.notEqual(versionRender.backRenderDigest, baseline.backRenderDigest, "template version did not move back render");
 });
 
-test("Slice C refuses an unadmitted or substituted portrait", () => {
+test("FID renderer refuses a substituted or unadmitted portrait", async () => {
   const w = workflow();
   const admitted = photo();
   const a = admission(w, admitted);
+  const template = await oceanFidTemplate();
 
   assert.throws(
-    () => renderFidCard({ workflow: w, photoAdmission: a, photo: photo(99) }),
+    () => renderFidCard({ workflow:w, photoAdmission:a, photo:photo(99), authorizedIdentity:identity(), template }),
     /does not match the admitted photo digest/,
   );
 
   const rejected = buildFidPhotoAdmission({
-    workflow: w,
-    source: {
-      role: "official_id_photo",
-      threadId: w.threadId,
-      candidatePhotoRef: null,
-      candidatePhotoDigest: null,
-      canonicalVisualReferenceRef: "media_canonical_fid_render_001",
-      canonicalVisualReferenceDigest: `sha256:${"1".repeat(64)}`,
-      derivationReceiptRef: null,
-      sourceReferences: ["media_canonical_fid_render_001"],
-      targetAgeYears: 24,
+    workflow:w,
+    source:{
+      role:"official_id_photo",
+      threadId:w.threadId,
+      candidatePhotoRef:null,
+      candidatePhotoDigest:null,
+      canonicalVisualReferenceRef:"media_canonical_fid_render_001",
+      canonicalVisualReferenceDigest:`sha256:${"1".repeat(64)}`,
+      derivationReceiptRef:null,
+      sourceReferences:["media_canonical_fid_render_001"],
+      targetAgeYears:24,
     },
-    admittedAt: "2026-09-09T20:01:00.000Z",
+    admittedAt:"2026-09-09T20:01:00.000Z",
   });
   assert.throws(
-    () => renderFidCard({ workflow: w, photoAdmission: rejected, photo: admitted }),
+    () => renderFidCard({ workflow:w, photoAdmission:rejected, photo:admitted, authorizedIdentity:identity(), template }),
     /requires an accepted photo admission/,
   );
 });
