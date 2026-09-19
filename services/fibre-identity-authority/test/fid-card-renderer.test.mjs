@@ -10,6 +10,7 @@ import {
   buildFidIssuanceWorkflowRecord,
 } from "../src/fid-card-issuance-domain.mjs";
 import { buildFidPhotoAdmission } from "../src/fid-photo-admission.mjs";
+import { decodePngRgba } from "../src/fid-photo-surface.mjs";
 import {
   createFidCardTemplate,
   FID_CARD_SIZE,
@@ -113,6 +114,19 @@ test("Slice C renders identical front/back PNG bytes from the same authorized is
   assert.notEqual(first.frontRenderDigest, first.backRenderDigest);
   assert.deepEqual(pngDimensions(first.files["front.png"]), FID_CARD_SIZE);
   assert.deepEqual(pngDimensions(first.files["back.png"]), FID_CARD_SIZE);
+});
+
+test("Slice C presents the admitted portrait in black and white without changing admission identity", async () => {
+  const w = workflow();
+  const p = photo();
+  const rendered = renderFidCard({ workflow: w, photoAdmission: admission(w, p), photo: p });
+  const front = await decodePngRgba(rendered.files["front.png"]);
+  const x = 48 + Math.floor(248 / 2);
+  const y = 118 + Math.floor(340 / 2);
+  const i = (y * front.width + x) * 4;
+  assert.equal(front.rgba[i], front.rgba[i + 1], "rendered portrait red/green channels differ");
+  assert.equal(front.rgba[i + 1], front.rgba[i + 2], "rendered portrait green/blue channels differ");
+  assert.equal(fidRenderPhotoDigest(p), admission(w, p).candidatePhotoDigest, "presentation treatment changed admitted photo identity");
 });
 
 test("Slice C render digests move when authorized identity, admitted photo, or template version moves", () => {

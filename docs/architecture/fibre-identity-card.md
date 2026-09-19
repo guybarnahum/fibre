@@ -176,7 +176,7 @@ The preferred source is the Thread's admitted canonical visual reference / autho
 - administrative camera pose and framing;
 - head-and-shoulders composition;
 - neutral background and lighting;
-- muted color treatment rather than black-and-white;
+- black-and-white presentation treatment on the card while admission remains bound to the normalized source photo;
 - no glamour, editorial, cinematic, or dramatic styling.
 
 Conceptually:

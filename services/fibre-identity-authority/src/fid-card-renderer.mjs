@@ -264,6 +264,21 @@ function clone(surface) {
   return { width: surface.width, height: surface.height, rgba: new Uint8Array(surface.rgba) };
 }
 
+function grayscale(surface) {
+  const result = clone(surface);
+  for (let i = 0; i < result.rgba.length; i += 4) {
+    const value = Math.round(
+      result.rgba[i] * 0.2126
+      + result.rgba[i + 1] * 0.7152
+      + result.rgba[i + 2] * 0.0722
+    );
+    result.rgba[i] = value;
+    result.rgba[i + 1] = value;
+    result.rgba[i + 2] = value;
+  }
+  return result;
+}
+
 function fingerprint(surface, digest, x, y, width, height, color) {
   const bits = digest.replace("sha256:", "");
   const columns = Math.min(bits.length * 4, width);
@@ -334,6 +349,7 @@ export function renderFidCard({
   if (fidRenderPhotoDigest(admittedPhoto) !== admission.candidatePhotoDigest) {
     throw new TypeError("FID renderer photo does not match the admitted photo digest");
   }
+  const presentationPhoto = grayscale(admittedPhoto);
   if (!template || typeof template.version !== "string") throw new TypeError("FID renderer requires a versioned template");
   for (const [name, layer] of [["front-base-layer", template.frontBaseLayer], ["front-upper-layer", template.frontUpperLayer], ["back", template.back]]) {
     requireSurface(`FID template ${name}`, layer);
@@ -352,7 +368,7 @@ export function renderFidCard({
   const front = clone(template.frontBaseLayer);
   placeCover(
     front,
-    admittedPhoto,
+    presentationPhoto,
     FRONT_LAYOUT.portraitX,
     FRONT_LAYOUT.portraitY,
     FRONT_LAYOUT.portraitWidth,
@@ -374,7 +390,7 @@ export function renderFidCard({
   drawText(front, "VERIFY IDENTITY SNAPSHOT", FRONT_LAYOUT.bodyX, 418, 2, CARD_PALETTE.inkSoft);
   fingerprint(front, identitySnapshotDigest, FRONT_LAYOUT.bodyX, 452, 304, 14, CARD_PALETTE.inkSoft);
 
-  placeCover(front, admittedPhoto, 646, 270, 158, 198, 0.055);
+  placeCover(front, presentationPhoto, 646, 270, 158, 198, 0.055);
   blend(front, template.frontUpperLayer);
 
   const back = clone(template.back);
