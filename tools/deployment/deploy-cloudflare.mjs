@@ -137,6 +137,17 @@ export function createWranglerDeploymentClient({
       if (!account || typeof account !== "object" || Array.isArray(account)) throw new Error("Wrangler whoami returned invalid JSON");
       return account;
     },
+    async assertContainersAvailable() {
+      try {
+        await runner(["containers", "images", "list", "--json"], { cwd });
+      } catch (error) {
+        throw new Error(
+          "Cloudflare Containers access is required for the Fibre C2PA signer. Ensure the account is on Workers Paid and CLOUDFLARE_API_TOKEN has Account > Containers > Edit.",
+          { cause:error },
+        );
+      }
+      return Object.freeze({ ok:true });
+    },
     async listSecretNames(workerName) {
       const { stdout } = await runner(["secret", "list", "--name", workerName, "--format", "json"], { cwd });
       return secretNames(JSON.parse(stdout));
@@ -228,6 +239,10 @@ export async function deployCloudflareStack({
 
   await validateRepository();
   await client.assertAuthenticated();
+  if (typeof client.assertContainersAvailable !== "function") {
+    throw new TypeError("Cloudflare deployment client must verify Containers access");
+  }
+  await client.assertContainersAvailable();
   const resourceState = await provision();
   if (resourceState?.environment !== env) throw new Error(`provisioned Cloudflare state environment mismatch: ${String(resourceState?.environment)}`);
 
