@@ -9,6 +9,8 @@ import {
 } from "./assertion-finder.mjs";
 
 const DEFAULT_ASSERTION_LABEL = "com.insidefibre.asset-generation";
+const GENERATED_SOURCE_TYPE = "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia";
+const CREDENTIAL_SOURCE_TYPE = "http://cv.iptc.org/newscodes/digitalsourcetype/composite";
 const FORMAT = "c2pa";
 const SELF_TEST_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlNfWQAAAAASUVORK5CYII=";
 
@@ -111,11 +113,9 @@ export async function createC2paNodeSigner({
     }, {
       verify: { verify_after_sign: true, verify_trust: false },
     });
-    if (generatedMedia) {
-      builder.setIntent({
-        create: "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
-      });
-    }
+    builder.setIntent({
+      create: generatedMedia ? GENERATED_SOURCE_TYPE : CREDENTIAL_SOURCE_TYPE,
+    });
     builder.addAssertion(label, JSON.stringify(body.assertion), "Json");
     const output = { buffer: null };
     builder.sign(localSigner, { buffer: bytes, mimeType: body.mediaType }, output);
@@ -176,6 +176,27 @@ export async function createC2paNodeSigner({
     });
     if (!verification.valid || canonicalJson(verification.assertion) !== canonicalJson(assertion)) {
       throw new Error(`Fibre local C2PA sign/read self-test failed: ${verification.failureReason ?? "assertion mismatch"}`);
+    }
+
+    const credentialLabel = "com.insidefibre.credential-self-test";
+    const credentialAssertion = {
+      selfTestVersion: "fibre-c2pa-local-credential-self-test-v1",
+      purpose: "credentialed-asset-sign-read-round-trip",
+    };
+    const credentialed = await embed({
+      bytesBase64: SELF_TEST_PNG_BASE64,
+      mediaType: "image/png",
+      assertionLabel: credentialLabel,
+      assertion: credentialAssertion,
+    });
+    const credentialVerification = await verify({
+      bytesBase64: credentialed.bytesBase64,
+      mediaType: "image/png",
+      assertionLabel: credentialLabel,
+    });
+    if (!credentialVerification.valid
+      || canonicalJson(credentialVerification.assertion) !== canonicalJson(credentialAssertion)) {
+      throw new Error(`Fibre local credentialed-asset C2PA self-test failed: ${credentialVerification.failureReason ?? "assertion mismatch"}`);
     }
   }
 
