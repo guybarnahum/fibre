@@ -230,11 +230,14 @@ function actionCell(thread) {
       eyebrow:"Authoritative identity",
       description,
       fields:actionFields(action),
-      body:(input) => ({
-        action:"identity",
-        operationKey:`admin_identity_${Date.now().toString(36)}`,
-        ...input,
-      }),
+      body:(input) => {
+        const commandAction = action.command ?? "identity";
+        return {
+          action:commandAction,
+          operationKey:`${commandAction === "raised_languages" ? "admin_raised_languages" : "admin_identity"}_${Date.now().toString(36)}`,
+          ...input,
+        };
+      },
     }, thread));
   }
 

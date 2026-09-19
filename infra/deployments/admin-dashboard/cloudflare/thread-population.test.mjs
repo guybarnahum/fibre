@@ -73,7 +73,9 @@ test("World Registry defines admitted population while Activity remains observat
   assert.deepEqual(population.threads[0].identity.culture, ["Valparaíso formative context"]);
   assert.deepEqual(population.threads[0].identity.raisedAs, { culturalContext:"Chilean coastal household", languages:["Spanish"] });
   assert.deepEqual(population.threads[0].identity.languages, ["Spanish", "English"], "Spoken languages must remain current Thread state");
-  assert.equal(population.threads[0].findings.find((finding) => finding.code === "RAISED_LANGUAGES").identityAction.id, "change_raised_languages", "Admin must edit Raised languages, not Spoken languages");
+  const raisedLanguageAction = population.threads[0].findings.find((finding) => finding.code === "RAISED_LANGUAGES").identityAction;
+  assert.equal(raisedLanguageAction.id, "change_raised_languages", "Admin must edit Raised languages, not Spoken languages");
+  assert.equal(raisedLanguageAction.command, "raised_languages", "Raised-language actions must route to the Genesis correction command");
   assert.equal(population.threads[0].reconciliation.state, "pending", "World reconciliation state must remain actionable in Threads");
   assert.equal(population.threads[0].findings.find((finding) => finding.code === "NAME").identityAction.id, "change_name");
   assert.equal(population.threads[0].health, "healthy", "healthy identity actions must not degrade health");
