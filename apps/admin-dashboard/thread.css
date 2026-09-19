@@ -27,6 +27,7 @@
 .thread-observatory-page{padding:18px}
 .thread-person-summary{font-size:13px;line-height:1.55;color:var(--muted);margin:0 0 10px;max-width:720px}
 .thread-identity-table{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.thread-identity-table .thread-person-fact.wide{grid-column:span 2}
 .thread-identity-table .thread-person-fact.long{grid-column:1/-1}
 .thread-identity-table .thread-person-fact.long strong{font-weight:550;line-height:1.55}
 .thread-empty-note{margin:0;padding:14px;border:1px dashed var(--border);border-radius:10px;color:var(--muted);font-size:11px;line-height:1.5;background:var(--surface-subtle)}
@@ -83,4 +84,4 @@
 .thread-image-dialog figcaption{font-size:10px;color:var(--muted)}
 .thread-image-close{position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:20px;cursor:pointer}
 @media(max-width:900px){.thread-identity-table{grid-template-columns:repeat(2,minmax(0,1fr))}.thread-fid-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:650px){.thread-observatory-page{padding:12px}.thread-identity-table,.thread-fid-visuals,.thread-fid-grid,.thread-fid-meta{grid-template-columns:1fr}.thread-identity-table .thread-person-fact.long{grid-column:auto}.thread-memory-track{gap:18px}}
+@media(max-width:650px){.thread-observatory-page{padding:12px}.thread-identity-table,.thread-fid-visuals,.thread-fid-grid,.thread-fid-meta{grid-template-columns:1fr}.thread-identity-table .thread-person-fact.long,.thread-identity-table .thread-person-fact.wide{grid-column:auto}.thread-memory-track{gap:18px}}

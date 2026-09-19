@@ -225,8 +225,8 @@ function disclosure(label, value, { open = false, prose = false } = {}) {
   details.append(content); return details;
 }
 
-function fact(label, value, { mono = false, long = false } = {}) {
-  const item = el("div", `thread-person-fact${long ? " long" : ""}`);
+function fact(label, value, { mono = false, long = false, wide = false } = {}) {
+  const item = el("div", `thread-person-fact${long ? " long" : ""}${wide ? " wide" : ""}`);
   item.append(el("span", "thread-person-label", label), el("strong", mono ? "mono" : null, value ?? "—"));
   return item;
 }
@@ -334,13 +334,13 @@ function identitySection(identity, threadId) {
     fact("Birth date", identity.birthDate),
     fact("Birth place", identity.birthPlace),
     fact("Lifecycle", identity.lifecycleStatus ? human(identity.lifecycleStatus) : null),
-    fact("Culture", valueOrNone(identity.culture)),
-    fact("Raised languages", valueOrNone(raised.languages)),
-    fact("Spoken languages", valueOrNone(identity.languages)),
-    fact("Origin", identity.originOrientation ? human(identity.originOrientation) : null),
+    fact("Genesis origin", identity.originOrientation ? human(identity.originOrientation) : null),
+    fact("Thread ID", threadId, { mono:true }),
+    fact("Culture", valueOrNone(identity.culture), { wide:true }),
     fact("Raised cultural context", raised.culturalContext, { long:true }),
     fact("Schooling / community", raised.schoolingOrCommunityContext, { long:true }),
-    fact("Thread ID", threadId, { mono:true }),
+    fact("Raised languages", valueOrNone(raised.languages), { wide:true }),
+    fact("Spoken languages", valueOrNone(identity.languages), { wide:true }),
   );
   wrap.append(grid);
   return wrap;
