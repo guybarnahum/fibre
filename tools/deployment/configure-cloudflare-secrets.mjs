@@ -22,6 +22,18 @@ function runtimeRequirementApplies() {
   return true;
 }
 
+export function operatorSecretsForMode(secrets, { noC2pa = false } = {}) {
+  if (!noC2pa) return secrets;
+  return Object.freeze(Object.fromEntries(Object.entries(secrets)
+    .filter(([serviceId]) => serviceId !== "content-credential-signer")
+    .map(([serviceId, names]) => [
+      serviceId,
+      Object.freeze(serviceId === "fibre-identity-authority"
+        ? names.filter((name) => name !== "C2PA_SIGNER_TOKEN")
+        : [...names]),
+    ])));
+}
+
 export function validateOperatorConfiguration({ values, secrets, runtimeConfig }) {
   const missing = [];
   for (const [serviceId, names] of Object.entries(secrets)) {
@@ -51,6 +63,7 @@ export async function configureCloudflareSecrets({
   environment,
   filePath,
   putSecrets,
+  noC2pa = false,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (typeof filePath !== "string" || filePath.trim() === "") throw new TypeError("--file <path> is required; no implicit .env is read");
@@ -58,7 +71,7 @@ export async function configureCloudflareSecrets({
   const source = await readFile(resolve(process.cwd(), filePath), "utf8");
   const values = parseOperatorEnv(source);
   const configs = await loadCloudflareWranglerConfigs(repoRoot);
-  const secrets = secretInventory(configs);
+  const secrets = operatorSecretsForMode(secretInventory(configs), { noC2pa });
   const runtimeConfig = runtimeConfigInventory(configs);
   const missing = validateOperatorConfiguration({ values, secrets, runtimeConfig });
   if (missing.length > 0) {
@@ -115,23 +128,26 @@ export function createWranglerSecretWriter({
 function parseArgs(argv) {
   let environment = null;
   let filePath = null;
+  let noC2pa = false;
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === "--env") environment = argv[++index] ?? null;
     else if (argv[index] === "--file") filePath = argv[++index] ?? null;
+    else if (argv[index] === "--no-c2pa") noC2pa = true;
     else throw new TypeError(`unsupported argument ${argv[index]}`);
   }
   if (!environment) throw new TypeError("--env <staging|production> is required");
   if (!filePath) throw new TypeError("--file <path> is required; no implicit .env is read");
-  return { environment, filePath };
+  return { environment, filePath, noC2pa };
 }
 
 async function main(argv) {
-  const { environment, filePath } = parseArgs(argv);
+  const { environment, filePath, noC2pa } = parseArgs(argv);
   const repoRoot = repoRootFrom(import.meta.url);
   const result = await configureCloudflareSecrets({
     repoRoot,
     environment,
     filePath,
+    noC2pa,
     putSecrets: createWranglerSecretWriter({
       cwd: repoRoot,
       onBootstrap: ({ serviceId, workerName }) => {
