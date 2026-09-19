@@ -7,6 +7,7 @@ import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
 import { createHttpContentCredentialSigner } from "#integrations/content-credentials/c2pa-http-signer.mjs";
 import { createFidCredentialCrypto } from "#integrations/fid-credentials/webcrypto.mjs";
+import { resolveCloudThreadFidSource } from "./cloud-thread-source.mjs";
 import {
   FidCardIssuanceStore,
   FidCardRegistry,
@@ -21,6 +22,59 @@ import {
 const TEMPLATE_VERSION = "fid-card-template-v0.3-ocean";
 const ASSET_ROOT = new URL("../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/", import.meta.url);
 const OUTPUT_ROOT = resolve(".fibre/fid-local-test");
+
+function parseArgs(argv) {
+  let threadId = null;
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index];
+    if (argument === "--thread_id") threadId = argv[++index] ?? null;
+    else if (argument.startsWith("--thread_id=")) threadId = argument.slice("--thread_id=".length);
+    else throw new TypeError(`unsupported argument ${argument}`);
+  }
+  if (threadId !== null && threadId.trim() === "") throw new TypeError("--thread_id requires a Thread ID");
+  return Object.freeze({ threadId:threadId?.trim() ?? null });
+}
+
+function deployedService(record, serviceId) {
+  const matches = (record?.deployments ?? []).filter((value) => value?.serviceId === serviceId);
+  if (matches.length !== 1 || typeof matches[0].baseUrl !== "string") {
+    throw new Error(`staging deployment evidence lacks exactly one ${serviceId} endpoint`);
+  }
+  return matches[0].baseUrl;
+}
+
+async function loadCloudThread(threadId) {
+  const deploymentPath = resolve(
+    process.env.FIBRE_CLOUDFLARE_DEPLOYMENT_RECORD?.trim()
+      || ".fibre/cloudflare/staging/deployment.json",
+  );
+  let deployment;
+  try {
+    deployment = JSON.parse(await readFile(deploymentPath, "utf8"));
+  } catch (cause) {
+    throw new Error(`--thread_id requires readable staging deployment evidence at ${deploymentPath}`, { cause });
+  }
+  if (deployment?.environment !== "staging") {
+    throw new Error("--thread_id requires staging Cloudflare deployment evidence");
+  }
+  return resolveCloudThreadFidSource({
+    threadId,
+    worldBaseUrl:deployedService(deployment, "world-kernel"),
+    presentationBaseUrl:deployedService(deployment, "thread-presentation"),
+    viewerOrigin:deployment.externalViewerOrigin,
+    privateToken:process.env.FIBRE_PRIVATE_TOKEN,
+  });
+}
+
+function ageAt(birthDate, at) {
+  if (birthDate === null) return null;
+  const birth = new Date(`${birthDate}T00:00:00Z`);
+  const date = new Date(at);
+  let age = date.getUTCFullYear() - birth.getUTCFullYear();
+  if (date.getUTCMonth() < birth.getUTCMonth()
+    || (date.getUTCMonth() === birth.getUTCMonth() && date.getUTCDate() < birth.getUTCDate())) age -= 1;
+  return age;
+}
 
 function syntheticPhoto() {
   const width = 320;
@@ -70,7 +124,8 @@ function syntheticPhoto() {
   return Object.freeze({ width, height, rgba });
 }
 
-async function loadPhoto() {
+async function loadPhoto(cloudThread) {
+  if (cloudThread !== null) return decodePngRgba(cloudThread.photo.bytes);
   const path = process.env.FID_LOCAL_PHOTO?.trim();
   if (!path) return syntheticPhoto();
   return decodePngRgba(await readFile(resolve(path)));
@@ -118,10 +173,14 @@ async function contentCredentialSigner() {
   });
 }
 
-const THREAD_ID = process.env.FID_LOCAL_THREAD_ID?.trim() || "thr_local_ocean_fid";
-const FIN = process.env.FID_LOCAL_FIN?.trim() || "8PKH-A4-VH5R";
-const DISPLAY_NAME = process.env.FID_LOCAL_NAME?.trim() || "Mira Vale";
-const BIRTH_DATE = process.env.FID_LOCAL_BIRTH_DATE?.trim() || "1996-03-18";
+const { threadId:requestedThreadId } = parseArgs(process.argv.slice(2));
+const CLOUD_THREAD = requestedThreadId === null ? null : await loadCloudThread(requestedThreadId);
+const THREAD_ID = CLOUD_THREAD?.threadId ?? process.env.FID_LOCAL_THREAD_ID?.trim() ?? "thr_local_ocean_fid";
+const FIN = CLOUD_THREAD?.civilRegistration.fibreIdentityNumber ?? process.env.FID_LOCAL_FIN?.trim() ?? "8PKH-A4-VH5R";
+const DISPLAY_NAME = CLOUD_THREAD?.displayName ?? process.env.FID_LOCAL_NAME?.trim() ?? "Mira Vale";
+const BIRTH_DATE = CLOUD_THREAD === null
+  ? process.env.FID_LOCAL_BIRTH_DATE?.trim() ?? "1996-03-18"
+  : CLOUD_THREAD.birthDate;
 const tempRoot = await mkdtemp(join(tmpdir(), "fibre-fid-ocean-"));
 
 const storage = {
@@ -134,27 +193,42 @@ const admissions = new FidPhotoAdmissionStore(storage);
 
 try {
   const [photo, template, signer] = await Promise.all([
-    loadPhoto(),
+    loadPhoto(CLOUD_THREAD),
     loadTemplate(),
     contentCredentialSigner(),
   ]);
-  const registration = buildFibreCivilRegistration({
-    threadId:THREAD_ID,
-    fibreIdentityNumber:FIN,
+  const civil = CLOUD_THREAD?.civilRegistration ?? {
     registeredAt:"2026-09-19T12:00:00.000Z",
     birthEventRef:"evt_local_ocean_fid",
     worldRef:"world_local_ocean_fid",
+  };
+  const registration = buildFibreCivilRegistration({
+    threadId:THREAD_ID,
+    fibreIdentityNumber:FIN,
+    registeredAt:civil.registeredAt,
+    birthEventRef:civil.birthEventRef,
+    worldRef:civil.worldRef,
   });
+  if (CLOUD_THREAD !== null
+    && (registration.registrationId !== civil.registrationId
+      || registration.registrationDigest !== civil.registrationDigest)) {
+    throw new Error("cloud Thread civil registration did not reconstruct exactly");
+  }
+  const visualRef = CLOUD_THREAD?.visualIdentity.referenceObjectRef ?? "visual_local_ocean";
+  const photoRef = CLOUD_THREAD?.photo.objectRef ?? "fid_photo_local_ocean";
+  const provenanceRef = CLOUD_THREAD?.photo.provenanceRef ?? "receipt_local_ocean";
   const source = {
     role:"official_id_photo",
     threadId:THREAD_ID,
-    candidatePhotoRef:"fid_photo_local_ocean",
+    candidatePhotoRef:photoRef,
     candidatePhotoDigest:fidRenderPhotoDigest(photo),
-    canonicalVisualReferenceRef:"visual_local_ocean",
-    canonicalVisualReferenceDigest:`sha256:${"b".repeat(64)}`,
-    derivationReceiptRef:"receipt_local_ocean",
-    sourceReferences:["visual_local_ocean"],
-    targetAgeYears:30,
+    canonicalVisualReferenceRef:visualRef,
+    canonicalVisualReferenceDigest:CLOUD_THREAD?.visualIdentity.digest ?? `sha256:${"b".repeat(64)}`,
+    derivationReceiptRef:provenanceRef,
+    sourceReferences:CLOUD_THREAD === null
+      ? [visualRef]
+      : [...new Set([visualRef, ...CLOUD_THREAD.photo.sourceReferences, provenanceRef])],
+    targetAgeYears:ageAt(BIRTH_DATE, "2026-09-19T12:01:00.000Z"),
   };
   const inspection = {
     faceCount:1,
@@ -231,6 +305,8 @@ try {
   ]);
 
   console.log("LOCAL OCEAN FIN CARD: OK");
+  console.log(`source: ${CLOUD_THREAD === null ? "local fixture" : `staging Thread ${THREAD_ID}`}`);
+  if (CLOUD_THREAD !== null) console.log(`photo: ${CLOUD_THREAD.photo.objectRef}`);
   console.log(`template: ${TEMPLATE_VERSION}`);
   console.log(`credentialId: ${result.credential.credentialId}`);
   console.log(`front: ${join(OUTPUT_ROOT, "front.png")}`);
