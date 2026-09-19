@@ -115,13 +115,14 @@
   font-size:10px;
   vertical-align:middle;
 }
-.thread-population-portrait-column,
-.thread-population-portrait-cell {
+.thread-population-table th.thread-population-portrait-column,
+.thread-population-table td.thread-population-portrait-cell {
   width:34px;
   min-width:34px;
+  max-width:34px;
   padding-left:4px;
   padding-right:0;
-  text-align:center;
+  text-align:left;
 }
 .thread-population-table td:nth-child(2) { padding-left:0; }
 .thread-population-person { display:flex; align-items:center; gap:8px; min-width:190px; }
