@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 
@@ -27,6 +27,23 @@ export const CLOUDFLARE_DEPLOY_ORDER = Object.freeze([
   "fibre-identity-authority",
   "birth-center",
 ]);
+
+export function selectedCloudflareDeployOrder({ noC2pa = false } = {}) {
+  return Object.freeze(noC2pa
+    ? CLOUDFLARE_DEPLOY_ORDER.filter((serviceId) => serviceId !== "content-credential-signer")
+    : [...CLOUDFLARE_DEPLOY_ORDER]);
+}
+
+export function configureFiaForNoC2pa(config) {
+  const resolved = structuredClone(config);
+  resolved.vars ??= {};
+  resolved.vars.FIA_CONTENT_CREDENTIAL_MODE = "disabled";
+  delete resolved.vars.C2PA_SIGNER_URL;
+  delete resolved.vars.C2PA_SIGNER_ID;
+  delete resolved.vars.C2PA_TRUST_POLICY;
+  resolved.services = (resolved.services ?? []).filter((binding) => binding?.binding !== "CONTENT_CREDENTIAL_SIGNER");
+  return resolved;
+}
 
 const STATEFUL_DO_SERVICES = new Set(["world-kernel", "fibre-identity-authority", "birth-center"]);
 const HEALTH_RETRY_ATTEMPTS = 20;
@@ -231,6 +248,7 @@ export async function deployCloudflareStack({
   provision,
   client,
   wait = delay,
+  noC2pa = false,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (typeof validateRepository !== "function") throw new TypeError("validateRepository callback is required");
@@ -239,24 +257,30 @@ export async function deployCloudflareStack({
 
   await validateRepository();
   await client.assertAuthenticated();
-  if (typeof client.assertContainersAvailable !== "function") {
-    throw new TypeError("Cloudflare deployment client must verify Containers access");
+  if (!noC2pa) {
+    if (typeof client.assertContainersAvailable !== "function") {
+      throw new TypeError("Cloudflare deployment client must verify Containers access");
+    }
+    await client.assertContainersAvailable();
   }
-  await client.assertContainersAvailable();
   const resourceState = await provision();
   if (resourceState?.environment !== env) throw new Error(`provisioned Cloudflare state environment mismatch: ${String(resourceState?.environment)}`);
 
   const configs = await loadCloudflareWranglerConfigs(repoRoot);
   const requiredSecrets = secretInventory(configs);
-  for (const serviceId of CLOUDFLARE_DEPLOY_ORDER) {
+  const deployOrder = selectedCloudflareDeployOrder({ noC2pa });
+  for (const serviceId of deployOrder) {
     const workerName = resourceState.resources.deployManaged.workers[serviceId];
     const remote = await client.listSecretNames(workerName);
-    const missing = missingRequiredSecretNames(requiredSecrets[serviceId], remote);
+    const required = noC2pa && serviceId === "fibre-identity-authority"
+      ? requiredSecrets[serviceId].filter((name) => name !== "C2PA_SIGNER_TOKEN")
+      : requiredSecrets[serviceId];
+    const missing = missingRequiredSecretNames(required, remote);
     if (missing.length > 0) throw new Error(`${serviceId} is missing required Cloudflare secrets: ${missing.join(", ")}`);
   }
 
   const resolvedConfigs = {};
-  for (const serviceId of CLOUDFLARE_DEPLOY_ORDER) {
+  for (const serviceId of deployOrder) {
     const relativePath = resourceState.wranglerConfigs?.[serviceId];
     if (!relativePath) throw new Error(`resolved Wrangler config is missing for ${serviceId}`);
     const configPath = resolve(repoRoot, relativePath);
@@ -266,20 +290,28 @@ export async function deployCloudflareStack({
     };
   }
 
-  const signerConfig = resolvedConfigs["content-credential-signer"].config;
-  const signerId = nonEmpty("C2PA signer ID", signerConfig.vars?.C2PA_SIGNER_ID);
-  const trustPolicy = nonEmpty("C2PA trust policy", signerConfig.vars?.C2PA_TRUST_POLICY);
-  if (!["fibre_signature_only", "c2pa_trust_list"].includes(trustPolicy)) {
-    throw new Error(`unsupported cloud C2PA trust policy ${trustPolicy}`);
-  }
-  const fiaSigner = (resolvedConfigs["fibre-identity-authority"].config.services ?? [])
-    .find((binding) => binding?.binding === "CONTENT_CREDENTIAL_SIGNER");
-  if (fiaSigner?.service !== signerConfig.name) {
-    throw new Error("FIA CONTENT_CREDENTIAL_SIGNER must target the deployed Fibre signer");
+  let signerId = null;
+  let trustPolicy = null;
+  if (noC2pa) {
+    const fia = resolvedConfigs["fibre-identity-authority"];
+    fia.config = configureFiaForNoC2pa(fia.config);
+    await writeFile(fia.path, `${JSON.stringify(fia.config, null, 2)}\n`, { mode:0o600 });
+  } else {
+    const signerConfig = resolvedConfigs["content-credential-signer"].config;
+    signerId = nonEmpty("C2PA signer ID", signerConfig.vars?.C2PA_SIGNER_ID);
+    trustPolicy = nonEmpty("C2PA trust policy", signerConfig.vars?.C2PA_TRUST_POLICY);
+    if (!["fibre_signature_only", "c2pa_trust_list"].includes(trustPolicy)) {
+      throw new Error(`unsupported cloud C2PA trust policy ${trustPolicy}`);
+    }
+    const fiaSigner = (resolvedConfigs["fibre-identity-authority"].config.services ?? [])
+      .find((binding) => binding?.binding === "CONTENT_CREDENTIAL_SIGNER");
+    if (fiaSigner?.service !== signerConfig.name) {
+      throw new Error("FIA CONTENT_CREDENTIAL_SIGNER must target the deployed Fibre signer");
+    }
   }
 
   const deployments = [];
-  for (const serviceId of CLOUDFLARE_DEPLOY_ORDER) {
+  for (const serviceId of deployOrder) {
     const workerName = resourceState.resources.deployManaged.workers[serviceId];
     const resolved = resolvedConfigs[serviceId];
     const deployed = await client.deployService({
@@ -313,6 +345,7 @@ export async function deployCloudflareStack({
 
   return Object.freeze({
     environment: env,
+    contentCredentialMode: noC2pa ? "disabled" : "c2pa",
     deployments: Object.freeze(deployments),
     acceptance,
     viewer,
@@ -330,21 +363,24 @@ export async function runCommand(command, args, { cwd = process.cwd() } = {}) {
 
 function parseArgs(argv) {
   let environment = null;
+  let noC2pa = false;
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === "--env") environment = argv[++index] ?? null;
+    else if (argv[index] === "--no-c2pa") noC2pa = true;
     else throw new TypeError(`unsupported argument ${argv[index]}`);
   }
   if (!environment) throw new TypeError("--env <staging|production> is required");
-  return { environment };
+  return { environment, noC2pa };
 }
 
 if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
-  const { environment } = parseArgs(process.argv.slice(2));
+  const { environment, noC2pa } = parseArgs(process.argv.slice(2));
   const repoRoot = repoRootFrom(import.meta.url);
   const client = createWranglerDeploymentClient({ cwd: repoRoot });
   const result = await deployCloudflareStack({
     repoRoot,
     environment,
+    noC2pa,
     client,
     validateRepository: () => runCommand("npm", ["run", "validate"], { cwd: repoRoot }),
     provision: () => provisionCloudflareResources({
