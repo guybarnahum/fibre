@@ -61,6 +61,11 @@ test("generated runtime Wrangler configs retain source Worker entry points", asy
       );
       assert.equal(resolvedMain(repoRoot, generatedConfigPath, generated), expected);
       assert.notEqual(generated.main, "./worker.mjs");
+      for (const [index, container] of (configs[serviceId].containers ?? []).entries()) {
+        const actualImage = resolve(dirname(resolve(repoRoot, generatedConfigPath)), generated.containers[index].image);
+        const expectedImage = resolve(repoRoot, dirname(CLOUDFLARE_SERVICE_CONFIGS[serviceId]), container.image);
+        assert.equal(actualImage, expectedImage);
+      }
     }
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
