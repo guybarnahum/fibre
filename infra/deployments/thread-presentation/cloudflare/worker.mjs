@@ -324,12 +324,14 @@ export default {
     const identityWriteResponse = await identityWriteApi.fetch(request);
     if (identityWriteResponse !== null) return identityWriteResponse;
 
-    const fidWriteApi = createFidLifecycleWriteApi({
-      reconciler:createFidLifecycle(env, infra, presentationServer),
-      privateToken:env.FIBRE_PRIVATE_TOKEN ?? null,
-    });
-    const fidWriteResponse = await fidWriteApi.fetch(request);
-    if (fidWriteResponse !== null) return fidWriteResponse;
+    if (url.pathname === "/internal/fid/reconcile") {
+      const fidWriteApi = createFidLifecycleWriteApi({
+        reconciler:createFidLifecycle(env, infra, presentationServer),
+        privateToken:env.FIBRE_PRIVATE_TOKEN ?? null,
+      });
+      const fidWriteResponse = await fidWriteApi.fetch(request);
+      if (fidWriteResponse !== null) return fidWriteResponse;
+    }
 
     const visualWriteApi = createVisualPublicationWriteApi({
       reconciler: createVisualReconciler(env, infra, presentationServer, activityRecorder),
