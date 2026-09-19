@@ -117,14 +117,14 @@
 }
 .thread-population-table th.thread-population-portrait-column,
 .thread-population-table td.thread-population-portrait-cell {
-  width:34px;
-  min-width:34px;
-  max-width:34px;
+  width:40px;
+  min-width:40px;
+  max-width:40px;
   padding-left:4px;
   padding-right:0;
   text-align:left;
 }
-.thread-population-table td:nth-child(2) { padding-left:0; }
+.thread-population-table td:nth-child(2) { padding-left:4px; }
 .thread-population-person { display:flex; align-items:center; gap:8px; min-width:190px; }
 .thread-population-person > div { min-width:0; }
 .thread-population-portrait {
