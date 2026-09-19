@@ -32,6 +32,13 @@ export function relocateWranglerMain(config, {
     if (relocatedImage === "") relocatedImage = `./${sourceImage.split(/[\\/]/u).at(-1)}`;
     else if (!relocatedImage.startsWith(".")) relocatedImage = `./${relocatedImage}`;
     container.image = relocatedImage;
+    if (typeof container.image_build_context === "string" && container.image_build_context.trim().startsWith(".")) {
+      const sourceContext = resolve(dirname(sourceConfig), container.image_build_context);
+      let relocatedContext = portablePath(relative(dirname(generatedConfig), sourceContext));
+      if (relocatedContext === "") relocatedContext = ".";
+      else if (!relocatedContext.startsWith(".")) relocatedContext = `./${relocatedContext}`;
+      container.image_build_context = relocatedContext;
+    }
   }
   return config;
 }

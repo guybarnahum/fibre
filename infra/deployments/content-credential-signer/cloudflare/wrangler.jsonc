@@ -18,6 +18,7 @@
     {
       "class_name": "FibreContentCredentialSignerContainer",
       "image": "./Dockerfile",
+      "image_build_context": "../../../..",
       "max_instances": 1
     }
   ],
