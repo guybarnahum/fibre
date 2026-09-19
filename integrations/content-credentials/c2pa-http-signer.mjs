@@ -11,6 +11,7 @@ import {
 
 export const C2PA_HTTP_TRUST_POLICIES = Object.freeze([
   "development_signature_only",
+  "fibre_signature_only",
   "c2pa_trust_list",
 ]);
 
@@ -115,24 +116,28 @@ function assertExpectedSignerId(actual, expected, { phase }) {
   }
 }
 
-function assertProductionTrust(payload, { trustPolicy }) {
-  if (trustPolicy !== "c2pa_trust_list") return;
+function assertConfiguredTrust(payload, { trustPolicy }) {
+  if (trustPolicy === "development_signature_only") return;
   const trust = payload?.trust;
+  const publicTrust = trustPolicy === "c2pa_trust_list";
+  const label = publicTrust ? "C2PA trust-list" : "Fibre signer";
   if (!trust || typeof trust !== "object" || Array.isArray(trust)) {
     throw terminalCredentialError(
-      "content credential verifier did not return C2PA trust-list evidence",
+      `content credential verifier did not return ${label} evidence`,
       { phase: "credential_verification" },
     );
   }
-  if (trust.policy !== "c2pa_trust_list" || typeof trust.trusted !== "boolean") {
+  if (trust.policy !== trustPolicy || typeof trust.trusted !== "boolean") {
     throw terminalCredentialError(
-      "content credential verifier returned invalid C2PA trust-list evidence",
+      `content credential verifier returned invalid ${label} evidence`,
       { phase: "credential_verification" },
     );
   }
   if (payload.valid === true && trust.trusted !== true) {
     throw terminalCredentialError(
-      "content credential signature is valid but signer is not trusted by the C2PA Trust List",
+      publicTrust
+        ? "content credential signature is valid but signer is not trusted by the C2PA Trust List"
+        : "content credential signature is valid but signer is not trusted by Fibre",
       { phase: "credential_verification" },
     );
   }
@@ -218,8 +223,8 @@ export function createHttpContentCredentialSigner({
   const normalizedBase = normalizeBaseUrl(baseUrl, { trustPolicy: normalizedTrustPolicy });
   const normalizedSignerId = nonEmpty("content credential signer id", signerId);
   const normalizedAuthorizationToken = optionalToken("content credential authorization token", authorizationToken);
-  if (normalizedTrustPolicy === "c2pa_trust_list" && normalizedAuthorizationToken === null) {
-    throw new TypeError("production C2PA trust-list signer requires an authorization token");
+  if (normalizedTrustPolicy !== "development_signature_only" && normalizedAuthorizationToken === null) {
+    throw new TypeError(`${normalizedTrustPolicy} signer requires an authorization token`);
   }
   if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl must be a function");
 
@@ -262,7 +267,7 @@ export function createHttpContentCredentialSigner({
         authorizationToken: normalizedAuthorizationToken,
       });
       assertExpectedSignerId(payload?.signerId, normalizedSignerId, { phase: "credential_verification" });
-      assertProductionTrust(payload, { trustPolicy: normalizedTrustPolicy });
+      assertConfiguredTrust(payload, { trustPolicy: normalizedTrustPolicy });
       const verification = {
         valid: payload.valid,
         format: payload.format,

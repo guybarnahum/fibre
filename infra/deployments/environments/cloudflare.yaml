@@ -87,8 +87,20 @@ integrations:
       presentationReferenceDefault: true
     secrets:
       apiKey: BFL_API_KEY
+  c2pa-node-fibre:
+    kind: content-credentials.signer
+    provider: c2pa-node
+    config:
+      signerId: fibre-c2pa-self-v1
+      trustPolicy: fibre_signature_only
+    environment:
+      serviceToken: C2PA_SIGNER_TOKEN
 
 services:
+  content-credential-signer:
+    runtime: cloudflare
+    integrations:
+      signer: c2pa-node-fibre
   world-kernel:
     runtime: cloudflare
     infra: world-cloudflare
