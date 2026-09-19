@@ -59,6 +59,7 @@ export {
   FID_C2PA_ASSERTION_LABEL,
   buildFidC2paAssertion,
   credentialAndStoreFidCard,
+  storeFidCardWithoutContentCredentials,
   verifyFidC2paSide,
 } from "./fid-card-credentialing.mjs";
 
