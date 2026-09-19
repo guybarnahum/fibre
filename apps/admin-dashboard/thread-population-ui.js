@@ -1,5 +1,6 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { decorateActionButton, iconForIdentityAction } from "./fa-icons.js";
+import { reissueFidCard } from "./thread-observatory.js";
 
 const $ = (selector) => document.querySelector(selector);
 const view = $("#threads-view");
@@ -199,6 +200,43 @@ function button(label, spec, thread) {
   return control;
 }
 
+function reissueFidButton(thread) {
+  const label = "Re-issue FIN Card";
+  const control = document.createElement("button");
+  control.type = "button";
+  control.className = "secondary";
+  decorateActionButton(control, {
+    icon:"id-card",
+    label,
+    tooltip:"Cut a new FIN Card from the current authoritative Thread identity",
+    iconOnly:true,
+  });
+  control.addEventListener("click", (event) => {
+    event.stopPropagation();
+    openThreadActionDialog({
+      threadId:thread.threadId,
+      threadName:thread.identity?.name ?? null,
+      label,
+      eyebrow:"Fibre Identity Card",
+      description:"Cut a new FIN Card from the current authoritative Thread identity. The FIN and Thread identity do not change; the previous card remains in history.",
+      onBusyChange:setPopulationControlsDisabled,
+      run:async () => {
+        const result = await reissueFidCard(thread.threadId);
+        const credential = result?.credential ?? null;
+        $("#chain-summary").textContent = credential
+          ? `Re-issued FIN Card for ${thread.identity?.name ?? "Unnamed Thread"} · revision ${credential.revision}.`
+          : result?.state === "derivation_requested"
+            ? `FIN Card reissue started for ${thread.identity?.name ?? "Unnamed Thread"} · official ID photo is being prepared.`
+            : `FIN Card reissue accepted for ${thread.identity?.name ?? "Unnamed Thread"}.`;
+        window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued", {
+          detail:{ threadId:thread.threadId, result },
+        }));
+      },
+    });
+  });
+  return control;
+}
+
 function actionCell(thread) {
   const cell = document.createElement("td");
   cell.className = "thread-population-actions";
@@ -213,6 +251,7 @@ function actionCell(thread) {
 
   const controls = document.createElement("div");
   controls.className = "thread-action-stack";
+  controls.append(reissueFidButton(thread));
   for (const action of identityActions(thread)) {
     const label = action.label ?? human(action.id);
     const finding = (thread.findings ?? []).find((entry) => entry?.identityAction?.id === action.id) ?? null;
