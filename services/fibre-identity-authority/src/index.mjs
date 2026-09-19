@@ -82,3 +82,5 @@ export {
   FidCivilRegistrationNotFoundError,
   createFibreIdentityAuthority,
 } from "./fibre-identity-authority.mjs";
+
+export { createFidCardIssuanceExecutor } from "./fid-card-issuance-executor.mjs";

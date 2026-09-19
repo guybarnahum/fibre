@@ -138,7 +138,7 @@ test("Slice C render digests move when authorized identity, admitted photo, or t
     workflow: w,
     photoAdmission: admission(w, p),
     photo: p,
-    template: createFidCardTemplate({ version: "fid-card-template-v0.3" }),
+    template: createFidCardTemplate({ version: "fid-card-template-v0.4" }),
   });
   assert.equal(templateRender.frontRenderDigest, baseline.frontRenderDigest);
   assert.notEqual(templateRender.backRenderDigest, baseline.backRenderDigest);

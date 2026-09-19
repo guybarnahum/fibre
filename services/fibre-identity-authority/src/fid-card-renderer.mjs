@@ -4,7 +4,7 @@ import { deflateSync } from "node:zlib";
 import { normalizeFidIssuanceWorkflowRecord } from "./fid-card-issuance-domain.mjs";
 import { assertFidPhotoAdmissionReceipt } from "./fid-photo-admission.mjs";
 
-export const FID_CARD_TEMPLATE_VERSION = "fid-card-template-v0.2";
+export const FID_CARD_TEMPLATE_VERSION = "fid-card-template-v0.3";
 export const FID_CARD_SIZE = Object.freeze({ width: 856, height: 540 });
 
 const GLYPHS = Object.freeze({
@@ -83,6 +83,43 @@ function canonical(value) {
   if (value === null || typeof value !== "object") return value;
   if (Array.isArray(value)) return value.map(canonical);
   return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]));
+}
+
+function cleanIdentityText(value) {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+function identitySnapshotFor(workflow, authorizedIdentity) {
+  const base = {
+    credentialId: workflow.proposedCredentialId,
+    revision: workflow.proposedRevision,
+    threadId: workflow.threadId,
+    fibreIdentityNumber: workflow.fibreIdentityNumber,
+    registrationId: workflow.registrationId,
+    civilRegistrationDigest: workflow.civilRegistrationDigest,
+    requestedAt: workflow.requestedAt,
+  };
+  if (authorizedIdentity == null) return Object.freeze(base);
+  if (typeof authorizedIdentity !== "object" || Array.isArray(authorizedIdentity)) {
+    throw new TypeError("FID authorized identity is invalid");
+  }
+  if (authorizedIdentity.threadId !== undefined && authorizedIdentity.threadId !== workflow.threadId) {
+    throw new TypeError("FID authorized identity belongs to a different Thread");
+  }
+  if (authorizedIdentity.fibreIdentityNumber != null
+    && authorizedIdentity.fibreIdentityNumber !== workflow.fibreIdentityNumber) {
+    throw new TypeError("FID authorized identity has a different FIN");
+  }
+  const displayName = cleanIdentityText(authorizedIdentity.displayName);
+  const birthDate = cleanIdentityText(authorizedIdentity.birthDate);
+  if (birthDate !== null && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+    throw new TypeError("FID authorized birth date must be YYYY-MM-DD");
+  }
+  return Object.freeze({
+    ...base,
+    displayName,
+    dateField: birthDate === null ? null : Object.freeze({ kind: "birth_date", value: birthDate }),
+  });
 }
 
 function rgbaSurface(width, height, color = [0, 0, 0, 0]) {
@@ -280,7 +317,13 @@ export function fidRenderPhotoDigest(photo) {
   return sha256(Buffer.concat([dimensions, Buffer.from(value.rgba)]));
 }
 
-export function renderFidCard({ workflow: candidateWorkflow, photoAdmission: candidateAdmission, photo, template = createFidCardTemplate() }) {
+export function renderFidCard({
+  workflow: candidateWorkflow,
+  photoAdmission: candidateAdmission,
+  photo,
+  authorizedIdentity = null,
+  template = createFidCardTemplate(),
+}) {
   const workflow = normalizeFidIssuanceWorkflowRecord(candidateWorkflow);
   const admission = assertFidPhotoAdmissionReceipt(candidateAdmission);
   if (admission.decision !== "accepted") throw new TypeError("FID renderer requires an accepted photo admission");
@@ -297,15 +340,7 @@ export function renderFidCard({ workflow: candidateWorkflow, photoAdmission: can
     if (layer.width !== FID_CARD_SIZE.width || layer.height !== FID_CARD_SIZE.height) throw new TypeError(`FID template ${name} has unsupported dimensions`);
   }
 
-  const identitySnapshot = Object.freeze({
-    credentialId: workflow.proposedCredentialId,
-    revision: workflow.proposedRevision,
-    threadId: workflow.threadId,
-    fibreIdentityNumber: workflow.fibreIdentityNumber,
-    registrationId: workflow.registrationId,
-    civilRegistrationDigest: workflow.civilRegistrationDigest,
-    requestedAt: workflow.requestedAt,
-  });
+  const identitySnapshot = identitySnapshotFor(workflow, authorizedIdentity);
   const identitySnapshotDigest = sha256(Buffer.from(JSON.stringify(canonical(identitySnapshot))));
   const materialDigest = sha256(Buffer.from(JSON.stringify(canonical({
     templateVersion: template.version,
@@ -328,10 +363,14 @@ export function renderFidCard({ workflow: candidateWorkflow, photoAdmission: can
   drawText(front, workflow.fibreIdentityNumber, FRONT_LAYOUT.bodyX, 164, 5, CARD_PALETTE.ink);
   rect(front, FRONT_LAYOUT.bodyX, 222, FRONT_LAYOUT.right - FRONT_LAYOUT.bodyX, 2, CARD_PALETTE.paperWarm);
 
-  drawText(front, "CREDENTIAL", FRONT_LAYOUT.bodyX, 258, 2, CARD_PALETTE.inkSoft);
-  drawText(front, workflow.proposedCredentialId.slice(-16), FRONT_LAYOUT.bodyX, 286, 2, CARD_PALETTE.ink);
-  drawText(front, "REVISION", FRONT_LAYOUT.bodyX, 334, 2, CARD_PALETTE.inkSoft);
-  drawText(front, String(workflow.proposedRevision).padStart(2, "0"), FRONT_LAYOUT.bodyX, 362, 3, CARD_PALETTE.ink);
+  if (identitySnapshot.displayName !== undefined && identitySnapshot.displayName !== null) {
+    drawText(front, "NAME", FRONT_LAYOUT.bodyX, 250, 2, CARD_PALETTE.inkSoft);
+    drawText(front, identitySnapshot.displayName, FRONT_LAYOUT.bodyX, 278, 2, CARD_PALETTE.ink);
+  }
+  if (identitySnapshot.dateField !== undefined && identitySnapshot.dateField !== null) {
+    drawText(front, identitySnapshot.dateField.kind === "birth_date" ? "BIRTH DATE" : "ENTRY DATE", FRONT_LAYOUT.bodyX, 330, 2, CARD_PALETTE.inkSoft);
+    drawText(front, identitySnapshot.dateField.value, FRONT_LAYOUT.bodyX, 358, 3, CARD_PALETTE.ink);
+  }
   drawText(front, "VERIFY IDENTITY SNAPSHOT", FRONT_LAYOUT.bodyX, 418, 2, CARD_PALETTE.inkSoft);
   fingerprint(front, identitySnapshotDigest, FRONT_LAYOUT.bodyX, 452, 304, 14, CARD_PALETTE.inkSoft);
 
@@ -357,6 +396,7 @@ export function renderFidCard({ workflow: candidateWorkflow, photoAdmission: can
     templateVersion: template.version,
     credentialId: workflow.proposedCredentialId,
     revision: workflow.proposedRevision,
+    identitySnapshot,
     identitySnapshotDigest,
     photoAdmissionId: admission.admissionId,
     frontRenderDigest: sha256(frontPng),

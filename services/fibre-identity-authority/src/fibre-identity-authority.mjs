@@ -20,8 +20,10 @@ function assertCivilRegistry(civilRegistry) {
   if (civilRegistry === null || typeof civilRegistry !== "object" || Array.isArray(civilRegistry)) {
     throw new TypeError("Fibre Identity Authority requires a Civil Registry service");
   }
-  if (typeof civilRegistry.lookupByThreadId !== "function") {
-    throw new TypeError("Civil Registry service must implement lookupByThreadId(threadId)");
+  for (const method of ["lookupByThreadId", "lookupByFin"]) {
+    if (typeof civilRegistry[method] !== "function") {
+      throw new TypeError(`Civil Registry service must implement ${method}()`);
+    }
   }
   return civilRegistry;
 }
@@ -42,6 +44,16 @@ function workflowIdOnly(value) {
     throw new TypeError("FID photo request must contain exactly: workflowId");
   }
   return value.workflowId;
+}
+
+function prepareRequest(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new TypeError("FID cut request is required");
+  }
+  const threadId = value.threadId == null ? null : nonEmpty("FID cut threadId", value.threadId);
+  const fin = value.fin == null ? null : nonEmpty("FID cut FIN", value.fin);
+  if ((threadId === null) === (fin === null)) throw new TypeError("FID cut request requires exactly one of threadId or fin");
+  return { threadId, fin, idempotencyKey: nonEmpty("FID cut idempotencyKey", value.idempotencyKey) };
 }
 
 function revocationRequest(value) {
@@ -90,6 +102,37 @@ export function createFibreIdentityAuthority({
       request: normalizedRequest,
       civilRegistration: registration,
       requestedAt: now(),
+    });
+  }
+
+  function prepareFidCard(request) {
+    const prepared = prepareRequest(request);
+    const registration = prepared.threadId === null
+      ? civil.lookupByFin(prepared.fin)
+      : civil.lookupByThreadId(prepared.threadId);
+    if (registration === null) {
+      throw new FidCivilRegistrationNotFoundError(
+        prepared.threadId === null ? `FIN ${prepared.fin} has no Fibre civil registration` : `Thread ${prepared.threadId} has no Fibre civil registration`,
+      );
+    }
+
+    const existing = workflows.getByIdempotencyKey(prepared.idempotencyKey, { required: false });
+    if (existing !== null) {
+      if (existing.workflow.threadId !== registration.threadId) {
+        throw new FidIssuanceIdempotencyConflictError(
+          `FID issuance idempotency key ${prepared.idempotencyKey} is already bound to a different Thread`,
+        );
+      }
+      return Object.freeze({ ...existing, created: false });
+    }
+    if (typeof registry?.listByFin !== "function") {
+      throw new TypeError("FID credential registry is required for automatic issuance");
+    }
+    const reason = registry.listByFin(registration.fibreIdentityNumber).length === 0 ? "initial" : "replacement";
+    return issueFidCard({
+      threadId: registration.threadId,
+      reason,
+      idempotencyKey: prepared.idempotencyKey,
     });
   }
 
@@ -201,5 +244,5 @@ export function createFibreIdentityAuthority({
     });
   }
 
-  return Object.freeze({ issueFidCard, revokeFidCard, admitFidPhoto, ensureFidPhoto });
+  return Object.freeze({ issueFidCard, prepareFidCard, revokeFidCard, admitFidPhoto, ensureFidPhoto });
 }

@@ -30,9 +30,10 @@ function credentialView(registry, entry) {
  * Cryptographic keys, protected credential bodies, and provider-specific
  * storage details deliberately never cross this boundary.
  */
-export function createFidService({ authority, registry, issuanceStore, photoAdmissionStore = null } = {}) {
+export function createFidService({ authority, registry, issuanceStore, photoAdmissionStore = null, issuanceExecutor = null } = {}) {
   requireMethod(authority, "issueFidCard", "FibreIdentityAuthority");
   requireMethod(authority, "revokeFidCard", "FibreIdentityAuthority");
+  if (issuanceExecutor !== null) requireMethod(issuanceExecutor, "cut", "FidCardIssuanceExecutor");
   for (const method of ["listByThreadId", "getActiveByFin", "getIssuanceByCredentialId"]) {
     requireMethod(registry, method, "FidCardRegistry");
   }
@@ -105,6 +106,10 @@ export function createFidService({ authority, registry, issuanceStore, photoAdmi
     inspectThread,
     getActivePresentation,
     issueFidCard: (request) => authority.issueFidCard(request),
+    cutFidCard: (request) => {
+      if (issuanceExecutor === null) throw new TypeError("FID service issuance executor is not configured");
+      return issuanceExecutor.cut(request);
+    },
     revokeFidCard: (request) => authority.revokeFidCard(request),
   });
 }
