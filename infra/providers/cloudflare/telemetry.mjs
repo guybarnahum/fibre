@@ -23,6 +23,12 @@ function assertDatabase(database) {
   return database;
 }
 
+function costObserver(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "function") throw new TypeError("Cloudflare activity telemetry onCost must be a function");
+  return value;
+}
+
 function clone(value) {
   return structuredClone(value);
 }
@@ -38,13 +44,14 @@ function deserializeRecord(value) {
   return normalizeActivityRecord(JSON.parse(value));
 }
 
-export function createCloudflareActivityTelemetryPort({ database } = {}) {
+export function createCloudflareActivityTelemetryPort({ database, onCost = null } = {}) {
   const db = assertDatabase(database);
+  const observeCost = costObserver(onCost);
 
   async function record(candidate) {
     const normalized = normalizeActivityRecord(candidate);
     const canonical = serializedRecord(normalized);
-    await db.prepare(`
+    const inserted = await db.prepare(`
       INSERT OR IGNORE INTO fibre_activity_log (
         activity_id,
         occurred_at,
@@ -89,10 +96,21 @@ export function createCloudflareActivityTelemetryPort({ database } = {}) {
       infraCanonicalJson(normalized.evidence),
       canonical,
     ).run();
+    observeCost?.("activity.record", inserted, {
+      stage:normalized.stage,
+      status:normalized.status,
+    });
 
-    const existing = await db.prepare(
+    if (Number(inserted?.meta?.changes ?? 0) > 0) return clone(normalized);
+
+    const existingResult = await db.prepare(
       "SELECT record_json FROM fibre_activity_log WHERE activity_id = ? LIMIT 1",
-    ).bind(normalized.activityId).first();
+    ).bind(normalized.activityId).all();
+    observeCost?.("activity.retry_verify", existingResult, {
+      stage:normalized.stage,
+      status:normalized.status,
+    });
+    const existing = existingResult?.results?.[0];
     if (!existing || typeof existing.record_json !== "string") {
       throw new Error(`Cloudflare activity ${normalized.activityId} was not readable after record`);
     }
@@ -120,6 +138,7 @@ export function createCloudflareActivityTelemetryPort({ database } = {}) {
     const result = bindings.length === 0
       ? await statement.all()
       : await statement.bind(...bindings).all();
+    observeCost?.("activity.query", result, { filters:Object.keys(normalizedQuery) });
     if (!result || !Array.isArray(result.results)) {
       throw new Error("Cloudflare activity telemetry query returned an invalid D1 result");
     }

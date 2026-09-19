@@ -1,3 +1,5 @@
+import { decorateActionButton } from "./fa-icons.js";
+
 const $ = (selector) => document.querySelector(selector);
 const form = $("#filters");
 const kind = $("#kind");
@@ -17,6 +19,8 @@ let timer = null;
 let lastInteractionAt = 0;
 let lastUiSignalAt = 0;
 let nav = { edge:"first", direction:"next", cursor:null, page:1 };
+
+decorateActionButton($("#export-button"), { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
 
 function text(node, input) { node.textContent = input ?? "—"; }
 function titleCase(input) { return String(input ?? "").split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" "); }
@@ -83,7 +87,7 @@ function syncFromUrl() {
   service.value = params.get("service") ?? "";
   status.value = params.get("status") ?? "";
   mode = params.get("mode") ?? (kind.value === "thread" ? "causal" : "raw");
-  if (!["causal", "raw", "threads"].includes(mode)) mode = "raw";
+  if (!["causal", "raw", "threads", "stillborn"].includes(mode)) mode = "raw";
   updateIdentityState();
   renderMode();
 }
@@ -118,7 +122,7 @@ function renderMode() {
   $("#causal-view").hidden = mode !== "causal";
   $("#raw-view").hidden = mode !== "raw";
   for (const button of document.querySelectorAll(".view-switch button")) button.classList.toggle("active", button.dataset.mode === mode);
-  text($("#metric-view"), mode === "threads" ? "Threads" : mode === "causal" ? "Causal" : "Raw");
+  text($("#metric-view"), mode === "threads" ? "Threads" : mode === "stillborn" ? "Stillborn" : mode === "causal" ? "Causal" : "Raw");
 }
 
 function renderMetrics(records) {
@@ -209,6 +213,49 @@ function detail(label, input, { wide = false, mono = false } = {}) {
   item.append(name, body); return item;
 }
 
+async function copyText(value) {
+  const textValue = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(textValue);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = textValue;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
+function activityCopyAction(record) {
+  const actions = document.createElement("div");
+  actions.className = "activity-record-actions";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "secondary icon-only-action";
+  decorateActionButton(button, {
+    icon:"copy",
+    label:"Copy activity details",
+    tooltip:"Copy activity details",
+    iconOnly:true,
+  });
+  button.addEventListener("click", async () => {
+    try {
+      await copyText(record);
+      decorateActionButton(button, { icon:"copy", label:"Activity details copied", tooltip:"Activity details copied", iconOnly:true });
+    } catch {
+      decorateActionButton(button, { icon:"copy", label:"Copy activity details failed", tooltip:"Copy activity details failed", iconOnly:true });
+    }
+    window.setTimeout(() => {
+      decorateActionButton(button, { icon:"copy", label:"Copy activity details", tooltip:"Copy activity details", iconOnly:true });
+    }, 1200);
+  });
+  actions.append(button);
+  return actions;
+}
+
 function showRecord(record) {
   text($("#dialog-eyebrow"), "Activity record");
   text($("#dialog-title"), `${titleCase(record.service)} · ${record.stage}`);
@@ -222,7 +269,7 @@ function showRecord(record) {
     detail("Correlation ID", record.correlationId, { mono:true }), detail("Causation ID", record.causationId, { mono:true }),
     detail("Deployment SHA", record.deploymentGitSha, { wide:true, mono:true }),
   );
-  const body = $("#dialog-body"); body.replaceChildren(grid);
+  const body = $("#dialog-body"); body.replaceChildren(activityCopyAction(record), grid);
   if (record.message) body.append(detail("Message", record.message, { wide:true }));
   if (record.error) {
     const error = document.createElement("div"); error.className = "error-box";
@@ -252,8 +299,11 @@ async function resolveThreadIdentity(threadId) {
     return payload.identity ?? {};
   })();
   threadIdentityCache.set(threadId, pending);
-  try { return await pending; }
-  catch (error) { threadIdentityCache.delete(threadId); throw error; }
+  try {
+    return await pending;
+  } finally {
+    if (threadIdentityCache.get(threadId) === pending) threadIdentityCache.delete(threadId);
+  }
 }
 
 function threadAssetCard(asset) {
@@ -361,12 +411,22 @@ async function copyExport() {
   const exportText = JSON.stringify(await activityExport(currentPayload), null, 2);
   try {
     await navigator.clipboard.writeText(exportText);
-    button.textContent = "Copied";
+    decorateActionButton(button, { icon:"file-export", label:"Activity export copied", tooltip:"Activity export copied", iconOnly:true });
   } catch {
     const area = document.createElement("textarea"); area.value = exportText; area.setAttribute("readonly", ""); area.style.position = "fixed"; area.style.opacity = "0";
-    document.body.append(area); area.select(); button.textContent = document.execCommand("copy") ? "Copied" : "Copy failed"; area.remove();
+    document.body.append(area); area.select();
+    const copied = document.execCommand("copy");
+    area.remove();
+    decorateActionButton(button, {
+      icon:"file-export",
+      label:copied ? "Activity export copied" : "Copy / Export activity failed",
+      tooltip:copied ? "Activity export copied" : "Copy / Export activity failed",
+      iconOnly:true,
+    });
   }
-  setTimeout(() => { button.textContent = "Copy export"; }, 1600);
+  setTimeout(() => {
+    decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
+  }, 1600);
 }
 
 function firstPage() {
@@ -400,7 +460,7 @@ function renderPager(payload) {
 }
 
 async function loadPage({ pushState = false } = {}) {
-  if (mode === "threads") return;
+  if (mode === "threads" || mode === "stillborn") return;
   setLoading(true);
   if (pushState) syncUrl();
   const params = baseParams();

@@ -15,6 +15,7 @@ import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 import { createThreadGenesisRepairApi } from "#services/world-kernel/src/thread-genesis-repair-api.mjs";
 import { createThreadGenesisRepairService } from "#services/world-kernel/src/thread-genesis-repair-service.mjs";
+import { createThreadIdentityCommandService } from "#services/world-kernel/src/thread-identity-command-service.mjs";
 import { ThreadIdentityUpdateStore } from "#services/world-kernel/src/thread-identity-update-store.mjs";
 import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
@@ -107,6 +108,34 @@ function closeAll(stores) {
   }
 }
 
+async function recordIdentityProjectionFailure(activityRecorder, { threadId, operationId, error }) {
+  if (activityRecorder === null) return;
+  try {
+    await activityRecorder.record({
+      threadId,
+      operationId,
+      stage:"thread.identity.presentation_projection",
+      status:"failed",
+      attempt:1,
+      message:error instanceof Error ? error.message : String(error),
+      error:{
+        category:"reconciliation",
+        code:typeof error?.code === "string" ? error.code : "THREAD_PRESENTATION_IDENTITY_PROJECTION_FAILED",
+        retryable:error?.retryable !== false,
+      },
+    });
+  } catch {}
+}
+
+export function repairReconciliationDisposition(result) {
+  if (result?.after?.health === "healthy") return "retire";
+  const visualAction = Array.isArray(result?.actions)
+    ? result.actions.find((entry) => entry?.action === "reconcile_visual_publication") ?? null
+    : null;
+  if (visualAction !== null && visualAction.result?.complete !== true) return "retry_visual";
+  return "none";
+}
+
 export function createWorldCloudflareRuntime({ storage, env, now = () => new Date().toISOString(), nowMs = Date.now } = {}) {
   if (!storage || typeof storage !== "object") throw new TypeError("Cloudflare World runtime requires Durable Object storage");
   if (typeof now !== "function") throw new TypeError("Cloudflare World runtime now must be a function");
@@ -192,15 +221,23 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     reconciler: visualReconciler,
     privateToken,
   });
+  const presentationReader = createPresentationReader(presentationFetch);
   const repairService = createThreadGenesisRepairService({
     worldReader:worldStore,
     civilRegistry:civilRegistryStore,
     embodimentReader:embodimentStore,
-    presentationReader:createPresentationReader(presentationFetch),
+    presentationReader,
     presentationDelivery,
     visualReconciler,
     genesisSexEvidence:genesisBirthSexEvidence,
     genesisSexMigrator:genesisSexMigrationStore,
+    genesisAuthority:genesisStore,
+    identityUpdater:threadIdentityUpdateStore,
+    activityRecorder,
+  });
+  const identityService = createThreadIdentityCommandService({
+    worldReader:worldStore,
+    genesisSexEvidence:genesisBirthSexEvidence,
     identityUpdater:threadIdentityUpdateStore,
     activityRecorder,
   });
@@ -251,17 +288,51 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   });
   const repairApi = createThreadGenesisRepairApi({
     repairService,
+    identityService,
     privateToken,
     reconciliationWorkset:visualPublicationWorkset,
     async onRepair({ threadId, result }) {
-      const blocked = ["migration_required", "integrity_error", "operator_decision_required", "unrecoverable"]
-        .includes(result?.after?.health);
-      if (!blocked && visualPublicationWorkset.requeue(threadId, { updatedAt:now() })) {
-        await reconciliationRuntime.requestWake();
+      const disposition = repairReconciliationDisposition(result);
+      if (disposition === "retire") {
+        if (visualPublicationWorkset.get(threadId)?.state === "pending") {
+          visualPublicationWorkset.complete(threadId, { updatedAt:now() });
+        }
+        return;
+      }
+      if (disposition === "retry_visual") {
+        visualPublicationWorkset.requeue(threadId, { updatedAt:now() });
+        if (visualPublicationWorkset.get(threadId)?.state === "pending") {
+          await reconciliationRuntime.requestWake();
+        }
       }
     },
     async onRecover() {
       await reconciliationRuntime.requestWake();
+    },
+    async onIdentityUpdate({ threadId, result }) {
+      if (result.changed !== true) return Object.freeze({ state:"current", changed:false });
+      try {
+        const projected = await presentationDelivery.reconcileThreadPresentationIdentity(threadId);
+        return Object.freeze({
+          state:"current",
+          changed:projected.reconciled === true,
+          presentation:projected.presentation ?? null,
+        });
+      } catch (error) {
+        await recordIdentityProjectionFailure(activityRecorder, {
+          threadId,
+          operationId:result.operationKey,
+          error,
+        });
+        return Object.freeze({
+          state:"pending",
+          changed:false,
+          error:Object.freeze({
+            code:typeof error?.code === "string" ? error.code : "THREAD_PRESENTATION_IDENTITY_PROJECTION_FAILED",
+            detail:error instanceof Error ? error.message : String(error),
+          }),
+        });
+      }
     },
   });
 
@@ -317,6 +388,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     visualReconciler,
     visualRecoveryApi,
     repairService,
+    identityService,
     repairApi,
     reconciliationProcess,
     reconciliationRuntime,

@@ -1,14 +1,30 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
+import { decorateActionButton, iconForIdentityAction } from "./fa-icons.js";
 
 const $ = (selector) => document.querySelector(selector);
 const view = $("#threads-view");
 const rows = $("#thread-population-rows");
 const empty = $("#thread-population-empty");
+const stillbornView = $("#stillborn-view");
+const stillbornRows = $("#stillborn-rows");
+const stillbornEmpty = $("#stillborn-empty");
 let active = false;
+let populationMode = "threads";
 let loading = false;
 let priorAutoRefresh = true;
 let population = [];
+let stillborn = [];
 let sortState = { key:"lastActivity", direction:"desc" };
+const populationPortraitCache = new Map();
+const populationPortraitObserver = typeof IntersectionObserver === "function"
+  ? new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        populationPortraitObserver.unobserve(entry.target);
+        void hydratePopulationPortrait(entry.target);
+      }
+    }, { rootMargin:"160px 0px" })
+  : null;
 
 function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
@@ -16,6 +32,79 @@ function human(value) {
 
 function shortId(value) {
   return value.length > 24 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
+}
+
+function initials(value) {
+  const parts = String(value ?? "").trim().split(/\s+/u).filter(Boolean);
+  if (parts.length === 0) return "·";
+  if (parts.length === 1) return parts[0].slice(0, 1).toLocaleUpperCase();
+  return `${parts[0].slice(0, 1)}${parts.at(-1).slice(0, 1)}`.toLocaleUpperCase();
+}
+
+function preferredPortraitUrl(identity) {
+  const assets = Array.isArray(identity?.assets) ? identity.assets : [];
+  const asset = assets.find((entry) => entry?.role === "official_id_photo" && entry?.url)
+    ?? assets.find((entry) => entry?.role === "canonical_portrait" && entry?.url)
+    ?? assets.find((entry) => entry?.url && String(entry.mediaType ?? "").startsWith("image/"))
+    ?? null;
+  return typeof asset?.url === "string" && asset.url !== "" ? asset.url : null;
+}
+
+async function resolvePopulationPortrait(threadId) {
+  if (populationPortraitCache.has(threadId)) return populationPortraitCache.get(threadId);
+  const pending = (async () => {
+    try {
+      const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, {
+        headers:{ Accept:"application/json" },
+        cache:"no-store",
+      });
+      if (!response.ok) return null;
+      const payload = await response.json();
+      return preferredPortraitUrl(payload.identity);
+    } catch {
+      return null;
+    }
+  })();
+  populationPortraitCache.set(threadId, pending);
+  return pending;
+}
+
+function setPopulationPortrait(portrait, url, name) {
+  portrait.replaceChildren();
+  portrait.removeAttribute("role");
+  portrait.removeAttribute("tabindex");
+  delete portrait.dataset.lightboxSrc;
+  delete portrait.dataset.lightboxAlt;
+  if (!url) {
+    portrait.textContent = initials(name);
+    return;
+  }
+
+  const image = document.createElement("img");
+  image.src = url;
+  image.alt = `${name ?? "Thread"} portrait`;
+  image.loading = "lazy";
+  portrait.dataset.lightboxSrc = url;
+  portrait.dataset.lightboxAlt = image.alt;
+  portrait.setAttribute("role", "button");
+  portrait.tabIndex = 0;
+  portrait.append(image);
+  image.addEventListener("error", () => setPopulationPortrait(portrait, null, name), { once:true });
+}
+
+async function hydratePopulationPortrait(portrait) {
+  const threadId = portrait.dataset.threadId;
+  if (!threadId) return;
+  const url = await resolvePopulationPortrait(threadId);
+  if (!portrait.isConnected || portrait.dataset.threadId !== threadId) return;
+  setPopulationPortrait(portrait, url, portrait.dataset.threadName || null);
+}
+
+function queuePopulationPortrait(portrait, thread) {
+  portrait.dataset.threadId = thread.threadId;
+  portrait.dataset.threadName = thread.identity?.name ?? "";
+  if (populationPortraitObserver) populationPortraitObserver.observe(portrait);
+  else void hydratePopulationPortrait(portrait);
 }
 
 function when(value) {
@@ -84,7 +173,12 @@ function button(label, spec, thread) {
   const control = document.createElement("button");
   control.type = "button";
   control.className = spec.kind === "recover" ? "secondary" : "primary";
-  control.textContent = label;
+  decorateActionButton(control, {
+    icon:spec.icon ?? null,
+    label,
+    tooltip:spec.tooltip ?? `${label} — ${spec.description}`,
+    iconOnly:spec.iconOnly === true,
+  });
   control.addEventListener("click", (event) => {
     event.stopPropagation();
     openThreadActionDialog({
@@ -121,16 +215,29 @@ function actionCell(thread) {
   controls.className = "thread-action-stack";
   for (const action of identityActions(thread)) {
     const label = action.label ?? human(action.id);
+    const finding = (thread.findings ?? []).find((entry) => entry?.identityAction?.id === action.id) ?? null;
+    const isAdmission = action.id === "admit_name" || action.id === "admit_birth_date";
+    const isLanguages = ["set_languages","change_languages"].includes(action.id);
+    const description = isAdmission
+      ? "Admit preserved identity evidence into authoritative World identity. Presentation is evidence, not authority."
+      : isLanguages
+        ? `${finding?.state === "operator_decision_required" ? "Required operator decision. " : ""}${finding?.reason ?? "Set this Thread's personal language path from household, civic life, or sustained schooling."}`
+        : "Record an explicit operator identity decision in World history. Fibre will re-read authoritative state before returning to Threads.";
     controls.append(button(label, {
       kind:"identity",
+      icon:iconForIdentityAction(action.id),
+      iconOnly:true,
       eyebrow:"Authoritative identity",
-      description:"Record an explicit operator identity decision in World history. Fibre will re-read authoritative state before returning to Threads.",
+      description,
       fields:actionFields(action),
-      body:(input) => ({
-        action:"identity",
-        operationKey:`admin_identity_${Date.now().toString(36)}`,
-        ...input,
-      }),
+      body:(input) => {
+        const commandAction = action.command ?? "identity";
+        return {
+          action:commandAction,
+          operationKey:`${commandAction === "raised_languages" ? "admin_raised_languages" : "admin_identity"}_${Date.now().toString(36)}`,
+          ...input,
+        };
+      },
     }, thread));
   }
 
@@ -139,6 +246,8 @@ function actionCell(thread) {
     const label = `Migrate · ${migration.label ?? human(migration.id)}`;
     controls.append(button(label, {
       kind:"migration",
+      icon:"arrow-up-from-bracket",
+      iconOnly:true,
       eyebrow:"Identity migration",
       description:"Apply the named migration using preserved evidence, then re-diagnose the Thread from authoritative World state.",
       fields:actionFields(migration),
@@ -152,19 +261,33 @@ function actionCell(thread) {
   }
 
   const deadLetter = thread.reconciliation?.state === "dead_letter";
+  const pending = thread.reconciliation?.state === "pending";
   if (hasRepair(thread) && thread.health === "repairable") {
     const label = deadLetter ? "Repair & recover" : "Repair";
     controls.append(button(label, {
       kind:"repair",
+      icon:deadLetter ? "heart-pulse" : "wrench",
+      iconOnly:true,
       eyebrow:"Thread repair",
       description:deadLetter
         ? "Repair derived state from authoritative World facts and recover this Thread from reconciliation quarantine."
         : "Repair derived state from authoritative World facts. No new identity fact will be invented.",
       body:() => ({ repairKey:`admin_repair_${Date.now().toString(36)}` }),
     }, thread));
+  } else if (pending && thread.health === "healthy") {
+    controls.append(button("Resolve reconciliation", {
+      kind:"repair",
+      icon:"rotate",
+      iconOnly:true,
+      eyebrow:"Reconciliation cleanup",
+      description:"Retire stale pending reconciliation now that authoritative Thread health is complete. This does not change identity or Genesis.",
+      body:() => ({ repairKey:`admin_reconcile_${Date.now().toString(36)}` }),
+    }, thread));
   } else if (deadLetter && thread.health === "healthy") {
     controls.append(button("Recover", {
       kind:"recover",
+      icon:"heart-pulse",
+      iconOnly:true,
       eyebrow:"Reconciliation recovery",
       description:"Return this healthy Thread from dead-letter quarantine to reconciliation processing.",
       body:() => ({ action:"recover" }),
@@ -196,14 +319,11 @@ function threadRow(thread) {
   portraitCell.className = "thread-population-portrait-cell";
   const portrait = document.createElement("span");
   portrait.className = "thread-population-portrait";
-  if (thread.admitted === true && typeof thread.portraitUrl === "string" && thread.portraitUrl !== "") {
-    const image = document.createElement("img");
-    image.src = thread.portraitUrl;
-    image.alt = "";
-    image.loading = "lazy";
-    portrait.append(image);
+  if (thread.admitted === true) {
+    setPopulationPortrait(portrait, thread.portraitUrl, identity.name);
+    if (!thread.portraitUrl) queuePopulationPortrait(portrait, thread);
   } else {
-    portrait.textContent = thread.admitted === true ? (identity.name?.trim()?.[0] ?? "·") : "·";
+    portrait.textContent = "·";
   }
   portraitCell.append(portrait);
 
@@ -211,9 +331,11 @@ function threadRow(thread) {
   const personLayout = document.createElement("div");
   personLayout.className = "thread-population-person";
   const personText = document.createElement("div");
-  const link = document.createElement("a");
-  link.className = "thread-population-name";
-  link.href = `/thread/${encodeURIComponent(thread.threadId)}`;
+  const link = document.createElement("button");
+  link.type = "button";
+  link.className = "thread-population-name thread-link";
+  link.dataset.threadId = thread.threadId;
+  link.title = `Inspect ${thread.threadId}`;
   link.textContent = thread.admitted === true
     ? identity.name ?? "Unnamed Thread"
     : thread.admitted === false ? "Activity-only ID" : "Unresolved ID";
@@ -284,10 +406,62 @@ function renderSortHeaders() {
 }
 
 function renderPopulation() {
+  populationPortraitObserver?.disconnect();
   const ordered = [...population].sort((left, right) => compare(left, right, sortState.key, sortState.direction));
   rows.replaceChildren(...ordered.map(threadRow));
   empty.hidden = ordered.length !== 0;
   renderSortHeaders();
+}
+
+function stillbornRow(thread) {
+  const tr = document.createElement("tr");
+  tr.className = "stillborn-row";
+
+  const identifier = document.createElement("td");
+  identifier.className = "mono";
+  identifier.textContent = thread.threadId;
+
+  const lastActivity = document.createElement("td");
+  lastActivity.className = "time";
+  lastActivity.textContent = when(thread.lastActivityAt);
+
+  const health = document.createElement("td");
+  health.append(badge("unrecoverable", "failed"));
+
+  const meaning = document.createElement("td");
+  meaning.className = "stillborn-reason";
+  meaning.textContent = thread.admitted === false
+    ? "Observed in Activity, but World never admitted a recoverable Thread state."
+    : "World diagnosis marked this Thread unrecoverable.";
+
+  const action = document.createElement("td");
+  action.className = "thread-population-actions";
+  const raw = document.createElement("button");
+  raw.type = "button";
+  raw.className = "secondary";
+  raw.textContent = "View Raw";
+  raw.addEventListener("click", () => {
+    const params = new URLSearchParams();
+    params.set("kind", "thread");
+    params.set("value", thread.threadId);
+    params.set("mode", "raw");
+    location.assign(`${location.pathname}?${params}`);
+  });
+  action.append(raw);
+
+  tr.append(identifier, lastActivity, health, meaning, action);
+  return tr;
+}
+
+function renderStillborn() {
+  const ordered = [...stillborn].sort((left, right) => {
+    const a = Date.parse(left.lastActivityAt ?? "");
+    const b = Date.parse(right.lastActivityAt ?? "");
+    if (Number.isFinite(a) && Number.isFinite(b) && a !== b) return b - a;
+    return left.threadId.localeCompare(right.threadId);
+  });
+  stillbornRows.replaceChildren(...ordered.map(stillbornRow));
+  stillbornEmpty.hidden = ordered.length !== 0;
 }
 
 function renderActivitySummaryLabels() {
@@ -314,10 +488,24 @@ function renderThreadsTopSummary(summary = null) {
   $("#metric-view-context").textContent = "population / World health";
 }
 
+function renderStillbornTopSummary(summary = null) {
+  $("#metric-label-records").textContent = "Stillborn";
+  $("#metric-context-records").textContent = "unrecoverable observed IDs";
+  $("#metric-records").textContent = summary?.stillborn ?? stillborn.length ?? "—";
+  $("#metric-label-failures").textContent = "World admission";
+  $("#metric-context-failures").textContent = "no recoverable person state";
+  $("#metric-failures").textContent = "0";
+  $("#metric-label-retries").textContent = "Repair path";
+  $("#metric-context-retries").textContent = "parked / observational";
+  $("#metric-retries").textContent = "—";
+  $("#metric-view").textContent = "Stillborn";
+  $("#metric-view-context").textContent = "unrecoverable / Activity evidence";
+}
+
 function renderSummary(summary) {
   const values = {
     "thread-stat-total":summary.total,
-    "thread-stat-activity-only":summary.activityOnly,
+    "thread-stat-activity-only":summary.stillborn,
     "thread-stat-female":summary.female,
     "thread-stat-male":summary.male,
     "thread-stat-unknown":summary.unknownSex,
@@ -333,12 +521,18 @@ function holdThreadsMode() {
   if (!active) return;
   $("#causal-view").hidden = true;
   $("#raw-view").hidden = true;
-  view.hidden = false;
+  view.hidden = populationMode !== "threads";
+  stillbornView.hidden = populationMode !== "stillborn";
   document.querySelector("#thread-context").hidden = true;
-  for (const control of document.querySelectorAll(".view-switch button")) control.classList.toggle("active", control.id === "view-threads");
-  $("#chain-title").textContent = "Threads";
-  $("#metric-view").textContent = "Threads";
-  $("#metric-view-context").textContent = "population / World health";
+  for (const control of document.querySelectorAll(".view-switch button")) {
+    control.classList.toggle("active", control.dataset.mode === populationMode);
+  }
+  $("#chain-title").textContent = populationMode === "stillborn" ? "Stillborn Threads" : "Threads";
+  if (populationMode === "stillborn") renderStillbornTopSummary();
+  else {
+    $("#metric-view").textContent = "Threads";
+    $("#metric-view-context").textContent = "population / World health";
+  }
 }
 
 async function loadPopulation() {
@@ -353,14 +547,26 @@ async function loadPopulation() {
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
     population = payload.threads ?? [];
+    stillborn = payload.stillborn ?? [];
+    populationPortraitCache.clear();
     renderSummary(payload.summary ?? {});
     renderPopulation();
+    renderStillborn();
     $("#environment-pill").textContent = payload.environment ?? "—";
-    $("#chain-summary").textContent = `${payload.summary?.total ?? 0} admitted Threads · ${payload.summary?.activityOnly ?? 0} Activity-only IDs${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
+    if (populationMode === "stillborn") {
+      renderStillbornTopSummary(payload.summary ?? {});
+      $("#chain-summary").textContent = `${stillborn.length} unrecoverable Thread ${stillborn.length === 1 ? "identifier" : "identifiers"} parked outside the admitted population${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
+    } else {
+      renderThreadsTopSummary(payload.summary ?? {});
+      $("#chain-summary").textContent = `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
+    }
   } catch (error) {
     population = [];
-    renderThreadsTopSummary();
+    stillborn = [];
+    if (populationMode === "stillborn") renderStillbornTopSummary();
+    else renderThreadsTopSummary();
     renderPopulation();
+    renderStillborn();
     $("#chain-summary").textContent = `Thread population unavailable: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
     loading = false;
@@ -379,25 +585,48 @@ function setActivityChrome(hidden) {
   $("#export-button").hidden = hidden;
 }
 
-function enterThreads() {
-  if (active) return;
+function enterPopulation(nextMode) {
+  populationMode = nextMode;
+  if (active) {
+    holdThreadsMode();
+    if (populationMode === "stillborn") {
+      renderStillbornTopSummary({ stillborn:stillborn.length });
+      $("#chain-summary").textContent = `${stillborn.length} unrecoverable Thread ${stillborn.length === 1 ? "identifier" : "identifiers"} parked outside the admitted population.`;
+    } else {
+      renderThreadsTopSummary({
+        total:population.length,
+        attention:population.filter((thread) => thread.health !== "healthy").length,
+        deadLetter:population.filter((thread) => thread.reconciliation?.state === "dead_letter").length,
+      });
+      $("#chain-summary").textContent = `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn.`;
+    }
+    const params = new URLSearchParams(location.search);
+    params.set("mode", populationMode);
+    history.replaceState(null, "", `${location.pathname}?${params}`);
+    return;
+  }
   active = true;
   priorAutoRefresh = $("#auto-refresh").checked;
   $("#auto-refresh").checked = false;
   $("#auto-refresh").dispatchEvent(new Event("change"));
   setActivityChrome(true);
-  renderThreadsTopSummary();
+  if (populationMode === "stillborn") renderStillbornTopSummary();
+  else renderThreadsTopSummary();
   holdThreadsMode();
   $("#chain-summary").textContent = "Loading population…";
-  const params = new URLSearchParams(location.search); params.set("mode", "threads");
+  const params = new URLSearchParams(location.search); params.set("mode", populationMode);
   history.replaceState(null, "", `${location.pathname}?${params}`);
   void loadPopulation();
 }
+
+function enterThreads() { enterPopulation("threads"); }
+function enterStillborn() { enterPopulation("stillborn"); }
 
 function exitThreads(nextMode) {
   if (!active) return;
   active = false;
   view.hidden = true;
+  stillbornView.hidden = true;
   setActivityChrome(false);
   renderActivitySummaryLabels();
   $("#metric-view").textContent = nextMode === "causal" ? "Causal" : "Raw";
@@ -405,7 +634,7 @@ function exitThreads(nextMode) {
   $("#auto-refresh").dispatchEvent(new Event("change"));
 
   const params = new URLSearchParams(location.search);
-  if (params.get("mode") === "threads") {
+  if (["threads","stillborn"].includes(params.get("mode"))) {
     params.set("mode", nextMode);
     history.replaceState(null, "", `${location.pathname}?${params}`);
     $("#refresh-button").click();
@@ -413,6 +642,7 @@ function exitThreads(nextMode) {
 }
 
 $("#view-threads").addEventListener("click", enterThreads);
+$("#view-stillborn").addEventListener("click", enterStillborn);
 for (const [id, nextMode] of [["view-causal", "causal"], ["view-raw", "raw"]]) {
   $(`#${id}`).addEventListener("click", () => exitThreads(nextMode));
 }
@@ -432,4 +662,6 @@ for (const control of document.querySelectorAll("[data-thread-sort]")) {
   });
 }
 
-if (new URLSearchParams(location.search).get("mode") === "threads") enterThreads();
+const initialMode = new URLSearchParams(location.search).get("mode");
+if (initialMode === "threads") enterThreads();
+if (initialMode === "stillborn") enterStillborn();

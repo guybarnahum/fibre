@@ -18,6 +18,44 @@ function normalizeName(value) {
   return normalized;
 }
 
+function canonicalBirthDate(year, month, day) {
+  const normalized = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(normalized) || Number(year) < 1000) return null;
+  const instant = new Date(`${normalized}T00:00:00.000Z`);
+  if (!Number.isFinite(instant.getTime()) || instant.toISOString().slice(0, 10) !== normalized) return null;
+  return normalized;
+}
+
+function normalizeBirthDate(value) {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || value.trim() === "") throw new TypeError("Thread birth date is required");
+  const raw = value.trim();
+
+  let match = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/u.exec(raw);
+  if (match !== null) {
+    const normalized = canonicalBirthDate(match[1], match[2], match[3]);
+    if (normalized === null) throw new TypeError("Thread birth date is invalid");
+    return normalized;
+  }
+
+  match = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/u.exec(raw);
+  if (match !== null) {
+    const normalized = canonicalBirthDate(match[3], match[1], match[2]);
+    if (normalized === null) throw new TypeError("Thread birth date is invalid");
+    return normalized;
+  }
+
+  if (/^\d{8}$/u.test(raw)) {
+    const ymd = canonicalBirthDate(raw.slice(0, 4), raw.slice(4, 6), raw.slice(6, 8));
+    if (ymd !== null) return ymd;
+    const mdy = canonicalBirthDate(raw.slice(4, 8), raw.slice(0, 2), raw.slice(2, 4));
+    if (mdy !== null) return mdy;
+    throw new TypeError("Thread birth date is invalid");
+  }
+
+  throw new TypeError("Thread birth date must be YYYY-MM-DD, YYYYMMDD, MM/DD/YYYY, or MMDDYYYY");
+}
+
 function normalizeOperationKey(value) {
   if (typeof value !== "string" || !OPERATION_KEY.test(value)) {
     throw new TypeError("identity operationKey must be a Fibre identifier up to 221 characters");
@@ -33,13 +71,13 @@ function eventId(threadId, operationKey) {
   });
 }
 
-function requestMatchesExisting(thread, changes, { name, sex }) {
+function requestMatchesExisting(thread, changes, { name, sex, birthDate }) {
   const matches = (field, requested) => {
     if (requested === undefined) return true;
     if (Object.prototype.hasOwnProperty.call(changes, field)) return changes[field] === requested;
     return thread.identity?.[field] === requested;
   };
-  return matches("name", name) && matches("sex", sex);
+  return matches("name", name) && matches("sex", sex) && matches("birthDate", birthDate);
 }
 
 export class ThreadIdentityUpdateStore {
@@ -51,12 +89,15 @@ export class ThreadIdentityUpdateStore {
 
   close() { this.#database.close(); }
 
-  update(thread, { name, sex, operationKey, changedAt = new Date().toISOString() } = {}) {
+  update(thread, { name, sex, birthDate, operationKey, changedAt = new Date().toISOString() } = {}) {
     validateThreadSnapshot(thread);
     const key = normalizeOperationKey(operationKey);
     const nextName = normalizeName(name);
     const nextSex = sex === undefined ? undefined : normalizeGenesisSex(sex);
-    if (nextName === undefined && nextSex === undefined) throw new TypeError("identity update requires name or sex");
+    const nextBirthDate = normalizeBirthDate(birthDate);
+    if (nextName === undefined && nextSex === undefined && nextBirthDate === undefined) {
+      throw new TypeError("identity update requires name, sex, or birthDate");
+    }
 
     const updateEventId = eventId(thread.threadId, key);
     const existing = this.#database.prepare(
@@ -68,7 +109,7 @@ export class ThreadIdentityUpdateStore {
       }
       const payload = JSON.parse(existing.payload_json);
       const existingChanges = payload?.changes ?? {};
-      if (payload?.operationKey !== key || !requestMatchesExisting(thread, existingChanges, { name:nextName, sex:nextSex })) {
+      if (payload?.operationKey !== key || !requestMatchesExisting(thread, existingChanges, { name:nextName, sex:nextSex, birthDate:nextBirthDate })) {
         throw new TypeError(`identity operationKey ${key} was already used with different identity input`);
       }
       const currentRow = this.#database.prepare("SELECT state_json FROM threads WHERE thread_id=?").get(thread.threadId);
@@ -95,6 +136,10 @@ export class ThreadIdentityUpdateStore {
     if (nextSex !== undefined && thread.identity.sex === undefined) {
       changes.sex = nextSex;
       previous.sex = null;
+    }
+    if (nextBirthDate !== undefined && nextBirthDate !== thread.identity.birthDate) {
+      changes.birthDate = nextBirthDate;
+      previous.birthDate = thread.identity.birthDate ?? null;
     }
     if (Object.keys(changes).length === 0) {
       return Object.freeze({ changed:false, reused:true, eventId:thread.provenance.lastEventId, changes:Object.freeze({}), thread });

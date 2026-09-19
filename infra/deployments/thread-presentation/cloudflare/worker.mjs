@@ -14,6 +14,7 @@ import {
   threadPresentationPacketDigest,
 } from "#services/thread-presentation/src/index.mjs";
 import { createGenesisPresentationWriteApi } from "#services/thread-presentation/src/http/genesis-write-api.mjs";
+import { createIdentityProjectionWriteApi } from "#services/thread-presentation/src/http/identity-projection-write-api.mjs";
 import { createPresentationReadApi, channelIdForThread } from "#services/thread-presentation/src/http/read-api.mjs";
 import { createVisualPublicationWriteApi } from "#services/thread-presentation/src/http/visual-publication-write-api.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
@@ -295,6 +296,13 @@ export default {
     const genesisWriteApi = createGenesisPresentationWriteApi({ presentationServer, privateToken: env.FIBRE_PRIVATE_TOKEN ?? null });
     const genesisWriteResponse = await genesisWriteApi.fetch(request);
     if (genesisWriteResponse !== null) return genesisWriteResponse;
+
+    const identityWriteApi = createIdentityProjectionWriteApi({
+      presentationServer,
+      privateToken: env.FIBRE_PRIVATE_TOKEN ?? null,
+    });
+    const identityWriteResponse = await identityWriteApi.fetch(request);
+    if (identityWriteResponse !== null) return identityWriteResponse;
 
     const visualWriteApi = createVisualPublicationWriteApi({
       reconciler: createVisualReconciler(env, infra, presentationServer, activityRecorder),

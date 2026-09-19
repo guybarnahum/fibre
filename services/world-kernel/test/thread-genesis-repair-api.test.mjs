@@ -8,19 +8,24 @@ const privateToken = "repair-private-token-123";
 function api(options = {}) {
   return createThreadGenesisRepairApi({
     privateToken,
+    identityService:{
+      async update(threadId, { operationKey, name, sex, birthDate }) {
+        return {
+          threadId,
+          operationKey,
+          exists:threadId !== "thr_missing",
+          changed:threadId !== "thr_missing",
+          eventId:threadId === "thr_missing" ? null : "evt_identity_1",
+          changes:threadId === "thr_missing" ? {} : { name, sex, birthDate },
+          identity:threadId === "thr_missing" ? null : { name:name ?? "Thread", sex:sex ?? null, birthDate:birthDate ?? null },
+          version:threadId === "thr_missing" ? null : 2,
+        };
+      },
+    },
     repairService:{
       async diagnose(threadId) {
         if (threadId === "thr_missing") return { threadId, exists:false, health:"unrecoverable", findings:[] };
         return { threadId, exists:true, health:"repairable", findings:[{ code:"PRESENTATION_MISSING", state:"repairable" }] };
-      },
-      async updateIdentity(threadId, { operationKey, name, sex }) {
-        return {
-          threadId,
-          operationKey,
-          before:{ exists:true, health:"operator_decision_required" },
-          after:{ exists:true, health:"repairable", identity:{ name:name ?? "Thread", sex:sex ?? null } },
-          changed:true,
-        };
       },
       async migrate(threadId, { migrationId, migrationKey, input }) {
         return {
@@ -31,6 +36,16 @@ function api(options = {}) {
           before:{ exists:true, health:"migration_required" },
           after:{ exists:true, health:"healthy" },
           migrated:true,
+        };
+      },
+      async updateRaisedLanguages(threadId, { operationKey, languages }) {
+        return {
+          threadId,
+          operationKey,
+          before:{ exists:true, health:"operator_decision_required" },
+          after:{ exists:true, health:"healthy" },
+          changed:true,
+          result:{ languages },
         };
       },
       async repair(threadId, { repairKey }) {
@@ -65,11 +80,11 @@ test("R1 repair diagnosis is private and read-only", async () => {
   const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair"));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.contract, "fibre-thread-repair-v0.4");
+  assert.equal(body.contract, "fibre-thread-repair-v0.6");
   assert.equal(body.diagnosis.health, "repairable");
 });
 
-test("Admin identity input changes authority through an explicit Thread action", async () => {
+test("Admin identity input changes World authority without requiring a repair diagnosis", async () => {
   const repairApi = api();
   const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
     method:"POST",
@@ -79,12 +94,63 @@ test("Admin identity input changes authority through an explicit Thread action",
       operationKey:"admin_identity_1",
       name:"Maya Cohen",
       sex:"female",
+      birthDate:"2004-08-20",
     }),
   }));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.identityUpdate.after.identity.name, "Maya Cohen");
-  assert.equal(body.identityUpdate.after.identity.sex, "female");
+  assert.deepEqual(body.identityUpdate.identity, { name:"Maya Cohen", sex:"female", birthDate:"2004-08-20" });
+  assert.equal(body.identityUpdate.changed, true);
+});
+
+test("Raised languages use Genesis correction rather than identity mutation", async () => {
+  let identityCalled = false;
+  const repairApi = api({
+    identityService:{
+      async update() {
+        identityCalled = true;
+        throw new Error("raised languages must not use identity mutation");
+      },
+    },
+  });
+  const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body:JSON.stringify({
+      action:"raised_languages",
+      operationKey:"admin_raised_languages_1",
+      languages:["Hebrew", "Russian"],
+    }),
+  }));
+  const body = await response.json();
+
+  assert.equal(response.status, 200, "raised-language correction failed");
+  assert.equal(identityCalled, false, "raised languages mutated current identity");
+  assert.deepEqual(body.raisedLanguagesUpdate.result.languages, ["Hebrew", "Russian"], "Genesis correction lost languages");
+});
+
+test("identity correction projects the new person state after World accepts it", async () => {
+  let projected = null;
+  const repairApi = api({
+    onIdentityUpdate:async ({ threadId, result }) => {
+      projected = { threadId, name:result.identity.name };
+      return { state:"current", changed:true };
+    },
+  });
+  const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body:JSON.stringify({
+      action:"identity",
+      operationKey:"admin_identity_projection_1",
+      name:"Maya Cohen",
+    }),
+  }));
+  const body = await response.json();
+
+  assert.equal(response.status, 200, "identity correction failed");
+  assert.deepEqual(projected, { threadId:"thr_1", name:"Maya Cohen" }, "Presentation missed World correction");
+  assert.equal(body.identityProjection.state, "current", "projection did not converge");
 });
 
 test("named migration remains distinct from repair", async () => {

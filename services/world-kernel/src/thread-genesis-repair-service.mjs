@@ -15,10 +15,11 @@ function unfinishedName(value) {
   return normalized === null || PLACEHOLDER_NAMES.has(normalized);
 }
 
-function identityAction(id, label, fields) {
+function identityAction(id, label, fields, { command = "identity" } = {}) {
   return Object.freeze({
     id,
     label,
+    command,
     input:Object.freeze({ fields:Object.freeze(fields.map((field) => Object.freeze(field))) }),
   });
 }
@@ -103,15 +104,26 @@ function identityFinding({
 
 function nameFinding(identity, projected) {
   const name = text(identity.name);
-  const action = identityAction(
-    unfinishedName(name) ? "set_name" : "change_name",
-    unfinishedName(name) ? "Set name" : "Change name",
-    [{ name:"name", label:"Name", kind:"text", required:true, ...(unfinishedName(name) ? {} : { default:name }) }],
-  );
+  const projectedName = text(projected?.subject?.displayName);
   if (unfinishedName(name)) {
+    const preservedCandidate = projectedName !== null && !unfinishedName(projectedName) ? projectedName : null;
+    const action = identityAction(
+      preservedCandidate === null ? "set_name" : "admit_name",
+      preservedCandidate === null ? "Set name" : "Admit name",
+      [{
+        name:"name",
+        label:"Name",
+        kind:"text",
+        required:true,
+        ...(preservedCandidate === null ? {} : { default:preservedCandidate }),
+      }],
+    );
     return finding("NAME_UNFINISHED", "operator_decision_required", null, {
       authoritative:name,
-      reason:"Fibre Thread is a bootstrap placeholder, not a finished personal name",
+      presentation:preservedCandidate,
+      reason:preservedCandidate === null
+        ? "Fibre Thread is a bootstrap placeholder, not a finished personal name"
+        : "World still has the bootstrap placeholder; current Presentation preserves a name that requires explicit operator admission",
       identityAction:action,
     });
   }
@@ -123,14 +135,18 @@ function nameFinding(identity, projected) {
     projectionCode:"NAME_PRESENTATION_MISSING",
     conflictCode:"NAME_PRESENTATION_STALE",
     projectionState:"repairable",
-    projectionAction:"rebuild_presentation",
+    projectionAction:"reconcile_identity_projection",
     conflictState:"repairable",
-    conflictAction:"rebuild_presentation",
-    detail:{ identityAction:action },
+    conflictAction:"reconcile_identity_projection",
+    detail:{
+      identityAction:identityAction("change_name", "Change name", [
+        { name:"name", label:"Name", kind:"text", required:true, default:name },
+      ]),
+    },
   });
 }
 
-function identityCompleteness(thread, registration, presentation, sexEvidence) {
+function identityCompleteness(thread, registration, presentation, sexEvidence, raisedLanguages) {
   const identity = thread.identity ?? {};
   const projected = presentation?.presentation ?? null;
   const missingSex = text(identity.sex) === null;
@@ -176,8 +192,28 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
     : finding("ORIGIN_ORIENTATION", "healthy", null, { authoritative:originOrientation }));
 
   const birthDate = text(identity.birthDate);
-  if (birthDate !== null) {
-    const publicBirthDate = projected === null ? undefined : projected.subject?.birthDate ?? null;
+  const publicBirthDate = projected === null ? undefined : projected.subject?.birthDate ?? null;
+  if (birthDate === null) {
+    const preservedBirthDate = text(publicBirthDate);
+    findings.push(finding("BIRTH_DATE_MISSING", "operator_decision_required", null, {
+      authoritative:null,
+      presentation:preservedBirthDate,
+      reason:preservedBirthDate === null
+        ? "birth date is absent from authoritative Thread identity"
+        : "Presentation preserves a birth date candidate that requires explicit operator admission into World identity",
+      identityAction:identityAction(
+        preservedBirthDate === null ? "set_birth_date" : "admit_birth_date",
+        preservedBirthDate === null ? "Set birth date" : "Admit birth date",
+        [{
+          name:"birthDate",
+          label:"Birth date",
+          kind:"date",
+          required:true,
+          ...(preservedBirthDate === null ? {} : { default:preservedBirthDate }),
+        }],
+      ),
+    }));
+  } else {
     findings.push(identityFinding({
       code:"BIRTH_DATE",
       missingCode:"BIRTH_DATE_MISSING",
@@ -185,6 +221,71 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
       projected:publicBirthDate,
       projectionCode:"BIRTH_DATE_PRESENTATION_MISSING",
       conflictCode:"BIRTH_DATE_CONFLICT",
+      projectionState:"repairable",
+      projectionAction:"reconcile_identity_projection",
+      conflictState:"repairable",
+      conflictAction:"reconcile_identity_projection",
+      detail:{
+        identityAction:identityAction("change_birth_date", "Change birth date", [{
+          name:"birthDate",
+          label:"Birth date",
+          kind:"date",
+          required:true,
+          default:birthDate,
+        }]),
+      },
+    }));
+  }
+
+  const spokenLanguages = Array.isArray(identity.languages)
+    ? identity.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+    : [];
+  const publicLanguages = projected === null
+    ? undefined
+    : Array.isArray(projected.subject?.languages)
+      ? projected.subject.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+      : [];
+  if (publicLanguages !== undefined && JSON.stringify(publicLanguages) !== JSON.stringify(spokenLanguages)) {
+    findings.push(finding("SPOKEN_LANGUAGES_PRESENTATION_STALE", "repairable", "reconcile_identity_projection", {
+      authoritative:Object.freeze([...spokenLanguages]),
+      presentation:Object.freeze([...publicLanguages]),
+      reason:"current Presentation spoken languages differ from the current World projection",
+    }));
+  } else {
+    findings.push(finding("SPOKEN_LANGUAGES", "healthy", null, {
+      authoritative:Object.freeze([...spokenLanguages]),
+      presentation:publicLanguages === undefined ? undefined : Object.freeze([...publicLanguages]),
+    }));
+  }
+
+  const raised = Array.isArray(raisedLanguages)
+    ? raisedLanguages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+    : [];
+  const raisedLanguageAction = identityAction(
+    raised.length === 0 ? "set_raised_languages" : "change_raised_languages",
+    raised.length === 0 ? "Set raised languages" : "Change raised languages",
+    [{
+      name:"languages",
+      label:"Raised languages",
+      kind:"string_list",
+      required:true,
+      ...(raised.length === 0 ? {} : { default:raised.join(", ") }),
+      placeholder:"Hebrew, Russian",
+    }],
+    { command:"raised_languages" },
+  );
+  if (raised.length === 0 || raised.length > 3) {
+    findings.push(finding(raised.length === 0 ? "RAISED_LANGUAGES_MISSING" : "RAISED_LANGUAGES_NEED_REVIEW", "operator_decision_required", null, {
+      authoritative:Object.freeze([...raised]),
+      reason:raised.length === 0
+        ? "Genesis has no raised-language context"
+        : "Genesis raised languages should describe this person's household, civic, and schooling path rather than a country's demographic language inventory",
+      identityAction:raisedLanguageAction,
+    }));
+  } else {
+    findings.push(finding("RAISED_LANGUAGES", "healthy", null, {
+      authoritative:Object.freeze([...raised]),
+      identityAction:raisedLanguageAction,
     }));
   }
 
@@ -196,6 +297,9 @@ function identityCompleteness(thread, registration, presentation, sexEvidence) {
       fibreIdentityNumber:text(registration?.fibreIdentityNumber),
       originOrientation,
       birthDate,
+      languages:Object.freeze([...spokenLanguages]),
+      spokenLanguages:Object.freeze([...spokenLanguages]),
+      raisedLanguages:Object.freeze([...raised]),
       lifecycleStatus:thread.status,
       canonicalVisualSpecification:canonicalSpec === null ? "missing" : "present",
     }),
@@ -238,6 +342,7 @@ export function createThreadGenesisRepairService({
   visualReconciler,
   genesisSexEvidence,
   genesisSexMigrator,
+  genesisAuthority,
   identityUpdater,
   activityRecorder = null,
 } = {}) {
@@ -251,6 +356,8 @@ export function createThreadGenesisRepairService({
   requireMethod("visualReconciler", visualReconciler, "reconcileThread");
   requireMethod("genesisSexEvidence", genesisSexEvidence, "resolve");
   requireMethod("genesisSexMigrator", genesisSexMigrator, "migrate");
+  requireMethod("genesisAuthority", genesisAuthority, "getRaisedLanguagesForThread");
+  requireMethod("genesisAuthority", genesisAuthority, "correctRaisedLanguages");
   requireMethod("identityUpdater", identityUpdater, "update");
   const activity = optionalActivity(activityRecorder);
 
@@ -274,7 +381,8 @@ export function createThreadGenesisRepairService({
     const presentation = await presentationReader.getSnapshot(threadId);
     const sexEvidence = text(thread.identity?.sex) === null ? genesisSexEvidence.resolve(threadId) : null;
     const visualState = presentationVisualState(presentation, embodiment);
-    const completeness = identityCompleteness(thread, registration, presentation, sexEvidence);
+    const raisedLanguages = genesisAuthority.getRaisedLanguagesForThread(threadId, { required:false })?.languages ?? [];
+    const completeness = identityCompleteness(thread, registration, presentation, sexEvidence, raisedLanguages);
     const findings = [...completeness.findings];
 
     const canonicalSpec = thread.identity?.canonicalVisualIdentity?.specification ?? null;
@@ -316,12 +424,12 @@ export function createThreadGenesisRepairService({
     });
   }
 
-  async function updateIdentity(threadId, { operationKey:requestedKey, name, sex } = {}) {
+  async function updateIdentity(threadId, { operationKey:requestedKey, name, sex, birthDate } = {}) {
     const root = operationKey("operationKey", requestedKey);
     const before = await diagnose(threadId);
     if (!before.exists) return Object.freeze({ threadId, operationKey:root, before, after:before, changed:false });
     const thread = worldReader.getThread(threadId);
-    const result = identityUpdater.update(thread, { name, sex, operationKey:root });
+    const result = identityUpdater.update(thread, { name, sex, birthDate, operationKey:root });
     await record(activity, {
       threadId,
       operationId:root,
@@ -329,6 +437,23 @@ export function createThreadGenesisRepairService({
       status:"succeeded",
       attempt:1,
       evidence:{ eventId:result.eventId, changes:Object.keys(result.changes ?? {}) },
+    });
+    const after = await diagnose(threadId);
+    return Object.freeze({ threadId, operationKey:root, before, after, changed:result.changed === true, result });
+  }
+
+  async function updateRaisedLanguages(threadId, { operationKey:requestedKey, languages } = {}) {
+    const root = operationKey("operationKey", requestedKey);
+    const before = await diagnose(threadId);
+    if (!before.exists) return Object.freeze({ threadId, operationKey:root, before, after:before, changed:false });
+    const result = genesisAuthority.correctRaisedLanguages(threadId, { languages, operationKey:root });
+    await record(activity, {
+      threadId,
+      operationId:root,
+      stage:"thread.genesis.raised_languages.correct",
+      status:"succeeded",
+      attempt:1,
+      evidence:{ correctionId:result.correctionId, changed:result.changed === true },
     });
     const after = await diagnose(threadId);
     return Object.freeze({ threadId, operationKey:root, before, after, changed:result.changed === true, result });
@@ -416,7 +541,27 @@ export function createThreadGenesisRepairService({
       });
     }
 
-    const afterPresentation = await diagnose(threadId);
+    let afterPresentation = await diagnose(threadId);
+    if (!blocked && afterPresentation.findings.some((entry) => entry.action === "reconcile_identity_projection")) {
+      const identityProjection = requireMethod(
+        "presentationDelivery",
+        presentationDelivery,
+        "reconcileThreadPresentationIdentity",
+      );
+      const result = await identityProjection.reconcileThreadPresentationIdentity(threadId);
+      actions.push(Object.freeze({ action:"reconcile_identity_projection", result }));
+      await record(activity, {
+        threadId,
+        operationId:childOperation(root, "identity_projection"),
+        parentOperationId:root,
+        stage:"thread.repair.identity_projection",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ reconciled:result.reconciled === true },
+      });
+      afterPresentation = await diagnose(threadId);
+    }
+
     if (!blocked && afterPresentation.findings.some((entry) => entry.action === "reconcile_visual_publication")) {
       const result = await visualReconciler.reconcileThread({
         threadId,
@@ -454,5 +599,5 @@ export function createThreadGenesisRepairService({
     });
   }
 
-  return Object.freeze({ diagnose, updateIdentity, migrate, repair });
+  return Object.freeze({ diagnose, updateIdentity, updateRaisedLanguages, migrate, repair });
 }

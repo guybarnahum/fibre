@@ -10,6 +10,7 @@ import { internalizeLivedEncounter } from "./lived-encounter-reflection.mjs";
 import { formLivedEncounterMemory } from "./lived-encounter-memory.mjs";
 
 const TOKEN_ENCODER = new TextEncoder();
+const ENCOUNTER_MEMORY_LIMIT = 6;
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -47,7 +48,10 @@ function captureLivedContext({ thread, situation, semanticStateStore, memoryStor
     semanticStates: Object.freeze(semanticStateStore.listCurrentState(thread.threadId).map((state) => structuredClone(state))),
     memories: Object.freeze(memoryStore === null
       ? []
-      : memoryStore.listCurrentMemories(thread.threadId).map((memory) => structuredClone(memory))),
+      : memoryStore.listCurrentMemories(thread.threadId, {
+        limit:ENCOUNTER_MEMORY_LIMIT,
+        newestFirst:true,
+      }).map((memory) => structuredClone(memory))),
   });
 }
 

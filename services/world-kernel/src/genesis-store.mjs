@@ -3,6 +3,7 @@ import {
   ThreadAlreadyExistsError,
   UNCOMMANDED_EVENT_TYPES,
   assertId,
+  boundedThreadScopedId,
   canonicalJson,
   sha256,
   threadStateHash,
@@ -76,6 +77,29 @@ const SOURCE_DERIVED_ORIGIN_MODES = Object.freeze([
   "homage",
   "fork",
 ]);
+
+function normalizeRaisedLanguages(value) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 3) {
+    throw new TypeError("Raised languages must contain 1 to 3 languages");
+  }
+  const languages = value.map((item) => {
+    if (typeof item !== "string" || item.trim() === "") throw new TypeError("Raised language names must be non-empty strings");
+    const language = item.trim().replace(/\s+/gu, " ");
+    if (language.length > 80) throw new TypeError("Raised language names must be at most 80 characters");
+    return language;
+  });
+  const keys = languages.map((item) => item.toLocaleLowerCase("en-US"));
+  if (new Set(keys).size !== keys.length) throw new TypeError("Raised languages must be unique");
+  return languages;
+}
+
+function raisedLanguageCorrectionId(threadId, operationKey) {
+  return boundedThreadScopedId({
+    prefix:"grc",
+    threadId,
+    suffix:`raised_languages_${sha256(operationKey).slice(0, 24)}`,
+  });
+}
 
 function parseRecord(name, json) {
   try { return JSON.parse(json); }
@@ -406,6 +430,102 @@ export class GenesisStore {
       throw translateStorageError(error);
     }
     return { record: structuredClone(record), recordDigest: digest, idempotent: false };
+  }
+
+  getRaisedLanguagesForThread(threadId, { required = true } = {}) {
+    assertId("threadId", threadId);
+    if (!tableExists(this.#database, "genesis_manifests") || !tableExists(this.#database, "genesis_world_specs")) {
+      if (!required) return null;
+      throw new GenesisNotFoundError(`Thread ${threadId} has no Genesis world context`);
+    }
+    const hasCorrections = tableExists(this.#database, "genesis_raised_language_corrections");
+    const row = this.#database.prepare(`
+      SELECT m.world_spec_id,w.record_json
+        ${hasCorrections ? ",c.correction_id,c.languages_json" : ",NULL AS correction_id,NULL AS languages_json"}
+      FROM genesis_manifests m
+      JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id
+      ${hasCorrections ? `LEFT JOIN genesis_raised_language_corrections c
+        ON c.correction_id=(
+          SELECT correction_id FROM genesis_raised_language_corrections
+          WHERE thread_id=m.thread_id
+          ORDER BY recorded_at DESC,correction_id DESC
+          LIMIT 1
+        )` : ""}
+      WHERE m.thread_id=? AND m.publication_status='published'
+      LIMIT 1
+    `).get(threadId);
+    if (row === undefined) {
+      if (!required) return null;
+      throw new GenesisNotFoundError(`Thread ${threadId} has no published Genesis world context`);
+    }
+    const worldSpec = normalizeGenesisWorldSpec(parseRecord(`WorldSpec ${row.world_spec_id}`, row.record_json));
+    const languages = row.languages_json === null
+      ? [...worldSpec.languages]
+      : normalizeRaisedLanguages(parseRecord(`Raised languages for ${threadId}`, row.languages_json));
+    return Object.freeze({
+      worldSpecId:row.world_spec_id,
+      languages:Object.freeze(languages),
+      source:row.correction_id === null ? "world_spec" : "admin_correction",
+      correctionId:row.correction_id ?? null,
+    });
+  }
+
+  correctRaisedLanguages(threadId, { languages, operationKey, recordedAt = new Date().toISOString() } = {}) {
+    if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot correct raised languages");
+    assertId("threadId", threadId);
+    assertId("operationKey", operationKey);
+    const nextLanguages = normalizeRaisedLanguages(languages);
+    const current = this.getRaisedLanguagesForThread(threadId);
+    const correctionId = raisedLanguageCorrectionId(threadId, operationKey);
+    const existing = this.#database.prepare(`
+      SELECT thread_id,world_spec_id,operation_key,languages_json,previous_languages_json
+      FROM genesis_raised_language_corrections
+      WHERE correction_id=? OR operation_key=?
+      LIMIT 1
+    `).get(correctionId, operationKey);
+    if (existing !== undefined) {
+      if (
+        existing.thread_id !== threadId
+        || existing.world_spec_id !== current.worldSpecId
+        || existing.operation_key !== operationKey
+        || canonicalJson(normalizeRaisedLanguages(parseRecord(`Raised languages correction ${correctionId}`, existing.languages_json))) !== canonicalJson(nextLanguages)
+      ) {
+        throw new GenesisConflictError(`raised-language operation ${operationKey} already exists with different content`);
+      }
+      return Object.freeze({
+        changed:false,
+        reused:true,
+        correctionId,
+        worldSpecId:current.worldSpecId,
+        languages:Object.freeze(nextLanguages),
+        previousLanguages:Object.freeze(normalizeRaisedLanguages(parseRecord(`Previous raised languages ${correctionId}`, existing.previous_languages_json))),
+      });
+    }
+    if (canonicalJson(current.languages) === canonicalJson(nextLanguages)) {
+      return Object.freeze({
+        changed:false,
+        reused:true,
+        correctionId:current.correctionId,
+        worldSpecId:current.worldSpecId,
+        languages:Object.freeze(nextLanguages),
+        previousLanguages:Object.freeze([...current.languages]),
+      });
+    }
+    this.#database.transaction(() => {
+      this.#database.prepare(`
+        INSERT INTO genesis_raised_language_corrections(
+          correction_id,thread_id,world_spec_id,operation_key,languages_json,previous_languages_json,recorded_at
+        ) VALUES (?,?,?,?,?,?,?)
+      `).run(correctionId,threadId,current.worldSpecId,operationKey,canonicalJson(nextLanguages),canonicalJson(current.languages),recordedAt);
+    });
+    return Object.freeze({
+      changed:true,
+      reused:false,
+      correctionId,
+      worldSpecId:current.worldSpecId,
+      languages:Object.freeze(nextLanguages),
+      previousLanguages:Object.freeze([...current.languages]),
+    });
   }
 
   getWorldSpec(worldSpecId, { required = true } = {}) {

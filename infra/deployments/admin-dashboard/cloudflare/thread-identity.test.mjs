@@ -80,30 +80,46 @@ test("O1 keeps public identity and publishes only ready media", async () => {
   assert.equal(resolved.assets[0].objectRef, "asset_object_1", "ready portrait must remain addressable");
 });
 
-test("O1 preserves rich authoritative World Thread state", async () => {
+test("O1 preserves authoritative birth and raised cultural context", async () => {
   const resolved = await resolveAdminWorldThreadIdentity({
     threadId:"thr_test_1",
     fetchImpl:async (input) => {
       assert.equal(new URL(input).pathname, "/internal/threads/thr_test_1/identity");
       return Response.json({
-        contract:"fibre-world-thread-identity-v0.2",
+        contract:"fibre-world-thread-identity-v0.3",
         identity:{
           threadId:"thr_test_1",
           fibreIdentityNumber:"4JX5-2N-04K2",
-          lifecycleStatus:"active",
-          thread:{ threadId:"thr_test_1", version:7, status:"active", memoryRefs:["mem_1"] },
-          civilRegistration:{ fibreIdentityNumber:"4JX5-2N-04K2", worldRef:"world_1" },
-          embodiments:[{ embodimentId:"emb_1", revision:1 }],
-          symbolicGenomes:[{ header:{ genomeId:"genome_1" }, traits:{ temperament:"patient;curious" } }],
+          displayName:"Thread One",
+          sex:"female",
+          status:"active",
+          birthDate:"2012-02-03",
+          birthPlace:"Tbilisi",
+          culture:["Georgian"],
+          languages:["ka"],
+          raisedAs:{
+            culturalContext:"Tbilisi Georgian family",
+            languages:["ka","en"],
+            schoolingOrCommunityContext:"Tbilisi public school",
+          },
+          originOrientation:"original",
+          summary:"I persist.",
+          version:7,
+          stateHash:"sha256:world-state",
+          updatedAt:"2026-09-18T00:00:00Z",
         },
       });
     },
   });
-  assert.equal(resolved.thread.version, 7);
-  assert.deepEqual(resolved.thread.memoryRefs, ["mem_1"]);
-  assert.equal(resolved.civilRegistration.worldRef, "world_1");
-  assert.equal(resolved.embodiments[0].embodimentId, "emb_1");
-  assert.equal(resolved.symbolicGenomes[0].traits.temperament, "patient;curious");
+  assert.equal(resolved.displayName, "Thread One");
+  assert.equal(resolved.birthPlace, "Tbilisi");
+  assert.deepEqual(resolved.culture, ["Georgian"]);
+  assert.deepEqual(resolved.raisedAs, {
+    culturalContext:"Tbilisi Georgian family",
+    languages:["ka","en"],
+    schoolingOrCommunityContext:"Tbilisi public school",
+  });
+  assert.equal(resolved.version, 7);
 });
 
 test("O2 treats only an explicit World THREAD_NOT_FOUND as not born", async () => {

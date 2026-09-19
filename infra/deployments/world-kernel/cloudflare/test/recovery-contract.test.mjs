@@ -10,7 +10,10 @@ import {
 } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
 import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
 import { attachTestCivilRegistration } from "#services/world-kernel/test/support/civil-registration-fixture.mjs";
-import { createWorldCloudflareRuntime } from "../runtime.mjs";
+import {
+  createWorldCloudflareRuntime,
+  repairReconciliationDisposition,
+} from "../runtime.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -235,6 +238,23 @@ function serviceEnvironment(calls) {
     },
   };
 }
+
+test("repair reconciliation schedules only unfinished visual work and retires healthy stale work", () => {
+  assert.equal(repairReconciliationDisposition({
+    after:{ health:"healthy" },
+    actions:[{ action:"reconcile_identity_projection", result:{ reconciled:true } }],
+  }), "retire");
+
+  assert.equal(repairReconciliationDisposition({
+    after:{ health:"repairable" },
+    actions:[{ action:"reconcile_visual_publication", result:{ complete:false } }],
+  }), "retry_visual");
+
+  assert.equal(repairReconciliationDisposition({
+    after:{ health:"operator_decision_required" },
+    actions:[],
+  }), "none");
+});
 
 test("Cloudflare World restart resumes pending work once and preserves convergence", async () => {
   const storage = durableStorage();

@@ -68,12 +68,19 @@ export function createGenesisPresentationWriteApi({ presentationServer, privateT
         const current = await presentationServer.getSnapshot(channelId);
 
         if (current !== null) {
-          if (!sameBundle(current.snapshot, bundle)) {
+          const identical = sameBundle(current.snapshot, bundle);
+          const catalog = typeof presentationServer.getCatalog === "function"
+            ? await presentationServer.getCatalog(channelId)
+            : null;
+          const sameGenesisLineage = catalog?.genesisId === genesisId
+            && catalog?.publicationDigest === publicationDigest;
+          if (!identical && !sameGenesisLineage) {
             return Response.json({ error: "presentation_conflict", threadId, genesisId }, { status: 409 });
           }
           return Response.json({
             ok: true,
             reused: true,
+            superseded:!identical && sameGenesisLineage,
             genesisId,
             threadId,
             channelId,

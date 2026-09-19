@@ -122,13 +122,6 @@ function situationFromRow(row) {
   return record;
 }
 
-function isActiveAt(plan, at) {
-  const instant = Date.parse(at);
-  return Date.parse(plan.authoredAt) <= instant &&
-    Date.parse(plan.horizonStart) <= instant &&
-    Date.parse(plan.horizonEnd) >= instant;
-}
-
 function physicalPlaceRefs(plan) {
   return [...new Set(plan.stops.map((stop) => stop.physicalPlaceRef))];
 }
@@ -300,9 +293,18 @@ export class LivedNowStore {
   latestPlan(threadId, kind, { at } = {}) {
     if (!at) throw new TypeError("latestPlan requires an at timestamp");
     assertIsoTimestamp("latestPlan at", at);
-    return this.listPlans(threadId, { kind })
-      .filter((plan) => isActiveAt(plan, at))
-      .at(-1) ?? null;
+    this.#requireThread(threadId);
+    if (!["personal", "care"].includes(kind)) throw new TypeError("plan kind is invalid");
+    const row = this.#database.prepare(`
+      SELECT * FROM lived_now_plans
+      WHERE subject_thread_id=? AND plan_kind=?
+        AND authored_at<=?
+        AND json_extract(record_json,'$.horizonStart')<=?
+        AND json_extract(record_json,'$.horizonEnd')>=?
+      ORDER BY authored_at DESC,plan_id DESC
+      LIMIT 1
+    `).get(threadId, kind, at, at, at);
+    return row === undefined ? null : planFromRow(row);
   }
 
   getSituation(situationId, { required = true } = {}) {

@@ -10,6 +10,10 @@ import {
   repoRootFrom,
   runWrangler,
 } from "./cloudflare-operator.mjs";
+import {
+  d1BindingsFromConfig,
+  ensureCloudflareD1Migrations,
+} from "./cloudflare-d1-migrations.mjs";
 
 const execFile = promisify(execFileCallback);
 const SERVICES = Object.freeze(new Set([
@@ -71,6 +75,8 @@ export async function deployCloudflareService({
   resolveSource = resolveCleanGitSha,
   readFileImpl = readFile,
   writeFileImpl = writeFile,
+  ensureD1MigrationsImpl = ensureCloudflareD1Migrations,
+  print = console.log,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   const serviceId = normalizeService(service);
@@ -91,6 +97,13 @@ export async function deployCloudflareService({
   const deployConfigPath = resolve(root, ".fibre", "cloudflare", env, "service-deploy", `${serviceId}.jsonc`);
   await mkdir(dirname(deployConfigPath), { recursive: true });
   await writeFileImpl(deployConfigPath, `${JSON.stringify(prepared.config, null, 2)}\n`, { mode: 0o600 });
+  await ensureD1MigrationsImpl({
+    repoRoot:root,
+    databases:d1BindingsFromConfig(prepared.config),
+    runner,
+    print,
+  });
+  print(`WORKER DEPLOY ${serviceId} -> ${prepared.workerName}`);
   const result = await runner([
     "deploy",
     "--config", deployConfigPath,

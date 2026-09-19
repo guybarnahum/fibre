@@ -16,6 +16,8 @@ const FIBRE_SQLITE_META_TABLE = "_fibre_sqlite_meta";
 const USER_VERSION_KEY = "user_version";
 const USER_VERSION_READ_PATTERN = /^\s*PRAGMA\s+user_version\s*;?\s*$/iu;
 const USER_VERSION_WRITE_PATTERN = /^\s*PRAGMA\s+user_version\s*=\s*(\d+)\s*;?\s*$/iu;
+const COST_BY_STORAGE = new WeakMap();
+const OBSERVED_CURSORS = new WeakSet();
 
 function assertDurableObjectStorage(storage, scopeId) {
   if (!storage || typeof storage !== "object") {
@@ -68,22 +70,76 @@ function assertReadOnlySql(sql) {
   }
 }
 
-function normalizeRows(cursor) {
+function queryLabel(value, scopeId) {
+  if (value === null || value === undefined) return scopeId;
+  if (typeof value !== "string" || value.trim() === "") throw new TypeError("transactional state queryLabel must be non-empty");
+  return value.trim();
+}
+
+function costFor(storage) {
+  let cost = COST_BY_STORAGE.get(storage);
+  if (cost === undefined) {
+    cost = { rowsRead:0, rowsWritten:0, queries:0, labels:new Map() };
+    COST_BY_STORAGE.set(storage, cost);
+  }
+  return cost;
+}
+
+function metric(value) {
+  const number = Number(value ?? 0);
+  return Number.isSafeInteger(number) && number >= 0 ? number : 0;
+}
+
+function observeCursor(cost, label, cursor) {
+  if (!cursor || typeof cursor !== "object" || OBSERVED_CURSORS.has(cursor)) return;
+  OBSERVED_CURSORS.add(cursor);
+  const rowsRead = metric(cursor.rowsRead);
+  const rowsWritten = metric(cursor.rowsWritten);
+  cost.rowsRead += rowsRead;
+  cost.rowsWritten += rowsWritten;
+  cost.queries += 1;
+  const byLabel = cost.labels.get(label) ?? { rowsRead:0, rowsWritten:0, queries:0 };
+  byLabel.rowsRead += rowsRead;
+  byLabel.rowsWritten += rowsWritten;
+  byLabel.queries += 1;
+  cost.labels.set(label, byLabel);
+}
+
+function costSnapshot(cost) {
+  return Object.freeze({
+    rowsRead:cost.rowsRead,
+    rowsWritten:cost.rowsWritten,
+    queries:cost.queries,
+    labels:Object.freeze(Object.fromEntries(
+      [...cost.labels.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([label, value]) => [
+        label,
+        Object.freeze({ ...value }),
+      ]),
+    )),
+  });
+}
+
+function normalizeRows(cursor, cost, label) {
   if (!cursor || typeof cursor.toArray !== "function") {
     throw new TypeError("Cloudflare SQLite cursor must provide toArray()");
   }
-  return cursor.toArray().map((row) => Object.fromEntries(Object.entries(row)));
+  const rows = cursor.toArray().map((row) => Object.fromEntries(Object.entries(row)));
+  observeCursor(cost, label, cursor);
+  return rows;
 }
 
 function syntheticCursor(rows, { rowsWritten = 0 } = {}) {
   const snapshot = rows.map((row) => Object.freeze({ ...row }));
-  return Object.freeze({
+  const cursor = {
     rowsWritten,
     toArray() { return snapshot.map((row) => ({ ...row })); },
-  });
+  };
+  OBSERVED_CURSORS.add(cursor);
+  return Object.freeze(cursor);
 }
 
-function runResult(cursor) {
+function runResult(cursor, cost, label) {
+  observeCursor(cost, label, cursor);
   return {
     changes: Number.isSafeInteger(cursor?.rowsWritten) ? cursor.rowsWritten : 0,
   };
@@ -99,28 +155,39 @@ function classifyUserVersionPragma(sql) {
   return Object.freeze({ kind: "write", version });
 }
 
-function readCloudflareUserVersion(storage) {
-  const table = normalizeRows(storage.sql.exec(
+function rawRows(storage, cost, label, sql, ...params) {
+  return normalizeRows(storage.sql.exec(sql, ...params), cost, label);
+}
+
+function readCloudflareUserVersion(storage, cost, label) {
+  const table = rawRows(
+    storage,
+    cost,
+    label,
     "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1",
     FIBRE_SQLITE_META_TABLE,
-  ))[0];
+  )[0];
   if (table === undefined) return syntheticCursor([{ user_version: 0 }]);
-  const row = normalizeRows(storage.sql.exec(
+  const row = rawRows(
+    storage,
+    cost,
+    label,
     `SELECT integer_value AS user_version FROM ${FIBRE_SQLITE_META_TABLE} WHERE key = ? LIMIT 1`,
     USER_VERSION_KEY,
-  ))[0];
+  )[0];
   const version = Number(row?.user_version ?? 0);
   if (!Number.isSafeInteger(version) || version < 0) throw new Error("Cloudflare Fibre SQLite user_version metadata is invalid");
   return syntheticCursor([{ user_version: version }]);
 }
 
-function writeCloudflareUserVersion(storage, version) {
-  storage.sql.exec(`
+function writeCloudflareUserVersion(storage, version, cost, label) {
+  const schemaCursor = storage.sql.exec(`
     CREATE TABLE IF NOT EXISTS ${FIBRE_SQLITE_META_TABLE} (
       key TEXT PRIMARY KEY,
       integer_value INTEGER NOT NULL CHECK (integer_value >= 0)
     ) STRICT
   `);
+  observeCursor(cost, label, schemaCursor);
   return storage.sql.exec(
     `INSERT INTO ${FIBRE_SQLITE_META_TABLE}(key, integer_value) VALUES (?, ?)
      ON CONFLICT(key) DO UPDATE SET integer_value = excluded.integer_value`,
@@ -129,21 +196,21 @@ function writeCloudflareUserVersion(storage, version) {
   );
 }
 
-function executeCloudflareSql(storage, sql, params, { readOnly }) {
+function executeCloudflareSql(storage, sql, params, { readOnly, cost, label }) {
   const pragma = classifyUserVersionPragma(sql);
   if (pragma?.kind === "read") {
     if (params.length !== 0) throw new TypeError("PRAGMA user_version does not accept bound parameters");
-    return readCloudflareUserVersion(storage);
+    return readCloudflareUserVersion(storage, cost, label);
   }
   if (pragma?.kind === "write") {
     if (params.length !== 0) throw new TypeError("PRAGMA user_version does not accept bound parameters");
     if (readOnly) throw new Error("transactional state session is read-only");
-    return writeCloudflareUserVersion(storage, pragma.version);
+    return writeCloudflareUserVersion(storage, pragma.version, cost, label);
   }
   return storage.sql.exec(sql, ...params);
 }
 
-function createSession(scopeId, storage, { readOnly }) {
+function createSession(scopeId, storage, { readOnly, label, cost }) {
   let closed = false;
   let transactionActive = false;
 
@@ -155,27 +222,27 @@ function createSession(scopeId, storage, { readOnly }) {
     assertOpen();
     if (readOnly && mutation) throw new Error(`transactional state scope ${scopeId} is read-only`);
     if (readOnly) assertReadOnlySql(sql);
-    return executeCloudflareSql(storage, sql, params, { readOnly });
+    return executeCloudflareSql(storage, sql, params, { readOnly, cost, label });
   }
 
   const session = {
     scopeId,
     readOnly,
     exec(sql) {
-      execute(sql, [], { mutation: !readOnly });
+      observeCursor(cost, label, execute(sql, [], { mutation: !readOnly }));
     },
     prepare(sql) {
       assertOpen();
       return Object.freeze({
         run(...params) {
-          return runResult(execute(sql, params, { mutation: true }));
+          return runResult(execute(sql, params, { mutation: true }), cost, label);
         },
         get(...params) {
-          const rows = normalizeRows(execute(sql, params));
+          const rows = normalizeRows(execute(sql, params), cost, label);
           return rows[0];
         },
         all(...params) {
-          return normalizeRows(execute(sql, params));
+          return normalizeRows(execute(sql, params), cost, label);
         },
       });
     },
@@ -207,12 +274,22 @@ export function createCloudflareTransactionalStatePort({ scopes } = {}) {
       if (!normalizedScopes.has(scopeId)) throw new Error(`transactional state scope ${scopeId} is not configured`);
       return stateGuarantees();
     },
-    open(scopeId, { readOnly = false } = {}) {
+    open(scopeId, { readOnly = false, queryLabel:requestedLabel = null } = {}) {
       assertInfraId("transactional state scopeId", scopeId);
       if (typeof readOnly !== "boolean") throw new TypeError("transactional state readOnly must be boolean");
       const storage = normalizedScopes.get(scopeId);
       if (storage === undefined) throw new Error(`transactional state scope ${scopeId} is not configured`);
-      return createSession(scopeId, storage, { readOnly });
+      return createSession(scopeId, storage, {
+        readOnly,
+        label:queryLabel(requestedLabel, scopeId),
+        cost:costFor(storage),
+      });
+    },
+    costSnapshot(scopeId) {
+      assertInfraId("transactional state scopeId", scopeId);
+      const storage = normalizedScopes.get(scopeId);
+      if (storage === undefined) throw new Error(`transactional state scope ${scopeId} is not configured`);
+      return costSnapshot(costFor(storage));
     },
   });
 }

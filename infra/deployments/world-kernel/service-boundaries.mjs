@@ -152,6 +152,19 @@ export function createThreadPresentationPublisher({
         "THREAD_PRESENTATION_PUBLICATION_FAILED",
       );
     },
+    reconcileIdentityProjection({ threadId, projection, projectedAt }) {
+      const identityUrl = endpoint(
+        baseUrl,
+        `/internal/threads/${encodeURIComponent(threadId)}/identity-projection`,
+        "Thread Presentation URL",
+      );
+      return post(
+        identityUrl,
+        { projection, projectedAt },
+        "World identity projection",
+        "THREAD_PRESENTATION_IDENTITY_PROJECTION_FAILED",
+      );
+    },
     async publishCurrentPresent({ threadId, present }) {
       const body = await post(
         presentUrl,

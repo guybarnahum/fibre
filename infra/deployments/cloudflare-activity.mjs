@@ -1,5 +1,6 @@
 import { createActivityRecorder } from "#infra/telemetry";
 import { createCloudflareActivityTelemetryPort } from "#infra/providers/cloudflare/telemetry";
+import { logD1Cost } from "./cloudflare-d1-cost.mjs";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
@@ -20,7 +21,18 @@ export function createCloudflareActivityRecorder({ env, service } = {}) {
   const deploymentGitSha = typeof env.FIBRE_DEPLOYMENT_GIT_SHA === "string" && env.FIBRE_DEPLOYMENT_GIT_SHA !== ""
     ? env.FIBRE_DEPLOYMENT_GIT_SHA
     : null;
-  const telemetry = createCloudflareActivityTelemetryPort({ database: env.ACTIVITY_LOG });
+  const telemetry = createCloudflareActivityTelemetryPort({
+    database:env.ACTIVITY_LOG,
+    onCost(operation, result, context) {
+      logD1Cost({
+        database:"activity-log",
+        service:serviceId,
+        operation,
+        result,
+        ...context,
+      });
+    },
+  });
   return createActivityRecorder({
     telemetry,
     environment,

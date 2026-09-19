@@ -120,7 +120,23 @@ export async function resolveAdminWorldThreadIdentity({ threadId, fetchImpl = gl
   return Object.freeze({
     threadId: resolvedThreadId,
     fibreIdentityNumber: clean(identity.fibreIdentityNumber),
-    lifecycleStatus: clean(identity.lifecycleStatus),
+    lifecycleStatus: clean(identity.lifecycleStatus ?? identity.status),
+    displayName: finishedName(identity.displayName ?? identity.thread?.identity?.name),
+    sex: clean(identity.sex ?? identity.thread?.identity?.sex),
+    birthDate: clean(identity.birthDate ?? identity.thread?.identity?.birthDate),
+    birthPlace: clean(identity.birthPlace ?? identity.thread?.identity?.birthCity),
+    originOrientation: clean(identity.originOrientation ?? identity.thread?.identity?.originOrientation),
+    culture: Object.freeze(cleanStrings(identity.culture ?? identity.thread?.identity?.culture)),
+    languages: Object.freeze(cleanStrings(identity.languages ?? identity.thread?.identity?.languages)),
+    raisedAs: identity.raisedAs && typeof identity.raisedAs === "object" ? Object.freeze({
+      culturalContext:clean(identity.raisedAs.culturalContext),
+      languages:Object.freeze(cleanStrings(identity.raisedAs.languages)),
+      schoolingOrCommunityContext:clean(identity.raisedAs.schoolingOrCommunityContext),
+    }) : null,
+    summary: clean(identity.summary ?? identity.thread?.identity?.selfDescription),
+    version: Number.isFinite(identity.version) ? identity.version : (Number.isFinite(identity.thread?.version) ? identity.thread.version : null),
+    stateHash: clean(identity.stateHash),
+    updatedAt: clean(identity.updatedAt),
     thread: identity.thread && typeof identity.thread === "object" ? structuredClone(identity.thread) : null,
     civilRegistration: identity.civilRegistration && typeof identity.civilRegistration === "object" ? structuredClone(identity.civilRegistration) : null,
     embodiments: Object.freeze(Array.isArray(identity.embodiments) ? structuredClone(identity.embodiments) : []),
@@ -172,16 +188,31 @@ export function combineAdminThreadIdentity({ world, presentation } = {}) {
   const threadIdentity = world.thread?.identity ?? {};
   const assets = mergeMedia(world, presentation);
   const worldPortrait = assets.find((asset) => asset.source === "world_embodiment" && asset.role === "canonical_portrait") ?? null;
-  const worldName = finishedName(threadIdentity.name);
-  const worldBirthDate = clean(threadIdentity.birthDate);
-  const worldSex = clean(threadIdentity.sex);
+  const worldName = finishedName(world.displayName ?? threadIdentity.name);
+  const worldBirthDate = clean(world.birthDate ?? threadIdentity.birthDate);
+  const worldSex = clean(world.sex ?? threadIdentity.sex);
+  const worldBirthPlace = clean(world.birthPlace ?? threadIdentity.birthCity);
+  const worldCulture = Object.freeze(cleanStrings(world.culture ?? threadIdentity.culture));
+  const worldLanguages = Object.freeze(cleanStrings(world.languages ?? threadIdentity.languages));
+  const raisedAs = world.raisedAs ?? null;
   return Object.freeze({
     threadId: world.threadId,
     displayName: worldName ?? presentation?.displayName ?? null,
     fibreIdentityNumber: world.fibreIdentityNumber ?? presentation?.fibreIdentityNumber ?? null,
     birthDate: worldBirthDate ?? presentation?.birthDate ?? null,
+    birthPlace:worldBirthPlace,
     sex:worldSex,
+    culture:worldCulture,
+    languages:worldLanguages,
+    raisedAs,
+    originOrientation:clean(world.originOrientation ?? threadIdentity.originOrientation),
+    summary:clean(world.summary ?? threadIdentity.selfDescription),
     lifecycleStatus: world.lifecycleStatus ?? presentation?.lifecycleStatus ?? null,
+    version: Number.isFinite(world.version)
+      ? world.version
+      : (Number.isFinite(world.thread?.version) ? world.thread.version : null),
+    stateHash: clean(world.stateHash),
+    updatedAt: clean(world.updatedAt),
     visualIdentity: presentation?.visualIdentity ?? (worldPortrait ? Object.freeze({
       embodimentId: worldPortrait.embodimentId,
       embodimentRevision: worldPortrait.embodimentRevision,

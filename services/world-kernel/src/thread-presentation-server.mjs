@@ -84,6 +84,17 @@ export function createThreadPresentationServer({ infra }) {
         threadId: normalized.presentation.manifest.threadId,
         lifecycleStatus: normalized.presentation.manifest.lifecycleStatus,
         fixture: normalized.presentation.manifest.fixture,
+        publicDirectory: {
+          displayName: normalized.presentation.subject?.displayName ?? null,
+          fibreIdentityNumber: normalized.presentation.civilIdentity?.fibreIdentityNumber ?? null,
+          birthDate: normalized.presentation.subject?.birthDate ?? null,
+          languages: normalized.presentation.subject?.languages ?? [],
+          homePlaceRef: normalized.presentation.subject?.homePlaceRef ?? null,
+          headline: normalized.presentation.introduction?.headline ?? null,
+          summary: normalized.presentation.introduction?.summary ?? null,
+          visualDescription: normalized.presentation.visualIdentity?.subjectDescription ?? null,
+          identityCardVisibility: normalized.presentation.identityCard?.visibility ?? null,
+        },
         latestSnapshotVersion: snapshotVersion,
         latestSnapshotDigest: digest,
         ...catalog,
@@ -102,6 +113,11 @@ export function createThreadPresentationServer({ infra }) {
         pointer,
         snapshot: JSON.parse(typeof stored.bytes === "string" ? stored.bytes : new TextDecoder().decode(stored.bytes)),
       };
+    },
+
+    async getCatalog(channelId) {
+      assertId("channelId", channelId);
+      return infra.catalog.get(channelId);
     },
   });
 }

@@ -10,6 +10,18 @@ export function createGenesisTables(database) {
       created_at TEXT NOT NULL
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS genesis_raised_language_corrections (
+      correction_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      world_spec_id TEXT NOT NULL,
+      operation_key TEXT NOT NULL UNIQUE,
+      languages_json TEXT NOT NULL CHECK (json_valid(languages_json)),
+      previous_languages_json TEXT NOT NULL CHECK (json_valid(previous_languages_json)),
+      recorded_at TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (world_spec_id) REFERENCES genesis_world_specs(world_spec_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS genesis_manifests (
       genesis_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL UNIQUE,
@@ -182,6 +194,12 @@ export function createGenesisTables(database) {
     FROM genesis_manifests
     WHERE publication_status='published';
 
+    CREATE TRIGGER IF NOT EXISTS genesis_raised_language_corrections_no_update
+      BEFORE UPDATE ON genesis_raised_language_corrections
+      BEGIN SELECT RAISE(ABORT,'genesis_raised_language_corrections is append-only'); END;
+    CREATE TRIGGER IF NOT EXISTS genesis_raised_language_corrections_no_delete
+      BEFORE DELETE ON genesis_raised_language_corrections
+      BEGIN SELECT RAISE(ABORT,'genesis_raised_language_corrections is append-only'); END;
     CREATE TRIGGER IF NOT EXISTS genesis_world_specs_no_update
       BEFORE UPDATE ON genesis_world_specs
       BEGIN SELECT RAISE(ABORT,'genesis_world_specs is immutable'); END;

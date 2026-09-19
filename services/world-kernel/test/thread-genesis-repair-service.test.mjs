@@ -18,7 +18,7 @@ function fixture() {
   const threadId = "thr_repair_1";
   const objectRef = "visual_identity_reference_1";
   const officialMediaId = "media_identity_1";
-  const state = { presentation:null, rebuilt:false, visual:false, activity:[] };
+  const state = { presentation:null, rebuilt:false, visual:false, activity:[], raisedLanguages:["English"] };
   const thread = {
     threadId,
     status:"active",
@@ -27,6 +27,8 @@ function fixture() {
       sex:"female",
       originOrientation:"original",
       selfDescription:"I persist.",
+      birthDate:"2004-08-20",
+      languages:["English"],
       canonicalVisualIdentity:{ specification:{ subject:{ description:"stable face" } } },
     },
   };
@@ -40,7 +42,7 @@ function fixture() {
     asset:{ referenceObjectRef:objectRef },
   };
   const publicIdentity = {
-    subject:{ displayName:"Repair Thread" },
+    subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
     civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
   };
   const service = createThreadGenesisRepairService({
@@ -57,6 +59,14 @@ function fixture() {
           media:{ assets:[] },
         };
         return { rebuilt:true, genesisId:"gen_repair_1", threadId };
+      },
+      async reconcileThreadPresentationIdentity(id) {
+        assert.equal(id, threadId);
+        state.presentation.presentation.subject = {
+          ...(state.presentation.presentation.subject ?? {}),
+          displayName:thread.identity.name,
+        };
+        return { threadId, reconciled:true };
       },
     },
     visualReconciler:{
@@ -77,6 +87,15 @@ function fixture() {
     },
     genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("sex migration should not run for a complete Thread"); } },
+    genesisAuthority:{
+      getRaisedLanguagesForThread() { return { languages:[...state.raisedLanguages] }; },
+      correctRaisedLanguages(id, { languages }) {
+        assert.equal(id, threadId);
+        const previousLanguages = [...state.raisedLanguages];
+        state.raisedLanguages = [...languages];
+        return { changed:true, correctionId:"grc_test", languages:[...languages], previousLanguages };
+      },
+    },
     identityUpdater:NO_IDENTITY_UPDATE,
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
   });
@@ -87,8 +106,13 @@ test("R1 diagnoses missing Presentation and unpublished canonical visual without
   const { service, threadId } = fixture();
   const diagnosis = await service.diagnose(threadId);
   assert.equal(diagnosis.health, "repairable");
-  assert.equal(diagnosis.findings.find((entry) => entry.code === "NAME").state, "healthy");
+  const name = diagnosis.findings.find((entry) => entry.code === "NAME");
+  assert.equal(name.state, "healthy");
+  assert.equal(name.identityAction.id, "change_name");
+  assert.equal(name.identityAction.input.fields[0].default, "Repair Thread");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "SEX").state, "healthy");
+  assert.equal(diagnosis.findings.find((entry) => entry.code === "SPOKEN_LANGUAGES").identityAction, undefined);
+  assert.equal(diagnosis.findings.find((entry) => entry.code === "RAISED_LANGUAGES").identityAction.id, "change_raised_languages");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "PRESENTATION_MISSING").action, "rebuild_presentation");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "CANONICAL_VISUAL_NOT_PUBLISHED").action, "reconcile_visual_publication");
 });
@@ -110,7 +134,7 @@ test("R4 keeps authoritative identity complete while public Presentation stays a
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Repair Thread" },
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -130,7 +154,7 @@ test("R4 distinguishes public projection omission from authoritative Genesis abs
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{},
+      subject:{ birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -144,11 +168,30 @@ test("R4 distinguishes public projection omission from authoritative Genesis abs
   assert.equal(diagnosis.health, "repairable");
 });
 
+test("R4 repairs stale public name from World without rebuilding Genesis", async () => {
+  const { service, state, threadId } = fixture();
+  state.presentation = {
+    presentation:{
+      subject:{ displayName:"Old Name", birthDate:"2004-08-20", languages:["English"] },
+      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
+      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
+      identityCard:{ officialPhotoMediaRef:"media_identity_1" },
+    },
+    media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
+  };
+
+  const result = await service.repair(threadId, { repairKey:"repair_identity_projection_1" });
+
+  assert.equal(state.rebuilt, false, "Genesis rebuild was used");
+  assert.deepEqual(result.actions.map((entry) => entry.action), ["reconcile_identity_projection"], "wrong repair path");
+  assert.equal(result.after.health, "healthy", "identity did not converge");
+});
+
 test("R4 surfaces authority conflicts instead of silently repairing them", async () => {
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Different Thread" },
+      subject:{ displayName:"Different Thread", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ZZZZ-99-ZZZZ" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -174,6 +217,10 @@ test("Fibre Thread and missing sex require explicit operator identity decisions 
     visualReconciler:{ async reconcileThread() { throw new Error("should not run"); } },
     genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("diagnosis must not migrate"); } },
+    genesisAuthority:{
+      getRaisedLanguagesForThread() { return { languages:["English"] }; },
+      correctRaisedLanguages() { throw new Error("diagnosis must not correct Genesis"); },
+    },
     identityUpdater:NO_IDENTITY_UPDATE,
   });
   const diagnosis = await service.diagnose("thr_legacy_1");
@@ -189,12 +236,87 @@ test("Fibre Thread and missing sex require explicit operator identity decisions 
   assert.equal(sex.identityAction.id, "set_sex");
 });
 
+test("legacy demographic Raised-language list requires explicit operator review", async () => {
+  const { service, state, threadId } = fixture();
+  state.raisedLanguages = ["Hebrew", "Arabic", "English", "Russian", "Amharic"];
+  state.presentation = {
+    presentation:{
+      subject:{
+        displayName:"Repair Thread",
+        birthDate:"2004-08-20",
+        languages:["Hebrew", "Arabic", "English", "Russian", "Amharic"],
+      },
+      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
+      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
+      identityCard:{ officialPhotoMediaRef:"media_identity_1" },
+    },
+    media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
+  };
+
+  const diagnosis = await service.diagnose(threadId);
+  const finding = diagnosis.findings.find((entry) => entry.code === "RAISED_LANGUAGES_NEED_REVIEW");
+  assert.equal(diagnosis.health, "operator_decision_required");
+  assert.deepEqual(finding.authoritative, ["Hebrew", "Arabic", "English", "Russian", "Amharic"]);
+  assert.equal(finding.identityAction.id, "change_raised_languages");
+  assert.equal(finding.identityAction.input.fields[0].default, "Hebrew, Arabic, English, Russian, Amharic");
+});
+
+test("missing birth date requires explicit operator admission and preserves Presentation evidence", async () => {
+  const { service, state, threadId, thread } = fixture();
+  delete thread.identity.birthDate;
+  state.presentation = {
+    presentation:{
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
+      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
+      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
+      identityCard:{ officialPhotoMediaRef:"media_identity_1" },
+    },
+    media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
+  };
+
+  const diagnosis = await service.diagnose(threadId);
+  const birthDate = diagnosis.findings.find((entry) => entry.code === "BIRTH_DATE_MISSING");
+  assert.equal(diagnosis.health, "operator_decision_required");
+  assert.equal(birthDate.presentation, "2004-08-20");
+  assert.equal(birthDate.identityAction.id, "admit_birth_date");
+  assert.equal(birthDate.identityAction.input.fields[0].default, "2004-08-20");
+
+  const repair = await service.repair(threadId, { repairKey:"repair_preserved_birth_date_1" });
+  assert.equal(thread.identity.birthDate, undefined, "repair promoted Presentation birth date into World");
+  assert.deepEqual(repair.actions, [], "repair bypassed operator birth-date admission");
+});
+
+test("preserved public name requires explicit World admission instead of being lost or silently promoted", async () => {
+  const { service, state, threadId, thread } = fixture();
+  thread.identity.name = "Fibre Thread";
+  state.presentation = {
+    presentation:{
+      subject:{ displayName:"Maya Cohen", birthDate:"2004-08-20", languages:["English"] },
+      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
+      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
+      identityCard:{ officialPhotoMediaRef:"media_identity_1" },
+    },
+    media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
+  };
+
+  const diagnosis = await service.diagnose(threadId);
+  const name = diagnosis.findings.find((entry) => entry.code === "NAME_UNFINISHED");
+  assert.equal(name.state, "operator_decision_required", "name admission was not explicit");
+  assert.equal(name.presentation, "Maya Cohen", "preserved name was lost");
+  assert.equal(name.identityAction.id, "admit_name", "wrong admission action");
+  assert.equal(name.identityAction.input.fields[0].default, "Maya Cohen", "candidate was not prefilled");
+
+  const repair = await service.repair(threadId, { repairKey:"repair_preserved_name_1" });
+  assert.equal(thread.identity.name, "Fibre Thread", "repair promoted projection into World");
+  assert.deepEqual(repair.actions, [], "repair bypassed operator admission");
+});
+
 test("migration changes legacy authority; repair never substitutes for it", async () => {
   const { state, threadId, thread } = fixture();
   delete thread.identity.sex;
   state.presentation = {
     presentation:{
-      subject:{ displayName:"Repair Thread" },
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
       identityCard:{ officialPhotoMediaRef:"media_identity_1" },
@@ -215,6 +337,10 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
         current.identity.sex = evidence.sex;
         return { migrated:true, reused:false, sex:evidence.sex, eventId:"evt_genesis_sex_migrated", evidence };
       },
+    },
+    genesisAuthority:{
+      getRaisedLanguagesForThread() { return { languages:["English"] }; },
+      correctRaisedLanguages() { throw new Error("migration must not correct Genesis languages"); },
     },
     identityUpdater:NO_IDENTITY_UPDATE,
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },

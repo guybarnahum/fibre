@@ -82,6 +82,45 @@ test("private Genesis write API persists a real newborn presentation and reuses 
   assert.equal(catalog.projectionKind, "genesis_birth");
 });
 
+test("private Genesis retry accepts a later Presentation snapshot from the same Genesis lineage", async () => {
+  const infra = createMemoryInfraDriver();
+  const presentationServer = createThreadPresentationServer({ infra });
+  const api = createGenesisPresentationWriteApi({ presentationServer, privateToken: TOKEN });
+  const input = birth();
+
+  const created = await api.fetch(request(input));
+  assert.equal(created.status, 201);
+  const first = await created.json();
+  const current = await presentationServer.getSnapshot(first.channelId);
+
+  const evolved = structuredClone(current.snapshot);
+  evolved.presentation.subject.displayName = "Ari Vale Current";
+  evolved.presentation.manifest.generatedAt = "2026-08-30T04:05:00.000Z";
+  const published = await presentationServer.publishSnapshot({
+    channelId:first.channelId,
+    objectRef:"snapshot_world_identity_test",
+    snapshotVersion:"world-identity-test",
+    bundle:{
+      presentation:evolved.presentation,
+      media:evolved.media,
+      provenance:evolved.provenance,
+    },
+    expectedSequence:current.pointer.sequence,
+    catalog:{ projectionKind:"world_identity_reconciliation" },
+  });
+
+  const retried = await api.fetch(request(input));
+  assert.equal(retried.status, 200);
+  const retry = await retried.json();
+  assert.equal(retry.reused, true);
+  assert.equal(retry.superseded, true);
+  assert.equal(retry.snapshotDigest, published.pointer.snapshotDigest);
+
+  const stillCurrent = await presentationServer.getSnapshot(first.channelId);
+  assert.equal(stillCurrent.snapshot.presentation.subject.displayName, "Ari Vale Current");
+  assert.equal(stillCurrent.pointer.snapshotDigest, published.pointer.snapshotDigest);
+});
+
 test("private Genesis write API rejects unauthorized writes and conflicting retries", async () => {
   const infra = createMemoryInfraDriver();
   const presentationServer = createThreadPresentationServer({ infra });
@@ -95,6 +134,7 @@ test("private Genesis write API rejects unauthorized writes and conflicting retr
   assert.equal(created.status, 201);
 
   const conflicting = structuredClone(input);
+  conflicting.publicationDigest = `sha256:${"b".repeat(64)}`;
   conflicting.bundle.presentation.introduction.summary = "Different projection content.";
   const conflict = await api.fetch(request(conflicting));
   assert.equal(conflict.status, 409);

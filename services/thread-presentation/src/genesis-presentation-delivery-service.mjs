@@ -174,6 +174,42 @@ export function createGenesisPresentationDeliveryService({
       });
     },
 
+    async reconcileThreadPresentationIdentity(threadId) {
+      const thread = world.getThread(threadId);
+      const registration = registry.getCivilRegistrationByThreadId(threadId);
+      if (registration === null) throw new Error(`Thread ${threadId} has no civil registration`);
+      const sourceReferences = [
+        threadId,
+        thread.provenance?.lastEventId ?? null,
+      ].filter((value) => typeof value === "string" && value.trim() !== "");
+      const projectedAt = now();
+      const identityPublisher = method(
+        "presentationPublisher",
+        presentationPublisher,
+        "reconcileIdentityProjection",
+      );
+      const publication = await identityPublisher.reconcileIdentityProjection({
+        threadId,
+        projectedAt,
+        projection:{
+          threadId,
+          displayName:thread.identity?.name ?? null,
+          birthDate:thread.identity?.birthDate ?? null,
+          languages:Array.isArray(thread.identity?.languages) ? thread.identity.languages : [],
+          lifecycleStatus:thread.status,
+          fibreIdentityNumber:registration.fibreIdentityNumber,
+          worldVersion:thread.version,
+          sourceReferences,
+        },
+      });
+      return Object.freeze({
+        threadId,
+        reconciled:publication?.changed === true,
+        reused:publication?.changed === false,
+        presentation:publication ?? null,
+      });
+    },
+
     async deliverPending({ limit = 100 } = {}) {
       const observedAt = now();
       const pending = queue.listPending({ limit }).filter((entry) => retryEligible(entry, observedAt));

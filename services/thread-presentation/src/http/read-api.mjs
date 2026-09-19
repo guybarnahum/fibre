@@ -55,17 +55,11 @@ async function requirePublicChannel(infra, threadId) {
   return { channelId, record };
 }
 
-async function currentPublicPresent(infra, channelId, threadId) {
-  const record = await infra.catalog.get(`${CURRENT_PRESENT_CATALOG_PREFIX}${channelId}`);
+function presentFromProjection(record, channelId, threadId) {
   if (record === null
-    || record.kind !== "current_public_present"
-    || record.publiclyVisible !== true
-    || record.threadId !== threadId
-    || record.channelId !== channelId
+    || record === undefined
     || !Number.isSafeInteger(record.sequence)
-    || record.sequence < 1) {
-    return null;
-  }
+    || record.sequence < 1) return null;
   try {
     const event = normalizeThreadPresentationEvent(record.event);
     if (event.kind !== "present.updated"
@@ -78,6 +72,19 @@ async function currentPublicPresent(infra, channelId, threadId) {
   } catch {
     return null;
   }
+}
+
+async function currentPublicPresent(infra, channelId, threadId, channelRecord = null) {
+  const projected = presentFromProjection(channelRecord?.currentPresent, channelId, threadId);
+  if (projected !== null) return projected;
+
+  const legacy = await infra.catalog.get(`${CURRENT_PRESENT_CATALOG_PREFIX}${channelId}`);
+  if (legacy === null
+    || legacy.kind !== "current_public_present"
+    || legacy.publiclyVisible !== true
+    || legacy.threadId !== threadId
+    || legacy.channelId !== channelId) return null;
+  return presentFromProjection(legacy, channelId, threadId);
 }
 
 function publicIdentityCredentialAllowed(snapshot) {
@@ -148,7 +155,14 @@ function directoryRequest(url, { meet = false } = {}) {
   };
 }
 
-function publicDiscoveryEntry({ key, value, current }) {
+function projectedIdentityAllowed(value) {
+  const directory = value?.publicDirectory;
+  if (directory === null || typeof directory !== "object") return null;
+  const visibility = directory.identityCardVisibility;
+  return visibility === null || visibility === "public";
+}
+
+function publicDirectoryEntry({ key, value, current = null }) {
   if (value?.publiclyVisible !== true || value?.channelId !== key) return null;
   try {
     assertId("discovery threadId", value.threadId);
@@ -156,22 +170,28 @@ function publicDiscoveryEntry({ key, value, current }) {
     return null;
   }
   if (threadPresentationChannelId(value.threadId) !== key) return null;
+
+  const projectedAllowed = projectedIdentityAllowed(value);
+  if (projectedAllowed === false) return null;
+  if (projectedAllowed === true) return publicThreadDirectoryEntry({ catalogRecord:value });
+
   if (current === null
     || current.pointer.threadId !== value.threadId
-    || !publicIdentityCredentialAllowed(current.snapshot)) {
-    return null;
-  }
-  return {
-    threadId: value.threadId,
-    lifecycleStatus: value.lifecycleStatus ?? null,
-    snapshotVersion: current.pointer.snapshotVersion,
-    snapshotDigest: current.pointer.snapshotDigest,
-  };
+    || !publicIdentityCredentialAllowed(current.snapshot)) return null;
+  return publicThreadDirectoryEntry({ current, catalogRecord:value });
 }
 
-function publicDirectoryEntry({ key, value, current }) {
-  if (publicDiscoveryEntry({ key, value, current }) === null) return null;
-  return publicThreadDirectoryEntry({ current, catalogRecord: value });
+function publicDiscoveryEntry({ key, value, current = null, currentPresent = null }) {
+  const directory = publicDirectoryEntry({ key, value, current });
+  if (directory === null) return null;
+  return Object.freeze({
+    threadId: directory.threadId,
+    lifecycleStatus: directory.lifecycleStatus,
+    displayName: directory.displayName,
+    snapshotVersion: directory.snapshotVersion,
+    snapshotDigest: directory.snapshotDigest,
+    currentPresent,
+  });
 }
 
 async function discoverPublicThreads({ infra, presentationServer, url }) {
@@ -189,8 +209,10 @@ async function discoverPublicThreads({ infra, presentationServer, url }) {
 
     for (const { key, value } of page.entries) {
       after = key;
-      const current = await presentationServer.getSnapshot(key);
-      const entry = publicDiscoveryEntry({ key, value, current });
+      const projected = projectedIdentityAllowed(value);
+      const current = projected === null ? await presentationServer.getSnapshot(key) : null;
+      const currentPresent = await currentPublicPresent(infra, key, value.threadId, value);
+      const entry = publicDiscoveryEntry({ key, value, current, currentPresent });
       if (entry !== null) threads.push(entry);
       if (threads.length === limit) {
         const moreCatalogEntries = key !== page.entries.at(-1).key || page.nextCursor !== null;
@@ -218,7 +240,9 @@ async function scanPublicDirectory({ infra, presentationServer }) {
     if (page.entries.length === 0) break;
     for (const { key, value } of page.entries) {
       scanned += 1;
-      const current = await presentationServer.getSnapshot(key);
+      const current = projectedIdentityAllowed(value) === null
+        ? await presentationServer.getSnapshot(key)
+        : null;
       const entry = publicDirectoryEntry({ key, value, current });
       if (entry !== null) threads.push(entry);
       if (scanned >= DIRECTORY_SCAN_LIMIT) break;
@@ -297,11 +321,16 @@ export function createPresentationReadApi({
         return json({ error: "origin_not_allowed" }, { status: 403 });
       }
       if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-      if (request.method !== "GET") return json({ error: "method_not_allowed" }, { status: 405, headers: cors });
-      if (url.pathname === "/healthz") return json({ ok: true }, { headers: cors });
+      if (!["GET", "HEAD"].includes(request.method)) return json({ error: "method_not_allowed" }, { status: 405, headers: cors });
+      if (url.pathname === "/healthz") return request.method === "HEAD"
+        ? new Response(null, { status:200, headers:cors })
+        : json({ ok: true }, { headers: cors });
 
       const matched = route(url.pathname);
       if (matched === null) return json({ error: "not_found" }, { status: 404, headers: cors });
+      if (request.method === "HEAD" && matched.kind !== "snapshot") {
+        return json({ error: "method_not_allowed" }, { status: 405, headers: cors });
+      }
       try {
         if (matched.kind === "threads") {
           return json(await discoverPublicThreads({ infra, presentationServer, url }), {
@@ -335,16 +364,37 @@ export function createPresentationReadApi({
         const { channelId } = publicChannel;
 
         if (matched.kind === "snapshot") {
+          if (request.method === "HEAD") {
+            const projectedAllowed = projectedIdentityAllowed(publicChannel.record);
+            if (projectedAllowed === false) return new Response(null, { status:404, headers:cors });
+            let snapshotDigest = publicChannel.record?.latestSnapshotDigest ?? null;
+            if (projectedAllowed === null || typeof snapshotDigest !== "string" || snapshotDigest === "") {
+              const result = await presentationServer.getSnapshot(channelId);
+              if (result === null || result.pointer.threadId !== matched.threadId || !publicIdentityCredentialAllowed(result.snapshot)) {
+                return new Response(null, { status:404, headers:cors });
+              }
+              snapshotDigest = result.pointer.snapshotDigest;
+            }
+            return new Response(null, {
+              status:200,
+              headers:{
+                ...cors,
+                "Cache-Control":"no-cache",
+                "ETag":`"${snapshotDigest}"`,
+                "X-Fibre-Snapshot-Digest":snapshotDigest,
+              },
+            });
+          }
           const result = await presentationServer.getSnapshot(channelId);
           if (result === null || result.pointer.threadId !== matched.threadId || !publicIdentityCredentialAllowed(result.snapshot)) {
             return json({ error: "not_found" }, { status: 404, headers: cors });
           }
-          const currentPresent = await currentPublicPresent(infra, channelId, matched.threadId);
+          const currentPresent = await currentPublicPresent(infra, channelId, matched.threadId, publicChannel.record);
           return json({ ...result, currentPresent }, {
             headers: {
               ...cors,
               "Cache-Control": "no-cache",
-              "ETag": `\"${result.pointer.snapshotDigest}:present-${currentPresent?.sequence ?? 0}\"`,
+              "ETag": `"${result.pointer.snapshotDigest}:present-${currentPresent?.sequence ?? 0}"`,
             },
           });
         }

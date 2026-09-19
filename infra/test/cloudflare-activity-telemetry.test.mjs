@@ -50,17 +50,22 @@ class FakeD1Statement {
     }
     if (this.database.failWrites) throw new Error("simulated D1 unavailable");
     const row = Object.fromEntries(INSERT_COLUMNS.map((column, index) => [column, this.bindings[index]]));
-    if (!this.database.rows.has(row.activity_id)) {
+    const created = !this.database.rows.has(row.activity_id);
+    if (created) {
       row.rowid = ++this.database.lastRowId;
       this.database.rows.set(row.activity_id, row);
     }
-    return { success: true };
+    return {
+      success:true,
+      meta:{ changes:created ? 1 : 0, rows_read:1, rows_written:created ? 5 : 0 },
+    };
   }
 
   async first() {
     if (!this.sql.startsWith("SELECT record_json FROM fibre_activity_log WHERE activity_id = ?")) {
       throw new Error(`unexpected D1 first: ${this.sql}`);
     }
+    this.database.reads += 1;
     const row = this.database.rows.get(this.bindings[0]);
     return row ? { record_json: row.record_json } : null;
   }
@@ -69,6 +74,7 @@ class FakeD1Statement {
     if (!this.sql.startsWith("SELECT record_json FROM fibre_activity_log")) {
       throw new Error(`unexpected D1 all: ${this.sql}`);
     }
+    this.database.reads += 1;
     const columns = [...this.sql.matchAll(/([a-z_]+) = \?/gu)].map((match) => match[1]);
     const selected = [...this.database.rows.values()]
       .filter((row) => columns.every((column, index) => row[column] === this.bindings[index]))
@@ -76,7 +82,7 @@ class FakeD1Statement {
         || left.recorded_at.localeCompare(right.recorded_at)
         || left.rowid - right.rowid)
       .map((row) => ({ record_json: row.record_json }));
-    return { success: true, results: selected };
+    return { success:true, results:selected, meta:{ rows_read:selected.length + 2, rows_written:0 } };
   }
 }
 
@@ -84,6 +90,7 @@ class FakeD1Database {
   constructor({ failWrites = false } = {}) {
     this.rows = new Map();
     this.lastRowId = 0;
+    this.reads = 0;
     this.failWrites = failWrites;
   }
 
@@ -120,10 +127,12 @@ class SqliteD1Statement {
 class SqliteD1Database {
   constructor() {
     this.database = new DatabaseSync(":memory:");
-    this.database.exec(readFileSync(
-      new URL("../providers/cloudflare/d1/0001_activity_log.sql", import.meta.url),
-      "utf8",
-    ));
+    for (const migration of [
+      "../providers/cloudflare/d1/0001_activity_log.sql",
+      "../providers/cloudflare/d1/0003_activity_thread_heads.sql",
+    ]) {
+      this.database.exec(readFileSync(new URL(migration, import.meta.url), "utf8"));
+    }
   }
 
   prepare(sql) {
@@ -161,13 +170,31 @@ function activity(overrides = {}) {
   };
 }
 
-test("Cloudflare Activity Log records idempotently, rejects divergent reuse, and queries by correlation", async () => {
+test("new Activity facts stay write-only while D1 cost remains attributable to the Fibre operation", async () => {
   const database = new FakeD1Database();
-  const telemetry = createCloudflareActivityTelemetryPort({ database });
+  const costs = [];
+  const telemetry = createCloudflareActivityTelemetryPort({
+    database,
+    onCost(operation, result) {
+      costs.push({
+        operation,
+        rowsRead:result.meta.rows_read,
+        rowsWritten:result.meta.rows_written,
+      });
+    },
+  });
 
   const first = await telemetry.record(activity());
+  assert.equal(database.reads, 0, "a new observational fact should not be reread immediately");
+  assert.deepEqual(costs, [{ operation:"activity.record", rowsRead:1, rowsWritten:5 }]);
+
   const replay = await telemetry.record(activity());
   assert.deepEqual(replay, first);
+  assert.equal(database.reads, 1, "an idempotent retry must verify the durable fact");
+  assert.deepEqual(costs.slice(1), [
+    { operation:"activity.record", rowsRead:1, rowsWritten:0 },
+    { operation:"activity.retry_verify", rowsRead:3, rowsWritten:0 },
+  ]);
   assert.equal(database.rows.size, 1);
 
   await telemetry.record(activity({
@@ -238,6 +265,11 @@ test("Activity Log migration and provider execute against SQLite-compatible D1 s
   ]);
   assert.equal(records[0].deploymentGitSha, "9baa39c426496d0437a0760ec6f297e4d72a2d9b");
   assert.equal(records[0].environment, "staging");
+  const head = database.database.prepare(
+    "SELECT thread_id,last_activity_at FROM fibre_activity_thread_heads WHERE environment=?",
+  ).get("staging");
+  assert.equal(head?.thread_id, "thr_cloud_001", "Thread activity head must stay bound to the Thread");
+  assert.equal(head?.last_activity_at, "2026-09-01T06:20:02.000Z", "Thread activity head must advance with new observational Activity");
   const indexes = database.database.prepare(
     "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'fibre_activity_log' ORDER BY name",
   ).all().map((row) => row.name);

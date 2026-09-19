@@ -8,26 +8,30 @@ function cleanStrings(value) {
     : [];
 }
 
-export function publicThreadDirectoryEntry({ current, catalogRecord }) {
-  const presentation = current?.snapshot?.presentation;
-  if (presentation === null || typeof presentation !== "object") return null;
+export function publicThreadDirectoryEntry({ current = null, catalogRecord }) {
   const threadId = cleanString(catalogRecord?.threadId);
-  if (threadId === null || current?.pointer?.threadId !== threadId) return null;
+  if (threadId === null) return null;
+  if (current !== null && current?.pointer?.threadId !== threadId) return null;
+
+  const projected = catalogRecord?.publicDirectory;
+  const presentation = current?.snapshot?.presentation;
+  if ((projected === null || typeof projected !== "object")
+    && (presentation === null || typeof presentation !== "object")) return null;
 
   return Object.freeze({
     threadId,
     lifecycleStatus: cleanString(catalogRecord?.lifecycleStatus)
-      ?? cleanString(presentation.manifest?.lifecycleStatus),
-    displayName: cleanString(presentation.subject?.displayName),
-    fibreIdentityNumber: cleanString(presentation.civilIdentity?.fibreIdentityNumber),
-    birthDate: cleanString(presentation.subject?.birthDate),
-    languages: Object.freeze(cleanStrings(presentation.subject?.languages)),
-    homePlaceRef: cleanString(presentation.subject?.homePlaceRef),
-    headline: cleanString(presentation.introduction?.headline),
-    summary: cleanString(presentation.introduction?.summary),
-    visualDescription: cleanString(presentation.visualIdentity?.subjectDescription),
-    snapshotVersion: cleanString(current.pointer?.snapshotVersion),
-    snapshotDigest: cleanString(current.pointer?.snapshotDigest),
+      ?? cleanString(presentation?.manifest?.lifecycleStatus),
+    displayName: cleanString(projected?.displayName ?? presentation?.subject?.displayName),
+    fibreIdentityNumber: cleanString(projected?.fibreIdentityNumber ?? presentation?.civilIdentity?.fibreIdentityNumber),
+    birthDate: cleanString(projected?.birthDate ?? presentation?.subject?.birthDate),
+    languages: Object.freeze(cleanStrings(projected?.languages ?? presentation?.subject?.languages)),
+    homePlaceRef: cleanString(projected?.homePlaceRef ?? presentation?.subject?.homePlaceRef),
+    headline: cleanString(projected?.headline ?? presentation?.introduction?.headline),
+    summary: cleanString(projected?.summary ?? presentation?.introduction?.summary),
+    visualDescription: cleanString(projected?.visualDescription ?? presentation?.visualIdentity?.subjectDescription),
+    snapshotVersion: cleanString(catalogRecord?.latestSnapshotVersion ?? current?.pointer?.snapshotVersion),
+    snapshotDigest: cleanString(catalogRecord?.latestSnapshotDigest ?? current?.pointer?.snapshotDigest),
   });
 }
 

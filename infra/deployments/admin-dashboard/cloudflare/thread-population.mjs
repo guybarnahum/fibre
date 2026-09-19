@@ -1,3 +1,5 @@
+import { logD1Cost } from "../../cloudflare-d1-cost.mjs";
+
 const MAX_THREADS = 200;
 const PLACEHOLDER_NAMES = new Set(["fibre thread", "fiber thread"]);
 
@@ -27,8 +29,10 @@ function summarize(threads) {
     attention:0,
     deadLetter:0,
     migrationsAvailable:0,
+    stillborn:0,
   };
   for (const thread of threads) {
+    if (thread.health === "unrecoverable") summary.stillborn += 1;
     if (thread.admitted !== true) {
       summary.activityOnly += 1;
       continue;
@@ -59,19 +63,102 @@ function registryFindings(entry) {
         ]) }),
       }),
     }));
+  } else {
+    findings.push(Object.freeze({
+      code:"NAME",
+      state:"healthy",
+      identityAction:Object.freeze({
+        id:"change_name",
+        label:"Change name",
+        input:Object.freeze({ fields:Object.freeze([
+          Object.freeze({ name:"name", label:"Name", kind:"text", required:true, default:clean(entry.displayName) }),
+        ]) }),
+      }),
+    }));
   }
   if (clean(entry.sex) === null) findings.push(Object.freeze({ code:"SEX_MISSING", state:"attention" }));
+  if (clean(entry.birthDate) === null) {
+    findings.push(Object.freeze({
+      code:"BIRTH_DATE_MISSING",
+      state:"operator_decision_required",
+      reason:"This Thread does not yet have an authoritative birth date",
+      identityAction:Object.freeze({
+        id:"set_birth_date",
+        label:"Set birth date",
+        input:Object.freeze({ fields:Object.freeze([
+          Object.freeze({ name:"birthDate", label:"Birth date", kind:"date", required:true }),
+        ]) }),
+      }),
+    }));
+  } else {
+    findings.push(Object.freeze({
+      code:"BIRTH_DATE",
+      state:"healthy",
+      identityAction:Object.freeze({
+        id:"change_birth_date",
+        label:"Change birth date",
+        input:Object.freeze({ fields:Object.freeze([
+          Object.freeze({ name:"birthDate", label:"Birth date", kind:"date", required:true, default:clean(entry.birthDate) }),
+        ]) }),
+      }),
+    }));
+  }
+  const spokenLanguages = Array.isArray(entry.languages)
+    ? entry.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+    : [];
+  findings.push(Object.freeze({
+    code:"SPOKEN_LANGUAGES",
+    state:"healthy",
+    authoritative:Object.freeze([...spokenLanguages]),
+  }));
+
+  const raisedLanguages = Array.isArray(entry.raisedAs?.languages)
+    ? entry.raisedAs.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+    : [];
+  const raisedLanguageAction = Object.freeze({
+    id:raisedLanguages.length === 0 ? "set_raised_languages" : "change_raised_languages",
+    label:raisedLanguages.length === 0 ? "Set raised languages" : "Change raised languages",
+    command:"raised_languages",
+    input:Object.freeze({ fields:Object.freeze([
+      Object.freeze({
+        name:"languages",
+        label:"Raised languages",
+        kind:"string_list",
+        required:true,
+        ...(raisedLanguages.length === 0 ? {} : { default:raisedLanguages.join(", ") }),
+        placeholder:"Hebrew, Russian",
+      }),
+    ]) }),
+  });
+  if (raisedLanguages.length === 0 || raisedLanguages.length > 3) {
+    findings.push(Object.freeze({
+      code:raisedLanguages.length === 0 ? "RAISED_LANGUAGES_MISSING" : "RAISED_LANGUAGES_NEED_REVIEW",
+      state:"operator_decision_required",
+      reason:raisedLanguages.length === 0
+        ? "Genesis has no raised-language context"
+        : "Genesis raised languages should describe this person's household, civic, and schooling path rather than a country's demographic language inventory",
+      identityAction:raisedLanguageAction,
+    }));
+  } else {
+    findings.push(Object.freeze({
+      code:"RAISED_LANGUAGES",
+      state:"healthy",
+      authoritative:Object.freeze([...raisedLanguages]),
+      identityAction:raisedLanguageAction,
+    }));
+  }
   if (clean(entry.fibreIdentityNumber) === null) findings.push(Object.freeze({ code:"FIN_MISSING", state:"attention" }));
   return Object.freeze(findings);
 }
 
 function admittedThread(entry, lastActivityAt) {
   const findings = registryFindings(entry);
+  const unresolved = findings.filter((finding) => finding.state !== "healthy");
   return Object.freeze({
     threadId:entry.threadId,
     admitted:true,
     lastActivityAt:lastActivityAt ?? null,
-    health:findings.length === 0 ? "healthy" : findings.some((finding) => finding.state === "operator_decision_required")
+    health:unresolved.length === 0 ? "healthy" : unresolved.some((finding) => finding.state === "operator_decision_required")
       ? "operator_decision_required"
       : "attention",
     identity:Object.freeze({
@@ -94,7 +181,9 @@ function admittedThread(entry, lastActivityAt) {
     }),
     portraitUrl:null,
     findings,
-    reconciliation:null,
+    reconciliation:entry.reconciliation === null || entry.reconciliation === undefined
+      ? null
+      : structuredClone(entry.reconciliation),
   });
 }
 
@@ -111,21 +200,49 @@ function activityOnly(row) {
   });
 }
 
-export async function readAdminThreadPopulation({ activityLog, environment, readRegistry }) {
-  if (!activityLog?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
-  if (typeof readRegistry !== "function") throw new TypeError("Thread population requires readRegistry()");
+function missingActivityHeads(error) {
+  return /no such table:\s*fibre_activity_thread_heads/iu.test(error?.message ?? String(error));
+}
 
-  const [registryEntries, activityResult] = await Promise.all([
-    readRegistry(MAX_THREADS),
-    activityLog.prepare(`
+async function readActivityHeads(activityLog, environment) {
+  try {
+    const result = await activityLog.prepare(`
+      SELECT thread_id, last_activity_at
+      FROM fibre_activity_thread_heads
+      WHERE environment = ?
+      ORDER BY last_activity_at DESC, thread_id ASC
+      LIMIT ?
+    `).bind(environment, MAX_THREADS + 1).all();
+    return Object.freeze({ result, operation:"admin.thread_population.activity" });
+  } catch (error) {
+    if (!missingActivityHeads(error)) throw error;
+    const result = await activityLog.prepare(`
       SELECT thread_id, MAX(occurred_at) AS last_activity_at
       FROM fibre_activity_log
       WHERE environment = ? AND thread_id IS NOT NULL
       GROUP BY thread_id
       ORDER BY last_activity_at DESC, thread_id ASC
       LIMIT ?
-    `).bind(environment, MAX_THREADS + 1).all(),
+    `).bind(environment, MAX_THREADS + 1).all();
+    return Object.freeze({ result, operation:"admin.thread_population.activity_fallback" });
+  }
+}
+
+export async function readAdminThreadPopulation({ activityLog, environment, readRegistry }) {
+  if (!activityLog?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
+  if (typeof readRegistry !== "function") throw new TypeError("Thread population requires readRegistry()");
+
+  const [registryEntries, activity] = await Promise.all([
+    readRegistry(MAX_THREADS),
+    readActivityHeads(activityLog, environment),
   ]);
+  const activityResult = activity.result;
+  logD1Cost({
+    database:"activity-log",
+    service:"admin-dashboard",
+    operation:activity.operation,
+    result:activityResult,
+  });
   if (!Array.isArray(registryEntries)) throw new Error("World Thread Registry returned an invalid population");
 
   const activityRows = Array.isArray(activityResult?.results) ? activityResult.results : [];
@@ -136,9 +253,12 @@ export async function readAdminThreadPopulation({ activityLog, environment, read
     if (!admittedIds.has(row.thread_id)) threads.push(activityOnly(row));
   }
 
+  const stillborn = threads.filter((thread) => thread.health === "unrecoverable");
+  const admittedPopulation = threads.filter((thread) => thread.health !== "unrecoverable");
   const truncated = registryEntries.length >= MAX_THREADS || activityRows.length > MAX_THREADS;
   return Object.freeze({
-    threads:Object.freeze(threads),
+    threads:Object.freeze(admittedPopulation),
+    stillborn:Object.freeze(stillborn),
     summary:summarize(threads),
     truncated,
     limit:MAX_THREADS,
