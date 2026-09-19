@@ -253,6 +253,7 @@ function normalizeIssuanceRecord(value, credential) {
     photoProvenanceDigest: digest("FID issuance photoProvenanceDigest", value.photoProvenanceDigest),
     photoAdmissionReceiptDigest: digest("FID issuance photoAdmissionReceiptDigest", value.photoAdmissionReceiptDigest),
     identitySnapshotDigest: digest("FID issuance identitySnapshotDigest", value.identitySnapshotDigest),
+    templateVersion: nonEmpty("FID issuance templateVersion", value.templateVersion),
     issuer: Object.freeze({
       authorityId: nonEmpty("FID issuance issuer.authorityId", value.issuer?.authorityId),
       keyId: nonEmpty("FID issuance issuer.keyId", value.issuer?.keyId),

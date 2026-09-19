@@ -16,6 +16,7 @@ import {
   FidPhotoAdmissionStore,
   createFibreIdentityAuthority,
   createFidCardIssuanceExecutor,
+  createFidCardTemplate,
   fidRenderPhotoDigest,
 } from "../src/index.mjs";
 
@@ -107,6 +108,7 @@ test("cutting by Thread then FIN reissues one civil identity and preserves card 
       photoExaminer: { inspect: async () => inspection },
       now,
     });
+    let templateLoads = 0;
     const executor = createFidCardIssuanceExecutor({
       authority,
       threadRegistry: { get: async () => ({ threadId: "thr_mira", fibreIdentityNumber: FIN, displayName: "Mira Vale", birthDate: "2004-03-18" }) },
@@ -116,6 +118,10 @@ test("cutting by Thread then FIN reissues one civil identity and preserves card 
       issuerSigner: issuer(),
       credentialProtector: protector(),
       loadPhoto: async () => photo,
+      loadTemplate: async () => {
+        templateLoads += 1;
+        return createFidCardTemplate({ version: "fid-card-template-executor-test" });
+      },
       now,
     });
 
@@ -124,6 +130,7 @@ test("cutting by Thread then FIN reissues one civil identity and preserves card 
     assert.equal(first.credential.revision, 1, "first card revision is wrong");
     assert.equal(first.identitySnapshot.displayName, "Mira Vale", "Thread name was not credentialed");
     assert.deepEqual(first.identitySnapshot.dateField, { kind: "birth_date", value: "2004-03-18" }, "Thread birth date was not credentialed");
+    assert.equal(first.issuance.templateVersion, "fid-card-template-executor-test", "issuance lost template version");
 
     const repeated = await executor.cut({ threadId: "thr_mira", idempotencyKey: "cut_mira_1" });
     assert.equal(repeated.reused, true, "same cut did not reuse its credential");
@@ -135,6 +142,8 @@ test("cutting by Thread then FIN reissues one civil identity and preserves card 
     assert.equal(registry.getByCredentialId(first.credential.credentialId).status, "superseded", "old card stayed active");
     assert.equal(registry.getActiveByFin(FIN).credential.credentialId, second.credential.credentialId, "new card is not active");
     assert.equal(registry.listByFin(FIN).length, 2, "card history was not preserved");
+    assert.equal(second.issuance.templateVersion, "fid-card-template-executor-test", "reissue lost template version");
+    assert.equal(templateLoads, 1, "FID template was reloaded across revisions");
   } finally {
     admissions.close();
     issuanceStore.close();

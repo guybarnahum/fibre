@@ -47,6 +47,7 @@ function assertProtectedLinkage(payload, issuerSigner) {
     ["civil registration digest", payload.civilRegistrationDigest],
   ]) digest(`FID ${name}`, value);
   nonEmpty("FID photo admissionId", payload.photo?.admissionId);
+  nonEmpty("FID templateVersion", payload.templateVersion);
   if (payload.issuer?.authorityId !== FIBRE_IDENTITY_AUTHORITY_ID
     || payload.issuer.keyId !== issuerSigner.profile?.keyId
     || payload.issuer.trustPolicy !== issuerSigner.profile?.trustPolicy) {
@@ -219,6 +220,7 @@ export async function finalizeFidCardIssuance({
     photoProvenanceDigest: payload.photo.provenanceDigest,
     photoAdmissionReceiptDigest: payload.photo.admissionReceiptDigest,
     identitySnapshotDigest: canonicalDigest(payload.identitySnapshot),
+    templateVersion: nonEmpty("FID templateVersion", payload.templateVersion),
     issuer: payload.issuer,
     credentialPayloadDigest: verification.payloadDigest,
     encryptedCredentialDigest: machineCredential.encryptedCredentialDigest,

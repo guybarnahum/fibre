@@ -116,6 +116,7 @@ export function buildFidMachineCredentialPayload({
   }
   digest("FID front render digest", render.frontRenderDigest);
   digest("FID back render digest", render.backRenderDigest);
+  const templateVersion = nonEmpty("FID templateVersion", render.templateVersion);
 
   return Object.freeze({
     schema: FID_MACHINE_CREDENTIAL_SCHEMA,
@@ -125,6 +126,7 @@ export function buildFidMachineCredentialPayload({
     threadId: workflow.threadId,
     registrationId: workflow.registrationId,
     civilRegistrationDigest: workflow.civilRegistrationDigest,
+    templateVersion,
     identitySnapshot: snapshot,
     photo: Object.freeze({
       encoding: "rgba8",

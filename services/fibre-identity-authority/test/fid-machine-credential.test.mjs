@@ -119,6 +119,7 @@ function fixture(issuer) {
 test("D1 canonical credential bytes are stable and issuer signature rejects payload or issuer-profile tampering", async () => {
   const issuer = signer();
   const { payload } = fixture(issuer);
+  assert.equal(payload.templateVersion, createFidCardTemplate().version);
   const reordered = Object.fromEntries(Object.entries(payload).reverse());
   assert.deepEqual(fidMachineCredentialBytes(reordered), fidMachineCredentialBytes(payload));
 
