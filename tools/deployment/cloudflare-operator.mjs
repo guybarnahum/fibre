@@ -10,6 +10,7 @@ export const CLOUDFLARE_OPERATOR_STATE_VERSION = "fibre-cloudflare-operator-stat
 export const CLOUDFLARE_ENVIRONMENTS = Object.freeze(["staging", "production"]);
 
 export const CLOUDFLARE_SERVICE_CONFIGS = Object.freeze({
+  "content-credential-signer": "infra/deployments/content-credential-signer/cloudflare/wrangler.jsonc",
   "asset-generator": "infra/deployments/asset-generator/cloudflare/wrangler.jsonc",
   "birth-center": "infra/deployments/birth-center/cloudflare/wrangler.jsonc",
   "fibre-identity-authority": "infra/deployments/fibre-identity-authority/cloudflare/wrangler.jsonc",
@@ -18,6 +19,7 @@ export const CLOUDFLARE_SERVICE_CONFIGS = Object.freeze({
 });
 
 const SERVICE_ORDER = Object.freeze([
+  "content-credential-signer",
   "asset-generator",
   "thread-presentation",
   "world-kernel",
@@ -26,18 +28,20 @@ const SERVICE_ORDER = Object.freeze([
 ]);
 
 const RUNTIME_CONFIG_BY_SERVICE = Object.freeze({
-  "asset-generator": Object.freeze(["C2PA_SIGNER_URL", "C2PA_SIGNER_ID", "C2PA_TRUST_POLICY"]),
+  "content-credential-signer": Object.freeze([]),
+  "asset-generator": Object.freeze([]),
   "birth-center": Object.freeze([]),
-  "fibre-identity-authority": Object.freeze(["C2PA_SIGNER_URL", "C2PA_SIGNER_ID", "C2PA_TRUST_POLICY"]),
-  "thread-presentation": Object.freeze(["C2PA_SIGNER_URL", "C2PA_SIGNER_ID", "C2PA_TRUST_POLICY", "VIEWER_ORIGIN"]),
+  "fibre-identity-authority": Object.freeze([]),
+  "thread-presentation": Object.freeze(["VIEWER_ORIGIN"]),
   "world-kernel": Object.freeze([]),
 });
 
 const REQUIRED_RUNTIME_CONFIG_BY_SERVICE = Object.freeze({
-  "asset-generator": Object.freeze(["C2PA_SIGNER_URL"]),
+  "content-credential-signer": Object.freeze([]),
+  "asset-generator": Object.freeze([]),
   "birth-center": Object.freeze([]),
-  "fibre-identity-authority": Object.freeze(["C2PA_SIGNER_URL"]),
-  "thread-presentation": Object.freeze(["C2PA_SIGNER_URL"]),
+  "fibre-identity-authority": Object.freeze([]),
+  "thread-presentation": Object.freeze([]),
   "world-kernel": Object.freeze([]),
 });
 
@@ -161,6 +165,7 @@ export function createCloudflareResourcePlan(configs, { environment }) {
     if (!configs?.[serviceId]) throw new TypeError(`missing Wrangler configuration for ${serviceId}`);
   }
 
+  const signer = configs["content-credential-signer"];
   const asset = configs["asset-generator"];
   const presentation = configs["thread-presentation"];
   const world = configs["world-kernel"];
@@ -211,6 +216,7 @@ export function createCloudflareResourcePlan(configs, { environment }) {
     deployManaged: Object.freeze({
       workers,
       durableObjects: Object.freeze([
+        { serviceId: "content-credential-signer", className: requireBinding(signer, ["durable_objects", "bindings", 0, "class_name"], "Content Credential Signer Container") },
         { serviceId: "world-kernel", className: requireBinding(world, ["durable_objects", "bindings", 0, "class_name"], "World Durable Object") },
         { serviceId: "fibre-identity-authority", className: requireBinding(fid, ["durable_objects", "bindings", 0, "class_name"], "Fibre Identity Authority Durable Object") },
         { serviceId: "birth-center", className: requireBinding(birth, ["durable_objects", "bindings", 0, "class_name"], "Birth Durable Object") },
