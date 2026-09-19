@@ -93,12 +93,11 @@ function assertStateHealthPayload(payload, serviceId) {
   return checked;
 }
 
-export function assertProductionSignerHealth(payload, expected) {
+export function assertSignerHealth(payload, expected) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("C2PA signer health response must be an object");
   if (payload.ok !== true || payload.service !== "content-credential-signer") throw new Error("C2PA signer health did not confirm content-credential-signer");
   if (payload.format !== "c2pa") throw new Error(`C2PA signer health returned unexpected format ${String(payload.format)}`);
   if (payload.signerId !== expected.signerId) throw new Error(`C2PA signer health returned unexpected signerId ${String(payload.signerId)}`);
-  if (expected.trustPolicy !== "c2pa_trust_list") throw new Error("cloud deployment requires c2pa_trust_list production trust policy");
   if (payload.trustPolicy !== expected.trustPolicy) throw new Error(`C2PA signer health returned unexpected trustPolicy ${String(payload.trustPolicy)}`);
   return payload;
 }
@@ -143,7 +142,7 @@ export function createWranglerDeploymentClient({
     },
     async checkSignerHealth({ baseUrl, signerId, trustPolicy }) {
       const payload = await fetchJson(fetchImpl, `${nonEmpty("C2PA signer URL", baseUrl).replace(/\/$/u, "")}/healthz`);
-      return assertProductionSignerHealth(payload, { signerId, trustPolicy });
+      return assertSignerHealth(payload, { signerId, trustPolicy });
     },
     async deployService({ configPath, workerName, resolvedConfig = null }) {
       const result = await runner([
@@ -262,14 +261,19 @@ export async function deployCloudflareStack({
 
   const signerVars = resolvedConfigs["asset-generator"].config.vars ?? {};
   if (typeof signerVars.C2PA_SIGNER_URL === "string" && signerVars.C2PA_SIGNER_URL.trim() !== "") {
+    const signerId = typeof signerVars.C2PA_SIGNER_ID === "string" && signerVars.C2PA_SIGNER_ID.trim() !== ""
+      ? signerVars.C2PA_SIGNER_ID
+      : DEFAULT_C2PA_SIGNER_ID;
+    const trustPolicy = typeof signerVars.C2PA_TRUST_POLICY === "string" && signerVars.C2PA_TRUST_POLICY.trim() !== ""
+      ? signerVars.C2PA_TRUST_POLICY
+      : DEFAULT_C2PA_TRUST_POLICY;
+    if (env === "production" && trustPolicy !== "c2pa_trust_list") {
+      throw new Error("production Cloudflare deployment requires c2pa_trust_list C2PA trust policy");
+    }
     await client.checkSignerHealth({
       baseUrl: signerVars.C2PA_SIGNER_URL,
-      signerId: typeof signerVars.C2PA_SIGNER_ID === "string" && signerVars.C2PA_SIGNER_ID.trim() !== ""
-        ? signerVars.C2PA_SIGNER_ID
-        : DEFAULT_C2PA_SIGNER_ID,
-      trustPolicy: typeof signerVars.C2PA_TRUST_POLICY === "string" && signerVars.C2PA_TRUST_POLICY.trim() !== ""
-        ? signerVars.C2PA_TRUST_POLICY
-        : DEFAULT_C2PA_TRUST_POLICY,
+      signerId,
+      trustPolicy,
     });
   }
 
@@ -349,3 +353,4 @@ if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
   for (const deployment of result.deployments) console.log(`HEALTH  ${deployment.serviceId} ${deployment.baseUrl}`);
   console.log(`VIEWER  ${result.externalViewerOrigin}`);
 }
+export const assertProductionSignerHealth = assertSignerHealth;

@@ -6,7 +6,7 @@ import { dirname, resolve } from "node:path";
 
 import {
   CLOUDFLARE_DEPLOY_ORDER,
-  assertProductionSignerHealth,
+  assertSignerHealth,
   createWranglerDeploymentClient,
   deployCloudflareStack,
   healthBaseUrlForDeployment,
@@ -28,9 +28,12 @@ async function fixtureRepo() {
     const resolved = parseJsonc(source, path);
     resolved.name = `${resolved.name}-staging`;
     resolved.vars ??= {};
-    if (serviceId === "asset-generator" || serviceId === "fibre-identity-authority") resolved.vars.C2PA_SIGNER_URL = "https://signer.staging.example";
-    if (serviceId === "thread-presentation") {
+    if (["asset-generator", "thread-presentation", "fibre-identity-authority"].includes(serviceId)) {
       resolved.vars.C2PA_SIGNER_URL = "https://signer.staging.example";
+      resolved.vars.C2PA_SIGNER_ID = "fibre-c2pa-staging-v1";
+      resolved.vars.C2PA_TRUST_POLICY = "development_signature_only";
+    }
+    if (serviceId === "thread-presentation") {
       resolved.vars.VIEWER_ORIGIN = "https://staging.insidefibre.com";
       resolved.routes[0].pattern = "api.staging.insidefibre.com";
     }
@@ -70,8 +73,8 @@ test("Slice F deployment accepts services only after shallow and durable state h
     async listSecretNames(workerName) { calls.push(`secrets:${workerName}`); return allSecrets(); },
     async checkSignerHealth(input) {
       calls.push(`signer:${input.baseUrl}`);
-      assert.equal(input.signerId, "fibre-c2pa-production-v1");
-      assert.equal(input.trustPolicy, "c2pa_trust_list");
+      assert.equal(input.signerId, "fibre-c2pa-staging-v1");
+      assert.equal(input.trustPolicy, "development_signature_only");
       return { ok: true };
     },
     async deployService({ serviceId }) {
@@ -153,8 +156,8 @@ test("Slice F fails before signer/deploy when a required remote secret name is a
   assert.equal(deployCalls, 0);
 });
 
-test("Slice F signer health requires exact production signer identity and trust-list policy", () => {
-  assert.deepEqual(assertProductionSignerHealth({
+test("Slice F signer health requires the configured signer identity and policy", () => {
+  assert.deepEqual(assertSignerHealth({
     ok: true,
     service: "content-credential-signer",
     format: "c2pa",
@@ -164,7 +167,7 @@ test("Slice F signer health requires exact production signer identity and trust-
     signerId: "fibre-c2pa-production-v1",
     trustPolicy: "c2pa_trust_list",
   }).ok, true);
-  assert.throws(() => assertProductionSignerHealth({
+  assert.throws(() => assertSignerHealth({
     ok: true,
     service: "content-credential-signer",
     format: "c2pa",
@@ -244,4 +247,34 @@ test("deep health failures surface the Fibre state diagnostic", async () => {
     client.checkStateHealth({ serviceId: "birth-center", baseUrl: "https://birth.example" }),
     /HTTP 503: Birth Center state could not be opened/,
   );
+});
+test("production deployment rejects Fibre-only C2PA trust policy", async () => {
+  const { root, state } = await fixtureRepo();
+  state.environment = "production";
+  for (const serviceId of CLOUDFLARE_DEPLOY_ORDER) {
+    const path = resolve(root, state.wranglerConfigs[serviceId]);
+    const config = JSON.parse(await readFile(path, "utf8"));
+    config.name = config.name.replace(/-staging$/u, "");
+    if (config.vars?.C2PA_SIGNER_URL) {
+      config.vars.C2PA_SIGNER_ID = "fibre-c2pa-staging-v1";
+      config.vars.C2PA_TRUST_POLICY = "development_signature_only";
+    }
+    if (serviceId === "thread-presentation") {
+      config.routes[0].pattern = "api.insidefibre.com";
+      config.vars.VIEWER_ORIGIN = "https://insidefibre.com";
+    }
+    await writeFile(path, JSON.stringify(config));
+  }
+  const client = {
+    async assertAuthenticated() {},
+    async listSecretNames() { return allSecrets(); },
+    async checkSignerHealth() { throw new Error("signer health should not run"); },
+  };
+  await assert.rejects(deployCloudflareStack({
+    repoRoot: root,
+    environment: "production",
+    client,
+    validateRepository: async () => {},
+    provision: async () => state,
+  }), /production Cloudflare deployment requires c2pa_trust_list/);
 });

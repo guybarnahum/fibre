@@ -44,17 +44,18 @@ export async function startContentCredentialSignerFromEnvironment(environment = 
   const signer = await createC2paNodeSigner({
     certificatePath,
     privateKeyPath,
-    signerId: selected.config.signerId,
-    trustPolicy: selected.config.trustPolicy,
+    signerId: environment.C2PA_SIGNER_ID ?? selected.config.signerId,
+    trustPolicy: environment.C2PA_TRUST_POLICY ?? selected.config.trustPolicy,
   });
   const serviceToken = optionalEnvironmentValue(selected.environment, "serviceToken", environment);
   const service = createContentCredentialSignerService({ signer, serviceToken });
   const server = createServer(createNodeServiceHandler({ service, maxBodyBytes: MAX_BODY_BYTES }));
-  const port = parsePort(environment.FIBRE_C2PA_PORT ?? "8791");
+  const port = parsePort(environment.PORT ?? environment.FIBRE_C2PA_PORT ?? "8791");
+  const host = environment.FIBRE_C2PA_HOST ?? "127.0.0.1";
 
   await new Promise((resolveListen, rejectListen) => {
     server.once("error", rejectListen);
-    server.listen(port, "127.0.0.1", () => {
+    server.listen(port, host, () => {
       server.off("error", rejectListen);
       resolveListen();
     });
