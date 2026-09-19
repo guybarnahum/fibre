@@ -117,13 +117,13 @@
 }
 .thread-population-portrait-column,
 .thread-population-portrait-cell {
-  width:40px;
-  min-width:40px;
-  padding-left:8px;
+  width:34px;
+  min-width:34px;
+  padding-left:4px;
   padding-right:0;
   text-align:center;
 }
-.thread-population-table td:nth-child(2) { padding-left:4px; }
+.thread-population-table td:nth-child(2) { padding-left:0; }
 .thread-population-person { display:flex; align-items:center; gap:8px; min-width:190px; }
 .thread-population-person > div { min-width:0; }
 .thread-population-portrait {
@@ -141,8 +141,8 @@
   font-weight:700;
 }
 .thread-population-portrait img { width:100%; height:100%; object-fit:cover; }
-.thread-population-name { display:block; color:var(--text); font-weight:700; font-size:11px; text-decoration:none; }
-.thread-population-name:hover { color:var(--text); text-decoration:underline; }
+.thread-population-name.thread-link { display:block; color:var(--text); font-weight:700; font-size:11px; text-decoration:none; }
+.thread-population-name.thread-link:hover { color:var(--text); text-decoration:underline; }
 .thread-population-name + small { display:block; margin-top:2px; color:var(--muted); font-size:8px; }
 .thread-population-actions { min-width:148px; }
 .thread-action-stack { display:flex; flex-wrap:wrap; gap:4px; }
