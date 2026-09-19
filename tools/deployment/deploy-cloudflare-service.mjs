@@ -17,6 +17,7 @@ import {
 
 const execFile = promisify(execFileCallback);
 const SERVICES = Object.freeze(new Set([
+  "content-credential-signer",
   "asset-generator",
   "thread-presentation",
   "world-kernel",
