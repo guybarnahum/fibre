@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../../node_modules/wrangler/config-schema.json",
+  "name": "fibre-content-credential-signer",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-09-19",
+  "vars": {
+    "C2PA_SIGNER_ID": "fibre-c2pa-self-v1",
+    "C2PA_TRUST_POLICY": "fibre_signature_only"
+  },
+  "secrets": {
+    "required": [
+      "C2PA_SIGNER_TOKEN",
+      "C2PA_SIGNER_CERT_BASE64",
+      "C2PA_SIGNER_KEY_BASE64"
+    ]
+  },
+  "containers": [
+    {
+      "class_name": "FibreContentCredentialSignerContainer",
+      "image": "./Dockerfile",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "C2PA_SIGNER_CONTAINER",
+        "class_name": "FibreContentCredentialSignerContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "FibreContentCredentialSignerContainer"
+      ]
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
