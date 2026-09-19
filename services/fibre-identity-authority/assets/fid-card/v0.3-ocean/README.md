@@ -16,3 +16,7 @@ The admitted FID photo remains the authoritative photo input. The renderer prese
 No identity fact is authored by these assets. FIN, name, date, credential revision, verification material, and other issuance facts are always stamped by the deterministic FID renderer from the authorized issuance snapshot.
 
 The three PNG assets are renderer inputs only. Public issuance still produces exactly `front.png` and `back.png`.
+
+## Integrity
+
+`asset-manifest.json` pins the exact normalized PNG bytes used by this template. Deployment/runtime composition should fail rather than silently substitute different artwork for the same template version.

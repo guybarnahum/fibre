@@ -1,0 +1,18 @@
+{
+  "templateVersion": "fid-card-template-v0.3-ocean",
+  "canvas": { "width": 856, "height": 540 },
+  "assets": {
+    "front-base.png": {
+      "sha256": "bf3dbbfebe60d5731ebaf0fa95beb4da8a9d34fe9871d6ff69546fc6ee430087",
+      "bytes": 259354
+    },
+    "front-foreground.png": {
+      "sha256": "f4f8f81b9d3f5d081b5a9748bfc64d9d3b862e33c67b09a2a0ec0a211294ab80",
+      "bytes": 69518
+    },
+    "back-base.png": {
+      "sha256": "564882e2dd1e233c8da8f64183cc4ca526bc9f19094edb31ad80a84fa0b9aff3",
+      "bytes": 269239
+    }
+  }
+}
