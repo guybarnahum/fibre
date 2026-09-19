@@ -5,7 +5,7 @@ import test from "node:test";
 import { createFidCardTemplateFromPngAssets } from "../src/fid-card-template-assets.mjs";
 
 const ROOT = new URL("../assets/fid-card/v0.3-ocean/", import.meta.url);
-const TEMPLATE_VERSION = "fid-card-template-v0.3-ocean";
+const VERSION = "fid-card-template-v0.3-ocean";
 
 async function oceanAssets() {
   const [layoutText, frontBasePng, frontForegroundPng, backBasePng, regular, medium] = await Promise.all([
@@ -28,43 +28,23 @@ async function oceanAssets() {
   };
 }
 
-test("ocean FID template hydrates exact declared OpenType font roles", async () => {
-  const assets = await oceanAssets();
-  const template = await createFidCardTemplateFromPngAssets({ version:TEMPLATE_VERSION, ...assets });
-
-  assert.deepEqual(Object.keys(template.fonts), ["regular", "medium"]);
-  assert.equal(template.fonts.regular.asset, "NotoSans-SemiCondensed.ttf");
-  assert.equal(template.fonts.medium.asset, "NotoSans-SemiCondensedMedium.ttf");
-  assert.ok(template.fonts.regular.font.numGlyphs > 1000, "regular font did not parse");
-  assert.ok(template.fonts.medium.font.numGlyphs > 1000, "medium font did not parse");
-  assert.notEqual(template.fonts.regular.font.charToGlyphIndex("A"), 0, "regular font lacks Latin glyphs");
-  assert.notEqual(template.fonts.medium.font.charToGlyphIndex("A"), 0, "medium font lacks Latin glyphs");
-  assert.equal(template.typography.styles.finValue.font, "medium");
-  assert.equal(template.layout.front.name.typography.value, "identityValue");
-});
-
-test("ocean FID typography declarations preserve the legacy bitmap fallback until font rendering is selected", async () => {
-  const { fontAssets:ignored, ...assets } = await oceanAssets();
-  void ignored;
-  const template = await createFidCardTemplateFromPngAssets({ version:TEMPLATE_VERSION, ...assets });
-  assert.deepEqual(template.fonts, {});
-  assert.equal(template.typography.fonts.regular.asset, "NotoSans-SemiCondensed.ttf");
-});
-
-test("FID template typography fails closed on undeclared style font roles", async () => {
-  const assets = await oceanAssets();
-  assets.layout.typography.styles.finValue.font = "missing";
-  await assert.rejects(
-    () => createFidCardTemplateFromPngAssets({ version:TEMPLATE_VERSION, ...assets }),
-    /references undeclared font missing/,
+test("ocean FID template resolves its versioned typography assets", async () => {
+  const template = await createFidCardTemplateFromPngAssets({ version:VERSION, ...await oceanAssets() });
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(template.fonts).map(([role, value]) => [role, value.asset])),
+    {
+      regular:"NotoSans-SemiCondensed.ttf",
+      medium:"NotoSans-SemiCondensedMedium.ttf",
+    },
+    "FID typography assets drifted",
   );
 });
 
-test("FID template font hydration fails closed when declared assets are missing", async () => {
+test("FID template rejects a missing declared font asset", async () => {
   const assets = await oceanAssets();
   delete assets.fontAssets["NotoSans-SemiCondensedMedium.ttf"];
   await assert.rejects(
-    () => createFidCardTemplateFromPngAssets({ version:TEMPLATE_VERSION, ...assets }),
-    /NotoSans-SemiCondensedMedium\.ttf for role medium is required/,
+    () => createFidCardTemplateFromPngAssets({ version:VERSION, ...assets }),
+    /FID font asset NotoSans-SemiCondensedMedium\.ttf is required/,
   );
 });

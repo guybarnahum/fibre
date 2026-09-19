@@ -130,50 +130,37 @@
         "font": "regular",
         "sizePx": 11,
         "letterSpacingPx": 1,
-        "align": "left",
         "textTransform": "uppercase"
       },
       "finValue": {
         "font": "medium",
         "sizePx": 28,
-        "letterSpacingPx": 0.5,
-        "align": "left",
-        "textTransform": "none"
+        "letterSpacingPx": 0.5
       },
       "identityValue": {
         "font": "medium",
         "sizePx": 19,
-        "letterSpacingPx": 0.2,
-        "align": "left",
-        "textTransform": "none"
+        "letterSpacingPx": 0.2
       },
       "dateValue": {
         "font": "medium",
         "sizePx": 20,
-        "letterSpacingPx": 0.25,
-        "align": "left",
-        "textTransform": "none"
+        "letterSpacingPx": 0.25
       },
       "backValue": {
         "font": "regular",
         "sizePx": 12,
-        "letterSpacingPx": 0.2,
-        "align": "left",
-        "textTransform": "none"
+        "letterSpacingPx": 0.2
       },
       "backStrong": {
         "font": "medium",
         "sizePx": 18,
-        "letterSpacingPx": 0.2,
-        "align": "left",
-        "textTransform": "none"
+        "letterSpacingPx": 0.2
       },
       "backMicro": {
         "font": "regular",
         "sizePx": 9,
-        "letterSpacingPx": 0.15,
-        "align": "left",
-        "textTransform": "none"
+        "letterSpacingPx": 0.15
       }
     }
   }
