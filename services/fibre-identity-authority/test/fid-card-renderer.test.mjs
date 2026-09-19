@@ -13,6 +13,7 @@ import { buildFidPhotoAdmission } from "../src/fid-photo-admission.mjs";
 import { decodePngRgba } from "../src/fid-photo-surface.mjs";
 import {
   createFidCardTemplate,
+  createFidCardTemplateFromPngAssets,
   FID_CARD_SIZE,
   FID_CARD_TEMPLATE_VERSION,
   fidRenderPhotoDigest,
@@ -127,6 +128,26 @@ test("Slice C presents the admitted portrait in black and white without changing
   assert.equal(front.rgba[i], front.rgba[i + 1], "rendered portrait red/green channels differ");
   assert.equal(front.rgba[i + 1], front.rgba[i + 2], "rendered portrait green/blue channels differ");
   assert.equal(fidRenderPhotoDigest(p), admission(w, p).candidatePhotoDigest, "presentation treatment changed admitted photo identity");
+});
+
+test("Slice C can hydrate a versioned template from PNG assets without provider-specific IO", async () => {
+  const w = workflow();
+  const p = photo();
+  const a = admission(w, p);
+  const procedural = renderFidCard({ workflow:w, photoAdmission:a, photo:p });
+  const layout = structuredClone(createFidCardTemplate().layout);
+  layout.templateVersion = "fid-card-template-test-assets";
+  const template = await createFidCardTemplateFromPngAssets({
+    version:"fid-card-template-test-assets",
+    layout,
+    frontBasePng:procedural.files["front.png"],
+    frontForegroundPng:procedural.files["front.png"],
+    backBasePng:procedural.files["back.png"],
+  });
+  const rendered = renderFidCard({ workflow:w, photoAdmission:a, photo:p, template });
+  assert.equal(rendered.templateVersion, "fid-card-template-test-assets");
+  assert.deepEqual(pngDimensions(rendered.files["front.png"]), FID_CARD_SIZE);
+  assert.deepEqual(pngDimensions(rendered.files["back.png"]), FID_CARD_SIZE);
 });
 
 test("Slice C render digests move when authorized identity, admitted photo, or template version moves", () => {

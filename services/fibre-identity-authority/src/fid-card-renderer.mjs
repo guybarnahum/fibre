@@ -75,6 +75,31 @@ const FRONT_LAYOUT = Object.freeze({
   portraitHeight: 340,
 });
 
+const LEGACY_LAYOUT = Object.freeze({
+  canvas: FID_CARD_SIZE,
+  front: Object.freeze({
+    portrait: Object.freeze({ x:48, y:118, width:248, height:340 }),
+    fin: Object.freeze({ labelX:344, labelY:132, valueX:344, valueY:164, valueScale:5 }),
+    divider: Object.freeze({ x:344, y:222, width:464, height:2 }),
+    name: Object.freeze({ labelX:344, labelY:250, valueX:344, valueY:278, valueScale:2 }),
+    date: Object.freeze({ labelX:344, labelY:330, valueX:344, valueY:358, valueScale:3 }),
+    verification: Object.freeze({ labelX:344, labelY:418, x:344, y:452, width:304, height:14 }),
+    watermark: Object.freeze({ x:646, y:270, width:158, height:198, opacity:0.055 }),
+  }),
+  back: Object.freeze({
+    drawLabels:true,
+    credentialId:Object.freeze({ label:"CREDENTIAL", labelX:72, labelY:232, x:72, y:260, scale:2 }),
+    revision:Object.freeze({ label:"REVISION", labelX:584, labelY:232, x:584, y:260, scale:3 }),
+    templateVersion:Object.freeze({ label:"TEMPLATE", labelX:72, labelY:324, x:72, y:352, scale:2 }),
+    renderPair:Object.freeze({
+      label:"VERIFY RENDER PAIR", labelX:72, labelY:408,
+      x:72, y:440, width:336, height:22,
+      digestRight:786, digestY:444, digestScale:2,
+    }),
+    footerLine:Object.freeze({ x:70, y:498, width:716, height:1 }),
+  }),
+});
+
 function sha256(bytes) {
   return `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 }
@@ -203,6 +228,23 @@ function blend(dst, src, dx = 0, dy = 0, opacity = 1) {
   }
 }
 
+function blendRect(surface, box, color = [248, 249, 246, 255]) {
+  const opacity = typeof box?.opacity === "number" ? box.opacity : 1;
+  const xStart = Math.max(0, box.x);
+  const yStart = Math.max(0, box.y);
+  const xEnd = Math.min(surface.width, box.x + box.width);
+  const yEnd = Math.min(surface.height, box.y + box.height);
+  for (let y = yStart; y < yEnd; y += 1) {
+    for (let x = xStart; x < xEnd; x += 1) {
+      const i = (y * surface.width + x) * 4;
+      for (let c = 0; c < 3; c += 1) {
+        surface.rgba[i + c] = Math.round(color[c] * opacity + surface.rgba[i + c] * (1 - opacity));
+      }
+      surface.rgba[i + 3] = 255;
+    }
+  }
+}
+
 function placeCover(dst, src, x, y, width, height, opacity = 1) {
   const scale = Math.max(width / src.width, height / src.height);
   const visibleWidth = width / scale;
@@ -289,6 +331,30 @@ function fingerprint(surface, digest, x, y, width, height, color) {
   }
 }
 
+function fingerprintGrid(surface, digest, box, color) {
+  const bits = [...digest.replace("sha256:", "")]
+    .flatMap((value) => Number.parseInt(value, 16).toString(2).padStart(4, "0").split(""));
+  const cell = Math.max(1, Math.floor(Math.min(box.width, box.height) / 16));
+  const width = cell * 16;
+  const height = cell * 16;
+  const originX = box.x + Math.floor((box.width - width) / 2);
+  const originY = box.y + Math.floor((box.height - height) / 2);
+  for (let index = 0; index < Math.min(bits.length, 256); index += 1) {
+    if (bits[index] !== "1") continue;
+    rect(surface, originX + (index % 16) * cell, originY + Math.floor(index / 16) * cell, cell, cell, color);
+  }
+}
+
+function layoutFor(template) {
+  const layout = template.layout ?? LEGACY_LAYOUT;
+  if (layout?.canvas?.width !== FID_CARD_SIZE.width || layout?.canvas?.height !== FID_CARD_SIZE.height
+    || !layout.front?.portrait || !layout.front?.fin || !layout.front?.verification || !layout.front?.watermark
+    || !layout.back?.credentialId || !layout.back?.revision || !layout.back?.templateVersion || !layout.back?.renderPair) {
+    throw new TypeError("FID template layout is invalid");
+  }
+  return layout;
+}
+
 export function createFidCardTemplate({ version = FID_CARD_TEMPLATE_VERSION } = {}) {
   if (typeof version !== "string" || version.trim() === "") throw new TypeError("FID template version is required");
   const { width, height } = FID_CARD_SIZE;
@@ -321,7 +387,7 @@ export function createFidCardTemplate({ version = FID_CARD_TEMPLATE_VERSION } = 
   drawText(back, "FIBRE IDENTITY AUTHORITY", 72, 142, 2, CARD_PALETTE.lightMuted);
   rect(back, 70, 188, 716, 2, CARD_PALETTE.accent);
 
-  return Object.freeze({ version, frontBaseLayer, frontUpperLayer, back });
+  return Object.freeze({ version, frontBaseLayer, frontUpperLayer, back, layout:LEGACY_LAYOUT });
 }
 
 export function fidRenderPhotoDigest(photo) {
@@ -355,6 +421,7 @@ export function renderFidCard({
     requireSurface(`FID template ${name}`, layer);
     if (layer.width !== FID_CARD_SIZE.width || layer.height !== FID_CARD_SIZE.height) throw new TypeError(`FID template ${name} has unsupported dimensions`);
   }
+  const layout = layoutFor(template);
 
   const identitySnapshot = identitySnapshotFor(workflow, authorizedIdentity);
   const identitySnapshotDigest = sha256(Buffer.from(JSON.stringify(canonical(identitySnapshot))));
@@ -365,46 +432,74 @@ export function renderFidCard({
     photoDigest: admission.candidatePhotoDigest,
   }))));
 
+  const frontLayout = layout.front;
+  const backLayout = layout.back;
   const front = clone(template.frontBaseLayer);
+  if (frontLayout.bodyPanel) blendRect(front, frontLayout.bodyPanel);
   placeCover(
     front,
     presentationPhoto,
-    FRONT_LAYOUT.portraitX,
-    FRONT_LAYOUT.portraitY,
-    FRONT_LAYOUT.portraitWidth,
-    FRONT_LAYOUT.portraitHeight,
+    frontLayout.portrait.x,
+    frontLayout.portrait.y,
+    frontLayout.portrait.width,
+    frontLayout.portrait.height,
   );
 
-  drawText(front, "FIBRE IDENTITY NUMBER", FRONT_LAYOUT.bodyX, 132, 2, CARD_PALETTE.inkSoft);
-  drawText(front, workflow.fibreIdentityNumber, FRONT_LAYOUT.bodyX, 164, 5, CARD_PALETTE.ink);
-  rect(front, FRONT_LAYOUT.bodyX, 222, FRONT_LAYOUT.right - FRONT_LAYOUT.bodyX, 2, CARD_PALETTE.paperWarm);
+  drawText(front, "FIBRE IDENTITY NUMBER", frontLayout.fin.labelX, frontLayout.fin.labelY, frontLayout.fin.labelScale ?? 2, CARD_PALETTE.inkSoft);
+  drawText(front, workflow.fibreIdentityNumber, frontLayout.fin.valueX, frontLayout.fin.valueY, frontLayout.fin.valueScale, CARD_PALETTE.ink);
+  if (frontLayout.divider) rect(front, frontLayout.divider.x, frontLayout.divider.y, frontLayout.divider.width, frontLayout.divider.height, CARD_PALETTE.paperWarm);
 
-  if (identitySnapshot.displayName !== undefined && identitySnapshot.displayName !== null) {
-    drawText(front, "NAME", FRONT_LAYOUT.bodyX, 250, 2, CARD_PALETTE.inkSoft);
-    drawText(front, identitySnapshot.displayName, FRONT_LAYOUT.bodyX, 278, 2, CARD_PALETTE.ink);
+  if (identitySnapshot.displayName !== undefined && identitySnapshot.displayName !== null && frontLayout.name) {
+    drawText(front, "NAME", frontLayout.name.labelX, frontLayout.name.labelY, frontLayout.name.labelScale ?? 2, CARD_PALETTE.inkSoft);
+    drawText(front, identitySnapshot.displayName, frontLayout.name.valueX, frontLayout.name.valueY, frontLayout.name.valueScale, CARD_PALETTE.ink);
   }
-  if (identitySnapshot.dateField !== undefined && identitySnapshot.dateField !== null) {
-    drawText(front, identitySnapshot.dateField.kind === "birth_date" ? "BIRTH DATE" : "ENTRY DATE", FRONT_LAYOUT.bodyX, 330, 2, CARD_PALETTE.inkSoft);
-    drawText(front, identitySnapshot.dateField.value, FRONT_LAYOUT.bodyX, 358, 3, CARD_PALETTE.ink);
+  if (identitySnapshot.dateField !== undefined && identitySnapshot.dateField !== null && frontLayout.date) {
+    drawText(front, identitySnapshot.dateField.kind === "birth_date" ? "BIRTH DATE" : "ENTRY DATE", frontLayout.date.labelX, frontLayout.date.labelY, frontLayout.date.labelScale ?? 2, CARD_PALETTE.inkSoft);
+    drawText(front, identitySnapshot.dateField.value, frontLayout.date.valueX, frontLayout.date.valueY, frontLayout.date.valueScale, CARD_PALETTE.ink);
   }
-  drawText(front, "VERIFY IDENTITY SNAPSHOT", FRONT_LAYOUT.bodyX, 418, 2, CARD_PALETTE.inkSoft);
-  fingerprint(front, identitySnapshotDigest, FRONT_LAYOUT.bodyX, 452, 304, 14, CARD_PALETTE.inkSoft);
+  drawText(
+    front,
+    "VERIFY IDENTITY SNAPSHOT",
+    frontLayout.verification.labelX ?? frontLayout.verification.x,
+    frontLayout.verification.labelY ?? frontLayout.verification.y - 28,
+    frontLayout.verification.labelScale ?? 2,
+    CARD_PALETTE.inkSoft,
+  );
+  fingerprint(front, identitySnapshotDigest, frontLayout.verification.x, frontLayout.verification.y, frontLayout.verification.width, frontLayout.verification.height, CARD_PALETTE.inkSoft);
 
-  placeCover(front, presentationPhoto, 646, 270, 158, 198, 0.055);
+  placeCover(
+    front,
+    presentationPhoto,
+    frontLayout.watermark.x,
+    frontLayout.watermark.y,
+    frontLayout.watermark.width,
+    frontLayout.watermark.height,
+    frontLayout.watermark.opacity,
+  );
   blend(front, template.frontUpperLayer);
 
   const back = clone(template.back);
-  drawText(back, "CREDENTIAL", 72, 232, 2, CARD_PALETTE.lightMuted);
-  drawText(back, workflow.proposedCredentialId.slice(-20), 72, 260, 2, CARD_PALETTE.light);
-  drawText(back, "REVISION", 584, 232, 2, CARD_PALETTE.lightMuted);
-  drawText(back, String(workflow.proposedRevision).padStart(2, "0"), 584, 260, 3, CARD_PALETTE.light);
+  if (backLayout.verification) fingerprintGrid(back, identitySnapshotDigest, backLayout.verification, CARD_PALETTE.inkSoft);
 
-  drawText(back, "TEMPLATE", 72, 324, 2, CARD_PALETTE.lightMuted);
-  drawText(back, template.version, 72, 352, 2, CARD_PALETTE.light);
-  drawText(back, "VERIFY RENDER PAIR", 72, 408, 2, CARD_PALETTE.lightMuted);
-  fingerprint(back, materialDigest, 72, 440, 336, 22, CARD_PALETTE.light);
-  drawTextRight(back, identitySnapshotDigest.slice(-16), 786, 444, 2, CARD_PALETTE.lightMuted);
-  rect(back, 70, 498, 716, 1, CARD_PALETTE.lightMuted);
+  const drawBackField = (field, fallbackLabel, value, color = CARD_PALETTE.ink) => {
+    if (backLayout.drawLabels !== false) {
+      drawText(back, field.label ?? fallbackLabel, field.labelX ?? field.x, field.labelY ?? field.y - 28, field.labelScale ?? 2, CARD_PALETTE.lightMuted);
+    }
+    drawText(back, value, field.x, field.y, field.scale, color);
+  };
+  drawBackField(backLayout.credentialId, "CREDENTIAL", workflow.proposedCredentialId.slice(-20), backLayout.drawLabels === false ? CARD_PALETTE.ink : CARD_PALETTE.light);
+  drawBackField(backLayout.revision, "REVISION", String(workflow.proposedRevision).padStart(2, "0"), backLayout.drawLabels === false ? CARD_PALETTE.ink : CARD_PALETTE.light);
+  drawBackField(backLayout.templateVersion, "TEMPLATE", template.version, backLayout.drawLabels === false ? CARD_PALETTE.ink : CARD_PALETTE.light);
+  if (backLayout.issuer) drawBackField(backLayout.issuer, "ISSUER", "FIBRE IDENTITY AUTHORITY", CARD_PALETTE.ink);
+
+  if (backLayout.drawLabels !== false) {
+    drawText(back, backLayout.renderPair.label ?? "VERIFY RENDER PAIR", backLayout.renderPair.labelX ?? backLayout.renderPair.x, backLayout.renderPair.labelY ?? backLayout.renderPair.y - 28, backLayout.renderPair.labelScale ?? 2, CARD_PALETTE.lightMuted);
+  }
+  fingerprint(back, materialDigest, backLayout.renderPair.x, backLayout.renderPair.y, backLayout.renderPair.width, backLayout.renderPair.height, backLayout.drawLabels === false ? CARD_PALETTE.inkSoft : CARD_PALETTE.light);
+  if (backLayout.renderPair.digestRight !== undefined) {
+    drawTextRight(back, identitySnapshotDigest.slice(-16), backLayout.renderPair.digestRight, backLayout.renderPair.digestY, backLayout.renderPair.digestScale ?? 2, backLayout.drawLabels === false ? CARD_PALETTE.inkSoft : CARD_PALETTE.lightMuted);
+  }
+  if (backLayout.footerLine) rect(back, backLayout.footerLine.x, backLayout.footerLine.y, backLayout.footerLine.width, backLayout.footerLine.height, backLayout.drawLabels === false ? CARD_PALETTE.inkSoft : CARD_PALETTE.lightMuted);
 
   const frontPng = encodePng(front);
   const backPng = encodePng(back);

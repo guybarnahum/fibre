@@ -55,6 +55,7 @@ export {
 } from "./fid-card-renderer.mjs";
 
 export { decodePngRgba } from "./fid-photo-surface.mjs";
+export { createFidCardTemplateFromPngAssets } from "./fid-card-template-assets.mjs";
 
 export {
   FID_C2PA_ASSERTION_LABEL,
