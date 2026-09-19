@@ -20,6 +20,7 @@ import {
 } from "./cloudflare-worker-domains.mjs";
 
 export const CLOUDFLARE_DEPLOY_ORDER = Object.freeze([
+  "content-credential-signer",
   "asset-generator",
   "thread-presentation",
   "world-kernel",
@@ -250,31 +251,16 @@ export async function deployCloudflareStack({
     };
   }
 
-  for (const serviceId of ["asset-generator", "thread-presentation", "fibre-identity-authority"]) {
-    const signerUrl = resolvedConfigs[serviceId].config.vars?.C2PA_SIGNER_URL;
-    if (typeof signerUrl !== "string" || signerUrl.trim() === "") continue;
-    const workerName = resourceState.resources.deployManaged.workers[serviceId];
-    const remote = await client.listSecretNames(workerName);
-    const missing = missingRequiredSecretNames(["C2PA_SIGNER_TOKEN"], remote);
-    if (missing.length > 0) throw new Error(`${serviceId} is missing required Cloudflare secrets: ${missing.join(", ")}`);
+  const signerConfig = resolvedConfigs["content-credential-signer"].config;
+  const signerId = nonEmpty("C2PA signer ID", signerConfig.vars?.C2PA_SIGNER_ID);
+  const trustPolicy = nonEmpty("C2PA trust policy", signerConfig.vars?.C2PA_TRUST_POLICY);
+  if (!["fibre_signature_only", "c2pa_trust_list"].includes(trustPolicy)) {
+    throw new Error(`unsupported cloud C2PA trust policy ${trustPolicy}`);
   }
-
-  const signerVars = resolvedConfigs["asset-generator"].config.vars ?? {};
-  if (typeof signerVars.C2PA_SIGNER_URL === "string" && signerVars.C2PA_SIGNER_URL.trim() !== "") {
-    const signerId = typeof signerVars.C2PA_SIGNER_ID === "string" && signerVars.C2PA_SIGNER_ID.trim() !== ""
-      ? signerVars.C2PA_SIGNER_ID
-      : DEFAULT_C2PA_SIGNER_ID;
-    const trustPolicy = typeof signerVars.C2PA_TRUST_POLICY === "string" && signerVars.C2PA_TRUST_POLICY.trim() !== ""
-      ? signerVars.C2PA_TRUST_POLICY
-      : DEFAULT_C2PA_TRUST_POLICY;
-    if (env === "production" && trustPolicy !== "c2pa_trust_list") {
-      throw new Error("production Cloudflare deployment requires c2pa_trust_list C2PA trust policy");
-    }
-    await client.checkSignerHealth({
-      baseUrl: signerVars.C2PA_SIGNER_URL,
-      signerId,
-      trustPolicy,
-    });
+  const fiaSigner = (resolvedConfigs["fibre-identity-authority"].config.services ?? [])
+    .find((binding) => binding?.binding === "CONTENT_CREDENTIAL_SIGNER");
+  if (fiaSigner?.service !== signerConfig.name) {
+    throw new Error("FIA CONTENT_CREDENTIAL_SIGNER must target the deployed Fibre signer");
   }
 
   const deployments = [];
@@ -289,13 +275,16 @@ export async function deployCloudflareStack({
     });
     const baseUrl = healthBaseUrlForDeployment({ serviceId, resolvedConfig: resolved.config, deploymentOutput: deployed.output });
     const customDomain = deployed.customDomain ?? null;
-    const health = await retryServiceHealth({
-      client,
-      serviceId,
-      baseUrl,
-      attempts: customDomain === null ? HEALTH_RETRY_ATTEMPTS : CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS,
-      wait,
-    });
+    const attempts = customDomain === null ? HEALTH_RETRY_ATTEMPTS : CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS;
+    const health = serviceId === "content-credential-signer"
+      ? await retryHealth({
+          serviceId,
+          attempts,
+          wait,
+          kind:"signer",
+          check:() => client.checkSignerHealth({ baseUrl, signerId, trustPolicy }),
+        })
+      : await retryServiceHealth({ client, serviceId, baseUrl, attempts, wait });
     const stateHealth = STATEFUL_DO_SERVICES.has(serviceId)
       ? await retryStateHealth({ client, serviceId, baseUrl, wait })
       : null;
