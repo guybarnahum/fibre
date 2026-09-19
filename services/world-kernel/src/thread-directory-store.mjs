@@ -23,9 +23,10 @@ function registryEntry(row) {
   const thread = parse(`Thread ${row.thread_id}`, row.state_json);
   const identity = thread?.identity ?? {};
   const worldSpec = parse(`Thread ${row.thread_id} WorldSpec`, row.world_spec_json);
+  const correctedRaisedLanguages = parse(`Thread ${row.thread_id} raised languages`, row.raised_languages_json);
   const raisedAs = worldSpec === null ? null : Object.freeze({
     culturalContext: clean(worldSpec.culturalContext),
-    languages: strings(worldSpec.languages),
+    languages: strings(correctedRaisedLanguages ?? worldSpec.languages),
     schoolingOrCommunityContext: clean(worldSpec.schoolingOrCommunityContext),
   });
   const reconciliation = clean(row.reconciliation_state) === null ? null : Object.freeze({
@@ -65,7 +66,7 @@ export class ThreadDirectoryStore {
     this.#tables = new Set(this.#database.prepare(`
       SELECT name FROM sqlite_master
       WHERE type='table' AND name IN (
-        'threads','fibre_civil_registrations','genesis_manifests','genesis_world_specs','thread_visual_publication_work'
+        'threads','fibre_civil_registrations','genesis_manifests','genesis_world_specs','genesis_raised_language_corrections','thread_visual_publication_work'
       )
     `).all().map((row) => row.name));
   }
@@ -77,11 +78,13 @@ export class ThreadDirectoryStore {
     if (!this.#tables.has("threads")) return null;
     const hasCivilRegistry = this.#tables.has("fibre_civil_registrations");
     const hasGenesis = this.#tables.has("genesis_manifests") && this.#tables.has("genesis_world_specs");
+    const hasRaisedCorrections = this.#tables.has("genesis_raised_language_corrections");
     const row = this.#database.prepare(`
       SELECT
         t.thread_id,t.version,t.status,t.state_json,t.state_hash,t.updated_at,
         ${hasCivilRegistry ? "r.fibre_identity_number" : "NULL"} AS fibre_identity_number,
         ${hasGenesis ? "w.record_json" : "NULL"} AS world_spec_json,
+        ${hasGenesis && hasRaisedCorrections ? "(SELECT languages_json FROM genesis_raised_language_corrections c WHERE c.thread_id=t.thread_id ORDER BY c.recorded_at DESC,c.correction_id DESC LIMIT 1)" : "NULL"} AS raised_languages_json,
         ${this.#tables.has("thread_visual_publication_work") ? "v.state" : "NULL"} AS reconciliation_state,
         ${this.#tables.has("thread_visual_publication_work") ? "v.last_error_json" : "NULL"} AS reconciliation_error_json,
         ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at
@@ -102,6 +105,7 @@ export class ThreadDirectoryStore {
     if (!this.#tables.has("threads")) return [];
     const hasCivilRegistry = this.#tables.has("fibre_civil_registrations");
     const hasGenesis = this.#tables.has("genesis_manifests") && this.#tables.has("genesis_world_specs");
+    const hasRaisedCorrections = this.#tables.has("genesis_raised_language_corrections");
     if (fin !== null && !hasCivilRegistry) return [];
 
     const sql = `
@@ -109,6 +113,7 @@ export class ThreadDirectoryStore {
         t.thread_id,t.version,t.status,t.state_json,t.state_hash,t.updated_at,
         ${hasCivilRegistry ? "r.fibre_identity_number" : "NULL"} AS fibre_identity_number,
         ${hasGenesis ? "w.record_json" : "NULL"} AS world_spec_json,
+        ${hasGenesis && hasRaisedCorrections ? "(SELECT languages_json FROM genesis_raised_language_corrections c WHERE c.thread_id=t.thread_id ORDER BY c.recorded_at DESC,c.correction_id DESC LIMIT 1)" : "NULL"} AS raised_languages_json,
         ${this.#tables.has("thread_visual_publication_work") ? "v.state" : "NULL"} AS reconciliation_state,
         ${this.#tables.has("thread_visual_publication_work") ? "v.last_error_json" : "NULL"} AS reconciliation_error_json,
         ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at

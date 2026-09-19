@@ -103,37 +103,48 @@ function registryFindings(entry) {
       }),
     }));
   }
-  const languages = Array.isArray(entry.languages)
+  const spokenLanguages = Array.isArray(entry.languages)
     ? entry.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
     : [];
-  const languageAction = Object.freeze({
-    id:languages.length === 0 ? "set_languages" : "change_languages",
-    label:languages.length === 0 ? "Set languages" : "Change languages",
+  findings.push(Object.freeze({
+    code:"SPOKEN_LANGUAGES",
+    state:"healthy",
+    authoritative:Object.freeze([...spokenLanguages]),
+  }));
+
+  const raisedLanguages = Array.isArray(entry.raisedAs?.languages)
+    ? entry.raisedAs.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
+    : [];
+  const raisedLanguageAction = Object.freeze({
+    id:raisedLanguages.length === 0 ? "set_raised_languages" : "change_raised_languages",
+    label:raisedLanguages.length === 0 ? "Set raised languages" : "Change raised languages",
+    command:"raised_languages",
     input:Object.freeze({ fields:Object.freeze([
       Object.freeze({
         name:"languages",
-        label:"Languages",
+        label:"Raised languages",
         kind:"string_list",
         required:true,
-        ...(languages.length === 0 ? {} : { default:languages.join(", ") }),
-        placeholder:"Hebrew, Russian, English",
+        ...(raisedLanguages.length === 0 ? {} : { default:raisedLanguages.join(", ") }),
+        placeholder:"Hebrew, Russian",
       }),
     ]) }),
   });
-  if (languages.length === 0 || languages.length > 3) {
+  if (raisedLanguages.length === 0 || raisedLanguages.length > 3) {
     findings.push(Object.freeze({
-      code:languages.length === 0 ? "LANGUAGES_MISSING" : "LANGUAGES_NEED_REVIEW",
+      code:raisedLanguages.length === 0 ? "RAISED_LANGUAGES_MISSING" : "RAISED_LANGUAGES_NEED_REVIEW",
       state:"operator_decision_required",
-      reason:languages.length === 0
-        ? "This Thread has no authoritative personal language path"
-        : "Legacy language list needs review as an individual household/civic/schooling path",
-      identityAction:languageAction,
+      reason:raisedLanguages.length === 0
+        ? "Genesis has no raised-language context"
+        : "Genesis raised languages should describe this person's household, civic, and schooling path rather than a country's demographic language inventory",
+      identityAction:raisedLanguageAction,
     }));
   } else {
     findings.push(Object.freeze({
-      code:"LANGUAGES",
+      code:"RAISED_LANGUAGES",
       state:"healthy",
-      identityAction:languageAction,
+      authoritative:Object.freeze([...raisedLanguages]),
+      identityAction:raisedLanguageAction,
     }));
   }
   if (clean(entry.fibreIdentityNumber) === null) findings.push(Object.freeze({ code:"FIN_MISSING", state:"attention" }));

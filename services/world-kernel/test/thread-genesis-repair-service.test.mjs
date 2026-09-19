@@ -18,7 +18,7 @@ function fixture() {
   const threadId = "thr_repair_1";
   const objectRef = "visual_identity_reference_1";
   const officialMediaId = "media_identity_1";
-  const state = { presentation:null, rebuilt:false, visual:false, activity:[] };
+  const state = { presentation:null, rebuilt:false, visual:false, activity:[], raisedLanguages:["English"] };
   const thread = {
     threadId,
     status:"active",
@@ -87,6 +87,15 @@ function fixture() {
     },
     genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("sex migration should not run for a complete Thread"); } },
+    genesisAuthority:{
+      getRaisedLanguagesForThread() { return { languages:[...state.raisedLanguages] }; },
+      correctRaisedLanguages(id, { languages }) {
+        assert.equal(id, threadId);
+        const previousLanguages = [...state.raisedLanguages];
+        state.raisedLanguages = [...languages];
+        return { changed:true, correctionId:"grc_test", languages:[...languages], previousLanguages };
+      },
+    },
     identityUpdater:NO_IDENTITY_UPDATE,
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
   });
@@ -102,7 +111,8 @@ test("R1 diagnoses missing Presentation and unpublished canonical visual without
   assert.equal(name.identityAction.id, "change_name");
   assert.equal(name.identityAction.input.fields[0].default, "Repair Thread");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "SEX").state, "healthy");
-  assert.equal(diagnosis.findings.find((entry) => entry.code === "LANGUAGES").identityAction.id, "change_languages");
+  assert.equal(diagnosis.findings.find((entry) => entry.code === "SPOKEN_LANGUAGES").identityAction, undefined);
+  assert.equal(diagnosis.findings.find((entry) => entry.code === "RAISED_LANGUAGES").identityAction.id, "change_raised_languages");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "PRESENTATION_MISSING").action, "rebuild_presentation");
   assert.equal(diagnosis.findings.find((entry) => entry.code === "CANONICAL_VISUAL_NOT_PUBLISHED").action, "reconcile_visual_publication");
 });
@@ -207,6 +217,10 @@ test("Fibre Thread and missing sex require explicit operator identity decisions 
     visualReconciler:{ async reconcileThread() { throw new Error("should not run"); } },
     genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("diagnosis must not migrate"); } },
+    genesisAuthority:{
+      getRaisedLanguagesForThread() { return { languages:["English"] }; },
+      correctRaisedLanguages() { throw new Error("diagnosis must not correct Genesis"); },
+    },
     identityUpdater:NO_IDENTITY_UPDATE,
   });
   const diagnosis = await service.diagnose("thr_legacy_1");
@@ -222,9 +236,9 @@ test("Fibre Thread and missing sex require explicit operator identity decisions 
   assert.equal(sex.identityAction.id, "set_sex");
 });
 
-test("legacy demographic language list requires explicit operator review", async () => {
-  const { service, state, threadId, thread } = fixture();
-  thread.identity.languages = ["Hebrew", "Arabic", "English", "Russian", "Amharic"];
+test("legacy demographic Raised-language list requires explicit operator review", async () => {
+  const { service, state, threadId } = fixture();
+  state.raisedLanguages = ["Hebrew", "Arabic", "English", "Russian", "Amharic"];
   state.presentation = {
     presentation:{
       subject:{
@@ -240,10 +254,10 @@ test("legacy demographic language list requires explicit operator review", async
   };
 
   const diagnosis = await service.diagnose(threadId);
-  const finding = diagnosis.findings.find((entry) => entry.code === "LANGUAGES_NEED_REVIEW");
+  const finding = diagnosis.findings.find((entry) => entry.code === "RAISED_LANGUAGES_NEED_REVIEW");
   assert.equal(diagnosis.health, "operator_decision_required");
   assert.deepEqual(finding.authoritative, ["Hebrew", "Arabic", "English", "Russian", "Amharic"]);
-  assert.equal(finding.identityAction.id, "change_languages");
+  assert.equal(finding.identityAction.id, "change_raised_languages");
   assert.equal(finding.identityAction.input.fields[0].default, "Hebrew, Arabic, English, Russian, Amharic");
 });
 
@@ -323,6 +337,10 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
         current.identity.sex = evidence.sex;
         return { migrated:true, reused:false, sex:evidence.sex, eventId:"evt_genesis_sex_migrated", evidence };
       },
+    },
+    genesisAuthority:{
+      getRaisedLanguagesForThread() { return { languages:["English"] }; },
+      correctRaisedLanguages() { throw new Error("migration must not correct Genesis languages"); },
     },
     identityUpdater:NO_IDENTITY_UPDATE,
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },

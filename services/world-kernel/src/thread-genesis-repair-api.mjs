@@ -1,6 +1,6 @@
 const TOKEN_ENCODER = new TextEncoder();
 const REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
-const CONTRACT = "fibre-thread-repair-v0.5";
+const CONTRACT = "fibre-thread-repair-v0.6";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -33,9 +33,13 @@ async function repairBody(request) {
       const name = value.name === undefined ? undefined : value.name;
       const sex = value.sex === undefined ? undefined : value.sex;
       const birthDate = value.birthDate === undefined ? undefined : value.birthDate;
-      const languages = value.languages === undefined ? undefined : value.languages;
-      if (name === undefined && sex === undefined && birthDate === undefined && languages === undefined) throw new TypeError();
-      return Object.freeze({ action:"identity", operationKey:value.operationKey.trim(), name, sex, birthDate, languages });
+      if (name === undefined && sex === undefined && birthDate === undefined) throw new TypeError();
+      return Object.freeze({ action:"identity", operationKey:value.operationKey.trim(), name, sex, birthDate });
+    }
+    if (value.action === "raised_languages") {
+      if (typeof value.operationKey !== "string" || value.operationKey.trim() === "") throw new TypeError();
+      if (!Array.isArray(value.languages)) throw new TypeError();
+      return Object.freeze({ action:"raised_languages", operationKey:value.operationKey.trim(), languages:value.languages });
     }
     if (value.action === "migrate") {
       if (typeof value.migrationId !== "string" || value.migrationId.trim() === "") throw new TypeError();
@@ -133,6 +137,14 @@ export function createThreadGenesisRepairApi({
             contract:CONTRACT,
             identityUpdate:result,
             identityProjection,
+            reconciliation:reconciliationWorkset?.get(threadId) ?? null,
+          });
+        }
+        if (command.action === "raised_languages") {
+          const result = await repairService.updateRaisedLanguages(threadId, command);
+          return json(result.before.exists ? 200 : 404, {
+            contract:CONTRACT,
+            raisedLanguagesUpdate:result,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
         }

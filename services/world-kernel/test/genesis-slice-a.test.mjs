@@ -160,6 +160,35 @@ test("Slice A WorldSpec is immutable, factual-shaped, and rejects extra personal
     store.close();
   }));
 
+test("Raised-language correction preserves the Thread and original Genesis evidence", () =>
+  withDatabase((databasePath) => {
+    const storage = localWorldStateStorage(databasePath);
+    const genesis = new GenesisStore(storage);
+    genesis.recordWorldSpec(worldSpec());
+    const thread = genesisThread();
+    thread.identity.languages = ["English"];
+    const published = genesis.publishBirth(registeredBirth(thread));
+
+    const world = openWorldStore(storage);
+    const before = world.getThread(thread.threadId);
+    const eventCount = world.listEvents(thread.threadId).length;
+
+    const correction = genesis.correctRaisedLanguages(thread.threadId, {
+      languages:["Korean"],
+      operationKey:"admin_raised_languages_1",
+      recordedAt:"2026-08-15T19:33:00Z",
+    });
+
+    assert.equal(correction.changed, true, "raised-language correction was not recorded");
+    assert.deepEqual(genesis.getRaisedLanguagesForThread(thread.threadId).languages, ["Korean"], "raised languages did not change");
+    assert.deepEqual(genesis.getWorldSpec(published.manifest.worldSpecRef).record.languages, ["English", "Korean"], "original Genesis evidence changed");
+    assert.deepEqual(world.getThread(thread.threadId), before, "raised-language correction changed the Thread");
+    assert.equal(world.listEvents(thread.threadId).length, eventCount, "raised-language correction created lived history");
+
+    world.close();
+    genesis.close();
+  }));
+
 test("candidate Genesis audit state is not a live Thread authority", () =>
   withDatabase((databasePath) => {
     const genesis = new GenesisStore(localWorldStateStorage(databasePath));

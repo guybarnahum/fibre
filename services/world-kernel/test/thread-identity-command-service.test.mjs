@@ -69,51 +69,22 @@ test("birth date is carried through the identity command boundary", async () => 
   assert.deepEqual(result.changes, { birthDate:"2004-08-20" });
 });
 
-test("language correction crosses the identity command boundary", async () => {
-  const current = thread({ languages:["Hebrew", "Arabic", "English", "Russian", "Amharic"] });
-  let persisted = structuredClone(current);
-  const service = createThreadIdentityCommandService({
-    worldReader:{ getThread:() => structuredClone(persisted) },
-    genesisSexEvidence:{ resolve() { throw new Error("languages must not inspect sex evidence"); } },
-    identityUpdater:{
-      update(value, { languages }) {
-        assert.deepEqual(languages, ["Hebrew", "Russian", "English"]);
-        const next = {
-          ...value,
-          version:value.version + 1,
-          identity:{ ...value.identity, languages },
-          provenance:{ ...value.provenance, lastEventId:"evt_languages" },
-        };
-        persisted = structuredClone(next);
-        return { changed:true, eventId:"evt_languages", changes:{ languages }, thread:next };
-      },
-    },
-  });
-
-  const result = await service.update(current.threadId, {
-    operationKey:"admin_languages_1",
-    languages:["Hebrew", "Russian", "English"],
-  });
-  assert.deepEqual(result.identity.languages, ["Hebrew", "Russian", "English"]);
-  assert.deepEqual(result.changes, { languages:["Hebrew", "Russian", "English"] });
-});
-
-test("identity command never acknowledges a language update that is not durably readable", async () => {
-  const current = thread({ languages:["Hebrew", "Arabic", "English", "Russian", "Amharic"] });
+test("identity command never acknowledges an update that is not durably readable", async () => {
+  const current = thread();
   const service = createThreadIdentityCommandService({
     worldReader:{ getThread:() => structuredClone(current) },
-    genesisSexEvidence:{ resolve() { throw new Error("languages must not inspect sex evidence"); } },
+    genesisSexEvidence:{ resolve() { throw new Error("name must not inspect sex evidence"); } },
     identityUpdater:{
-      update(value, { languages }) {
+      update(value, { name }) {
         return {
           changed:true,
-          eventId:"evt_languages_unpersisted",
-          changes:{ languages },
+          eventId:"evt_name_unpersisted",
+          changes:{ name },
           thread:{
             ...value,
             version:value.version + 1,
-            identity:{ ...value.identity, languages },
-            provenance:{ ...value.provenance, lastEventId:"evt_languages_unpersisted" },
+            identity:{ ...value.identity, name },
+            provenance:{ ...value.provenance, lastEventId:"evt_name_unpersisted" },
           },
         };
       },
@@ -122,8 +93,8 @@ test("identity command never acknowledges a language update that is not durably 
 
   await assert.rejects(
     service.update(current.threadId, {
-      operationKey:"admin_languages_unpersisted_1",
-      languages:["Hebrew", "English"],
+      operationKey:"admin_name_unpersisted_1",
+      name:"Maya Cohen",
     }),
     (error) => error?.code === "THREAD_IDENTITY_PERSISTENCE_MISMATCH"
       && /not durably readable/u.test(error.message),

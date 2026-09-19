@@ -37,10 +37,11 @@ function labelFor(code) {
     BIRTH_DATE_MISSING:"Birth date",
     BIRTH_DATE_PRESENTATION_MISSING:"Birth date",
     BIRTH_DATE_CONFLICT:"Birth date",
-    LANGUAGES:"Languages",
-    LANGUAGES_MISSING:"Languages",
-    LANGUAGES_NEED_REVIEW:"Languages",
-    LANGUAGES_PRESENTATION_STALE:"Languages",
+    SPOKEN_LANGUAGES:"Spoken languages",
+    SPOKEN_LANGUAGES_PRESENTATION_STALE:"Spoken languages",
+    RAISED_LANGUAGES:"Raised languages",
+    RAISED_LANGUAGES_MISSING:"Raised languages",
+    RAISED_LANGUAGES_NEED_REVIEW:"Raised languages",
     CANONICAL_EMBODIMENT:"Canonical embodiment",
     CANONICAL_EMBODIMENT_MISSING:"Canonical embodiment",
     CANONICAL_EMBODIMENT_PENDING:"Canonical embodiment",
@@ -58,7 +59,7 @@ function stateText(finding) {
   if (finding.migration?.id) return `migration · ${finding.migration.label ?? human(finding.migration.id)}`;
   if (finding.state === "migration_required") return "migration required";
   if (finding.state === "operator_decision_required" && ["admit_name","admit_birth_date"].includes(finding.identityAction?.id)) return "admission required";
-  if (finding.code === "LANGUAGES_NEED_REVIEW") return "review required";
+  if (finding.code === "RAISED_LANGUAGES_NEED_REVIEW") return "review required";
   if (finding.state === "operator_decision_required") return "input required";
   if (finding.state === "integrity_error") return "authority conflict";
   if (finding.state === "unrecoverable") return "not admitted";
@@ -220,8 +221,8 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
       ? "Admit the preserved public name into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
       : action.id === "admit_birth_date"
         ? "Admit the preserved birth date into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
-        : ["set_languages","change_languages"].includes(action.id)
-          ? "Set this Thread's personal language path in authoritative World identity. Use only languages grounded in household, civic life, or sustained schooling; do not list a country's demographic language inventory."
+        : ["set_raised_languages","change_raised_languages"].includes(action.id)
+          ? "Correct the languages this person was raised with in Genesis. This does not edit Spoken languages, which belong to the Thread's lived history."
           : "Record an explicit operator identity decision in World history.";
     const control = dialogActionButton(label, () => {
       openThreadActionDialog({
@@ -233,8 +234,8 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
         fields:actionFields(action),
         run:async (input) => {
           await post(threadId, {
-            action:"identity",
-            operationKey:`admin_identity_${Date.now().toString(36)}`,
+            action:action.command ?? "identity",
+            operationKey:`${action.command === "raised_languages" ? "admin_raised_languages" : "admin_identity"}_${Date.now().toString(36)}`,
             ...input,
           });
           window.dispatchEvent(new CustomEvent("fibre:thread-identity-updated", {
@@ -248,7 +249,9 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
               ? "Name admitted into World; Presentation is reconciled from that authority."
               : action.id === "admit_birth_date"
                 ? "Birth date admitted into World; Presentation is reconciled from that authority."
-                : `${label} updated in World.`,
+                : action.command === "raised_languages"
+                  ? "Raised languages corrected in Genesis; Spoken languages were left untouched."
+                  : `${label} updated in World.`,
           );
         },
       });

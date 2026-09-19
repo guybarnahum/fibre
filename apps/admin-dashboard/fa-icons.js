@@ -65,7 +65,7 @@ export function iconForIdentityAction(actionId) {
   if (["set_name","change_name"].includes(actionId)) return "signature";
   if (actionId === "set_sex") return "venus-mars";
   if (["set_birth_date","change_birth_date"].includes(actionId)) return "cake-candles";
-  if (["set_languages","change_languages"].includes(actionId)) return "language";
+  if (["set_raised_languages","change_raised_languages"].includes(actionId)) return "language";
   return null;
 }
 
