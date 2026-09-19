@@ -82,6 +82,16 @@ jobs:
             cat "$log"
             exit 1
           fi
+      - name: dry-run fibre identity authority
+        run: |
+          log="$RUNNER_TEMP/fibre-identity-authority.log"
+          echo "=== dry-run fibre identity authority ==="
+          if npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/fibre-identity-authority/cloudflare/wrangler.jsonc > "$log" 2>&1; then
+            echo "✓ fibre identity authority dry-run passed"
+          else
+            cat "$log"
+            exit 1
+          fi
       - name: dry-run birth center
         run: |
           log="$RUNNER_TEMP/birth-center.log"

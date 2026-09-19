@@ -14,7 +14,7 @@ import {
   writeCloudflareRuntimeConfig,
 } from "./cloudflare-operator.mjs";
 
-const CONTENT_CREDENTIAL_SERVICES = Object.freeze(["asset-generator", "thread-presentation"]);
+const CONTENT_CREDENTIAL_SERVICES = Object.freeze(["asset-generator", "thread-presentation", "fibre-identity-authority"]);
 const DEFAULT_C2PA_SIGNER_ID = "fibre-c2pa-production-v1";
 const DEFAULT_C2PA_TRUST_POLICY = "c2pa_trust_list";
 

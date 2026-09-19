@@ -21,6 +21,7 @@ const SERVICES = Object.freeze(new Set([
   "thread-presentation",
   "world-kernel",
   "birth-center",
+  "fibre-identity-authority",
 ]));
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
 

@@ -51,14 +51,14 @@ function civilRegistryFor(record) {
   });
 }
 
-function withDatabase(run) {
+async function withDatabase(run) {
   const root = mkdtempSync(join(tmpdir(), "fibre-fid-authority-"));
   const databasePath = join(root, "fid.sqlite");
-  try { return run(databasePath); }
+  try { return await run(databasePath); }
   finally { rmSync(root, { recursive: true, force: true }); }
 }
 
-test("FID issuance resolves civil identity once and remains durable/idempotent", () => withDatabase((databasePath) => {
+test("FID issuance resolves civil identity once and remains durable/idempotent", async () => withDatabase(async (databasePath) => {
   const civilRegistration = registration();
   const stateBinding = storage(databasePath);
   const registry = new FidCardRegistry(stateBinding);
@@ -69,14 +69,14 @@ test("FID issuance resolves civil identity once and remains durable/idempotent",
     now: () => "2026-09-09T18:45:00.000Z",
   });
 
-  assert.throws(() => authority.issueFidCard({
+  await assert.rejects(() => authority.issueFidCard({
     threadId: "thr_mira",
     reason: "initial",
     idempotencyKey: "issue_mira_001",
     fibreIdentityNumber: FIN,
   }));
 
-  const first = authority.issueFidCard({
+  const first = await authority.issueFidCard({
     threadId: "thr_mira",
     reason: "initial",
     idempotencyKey: "issue_mira_001",
@@ -87,7 +87,7 @@ test("FID issuance resolves civil identity once and remains durable/idempotent",
   assert.equal(first.workflow.priorActiveCredentialId, null);
   assert.equal(registry.getActiveByFin(FIN), null, "issuance intent alone must not activate a card");
 
-  const repeated = authority.issueFidCard({
+  const repeated = await authority.issueFidCard({
     threadId: "thr_mira",
     reason: "initial",
     idempotencyKey: "issue_mira_001",
@@ -102,7 +102,7 @@ test("FID issuance resolves civil identity once and remains durable/idempotent",
   reopened.close();
 }));
 
-test("FID Authority preserves an active card during reissue intent and owns explicit revocation", () => withDatabase((databasePath) => {
+test("FID Authority preserves an active card during reissue intent and owns explicit revocation", async () => withDatabase(async (databasePath) => {
   const civilRegistration = registration();
   const registry = new FidCardRegistry(storage(databasePath));
   registry.registerCredential({
@@ -131,7 +131,7 @@ test("FID Authority preserves an active card during reissue intent and owns expl
     registry,
     now: () => "2026-09-09T18:50:00.000Z",
   });
-  const reissue = authority.issueFidCard({
+  const reissue = await authority.issueFidCard({
     threadId: "thr_mira",
     reason: "replacement",
     idempotencyKey: "replace_mira_001",
@@ -142,7 +142,7 @@ test("FID Authority preserves an active card during reissue intent and owns expl
   assert.equal(registry.getActiveByFin(FIN).credential.credentialId, "fidc_mira_existing");
   assert.equal(registry.listByFin(FIN).length, 1, "incomplete reissue must not register the proposed credential");
 
-  assert.throws(() => authority.issueFidCard({
+  await assert.rejects(() => authority.issueFidCard({
     threadId: "thr_mira",
     reason: "correction",
     idempotencyKey: "replace_mira_001",
@@ -157,7 +157,7 @@ test("FID Authority preserves an active card during reissue intent and owns expl
     issuanceStore,
     now: () => "2026-09-09T18:55:00.000Z",
   });
-  assert.throws(() => missingAuthority.issueFidCard({
+  await assert.rejects(() => missingAuthority.issueFidCard({
     threadId: "thr_missing",
     reason: "initial",
     idempotencyKey: "issue_missing_001",

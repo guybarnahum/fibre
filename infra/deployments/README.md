@@ -16,6 +16,8 @@ infra/deployments/
   environments/
   asset-generator/
     cloudflare/
+  fibre-identity-authority/
+    cloudflare/
   thread-presentation/
     cloudflare/
 ```
@@ -51,6 +53,7 @@ The command runs repository/deployment validation, verifies Wrangler authenticat
 Asset Generator
 Thread Presentation
 World Kernel
+Fibre Identity Authority
 Birth Center
 ```
 

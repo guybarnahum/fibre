@@ -47,3 +47,7 @@ ensureFidPhoto({ workflowId })
 A currently valid admitted official photo is reused. Otherwise the authority creates one deterministic `official_id_photo` Asset Generation demand from the Thread's admitted canonical visual reference, target age, and FID photo policy. Asset Generator remains the executor. The generated result must return through the same trusted photo-source boundary and pass B1 admission before issuance can progress.
 
 The derivation identity is deliberately independent of FID credential/workflow identity. Equivalent source + policy + target age therefore reuses the same generation demand instead of manufacturing redundant portraits of the same persistent Thread.
+
+## Runtime composition
+
+FIA remains provider-neutral. Executable provider composition belongs under `infra/deployments/fibre-identity-authority/`; the Cloudflare host injects an `InfraDriver` for FIA state/objects/workflows plus World, Thread Presentation, Asset Generation, content-credential, issuer-signing, and credential-protection boundaries. A different provider can compose the same FIA service contracts without changing FIA domain code.

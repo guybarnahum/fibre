@@ -23,10 +23,11 @@ export const CLOUDFLARE_DEPLOY_ORDER = Object.freeze([
   "asset-generator",
   "thread-presentation",
   "world-kernel",
+  "fibre-identity-authority",
   "birth-center",
 ]);
 
-const STATEFUL_DO_SERVICES = new Set(["world-kernel", "birth-center"]);
+const STATEFUL_DO_SERVICES = new Set(["world-kernel", "fibre-identity-authority", "birth-center"]);
 const HEALTH_RETRY_ATTEMPTS = 20;
 const CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS = 60;
 const HEALTH_RETRY_DELAY_MS = 1500;
@@ -250,7 +251,7 @@ export async function deployCloudflareStack({
     };
   }
 
-  for (const serviceId of ["asset-generator", "thread-presentation"]) {
+  for (const serviceId of ["asset-generator", "thread-presentation", "fibre-identity-authority"]) {
     const signerUrl = resolvedConfigs[serviceId].config.vars?.C2PA_SIGNER_URL;
     if (typeof signerUrl !== "string" || signerUrl.trim() === "") continue;
     const workerName = resourceState.resources.deployManaged.workers[serviceId];

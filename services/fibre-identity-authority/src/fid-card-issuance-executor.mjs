@@ -30,7 +30,7 @@ export function createFidCardIssuanceExecutor({
   if (typeof now !== "function") throw new TypeError("FID issuance now must be a function");
 
   async function cut(request) {
-    const prepared = authority.prepareFidCard(request);
+    const prepared = await authority.prepareFidCard(request);
     const workflow = prepared.workflow;
 
     const prior = registry.getByCredentialId(workflow.proposedCredentialId, { required: false });

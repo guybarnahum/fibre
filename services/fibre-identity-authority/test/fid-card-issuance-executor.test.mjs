@@ -8,7 +8,6 @@ import test from "node:test";
 import { buildFibreCivilRegistration } from "#core/src/fibre-civil-identity.mjs";
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
-import { createCivilRegistryReadService } from "#services/world-kernel/public/civil-registry-service.mjs";
 import {
   FIBRE_IDENTITY_AUTHORITY_ID,
   FID_C2PA_ASSERTION_LABEL,
@@ -76,12 +75,10 @@ test("cutting by Thread then FIN reissues one civil identity and preserves card 
       birthEventRef: "evt_birth_mira",
       worldRef: "world_fid_cut",
     });
-    const civilRegistry = createCivilRegistryReadService({
-      authority: {
-        getCivilRegistrationByThreadId: (id, { required = true } = {}) => id === registration.threadId ? registration : (required ? (() => { throw new Error("missing Thread"); })() : null),
-        getCivilRegistrationByFin: (fin, { required = true } = {}) => fin === FIN ? registration : (required ? (() => { throw new Error("missing FIN"); })() : null),
-      },
-    });
+    const civilRegistry = {
+      async lookupByThreadId(id) { return id === registration.threadId ? registration : null; },
+      async lookupByFin(fin) { return fin === FIN ? registration : null; },
+    };
     const photo = { width: 8, height: 8, rgba: new Uint8Array(8 * 8 * 4).map((_, i) => (i * 29) % 256) };
     const source = {
       role: "official_id_photo",

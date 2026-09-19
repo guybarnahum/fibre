@@ -12,6 +12,7 @@ export const CLOUDFLARE_ENVIRONMENTS = Object.freeze(["staging", "production"]);
 export const CLOUDFLARE_SERVICE_CONFIGS = Object.freeze({
   "asset-generator": "infra/deployments/asset-generator/cloudflare/wrangler.jsonc",
   "birth-center": "infra/deployments/birth-center/cloudflare/wrangler.jsonc",
+  "fibre-identity-authority": "infra/deployments/fibre-identity-authority/cloudflare/wrangler.jsonc",
   "thread-presentation": "infra/deployments/thread-presentation/cloudflare/wrangler.jsonc",
   "world-kernel": "infra/deployments/world-kernel/cloudflare/wrangler.jsonc",
 });
@@ -20,12 +21,14 @@ const SERVICE_ORDER = Object.freeze([
   "asset-generator",
   "thread-presentation",
   "world-kernel",
+  "fibre-identity-authority",
   "birth-center",
 ]);
 
 const RUNTIME_CONFIG_BY_SERVICE = Object.freeze({
   "asset-generator": Object.freeze(["C2PA_SIGNER_URL", "C2PA_SIGNER_ID", "C2PA_TRUST_POLICY"]),
   "birth-center": Object.freeze([]),
+  "fibre-identity-authority": Object.freeze(["C2PA_SIGNER_URL", "C2PA_SIGNER_ID", "C2PA_TRUST_POLICY"]),
   "thread-presentation": Object.freeze(["C2PA_SIGNER_URL", "C2PA_SIGNER_ID", "C2PA_TRUST_POLICY", "VIEWER_ORIGIN"]),
   "world-kernel": Object.freeze([]),
 });
@@ -33,6 +36,7 @@ const RUNTIME_CONFIG_BY_SERVICE = Object.freeze({
 const REQUIRED_RUNTIME_CONFIG_BY_SERVICE = Object.freeze({
   "asset-generator": Object.freeze(["C2PA_SIGNER_URL"]),
   "birth-center": Object.freeze([]),
+  "fibre-identity-authority": Object.freeze(["C2PA_SIGNER_URL"]),
   "thread-presentation": Object.freeze(["C2PA_SIGNER_URL"]),
   "world-kernel": Object.freeze([]),
 });
@@ -140,8 +144,8 @@ function requireBinding(config, path, label) {
   return value;
 }
 
-function sharedD1Database(configs, binding, label) {
-  const declarations = SERVICE_ORDER.map((serviceId) => {
+function sharedD1Database(configs, binding, label, serviceIds = SERVICE_ORDER) {
+  const declarations = serviceIds.map((serviceId) => {
     const database = (configs[serviceId].d1_databases ?? []).find((candidate) => candidate.binding === binding);
     if (!database?.database_name) throw new TypeError(`${serviceId} must declare ${label}`);
     return database.database_name;
@@ -160,22 +164,31 @@ export function createCloudflareResourcePlan(configs, { environment }) {
   const asset = configs["asset-generator"];
   const presentation = configs["thread-presentation"];
   const world = configs["world-kernel"];
+  const fid = configs["fibre-identity-authority"];
   const birth = configs["birth-center"];
 
   const assetBucket = requireBinding(asset, ["r2_buckets", 0, "bucket_name"], "Asset Generator R2 bucket");
   const presentationBucket = requireBinding(presentation, ["r2_buckets", 0, "bucket_name"], "Thread Presentation R2 bucket");
-  if (assetBucket !== presentationBucket) throw new TypeError("Asset Generator and Thread Presentation must share the declared presentation R2 bucket");
+  const fidBucket = requireBinding(fid, ["r2_buckets", 0, "bucket_name"], "Fibre Identity Authority R2 bucket");
+  if (assetBucket !== presentationBucket || assetBucket !== fidBucket) {
+    throw new TypeError("Asset Generator, Thread Presentation, and Fibre Identity Authority must share the declared presentation R2 bucket");
+  }
 
   const catalogBinding = requireBinding(presentation, ["d1_databases", 0, "binding"], "Thread Presentation D1 binding");
   const catalogBaseName = presentation.d1_databases[0].database_name ?? "fibre-presentation-catalog";
-  const activityBaseName = sharedD1Database(configs, "ACTIVITY_LOG", "Activity Log D1 database");
+  const activityBaseName = sharedD1Database(configs, "ACTIVITY_LOG", "Activity Log D1 database", [
+    "asset-generator", "thread-presentation", "world-kernel", "birth-center",
+  ]);
   const completionQueue = requireBinding(asset, ["queues", "producers", 0, "queue"], "Asset completion queue");
   const presentationQueue = requireBinding(presentation, ["queues", "consumers", 0, "queue"], "Presentation completion queue");
   if (completionQueue !== presentationQueue) throw new TypeError("Asset Generator producer and Thread Presentation must declare the same completion queue");
   const completionDlq = requireBinding(presentation, ["queues", "consumers", 0, "dead_letter_queue"], "Asset completion DLQ");
   const assetWorkflow = requireBinding(asset, ["workflows", 0, "name"], "Asset Generation Workflow");
   const presentationWorkflow = requireBinding(presentation, ["workflows", 0, "name"], "Presentation Workflow binding");
-  if (assetWorkflow !== presentationWorkflow) throw new TypeError("Asset Generator and Thread Presentation must declare the same Workflow name");
+  const fidWorkflow = requireBinding(fid, ["workflows", 0, "name"], "Fibre Identity Authority Workflow binding");
+  if (assetWorkflow !== presentationWorkflow || assetWorkflow !== fidWorkflow) {
+    throw new TypeError("Asset Generator, Thread Presentation, and Fibre Identity Authority must declare the same Workflow name");
+  }
 
   const workers = Object.freeze(Object.fromEntries(SERVICE_ORDER.map((serviceId) => [
     serviceId,
@@ -199,6 +212,7 @@ export function createCloudflareResourcePlan(configs, { environment }) {
       workers,
       durableObjects: Object.freeze([
         { serviceId: "world-kernel", className: requireBinding(world, ["durable_objects", "bindings", 0, "class_name"], "World Durable Object") },
+        { serviceId: "fibre-identity-authority", className: requireBinding(fid, ["durable_objects", "bindings", 0, "class_name"], "Fibre Identity Authority Durable Object") },
         { serviceId: "birth-center", className: requireBinding(birth, ["durable_objects", "bindings", 0, "class_name"], "Birth Durable Object") },
         { serviceId: "thread-presentation", className: requireBinding(presentation, ["durable_objects", "bindings", 0, "class_name"], "Presentation Durable Object") },
       ]),

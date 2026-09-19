@@ -62,7 +62,7 @@ function createGenerationJob({ identityDigest, ...job }) {
   });
 }
 
-function withHarness(run) {
+async function withHarness(run) {
   const root = mkdtempSync(join(tmpdir(), "fibre-fid-photo-"));
   const state = storage(join(root, "fid.sqlite"));
   const registration = buildFibreCivilRegistration({
@@ -89,6 +89,7 @@ function withHarness(run) {
   const authority = createFibreIdentityAuthority({
     civilRegistry,
     issuanceStore,
+    registry,
     photoAdmissionStore: admissions,
     photoSource: { resolveCandidate: async () => candidate },
     photoExaminer: { inspect: async () => examined },
@@ -99,11 +100,11 @@ function withHarness(run) {
     photoGenerationProviderProfile: "fid-photo-test",
     now: () => `2026-09-09T19:${String(10 + tick++).padStart(2, "0")}:00.000Z`,
   });
-  const workflow = authority.issueFidCard({
+  const workflow = (await authority.issueFidCard({
     threadId: "thr_mira",
     reason: "initial",
     idempotencyKey: "b1_mira",
-  }).workflow;
+  })).workflow;
 
   return Promise.resolve(run({
     authority,
@@ -174,15 +175,17 @@ test("B2 derives when the current photo is absent or unsuitable, but never bypas
   assert.equal(existing.state, "accepted");
   assert.equal(existing.derivation, null);
 
-  const fallbackWorkflow = authority.issueFidCard({
+  const fallbackWorkflow = (await authority.issueFidCard({
     threadId: "thr_mira",
     reason: "correction",
     idempotencyKey: "b2_mira",
-  }).workflow;
+  })).workflow;
   setSource(source({ candidatePhotoRef: null, candidatePhotoDigest: null, derivationReceiptRef: null }));
 
   const requested = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
   assert.equal(requested.state, "derivation_requested");
+  const resumed = await authority.prepareFidCard({ threadId: "thr_mira", idempotencyKey: "b2_mira_retry" });
+  assert.equal(resumed.workflow.workflowId, fallbackWorkflow.workflowId, "pending FID cut forked a new revision");
   assert.equal(requested.progressionAllowed, false);
   assert.equal(requested.derivation.job.context.kind, "fid_photo_derivation");
   assert.equal(requested.derivation.job.context.targetAgeYears, 34);
@@ -207,11 +210,11 @@ test("B2 derives when the current photo is absent or unsuitable, but never bypas
   assert.equal(reused.reused, true);
   assert.equal(reused.admission.receipt.admissionId, admitted.admission.receipt.admissionId);
 
-  const unsuitableWorkflow = authority.issueFidCard({
+  const unsuitableWorkflow = (await authority.issueFidCard({
     threadId: "thr_mira",
     reason: "replacement",
     idempotencyKey: "b2_mira_unsuitable",
-  }).workflow;
+  })).workflow;
   setSource(source({
     candidatePhotoRef: "obj_old_unsuitable",
     candidatePhotoDigest: `sha256:${"d".repeat(64)}`,

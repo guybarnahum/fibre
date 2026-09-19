@@ -32,7 +32,7 @@ function assertIssuanceStore(issuanceStore) {
   if (issuanceStore === null || typeof issuanceStore !== "object" || Array.isArray(issuanceStore)) {
     throw new TypeError("Fibre Identity Authority requires a FidCardIssuanceStore");
   }
-  for (const method of ["beginIssuanceWorkflow", "getByIdempotencyKey", "getByWorkflowId"]) {
+  for (const method of ["beginIssuanceWorkflow", "getByIdempotencyKey", "getByWorkflowId", "listByThreadId"]) {
     if (typeof issuanceStore[method] !== "function") throw new TypeError(`FidCardIssuanceStore must implement ${method}()`);
   }
   return issuanceStore;
@@ -82,7 +82,7 @@ export function createFibreIdentityAuthority({
   const workflows = assertIssuanceStore(issuanceStore);
   if (typeof now !== "function") throw new TypeError("Fibre Identity Authority now must be a function");
 
-  function issueFidCard(request) {
+  async function issueFidCard(request) {
     const normalizedRequest = normalizeFidIssuanceRequest(request);
     const existing = workflows.getByIdempotencyKey(normalizedRequest.idempotencyKey, { required: false });
     if (existing !== null) {
@@ -94,7 +94,7 @@ export function createFibreIdentityAuthority({
       return Object.freeze({ ...existing, created: false });
     }
 
-    const registration = civil.lookupByThreadId(normalizedRequest.threadId);
+    const registration = await civil.lookupByThreadId(normalizedRequest.threadId);
     if (registration === null) {
       throw new FidCivilRegistrationNotFoundError(`Thread ${normalizedRequest.threadId} has no Fibre civil registration`);
     }
@@ -105,11 +105,11 @@ export function createFibreIdentityAuthority({
     });
   }
 
-  function prepareFidCard(request) {
+  async function prepareFidCard(request) {
     const prepared = prepareRequest(request);
     const registration = prepared.threadId === null
-      ? civil.lookupByFin(prepared.fin)
-      : civil.lookupByThreadId(prepared.threadId);
+      ? await civil.lookupByFin(prepared.fin)
+      : await civil.lookupByThreadId(prepared.threadId);
     if (registration === null) {
       throw new FidCivilRegistrationNotFoundError(
         prepared.threadId === null ? `FIN ${prepared.fin} has no Fibre civil registration` : `Thread ${prepared.threadId} has no Fibre civil registration`,
@@ -125,9 +125,12 @@ export function createFibreIdentityAuthority({
       }
       return Object.freeze({ ...existing, created: false });
     }
-    if (typeof registry?.listByFin !== "function") {
+    if (typeof registry?.listByFin !== "function" || typeof registry?.getByCredentialId !== "function") {
       throw new TypeError("FID credential registry is required for automatic issuance");
     }
+    const pending = workflows.listByThreadId(registration.threadId)
+      .findLast((entry) => registry.getByCredentialId(entry.workflow.proposedCredentialId, { required: false }) === null) ?? null;
+    if (pending !== null) return Object.freeze({ ...pending, created: false, resumed: true });
     const reason = registry.listByFin(registration.fibreIdentityNumber).length === 0 ? "initial" : "replacement";
     return issueFidCard({
       threadId: registration.threadId,
@@ -168,7 +171,7 @@ export function createFibreIdentityAuthority({
   async function admitFidPhoto(request) {
     const workflow = workflows.getByWorkflowId(workflowIdOnly(request)).workflow;
     requirePhotoAdmission();
-    const source = await photoSource.resolveCandidate({ threadId: workflow.threadId, at: workflow.requestedAt });
+    const source = await photoSource.resolveCandidate({ threadId: workflow.threadId, at: workflow.requestedAt, workflow });
     return admitResolvedPhoto(workflow, source);
   }
 
@@ -189,7 +192,7 @@ export function createFibreIdentityAuthority({
     }
 
     requirePhotoAdmission();
-    const source = await photoSource.resolveCandidate({ threadId: workflow.threadId, at: workflow.requestedAt });
+    const source = await photoSource.resolveCandidate({ threadId: workflow.threadId, at: workflow.requestedAt, workflow });
     const admission = await admitResolvedPhoto(workflow, source);
     if (admission.progressionAllowed) {
       return Object.freeze({

@@ -53,6 +53,8 @@
     "deploy:thread-presentation:cloudflare": "npx wrangler@latest deploy --config infra/deployments/thread-presentation/cloudflare/wrangler.jsonc",
     "deploy:world-kernel:cloudflare:dry": "npx wrangler@latest deploy --dry-run --config infra/deployments/world-kernel/cloudflare/wrangler.jsonc",
     "deploy:world-kernel:cloudflare": "npx wrangler@latest deploy --config infra/deployments/world-kernel/cloudflare/wrangler.jsonc",
+    "deploy:fibre-identity-authority:cloudflare:dry": "npx wrangler@latest deploy --dry-run --config infra/deployments/fibre-identity-authority/cloudflare/wrangler.jsonc",
+    "deploy:fibre-identity-authority:cloudflare": "npx wrangler@latest deploy --config infra/deployments/fibre-identity-authority/cloudflare/wrangler.jsonc",
     "deploy:birth-center:cloudflare:dry": "npx wrangler@latest deploy --dry-run --config infra/deployments/birth-center/cloudflare/wrangler.jsonc",
     "deploy:birth-center:cloudflare": "npx wrangler@latest deploy --config infra/deployments/birth-center/cloudflare/wrangler.jsonc",
     "deploy:admin-dashboard:cloudflare:dry": "npx --yes wrangler@4.126.0 deploy --dry-run --config infra/deployments/admin-dashboard/cloudflare/wrangler.jsonc",

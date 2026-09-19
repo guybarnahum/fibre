@@ -561,7 +561,9 @@ function fidSection(identity, threadId) {
         actionStatus.hidden = false;
         actionStatus.textContent = credential
           ? `Re-issued · Revision ${credential.revision} · ${credential.credentialId}`
-          : "FIN Card reissue completed.";
+          : result?.state === "derivation_requested"
+            ? "Reissue pending · official ID photo is being prepared."
+            : `Reissue · ${human(result?.state ?? "accepted")}`;
         window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued", { detail:{ threadId, result } }));
       },
     });

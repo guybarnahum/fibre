@@ -28,7 +28,7 @@ async function fixtureRepo() {
     const resolved = parseJsonc(source, path);
     resolved.name = `${resolved.name}-staging`;
     resolved.vars ??= {};
-    if (serviceId === "asset-generator") resolved.vars.C2PA_SIGNER_URL = "https://signer.staging.example";
+    if (serviceId === "asset-generator" || serviceId === "fibre-identity-authority") resolved.vars.C2PA_SIGNER_URL = "https://signer.staging.example";
     if (serviceId === "thread-presentation") {
       resolved.vars.C2PA_SIGNER_URL = "https://signer.staging.example";
       resolved.vars.VIEWER_ORIGIN = "https://staging.insidefibre.com";
@@ -55,7 +55,10 @@ async function fixtureRepo() {
 }
 
 function allSecrets() {
-  return new Set(["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
+  return new Set([
+    "OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN",
+    "FIA_ISSUER_JWK", "FIA_CREDENTIAL_KEY_BASE64",
+  ]);
 }
 
 test("Slice F deployment accepts services only after shallow and durable state health", async () => {
@@ -106,14 +109,17 @@ test("Slice F deployment accepts services only after shallow and durable state h
     "deploy:asset-generator",
     "deploy:thread-presentation",
     "deploy:world-kernel",
+    "deploy:fibre-identity-authority",
     "deploy:birth-center",
   ]);
   assert.deepEqual(calls.filter((call) => call.startsWith("state-health:")), [
     "state-health:world-kernel:https://world-kernel.account.workers.dev",
+    "state-health:fibre-identity-authority:https://fibre-identity-authority.account.workers.dev",
     "state-health:birth-center:https://birth-center.account.workers.dev",
     "state-health:birth-center:https://birth-center.account.workers.dev",
   ]);
   assert.equal(result.deployments.find((item) => item.serviceId === "world-kernel").stateHealth.stateChecked, true);
+  assert.equal(result.deployments.find((item) => item.serviceId === "fibre-identity-authority").stateHealth.stateChecked, true);
   assert.equal(result.deployments.find((item) => item.serviceId === "birth-center").stateHealth.stateChecked, true);
   assert.equal(result.deployments.find((item) => item.serviceId === "asset-generator").stateHealth, null);
   assert.deepEqual(calls.slice(0, 3), ["validate", "auth", "provision"]);

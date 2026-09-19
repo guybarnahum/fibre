@@ -85,7 +85,7 @@ test("Slice E resource plan derives isolated staging names while deploy-managed 
   assert.deepEqual(plan.deployManaged.customDomains, ["api.staging.insidefibre.com"]);
   assert.equal(plan.externalRequired.viewerDomain, "staging.insidefibre.com");
   const worldBindings = plan.deployManaged.serviceBindings.filter((entry) => entry.binding === "WORLD_KERNEL");
-  assert.equal(worldBindings.length, 2, "only Birth Center and Thread Presentation should bind World Kernel");
+  assert.equal(worldBindings.length, 3, "Birth Center, Thread Presentation, and FIA should bind World Kernel");
   assert.equal(
     hasServiceBinding(plan, "birth-center", "WORLD_KERNEL", "fibre-world-kernel-staging"),
     true,
@@ -95,6 +95,11 @@ test("Slice E resource plan derives isolated staging names while deploy-managed 
     hasServiceBinding(plan, "thread-presentation", "WORLD_KERNEL", "fibre-world-kernel-staging"),
     true,
     "Thread Presentation should bind staging World Kernel for encounters",
+  );
+  assert.equal(
+    hasServiceBinding(plan, "fibre-identity-authority", "WORLD_KERNEL", "fibre-world-kernel-staging"),
+    true,
+    "FIA should bind staging World Kernel for authoritative identity",
   );
 });
 
@@ -183,6 +188,8 @@ test("Slice E secret configuration uploads only each service subset and persists
     "FIBRE_PRIVATE_TOKEN=secret-private",
     "C2PA_SIGNER_TOKEN=secret-signer",
     "C2PA_SIGNER_URL=https://signer.staging.example",
+    "FIA_ISSUER_JWK=secret-fia-jwk",
+    "FIA_CREDENTIAL_KEY_BASE64=secret-fid-key",
   ].join("\n"));
 
   const uploads = [];
@@ -193,7 +200,7 @@ test("Slice E secret configuration uploads only each service subset and persists
     putSecrets: async ({ serviceId, workerName, values }) => uploads.push({ serviceId, workerName, values }),
   });
 
-  assert.equal(uploads.length, 4, "exactly the four deployed services should receive secrets");
+  assert.equal(uploads.length, 5, "exactly the five deployed services should receive secrets");
   assert.deepEqual(
     uploadedSecretKeys(uploads, "asset-generator"),
     ["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"],
@@ -210,7 +217,12 @@ test("Slice E secret configuration uploads only each service subset and persists
     uploadedSecretKeys(uploads, "birth-center"),
     ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN"],
   );
+  assert.deepEqual(
+    uploadedSecretKeys(uploads, "fibre-identity-authority"),
+    ["FIBRE_PRIVATE_TOKEN", "C2PA_SIGNER_TOKEN", "FIA_ISSUER_JWK", "FIA_CREDENTIAL_KEY_BASE64"],
+  );
   assert.equal(result.runtimeConfigByService["asset-generator"].C2PA_SIGNER_URL, "https://signer.staging.example");
+  assert.equal(result.runtimeConfigByService["fibre-identity-authority"].C2PA_SIGNER_URL, "https://signer.staging.example");
   const asset = await readFile(resolve(repoRoot, state.wranglerConfigs["asset-generator"]), "utf8");
   assertTextMatches(asset, /https:\/\/signer\.staging\.example/, "generated asset-generator Wrangler config");
   assertTextDoesNotMatch(asset, /secret-openai|secret-bfl|secret-private|secret-signer/, "generated asset-generator Wrangler config");

@@ -18,6 +18,13 @@ infra:
     capabilities:
       - state
       - scheduler
+  fid-cloudflare:
+    provider: cloudflare
+    driver: cloudflare-v1
+    capabilities:
+      - state
+      - objects
+      - workflows
   cloudflare:
     provider: cloudflare
     driver: cloudflare-v1
@@ -93,6 +100,9 @@ services:
     integrations:
       creative: genesis-openai-creative
       repair: genesis-openai-repair
+  fibre-identity-authority:
+    runtime: cloudflare
+    infra: fid-cloudflare
   thread-presentation:
     runtime: cloudflare
     infra: cloudflare
