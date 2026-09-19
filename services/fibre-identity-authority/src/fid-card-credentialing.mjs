@@ -168,3 +168,45 @@ export async function credentialAndStoreFidCard({ infra, contentCredentialSigner
     back: result.back,
   });
 }
+export async function storeFidCardWithoutContentCredentials({ infra, render, machineCredential: rawEnvelope }) {
+  requireInfraCapabilities(infra, "objects");
+  const objects = infra.objects;
+  const envelope = machineEnvelope(rawEnvelope);
+  const raw = assertRender(render, envelope);
+  const machineCredentialDigest = sha256(Buffer.from(JSON.stringify(canonical(envelope))));
+  const result = {};
+
+  for (const cardSide of SIDES) {
+    const bytes = raw[cardSide];
+    const finalDigest = sha256(bytes);
+    const objectRef = `fidcard_${envelope.routing.credentialId}_${cardSide}`;
+    const stored = await objects.putImmutable(objectRef, bytes, finalDigest, {
+      kind: "fid_card",
+      credentialId: envelope.routing.credentialId,
+      revision: envelope.routing.revision,
+      side: cardSide,
+      mediaType: "image/png",
+      rawRenderDigest: envelope.routing[`${cardSide}RenderDigest`],
+      machineCredentialDigest,
+      encryptedCredentialDigest: envelope.encryptedCredentialDigest,
+      credentialFormat: "none",
+      contentCredentials: "disabled",
+    });
+    result[cardSide] = Object.freeze({
+      objectRef,
+      finalDigest,
+      manifestDigest: null,
+      stored: true,
+      duplicate: stored.duplicate === true,
+    });
+  }
+
+  return Object.freeze({
+    credentialId: envelope.routing.credentialId,
+    revision: envelope.routing.revision,
+    machineCredentialDigest,
+    front: result.front,
+    back: result.back,
+  });
+}
+
