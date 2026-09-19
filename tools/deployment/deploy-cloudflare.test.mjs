@@ -67,6 +67,7 @@ test("Slice F deployment accepts services only after shallow and durable state h
   let birthStateAttempts = 0;
   const client = {
     async assertAuthenticated() { calls.push("auth"); return { ok: true }; },
+    async assertContainersAvailable() { calls.push("containers"); return { ok:true }; },
     async listSecretNames(workerName) { calls.push(`secrets:${workerName}`); return allSecrets(); },
     async checkSignerHealth(input) {
       calls.push(`signer:${input.baseUrl}`);
@@ -123,7 +124,7 @@ test("Slice F deployment accepts services only after shallow and durable state h
   assert.equal(result.deployments.find((item) => item.serviceId === "fibre-identity-authority").stateHealth.stateChecked, true);
   assert.equal(result.deployments.find((item) => item.serviceId === "birth-center").stateHealth.stateChecked, true);
   assert.equal(result.deployments.find((item) => item.serviceId === "asset-generator").stateHealth, null);
-  assert.deepEqual(calls.slice(0, 3), ["validate", "auth", "provision"]);
+  assert.deepEqual(calls.slice(0, 4), ["validate", "auth", "containers", "provision"]);
   assert.ok(calls.indexOf("deploy:content-credential-signer") > calls.findLastIndex((call) => call.startsWith("secrets:")));
   assert.ok(calls.indexOf("signer:https://content-credential-signer.account.workers.dev") > calls.indexOf("deploy:content-credential-signer"));
   assert.ok(calls.indexOf("deploy:asset-generator") > calls.indexOf("signer:https://content-credential-signer.account.workers.dev"));
@@ -137,6 +138,7 @@ test("Slice F fails before deploy when Fibre signer credentials are incomplete",
   let deployCalls = 0;
   const client = {
     async assertAuthenticated() {},
+    async assertContainersAvailable() {},
     async listSecretNames(workerName) {
       if (workerName === "fibre-content-credential-signer-staging") {
         const present = allSecrets();
@@ -187,6 +189,7 @@ test("Slice F Wrangler client verifies secret names, shallow health and deep sta
   const runner = async (args) => {
     calls.push(args);
     if (args[0] === "whoami") return { stdout: '{"accounts":[{"id":"acct"}]}', stderr: "", exitCode: 0 };
+    if (args[0] === "containers") return { stdout: "[]", stderr: "", exitCode: 0 };
     if (args[0] === "secret") return { stdout: '[{"name":"FIBRE_PRIVATE_TOKEN","type":"secret_text"}]', stderr: "", exitCode: 0 };
     if (args[0] === "deploy") return { stdout: "https://worker.account.workers.dev", stderr: "", exitCode: 0 };
     throw new Error(`unexpected command ${args.join(" ")}`);
@@ -206,6 +209,7 @@ test("Slice F Wrangler client verifies secret names, shallow health and deep sta
   });
   const client = createWranglerDeploymentClient({ runner, cwd: "/repo", fetchImpl });
   await client.assertAuthenticated();
+  assert.deepEqual(await client.assertContainersAvailable(), { ok:true });
   assert.deepEqual(await client.listSecretNames("fibre-world-kernel-staging"), new Set(["FIBRE_PRIVATE_TOKEN"]));
   await client.deployService({ configPath: "/repo/.fibre/world.jsonc" });
   assert.deepEqual(calls.at(-1), [
@@ -251,6 +255,30 @@ test("deep health failures surface the Fibre state diagnostic", async () => {
     /HTTP 503: Birth Center state could not be opened/,
   );
 });
+test("deployment fails before provisioning when Cloudflare Containers access is unavailable", async () => {
+  const { root } = await fixtureRepo();
+  let provisionCalls = 0;
+  let deployCalls = 0;
+  await assert.rejects(deployCloudflareStack({
+    repoRoot: root,
+    environment: "staging",
+    client: {
+      async assertAuthenticated() {},
+      async assertContainersAvailable() {
+        throw new Error("Cloudflare Containers access is required for the Fibre C2PA signer");
+      },
+      async deployService() { deployCalls += 1; },
+    },
+    validateRepository: async () => {},
+    provision: async () => {
+      provisionCalls += 1;
+      throw new Error("provision should not run");
+    },
+  }), /Cloudflare Containers access is required/);
+  assert.equal(provisionCalls, 0);
+  assert.equal(deployCalls, 0);
+});
+
 test("deployment rejects FIA binding that does not target the declared Fibre signer", async () => {
   const { root, state } = await fixtureRepo();
   const fiaPath = resolve(root, state.wranglerConfigs["fibre-identity-authority"]);
@@ -260,6 +288,7 @@ test("deployment rejects FIA binding that does not target the declared Fibre sig
 
   const client = {
     async assertAuthenticated() {},
+    async assertContainersAvailable() {},
     async listSecretNames() { return allSecrets(); },
   };
   await assert.rejects(deployCloudflareStack({
