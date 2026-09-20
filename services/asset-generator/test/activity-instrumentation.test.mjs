@@ -80,7 +80,6 @@ test("asset activity log identifies a failed attempt followed by an explicit suc
   const runtime = createAssetGenerationRuntime({
     infra: infra(),
     provider: { providerId: "fixture" },
-    credentialSigner: { signerId: "fixture" },
     activityRecorder: recorder(telemetry),
     executeJob: async ({ job: injectedJob }) => {
       calls += 1;
@@ -127,7 +126,6 @@ test("derived Thread media names its canonical reference as cause and keeps comp
   const runtime = createAssetGenerationRuntime({
     infra: infra(),
     provider: { providerId: "fixture" },
-    credentialSigner: { signerId: "fixture" },
     activityRecorder: recorder(telemetry, "derived_asset"),
     executeJob: async ({ job: injectedJob }) => generatedResult(injectedJob),
   });
@@ -172,7 +170,6 @@ test("non-Thread asset scopes never become Thread activity identities by inferen
   const runtime = createAssetGenerationRuntime({
     infra: infra(),
     provider: { providerId: "fixture" },
-    credentialSigner: { signerId: "fixture" },
     activityRecorder: recorder(telemetry, "place_asset"),
     executeJob: async ({ job: injectedJob }) => generatedResult(injectedJob),
   });
