@@ -5,7 +5,6 @@ import {
   toAssetGenerationError,
 } from "./asset-generation-error.mjs";
 import { executeProvenancedAssetGenerationJob } from "./provenanced-asset-generation.mjs";
-import { prepareResumableProviderExecution } from "./resumable-provider-operation.mjs";
 
 export const ASSET_GENERATION_RUNTIME_INFRA_PROFILE = Object.freeze(["objects"]);
 const ACTIVITY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
@@ -120,7 +119,6 @@ function annotateActivityError(error) {
 export function createAssetGenerationRuntime({
   infra,
   provider,
-  credentialSigner = null,
   activityRecorder = null,
   executeJob = executeProvenancedAssetGenerationJob,
 } = {}) {
@@ -150,30 +148,13 @@ export function createAssetGenerationRuntime({
         evidence,
       }, async () => {
         try {
-          if (credentialSigner === null && executeJob === executeProvenancedAssetGenerationJob) {
-            return runtimeResult(await executeJob({
-              infra,
-              provider,
-              credentialSigner: null,
-              job,
-              attemptNumber: checkedAttemptNumber,
-            }));
-          }
-
-          const prepared = await prepareResumableProviderExecution({
+          const result = await executeJob({
             infra,
             provider,
             job,
             attemptNumber: checkedAttemptNumber,
           });
-          const result = await executeJob({
-            infra,
-            provider: prepared.provider,
-            credentialSigner,
-            job,
-            attemptNumber: prepared.attemptNumber,
-          });
-          return runtimeResult(result, prepared.observation());
+          return runtimeResult(result);
         } catch (error) {
           const normalized = error instanceof AssetGenerationError
             ? error
