@@ -118,6 +118,14 @@ The signature covers the canonical bytes of `assertion`. `assertionDigest` is re
 
 The runtime signer profile must explicitly declare `algorithm = Ed25519`. Cloudflare's existing `FIA_ISSUER_JWK` WebCrypto composition satisfies that contract.
 
+The PNG transport uses one Fibre-private ancillary chunk:
+
+```text
+fiDP
+```
+
+Its PNG property bits intentionally mean ancillary + private + reserved-bit compliant + unsafe-to-copy. The canonical signed envelope JSON is stored as the chunk payload immediately before `IEND`. Embedding is deterministic, changes no image pixels, and extraction removes only that chunk to recover the original deterministic PNG byte-for-byte. The transport rejects malformed CRCs, duplicate Fibre proof chunks and implicit re-embedding.
+
 ## Protected machine credential remains separate
 
 The existing protected `fibre.fid-card.v1` machine credential remains FIA authority material.
@@ -183,7 +191,7 @@ Costs:
 ```text
 A. proof assertion contract — implemented
 B. FIA Ed25519 signature envelope — implemented
-C. deterministic PNG embedding/extraction
+C. deterministic PNG embedding/extraction — implemented
 D. strict verifier
 E. issuance integration
 F. registry/storage proof evidence
