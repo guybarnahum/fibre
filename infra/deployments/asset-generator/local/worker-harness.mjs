@@ -19,7 +19,6 @@ function requireMethod(name, value, method) {
 export function createLocalAssetGenerationWorker({
   infra,
   selectProvider,
-  credentialSigner,
   completionSink = null,
   workflowName = "asset_generation_v1",
 } = {}) {
@@ -27,7 +26,6 @@ export function createLocalAssetGenerationWorker({
   if (typeof selectProvider !== "function") {
     throw new TypeError("local Asset Generator worker requires selectProvider()");
   }
-  requireMethod("credentialSigner", credentialSigner, "verify");
   if (completionSink !== null && typeof completionSink !== "function") {
     throw new TypeError("local Asset Generator worker completionSink must be a function or null");
   }
@@ -40,7 +38,6 @@ export function createLocalAssetGenerationWorker({
       const runtime = createAssetGenerationRuntime({
         infra,
         provider,
-        credentialSigner,
       });
       const generated = await runtime.execute(workflow.input, { attemptNumber });
       const completion = createAssetGenerationCompletion({
