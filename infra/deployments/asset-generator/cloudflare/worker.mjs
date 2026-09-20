@@ -21,10 +21,7 @@ import {
   parseDeploymentManifest,
   resolveServiceDeployment,
 } from "../../manifest.mjs";
-import {
-  selectContentCredentialIntegration,
-  selectImageIntegration,
-} from "../../integration-selection.mjs";
+import { selectImageIntegration } from "../../integration-selection.mjs";
 import { maybeInjectSliceH2ProviderTransientFailure } from "./slice-h2-provider-fault.mjs";
 
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
@@ -88,13 +85,6 @@ function imageSelection(deployment, profile) {
   return selected;
 }
 
-function optionalCredentialSigner(deployment, env) {
-  const selected = deployment.integrations.contentCredentials ?? null;
-  return selected === null
-    ? null
-    : selectContentCredentialIntegration(selected, { environment: env });
-}
-
 function completionActivityContext(job) {
   const context = job?.context ?? {};
   return Object.freeze({
@@ -119,10 +109,9 @@ function createRuntime(env, job) {
   const provider = selectImageIntegration(imageSelection(deployment, job?.providerProfile), {
     environment: env,
   });
-  const credentialSigner = optionalCredentialSigner(deployment, env);
   const activityRecorder = createCloudflareActivityRecorder({ env, service: "asset-generator" });
 
-  return createAssetGenerationRuntime({ infra, provider, credentialSigner, activityRecorder });
+  return createAssetGenerationRuntime({ infra, provider, activityRecorder });
 }
 
 function createControlApi(env) {
@@ -135,7 +124,6 @@ function createControlApi(env) {
   });
   const controlService = createAssetGenerationControlService({
     infra,
-    credentialSigner: optionalCredentialSigner(deployment, env),
   });
   return createAssetGenerationControlApi({
     privateToken: env.FIBRE_PRIVATE_TOKEN,
