@@ -16,6 +16,7 @@ import {
   createFidCardTemplateFromPngAssets,
   decodePngRgba,
   fidRenderPhotoDigest,
+  verifyFidCardProof,
 } from "#services/fibre-identity-authority/src/index.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
@@ -34,6 +35,7 @@ const FID_SCOPE_ID = "fid";
 const ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const ACTIVE_ROUTE = /^\/internal\/fid\/threads\/([^/]+)\/active$/u;
 const REISSUE_ROUTE = "/internal/fid/cards/reissue";
+const VERIFY_ROUTE = "/internal/fid/cards/verify";
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
 const ASSET_DEPLOYMENT = resolveServiceDeployment(DEPLOYMENT, "asset-generator");
 const FID_TEMPLATE_VERSION = "fid-card-template-v0.3-ocean";
@@ -365,7 +367,7 @@ function createRuntime(ctx, env) {
     photoAdmissionStore:admissions,
     issuanceExecutor:executor,
   });
-  return Object.freeze({ infra, fidService });
+  return Object.freeze({ infra, fidService, issuerSigner });
 }
 
 export class FibreIdentityAuthorityDurableObject extends DurableObject {
@@ -403,6 +405,19 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
     }
 
     const runtime = this.runtimeForRequest();
+    if (request.method === "POST" && url.pathname === VERIFY_ROUTE) {
+      const side = url.searchParams.get("side");
+      if (side !== "front" && side !== "back") {
+        return Response.json({ error:{ code:"INVALID_FID_SIDE" } }, { status:400 });
+      }
+      const result = await verifyFidCardProof({
+        pngBytes:new Uint8Array(await request.arrayBuffer()),
+        issuerSigner:runtime.issuerSigner,
+        expectedSide:side,
+      });
+      return Response.json(result);
+    }
+
     if (request.method === "POST" && url.pathname === REISSUE_ROUTE) {
       let body;
       try { body = await request.json(); }
