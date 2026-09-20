@@ -236,6 +236,7 @@ function normalizedSide(name, value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError(`FID issuance ${name} is required`);
   return Object.freeze({
     objectRef: nonEmpty(`FID issuance ${name}.objectRef`, value.objectRef),
+    rawRenderDigest: digest(`FID issuance ${name}.rawRenderDigest`, value.rawRenderDigest),
     finalDigest: digest(`FID issuance ${name}.finalDigest`, value.finalDigest),
     proofAssertionDigest: digest(`FID issuance ${name}.proofAssertionDigest`, value.proofAssertionDigest),
   });
