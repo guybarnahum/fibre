@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
 
+// Transitional legacy FIN-card C2PA path. New FIN-card protection follows ADR-0022
+// and services/fibre-identity-authority/src/fid-card-proof.mjs. Do not extend
+// this module with new FIN-card identity semantics; it will be retired after
+// the native proof path reaches issuance parity.
+
 import { requireInfraCapabilities } from "#infra";
 import { assertContentCredentialSigner } from "fibre/asset-generator/content-credential-signer";
 import {
