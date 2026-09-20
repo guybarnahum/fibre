@@ -22,7 +22,6 @@ import { attachTestCivilRegistration } from "#services/world-kernel/test/support
 import { createScriptedGuardianModelAdapter } from "#services/world-kernel/test/support/scripted-guardian-model-adapter.mjs";
 import { createLocalAssetGenerationWorker } from "../../asset-generator/local/worker-harness.mjs";
 import {
-  selectContentCredentialIntegration,
   selectImageIntegration,
   selectImageProviderProfile,
 } from "../../integration-selection.mjs";
@@ -40,8 +39,6 @@ const LOCAL_MANIFEST = parseDeploymentManifest(
 const ASSET_DEPLOYMENT = resolveServiceDeployment(LOCAL_MANIFEST, "asset-generator");
 const PRIVATE_TOKEN = "slice-a-automatic-visual-private-token";
 const THREAD_ID = "thr_slice_a_automatic_visual_001";
-const PRODUCTION_SIGNER_ID = "fibre-c2pa-production-v1";
-const MANIFEST_DIGEST = `sha256:${"e".repeat(64)}`;
 const encoder = new TextEncoder();
 const sha = (char) => `sha256:${char.repeat(64)}`;
 
@@ -243,55 +240,6 @@ function createBflFixtureFetch({ expectedReferenceBase64 }) {
   return { calls, fetchImpl };
 }
 
-function createC2paFixtureFetch() {
-  let embeddedAssertion = null;
-  let sequence = 0;
-  const fetchImpl = async (url, init = {}) => {
-    assert.equal(init.headers.Authorization, "Bearer slice-a-c2pa-token");
-    const body = JSON.parse(init.body);
-    if (url.endsWith("/embed")) {
-      sequence += 1;
-      embeddedAssertion = structuredClone(body.assertion);
-      const raw = Buffer.from(body.bytesBase64, "base64");
-      const credentialed = Buffer.concat([raw, Buffer.from(`--slice-a-c2pa-${sequence}--`)]);
-      return jsonResponse({
-        bytesBase64: credentialed.toString("base64"),
-        format: "c2pa",
-        signerId: PRODUCTION_SIGNER_ID,
-        manifestDigest: MANIFEST_DIGEST,
-        embeddedAt: `2026-08-30T18:${37 + sequence}:00Z`,
-      });
-    }
-    if (url.endsWith("/verify")) {
-      assert.ok(embeddedAssertion);
-      return jsonResponse({
-        valid: true,
-        format: "c2pa",
-        signerId: PRODUCTION_SIGNER_ID,
-        manifestDigest: MANIFEST_DIGEST,
-        assertion: structuredClone(embeddedAssertion),
-        verifiedAt: `2026-08-30T18:${38 + sequence}:00Z`,
-        failureReason: null,
-        trust: { policy: "c2pa_trust_list", trusted: true },
-      });
-    }
-    throw new Error(`unexpected C2PA fixture URL ${url}`);
-  };
-  return { fetchImpl };
-}
-
-function signerFromFixture(c2pa) {
-  return selectContentCredentialIntegration(ASSET_DEPLOYMENT.integrations.contentCredentials, {
-    environment: {
-      C2PA_SIGNER_URL: "https://signer.example.test",
-      C2PA_SIGNER_ID: PRODUCTION_SIGNER_ID,
-      C2PA_TRUST_POLICY: "c2pa_trust_list",
-      C2PA_SIGNER_TOKEN: "slice-a-c2pa-token",
-    },
-    fetchImpl: c2pa.fetchImpl,
-  });
-}
-
 function worldEnvironment(databasePath, presentationPort) {
   return {
     FIBRE_WORLD_DATABASE: databasePath,
@@ -333,7 +281,6 @@ test("real birth automatically converges through durable root and photo workflow
     presentationServer,
     openStream() { throw new Error("stream route is not part of the Slice-A proof"); },
   });
-  const signer = signerFromFixture(createC2paFixtureFetch());
   const openai = createRetryingOpenAiFixtureFetch(encoder.encode("slice-a-canonical-root-provider-bytes"));
   const rootProvider = selectImageIntegration(ASSET_DEPLOYMENT.integrations["openai-gpt-image-2-medium-v1"], {
     environment: { OPENAI_API_KEY: "slice-a-openai-key" },
@@ -345,12 +292,10 @@ test("real birth automatically converges through durable root and photo workflow
   const channelId = threadPresentationChannelId(THREAD_ID);
   const publisher = createThreadPresentationAssetPublisher({
     infra,
-    credentialSigner: signer,
     presentationServer,
   });
   const completions = createPresentationAssetCompletionService({
     infra,
-    credentialSigner: signer,
     async publishReady({ scope, receipt }) {
       assert.deepEqual(scope, { entityKind: "thread", entityRef: THREAD_ID });
       return publisher.publishReady({ receipt, channelId });
@@ -358,7 +303,6 @@ test("real birth automatically converges through durable root and photo workflow
   });
   const worker = createLocalAssetGenerationWorker({
     infra,
-    credentialSigner: signer,
     selectProvider(job) {
       if (job.providerProfile === "openai-gpt-image-2-medium-v1") return rootProvider;
       if (job.providerProfile === "bfl-flux-2-pro-v1" && photoProvider !== null) return photoProvider;
@@ -372,7 +316,6 @@ test("real birth automatically converges through durable root and photo workflow
   });
   const canonicalRootBoundary = createCanonicalVisualRootBoundary({
     infra,
-    credentialSigner: signer,
   });
   const presentationBoundary = createThreadPresentationVisualBoundary({
     presentationServer,
