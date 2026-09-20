@@ -6,7 +6,9 @@ import {
 } from "fibre/world-kernel/thread-presentation-contracts";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
 
-const CARD_ROLES = new Set(["fibre_identity_card_front", "fibre_identity_card_back"]);
+const CARD_ROLES = new Set(["fibre_identity_card", "fibre_identity_card_front", "fibre_identity_card_back"]);
+const FID_CARD_ASSET_MEDIA_TYPE = "application/vnd.fibre.identity-card+json";
+const FID_CARD_ASSET_SCHEMA_VERSION = "fibre-identity-card-asset-v0.1";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
@@ -17,6 +19,62 @@ function iso(name, value) {
   nonEmpty(name, value);
   if (!Number.isFinite(Date.parse(value))) throw new TypeError(`${name} must be an ISO timestamp`);
   return new Date(value).toISOString();
+}
+
+function utf8(value) {
+  return new TextEncoder().encode(value);
+}
+
+async function sha256Digest(bytes) {
+  const raw = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return `sha256:${[...raw].map((value) => value.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function fidCardAssetDescriptor(active) {
+  return Object.freeze({
+    schemaVersion:FID_CARD_ASSET_SCHEMA_VERSION,
+    credentialId:active.credentialId,
+    revision:active.revision,
+    aspectRatio:1.586,
+    interaction:Object.freeze({ flip:"click", initialSide:"front" }),
+    front:Object.freeze({
+      objectRef:active.front.objectRef,
+      digest:active.front.digest,
+      mediaType:active.front.mediaType,
+      width:active.front.width,
+      height:active.front.height,
+    }),
+    back:Object.freeze({
+      objectRef:active.back.objectRef,
+      digest:active.back.digest,
+      mediaType:active.back.mediaType,
+      width:active.back.width,
+      height:active.back.height,
+    }),
+  });
+}
+
+async function attachFidCardAsset(infra, active) {
+  if (active === null) return null;
+  const descriptor = fidCardAssetDescriptor(active);
+  const bytes = utf8(JSON.stringify(descriptor));
+  const digest = await sha256Digest(bytes);
+  const objectRef = `fidcard_${active.credentialId}_card`;
+  await infra.objects.putImmutable(objectRef, bytes, digest, {
+    kind:"fibre_identity_card_asset",
+    credentialId:active.credentialId,
+    revision:active.revision,
+    mediaType:FID_CARD_ASSET_MEDIA_TYPE,
+  });
+  return Object.freeze({
+    ...active,
+    cardAsset:Object.freeze({
+      objectRef,
+      digest,
+      mediaType:FID_CARD_ASSET_MEDIA_TYPE,
+      descriptor,
+    }),
+  });
 }
 
 function mediaId(credentialId, side) { return `media_fid_${credentialId}_${side}`; }
@@ -37,6 +95,13 @@ function activeFid(value, threadId) {
     nonEmpty(`active FID ${side} digest`, media.digest);
     if (media.mediaType !== "image/png" || !Number.isSafeInteger(media.width) || !Number.isSafeInteger(media.height)) {
       throw new TypeError(`active FID ${side} media must be a sized PNG`);
+    }
+  }
+  if (value.cardAsset !== undefined && value.cardAsset !== null) {
+    nonEmpty("active FID card asset objectRef", value.cardAsset.objectRef);
+    nonEmpty("active FID card asset digest", value.cardAsset.digest);
+    if (value.cardAsset.mediaType !== FID_CARD_ASSET_MEDIA_TYPE) {
+      throw new TypeError("active FID card asset media type is invalid");
     }
   }
   return value;
@@ -79,6 +144,27 @@ function fidMedia(active, side, provenanceRef, sourceReferences) {
   };
 }
 
+function fidCardMedia(active, provenanceRef, sourceReferences) {
+  if (!active.cardAsset) return null;
+  return {
+    mediaId:mediaId(active.credentialId, "card"),
+    kind:"document",
+    role:"fibre_identity_card",
+    status:"ready",
+    locator:active.cardAsset.objectRef,
+    mediaType:active.cardAsset.mediaType,
+    sha256:active.cardAsset.digest,
+    width:null,
+    height:null,
+    durationMs:null,
+    posterRef:null,
+    unavailableReason:null,
+    sourceReferences,
+    provenanceRef,
+    generation:null,
+  };
+}
+
 function alreadyProjectsActiveFid(bundle, active, visibility) {
   const card = bundle.presentation.identityCard;
   if (active === null) return card === null;
@@ -90,6 +176,11 @@ function alreadyProjectsActiveFid(bundle, active, visibility) {
     const ref = card[`${side}MediaRef`];
     const media = bundle.media.assets.find((asset) => asset.mediaId === ref);
     if (!media || media.locator !== active[side].objectRef || media.sha256 !== active[side].digest) return false;
+  }
+  if (active.cardAsset) {
+    const cardMedia = bundle.media.assets.find((asset) => asset.mediaId === mediaId(active.credentialId, "card"));
+    if (!cardMedia || cardMedia.role !== "fibre_identity_card"
+      || cardMedia.locator !== active.cardAsset.objectRef || cardMedia.sha256 !== active.cardAsset.digest) return false;
   }
   return true;
 }
@@ -121,6 +212,7 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
   const sourceReferences = [fid.credentialId, fid.issuanceRecordDigest, fid.photoAdmissionId, fid.photoDigest];
   const front = fidMedia(fid, "front", provenanceRef, sourceReferences);
   const back = fidMedia(fid, "back", provenanceRef, sourceReferences);
+  const cardAsset = fidCardMedia(fid, provenanceRef, sourceReferences);
   const identityCard = {
     credentialVersion: FIBRE_IDENTITY_CARD_CURRENT_VERSION,
     credentialId: fid.credentialId,
@@ -140,7 +232,7 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
 
   return normalizeThreadPresentationBundle({
     presentation: { ...base.presentation, manifest: { ...base.presentation.manifest, generatedAt: at }, identityCard },
-    media: { ...base.media, generatedAt: at, assets: [...base.media.assets, front, back] },
+    media: { ...base.media, generatedAt: at, assets: [...base.media.assets, front, back, ...(cardAsset ? [cardAsset] : [])] },
     provenance: {
       ...base.provenance,
       generatedAt: at,
@@ -162,6 +254,12 @@ async function requireStoredMedia(infra, active) {
       throw new Error(`active FID ${side} does not match immutable object storage`);
     }
   }
+  if (active.cardAsset) {
+    const stored = await infra.objects.get(active.cardAsset.objectRef);
+    if (stored === null || stored.digest !== active.cardAsset.digest) {
+      throw new Error("active FID rich card asset does not match immutable object storage");
+    }
+  }
 }
 
 export function createFidPresentationProjectionService({ presentationServer, infra } = {}) {
@@ -174,7 +272,8 @@ export function createFidPresentationProjectionService({ presentationServer, inf
   return Object.freeze({
     async reconcile({ threadId: candidateThreadId, activeFid: candidateFid, projectedAt, visibility = "public" } = {}) {
       const threadId = nonEmpty("threadId", candidateThreadId);
-      const active = activeFid(candidateFid, threadId);
+      const authoritativeActive = activeFid(candidateFid, threadId);
+      const active = await attachFidCardAsset(infra, authoritativeActive);
       const at = iso("FID projectedAt", projectedAt);
       const channelId = threadPresentationChannelId(threadId);
       const current = await presentationServer.getSnapshot(channelId);
@@ -192,11 +291,12 @@ export function createFidPresentationProjectionService({ presentationServer, inf
 
       const events = [];
       if (active !== null) {
-        for (const side of ["front", "back"]) {
-          const media = projected.media.assets.find((asset) => asset.mediaId === mediaId(active.credentialId, side));
+        for (const part of ["front", "back", "card"]) {
+          const media = projected.media.assets.find((asset) => asset.mediaId === mediaId(active.credentialId, part));
+          if (!media) continue;
           const accepted = await presentationServer.appendEvent({
             streamVersion: THREAD_PRESENTATION_STREAM_VERSION,
-            eventId: `fid_media_${active.credentialId}_${side}`,
+            eventId: `fid_media_${active.credentialId}_${part}`,
             threadId,
             channelId,
             occurredAt: at,
