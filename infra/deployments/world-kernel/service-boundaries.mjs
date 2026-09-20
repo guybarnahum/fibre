@@ -53,8 +53,8 @@ export function createCanonicalVisualRootBoundary({
       const body = await responseJson(response);
       if (!response.ok) {
         const detail = body?.detail ?? body?.error ?? response.statusText ?? `HTTP ${response.status}`;
-        const error = new Error(`Asset Generator rejected canonical root handoff: ${detail}`);
-        error.code = downstreamCode(body, "CANONICAL_VISUAL_ROOT_HANDOFF_FAILED");
+        const error = new Error(`Canonical visual generation was rejected: ${detail}`);
+        error.code = downstreamCode(body, "CANONICAL_VISUAL_GENERATION_UNAVAILABLE");
         error.activityCategory = "reconciliation";
         error.httpStatus = response.status;
         error.retryable = downstreamRetryable(response, body);
@@ -62,7 +62,7 @@ export function createCanonicalVisualRootBoundary({
       }
       if (!body || body.ok !== true || !body.result || typeof body.result !== "object") {
         const error = new Error("Asset Generator returned an invalid canonical root response");
-        error.code = "CANONICAL_VISUAL_ROOT_HANDOFF_INVALID_RESPONSE";
+        error.code = "CANONICAL_VISUAL_GENERATION_STATE_INVALID";
         error.retryable = true;
         throw error;
       }
@@ -93,8 +93,8 @@ export function createThreadPresentationVisualBoundary({
       const body = await responseJson(response);
       if (!response.ok) {
         const detail = body?.detail ?? body?.error ?? response.statusText ?? `HTTP ${response.status}`;
-        const error = new Error(`Thread Presentation rejected visual publication handoff: ${detail}`);
-        error.code = downstreamCode(body, "THREAD_PRESENTATION_VISUAL_HANDOFF_FAILED");
+        const error = new Error(`Thread Presentation could not reconcile visual identity: ${detail}`);
+        error.code = downstreamCode(body, "PRESENTATION_VISUAL_PUBLICATION_UNAVAILABLE");
         error.activityCategory = "reconciliation";
         error.httpStatus = response.status;
         error.retryable = downstreamRetryable(response, body);
@@ -102,7 +102,7 @@ export function createThreadPresentationVisualBoundary({
       }
       if (!body || body.ok !== true || !body.result || typeof body.result !== "object") {
         const error = new Error("Thread Presentation returned an invalid visual publication response");
-        error.code = "THREAD_PRESENTATION_VISUAL_HANDOFF_INVALID_RESPONSE";
+        error.code = "PRESENTATION_VISUAL_PUBLICATION_STATE_INVALID";
         error.retryable = true;
         throw error;
       }
@@ -149,7 +149,7 @@ export function createThreadPresentationPublisher({
         genesisUrl,
         { genesisId, publicationDigest, bundle },
         "Genesis projection",
-        "THREAD_PRESENTATION_PUBLICATION_FAILED",
+        "GENESIS_PRESENTATION_PUBLICATION_FAILED",
       );
     },
     reconcileIdentityProjection({ threadId, projection, projectedAt }) {
@@ -162,7 +162,7 @@ export function createThreadPresentationPublisher({
         identityUrl,
         { projection, projectedAt },
         "World identity projection",
-        "THREAD_PRESENTATION_IDENTITY_PROJECTION_FAILED",
+        "PRESENTATION_IDENTITY_PROJECTION_FAILED",
       );
     },
     async publishCurrentPresent({ threadId, present }) {
@@ -170,11 +170,11 @@ export function createThreadPresentationPublisher({
         presentUrl,
         { threadId, present },
         "current present projection",
-        "THREAD_PRESENTATION_CURRENT_PRESENT_FAILED",
+        "CURRENT_PRESENT_PUBLICATION_FAILED",
       );
       if (!body || body.ok !== true || !body.result || typeof body.result !== "object") {
         const error = new Error("Thread Presentation returned an invalid current present response");
-        error.code = "THREAD_PRESENTATION_CURRENT_PRESENT_INVALID_RESPONSE";
+        error.code = "CURRENT_PRESENT_PUBLICATION_STATE_INVALID";
         error.retryable = true;
         throw error;
       }
