@@ -125,13 +125,25 @@ function sleep(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function replaceFidSection(current, identity, threadId, credential = null) {
+  const replacement = renderFidSection(identity, threadId);
+  if (credential) {
+    const status = replacement.querySelector(".thread-repair-actions")?.nextElementSibling;
+    if (status) {
+      status.hidden = false;
+      status.textContent = `Re-issued · Revision ${credential.revision} · ${credential.credentialId}`;
+    }
+  }
+  current.replaceWith(replacement);
+}
+
 async function refreshFidSection(threadId, expectedCredential = null, publishedIdentity = null) {
   const load = ++fidSectionLoad;
   const current = document.querySelector(".thread-observatory-page .thread-fid-section");
   if (!current) return;
 
   if (publishedIdentity?.presentation?.presentation?.identityCard) {
-    current.replaceWith(renderFidSection(publishedIdentity, threadId));
+    replaceFidSection(current, publishedIdentity, threadId, expectedCredential);
     return;
   }
 
@@ -149,7 +161,7 @@ async function refreshFidSection(threadId, expectedCredential = null, publishedI
     }
 
     if (renderedThreadId !== threadId || load !== fidSectionLoad || !current.isConnected || payload === null) return;
-    current.replaceWith(renderFidSection(payload.identity ?? {}, threadId));
+    replaceFidSection(current, payload.identity ?? {}, threadId, expectedCredential);
   } catch (error) {
     if (renderedThreadId !== threadId || load !== fidSectionLoad || !current.isConnected) return;
     const status = current.querySelector(".thread-repair-actions")?.nextElementSibling;
