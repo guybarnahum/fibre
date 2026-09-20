@@ -32,5 +32,9 @@ test("Admin reaches authoritative World and Thread Presentation through service 
     resolved.services.find((candidate) => candidate.binding === "THREAD_PRESENTATION")?.service,
     "fibre-thread-presentation-staging",
   );
+  assert.equal(
+    resolved.services.find((candidate) => candidate.binding === "FIBRE_IDENTITY_AUTHORITY")?.service,
+    "fibre-identity-authority-staging",
+  );
   assert.equal(resolved.main, "./admin-worker.mjs");
 });
