@@ -295,6 +295,7 @@ test("E1 preserves an authentic history while active status moves atomically", a
     storedCard: firstStored,
     machineCredential: first.machineCredential,
     contentCredentialSigner: signer,
+    contentCredentialMode:"c2pa",
     issuerSigner: first.issuerSigner,
     credentialProtector: first.credentialProtector,
     activatedAt: "2026-09-09T20:05:00.000Z",
@@ -305,6 +306,7 @@ test("E1 preserves an authentic history while active status moves atomically", a
   const firstBytes = await storedBytes(infra, firstStored);
   const offline = await verifyFidCard({
     contentCredentialSigner: signer,
+    contentCredentialMode:"c2pa",
     machineCredential: first.machineCredential,
     frontBytes: firstBytes.front.bytes,
     backBytes: firstBytes.back.bytes,
@@ -325,6 +327,7 @@ test("E1 preserves an authentic history while active status moves atomically", a
     storedCard: { ...secondStored, back: { ...secondStored.back, objectRef: "fidcard_missing_back" } },
     machineCredential: second.machineCredential,
     contentCredentialSigner: signer,
+    contentCredentialMode:"c2pa",
     issuerSigner: second.issuerSigner,
     credentialProtector: second.credentialProtector,
     activatedAt: "2026-09-09T20:06:00.000Z",
@@ -338,6 +341,7 @@ test("E1 preserves an authentic history while active status moves atomically", a
     storedCard: secondStored,
     machineCredential: second.machineCredential,
     contentCredentialSigner: signer,
+    contentCredentialMode:"c2pa",
     issuerSigner: second.issuerSigner,
     credentialProtector: second.credentialProtector,
     activatedAt: "2026-09-09T20:07:00.000Z",
@@ -348,6 +352,7 @@ test("E1 preserves an authentic history while active status moves atomically", a
 
   const oldOnline = await verifyFidCard({
     contentCredentialSigner: signer,
+    contentCredentialMode:"c2pa",
     machineCredential: first.machineCredential,
     frontBytes: firstBytes.front.bytes,
     backBytes: firstBytes.back.bytes,
@@ -368,6 +373,7 @@ test("E1 preserves an authentic history while active status moves atomically", a
   const secondBytes = await storedBytes(infra, secondStored);
   const revokedOnline = await verifyFidCard({
     contentCredentialSigner: signer,
+    contentCredentialMode:"c2pa",
     machineCredential: second.machineCredential,
     frontBytes: secondBytes.front.bytes,
     backBytes: secondBytes.back.bytes,
