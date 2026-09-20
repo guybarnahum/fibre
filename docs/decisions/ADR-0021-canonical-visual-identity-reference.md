@@ -128,7 +128,7 @@ For example, a disclosed historical Homage may be visually inspired by an attest
 
 ### 7. Root-reference admission requires generation proof
 
-For generated roots, the canonical asset must be tied to its exact generation job, semantic brief, input/reference witnesses, immutable object digest, Content Credential/provenance proof where required by deployment policy, and the matching Embodiment revision.
+For generated roots, the canonical asset must be tied to its exact generation job, semantic brief, input/reference witnesses, immutable object digest, Fibre generation provenance proof, and the matching Embodiment revision.
 
 Asset Generator does not own the visual identity. It produces candidate bytes plus immutable generation proof. World/Embodiment authority decides whether that exact output is admitted as the canonical reference.
 
@@ -170,7 +170,7 @@ The standing implementation order is:
 5. bounded public visual-identity projection
 6. Thread Presentation rewrite / identity-card slot
 7. reference-conditioned + age-conditioned derived media demand
-8. Asset Generator + Content Credential completion
+8. Asset Generator + Fibre provenance completion
 9. Thread Presentation acceptance/publication
 10. Viewer consumption
 ```
