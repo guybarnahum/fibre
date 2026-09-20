@@ -15,7 +15,6 @@ export {
   PROVENANCED_ASSET_PUBLICATION_PROOF_VERSION,
   PROVENANCED_ASSET_RECEIPT_VERSION,
   executeProvenancedAssetGenerationJob,
-  executeUncredentialedAssetGenerationJob,
   normalizeProvenancedAssetReceipt,
   normalizeStoredAssetReceipt,
   verifyProvenancedAssetForPublication,
@@ -24,7 +23,3 @@ export {
   createAssetGenerationService,
   executeAssetGenerationJob,
 } from "./asset-generation-service.mjs";
-export {
-  executeCredentialedAssetGenerationJob,
-  verifyCredentialedAssetForPublication,
-} from "./credentialed-asset-generation.mjs";
