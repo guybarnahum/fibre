@@ -272,7 +272,6 @@ test("finalization refuses stored native proof bytes that no longer match the ad
       workflow:prepared.workflow,
       storedCard:changed,
       machineCredential:prepared.machineCredential,
-      contentCredentialMode:"native",
       issuerSigner:prepared.issuerSigner,
       credentialProtector:prepared.credentialProtector,
       activatedAt:"2026-09-20T01:04:00.000Z",
