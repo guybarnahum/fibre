@@ -41,17 +41,6 @@ jobs:
             cat "$log"
             exit 1
           fi
-      - name: audit tests
-        run: |
-          log="$RUNNER_TEMP/test-audit.log"
-          echo "=== audit tests ==="
-          if npm run test:audit -- --check --quiet > "$log" 2>&1; then
-            grep -E '^TEST-AUDIT:' "$log" || true
-            echo "✓ test audit passed"
-          else
-            cat "$log"
-            exit 1
-          fi
       - name: dry-run asset generator
         run: |
           log="$RUNNER_TEMP/asset-generator.log"

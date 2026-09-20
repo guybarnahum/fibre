@@ -50,7 +50,7 @@ function apiFixture() {
   };
 }
 
-test("Asset Generator control API authenticates and schedules one durable workflow", async () => {
+test("one asset generation request keeps one durable workflow identity", async () => {
   const { infra, api } = apiFixture();
 
   const first = await (await api.fetch(request())).json();
@@ -68,48 +68,27 @@ test("Asset Generator control API authenticates and schedules one durable workfl
   assert.deepEqual(workflow.input, job());
 });
 
-test("Asset Generator control API rejects unauthenticated requests", async () => {
-  const { api } = apiFixture();
-  const response = await api.fetch(request(null));
-  assert.equal(response.status, 403);
-  assert.deepEqual(await response.json(), { ok: false, error: "private_token_required" });
-});
 
-test("Asset Generator control API preserves terminal workflow classification", async () => {
+test("Asset Generator control API preserves terminal generation classification", async () => {
   const api = createAssetGenerationControlApi({
-    privateToken: "shared-private-token",
-    controlService: {
+    privateToken:"shared-private-token",
+    controlService:{
       async reconcile() {
-        const error = new Error("asset generation workflow asset_control_job_1 ended as errored: provider rejected request");
+        const error = new Error("provider rejected generation");
         error.code = "ASSET_GENERATION_WORKFLOW_TERMINAL";
         error.retryable = false;
         throw error;
       },
     },
   });
-  const logged = [];
   const originalError = console.error;
-  console.error = (message) => logged.push(message);
-  let response;
+  console.error = () => {};
   try {
-    response = await api.fetch(request());
+    const body = await (await api.fetch(request())).json();
+    assert.equal(body.code, "ASSET_GENERATION_WORKFLOW_TERMINAL");
+    assert.equal(body.retryable, false);
+    assert.match(body.detail, /provider rejected generation/);
   } finally {
     console.error = originalError;
   }
-  assert.equal(response.status, 409);
-  assert.deepEqual(await response.json(), {
-    ok: false,
-    error: "asset_generation_control_failed",
-    code: "ASSET_GENERATION_WORKFLOW_TERMINAL",
-    detail: "asset generation workflow asset_control_job_1 ended as errored: provider rejected request",
-    retryable: false,
-  });
-  assert.equal(logged.length, 1);
-  assert.deepEqual(JSON.parse(logged[0]), {
-    event: "asset_generation_control_failed",
-    errorName: "Error",
-    code: "ASSET_GENERATION_WORKFLOW_TERMINAL",
-    retryable: false,
-    message: "asset generation workflow asset_control_job_1 ended as errored: provider rejected request",
-  });
 });

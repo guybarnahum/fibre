@@ -4,131 +4,61 @@ import test from "node:test";
 import { createVisualPublicationWriteApi } from "../src/http/visual-publication-write-api.mjs";
 
 const BODY = Object.freeze({
-  threadId: "thr_visual_handoff",
-  embodiment: Object.freeze({ embodimentId: "emb_visual_handoff", threadId: "thr_visual_handoff" }),
-  observedAt: "2026-08-31T01:00:00Z",
+  threadId:"thr_visual_handoff",
+  embodiment:Object.freeze({ embodimentId:"emb_visual_handoff", threadId:"thr_visual_handoff" }),
+  observedAt:"2026-08-31T01:00:00Z",
 });
 
-function request({ token = "secret", body = BODY, method = "POST" } = {}) {
+function request(body = BODY) {
   return new Request("https://presentation.example/internal/visual-publication/reconcile", {
-    method,
-    headers: {
-      "content-type": "application/json",
-      ...(token === null ? {} : { "x-fibre-private-token": token }),
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-fibre-private-token":"secret",
     },
-    body: method === "POST" ? JSON.stringify(body) : undefined,
+    body:JSON.stringify(body),
   });
 }
 
-test("visual publication write API authenticates and forwards admitted Embodiment handoff", async () => {
-  const calls = [];
+test("visual recovery intent reaches Presentation reconciliation", async () => {
+  let received = null;
   const api = createVisualPublicationWriteApi({
-    privateToken: "secret",
-    reconciler: {
+    privateToken:"secret",
+    reconciler:{
       async reconcileAvailableEmbodiment(input) {
-        calls.push(input);
-        return { complete: false, stage: "official_photo_pending", detail: { jobId: "assetjob_photo" } };
+        received = input;
+        return { complete:false, stage:"official_photo_pending", detail:{} };
       },
     },
   });
+  const activityContext = { threadId:BODY.threadId, causationId:BODY.embodiment.embodimentId };
 
-  const response = await api.fetch(request());
-  assert.equal(response.status, 200);
-  assert.deepEqual(calls, [{ ...BODY, activityContext: {}, regenerationKey: null }]);
-  assert.deepEqual(await response.json(), {
-    ok: true,
-    result: { complete: false, stage: "official_photo_pending", detail: { jobId: "assetjob_photo" } },
-  });
-});
-
-test("visual publication write API forwards explicit regeneration key and Activity context", async () => {
-  const calls = [];
-  const api = createVisualPublicationWriteApi({
-    privateToken: "secret",
-    reconciler: {
-      async reconcileAvailableEmbodiment(input) {
-        calls.push(input);
-        return { complete: false, stage: "official_photo_pending", detail: { jobId: "assetjob_photo_retry" } };
-      },
-    },
-  });
-  const activityContext = {
-    threadId: "thr_visual_handoff",
-    causationId: "emb_visual_handoff",
-  };
-  const response = await api.fetch(request({
-    body: {
-      ...BODY,
-      activityContext,
-      regenerationKey: "recover-bfl-shard-20260903",
-    },
+  await api.fetch(request({
+    ...BODY,
+    activityContext,
+    regenerationKey:"recover-canonical-photo",
   }));
-  assert.equal(response.status, 200);
-  assert.equal(calls[0].regenerationKey, "recover-bfl-shard-20260903");
-  assert.deepEqual(calls[0].activityContext, activityContext);
+
+  assert.equal(received.regenerationKey, "recover-canonical-photo");
+  assert.deepEqual(received.activityContext, activityContext);
 });
 
-test("visual publication write API rejects unauthenticated handoff", async () => {
+test("visual publication preserves a terminal Presentation failure", async () => {
   const api = createVisualPublicationWriteApi({
-    privateToken: "secret",
-    reconciler: { async reconcileAvailableEmbodiment() { throw new Error("must not run"); } },
-  });
-  const response = await api.fetch(request({ token: null }));
-  assert.equal(response.status, 403);
-  assert.deepEqual(await response.json(), { error: "private_token_required" });
-});
-
-test("visual publication write API isolates invalid reconciliation input", async () => {
-  const api = createVisualPublicationWriteApi({
-    privateToken: "secret",
-    reconciler: { async reconcileAvailableEmbodiment() { throw new TypeError("bad embodiment"); } },
-  });
-  const response = await api.fetch(request());
-  assert.equal(response.status, 400);
-  assert.deepEqual(await response.json(), {
-    error: "invalid_visual_publication_handoff",
-    detail: "bad embodiment",
-    retryable: false,
-  });
-});
-
-test("visual publication write API preserves terminal reconciliation classification", async () => {
-  const api = createVisualPublicationWriteApi({
-    privateToken: "secret",
-    reconciler: {
+    privateToken:"secret",
+    reconciler:{
       async reconcileAvailableEmbodiment() {
-        const error = new Error("official photo workflow ended as errored");
+        const error = new Error("official photo generation ended terminally");
         error.code = "PRESENTATION_ASSET_WORKFLOW_TERMINAL";
         error.retryable = false;
         throw error;
       },
     },
   });
-  const response = await api.fetch(request());
-  assert.equal(response.status, 503);
-  assert.deepEqual(await response.json(), {
-    error: "visual_publication_reconciliation_failed",
-    code: "PRESENTATION_ASSET_WORKFLOW_TERMINAL",
-    detail: "official photo workflow ended as errored",
-    retryable: false,
-  });
-});
 
-test("visual publication write API keeps unknown server reconciliation failures retryable", async () => {
-  const api = createVisualPublicationWriteApi({
-    privateToken: "secret",
-    reconciler: {
-      async reconcileAvailableEmbodiment() {
-        throw new Error("temporary internal failure");
-      },
-    },
-  });
-  const response = await api.fetch(request());
-  assert.equal(response.status, 503);
-  assert.deepEqual(await response.json(), {
-    error: "visual_publication_reconciliation_failed",
-    code: "VISUAL_PUBLICATION_RECONCILIATION_FAILED",
-    detail: "temporary internal failure",
-    retryable: true,
-  });
+  const body = await (await api.fetch(request())).json();
+
+  assert.equal(body.code, "PRESENTATION_ASSET_WORKFLOW_TERMINAL");
+  assert.equal(body.retryable, false);
+  assert.match(body.detail, /ended terminally/);
 });

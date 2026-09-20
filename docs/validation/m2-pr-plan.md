@@ -173,7 +173,6 @@ This gate passed on 2026-09-10/11 local development time:
 check:          1230 / 1230 active tests passed
 demo:m2:          17 / 17 milestone tests passed
 slice:validate: 1235 / 1235 full-suite tests passed
-TEST-AUDIT: PASS · 310 files · 1149 declared calls
 World seed validation passed
 local + Cloudflare deployment manifests valid
 ```
