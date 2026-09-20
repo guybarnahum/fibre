@@ -52,7 +52,7 @@ async function fixture({
     OBJECT_REF,
     new TextEncoder().encode("public-asset-bytes"),
     objectDigest,
-    { kind: "credentialed_generated_media" },
+    { kind: "provenanced_generated_media" },
   );
   await infra.catalog.upsert(`media:${OBJECT_REF}`, {
     kind: "public_presentation_media",
@@ -103,7 +103,7 @@ test("object possession or a hidden publication projection cannot make an asset 
     OBJECT_REF,
     new TextEncoder().encode("private-object"),
     DIGEST,
-    { kind: "credentialed_generated_media" },
+    { kind: "provenanced_generated_media" },
   );
   const resolver = createPublicPresentationAssetResolver({
     infra,
