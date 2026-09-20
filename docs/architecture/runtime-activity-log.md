@@ -43,7 +43,7 @@ show everything for genesisId Y
 show everything for threadId Z
 show all failed stages for Thread Z
 show retries/recovery for one stage
-show where the Slice G E2E stopped
+show where the Fibre runtime chain stopped during a Slice G E2E
 show all failures in staging since time T
 ```
 
@@ -211,27 +211,6 @@ Sensitive domain details stay inspectable through their existing access-controll
 
 The mechanism remains simple even if the stage vocabulary is detailed. Stage names are stable operational checkpoints and use hierarchical dot-separated names.
 
-### E2E operator
-
-```text
-e2e.start
-e2e.preflight.git
-e2e.preflight.deployment_evidence
-e2e.preflight.endpoints
-e2e.prebirth.birth_absence
-e2e.prebirth.world_absence
-e2e.prebirth.presentation_absence
-e2e.birth_submit
-e2e.birth_publish_wait
-e2e.birth_replay
-e2e.world_convergence_wait
-e2e.presentation_convergence_wait
-e2e.viewer_visibility
-e2e.asset_visibility
-e2e.evidence_write
-e2e.complete
-```
-
 ### Birth Center / Genesis request lifecycle
 
 ```text
@@ -340,9 +319,9 @@ presentation.completion.validate
 presentation.world_authority.resolve
 presentation.visual_identity.project
 presentation.identity_media.ensure
-presentation.media_demand.reconcile
+presentation.official_photo.generate
 presentation.catalog.publish
-presentation.snapshot.publish
+presentation.genesis.publish
 presentation.asset.serve
 ```
 
@@ -529,13 +508,14 @@ The raw JSON export remains available for machines and retained E2E evidence.
 
 Instrument Slice G first because it crosses all relevant cloud boundaries.
 
-Minimum emitters:
+Minimum runtime emitters:
 
-1. E2E runner
-2. Birth Center
-3. World Kernel
-4. Asset Generator
-5. Thread Presentation
+1. Birth Center
+2. World Kernel
+3. Asset Generator
+4. Thread Presentation
+
+The E2E runner is an Activity **consumer**, not an emitter. Its preflight, polling, closure assertions and evidence-writing belong to acceptance evidence, not Fibre runtime Activity.
 
 The goal is not exhaustive logging. It is enough coverage to locate the failed boundary and reconstruct real handoffs without manually correlating each service.
 
@@ -545,7 +525,7 @@ The Slice G evidence file may retain the `requestId` plus an Activity Log query/
 
 The Activity Log v0.1 is useful when all of these are true:
 
-1. One cloud Genesis E2E request can be reconstructed by `requestId`.
+1. The Fibre runtime work caused by one cloud Genesis E2E request can be reconstructed by `requestId`.
 2. After identity is known, the same chain is queryable by `genesisId` and `threadId`.
 3. A deliberate provider or reconciliation failure shows the exact failed stage, service, attempt and retryability.
 4. A successful retry is visible without overwriting the earlier failure.
