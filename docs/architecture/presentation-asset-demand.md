@@ -154,7 +154,7 @@ The consumer orders a current Thread completion as:
 1. resolve immutable receipt and verify receipt digest
 2. find exactly one matching durable current demand
 3. ignore superseded/obsolete demand completion as stale
-4. re-verify GenerationRecord, final bytes and Content Credential
+4. re-verify GenerationRecord, staged provider bytes and final bytes
 5. let Thread Presentation admit media.ready
 6. persist operational demand state = ready
 ```
