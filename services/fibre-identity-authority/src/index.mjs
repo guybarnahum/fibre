@@ -77,6 +77,12 @@ export {
 } from "./fid-card-proof-png.mjs";
 
 export {
+  FID_CARD_PROOF_VERIFICATION_REASONS,
+  verifyFidCardProof,
+  verifyFidCardProofPair,
+} from "./fid-card-proof-verifier.mjs";
+
+export {
   FID_C2PA_ASSERTION_LABEL,
   buildFidC2paAssertion,
   credentialAndStoreFidCard,
