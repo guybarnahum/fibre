@@ -16,10 +16,18 @@ class FibreFinCardElement extends HTMLElement {
     this.attachShadow({ mode:"open" });
     this._flipped = false;
     this._rendered = false;
+    this._interactionTimer = null;
   }
 
   connectedCallback() {
     if (!this._rendered) this._render();
+  }
+
+  disconnectedCallback() {
+    if (this._interactionTimer !== null) {
+      clearTimeout(this._interactionTimer);
+      this._interactionTimer = null;
+    }
   }
 
   _render() {
@@ -57,8 +65,20 @@ class FibreFinCardElement extends HTMLElement {
     back.alt = `${label} back`;
     back.loading = "lazy";
 
-    this._control.addEventListener("click", () => this._setFlipped(!this._flipped));
+    this._control.addEventListener("click", () => {
+      this._showInteraction();
+      this._setFlipped(!this._flipped);
+    });
     this._setFlipped(false);
+  }
+
+  _showInteraction() {
+    this.dataset.interacting = "true";
+    if (this._interactionTimer !== null) clearTimeout(this._interactionTimer);
+    this._interactionTimer = setTimeout(() => {
+      delete this.dataset.interacting;
+      this._interactionTimer = null;
+    }, 1600);
   }
 
   _setFlipped(value) {
