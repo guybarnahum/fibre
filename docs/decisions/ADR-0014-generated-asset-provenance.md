@@ -2,7 +2,7 @@
 id: adr-0014
 status: accepted
 date: 2026-08-21
-superseded-on: 2026-09-20
+last-reviewed: 2026-09-20
 ---
 
 # ADR-0014: Generated asset provenance
