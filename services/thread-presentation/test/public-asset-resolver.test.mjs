@@ -13,7 +13,7 @@ const MEDIA_ID = "media_asset_resolver_demo";
 const OBJECT_REF = "asset_resolver_demo";
 const DIGEST = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-function currentSnapshot({ role = "place", card = null } = {}) {
+function currentSnapshot({ role = "place", kind = "image", card = null } = {}) {
   return {
     pointer: { threadId: THREAD_ID },
     snapshot: {
@@ -21,7 +21,7 @@ function currentSnapshot({ role = "place", card = null } = {}) {
       media: {
         assets: [{
           mediaId: MEDIA_ID,
-          kind: "image",
+          kind,
           role,
         }],
       },
@@ -34,6 +34,8 @@ async function fixture({
   mediaPublic = true,
   mediaRole = "place",
   currentRole = mediaRole,
+  mediaKind = "image",
+  mediaType = "image/png",
   identityCredentialMedia = false,
   card = null,
   mediaDigest = DIGEST,
@@ -61,7 +63,7 @@ async function fixture({
     role: mediaRole,
     objectRef: OBJECT_REF,
     digest: mediaDigest,
-    mediaType: "image/png",
+    mediaType,
     provenanceClass: "generated_reconstruction",
     eventId: "event_media_ready_asset_resolver_demo",
     eventSequence: 1,
@@ -69,7 +71,7 @@ async function fixture({
   const presentationReader = {
     async getSnapshot(requestedChannelId) {
       assert.equal(requestedChannelId, channelId);
-      return currentSnapshot({ role: currentRole, card });
+      return currentSnapshot({ role: currentRole, kind: mediaKind, card });
     },
   };
   return {
@@ -157,6 +159,28 @@ test("current FIA card keeps the Thread official ID photo publicly resolvable", 
   assert.notEqual(await resolver.resolve(OBJECT_REF), null, "active FID hid official ID photo");
 });
 
+
+test("active public FIA card exposes its rich card descriptor asset", async () => {
+  const { resolver } = await fixture({
+    mediaRole:"fibre_identity_card",
+    currentRole:"fibre_identity_card",
+    mediaKind:"document",
+    mediaType:"application/vnd.fibre.identity-card+json",
+    identityCredentialMedia:true,
+    card:{
+      credentialVersion:"fibre-identity-card-credential-v0.2",
+      credentialId:"fidc_active",
+      status:"active",
+      visibility:"public",
+      frontMediaRef:"media_fid_front",
+      backMediaRef:"media_fid_back",
+    },
+  });
+  const resolved = await resolver.resolve(OBJECT_REF);
+  assert.notEqual(resolved, null);
+  assert.equal(resolved.role, "fibre_identity_card");
+  assert.equal(resolved.mediaType, "application/vnd.fibre.identity-card+json");
+});
 
 test("published catalog digest must match immutable object storage", async () => {
   const { resolver } = await fixture({
