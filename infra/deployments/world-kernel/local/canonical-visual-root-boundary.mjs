@@ -9,12 +9,10 @@ import { createAssetGenerationControlService } from "#services/asset-generator/s
  */
 export function createCanonicalVisualRootBoundary({
   infra,
-  credentialSigner,
   workflowName = "asset_generation_v1",
 } = {}) {
   const controlService = createAssetGenerationControlService({
     infra,
-    credentialSigner,
     workflowName,
   });
   return Object.freeze({
