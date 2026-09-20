@@ -70,7 +70,7 @@ test("services cannot select concrete Infra providers or concrete integrations",
 
 test("deployment composition may import integrations and public Infra providers but not providers through private relative paths", () => {
   assert.deepEqual(
-    runtimeDependencyViolationsForSource("infra/deployments/example/cloudflare/worker.mjs", fakeImport("#integrations/content-credentials/c2pa-http-signer.mjs")),
+    runtimeDependencyViolationsForSource("infra/deployments/example/cloudflare/worker.mjs", fakeImport("#integrations/ai/image/openai.mjs")),
     [],
   );
   assert.deepEqual(
