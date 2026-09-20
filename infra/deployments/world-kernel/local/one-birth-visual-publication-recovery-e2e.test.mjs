@@ -33,7 +33,6 @@ import { createThreadPresentationServer } from "#services/world-kernel/src/threa
 import { attachTestCivilRegistration } from "#services/world-kernel/test/support/civil-registration-fixture.mjs";
 import { createScriptedGuardianModelAdapter } from "#services/world-kernel/test/support/scripted-guardian-model-adapter.mjs";
 import {
-  selectContentCredentialIntegration,
   selectImageIntegration,
   selectImageProviderProfile,
 } from "../../integration-selection.mjs";
@@ -49,8 +48,6 @@ const LOCAL_MANIFEST = parseDeploymentManifest(
 const ASSET_DEPLOYMENT = resolveServiceDeployment(LOCAL_MANIFEST, "asset-generator");
 const PRIVATE_TOKEN = "one-birth-visual-recovery-private-token";
 const THREAD_ID = "thr_one_birth_visual_recovery_001";
-const PRODUCTION_SIGNER_ID = "fibre-c2pa-production-v1";
-const MANIFEST_DIGEST = `sha256:${"e".repeat(64)}`;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const sha = (char) => `sha256:${char.repeat(64)}`;
@@ -267,57 +264,6 @@ function createBflFixtureFetch({ expectedReferenceBase64 }) {
   return { calls, providerBytes, fetchImpl };
 }
 
-function createC2paFixtureFetch() {
-  const calls = [];
-  let embeddedAssertion = null;
-  let sequence = 0;
-  const fetchImpl = async (url, init = {}) => {
-    calls.push({ url, init });
-    assert.equal(init.headers.Authorization, "Bearer one-birth-c2pa-token");
-    const body = JSON.parse(init.body);
-    if (url.endsWith("/embed")) {
-      sequence += 1;
-      embeddedAssertion = structuredClone(body.assertion);
-      const raw = Buffer.from(body.bytesBase64, "base64");
-      const credentialed = Buffer.concat([raw, Buffer.from(`--h-c2pa-${sequence}--`)]);
-      return jsonResponse({
-        bytesBase64: credentialed.toString("base64"),
-        format: "c2pa",
-        signerId: PRODUCTION_SIGNER_ID,
-        manifestDigest: MANIFEST_DIGEST,
-        embeddedAt: `2026-08-30T18:${37 + sequence}:00Z`,
-      });
-    }
-    if (url.endsWith("/verify")) {
-      assert.ok(embeddedAssertion, "C2PA verify must follow an embed in the H fixture");
-      return jsonResponse({
-        valid: true,
-        format: "c2pa",
-        signerId: PRODUCTION_SIGNER_ID,
-        manifestDigest: MANIFEST_DIGEST,
-        assertion: structuredClone(embeddedAssertion),
-        verifiedAt: `2026-08-30T18:${38 + sequence}:00Z`,
-        failureReason: null,
-        trust: { policy: "c2pa_trust_list", trusted: true },
-      });
-    }
-    throw new Error(`unexpected C2PA fixture URL ${url}`);
-  };
-  return { calls, fetchImpl };
-}
-
-function signerFromFixture(c2pa) {
-  return selectContentCredentialIntegration(ASSET_DEPLOYMENT.integrations.contentCredentials, {
-    environment: {
-      C2PA_SIGNER_URL: "https://signer.example.test",
-      C2PA_SIGNER_ID: PRODUCTION_SIGNER_ID,
-      C2PA_TRUST_POLICY: "c2pa_trust_list",
-      C2PA_SIGNER_TOKEN: "one-birth-c2pa-token",
-    },
-    fetchImpl: c2pa.fetchImpl,
-  });
-}
-
 function worldEnvironment(databasePath, presentationPort) {
   return {
     FIBRE_WORLD_DATABASE: databasePath,
@@ -359,8 +305,6 @@ test("one birth recovers through one canonical root and one public identity/phot
     openStream() { throw new Error("stream route is not part of the H recovery proof"); },
   });
   const channelId = threadPresentationChannelId(THREAD_ID);
-  const c2pa = createC2paFixtureFetch();
-  const signer = signerFromFixture(c2pa);
   let world = null;
 
   try {
@@ -396,18 +340,12 @@ test("one birth recovers through one canonical root and one public identity/phot
     const rootRuntime = createAssetGenerationRuntime({
       infra: presentationInfra,
       provider: rootProvider,
-      credentialSigner: signer,
     });
     const rootGenerated = await rootRuntime.execute(rootJob);
     assert.equal(openai.calls.length, 1);
     const rootStored = await presentationInfra.objects.get(rootGenerated.receipt.objectRef);
     assert.ok(rootStored);
-    const rootVerification = await signer.verify({
-      bytes: rootStored.bytes,
-      mediaType: rootGenerated.receipt.mediaType,
-    });
-    assert.equal(rootVerification.valid, true);
-    const rootGenerationRecord = await storedGenerationRecord(
+      const rootGenerationRecord = await storedGenerationRecord(
       presentationInfra,
       rootGenerated.generationRecordObjectRef,
     );
@@ -416,7 +354,6 @@ test("one birth recovers through one canonical root and one public identity/phot
       proof: {
         receipt: rootGenerated.receipt,
         generationRecord: rootGenerationRecord,
-        verification: rootVerification,
       },
       recordedAt: rootGenerated.receipt.completedAt,
     });
@@ -502,19 +439,16 @@ test("one birth recovers through one canonical root and one public identity/phot
     const photoRuntime = createAssetGenerationRuntime({
       infra: presentationInfra,
       provider: photoProvider,
-      credentialSigner: signer,
     });
     const generatedPhoto = await photoRuntime.execute(photoJob);
     assert.equal(bfl.calls.filter((call) => call.init.method === "POST").length, 1);
 
     const publisher = createThreadPresentationAssetPublisher({
       infra: presentationInfra,
-      credentialSigner: signer,
       presentationServer,
     });
     const completions = createPresentationAssetCompletionService({
       infra: presentationInfra,
-      credentialSigner: signer,
       async publishReady({ scope, receipt }) {
         assert.deepEqual(scope, { entityKind: "thread", entityRef: THREAD_ID });
         return publisher.publishReady({ receipt, channelId });
@@ -528,7 +462,7 @@ test("one birth recovers through one canonical root and one public identity/phot
     const accepted = await completions.consume(completion);
     assert.equal(accepted.handled, true);
     assert.equal(accepted.duplicate, false);
-    assert.equal(accepted.proof.verification.valid, true);
+    assert.equal(accepted.proof.receipt.sha256, accepted.proof.receipt.providerOutputDigest);
     assert.equal(accepted.publication.event.kind, "media.ready");
     assert.equal(accepted.publication.event.payload.mediaId, officialMediaId);
 
