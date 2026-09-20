@@ -172,17 +172,9 @@ current validity
 
 Online verification may add a registry lookup only after proof authenticity succeeds.
 
-Normal FIA issuance now uses the native proof path. Both sides are signed, embedded and verified before either object is stored; finalization then re-verifies the immutable stored bytes and requires the trusted embedded assertions to match the protected FIA machine credential before activation. Legacy C2PA and unsigned modes remain explicit transitional compatibility paths only.
+Normal FIA issuance uses the native proof path exclusively. Both sides are signed, embedded and verified before either object is stored; finalization then re-verifies the immutable stored bytes and requires the trusted embedded assertions to match the protected FIA machine credential before activation.
 
-The persisted issuance record is intentionally not redesigned in this slice. Native cards temporarily leave the legacy C2PA evidence slot disabled until the next registry/storage-evidence slice replaces it with first-class native proof metadata.
-
-## C2PA relationship
-
-C2PA is no longer required for FIN Card issuance, activation or Fibre-native verification.
-
-Fibre may later wrap the same public assertion in C2PA to support third-party Content Credentials tooling. Such a wrapper is interoperability metadata, not FID identity authority.
-
-This decision does not repeal ADR-0014. Generated-media provenance may continue to use C2PA independently.
+The immutable issuance record persists native proof evidence directly: proof format, schema, envelope version, FIA signer key ID, verification status, and the trusted assertion digest for each side.
 
 ## Consequences
 
@@ -193,11 +185,10 @@ Positive:
 - no Docker, Container, Wasm, X.509 chain, commercial CA or separate signer service is required for FIN Cards;
 - the embedded assertion is small, inspectable and directly corresponds to rendered card facts;
 - Fibre can verify copied card images without depending on Fibre object storage;
-- C2PA interoperability remains possible later without coupling FIA semantics to it.
 
 Costs:
 
-- the proof is Fibre-specific and generic C2PA validators will not understand it;
+- the proof is Fibre-specific and is verified by Fibre;
 - Fibre owns the PNG proof-chunk format and verifier implementation;
 - key rotation/public-key distribution remain FIA deployment responsibilities;
 - metadata-stripping tools can remove the proof, in which case the copied image becomes unverifiable rather than falsely valid.
@@ -210,11 +201,10 @@ B. FIA Ed25519 signature envelope — implemented
 C. deterministic PNG embedding/extraction — implemented
 D. strict verifier — implemented
 E. issuance integration — implemented
-F. registry/storage proof evidence
+F. registry/storage proof evidence — implemented
 G. verification API
 H. current-status verification
 I. rich-card verification UI
-J. retire FIN-specific C2PA deployment machinery
 ```
 
 Every implementation slice must pass `npm run slice:validate`.
