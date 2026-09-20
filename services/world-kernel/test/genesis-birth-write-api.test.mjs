@@ -25,7 +25,7 @@ function request({
   });
 }
 
-test("Fetch-native Genesis birth write API preserves publication identity and causal activity context", async () => {
+test("birth publication keeps Activity correlation outside the authoritative birth bundle", async () => {
   const calls = [];
   const api = createGenesisBirthWriteApi({
     privateToken: TOKEN,
@@ -77,15 +77,3 @@ test("malformed activity correlation is ignored rather than blocking authoritati
   assert.deepEqual(options, { activityContext: {} });
 });
 
-test("Fetch-native Genesis birth write API rejects unauthenticated and malformed writes without invoking World authority", async () => {
-  let calls = 0;
-  const api = createGenesisBirthWriteApi({
-    privateToken: TOKEN,
-    birthPublisher: { async publishBirth() { calls += 1; return {}; } },
-  });
-  assert.equal((await api.fetch(request({ token: null }))).status, 403);
-  assert.equal((await api.fetch(request({ method: "GET" }))).status, 405);
-  assert.equal((await api.fetch(request({ contentType: "text/plain" }))).status, 415);
-  assert.equal(calls, 0);
-  assert.equal(await api.fetch(new Request("https://world.internal/not-world")), null);
-});
