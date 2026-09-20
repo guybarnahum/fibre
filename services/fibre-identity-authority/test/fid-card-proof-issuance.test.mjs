@@ -207,7 +207,6 @@ test("native FIN proof protects both sides, stores them, and finalizes only afte
     workflow:prepared.workflow,
     storedCard,
     machineCredential:prepared.machineCredential,
-    contentCredentialMode:"native",
     issuerSigner:prepared.issuerSigner,
     credentialProtector:prepared.credentialProtector,
     activatedAt:"2026-09-20T01:04:00.000Z",
@@ -217,12 +216,14 @@ test("native FIN proof protects both sides, stores them, and finalizes only afte
   assert.equal(registry.getActiveByFin(FIN).credential.credentialId, prepared.payload.credentialId);
 
   const issuance = registry.getIssuanceByCredentialId(prepared.payload.credentialId).record;
-  assert.equal(issuance.front.manifestDigest, null);
-  assert.equal(issuance.back.manifestDigest, null);
-  assert.deepEqual(issuance.c2pa, {
-    signerId:null,
-    trustPolicy:null,
-    validationStatus:"disabled",
+  assert.equal(issuance.front.proofAssertionDigest, storedCard.front.proofAssertionDigest);
+  assert.equal(issuance.back.proofAssertionDigest, storedCard.back.proofAssertionDigest);
+  assert.deepEqual(issuance.proof, {
+    format:"fibre-fin-proof",
+    schema:"fibre.fin-card-proof.v1",
+    envelopeVersion:"fibre.fin-card-proof-envelope.v1",
+    signerKeyId:"fia-native-proof-test",
+    validationStatus:"verified",
   });
 }));
 
