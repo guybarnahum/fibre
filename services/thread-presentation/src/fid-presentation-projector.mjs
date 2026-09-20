@@ -88,7 +88,6 @@ function activeFid(value, threadId) {
     nonEmpty(`active FID ${name}`, value[name]);
   }
   if (!Number.isSafeInteger(value.revision) || value.revision < 1) throw new TypeError("active FID revision is invalid");
-  if (value.proofStatus !== "verified") throw new TypeError("active FID proof must be verified");
   for (const side of ["front", "back"]) {
     const media = value[side];
     if (!media || typeof media !== "object") throw new TypeError(`active FID ${side} media is required`);
@@ -172,8 +171,7 @@ function alreadyProjectsActiveFid(bundle, active, visibility) {
   if (card?.credentialVersion !== FIBRE_IDENTITY_CARD_CURRENT_VERSION
     || card.credentialId !== active.credentialId
     || card.visibility !== visibility
-    || card.status !== "active"
-    || card.proofStatus !== active.proofStatus) return false;
+    || card.status !== "active") return false;
   for (const side of ["front", "back"]) {
     const ref = card[`${side}MediaRef`];
     const media = bundle.media.assets.find((asset) => asset.mediaId === ref);
@@ -228,7 +226,6 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
     frontMediaRef: front.mediaId,
     backMediaRef: back.mediaId,
     issuerAuthorityId: fid.issuerAuthorityId,
-    proofStatus: fid.proofStatus,
     sourceReferences,
     provenanceRef,
   };
