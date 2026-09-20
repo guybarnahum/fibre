@@ -22,7 +22,6 @@ function activeFid() {
     issuedAt:"2026-09-19T20:00:00.000Z",
     expiresAt:null,
     status:"active",
-    proofStatus:"verified",
     front:{
       objectRef:"fidcard_fidc_card_asset_2_front",
       digest:"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -189,6 +188,5 @@ test("FID projection publishes front, back and one logical rich card asset", asy
   );
   assert.equal(projected.presentation.identityCard.frontMediaRef, "media_fid_fidc_card_asset_2_front");
   assert.equal(projected.presentation.identityCard.backMediaRef, "media_fid_fidc_card_asset_2_back");
-  assert.equal(projected.presentation.identityCard.proofStatus, "verified");
 });
 
