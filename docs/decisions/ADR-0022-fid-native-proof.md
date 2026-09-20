@@ -202,9 +202,9 @@ C. deterministic PNG embedding/extraction — implemented
 D. strict verifier — implemented
 E. issuance integration — implemented
 F. registry/storage proof evidence — implemented
-G. verification API
+G. verification API — implemented
 H. current-status verification
-I. rich-card verification UI
+I. rich-card verification UI — authenticity implemented
 ```
 
 Every implementation slice must pass `npm run slice:validate`.
