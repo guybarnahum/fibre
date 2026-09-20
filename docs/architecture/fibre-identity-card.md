@@ -27,7 +27,7 @@ FID Card / credentialId
     replaceable and revocable credential representing that FIN at one issuance point
 ```
 
-The card is not the Thread's identity. Reissue, redesign, loss, expiry, revocation, rendering changes, or media regeneration may never change `threadId`, FIN, birth registration, history, memory, meaning, or embodiment authority.
+The card is not the Thread's identity. Reissue, redesign, loss, revocation, rendering changes, or media regeneration may never change `threadId`, FIN, birth registration, history, memory, meaning, or embodiment authority.
 
 **Birth never waits for FID issuance.** A Thread may be born, receive its FIN, and live normally with no FID Card. Card issuance is a later workflow.
 
@@ -140,14 +140,15 @@ FIN XXXX-XX-XXXX
   `-- fidc_003  active
 ```
 
-Lifecycle states:
+Lifecycle states used by the current FIN Card policy:
 
 ```text
 active
 superseded
 revoked
-expired       # optional policy when an expiry date exists
 ```
+
+The underlying credential schema keeps a nullable expiry field reserved for compatibility with generic credential machinery, but FIN Cards currently do not expire and issuance sets it to `null`.
 
 Rules:
 
@@ -309,7 +310,7 @@ FidCredentialPayload {
   }
 
   issuedAt
-  expiresAt?
+  expiresAt = null   # reserved; FIN Cards do not expire under current policy
 
   issuer {
     authorityId
@@ -365,7 +366,7 @@ fibre.fin-card-proof.v1 {
   }
 
   issuedAt
-  expiresAt?
+  expiresAt = null   # reserved; FIN Cards do not expire under current policy
   templateVersion
 
   registrationId
@@ -441,7 +442,7 @@ FidCardIssuanceRecord {
   photoDigest
   identitySnapshotDigest
   issuedAt
-  expiresAt?
+  expiresAt = null   # reserved; FIN Cards do not expire under current policy
 
   issuer {
     authorityId
@@ -486,8 +487,8 @@ identityCard {
   revision
   registrationId
   issuedAt
-  expiresAt?
-  status: active | superseded | expired | revoked
+  expiresAt = null   # reserved; FIN Cards do not expire under current policy
+  status: active | superseded | revoked
   visibility: public | restricted | private
   officialPhotoMediaRef
   frontMediaRef
