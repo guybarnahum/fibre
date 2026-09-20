@@ -150,14 +150,12 @@ export async function protectAndStoreFidCard({
         proofSchema:FID_CARD_PROOF_SCHEMA,
         proofEnvelopeVersion:FID_CARD_PROOF_ENVELOPE_VERSION,
         proofAssertionDigest:current.assertionDigest,
-        proofSignerKeyId:current.signerKeyId,
-        proofValidationStatus:"verified",
+          proofValidationStatus:"verified",
       },
     );
     storedResult[side] = Object.freeze({
       objectRef,
       finalDigest:current.finalDigest,
-      manifestDigest:null,
       proofAssertionDigest:current.assertionDigest,
       proofSignerKeyId:current.signerKeyId,
       stored:true,
@@ -171,6 +169,7 @@ export async function protectAndStoreFidCard({
     machineCredentialDigest,
     proofFormat:"fibre-fin-proof",
     proofSchema:FID_CARD_PROOF_SCHEMA,
+    proofEnvelopeVersion:FID_CARD_PROOF_ENVELOPE_VERSION,
     front:storedResult.front,
     back:storedResult.back,
   });
