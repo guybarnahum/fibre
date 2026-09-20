@@ -402,7 +402,7 @@ Rules:
 - canonical JSON is deterministic so signing and verification operate over one unambiguous byte representation;
 - a verifier returns the embedded assertion only after both the FIA signature and PNG binding validate.
 
-The proof contract is implemented in `services/fibre-identity-authority/src/fid-card-proof.mjs`. Slice A defines and validates this assertion only. Signature-envelope construction, PNG embedding, extraction, and runtime verification are subsequent slices.
+The assertion/signature contract is implemented in `services/fibre-identity-authority/src/fid-card-proof.mjs`. PNG transport is implemented in `fid-card-proof-png.mjs` using one private ancillary `fiDP` chunk inserted immediately before `IEND`. The chunk is intentionally marked unsafe-to-copy so generic image editors should not preserve it after modifying image data. Embedding is deterministic, does not change visible pixels, and extraction reconstructs the original raw rendered PNG byte-for-byte. Runtime authenticity verification remains Slice D.
 
 ### C2PA interoperability is optional
 
@@ -594,12 +594,16 @@ The original FID authority/photo/render lifecycle slices are complete. The remai
 - verify with the corresponding FIA public key;
 - fail on assertion/signature/key mutation or non-Ed25519 signer profiles.
 
-### FIN-PROOF-C — PNG embedding
+### FIN-PROOF-C — PNG embedding — implemented
 
-- define one deterministic Fibre-owned PNG ancillary chunk;
+- define the private ancillary, unsafe-to-copy `fiDP` PNG chunk;
+- encode only canonical `fibre.fin-card-proof-envelope.v1` JSON;
+- insert exactly one proof chunk immediately before `IEND`;
+- validate PNG chunk CRCs during extraction;
 - embed the signed proof without changing visible pixels;
 - extract/remove the chunk deterministically;
-- reconstruct the original raw rendered PNG byte-for-byte.
+- reconstruct the original raw rendered PNG byte-for-byte;
+- reject implicit re-embedding, duplicate proof chunks, malformed PNGs and invalid proof-chunk CRCs.
 
 ### FIN-PROOF-D — strict verifier
 
