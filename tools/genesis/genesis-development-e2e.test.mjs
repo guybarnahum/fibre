@@ -274,7 +274,7 @@ test("staging Genesis E2E retains one exact-SHA 13-point cloud birth evidence re
           headers: {
             "content-type": "image/png",
             etag: `\"sha256:${"9".repeat(64)}\"`,
-            "x-fibre-provenance": "c2pa_verified",
+            "x-fibre-provenance": "generated_reconstruction",
           },
         });
       }
