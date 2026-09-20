@@ -80,11 +80,11 @@ button:focus-visible{
 :host([data-side="back"]) .inner{
   transform:rotateY(180deg);
 }
-:host([data-interacting="true"]) button{
-  transform:scale(1.2);
-  z-index:2;
-}
 @media(hover:hover) and (pointer:fine){
+  button:hover{
+    transform:scale(1.2);
+    z-index:2;
+  }
   :host([data-side="front"]) button:hover .inner{
     transform:rotateX(-1.4deg) rotateY(2.5deg);
   }
