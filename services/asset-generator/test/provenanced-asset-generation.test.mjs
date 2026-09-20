@@ -8,14 +8,14 @@ import {
 } from "../src/asset-provenance-domain.mjs";
 import {
   PROVENANCED_ASSET_RECEIPT_VERSION,
-  executeUncredentialedAssetGenerationJob,
+  executeProvenancedAssetGenerationJob,
   verifyProvenancedAssetForPublication,
 } from "../src/provenanced-asset-generation.mjs";
 
 function job() {
   return {
     jobVersion: ASSET_GENERATION_JOB_VERSION,
-    jobId: "job_provenanced_without_c2pa_001",
+    jobId: "job_provenanced_native_001",
     assetKind: "image",
     role: "official_id_photo",
     variant: "reference-conditioned",
@@ -23,23 +23,23 @@ function job() {
       description: "Generate an ordinary identity-preserving portrait.",
       constraints: ["Preserve the supplied identity anchor."],
     },
-    inputReferences: ["thr_provenanced_without_c2pa_001"],
+    inputReferences: ["thr_provenanced_native_001"],
     referenceObjectRefs: [],
-    outputObjectRef: "asset_provenanced_without_c2pa_001",
-    receiptObjectRef: "receipt_provenanced_without_c2pa_001",
+    outputObjectRef: "asset_provenanced_native_001",
+    receiptObjectRef: "receipt_provenanced_native_001",
     requestedAt: "2026-09-01T02:50:00Z",
     providerProfile: "fixture-image-provider",
     context: {
       kind: "thread_presentation_media",
-      threadId: "thr_provenanced_without_c2pa_001",
-      mediaId: "media_provenanced_without_c2pa_001",
-      provenanceRef: "prov_provenanced_without_c2pa_001",
+      threadId: "thr_provenanced_native_001",
+      mediaId: "media_provenanced_native_001",
+      provenanceRef: "prov_provenanced_native_001",
     },
   };
 }
 
 function provider(calls) {
-  const bytes = new TextEncoder().encode("provider-output-without-c2pa");
+  const bytes = new TextEncoder().encode("provider-output-native");
   return {
     providerVersion: WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
     providerId: "fixture-image-provider",
@@ -61,7 +61,7 @@ function provider(calls) {
           durationMs: null,
           provider: "fixture",
           model: "fixture-image-v1",
-          providerRequestId: "provider-request-without-c2pa-001",
+          providerRequestId: "provider-request-native-001",
           generatedAt: "2026-09-01T02:51:00Z",
           configuration: { mode: "fixture" },
         },
@@ -70,10 +70,10 @@ function provider(calls) {
   };
 }
 
-test("uncredentialed generation retains durable provider provenance and exact final-byte integrity", async () => {
+test("Fibre-native generation retains durable provider provenance and exact final-byte integrity", async () => {
   const infra = createMemoryInfraDriver();
   const calls = [];
-  const first = await executeUncredentialedAssetGenerationJob({
+  const first = await executeProvenancedAssetGenerationJob({
     infra,
     provider: provider(calls),
     job: job(),
@@ -82,21 +82,17 @@ test("uncredentialed generation retains durable provider provenance and exact fi
 
   assert.equal(calls.length, 1);
   assert.equal(first.receipt.receiptVersion, PROVENANCED_ASSET_RECEIPT_VERSION);
-  assert.equal(first.receipt.credential, null);
   assert.equal(first.receipt.sha256, first.receipt.providerOutputDigest);
-  assert.equal(first.generationRecord.generation.providerRequestId, "provider-request-without-c2pa-001");
+  assert.equal(first.generationRecord.generation.providerRequestId, "provider-request-native-001");
 
   const proof = await verifyProvenancedAssetForPublication({
     infra,
-    credentialSigner: null,
     receipt: first.receipt,
   });
-  assert.equal(proof.credentialMode, "disabled");
-  assert.equal(proof.verification, null);
-  assert.equal(proof.generationRecord.generation.providerRequestId, "provider-request-without-c2pa-001");
+  assert.equal(proof.generationRecord.generation.providerRequestId, "provider-request-native-001");
   assert.equal(proof.receipt.sha256, proof.generationRecord.providerOutputDigest);
 
-  const replay = await executeUncredentialedAssetGenerationJob({
+  const replay = await executeProvenancedAssetGenerationJob({
     infra,
     provider: provider(calls),
     job: job(),
