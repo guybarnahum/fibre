@@ -110,7 +110,7 @@ export function createGenesisPresentationDeliveryService({
     if (entry.attemptCount > 0) {
       await bestEffortRecord(activity, {
         ...context,
-        stage: "presentation.snapshot.publish",
+        stage: "presentation.genesis.publish",
         status: "retrying",
         attempt,
         message: "Retrying Genesis presentation delivery",
@@ -120,7 +120,7 @@ export function createGenesisPresentationDeliveryService({
       const bundle = projectEntry(entry);
       const publication = await runActivityStage(activity, {
         ...context,
-        stage: "presentation.snapshot.publish",
+        stage: "presentation.genesis.publish",
         attempt,
       }, async () => publisher.publishGenesisPresentation({
         genesisId: entry.genesisId,
@@ -158,7 +158,7 @@ export function createGenesisPresentationDeliveryService({
       const bundle = projectEntry(entry);
       const publication = await runActivityStage(activity, {
         ...activityContext(entry),
-        stage: "presentation.snapshot.rebuild",
+        stage: "presentation.genesis.restore",
         attempt: 1,
       }, async () => publisher.publishGenesisPresentation({
         genesisId: entry.genesisId,
