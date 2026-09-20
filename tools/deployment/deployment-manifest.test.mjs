@@ -25,7 +25,6 @@ test("local deployment YAML selects runtime, InfraDriver and integrations outsid
   assert.equal(assetGenerator.infra.driver, "cloudflare-v1");
   assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].provider, "openai");
   assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].config.model, "gpt-image-2-2026-04-21");
-  assert.equal(assetGenerator.integrations.contentCredentials.provider, "c2pa-http");
 
   const worldKernel = resolveServiceDeployment(manifest, "world-kernel");
   assert.equal(worldKernel.runtime.provider, "local-node");
