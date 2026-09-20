@@ -4,74 +4,13 @@ import assert from "node:assert/strict";
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import {
   ASSET_GENERATION_JOB_VERSION,
-  CONTENT_CREDENTIAL_SIGNER_VERSION,
   WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
-  executeCredentialedAssetGenerationJob,
-  normalizeEmbeddedAssetProvenance,
+  executeProvenancedAssetGenerationJob,
 } from "#services/asset-generator/src/index.mjs";
 import { createThreadPresentationServer } from "../src/thread-presentation-server.mjs";
 import { createThreadPresentationAssetPublisher } from "../src/thread-presentation-asset-publisher.mjs";
 
 const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-const DELIMITER = "\n--FIBRE-PUBLISHER-CREDENTIAL--\n";
-
-async function sha256(bytes) {
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return `sha256:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
-}
-
-function concatBytes(...parts) {
-  const output = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
-  let offset = 0;
-  for (const part of parts) { output.set(part, offset); offset += part.length; }
-  return output;
-}
-
-function signer({ forceInvalid = false } = {}) {
-  return {
-    signerVersion: CONTENT_CREDENTIAL_SIGNER_VERSION,
-    signerId: "fixture-publisher-signer",
-    format: "fixture-content-credential",
-    async embed({ bytes, assertion }) {
-      const normalized = normalizeEmbeddedAssetProvenance(assertion);
-      const manifest = encoder.encode(JSON.stringify(normalized));
-      return {
-        bytes: concatBytes(bytes, encoder.encode(DELIMITER), manifest),
-        format: "fixture-content-credential",
-        signerId: "fixture-publisher-signer",
-        manifestDigest: await sha256(manifest),
-        embeddedAt: "2026-08-21T21:20:01Z",
-      };
-    },
-    async verify({ bytes }) {
-      if (forceInvalid) {
-        return {
-          valid: false,
-          format: "fixture-content-credential",
-          signerId: "fixture-publisher-signer",
-          manifestDigest: null,
-          assertion: null,
-          verifiedAt: "2026-08-21T21:20:02Z",
-          failureReason: "forced invalid credential",
-        };
-      }
-      const text = decoder.decode(bytes);
-      const index = text.lastIndexOf(DELIMITER);
-      const assertion = normalizeEmbeddedAssetProvenance(JSON.parse(text.slice(index + DELIMITER.length)));
-      const manifest = encoder.encode(JSON.stringify(assertion));
-      return {
-        valid: true,
-        format: "fixture-content-credential",
-        signerId: "fixture-publisher-signer",
-        manifestDigest: await sha256(manifest),
-        assertion,
-        verifiedAt: "2026-08-21T21:20:02Z",
-        failureReason: null,
-      };
-    },
-  };
-}
 
 function provider() {
   return {
@@ -110,7 +49,10 @@ function job({ role = "place", mediaId = "media_place_1", suffix = "1" } = {}) {
     assetKind: "image",
     role,
     variant: "default",
-    brief: { description: `A generated reconstruction for ${role}.`, constraints: ["Not documentary evidence."] },
+    brief: {
+      description: `A generated reconstruction for ${role}.`,
+      constraints: ["Not documentary evidence."],
+    },
     inputReferences: ["presentation_1", "source_1"],
     referenceObjectRefs: [],
     outputObjectRef: `asset_publisher_${suffix}`,
@@ -128,22 +70,20 @@ function job({ role = "place", mediaId = "media_place_1", suffix = "1" } = {}) {
 }
 
 async function generated(infra, generationJob = job()) {
-  return executeCredentialedAssetGenerationJob({
+  return executeProvenancedAssetGenerationJob({
     infra,
     provider: provider(),
-    credentialSigner: signer(),
     job: generationJob,
     now: () => "2026-08-21T21:20:03Z",
   });
 }
 
-test("Thread presentation publishes media.ready only after stored credentialed asset verification", async () => {
+test("Thread presentation publishes media.ready only after stored Fibre provenance verification", async () => {
   const infra = createMemoryInfraDriver();
   const result = await generated(infra);
   const presentationServer = createThreadPresentationServer({ infra });
   const publisher = createThreadPresentationAssetPublisher({
     infra,
-    credentialSigner: signer(),
     presentationServer,
     now: () => "2026-08-21T21:20:04Z",
   });
@@ -152,10 +92,12 @@ test("Thread presentation publishes media.ready only after stored credentialed a
     channelId: "channel_thr_1",
     expectedSequence: 0,
   });
+
   assert.equal(accepted.event.kind, "media.ready");
   assert.equal(accepted.event.payload.objectRef, result.receipt.objectRef);
   assert.equal(accepted.event.payload.digest, result.receipt.sha256);
-  assert.equal(accepted.proof.verification.valid, true);
+  assert.equal(accepted.proof.generationRecord.jobId, result.receipt.jobId);
+  assert.equal(accepted.proof.generationRecord.providerOutputDigest, result.receipt.providerOutputDigest);
   assert.equal((await presentationServer.getHead("channel_thr_1")).sequence, 1);
 
   const publicMedia = await infra.catalog.get(`media:${result.receipt.objectRef}`);
@@ -177,7 +119,11 @@ test("Thread presentation publishes media.ready only after stored credentialed a
 
 test("private official ID photo can become media.ready without becoming public media", async () => {
   const infra = createMemoryInfraDriver();
-  const generationJob = job({ role: "official_id_photo", mediaId: "media_official_id_photo", suffix: "official" });
+  const generationJob = job({
+    role: "official_id_photo",
+    mediaId: "media_official_id_photo",
+    suffix: "official",
+  });
   const result = await generated(infra, generationJob);
   const acceptedEvents = [];
   const projectedSnapshots = [];
@@ -191,7 +137,10 @@ test("private official ID photo can become media.ready without becoming public m
         snapshot: {
           presentation: {
             manifest: { generatedAt: "2026-08-21T21:19:58Z" },
-            identityCard: { officialPhotoMediaRef: "media_official_id_photo", visibility: "private" },
+            identityCard: {
+              officialPhotoMediaRef: "media_official_id_photo",
+              visibility: "private",
+            },
           },
           media: {
             generatedAt: "2026-08-21T21:19:58Z",
@@ -218,7 +167,6 @@ test("private official ID photo can become media.ready without becoming public m
   };
   const publisher = createThreadPresentationAssetPublisher({
     infra,
-    credentialSigner: signer(),
     presentationServer,
     now: () => "2026-08-21T21:20:04Z",
   });
@@ -226,21 +174,21 @@ test("private official ID photo can become media.ready without becoming public m
     receipt: result.receipt,
     channelId: "channel_thr_1",
   });
+
   assert.equal(accepted.event.kind, "media.ready");
   assert.equal(acceptedEvents.length, 1);
   assert.equal(projectedSnapshots.length, 1);
   assert.equal(projectedSnapshots[0].bundle.media.assets[0].status, "ready");
   const catalog = await infra.catalog.get(`media:${result.receipt.objectRef}`);
   assert.equal(catalog.publiclyVisible, false);
-  assert.equal(catalog.identityCredentialMedia, true);
+  assert.equal(catalog.identityCredentialMedia, false);
   assert.equal(catalog.role, "official_id_photo");
 });
 
-test("publisher requires snapshot projection capability", async () => {
+test("publisher requires snapshot projection capability", () => {
   const infra = createMemoryInfraDriver();
   assert.throws(() => createThreadPresentationAssetPublisher({
     infra,
-    credentialSigner: signer(),
     presentationServer: {
       async getSnapshot() { return null; },
       async appendEvent() { return null; },
@@ -248,23 +196,27 @@ test("publisher requires snapshot projection capability", async () => {
   }), /appendEvent, getSnapshot, and publishSnapshot/);
 });
 
-test("invalid credential blocks media.ready and public-media catalog projection", async () => {
+test("receipt tampering blocks media.ready and public-media projection", async () => {
   const infra = createMemoryInfraDriver();
   const result = await generated(infra);
   const presentationServer = createThreadPresentationServer({ infra });
   const publisher = createThreadPresentationAssetPublisher({
     infra,
-    credentialSigner: signer({ forceInvalid: true }),
     presentationServer,
     now: () => "2026-08-21T21:20:04Z",
   });
+  const tampered = {
+    ...result.receipt,
+    sha256: "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  };
+
   await assert.rejects(
     () => publisher.publishReady({
-      receipt: result.receipt,
+      receipt: tampered,
       channelId: "channel_thr_1",
       expectedSequence: 0,
     }),
-    /content credential verification failed/,
+    /final asset digest does not match stored asset receipt/,
   );
   assert.equal((await presentationServer.getHead("channel_thr_1")).sequence, 0);
   assert.equal(await infra.catalog.get(`media:${result.receipt.objectRef}`), null);
