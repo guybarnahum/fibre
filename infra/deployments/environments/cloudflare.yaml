@@ -109,6 +109,5 @@ services:
   asset-generator:
     runtime: cloudflare
     infra: cloudflare
-    integrations:
       openai-gpt-image-2-medium-v1: asset-image-openai
       bfl-flux-2-pro-v1: asset-image-bfl
