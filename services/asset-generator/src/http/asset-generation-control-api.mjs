@@ -47,9 +47,9 @@ export function createAssetGenerationControlApi({
         const retryable = error?.retryable !== false;
         const code = typeof error?.code === "string" && error.code !== ""
           ? error.code
-          : "ASSET_GENERATION_CONTROL_FAILED";
+          : "ASSET_GENERATION_FAILED";
         console.error(JSON.stringify({
-          event: "asset_generation_control_failed",
+          event: "asset_generation_failed",
           errorName: error?.constructor?.name ?? "Error",
           code,
           retryable,
@@ -57,7 +57,7 @@ export function createAssetGenerationControlApi({
         }));
         return json(retryable ? 500 : 409, {
           ok: false,
-          error: "asset_generation_control_failed",
+          error: "asset_generation_failed",
           code,
           detail,
           retryable,
