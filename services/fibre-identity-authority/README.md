@@ -4,7 +4,7 @@ The Fibre Identity Authority owns replaceable FID Card credentials for already-b
 
 It does **not** mint FINs, change civil registration, create visual identity, or execute image generation. Those responsibilities remain with their owning Fibre boundaries.
 
-FIN-card authenticity is moving to a Fibre-native proof owned by FIA: a small public assertion derived from already-authorized issuance facts, signed with the existing FIA Ed25519 issuer key, and embedded directly in each PNG. The assertion/signature contract, deterministic PNG transport, and strict authenticity verifier are implemented; issuance integration is the next step. C2PA is no longer part of the target FIN-card protection architecture; it remains optional future interoperability and may continue independently for generated-media provenance.
+FIN-card authenticity uses a Fibre-native proof owned by FIA: a small public assertion derived from already-authorized issuance facts, signed with the existing FIA Ed25519 issuer key, embedded directly in each PNG, and strictly verified before storage and activation. Assertion/signature, PNG transport, strict verification, and issuance integration are implemented. C2PA is no longer part of the normal FIN-card protection path; it remains optional future interoperability and may continue independently for generated-media provenance.
 
 Core authority surface:
 
@@ -59,9 +59,9 @@ cutFidCard({ threadId, idempotencyKey })
 getActivePresentation(threadId)
 ```
 
-`cutFidCard` drives the existing issuance executor through identity resolution, photo reuse/derivation and admission, deterministic front/back rendering, machine-credential protection, immutable object storage and atomic activation. The target protection path adds FIA-native proof signing/embedding/verification before storage. Callers still do not author identity facts or card bytes.
+`cutFidCard` drives the issuance executor through identity resolution, photo reuse/derivation and admission, deterministic front/back rendering, protected machine-credential creation, native FIN-proof signing/embedding/verification, immutable object storage, stored-object re-verification, and atomic activation. Callers still do not author identity facts or card bytes.
 
-The previous C2PA embed/verify implementation remains temporarily in the repository during migration but is no longer the target FIN-card architecture.
+The previous C2PA embed/verify implementation remains temporarily as an explicit compatibility path and is no longer the normal FIN-card architecture. The registry still carries a legacy C2PA-shaped evidence slot for native cards until the next persistence cleanup slice.
 
 `getActivePresentation` exposes only the verified active credential material needed by Thread Presentation. Cryptographic keys, protected credential bodies and provider storage details stay behind FIA.
 
