@@ -4,7 +4,7 @@ The Fibre Identity Authority owns replaceable FID Card credentials for already-b
 
 It does **not** mint FINs, change civil registration, create visual identity, or execute image generation. Those responsibilities remain with their owning Fibre boundaries.
 
-FIN-card authenticity uses a Fibre-native proof owned by FIA: a small public assertion derived from already-authorized issuance facts, signed with the existing FIA Ed25519 issuer key, embedded directly in each PNG, and strictly verified before storage and activation. Assertion/signature, PNG transport, strict verification, and issuance integration are implemented. C2PA is no longer part of the normal FIN-card protection path; it remains optional future interoperability and may continue independently for generated-media provenance.
+FIN-card authenticity uses a Fibre-native proof owned by FIA: a small public assertion derived from already-authorized issuance facts, signed with the existing FIA Ed25519 issuer key, embedded directly in each PNG, and strictly verified before storage and activation. Assertion/signature, PNG transport, strict verification, issuance integration, and proof evidence persistence are implemented.
 
 Core authority surface:
 
@@ -61,8 +61,6 @@ getActivePresentation(threadId)
 
 `cutFidCard` drives the issuance executor through identity resolution, photo reuse/derivation and admission, deterministic front/back rendering, protected machine-credential creation, native FIN-proof signing/embedding/verification, immutable object storage, stored-object re-verification, and atomic activation. Callers still do not author identity facts or card bytes.
 
-The previous C2PA embed/verify implementation remains temporarily as an explicit compatibility path and is no longer the normal FIN-card architecture. The registry still carries a legacy C2PA-shaped evidence slot for native cards until the next persistence cleanup slice.
-
 `getActivePresentation` exposes only the verified active credential material needed by Thread Presentation. Cryptographic keys, protected credential bodies and provider storage details stay behind FIA.
 
 Lifecycle orchestration itself is not owned by FIA. Thread Presentation owns the private `ensure|reissue` reconciliation seam and calls FIA through its neutral boundary; Admin Dashboard therefore never calls FIA directly.
@@ -85,4 +83,4 @@ npm run cloud:configure-secrets -- --file .env --env staging
 
 The target FIA Wrangler contract requires `FIBRE_PRIVATE_TOKEN`, `FIA_ISSUER_JWK`, and `FIA_CREDENTIAL_KEY_BASE64`. `FIA_ISSUER_JWK` already supplies the Ed25519 key used by the protected machine credential and will also sign the public FIN proof.
 
-During migration, checked Cloudflare configuration may still contain legacy C2PA signer bindings/secrets for the old card path. Those are transitional and are scheduled for removal after native proof issuance/verification is integrated and accepted.
+The checked FIA Cloudflare configuration needs only the FIA issuer/protection secrets; FIN cards have no separate content-credential signer binding or secret.
