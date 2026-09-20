@@ -37,8 +37,10 @@ For public progress, milestone summaries, website status, or claims about what F
 ## Validation workflow
 
 - During development, use focused tests or `npm test` as needed.
-- At slice completion, run **only** `npm run slice:validate` for the full repository validation. It performs the include check, one build, the complete active + replay test suite, context-pack generation plus generated-pack validation, World seed and deployment validation, and the quiet test-value audit.
-- Do not stack `npm run check`, `npm run test:all`, `npm run validate`, and `npm run test:audit -- --check --quiet` after one another at slice completion; those commands overlap and repeat almost the full test suite and build.
+- At slice completion, run **only** `npm run slice:validate` for the full repository validation. It performs the include check, one build, the complete active + replay test suite, context-pack generation plus generated-pack validation, World seed and deployment validation.
+- Do not stack `npm run check`, `npm run test:all`, and `npm run validate` after one another at slice completion; those commands overlap and repeat almost the full test suite and build.
+- Tests must prove Fibre semantics, not implementation trivia. Prefer one durable invariant/continuity proof over several HTTP, header, status-code, helper-shape, or adapter-plumbing assertions.
+- A test earns its place when its failure would reveal a meaningful break in Thread identity, history, agency, continuity, authority, recovery, or another named Fibre capability. Keep failure messages short and semantic.
 - `validate-repo.mjs --generated` means normal repository validation plus verification that generated AI context packs exist and exactly match their canonical sources.
 
 ## Non-negotiable invariants
