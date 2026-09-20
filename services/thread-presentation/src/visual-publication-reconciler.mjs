@@ -147,7 +147,7 @@ function reconciliationFailure(error) {
     ? error.code
     : "PRESENTATION_RECONCILIATION_FAILED";
   return Object.freeze({
-    category: "reconciliation",
+    category: typeof error?.activityCategory === "string" ? error.activityCategory : "reconciliation",
     code,
     retryable: error?.retryable === true,
   });

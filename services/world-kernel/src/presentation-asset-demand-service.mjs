@@ -5,6 +5,7 @@ import {
 } from "#services/asset-generator/src/index.mjs";
 import {
   InfraImmutableObjectConflictError,
+  InfraWorkflowConflictError,
   requireInfraCapabilities,
 } from "#infra";
 import {
@@ -254,6 +255,24 @@ function buildNextProjection({ priorProjection, reconciliation, dispatchByDemand
   });
 }
 
+async function requestAssetGeneration(assetGeneration, demand) {
+  try {
+    return await assetGeneration.request(demand.job);
+  } catch (error) {
+    if (!(error instanceof InfraWorkflowConflictError)) throw error;
+    const conflict = new Error(
+      `Presentation asset ${demand.slotKey} resolves to conflicting durable generation state and cannot be safely reused`,
+    );
+    conflict.name = "PresentationAssetDemandConflictError";
+    conflict.code = "PRESENTATION_ASSET_DEMAND_CONFLICT";
+    conflict.activityCategory = "conflict";
+    conflict.retryable = false;
+    conflict.demandId = demand.demandId;
+    conflict.jobId = demand.job.jobId;
+    throw conflict;
+  }
+}
+
 async function reserveShortGenerationId({ infra, slot, providerProfile, regenerationKey }) {
   const identityValue = presentationAssetIdentityValue(slot, { providerProfile, regenerationKey });
   const serialized = canonicalJson(identityValue);
@@ -338,7 +357,7 @@ export function createPresentationAssetDemandService({
       const dispatchByDemandId = new Map();
 
       for (const demand of reconciliation.createdDemands) {
-        const scheduled = await assetGeneration.request(demand.job);
+        const scheduled = await requestAssetGeneration(assetGeneration, demand);
         dispatchByDemandId.set(demand.demandId, dispatchWitness(scheduled.instance, requestedAt));
       }
 
@@ -347,7 +366,7 @@ export function createPresentationAssetDemandService({
         const priorEntry = priorProjection.demands.find((entry) => entry.demand.demandId === demand.demandId);
         const status = await assetGeneration.status(demand.job.jobId);
         if (status === null) {
-          const scheduled = await assetGeneration.request(demand.job);
+          const scheduled = await requestAssetGeneration(assetGeneration, demand);
           dispatchByDemandId.set(demand.demandId, dispatchWitness(scheduled.instance, requestedAt));
         } else {
           const witness = refreshWitness(status, priorEntry?.dispatch ?? null, requestedAt);
