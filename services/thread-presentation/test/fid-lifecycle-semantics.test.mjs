@@ -20,6 +20,7 @@ test("FID revision history does not invent a superseded predecessor", () => {
     frontMediaRef: "media_fid_front",
     backMediaRef: "media_fid_back",
     issuerAuthorityId: "fibre_identity_authority",
+    proofStatus: "verified",
     sourceReferences: ["issuance_record_2"],
     provenanceRef: "prov_fid_2",
   });
