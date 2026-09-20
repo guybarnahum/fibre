@@ -402,7 +402,7 @@ Rules:
 - canonical JSON is deterministic so signing and verification operate over one unambiguous byte representation;
 - a verifier returns the embedded assertion only after both the FIA signature and PNG binding validate.
 
-The assertion/signature contract is implemented in `services/fibre-identity-authority/src/fid-card-proof.mjs`. PNG transport is implemented in `fid-card-proof-png.mjs` using one private ancillary `fiDP` chunk inserted immediately before `IEND`. The chunk is intentionally marked unsafe-to-copy so generic image editors should not preserve it after modifying image data. Embedding is deterministic, does not change visible pixels, and extraction reconstructs the original raw rendered PNG byte-for-byte. Runtime authenticity verification remains Slice D.
+The assertion/signature contract is implemented in `services/fibre-identity-authority/src/fid-card-proof.mjs`. PNG transport is implemented in `fid-card-proof-png.mjs` using one private ancillary `fiDP` chunk inserted immediately before `IEND`. The chunk is intentionally marked unsafe-to-copy so generic image editors should not preserve it after modifying image data. Embedding is deterministic, does not change visible pixels, and extraction reconstructs the original raw rendered PNG byte-for-byte. Strict authenticity decisions are implemented in `fid-card-proof-verifier.mjs`.
 
 ### C2PA interoperability is optional
 
@@ -605,14 +605,17 @@ The original FID authority/photo/render lifecycle slices are complete. The remai
 - reconstruct the original raw rendered PNG byte-for-byte;
 - reject implicit re-embedding, duplicate proof chunks, malformed PNGs and invalid proof-chunk CRCs.
 
-### FIN-PROOF-D — strict verifier
+### FIN-PROOF-D — strict verifier — implemented
 
-- validate proof schema and issuer key;
-- verify Ed25519 signature;
-- reconstruct and hash raw PNG;
-- compare `rawRenderDigest`;
-- return assertion only after all checks pass;
-- reject malformed, duplicated, tampered, wrong-side, or wrong-key proofs.
+- expose one fail-closed single-image verifier that returns either `{ verified:true, assertion }` or `{ verified:false, reason }`;
+- validate PNG/proof transport and accepted FIA issuer identity;
+- distinguish an unknown key identity from a mathematically invalid signature;
+- verify the FIA Ed25519 signature;
+- enforce optional expected `front|back` side semantics;
+- reconstruct and SHA-256 the raw PNG and compare `rawRenderDigest`;
+- never return an assertion on failure;
+- classify bounded failures as malformed/missing/duplicate proof, invalid envelope, unknown issuer key, invalid signature, wrong side, render-digest mismatch, or pair mismatch;
+- verify front/back as a coherent pair only after both sides independently pass authenticity and share the same credential/revision/identity/issuer facts.
 
 ### FIN-PROOF-E — FIA issuance integration
 
