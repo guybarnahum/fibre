@@ -59,7 +59,6 @@ services/
   birth-center/
   thread-presentation/
   asset-generator/
-  c2pa-local/
 
 <deployment composition>/
   cloudflare/
