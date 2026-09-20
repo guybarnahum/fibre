@@ -46,7 +46,7 @@ test("generic asset route and Thread compatibility route resolve the same publis
     objectRef,
     bytes,
     digest,
-    { kind: "credentialed_generated_media" },
+    { kind: "provenanced_generated_media" },
   );
 
   const before = await current.api.fetch(new Request(`https://api.insidefibre.com/api/assets/${objectRef}`));
