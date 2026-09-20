@@ -216,6 +216,8 @@ test("native FIN proof protects both sides, stores them, and finalizes only afte
   assert.equal(registry.getActiveByFin(FIN).credential.credentialId, prepared.payload.credentialId);
 
   const issuance = registry.getIssuanceByCredentialId(prepared.payload.credentialId).record;
+  assert.equal(issuance.front.rawRenderDigest, prepared.payload.frontRenderDigest);
+  assert.equal(issuance.back.rawRenderDigest, prepared.payload.backRenderDigest);
   assert.equal(issuance.front.proofAssertionDigest, storedCard.front.proofAssertionDigest);
   assert.equal(issuance.back.proofAssertionDigest, storedCard.back.proofAssertionDigest);
   assert.equal(issuance.proof.validationStatus, "verified");
