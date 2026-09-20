@@ -627,7 +627,7 @@ The original FID authority/photo/render lifecycle slices are complete. The remai
 
 ### FIN-PROOF-I — rich-card verification UI — implemented
 
-- Thread Presentation carries FIA-issued cards whose proof state is verified;
+- Thread Presentation carries FIA-issued card media without duplicating proof state into the presentation packet;
 - Admin's reusable FIN-card component fetches the exact front/back PNGs it displays and asks FIA to verify each;
 - the component shows `✓ Verified by Fibre` only when both sides verify and describe the same credential;
 - an expandable view renders key/value data derived only from the trusted embedded assertions;
