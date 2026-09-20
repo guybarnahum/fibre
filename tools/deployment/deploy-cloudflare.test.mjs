@@ -132,7 +132,7 @@ test("Slice F deployment accepts services only after shallow and durable state h
   assert.equal(calls.at(-1), "viewer:https://staging.insidefibre.com");
 });
 
-test("no-C2PA deployment skips Containers and deploys FIA without the signer binding", async () => {
+test("no-C2PA deployment skips the global content-credential signer", async () => {
   const { root, state } = await fixtureRepo();
   const calls = [];
   const client = {
@@ -140,16 +140,10 @@ test("no-C2PA deployment skips Containers and deploys FIA without the signer bin
     async listSecretNames(workerName) {
       calls.push(`secrets:${workerName}`);
       const present = allSecrets();
-      if (workerName === "fibre-identity-authority-staging") present.delete("C2PA_SIGNER_TOKEN");
       return present;
     },
     async deployService({ serviceId, resolvedConfig }) {
       calls.push(`deploy:${serviceId}`);
-      if (serviceId === "fibre-identity-authority") {
-        assert.equal(resolvedConfig.vars.FIA_CONTENT_CREDENTIAL_MODE, "native");
-        assert.equal(resolvedConfig.services.some((binding) => binding.binding === "CONTENT_CREDENTIAL_SIGNER"), false);
-        assert.equal(Object.hasOwn(resolvedConfig.vars, "C2PA_SIGNER_URL"), false);
-      }
       return { output:`Published\nhttps://${serviceId}.account.workers.dev` };
     },
     async checkServiceHealth({ serviceId }) { return { ok:true, service:serviceId }; },
@@ -168,7 +162,7 @@ test("no-C2PA deployment skips Containers and deploys FIA without the signer bin
     wait:async () => {},
   });
 
-  assert.equal(result.contentCredentialMode, "native");
+  assert.equal(result.contentCredentialMode, "disabled");
   assert.deepEqual(result.deployments.map((item) => item.serviceId), [
     "asset-generator",
     "thread-presentation",
