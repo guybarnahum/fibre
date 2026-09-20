@@ -290,7 +290,7 @@ function renderFid() {
       { label: "Credential", value: active.credential.credentialId },
       { label: "Issued", value: active.credential.issuedAt },
       { label: "Issuer", value: active.issuance?.issuer?.authorityId ?? "—" },
-      { label: "C2PA", value: active.issuance?.c2pa?.validationStatus ?? "—" },
+      { label: "Proof", value: active.issuance?.proof?.validationStatus ?? "—" },
       { label: "Front", value: active.issuance?.front?.objectRef ?? "—" },
       { label: "Back", value: active.issuance?.back?.objectRef ?? "—" },
     ],
@@ -302,7 +302,7 @@ function renderFid() {
   for (const entry of fid.credentials) {
     history.append(recordButton(
       `Revision ${entry.credential.revision} · ${entry.status}`,
-      `${entry.credential.credentialId} · ${entry.issuance?.c2pa?.validationStatus ?? "no verified issuance evidence"}`,
+      `${entry.credential.credentialId} · ${entry.issuance?.proof?.validationStatus ?? "no verified issuance evidence"}`,
       () => {
         $("fidRaw").textContent = formatJson(entry);
       },
