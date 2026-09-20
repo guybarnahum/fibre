@@ -41,13 +41,11 @@ function terminalWorkflowError(job, instance) {
  *
  * The caller supplies the semantic job. This service owns only workflow
  * scheduling and durable completion observation; it does not interpret World
- * or Presentation semantics. Content credentials are an optional publication
- * enhancement: when absent, immutable generation-record, provider-output and
- * final-asset digests remain mandatory.
+ * or Presentation semantics. Immutable generation-record, provider-output and
+ * final-asset digests are the publication proof.
  */
 export function createAssetGenerationControlService({
   infra,
-  credentialSigner = null,
   workflowName = "asset_generation_v1",
 } = {}) {
   if (!infra?.objects || typeof infra.objects.get !== "function") {
@@ -85,7 +83,6 @@ export function createAssetGenerationControlService({
       }
       const proof = await verifyProvenancedAssetForPublication({
         infra,
-        credentialSigner,
         receipt,
       });
       return Object.freeze({
@@ -94,8 +91,6 @@ export function createAssetGenerationControlService({
         proof: Object.freeze({
           receipt: proof.receipt,
           generationRecord: proof.generationRecord,
-          verification: proof.verification,
-          credentialMode: proof.credentialMode,
         }),
       });
     },
