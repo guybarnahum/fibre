@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import {
   ASSET_GENERATION_COMPLETION_VERSION,
-  STORED_ASSET_RECEIPT_VERSION,
+  PROVENANCED_ASSET_RECEIPT_VERSION,
 } from "#services/asset-generator/src/index.mjs";
 import { presentationAssetSourceDigest } from "../src/presentation-asset-demand.mjs";
 import { createPresentationAssetDemandService } from "../src/presentation-asset-demand-service.mjs";
@@ -14,7 +14,6 @@ const RECEIPT_DIGEST = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 const ASSET_DIGEST = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 const RECORD_DIGEST = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
 const PROVIDER_DIGEST = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
-const MANIFEST_DIGEST = "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
 function missingThreadSlot({ source = "first" } = {}) {
   return {
@@ -46,14 +45,14 @@ function missingThreadSlot({ source = "first" } = {}) {
 
 function receiptFor(job) {
   return {
-    receiptVersion: STORED_ASSET_RECEIPT_VERSION,
+    receiptVersion: PROVENANCED_ASSET_RECEIPT_VERSION,
     jobId: job.jobId,
     status: "ready",
     assetKind: job.assetKind,
     role: job.role,
     variant: job.variant,
     objectRef: job.outputObjectRef,
-    sha256: ASSET_DIGEST,
+    sha256: PROVIDER_DIGEST,
     mediaType: "image/webp",
     width: 512,
     height: 512,
@@ -62,13 +61,6 @@ function receiptFor(job) {
     generationRecordObjectRef: "generation_record_completion",
     generationRecordDigest: RECORD_DIGEST,
     providerOutputDigest: PROVIDER_DIGEST,
-    credential: {
-      format: "fixture-content-credential",
-      signerId: "fixture-signer",
-      manifestDigest: MANIFEST_DIGEST,
-      embeddedAt: "2026-08-25T22:00:01Z",
-      verifiedAt: "2026-08-25T22:00:02Z",
-    },
     inputReferences: job.inputReferences,
     context: job.context,
   };
@@ -112,12 +104,10 @@ test("completion publishes a current pending Thread demand once, then marks it r
   let publications = 0;
   const service = createPresentationAssetCompletionService({
     infra,
-    credentialSigner: {},
     verifyReceipt: async () => ({
       proofVersion: "fixture-publication-proof",
       receipt,
       generationRecord: { job: structuredClone(job) },
-      verification: { valid: true },
     }),
     publishReady: async ({ demand, receipt: verifiedReceipt }) => {
       publications += 1;
@@ -154,8 +144,7 @@ test("completion for a superseded demand is acknowledged as stale and never publ
   let publications = 0;
   const service = createPresentationAssetCompletionService({
     infra,
-    credentialSigner: {},
-    verifyReceipt: async () => { throw new Error("stale completion must not reach credential verification"); },
+    verifyReceipt: async () => { throw new Error("stale completion must not reach provenance verification"); },
     publishReady: async () => { publications += 1; },
     now: () => "2026-08-25T22:01:01Z",
   });
@@ -173,7 +162,6 @@ test("completion refuses a queue signal whose receipt digest does not match immu
   await persistReceipt(infra, job);
   const service = createPresentationAssetCompletionService({
     infra,
-    credentialSigner: {},
     verifyReceipt: async () => { throw new Error("should not verify mismatched receipt"); },
   });
   await assert.rejects(() => service.consume({
