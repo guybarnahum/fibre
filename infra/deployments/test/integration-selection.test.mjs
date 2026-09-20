@@ -7,7 +7,6 @@ import {
   resolveServiceDeployment,
 } from "../manifest.mjs";
 import {
-  selectContentCredentialIntegration,
   selectImageIntegration,
   selectImageProviderProfile,
   selectReasoningIntegration,
@@ -66,7 +65,6 @@ test("reference-aware profile selection fails closed when deployment has no capa
     ...assetGenerator,
     integrations: Object.freeze({
       "openai-gpt-image-2-medium-v1": assetGenerator.integrations["openai-gpt-image-2-medium-v1"],
-      contentCredentials: assetGenerator.integrations.contentCredentials,
     }),
   };
   assert.throws(
@@ -75,16 +73,3 @@ test("reference-aware profile selection fails closed when deployment has no capa
   );
 });
 
-test("deployment composition constructs selected content credential client", () => {
-  const assetGenerator = resolveServiceDeployment(local, "asset-generator");
-  const signer = selectContentCredentialIntegration(assetGenerator.integrations.contentCredentials, {
-    environment: {
-      C2PA_SIGNER_URL: "http://127.0.0.1:8790",
-      C2PA_SIGNER_ID: "fibre-c2pa-node-local-v1",
-      C2PA_TRUST_POLICY: "development_signature_only",
-    },
-    fetchImpl: async () => { throw new Error("not called"); },
-  });
-  assert.equal(signer.signerId, "fibre-c2pa-node-local-v1");
-  assert.equal(signer.trustPolicy, "development_signature_only");
-});
