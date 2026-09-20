@@ -125,10 +125,15 @@ function sleep(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-async function refreshFidSection(threadId, expectedCredential = null) {
+async function refreshFidSection(threadId, expectedCredential = null, publishedIdentity = null) {
   const load = ++fidSectionLoad;
   const current = document.querySelector(".thread-observatory-page .thread-fid-section");
   if (!current) return;
+
+  if (publishedIdentity?.presentation?.presentation?.identityCard) {
+    current.replaceWith(renderFidSection(publishedIdentity, threadId));
+    return;
+  }
 
   try {
     let payload = null;
@@ -159,7 +164,8 @@ window.addEventListener("fibre:fid-card-reissued", (event) => {
   const threadId = event?.detail?.threadId ?? null;
   if (threadId === null || threadId !== renderedThreadId) return;
   const credential = event?.detail?.result?.credential ?? null;
-  void refreshFidSection(threadId, credential);
+  const identity = event?.detail?.identity ?? null;
+  void refreshFidSection(threadId, credential, identity);
 });
 
 window.addEventListener("fibre:thread-identity-updated", (event) => {
