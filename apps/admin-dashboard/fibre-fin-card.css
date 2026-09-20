@@ -12,10 +12,10 @@
 }
 button{
   display:block;
-  width:100%;
-  max-width:760px;
+  width:min(330px,100%);
   border:0;
-  padding:14px;
+  margin:14px 0;
+  padding:8px;
   background:transparent;
   color:inherit;
   perspective:1200px;
@@ -23,6 +23,11 @@ button{
   border-radius:14px;
   outline:none;
   font:inherit;
+  position:relative;
+  z-index:1;
+  transform:scale(1);
+  transform-origin:center;
+  transition:transform 180ms ease-out;
 }
 button:focus-visible{
   box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#ea7a24) 45%,transparent);
@@ -75,6 +80,10 @@ button:focus-visible{
 :host([data-side="back"]) .inner{
   transform:rotateY(180deg);
 }
+:host([data-interacting="true"]) button{
+  transform:scale(1.2);
+  z-index:2;
+}
 @media(hover:hover) and (pointer:fine){
   :host([data-side="front"]) button:hover .inner{
     transform:rotateX(-1.4deg) rotateY(2.5deg);
@@ -87,6 +96,7 @@ button:focus-visible{
   }
 }
 @media(prefers-reduced-motion:reduce){
+  button{transition:none}
   .inner{transition:none}
   .face::after{display:none}
 }
