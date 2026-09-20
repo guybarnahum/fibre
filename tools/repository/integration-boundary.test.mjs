@@ -22,10 +22,6 @@ const retiredSelectionPaths = Object.freeze([
   new URL("services/world-kernel/src/model-runtime/model-runtime.mjs", repoRoot),
   new URL("services/world-kernel/src/server.mjs", repoRoot),
   new URL("services/birth-center/src/server.mjs", repoRoot),
-  new URL("services/c2pa-local/server.mjs", repoRoot),
-  new URL("services/content-credential-signer/", repoRoot),
-  new URL("integrations/content-credentials/", repoRoot),
-  new URL("infra/deployments/content-credential-signer/", repoRoot),
   new URL("infra/deployments/asset-generator/image-provider-selection.mjs", repoRoot),
 ]);
 
