@@ -1,7 +1,7 @@
 ---
 id: fibre-cloud-runtime-infradriver-plan
 status: accepted
-last-reviewed: 2026-09-19
+last-reviewed: 2026-09-20
 canonical: true
 ---
 
@@ -9,789 +9,226 @@ canonical: true
 
 ## Purpose
 
-This plan defines the remaining engineering work required to run the complete Fibre birth-to-publication process in cloud infrastructure with no local runtime participating.
+Run Fibre's complete birth-to-publication path in cloud infrastructure without introducing a cloud-specific application architecture.
 
-The target is not merely to deploy the current Node processes somewhere remote. The target is:
+The target is:
 
-> Every Fibre runtime service executes through provider-neutral `InfraDriver` capabilities, so the same service architecture runs locally and in cloud environments while provider adapters supply persistence, scheduling, coordination, objects, queues, workflows and hosting.
+> Fibre services remain provider-neutral; `InfraDriver` and deployment composition supply persistence, scheduling, objects, queues, workflows and hosting.
 
-The acceptance path is one real Thread born in cloud infrastructure and automatically reflected on `insidefibre.com` with its admitted identity, public presentation and generated official photo.
+The acceptance path is one real Thread born in cloud infrastructure and automatically reflected through Thread Presentation and the Viewer with its admitted identity and generated media.
 
-This is deployment/runtime work. It does not create a new semantic authority and does not change the canonical visual-identity invariant, Genesis authority, Thread identity semantics or Presentation publication authority.
+This is runtime/deployment work. It does not create semantic authority.
 
-## Standing architectural constraints
+## Standing constraints
 
-### One application architecture, multiple InfraDrivers
+### One application architecture
 
-Local and cloud runtimes must be architecturally equivalent:
-
-```text
-semantic service/store
-        |
-        v
-InfraDriver capability
-        |
-        +--> local provider
-        |
-        +--> cloudflare provider
-```
-
-Provider adapters may implement a capability differently, but semantic services must not branch into separate local and cloud architectures.
-
-This applies especially to `InfraDriver.state`, `InfraDriver.scheduler` and any coordination required for restart-safe reconciliation.
-
-### Scheduler parity is mandatory
-
-`InfraDriver.scheduler` must work locally as well as in Cloudflare.
-
-A local runtime must not use `setInterval`, ad-hoc timers or process-lifetime assumptions as its semantic scheduling model while cloud uses Durable Object alarms or another durable scheduler. Both environments use the same provider-neutral scheduler contract and the same reconciliation semantics.
-
-Provider implementations may differ:
+Local and Cloudflare execution share the same service contracts:
 
 ```text
-InfraDriver.scheduler
-   local      -> local durable/testable scheduler adapter
-   cloudflare -> Durable Object alarm / other Cloudflare scheduling adapter
+Fibre service
+    |
+    v
+InfraDriver / injected integration seam
+    |
+    +--> local provider
+    |
+    +--> Cloudflare provider
 ```
 
-The scheduler contract should be the smallest interface required by actual Fibre work. Do not build a generalized scheduling framework before the concrete World/Birth reconciliation use cases require it.
+Services must not branch into “local semantics” and “cloud semantics.”
 
-### Do not over-generalize prematurely
+### Small provider-neutral capabilities
 
-For every new capability or method:
+New runtime capabilities are added only when a concrete Fibre operation needs them:
 
-1. identify the concrete Fibre operation that requires it;
-2. define the smallest provider-neutral contract that preserves that operation;
-3. implement local and cloud provider mappings;
-4. add shared conformance tests;
-5. expand only when a second real use case demonstrates the need.
+1. identify the real operation;
+2. define the smallest portable contract;
+3. implement local and Cloudflare providers;
+4. prove parity with semantic tests;
+5. expand only when a second real use case requires it.
 
-Do not design speculative lease systems, distributed-lock frameworks, job platforms or generic workflow engines when a narrower state-scoped operation is sufficient.
+Do not create speculative lock, lease, scheduler, workflow or deployment frameworks.
 
-### Explicit secret-file input
+### Durable reconciliation
 
-Cloud secret configuration tools must not silently read `.env` by default.
+Long-lived Fibre processes must survive process/Worker restart.
 
-The operator supplies the source file explicitly, for example:
+Semantic convergence therefore depends on durable state plus provider-neutral scheduling/reconciliation, not on process-local timers or request lifetime.
+
+`InfraDriver.scheduler` is the portable scheduling seam. Local and Cloudflare providers may implement it differently, but World/Birth reconciliation semantics stay identical.
+
+### Explicit secret input
+
+Operator tools never silently read an arbitrary local secret file.
 
 ```text
 npm run cloud:configure-secrets -- --file .env --env staging
 ```
 
-or another named file.
+The tool validates required values, sends each Worker only its required subset, and never writes secret values into generated config or repository files.
 
-The tool must:
-
-- require an explicit file path;
-- parse only that file;
-- know the required secret names for each target service;
-- warn clearly for every missing required secret;
-- fail before deployment when mandatory secrets are absent;
-- never print secret values;
-- upload only the subset required by each service;
-- never commit or persist copied secret values into repository files.
-
-`.env` remains a convenient possible input file, not an implicit authority or default.
-
-## Current deployment posture
-
-Cloudflare deployment already exists for:
+## Current cloud service topology
 
 ```text
-Thread Presentation
-Asset Generator
-insidefibre.com Viewer
-```
-
-The completed deployment integration proves:
-
-```text
-World
- -> authenticated Asset Generator control boundary
- -> durable generation
- -> verified canonical-root proof
- -> World Embodiment admission
- -> authenticated Thread Presentation handoff
- -> public snapshot/events/assets
- -> insidefibre.com Viewer
-```
-
-World Kernel and Birth Center now both have provider-neutral local/cloud runtime compositions in code. Authoritative World relational persistence and Birth Center provisional/provider-call durability use `InfraDriver.state`; both cloud runtimes map state and scheduler wakes to SQLite-backed Durable Object storage/alarms. Fibre Identity Authority also has a Cloudflare runtime using `InfraDriver.state`, objects and workflows, and Thread Presentation now owns the private FID lifecycle reconciliation seam used by Admin Dashboard.
-
-The repository also contains a Fibre-hosted Content Credential Signer deployment: a Cloudflare Worker fronts a Cloudflare Container running `@contentauth/c2pa-node`. FIA reaches it through a Cloudflare service binding. This closes the staging hosting shape without turning signing into an `InfraDriver` capability. These implementations prove deployment shape and local/dry-run acceptance; they do not yet claim that the complete current stack has passed live staging acceptance.
-
-## Target cloud topology
-
-```text
-Birth Center [Cloudflare]
-        |
-        v
-World Kernel [Cloudflare]
-        |
-        +----> Asset Generator [Cloudflare Worker + Workflow]
-        |            |
-        |            +--> image provider(s)
-        |            +--> C2PA signer
-        |            +--> R2
-        |
-        +----> Thread Presentation [Cloudflare]
-                         |
-                         +--> Durable Object streams/realtime
-                         +--> D1 public catalog
-                         +--> R2 public media
-                         +--> completion Queue
-                         |
-                         v
-                 api.insidefibre.com
-                         |
-                         v
-                  insidefibre.com
-```
-
-The current staging composition keeps the C2PA signer inside the Cloudflare deployment boundary: a Worker provides the service edge and a Container runs the native `@contentauth/c2pa-node` implementation. The signer remains an integration service, not an `InfraDriver` capability. FIA calls it through the `CONTENT_CREDENTIAL_SIGNER` service binding.
-
-Staging uses Fibre trust (`fibre-c2pa-self-v1` / `fibre_signature_only`) rather than claiming public C2PA Trust List acceptance. Public trust-list/conformance work and a production certificate authority remain deferred until Fibre needs them.
-
-## InfraDriver capability profile
-
-The umbrella InfraDriver vocabulary already includes:
-
-```text
-state
-streams
-objects
-catalog
-realtime
-queues
-scheduler
-workflows
-coordination
-secrets
-cache
-telemetry
-```
-
-Only capabilities required by a real deployment slice should acquire or expand executable contracts.
-
-Expected service requirements are initially:
-
-```text
-World Kernel
-  state
-  scheduler
-  coordination only if a concrete race cannot be solved by state serialization
-  telemetry as needed
-
 Birth Center
-  state
-  scheduler only where durable retry/reconciliation requires it
-
-Thread Presentation
-  streams
-  objects
-  catalog
-  realtime
-  queues
-  workflows
-
-Asset Generator
-  objects
-  queues
-  workflows
+    |
+    v
+World Kernel
+    |
+    +--> Fibre Identity Authority
+    |
+    +--> Thread Presentation
+              |
+              +--> Asset Generator workflow
+              |       |
+              |       +--> image integration
+              |       +--> immutable objects
+              |       +--> completion queue
+              |
+              +--> public discovery / media serving
 ```
 
-Do not grant services broad provider capabilities merely because the provider supports them.
-
-## Cloud Slice A — transactional state InfraDriver
-
-### Goal
-
-Implement cloud transactional state that satisfies Fibre's executable `transactional-state-v0.2` contract and the existing World/Birth guarantees:
-
-```text
-relationalStatements
-atomicWriteTransactions
-serializedWriteTransactions
-durableCommitBeforeAcknowledgement
-transactionalReads
-schemaMigrations
-consistencyScope = single_named_scope
-```
-
-### Preferred Cloudflare mapping
-
-Use SQLite-backed Durable Object storage for one named Fibre state scope unless implementation evidence shows it cannot satisfy the contract.
-
-Conceptually:
-
-```text
-scope "world"
- -> FibreTransactionalStateDurableObject("world")
-
-scope "birth-center"
- -> FibreTransactionalStateDurableObject("birth-center")
-```
-
-A generic state Durable Object is preferred over separate World/Birth state classes unless their concrete requirements diverge.
-
-### Required port
-
-Cloudflare must implement the existing state interface rather than invent a second persistence API:
-
-```text
-state.open(scopeId, options)
-state.guarantees(scopeId)
-
-session.exec
-session.prepare
-session.transaction(callback)
-session.close
-```
-
-### Local parity
-
-The local provider must implement the same contract and shared conformance tests. Local SQLite may remain the provider implementation, but services receive it only through `InfraDriver.state`.
-
-### Gate
-
-The same transactional state contract suite passes against local and Cloudflare providers, including serialized writes, rollback, durable commit, synchronous callbacks, transactional reads and read-only mutation rejection. **Completed before Slice B.**
-
-## Cloud Slice B — World persistence portability
-
-### Goal
-
-Remove direct database-path and filesystem persistence assumptions from authoritative World runtime composition.
-
-Before this slice, several World stores still opened the shared local database directly. They now receive provider-neutral storage context:
-
-```text
-{
-  infraDriver,
-  stateScopeId: "world"
-}
-```
-
-or an equivalent state session abstraction.
-
-### Migration rule
-
-Do not create Cloudflare-specific variants of every World store.
-
-Target:
-
-```text
-World semantic store
- -> InfraDriver.state
- -> local SQLite adapter OR Cloudflare state adapter
-```
-
-### Schema migrations
-
-World schema initialization/migration must operate through the state capability. Starting an empty state scope must deterministically establish the required schema before serving mutations.
-
-### Gate
-
-- authoritative World persistence runs through `InfraDriver.state`;
-- no production World store depends on local filesystem/database paths outside the local provider boundary;
-- existing local tests run through the local InfraDriver;
-- the same real `WorldStore` migration/commit/reopen/rollback/integrity contract passes against local and Cloudflare state providers;
-- repository policy rejects renewed direct SQLite imports in production World source.
-
-**Implementation status:** closed on `agent/cloud-runtime-infradriver`; authoritative World relational persistence is provider-neutral and exact-head branch validation passed.
-
-## Cloud Slice C — provider-neutral scheduler and World cloud runtime
-
-### Scheduler contract
-
-First extract the actual durable scheduling requirements from current reconciliation loops, especially:
-
-```text
-pending Genesis Presentation delivery
-pending canonical-root reconciliation
-pending admitted-Embodiment -> Presentation handoff
-```
-
-Define the minimum scheduler interface required for these operations.
-
-Both providers implement it:
-
-```text
-local scheduler provider
-Cloudflare scheduler provider
-```
-
-The local runtime must use this scheduler too; no separate timer architecture is allowed.
-
-The executable scheduler contract is `scheduler-v0.1` with the same provider-neutral surface in both environments: `get(scopeId)`, `schedule(scopeId, scheduledTimeMs)`, and `cancel(scopeId)`. Local maps that contract to a timer adapter; Cloudflare maps it to the alarm on the same named World Durable Object scope. World reconciliation, not the provider, decides what work a wake means.
-
-### Cloud World deployment
-
-Add:
-
-```text
-infra/deployments/world-kernel/cloudflare/
-  worker.mjs
-  wrangler.jsonc
-  README.md
-```
-
-and declare World in `infra/deployments/environments/cloudflare.yaml`.
-
-World cloud composition should use:
-
-- cloud `InfraDriver.state`;
-- cloud `InfraDriver.scheduler`;
-- the minimum coordination facility actually required;
-- existing provider-neutral Asset Generator and Presentation boundaries.
-
-Where practical, Cloudflare service bindings may back the existing `fetch`-shaped service boundaries. The semantic HTTP contract remains the same; cloud deployment should not require public DNS between internal Fibre services.
-
-### Recovery gate
-
-Prove:
-
-```text
-birth/pending work
- -> Worker instance disappears
- -> durable scheduler resumes reconciliation
- -> same canonical root
- -> same admitted Embodiment
- -> same current Presentation demand
- -> no duplicate semantic admission
-```
-
-**Implementation status:** closed on `agent/cloud-runtime-infradriver`; the shared scheduler contract drives both local and Cloudflare World reconciliation, the Cloudflare Worker hosts one named SQLite-backed World Durable Object using `state + scheduler`, service bindings preserve the Asset Generator and Thread Presentation fetch contracts, the recovery test proves a scheduled wake survives runtime disposal and converges without duplicate canonical Embodiment admission, and exact-head validation including the World Wrangler dry-run passed. Live production deployment is not claimed by this slice.
-
-## Cloud Slice D — Birth Center portability and cloud runtime
-
-### Goal
-
-Move Birth Center durable provisional state and provider-call recovery through `InfraDriver.state` and any required scheduler capability.
-
-Add:
-
-```text
-infra/deployments/birth-center/cloudflare/
-  worker.mjs
-  wrangler.jsonc
-  README.md
-```
-
-Birth Center remains provisional authority. World remains the only authority that makes a Thread live.
-
-Cloud Birth Center should publish to World through the existing provider-neutral boundary, backed by a Cloudflare service binding where appropriate.
-
-Initial birth mutation endpoints should remain private/operator-controlled rather than becoming an unauthenticated public birth API.
-
-### Gate
-
-```text
-cloud Birth Center
- -> durable provisional birth
- -> cloud World publication
- -> one authoritative live Thread
-```
-
-Retry/restart may preserve provisional work but may not create a partially born authoritative Thread.
-
-**Implementation status:** closed on `agent/cloud-runtime-infradriver`; Birth Center provisional state and durable model-invocation witnesses now use `InfraDriver.state`, local/cloud Birth runtimes use the same `state + scheduler` shape, the Cloudflare Birth Durable Object resumes pending publication after runtime loss, exact World birth replay is idempotent while divergent replay fails closed, and exact-head validation including the Birth Center Wrangler dry-run passed. Live resource provisioning/deployment is not claimed by this slice.
-
-## Cloud Slice E — resource provisioning and configuration closure
-
-### Required production resources
-
-At minimum:
-
-```text
-World transactional state Durable Object namespace
-Birth transactional state Durable Object namespace
-Presentation Durable Object namespace
-Presentation D1 catalog
-shared presentation/generated-media R2 bucket
-Asset Generation Workflow
-asset completion Queue
-asset completion DLQ
-Workers and service bindings
-Fibre Identity Authority Durable Object
-Content Credential Signer Worker + Container
-insidefibre.com custom domain
-api.insidefibre.com custom domain
-```
-
-The existing Presentation D1 binding must be connected to a concrete provisioned production database rather than remaining only a dry-run placeholder.
-
-### Provision command
-
-Create an idempotent operator command such as:
-
-```text
-npm run cloud:provision -- --env staging
-```
-
-It should verify/create required resources and report provider identifiers without placing provider-native identifiers into semantic Thread records.
-
-Production resource names and IDs are operational configuration, not secrets.
-
-**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:provision` derives resource names from the checked Wrangler topology, creates/verifies D1/R2/Queue resources idempotently, reapplies the idempotent Presentation catalog schema, and writes resolved provider IDs/configuration only under ignored `.fibre/cloudflare/<environment>/`. Staging uses isolated `-staging` names. Current Cloudflare lifecycle is respected rather than emulated: Durable Object namespaces are reconciled by Worker `exports` on deploy, while Workflows, service bindings, Workers and custom domains are deploy-managed. The separate Viewer repository remains the owner of `insidefibre.com`; Fibre records that domain as an external deployment dependency. The focused operator suite, broad local gates, exact-head validation and all four Wrangler dry-runs passed. No live Cloudflare provisioning is claimed by the ordinary test gate.
-
-## Secrets and credentials
-
-### Application secrets
-
-Expected secret inventory:
-
-```text
-OPENAI_API_KEY
-BFL_API_KEY
-GEMINI_API_KEY              when a selected runtime integration uses Gemini
-FIBRE_PRIVATE_TOKEN
-FIBRE_ADMIN_TOKEN
-C2PA_SIGNER_TOKEN
-C2PA_SIGNER_CERT_BASE64
-C2PA_SIGNER_KEY_BASE64
-FIA_ISSUER_JWK
-FIA_CREDENTIAL_KEY_BASE64
-```
-
-Each secret is exposed only to services that require it.
-
-### Application configuration that is not secret
-
-Examples:
-
-```text
-C2PA_SIGNER_ID
-C2PA_TRUST_POLICY
-VIEWER_ORIGIN
-service/binding names
-D1 database ID
-R2 bucket names
-queue names
-custom domains
-```
-
-In local/legacy HTTP composition, `C2PA_SIGNER_URL` remains ordinary configuration rather than a credential. The Cloudflare FIA runtime does not require an operator-supplied signer URL: its transport uses the `CONTENT_CREDENTIAL_SIGNER` service binding while the checked Wrangler config retains an internal locator for the provider-neutral HTTP signer adapter.
-
-### Deployment-only credentials
-
-Cloudflare operator/CI credentials are distinct from application runtime secrets:
-
-```text
-CLOUDFLARE_API_TOKEN
-CLOUDFLARE_ACCOUNT_ID
-```
-
-These authorize Wrangler/CI to provision and deploy infrastructure. They are stored in operator credential storage or CI secret storage and are not injected into Fibre Workers unless a concrete runtime requirement exists.
-
-### `FIBRE_PRIVATE_TOKEN`
-
-This is service-to-service application authentication, not an operator credential.
-
-For the first cloud deployment, one cryptographically random shared value is acceptable across the participating private service boundaries. Later service-specific credentials may replace it if a concrete security requirement justifies the added complexity.
-
-### `FIBRE_ADMIN_TOKEN`
-
-This is distinct from `FIBRE_PRIVATE_TOKEN` and protects human/operator repair or administrative actions.
-
-Do not reuse provider API keys or the private service token as the admin credential.
-
-### C2PA signer
-
-The current Cloudflare signer contract is:
-
-```text
-CONTENT_CREDENTIAL_SIGNER   Cloudflare service binding from FIA
-C2PA_SIGNER_TOKEN           secret shared only with authenticated signer clients
-C2PA_SIGNER_CERT_BASE64     signer Worker secret
-C2PA_SIGNER_KEY_BASE64      signer Worker secret
-C2PA_SIGNER_ID              checked signer configuration
-C2PA_TRUST_POLICY           checked signer configuration
-```
-
-The checked staging identity is `fibre-c2pa-self-v1` with `fibre_signature_only`. The certificate secret contains the signer certificate plus its issuing Fibre CA certificate; verification succeeds only when the credential chains to that configured Fibre CA. Public C2PA Trust List validation is deliberately deferred.
-
-Private signing-key custody is owned by the signer deployment. FIA holds no C2PA private key and reaches the signer through the service binding. The native C2PA dependency runs in the Cloudflare Container rather than in the Worker isolate.
-
-## Secret configuration tool
-
-Add an operator tool such as:
-
-```text
-tools/deployment/configure-cloudflare-secrets.mjs
-```
-
-Required invocation shape:
-
-```text
-npm run cloud:configure-secrets -- --file <path> --env <environment>
-```
-
-There is no implicit `.env` read.
-
-The tool must validate the selected environment and target services, then print names/status only, for example:
+Deployable Fibre services are:
 
 ```text
 asset-generator
-  OK      OPENAI_API_KEY
-  OK      BFL_API_KEY
-  MISSING C2PA_SIGNER_TOKEN
-  OK      FIBRE_PRIVATE_TOKEN
+thread-presentation
+world-kernel
+fibre-identity-authority
+birth-center
 ```
 
-Missing optional secrets may warn. Missing mandatory secrets must fail before deployment.
+There is no separate generated-media or FIN signing service.
 
-A supplied `.env` file may be used:
+## Proof and provenance boundaries
+
+### FIN
+
+Fibre Identity Authority owns native FIN proof.
+
+FIN PNGs carry a canonical Fibre assertion signed with the FIA Ed25519 issuer key and embedded in the `fiDP` PNG chunk. FIA self-verifies the proof before immutable storage.
+
+FIN authenticity answers whether FIA issued the exact card bytes; current active/superseded/revoked state is a separate lifecycle query. FIN cards do not expire.
+
+### Generated media
+
+Asset Generator owns immutable generation provenance:
 
 ```text
+AssetGenerationJob
+  -> provider operation / GenerationAttempt
+  -> immutable staged provider output
+  -> GenerationRecord
+  -> immutable final asset
+  -> StoredAssetReceipt
+  -> AssetGenerationCompletion
+```
+
+Thread Presentation independently verifies that provenance before authoring `media.ready`.
+
+If generated PNGs later need portable embedded signatures, Fibre will reuse/extract the generic canonical-JSON + Ed25519 + PNG-envelope mechanism proven by FIN, with an asset-specific assertion schema. That does not add a second trust stack.
+
+## Cloudflare resource ownership
+
+The deployment layer owns concrete Cloudflare configuration:
+
+- Workers;
+- Workflows;
+- Queues and DLQs;
+- D1 databases;
+- R2 buckets;
+- Durable Objects;
+- service bindings;
+- custom domains;
+- Worker secrets and non-secret vars.
+
+Services own none of those provider identifiers.
+
+Provider-native resource IDs never become Fibre semantic identities.
+
+## Operator flow
+
+### Prepare
+
+```bash
+npm run cloud:provision -- --env staging
 npm run cloud:configure-secrets -- --file .env --env staging
 ```
 
-but `.env` is simply the caller-selected input file.
+`cloud:provision` is idempotent. It reconciles independently managed resources, applies schema where required, and writes resolved provider configuration under ignored `.fibre/cloudflare/<environment>/`.
 
-**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:configure-secrets` requires an explicit file, validates every mandatory service value before any upload, sends only each Worker's secret subset through Wrangler stdin, and never writes secret values into repository or generated config files. The cloud signer token/certificate/key and FIA credential keys are topology-declared secrets; signer identity/trust policy are checked non-secret configuration. Cloud FIA uses the signer service binding, so operators do not provide a public `C2PA_SIGNER_URL` for staging. Wrangler version-secret bulk is used so secret configuration creates a Worker version without intentionally switching traffic. The focused operator suite, broad local gates and exact-head validation passed; first empty-environment behavior still requires the Slice I rebuild proof.
+### Validate
 
-## Cloud Slice F — deploy command and health closure
+The standing repository gate remains:
 
-Create a reproducible deployment command:
+```bash
+npm run slice:validate
+```
 
-```text
+Deployment-specific dry-runs should prove that checked Wrangler configuration still composes:
+
+```bash
+npm run deploy:asset-generator:cloudflare:dry
+npm run deploy:thread-presentation:cloudflare:dry
+npm run deploy:world-kernel:cloudflare:dry
+npm run deploy:fibre-identity-authority:cloudflare:dry
+npm run deploy:birth-center:cloudflare:dry
+```
+
+A dry-run proves composition, not live provider availability or true end-to-end acceptance.
+
+### Deploy
+
+```bash
 npm run cloud:deploy -- --env staging
 ```
 
-The implemented deployment/health order is:
+Deployment proceeds in dependency order:
 
 ```text
-1. repository/deployment validation
-2. Cloudflare operator authentication check
-3. idempotent Slice E resource provisioning verification
-4. required remote secret-name verification
-5. Content Credential Signer deploy + /healthz identity/trust acceptance
-6. Asset Generator deploy + /healthz
-7. Thread Presentation deploy + /healthz
-8. World Kernel deploy + /healthz
-9. Fibre Identity Authority deploy + /healthz
-10. Birth Center deploy + /healthz
-11. non-mutating Thread Presentation discovery acceptance
-12. external Viewer reachability verification
-```
-
-Wrangler automatic resource provisioning is disabled during deploy so Slice E remains the resource authority. Deployment must not print secret values.
-
-The separate `insidefibre.com` Viewer repository is not mutated by this command; Fibre verifies the configured Viewer endpoint as an external dependency. A genuine new Thread birth and full birth-to-Viewer acceptance proof belong to Slice G rather than being hidden inside deployment orchestration.
-
-**Implementation status:** closed on `agent/cloud-runtime-infradriver`. `cloud:deploy` enforces validation/auth/resource/secret preflight, deploys the Content Credential Signer first and then the five dependent Fibre Cloudflare services in service-binding dependency order, checks each service health, then checks the public Presentation discovery API and Viewer reachability. Focused Slice F tests passed locally, broad local validation passed (`1045/1045` active and `1050/1050` all), and exact-head GitHub validation including all four Wrangler dry-runs passed. This slice does not claim that a live staging deployment has actually been executed or that a genuine cloud Thread has been born; those are Slice G acceptance work.
-
-## Cloud Slice G — full cloud in-vivo E2E
-
-### Acceptance condition
-
-No local service process participates.
-
-Create one genuine new Thread through the deployed Birth Center and record its `genesisId` and `threadId`.
-
-Verify in order:
-
-```text
+Asset Generator
+Thread Presentation
+World Kernel
+Fibre Identity Authority
 Birth Center
- -> provisional state durably recorded
-
-World
- -> authoritative birth transaction
- -> civil identity
- -> canonical visual identity request
-
-Asset Generator
- -> canonical-root workflow
- -> provider generation
- -> credentialed asset
- -> durable receipt/object
-
-World
- -> verified root admission
- -> canonical Embodiment
-
-Thread Presentation
- -> birth projection
- -> admitted visual projection
- -> Fibre Identity Card
- -> official-photo demand
-
-Asset Generator
- -> reference-conditioned official photo
- -> completion Queue
-
-Thread Presentation
- -> media.ready
- -> updated public snapshot
-
-Public API
- -> Thread appears in /api/threads
- -> snapshot/events readable
- -> official-photo bytes served with provenance headers
-
-insidefibre.com
- -> same Thread renders automatically
- -> official photo renders from Presentation public asset route
 ```
 
-No fixture mutation endpoints, manual R2 writes, manual Presentation seeding or local World/Birth process may participate in this acceptance proof.
+Each service must answer `/healthz` with the expected service identity before dependent acceptance continues.
 
-## Cloud Slice H — restart/failure hardening
+The Viewer remains independently deployed; Fibre verifies the required Viewer endpoint but does not mutate that repository.
 
-Run controlled failures at minimum around:
+## Required cloud acceptance
 
-```text
-provider transient failure
-World restart while root pending
-Presentation unavailable during handoff
-completion Queue retry
-Birth request replay
-duplicate visual reconcile
-duplicate workflow start
-already-existing immutable asset
-viewer reload during snapshot transition
-```
+A cloud deployment is not closed by Worker deployment alone.
 
-Required invariant after recovery:
+The acceptance proof must show:
 
-```text
-one Thread
-one civil identity
-one canonical root
-one admitted Embodiment
-one current official-photo demand
-one admitted public official-photo asset
-no divergent identity authority
-```
+1. a clean exact Git SHA was deployed;
+2. one genuine cloud birth succeeds;
+3. durable World state survives restart/re-entry;
+4. canonical visual identity converges through Asset Generator;
+5. generated bytes and provenance survive provider/workflow retries;
+6. Thread Presentation admits exactly one current media projection;
+7. FIA can issue and verify a native-proof FIN card when requested;
+8. public discovery and asset serving expose only authorized presentation state;
+9. the Viewer can consume the resulting Thread without reaching internal stores/services;
+10. replay/reconciliation does not create duplicate semantic events or duplicate provider work.
 
-## Cloud Slice I — empty-environment rebuild proof
+## Failure semantics
 
-Create a staging environment from no pre-existing Fibre runtime resources and prove the environment can be recreated by documented commands plus explicitly supplied credentials/secrets.
+Infrastructure failure must remain operational failure.
 
-Conceptual operator flow:
+Examples:
 
-```text
-npm run cloud:provision -- --env staging
-npm run cloud:configure-secrets -- --file <operator-selected-file> --env staging
-npm run cloud:deploy -- --env staging
-npm run cloud:e2e -- --env staging
-```
+- provider timeout does not become semantic media unavailability;
+- queue redelivery does not create a second `media.ready`;
+- Worker restart does not create a second birth or identity;
+- failed FIN reissue does not supersede the prior active credential;
+- ambiguous provider submission is not blindly replayed.
 
-The final command must produce evidence that a newly born staging Thread appears in the staging Viewer.
+Semantic state advances only after the owning authority has verified durable prerequisites.
 
-## Staging before production
+## Completion condition
 
-Use isolated staging resources before production:
-
-```text
-separate World state
-separate Birth state
-separate Presentation catalog
-separate R2 bucket where practical
-separate queues/DLQ
-separate Worker deployments
-separate FIBRE_PRIVATE_TOKEN
-separate FIBRE_ADMIN_TOKEN
-```
-
-Provider API credentials may be shared initially if desired, but state and internal authentication should remain environment-isolated.
-
-Suggested public endpoints:
-
-```text
-staging.insidefibre.com
-api.staging.insidefibre.com
-```
-
-## Observability requirement
-
-Before live cloud births, structured logs must allow an operator to answer:
-
-> Where did Thread `<threadId>` stop?
-
-Carry stable identifiers where applicable:
-
-```text
-threadId
-genesisId
-embodimentId
-jobId
-mediaId
-eventId
-```
-
-Useful lifecycle events include:
-
-```text
-birth.accepted
-genesis.persisted
-presentation.delivered
-visual.root.requested
-visual.root.ready
-embodiment.admitted
-presentation.visual.reconciled
-media.requested
-media.ready
-viewer.discoverable
-```
-
-Never log authentication tokens, API keys or private signing material.
-
-## Documentation/config closure
-
-As implementation proceeds:
-
-- keep `infra/README.md` aligned with local/cloud parity;
-- keep `.env.example` as a name/documentation inventory only, never a deployment source of truth;
-- document every required secret/config name and owning service;
-- keep `cloudflare.yaml` authoritative for selected runtime/infra/integration composition;
-- update deployment READMEs with actual resource names and provisioning commands;
-- preserve explicit distinction between secrets, non-secret runtime configuration and deployment-only operator credentials.
-
-## Current gap summary
-
-```text
-InfraDriver abstraction                         EXISTS
-transactional state contract                    EXISTS
-local transactional state                       EXISTS
-Cloud streams/objects/catalog/realtime           EXISTS
-Cloud queues/workflows                          EXISTS
-Asset Generator cloud runtime                   EXISTS
-Thread Presentation cloud runtime               EXISTS
-insidefibre.com public contract E2E             EXISTS
-
-Cloud transactional state provider              EXISTS
-World stores fully on InfraDriver.state          EXISTS
-provider-neutral scheduler + local parity       EXISTS
-World Cloudflare runtime                        EXISTS
-Birth persistence through InfraDriver.state      EXISTS
-Birth Cloudflare runtime                        EXISTS
-explicit resource provisioning                  EXISTS
-explicit secret-file configuration tool         EXISTS
-cloud deploy/health orchestration               EXISTS
-Fibre C2PA Worker+Container deployment       EXISTS; LIVE STAGING ACCEPTANCE NOT YET RUN
-full cloud one-Thread in-vivo E2E               GAP
-cloud failure/restart acceptance                GAP
-empty-environment rebuild proof                 GAP
-```
-
-## Stop condition
-
-This plan is closed only when:
-
-```text
-operator-selected secret/config input
- -> reproducible cloud provisioning
- -> all Fibre application runtimes deployed
- -> no local process participates
- -> one new Thread is born
- -> World authority survives restart
- -> canonical root is generated and admitted
- -> Presentation publishes the Thread
- -> official photo is generated from the canonical root
- -> api.insidefibre.com exposes the final public state
- -> insidefibre.com renders the Thread
- -> retry/restart does not duplicate semantic authority
-```
-
-The implementation should remain as small as possible while satisfying this path. Infrastructure abstraction is justified only by the concrete Fibre runtime behavior it enables or protects.
+This plan is satisfied when the same Fibre application architecture runs locally and on Cloudflare, the repository gate passes, deployment composition is reproducible from exact source, and a genuine cloud Thread can move birth -> durable life -> generated media -> presentation -> Viewer without any local runtime or hidden provider-specific semantic path.
