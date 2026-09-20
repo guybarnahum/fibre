@@ -351,3 +351,69 @@ test("Presentation visual reconciliation fails immediately when official-photo W
     && record.error.retryable === false
   )), true);
 });
+
+
+test("an enacted public present becomes durable Presentation and can request a scene depiction", async () => {
+  const threadId = "thr_public_present_continuity";
+  const present = {
+    presentVersion:"thread-public-present-v0.1",
+    situationId:"sit_public_present_continuity",
+    establishedAt:"2026-09-20T17:00:00Z",
+    phase:"at_place",
+    location:{ kind:"place", place:{ displayName:"Harbor café", region:"Haifa District" } },
+    mediatedContext:null,
+    activity:"Sketching boats moving through the harbor.",
+    reason:null,
+    participants:[],
+    depictionMediaId:"media_present_continuity",
+  };
+  let catalog = { publiclyVisible:true };
+  let appended = null;
+  let demand = null;
+
+  const reconciler = createThreadPresentationVisualPublicationReconciler({
+    presentationServer:{
+      async getSnapshot() {
+        return {
+          pointer:{ threadId, objectRef:"snapshot_present", snapshotDigest:`sha256:${"e".repeat(64)}` },
+          snapshot:{ presentation:{ manifest:{ threadId }, visualIdentity:null }, media:{ assets:[] }, provenance:{} },
+        };
+      },
+      async publishSnapshot() { throw new Error("not reached"); },
+      async appendEvent(event) {
+        appended = event;
+        return { event:{ ...event, sequence:7 }, duplicate:false };
+      },
+    },
+    infra:{
+      catalog:{
+        async get() { return catalog; },
+        async upsert(_key, value) { catalog = value; return value; },
+      },
+    },
+    selectProviderProfile({ requiresReferenceObjects }) {
+      assert.equal(requiresReferenceObjects, false);
+      return "scene-provider";
+    },
+    createDemandService() {
+      return {
+        async reconcile(input) {
+          demand = input;
+          return { changed:true };
+        },
+      };
+    },
+    createVisualRewrite() { return { async project() { throw new Error("not reached"); } }; },
+    createIdentityRewrite() { return { async ensureOfficialIdentityMedia() { throw new Error("not reached"); } }; },
+    planSlots() { return { slots:[] }; },
+  });
+
+  const result = await reconciler.publishCurrentPresent({ threadId, present });
+
+  assert.equal(appended.kind, "present.updated");
+  assert.equal(appended.payload.situationId, present.situationId);
+  assert.equal(catalog.currentPresent.event.payload.activity, present.activity);
+  assert.deepEqual(demand.scope, { entityKind:"experience", entityRef:present.situationId });
+  assert.equal(demand.slots[0].role, "present_scene");
+  assert.equal(result.event.sequence, 7);
+});

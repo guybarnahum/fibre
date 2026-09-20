@@ -1,3 +1,5 @@
+import { THREAD_PRESENTATION_STREAM_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
+import { planCurrentPresentDepiction } from "./current-present-depiction.mjs";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
 
 const TERMINAL_WORKFLOW_STATUSES = new Set(["errored", "terminated"]);
@@ -148,6 +150,78 @@ function reconciliationFailure(error) {
     category: "reconciliation",
     code,
     retryable: error?.retryable === true,
+  });
+}
+
+async function retainLatestPresent(catalog, channelId, event, channelRecord) {
+  const prior = channelRecord?.currentPresent;
+  if (Number.isSafeInteger(prior?.sequence) && prior.sequence > event.sequence) return prior;
+  const currentPresent = Object.freeze({ sequence:event.sequence, event });
+  await catalog.upsert(channelId, { ...channelRecord, currentPresent });
+  return currentPresent;
+}
+
+async function publishCurrentPresent({
+  infra,
+  presentationServer,
+  selectProviderProfile,
+  demandService,
+}, { threadId, present } = {}) {
+  if (!infra?.catalog
+    || typeof infra.catalog.get !== "function"
+    || typeof infra.catalog.upsert !== "function") {
+    throw new TypeError("current present publication requires presentation catalog access");
+  }
+  if (!presentationServer
+    || typeof presentationServer.getSnapshot !== "function"
+    || typeof presentationServer.appendEvent !== "function") {
+    throw new TypeError("current present publication requires presentation snapshot and stream access");
+  }
+
+  const channelId = threadPresentationChannelId(threadId);
+  const [current, catalog] = await Promise.all([
+    presentationServer.getSnapshot(channelId),
+    infra.catalog.get(channelId),
+  ]);
+  if (current === null || current.pointer.threadId !== threadId || catalog?.publiclyVisible !== true) {
+    const error = new Error(`Thread ${threadId} does not have an admitted public presentation`);
+    error.code = "THREAD_PRESENTATION_NOT_PUBLIC";
+    error.retryable = true;
+    throw error;
+  }
+
+  const accepted = await presentationServer.appendEvent({
+    streamVersion:THREAD_PRESENTATION_STREAM_VERSION,
+    eventId:`present_${present?.situationId ?? "invalid"}`,
+    threadId,
+    channelId,
+    occurredAt:present?.establishedAt,
+    emittedAt:present?.establishedAt,
+    kind:"present.updated",
+    provenanceRef:present?.situationId,
+    sourceReferences:[present?.situationId],
+    payload:present,
+  });
+  await retainLatestPresent(infra.catalog, channelId, accepted.event, catalog);
+
+  const slot = planCurrentPresentDepiction({
+    present:accepted.event.payload,
+    presentation:current.snapshot.presentation,
+  });
+  const providerProfile = selectProviderProfile({
+    requiresReferenceObjects:slot.referenceObjectRefs.length > 0,
+  });
+  const depiction = await demandService.reconcile({
+    scope:{ entityKind:"experience", entityRef:accepted.event.payload.situationId },
+    slots:[slot],
+    requestedAt:accepted.event.payload.establishedAt,
+    providerProfile,
+  });
+
+  return Object.freeze({
+    event:accepted.event,
+    duplicate:accepted.duplicate,
+    depiction,
   });
 }
 
@@ -317,6 +391,14 @@ export function createThreadPresentationVisualPublicationReconciler({
         jobId: active.demand.job.jobId,
         workflowStatus: active.dispatch?.workflowStatus ?? null,
       });
+    },
+    publishCurrentPresent(input = {}) {
+      return publishCurrentPresent({
+        infra,
+        presentationServer,
+        selectProviderProfile,
+        demandService,
+      }, input);
     },
   });
 }
