@@ -40,7 +40,6 @@ The portable runtime is constructed as:
 createAssetGenerationRuntime({
   infra,
   provider,
-  credentialSigner,
 })
 ```
 
