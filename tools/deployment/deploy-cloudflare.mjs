@@ -286,11 +286,6 @@ export async function deployCloudflareStack({
     if (!["fibre_signature_only", "c2pa_trust_list"].includes(trustPolicy)) {
       throw new Error(`unsupported cloud C2PA trust policy ${trustPolicy}`);
     }
-    const fiaSigner = (resolvedConfigs["fibre-identity-authority"].config.services ?? [])
-      .find((binding) => binding?.binding === "CONTENT_CREDENTIAL_SIGNER");
-    if (fiaSigner?.service !== signerConfig.name) {
-      throw new Error("FIA CONTENT_CREDENTIAL_SIGNER must target the deployed Fibre signer");
-    }
   }
 
   const deployments = [];
