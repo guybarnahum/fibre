@@ -11,7 +11,7 @@ canonical: false
 
 Define the Fibre Identity Card (FID Card) as a later-issued, cryptographically verifiable credential for an already-born Thread without moving FIN or Thread identity authority into presentation or rendering code.
 
-FIN-card tamper evidence follows [ADR-0022](../decisions/ADR-0022-fid-native-proof.md): Fibre-native FIA Ed25519 proof is the primary protection mechanism; C2PA is optional future interoperability rather than an issuance dependency.
+FIN-card tamper evidence follows [ADR-0022](../decisions/ADR-0022-fid-native-proof.md): Fibre-native FIA Ed25519 proof is the credential's protection mechanism.
 
 Three identities must remain distinct:
 
@@ -94,9 +94,7 @@ issuer {
 }
 ```
 
-The current Cloudflare implementation already provides this issuer through `FIA_ISSUER_JWK` and WebCrypto Ed25519. FIN-card proof reuses that identity rather than introducing X.509, C2PA trust lists, Docker, Wasm, or a second signing service.
-
-C2PA remains a possible future interoperability wrapper for third-party validators. It is not required for Fibre-native FIN-card authenticity or activation.
+The current Cloudflare implementation already provides this issuer through `FIA_ISSUER_JWK` and WebCrypto Ed25519. FIN-card proof reuses that identity directly, so FIA needs no second signing service or parallel trust system.
 
 ## Issuance API principle
 
@@ -336,7 +334,7 @@ The protected machine credential **includes the exact normalized FID photo used 
 
 ## Fibre-native FIN-card proof
 
-Fibre-native FIN-card authenticity uses the FIA issuer key already present in the runtime. No C2PA runtime, X.509 chain, Container, Docker image, Wasm module, or third-party signing service is required.
+Fibre-native FIN-card authenticity uses the FIA issuer key already present in the runtime. The protection path stays inside the FIA trust boundary.
 
 The proof is intentionally distinct from the protected machine credential:
 
@@ -403,12 +401,6 @@ Rules:
 - a verifier returns the embedded assertion only after both the FIA signature and PNG binding validate.
 
 The assertion/signature contract is implemented in `services/fibre-identity-authority/src/fid-card-proof.mjs`. PNG transport is implemented in `fid-card-proof-png.mjs` using one private ancillary `fiDP` chunk inserted immediately before `IEND`. The chunk is intentionally marked unsafe-to-copy so generic image editors should not preserve it after modifying image data. Embedding is deterministic, does not change visible pixels, and extraction reconstructs the original raw rendered PNG byte-for-byte. Strict authenticity decisions are implemented in `fid-card-proof-verifier.mjs`.
-
-### C2PA interoperability is optional
-
-Fibre may later wrap the same public assertion in C2PA for interoperability with third-party Content Credentials tooling. Such a wrapper must remain downstream of FIA authority and must not be required for Fibre-native issuance, verification, or lifecycle semantics.
-
-The existing C2PA-specific FIN-card code is transitional implementation debt from the previous plan and may remain temporarily while the native proof path is introduced. Generated-media provenance may continue to use C2PA independently; FIN-card identity protection no longer depends on that architecture.
 
 ## Front/back cryptographic binding
 
@@ -626,13 +618,14 @@ The original FID authority/photo/render lifecycle slices are complete. The remai
 - re-verify the immutable stored front/back objects during finalization;
 - compare stored proof assertion digests with the admitted proof evidence;
 - re-open the protected machine credential and require the trusted embedded assertions to match it exactly before registry activation;
-- keep legacy `c2pa` and `disabled` modes only as explicit transitional compatibility paths;
-- keep the existing C2PA-shaped issuance evidence slot temporarily disabled for native cards until FIN-PROOF-F replaces that persistence schema.
 
-### FIN-PROOF-F — registry/storage evidence
+### FIN-PROOF-F — registry/storage evidence — implemented
 
-- replace C2PA-specific FIN issuance metadata with native proof metadata;
-- retain raw render digest, protected-object digest, machine-credential digest, credential ID and revision.
+- persist native proof evidence directly in the immutable issuance record;
+- record proof format, schema, envelope version, FIA signer key ID and verified status once per credential;
+- record the trusted assertion digest alongside each stored front/back object;
+- retain protected-object digest, machine-credential digest, credential ID and revision;
+- require persisted proof signer identity to match the FIA issuer.
 
 ### FIN-PROOF-G — verification API
 
@@ -648,11 +641,6 @@ The original FID authority/photo/render lifecycle slices are complete. The remai
 
 - surface authenticity and current status through the reusable FIN-card presentation;
 - display trusted values from the verifier rather than OCR or duplicated page state.
-
-### FIN-PROOF-J — retire FIN-card C2PA deployment baggage
-
-- remove the FIN-specific dependency on ContentCredentialSigner, Containers, Docker, C2PA secrets and signer health checks;
-- retain C2PA only where independently justified for generated-media provenance or future interoperability.
 
 ## Acceptance criteria
 
@@ -691,4 +679,4 @@ The FID vertical is not complete until all of these hold:
 | FID status | Fibre Identity Authority / FidCardRegistry | active/superseded/revoked/expired authority |
 | Thread Presentation | Thread Presentation | consumes active admitted projection only |
 
-Nothing in this contract makes card pixels, a generated portrait, a valid FIN proof, or any future C2PA wrapper into Thread history, memory, meaning, cognition, or embodiment authority.
+Nothing in this contract makes card pixels, a generated portrait, or a valid FIN proof into Thread history, memory, meaning, cognition, or embodiment authority.
