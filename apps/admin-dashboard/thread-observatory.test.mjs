@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { identityWithFidPublication, mergeObservatoryWorldIdentity } from "./thread-observatory.js";
+import {
+  identityWithFidPublication,
+  mergeObservatoryWorldIdentity,
+  reissueFidCard,
+  resumeFidReissue,
+} from "./thread-observatory.js";
 
 test("Thread Observatory renders mutable identity from current authoritative World", () => {
   const staleProjection = {
@@ -160,4 +165,57 @@ test("successful FIN reissue projects returned publication immediately", () => {
   assert.equal(projected.assets.find((asset) => asset.mediaId === "media_new_front")?.url, "/api/thread-assets/fidcard_new_front", "new FIN media was not immediately addressable");
   assert.equal(projected.assets.some((asset) => asset.mediaId === "media_old_front"), false, "stale FIN media survived reissue projection");
   assert.equal(projected.assets.some((asset) => asset.mediaId === "world_portrait"), true, "non-presentation media was lost");
+});
+
+
+test("first FIN issuance resumes the same idempotent workflow after photo derivation", async () => {
+  const originalFetch = globalThis.fetch;
+  const bodies = [];
+  let request = 0;
+  globalThis.fetch = async (_url, options) => {
+    bodies.push(JSON.parse(options.body));
+    request += 1;
+    const payload = request === 1
+      ? {
+          complete:false,
+          state:"derivation_requested",
+          credential:null,
+          derivation:{ jobId:"asset_fid_photo_1", status:"queued" },
+          presentation:null,
+        }
+      : {
+          complete:true,
+          state:"active",
+          credential:{ credentialId:"fidc_first", revision:1, supersedesCredentialId:null },
+          derivation:null,
+          presentation:{ changed:true },
+        };
+    return new Response(JSON.stringify(payload), {
+      status:request === 1 ? 202 : 200,
+      headers:{ "Content-Type":"application/json" },
+    });
+  };
+
+  try {
+    const idempotencyKey = "admin_fid_reissue_first_card";
+    const initial = await reissueFidCard("thr_first_card", { idempotencyKey });
+    assert.equal(initial.state, "derivation_requested");
+
+    const completed = await resumeFidReissue("thr_first_card", {
+      idempotencyKey,
+      initialResult:initial,
+      wait:async () => {},
+      maxAttempts:2,
+    });
+
+    assert.equal(completed.state, "active");
+    assert.equal(completed.credential.revision, 1);
+    assert.deepEqual(
+      bodies.map((body) => body.idempotencyKey),
+      [idempotencyKey, idempotencyKey],
+      "first-card continuation started a new issuance workflow instead of resuming the existing one",
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
