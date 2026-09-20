@@ -54,7 +54,6 @@ function findDemandEntry(projection, jobId) {
 
 export function createPresentationAssetCompletionService({
   infra,
-  credentialSigner = null,
   publishReady = null,
   verifyReceipt = verifyProvenancedAssetForPublication,
   now = () => new Date().toISOString(),
@@ -115,7 +114,6 @@ export function createPresentationAssetCompletionService({
 
       const proof = await verifyReceipt({
         infra,
-        credentialSigner,
         receipt,
       });
       if (proof.receipt.jobId !== completion.jobId) {
