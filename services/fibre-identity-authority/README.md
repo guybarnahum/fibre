@@ -2,7 +2,9 @@
 
 The Fibre Identity Authority owns replaceable FID Card credentials for already-born Threads, including whether a Thread image is admissible for FID use.
 
-It does **not** mint FINs, change civil registration, create visual identity, execute image generation, render cards, or perform C2PA signing. Those responsibilities remain with their owning Fibre boundaries.
+It does **not** mint FINs, change civil registration, create visual identity, or execute image generation. Those responsibilities remain with their owning Fibre boundaries.
+
+FIN-card authenticity is moving to a Fibre-native proof owned by FIA: a small public assertion derived from already-authorized issuance facts, signed with the existing FIA Ed25519 issuer key, and later embedded directly in each PNG. C2PA is no longer part of the target FIN-card protection architecture; it remains optional future interoperability and may continue independently for generated-media provenance.
 
 Core authority surface:
 
@@ -57,7 +59,9 @@ cutFidCard({ threadId, idempotencyKey })
 getActivePresentation(threadId)
 ```
 
-`cutFidCard` drives the existing issuance executor through identity resolution, photo reuse/derivation and admission, deterministic front/back rendering, machine-credential protection, C2PA embed/verify, immutable object storage and atomic activation. Callers still do not author identity facts or card bytes.
+`cutFidCard` drives the existing issuance executor through identity resolution, photo reuse/derivation and admission, deterministic front/back rendering, machine-credential protection, immutable object storage and atomic activation. The target protection path adds FIA-native proof signing/embedding/verification before storage. Callers still do not author identity facts or card bytes.
+
+The previous C2PA embed/verify implementation remains temporarily in the repository during migration but is no longer the target FIN-card architecture.
 
 `getActivePresentation` exposes only the verified active credential material needed by Thread Presentation. Cryptographic keys, protected credential bodies and provider storage details stay behind FIA.
 
@@ -66,7 +70,9 @@ Lifecycle orchestration itself is not owned by FIA. Thread Presentation owns the
 
 ## Runtime composition
 
-FIA remains provider-neutral. Executable provider composition belongs under `infra/deployments/fibre-identity-authority/`; the Cloudflare host injects an `InfraDriver` for FIA state/objects/workflows plus World, Thread Presentation, Asset Generation, content-credential, issuer-signing, and credential-protection boundaries. A different provider can compose the same FIA service contracts without changing FIA domain code.
+FIA remains provider-neutral. Executable provider composition belongs under `infra/deployments/fibre-identity-authority/`; the Cloudflare host injects an `InfraDriver` for FIA state/objects/workflows plus World, Thread Presentation, Asset Generation, issuer-signing, and credential-protection boundaries. A different provider can compose the same FIA service contracts without changing FIA domain code.
+
+The native FIN proof contract lives in `src/fid-card-proof.mjs` and is intentionally provider-independent. Its signing implementation will reuse the already-composed FIA issuer signer rather than introduce a separate content-credential provider.
 
 
 ## Cloudflare operator secrets
@@ -77,6 +83,6 @@ The Cloudflare runtime uses the same operator path as the other Fibre Workers; F
 npm run cloud:configure-secrets -- --file .env --env staging
 ```
 
-The FIA Wrangler contract declares `FIBRE_PRIVATE_TOKEN`, `C2PA_SIGNER_TOKEN`, `FIA_ISSUER_JWK`, and `FIA_CREDENTIAL_KEY_BASE64` as Worker secrets. Signer identity/trust policy remain checked non-secret configuration.
+The target FIA Wrangler contract requires `FIBRE_PRIVATE_TOKEN`, `FIA_ISSUER_JWK`, and `FIA_CREDENTIAL_KEY_BASE64`. `FIA_ISSUER_JWK` already supplies the Ed25519 key used by the protected machine credential and will also sign the public FIN proof.
 
-In Cloudflare, FIA reaches the Fibre Content Credential Signer through the `CONTENT_CREDENTIAL_SIGNER` service binding. The checked Wrangler config retains an internal `C2PA_SIGNER_URL` locator for the provider-neutral HTTP signer adapter, but cloud operators do not supply a public signer URL and no native C2PA code runs inside the FIA Worker.
+During migration, checked Cloudflare configuration may still contain legacy C2PA signer bindings/secrets for the old card path. Those are transitional and are scheduled for removal after native proof issuance/verification is integrated and accepted.
