@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { mergeObservatoryWorldIdentity } from "./thread-observatory.js";
+import { identityWithFidPublication, mergeObservatoryWorldIdentity } from "./thread-observatory.js";
 
 test("Thread Observatory renders mutable identity from current authoritative World", () => {
   const staleProjection = {
@@ -94,4 +94,70 @@ test("Thread Observatory preserves identity projection when deep World is unavai
   const merged = mergeObservatoryWorldIdentity(identity, null);
   assert.deepEqual(merged.languages, ["Hebrew", "English"]);
   assert.equal(merged.world, null);
+});
+
+
+test("successful FIN reissue projects returned publication immediately", () => {
+  const identity = {
+    threadId:"thr_sara",
+    assets:[{
+      mediaId:"media_old_front",
+      role:"fibre_identity_card_front",
+      objectRef:"fidcard_old_front",
+      url:"/api/thread-assets/fidcard_old_front",
+      source:"current_public_presentation",
+      deliveryStatus:"published",
+    },{
+      mediaId:"world_portrait",
+      role:"canonical_portrait",
+      source:"world_embodiment",
+      url:null,
+    }],
+    presentation:{
+      presentation:{
+        identityCard:{ credentialId:"fidc_old", revision:1 },
+      },
+    },
+  };
+  const result = {
+    credential:{ credentialId:"fidc_new", revision:2 },
+    presentation:{
+      publication:{
+        snapshot:{
+          presentation:{
+            identityCard:{
+              credentialId:"fidc_new",
+              revision:2,
+              frontMediaRef:"media_new_front",
+              backMediaRef:"media_new_back",
+            },
+          },
+          media:{
+            assets:[{
+              mediaId:"media_new_front",
+              kind:"image",
+              role:"fibre_identity_card_front",
+              status:"ready",
+              locator:"fidcard_new_front",
+              mediaType:"image/png",
+            },{
+              mediaId:"media_new_back",
+              kind:"image",
+              role:"fibre_identity_card_back",
+              status:"ready",
+              locator:"fidcard_new_back",
+              mediaType:"image/png",
+            }],
+          },
+        },
+      },
+    },
+  };
+
+  const projected = identityWithFidPublication(identity, result);
+
+  assert.equal(projected.presentation.presentation.identityCard.credentialId, "fidc_new", "new FIN snapshot was not projected");
+  assert.equal(projected.assets.find((asset) => asset.mediaId === "media_new_front")?.url, "/api/thread-assets/fidcard_new_front", "new FIN media was not immediately addressable");
+  assert.equal(projected.assets.some((asset) => asset.mediaId === "media_old_front"), false, "stale FIN media survived reissue projection");
+  assert.equal(projected.assets.some((asset) => asset.mediaId === "world_portrait"), true, "non-presentation media was lost");
 });
