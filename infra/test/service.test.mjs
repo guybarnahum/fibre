@@ -29,29 +29,29 @@ test("service owns public health and exact not-found behavior", async () => {
 
 test("service bearer auth is fail-closed and accepts configured service tokens", async () => {
   const service = createService({
-    serviceName: "c2pa",
+    serviceName: "fixture-service",
     routes: [
       {
         method: "POST",
-        path: "/embed",
+        path: "/write",
         auth: bearerAuth("asset-generator-token", "operator-token"),
         handler: async () => ({ ok: true }),
       },
     ],
   });
 
-  const missing = await service.fetch(new Request("https://service.test/embed", { method: "POST" }));
+  const missing = await service.fetch(new Request("https://service.test/write", { method: "POST" }));
   assert.equal(missing.status, 401);
   assert.equal(missing.headers.get("www-authenticate"), "Bearer");
 
-  const wrong = await service.fetch(new Request("https://service.test/embed", {
+  const wrong = await service.fetch(new Request("https://service.test/write", {
     method: "POST",
     headers: { Authorization: "Bearer wrong-token" },
   }));
   assert.equal(wrong.status, 401);
 
   for (const token of ["asset-generator-token", "operator-token"]) {
-    const accepted = await service.fetch(new Request("https://service.test/embed", {
+    const accepted = await service.fetch(new Request("https://service.test/write", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     }));
@@ -62,11 +62,11 @@ test("service bearer auth is fail-closed and accepts configured service tokens",
 
 test("service standardizes JSON and safe request errors", async () => {
   const service = createService({
-    serviceName: "c2pa",
+    serviceName: "fixture-service",
     routes: [
       {
         method: "POST",
-        path: "/verify",
+        path: "/inspect",
         handler: async ({ request }) => {
           const body = await readJsonRequest(request);
           if (body.reject === true) throw new ServiceHttpError(422, "rejected", { detail: "fixture rejection" });
@@ -77,7 +77,7 @@ test("service standardizes JSON and safe request errors", async () => {
     ],
   });
 
-  const invalidJson = await service.fetch(new Request("https://service.test/verify", {
+  const invalidJson = await service.fetch(new Request("https://service.test/inspect", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: "{",
@@ -85,7 +85,7 @@ test("service standardizes JSON and safe request errors", async () => {
   assert.equal(invalidJson.status, 400);
   assert.deepEqual(await invalidJson.json(), { error: "invalid_json" });
 
-  const invalidRequest = await service.fetch(new Request("https://service.test/verify", {
+  const invalidRequest = await service.fetch(new Request("https://service.test/inspect", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({}),
@@ -93,7 +93,7 @@ test("service standardizes JSON and safe request errors", async () => {
   assert.equal(invalidRequest.status, 400);
   assert.deepEqual(await invalidRequest.json(), { error: "invalid_request", detail: "value must be a string" });
 
-  const rejected = await service.fetch(new Request("https://service.test/verify", {
+  const rejected = await service.fetch(new Request("https://service.test/inspect", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ reject: true }),
