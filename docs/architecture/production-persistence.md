@@ -173,7 +173,7 @@ Current migration debt:
 
 These are tracked migration boundaries, not precedent for new persistence code.
 
-Local Birth Center/Genesis development work under `.fibre/`, test databases and local C2PA credentials are development tooling/profile state rather than production persistence and may continue to use the local filesystem directly.
+Local Birth Center/Genesis development work under `.fibre/` and test databases are development tooling/profile state rather than production persistence and may continue to use the local filesystem directly.
 
 ## No-new-bypasses rule
 
