@@ -73,7 +73,7 @@ infra/
 
 The manifest records logical provider aliases, runtime provider, InfraDriver provider, advertised capabilities, and each service's required capabilities. Runtime and infrastructure aliases remain separate even when they currently select the same Cloudflare environment.
 
-The manifest contains no cloud credentials, model credentials, C2PA signing keys, provider-native resource identities, Thread/World semantics, or publication decisions.
+The manifest contains no cloud credentials, model credentials, signing keys, provider-native resource identities, Thread/World semantics, or publication decisions.
 
 Current manifests:
 
@@ -89,7 +89,7 @@ A generalized manifest-to-provider compiler remains deferred; current Wrangler J
 Portable construction remains:
 
 ```text
-createAssetGenerationRuntime({ infra, provider, credentialSigner })
+createAssetGenerationRuntime({ infra, provider })
 ```
 
 Cloudflare host composition lives at `infra/deployments/asset-generator/cloudflare/`. Logical image-provider profile selection lives one level above the Cloudflare host and receives abstract secrets from the host. OpenAI/BFL integrations stay under `integrations/ai/`.
