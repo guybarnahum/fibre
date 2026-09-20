@@ -31,7 +31,7 @@ export const PRESENTATION_PROVENANCE_KINDS = Object.freeze([
   "authoritative_fact", "thread_memory", "thread_meaning", "thread_expression", "belief",
   "fibre_projection", "editorial", "generated_reconstruction", "fixture",
 ]);
-export const PRESENTATION_MEDIA_KINDS = Object.freeze(["image", "audio", "video"]);
+export const PRESENTATION_MEDIA_KINDS = Object.freeze(["image", "audio", "video", "document"]);
 export const PRESENTATION_MEDIA_STATUSES = Object.freeze(["placeholder", "pending", "ready", "unavailable"]);
 
 function assertEnum(name, value, allowed) {
@@ -392,6 +392,10 @@ function normalizeMediaAsset(value, index) {
   } else if (value.kind === "audio") {
     if (width !== null || height !== null || posterRef !== null) throw new TypeError(`${name} audio has invalid visual fields`);
     if (value.status === "ready" && durationMs === null) throw new TypeError(`${name} ready audio requires durationMs`);
+  } else if (value.kind === "document") {
+    if (width !== null || height !== null || durationMs !== null || posterRef !== null) {
+      throw new TypeError(`${name} document cannot claim visual or temporal dimensions`);
+    }
   } else if (value.status === "ready" && (width === null || height === null || durationMs === null)) {
     throw new TypeError(`${name} ready video requires width, height, and durationMs`);
   }
