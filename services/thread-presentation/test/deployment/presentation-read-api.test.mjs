@@ -151,7 +151,7 @@ test("media route requires verified public-media catalog projection rather than 
   const current = await fixture();
   const bytes = new TextEncoder().encode("credentialed-image-fixture");
   const digest = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-  await current.infra.objects.putImmutable("asset_public_1", bytes, digest, { kind: "credentialed_generated_media" });
+  await current.infra.objects.putImmutable("asset_public_1", bytes, digest, { kind: "provenanced_generated_media" });
 
   const before = await current.api.fetch(new Request(
     `https://api.insidefibre.com/api/threads/${current.threadId}/media/asset_public_1`,
@@ -190,7 +190,7 @@ test("catalog mistakes cannot expose a private Fibre identity card or its offici
 
   const bytes = new TextEncoder().encode("private-official-photo");
   const digest = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
-  await current.infra.objects.putImmutable("asset_private_id_photo", bytes, digest, { kind: "credentialed_generated_media" });
+  await current.infra.objects.putImmutable("asset_private_id_photo", bytes, digest, { kind: "provenanced_generated_media" });
   await current.infra.catalog.upsert("media:asset_private_id_photo", {
     kind: "public_presentation_media",
     publiclyVisible: true,
