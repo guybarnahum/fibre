@@ -30,7 +30,7 @@ async function sha256Digest(bytes) {
   return `sha256:${[...raw].map((value) => value.toString(16).padStart(2, "0")).join("")}`;
 }
 
-function fidCardAssetDescriptor(active) {
+export function createFidCardAssetDescriptor(active) {
   return Object.freeze({
     schemaVersion:FID_CARD_ASSET_SCHEMA_VERSION,
     credentialId:active.credentialId,
@@ -54,9 +54,9 @@ function fidCardAssetDescriptor(active) {
   });
 }
 
-async function attachFidCardAsset(infra, active) {
+export async function materializeFidCardAsset(infra, active) {
   if (active === null) return null;
-  const descriptor = fidCardAssetDescriptor(active);
+  const descriptor = createFidCardAssetDescriptor(active);
   const bytes = utf8(JSON.stringify(descriptor));
   const digest = await sha256Digest(bytes);
   const objectRef = `fidcard_${active.credentialId}_card`;
@@ -273,7 +273,7 @@ export function createFidPresentationProjectionService({ presentationServer, inf
     async reconcile({ threadId: candidateThreadId, activeFid: candidateFid, projectedAt, visibility = "public" } = {}) {
       const threadId = nonEmpty("threadId", candidateThreadId);
       const authoritativeActive = activeFid(candidateFid, threadId);
-      const active = await attachFidCardAsset(infra, authoritativeActive);
+      const active = await materializeFidCardAsset(infra, authoritativeActive);
       const at = iso("FID projectedAt", projectedAt);
       const channelId = threadPresentationChannelId(threadId);
       const current = await presentationServer.getSnapshot(channelId);
