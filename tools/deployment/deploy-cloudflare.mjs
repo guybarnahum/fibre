@@ -34,17 +34,6 @@ export function selectedCloudflareDeployOrder({ noC2pa = false } = {}) {
     : [...CLOUDFLARE_DEPLOY_ORDER]);
 }
 
-export function configureFiaForNoC2pa(config) {
-  const resolved = structuredClone(config);
-  resolved.vars ??= {};
-  resolved.vars.FIA_CONTENT_CREDENTIAL_MODE = "native";
-  delete resolved.vars.C2PA_SIGNER_URL;
-  delete resolved.vars.C2PA_SIGNER_ID;
-  delete resolved.vars.C2PA_TRUST_POLICY;
-  resolved.services = (resolved.services ?? []).filter((binding) => binding?.binding !== "CONTENT_CREDENTIAL_SIGNER");
-  return resolved;
-}
-
 const STATEFUL_DO_SERVICES = new Set(["world-kernel", "fibre-identity-authority", "birth-center"]);
 const HEALTH_RETRY_ATTEMPTS = 20;
 const CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS = 60;
@@ -272,9 +261,7 @@ export async function deployCloudflareStack({
   for (const serviceId of deployOrder) {
     const workerName = resourceState.resources.deployManaged.workers[serviceId];
     const remote = await client.listSecretNames(workerName);
-    const required = noC2pa && serviceId === "fibre-identity-authority"
-      ? requiredSecrets[serviceId].filter((name) => name !== "C2PA_SIGNER_TOKEN")
-      : requiredSecrets[serviceId];
+    const required = requiredSecrets[serviceId];
     const missing = missingRequiredSecretNames(required, remote);
     if (missing.length > 0) throw new Error(`${serviceId} is missing required Cloudflare secrets: ${missing.join(", ")}`);
   }
@@ -292,11 +279,7 @@ export async function deployCloudflareStack({
 
   let signerId = null;
   let trustPolicy = null;
-  if (noC2pa) {
-    const fia = resolvedConfigs["fibre-identity-authority"];
-    fia.config = configureFiaForNoC2pa(fia.config);
-    await writeFile(fia.path, `${JSON.stringify(fia.config, null, 2)}\n`, { mode:0o600 });
-  } else {
+  if (!noC2pa) {
     const signerConfig = resolvedConfigs["content-credential-signer"].config;
     signerId = nonEmpty("C2PA signer ID", signerConfig.vars?.C2PA_SIGNER_ID);
     trustPolicy = nonEmpty("C2PA trust policy", signerConfig.vars?.C2PA_TRUST_POLICY);
@@ -345,7 +328,7 @@ export async function deployCloudflareStack({
 
   return Object.freeze({
     environment: env,
-    contentCredentialMode: resolvedConfigs["fibre-identity-authority"].config.vars?.FIA_CONTENT_CREDENTIAL_MODE ?? "native",
+    contentCredentialMode:noC2pa ? "disabled" : "c2pa",
     deployments: Object.freeze(deployments),
     acceptance,
     viewer,
