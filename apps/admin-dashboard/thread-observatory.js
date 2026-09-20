@@ -479,6 +479,29 @@ function memoriesSection(memories, birthDate, memoryError = null) {
   return wrap;
 }
 
+export function identityWithFidPublication(identity, result) {
+  const snapshot = result?.presentation?.publication?.snapshot ?? null;
+  if (!snapshot?.presentation || !Array.isArray(snapshot?.media?.assets)) return identity;
+
+  const publishedAssets = snapshot.media.assets
+    .filter((asset) => asset?.status === "ready" && typeof asset.locator === "string" && asset.locator !== "")
+    .map((asset) => ({
+      ...asset,
+      objectRef:asset.locator,
+      url:`/api/thread-assets/${encodeURIComponent(asset.locator)}`,
+      source:"current_public_presentation",
+      deliveryStatus:"published",
+    }));
+  const preserved = (Array.isArray(identity?.assets) ? identity.assets : [])
+    .filter((asset) => asset?.source !== "current_public_presentation");
+
+  return Object.freeze({
+    ...identity,
+    assets:Object.freeze([...publishedAssets, ...preserved]),
+    presentation:structuredClone(snapshot),
+  });
+}
+
 export async function reissueFidCard(threadId) {
   const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/fid/reissue`, {
     method:"POST",
@@ -571,7 +594,13 @@ export function renderFidSection(identity, threadId) {
           : result?.state === "derivation_requested"
             ? "Reissue pending · official ID photo is being prepared."
             : `Reissue · ${human(result?.state ?? "accepted")}`;
-        window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued", { detail:{ threadId, result } }));
+        window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued", {
+          detail:{
+            threadId,
+            result,
+            identity:identityWithFidPublication(identity, result),
+          },
+        }));
       },
     });
   });
