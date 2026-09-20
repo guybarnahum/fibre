@@ -183,6 +183,6 @@ No external runtime input/output change is intended.
 
 ## Compatibility and proof discipline
 
-Each slice keeps `npm run check`, repository validation and test-audit gates green. Structural moves demonstrate before/after equivalence through existing tests and add boundary tests where the architecture was previously only prose.
+Each slice keeps the repository validation green. Structural moves preserve meaningful Fibre invariants through focused tests; add boundary tests only when the boundary itself carries semantic authority or continuity.
 
 Runtime routes, packet schemas, durable record formats, environment inputs, hashes and semantic authority do not change merely because code moves.
