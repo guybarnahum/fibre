@@ -1,7 +1,7 @@
 ---
 id: architecture-fibre-identity-card-implementation-plan-v0-1
 status: accepted
-last-reviewed: 2026-09-10
+last-reviewed: 2026-09-19
 canonical: false
 ---
 
@@ -9,7 +9,7 @@ canonical: false
 
 ## Closure
 
-The Fibre Identity Card vertical is implemented and merged to `main`. The former feature branch is no longer an active development authority.
+The original Fibre Identity Card vertical is implemented and merged to `main`. Current follow-on work on `agent/fin-presentation-work` does not reopen FID identity authority; it adds lifecycle orchestration and closes the staging deployment path around the existing credential.
 
 The architecture contract remains [`fibre-identity-card.md`](./fibre-identity-card.md). Current lived-person execution continues in [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md).
 
@@ -72,6 +72,49 @@ already-born Thread + FIN
   -> inspect through authorized tooling
   -> project through Thread Presentation
 ```
+
+## Lifecycle follow-on state — 2026-09-19
+
+The lifecycle seam now lives in Thread Presentation rather than in callers or Admin Dashboard. The private operation is:
+
+```text
+reconcileFid(threadId, mode, idempotencyKey)
+
+mode = ensure | reissue
+```
+
+Callers provide no FIN, civil identity fields, photo bytes, credential ID or render facts. Thread Presentation queries the current FIA credential, cuts through FIA only when required by the mode, and projects the resulting active credential.
+
+Current state:
+
+- **Lifecycle D1 — complete.** `ensure` reuses an active FIA credential when one exists; `reissue` deliberately cuts through FIA; both project the active credential into Thread Presentation.
+- Admin Dashboard `Re-issue FIN Card` now routes through Thread Presentation `POST /internal/fid/reconcile`; Admin no longer calls FIA directly.
+- Card replacement owns only `fibre_identity_card_front` and `fibre_identity_card_back`. `official_id_photo` remains Thread visual identity and survives FID replacement.
+- The public asset resolver keeps the official ID photo visible when an active FIA card exists.
+- **Lifecycle D2 — deferred.** Automatic newborn issuance should trigger only after a ready `official_id_photo` is successfully published; World must not synchronously call FIA.
+- **Lifecycle D3 — deferred.** Repair/Observatory reconciliation must remain outside a World -> FIA synchronous authority cycle.
+- **Lifecycle D4 — deferred.** Activity may observe FID stages but must not become FID authority.
+
+The earlier staging failure (`POST /api/threads/:threadId/fid/reissue -> 405`) was traced to deployment skew: Admin had the D1 route while staging Thread Presentation had not yet been redeployed with the lifecycle binding. The repository now contains the required Cloudflare deployment composition, including the Fibre C2PA signer described below, but a successful live staging acceptance of the complete path is still required.
+
+### Staging C2PA posture
+
+The intended C2PA staging composition remains Fibre's own signer and verification policy, with public C2PA Trust List acceptance deliberately deferred. D1 staging closure may temporarily use `--no-c2pa` while Cloudflare Containers authorization is resolved.
+
+In `--no-c2pa` mode, FIA still renders deterministically, signs/encrypts the protected machine credential, verifies that protected credential against the raw front/back render digests, stores both PNGs immutably, and performs normal atomic activation/supersession. The issuance record explicitly stores `c2pa.validationStatus = "disabled"`; it does not claim C2PA verification. The signer Worker/Container and FIA signer binding are omitted from that deployment.
+
+The C2PA-enabled Cloudflare composition remains:
+
+```text
+FIA Worker
+  -> CONTENT_CREDENTIAL_SIGNER service binding
+  -> Fibre Content Credential Signer Worker
+  -> Cloudflare Container running @contentauth/c2pa-node
+```
+
+The Container is required because `@contentauth/c2pa-node` depends on native Linux binaries. This is deployment composition, not a new `InfraDriver` capability. The signer is configured as `fibre-c2pa-self-v1` with `fibre_signature_only`; signing succeeds only under Fibre's configured certificate chain. Public Trust List/conformance work remains deferred.
+
+With C2PA enabled, the operator path bootstraps missing Workers while configuring secrets and deploys the signer before dependent services. Cloud deployment does not require an operator-supplied public `C2PA_SIGNER_URL`; FIA reaches the signer through the Cloudflare service binding. With `--no-c2pa`, signer secrets, Containers access, signer deployment, and that service binding are all skipped.
 
 ## Closure invariants
 

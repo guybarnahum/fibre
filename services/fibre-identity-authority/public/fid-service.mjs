@@ -30,9 +30,10 @@ function credentialView(registry, entry) {
  * Cryptographic keys, protected credential bodies, and provider-specific
  * storage details deliberately never cross this boundary.
  */
-export function createFidService({ authority, registry, issuanceStore, photoAdmissionStore = null } = {}) {
+export function createFidService({ authority, registry, issuanceStore, photoAdmissionStore = null, issuanceExecutor = null } = {}) {
   requireMethod(authority, "issueFidCard", "FibreIdentityAuthority");
   requireMethod(authority, "revokeFidCard", "FibreIdentityAuthority");
+  if (issuanceExecutor !== null) requireMethod(issuanceExecutor, "cut", "FidCardIssuanceExecutor");
   for (const method of ["listByThreadId", "getActiveByFin", "getIssuanceByCredentialId"]) {
     requireMethod(registry, method, "FidCardRegistry");
   }
@@ -67,8 +68,9 @@ export function createFidService({ authority, registry, issuanceStore, photoAdmi
     const inspected = inspectThread(threadId);
     const active = inspected.credentials.find((entry) => entry.status === "active") ?? null;
     if (active === null) return null;
-    if (active.issuance === null || active.issuance.c2pa?.validationStatus !== "verified") {
-      throw new Error(`active FID ${active.credential.credentialId} has no verified issuance evidence`);
+    const proofStatus = active.issuance?.proof?.validationStatus ?? null;
+    if (active.issuance === null || proofStatus !== "verified") {
+      throw new Error(`active FID ${active.credential.credentialId} has no accepted issuance evidence`);
     }
     const { credential, issuance, issuanceRecordDigest } = active;
     return Object.freeze({
@@ -84,6 +86,7 @@ export function createFidService({ authority, registry, issuanceStore, photoAdmi
       issuanceRecordDigest,
       photoAdmissionId: issuance.photoAdmissionId,
       photoDigest: issuance.photoDigest,
+      proofStatus,
       front: Object.freeze({
         objectRef: issuance.front.objectRef,
         digest: issuance.front.finalDigest,
@@ -105,6 +108,10 @@ export function createFidService({ authority, registry, issuanceStore, photoAdmi
     inspectThread,
     getActivePresentation,
     issueFidCard: (request) => authority.issueFidCard(request),
+    cutFidCard: (request) => {
+      if (issuanceExecutor === null) throw new TypeError("FID service issuance executor is not configured");
+      return issuanceExecutor.cut(request);
+    },
     revokeFidCard: (request) => authority.revokeFidCard(request),
   });
 }

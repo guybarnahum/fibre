@@ -2,9 +2,11 @@
 
 The Fibre Identity Authority owns replaceable FID Card credentials for already-born Threads, including whether a Thread image is admissible for FID use.
 
-It does **not** mint FINs, change civil registration, create visual identity, execute image generation, render cards, or perform C2PA signing. Those responsibilities remain with their owning Fibre boundaries.
+It does **not** mint FINs, change civil registration, create visual identity, or execute image generation. Those responsibilities remain with their owning Fibre boundaries.
 
-Current A1/A2/B1/B2 surface:
+FIN-card authenticity uses a Fibre-native proof owned by FIA: a small public assertion derived from already-authorized issuance facts, signed with the existing FIA Ed25519 issuer key, embedded directly in each PNG, and strictly verified before storage and activation. Assertion/signature, PNG transport, strict verification, issuance integration, and proof evidence persistence are implemented.
+
+Core authority surface:
 
 ```text
 services/fibre-identity-authority/src/index.mjs
@@ -47,3 +49,38 @@ ensureFidPhoto({ workflowId })
 A currently valid admitted official photo is reused. Otherwise the authority creates one deterministic `official_id_photo` Asset Generation demand from the Thread's admitted canonical visual reference, target age, and FID photo policy. Asset Generator remains the executor. The generated result must return through the same trusted photo-source boundary and pass B1 admission before issuance can progress.
 
 The derivation identity is deliberately independent of FID credential/workflow identity. Equivalent source + policy + target age therefore reuses the same generation demand instead of manufacturing redundant portraits of the same persistent Thread.
+
+## Current cut and presentation boundary
+
+The provider-neutral public service completes the credential path with:
+
+```text
+cutFidCard({ threadId, idempotencyKey })
+getActivePresentation(threadId)
+```
+
+`cutFidCard` drives the issuance executor through identity resolution, photo reuse/derivation and admission, deterministic front/back rendering, protected machine-credential creation, native FIN-proof signing/embedding/verification, immutable object storage, stored-object re-verification, and atomic activation. Callers still do not author identity facts or card bytes.
+
+`getActivePresentation` exposes only the verified active credential material needed by Thread Presentation. Cryptographic keys, protected credential bodies and provider storage details stay behind FIA.
+
+Lifecycle orchestration itself is not owned by FIA. Thread Presentation owns the private `ensure|reissue` reconciliation seam and calls FIA through its neutral boundary; Admin Dashboard therefore never calls FIA directly.
+
+
+## Runtime composition
+
+FIA remains provider-neutral. Executable provider composition belongs under `infra/deployments/fibre-identity-authority/`; the Cloudflare host injects an `InfraDriver` for FIA state/objects/workflows plus World, Thread Presentation, Asset Generation, issuer-signing, and credential-protection boundaries. A different provider can compose the same FIA service contracts without changing FIA domain code.
+
+The native FIN proof contract lives in `src/fid-card-proof.mjs` and is intentionally provider-independent. It reuses the already-composed FIA issuer signer rather than introducing a separate content-credential provider. `src/fid-card-proof-png.mjs` carries the canonical signed envelope in one private ancillary `fiDP` PNG chunk and can reconstruct the original unsigned render byte-for-byte. `src/fid-card-proof-verifier.mjs` is the trust boundary: it returns embedded assertion data only after accepted FIA key identity, Ed25519 signature, side (when expected), and raw-render digest all validate.
+
+
+## Cloudflare operator secrets
+
+The Cloudflare runtime uses the same operator path as the other Fibre Workers; FIA has no separate secret-provisioning mechanism.
+
+```sh
+npm run cloud:configure-secrets -- --file .env --env staging
+```
+
+The target FIA Wrangler contract requires `FIBRE_PRIVATE_TOKEN`, `FIA_ISSUER_JWK`, and `FIA_CREDENTIAL_KEY_BASE64`. `FIA_ISSUER_JWK` already supplies the Ed25519 key used by the protected machine credential and will also sign the public FIN proof.
+
+The checked FIA Cloudflare configuration needs only the FIA issuer/protection secrets; FIN cards have no separate content-credential signer binding or secret.

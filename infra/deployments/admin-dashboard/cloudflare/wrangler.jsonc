@@ -6,27 +6,57 @@
   "workers_dev": false,
   "preview_urls": false,
   "routes": [
-    { "pattern": "admin.insidefibre.com", "custom_domain": true }
+    {
+      "pattern": "admin.insidefibre.com",
+      "custom_domain": true
+    }
   ],
   "vars": {
     "FIBRE_ENVIRONMENT": "production"
   },
   "services": [
-    { "binding": "WORLD_KERNEL", "service": "fibre-world-kernel" },
-    { "binding": "BIRTH_CENTER", "service": "fibre-birth-center" },
-    { "binding": "THREAD_PRESENTATION", "service": "fibre-thread-presentation" },
-    { "binding": "ASSET_GENERATOR", "service": "fibre-asset-generator" }
+    {
+      "binding": "WORLD_KERNEL",
+      "service": "fibre-world-kernel"
+    },
+    {
+      "binding": "BIRTH_CENTER",
+      "service": "fibre-birth-center"
+    },
+    {
+      "binding": "THREAD_PRESENTATION",
+      "service": "fibre-thread-presentation"
+    },
+    {
+      "binding": "FIBRE_IDENTITY_AUTHORITY",
+      "service": "fibre-identity-authority"
+    },
+    {
+      "binding": "ASSET_GENERATOR",
+      "service": "fibre-asset-generator"
+    }
   ],
   "d1_databases": [
-    { "binding": "ACTIVITY_LOG", "database_name": "fibre-activity-log" }
+    {
+      "binding": "ACTIVITY_LOG",
+      "database_name": "fibre-activity-log"
+    }
   ],
   "durable_objects": {
     "bindings": [
-      { "name": "INFRA_MONITOR", "class_name": "FibreAdminInfraMonitor" }
+      {
+        "name": "INFRA_MONITOR",
+        "class_name": "FibreAdminInfraMonitor"
+      }
     ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["FibreAdminInfraMonitor"] }
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "FibreAdminInfraMonitor"
+      ]
+    }
   ],
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
@@ -37,5 +67,7 @@
     "run_worker_first": true,
     "not_found_handling": "single-page-application"
   },
-  "observability": { "enabled": true }
+  "observability": {
+    "enabled": true
+  }
 }

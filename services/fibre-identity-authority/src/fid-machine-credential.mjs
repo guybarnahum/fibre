@@ -71,16 +71,18 @@ function protector(value) {
   };
 }
 
-function identitySnapshot(workflow) {
-  return Object.freeze({
-    credentialId: workflow.proposedCredentialId,
-    revision: workflow.proposedRevision,
-    threadId: workflow.threadId,
-    fibreIdentityNumber: workflow.fibreIdentityNumber,
-    registrationId: workflow.registrationId,
-    civilRegistrationDigest: workflow.civilRegistrationDigest,
-    requestedAt: workflow.requestedAt,
-  });
+function identitySnapshot(workflow, render) {
+  const snapshot = render?.identitySnapshot;
+  if (!snapshot || snapshot.credentialId !== workflow.proposedCredentialId
+    || snapshot.revision !== workflow.proposedRevision
+    || snapshot.threadId !== workflow.threadId
+    || snapshot.fibreIdentityNumber !== workflow.fibreIdentityNumber
+    || snapshot.registrationId !== workflow.registrationId
+    || snapshot.civilRegistrationDigest !== workflow.civilRegistrationDigest
+    || snapshot.requestedAt !== workflow.requestedAt) {
+    throw new TypeError("FID render identity snapshot does not match issuance workflow");
+  }
+  return snapshot;
 }
 
 function renderDigest(value) { return sha256(bytes(value)); }
@@ -106,7 +108,7 @@ export function buildFidMachineCredentialPayload({
   }
   if (fidRenderPhotoDigest(photo) !== admission.candidatePhotoDigest) throw new TypeError("FID machine credential photo does not match admission");
 
-  const snapshot = identitySnapshot(workflow);
+  const snapshot = identitySnapshot(workflow, render);
   const expectedSnapshotDigest = renderDigest(snapshot);
   if (!render || render.credentialId !== workflow.proposedCredentialId || render.revision !== workflow.proposedRevision
     || render.photoAdmissionId !== admission.admissionId || render.identitySnapshotDigest !== expectedSnapshotDigest) {
@@ -114,6 +116,9 @@ export function buildFidMachineCredentialPayload({
   }
   digest("FID front render digest", render.frontRenderDigest);
   digest("FID back render digest", render.backRenderDigest);
+  const templateVersion = nonEmpty("FID templateVersion", render.templateVersion);
+  const normalizedIssuedAt = iso("FID issuedAt", issuedAt);
+  if (render.issuedAt !== normalizedIssuedAt) throw new TypeError("FID render issue date does not match credential issue date");
 
   return Object.freeze({
     schema: FID_MACHINE_CREDENTIAL_SCHEMA,
@@ -123,6 +128,7 @@ export function buildFidMachineCredentialPayload({
     threadId: workflow.threadId,
     registrationId: workflow.registrationId,
     civilRegistrationDigest: workflow.civilRegistrationDigest,
+    templateVersion,
     identitySnapshot: snapshot,
     photo: Object.freeze({
       encoding: "rgba8",
@@ -136,7 +142,7 @@ export function buildFidMachineCredentialPayload({
       admissionId: admission.admissionId,
       derivationReceiptRef: admission.derivationReceiptRef,
     }),
-    issuedAt: iso("FID issuedAt", issuedAt),
+    issuedAt: normalizedIssuedAt,
     expiresAt: expiresAt == null ? null : iso("FID expiresAt", expiresAt),
     issuer: profile,
     frontRenderDigest: render.frontRenderDigest,

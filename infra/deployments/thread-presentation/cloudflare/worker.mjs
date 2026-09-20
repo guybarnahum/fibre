@@ -7,12 +7,15 @@ import {
   normalizeStoredAssetReceipt,
 } from "#services/asset-generator/src/index.mjs";
 import {
+  createFidLifecycleReconciler,
+  createFidPresentationProjectionService,
   createThreadPresentationVisualPublicationReconciler,
   normalizeThreadPresentationBundle,
   presentationProvenanceDigest,
   threadMediaPacketDigest,
   threadPresentationPacketDigest,
 } from "#services/thread-presentation/src/index.mjs";
+import { createFidLifecycleWriteApi } from "#services/thread-presentation/src/http/fid-lifecycle-write-api.mjs";
 import { createGenesisPresentationWriteApi } from "#services/thread-presentation/src/http/genesis-write-api.mjs";
 import { createIdentityProjectionWriteApi } from "#services/thread-presentation/src/http/identity-projection-write-api.mjs";
 import { createPresentationReadApi, channelIdForThread } from "#services/thread-presentation/src/http/read-api.mjs";
@@ -37,6 +40,7 @@ import {
   completionQueueFailureDisposition,
 } from "./completion-queue-policy.mjs";
 import { createCompletedWorkflowRecoveryReconciler } from "./completed-workflow-recovery.mjs";
+import { createFidAuthorityBoundary } from "../fid-authority-boundary.mjs";
 
 export { FibrePresentationChannelDurableObject };
 
@@ -110,6 +114,22 @@ function nonEmpty(name, value) {
     throw new TypeError(`${name} must be a non-empty string`);
   }
   return value;
+}
+
+function createFidLifecycle(env, infra, presentationServer) {
+  const authorityBinding = env?.FIBRE_IDENTITY_AUTHORITY;
+  if (!authorityBinding || typeof authorityBinding.fetch !== "function") {
+    throw new TypeError("FIBRE_IDENTITY_AUTHORITY service binding is required");
+  }
+  const fidAuthority = createFidAuthorityBoundary({
+    baseUrl:"https://fibre-identity-authority.internal",
+    privateToken:env.FIBRE_PRIVATE_TOKEN,
+    fetchImpl:(input, init) => authorityBinding.fetch(input instanceof Request ? input : new Request(input, init)),
+  });
+  return createFidLifecycleReconciler({
+    fidAuthority,
+    presentationProjection:createFidPresentationProjectionService({ presentationServer, infra }),
+  });
 }
 
 async function requestJson(request) {
@@ -303,6 +323,15 @@ export default {
     });
     const identityWriteResponse = await identityWriteApi.fetch(request);
     if (identityWriteResponse !== null) return identityWriteResponse;
+
+    if (url.pathname === "/internal/fid/reconcile") {
+      const fidWriteApi = createFidLifecycleWriteApi({
+        reconciler:createFidLifecycle(env, infra, presentationServer),
+        privateToken:env.FIBRE_PRIVATE_TOKEN ?? null,
+      });
+      const fidWriteResponse = await fidWriteApi.fetch(request);
+      if (fidWriteResponse !== null) return fidWriteResponse;
+    }
 
     const visualWriteApi = createVisualPublicationWriteApi({
       reconciler: createVisualReconciler(env, infra, presentationServer, activityRecorder),

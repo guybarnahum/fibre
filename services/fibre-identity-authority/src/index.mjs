@@ -48,18 +48,41 @@ export {
 
 export {
   FID_CARD_SIZE,
-  FID_CARD_TEMPLATE_VERSION,
-  createFidCardTemplate,
   fidRenderPhotoDigest,
   renderFidCard,
 } from "./fid-card-renderer.mjs";
 
+export { decodePngRgba } from "./fid-photo-surface.mjs";
+export { createFidCardTemplateFromPngAssets } from "./fid-card-template-assets.mjs";
+
 export {
-  FID_C2PA_ASSERTION_LABEL,
-  buildFidC2paAssertion,
-  credentialAndStoreFidCard,
-  verifyFidC2paSide,
-} from "./fid-card-credentialing.mjs";
+  FID_CARD_PROOF_ENVELOPE_VERSION,
+  FID_CARD_PROOF_SCHEMA,
+  FID_CARD_PROOF_SIGNATURE_ALGORITHM,
+  FID_CARD_PROOF_SIDES,
+  buildFidCardProofAssertion,
+  fidCardProofAssertionDigest,
+  fidCardProofAssertionJson,
+  fidCardProofEnvelopeJson,
+  normalizeFidCardProofAssertion,
+  normalizeFidCardProofEnvelope,
+  signFidCardProofAssertion,
+  verifyFidCardProofEnvelope,
+} from "./fid-card-proof.mjs";
+
+export {
+  FID_CARD_PROOF_PNG_CHUNK_TYPE,
+  embedFidCardProofInPng,
+  extractFidCardProofFromPng,
+} from "./fid-card-proof-png.mjs";
+
+export {
+  FID_CARD_PROOF_VERIFICATION_REASONS,
+  verifyFidCardProof,
+  verifyFidCardProofPair,
+} from "./fid-card-proof-verifier.mjs";
+
+export { protectAndStoreFidCard } from "./fid-card-proof-issuance.mjs";
 
 export {
   FIBRE_IDENTITY_AUTHORITY_ID,
@@ -82,3 +105,5 @@ export {
   FidCivilRegistrationNotFoundError,
   createFibreIdentityAuthority,
 } from "./fibre-identity-authority.mjs";
+
+export { createFidCardIssuanceExecutor } from "./fid-card-issuance-executor.mjs";

@@ -24,6 +24,8 @@ Admin uses two independent gates. Cloudflare Access authenticates the human and 
 
 `/healthz` is the only unauthenticated route and exposes only the dashboard service/version identity.
 
+FIN cards are verified through Fibre Identity Authority, not in browser JavaScript. The Admin card component submits the exact displayed front/back PNG bytes to the authenticated Admin verification route, which delegates to FIA's native FIN-proof verifier. The UI shows embedded proof fields only after both sides verify as one credential. Current credential status is a separate FIA lifecycle concern.
+
 Production and staging hostnames are:
 
 ```text

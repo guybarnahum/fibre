@@ -13,6 +13,11 @@ import {
   normalizeFidLifecycleStatus,
 } from "./fid-card-domain.mjs";
 
+import {
+  FID_CARD_PROOF_ENVELOPE_VERSION,
+  FID_CARD_PROOF_SCHEMA,
+} from "./fid-card-proof.mjs";
+
 const FID_STATE_REQUIREMENTS = Object.freeze({
   relationalStatements: true,
   atomicWriteTransactions: true,
@@ -231,8 +236,28 @@ function normalizedSide(name, value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError(`FID issuance ${name} is required`);
   return Object.freeze({
     objectRef: nonEmpty(`FID issuance ${name}.objectRef`, value.objectRef),
+    rawRenderDigest: digest(`FID issuance ${name}.rawRenderDigest`, value.rawRenderDigest),
     finalDigest: digest(`FID issuance ${name}.finalDigest`, value.finalDigest),
-    manifestDigest: digest(`FID issuance ${name}.manifestDigest`, value.manifestDigest),
+    proofAssertionDigest: digest(`FID issuance ${name}.proofAssertionDigest`, value.proofAssertionDigest),
+  });
+}
+
+function normalizeProof(value, issuerKeyId) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("FID issuance proof is required");
+  if (value.format !== "fibre-fin-proof"
+    || value.schema !== FID_CARD_PROOF_SCHEMA
+    || value.envelopeVersion !== FID_CARD_PROOF_ENVELOPE_VERSION
+    || value.validationStatus !== "verified") {
+    throw new TypeError("FID issuance proof is not a verified Fibre FIN proof");
+  }
+  const signerKeyId = nonEmpty("FID issuance proof.signerKeyId", value.signerKeyId);
+  if (signerKeyId !== issuerKeyId) throw new TypeError("FID issuance proof signer does not match issuer");
+  return Object.freeze({
+    format:"fibre-fin-proof",
+    schema:FID_CARD_PROOF_SCHEMA,
+    envelopeVersion:FID_CARD_PROOF_ENVELOPE_VERSION,
+    signerKeyId,
+    validationStatus:"verified",
   });
 }
 
@@ -241,7 +266,12 @@ function normalizeIssuanceRecord(value, credential) {
   if (value.credentialId !== credential.credentialId || value.revision !== credential.revision) {
     throw new TypeError("verified FID issuance record identifies a different credential");
   }
-  if (value.c2pa?.validationStatus !== "verified") throw new TypeError("FID issuance must have verified C2PA status");
+  const issuer = Object.freeze({
+    authorityId: nonEmpty("FID issuance issuer.authorityId", value.issuer?.authorityId),
+    keyId: nonEmpty("FID issuance issuer.keyId", value.issuer?.keyId),
+    publicKeyRef: value.issuer?.publicKeyRef == null ? null : nonEmpty("FID issuance issuer.publicKeyRef", value.issuer.publicKeyRef),
+    trustPolicy: nonEmpty("FID issuance issuer.trustPolicy", value.issuer?.trustPolicy),
+  });
   return Object.freeze({
     credentialId: credential.credentialId,
     revision: credential.revision,
@@ -253,22 +283,14 @@ function normalizeIssuanceRecord(value, credential) {
     photoProvenanceDigest: digest("FID issuance photoProvenanceDigest", value.photoProvenanceDigest),
     photoAdmissionReceiptDigest: digest("FID issuance photoAdmissionReceiptDigest", value.photoAdmissionReceiptDigest),
     identitySnapshotDigest: digest("FID issuance identitySnapshotDigest", value.identitySnapshotDigest),
-    issuer: Object.freeze({
-      authorityId: nonEmpty("FID issuance issuer.authorityId", value.issuer?.authorityId),
-      keyId: nonEmpty("FID issuance issuer.keyId", value.issuer?.keyId),
-      publicKeyRef: value.issuer?.publicKeyRef == null ? null : nonEmpty("FID issuance issuer.publicKeyRef", value.issuer.publicKeyRef),
-      trustPolicy: nonEmpty("FID issuance issuer.trustPolicy", value.issuer?.trustPolicy),
-    }),
+    templateVersion: nonEmpty("FID issuance templateVersion", value.templateVersion),
+    issuer,
     credentialPayloadDigest: digest("FID issuance credentialPayloadDigest", value.credentialPayloadDigest),
     encryptedCredentialDigest: digest("FID issuance encryptedCredentialDigest", value.encryptedCredentialDigest),
     machineCredentialDigest: digest("FID issuance machineCredentialDigest", value.machineCredentialDigest),
     front: normalizedSide("front", value.front),
     back: normalizedSide("back", value.back),
-    c2pa: Object.freeze({
-      signerId: nonEmpty("FID issuance c2pa.signerId", value.c2pa?.signerId),
-      trustPolicy: nonEmpty("FID issuance c2pa.trustPolicy", value.c2pa?.trustPolicy),
-      validationStatus: "verified",
-    }),
+    proof: normalizeProof(value.proof, issuer.keyId),
   });
 }
 

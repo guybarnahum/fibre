@@ -20,13 +20,21 @@ import {
 } from "./cloudflare-worker-domains.mjs";
 
 export const CLOUDFLARE_DEPLOY_ORDER = Object.freeze([
+  "content-credential-signer",
   "asset-generator",
   "thread-presentation",
   "world-kernel",
+  "fibre-identity-authority",
   "birth-center",
 ]);
 
-const STATEFUL_DO_SERVICES = new Set(["world-kernel", "birth-center"]);
+export function selectedCloudflareDeployOrder({ noC2pa = false } = {}) {
+  return Object.freeze(noC2pa
+    ? CLOUDFLARE_DEPLOY_ORDER.filter((serviceId) => serviceId !== "content-credential-signer")
+    : [...CLOUDFLARE_DEPLOY_ORDER]);
+}
+
+const STATEFUL_DO_SERVICES = new Set(["world-kernel", "fibre-identity-authority", "birth-center"]);
 const HEALTH_RETRY_ATTEMPTS = 20;
 const CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS = 60;
 const HEALTH_RETRY_DELAY_MS = 1500;
@@ -92,12 +100,11 @@ function assertStateHealthPayload(payload, serviceId) {
   return checked;
 }
 
-export function assertProductionSignerHealth(payload, expected) {
+export function assertSignerHealth(payload, expected) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("C2PA signer health response must be an object");
   if (payload.ok !== true || payload.service !== "content-credential-signer") throw new Error("C2PA signer health did not confirm content-credential-signer");
   if (payload.format !== "c2pa") throw new Error(`C2PA signer health returned unexpected format ${String(payload.format)}`);
   if (payload.signerId !== expected.signerId) throw new Error(`C2PA signer health returned unexpected signerId ${String(payload.signerId)}`);
-  if (expected.trustPolicy !== "c2pa_trust_list") throw new Error("cloud deployment requires c2pa_trust_list production trust policy");
   if (payload.trustPolicy !== expected.trustPolicy) throw new Error(`C2PA signer health returned unexpected trustPolicy ${String(payload.trustPolicy)}`);
   return payload;
 }
@@ -136,13 +143,24 @@ export function createWranglerDeploymentClient({
       if (!account || typeof account !== "object" || Array.isArray(account)) throw new Error("Wrangler whoami returned invalid JSON");
       return account;
     },
+    async assertContainersAvailable() {
+      try {
+        await runner(["containers", "images", "list", "--json"], { cwd });
+      } catch (error) {
+        throw new Error(
+          "Cloudflare Containers access is required for the Fibre C2PA signer. Ensure the account is on Workers Paid and CLOUDFLARE_API_TOKEN has Account > Containers > Edit.",
+          { cause:error },
+        );
+      }
+      return Object.freeze({ ok:true });
+    },
     async listSecretNames(workerName) {
       const { stdout } = await runner(["secret", "list", "--name", workerName, "--format", "json"], { cwd });
       return secretNames(JSON.parse(stdout));
     },
     async checkSignerHealth({ baseUrl, signerId, trustPolicy }) {
       const payload = await fetchJson(fetchImpl, `${nonEmpty("C2PA signer URL", baseUrl).replace(/\/$/u, "")}/healthz`);
-      return assertProductionSignerHealth(payload, { signerId, trustPolicy });
+      return assertSignerHealth(payload, { signerId, trustPolicy });
     },
     async deployService({ configPath, workerName, resolvedConfig = null }) {
       const result = await runner([
@@ -219,6 +237,7 @@ export async function deployCloudflareStack({
   provision,
   client,
   wait = delay,
+  noC2pa = false,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (typeof validateRepository !== "function") throw new TypeError("validateRepository callback is required");
@@ -227,20 +246,28 @@ export async function deployCloudflareStack({
 
   await validateRepository();
   await client.assertAuthenticated();
+  if (!noC2pa) {
+    if (typeof client.assertContainersAvailable !== "function") {
+      throw new TypeError("Cloudflare deployment client must verify Containers access");
+    }
+    await client.assertContainersAvailable();
+  }
   const resourceState = await provision();
   if (resourceState?.environment !== env) throw new Error(`provisioned Cloudflare state environment mismatch: ${String(resourceState?.environment)}`);
 
   const configs = await loadCloudflareWranglerConfigs(repoRoot);
   const requiredSecrets = secretInventory(configs);
-  for (const serviceId of CLOUDFLARE_DEPLOY_ORDER) {
+  const deployOrder = selectedCloudflareDeployOrder({ noC2pa });
+  for (const serviceId of deployOrder) {
     const workerName = resourceState.resources.deployManaged.workers[serviceId];
     const remote = await client.listSecretNames(workerName);
-    const missing = missingRequiredSecretNames(requiredSecrets[serviceId], remote);
+    const required = requiredSecrets[serviceId];
+    const missing = missingRequiredSecretNames(required, remote);
     if (missing.length > 0) throw new Error(`${serviceId} is missing required Cloudflare secrets: ${missing.join(", ")}`);
   }
 
   const resolvedConfigs = {};
-  for (const serviceId of CLOUDFLARE_DEPLOY_ORDER) {
+  for (const serviceId of deployOrder) {
     const relativePath = resourceState.wranglerConfigs?.[serviceId];
     if (!relativePath) throw new Error(`resolved Wrangler config is missing for ${serviceId}`);
     const configPath = resolve(repoRoot, relativePath);
@@ -250,30 +277,19 @@ export async function deployCloudflareStack({
     };
   }
 
-  for (const serviceId of ["asset-generator", "thread-presentation"]) {
-    const signerUrl = resolvedConfigs[serviceId].config.vars?.C2PA_SIGNER_URL;
-    if (typeof signerUrl !== "string" || signerUrl.trim() === "") continue;
-    const workerName = resourceState.resources.deployManaged.workers[serviceId];
-    const remote = await client.listSecretNames(workerName);
-    const missing = missingRequiredSecretNames(["C2PA_SIGNER_TOKEN"], remote);
-    if (missing.length > 0) throw new Error(`${serviceId} is missing required Cloudflare secrets: ${missing.join(", ")}`);
-  }
-
-  const signerVars = resolvedConfigs["asset-generator"].config.vars ?? {};
-  if (typeof signerVars.C2PA_SIGNER_URL === "string" && signerVars.C2PA_SIGNER_URL.trim() !== "") {
-    await client.checkSignerHealth({
-      baseUrl: signerVars.C2PA_SIGNER_URL,
-      signerId: typeof signerVars.C2PA_SIGNER_ID === "string" && signerVars.C2PA_SIGNER_ID.trim() !== ""
-        ? signerVars.C2PA_SIGNER_ID
-        : DEFAULT_C2PA_SIGNER_ID,
-      trustPolicy: typeof signerVars.C2PA_TRUST_POLICY === "string" && signerVars.C2PA_TRUST_POLICY.trim() !== ""
-        ? signerVars.C2PA_TRUST_POLICY
-        : DEFAULT_C2PA_TRUST_POLICY,
-    });
+  let signerId = null;
+  let trustPolicy = null;
+  if (!noC2pa) {
+    const signerConfig = resolvedConfigs["content-credential-signer"].config;
+    signerId = nonEmpty("C2PA signer ID", signerConfig.vars?.C2PA_SIGNER_ID);
+    trustPolicy = nonEmpty("C2PA trust policy", signerConfig.vars?.C2PA_TRUST_POLICY);
+    if (!["fibre_signature_only", "c2pa_trust_list"].includes(trustPolicy)) {
+      throw new Error(`unsupported cloud C2PA trust policy ${trustPolicy}`);
+    }
   }
 
   const deployments = [];
-  for (const serviceId of CLOUDFLARE_DEPLOY_ORDER) {
+  for (const serviceId of deployOrder) {
     const workerName = resourceState.resources.deployManaged.workers[serviceId];
     const resolved = resolvedConfigs[serviceId];
     const deployed = await client.deployService({
@@ -284,13 +300,16 @@ export async function deployCloudflareStack({
     });
     const baseUrl = healthBaseUrlForDeployment({ serviceId, resolvedConfig: resolved.config, deploymentOutput: deployed.output });
     const customDomain = deployed.customDomain ?? null;
-    const health = await retryServiceHealth({
-      client,
-      serviceId,
-      baseUrl,
-      attempts: customDomain === null ? HEALTH_RETRY_ATTEMPTS : CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS,
-      wait,
-    });
+    const attempts = customDomain === null ? HEALTH_RETRY_ATTEMPTS : CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS;
+    const health = serviceId === "content-credential-signer"
+      ? await retryHealth({
+          serviceId,
+          attempts,
+          wait,
+          kind:"signer",
+          check:() => client.checkSignerHealth({ baseUrl, signerId, trustPolicy }),
+        })
+      : await retryServiceHealth({ client, serviceId, baseUrl, attempts, wait });
     const stateHealth = STATEFUL_DO_SERVICES.has(serviceId)
       ? await retryStateHealth({ client, serviceId, baseUrl, wait })
       : null;
@@ -304,6 +323,7 @@ export async function deployCloudflareStack({
 
   return Object.freeze({
     environment: env,
+    contentCredentialMode:noC2pa ? "disabled" : "c2pa",
     deployments: Object.freeze(deployments),
     acceptance,
     viewer,
@@ -321,21 +341,24 @@ export async function runCommand(command, args, { cwd = process.cwd() } = {}) {
 
 function parseArgs(argv) {
   let environment = null;
+  let noC2pa = false;
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === "--env") environment = argv[++index] ?? null;
+    else if (argv[index] === "--no-c2pa") noC2pa = true;
     else throw new TypeError(`unsupported argument ${argv[index]}`);
   }
   if (!environment) throw new TypeError("--env <staging|production> is required");
-  return { environment };
+  return { environment, noC2pa };
 }
 
 if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
-  const { environment } = parseArgs(process.argv.slice(2));
+  const { environment, noC2pa } = parseArgs(process.argv.slice(2));
   const repoRoot = repoRootFrom(import.meta.url);
   const client = createWranglerDeploymentClient({ cwd: repoRoot });
   const result = await deployCloudflareStack({
     repoRoot,
     environment,
+    noC2pa,
     client,
     validateRepository: () => runCommand("npm", ["run", "validate"], { cwd: repoRoot }),
     provision: () => provisionCloudflareResources({
@@ -348,3 +371,4 @@ if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
   for (const deployment of result.deployments) console.log(`HEALTH  ${deployment.serviceId} ${deployment.baseUrl}`);
   console.log(`VIEWER  ${result.externalViewerOrigin}`);
 }
+export const assertProductionSignerHealth = assertSignerHealth;

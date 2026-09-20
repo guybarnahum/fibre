@@ -26,6 +26,7 @@ function resolvedConfig(name = "fibre-world-kernel-staging") {
 
 test("Cloudflare service deploy accepts only managed Fibre services", () => {
   assert.equal(normalizeService("world-kernel"), "world-kernel");
+  assert.equal(normalizeService("fibre-identity-authority"), "fibre-identity-authority");
   assert.throws(() => normalizeService("admin-dashboard"), /unsupported Cloudflare service/);
 });
 

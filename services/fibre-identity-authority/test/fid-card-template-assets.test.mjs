@@ -1,0 +1,50 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+import { createFidCardTemplateFromPngAssets } from "../src/fid-card-template-assets.mjs";
+
+const ROOT = new URL("../assets/fid-card/v0.3-ocean/", import.meta.url);
+const VERSION = "fid-card-template-v0.3-ocean";
+
+async function oceanAssets() {
+  const [layoutText, frontBasePng, frontForegroundPng, backBasePng, regular, medium] = await Promise.all([
+    readFile(new URL("layout.json", ROOT), "utf8"),
+    readFile(new URL("front-base.png", ROOT)),
+    readFile(new URL("front-foreground.png", ROOT)),
+    readFile(new URL("back-base.png", ROOT)),
+    readFile(new URL("NotoSans-SemiCondensed.ttf", ROOT)),
+    readFile(new URL("NotoSans-SemiCondensedMedium.ttf", ROOT)),
+  ]);
+  return {
+    layout:JSON.parse(layoutText),
+    frontBasePng,
+    frontForegroundPng,
+    backBasePng,
+    fontAssets:{
+      "NotoSans-SemiCondensed.ttf":regular,
+      "NotoSans-SemiCondensedMedium.ttf":medium,
+    },
+  };
+}
+
+test("ocean FID template resolves its versioned font roles", async () => {
+  const template = await createFidCardTemplateFromPngAssets({ version:VERSION, ...await oceanAssets() });
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(template.fonts).map(([role, value]) => [role, value.asset])),
+    {
+      regular:"NotoSans-SemiCondensed.ttf",
+      medium:"NotoSans-SemiCondensedMedium.ttf",
+    },
+    "FID typography assets drifted",
+  );
+});
+
+test("FID template rejects a missing declared font asset", async () => {
+  const assets = await oceanAssets();
+  delete assets.fontAssets["NotoSans-SemiCondensedMedium.ttf"];
+  await assert.rejects(
+    () => createFidCardTemplateFromPngAssets({ version:VERSION, ...assets }),
+    /FID font asset NotoSans-SemiCondensedMedium\.ttf is required/,
+  );
+});

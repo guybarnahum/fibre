@@ -10,13 +10,10 @@ import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifes
 
 const MAX_BODY_BYTES = 32 * 1024 * 1024;
 const REPO_ROOT = fileURLToPath(new URL("../../../..", import.meta.url));
-const LOCAL_MANIFEST = parseDeploymentManifest(
-  readFileSync(new URL("../../environments/local.yaml", import.meta.url), "utf8"),
-);
-const DEPLOYMENT = resolveServiceDeployment(LOCAL_MANIFEST, "content-credential-signer");
-if (DEPLOYMENT.runtime.provider !== "local-node") {
-  throw new TypeError(`content-credential-signer local host requires local-node runtime, got ${DEPLOYMENT.runtime.provider}`);
-}
+const DEPLOYMENTS = Object.freeze({
+  local: parseDeploymentManifest(readFileSync(new URL("../../environments/local.yaml", import.meta.url), "utf8")),
+  cloudflare: parseDeploymentManifest(readFileSync(new URL("../../environments/cloudflare.yaml", import.meta.url), "utf8")),
+});
 
 function optionalEnvironmentValue(mapping, key, environment) {
   const variable = mapping?.[key];
@@ -34,27 +31,37 @@ function parsePort(value) {
 }
 
 export async function startContentCredentialSignerFromEnvironment(environment = process.env) {
-  const selected = DEPLOYMENT.integrations.signer;
+  const deploymentEnvironment = environment.FIBRE_DEPLOYMENT_ENV ?? "local";
+  const manifest = DEPLOYMENTS[deploymentEnvironment];
+  if (!manifest) throw new TypeError(`unsupported content-credential-signer deployment environment ${String(deploymentEnvironment)}`);
+  const deployment = resolveServiceDeployment(manifest, "content-credential-signer");
+  const selected = deployment.integrations.signer;
   if (!selected || selected.kind !== "content-credentials.signer" || selected.provider !== "c2pa-node") {
-    throw new TypeError("content-credential-signer local deployment requires c2pa-node signer integration");
+    throw new TypeError("content-credential-signer requires c2pa-node signer integration");
   }
 
-  const certificatePath = resolve(REPO_ROOT, environment.FIBRE_C2PA_CERT ?? selected.config.certificatePath);
-  const privateKeyPath = resolve(REPO_ROOT, environment.FIBRE_C2PA_KEY ?? selected.config.privateKeyPath);
+  const certificateBase64 = typeof environment.C2PA_SIGNER_CERT_BASE64 === "string" && environment.C2PA_SIGNER_CERT_BASE64.trim() !== ""
+    ? environment.C2PA_SIGNER_CERT_BASE64.trim() : null;
+  const privateKeyBase64 = typeof environment.C2PA_SIGNER_KEY_BASE64 === "string" && environment.C2PA_SIGNER_KEY_BASE64.trim() !== ""
+    ? environment.C2PA_SIGNER_KEY_BASE64.trim() : null;
   const signer = await createC2paNodeSigner({
-    certificatePath,
-    privateKeyPath,
-    signerId: selected.config.signerId,
-    trustPolicy: selected.config.trustPolicy,
+    certificatePath: certificateBase64 === null ? resolve(REPO_ROOT, environment.FIBRE_C2PA_CERT ?? selected.config.certificatePath) : null,
+    privateKeyPath: privateKeyBase64 === null ? resolve(REPO_ROOT, environment.FIBRE_C2PA_KEY ?? selected.config.privateKeyPath) : null,
+    certificateBytes: certificateBase64 === null ? null : Buffer.from(certificateBase64, "base64"),
+    privateKeyBytes: privateKeyBase64 === null ? null : Buffer.from(privateKeyBase64, "base64"),
+    signerId: environment.C2PA_SIGNER_ID ?? selected.config.signerId,
+    trustPolicy: environment.C2PA_TRUST_POLICY ?? selected.config.trustPolicy,
   });
-  const serviceToken = optionalEnvironmentValue(selected.environment, "serviceToken", environment);
+  const serviceToken = environment.C2PA_SIGNER_TOKEN
+    ?? optionalEnvironmentValue(selected.environment, "serviceToken", environment);
   const service = createContentCredentialSignerService({ signer, serviceToken });
   const server = createServer(createNodeServiceHandler({ service, maxBodyBytes: MAX_BODY_BYTES }));
-  const port = parsePort(environment.FIBRE_C2PA_PORT ?? "8791");
+  const port = parsePort(environment.PORT ?? environment.FIBRE_C2PA_PORT ?? "8791");
+  const host = environment.FIBRE_C2PA_HOST ?? "127.0.0.1";
 
   await new Promise((resolveListen, rejectListen) => {
     server.once("error", rejectListen);
-    server.listen(port, "127.0.0.1", () => {
+    server.listen(port, host, () => {
       server.off("error", rejectListen);
       resolveListen();
     });

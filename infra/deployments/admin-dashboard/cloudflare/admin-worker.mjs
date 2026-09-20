@@ -16,6 +16,8 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
 const THREAD_OBSERVATORY_ROUTE = /^\/api\/threads\/([^/]+)\/observatory$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
+const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
+const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
@@ -149,6 +151,64 @@ async function proxyThreadRepair(request, env, threadId) {
   });
 }
 
+export async function proxyFinCardVerify(request, env) {
+  const side = new URL(request.url).searchParams.get("side");
+  if (side !== "front" && side !== "back") return json(400, { error:"invalid_fid_side" });
+
+  const upstream = await serviceBinding(env, "FIBRE_IDENTITY_AUTHORITY").fetch(new Request(
+    `https://fibre-identity-authority.internal/internal/fid/cards/verify?side=${encodeURIComponent(side)}`,
+    {
+      method:"POST",
+      headers:{
+        Accept:"application/json",
+        "Content-Type":"image/png",
+        "x-fibre-private-token":privateToken(env),
+      },
+      body:await request.arrayBuffer(),
+    },
+  ));
+  const payload = await upstream.json().catch(() => null);
+  if (!upstream.ok || payload === null) {
+    return json(upstream.ok ? 502 : upstream.status, payload ?? { error:"fid_verify_invalid_response" });
+  }
+  return json(200, payload);
+}
+
+export async function proxyFidReissue(request, env, threadId) {
+  let input;
+  try { input = await request.json(); }
+  catch { return json(400, { error:"invalid_fid_reissue", detail:"FID reissue request must be JSON" }); }
+  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).join(",") !== "idempotencyKey") {
+    return json(400, { error:"invalid_fid_reissue", detail:"FID reissue request must contain exactly idempotencyKey" });
+  }
+  const idempotencyKey = id("idempotencyKey", input.idempotencyKey);
+  let presentation;
+  try { presentation = serviceBinding(env, "THREAD_PRESENTATION"); }
+  catch {
+    return json(503, {
+      error:"fid_reissue_not_configured",
+      detail:"Thread Presentation is not deployed in this environment.",
+    });
+  }
+  const upstream = await presentation.fetch(new Request(
+    "https://thread-presentation.internal/internal/fid/reconcile",
+    {
+      method:"POST",
+      headers:{
+        Accept:"application/json",
+        "Content-Type":"application/json",
+        "x-fibre-private-token":privateToken(env),
+      },
+      body:JSON.stringify({ threadId, idempotencyKey, mode:"reissue" }),
+    },
+  ));
+  const payload = await upstream.json().catch(() => null);
+  if (!upstream.ok || payload?.ok !== true || !payload.result) {
+    return json(upstream.status, payload ?? { error:"fid_reissue_invalid_response" });
+  }
+  return json(upstream.status, payload.result);
+}
+
 async function threadRegistry(env, limit) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     `https://world.internal/internal/thread-directory/search?limit=${encodeURIComponent(String(limit))}`,
@@ -175,11 +235,13 @@ export default {
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     const observatoryMatch = THREAD_OBSERVATORY_ROUTE.exec(url.pathname);
     const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
+    const fidReissueMatch = THREAD_FID_REISSUE_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || repairMatch || assetMatch || threadPopulation || infraMonitor);
-    const adminPost = request.method === "POST" && (repairMatch || infraMonitor);
+    const finVerify = url.pathname === FIN_VERIFY_ROUTE;
+    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || finVerify || infraMonitor);
     if (adminGet || adminPost) {
       const gate = await adminPrincipal(request, env);
       if (gate.response) return gate.response;
@@ -202,6 +264,11 @@ export default {
             queriedAt:new Date().toISOString(),
             ...population,
           });
+        }
+        if (finVerify) return proxyFinCardVerify(request, env);
+        if (fidReissueMatch) {
+          const threadId = id("threadId", decodeURIComponent(fidReissueMatch[1]));
+          return proxyFidReissue(request, env, threadId);
         }
         if (repairMatch) {
           const threadId = id("threadId", decodeURIComponent(repairMatch[1]));
@@ -242,6 +309,8 @@ export default {
       } catch (error) {
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
         if (threadPopulation) return json(503, { error:"thread_population_unavailable", detail:error.message });
+        if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
+        if (fidReissueMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_reissue_unavailable", detail:error.message });
         return json(error instanceof TypeError ? 400 : 503, {
           error: error instanceof TypeError ? "invalid_thread_resource" : "thread_identity_unavailable",
           detail: error.message,

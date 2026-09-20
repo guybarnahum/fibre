@@ -1,4 +1,6 @@
 import { decorateActionButton } from "./fa-icons.js";
+import { createFibreFinCard } from "./fibre-fin-card.js";
+import { openThreadActionDialog } from "./thread-action-dialog.js";
 
 function el(tag, className = null, text = null) {
   const node = document.createElement(tag);
@@ -477,10 +479,72 @@ function memoriesSection(memories, birthDate, memoryError = null) {
   return wrap;
 }
 
-function fidSection(identity) {
+export function identityWithFidPublication(identity, result) {
+  const snapshot = result?.presentation?.publication?.snapshot ?? null;
+  if (!snapshot?.presentation || !Array.isArray(snapshot?.media?.assets)) return identity;
+
+  const publishedAssets = snapshot.media.assets
+    .filter((asset) => asset?.status === "ready" && typeof asset.locator === "string" && asset.locator !== "")
+    .map((asset) => ({
+      ...asset,
+      objectRef:asset.locator,
+      url:`/api/thread-assets/${encodeURIComponent(asset.locator)}`,
+      source:"current_public_presentation",
+      deliveryStatus:"published",
+    }));
+  const preserved = (Array.isArray(identity?.assets) ? identity.assets : [])
+    .filter((asset) => asset?.source !== "current_public_presentation");
+
+  return Object.freeze({
+    ...identity,
+    assets:Object.freeze([...publishedAssets, ...preserved]),
+    presentation:structuredClone(snapshot),
+  });
+}
+
+function fidReissueKey() {
+  return `admin_fid_reissue_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export async function reissueFidCard(threadId, { idempotencyKey = fidReissueKey() } = {}) {
+  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/fid/reissue`, {
+    method:"POST",
+    headers:{ Accept:"application/json", "Content-Type":"application/json" },
+    body:JSON.stringify({ idempotencyKey }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+  return payload;
+}
+
+export async function resumeFidReissue(threadId, {
+  idempotencyKey,
+  initialResult,
+  wait = (ms) => new Promise((resolve) => globalThis.setTimeout(resolve, ms)),
+  maxAttempts = 120,
+} = {}) {
+  if (typeof idempotencyKey !== "string" || idempotencyKey.trim() === "") {
+    throw new TypeError("FID reissue continuation requires idempotencyKey");
+  }
+  if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
+    throw new TypeError("FID reissue continuation maxAttempts must be a positive integer");
+  }
+
+  let result = initialResult ?? await reissueFidCard(threadId, { idempotencyKey });
+  let delayMs = 500;
+  for (let attempt = 0; result?.state === "derivation_requested" && attempt < maxAttempts; attempt += 1) {
+    await wait(delayMs);
+    result = await reissueFidCard(threadId, { idempotencyKey });
+    delayMs = Math.min(5_000, Math.round(delayMs * 1.6));
+  }
+  return result;
+}
+
+export function renderFidSection(identity, threadId) {
   const presentation = identity.presentation?.presentation ?? null;
   const card = presentation?.identityCard ?? null;
   const wrap = section("Fibre Identity Card", card ? `Revision ${card.revision ?? "—"} · ${human(card.status ?? "unknown")}` : "Card not issued");
+  wrap.classList.add("thread-fid-section");
   const assets = Array.isArray(identity.assets) ? identity.assets : [];
   const officialPhotoMediaRef = typeof card?.officialPhotoMediaRef === "string" ? card.officialPhotoMediaRef : null;
   const officialPhoto = assets.find((asset) => asset?.role === "official_id_photo" && asset?.url)
@@ -506,17 +570,22 @@ function fidSection(identity) {
   if (card === null) {
     cardPane.append(el("p", "thread-empty-note", "No active Fibre Identity Card is projected for this Thread."));
   } else {
-    const refs = [card.frontMediaRef, card.backMediaRef].filter((value) => typeof value === "string");
-    const cardAssets = refs.map((mediaId) => assets.find((asset) => asset.mediaId === mediaId && asset.url)).filter(Boolean);
-    if (cardAssets.length) {
-      const grid = el("div", "thread-fid-grid");
-      for (const asset of cardAssets) {
-        const side = asset.role === "fibre_identity_card_back" ? "Back" : "Front";
-        const pane = el("article", "thread-fid-card");
-        pane.append(imageButton(asset, `Fibre Identity Card ${side.toLowerCase()}`, "thread-fid-preview"), el("strong", null, side));
-        grid.append(pane);
-      }
-      cardPane.append(grid);
+    const front = typeof card.frontMediaRef === "string"
+      ? assets.find((asset) => asset.mediaId === card.frontMediaRef && asset.url) ?? null
+      : null;
+    const back = typeof card.backMediaRef === "string"
+      ? assets.find((asset) => asset.mediaId === card.backMediaRef && asset.url) ?? null
+      : null;
+    const descriptor = assets.find((asset) => asset.role === "fibre_identity_card"
+      && asset.kind === "document" && asset.url) ?? null;
+
+    if (front && back) {
+      cardPane.append(createFibreFinCard({
+        front,
+        back,
+        descriptor,
+        label:`Fibre Identity Card revision ${card.revision ?? ""}`.trim(),
+      }));
     } else {
       cardPane.append(el("p", "thread-empty-note", card.credentialVersion === "fibre-identity-card-credential-v0.1"
         ? "Legacy identity credential metadata exists; rendered front/back card media has not been issued."
@@ -525,6 +594,81 @@ function fidSection(identity) {
   }
   visuals.append(cardPane);
   wrap.append(visuals);
+
+  const actionStatus = el("p", "thread-empty-note");
+  actionStatus.hidden = true;
+  const actions = el("div", "thread-repair-actions");
+  const reissue = el("button", "secondary thread-repair-button");
+  reissue.type = "button";
+  decorateActionButton(reissue, {
+    icon:"id-card",
+    label:"Re-issue FIN Card",
+    tooltip:"Cut a new FIN Card from the current authoritative Thread identity",
+  });
+  reissue.addEventListener("click", () => {
+    openThreadActionDialog({
+      threadId,
+      threadName:threadName(identity),
+      label:"Re-issue FIN Card",
+      eyebrow:"Fibre Identity Card",
+      description:"Cut a new FIN Card from the current authoritative Thread identity. The FIN and Thread identity do not change; the previous card remains in history.",
+      run:async () => {
+        const idempotencyKey = fidReissueKey();
+        const result = await reissueFidCard(threadId, { idempotencyKey });
+        const credential = result?.credential ?? null;
+        actionStatus.hidden = false;
+        actionStatus.textContent = credential
+          ? `Re-issued · Revision ${credential.revision} · ${credential.credentialId}`
+          : result?.state === "derivation_requested"
+            ? "Reissue pending · official ID photo is being prepared."
+            : `Reissue · ${human(result?.state ?? "accepted")}`;
+
+        const publish = (completed) => window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued", {
+          detail:{
+            threadId,
+            result:completed,
+            identity:identityWithFidPublication(identity, completed),
+          },
+        }));
+
+        if (result?.state !== "derivation_requested") {
+          publish(result);
+          return;
+        }
+
+        reissue.disabled = true;
+        void resumeFidReissue(threadId, {
+          idempotencyKey,
+          initialResult:result,
+        }).then((completed) => {
+          const completedCredential = completed?.credential ?? null;
+          if (completed?.state === "active" && completedCredential !== null) {
+            if (actionStatus.isConnected) {
+              actionStatus.hidden = false;
+              actionStatus.textContent = `Re-issued · Revision ${completedCredential.revision} · ${completedCredential.credentialId}`;
+            }
+            publish(completed);
+            return;
+          }
+
+          if (actionStatus.isConnected) {
+            actionStatus.hidden = false;
+            actionStatus.textContent = completed?.state === "derivation_requested"
+              ? "Reissue pending · official ID photo is still being prepared."
+              : `Reissue · ${human(completed?.state ?? "not completed")}`;
+            reissue.disabled = false;
+          }
+        }).catch((error) => {
+          if (!actionStatus.isConnected) return;
+          actionStatus.hidden = false;
+          actionStatus.textContent = `FIN Card reissue failed: ${error instanceof Error ? error.message : String(error)}`;
+          reissue.disabled = false;
+        });
+      },
+    });
+  });
+  actions.append(reissue);
+  wrap.append(actions, actionStatus);
 
   if (card !== null) {
     const meta = el("div", "thread-person-facts thread-fid-meta");
@@ -647,7 +791,7 @@ export function renderThreadObservatory({ identity, threadId, memories = [], mem
   view.append(
     hero(identity, threadId),
     identitySection(identity, threadId),
-    fidSection(identity),
+    renderFidSection(identity, threadId),
     nowSection(identity),
     memoriesSection(memories, firstText(identity.birthDate, identity.world?.thread?.identity?.birthDate), memoryError),
   );

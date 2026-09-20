@@ -2,12 +2,14 @@ import { renderThreadHealth } from "./thread-repair-ui.js";
 import {
   fetchThreadObservatory,
   portraitAsset,
+  renderFidSection,
   renderThreadObservatory,
   threadName,
 } from "./thread-observatory.js";
 
 let renderedThreadId = null;
 let threadPageLoad = 0;
+let fidSectionLoad = 0;
 
 function node(tag, className = null, text = null) {
   const element = document.createElement(tag);
@@ -118,6 +120,65 @@ export async function renderThreadPage(threadId) {
     viewer.removeAttribute("href");
   }
 }
+
+function sleep(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function replaceFidSection(current, identity, threadId, credential = null) {
+  const replacement = renderFidSection(identity, threadId);
+  if (credential) {
+    const status = replacement.querySelector(".thread-repair-actions")?.nextElementSibling;
+    if (status) {
+      status.hidden = false;
+      status.textContent = `Re-issued · Revision ${credential.revision} · ${credential.credentialId}`;
+    }
+  }
+  current.replaceWith(replacement);
+}
+
+async function refreshFidSection(threadId, expectedCredential = null, publishedIdentity = null) {
+  const load = ++fidSectionLoad;
+  const current = document.querySelector(".thread-observatory-page .thread-fid-section");
+  if (!current) return;
+
+  if (publishedIdentity?.presentation?.presentation?.identityCard) {
+    replaceFidSection(current, publishedIdentity, threadId, expectedCredential);
+    return;
+  }
+
+  try {
+    let payload = null;
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      payload = await fetchThreadObservatory(threadId);
+      if (renderedThreadId !== threadId || load !== fidSectionLoad || !current.isConnected) return;
+
+      const card = payload.identity?.presentation?.presentation?.identityCard ?? null;
+      if (expectedCredential === null
+        || (card?.credentialId === expectedCredential.credentialId && card?.revision === expectedCredential.revision)) break;
+
+      await sleep(250);
+    }
+
+    if (renderedThreadId !== threadId || load !== fidSectionLoad || !current.isConnected || payload === null) return;
+    replaceFidSection(current, payload.identity ?? {}, threadId, expectedCredential);
+  } catch (error) {
+    if (renderedThreadId !== threadId || load !== fidSectionLoad || !current.isConnected) return;
+    const status = current.querySelector(".thread-repair-actions")?.nextElementSibling;
+    if (status) {
+      status.hidden = false;
+      status.textContent = `FIN Card refresh failed: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+}
+
+window.addEventListener("fibre:fid-card-reissued", (event) => {
+  const threadId = event?.detail?.threadId ?? null;
+  if (threadId === null || threadId !== renderedThreadId) return;
+  const credential = event?.detail?.result?.credential ?? null;
+  const identity = event?.detail?.identity ?? null;
+  void refreshFidSection(threadId, credential, identity);
+});
 
 window.addEventListener("fibre:thread-identity-updated", (event) => {
   const threadId = event?.detail?.threadId ?? null;

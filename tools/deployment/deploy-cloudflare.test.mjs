@@ -6,7 +6,7 @@ import { dirname, resolve } from "node:path";
 
 import {
   CLOUDFLARE_DEPLOY_ORDER,
-  assertProductionSignerHealth,
+  assertSignerHealth,
   createWranglerDeploymentClient,
   deployCloudflareStack,
   healthBaseUrlForDeployment,
@@ -28,9 +28,8 @@ async function fixtureRepo() {
     const resolved = parseJsonc(source, path);
     resolved.name = `${resolved.name}-staging`;
     resolved.vars ??= {};
-    if (serviceId === "asset-generator") resolved.vars.C2PA_SIGNER_URL = "https://signer.staging.example";
+    for (const binding of resolved.services ?? []) binding.service = `${binding.service}-staging`;
     if (serviceId === "thread-presentation") {
-      resolved.vars.C2PA_SIGNER_URL = "https://signer.staging.example";
       resolved.vars.VIEWER_ORIGIN = "https://staging.insidefibre.com";
       resolved.routes[0].pattern = "api.staging.insidefibre.com";
     }
@@ -55,7 +54,11 @@ async function fixtureRepo() {
 }
 
 function allSecrets() {
-  return new Set(["OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN"]);
+  return new Set([
+    "OPENAI_API_KEY", "BFL_API_KEY", "C2PA_SIGNER_TOKEN", "FIBRE_PRIVATE_TOKEN",
+    "C2PA_SIGNER_CERT_BASE64", "C2PA_SIGNER_KEY_BASE64",
+    "FIA_ISSUER_JWK", "FIA_CREDENTIAL_KEY_BASE64",
+  ]);
 }
 
 test("Slice F deployment accepts services only after shallow and durable state health", async () => {
@@ -64,11 +67,12 @@ test("Slice F deployment accepts services only after shallow and durable state h
   let birthStateAttempts = 0;
   const client = {
     async assertAuthenticated() { calls.push("auth"); return { ok: true }; },
+    async assertContainersAvailable() { calls.push("containers"); return { ok:true }; },
     async listSecretNames(workerName) { calls.push(`secrets:${workerName}`); return allSecrets(); },
     async checkSignerHealth(input) {
       calls.push(`signer:${input.baseUrl}`);
-      assert.equal(input.signerId, "fibre-c2pa-production-v1");
-      assert.equal(input.trustPolicy, "c2pa_trust_list");
+      assert.equal(input.signerId, "fibre-c2pa-self-v1");
+      assert.equal(input.trustPolicy, "fibre_signature_only");
       return { ok: true };
     },
     async deployService({ serviceId }) {
@@ -103,34 +107,86 @@ test("Slice F deployment accepts services only after shallow and durable state h
   assert.equal(result.deployments.find((item) => item.serviceId === "thread-presentation").baseUrl, "https://api.staging.insidefibre.com");
   assert.equal(result.externalViewerOrigin, "https://staging.insidefibre.com");
   assert.deepEqual(calls.filter((call) => call.startsWith("deploy:")), [
+    "deploy:content-credential-signer",
     "deploy:asset-generator",
     "deploy:thread-presentation",
     "deploy:world-kernel",
+    "deploy:fibre-identity-authority",
     "deploy:birth-center",
   ]);
   assert.deepEqual(calls.filter((call) => call.startsWith("state-health:")), [
     "state-health:world-kernel:https://world-kernel.account.workers.dev",
+    "state-health:fibre-identity-authority:https://fibre-identity-authority.account.workers.dev",
     "state-health:birth-center:https://birth-center.account.workers.dev",
     "state-health:birth-center:https://birth-center.account.workers.dev",
   ]);
   assert.equal(result.deployments.find((item) => item.serviceId === "world-kernel").stateHealth.stateChecked, true);
+  assert.equal(result.deployments.find((item) => item.serviceId === "fibre-identity-authority").stateHealth.stateChecked, true);
   assert.equal(result.deployments.find((item) => item.serviceId === "birth-center").stateHealth.stateChecked, true);
   assert.equal(result.deployments.find((item) => item.serviceId === "asset-generator").stateHealth, null);
-  assert.deepEqual(calls.slice(0, 3), ["validate", "auth", "provision"]);
-  assert.ok(calls.indexOf("signer:https://signer.staging.example") > calls.findLastIndex((call) => call.startsWith("secrets:")));
-  assert.ok(calls.indexOf("deploy:asset-generator") > calls.indexOf("signer:https://signer.staging.example"));
+  assert.deepEqual(calls.slice(0, 4), ["validate", "auth", "containers", "provision"]);
+  assert.ok(calls.indexOf("deploy:content-credential-signer") > calls.findLastIndex((call) => call.startsWith("secrets:")));
+  assert.ok(calls.indexOf("signer:https://content-credential-signer.account.workers.dev") > calls.indexOf("deploy:content-credential-signer"));
+  assert.ok(calls.indexOf("deploy:asset-generator") > calls.indexOf("signer:https://content-credential-signer.account.workers.dev"));
   assert.equal(calls.at(-2), "accept:https://api.staging.insidefibre.com");
   assert.equal(calls.at(-1), "viewer:https://staging.insidefibre.com");
 });
 
-test("Slice F fails before signer/deploy when a required remote secret name is absent", async () => {
+test("no-C2PA deployment skips the global content-credential signer", async () => {
+  const { root, state } = await fixtureRepo();
+  const calls = [];
+  const client = {
+    async assertAuthenticated() { calls.push("auth"); },
+    async listSecretNames(workerName) {
+      calls.push(`secrets:${workerName}`);
+      const present = allSecrets();
+      return present;
+    },
+    async deployService({ serviceId, resolvedConfig }) {
+      calls.push(`deploy:${serviceId}`);
+      return { output:`Published\nhttps://${serviceId}.account.workers.dev` };
+    },
+    async checkServiceHealth({ serviceId }) { return { ok:true, service:serviceId }; },
+    async checkStateHealth({ serviceId }) { return { ok:true, service:serviceId, stateChecked:true }; },
+    async checkPresentationAcceptance() { return { threads:[] }; },
+    async checkViewer() { return { ok:true }; },
+  };
+
+  const result = await deployCloudflareStack({
+    repoRoot:root,
+    environment:"staging",
+    noC2pa:true,
+    client,
+    validateRepository:async () => calls.push("validate"),
+    provision:async () => { calls.push("provision"); return state; },
+    wait:async () => {},
+  });
+
+  assert.equal(result.contentCredentialMode, "disabled");
+  assert.deepEqual(result.deployments.map((item) => item.serviceId), [
+    "asset-generator",
+    "thread-presentation",
+    "world-kernel",
+    "fibre-identity-authority",
+    "birth-center",
+  ]);
+  assert.equal(calls.some((call) => call.includes("content-credential-signer")), false);
+  assert.deepEqual(calls.slice(0, 3), ["validate", "auth", "provision"]);
+});
+
+test("Slice F fails before deploy when Fibre signer credentials are incomplete", async () => {
   const { root, state } = await fixtureRepo();
   let signerCalls = 0;
   let deployCalls = 0;
   const client = {
     async assertAuthenticated() {},
+    async assertContainersAvailable() {},
     async listSecretNames(workerName) {
-      if (workerName === "fibre-asset-generator-staging") return new Set(["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"]);
+      if (workerName === "fibre-content-credential-signer-staging") {
+        const present = allSecrets();
+        present.delete("C2PA_SIGNER_CERT_BASE64");
+        return present;
+      }
       return allSecrets();
     },
     async checkSignerHealth() { signerCalls += 1; },
@@ -142,31 +198,31 @@ test("Slice F fails before signer/deploy when a required remote secret name is a
     client,
     validateRepository: async () => {},
     provision: async () => state,
-  }), /asset-generator is missing required Cloudflare secrets: C2PA_SIGNER_TOKEN/);
+  }), /content-credential-signer is missing required Cloudflare secrets: C2PA_SIGNER_CERT_BASE64/);
   assert.equal(signerCalls, 0);
   assert.equal(deployCalls, 0);
 });
 
-test("Slice F signer health requires exact production signer identity and trust-list policy", () => {
-  assert.deepEqual(assertProductionSignerHealth({
+test("Slice F signer health requires the configured signer identity and policy", () => {
+  assert.deepEqual(assertSignerHealth({
     ok: true,
     service: "content-credential-signer",
     format: "c2pa",
-    signerId: "fibre-c2pa-production-v1",
-    trustPolicy: "c2pa_trust_list",
+    signerId: "fibre-c2pa-self-v1",
+    trustPolicy: "fibre_signature_only",
   }, {
-    signerId: "fibre-c2pa-production-v1",
-    trustPolicy: "c2pa_trust_list",
+    signerId: "fibre-c2pa-self-v1",
+    trustPolicy: "fibre_signature_only",
   }).ok, true);
-  assert.throws(() => assertProductionSignerHealth({
+  assert.throws(() => assertSignerHealth({
     ok: true,
     service: "content-credential-signer",
     format: "c2pa",
     signerId: "other",
-    trustPolicy: "c2pa_trust_list",
+    trustPolicy: "fibre_signature_only",
   }, {
-    signerId: "fibre-c2pa-production-v1",
-    trustPolicy: "c2pa_trust_list",
+    signerId: "fibre-c2pa-self-v1",
+    trustPolicy: "fibre_signature_only",
   }), /unexpected signerId/);
 });
 
@@ -175,6 +231,7 @@ test("Slice F Wrangler client verifies secret names, shallow health and deep sta
   const runner = async (args) => {
     calls.push(args);
     if (args[0] === "whoami") return { stdout: '{"accounts":[{"id":"acct"}]}', stderr: "", exitCode: 0 };
+    if (args[0] === "containers") return { stdout: "[]", stderr: "", exitCode: 0 };
     if (args[0] === "secret") return { stdout: '[{"name":"FIBRE_PRIVATE_TOKEN","type":"secret_text"}]', stderr: "", exitCode: 0 };
     if (args[0] === "deploy") return { stdout: "https://worker.account.workers.dev", stderr: "", exitCode: 0 };
     throw new Error(`unexpected command ${args.join(" ")}`);
@@ -194,6 +251,7 @@ test("Slice F Wrangler client verifies secret names, shallow health and deep sta
   });
   const client = createWranglerDeploymentClient({ runner, cwd: "/repo", fetchImpl });
   await client.assertAuthenticated();
+  assert.deepEqual(await client.assertContainersAvailable(), { ok:true });
   assert.deepEqual(await client.listSecretNames("fibre-world-kernel-staging"), new Set(["FIBRE_PRIVATE_TOKEN"]));
   await client.deployService({ configPath: "/repo/.fibre/world.jsonc" });
   assert.deepEqual(calls.at(-1), [
@@ -239,3 +297,27 @@ test("deep health failures surface the Fibre state diagnostic", async () => {
     /HTTP 503: Birth Center state could not be opened/,
   );
 });
+test("deployment fails before provisioning when Cloudflare Containers access is unavailable", async () => {
+  const { root } = await fixtureRepo();
+  let provisionCalls = 0;
+  let deployCalls = 0;
+  await assert.rejects(deployCloudflareStack({
+    repoRoot: root,
+    environment: "staging",
+    client: {
+      async assertAuthenticated() {},
+      async assertContainersAvailable() {
+        throw new Error("Cloudflare Containers access is required for the Fibre C2PA signer");
+      },
+      async deployService() { deployCalls += 1; },
+    },
+    validateRepository: async () => {},
+    provision: async () => {
+      provisionCalls += 1;
+      throw new Error("provision should not run");
+    },
+  }), /Cloudflare Containers access is required/);
+  assert.equal(provisionCalls, 0);
+  assert.equal(deployCalls, 0);
+});
+

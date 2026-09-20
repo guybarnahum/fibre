@@ -3,52 +3,13 @@ import { deflateSync } from "node:zlib";
 
 import { normalizeFidIssuanceWorkflowRecord } from "./fid-card-issuance-domain.mjs";
 import { assertFidPhotoAdmissionReceipt } from "./fid-photo-admission.mjs";
+import { drawFidText, measureFidText } from "./fid-card-typography.mjs";
 
-export const FID_CARD_TEMPLATE_VERSION = "fid-card-template-v0.1";
-export const FID_CARD_SIZE = Object.freeze({ width: 856, height: 540 });
+export const FID_CARD_SIZE = Object.freeze({ width:856, height:540 });
 
-const GLYPHS = Object.freeze({
-  " ": ["00000","00000","00000","00000","00000","00000","00000"],
-  "-": ["00000","00000","00000","11111","00000","00000","00000"],
-  ".": ["00000","00000","00000","00000","00000","01100","01100"],
-  ":": ["00000","01100","01100","00000","01100","01100","00000"],
-  "0": ["01110","10001","10011","10101","11001","10001","01110"],
-  "1": ["00100","01100","00100","00100","00100","00100","01110"],
-  "2": ["01110","10001","00001","00010","00100","01000","11111"],
-  "3": ["11110","00001","00001","01110","00001","00001","11110"],
-  "4": ["00010","00110","01010","10010","11111","00010","00010"],
-  "5": ["11111","10000","10000","11110","00001","00001","11110"],
-  "6": ["01110","10000","10000","11110","10001","10001","01110"],
-  "7": ["11111","00001","00010","00100","01000","01000","01000"],
-  "8": ["01110","10001","10001","01110","10001","10001","01110"],
-  "9": ["01110","10001","10001","01111","00001","00001","01110"],
-  A: ["01110","10001","10001","11111","10001","10001","10001"],
-  B: ["11110","10001","10001","11110","10001","10001","11110"],
-  C: ["01111","10000","10000","10000","10000","10000","01111"],
-  D: ["11110","10001","10001","10001","10001","10001","11110"],
-  E: ["11111","10000","10000","11110","10000","10000","11111"],
-  F: ["11111","10000","10000","11110","10000","10000","10000"],
-  G: ["01111","10000","10000","10111","10001","10001","01111"],
-  H: ["10001","10001","10001","11111","10001","10001","10001"],
-  I: ["01110","00100","00100","00100","00100","00100","01110"],
-  J: ["00001","00001","00001","00001","10001","10001","01110"],
-  K: ["10001","10010","10100","11000","10100","10010","10001"],
-  L: ["10000","10000","10000","10000","10000","10000","11111"],
-  M: ["10001","11011","10101","10101","10001","10001","10001"],
-  N: ["10001","11001","10101","10011","10001","10001","10001"],
-  O: ["01110","10001","10001","10001","10001","10001","01110"],
-  P: ["11110","10001","10001","11110","10000","10000","10000"],
-  Q: ["01110","10001","10001","10001","10101","10010","01101"],
-  R: ["11110","10001","10001","11110","10100","10010","10001"],
-  S: ["01111","10000","10000","01110","00001","00001","11110"],
-  T: ["11111","00100","00100","00100","00100","00100","00100"],
-  U: ["10001","10001","10001","10001","10001","10001","01110"],
-  V: ["10001","10001","10001","10001","10001","01010","00100"],
-  W: ["10001","10001","10001","10101","10101","10101","01010"],
-  X: ["10001","10001","01010","00100","01010","10001","10001"],
-  Y: ["10001","10001","01010","00100","00100","00100","00100"],
-  Z: ["11111","00001","00010","00100","01000","10000","11111"],
-  "?": ["01110","10001","00001","00010","00100","00000","00100"],
+const CARD_PALETTE = Object.freeze({
+  ink:[24, 29, 29, 255],
+  inkSoft:[75, 81, 78, 255],
 });
 
 function sha256(bytes) {
@@ -61,10 +22,41 @@ function canonical(value) {
   return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]));
 }
 
-function rgbaSurface(width, height, color = [0, 0, 0, 0]) {
-  const rgba = new Uint8Array(width * height * 4);
-  for (let i = 0; i < rgba.length; i += 4) rgba.set(color, i);
-  return { width, height, rgba };
+function cleanIdentityText(value) {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+function identitySnapshotFor(workflow, authorizedIdentity) {
+  const base = {
+    credentialId:workflow.proposedCredentialId,
+    revision:workflow.proposedRevision,
+    threadId:workflow.threadId,
+    fibreIdentityNumber:workflow.fibreIdentityNumber,
+    registrationId:workflow.registrationId,
+    civilRegistrationDigest:workflow.civilRegistrationDigest,
+    requestedAt:workflow.requestedAt,
+  };
+  if (authorizedIdentity == null) return Object.freeze(base);
+  if (typeof authorizedIdentity !== "object" || Array.isArray(authorizedIdentity)) {
+    throw new TypeError("FID authorized identity is invalid");
+  }
+  if (authorizedIdentity.threadId !== undefined && authorizedIdentity.threadId !== workflow.threadId) {
+    throw new TypeError("FID authorized identity belongs to a different Thread");
+  }
+  if (authorizedIdentity.fibreIdentityNumber != null
+    && authorizedIdentity.fibreIdentityNumber !== workflow.fibreIdentityNumber) {
+    throw new TypeError("FID authorized identity has a different FIN");
+  }
+  const displayName = cleanIdentityText(authorizedIdentity.displayName);
+  const birthDate = cleanIdentityText(authorizedIdentity.birthDate);
+  if (birthDate !== null && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+    throw new TypeError("FID authorized birth date must be YYYY-MM-DD");
+  }
+  return Object.freeze({
+    ...base,
+    displayName,
+    dateField:birthDate === null ? null : Object.freeze({ kind:"birth_date", value:birthDate }),
+  });
 }
 
 function requireSurface(name, value) {
@@ -86,19 +78,6 @@ function rect(surface, x, y, width, height, color) {
   }
 }
 
-function drawText(surface, text, x, y, scale, color) {
-  let cursor = x;
-  for (const raw of String(text).toUpperCase()) {
-    const glyph = GLYPHS[raw] ?? GLYPHS["?"];
-    for (let row = 0; row < 7; row += 1) {
-      for (let col = 0; col < 5; col += 1) {
-        if (glyph[row][col] === "1") rect(surface, cursor + col * scale, y + row * scale, scale, scale, color);
-      }
-    }
-    cursor += 6 * scale;
-  }
-}
-
 function blend(dst, src, dx = 0, dy = 0, opacity = 1) {
   for (let sy = 0; sy < src.height; sy += 1) {
     const y = sy + dy;
@@ -110,7 +89,9 @@ function blend(dst, src, dx = 0, dy = 0, opacity = 1) {
       const di = (y * dst.width + x) * 4;
       const alpha = (src.rgba[si + 3] / 255) * opacity;
       if (alpha <= 0) continue;
-      for (let c = 0; c < 3; c += 1) dst.rgba[di + c] = Math.round(src.rgba[si + c] * alpha + dst.rgba[di + c] * (1 - alpha));
+      for (let channel = 0; channel < 3; channel += 1) {
+        dst.rgba[di + channel] = Math.round(src.rgba[si + channel] * alpha + dst.rgba[di + channel] * (1 - alpha));
+      }
       dst.rgba[di + 3] = 255;
     }
   }
@@ -127,9 +108,11 @@ function placeCover(dst, src, x, y, width, height, opacity = 1) {
       const sx = Math.min(src.width - 1, Math.max(0, Math.floor(originX + px / scale)));
       const sy = Math.min(src.height - 1, Math.max(0, Math.floor(originY + py / scale)));
       const si = (sy * src.width + sx) * 4;
-      const alpha = (src.rgba[si + 3] / 255) * opacity;
       const di = ((y + py) * dst.width + (x + px)) * 4;
-      for (let c = 0; c < 3; c += 1) dst.rgba[di + c] = Math.round(src.rgba[si + c] * alpha + dst.rgba[di + c] * (1 - alpha));
+      const alpha = (src.rgba[si + 3] / 255) * opacity;
+      for (let channel = 0; channel < 3; channel += 1) {
+        dst.rgba[di + channel] = Math.round(src.rgba[si + channel] * alpha + dst.rgba[di + channel] * (1 - alpha));
+      }
       dst.rgba[di + 3] = 255;
     }
   }
@@ -168,47 +151,86 @@ function encodePng(surface) {
   return Buffer.concat([
     Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
     chunk("IHDR", ihdr),
-    chunk("IDAT", deflateSync(scanlines, { level: 9 })),
+    chunk("IDAT", deflateSync(scanlines, { level:9 })),
     chunk("IEND"),
   ]);
 }
 
 function clone(surface) {
-  return { width: surface.width, height: surface.height, rgba: new Uint8Array(surface.rgba) };
+  return { width:surface.width, height:surface.height, rgba:new Uint8Array(surface.rgba) };
+}
+
+function grayscale(surface) {
+  const result = clone(surface);
+  for (let index = 0; index < result.rgba.length; index += 4) {
+    const value = Math.round(
+      result.rgba[index] * 0.2126
+      + result.rgba[index + 1] * 0.7152
+      + result.rgba[index + 2] * 0.0722,
+    );
+    result.rgba[index] = value;
+    result.rgba[index + 1] = value;
+    result.rgba[index + 2] = value;
+  }
+  return result;
 }
 
 function fingerprint(surface, digest, x, y, width, height, color) {
   const bits = digest.replace("sha256:", "");
   const columns = Math.min(bits.length * 4, width);
-  for (let col = 0; col < columns; col += 1) {
-    const nibble = Number.parseInt(bits[Math.floor(col / 4)], 16);
-    const on = (nibble >> (3 - (col % 4))) & 1;
-    if (on) rect(surface, x + col, y, 1, height, color);
+  for (let column = 0; column < columns; column += 1) {
+    const nibble = Number.parseInt(bits[Math.floor(column / 4)], 16);
+    if ((nibble >> (3 - (column % 4))) & 1) rect(surface, x + column, y, 1, height, color);
   }
 }
 
-export function createFidCardTemplate({ version = FID_CARD_TEMPLATE_VERSION } = {}) {
-  if (typeof version !== "string" || version.trim() === "") throw new TypeError("FID template version is required");
-  const { width, height } = FID_CARD_SIZE;
-  const frontBaseLayer = rgbaSurface(width, height, [238, 236, 226, 255]);
-  const frontUpperLayer = rgbaSurface(width, height);
-  const back = rgbaSurface(width, height, [29, 34, 35, 255]);
-
-  rect(frontBaseLayer, 0, 0, width, 72, [28, 33, 34, 255]);
-  for (let x = -height; x < width; x += 34) {
-    for (let y = 0; y < height; y += 1) pixel(frontBaseLayer, x + y, y, [218, 215, 201, 255]);
+function fingerprintGrid(surface, digest, box, color) {
+  const bits = [...digest.replace("sha256:", "")]
+    .flatMap((value) => Number.parseInt(value, 16).toString(2).padStart(4, "0").split(""));
+  const cell = Math.max(1, Math.floor(Math.min(box.width, box.height) / 16));
+  const originX = box.x + Math.floor((box.width - cell * 16) / 2);
+  const originY = box.y + Math.floor((box.height - cell * 16) / 2);
+  for (let index = 0; index < Math.min(bits.length, 256); index += 1) {
+    if (bits[index] === "1") {
+      rect(surface, originX + (index % 16) * cell, originY + Math.floor(index / 16) * cell, cell, cell, color);
+    }
   }
-  rect(frontUpperLayer, 18, 18, width - 36, 2, [52, 58, 58, 170]);
-  rect(frontUpperLayer, 18, height - 20, width - 36, 2, [52, 58, 58, 170]);
-  drawText(frontUpperLayer, "FIBRE IDENTITY", 42, 24, 4, [238, 236, 226, 255]);
+}
 
-  for (let x = -height; x < width; x += 26) {
-    for (let y = 0; y < height; y += 1) pixel(back, x + y, y, [43, 50, 50, 255]);
+function layoutFor(template) {
+  const layout = template?.layout;
+  if (!layout || layout.canvas?.width !== FID_CARD_SIZE.width || layout.canvas?.height !== FID_CARD_SIZE.height
+    || !layout.typography?.styles || !layout.front?.portrait || !layout.front?.fin
+    || !layout.front?.issueDate || !layout.front?.verification || !layout.front?.watermark
+    || !layout.back?.credentialId || !layout.back?.revision || !layout.back?.templateVersion
+    || !layout.back?.issuer || !layout.back?.renderPair) {
+    throw new TypeError("FID template layout is invalid");
   }
-  drawText(back, "FIBRE", 54, 54, 7, [222, 220, 208, 255]);
-  drawText(back, "IDENTITY CREDENTIAL", 58, 126, 3, [170, 174, 166, 255]);
+  return layout;
+}
 
-  return Object.freeze({ version, frontBaseLayer, frontUpperLayer, back });
+function drawStyled(surface, template, value, x, y, styleName, color, maxWidth, fieldName) {
+  const style = template.layout.typography.styles[styleName];
+  if (!style) throw new TypeError(`FID typography style ${String(styleName)} is unavailable`);
+  const font = template.fonts?.[style.font]?.font;
+  if (!font) throw new TypeError(`FID font role ${String(style.font)} is unavailable`);
+  if (maxWidth !== undefined && measureFidText(font, value, style) > maxWidth) {
+    throw new TypeError(`FID ${fieldName} does not fit`);
+  }
+  drawFidText(surface, value, x, y, style, template.fonts, color);
+}
+
+function centeredValueY(template, field) {
+  const style = template.layout.typography.styles[field.typography?.value];
+  const font = template.fonts?.[style?.font]?.font;
+  if (!style || !font || !(field.height > 0)) throw new TypeError("FID back field layout is invalid");
+  const lineHeight = (font.ascender - font.descender) * style.sizePx / font.unitsPerEm;
+  return field.y + (field.height - lineHeight) / 2;
+}
+
+function iso(name, value) {
+  if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) throw new TypeError(`${name} must be an ISO timestamp`);
+  return new Date(value).toISOString();
 }
 
 export function fidRenderPhotoDigest(photo) {
@@ -219,8 +241,16 @@ export function fidRenderPhotoDigest(photo) {
   return sha256(Buffer.concat([dimensions, Buffer.from(value.rgba)]));
 }
 
-export function renderFidCard({ workflow: candidateWorkflow, photoAdmission: candidateAdmission, photo, template = createFidCardTemplate() }) {
+export function renderFidCard({
+  workflow:candidateWorkflow,
+  photoAdmission:candidateAdmission,
+  photo,
+  authorizedIdentity = null,
+  issuedAt:candidateIssuedAt,
+  template,
+}) {
   const workflow = normalizeFidIssuanceWorkflowRecord(candidateWorkflow);
+  const issuedAt = iso("FID render issuedAt", candidateIssuedAt);
   const admission = assertFidPhotoAdmissionReceipt(candidateAdmission);
   if (admission.decision !== "accepted") throw new TypeError("FID renderer requires an accepted photo admission");
   if (admission.workflowId !== workflow.workflowId || admission.threadId !== workflow.threadId) {
@@ -231,60 +261,143 @@ export function renderFidCard({ workflow: candidateWorkflow, photoAdmission: can
     throw new TypeError("FID renderer photo does not match the admitted photo digest");
   }
   if (!template || typeof template.version !== "string") throw new TypeError("FID renderer requires a versioned template");
-  for (const [name, layer] of [["front-base-layer", template.frontBaseLayer], ["front-upper-layer", template.frontUpperLayer], ["back", template.back]]) {
+  for (const [name, layer] of [
+    ["front-base-layer", template.frontBaseLayer],
+    ["front-upper-layer", template.frontUpperLayer],
+    ["back", template.back],
+  ]) {
     requireSurface(`FID template ${name}`, layer);
-    if (layer.width !== FID_CARD_SIZE.width || layer.height !== FID_CARD_SIZE.height) throw new TypeError(`FID template ${name} has unsupported dimensions`);
+    if (layer.width !== FID_CARD_SIZE.width || layer.height !== FID_CARD_SIZE.height) {
+      throw new TypeError(`FID template ${name} has unsupported dimensions`);
+    }
   }
-
-  const identitySnapshot = Object.freeze({
-    credentialId: workflow.proposedCredentialId,
-    revision: workflow.proposedRevision,
-    threadId: workflow.threadId,
-    fibreIdentityNumber: workflow.fibreIdentityNumber,
-    registrationId: workflow.registrationId,
-    civilRegistrationDigest: workflow.civilRegistrationDigest,
-    requestedAt: workflow.requestedAt,
-  });
+  const layout = layoutFor(template);
+  const identitySnapshot = identitySnapshotFor(workflow, authorizedIdentity);
   const identitySnapshotDigest = sha256(Buffer.from(JSON.stringify(canonical(identitySnapshot))));
   const materialDigest = sha256(Buffer.from(JSON.stringify(canonical({
-    templateVersion: template.version,
+    templateVersion:template.version,
     identitySnapshotDigest,
-    photoAdmissionId: admission.admissionId,
-    photoDigest: admission.candidatePhotoDigest,
+    photoAdmissionId:admission.admissionId,
+    photoDigest:admission.candidatePhotoDigest,
+    issuedAt,
   }))));
 
+  const frontLayout = layout.front;
   const front = clone(template.frontBaseLayer);
-  placeCover(front, admittedPhoto, 54, 112, 280, 350);
-  drawText(front, "FIN", 382, 140, 3, [42, 47, 47, 255]);
-  drawText(front, workflow.fibreIdentityNumber, 382, 174, 5, [24, 29, 29, 255]);
-  drawText(front, "REV", 382, 244, 3, [86, 91, 89, 255]);
-  drawText(front, String(workflow.proposedRevision), 382, 278, 4, [24, 29, 29, 255]);
-  drawText(front, "FID", 382, 334, 3, [86, 91, 89, 255]);
-  drawText(front, workflow.proposedCredentialId.slice(-16), 382, 368, 2, [24, 29, 29, 255]);
-  fingerprint(front, identitySnapshotDigest, 382, 424, 256, 12, [73, 80, 79, 255]);
+  placeCover(
+    front,
+    grayscale(admittedPhoto),
+    frontLayout.portrait.x,
+    frontLayout.portrait.y,
+    frontLayout.portrait.width,
+    frontLayout.portrait.height,
+  );
 
-  const watermark = rgbaSurface(160, 200);
-  placeCover(watermark, admittedPhoto, 0, 0, watermark.width, watermark.height, 0.18);
-  blend(front, watermark, 650, 250, 0.32);
+  drawStyled(
+    front,
+    template,
+    "FIBRE IDENTITY NUMBER",
+    frontLayout.fin.labelX,
+    frontLayout.fin.labelY,
+    frontLayout.fin.typography?.label,
+    CARD_PALETTE.inkSoft,
+    frontLayout.fin.width,
+    "FIN label",
+  );
+  drawStyled(
+    front,
+    template,
+    workflow.fibreIdentityNumber,
+    frontLayout.fin.valueX,
+    frontLayout.fin.valueY,
+    frontLayout.fin.typography?.value,
+    CARD_PALETTE.ink,
+    frontLayout.fin.width,
+    "FIN",
+  );
+  if (identitySnapshot.displayName !== undefined && identitySnapshot.displayName !== null && frontLayout.name) {
+    drawStyled(front, template, "NAME", frontLayout.name.labelX, frontLayout.name.labelY, frontLayout.name.typography?.label, CARD_PALETTE.inkSoft, frontLayout.name.width, "name label");
+    drawStyled(front, template, identitySnapshot.displayName, frontLayout.name.valueX, frontLayout.name.valueY, frontLayout.name.typography?.value, CARD_PALETTE.ink, frontLayout.name.width, "name");
+  }
+  if (identitySnapshot.dateField !== undefined && identitySnapshot.dateField !== null && frontLayout.date) {
+    const label = identitySnapshot.dateField.kind === "birth_date" ? "BIRTH DATE" : "ENTRY DATE";
+    drawStyled(front, template, label, frontLayout.date.labelX, frontLayout.date.labelY, frontLayout.date.typography?.label, CARD_PALETTE.inkSoft, frontLayout.date.width, "date label");
+    drawStyled(front, template, identitySnapshot.dateField.value, frontLayout.date.valueX, frontLayout.date.valueY, frontLayout.date.typography?.value, CARD_PALETTE.ink, frontLayout.date.width, "date");
+  }
+  drawStyled(front, template, "ISSUE DATE", frontLayout.issueDate.labelX, frontLayout.issueDate.labelY, frontLayout.issueDate.typography?.label, CARD_PALETTE.inkSoft, frontLayout.issueDate.width, "issue date label");
+  drawStyled(front, template, issuedAt.slice(0, 10), frontLayout.issueDate.valueX, frontLayout.issueDate.valueY, frontLayout.issueDate.typography?.value, CARD_PALETTE.ink, frontLayout.issueDate.width, "issue date");
+  drawStyled(
+    front,
+    template,
+    "VERIFY IDENTITY SNAPSHOT",
+    frontLayout.verification.labelX ?? frontLayout.verification.x,
+    frontLayout.verification.labelY ?? frontLayout.verification.y - 28,
+    frontLayout.verification.typography?.label,
+    CARD_PALETTE.inkSoft,
+    frontLayout.verification.width,
+    "verification label",
+  );
+  fingerprint(
+    front,
+    identitySnapshotDigest,
+    frontLayout.verification.x,
+    frontLayout.verification.y,
+    frontLayout.verification.width,
+    frontLayout.verification.height,
+    CARD_PALETTE.inkSoft,
+  );
+  placeCover(
+    front,
+    grayscale(admittedPhoto),
+    frontLayout.watermark.x,
+    frontLayout.watermark.y,
+    frontLayout.watermark.width,
+    frontLayout.watermark.height,
+    frontLayout.watermark.opacity,
+  );
   blend(front, template.frontUpperLayer);
 
+  const backLayout = layout.back;
   const back = clone(template.back);
-  drawText(back, "TEMPLATE", 58, 206, 2, [150, 156, 150, 255]);
-  drawText(back, template.version, 58, 232, 2, [222, 220, 208, 255]);
-  drawText(back, "PAIR", 58, 288, 2, [150, 156, 150, 255]);
-  fingerprint(back, materialDigest, 58, 318, 256, 22, [222, 220, 208, 255]);
-  drawText(back, workflow.proposedCredentialId.slice(-20), 58, 382, 2, [176, 181, 173, 255]);
+  if (backLayout.verification) fingerprintGrid(back, identitySnapshotDigest, backLayout.verification, CARD_PALETTE.inkSoft);
+  const drawBackValue = (field, value, fieldName) => drawStyled(
+    back,
+    template,
+    value,
+    field.x,
+    centeredValueY(template, field),
+    field.typography?.value,
+    CARD_PALETTE.ink,
+    field.width,
+    fieldName,
+  );
+  drawBackValue(backLayout.credentialId, workflow.proposedCredentialId.slice(-20), "credential id");
+  drawBackValue(backLayout.revision, String(workflow.proposedRevision).padStart(2, "0"), "revision");
+  drawBackValue(backLayout.templateVersion, template.version, "template version");
+  if (backLayout.issuer) drawBackValue(backLayout.issuer, "FIBRE IDENTITY AUTHORITY", "issuer");
+
+  fingerprint(
+    back,
+    materialDigest,
+    backLayout.renderPair.x,
+    backLayout.renderPair.y,
+    backLayout.renderPair.width,
+    backLayout.renderPair.height,
+    CARD_PALETTE.inkSoft,
+  );
 
   const frontPng = encodePng(front);
   const backPng = encodePng(back);
   return Object.freeze({
-    templateVersion: template.version,
-    credentialId: workflow.proposedCredentialId,
-    revision: workflow.proposedRevision,
+    templateVersion:template.version,
+    issuedAt,
+    credentialId:workflow.proposedCredentialId,
+    revision:workflow.proposedRevision,
+    identitySnapshot,
     identitySnapshotDigest,
-    photoAdmissionId: admission.admissionId,
-    frontRenderDigest: sha256(frontPng),
-    backRenderDigest: sha256(backPng),
-    files: Object.freeze({ "front.png": frontPng, "back.png": backPng }),
+    photoAdmissionId:admission.admissionId,
+    frontRenderDigest:sha256(frontPng),
+    backRenderDigest:sha256(backPng),
+    files:Object.freeze({ "front.png":frontPng, "back.png":backPng }),
   });
 }

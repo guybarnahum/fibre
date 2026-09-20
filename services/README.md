@@ -8,6 +8,7 @@ Provider-specific executable composition belongs under `deployments/`. Provider 
 
 - `world-kernel/` — authoritative Thread/World runtime, persistence, lifecycle, history, memory, meaning, obligations, and causal execution.
 - `birth-center/` — Genesis candidate construction, admission, and atomic birth into the authoritative runtime.
+- `fibre-identity-authority/` — replaceable FIN-card credential issuance and lifecycle for already-born Threads; it never mints FINs or owns Thread identity.
 - `thread-presentation/` — non-cognitive, human-facing projection of already-authorized Thread and World truth. This is the stable presentation integration boundary for external consumers.
 - `asset-generator/` — provider-neutral execution of admissible media-generation briefs plus immutable generation provenance. It never decides what is true or publishable about a Thread.
 - `c2pa-local/` — local Content Credential/C2PA support used by generated-asset publication paths.

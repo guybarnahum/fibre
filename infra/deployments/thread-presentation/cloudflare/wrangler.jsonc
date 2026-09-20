@@ -12,7 +12,9 @@
   "rules": [
     {
       "type": "Text",
-      "globs": ["**/*.yaml"],
+      "globs": [
+        "**/*.yaml"
+      ],
       "fallthrough": true
     }
   ],
@@ -21,12 +23,18 @@
     "VIEWER_ORIGIN": "https://insidefibre.com"
   },
   "secrets": {
-    "required": ["FIBRE_PRIVATE_TOKEN"]
+    "required": [
+      "FIBRE_PRIVATE_TOKEN"
+    ]
   },
   "services": [
     {
       "binding": "WORLD_KERNEL",
       "service": "fibre-world-kernel"
+    },
+    {
+      "binding": "FIBRE_IDENTITY_AUTHORITY",
+      "service": "fibre-identity-authority"
     }
   ],
   "r2_buckets": [
