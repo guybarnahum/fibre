@@ -180,10 +180,19 @@ test("historical envelope rejects structural or local-civil-time drift", () => {
   };
   assert.equal(assertHistoricalEnvelopeRealized(base, envelope), base);
   const wrongWeekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].find((item) => item !== envelope.localWeekday);
-  assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, observableAction: `On ${wrongWeekday}, they sorted two books.` }, envelope), /weekday inconsistent/i);
+  assert.throws(
+    () => assertHistoricalEnvelopeRealized({ ...base, observableAction: `On ${wrongWeekday}, they sorted two books.` }, envelope),
+    (error) => error.code === "GENESIS_EPISODE_TIME_CONFLICT" && /weekday inconsistent/i.test(error.message),
+  );
   const wrongDaypart = envelope.daypart.includes("morning") ? "afternoon" : "morning";
-  assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, observableAction: `In the ${wrongDaypart}, they sorted two books.` }, envelope), /daypart inconsistent/i);
-  assert.throws(() => assertHistoricalEnvelopeRealized({ ...base, participantRefs: ["thr_test_envelope"] }, envelope), /omitted frozen.*counterpart/i);
+  assert.throws(
+    () => assertHistoricalEnvelopeRealized({ ...base, observableAction: `In the ${wrongDaypart}, they sorted two books.` }, envelope),
+    (error) => error.code === "GENESIS_EPISODE_TIME_CONFLICT" && /daypart inconsistent/i.test(error.message),
+  );
+  assert.throws(
+    () => assertHistoricalEnvelopeRealized({ ...base, participantRefs: ["thr_test_envelope"] }, envelope),
+    (error) => error.code === "GENESIS_HISTORICAL_ENVELOPE_CONFLICT" && /omitted frozen.*counterpart/i.test(error.message),
+  );
 });
 
 test("historical envelope does not choose a counterpart role after its compatible places are full", () => {
