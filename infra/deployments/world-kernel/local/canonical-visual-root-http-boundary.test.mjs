@@ -29,10 +29,7 @@ function fixture() {
   const infra = createMemoryInfraDriver();
   const api = createAssetGenerationControlApi({
     privateToken: "shared-private-token",
-    controlService: createAssetGenerationControlService({
-      infra,
-      credentialSigner: { verify() { throw new Error("not reached without receipt"); } },
-    }),
+    controlService: createAssetGenerationControlService({ infra }),
   });
   const boundary = createCanonicalVisualRootHttpBoundary({
     baseUrl: "https://asset.example/ignored",
