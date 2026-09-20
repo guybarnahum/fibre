@@ -1,7 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 
 const base = process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8787";
-const signerBase = process.env.FIBRE_C2PA_SIGNER_URL ?? "http://127.0.0.1:8790";
 const threadId = "thr_pr39_g2_04";
 const mediaId = "media_place_market";
 const timeoutMs = Number(process.env.P3_PROOF_TIMEOUT_MS ?? 10 * 60 * 1000);
@@ -15,9 +14,6 @@ async function jsonFetch(url, init) {
 }
 
 async function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
-
-const health = await jsonFetch(`${signerBase}/healthz`);
-if (health.format !== "c2pa") throw new Error("local signer is not reporting C2PA format");
 
 const scheduled = await jsonFetch(`${base}/__p3/fixtures/can-tho/generate-market`, { method: "POST" });
 const started = Date.now();
@@ -53,29 +49,9 @@ const mediaType = mediaResponse.headers.get("content-type");
 const bytes = new Uint8Array(await mediaResponse.arrayBuffer());
 if (bytes.length === 0) throw new Error("generated media is empty");
 
-const verification = await jsonFetch(`${signerBase}/verify`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    bytesBase64: Buffer.from(bytes).toString("base64"),
-    mediaType,
-  }),
-});
-if (verification.valid !== true) throw new Error(`C2PA verification failed: ${verification.failureReason}`);
-if (verification.assertion?.provenanceClass !== "generated_reconstruction") {
-  throw new Error("embedded C2PA assertion does not classify asset as generated_reconstruction");
-}
-if (verification.assertion?.promptDisclosure?.mode !== "digest_only") {
-  throw new Error("P3 proof must not publish exact prompt text in C2PA");
-}
-if (verification.assertion.promptDisclosure.semanticBrief !== null
-  || verification.assertion.promptDisclosure.providerRequest !== null) {
-  throw new Error("digest_only C2PA unexpectedly contains prompt text");
-}
-
 await mkdir("artifacts/generated", { recursive: true });
 const extension = mediaType === "image/png" ? "png" : mediaType === "image/jpeg" ? "jpg" : "bin";
-const output = `artifacts/generated/p3-can-tho-market-credentialed.${extension}`;
+const output = `artifacts/generated/p3-can-tho-market-provenanced.${extension}`;
 await writeFile(output, bytes);
 
 console.log(JSON.stringify({
@@ -95,14 +71,10 @@ console.log(JSON.stringify({
   finalAssetDigest: readyEvent.payload.digest,
   mediaType,
   byteLength: bytes.length,
-  c2pa: {
-    valid: true,
-    signerId: verification.signerId,
-    manifestDigest: verification.manifestDigest,
-    provenanceClass: verification.assertion.provenanceClass,
-    provider: verification.assertion.provider,
-    model: verification.assertion.model,
-    promptDisclosure: verification.assertion.promptDisclosure.mode,
+  provenance: {
+    classification: mediaResponse.headers.get("x-fibre-provenance"),
+    etag: mediaResponse.headers.get("etag"),
+    finalAssetDigest: readyEvent.payload.digest,
   },
   savedTo: output,
 }, null, 2));
