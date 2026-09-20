@@ -2,7 +2,7 @@
 
 ## Provider-neutral live generated-asset smoke
 
-`npm run test:asset-live` is an explicit networked smoke for real image generation. It is intentionally outside normal `npm test` and CI because it requires provider credentials and can spend provider quota.
+`npm run test:asset-live` is an explicit networked smoke for real image generation. It is outside normal `npm test` and CI because it requires provider credentials and can spend provider quota.
 
 Use `--dry-run` to exercise planning without invoking the provider:
 
@@ -10,11 +10,11 @@ Use `--dry-run` to exercise planning without invoking the provider:
 npm run test:asset-live -- --dry-run
 ```
 
-A real run remains an explicit operator action.
+A real run verifies the provider output, immutable Fibre generation provenance, receipt, final-byte digest, and generated PNG.
 
 ## Cloudflare live generated-asset smoke
 
-`npm run test:asset-live:cloudflare` exercises the local end-to-end path:
+`npm run test:asset-live:cloudflare` exercises:
 
 ```text
 Thread Presentation fixture
@@ -26,9 +26,9 @@ Thread Presentation fixture
   -> completion Queue
   -> Presentation admission / media.ready
   -> public asset resolver
-  -> C2PA verification
+  -> Fibre provenance classification
 ```
 
-Start the local signer and local Cloudflare stack first; see `infra/deployments/asset-generator/cloudflare/README.md` and `infra/deployments/thread-presentation/cloudflare/README.md`.
+Start the local Cloudflare stack first; see `infra/deployments/asset-generator/cloudflare/README.md` and `infra/deployments/thread-presentation/cloudflare/README.md`.
 
 The fixture endpoints are local/e2e-only under `P3_FIXTURE_MODE=1`. Paid generation is never part of ordinary repository validation or CI.
