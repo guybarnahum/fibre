@@ -175,6 +175,10 @@ export function fidCardProofAssertionDigest(value) {
   return `sha256:${createHash("sha256").update(fidCardProofAssertionJson(value)).digest("hex")}`;
 }
 
+export function fidCardProofEnvelopeJson(value) {
+  return JSON.stringify(canonical(normalizeFidCardProofEnvelope(value)));
+}
+
 export function normalizeFidCardProofEnvelope(value) {
   exactKeys("FID card proof envelope", value, [
     "envelopeVersion",
