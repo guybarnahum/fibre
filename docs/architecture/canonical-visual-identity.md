@@ -190,7 +190,7 @@ pending Embodiment specification
       -> root AssetGenerationJob
       -> provider execution
       -> GenerationRecord
-      -> Content Credential / verification
+      -> Fibre provenance verification
       -> immutable root object + StoredAssetReceipt
       -> World Kernel verifies exact proof
       -> Embodiment revision becomes available
@@ -297,7 +297,7 @@ Genesis birth
   -> public presentation rewrite
   -> official-photo demand carrying same root objectRef + target age
   -> reference-capable Asset Generator
-  -> C2PA/provenance completion
+  -> Fibre provenance completion
   -> Thread Presentation acceptance
   -> public official image
   -> Viewer
