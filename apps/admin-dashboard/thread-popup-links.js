@@ -1,5 +1,6 @@
 import {
   fetchThreadObservatory,
+  renderFidSection,
   renderThreadObservatory,
   threadName,
 } from "./thread-observatory.js";
@@ -55,6 +56,25 @@ async function openThread(threadId) {
       el("div", "error-box", error instanceof Error ? error.message : String(error)),
     );
   }
+}
+
+function replaceOpenFidSection(threadId, identity, credential = null) {
+  if (threadId !== openThreadId || !dialog?.open || !body) return false;
+
+  const current = body.querySelector(".thread-fid-section");
+  if (!current) return false;
+
+  const replacement = renderFidSection(identity, threadId);
+  if (credential) {
+    const status = replacement.querySelector(".thread-repair-actions")?.nextElementSibling;
+    if (status) {
+      status.hidden = false;
+      status.textContent = `Re-issued · Revision ${credential.revision} · ${credential.credentialId}`;
+    }
+  }
+
+  current.replaceWith(replacement);
+  return true;
 }
 
 function threadIdFor(node) {
@@ -113,6 +133,19 @@ document.addEventListener("keydown", (event) => {
 dialog?.addEventListener("close", () => {
   openThreadId = null;
   openThreadLoad += 1;
+});
+
+window.addEventListener("fibre:fid-card-reissued", (event) => {
+  const threadId = event?.detail?.threadId ?? null;
+  if (threadId !== openThreadId || !dialog?.open) return;
+
+  const identity = event?.detail?.identity ?? null;
+  const credential = event?.detail?.result?.credential ?? null;
+
+  if (identity?.presentation?.presentation?.identityCard
+    && replaceOpenFidSection(threadId, identity, credential)) return;
+
+  void openThread(threadId);
 });
 
 window.addEventListener("fibre:thread-identity-updated", (event) => {
