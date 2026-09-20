@@ -56,12 +56,17 @@ export { decodePngRgba } from "./fid-photo-surface.mjs";
 export { createFidCardTemplateFromPngAssets } from "./fid-card-template-assets.mjs";
 
 export {
+  FID_CARD_PROOF_ENVELOPE_VERSION,
   FID_CARD_PROOF_SCHEMA,
+  FID_CARD_PROOF_SIGNATURE_ALGORITHM,
   FID_CARD_PROOF_SIDES,
   buildFidCardProofAssertion,
   fidCardProofAssertionDigest,
   fidCardProofAssertionJson,
   normalizeFidCardProofAssertion,
+  normalizeFidCardProofEnvelope,
+  signFidCardProofAssertion,
+  verifyFidCardProofEnvelope,
 } from "./fid-card-proof.mjs";
 
 export {
