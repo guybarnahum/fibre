@@ -73,15 +73,14 @@ function deploymentErrorDetail(error) {
   return details.join("\nCaused by: ");
 }
 
-export function formatCloudflareDeploymentFailure(error, { environment, noC2pa = false } = {}) {
+export function formatCloudflareDeploymentFailure(error, { environment } = {}) {
   const env = typeof environment === "string" && environment.trim() !== ""
     ? environment.trim()
     : "requested environment";
   const serviceId = deploymentService(error);
   const detail = deploymentErrorDetail(error);
   const target = serviceId ? ` while deploying ${serviceId}` : "";
-  const retryFlag = noC2pa ? " --no-c2pa" : "";
-  return `Cloudflare deployment failed for ${env}${target}.\n${detail}\nRetry: npm run cloud:deploy -- --env ${env}${retryFlag}`;
+  return `Cloudflare deployment failed for ${env}${target}.\n${detail}\nRetry: npm run cloud:deploy -- --env ${env}`;
 }
 
 export async function resolveCleanGitDeploymentSource(repoRoot) {
@@ -112,7 +111,6 @@ export function createCloudflareDeploymentEvidence({
     sourceGitSha,
     sourceTreeClean: true,
     recordedAt,
-    contentCredentialMode: deployment.contentCredentialMode ?? "c2pa",
     deployments: structuredClone(deployment.deployments ?? []),
     acceptance: structuredClone(deployment.acceptance ?? null),
     viewer: structuredClone(deployment.viewer ?? null),
@@ -157,24 +155,21 @@ export async function deployCloudflareStackWithEvidence({
 
 function parseArgs(argv) {
   let environment = null;
-  let noC2pa = false;
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === "--env") environment = argv[++index] ?? null;
-    else if (argv[index] === "--no-c2pa") noC2pa = true;
     else throw new TypeError(`unsupported argument ${argv[index]}`);
   }
   if (!environment) throw new TypeError("--env <staging|production> is required");
-  return { environment, noC2pa };
+  return { environment };
 }
 
 async function main() {
-  const { environment, noC2pa } = parseArgs(process.argv.slice(2));
+  const { environment } = parseArgs(process.argv.slice(2));
   const repoRoot = repoRootFrom(import.meta.url);
   const client = createWranglerDeploymentClient({ cwd: repoRoot });
   const result = await deployCloudflareStackWithEvidence({
     repoRoot,
     environment,
-    noC2pa,
     client,
     validateRepository: () => runCommand("npm", ["run", "validate"], { cwd: repoRoot }),
     provision: ({ sourceGitSha } = {}) => provisionCloudflareResources({
@@ -193,9 +188,9 @@ async function main() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const { environment, noC2pa } = parseArgs(process.argv.slice(2));
+  const { environment } = parseArgs(process.argv.slice(2));
   main().catch((error) => {
-    console.error(formatCloudflareDeploymentFailure(error, { environment, noC2pa }));
+    console.error(formatCloudflareDeploymentFailure(error, { environment }));
     process.exitCode = 1;
   });
 }
