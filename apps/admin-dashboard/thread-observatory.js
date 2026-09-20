@@ -502,15 +502,42 @@ export function identityWithFidPublication(identity, result) {
   });
 }
 
-export async function reissueFidCard(threadId) {
+function fidReissueKey() {
+  return `admin_fid_reissue_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export async function reissueFidCard(threadId, { idempotencyKey = fidReissueKey() } = {}) {
   const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/fid/reissue`, {
     method:"POST",
     headers:{ Accept:"application/json", "Content-Type":"application/json" },
-    body:JSON.stringify({ idempotencyKey:`admin_fid_reissue_${Date.now().toString(36)}` }),
+    body:JSON.stringify({ idempotencyKey }),
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
   return payload;
+}
+
+export async function resumeFidReissue(threadId, {
+  idempotencyKey,
+  initialResult,
+  wait = (ms) => new Promise((resolve) => globalThis.setTimeout(resolve, ms)),
+  maxAttempts = 120,
+} = {}) {
+  if (typeof idempotencyKey !== "string" || idempotencyKey.trim() === "") {
+    throw new TypeError("FID reissue continuation requires idempotencyKey");
+  }
+  if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
+    throw new TypeError("FID reissue continuation maxAttempts must be a positive integer");
+  }
+
+  let result = initialResult ?? await reissueFidCard(threadId, { idempotencyKey });
+  let delayMs = 500;
+  for (let attempt = 0; result?.state === "derivation_requested" && attempt < maxAttempts; attempt += 1) {
+    await wait(delayMs);
+    result = await reissueFidCard(threadId, { idempotencyKey });
+    delayMs = Math.min(5_000, Math.round(delayMs * 1.6));
+  }
+  return result;
 }
 
 export function renderFidSection(identity, threadId) {
@@ -586,7 +613,8 @@ export function renderFidSection(identity, threadId) {
       eyebrow:"Fibre Identity Card",
       description:"Cut a new FIN Card from the current authoritative Thread identity. The FIN and Thread identity do not change; the previous card remains in history.",
       run:async () => {
-        const result = await reissueFidCard(threadId);
+        const idempotencyKey = fidReissueKey();
+        const result = await reissueFidCard(threadId, { idempotencyKey });
         const credential = result?.credential ?? null;
         actionStatus.hidden = false;
         actionStatus.textContent = credential
@@ -594,13 +622,48 @@ export function renderFidSection(identity, threadId) {
           : result?.state === "derivation_requested"
             ? "Reissue pending · official ID photo is being prepared."
             : `Reissue · ${human(result?.state ?? "accepted")}`;
-        window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued", {
+
+        const publish = (completed) => window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued", {
           detail:{
             threadId,
-            result,
-            identity:identityWithFidPublication(identity, result),
+            result:completed,
+            identity:identityWithFidPublication(identity, completed),
           },
         }));
+
+        if (result?.state !== "derivation_requested") {
+          publish(result);
+          return;
+        }
+
+        reissue.disabled = true;
+        void resumeFidReissue(threadId, {
+          idempotencyKey,
+          initialResult:result,
+        }).then((completed) => {
+          const completedCredential = completed?.credential ?? null;
+          if (completed?.state === "active" && completedCredential !== null) {
+            if (actionStatus.isConnected) {
+              actionStatus.hidden = false;
+              actionStatus.textContent = `Re-issued · Revision ${completedCredential.revision} · ${completedCredential.credentialId}`;
+            }
+            publish(completed);
+            return;
+          }
+
+          if (actionStatus.isConnected) {
+            actionStatus.hidden = false;
+            actionStatus.textContent = completed?.state === "derivation_requested"
+              ? "Reissue pending · official ID photo is still being prepared."
+              : `Reissue · ${human(completed?.state ?? "not completed")}`;
+            reissue.disabled = false;
+          }
+        }).catch((error) => {
+          if (!actionStatus.isConnected) return;
+          actionStatus.hidden = false;
+          actionStatus.textContent = `FIN Card reissue failed: ${error instanceof Error ? error.message : String(error)}`;
+          reissue.disabled = false;
+        });
       },
     });
   });
