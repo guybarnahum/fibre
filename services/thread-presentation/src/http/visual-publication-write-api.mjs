@@ -33,7 +33,7 @@ function optionalActivityContext(value) {
 function failureResponse(error, kind = "visual_publication") {
   const detail = error instanceof Error ? error.message : String(error);
   if (error instanceof TypeError) {
-    return Response.json({ error: `invalid_${kind}_handoff`, detail, retryable: false }, { status: 400 });
+    return Response.json({ error: `invalid_${kind}_request`, detail, retryable: false }, { status: 400 });
   }
   const retryable = error?.retryable !== false;
   const code = typeof error?.code === "string" && error.code !== ""
