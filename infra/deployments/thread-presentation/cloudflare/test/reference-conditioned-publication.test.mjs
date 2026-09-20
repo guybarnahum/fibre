@@ -14,7 +14,6 @@ import { createThreadPresentationAssetPublisher } from "#services/world-kernel/s
 import { createThreadPresentationIdentityMediaRewriteService } from "#services/world-kernel/src/thread-presentation-identity-media-rewrite-service.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import {
-  selectContentCredentialIntegration,
   selectImageIntegration,
   selectImageProviderProfile,
 } from "../../../integration-selection.mjs";
@@ -26,8 +25,6 @@ import {
 const THREAD_ID = "thr_pr39_g2_04";
 const CHANNEL_ID = `presentation:${THREAD_ID}`;
 const CANONICAL_ROOT = "asset_slice_f_canonical_visual_identity_root";
-const PRODUCTION_SIGNER_ID = "fibre-c2pa-production-v1";
-const MANIFEST_DIGEST = `sha256:${"e".repeat(64)}`;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
@@ -155,44 +152,7 @@ function createBflFixtureFetch({ expectedReferenceBase64 }) {
   return { calls, providerBytes, fetchImpl };
 }
 
-function createC2paFixtureFetch() {
-  const calls = [];
-  let embeddedAssertion = null;
-  const fetchImpl = async (url, init = {}) => {
-    calls.push({ url, init });
-    assert.equal(init.headers.Authorization, "Bearer slice-f-c2pa-token");
-    const body = JSON.parse(init.body);
-    if (url.endsWith("/embed")) {
-      embeddedAssertion = structuredClone(body.assertion);
-      const raw = Buffer.from(body.bytesBase64, "base64");
-      const credentialed = Buffer.concat([raw, Buffer.from("--slice-f-c2pa--")]);
-      return jsonResponse({
-        bytesBase64: credentialed.toString("base64"),
-        format: "c2pa",
-        signerId: PRODUCTION_SIGNER_ID,
-        manifestDigest: MANIFEST_DIGEST,
-        embeddedAt: "2026-08-30T18:31:00Z",
-      });
-    }
-    if (url.endsWith("/verify")) {
-      assert.ok(embeddedAssertion, "C2PA verify must follow embed in the Slice F fixture");
-      return jsonResponse({
-        valid: true,
-        format: "c2pa",
-        signerId: PRODUCTION_SIGNER_ID,
-        manifestDigest: MANIFEST_DIGEST,
-        assertion: structuredClone(embeddedAssertion),
-        verifiedAt: "2026-08-30T18:31:01Z",
-        failureReason: null,
-        trust: { policy: "c2pa_trust_list", trusted: true },
-      });
-    }
-    throw new Error(`unexpected C2PA fixture URL ${url}`);
-  };
-  return { calls, fetchImpl };
-}
-
-test("Slice F reference-capable generation converges through C2PA verification into one admitted media.ready publication", async () => {
+test("Slice F reference-capable generation converges through Fibre provenance into one admitted media.ready publication", async () => {
   const infra = createMemoryInfraDriver();
   const presentationServer = createThreadPresentationServer({ infra });
   await presentationServer.publishSnapshot({
@@ -207,7 +167,7 @@ test("Slice F reference-capable generation converges through C2PA verification i
   const rootBytes = encoder.encode("slice-f-canonical-root-image-bytes");
   const rootDigest = await sha256(rootBytes);
   await infra.objects.putImmutable(CANONICAL_ROOT, rootBytes, rootDigest, {
-    kind: "credentialed_generated_media",
+    kind: "provenanced_generated_media",
     mediaType: "image/png",
     role: "canonical_visual_identity_reference",
   });
@@ -254,31 +214,16 @@ test("Slice F reference-capable generation converges through C2PA verification i
   const bfl = createBflFixtureFetch({
     expectedReferenceBase64: Buffer.from(rootBytes).toString("base64"),
   });
-  const c2pa = createC2paFixtureFetch();
   const provider = selectImageIntegration(assetDeployment.integrations[providerProfile], {
     environment: { BFL_API_KEY: "slice-f-bfl-key" },
     fetchImpl: bfl.fetchImpl,
   });
-  const signer = selectContentCredentialIntegration(assetDeployment.integrations.contentCredentials, {
-    environment: {
-      C2PA_SIGNER_URL: "https://signer.example.test",
-      C2PA_SIGNER_ID: PRODUCTION_SIGNER_ID,
-      C2PA_TRUST_POLICY: "c2pa_trust_list",
-      C2PA_SIGNER_TOKEN: "slice-f-c2pa-token",
-    },
-    fetchImpl: c2pa.fetchImpl,
-  });
-  assert.equal(signer.trustPolicy, "c2pa_trust_list");
-
   const runtime = createAssetGenerationRuntime({
     infra,
     provider,
-    credentialSigner: signer,
   });
   const generated = await runtime.execute(job);
   assert.equal(generated.receipt.role, "official_id_photo");
-  assert.equal(generated.receipt.credential.format, "c2pa");
-  assert.equal(generated.receipt.credential.signerId, PRODUCTION_SIGNER_ID);
   assert.notEqual(generated.providerOperationObjectRef, null, "accepted BFL task must be durably checkpointed");
 
   const generationRecordStored = await infra.objects.get(generated.generationRecordObjectRef);
@@ -289,7 +234,7 @@ test("Slice F reference-capable generation converges through C2PA verification i
       objectRef: CANONICAL_ROOT,
       digest: rootDigest,
       mediaType: "image/png",
-      kind: "credentialed_generated_media",
+      kind: "provenanced_generated_media",
     },
   ]);
   assert.equal(
@@ -301,12 +246,10 @@ test("Slice F reference-capable generation converges through C2PA verification i
 
   const publisher = createThreadPresentationAssetPublisher({
     infra,
-    credentialSigner: signer,
     presentationServer,
   });
   const completions = createPresentationAssetCompletionService({
     infra,
-    credentialSigner: signer,
     async publishReady({ scope, receipt }) {
       assert.deepEqual(scope, { entityKind: "thread", entityRef: THREAD_ID });
       return publisher.publishReady({ receipt, channelId: CHANNEL_ID });
@@ -322,14 +265,14 @@ test("Slice F reference-capable generation converges through C2PA verification i
   assert.equal(accepted.duplicate, false);
   assert.equal(accepted.stale, false);
   assert.equal(accepted.demand.state, "ready");
-  assert.equal(accepted.proof.verification.valid, true);
+  assert.equal(accepted.proof.receipt.sha256, accepted.proof.receipt.providerOutputDigest);
   assert.equal(accepted.publication.event.kind, "media.ready");
   assert.equal(accepted.publication.event.payload.mediaId, issued.identityCard.officialPhotoMediaRef);
   assert.equal(accepted.publication.event.payload.objectRef, generated.receipt.objectRef);
 
   const publicMedia = await infra.catalog.get(`media:${generated.receipt.objectRef}`);
   assert.equal(publicMedia.publiclyVisible, true);
-  assert.equal(publicMedia.identityCredentialMedia, true);
+  assert.equal(publicMedia.identityCredentialMedia, false);
   assert.equal(publicMedia.threadId, THREAD_ID);
   assert.equal(publicMedia.mediaId, issued.identityCard.officialPhotoMediaRef);
   assert.equal(publicMedia.digest, generated.receipt.sha256);
@@ -343,24 +286,5 @@ test("Slice F reference-capable generation converges through C2PA verification i
   assert.equal(duplicate.duplicate, true);
   const eventsAfterDuplicate = await presentationServer.readEvents({ channelId: CHANNEL_ID, after: 0, limit: 20 });
   assert.equal(eventsAfterDuplicate.filter((event) => event.kind === "media.ready").length, 1);
-  assert.ok(c2pa.calls.some((call) => call.url.endsWith("/embed")));
-  assert.ok(c2pa.calls.some((call) => call.url.endsWith("/verify")));
 
-  const c2paBodies = c2pa.calls.map((call) => JSON.parse(call.init.body));
-  assert.equal(
-    JSON.stringify(c2paBodies).includes("slice-f-c2pa-token"),
-    false,
-    "C2PA authorization token must never enter signer request bodies",
-  );
-  assert.equal(
-    JSON.stringify({
-      generationRecord,
-      receipt: generated.receipt,
-      proof: accepted.proof,
-      publicMedia,
-      presentationEvents: eventsAfterDuplicate,
-    }).includes("slice-f-c2pa-token"),
-    false,
-    "C2PA authorization token must never enter persisted generation, credential, catalog, or presentation provenance",
-  );
 });
