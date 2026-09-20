@@ -217,9 +217,9 @@ test("presentation media admits immutable document assets without pretending the
   value.media.assets.push({
     mediaId:"media_card_document",
     kind:"document",
-    role:"fibre_identity_card",
+    role:"attachment",
     status:"ready",
-    locator:"fidcard_demo_card",
+    locator:"document_demo",
     mediaType:"application/vnd.fibre.identity-card+json",
     sha256:"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
     width:null,
