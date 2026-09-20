@@ -5,7 +5,6 @@ import { join, resolve } from "node:path";
 import { buildFibreCivilRegistration } from "#core/src/fibre-civil-identity.mjs";
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
-import { createHttpContentCredentialSigner } from "#integrations/content-credentials/c2pa-http-signer.mjs";
 import { createFidCredentialCrypto } from "#integrations/fid-credentials/webcrypto.mjs";
 import { resolveCloudThreadFidSource } from "./cloud-thread-source.mjs";
 import {
@@ -153,25 +152,6 @@ async function loadTemplate() {
   });
 }
 
-async function contentCredentialSigner() {
-  const baseUrl = process.env.C2PA_SIGNER_URL?.trim() || "http://127.0.0.1:8791";
-  let health;
-  try {
-    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/healthz`);
-    health = response.ok ? await response.json() : null;
-  } catch {
-    health = null;
-  }
-  if (health?.ok !== true || health?.service !== "content-credential-signer") {
-    throw new Error(`local C2PA signer is not healthy at ${baseUrl}; run npm run content-credential-signer first`);
-  }
-  return createHttpContentCredentialSigner({
-    baseUrl,
-    signerId:process.env.C2PA_SIGNER_ID?.trim() || health.signerId || "fibre-c2pa-node-local-v1",
-    trustPolicy:process.env.C2PA_TRUST_POLICY?.trim() || health.trustPolicy || "development_signature_only",
-    authorizationToken:process.env.C2PA_SIGNER_TOKEN?.trim() || null,
-  });
-}
 
 const { threadId:requestedThreadId } = parseArgs(process.argv.slice(2));
 const CLOUD_THREAD = requestedThreadId === null ? null : await loadCloudThread(requestedThreadId);
@@ -192,10 +172,9 @@ const issuanceStore = new FidCardIssuanceStore(storage);
 const admissions = new FidPhotoAdmissionStore(storage);
 
 try {
-  const [photo, template, signer] = await Promise.all([
+  const [photo, template] = await Promise.all([
     loadPhoto(CLOUD_THREAD),
     loadTemplate(),
-    contentCredentialSigner(),
   ]);
   const civil = CLOUD_THREAD?.civilRegistration ?? {
     registeredAt:"2026-09-19T12:00:00.000Z",
@@ -268,7 +247,6 @@ try {
     },
     registry,
     infra,
-    contentCredentialSigner:signer,
     issuerSigner,
     credentialProtector,
     loadPhoto:async () => photo,
