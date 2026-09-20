@@ -85,3 +85,28 @@ test("FID lifecycle waits for issuance before projecting a credential", async ()
   assert.equal(result.state, "derivation_requested", "pending issuance state was lost");
   assert.equal(projections, 0, "unissued FID was projected");
 });
+
+test("FID reissue cuts a replacement without requiring the prior active presentation", async () => {
+  const replacement = active(3);
+  const reconciler = createFidLifecycleReconciler({
+    fidAuthority:{
+      async getActive() { throw new Error("old card is not projectable"); },
+      async cut() { return { result:{ state:"active" }, active:replacement }; },
+    },
+    presentationProjection:{
+      async reconcile({ activeFid }) {
+        return { changed:true, credentialId:activeFid.credentialId };
+      },
+    },
+  });
+
+  const result = await reconciler.reconcile({
+    threadId:"thr_fid_lifecycle",
+    idempotencyKey:"fid_reissue_from_old_1",
+    mode:"reissue",
+  });
+
+  assert.equal(result.complete, true, "reissue should replace an unreadable prior card");
+  assert.equal(result.credential.credentialId, replacement.credentialId, "replacement card was not projected");
+});
+
