@@ -554,6 +554,19 @@ export function normalizeThreadPresentationBundle({ presentation, media, provena
         throw new TypeError(`media.assets[${index}] official_id_photo requires civil identity and identity-card presentation data`);
       }
     }
+    if (asset.role === "fibre_identity_card") {
+      if (asset.kind !== "document"
+        || asset.status !== "ready"
+        || asset.mediaType !== "application/vnd.fibre.identity-card+json"
+        || provenanceEntry.kind !== "fibre_projection") {
+        throw new TypeError(`media.assets[${index}] fibre_identity_card must be a ready Fibre-projected card document`);
+      }
+      if (p.schemaVersion !== THREAD_PRESENTATION_PACKET_CURRENT_VERSION
+        || p.identityCard?.credentialVersion !== FIBRE_IDENTITY_CARD_CURRENT_VERSION
+        || !asset.sourceReferences.includes(p.identityCard.credentialId)) {
+        throw new TypeError(`media.assets[${index}] fibre_identity_card must bind the active FIA credential`);
+      }
+    }
     if (asset.posterRef !== null) {
       const poster = mediaById.get(asset.posterRef);
       if (!poster) throw new TypeError(`media.assets[${index}].posterRef must resolve`);
@@ -577,6 +590,8 @@ export function normalizeThreadPresentationBundle({ presentation, media, provena
             throw new TypeError(`identity card ${side}MediaRef must resolve to ready FIA card PNG media`);
           }
         }
+        const richCardAssets = m.assets.filter((asset) => asset.role === "fibre_identity_card");
+        if (richCardAssets.length > 1) throw new TypeError("identity card may expose at most one rich card document");
       } else {
         if (p.identityCard.displayName !== p.subject.displayName) {
           throw new TypeError("identity card displayName must match the current presented subject name");
