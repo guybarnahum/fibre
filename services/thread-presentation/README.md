@@ -103,8 +103,7 @@ See [`../../docs/architecture/presentation-asset-serving.md`](../../docs/archite
 
 - [`../birth-center/`](../birth-center/) owns Civil Registry issuance at birth; the immutable registry is read through World Kernel's `CivilRegistryStore`.
 - [`../asset-generator/`](../asset-generator/) executes generated-media briefs and records immutable generation provenance.
-- [`../content-credential-signer/`](../content-credential-signer/) defines the provider-neutral Content Credential signer service.
-- [`../../integrations/content-credentials/`](../../integrations/content-credentials/) contains concrete Content Credential integrations.
+- [`../../docs/architecture/generated-asset-provenance.md`](../../docs/architecture/generated-asset-provenance.md) defines the generated-media provenance and future native embedded-proof direction.
 - [`../../infra/deployments/thread-presentation/cloudflare/`](../../infra/deployments/thread-presentation/cloudflare/) is the current Cloudflare delivery/read-model deployment adapter.
 - [`../../fixtures/thread-presentation/`](../../fixtures/thread-presentation/) contains reusable presentation fixtures.
 
