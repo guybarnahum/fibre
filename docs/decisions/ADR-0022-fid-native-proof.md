@@ -1,7 +1,7 @@
 ---
 id: ADR-0022
 status: accepted
-last-reviewed: 2026-09-19
+last-reviewed: 2026-09-20
 ---
 
 # ADR-0022: Fibre-native FIN Card proof
@@ -14,11 +14,9 @@ Accepted.
 
 Fibre Identity Cards need a tamper-evident, machine-readable statement of the identity facts FIA actually credentialed on each rendered card side.
 
-The earlier plan reused Fibre's C2PA / Content Credential signer. That is useful for third-party interoperability, but it introduces machinery that is not required for Fibre's immediate trust model: X.509 credential management, a separate signer service, C2PA runtime dependencies, and Cloudflare deployment complexity.
+FIN Cards need no separate media-signing trust stack. Fibre itself is issuer and verifier. FIA already has an Ed25519 issuer identity used to sign the protected machine credential, and the deterministic renderer already produces exact SHA-256 digests for `front.png` and `back.png`.
 
-For FIN Cards, Fibre itself is both issuer and verifier. FIA already has an Ed25519 issuer identity used to sign the protected machine credential, and the deterministic renderer already produces exact SHA-256 digests for `front.png` and `back.png`.
-
-Fibre therefore does not need C2PA merely to answer:
+The native proof answers:
 
 > Did Fibre issue this exact FIN Card image, and what public identity facts did FIA attest for it?
 
@@ -45,7 +43,6 @@ fibre.fin-card-proof.v1 {
   }
 
   issuedAt
-  expiresAt?
   templateVersion
 
   registrationId
@@ -182,7 +179,7 @@ Positive:
 
 - FIN Card protection runs entirely inside the existing FIA Worker trust boundary;
 - the existing FIA Ed25519 issuer identity is reused;
-- no Docker, Container, Wasm, X.509 chain, commercial CA or separate signer service is required for FIN Cards;
+- no separate media-signing service or second trust framework is required for FIN Cards;
 - the embedded assertion is small, inspectable and directly corresponds to rendered card facts;
 - Fibre can verify copied card images without depending on Fibre object storage;
 
