@@ -128,9 +128,6 @@ export function createFibreIdentityAuthority({
     if (typeof registry?.listByFin !== "function" || typeof registry?.getByCredentialId !== "function") {
       throw new TypeError("FID credential registry is required for automatic issuance");
     }
-    const pending = workflows.listByThreadId(registration.threadId)
-      .findLast((entry) => registry.getByCredentialId(entry.workflow.proposedCredentialId, { required: false }) === null) ?? null;
-    if (pending !== null) return Object.freeze({ ...pending, created: false, resumed: true });
     const reason = registry.listByFin(registration.fibreIdentityNumber).length === 0 ? "initial" : "replacement";
     return issueFidCard({
       threadId: registration.threadId,
