@@ -70,6 +70,17 @@
 .thread-fid-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .thread-fid-preview{display:block;width:100%;border:0;padding:0;background:var(--surface);aspect-ratio:1.586/1;cursor:zoom-in;overflow:hidden}
 .thread-fid-preview img{width:100%;height:100%;object-fit:contain;display:block}
+.fibre-fin-card-shell{display:grid;gap:7px;justify-items:center;min-width:0}
+.fibre-fin-card{display:block;width:100%;max-width:760px;border:0;padding:14px;background:transparent;color:inherit;perspective:1200px;cursor:pointer;border-radius:14px;outline:none}
+.fibre-fin-card:focus-visible{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent)}
+.fibre-fin-card-inner{position:relative;display:block;width:100%;aspect-ratio:1.586/1;transform-style:preserve-3d;transition:transform 520ms cubic-bezier(.2,.75,.2,1);will-change:transform}
+.fibre-fin-card-face{position:absolute;inset:0;display:block;overflow:hidden;border-radius:16px;background:var(--surface);backface-visibility:hidden;box-shadow:0 14px 28px rgba(20,22,26,.18),0 2px 5px rgba(20,22,26,.12);border:1px solid color-mix(in srgb,var(--border-strong) 85%,transparent)}
+.fibre-fin-card-face::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.14),transparent 27%,transparent 72%,rgba(255,255,255,.08));mix-blend-mode:screen}
+.fibre-fin-card-face img{display:block;width:100%;height:100%;object-fit:contain}
+.fibre-fin-card-back{transform:rotateY(180deg)}
+.fibre-fin-card-hint{font-size:9px;color:var(--muted);letter-spacing:.02em}
+@media(hover:hover) and (pointer:fine){.fibre-fin-card:hover .fibre-fin-card-face{box-shadow:0 18px 34px rgba(20,22,26,.22),0 3px 7px rgba(20,22,26,.13)}}
+@media(prefers-reduced-motion:reduce){.fibre-fin-card-inner{transition:none}.fibre-fin-card-face::after{display:none}}
 .thread-fid-meta{grid-template-columns:minmax(150px,.8fr) minmax(240px,2fr) minmax(105px,.6fr) minmax(90px,.5fr);margin-top:10px}
 .thread-image-button{cursor:zoom-in}
 .thread-person-portrait-button{width:100%;height:100%;border:0;padding:0;background:transparent;cursor:zoom-in}
