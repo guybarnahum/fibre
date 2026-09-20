@@ -58,11 +58,9 @@ test("asset generation runtime receives InfraDriver rather than selecting an inf
   const runtime = createAssetGenerationRuntime({
     infra: infra(sent),
     provider: { providerId: "fixture" },
-    credentialSigner: { signerId: "fixture" },
-    executeJob: async ({ infra: injected, provider, credentialSigner, job: injectedJob }) => {
+    executeJob: async ({ infra: injected, provider, job: injectedJob }) => {
       assert.equal(injected.driverId, "asset-runtime-test");
       assert.equal(provider.providerId, "fixture");
-      assert.equal(credentialSigner.signerId, "fixture");
       return {
         receipt: { jobId: injectedJob.jobId },
         receiptObjectRef: "receipt_1",
@@ -91,7 +89,6 @@ test("unphased execution failures become provider-neutral errors but are not bli
   const runtime = createAssetGenerationRuntime({
     infra: infra(),
     provider: {},
-    credentialSigner: {},
     executeJob: async () => { throw new Error("unexpected execution failure"); },
   });
 
@@ -110,7 +107,6 @@ test("completion transport failures are explicitly retryable after durable gener
   const runtime = createAssetGenerationRuntime({
     infra: infra([], { queueError: new Error("queue transport unavailable") }),
     provider: {},
-    credentialSigner: {},
     executeJob: async () => { throw new Error("unused"); },
   });
 
