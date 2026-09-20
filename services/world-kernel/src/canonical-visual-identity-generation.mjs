@@ -37,22 +37,9 @@ function richEnough(embodiment) {
 }
 
 function assertVerifiedGenerationProof(proof, receipt) {
-  if (proof?.credentialMode === "content_credential") {
-    if (proof.verification?.valid !== true) {
-      throw new TypeError("canonical visual identity completion requires valid content-credential verification");
-    }
-    return;
+  if (!proof?.generationRecord || proof.receipt?.sha256 !== receipt.sha256) {
+    throw new TypeError("canonical visual identity completion requires verified Fibre generation provenance");
   }
-  if (proof?.credentialMode === "disabled") {
-    if (proof.verification !== null) {
-      throw new TypeError("canonical visual identity uncredentialed provenance proof must not claim credential verification");
-    }
-    return;
-  }
-  if (proof?.credentialMode === undefined && receipt?.credential !== null && proof?.verification?.valid === true) {
-    return;
-  }
-  throw new TypeError("canonical visual identity completion requires a recognized verified generation proof mode");
 }
 
 export function canonicalVisualIdentityBrief(embodimentCandidate) {
