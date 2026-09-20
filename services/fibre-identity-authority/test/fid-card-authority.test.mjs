@@ -139,6 +139,15 @@ test("FID Authority preserves an active card during reissue intent and owns expl
 
   assert.equal(reissue.workflow.priorActiveCredentialId, "fidc_mira_existing");
   assert.equal(reissue.workflow.proposedRevision, 2);
+
+  const freshIntent = await authority.prepareFidCard({
+    threadId:"thr_mira",
+    idempotencyKey:"replace_mira_002",
+  });
+  assert.notEqual(freshIntent.workflow.workflowId, reissue.workflow.workflowId, "new idempotency key reused an older issuance");
+  assert.equal(freshIntent.workflow.proposedRevision, 3, "new issuance intent did not reserve the next revision");
+  assert.equal(freshIntent.workflow.priorActiveCredentialId, "fidc_mira_existing");
+
   assert.equal(registry.getActiveByFin(FIN).credential.credentialId, "fidc_mira_existing");
   assert.equal(registry.listByFin(FIN).length, 1, "incomplete reissue must not register the proposed credential");
 
