@@ -10,7 +10,6 @@ import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
 import {
   FIBRE_IDENTITY_AUTHORITY_ID,
-  FID_C2PA_ASSERTION_LABEL,
   FidCardIssuanceStore,
   FidCardRegistry,
   FidPhotoAdmissionStore,
@@ -26,7 +25,7 @@ const sha256 = (value) => `sha256:${createHash("sha256").update(value).digest("h
 function issuer() {
   const key = Buffer.from("fid-cut-test-key");
   return {
-    profile: { authorityId: FIBRE_IDENTITY_AUTHORITY_ID, keyId: "fid-cut", publicKeyRef: "test:fid-cut", trustPolicy: "fid-test-v1" },
+    profile: { authorityId: FIBRE_IDENTITY_AUTHORITY_ID, keyId: "fid-cut", algorithm:"Ed25519", publicKeyRef: "test:fid-cut", trustPolicy: "fid-test-v1" },
     async sign(bytes) { return createHash("sha256").update(key).update(bytes).digest(); },
     async verify(bytes, signature) { return Buffer.from(signature).equals(createHash("sha256").update(key).update(bytes).digest()); },
   };
@@ -37,25 +36,6 @@ function protector() {
     profile: { policyId: "fid-test-private", keyId: "fid-test-reader" },
     async seal({ plaintext }) { return { ciphertext: Buffer.from(plaintext).reverse(), parameters: {} }; },
     async open({ ciphertext }) { return Buffer.from(ciphertext).reverse(); },
-  };
-}
-
-function c2pa() {
-  return {
-    signerVersion: "content-credential-signer-v0.1",
-    signerId: "fid-cut-c2pa",
-    format: "c2pa",
-    trustPolicy: "fid-test-v1",
-    async embed({ bytes, assertion, assertionLabel }) {
-      assert.equal(assertionLabel, FID_C2PA_ASSERTION_LABEL, "FID assertion label changed");
-      const embedded = Buffer.from(JSON.stringify({ assertionLabel, assertion, bytes: Buffer.from(bytes).toString("base64") }));
-      return { bytes: embedded, format: "c2pa", signerId: "fid-cut-c2pa", manifestDigest: sha256(embedded), embeddedAt: "2026-09-18T20:00:00.000Z" };
-    },
-    async verify({ bytes, assertionLabel }) {
-      const embedded = JSON.parse(Buffer.from(bytes).toString("utf8"));
-      const valid = embedded.assertionLabel === assertionLabel;
-      return { valid, format: "c2pa", signerId: "fid-cut-c2pa", manifestDigest: valid ? sha256(bytes) : null, assertion: valid ? embedded.assertion : null, verifiedAt: "2026-09-18T20:00:01.000Z", failureReason: valid ? null : "wrong assertion" };
-    },
   };
 }
 
@@ -114,7 +94,6 @@ test("cutting by Thread then FIN reissues one civil identity and preserves card 
       threadRegistry: { get: async () => ({ threadId: "thr_mira", fibreIdentityNumber: FIN, displayName: "Mira Vale", birthDate: "2004-03-18" }) },
       registry,
       infra: createMemoryInfraDriver(),
-      contentCredentialSigner: c2pa(),
       issuerSigner: issuer(),
       credentialProtector: protector(),
       loadPhoto: async () => photo,
@@ -131,6 +110,12 @@ test("cutting by Thread then FIN reissues one civil identity and preserves card 
     assert.equal(first.identitySnapshot.displayName, "Mira Vale", "Thread name was not credentialed");
     assert.deepEqual(first.identitySnapshot.dateField, { kind: "birth_date", value: "2004-03-18" }, "Thread birth date was not credentialed");
     assert.equal(first.issuance.templateVersion, "fid-card-template-executor-test", "issuance lost template version");
+    assert.equal(first.issuance.front.manifestDigest, null, "native proof should not create a C2PA manifest");
+    assert.deepEqual(first.issuance.c2pa, {
+      signerId:null,
+      trustPolicy:null,
+      validationStatus:"disabled",
+    }, "legacy C2PA evidence should stay disabled during native-proof migration");
 
     const repeated = await executor.cut({ threadId: "thr_mira", idempotencyKey: "cut_mira_1" });
     assert.equal(repeated.reused, true, "same cut did not reuse its credential");
