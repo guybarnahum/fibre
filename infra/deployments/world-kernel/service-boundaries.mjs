@@ -149,7 +149,7 @@ export function createThreadPresentationPublisher({
         genesisUrl,
         { genesisId, publicationDigest, bundle },
         "Genesis projection",
-        "THREAD_PRESENTATION_PUBLICATION_FAILED",
+        "GENESIS_PRESENTATION_DELIVERY_FAILED",
       );
     },
     reconcileIdentityProjection({ threadId, projection, projectedAt }) {

@@ -75,7 +75,14 @@ export function createGenesisPresentationWriteApi({ presentationServer, privateT
           const sameGenesisLineage = catalog?.genesisId === genesisId
             && catalog?.publicationDigest === publicationDigest;
           if (!identical && !sameGenesisLineage) {
-            return Response.json({ error: "presentation_conflict", threadId, genesisId }, { status: 409 });
+            return Response.json({
+              error:"genesis_lineage_conflict",
+              code:"GENESIS_PRESENTATION_LINEAGE_CONFLICT",
+              detail:"Existing public Presentation belongs to a different Genesis publication lineage and cannot be replaced by this birth projection.",
+              retryable:false,
+              threadId,
+              genesisId,
+            }, { status:409 });
           }
           return Response.json({
             ok: true,

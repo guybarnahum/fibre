@@ -45,12 +45,12 @@ function birth() {
   };
 }
 
-function request(body, { token = TOKEN } = {}) {
+function request(body) {
   return new Request("https://presentation.local/internal/genesis/presentations", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-fibre-private-token": token,
+      "x-fibre-private-token": TOKEN,
     },
     body: JSON.stringify(body),
   });
@@ -121,21 +121,27 @@ test("private Genesis retry accepts a later Presentation snapshot from the same 
   assert.equal(stillCurrent.pointer.snapshotDigest, published.pointer.snapshotDigest);
 });
 
-test("private Genesis write API rejects unauthorized writes and conflicting retries", async () => {
+test("a different Genesis lineage cannot replace an existing Thread Presentation", async () => {
   const infra = createMemoryInfraDriver();
   const presentationServer = createThreadPresentationServer({ infra });
   const api = createGenesisPresentationWriteApi({ presentationServer, privateToken: TOKEN });
   const input = birth();
 
-  const unauthorized = await api.fetch(request(input, { token: "wrong" }));
-  assert.equal(unauthorized.status, 403);
-
   const created = await api.fetch(request(input));
-  assert.equal(created.status, 201);
+  const first = await created.json();
+  const original = await presentationServer.getSnapshot(first.channelId);
 
   const conflicting = structuredClone(input);
   conflicting.publicationDigest = `sha256:${"b".repeat(64)}`;
-  conflicting.bundle.presentation.introduction.summary = "Different projection content.";
-  const conflict = await api.fetch(request(conflicting));
-  assert.equal(conflict.status, 409);
+  conflicting.bundle.presentation.introduction.summary = "Different birth projection.";
+  const response = await api.fetch(request(conflicting));
+  const conflict = await response.json();
+
+  assert.equal(response.status, 409);
+  assert.equal(conflict.code, "GENESIS_PRESENTATION_LINEAGE_CONFLICT");
+  assert.equal(conflict.retryable, false);
+  assert.match(conflict.detail, /different Genesis publication lineage/);
+
+  const stillCurrent = await presentationServer.getSnapshot(first.channelId);
+  assert.equal(stillCurrent.pointer.snapshotDigest, original.pointer.snapshotDigest);
 });

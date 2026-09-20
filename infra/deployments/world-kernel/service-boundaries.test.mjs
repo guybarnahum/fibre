@@ -57,7 +57,7 @@ test("Genesis Presentation boundary keeps transient downstream failures retryabl
       bundle: {},
     }),
     (error) => {
-      assert.equal(error.code, "THREAD_PRESENTATION_PUBLICATION_FAILED");
+      assert.equal(error.code, "GENESIS_PRESENTATION_DELIVERY_FAILED");
       assert.equal(error.httpStatus, 503);
       assert.equal(error.retryable, true);
       return true;

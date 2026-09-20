@@ -342,7 +342,7 @@ presentation.visual_identity.project
 presentation.identity_media.ensure
 presentation.media_demand.reconcile
 presentation.catalog.publish
-presentation.snapshot.publish
+presentation.genesis.publish
 presentation.asset.serve
 ```
 
