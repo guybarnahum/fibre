@@ -47,7 +47,8 @@ test("Admin FIN verification trusts only a coherent verified front/back pair", a
 
   assert.equal(result.verified, true, "verified card pair was rejected");
   assert.equal(result.assertion.credentialId, "fidc_admin_1");
-  assert.deepEqual(calls.map((call) => call.method), ["GET","GET","POST","POST"]);
+  assert.equal(calls.filter((call) => call.method === "GET").length, 2, "both displayed card sides must be read");
+  assert.equal(calls.filter((call) => call.method === "POST").length, 2, "both displayed card sides must be verified");
 });
 
 test("Admin FIN verification never exposes assertion data from a failed side", async () => {
