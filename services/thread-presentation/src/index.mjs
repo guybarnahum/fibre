@@ -50,7 +50,7 @@ export { createGenesisPresentationDeliveryService } from "./genesis-presentation
 export { projectNewbornThreadPresentation } from "./newborn-presentation-projector.mjs";
 export { projectVisualIdentityThreadPresentation } from "./visual-identity-presentation-projector.mjs";
 export { createFidLifecycleReconciler } from "./fid-lifecycle-reconciler.mjs";
-export { createThreadPresentationVisualPublicationReconciler } from "./visual-publication-h1-reconciler.mjs";
+export { createThreadPresentationVisualPublicationReconciler } from "./visual-publication-reconciler.mjs";
 export {
   createFidPresentationProjectionService,
   projectFidThreadPresentation,
