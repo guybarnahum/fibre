@@ -152,23 +152,14 @@ expired       # optional policy when an expiry date exists
 Rules:
 
 - first successful issuance creates a new immutable credential and marks it `active`;
-- a normal replacement, renewal, or correction creates a new credential ID/revision and atomically marks the prior active credential `superseded`;
+- a normal replacement or correction creates a new credential ID/revision and atomically marks the prior active credential `superseded` for FIA's internal lifecycle bookkeeping;
 - loss, compromise, bad issuance, or administrative invalidation may explicitly mark a credential `revoked`;
 - reissue never changes FIN or civil registration;
 - old PNGs and issuance records remain immutable historical artifacts;
-- an old card may remain cryptographically authentic while no longer being currently valid.
+- FIN Cards do not expire as part of the native proof contract;
+- verification proves authenticity of the exact card, not whether Fibre knows of a newer revision.
 
-Verification must therefore distinguish:
-
-```text
-authenticity
-  "Was this exact credential issued by Fibre?"
-
-current validity
-  "Is this credential still active now?"
-```
-
-Online verification should consult the FID status authority. Offline verification can prove embedded authenticity/issuance but cannot prove current non-revocation unless a sufficiently fresh signed status artifact is also available.
+When multiple authentic cards are available, `revision` and `issuedAt` provide their chronology. Whether a newer card exists is deliberately outside the embedded proof and is not required for card verification.
 
 ## FID photo derivation and admission
 
@@ -532,17 +523,14 @@ protected FIN-card PNG
 
 Failure is closed: malformed proof, unknown key, bad signature, malformed PNG, duplicate/conflicting proof chunks, side mismatch, or render-digest mismatch returns a verification failure and **does not return the embedded assertion**.
 
-Authenticity and current validity remain distinct:
+Verification answers one question:
 
 ```text
 authenticity
   "Was this exact PNG issued and signed by Fibre?"
-
-current validity
-  "Is this credential still active now?"
 ```
 
-Online verification may additionally query `FidCardRegistry` after cryptographic authenticity succeeds. A superseded or revoked card can remain cryptographically authentic while no longer being current.
+The proof does not claim that the card is the latest revision. If several authentic cards are known, `revision` and `issuedAt` establish their order. A lookup for "latest known revision" may be added later if a concrete product need appears, but it is not part of the FIN proof contract.
 
 ## Asynchronous relationship to birth and media
 
@@ -636,18 +624,15 @@ The original FID authority/photo/render lifecycle slices are complete. The remai
 - return `{ verified:false, reason }` with no assertion on trust failure;
 - let authenticated Admin proxy displayed PNG bytes to FIA without moving cryptographic trust into the browser.
 
-### FIN-PROOF-H — current-status verification
+### FIN-PROOF-I — rich-card verification UI — implemented
 
-- optionally add registry lookup after authenticity succeeds;
-- distinguish authentic from active/superseded/revoked/expired.
-
-### FIN-PROOF-I — rich-card verification UI — authenticity implemented
-
-- Thread Presentation carries only FIA-active cards whose proof state is verified;
+- Thread Presentation carries FIA-issued cards whose proof state is verified;
 - Admin's reusable FIN-card component fetches the exact front/back PNGs it displays and asks FIA to verify each;
 - the component shows `✓ Verified by Fibre` only when both sides verify and describe the same credential;
 - an expandable view renders key/value data derived only from the trusted embedded assertions;
-- current active/superseded/revoked status remains FIN-PROOF-H and is not inferred from authenticity.
+- the UI does not infer "latest" or "obsolete" from authenticity alone.
+
+Latest-revision awareness is intentionally deferred. If Fibre later needs it, it can compare trusted `revision` / `issuedAt` against FIA's known issuance history without changing or re-signing historical cards.
 
 ## Acceptance criteria
 
@@ -660,7 +645,7 @@ The FID vertical is not complete until all of these hold:
 5. The admitted FID photo is provenance-bound to the Thread's visual identity.
 6. Exactly one active FID credential exists per FIN under normal policy.
 7. Reissue creates a new credential and supersedes, rather than overwrites, the prior credential.
-8. Revoked/superseded historical PNGs remain cryptographically authentic but verify as not currently active.
+8. Historical PNGs remain cryptographically authentic; when multiple authentic cards are known, revision and issue date establish chronology without changing older cards.
 9. Public output consists of exactly `front.png` and `back.png`.
 10. The two sides are cryptographically bound to the same credential and cannot be mixed across issuances.
 11. The protected machine credential includes the exact normalized FID photo and its provenance/admission digests.
@@ -683,7 +668,7 @@ The FID vertical is not complete until all of these hold:
 | front/back rendering | FID Renderer | deterministic derived artifact |
 | FIN-card proof signing / embedding / verification | Fibre Identity Authority + native proof module | Fibre-only tamper-evidence mechanism |
 | final front/back bytes | InfraDriver objects | immutable credentialed artifacts |
-| FID status | Fibre Identity Authority / FidCardRegistry | active/superseded/revoked/expired authority |
+| FID lifecycle bookkeeping | Fibre Identity Authority / FidCardRegistry | issuance history and latest known revision; not part of embedded proof verification |
 | Thread Presentation | Thread Presentation | consumes active admitted projection only |
 
 Nothing in this contract makes card pixels, a generated portrait, or a valid FIN proof into Thread history, memory, meaning, cognition, or embodiment authority.
