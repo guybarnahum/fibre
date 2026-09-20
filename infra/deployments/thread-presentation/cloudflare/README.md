@@ -1,12 +1,12 @@
 # Thread Presentation — Cloudflare deployment
 
-This directory is the Cloudflare host for the provider-neutral Thread Presentation capability in `services/thread-presentation/`. It is composition, not Thread authority.
+This directory hosts the provider-neutral Thread Presentation capability from `services/thread-presentation/`. It is composition, not Thread authority.
 
-Provider-neutral HTTP/read behavior lives at `services/thread-presentation/src/http/read-api.mjs`. This host injects the Cloudflare InfraDriver, HTTP/WebSocket delivery, Asset Generator Workflow binding and completion Queue.
+Provider-neutral HTTP/read behavior lives at `services/thread-presentation/src/http/read-api.mjs`. This host injects the Cloudflare InfraDriver, HTTP/WebSocket delivery, Asset Generator Workflow binding, completion Queue, and private Fibre service bindings.
 
 ## Configs
 
-- `wrangler.local.jsonc` — local/e2e composition with the dev-only P3 fixture seam and local C2PA signer.
+- `wrangler.local.jsonc` — local/e2e composition with the dev-only P3 fixture seam.
 - `wrangler.jsonc` — remote Cloudflare topology.
 
 Remote provider selection is declared in `infra/deployments/environments/cloudflare.yaml`.
@@ -26,30 +26,26 @@ InfraDriver cloudflare-v1
   queues     -> asset completion consumer
 ```
 
-Public read routes include snapshot/events/stream and admitted presentation assets. Object possession or an Asset Generator receipt is insufficient for public serving; Presentation admission remains required.
+Public read routes include snapshots, events, streams and admitted presentation assets. Object possession or an Asset Generator receipt is insufficient for public serving; Presentation admission remains required.
 
 ## Private World handoff
 
-World remains authoritative for the canonical Embodiment. Once World has admitted the canonical visual root, it sends the admitted Embodiment over the authenticated internal endpoint:
+World remains authoritative for canonical Embodiment. Once World has admitted the canonical visual root, it sends that admitted Embodiment over:
 
 ```text
 POST /internal/visual-publication/reconcile
 x-fibre-private-token: <shared private token>
-
-{
-  "threadId": "...",
-  "embodiment": { "...": "admitted World-owned Embodiment" },
-  "observedAt": "..."
-}
 ```
 
-Presentation does not read World storage and does not redefine canonical identity. It validates the supplied admitted Embodiment, projects visual identity into its own snapshot, ensures identity media, and durably schedules derived media through Asset Generator. Repeated handoffs are idempotent and return the current reconciliation stage.
+Presentation does not read World storage or redefine canonical identity. It validates the admitted Embodiment, projects visual identity into its snapshot, ensures identity media, and schedules derived media through Asset Generator.
 
-`FIBRE_PRIVATE_TOKEN` is the required remote Thread Presentation secret. Thread Presentation does not hold C2PA signer credentials; FID signing remains behind Fibre Identity Authority and the Content Credential Signer deployment. Validation/auth failures return 4xx. Transient reconciliation failures return 5xx so World can retry on a later reconciliation sweep.
+Repeated handoffs are idempotent.
 
-## Private FID lifecycle handoff
+`FIBRE_PRIVATE_TOKEN` is the required remote private-service secret. Validation/auth failures return 4xx. Transient reconciliation failures return 5xx so World can retry on a later reconciliation sweep.
 
-Thread Presentation owns the lifecycle orchestration seam for already-born Threads:
+## Private FIN lifecycle handoff
+
+Thread Presentation owns lifecycle orchestration for already-born Threads:
 
 ```text
 POST /internal/fid/reconcile
@@ -62,9 +58,9 @@ x-fibre-private-token: <shared private token>
 }
 ```
 
-The Cloudflare host requires the `FIBRE_IDENTITY_AUTHORITY` service binding, queries FIA for the current active credential, cuts only when the selected mode requires it, and projects the resulting active card. The caller cannot supply FIN, civil identity fields, photo bytes or card rendering facts.
+The Cloudflare host uses the `FIBRE_IDENTITY_AUTHORITY` service binding, queries FIA for the current active credential, cuts only when the selected mode requires it, and projects the resulting active card.
 
-This keeps the authority direction explicit:
+The caller cannot supply FIN, civil identity fields, photo bytes or card rendering facts.
 
 ```text
 Admin / lifecycle caller
@@ -73,17 +69,13 @@ Admin / lifecycle caller
   -> Thread Presentation projection
 ```
 
+FIN proof remains entirely behind FIA. Thread Presentation handles only the resulting verified credential projection.
+
 World does not synchronously call FIA.
 
 ## Local generated-media proof
 
-```bash
-sh services/c2pa-local/generate-dev-cert.sh
-npm install --prefix services/c2pa-local --no-package-lock
-npm start --prefix services/c2pa-local
-```
-
-Then:
+Initialize the local D1 catalog, then start the local Asset Generator + Thread Presentation stack:
 
 ```bash
 npx wrangler@latest d1 execute fibre-presentation-local \
@@ -95,6 +87,8 @@ npm run dev:asset-stack:cloudflare
 ```
 
 The fixture-only mutation endpoints are enabled only when `P3_FIXTURE_MODE=1`; the remote config does not enable them.
+
+Generated-media admission uses Fibre's immutable generation provenance. Asset Generator emits completion facts; Thread Presentation independently verifies the durable receipt/generation record and alone authors `media.ready`.
 
 ## Remote topology
 
@@ -117,4 +111,4 @@ npm run deploy:asset-generator:cloudflare:dry
 npm run deploy:thread-presentation:cloudflare:dry
 ```
 
-This is topology validation, not production C2PA acceptance. Asset Generator emits completion facts; Thread Presentation alone admits them and publishes `media.ready`.
+This proves topology/composition only; live provider generation and true end-to-end acceptance require the explicit staging E2E.
