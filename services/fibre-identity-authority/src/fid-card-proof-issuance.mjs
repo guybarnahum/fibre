@@ -145,11 +145,11 @@ export async function protectAndStoreFidCard({
         rawRenderDigest:envelope.routing[`${side}RenderDigest`],
         machineCredentialDigest,
         encryptedCredentialDigest:envelope.encryptedCredentialDigest,
-        credentialFormat:"fibre-fin-proof",
+        proofFormat:"fibre-fin-proof",
         proofSchema:FID_CARD_PROOF_SCHEMA,
         proofEnvelopeVersion:FID_CARD_PROOF_ENVELOPE_VERSION,
         proofAssertionDigest:current.assertionDigest,
-        proofValidationStatus:"verified",
+        proofStatus:"verified",
       },
     );
     storedResult[side] = Object.freeze({
