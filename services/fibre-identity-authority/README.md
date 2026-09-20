@@ -70,7 +70,7 @@ Lifecycle orchestration itself is not owned by FIA. Thread Presentation owns the
 
 FIA remains provider-neutral. Executable provider composition belongs under `infra/deployments/fibre-identity-authority/`; the Cloudflare host injects an `InfraDriver` for FIA state/objects/workflows plus World, Thread Presentation, Asset Generation, issuer-signing, and credential-protection boundaries. A different provider can compose the same FIA service contracts without changing FIA domain code.
 
-The native FIN proof contract lives in `src/fid-card-proof.mjs` and is intentionally provider-independent. It reuses the already-composed FIA issuer signer rather than introducing a separate content-credential provider. `src/fid-card-proof-png.mjs` carries the canonical signed envelope in one private ancillary `fiDP` PNG chunk and can reconstruct the original unsigned render byte-for-byte. `src/fid-card-proof-verifier.mjs` is the trust boundary: it returns embedded assertion data only after accepted FIA key identity, Ed25519 signature, side (when expected), and raw-render digest all validate.
+The native FIN proof contract lives in `src/fid-card-proof.mjs` and is intentionally provider-independent. It reuses the already-composed FIA issuer signer rather than introducing a separate media-signing provider. `src/fid-card-proof-png.mjs` carries the canonical signed envelope in one private ancillary `fiDP` PNG chunk and can reconstruct the original unsigned render byte-for-byte. `src/fid-card-proof-verifier.mjs` is the trust boundary: it returns embedded assertion data only after accepted FIA key identity, Ed25519 signature, side (when expected), and raw-render digest all validate.
 
 
 ## Cloudflare operator secrets
@@ -83,4 +83,4 @@ npm run cloud:configure-secrets -- --file .env --env staging
 
 The target FIA Wrangler contract requires `FIBRE_PRIVATE_TOKEN`, `FIA_ISSUER_JWK`, and `FIA_CREDENTIAL_KEY_BASE64`. `FIA_ISSUER_JWK` already supplies the Ed25519 key used by the protected machine credential and will also sign the public FIN proof.
 
-The checked FIA Cloudflare configuration needs only the FIA issuer/protection secrets; FIN cards have no separate content-credential signer binding or secret.
+The checked FIA Cloudflare configuration needs only the FIA issuer/protection secrets; FIN cards have no separate media-signing binding or secret.
