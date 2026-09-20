@@ -37,7 +37,7 @@ export function selectedCloudflareDeployOrder({ noC2pa = false } = {}) {
 export function configureFiaForNoC2pa(config) {
   const resolved = structuredClone(config);
   resolved.vars ??= {};
-  resolved.vars.FIA_CONTENT_CREDENTIAL_MODE = "disabled";
+  resolved.vars.FIA_CONTENT_CREDENTIAL_MODE = "native";
   delete resolved.vars.C2PA_SIGNER_URL;
   delete resolved.vars.C2PA_SIGNER_ID;
   delete resolved.vars.C2PA_TRUST_POLICY;
@@ -345,7 +345,7 @@ export async function deployCloudflareStack({
 
   return Object.freeze({
     environment: env,
-    contentCredentialMode: noC2pa ? "disabled" : "c2pa",
+    contentCredentialMode: resolvedConfigs["fibre-identity-authority"].config.vars?.FIA_CONTENT_CREDENTIAL_MODE ?? "native",
     deployments: Object.freeze(deployments),
     acceptance,
     viewer,
