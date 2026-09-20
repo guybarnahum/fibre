@@ -37,10 +37,7 @@ function request(token = "shared-private-token") {
 
 function apiFixture() {
   const infra = createMemoryInfraDriver();
-  const controlService = createAssetGenerationControlService({
-    infra,
-    credentialSigner: { verify() { throw new Error("not reached without receipt"); } },
-  });
+  const controlService = createAssetGenerationControlService({ infra });
   return {
     infra,
     api: createAssetGenerationControlApi({
