@@ -53,7 +53,7 @@ Runtime consumers use the stable `#infra...` imports declared in the repository 
 
 Provider-specific hosting remains under `infra/providers/`. For example, `infra/providers/local/service.mjs` adapts a Fibre service to Node HTTP. Cloudflare Workers can use the Fetch-native service directly.
 
-Service-specific behavior stays under `services/<service>/` or deployment composition. The Infra service seam does not own image generation, C2PA semantics, Thread publication, Birth Center behavior, or World Kernel protocol semantics.
+Service-specific behavior stays under `services/<service>/` or deployment composition. The Infra service seam does not own image generation, Fibre provenance semantics, Thread publication, Birth Center behavior, or World Kernel protocol semantics.
 
 ## Providers
 
