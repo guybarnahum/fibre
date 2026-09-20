@@ -51,8 +51,9 @@ function signer(value) {
   }
   const profile = value.profile;
   if (!profile || typeof profile !== "object" || Array.isArray(profile)
-    || profile.authorityId !== FIBRE_IDENTITY_AUTHORITY_ID) {
-    throw new TypeError("FID card proof issuer signer profile is invalid");
+    || profile.authorityId !== FIBRE_IDENTITY_AUTHORITY_ID
+    || profile.algorithm !== FID_CARD_PROOF_SIGNATURE_ALGORITHM) {
+    throw new TypeError("FID card proof issuer signer profile must be Fibre Identity Authority Ed25519");
   }
   return Object.freeze({
     sign:value.sign.bind(value),
@@ -60,6 +61,7 @@ function signer(value) {
     profile:Object.freeze({
       authorityId:profile.authorityId,
       keyId:id("FID card proof signer keyId", profile.keyId),
+      algorithm:FID_CARD_PROOF_SIGNATURE_ALGORITHM,
     }),
   });
 }
