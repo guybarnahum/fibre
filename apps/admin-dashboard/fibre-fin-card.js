@@ -89,17 +89,15 @@ class FibreFinCardElement extends HTMLElement {
       status.classList.add("verified");
       details.hidden = false;
       const rows = [];
-      const visit = (value, prefix = "") => {
+      const visit = (value, prefix) => {
         for (const [key, item] of Object.entries(value ?? {})) {
-          const name = prefix ? `${prefix}.${key}` : key;
+          const name = `${prefix}.${key}`;
           if (item && typeof item === "object" && !Array.isArray(item)) visit(item, name);
           else rows.push([name, item]);
         }
       };
-      const { side:_side, rawRenderDigest:_frontDigest, ...shared } = result.frontAssertion;
-      visit(shared);
-      rows.push(["front.rawRenderDigest", result.frontAssertion.rawRenderDigest]);
-      rows.push(["back.rawRenderDigest", result.backAssertion.rawRenderDigest]);
+      visit(result.frontAssertion, "front");
+      visit(result.backAssertion, "back");
       for (const [key, value] of rows) {
         const term = document.createElement("dt");
         term.textContent = key;
