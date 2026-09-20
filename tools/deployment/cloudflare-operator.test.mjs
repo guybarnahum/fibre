@@ -102,11 +102,6 @@ test("Slice E resource plan derives isolated staging names while deploy-managed 
     true,
     "FIA should bind staging World Kernel for authoritative identity",
   );
-  assert.equal(
-    hasServiceBinding(plan, "fibre-identity-authority", "CONTENT_CREDENTIAL_SIGNER", "fibre-content-credential-signer-staging"),
-    true,
-    "FIA should bind the staging Fibre signer",
-  );
 });
 
 test("Slice E provision is idempotent and writes resolved D1/resource configuration outside Git", async () => {
@@ -230,7 +225,7 @@ test("Slice E secret configuration uploads only each service subset and persists
   );
   assert.deepEqual(
     uploadedSecretKeys(uploads, "fibre-identity-authority"),
-    ["FIBRE_PRIVATE_TOKEN", "C2PA_SIGNER_TOKEN", "FIA_ISSUER_JWK", "FIA_CREDENTIAL_KEY_BASE64"],
+    ["FIBRE_PRIVATE_TOKEN", "FIA_ISSUER_JWK", "FIA_CREDENTIAL_KEY_BASE64"],
   );
   assert.deepEqual(result.runtimeConfigByService["content-credential-signer"], {});
   assert.deepEqual(result.runtimeConfigByService["fibre-identity-authority"], {});
@@ -242,8 +237,8 @@ test("Slice E secret configuration uploads only each service subset and persists
 
   const reprovisioned = await provisionCloudflareResources({ repoRoot, environment: "staging", client });
   const regeneratedFia = JSON.parse(await readFile(resolve(repoRoot, reprovisioned.wranglerConfigs["fibre-identity-authority"]), "utf8"));
-  assert.equal(regeneratedFia.vars.C2PA_SIGNER_URL, "https://content-credential-signer.internal");
-  assert.equal(regeneratedFia.services.find((binding) => binding.binding === "CONTENT_CREDENTIAL_SIGNER").service, "fibre-content-credential-signer-staging");
+  assert.equal(Object.hasOwn(regeneratedFia.vars, "C2PA_SIGNER_URL"), false);
+  assert.equal(regeneratedFia.services.some((binding) => binding.binding === "CONTENT_CREDENTIAL_SIGNER"), false);
 });
 
 
