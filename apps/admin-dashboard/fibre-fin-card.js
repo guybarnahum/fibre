@@ -1,3 +1,5 @@
+import { verifyFibreFinCardAssets } from "./fibre-fin-card-verification.js";
+
 const TAG_NAME = "fibre-fin-card";
 const STYLESHEET_HREF = "/fibre-fin-card.css";
 
@@ -43,6 +45,13 @@ class FibreFinCardElement extends HTMLElement {
           </span>
         </button>
         <span class="hint">Front · click to flip</span>
+        <div class="proof">
+          <span class="proof-status" aria-live="polite">Verifying Fibre proof…</span>
+          <details class="proof-details" hidden>
+            <summary>Verified embedded data</summary>
+            <dl class="proof-data"></dl>
+          </details>
+        </div>
       </div>
     `;
 
@@ -59,6 +68,49 @@ class FibreFinCardElement extends HTMLElement {
 
     this._control.addEventListener("click", () => this._setFlipped(!this._flipped));
     this._setFlipped(false);
+    void this._verify(frontSrc, backSrc);
+  }
+
+  async _verify(frontSrc, backSrc) {
+    const status = this.shadowRoot.querySelector(".proof-status");
+    const details = this.shadowRoot.querySelector(".proof-details");
+    const data = this.shadowRoot.querySelector(".proof-data");
+    try {
+      const result = await verifyFibreFinCardAssets({
+        front:{ url:frontSrc },
+        back:{ url:backSrc },
+      });
+      if (!result.verified) {
+        status.textContent = "FIN proof not verified";
+        status.classList.add("failed");
+        return;
+      }
+      status.textContent = "✓ Verified by Fibre";
+      status.classList.add("verified");
+      details.hidden = false;
+      const rows = [];
+      const visit = (value, prefix = "") => {
+        for (const [key, item] of Object.entries(value ?? {})) {
+          const name = prefix ? `${prefix}.${key}` : key;
+          if (item && typeof item === "object" && !Array.isArray(item)) visit(item, name);
+          else rows.push([name, item]);
+        }
+      };
+      const { side:_side, rawRenderDigest:_frontDigest, ...shared } = result.frontAssertion;
+      visit(shared);
+      rows.push(["front.rawRenderDigest", result.frontAssertion.rawRenderDigest]);
+      rows.push(["back.rawRenderDigest", result.backAssertion.rawRenderDigest]);
+      for (const [key, value] of rows) {
+        const term = document.createElement("dt");
+        term.textContent = key;
+        const description = document.createElement("dd");
+        description.textContent = value === null ? "null" : Array.isArray(value) ? JSON.stringify(value) : String(value);
+        data.append(term, description);
+      }
+    } catch {
+      status.textContent = "FIN proof verification unavailable";
+      status.classList.add("failed");
+    }
   }
 
   _setFlipped(value) {
