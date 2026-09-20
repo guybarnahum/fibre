@@ -172,6 +172,10 @@ current validity
 
 Online verification may add a registry lookup only after proof authenticity succeeds.
 
+Normal FIA issuance now uses the native proof path. Both sides are signed, embedded and verified before either object is stored; finalization then re-verifies the immutable stored bytes and requires the trusted embedded assertions to match the protected FIA machine credential before activation. Legacy C2PA and unsigned modes remain explicit transitional compatibility paths only.
+
+The persisted issuance record is intentionally not redesigned in this slice. Native cards temporarily leave the legacy C2PA evidence slot disabled until the next registry/storage-evidence slice replaces it with first-class native proof metadata.
+
 ## C2PA relationship
 
 C2PA is no longer required for FIN Card issuance, activation or Fibre-native verification.
@@ -205,7 +209,7 @@ A. proof assertion contract — implemented
 B. FIA Ed25519 signature envelope — implemented
 C. deterministic PNG embedding/extraction — implemented
 D. strict verifier — implemented
-E. issuance integration
+E. issuance integration — implemented
 F. registry/storage proof evidence
 G. verification API
 H. current-status verification
