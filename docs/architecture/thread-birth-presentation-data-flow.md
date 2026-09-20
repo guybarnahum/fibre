@@ -44,11 +44,7 @@ Thread Presentation
 Asset Generator
   provider-neutral asynchronous media generation
   immutable generation provenance
-  Content Credential embedding/verification
   immutable final asset + receipt
-
-Content Credential Signer
-  concrete signing/verification capability selected by deployment
 
 insidefibre.com
   public presentation consumer only
@@ -158,7 +154,6 @@ Thread Presentation publishes current snapshot
                   |
             GenerationRecord
                   |
-            Content Credential embed + verify
                   |
             immutable final asset
                   |
@@ -309,7 +304,6 @@ job
   -> provider operation / generation attempt
   -> staged provider bytes
   -> GenerationRecord
-  -> Content Credential
   -> final immutable object
   -> StoredAssetReceipt
   -> AssetGenerationCompletion
@@ -368,7 +362,6 @@ The canonical local development ports are deliberately non-overlapping:
 127.0.0.1:8787  World Kernel
 127.0.0.1:8788  Thread Presentation + Asset Generator Cloudflare local stack
 127.0.0.1:8790  Birth Center
-127.0.0.1:8791  Content Credential Signer
 localhost:5173   insidefibre.com Vite development site
 ```
 
@@ -383,10 +376,6 @@ npm run birth-center
 ```
 
 ```bash
-npm run content-credential-signer
-```
-
-```bash
 npm run dev:asset-stack:cloudflare
 ```
 
@@ -396,7 +385,7 @@ Then run `insidefibre.com` separately from its repository:
 npm run dev
 ```
 
-The Cloudflare local presentation deployment allows `http://localhost:5173` as the viewer origin and points its local Content Credential integration at `http://127.0.0.1:8791`.
+The Cloudflare local presentation deployment allows `http://localhost:5173` as the viewer origin.
 
 The local World Kernel is in an incremental persistence migration. GenesisStore, CivilRegistryStore, GenesisPresentationOutboxStore, and the World store are already composed against shared provider-neutral World state while several older semantic/runtime stores still receive the legacy database path. Concrete SQLite selection remains deployment composition, not service-domain policy; remaining stores should migrate behind the same state capability incrementally rather than through a parallel persistence architecture.
 
@@ -431,7 +420,6 @@ Current behavior is fragmented but useful:
 - local Node deployments emit process logs to stdout/stderr;
 - World Kernel already emits structured JSON for startup and request failures;
 - Birth Center emits structured JSON lifecycle logs;
-- Content Credential Signer emits structured JSON lifecycle logs;
 - Cloudflare deployments enable Worker observability and emit selected structured JSON failure events;
 - `InfraDriver` reserves a `telemetry` capability, but there is not yet an executable portable telemetry port/provider or a shared Fibre flow-event envelope.
 
