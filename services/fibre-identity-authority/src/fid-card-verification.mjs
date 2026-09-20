@@ -3,7 +3,6 @@ import { createHash } from "node:crypto";
 import { requireInfraCapabilities } from "#infra";
 
 import { normalizeFidIssuanceWorkflowRecord } from "./fid-card-issuance-domain.mjs";
-import { verifyFidC2paSide } from "./fid-card-credentialing.mjs";
 import {
   buildFidCardProofAssertion,
   fidCardProofAssertionDigest,
@@ -38,14 +37,6 @@ function bytes(name, value) {
   if (value instanceof ArrayBuffer) return new Uint8Array(value);
   throw new TypeError(`${name} must be bytes`);
 }
-function normalizeContentCredentialMode(value) {
-  const mode = value ?? "native";
-  if (mode !== "native" && mode !== "c2pa" && mode !== "disabled") {
-    throw new TypeError(`unsupported FID content credential mode ${String(mode)}`);
-  }
-  return mode;
-}
-
 function statusReader(value) {
   if (value == null) return null;
   if (typeof value.getByCredentialId !== "function") throw new TypeError("FID status authority must expose getByCredentialId()");
@@ -69,89 +60,42 @@ function assertProtectedLinkage(payload, issuerSigner) {
 }
 
 export async function verifyFidCard({
-  contentCredentialSigner = null,
-  contentCredentialMode = "native",
   machineCredential,
   frontBytes,
   backBytes,
-  issuerSigner = null,
-  credentialProtector = null,
+  issuerSigner,
+  credentialProtector,
   statusAuthority = null,
 }) {
-  const credentialMode = normalizeContentCredentialMode(contentCredentialMode);
   if (machineCredential?.routing?.issuerAuthorityId !== FIBRE_IDENTITY_AUTHORITY_ID) {
     throw new Error("FID credential is not routed to Fibre Identity Authority");
   }
-
-  const frontAsset = bytes("FID front.png", frontBytes);
-  const backAsset = bytes("FID back.png", backBytes);
-  let front;
-  let back;
-  let nativeProof = null;
-  if (credentialMode === "native") {
-    if (issuerSigner == null) throw new TypeError("native FIN proof verification requires issuerSigner");
-    nativeProof = await verifyFidCardProofPair({
-      frontPngBytes:frontAsset,
-      backPngBytes:backAsset,
-      issuerSigner,
-    });
-    if (!nativeProof.verified) {
-      throw new Error(`FID native proof verification failed: ${nativeProof.reason}`);
-    }
-    front = {
-      manifestDigest:null,
-      proofAssertionDigest:fidCardProofAssertionDigest(nativeProof.frontAssertion),
-    };
-    back = {
-      manifestDigest:null,
-      proofAssertionDigest:fidCardProofAssertionDigest(nativeProof.backAssertion),
-    };
-  } else if (credentialMode === "c2pa") {
-    nonEmpty("FID C2PA trustPolicy", contentCredentialSigner?.trustPolicy);
-    front = await verifyFidC2paSide({
-      contentCredentialSigner,
-      bytes: frontAsset,
-      side: "front",
-      machineCredential,
-    });
-    back = await verifyFidC2paSide({
-      contentCredentialSigner,
-      bytes: backAsset,
-      side: "back",
-      machineCredential,
-    });
-  } else {
-    if (sha256(frontAsset) !== machineCredential.routing.frontRenderDigest
-      || sha256(backAsset) !== machineCredential.routing.backRenderDigest) {
-      throw new Error("FID unsigned card bytes do not match protected render digests");
-    }
-    front = { manifestDigest:null, proofAssertionDigest:null };
-    back = { manifestDigest:null, proofAssertionDigest:null };
+  if (issuerSigner == null || credentialProtector == null) {
+    throw new TypeError("FID verification requires issuerSigner and credentialProtector");
   }
 
-  if ((issuerSigner == null) !== (credentialProtector == null)) {
-    throw new TypeError("FID protected verification requires both issuerSigner and credentialProtector");
-  }
-  const opened = issuerSigner == null
-    ? null
-    : await openFidMachineCredential(machineCredential, { issuerSigner, credentialProtector });
-  if (opened !== null) assertProtectedLinkage(opened.payload, issuerSigner);
+  const nativeProof = await verifyFidCardProofPair({
+    frontPngBytes:bytes("FID front.png", frontBytes),
+    backPngBytes:bytes("FID back.png", backBytes),
+    issuerSigner,
+  });
+  if (!nativeProof.verified) throw new Error(`FID proof verification failed: ${nativeProof.reason}`);
 
-  if (credentialMode === "native") {
-    if (opened === null) throw new Error("FID native proof verification requires protected credential verification");
-    const expectedFront = buildFidCardProofAssertion({ payload:opened.payload, side:"front" });
-    const expectedBack = buildFidCardProofAssertion({ payload:opened.payload, side:"back" });
-    if (fidCardProofAssertionJson(nativeProof.frontAssertion) !== fidCardProofAssertionJson(expectedFront)
-      || fidCardProofAssertionJson(nativeProof.backAssertion) !== fidCardProofAssertionJson(expectedBack)) {
-      throw new Error("FID native proof assertions do not match the protected FIA credential");
-    }
+  const opened = await openFidMachineCredential(machineCredential, { issuerSigner, credentialProtector });
+  assertProtectedLinkage(opened.payload, issuerSigner);
+
+  const expectedFront = buildFidCardProofAssertion({ payload:opened.payload, side:"front" });
+  const expectedBack = buildFidCardProofAssertion({ payload:opened.payload, side:"back" });
+  if (fidCardProofAssertionJson(nativeProof.frontAssertion) !== fidCardProofAssertionJson(expectedFront)
+    || fidCardProofAssertionJson(nativeProof.backAssertion) !== fidCardProofAssertionJson(expectedBack)) {
+    throw new Error("FID proof assertions do not match the protected FIA credential");
   }
 
   const status = statusReader(statusAuthority)?.getByCredentialId(
     machineCredential.routing.credentialId,
-    { required: false },
+    { required:false },
   ) ?? null;
-  if (status !== null && opened !== null) {
+  if (status !== null) {
     const credential = status.credential;
     const payload = opened.payload;
     if (credential.credentialId !== payload.credentialId
@@ -164,36 +108,33 @@ export async function verifyFidCard({
   }
 
   return Object.freeze({
-    authenticity: Object.freeze({
-      valid: true,
-      credentialId: machineCredential.routing.credentialId,
-      revision: machineCredential.routing.revision,
-      issuerAuthorityId: machineCredential.routing.issuerAuthorityId,
-      issuerKeyId: machineCredential.routing.issuerKeyId,
-      proofFormat: credentialMode === "native" ? "fibre-fin-proof" : (credentialMode === "c2pa" ? "c2pa" : "none"),
-      nativeProofVerified: credentialMode === "native",
-      c2paSignerId: credentialMode === "c2pa" ? contentCredentialSigner.signerId : null,
-      c2paTrustPolicy: credentialMode === "c2pa" ? contentCredentialSigner.trustPolicy : null,
-      protectedCredentialVerified: opened !== null,
+    authenticity:Object.freeze({
+      valid:true,
+      credentialId:machineCredential.routing.credentialId,
+      revision:machineCredential.routing.revision,
+      issuerAuthorityId:machineCredential.routing.issuerAuthorityId,
+      issuerKeyId:machineCredential.routing.issuerKeyId,
+      proofFormat:"fibre-fin-proof",
+      protectedCredentialVerified:true,
     }),
-    currentValidity: Object.freeze(statusAuthority == null
-      ? { known: false, status: null, active: null }
-      : { known: true, status: status?.status ?? null, active: status?.status === "active" }),
-    manifestDigestBySide: Object.freeze({ front: front.manifestDigest, back: back.manifestDigest }),
-    proofAssertionDigestBySide: Object.freeze({
-      front: front.proofAssertionDigest ?? null,
-      back: back.proofAssertionDigest ?? null,
+    currentValidity:Object.freeze(statusAuthority == null
+      ? { known:false, status:null, active:null }
+      : { known:true, status:status?.status ?? null, active:status?.status === "active" }),
+    proofAssertionDigestBySide:Object.freeze({
+      front:fidCardProofAssertionDigest(nativeProof.frontAssertion),
+      back:fidCardProofAssertionDigest(nativeProof.backAssertion),
     }),
-    payload: opened?.payload ?? null,
-    payloadDigest: opened?.signedCredential?.payloadDigest ?? null,
-    photo: opened?.photo ?? null,
+    payload:opened.payload,
+    payloadDigest:opened.signedCredential.payloadDigest,
+    photo:opened.photo,
   });
 }
 
-function assertStoredCard(storedCard, machineCredential, contentCredentialMode) {
+function assertStoredCard(storedCard, machineCredential) {
   if (!storedCard || storedCard.credentialId !== machineCredential.routing.credentialId
-    || storedCard.revision !== machineCredential.routing.revision) {
-    throw new TypeError("FID stored card does not identify the machine credential issuance");
+    || storedCard.revision !== machineCredential.routing.revision
+    || storedCard.proofFormat !== "fibre-fin-proof") {
+    throw new TypeError("FID stored card does not identify a verified native-proof issuance");
   }
   if (storedCard.machineCredentialDigest !== canonicalDigest(machineCredential)) {
     throw new TypeError("FID stored card machine credential digest mismatch");
@@ -201,16 +142,7 @@ function assertStoredCard(storedCard, machineCredential, contentCredentialMode) 
   for (const side of ["front", "back"]) {
     nonEmpty(`FID ${side} objectRef`, storedCard[side]?.objectRef);
     digest(`FID ${side} final digest`, storedCard[side]?.finalDigest);
-    if (contentCredentialMode === "c2pa") {
-      digest(`FID ${side} manifest digest`, storedCard[side]?.manifestDigest);
-    } else {
-      if (storedCard[side]?.manifestDigest !== null) {
-        throw new TypeError(`FID ${side} manifest digest must be null without C2PA`);
-      }
-      if (contentCredentialMode === "native") {
-        digest(`FID ${side} proof assertion digest`, storedCard[side]?.proofAssertionDigest);
-      }
-    }
+    digest(`FID ${side} proof assertion digest`, storedCard[side]?.proofAssertionDigest);
   }
   return storedCard;
 }
@@ -221,8 +153,6 @@ export async function finalizeFidCardIssuance({
   workflow: rawWorkflow,
   storedCard: rawStoredCard,
   machineCredential,
-  contentCredentialSigner = null,
-  contentCredentialMode = "c2pa",
   issuerSigner,
   credentialProtector,
   activatedAt,
@@ -232,8 +162,7 @@ export async function finalizeFidCardIssuance({
     throw new TypeError("FID finalization requires a FidCardRegistry");
   }
   const workflow = normalizeFidIssuanceWorkflowRecord(rawWorkflow);
-  const credentialMode = normalizeContentCredentialMode(contentCredentialMode);
-  const storedCard = assertStoredCard(rawStoredCard, machineCredential, credentialMode);
+  const storedCard = assertStoredCard(rawStoredCard, machineCredential);
   nonEmpty("FID activatedAt", activatedAt);
   if (!Number.isFinite(Date.parse(activatedAt))) throw new TypeError("FID activatedAt must be an ISO timestamp");
 
@@ -248,8 +177,6 @@ export async function finalizeFidCardIssuance({
   }
 
   const verification = await verifyFidCard({
-    contentCredentialSigner,
-    contentCredentialMode:credentialMode,
     machineCredential,
     frontBytes: stored.front.bytes,
     backBytes: stored.back.bytes,
@@ -259,14 +186,8 @@ export async function finalizeFidCardIssuance({
   if (!verification.authenticity.protectedCredentialVerified) {
     throw new Error("FID finalization requires protected credential verification");
   }
-  if (credentialMode === "c2pa"
-    && (verification.manifestDigestBySide.front !== storedCard.front.manifestDigest
-      || verification.manifestDigestBySide.back !== storedCard.back.manifestDigest)) {
-    throw new Error("FID stored manifest identity changed after credential admission");
-  }
-  if (credentialMode === "native"
-    && (verification.proofAssertionDigestBySide.front !== storedCard.front.proofAssertionDigest
-      || verification.proofAssertionDigestBySide.back !== storedCard.back.proofAssertionDigest)) {
+  if (verification.proofAssertionDigestBySide.front !== storedCard.front.proofAssertionDigest
+    || verification.proofAssertionDigestBySide.back !== storedCard.back.proofAssertionDigest) {
     throw new Error("FID stored native proof identity changed after proof admission");
   }
 
@@ -309,21 +230,19 @@ export async function finalizeFidCardIssuance({
     front: Object.freeze({
       objectRef: storedCard.front.objectRef,
       finalDigest: storedCard.front.finalDigest,
-      manifestDigest: storedCard.front.manifestDigest,
+      proofAssertionDigest: storedCard.front.proofAssertionDigest,
     }),
     back: Object.freeze({
       objectRef: storedCard.back.objectRef,
       finalDigest: storedCard.back.finalDigest,
-      manifestDigest: storedCard.back.manifestDigest,
+      proofAssertionDigest: storedCard.back.proofAssertionDigest,
     }),
-    c2pa: Object.freeze(credentialMode === "c2pa" ? {
-      signerId: contentCredentialSigner.signerId,
-      trustPolicy: contentCredentialSigner.trustPolicy,
-      validationStatus: "verified",
-    } : {
-      signerId: null,
-      trustPolicy: null,
-      validationStatus: "disabled",
+    proof:Object.freeze({
+      format:"fibre-fin-proof",
+      schema:storedCard.proofSchema,
+      envelopeVersion:storedCard.proofEnvelopeVersion,
+      signerKeyId:payload.issuer.keyId,
+      validationStatus:"verified",
     }),
   });
 
