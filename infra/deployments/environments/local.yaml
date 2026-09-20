@@ -79,24 +79,6 @@ integrations:
       presentationReferenceDefault: true
     secrets:
       apiKey: BFL_API_KEY
-  c2pa-local-http:
-    kind: content-credentials
-    provider: c2pa-http
-    environment:
-      baseUrl: C2PA_SIGNER_URL
-      signerId: C2PA_SIGNER_ID
-      trustPolicy: C2PA_TRUST_POLICY
-      authorizationToken: C2PA_SIGNER_TOKEN
-  c2pa-node-local:
-    kind: content-credentials.signer
-    provider: c2pa-node
-    config:
-      signerId: fibre-c2pa-node-local-v1
-      trustPolicy: development_signature_only
-      certificatePath: .fibre/p3-c2pa/cert.pem
-      privateKeyPath: .fibre/p3-c2pa/key.pem
-    environment:
-      serviceToken: FIBRE_C2PA_SERVICE_TOKEN
 
 services:
   world-kernel:
@@ -110,19 +92,13 @@ services:
     integrations:
       creative: genesis-openai-creative
       repair: genesis-openai-repair
-  content-credential-signer:
-    runtime: node-local
-    integrations:
-      signer: c2pa-node-local
   thread-presentation:
     runtime: cloudflare-local
     infra: cloudflare-local
     integrations:
-      contentCredentials: c2pa-local-http
   asset-generator:
     runtime: cloudflare-local
     infra: cloudflare-local
     integrations:
       openai-gpt-image-2-medium-v1: asset-image-openai
       bfl-flux-2-pro-v1: asset-image-bfl
-      contentCredentials: c2pa-local-http
