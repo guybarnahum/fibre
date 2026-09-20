@@ -30,10 +30,7 @@ import { createThreadPresentationServer } from "#services/world-kernel/src/threa
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
-import {
-  selectContentCredentialIntegration,
-  selectImageProviderProfile,
-} from "../../integration-selection.mjs";
+import { selectImageProviderProfile } from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import {
   COMPLETION_QUEUE_MAX_RETRIES,
@@ -79,13 +76,6 @@ function createInfra(env, { includeWorkflows = true } = {}) {
       ? { asset_generation_v1: env.ASSET_GENERATION }
       : {},
   });
-}
-
-function createCredentialSigner(env) {
-  const selected = serviceDeployment(env).integrations.contentCredentials ?? null;
-  return selected === null
-    ? null
-    : selectContentCredentialIntegration(selected, { environment: env });
 }
 
 function createVisualReconciler(env, infra, presentationServer, activityRecorder) {
@@ -252,11 +242,9 @@ async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
 }
 
 function createCompletionConsumer(env, infra, presentationServer) {
-  const credentialSigner = createCredentialSigner(env);
-  const publisher = createThreadPresentationAssetPublisher({ infra, credentialSigner, presentationServer });
+  const publisher = createThreadPresentationAssetPublisher({ infra, presentationServer });
   return createPresentationAssetCompletionService({
     infra,
-    credentialSigner,
     async publishReady({ scope, receipt }) {
       if (scope.entityKind === "thread") {
         return publisher.publishReady({ receipt, channelId: channelIdForThread(scope.entityRef) });
