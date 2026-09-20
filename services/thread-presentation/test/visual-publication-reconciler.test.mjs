@@ -168,7 +168,7 @@ test("Presentation visual reconciliation projects admitted identity then schedul
     [
       "presentation.visual_identity.project",
       "presentation.identity_media.ensure",
-      "presentation.media_demand.reconcile",
+      "presentation.official_photo.generate",
     ],
   );
   assert.equal(activity.every((record) => record.causationId === embodiment.embodimentId), true);
@@ -269,7 +269,7 @@ test("Presentation visual reconciliation emits no Activity when projection is al
   assert.deepEqual(activity, []);
 });
 
-test("Presentation visual reconciliation fails immediately when official-photo Workflow is terminal", async () => {
+test("Presentation visual reconciliation fails immediately when official-photo generation is terminal", async () => {
   const embodiment = availableEmbodiment("thr_presentation_visual_terminal_001");
   const mediaId = "media_official_id_photo_terminal";
   const currentSnapshot = {
@@ -343,10 +343,10 @@ test("Presentation visual reconciliation fails immediately when official-photo W
       embodiment,
       observedAt: "2026-08-30T20:02:00Z",
     }),
-    (error) => error.code === "PRESENTATION_ASSET_WORKFLOW_TERMINAL" && error.retryable === false,
+    (error) => error.code === "PRESENTATION_ASSET_GENERATION_TERMINAL" && error.retryable === false,
   );
   assert.equal(activity.some((record) => (
-    record.stage === "presentation.media_demand.reconcile"
+    record.stage === "presentation.official_photo.generate"
     && record.status === "failed"
     && record.error.retryable === false
   )), true);
