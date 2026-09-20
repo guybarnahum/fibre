@@ -63,6 +63,7 @@ export {
   buildFidCardProofAssertion,
   fidCardProofAssertionDigest,
   fidCardProofAssertionJson,
+  fidCardProofEnvelopeJson,
   normalizeFidCardProofAssertion,
   normalizeFidCardProofEnvelope,
   signFidCardProofAssertion,
