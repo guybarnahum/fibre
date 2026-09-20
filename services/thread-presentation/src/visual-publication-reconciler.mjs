@@ -116,7 +116,7 @@ function suppliedEmbodimentReader(embodiment) {
   });
 }
 
-async function terminalWorkflowError({ infra, threadId, mediaId, active }) {
+async function terminalGenerationError({ infra, threadId, mediaId, active }) {
   const status = active?.dispatch?.workflowStatus;
   if (!TERMINAL_WORKFLOW_STATUSES.has(status)) return null;
   let workflow = null;
@@ -125,13 +125,13 @@ async function terminalWorkflowError({ infra, threadId, mediaId, active }) {
       workflow = await infra.workflows.get(ASSET_GENERATION_WORKFLOW, active.demand.job.jobId);
     } catch {}
   }
-  const detail = workflow?.error?.message ?? "no workflow failure detail reported";
+  const detail = workflow?.error?.message ?? "no generation failure detail reported";
   const error = new Error(
-    `Thread ${threadId} official identity-photo workflow ${active.demand.job.jobId} ended as ${status}: ${detail}`,
+    `Thread ${threadId} official identity-photo generation ${active.demand.job.jobId} ended terminally (${status}): ${detail}`,
   );
-  error.name = "PresentationAssetWorkflowTerminalError";
-  error.code = "PRESENTATION_ASSET_WORKFLOW_TERMINAL";
-  error.activityCategory = "reconciliation";
+  error.name = "PresentationAssetGenerationTerminalError";
+  error.code = "PRESENTATION_ASSET_GENERATION_TERMINAL";
+  error.activityCategory = "generation";
   error.retryable = false;
   error.threadId = threadId;
   error.mediaId = mediaId;
@@ -145,7 +145,7 @@ function reconciliationFailure(error) {
     ? error.code
     : "PRESENTATION_RECONCILIATION_FAILED";
   return Object.freeze({
-    category: "reconciliation",
+    category: typeof error?.activityCategory === "string" ? error.activityCategory : "reconciliation",
     code,
     retryable: error?.retryable === true,
   });
@@ -269,7 +269,7 @@ export function createThreadPresentationVisualPublicationReconciler({
       });
       const activityMetadata = {
         ...context,
-        stage: "presentation.media_demand.reconcile",
+        stage: "presentation.official_photo.generate",
         attempt: 1,
         evidence: {
           embodimentId: embodiment.embodimentId,
@@ -293,7 +293,7 @@ export function createThreadPresentationVisualPublicationReconciler({
           && entry.demand.job.context.mediaId === mediaId
         ));
         if (!active) throw new Error(`Thread ${threadId} official identity-photo demand did not become current`);
-        const terminal = await terminalWorkflowError({ infra, threadId, mediaId, active });
+        const terminal = await terminalGenerationError({ infra, threadId, mediaId, active });
         if (terminal !== null) throw terminal;
         if (demand.changed !== false) {
           await bestEffortRecord(activity, { ...activityMetadata, status: "succeeded" });
