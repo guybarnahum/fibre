@@ -19,10 +19,7 @@ import {
 } from "#services/fibre-identity-authority/src/index.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
-import {
-  selectContentCredentialIntegration,
-  selectImageProviderProfile,
-} from "../../integration-selection.mjs";
+import { selectImageProviderProfile } from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { createFidCredentialCrypto } from "#integrations/fid-credentials/webcrypto.mjs";
 
@@ -75,22 +72,6 @@ function binding(env, name) {
 
 function privateToken(env) {
   return nonEmpty("FIBRE_PRIVATE_TOKEN", env?.FIBRE_PRIVATE_TOKEN);
-}
-
-function contentCredentialMode(env) {
-  const mode = env?.FIA_CONTENT_CREDENTIAL_MODE ?? "native";
-  if (mode !== "native" && mode !== "c2pa" && mode !== "disabled") {
-    throw new TypeError(`unsupported FIA_CONTENT_CREDENTIAL_MODE ${String(mode)}`);
-  }
-  return mode;
-}
-
-function createContentCredentialSigner(env) {
-  const signer = binding(env, "CONTENT_CREDENTIAL_SIGNER");
-  return selectContentCredentialIntegration(null, {
-    environment:env,
-    fetchImpl:(input, init) => signer.fetch(input instanceof Request ? input : new Request(input, init)),
-  });
 }
 
 async function jsonFrom(response, label) {
@@ -363,15 +344,11 @@ function createRuntime(ctx, env) {
     photoGenerationProviderProfile:providerProfile,
   });
   const { issuerSigner, credentialProtector } = createFidCredentialCrypto(env);
-  const fidContentCredentialMode = contentCredentialMode(env);
-  const contentCredentialSigner = fidContentCredentialMode === "c2pa" ? createContentCredentialSigner(env) : null;
   const executor = createFidCardIssuanceExecutor({
     authority,
     threadRegistry:createWorldThreadRegistry(env),
     registry,
     infra,
-    contentCredentialSigner,
-    contentCredentialMode:fidContentCredentialMode,
     issuerSigner,
     credentialProtector,
     loadTemplate:loadFidTemplate,
