@@ -85,14 +85,6 @@ export {
 export { protectAndStoreFidCard } from "./fid-card-proof-issuance.mjs";
 
 export {
-  FID_C2PA_ASSERTION_LABEL,
-  buildFidC2paAssertion,
-  credentialAndStoreFidCard,
-  storeFidCardWithoutContentCredentials,
-  verifyFidC2paSide,
-} from "./fid-card-credentialing.mjs";
-
-export {
   FIBRE_IDENTITY_AUTHORITY_ID,
   FID_MACHINE_CREDENTIAL_SCHEMA,
   FID_MACHINE_ENVELOPE_VERSION,
