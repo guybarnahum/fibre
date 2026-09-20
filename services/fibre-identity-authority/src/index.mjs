@@ -71,6 +71,12 @@ export {
 } from "./fid-card-proof.mjs";
 
 export {
+  FID_CARD_PROOF_PNG_CHUNK_TYPE,
+  embedFidCardProofInPng,
+  extractFidCardProofFromPng,
+} from "./fid-card-proof-png.mjs";
+
+export {
   FID_C2PA_ASSERTION_LABEL,
   buildFidC2paAssertion,
   credentialAndStoreFidCard,
