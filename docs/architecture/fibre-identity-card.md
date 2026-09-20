@@ -264,6 +264,21 @@ back.png
 
 The front is the deterministic composite of the populated base plus transparent upper layer. Intermediate layers need not be published.
 
+Thread Presentation may additionally publish one immutable **rich card presentation descriptor** alongside those two PNGs:
+
+```text
+card.json
+  schemaVersion = fibre-identity-card-asset-v0.1
+  credentialId
+  revision
+  aspectRatio
+  interaction { flip, initialSide }
+  front { objectRef, digest, mediaType, width, height }
+  back  { objectRef, digest, mediaType, width, height }
+```
+
+This descriptor is not a third credential surface and is not identity authority. It binds the already-issued immutable front/back assets into one reusable presentation object. Executable HTML/JavaScript is deliberately not stored in the credential bundle; clients render the descriptor with a versioned Fibre component so interaction can evolve without rewriting historical credentials.
+
 Fibre should look like Fibre, not a simulation of a national passport or driver's license. The visual language may use woven/thread geometry, restrained stamps and portrait-derived watermarking, but those graphics never substitute for cryptographic verification.
 
 ## Machine-readable credential
@@ -494,6 +509,8 @@ identityCard {
 ```
 
 The presentation credential deliberately has no independently writable FIN or identity fields. FIN and authoritative identity are resolved from the admitted civil/identity authorities.
+
+When the current FID is projected, the media packet may also contain a ready `document` asset with role `fibre_identity_card` and media type `application/vnd.fibre.identity-card+json`. That descriptor references the exact front/back object refs and digests and is removed/replaced together with the card projection on reissue.
 
 Public delivery remains governed by immutable visibility policy. Clients never construct R2/S3/provider URLs.
 
