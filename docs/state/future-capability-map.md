@@ -26,7 +26,6 @@ Current concrete machinery includes:
 - `deployments/cloudflare/thread-presentation/` — current Cloudflare delivery and presentation read-model deployment;
 - `services/asset-generator/` — provider-neutral generated presentation assets;
 - `deployments/cloudflare/asset-generator/` — current Cloudflare Asset Generator deployment;
-- `services/c2pa-local/` — local provenance/C2PA support;
 - `fixtures/thread-presentation/` — reusable presentation fixtures;
 - `docs/architecture/world-presentation.md` — accepted presentation authority and non-cognitive boundary.
 
