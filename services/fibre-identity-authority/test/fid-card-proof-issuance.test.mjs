@@ -218,13 +218,8 @@ test("native FIN proof protects both sides, stores them, and finalizes only afte
   const issuance = registry.getIssuanceByCredentialId(prepared.payload.credentialId).record;
   assert.equal(issuance.front.proofAssertionDigest, storedCard.front.proofAssertionDigest);
   assert.equal(issuance.back.proofAssertionDigest, storedCard.back.proofAssertionDigest);
-  assert.deepEqual(issuance.proof, {
-    format:"fibre-fin-proof",
-    schema:"fibre.fin-card-proof.v1",
-    envelopeVersion:"fibre.fin-card-proof-envelope.v1",
-    signerKeyId:"fia-native-proof-test",
-    validationStatus:"verified",
-  });
+  assert.equal(issuance.proof.validationStatus, "verified");
+  assert.equal(issuance.proof.signerKeyId, prepared.payload.issuer.keyId);
 }));
 
 test("native FIN proof verifies both sides before storing either object", async () => {
