@@ -28,6 +28,10 @@
       "service": "fibre-thread-presentation"
     },
     {
+      "binding": "FIBRE_IDENTITY_AUTHORITY",
+      "service": "fibre-identity-authority"
+    },
+    {
       "binding": "ASSET_GENERATOR",
       "service": "fibre-asset-generator"
     }
