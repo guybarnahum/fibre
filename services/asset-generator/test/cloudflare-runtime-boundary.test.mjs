@@ -53,13 +53,13 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   for (const pattern of [
     /createAssetGenerationRuntime/,
     /requireInfraCapabilities/,
-    /prepareResumableProviderExecution/,
+    /executeProvenancedAssetGenerationJob/,
     /publishAssetGenerationCompletion/,
     /attemptNumber/,
     /providerOperationResumed/,
     /providerOutputResumed/,
   ]) assertSourceMatches(runtime, pattern, "asset generation runtime");
-  assertSourceDoesNotMatch(runtime, /cloudflare|ASSET_OBJECTS|ASSET_COMPLETIONS|OPENAI_API_KEY|BFL_API_KEY|C2PA_SIGNER_URL|WorkflowEntrypoint|NonRetryableError/, "asset generation runtime");
+  assertSourceDoesNotMatch(runtime, /cloudflare|ASSET_OBJECTS|ASSET_COMPLETIONS|OPENAI_API_KEY|BFL_API_KEY|WorkflowEntrypoint|NonRetryableError/, "asset generation runtime");
   assertSourceDoesNotMatch(runtime, /world-kernel|thread-presentation|presentationServer|media\.ready/, "asset generation runtime");
 
   for (const pattern of [
@@ -99,8 +99,6 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
     /createAssetGenerationControlService/,
     /createAssetGenerationControlApi/,
     /selectImageIntegration/,
-    /selectContentCredentialIntegration/,
-    /contentCredentials\s*\?\?\s*null/,
     /class AssetGenerationWorkflow extends WorkflowEntrypoint/,
     /NonRetryableError/,
     /assetGenerationRetryDecision/,
@@ -123,12 +121,11 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   ]) assertSourceMatches(worker, pattern, "asset-generator Cloudflare worker");
   assertSourceDoesNotMatch(worker, /["'`]\/generate(?:["'`/?]|$)|["'`]\/asset-generation(?:["'`/?]|$)/, "asset-generator Cloudflare worker");
   assertSourceDoesNotMatch(worker, /world-kernel|thread-presentation|presentationServer|media\.ready/, "asset-generator Cloudflare worker");
-  assertSourceDoesNotMatch(worker, /#integrations\/ai\/image|#integrations\/content-credentials/, "asset-generator Cloudflare worker");
+  assertSourceDoesNotMatch(worker, /#integrations\/ai\/image/, "asset-generator Cloudflare worker");
 
   for (const pattern of [
     /createOpenAIImageProvider/,
     /createBflFluxImageProvider/,
-    /createHttpContentCredentialSigner/,
   ]) assertSourceMatches(integrationSelection, pattern, "deployment integration selection");
   assertSourceDoesNotMatch(integrationSelection, /world-kernel|thread-presentation|presentationServer|media\.ready/, "deployment integration selection");
 });
@@ -182,11 +179,10 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
   assert.equal(consumer.dead_letter_queue, "fibre-asset-completions-local-dlq");
 
   assertSourceDoesNotMatch(presentationWorker, /WorkflowEntrypoint|NonRetryableError/, "thread-presentation Cloudflare worker");
-  assertSourceDoesNotMatch(presentationWorker, /createOpenAIImageProvider|createBflFluxImageProvider|executeCredentialedAssetGenerationJob/, "thread-presentation Cloudflare worker");
+  assertSourceDoesNotMatch(presentationWorker, /createOpenAIImageProvider|createBflFluxImageProvider/, "thread-presentation Cloudflare worker");
   for (const pattern of [
     /createPresentationAssetCompletionService/,
     /createThreadPresentationAssetPublisher/,
-    /selectContentCredentialIntegration/,
     /async queue\(batch, env\)/,
     /message\.ack\(\)/,
     /message\.retry/,
@@ -196,7 +192,7 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
   assertSourceMatches(p3Proof, /queue_completion_handoff/, "P3 generated media proof");
 });
 
-test("remote Cloudflare composition shares generated assets and completion topology without requiring C2PA", async () => {
+test("remote Cloudflare composition shares generated assets and Fibre provenance topology", async () => {
   const manifest = await deployment(remoteDeploymentManifestUrl);
   const assetConfig = await json(assetRemoteConfigUrl);
   const presentationConfig = await json(presentationRemoteConfigUrl);
@@ -215,8 +211,6 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(presentationDeployment.infra.infraId, "cloudflare");
   assert.ok(presentationDeployment.infra.capabilities.includes("streams"));
   assert.ok(presentationDeployment.infra.capabilities.includes("realtime"));
-  assert.equal(assetDeployment.integrations.contentCredentials, undefined);
-  assert.equal(presentationDeployment.integrations.contentCredentials, undefined);
 
   const assetBucket = assetConfig.r2_buckets.find((binding) => binding.binding === "ASSET_OBJECTS");
   const presentationBucket = presentationConfig.r2_buckets.find((binding) => binding.binding === "PRESENTATION_OBJECTS");
@@ -251,9 +245,5 @@ test("remote Cloudflare composition shares generated assets and completion topol
   assert.equal(assetConfig.queues.consumers, undefined);
   assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"]);
   assert.deepEqual(presentationConfig.secrets.required, ["FIBRE_PRIVATE_TOKEN"]);
-  assert.equal(presentationConfig.vars.C2PA_SIGNER_ID, undefined);
-  assert.equal(presentationConfig.vars.C2PA_TRUST_POLICY, undefined);
-  assert.equal(assetConfig.vars.C2PA_SIGNER_ID, undefined);
-  assert.equal(assetConfig.vars.C2PA_TRUST_POLICY, undefined);
   assert.equal(presentationConfig.vars?.P3_FIXTURE_MODE, undefined);
 });
