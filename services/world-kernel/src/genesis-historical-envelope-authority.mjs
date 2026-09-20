@@ -48,6 +48,13 @@ const COUNTERPART_KEYS = Object.freeze([
 ]);
 
 function fail(ErrorType, message) { throw new ErrorType(message); }
+function failFrom(ErrorType, cause) {
+  const error = new ErrorType(cause instanceof Error ? cause.message : String(cause));
+  if (typeof cause?.code === "string") error.code = cause.code;
+  if (typeof cause?.activityCategory === "string") error.activityCategory = cause.activityCategory;
+  if (typeof cause?.retryable === "boolean") error.retryable = cause.retryable;
+  throw error;
+}
 function exactKeys(name, value, keys, ErrorType) {
   const actual = Object.keys(value).sort();
   const expected = [...keys].sort();
@@ -213,7 +220,7 @@ export function assertGenesisHistoricalEnvelopePublication({
     const episode = episodes[index];
     const envelope = plan.envelopes[index];
     try { assertHistoricalEnvelopeRealized(episode, envelope); }
-    catch (error) { fail(ErrorType, error.message); }
+    catch (error) { failFrom(ErrorType, error); }
     assertGenesisEpisodePlaceConsistency({ episode, envelope, ErrorType });
   }
   return plan;

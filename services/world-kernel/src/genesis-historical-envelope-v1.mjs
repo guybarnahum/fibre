@@ -28,6 +28,14 @@ const DAYPARTS = Object.freeze([
 const WEEKDAYS = Object.freeze(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]);
 
 function fail(message) { throw new TypeError(message); }
+
+function invariant(code, message) {
+  const error = new TypeError(message);
+  error.code = code;
+  error.activityCategory = "invariant";
+  error.retryable = false;
+  throw error;
+}
 function hash(value) { return sha256(canonicalJson(value)); }
 function ranked(seed, values, key = (value) => value) {
   return [...values].sort((left, right) => {
@@ -475,21 +483,33 @@ function allowedNarrativeDayparts(daypart) {
 }
 
 export function assertHistoricalEnvelopeRealized(episode, envelope) {
-  if (episode.occurredAt !== envelope.occurredAt) fail(`episode ${episode.episodeId} changed frozen historical-envelope occurredAt`);
-  if (episode.placeRef !== envelope.placeRef) fail(`episode ${episode.episodeId} changed frozen historical-envelope place`);
+  if (episode.occurredAt !== envelope.occurredAt) {
+    invariant("GENESIS_HISTORICAL_ENVELOPE_CONFLICT", `episode ${episode.episodeId} changed frozen historical-envelope occurredAt`);
+  }
+  if (episode.placeRef !== envelope.placeRef) {
+    invariant("GENESIS_HISTORICAL_ENVELOPE_CONFLICT", `episode ${episode.episodeId} changed frozen historical-envelope place`);
+  }
   const expectedStructure = envelope.selectionKind === "world_emergent" ? null : envelope.structureRef;
-  if (episode.structureRef !== expectedStructure) fail(`episode ${episode.episodeId} changed frozen historical-envelope structure`);
-  if (envelope.counterpart !== null && !episode.participantRefs.includes(envelope.counterpart.participantId)) fail(`episode ${episode.episodeId} omitted frozen historical-envelope counterpart`);
+  if (episode.structureRef !== expectedStructure) {
+    invariant("GENESIS_HISTORICAL_ENVELOPE_CONFLICT", `episode ${episode.episodeId} changed frozen historical-envelope structure`);
+  }
+  if (envelope.counterpart !== null && !episode.participantRefs.includes(envelope.counterpart.participantId)) {
+    invariant("GENESIS_HISTORICAL_ENVELOPE_CONFLICT", `episode ${episode.episodeId} omitted frozen historical-envelope counterpart`);
+  }
   if (envelope.counterpart?.introducedHere === true) {
     const introduction = episode.introducedParticipants.find((item) => item.provisionalPersonId === envelope.counterpart.participantId);
     if (!introduction || introduction.roleRef !== envelope.counterpart.roleRef || introduction.introducedAt !== envelope.occurredAt) {
-      fail(`episode ${episode.episodeId} did not materialize frozen historical-envelope counterpart introduction`);
+      invariant("GENESIS_HISTORICAL_ENVELOPE_CONFLICT", `episode ${episode.episodeId} did not materialize frozen historical-envelope counterpart introduction`);
     }
   }
   const weekdays = mentionedWeekdays(episode.observableAction);
-  if (weekdays.some((weekday) => weekday !== envelope.localWeekday)) fail(`episode ${episode.episodeId} narrates a weekday inconsistent with local civil time`);
+  if (weekdays.some((weekday) => weekday !== envelope.localWeekday)) {
+    invariant("GENESIS_EPISODE_TIME_CONFLICT", `episode ${episode.episodeId} narrates a weekday inconsistent with local civil time`);
+  }
   const allowed = allowedNarrativeDayparts(envelope.daypart);
   const dayparts = mentionedDayparts(episode.observableAction);
-  if (dayparts.some((part) => !allowed.has(part))) fail(`episode ${episode.episodeId} narrates a daypart inconsistent with local civil time`);
+  if (dayparts.some((part) => !allowed.has(part))) {
+    invariant("GENESIS_EPISODE_TIME_CONFLICT", `episode ${episode.episodeId} narrates a daypart inconsistent with local civil time`);
+  }
   return episode;
 }

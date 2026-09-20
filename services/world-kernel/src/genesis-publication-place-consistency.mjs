@@ -16,6 +16,14 @@ const LOCATIVE_CUES = Object.freeze([
 
 function fail(ErrorType, message) { throw new ErrorType(message); }
 
+function invariant(ErrorType, code, message) {
+  const error = new ErrorType(message);
+  error.code = code;
+  error.activityCategory = "invariant";
+  error.retryable = false;
+  throw error;
+}
+
 function sceneSettingClause(observableAction) {
   // B7 protects the authoritative physical scene, not every place mentioned in
   // dialogue, memory, destination, web content, or explanation later in the
@@ -33,14 +41,19 @@ export function assertGenesisEpisodePlaceConsistency({ episode, envelope, ErrorT
     fail(ErrorType, "Genesis place consistency requires authoritative envelope placeRef/placeKind");
   }
   if (episode.placeRef !== envelope.placeRef) {
-    fail(ErrorType, `episode ${episode.episodeId} placeRef does not match its authoritative historical envelope`);
+    invariant(
+      ErrorType,
+      "GENESIS_EPISODE_PLACE_CONFLICT",
+      `episode ${episode.episodeId} placeRef does not match its authoritative historical envelope`,
+    );
   }
   const sceneSetting = sceneSettingClause(episode.observableAction);
   for (const cue of LOCATIVE_CUES) {
     if (!cue.pattern.test(sceneSetting)) continue;
     if (!cue.kinds.includes(envelope.placeKind)) {
-      fail(
+      invariant(
         ErrorType,
+        "GENESIS_EPISODE_PLACE_CONFLICT",
         `episode ${episode.episodeId} observableAction narrates an explicit scene setting incompatible with authoritative placeRef ${episode.placeRef} (${envelope.placeKind})`,
       );
     }
