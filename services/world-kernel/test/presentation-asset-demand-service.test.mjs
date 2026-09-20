@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { InfraWorkflowConflictError } from "#infra";
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import { presentationAssetSourceDigest } from "../src/presentation-asset-demand.mjs";
 import {
@@ -109,6 +110,53 @@ test("catalog failure after Workflow dispatch is replay-safe because exact job s
   assert.equal(retried.reconciliation.jobs.length, 1);
   assert.equal(retried.dispatches[0].dispatch.duplicate, true);
   assert.equal(retried.projection.demands.length, 1);
+});
+
+test("one Presentation asset identity cannot resolve to conflicting generation intent", async () => {
+  const base = createMemoryInfraDriver();
+  let attemptedJob = null;
+  const infra = {
+    ...base,
+    workflows: {
+      async start(_workflowName, _instanceId, input) {
+        attemptedJob = structuredClone(input);
+        throw new InfraWorkflowConflictError("durable generation identity conflict");
+      },
+      async get(workflowName, instanceId) {
+        const conflicting = structuredClone(attemptedJob);
+        conflicting.brief = {
+          ...conflicting.brief,
+          description: "A different generation intent for the same Presentation asset.",
+        };
+        return {
+          workflowName,
+          instanceId,
+          status: "queued",
+          error: null,
+          input: conflicting,
+        };
+      },
+    },
+  };
+  const service = createPresentationAssetDemandService({ infra });
+
+  await assert.rejects(
+    () => service.reconcile({
+      scope: { entityKind: "thread", entityRef: "thr_conflicting_asset_intent" },
+      slots: [missingSlot({
+        slotKey: "thread:thr_conflicting_asset_intent:media:portrait",
+        entityRef: "thr_conflicting_asset_intent",
+        mediaId: "portrait",
+      })],
+      requestedAt: "2026-08-25T19:42:30Z",
+    }),
+    (error) => (
+      error.code === "PRESENTATION_ASSET_DEMAND_CONFLICT"
+      && error.activityCategory === "conflict"
+      && error.retryable === false
+      && /cannot be safely reused/u.test(error.message)
+    ),
+  );
 });
 
 test("changed semantic source supersedes the prior demand without overwriting its job witness", async () => {
