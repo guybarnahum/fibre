@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { createActivityRecorder } from "#infra/telemetry";
 import { createLocalActivityTelemetryPort } from "#infra/providers/local/telemetry";
-import { STORED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
+import { PROVENANCED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
 import {
   embodimentId,
   embodimentSpecificationDigest,
@@ -45,7 +45,7 @@ function pendingEmbodiment(threadId = "thr_visual_process_001") {
 
 function readyRoot(job) {
   const receipt = {
-    receiptVersion: STORED_ASSET_RECEIPT_VERSION,
+    receiptVersion: PROVENANCED_ASSET_RECEIPT_VERSION,
     jobId: job.jobId,
     status: "ready",
     assetKind: job.assetKind,
@@ -60,14 +60,7 @@ function readyRoot(job) {
     completedAt: "2026-08-30T20:01:00Z",
     generationRecordObjectRef: "generation_record_visual_process_001",
     generationRecordDigest: sha("b"),
-    providerOutputDigest: sha("c"),
-    credential: {
-      format: "fixture-content-credential",
-      signerId: "fixture-signer",
-      manifestDigest: sha("d"),
-      embeddedAt: "2026-08-30T20:00:58Z",
-      verifiedAt: "2026-08-30T20:00:59Z",
-    },
+    providerOutputDigest: sha("a"),
     inputReferences: job.inputReferences,
     context: job.context,
   };
@@ -76,7 +69,6 @@ function readyRoot(job) {
     proof: {
       receipt,
       generationRecord: { job },
-      verification: { valid: true },
     },
     recordedAt: "2026-08-30T20:01:01Z",
   };
