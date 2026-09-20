@@ -279,4 +279,4 @@ test("finalization refuses stored native proof bytes that no longer match the ad
     /stored native proof identity changed/u,
   );
   assert.equal(registry.getActiveByFin(FIN), null);
-});
+}));
