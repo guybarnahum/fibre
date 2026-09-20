@@ -77,7 +77,7 @@ public FIA assertion
 canonical JSON
       |
       v
-FIA Ed25519 signature
+FIA Ed25519 signature envelope
       |
       v
 Fibre-owned PNG ancillary chunk
@@ -96,6 +96,27 @@ A verifier must:
 6. return the embedded assertion only if all checks succeed.
 
 Malformed, duplicated, conflicting, wrong-key, wrong-side, signature-invalid or render-digest-invalid proofs fail closed and do not expose a trusted assertion.
+
+The signed envelope is:
+
+```text
+fibre.fin-card-proof-envelope.v1 {
+  envelopeVersion
+  assertion
+  assertionDigest
+
+  signature {
+    algorithm = Ed25519
+    authorityId = fibre_identity_authority
+    keyId
+    bytesBase64
+  }
+}
+```
+
+The signature covers the canonical bytes of `assertion`. `assertionDigest` is recomputed during normalization and exists as stable evidence/indexing metadata; it is not a substitute for signature verification. The assertion issuer, signature identity and configured FIA signer profile must all identify the same FIA key.
+
+The runtime signer profile must explicitly declare `algorithm = Ed25519`. Cloudflare's existing `FIA_ISSUER_JWK` WebCrypto composition satisfies that contract.
 
 ## Protected machine credential remains separate
 
@@ -160,8 +181,8 @@ Costs:
 ## Implementation order
 
 ```text
-A. proof assertion contract
-B. FIA Ed25519 signature envelope
+A. proof assertion contract — implemented
+B. FIA Ed25519 signature envelope — implemented
 C. deterministic PNG embedding/extraction
 D. strict verifier
 E. issuance integration
