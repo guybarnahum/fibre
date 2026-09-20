@@ -85,7 +85,7 @@ test("BFL FLUX reference objects map deterministically to input_image fields wit
         objectRef: "reference_place_1",
         bytes: secondBytes,
         digest: "sha256:reference-place",
-        metadata: { kind: "credentialed_generated_media", mediaType: "image/webp" },
+        metadata: { kind: "provenanced_generated_media", mediaType: "image/webp" },
       },
     ],
   }));
@@ -108,7 +108,7 @@ test("BFL FLUX reference objects map deterministically to input_image fields wit
       objectRef: "reference_place_1",
       digest: "sha256:reference-place",
       mediaType: "image/webp",
-      kind: "credentialed_generated_media",
+      kind: "provenanced_generated_media",
     },
   ]);
   const durableText = JSON.stringify(started);
