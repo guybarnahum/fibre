@@ -25,6 +25,8 @@
 
 /* Unified Thread Observatory */
 .thread-observatory-page{padding:18px}
+.thread-observatory-actions{display:flex;justify-content:flex-end;margin-bottom:-6px}
+.thread-observatory-copy{flex:0 0 auto}
 .thread-person-summary{font-size:13px;line-height:1.55;color:var(--muted);margin:0 0 10px;max-width:720px}
 .thread-identity-table{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .thread-identity-table .thread-person-fact.wide{grid-column:span 2}
