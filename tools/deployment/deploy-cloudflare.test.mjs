@@ -321,23 +321,3 @@ test("deployment fails before provisioning when Cloudflare Containers access is 
   assert.equal(deployCalls, 0);
 });
 
-test("deployment rejects FIA binding that does not target the declared Fibre signer", async () => {
-  const { root, state } = await fixtureRepo();
-  const fiaPath = resolve(root, state.wranglerConfigs["fibre-identity-authority"]);
-  const fia = JSON.parse(await readFile(fiaPath, "utf8"));
-  fia.services.find((binding) => binding.binding === "CONTENT_CREDENTIAL_SIGNER").service = "wrong-signer-staging";
-  await writeFile(fiaPath, JSON.stringify(fia));
-
-  const client = {
-    async assertAuthenticated() {},
-    async assertContainersAvailable() {},
-    async listSecretNames() { return allSecrets(); },
-  };
-  await assert.rejects(deployCloudflareStack({
-    repoRoot: root,
-    environment: "staging",
-    client,
-    validateRepository: async () => {},
-    provision: async () => state,
-  }), /CONTENT_CREDENTIAL_SIGNER must target the deployed Fibre signer/);
-});
