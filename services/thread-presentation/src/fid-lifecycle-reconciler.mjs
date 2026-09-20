@@ -30,9 +30,9 @@ export function createFidLifecycleReconciler({
       const threadId = nonEmpty("threadId", candidateThreadId);
       const idempotencyKey = nonEmpty("FID lifecycle idempotencyKey", candidateKey);
       const mode = lifecycleMode(candidateMode);
-      let active = await fidAuthority.getActive(threadId);
+      let active = mode === "reissue" ? null : await fidAuthority.getActive(threadId);
 
-      if (mode === "reissue" || active === null) {
+      if (active === null) {
         const cut = await fidAuthority.cut({ threadId, idempotencyKey });
         if (cut.result.state !== "active" || cut.active === null) {
           return Object.freeze({
