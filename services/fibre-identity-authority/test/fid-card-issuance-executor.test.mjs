@@ -110,12 +110,8 @@ test("cutting by Thread then FIN reissues one civil identity and preserves card 
     assert.equal(first.identitySnapshot.displayName, "Mira Vale", "Thread name was not credentialed");
     assert.deepEqual(first.identitySnapshot.dateField, { kind: "birth_date", value: "2004-03-18" }, "Thread birth date was not credentialed");
     assert.equal(first.issuance.templateVersion, "fid-card-template-executor-test", "issuance lost template version");
-    assert.equal(first.issuance.front.manifestDigest, null, "native proof should not create a C2PA manifest");
-    assert.deepEqual(first.issuance.c2pa, {
-      signerId:null,
-      trustPolicy:null,
-      validationStatus:"disabled",
-    }, "legacy C2PA evidence should stay disabled during native-proof migration");
+    assert.equal(first.issuance.proof.validationStatus, "verified", "FIN proof was not persisted as verified");
+    assert.equal(first.issuance.proof.signerKeyId, "fid-cut", "FIN proof signer drifted from FIA issuer");
 
     const repeated = await executor.cut({ threadId: "thr_mira", idempotencyKey: "cut_mira_1" });
     assert.equal(repeated.reused, true, "same cut did not reuse its credential");
