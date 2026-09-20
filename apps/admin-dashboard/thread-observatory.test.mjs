@@ -6,6 +6,7 @@ import {
   mergeObservatoryWorldIdentity,
   reissueFidCard,
   resumeFidReissue,
+  threadObservatoryCopyPayload,
 } from "./thread-observatory.js";
 
 test("Thread Observatory renders mutable identity from current authoritative World", () => {
@@ -218,4 +219,36 @@ test("first FIN issuance resumes the same idempotent workflow after photo deriva
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+
+test("Thread Observatory copy payload carries person state and current repair diagnosis", () => {
+  const payload = threadObservatoryCopyPayload({
+    threadId:"thr_observatory_copy_1",
+    identity:{
+      displayName:"Maya Cohen",
+      raisedAs:{ languages:["Hebrew"] },
+      languages:["Hebrew", "Danish"],
+      world:{ thread:{ version:12, status:"active" } },
+    },
+    memories:[{ memoryId:"mem_1", rememberedContent:"Worked in Copenhagen." }],
+    repair:{
+      diagnosis:{
+        health:"operator_decision_required",
+        findings:[{ code:"RAISED_LANGUAGES_NEED_REVIEW", state:"operator_decision_required" }],
+      },
+      reconciliation:{ state:"pending" },
+    },
+  });
+
+  assert.equal(payload.contract, "fibre-thread-observatory-copy-v0.1");
+  assert.equal(payload.threadId, "thr_observatory_copy_1");
+  assert.deepEqual(payload.identity.raisedAs.languages, ["Hebrew"]);
+  assert.deepEqual(payload.identity.languages, ["Hebrew", "Danish"]);
+  assert.equal(payload.identity.world.thread.version, 12);
+  assert.equal(payload.memories[0].memoryId, "mem_1");
+  assert.equal(payload.repair.diagnosis.health, "operator_decision_required");
+  assert.equal(payload.repair.reconciliation.state, "pending");
+  assert.equal(payload.memoryError, null);
+  assert.equal(payload.repairError, null);
 });
