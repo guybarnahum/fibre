@@ -123,7 +123,6 @@ export async function protectAndStoreFidCard({
       bytes:protectedBytes,
       finalDigest:sha256(protectedBytes),
       assertionDigest:fidCardProofAssertionDigest(expectedAssertion),
-      signerKeyId:expectedAssertion.issuer.keyId,
     });
   }
 
@@ -150,14 +149,13 @@ export async function protectAndStoreFidCard({
         proofSchema:FID_CARD_PROOF_SCHEMA,
         proofEnvelopeVersion:FID_CARD_PROOF_ENVELOPE_VERSION,
         proofAssertionDigest:current.assertionDigest,
-          proofValidationStatus:"verified",
+        proofValidationStatus:"verified",
       },
     );
     storedResult[side] = Object.freeze({
       objectRef,
       finalDigest:current.finalDigest,
       proofAssertionDigest:current.assertionDigest,
-      proofSignerKeyId:current.signerKeyId,
       stored:true,
       duplicate:stored.duplicate === true,
     });
