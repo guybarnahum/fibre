@@ -113,7 +113,6 @@ npm run build
 npm test
 npm run test:replay
 npm run test:all
-npm run test:audit -- --check
 npm run validate
 npm run includes:sync
 npm run includes:check
