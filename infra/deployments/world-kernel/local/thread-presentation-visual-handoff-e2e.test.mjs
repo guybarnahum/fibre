@@ -105,7 +105,7 @@ function admittedEmbodiment() {
   };
 }
 
-test("World hands admitted Embodiment to deployed Presentation contract without shared World storage", async () => {
+test("admitted Embodiment converges through Presentation retry and restart", async () => {
   const infra = createMemoryInfraDriver();
   const presentationServer = createThreadPresentationServer({ infra });
   await presentationServer.publishSnapshot({
@@ -148,7 +148,7 @@ test("World hands admitted Embodiment to deployed Presentation contract without 
       embodiment,
       observedAt: "2026-08-31T00:49:00Z",
     }),
-    (error) => error.code === "THREAD_PRESENTATION_VISUAL_HANDOFF_FAILED" && error.retryable === true,
+    (error) => error.code === "PRESENTATION_VISUAL_PUBLICATION_UNAVAILABLE" && error.retryable === true,
   );
 
   const beforeRetry = await presentationServer.getSnapshot(CHANNEL_ID);
