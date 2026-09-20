@@ -212,6 +212,36 @@ test("memory and meaning sections require their own authority classes", () => {
   );
 });
 
+test("presentation media admits immutable document assets without pretending they are images", () => {
+  const value = bundle();
+  value.media.assets.push({
+    mediaId:"media_card_document",
+    kind:"document",
+    role:"fibre_identity_card",
+    status:"ready",
+    locator:"fidcard_demo_card",
+    mediaType:"application/vnd.fibre.identity-card+json",
+    sha256:"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    width:null,
+    height:null,
+    durationMs:null,
+    posterRef:null,
+    unavailableReason:null,
+    sourceReferences:["mem_market"],
+    provenanceRef:"prov_media",
+    generation:null,
+  });
+  const normalized = normalizeThreadPresentationBundle(value);
+  assert.equal(normalized.media.assets.at(-1).kind, "document");
+  assert.equal(normalized.media.assets.at(-1).mediaType, "application/vnd.fibre.identity-card+json");
+
+  value.media.assets.at(-1).width = 640;
+  assert.throws(
+    () => normalizeThreadPresentationBundle(value),
+    /document cannot claim visual or temporal dimensions/u,
+  );
+});
+
 test("generated media cannot masquerade under factual provenance", () => {
   const value = bundle();
   value.media.assets[0] = {
