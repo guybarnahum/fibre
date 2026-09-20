@@ -184,8 +184,8 @@ test("B2 derives when the current photo is absent or unsuitable, but never bypas
 
   const requested = await authority.ensureFidPhoto({ workflowId: fallbackWorkflow.workflowId });
   assert.equal(requested.state, "derivation_requested");
-  const resumed = await authority.prepareFidCard({ threadId: "thr_mira", idempotencyKey: "b2_mira_retry" });
-  assert.equal(resumed.workflow.workflowId, fallbackWorkflow.workflowId, "pending FID cut forked a new revision");
+  const resumed = await authority.prepareFidCard({ threadId: "thr_mira", idempotencyKey: "b2_mira" });
+  assert.equal(resumed.workflow.workflowId, fallbackWorkflow.workflowId, "same issuance key did not resume its workflow");
   assert.equal(requested.progressionAllowed, false);
   assert.equal(requested.derivation.job.context.kind, "fid_photo_derivation");
   assert.equal(requested.derivation.job.context.targetAgeYears, 34);
