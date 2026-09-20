@@ -146,7 +146,7 @@ test("no-C2PA deployment skips Containers and deploys FIA without the signer bin
     async deployService({ serviceId, resolvedConfig }) {
       calls.push(`deploy:${serviceId}`);
       if (serviceId === "fibre-identity-authority") {
-        assert.equal(resolvedConfig.vars.FIA_CONTENT_CREDENTIAL_MODE, "disabled");
+        assert.equal(resolvedConfig.vars.FIA_CONTENT_CREDENTIAL_MODE, "native");
         assert.equal(resolvedConfig.services.some((binding) => binding.binding === "CONTENT_CREDENTIAL_SIGNER"), false);
         assert.equal(Object.hasOwn(resolvedConfig.vars, "C2PA_SIGNER_URL"), false);
       }
@@ -168,7 +168,7 @@ test("no-C2PA deployment skips Containers and deploys FIA without the signer bin
     wait:async () => {},
   });
 
-  assert.equal(result.contentCredentialMode, "disabled");
+  assert.equal(result.contentCredentialMode, "native");
   assert.deepEqual(result.deployments.map((item) => item.serviceId), [
     "asset-generator",
     "thread-presentation",
