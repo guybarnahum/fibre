@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  PROVENANCED_ASSET_RECEIPT_VERSION,
-  STORED_ASSET_RECEIPT_VERSION,
-} from "#services/asset-generator/src/index.mjs";
+import { PROVENANCED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
 import {
   embodimentId,
   embodimentSpecificationDigest,
@@ -18,8 +15,6 @@ import { CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS } from "../src/visual-ide
 
 const DIGEST_A = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const DIGEST_B = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-const DIGEST_C = "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
-const DIGEST_D = "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
 
 function pendingEmbodiment({ rich = true } = {}) {
   const threadId = "thr_canonical_visual_identity_001";
@@ -57,37 +52,7 @@ function pendingEmbodiment({ rich = true } = {}) {
   };
 }
 
-function storedReceipt(job) {
-  return {
-    receiptVersion: STORED_ASSET_RECEIPT_VERSION,
-    jobId: job.jobId,
-    status: "ready",
-    assetKind: "image",
-    role: job.role,
-    variant: job.variant,
-    objectRef: job.outputObjectRef,
-    sha256: DIGEST_A,
-    mediaType: "image/webp",
-    width: 1024,
-    height: 1024,
-    durationMs: null,
-    completedAt: "2026-08-30T05:06:00Z",
-    generationRecordObjectRef: "generation_record_visual_identity_001",
-    generationRecordDigest: DIGEST_B,
-    providerOutputDigest: DIGEST_C,
-    credential: {
-      format: "fixture-content-credential",
-      signerId: "fixture-signer",
-      manifestDigest: DIGEST_D,
-      embeddedAt: "2026-08-30T05:05:58Z",
-      verifiedAt: "2026-08-30T05:05:59Z",
-    },
-    inputReferences: job.inputReferences,
-    context: job.context,
-  };
-}
-
-function provenancedReceipt(job) {
+function provenancedReceipt(job, overrides = {}) {
   return {
     receiptVersion: PROVENANCED_ASSET_RECEIPT_VERSION,
     jobId: job.jobId,
@@ -105,9 +70,9 @@ function provenancedReceipt(job) {
     generationRecordObjectRef: "generation_record_visual_identity_001",
     generationRecordDigest: DIGEST_B,
     providerOutputDigest: DIGEST_A,
-    credential: null,
     inputReferences: job.inputReferences,
     context: job.context,
+    ...overrides,
   };
 }
 
@@ -155,20 +120,18 @@ test("canonical generation requires a sufficiently rich identity specification",
   }), /concrete appearance detail/);
 });
 
-test("verified credentialed root-image proof binds immutable reference object into Embodiment", () => {
+test("verified Fibre provenance binds the immutable canonical reference into Embodiment", () => {
   const pending = pendingEmbodiment();
   const job = planCanonicalVisualIdentityGeneration({
     embodiment: pending,
     requestedAt: "2026-08-30T05:05:10Z",
   });
-  const receipt = storedReceipt(job);
+  const receipt = provenancedReceipt(job);
   const available = bindVerifiedCanonicalVisualIdentityProof({
     embodiment: pending,
     proof: {
       receipt,
       generationRecord: { job },
-      verification: { valid: true },
-      credentialMode: "content_credential",
     },
     recordedAt: "2026-08-30T05:06:01Z",
   });
@@ -186,45 +149,7 @@ test("verified credentialed root-image proof binds immutable reference object in
   assert.deepEqual(visualIdentity.referenceObjectRefs, [job.outputObjectRef]);
 });
 
-test("legacy credentialed proof remains recognizable from credentialed receipt plus valid verification", () => {
-  const pending = pendingEmbodiment();
-  const job = planCanonicalVisualIdentityGeneration({
-    embodiment: pending,
-    requestedAt: "2026-08-30T05:05:10Z",
-  });
-  const available = bindVerifiedCanonicalVisualIdentityProof({
-    embodiment: pending,
-    proof: {
-      receipt: storedReceipt(job),
-      generationRecord: { job },
-      verification: { valid: true },
-    },
-    recordedAt: "2026-08-30T05:06:01Z",
-  });
-  assert.equal(available.status, "available");
-});
-
-test("verified durable provenance admits canonical root when content credentials are disabled", () => {
-  const pending = pendingEmbodiment();
-  const job = planCanonicalVisualIdentityGeneration({
-    embodiment: pending,
-    requestedAt: "2026-08-30T05:05:10Z",
-  });
-  const available = bindVerifiedCanonicalVisualIdentityProof({
-    embodiment: pending,
-    proof: {
-      receipt: provenancedReceipt(job),
-      generationRecord: { job },
-      verification: null,
-      credentialMode: "disabled",
-    },
-    recordedAt: "2026-08-30T05:06:01Z",
-  });
-  assert.equal(available.status, "available");
-  assert.equal(available.asset.referenceObjectRef, job.outputObjectRef);
-});
-
-test("canonical root admission rejects ambiguous or dishonest proof modes", () => {
+test("canonical root admission rejects provenance for a different generation job", () => {
   const pending = pendingEmbodiment();
   const job = planCanonicalVisualIdentityGeneration({
     embodiment: pending,
@@ -234,19 +159,27 @@ test("canonical root admission rejects ambiguous or dishonest proof modes", () =
     embodiment: pending,
     proof: {
       receipt: provenancedReceipt(job),
-      generationRecord: { job },
-      verification: { valid: true },
-      credentialMode: "disabled",
+      generationRecord: {
+        job: { ...job, jobId: "asset_job_other" },
+      },
     },
     recordedAt: "2026-08-30T05:06:01Z",
-  }), /must not claim credential verification/);
+  }), /proof job does not match the stored receipt/);
+});
+
+test("canonical root admission rejects a receipt that does not match pending embodiment authority", () => {
+  const pending = pendingEmbodiment();
+  const job = planCanonicalVisualIdentityGeneration({
+    embodiment: pending,
+    requestedAt: "2026-08-30T05:05:10Z",
+  });
+  const context = { ...job.context, embodimentRevision: job.context.embodimentRevision + 1 };
   assert.throws(() => bindVerifiedCanonicalVisualIdentityProof({
     embodiment: pending,
     proof: {
-      receipt: provenancedReceipt(job),
-      generationRecord: { job },
-      verification: null,
+      receipt: provenancedReceipt(job, { context }),
+      generationRecord: { job: { ...job, context } },
     },
     recordedAt: "2026-08-30T05:06:01Z",
-  }), /recognized verified generation proof mode/);
+  }), /receipt does not match the pending embodiment authority/);
 });
