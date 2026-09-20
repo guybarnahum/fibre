@@ -156,21 +156,21 @@ public FIN proof
 
 Neither representation is allowed to redefine FIN, Thread identity, civil registration or visual-identity authority.
 
-## Authenticity versus current validity
+## Authenticity and chronology
 
 The native proof establishes authenticity of one immutable credential artifact.
 
-It does not by itself prove that the credential is currently active.
+It deliberately does not claim that the card is the latest revision. FIN Cards do not expire as part of this proof contract, and historical cards are never re-signed merely because a newer card is issued.
 
 ```text
 authenticity
   exact PNG + trusted FIA proof
 
-current validity
-  FidCardRegistry says active / superseded / revoked / expired
+chronology, when multiple cards are known
+  revision + issuedAt
 ```
 
-Online verification may add a registry lookup only after proof authenticity succeeds.
+A future product may ask FIA whether a newer revision is known, but that lookup is outside the proof and is intentionally deferred until it provides concrete Fibre value.
 
 Normal FIA issuance uses the native proof path exclusively. Both sides are signed, embedded and verified before either object is stored; finalization then re-verifies the immutable stored bytes and requires the trusted embedded assertions to match the protected FIA machine credential before activation.
 
@@ -203,8 +203,7 @@ D. strict verifier — implemented
 E. issuance integration — implemented
 F. registry/storage proof evidence — implemented
 G. verification API — implemented
-H. current-status verification
-I. rich-card verification UI — authenticity implemented
+I. rich-card verification UI — implemented
 ```
 
 Every implementation slice must pass `npm run slice:validate`.
