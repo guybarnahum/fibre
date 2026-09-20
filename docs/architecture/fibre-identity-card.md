@@ -617,12 +617,17 @@ The original FID authority/photo/render lifecycle slices are complete. The remai
 - classify bounded failures as malformed/missing/duplicate proof, invalid envelope, unknown issuer key, invalid signature, wrong side, render-digest mismatch, or pair mismatch;
 - verify front/back as a coherent pair only after both sides independently pass authenticity and share the same credential/revision/identity/issuer facts.
 
-### FIN-PROOF-E — FIA issuance integration
+### FIN-PROOF-E — FIA issuance integration — implemented
 
-- make native proof the normal issuance path;
-- embed and immediately verify both sides before storage/activation;
-- compare verified assertions with FIA's expected assertions;
-- prevent half-verified pairs from becoming active.
+- make native proof the normal FIA issuance/runtime mode;
+- build expected front/back assertions from the already-authorized machine-credential payload;
+- sign, embed and immediately verify both sides before storing either card object;
+- compare trusted verifier output with FIA's expected assertions before storage;
+- re-verify the immutable stored front/back objects during finalization;
+- compare stored proof assertion digests with the admitted proof evidence;
+- re-open the protected machine credential and require the trusted embedded assertions to match it exactly before registry activation;
+- keep legacy `c2pa` and `disabled` modes only as explicit transitional compatibility paths;
+- keep the existing C2PA-shaped issuance evidence slot temporarily disabled for native cards until FIN-PROOF-F replaces that persistence schema.
 
 ### FIN-PROOF-F — registry/storage evidence
 
