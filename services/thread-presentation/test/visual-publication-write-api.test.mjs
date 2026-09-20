@@ -4,8 +4,8 @@ import test from "node:test";
 import { createVisualPublicationWriteApi } from "../src/http/visual-publication-write-api.mjs";
 
 const BODY = Object.freeze({
-  threadId:"thr_visual_handoff",
-  embodiment:Object.freeze({ embodimentId:"emb_visual_handoff", threadId:"thr_visual_handoff" }),
+  threadId:"thr_visual_publication",
+  embodiment:Object.freeze({ embodimentId:"emb_visual_publication", threadId:"thr_visual_publication" }),
   observedAt:"2026-08-31T01:00:00Z",
 });
 
@@ -49,7 +49,7 @@ test("visual publication preserves a terminal Presentation failure", async () =>
     reconciler:{
       async reconcileAvailableEmbodiment() {
         const error = new Error("official photo generation ended terminally");
-        error.code = "PRESENTATION_ASSET_WORKFLOW_TERMINAL";
+        error.code = "PRESENTATION_ASSET_GENERATION_TERMINAL";
         error.retryable = false;
         throw error;
       },
@@ -58,7 +58,7 @@ test("visual publication preserves a terminal Presentation failure", async () =>
 
   const body = await (await api.fetch(request())).json();
 
-  assert.equal(body.code, "PRESENTATION_ASSET_WORKFLOW_TERMINAL");
+  assert.equal(body.code, "PRESENTATION_ASSET_GENERATION_TERMINAL");
   assert.equal(body.retryable, false);
   assert.match(body.detail, /ended terminally/);
 });

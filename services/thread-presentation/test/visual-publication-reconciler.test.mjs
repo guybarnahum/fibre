@@ -343,7 +343,7 @@ test("Presentation visual reconciliation fails immediately when official-photo W
       embodiment,
       observedAt: "2026-08-30T20:02:00Z",
     }),
-    (error) => error.code === "PRESENTATION_ASSET_WORKFLOW_TERMINAL" && error.retryable === false,
+    (error) => error.code === "PRESENTATION_ASSET_GENERATION_TERMINAL" && error.retryable === false,
   );
   assert.equal(activity.some((record) => (
     record.stage === "presentation.media_demand.reconcile"

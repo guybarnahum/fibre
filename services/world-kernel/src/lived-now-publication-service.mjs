@@ -19,7 +19,7 @@ export function createLivedNowPublicationService({
   return Object.freeze({
     async enactCurrentSituation(input) {
       // World commits first. Presentation is a lossy projection of that committed
-      // reality; a failed handoff never rolls reality back. Repeating this call is
+      // reality; a failed publication never rolls reality back. Repeating this call is
       // safe because LivedNow enactment and present stream publication are idempotent.
       const situation = livedNowStore.enactCurrentSituation(input);
       const present = projectCurrentSituationPresent({

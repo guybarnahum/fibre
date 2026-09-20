@@ -20,7 +20,7 @@ async function jsonBody(request) {
 function failureResponse(error) {
   const detail = error instanceof Error ? error.message : String(error);
   if (error instanceof TypeError) {
-    return Response.json({ error: "invalid_current_present_handoff", detail, retryable: false }, { status: 400 });
+    return Response.json({ error: "invalid_current_present", detail, retryable: false }, { status: 400 });
   }
   const retryable = error?.retryable !== false;
   const code = typeof error?.code === "string" && error.code !== ""

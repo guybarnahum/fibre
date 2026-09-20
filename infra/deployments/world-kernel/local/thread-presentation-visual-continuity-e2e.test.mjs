@@ -16,7 +16,7 @@ import { createThreadPresentationIdentityMediaRewriteService } from "#services/w
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import { createThreadPresentationVisualHttpBoundary } from "./thread-presentation-visual-http-boundary.mjs";
 
-const THREAD_ID = "thr_slice_b_remote_visual_handoff";
+const THREAD_ID = "thr_visual_continuity";
 const CHANNEL_ID = `presentation:${THREAD_ID}`;
 const ROOT_OBJECT_REF = "asset_slice_b_canonical_visual_root";
 const PRIVATE_TOKEN = "slice-b-private-token";
@@ -31,7 +31,7 @@ async function initialPresentationBundle() {
   presentation.manifest = {
     ...presentation.manifest,
     threadId: THREAD_ID,
-    presentationId: "presentation_slice_b_remote_visual_handoff",
+    presentationId: "presentation_visual_continuity",
     lifecycleStatus: "active",
     fixture: false,
     generatedAt: "2026-08-31T00:40:00Z",
@@ -58,7 +58,7 @@ async function initialPresentationBundle() {
       provenanceId: "prov_slice_b_civil",
       kind: "authoritative_fact",
       sourceReferences: ["registration_slice_b", "birth_slice_b", "world_slice_b"],
-      note: "Authoritative civil identity projection for Slice B handoff proof.",
+      note: "Authoritative civil identity projection for visual continuity proof.",
     },
   ];
   return { presentation, media, provenance };
@@ -105,7 +105,7 @@ function admittedEmbodiment() {
   };
 }
 
-test("World hands admitted Embodiment to deployed Presentation contract without shared World storage", async () => {
+test("admitted Embodiment converges through Presentation retry and restart", async () => {
   const infra = createMemoryInfraDriver();
   const presentationServer = createThreadPresentationServer({ infra });
   await presentationServer.publishSnapshot({
@@ -148,7 +148,7 @@ test("World hands admitted Embodiment to deployed Presentation contract without 
       embodiment,
       observedAt: "2026-08-31T00:49:00Z",
     }),
-    (error) => error.code === "THREAD_PRESENTATION_VISUAL_HANDOFF_FAILED" && error.retryable === true,
+    (error) => error.code === "PRESENTATION_VISUAL_PUBLICATION_UNAVAILABLE" && error.retryable === true,
   );
 
   const beforeRetry = await presentationServer.getSnapshot(CHANNEL_ID);

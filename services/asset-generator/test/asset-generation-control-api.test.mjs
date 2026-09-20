@@ -50,7 +50,7 @@ function apiFixture() {
   };
 }
 
-test("one asset generation request keeps one durable workflow identity", async () => {
+test("one asset generation request keeps one durable generation identity", async () => {
   const { infra, api } = apiFixture();
 
   const first = await (await api.fetch(request())).json();
@@ -75,7 +75,7 @@ test("Asset Generator control API preserves terminal generation classification",
     controlService:{
       async reconcile() {
         const error = new Error("provider rejected generation");
-        error.code = "ASSET_GENERATION_WORKFLOW_TERMINAL";
+        error.code = "ASSET_GENERATION_TERMINAL";
         error.retryable = false;
         throw error;
       },
@@ -85,7 +85,7 @@ test("Asset Generator control API preserves terminal generation classification",
   console.error = () => {};
   try {
     const body = await (await api.fetch(request())).json();
-    assert.equal(body.code, "ASSET_GENERATION_WORKFLOW_TERMINAL");
+    assert.equal(body.code, "ASSET_GENERATION_TERMINAL");
     assert.equal(body.retryable, false);
     assert.match(body.detail, /provider rejected generation/);
   } finally {

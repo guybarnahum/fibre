@@ -87,19 +87,19 @@ test("terminal runtime classifier selects the latest non-retryable failure acros
       activityId: "act_presentation_terminal",
       occurredAt: "2026-09-03T17:00:02.000Z",
       service: "thread-presentation",
-      stage: "presentation.media_demand.reconcile",
+      stage: "presentation.official_photo.generate",
       status: "failed",
-      message: "official photo workflow ended as errored",
-      error: { category: "reconciliation", code: "PRESENTATION_ASSET_WORKFLOW_TERMINAL", retryable: false },
+      message: "official photo generation ended terminally",
+      error: { category: "generation", code: "PRESENTATION_ASSET_GENERATION_TERMINAL", retryable: false },
     },
   ];
   assert.deepEqual(terminalRuntimeFailure(records), {
     activityId: "act_presentation_terminal",
     occurredAt: "2026-09-03T17:00:02.000Z",
     service: "thread-presentation",
-    stage: "presentation.media_demand.reconcile",
-    code: "PRESENTATION_ASSET_WORKFLOW_TERMINAL",
-    message: "official photo workflow ended as errored",
+    stage: "presentation.official_photo.generate",
+    code: "PRESENTATION_ASSET_GENERATION_TERMINAL",
+    message: "official photo generation ended terminally",
   });
 });
 
@@ -162,10 +162,10 @@ test("staging wrapper fails fast on terminal Presentation activity for the activ
           activityId: "act_presentation_terminal",
           occurredAt: "2026-09-03T17:00:00.000Z",
           service: "thread-presentation",
-          stage: "presentation.media_demand.reconcile",
+          stage: "presentation.official_photo.generate",
           status: "failed",
-          message: "official photo workflow ended as errored",
-          error: { category: "reconciliation", code: "PRESENTATION_ASSET_WORKFLOW_TERMINAL", retryable: false },
+          message: "official photo generation ended terminally",
+          error: { category: "generation", code: "PRESENTATION_ASSET_GENERATION_TERMINAL", retryable: false },
         }],
         summary: "terminal presentation failure",
       }),
@@ -176,7 +176,7 @@ test("staging wrapper fails fast on terminal Presentation activity for the activ
         await sleep(2_000);
       },
     }),
-    /thread-presentation failed terminally at presentation\.media_demand\.reconcile \(PRESENTATION_ASSET_WORKFLOW_TERMINAL\)/,
+    /thread-presentation failed terminally at presentation\.media_demand\.reconcile \(PRESENTATION_ASSET_GENERATION_TERMINAL\)/,
   );
   assert.equal(underlyingSleeps, 0);
 });

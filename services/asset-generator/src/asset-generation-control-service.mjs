@@ -23,13 +23,13 @@ function parseJsonObject(bytes, label) {
 
 function terminalWorkflowError(job, instance) {
   if (!TERMINAL_WORKFLOW_STATUSES.has(instance?.status)) return null;
-  const detail = instance?.error?.message ?? "no workflow failure detail reported";
+  const detail = instance?.error?.message ?? "no generation failure detail reported";
   const error = new Error(
-    `asset generation workflow ${job.jobId} ended as ${instance.status}: ${detail}`,
+    `asset generation ${job.jobId} ended terminally (${instance.status}): ${detail}`,
   );
-  error.name = "AssetGenerationControlWorkflowTerminalError";
-  error.code = "ASSET_GENERATION_WORKFLOW_TERMINAL";
-  error.activityCategory = "reconciliation";
+  error.name = "AssetGenerationTerminalError";
+  error.code = "ASSET_GENERATION_TERMINAL";
+  error.activityCategory = "generation";
   error.retryable = false;
   error.jobId = job.jobId;
   error.workflowStatus = instance.status;
