@@ -114,13 +114,13 @@ async function recordIdentityProjectionFailure(activityRecorder, { threadId, ope
     await activityRecorder.record({
       threadId,
       operationId,
-      stage:"thread.identity.presentation_projection",
+      stage:"presentation.identity.project",
       status:"failed",
       attempt:1,
       message:error instanceof Error ? error.message : String(error),
       error:{
         category:"reconciliation",
-        code:typeof error?.code === "string" ? error.code : "THREAD_PRESENTATION_IDENTITY_PROJECTION_FAILED",
+        code:typeof error?.code === "string" ? error.code : "PRESENTATION_IDENTITY_PROJECTION_FAILED",
         retryable:error?.retryable !== false,
       },
     });
@@ -328,7 +328,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
           state:"pending",
           changed:false,
           error:Object.freeze({
-            code:typeof error?.code === "string" ? error.code : "THREAD_PRESENTATION_IDENTITY_PROJECTION_FAILED",
+            code:typeof error?.code === "string" ? error.code : "PRESENTATION_IDENTITY_PROJECTION_FAILED",
             detail:error instanceof Error ? error.message : String(error),
           }),
         });
