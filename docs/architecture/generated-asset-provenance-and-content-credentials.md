@@ -13,6 +13,8 @@ Define how Fibre generated media survives copying, storage loss, provider replac
 
 This architecture implements the decision in [`../decisions/ADR-0014-generated-asset-provenance.md`](../decisions/ADR-0014-generated-asset-provenance.md).
 
+This document applies to **generated-media provenance**. Fibre Identity Cards use the separate FIA-native `fibre.fin-card-proof.v1` tamper-evidence contract; FIN-card authenticity does not depend on C2PA. C2PA may still be added later as an interoperability wrapper without becoming FID identity authority.
+
 The central rule is:
 
 > **Full reproducibility provenance lives in Fibre; a public-safe signed survival capsule travels with the asset. Neither makes the generated representation Thread-life evidence.**
