@@ -27,15 +27,10 @@ const JOB = Object.freeze({
   },
 });
 
-const signer = Object.freeze({
-  async verify() {
-    throw new Error("verification must not run before a durable receipt exists");
-  },
-});
 
 test("canonical visual root boundary schedules one durable workflow and reuses it while pending", async () => {
   const infra = createMemoryInfraDriver();
-  const boundary = createCanonicalVisualRootBoundary({ infra, credentialSigner: signer });
+  const boundary = createCanonicalVisualRootBoundary({ infra });
 
   const first = await boundary.reconcile({ job: JOB });
   assert.equal(first.state, "pending");
@@ -58,7 +53,6 @@ test("canonical visual root boundary requires durable workflow capability", () =
   assert.throws(
     () => createCanonicalVisualRootBoundary({
       infra: { objects: { async get() { return null; } } },
-      credentialSigner: signer,
     }),
     /requires durable workflows/,
   );
