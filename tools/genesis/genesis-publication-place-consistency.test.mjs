@@ -18,7 +18,7 @@ test("publication place gate distinguishes current scene from a reported place",
   }), true);
 });
 
-test("publication place gate still refuses a contradictory opening scene", () => {
+test("publication place gate names a contradiction with authoritative place", () => {
   assert.throws(() => assertGenesisEpisodePlaceConsistency({
     episode: {
       episodeId: "ep_transit_but_school_001",
@@ -26,5 +26,10 @@ test("publication place gate still refuses a contradictory opening scene", () =>
       observableAction: "In a classroom, the subject and peer compare notes before the lesson begins.",
     },
     envelope: { placeRef: "place_transit", placeKind: "transit" },
-  }), /scene setting incompatible with authoritative placeRef/u);
+  }), (error) => (
+    error.code === "GENESIS_EPISODE_PLACE_CONFLICT"
+    && error.activityCategory === "invariant"
+    && error.retryable === false
+    && /scene setting incompatible with authoritative placeRef/u.test(error.message)
+  ));
 });
