@@ -67,12 +67,13 @@ function normalizePublicMediaRecord(value, objectRef) {
 function identityCredentialVisible(snapshot, media) {
   const card = snapshot?.presentation?.identityCard ?? null;
   const credentialMedia = media.role === "official_id_photo"
+    || media.role === "fibre_identity_card"
     || media.role === "fibre_identity_card_front"
     || media.role === "fibre_identity_card_back"
     || media.identityCredentialMedia;
   if (!credentialMedia) return true;
   if (card === null || card.visibility !== "public" || card.status !== "active") return false;
-  if (media.role === "official_id_photo") return true;
+  if (media.role === "official_id_photo" || media.role === "fibre_identity_card") return true;
   return [card.frontMediaRef, card.backMediaRef].filter(Boolean).includes(media.mediaId);
 }
 
