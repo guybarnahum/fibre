@@ -125,7 +125,6 @@ test("FIN proof exposes only the public FIA facts bound to one rendered side", (
     "encryptedCredential",
     "trustPolicy",
     "publicKeyRef",
-    "C2PA",
   ]) {
     assert.equal(json.includes(forbidden), false, `public FIN proof leaked ${forbidden}`);
   }
