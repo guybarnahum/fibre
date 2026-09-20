@@ -118,7 +118,7 @@ Presentation Worker
 Asset Generator Worker
     |
     +--> MediaGenerationProvider
-    +--> ContentCredentialSigner
+    +--> Fibre provenance
     +--> InfraDriver.objects
     |
     `--> AssetGenerationCompletion
@@ -130,14 +130,16 @@ Asset Generator Worker
        Presentation consumer
 ```
 
-The Asset Generator Worker owns provider execution, credential embedding, immutable output, and the operational completion pointer. It has no Thread Presentation or World Kernel publication authority.
+The Asset Generator Worker owns provider execution, immutable provenance/output, and the operational completion pointer. It has no Thread Presentation or World Kernel publication authority.
 
 The Workflow uses two durable steps:
 
 ```text
-1. generate credentialed asset
+1. generate provenanced asset
+   -> GenerationAttempt
+   -> immutable provider output
    -> GenerationRecord
-   -> credentialed final asset
+   -> final asset
    -> StoredAssetReceipt
 
 2. signal asset generation completion
@@ -221,7 +223,7 @@ AssetGenerationCompletion
 PresentationAssetCompletionService
         |
         +--> exact durable demand/job match
-        +--> receipt + GenerationRecord + credential verification
+        +--> receipt + GenerationRecord + byte/digest verification
         `--> ThreadPresentationAssetPublisher
                     |
                     `--> media.ready
@@ -248,20 +250,19 @@ A completion for a superseded or obsolete demand is not promoted into current Th
 4. request path returns; generation is not user-request synchronous
 5. workflow resolves approved immutable reference objects
 6. workflow invokes MediaGenerationProvider
-7. successful raw output is captured with exact generation provenance
-8. content credentials are applied when required by policy
-9. final bytes and durable GenerationRecord/StoredAssetReceipt are stored immutably
-10. Workflow sends minimal AssetGenerationCompletion in a separate retryable step
-11. calling domain resolves the immutable receipt and exact durable demand
-12. superseded/obsolete completion is ignored as stale
-13. current completion is re-verified against GenerationRecord, bytes and credentials
-14. calling domain publishes its own semantic update
-15. operational demand state advances to ready after successful completion handling
+7. successful provider output is staged immutably with exact generation provenance
+8. final bytes and durable GenerationRecord/StoredAssetReceipt are stored immutably
+9. Workflow sends minimal AssetGenerationCompletion in a separate retryable step
+10. calling domain resolves the immutable receipt and exact durable demand
+11. superseded/obsolete completion is ignored as stale
+12. current completion is re-verified against GenerationRecord, staged provider bytes and final bytes
+13. calling domain publishes its own semantic update
+14. operational demand state advances to ready after successful completion handling
 ```
 
-For Thread Presentation, step 14 is a legal, idempotent `media.ready` event authored by Presentation. Asset Generator and its completion transport never author presentation semantics.
+For Thread Presentation, step 13 is a legal, idempotent `media.ready` event authored by Presentation. Asset Generator and its completion transport never author presentation semantics.
 
-The current credentialed path does not yet serialize terminal unsupported/policy refusal as a `StoredAssetReceipt`. Therefore terminal `media.unavailable` publication remains deferred; provider/runtime failure must not be reclassified as semantic unavailability merely to close a Workflow.
+The current generation path does not yet serialize terminal unsupported/policy refusal as a `StoredAssetReceipt`. Therefore terminal `media.unavailable` publication remains deferred; provider/runtime failure must not be reclassified as semantic unavailability merely to close a Workflow.
 
 ## Immutability and regeneration
 
@@ -291,7 +292,7 @@ successful generation
 
 Transient outages must not become permanent semantic unavailability, and deterministic policy refusal must not be retried indefinitely once the terminal-outcome contract exists.
 
-The current credentialed Cloudflare generation step is intentionally at-most-once for one semantic job identity because the media provider is nondeterministic while final object identities are immutable. General retryable generation remains **deferred** until Fibre has an explicit attempt/staging identity that can retry safely without writing different bytes under one final object reference.
+The current Cloudflare generation path preserves retry safety by separating provider-operation identity, generation attempts, staged output and immutable final object identity. General retryable generation remains **deferred** until Fibre has an explicit attempt/staging identity that can retry safely without writing different bytes under one final object reference.
 
 ## Portability requirements
 
@@ -308,4 +309,4 @@ Every production infrastructure/provider combination must prove:
 - actual provider/model/configuration provenance is retained; and
 - no provider-native ID or generated output becomes Thread semantic authority.
 
-See [`generated-asset-provenance-and-content-credentials.md`](generated-asset-provenance-and-content-credentials.md) for the stronger provenance and Content Credentials contract, and [`presentation-asset-demand.md`](presentation-asset-demand.md) for demand/completion state and concurrency boundaries.
+See [`generated-asset-provenance.md`](generated-asset-provenance.md) for the generated-media provenance contract, and [`presentation-asset-demand.md`](presentation-asset-demand.md) for demand/completion state and concurrency boundaries.
