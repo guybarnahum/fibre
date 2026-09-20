@@ -82,6 +82,8 @@ export {
   verifyFidCardProofPair,
 } from "./fid-card-proof-verifier.mjs";
 
+export { protectAndStoreFidCard } from "./fid-card-proof-issuance.mjs";
+
 export {
   FID_C2PA_ASSERTION_LABEL,
   buildFidC2paAssertion,
