@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
-import { STORED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
+import { PROVENANCED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
 import {
   GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY,
   attachGenesisCanonicalVisualIdentity,
@@ -174,7 +174,7 @@ function birth() {
 
 function readyRoot(job) {
   const receipt = {
-    receiptVersion: STORED_ASSET_RECEIPT_VERSION,
+    receiptVersion: PROVENANCED_ASSET_RECEIPT_VERSION,
     jobId: job.jobId,
     status: "ready",
     assetKind: job.assetKind,
@@ -189,20 +189,13 @@ function readyRoot(job) {
     completedAt: "2026-08-31T18:24:00Z",
     generationRecordObjectRef: "generation_record_slice_c_cloud_001",
     generationRecordDigest: sha("2"),
-    providerOutputDigest: sha("3"),
-    credential: {
-      format: "fixture-content-credential",
-      signerId: "fixture-signer",
-      manifestDigest: sha("4"),
-      embeddedAt: "2026-08-31T18:23:58Z",
-      verifiedAt: "2026-08-31T18:23:59Z",
-    },
+    providerOutputDigest: sha("1"),
     inputReferences: job.inputReferences,
     context: job.context,
   };
   return {
     state: "ready",
-    proof: { receipt, generationRecord: { job }, verification: { valid: true } },
+    proof: { receipt, generationRecord: { job } },
     recordedAt: "2026-08-31T18:24:01Z",
   };
 }
