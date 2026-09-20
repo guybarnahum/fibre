@@ -78,8 +78,10 @@ function privateToken(env) {
 }
 
 function contentCredentialMode(env) {
-  const mode = env?.FIA_CONTENT_CREDENTIAL_MODE ?? "c2pa";
-  if (mode !== "c2pa" && mode !== "disabled") throw new TypeError(`unsupported FIA_CONTENT_CREDENTIAL_MODE ${String(mode)}`);
+  const mode = env?.FIA_CONTENT_CREDENTIAL_MODE ?? "native";
+  if (mode !== "native" && mode !== "c2pa" && mode !== "disabled") {
+    throw new TypeError(`unsupported FIA_CONTENT_CREDENTIAL_MODE ${String(mode)}`);
+  }
   return mode;
 }
 
