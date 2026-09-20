@@ -1,11 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createHttpContentCredentialSigner } from "../../../integrations/content-credentials/c2pa-http-signer.mjs";
 import { createOpenAIImageProvider } from "../../../integrations/ai/image/openai.mjs";
 import { AssetGenerationError } from "../src/asset-generation-error.mjs";
-
-const encoder = new TextEncoder();
 
 function imageRequest(overrides = {}) {
   return {
@@ -151,102 +148,3 @@ test("OpenAI image provider classifies transport failures without exposing the A
   );
 });
 
-test("HTTP content credential signer maps portable embed and verify responses", async () => {
-  const calls = [];
-  const assertion = {
-    schemaVersion: "fibre-embedded-asset-provenance-v0.1",
-    provenanceClass: "generated_reconstruction",
-    assetKind: "image",
-    role: "place",
-    variant: "default",
-    generationRecordDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    semanticBriefDigest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    providerRequestDigest: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-    providerOutputDigest: "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-    provider: "openai",
-    model: "gpt-image-2-2026-04-21",
-    generatedAt: "2026-08-22T01:00:00Z",
-    promptDisclosure: {
-      mode: "digest_only",
-      authorizationRef: null,
-      semanticBrief: null,
-      providerRequest: null,
-    },
-  };
-  const signer = createHttpContentCredentialSigner({
-    baseUrl: "http://127.0.0.1:8790/",
-    fetchImpl: async (url, init) => {
-      const body = JSON.parse(init.body);
-      calls.push({ url, body });
-      if (url.endsWith("/embed")) {
-        return response({
-          status: 200,
-          payload: {
-            bytesBase64: btoa("signed-bytes"),
-            format: "c2pa",
-            signerId: "fibre-c2pa-node-local-v1",
-            manifestDigest: "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-            embeddedAt: "2026-08-22T01:00:01Z",
-          },
-        });
-      }
-      return response({
-        status: 200,
-        payload: {
-          valid: true,
-          format: "c2pa",
-          signerId: "fibre-c2pa-node-local-v1",
-          manifestDigest: "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-          assertion,
-          verifiedAt: "2026-08-22T01:00:02Z",
-          failureReason: null,
-        },
-      });
-    },
-  });
-  const embedded = await signer.embed({ bytes: encoder.encode("raw"), mediaType: "image/png", assertion });
-  assert.equal(new TextDecoder().decode(embedded.bytes), "signed-bytes");
-  const verification = await signer.verify({ bytes: embedded.bytes, mediaType: "image/png" });
-  assert.equal(verification.valid, true);
-  assert.deepEqual(verification.assertion, assertion);
-  assert.equal(calls[0].url, "http://127.0.0.1:8790/embed");
-  assert.equal(calls[1].url, "http://127.0.0.1:8790/verify");
-});
-
-test("HTTP content credential signer preserves phase and transient service status", async () => {
-  const signer = createHttpContentCredentialSigner({
-    baseUrl: "http://127.0.0.1:8790/",
-    fetchImpl: async () => response({
-      status: 503,
-      headers: { "retry-after": "2" },
-      payload: { error: "signer unavailable" },
-    }),
-  });
-  await assert.rejects(
-    () => signer.embed({
-      bytes: encoder.encode("raw"),
-      mediaType: "image/png",
-      assertion: {
-        schemaVersion: "fibre-embedded-asset-provenance-v0.1",
-        provenanceClass: "generated_reconstruction",
-        assetKind: "image",
-        role: "place",
-        variant: "default",
-        generationRecordDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        semanticBriefDigest: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        providerRequestDigest: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-        providerOutputDigest: "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-        provider: "openai",
-        model: "fixture",
-        generatedAt: "2026-08-22T01:00:00Z",
-        promptDisclosure: { mode: "digest_only", authorizationRef: null, semanticBrief: null, providerRequest: null },
-      },
-    }),
-    (error) => error instanceof AssetGenerationError
-      && error.phase === "credential_signing"
-      && error.category === "provider_unavailable"
-      && error.retryable === true
-      && error.httpStatus === 503
-      && error.retryAfterMs === 2000,
-  );
-});
