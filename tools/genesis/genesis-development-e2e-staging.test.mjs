@@ -176,7 +176,7 @@ test("staging wrapper fails fast on terminal Presentation activity for the activ
         await sleep(2_000);
       },
     }),
-    /thread-presentation failed terminally at presentation\.media_demand\.reconcile \(PRESENTATION_ASSET_GENERATION_TERMINAL\)/,
+    /thread-presentation failed terminally at presentation\.official_photo\.generate \(PRESENTATION_ASSET_GENERATION_TERMINAL\)/,
   );
   assert.equal(underlyingSleeps, 0);
 });
