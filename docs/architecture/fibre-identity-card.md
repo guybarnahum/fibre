@@ -627,20 +627,27 @@ The original FID authority/photo/render lifecycle slices are complete. The remai
 - retain protected-object digest, machine-credential digest, credential ID and revision;
 - require persisted proof signer identity to match the FIA issuer.
 
-### FIN-PROOF-G — verification API
+### FIN-PROOF-G — verification API — implemented
 
-- expose a FIA-owned verification endpoint for uploaded FIN-card PNGs;
-- return trusted assertion only on successful cryptographic verification.
+- expose FIA-owned `POST /internal/fid/cards/verify?side=front|back`;
+- accept the exact FIN-card PNG bytes to verify;
+- run the strict native proof verifier inside FIA;
+- return `{ verified:true, assertion }` only after cryptographic verification;
+- return `{ verified:false, reason }` with no assertion on trust failure;
+- let authenticated Admin proxy displayed PNG bytes to FIA without moving cryptographic trust into the browser.
 
 ### FIN-PROOF-H — current-status verification
 
 - optionally add registry lookup after authenticity succeeds;
 - distinguish authentic from active/superseded/revoked/expired.
 
-### FIN-PROOF-I — rich-card verification UI
+### FIN-PROOF-I — rich-card verification UI — authenticity implemented
 
-- surface authenticity and current status through the reusable FIN-card presentation;
-- display trusted values from the verifier rather than OCR or duplicated page state.
+- Thread Presentation carries only FIA-active cards whose proof state is verified;
+- Admin's reusable FIN-card component fetches the exact front/back PNGs it displays and asks FIA to verify each;
+- the component shows `✓ Verified by Fibre` only when both sides verify and describe the same credential;
+- an expandable view renders key/value data derived only from the trusted embedded assertions;
+- current active/superseded/revoked status remains FIN-PROOF-H and is not inferred from authenticity.
 
 ## Acceptance criteria
 
