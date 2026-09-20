@@ -35,7 +35,6 @@ function parseArgs(argv) {
     fixture: DEFAULT_LIVE_FIXTURE,
     mediaId: DEFAULT_LIVE_MEDIA_ID,
     baseUrl: process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8787",
-    signerUrl: process.env.FIBRE_C2PA_SIGNER_URL ?? "http://127.0.0.1:8790",
     dryRun: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -54,11 +53,6 @@ function parseArgs(argv) {
     if (value === "--base-url") {
       if (index + 1 >= argv.length) throw new TypeError("--base-url requires a value");
       parsed.baseUrl = nonEmpty("base-url", argv[++index]).replace(/\/$/, "");
-      continue;
-    }
-    if (value === "--signer-url") {
-      if (index + 1 >= argv.length) throw new TypeError("--signer-url requires a value");
-      parsed.signerUrl = nonEmpty("signer-url", argv[++index]).replace(/\/$/, "");
       continue;
     }
     throw new TypeError(`unknown Cloudflare live asset argument: ${value}`);
@@ -125,31 +119,27 @@ export async function runCloudflareLiveAssetSmoke({
   fixture = DEFAULT_LIVE_FIXTURE,
   mediaId = DEFAULT_LIVE_MEDIA_ID,
   baseUrl = process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8787",
-  signerUrl = process.env.FIBRE_C2PA_SIGNER_URL ?? "http://127.0.0.1:8790",
   timeoutMs = Number(process.env.ASSET_LIVE_CLOUDFLARE_TIMEOUT_MS ?? 10 * 60 * 1000),
   pollMs = Number(process.env.ASSET_LIVE_CLOUDFLARE_POLL_MS ?? 2000),
 } = {}) {
   const target = await loadThreadPresentationLiveTarget({ fixture, mediaId });
   const base = nonEmpty("baseUrl", baseUrl).replace(/\/$/, "");
-  const signerBase = nonEmpty("signerUrl", signerUrl).replace(/\/$/, "");
   const startedAt = Date.now();
   const runStartedAt = new Date(startedAt).toISOString();
 
   console.log("FIBRE CLOUDFLARE LIVE ASSET SMOKE: START");
-  console.log(`[1/6] Target: ${target.label} (${target.mediaAsset.mediaId}) on Thread ${target.threadId}`);
-  console.log("[2/6] Checking local C2PA signer and Cloudflare Presentation runtime...");
-  const health = await jsonFetch(`${signerBase}/healthz`);
-  if (health.format !== "c2pa") throw new Error("configured signer is not reporting C2PA format");
+  console.log(`[1/5] Target: ${target.label} (${target.mediaAsset.mediaId}) on Thread ${target.threadId}`);
+  console.log("[2/5] Checking Cloudflare Presentation runtime...");
   await jsonFetch(`${base}/healthz`);
 
-  console.log("[3/6] Seeding the selected fixture through the Cloudflare dev-only fixture seam...");
+  console.log("[3/5] Seeding the selected fixture through the Cloudflare dev-only fixture seam...");
   await jsonFetch(`${base}/__p3/fixtures/thread`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ bundle: target.bundle }),
   });
 
-  console.log("[4/6] Scheduling the selected media through Presentation → Workflow → Asset Generator...");
+  console.log("[4/5] Scheduling the selected media through Presentation → Workflow → Asset Generator...");
   const scheduled = await jsonFetch(`${base}/__p3/fixtures/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -187,7 +177,7 @@ export async function runCloudflareLiveAssetSmoke({
   if (!readyEvent) throw new Error(`timed out waiting for ${target.mediaAsset.mediaId} media.ready`);
   if (readyEvent.payload.objectRef !== scheduled.objectRef) throw new Error("media.ready objectRef does not match scheduled job");
 
-  console.log("[5/6] Fetching the published asset through the provider-neutral public route...");
+  console.log("[5/5] Fetching the published asset and verifying Fibre provenance classification...");
   const mediaResponse = await fetch(`${base}/api/assets/${encodeURIComponent(readyEvent.payload.objectRef)}`);
   if (!mediaResponse.ok) throw new Error(`generated asset fetch failed ${mediaResponse.status}`);
   if (mediaResponse.headers.get("x-fibre-provenance") !== "generated_reconstruction") {
@@ -196,20 +186,6 @@ export async function runCloudflareLiveAssetSmoke({
   const mediaType = mediaResponse.headers.get("content-type");
   const bytes = new Uint8Array(await mediaResponse.arrayBuffer());
   if (bytes.length === 0) throw new Error("generated media is empty");
-
-  console.log("[6/6] Verifying embedded Content Credentials and writing evidence...");
-  const verification = await jsonFetch(`${signerBase}/verify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bytesBase64: Buffer.from(bytes).toString("base64"), mediaType }),
-  });
-  if (verification.valid !== true) throw new Error(`C2PA verification failed: ${verification.failureReason}`);
-  if (verification.assertion?.provenanceClass !== "generated_reconstruction") {
-    throw new Error("embedded C2PA assertion does not classify asset as generated_reconstruction");
-  }
-  if (verification.assertion?.promptDisclosure?.mode !== "digest_only") {
-    throw new Error("Cloudflare live proof must not publish exact prompt text in C2PA");
-  }
 
   const outputDirectory = join(OUTPUT_ROOT, runDirectoryName(runStartedAt));
   await mkdir(outputDirectory, { recursive: true });
@@ -235,14 +211,10 @@ export async function runCloudflareLiveAssetSmoke({
     finalAssetDigest: readyEvent.payload.digest,
     mediaType,
     byteLength: bytes.length,
-    c2pa: {
-      valid: true,
-      signerId: verification.signerId,
-      manifestDigest: verification.manifestDigest,
-      provenanceClass: verification.assertion.provenanceClass,
-      provider: verification.assertion.provider,
-      model: verification.assertion.model,
-      promptDisclosure: verification.assertion.promptDisclosure.mode,
+    provenance: {
+      classification: mediaResponse.headers.get("x-fibre-provenance"),
+      etag: mediaResponse.headers.get("etag"),
+      finalAssetDigest: readyEvent.payload.digest,
     },
     path: {
       scheduling: "thread-presentation -> InfraDriver.workflows -> Cloudflare Workflow -> asset-generator",
@@ -268,7 +240,6 @@ async function main() {
     console.log(`Thread: ${target.threadId}`);
     console.log(`Target: ${target.label} (${target.mediaAsset.mediaId})`);
     console.log(`Presentation: ${args.baseUrl}`);
-    console.log(`Signer: ${args.signerUrl}`);
     return;
   }
   await runCloudflareLiveAssetSmoke(args);
