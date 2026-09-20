@@ -9,10 +9,8 @@ import {
 } from "../../integrations/ai/image/openai.mjs";
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import {
-  CONTENT_CREDENTIAL_SIGNER_VERSION,
-  executeCredentialedAssetGenerationJob,
-  normalizeEmbeddedAssetProvenance,
-  verifyCredentialedAssetForPublication,
+  executeProvenancedAssetGenerationJob,
+  verifyProvenancedAssetForPublication,
 } from "../../services/asset-generator/src/index.mjs";
 import { planThreadPresentationAssetGeneration } from "../../services/world-kernel/src/thread-presentation-asset-planner.mjs";
 import {
@@ -63,51 +61,6 @@ export async function buildLiveAssetSmokeJob({
   assert.ok(job, `fixture ${target.fixtureName} did not produce generation job for ${target.mediaAsset.mediaId}`);
   assert.equal(job.assetKind, "image", "live asset smoke currently supports image targets only");
   return { ...target, job, snapshotBytes, snapshotDigest, snapshotObjectRef };
-}
-
-function createProcessLocalCredentialSigner({ now = () => new Date().toISOString() } = {}) {
-  const signerId = "fibre-live-smoke-process-local-signer";
-  const format = "fibre-live-smoke-test-witness-v0.1";
-  const witnessed = new Map();
-
-  return {
-    signerVersion: CONTENT_CREDENTIAL_SIGNER_VERSION,
-    signerId,
-    format,
-    async embed({ bytes, assertion }) {
-      const normalizedAssertion = normalizeEmbeddedAssetProvenance(assertion);
-      const copiedBytes = bytes instanceof Uint8Array ? bytes.slice() : new Uint8Array(bytes.slice(0));
-      const assetDigest = await sha256(copiedBytes);
-      const manifestDigest = await sha256(canonicalJson(normalizedAssertion));
-      witnessed.set(assetDigest, { assertion: normalizedAssertion, manifestDigest });
-      return { bytes: copiedBytes, format, signerId, manifestDigest, embeddedAt: now() };
-    },
-    async verify({ bytes }) {
-      const copiedBytes = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-      const assetDigest = await sha256(copiedBytes);
-      const record = witnessed.get(assetDigest);
-      if (!record) {
-        return {
-          valid: false,
-          format,
-          signerId,
-          manifestDigest: null,
-          assertion: null,
-          verifiedAt: now(),
-          failureReason: "process-local live-smoke witness is unavailable",
-        };
-      }
-      return {
-        valid: true,
-        format,
-        signerId,
-        manifestDigest: record.manifestDigest,
-        assertion: structuredClone(record.assertion),
-        verifiedAt: now(),
-        failureReason: null,
-      };
-    },
-  };
 }
 
 function assertPng(bytes) {
@@ -241,17 +194,15 @@ export async function runLiveAssetSmoke({
     ...providerOptionsFromEnvironment(apiKey),
     fetchImpl: createProgressFetch(),
   });
-  const credentialSigner = createProcessLocalCredentialSigner();
-  const generated = await executeCredentialedAssetGenerationJob({
+  const generated = await executeProvenancedAssetGenerationJob({
     infra,
     provider,
-    credentialSigner,
     job: prepared.job,
   });
 
   console.log("[4/5] Image returned. Verifying immutable storage, receipt, digest and provenance...");
-  const proof = await verifyCredentialedAssetForPublication({ infra, credentialSigner, receipt: generated.receipt });
-  assert.equal(proof.verification.valid, true);
+  const proof = await verifyProvenancedAssetForPublication({ infra, receipt: generated.receipt });
+  assert.equal(proof.receipt.sha256, proof.receipt.providerOutputDigest);
   assert.deepEqual(generated.generationRecord.semanticBrief, prepared.job.brief);
   assert.equal(generated.receipt.mediaType, "image/png");
 
@@ -272,7 +223,7 @@ export async function runLiveAssetSmoke({
     evidenceVersion: "fibre-live-asset-smoke-v0.2",
     runStartedAt,
     purpose: "Prove that a selected Fibre Thread Presentation media target can generate real image bytes through the provider-neutral Asset Generator path.",
-    credentialNote: "The image provider is live OpenAI. Credential embed/verify uses a process-local test signer so this smoke test does not claim production C2PA signing.",
+    provenanceNote: "The image provider is live OpenAI. Fibre verifies the durable generation record, provider output digest, final bytes and receipt before publication.",
     source: sourceEvidence(prepared),
     job: {
       jobId: prepared.job.jobId,
@@ -295,11 +246,11 @@ export async function runLiveAssetSmoke({
       finalAssetDigest: generated.finalAssetDigest,
     },
     receipt: generated.receipt,
-    verification: {
-      valid: proof.verification.valid,
-      format: proof.verification.format,
-      signerId: proof.verification.signerId,
-      manifestDigest: proof.verification.manifestDigest,
+    provenanceProof: {
+      generationRecordObjectRef: generated.generationRecordObjectRef,
+      generationRecordDigest: generated.generationRecordDigest,
+      providerOutputDigest: generated.providerOutputDigest,
+      finalAssetDigest: generated.finalAssetDigest,
     },
     output: {
       image: imagePath.slice(REPO_ROOT.length + 1),
@@ -315,7 +266,7 @@ export async function runLiveAssetSmoke({
   console.log(`Image: ${evidence.output.image}`);
   console.log(`Bytes: ${evidence.output.bytes}`);
   console.log(`Digest: ${evidence.generation.finalAssetDigest}`);
-  console.log("Credential: process-local test witness (not production C2PA)");
+  console.log("Proof: Fibre immutable generation provenance");
   return evidence;
 }
 
