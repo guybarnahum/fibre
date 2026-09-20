@@ -36,7 +36,6 @@ test("retired proof and experiment tests are explicit reproducibility evidence",
     "tools/genesis/genesis-life-publication.test.mjs",
     "tools/genesis/genesis-memory-meaning-characterization.test.mjs",
     "tools/genesis/genesis-pass-c-semantics-audit.test.mjs",
-    "tools/test-infra/test-value-audit.test.mjs",
     "tools/test-infra/test-suite-lifecycle.test.mjs",
     "tools/gates/history/history-bends-judgment-candidate-4-frozen-boundary.test.mjs",
   ]) {
