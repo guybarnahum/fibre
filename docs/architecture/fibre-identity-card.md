@@ -1,7 +1,7 @@
 ---
 id: architecture-fibre-identity-card-v0-2
 status: proposed
-last-reviewed: 2026-09-03
+last-reviewed: 2026-09-19
 canonical: false
 ---
 
@@ -10,6 +10,8 @@ canonical: false
 ## Purpose
 
 Define the Fibre Identity Card (FID Card) as a later-issued, cryptographically verifiable credential for an already-born Thread without moving FIN or Thread identity authority into presentation or rendering code.
+
+FIN-card tamper evidence follows [ADR-0022](../decisions/ADR-0022-fid-native-proof.md): Fibre-native FIA Ed25519 proof is the primary protection mechanism; C2PA is optional future interoperability rather than an issuance dependency.
 
 Three identities must remain distinct:
 
