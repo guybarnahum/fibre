@@ -196,11 +196,13 @@ thread-media-packet-v0.1
 
 A media packet is an index/plan over presentation assets, not evidence by itself.
 
+`document` is reserved for immutable, non-executable presentation documents. The first use is the Fibre Identity Card rich descriptor (`application/vnd.fibre.identity-card+json`), which binds existing front/back PNG assets into one logical presentation object. A document carries no width, height, duration or poster metadata.
+
 Each media entry records:
 
 ```text
 mediaId
-kind: image | audio | video
+kind: image | audio | video | document
 role
 status: placeholder | pending | ready | unavailable
 locator?
@@ -264,7 +266,8 @@ Common requirements include:
 - generated media uses `generated_reconstruction` provenance;
 - subject/timeline place references resolve;
 - memory/meaning references resolve without collapsing authority;
-- video poster references resolve to image media.
+- video poster references resolve to image media;
+- document assets are non-executable and carry no visual/temporal dimensions.
 
 V0.2 additionally requires:
 
