@@ -4,7 +4,7 @@ The Fibre Identity Authority owns replaceable FID Card credentials for already-b
 
 It does **not** mint FINs, change civil registration, create visual identity, or execute image generation. Those responsibilities remain with their owning Fibre boundaries.
 
-FIN-card authenticity is moving to a Fibre-native proof owned by FIA: a small public assertion derived from already-authorized issuance facts, signed with the existing FIA Ed25519 issuer key, and later embedded directly in each PNG. C2PA is no longer part of the target FIN-card protection architecture; it remains optional future interoperability and may continue independently for generated-media provenance.
+FIN-card authenticity is moving to a Fibre-native proof owned by FIA: a small public assertion derived from already-authorized issuance facts, signed with the existing FIA Ed25519 issuer key, and embedded directly in each PNG. The assertion/signature contract and deterministic PNG transport are implemented; strict authenticity verification and issuance integration remain the next steps. C2PA is no longer part of the target FIN-card protection architecture; it remains optional future interoperability and may continue independently for generated-media provenance.
 
 Core authority surface:
 
@@ -72,7 +72,7 @@ Lifecycle orchestration itself is not owned by FIA. Thread Presentation owns the
 
 FIA remains provider-neutral. Executable provider composition belongs under `infra/deployments/fibre-identity-authority/`; the Cloudflare host injects an `InfraDriver` for FIA state/objects/workflows plus World, Thread Presentation, Asset Generation, issuer-signing, and credential-protection boundaries. A different provider can compose the same FIA service contracts without changing FIA domain code.
 
-The native FIN proof contract lives in `src/fid-card-proof.mjs` and is intentionally provider-independent. Its signing implementation will reuse the already-composed FIA issuer signer rather than introduce a separate content-credential provider.
+The native FIN proof contract lives in `src/fid-card-proof.mjs` and is intentionally provider-independent. It reuses the already-composed FIA issuer signer rather than introducing a separate content-credential provider. `src/fid-card-proof-png.mjs` carries the canonical signed envelope in one private ancillary `fiDP` PNG chunk and can reconstruct the original unsigned render byte-for-byte.
 
 
 ## Cloudflare operator secrets
