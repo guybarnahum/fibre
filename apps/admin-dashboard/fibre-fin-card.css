@@ -100,3 +100,43 @@ button:focus-visible{
   .inner{transition:none}
   .face::after{display:none}
 }
+
+.proof{
+  width:min(330px,100%);
+  display:grid;
+  gap:7px;
+}
+.proof-status{
+  font-size:10px;
+  color:var(--muted,#6d6f73);
+}
+.proof-status.verified{
+  color:var(--accent,#ea7a24);
+  font-weight:600;
+}
+.proof-status.failed{
+  color:var(--muted,#6d6f73);
+}
+.proof-details{
+  width:100%;
+  text-align:left;
+  font-size:10px;
+}
+.proof-details summary{
+  cursor:pointer;
+  color:var(--muted,#6d6f73);
+}
+.proof-data{
+  display:grid;
+  grid-template-columns:max-content minmax(0,1fr);
+  gap:4px 10px;
+  margin:8px 0 0;
+}
+.proof-data dt{
+  color:var(--muted,#6d6f73);
+}
+.proof-data dd{
+  margin:0;
+  overflow-wrap:anywhere;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
