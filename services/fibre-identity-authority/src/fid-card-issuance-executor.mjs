@@ -3,6 +3,7 @@ import {
   sealFidMachineCredential,
 } from "./fid-machine-credential.mjs";
 import { credentialAndStoreFidCard, storeFidCardWithoutContentCredentials } from "./fid-card-credentialing.mjs";
+import { protectAndStoreFidCard } from "./fid-card-proof-issuance.mjs";
 import { renderFidCard } from "./fid-card-renderer.mjs";
 import { finalizeFidCardIssuance } from "./fid-card-verification.mjs";
 
@@ -17,7 +18,7 @@ export function createFidCardIssuanceExecutor({
   registry,
   infra,
   contentCredentialSigner = null,
-  contentCredentialMode = "c2pa",
+  contentCredentialMode = "native",
   issuerSigner,
   credentialProtector,
   loadPhoto,
@@ -31,7 +32,7 @@ export function createFidCardIssuanceExecutor({
   if (typeof loadPhoto !== "function") throw new TypeError("FID issuance requires loadPhoto()");
   if (typeof loadTemplate !== "function") throw new TypeError("FID issuance requires loadTemplate()");
   if (typeof now !== "function") throw new TypeError("FID issuance now must be a function");
-  if (!["c2pa", "disabled"].includes(contentCredentialMode)) {
+  if (!["native", "c2pa", "disabled"].includes(contentCredentialMode)) {
     throw new TypeError(`unsupported FID content credential mode ${String(contentCredentialMode)}`);
   }
   let templatePromise = null;
@@ -105,18 +106,26 @@ export function createFidCardIssuanceExecutor({
       issuerSigner,
       credentialProtector,
     });
-    const storedCard = contentCredentialMode === "c2pa"
-      ? await credentialAndStoreFidCard({
+    const storedCard = contentCredentialMode === "native"
+      ? await protectAndStoreFidCard({
           infra,
-          contentCredentialSigner,
           render,
           machineCredential,
+          machineCredentialPayload:payload,
+          issuerSigner,
         })
-      : await storeFidCardWithoutContentCredentials({
-          infra,
-          render,
-          machineCredential,
-        });
+      : contentCredentialMode === "c2pa"
+        ? await credentialAndStoreFidCard({
+            infra,
+            contentCredentialSigner,
+            render,
+            machineCredential,
+          })
+        : await storeFidCardWithoutContentCredentials({
+            infra,
+            render,
+            machineCredential,
+          });
     const finalized = await finalizeFidCardIssuance({
       infra,
       registry,
