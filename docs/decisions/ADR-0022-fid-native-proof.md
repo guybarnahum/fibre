@@ -126,6 +126,18 @@ fiDP
 
 Its PNG property bits intentionally mean ancillary + private + reserved-bit compliant + unsafe-to-copy. The canonical signed envelope JSON is stored as the chunk payload immediately before `IEND`. Embedding is deterministic, changes no image pixels, and extraction removes only that chunk to recover the original deterministic PNG byte-for-byte. The transport rejects malformed CRCs, duplicate Fibre proof chunks and implicit re-embedding.
 
+The strict verifier is the semantic trust boundary. Extraction alone never makes assertion data trusted. A successful verification requires all of:
+
+```text
+valid PNG/proof transport
+AND accepted FIA key identity
+AND valid Ed25519 signature
+AND expected side, when supplied
+AND SHA-256(reconstructed raw PNG) == assertion.rawRenderDigest
+```
+
+Only then may the verifier return the embedded assertion. Every failure returns a bounded reason with no assertion payload. Front/back pair verification first authenticates each side independently, then requires matching credential, revision, identity, registration, issuance, template, photo and issuer facts.
+
 ## Protected machine credential remains separate
 
 The existing protected `fibre.fid-card.v1` machine credential remains FIA authority material.
@@ -192,7 +204,7 @@ Costs:
 A. proof assertion contract — implemented
 B. FIA Ed25519 signature envelope — implemented
 C. deterministic PNG embedding/extraction — implemented
-D. strict verifier
+D. strict verifier — implemented
 E. issuance integration
 F. registry/storage proof evidence
 G. verification API
