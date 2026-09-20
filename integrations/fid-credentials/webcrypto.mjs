@@ -60,6 +60,7 @@ export function createFidCredentialCrypto(env) {
     profile:Object.freeze({
       authorityId:"fibre_identity_authority",
       keyId:env?.FIA_ISSUER_KEY_ID?.trim() || ISSUER_KEY_ID,
+      algorithm:"Ed25519",
       publicKeyRef:env?.FIA_ISSUER_PUBLIC_KEY_REF?.trim() || `urn:fibre:fid-key:${env?.FIA_ISSUER_KEY_ID?.trim() || ISSUER_KEY_ID}`,
       trustPolicy:env?.FIA_ISSUER_TRUST_POLICY?.trim() || ISSUER_TRUST_POLICY,
     }),
