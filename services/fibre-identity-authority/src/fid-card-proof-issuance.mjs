@@ -154,6 +154,7 @@ export async function protectAndStoreFidCard({
     );
     storedResult[side] = Object.freeze({
       objectRef,
+      rawRenderDigest:envelope.routing[`${side}RenderDigest`],
       finalDigest:current.finalDigest,
       proofAssertionDigest:current.assertionDigest,
       stored:true,
