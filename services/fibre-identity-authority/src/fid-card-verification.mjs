@@ -141,6 +141,10 @@ function assertStoredCard(storedCard, machineCredential) {
   }
   for (const side of ["front", "back"]) {
     nonEmpty(`FID ${side} objectRef`, storedCard[side]?.objectRef);
+    const rawRenderDigest = digest(`FID ${side} raw render digest`, storedCard[side]?.rawRenderDigest);
+    if (rawRenderDigest !== machineCredential.routing[`${side}RenderDigest`]) {
+      throw new TypeError(`FID ${side} raw render digest does not match machine credential`);
+    }
     digest(`FID ${side} final digest`, storedCard[side]?.finalDigest);
     digest(`FID ${side} proof assertion digest`, storedCard[side]?.proofAssertionDigest);
   }
@@ -229,11 +233,13 @@ export async function finalizeFidCardIssuance({
     machineCredentialDigest: storedCard.machineCredentialDigest,
     front: Object.freeze({
       objectRef: storedCard.front.objectRef,
+      rawRenderDigest: storedCard.front.rawRenderDigest,
       finalDigest: storedCard.front.finalDigest,
       proofAssertionDigest: storedCard.front.proofAssertionDigest,
     }),
     back: Object.freeze({
       objectRef: storedCard.back.objectRef,
+      rawRenderDigest: storedCard.back.rawRenderDigest,
       finalDigest: storedCard.back.finalDigest,
       proofAssertionDigest: storedCard.back.proofAssertionDigest,
     }),
