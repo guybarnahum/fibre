@@ -13,18 +13,12 @@ import { toAssetGenerationError } from "./asset-generation-error.mjs";
 import { createGenerationAttemptObjectPort } from "./generation-attempt-object-port.mjs";
 import {
   GENERATION_RECORD_VERSION,
-  STORED_ASSET_RECEIPT_VERSION,
   assertWitnessedMediaGenerationProvider,
   generationRecordObjectRefs,
   normalizeGenerationRecord,
-  normalizeStoredAssetReceipt as normalizeCredentialedStoredAssetReceipt,
   normalizeWitnessedMediaGenerationResult,
 } from "./asset-provenance-domain.mjs";
 import { createAssetGenerationReuse } from "./asset-generation-reuse.mjs";
-import {
-  executeCredentialedAssetGenerationJob,
-  verifyCredentialedAssetForPublication,
-} from "./credentialed-asset-generation.mjs";
 import { prepareResumableProviderExecution } from "./resumable-provider-operation.mjs";
 
 export const PROVENANCED_ASSET_RECEIPT_VERSION = "stored-asset-receipt-v0.2";
@@ -135,7 +129,7 @@ export function normalizeProvenancedAssetReceipt(value) {
     "receiptVersion", "jobId", "status", "assetKind", "role", "variant", "objectRef", "sha256",
     "mediaType", "width", "height", "durationMs", "completedAt",
     "generationRecordObjectRef", "generationRecordDigest", "providerOutputDigest",
-    "credential", "inputReferences", "context",
+    "inputReferences", "context",
   ]);
   for (const key of Object.keys(value)) if (!allowed.has(key)) throw new TypeError(`${name}.${key} is not allowed`);
   if (value.receiptVersion !== PROVENANCED_ASSET_RECEIPT_VERSION) throw new TypeError(`${name}.receiptVersion is unsupported`);
@@ -154,7 +148,6 @@ export function normalizeProvenancedAssetReceipt(value) {
   nonEmpty(`${name}.generationRecordObjectRef`, value.generationRecordObjectRef);
   digest(`${name}.generationRecordDigest`, value.generationRecordDigest);
   digest(`${name}.providerOutputDigest`, value.providerOutputDigest);
-  if (value.credential !== null) throw new TypeError(`${name}.credential must be null when content credentials are disabled`);
   stringArray(`${name}.inputReferences`, value.inputReferences, { required: true });
   plain(`${name}.context`, value.context);
   jsonValue(`${name}.context`, value.context);
@@ -162,7 +155,6 @@ export function normalizeProvenancedAssetReceipt(value) {
 }
 
 export function normalizeStoredAssetReceipt(value) {
-  if (value?.receiptVersion === STORED_ASSET_RECEIPT_VERSION) return normalizeCredentialedStoredAssetReceipt(value);
   return normalizeProvenancedAssetReceipt(value);
 }
 
@@ -345,7 +337,7 @@ async function generationRecordFromStaged({ objects, job, staged }) {
   });
 }
 
-function assertUncredentialedFinalAssetMetadata(metadata, {
+function assertFinalAssetMetadata(metadata, {
   job,
   staged,
   generationRecordObjectRef,
@@ -360,23 +352,22 @@ function assertUncredentialedFinalAssetMetadata(metadata, {
     || metadata.providerOutputObjectRef !== staged.attempt.providerOutputObjectRef
     || metadata.providerOutputDigest !== providerOutputDigest
     || metadata.generationRecordObjectRef !== generationRecordObjectRef
-    || metadata.generationRecordDigest !== generationRecordDigest
-    || metadata.contentCredentialMode !== "disabled") {
-    throw new InfraImmutableObjectConflictError("existing uncredentialed final asset metadata does not match the staged generation attempt");
+    || metadata.generationRecordDigest !== generationRecordDigest) {
+    throw new InfraImmutableObjectConflictError("existing final asset metadata does not match the staged generation attempt");
   }
   for (const key of ["mediaType", "provider", "model", "finalizedAt"]) {
     if (typeof metadata[key] !== "string" || metadata[key].length === 0) {
-      throw new InfraImmutableObjectConflictError(`existing uncredentialed final asset metadata is missing ${key}`);
+      throw new InfraImmutableObjectConflictError(`existing final asset metadata is missing ${key}`);
     }
   }
 }
 
-async function finalizeUncredentialedAsset({ objects, job, staged, generation, now }) {
+async function finalizeProvenancedAsset({ objects, job, staged, generation, now }) {
   const generated = staged.witnessed.result;
   const providerOutputDigest = generation.generationRecord.providerOutputDigest;
   const existing = await objects.get(job.outputObjectRef);
   if (existing !== null) {
-    assertUncredentialedFinalAssetMetadata(existing.metadata, {
+    assertFinalAssetMetadata(existing.metadata, {
       job,
       staged,
       generationRecordObjectRef: generation.generationRecordObjectRef,
@@ -385,7 +376,7 @@ async function finalizeUncredentialedAsset({ objects, job, staged, generation, n
     });
     const finalDigest = await sha256(existing.bytes);
     if (existing.digest !== providerOutputDigest || finalDigest !== providerOutputDigest) {
-      throw new InfraImmutableObjectConflictError("existing uncredentialed final asset differs from the durable provider output");
+      throw new InfraImmutableObjectConflictError("existing final asset differs from the durable provider output");
     }
     return Object.freeze({
       finalAssetDigest: providerOutputDigest,
@@ -414,7 +405,6 @@ async function finalizeUncredentialedAsset({ objects, job, staged, generation, n
     generationRecordObjectRef: generation.generationRecordObjectRef,
     generationRecordDigest: generation.generationRecordDigest,
     providerOutputDigest,
-    contentCredentialMode: "disabled",
     finalizedAt,
   });
   return Object.freeze({
@@ -461,16 +451,10 @@ async function loadGenerationProof(objects, receipt) {
 
 export async function verifyProvenancedAssetForPublication({
   infra,
-  credentialSigner = null,
   receipt: rawReceipt,
 } = {}) {
   requireInfraCapabilities(infra, "objects");
   const receipt = normalizeStoredAssetReceipt(rawReceipt);
-  if (receipt.receiptVersion === STORED_ASSET_RECEIPT_VERSION) {
-    if (credentialSigner === null) throw new TypeError("credentialed asset publication requires a content credential signer");
-    const proof = await verifyCredentialedAssetForPublication({ infra, credentialSigner, receipt });
-    return Object.freeze({ ...proof, credentialMode: "content_credential" });
-  }
 
   const objects = createGenerationAttemptObjectPort(infra.objects);
   const provenance = await loadGenerationProof(objects, receipt);
@@ -481,9 +465,9 @@ export async function verifyProvenancedAssetForPublication({
     throw new Error("final asset digest does not match stored asset receipt");
   }
   if (receipt.sha256 !== receipt.providerOutputDigest) {
-    throw new Error("uncredentialed final asset digest must equal the durable provider output digest");
+    throw new Error("final asset digest must equal the durable provider output digest");
   }
-  assertUncredentialedFinalAssetMetadata(assetStored.metadata, {
+  assertFinalAssetMetadata(assetStored.metadata, {
     job: provenance.generationRecord.job,
     staged: {
       attempt: provenance.generationAttempt,
@@ -499,12 +483,10 @@ export async function verifyProvenancedAssetForPublication({
     receipt,
     generationRecord: provenance.generationRecord,
     generationAttempt: provenance.generationAttempt,
-    verification: null,
-    credentialMode: "disabled",
   });
 }
 
-async function completedUncredentialedReuse({ infra, job, jobDigest }) {
+async function completedProvenancedReuse({ infra, job, jobDigest }) {
   const receiptStored = await infra.objects.get(job.receiptObjectRef);
   if (receiptStored === null) return null;
   const receipt = normalizeStoredAssetReceipt(await parseStoredJson(receiptStored, `stored asset receipt ${job.receiptObjectRef}`));
@@ -538,7 +520,7 @@ async function completedUncredentialedReuse({ infra, job, jobDigest }) {
   });
 }
 
-export async function executeUncredentialedAssetGenerationJob({
+export async function executeProvenancedAssetGenerationJob({
   infra,
   provider,
   job: rawJob,
@@ -556,7 +538,7 @@ export async function executeUncredentialedAssetGenerationJob({
     const job = normalizeAssetGenerationJob(rawJob);
     const checkedAttemptNumber = positiveAttemptNumber(attemptNumber);
     const jobDigest = await assetGenerationJobDigest(job);
-    const completed = await completedUncredentialedReuse({ infra, job, jobDigest });
+    const completed = await completedProvenancedReuse({ infra, job, jobDigest });
     if (completed !== null) return completed;
 
     const prepared = await prepareResumableProviderExecution({
@@ -608,7 +590,7 @@ export async function executeUncredentialedAssetGenerationJob({
 
     phase = "storage_finalization";
     const generation = await generationRecordFromStaged({ objects, job, staged });
-    const finalized = await finalizeUncredentialedAsset({ objects, job, staged, generation, now });
+    const finalized = await finalizeProvenancedAsset({ objects, job, staged, generation, now });
     const generated = staged.witnessed.result;
     const receipt = normalizeProvenancedAssetReceipt({
       receiptVersion: PROVENANCED_ASSET_RECEIPT_VERSION,
@@ -627,7 +609,6 @@ export async function executeUncredentialedAssetGenerationJob({
       generationRecordObjectRef: generation.generationRecordObjectRef,
       generationRecordDigest: generation.generationRecordDigest,
       providerOutputDigest: generation.generationRecord.providerOutputDigest,
-      credential: null,
       inputReferences: job.inputReferences,
       context: job.context,
     });
@@ -642,7 +623,6 @@ export async function executeUncredentialedAssetGenerationJob({
       providerOutputObjectRef: staged.attempt.providerOutputObjectRef,
       generationRecordDigest: generation.generationRecordDigest,
       finalAssetDigest: finalized.finalAssetDigest,
-      contentCredentialMode: "disabled",
     });
     const providerOperation = prepared.observation();
     return Object.freeze({
@@ -664,7 +644,6 @@ export async function executeUncredentialedAssetGenerationJob({
       providerOutputResumed: staged.resumed,
       finalAssetDigest: finalized.finalAssetDigest,
       finalAssetReused: finalized.reusedFinalAsset,
-      verification: null,
       reuse: createAssetGenerationReuse({
         mode: staged.resumed ? "staged_provider_output" : "none",
         jobDigest,
@@ -681,8 +660,3 @@ export async function executeUncredentialedAssetGenerationJob({
   }
 }
 
-export function executeProvenancedAssetGenerationJob(options = {}) {
-  return options.credentialSigner === null || options.credentialSigner === undefined
-    ? executeUncredentialedAssetGenerationJob(options)
-    : executeCredentialedAssetGenerationJob(options);
-}
