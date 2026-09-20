@@ -72,7 +72,7 @@ The following can corroborate a score but cannot independently create causal/per
 - deterministic admission constraints that enforce the property later being observed;
 - context availability without a demonstrated consumer effect;
 - distinctive generated prose or visual identity;
-- provider/runtime reliability, C2PA, publication, restart, or replay when used to argue semantic individuality rather than the mechanical property actually tested;
+- provider/runtime reliability, provenance, publication, restart, or replay when used to argue semantic individuality rather than the mechanical property actually tested;
 - prompt/capsule difference without attributable cognition or consequence.
 
 ### Explicitly inadmissible shortcuts
