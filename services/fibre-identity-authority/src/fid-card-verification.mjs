@@ -5,6 +5,12 @@ import { requireInfraCapabilities } from "#infra";
 import { normalizeFidIssuanceWorkflowRecord } from "./fid-card-issuance-domain.mjs";
 import { verifyFidC2paSide } from "./fid-card-credentialing.mjs";
 import {
+  buildFidCardProofAssertion,
+  fidCardProofAssertionDigest,
+  fidCardProofAssertionJson,
+} from "./fid-card-proof.mjs";
+import { verifyFidCardProofPair } from "./fid-card-proof-verifier.mjs";
+import {
   FIBRE_IDENTITY_AUTHORITY_ID,
   openFidMachineCredential,
 } from "./fid-machine-credential.mjs";
@@ -33,8 +39,10 @@ function bytes(name, value) {
   throw new TypeError(`${name} must be bytes`);
 }
 function normalizeContentCredentialMode(value) {
-  const mode = value ?? "c2pa";
-  if (mode !== "c2pa" && mode !== "disabled") throw new TypeError(`unsupported FID content credential mode ${String(mode)}`);
+  const mode = value ?? "native";
+  if (mode !== "native" && mode !== "c2pa" && mode !== "disabled") {
+    throw new TypeError(`unsupported FID content credential mode ${String(mode)}`);
+  }
   return mode;
 }
 
@@ -62,7 +70,7 @@ function assertProtectedLinkage(payload, issuerSigner) {
 
 export async function verifyFidCard({
   contentCredentialSigner = null,
-  contentCredentialMode = "c2pa",
+  contentCredentialMode = "native",
   machineCredential,
   frontBytes,
   backBytes,
@@ -79,7 +87,26 @@ export async function verifyFidCard({
   const backAsset = bytes("FID back.png", backBytes);
   let front;
   let back;
-  if (credentialMode === "c2pa") {
+  let nativeProof = null;
+  if (credentialMode === "native") {
+    if (issuerSigner == null) throw new TypeError("native FIN proof verification requires issuerSigner");
+    nativeProof = await verifyFidCardProofPair({
+      frontPngBytes:frontAsset,
+      backPngBytes:backAsset,
+      issuerSigner,
+    });
+    if (!nativeProof.verified) {
+      throw new Error(`FID native proof verification failed: ${nativeProof.reason}`);
+    }
+    front = {
+      manifestDigest:null,
+      proofAssertionDigest:fidCardProofAssertionDigest(nativeProof.frontAssertion),
+    };
+    back = {
+      manifestDigest:null,
+      proofAssertionDigest:fidCardProofAssertionDigest(nativeProof.backAssertion),
+    };
+  } else if (credentialMode === "c2pa") {
     nonEmpty("FID C2PA trustPolicy", contentCredentialSigner?.trustPolicy);
     front = await verifyFidC2paSide({
       contentCredentialSigner,
@@ -98,8 +125,8 @@ export async function verifyFidCard({
       || sha256(backAsset) !== machineCredential.routing.backRenderDigest) {
       throw new Error("FID unsigned card bytes do not match protected render digests");
     }
-    front = { manifestDigest:null };
-    back = { manifestDigest:null };
+    front = { manifestDigest:null, proofAssertionDigest:null };
+    back = { manifestDigest:null, proofAssertionDigest:null };
   }
 
   if ((issuerSigner == null) !== (credentialProtector == null)) {
@@ -109,6 +136,16 @@ export async function verifyFidCard({
     ? null
     : await openFidMachineCredential(machineCredential, { issuerSigner, credentialProtector });
   if (opened !== null) assertProtectedLinkage(opened.payload, issuerSigner);
+
+  if (credentialMode === "native") {
+    if (opened === null) throw new Error("FID native proof verification requires protected credential verification");
+    const expectedFront = buildFidCardProofAssertion({ payload:opened.payload, side:"front" });
+    const expectedBack = buildFidCardProofAssertion({ payload:opened.payload, side:"back" });
+    if (fidCardProofAssertionJson(nativeProof.frontAssertion) !== fidCardProofAssertionJson(expectedFront)
+      || fidCardProofAssertionJson(nativeProof.backAssertion) !== fidCardProofAssertionJson(expectedBack)) {
+      throw new Error("FID native proof assertions do not match the protected FIA credential");
+    }
+  }
 
   const status = statusReader(statusAuthority)?.getByCredentialId(
     machineCredential.routing.credentialId,
@@ -133,6 +170,8 @@ export async function verifyFidCard({
       revision: machineCredential.routing.revision,
       issuerAuthorityId: machineCredential.routing.issuerAuthorityId,
       issuerKeyId: machineCredential.routing.issuerKeyId,
+      proofFormat: credentialMode === "native" ? "fibre-fin-proof" : (credentialMode === "c2pa" ? "c2pa" : "none"),
+      nativeProofVerified: credentialMode === "native",
       c2paSignerId: credentialMode === "c2pa" ? contentCredentialSigner.signerId : null,
       c2paTrustPolicy: credentialMode === "c2pa" ? contentCredentialSigner.trustPolicy : null,
       protectedCredentialVerified: opened !== null,
@@ -141,6 +180,10 @@ export async function verifyFidCard({
       ? { known: false, status: null, active: null }
       : { known: true, status: status?.status ?? null, active: status?.status === "active" }),
     manifestDigestBySide: Object.freeze({ front: front.manifestDigest, back: back.manifestDigest }),
+    proofAssertionDigestBySide: Object.freeze({
+      front: front.proofAssertionDigest ?? null,
+      back: back.proofAssertionDigest ?? null,
+    }),
     payload: opened?.payload ?? null,
     payloadDigest: opened?.signedCredential?.payloadDigest ?? null,
     photo: opened?.photo ?? null,
@@ -158,8 +201,16 @@ function assertStoredCard(storedCard, machineCredential, contentCredentialMode) 
   for (const side of ["front", "back"]) {
     nonEmpty(`FID ${side} objectRef`, storedCard[side]?.objectRef);
     digest(`FID ${side} final digest`, storedCard[side]?.finalDigest);
-    if (contentCredentialMode === "c2pa") digest(`FID ${side} manifest digest`, storedCard[side]?.manifestDigest);
-    else if (storedCard[side]?.manifestDigest !== null) throw new TypeError(`FID ${side} manifest digest must be null when C2PA is disabled`);
+    if (contentCredentialMode === "c2pa") {
+      digest(`FID ${side} manifest digest`, storedCard[side]?.manifestDigest);
+    } else {
+      if (storedCard[side]?.manifestDigest !== null) {
+        throw new TypeError(`FID ${side} manifest digest must be null without C2PA`);
+      }
+      if (contentCredentialMode === "native") {
+        digest(`FID ${side} proof assertion digest`, storedCard[side]?.proofAssertionDigest);
+      }
+    }
   }
   return storedCard;
 }
@@ -212,6 +263,11 @@ export async function finalizeFidCardIssuance({
     && (verification.manifestDigestBySide.front !== storedCard.front.manifestDigest
       || verification.manifestDigestBySide.back !== storedCard.back.manifestDigest)) {
     throw new Error("FID stored manifest identity changed after credential admission");
+  }
+  if (credentialMode === "native"
+    && (verification.proofAssertionDigestBySide.front !== storedCard.front.proofAssertionDigest
+      || verification.proofAssertionDigestBySide.back !== storedCard.back.proofAssertionDigest)) {
+    throw new Error("FID stored native proof identity changed after proof admission");
   }
 
   const payload = verification.payload;
