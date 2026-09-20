@@ -1,14 +1,20 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, generateKeyPairSync } from "node:crypto";
 import test from "node:test";
 
+import { createFidCredentialCrypto } from "../../../integrations/fid-credentials/webcrypto.mjs";
 import {
+  FID_CARD_PROOF_ENVELOPE_VERSION,
   FID_CARD_PROOF_SCHEMA,
+  FID_CARD_PROOF_SIGNATURE_ALGORITHM,
   FID_MACHINE_CREDENTIAL_SCHEMA,
   buildFidCardProofAssertion,
   fidCardProofAssertionDigest,
   fidCardProofAssertionJson,
   normalizeFidCardProofAssertion,
+  normalizeFidCardProofEnvelope,
+  signFidCardProofAssertion,
+  verifyFidCardProofEnvelope,
 } from "../src/index.mjs";
 
 const FRONT_DIGEST = `sha256:${"a".repeat(64)}`;
@@ -72,6 +78,16 @@ function payload(overrides = {}) {
     backRenderDigest:BACK_DIGEST,
     ...overrides,
   };
+}
+
+function realIssuer({ keyId = "fibre-fia-production-v1" } = {}) {
+  const { privateKey } = generateKeyPairSync("ed25519");
+  const jwk = privateKey.export({ format:"jwk" });
+  return createFidCredentialCrypto({
+    FIA_ISSUER_JWK:JSON.stringify(jwk),
+    FIA_ISSUER_KEY_ID:keyId,
+    FIA_CREDENTIAL_KEY_BASE64:Buffer.alloc(32, 9).toString("base64"),
+  }).issuerSigner;
 }
 
 test("FIN proof exposes only the public FIA facts bound to one rendered side", () => {
@@ -158,3 +174,69 @@ test("FIN proof validation fails closed on malformed or authority-mismatched inp
     /front or back/u,
   );
 });
+
+test("FIN proof envelope signs canonical assertion bytes with the FIA Ed25519 issuer", async () => {
+  const issuerSigner = realIssuer();
+  const assertion = buildFidCardProofAssertion({ payload:payload(), side:"front" });
+  const envelope = await signFidCardProofAssertion({ assertion, issuerSigner });
+
+  assert.equal(envelope.envelopeVersion, FID_CARD_PROOF_ENVELOPE_VERSION);
+  assert.equal(envelope.assertionDigest, fidCardProofAssertionDigest(assertion));
+  assert.equal(envelope.signature.algorithm, FID_CARD_PROOF_SIGNATURE_ALGORITHM);
+  assert.equal(envelope.signature.authorityId, "fibre_identity_authority");
+  assert.equal(envelope.signature.keyId, assertion.issuer.keyId);
+  assert.match(envelope.signature.bytesBase64, /^[A-Za-z0-9+/]+={0,2}$/u);
+  assert.equal(await verifyFidCardProofEnvelope({ envelope, issuerSigner }), true);
+});
+
+test("FIN proof envelope verification fails closed on assertion or signature mutation", async () => {
+  const issuerSigner = realIssuer();
+  const assertion = buildFidCardProofAssertion({ payload:payload(), side:"front" });
+  const envelope = await signFidCardProofAssertion({ assertion, issuerSigner });
+
+  const changedAssertion = structuredClone(envelope);
+  changedAssertion.assertion.identity.displayName = "Mallory";
+  assert.equal(await verifyFidCardProofEnvelope({ envelope:changedAssertion, issuerSigner }), false);
+
+  const changedSignature = structuredClone(envelope);
+  const signatureBytes = Buffer.from(changedSignature.signature.bytesBase64, "base64");
+  signatureBytes[0] ^= 1;
+  changedSignature.signature.bytesBase64 = signatureBytes.toString("base64");
+  assert.equal(await verifyFidCardProofEnvelope({ envelope:changedSignature, issuerSigner }), false);
+
+  const changedKeyId = structuredClone(envelope);
+  changedKeyId.signature.keyId = "fibre-fia-other-key";
+  assert.equal(await verifyFidCardProofEnvelope({ envelope:changedKeyId, issuerSigner }), false);
+});
+
+test("FIN proof envelope cannot be verified by a different FIA key", async () => {
+  const issuerSigner = realIssuer();
+  const wrongSigner = realIssuer();
+  const assertion = buildFidCardProofAssertion({ payload:payload(), side:"back" });
+  const envelope = await signFidCardProofAssertion({ assertion, issuerSigner });
+
+  assert.equal(await verifyFidCardProofEnvelope({ envelope, issuerSigner }), true);
+  assert.equal(await verifyFidCardProofEnvelope({ envelope, issuerSigner:wrongSigner }), false);
+});
+
+test("FIN proof envelope rejects non-Ed25519 or issuer-mismatched envelopes", async () => {
+  const issuerSigner = realIssuer();
+  const assertion = buildFidCardProofAssertion({ payload:payload(), side:"front" });
+  const envelope = await signFidCardProofAssertion({ assertion, issuerSigner });
+
+  assert.throws(
+    () => normalizeFidCardProofEnvelope({
+      ...envelope,
+      signature:{ ...envelope.signature, algorithm:"ES256" },
+    }),
+    /algorithm is unsupported/u,
+  );
+  await assert.rejects(
+    () => signFidCardProofAssertion({
+      assertion,
+      issuerSigner:realIssuer({ keyId:"different-key" }),
+    }),
+    /does not match signer profile/u,
+  );
+});
+
