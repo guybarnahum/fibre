@@ -127,7 +127,6 @@ test("staging wrapper fails fast when active Thread has terminal World reconcili
     runStagingGenesisDevelopmentE2EWithActivity({
       repoRoot: directory,
       environment: {},
-      activityRecorder: null,
       activityReader: {},
       inspect,
       sleep: async () => { underlyingSleeps += 1; },
@@ -156,7 +155,6 @@ test("staging wrapper fails fast on terminal Presentation activity for the activ
     runStagingGenesisDevelopmentE2EWithActivity({
       repoRoot: directory,
       environment: {},
-      activityRecorder: null,
       activityReader: {},
       inspect: async () => ({
         databaseName: "fibre-activity-log-staging",
@@ -220,7 +218,6 @@ test("staging wrapper retains request/genesis/thread Activity references without
     repoRoot: directory,
     environment: {},
     runCore: async () => core,
-    activityRecorder: null,
     activityReader: {},
     inspect,
     emit: () => {},
@@ -251,7 +248,6 @@ test("Activity inspection failure is retained diagnostically and cannot suppress
     repoRoot: directory,
     environment: {},
     runCore: async () => core,
-    activityRecorder: null,
     activityReader: {},
     inspect: async () => { throw new Error("activity database unavailable"); },
     emit: () => {},
@@ -261,41 +257,4 @@ test("Activity inspection failure is retained diagnostically and cannot suppress
   assert.match(result.evidence.activityLog.error.message, /activity database unavailable/);
   assert.equal(result.evidence.closureAssertions.length, 13);
   assert.ok(result.evidence.closureAssertions.every((item) => item.passed === true));
-});
-
-test("Activity recorder exceptions are swallowed before they can affect semantic E2E", async () => {
-  const directory = mkdtempSync(resolve(tmpdir(), "fibre-staging-activity-recorder-fail-open-"));
-  const core = coreResult(directory);
-  const events = [];
-  let semanticRan = false;
-
-  const result = await runStagingGenesisDevelopmentE2EWithActivity({
-    repoRoot: directory,
-    environment: {},
-    activityRecorder: {
-      async record() { throw new Error("recorder implementation bug"); },
-    },
-    runCore: async ({ activityRecorder }) => {
-      const candidate = { stage: "e2e.start", status: "started" };
-      const retained = await activityRecorder.record(candidate);
-      assert.deepEqual(retained, candidate);
-      semanticRan = true;
-      return core;
-    },
-    activityReader: {},
-    inspect: async ({ selector }) => ({
-      databaseName: "fibre-activity-log-staging",
-      records: [],
-      summary: `no activity for ${selector.kind}`,
-    }),
-    emit: (event) => events.push(event),
-  });
-
-  assert.equal(semanticRan, true);
-  assert.equal(result.evidence.closureAssertions.length, 13);
-  assert.ok(events.some((event) => (
-    event.event === "genesis-development-staging-activity-write-failed"
-    && event.stage === "e2e.start"
-    && event.status === "started"
-  )));
 });

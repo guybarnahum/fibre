@@ -4,7 +4,6 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { runGenesisDevelopmentE2E } from "./genesis-development-e2e.mjs";
-import { createWranglerGenesisE2EActivityRecorder } from "./genesis-development-e2e-activity.mjs";
 import {
   createWranglerActivityReader,
   inspectRuntimeActivity,
@@ -79,32 +78,6 @@ export function terminalWorldFailure(records) {
   if (failure === null) return null;
   const { service: _service, ...worldFailure } = failure;
   return Object.freeze(worldFailure);
-}
-
-function failOpenActivityRecorder(recorder, emit) {
-  if (recorder === null || recorder === undefined) return null;
-  if (typeof recorder.record !== "function") {
-    emit({
-      event: "genesis-development-staging-activity-recorder-invalid",
-      errorName: "TypeError",
-    });
-    return null;
-  }
-  return Object.freeze({
-    async record(candidate) {
-      try {
-        return await recorder.record(candidate);
-      } catch (error) {
-        emit({
-          event: "genesis-development-staging-activity-write-failed",
-          stage: candidate?.stage ?? null,
-          status: candidate?.status ?? null,
-          errorName: error?.constructor?.name ?? "Error",
-        });
-        return candidate;
-      }
-    },
-  });
 }
 
 function failFastSleep({
@@ -235,44 +208,9 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
   sourceResolver,
   repoRoot = REPO_ROOT,
   runCore = runGenesisDevelopmentE2E,
-  activityRecorder = undefined,
-  activityRecorderFactory = createWranglerGenesisE2EActivityRecorder,
   activityReader = null,
   inspect = inspectRuntimeActivity,
 } = {}) {
-  let recorder = activityRecorder;
-  if (recorder === undefined) {
-    try {
-      recorder = await activityRecorderFactory({
-        repoRoot,
-        environment: "staging",
-        onTelemetryError(error, activity) {
-          emit({
-            event: "genesis-development-staging-activity-write-failed",
-            stage: activity.stage,
-            status: activity.status,
-            errorName: error?.constructor?.name ?? "Error",
-          });
-        },
-      });
-      if (!recorder || typeof recorder.record !== "function") {
-        throw new TypeError("staging Activity recorder factory must return record()");
-      }
-      emit({
-        event: "genesis-development-staging-activity-writer-ready",
-        databaseName: recorder.databaseName,
-      });
-    } catch (error) {
-      recorder = null;
-      const diagnostic = safeError(error);
-      emit({
-        event: "genesis-development-staging-activity-writer-unavailable",
-        errorName: diagnostic.name,
-        message: diagnostic.message,
-      });
-    }
-  }
-
   const reader = activityReader ?? createWranglerActivityReader({ cwd: repoRoot });
   const activeIdentity = { requestId: null, genesisId: null, threadId: null };
   const emitWithIdentity = (event) => {
@@ -298,7 +236,6 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
     emit: emitWithIdentity,
     ...(sourceResolver ? { sourceResolver } : {}),
     repoRoot,
-    activityRecorder: failOpenActivityRecorder(recorder, emitWithIdentity),
   });
   const attached = await attachActivityLogEvidence({
     e2eResult: core,

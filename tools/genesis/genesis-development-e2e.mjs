@@ -10,23 +10,6 @@ import {
 } from "#services/birth-center/src/genesis-development-plan.mjs";
 
 export const GENESIS_STAGING_EVIDENCE_VERSION = "fibre-slice-g-cloud-e2e-evidence-v1";
-export const GENESIS_STAGING_ACTIVITY_STAGES = Object.freeze([
-  "e2e.start",
-  "e2e.preflight.git",
-  "e2e.preflight.deployment_evidence",
-  "e2e.preflight.endpoints",
-  "e2e.prebirth.birth_absence",
-  "e2e.prebirth.world_absence",
-  "e2e.prebirth.presentation_absence",
-  "e2e.birth_submit",
-  "e2e.birth_publish_wait",
-  "e2e.birth_replay",
-  "e2e.world_convergence_wait",
-  "e2e.presentation_convergence_wait",
-  "e2e.viewer_visibility",
-  "e2e.evidence_write",
-  "e2e.complete",
-]);
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const GIT_SHA_PATTERN = /^[0-9a-f]{40}$/u;
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
@@ -108,42 +91,6 @@ export function loadStagingDeploymentEvidence({ repoRoot = REPO_ROOT, path = nul
     throw new Error("Cloudflare deployment evidence lacks an exact clean source SHA");
   }
   return Object.freeze({ path: evidencePath, record });
-}
-
-function activityMetadata({ requestId, plan = null, stage, evidence = null }) {
-  const metadata = {
-    requestId,
-    genesisId: plan?.genesisId ?? null,
-    threadId: plan?.threadId ?? null,
-    correlationId: requestId,
-    stage,
-    attempt: 1,
-  };
-  if (evidence !== null) metadata.evidence = evidence;
-  return Object.freeze(metadata);
-}
-
-async function recordActivity(activityRecorder, candidate) {
-  if (activityRecorder === null || activityRecorder === undefined) return null;
-  return activityRecorder.record(candidate);
-}
-
-async function runActivityStage(activityRecorder, metadata, operation) {
-  if (typeof operation !== "function") throw new TypeError("E2E Activity stage operation must be a function");
-  if (activityRecorder === null || activityRecorder === undefined) return operation();
-  await recordActivity(activityRecorder, { ...metadata, status: "started", error: null });
-  try {
-    const result = await operation();
-    await recordActivity(activityRecorder, { ...metadata, status: "succeeded", error: null });
-    return result;
-  } catch (error) {
-    await recordActivity(activityRecorder, {
-      ...metadata,
-      status: "failed",
-      error: Object.freeze({ category: "workflow", code: "E2E_STAGE_FAILED", retryable: false }),
-    });
-    throw error;
-  }
 }
 
 async function responseJson(response, label) {
@@ -524,63 +471,42 @@ async function runDevelopmentLifecycle({
   pollMs,
   sleep,
   emit,
-  activityRecorder = null,
-  activityContext = null,
   afterReplay = null,
 }) {
   const url = endpoint(baseUrl, "/internal/births/develop");
-  const runStage = (stage, operation) => runActivityStage(
-    activityRecorder,
-    activityContext === null ? null : Object.freeze({ ...activityContext, stage }),
-    operation,
-  );
-  emit({ event: "genesis-development-e2e-start", endpoint: url.toString(), requestId: body.requestId });
-  const first = await runStage("e2e.birth_submit", () => submit({
-    fetchImpl,
-    url,
-    privateToken,
-    body,
-    requestTimeoutMs,
-  }));
+  emit({ event:"genesis-development-e2e-start", endpoint:url.toString(), requestId:body.requestId });
+
+  const first = await submit({ fetchImpl, url, privateToken, body, requestTimeoutMs });
   emit({
-    event: "genesis-development-e2e-submitted",
-    requestId: body.requestId,
-    genesisId: first.genesisId,
-    threadId: first.threadId,
-    fibreIdentityNumber: first.fibreIdentityNumber,
-    status: first.status,
-    generated: first.generated,
-    idempotent: first.idempotent,
+    event:"genesis-development-e2e-submitted",
+    requestId:body.requestId,
+    genesisId:first.genesisId,
+    threadId:first.threadId,
+    fibreIdentityNumber:first.fibreIdentityNumber,
+    status:first.status,
+    generated:first.generated,
+    idempotent:first.idempotent,
   });
 
-  await runStage("e2e.birth_publish_wait", async () => {
-    let current = first;
-    const deadline = Date.now() + publishWaitMs;
-    while (current.status !== "published" && Date.now() < deadline) {
-      await sleep(pollMs);
-      const next = await submit({ fetchImpl, url, privateToken, body, requestTimeoutMs });
-      assertSameIdentity(first, next);
-      current = next;
-    }
-    if (current.status !== "published") {
-      throw new Error(`Genesis development ${first.genesisId} remained ${current.status} after ${publishWaitMs}ms`);
-    }
-  });
+  let current = first;
+  const deadline = Date.now() + publishWaitMs;
+  while (current.status !== "published" && Date.now() < deadline) {
+    await sleep(pollMs);
+    const next = await submit({ fetchImpl, url, privateToken, body, requestTimeoutMs });
+    assertSameIdentity(first, next);
+    current = next;
+  }
+  if (current.status !== "published") {
+    throw new Error(`Genesis development ${first.genesisId} remained ${current.status} after ${publishWaitMs}ms`);
+  }
 
-  const replayResult = await runStage("e2e.birth_replay", async () => {
-    const replay = await submit({ fetchImpl, url, privateToken, body, requestTimeoutMs });
-    assertSameIdentity(first, replay);
-    if (replay.status !== "published" || replay.idempotent !== true || replay.generated !== false) {
-      throw new Error("published Genesis development did not replay idempotently without regeneration");
-    }
-    const replayWitness = typeof afterReplay === "function" ? await afterReplay(replay) : null;
-    return Object.freeze({ replay, replayWitness });
-  });
-  return Object.freeze({
-    first,
-    replay: replayResult.replay,
-    replayWitness: replayResult.replayWitness,
-  });
+  const replay = await submit({ fetchImpl, url, privateToken, body, requestTimeoutMs });
+  assertSameIdentity(first, replay);
+  if (replay.status !== "published" || replay.idempotent !== true || replay.generated !== false) {
+    throw new Error("published Genesis development did not replay idempotently without regeneration");
+  }
+  const replayWitness = typeof afterReplay === "function" ? await afterReplay(replay) : null;
+  return Object.freeze({ first, replay, replayWitness });
 }
 
 async function runLocal({ environment, fetchImpl, sleep, emit }) {
@@ -615,7 +541,7 @@ async function runLocal({ environment, fetchImpl, sleep, emit }) {
   return lifecycle;
 }
 
-async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver, repoRoot, activityRecorder }) {
+async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver, repoRoot }) {
   const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", environment.FIBRE_PRIVATE_TOKEN);
   const slotOrdinal = positiveInteger("FIBRE_GENESIS_E2E_SLOT", environment.FIBRE_GENESIS_E2E_SLOT, 1);
   const requestTimeoutMs = positiveInteger("FIBRE_GENESIS_E2E_REQUEST_TIMEOUT_MS", environment.FIBRE_GENESIS_E2E_REQUEST_TIMEOUT_MS, 900_000);
@@ -625,121 +551,59 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
   const requestId = environment.FIBRE_GENESIS_REQUEST_ID?.trim() || `genesis-staging-${Date.now().toString(36)}`;
   const requestedAt = environment.FIBRE_GENESIS_REQUESTED_AT?.trim() || new Date().toISOString();
 
-  const start = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, stage: "e2e.start" }),
-    async () => {
-      const body = requestFromFixture({ requestId, requestedAt, slotOrdinal });
-      return Object.freeze({ body, plan: buildGenesisDevelopmentPlan(body) });
-    },
-  );
-  const body = start.body;
-  const plan = start.plan;
+  const body = requestFromFixture({ requestId, requestedAt, slotOrdinal });
+  const plan = buildGenesisDevelopmentPlan(body);
 
-  const currentSource = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.preflight.git" }),
-    async () => sourceResolver(repoRoot),
-  );
+  const currentSource = await sourceResolver(repoRoot);
 
-  const deploymentEvidence = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.preflight.deployment_evidence" }),
-    async () => {
-      const loaded = loadStagingDeploymentEvidence({
-        repoRoot,
-        path: environment.FIBRE_CLOUDFLARE_DEPLOYMENT_RECORD?.trim() || null,
-      });
-      if (loaded.record.sourceGitSha !== currentSource.gitSha) {
-        throw new Error(`staging deployment SHA ${loaded.record.sourceGitSha} does not match current checkout ${currentSource.gitSha}`);
-      }
-      return loaded;
-    },
-  );
+  const deploymentEvidence = loadStagingDeploymentEvidence({
+    repoRoot,
+    path: environment.FIBRE_CLOUDFLARE_DEPLOYMENT_RECORD?.trim() || null,
+  });
+  if (deploymentEvidence.record.sourceGitSha !== currentSource.gitSha) {
+    throw new Error(`staging deployment SHA ${deploymentEvidence.record.sourceGitSha} does not match current checkout ${currentSource.gitSha}`);
+  }
   const deployment = deploymentEvidence.record;
 
-  const preflight = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.preflight.endpoints" }),
-    async () => {
-      const endpoints = Object.freeze({
-        birthCenter: assertRemoteHttps("staging Birth Center URL", deploymentByService(deployment, "birth-center").baseUrl),
-        worldKernel: assertRemoteHttps("staging World URL", deploymentByService(deployment, "world-kernel").baseUrl),
-        threadPresentation: assertRemoteHttps("staging Thread Presentation URL", deploymentByService(deployment, "thread-presentation").baseUrl),
-        viewer: assertRemoteHttps("staging Viewer origin", deployment.externalViewerOrigin),
-      });
-      const birthService = await birthHealth({
-        fetchImpl,
-        baseUrl: endpoints.birthCenter,
-        requestTimeoutMs,
-      });
-      return Object.freeze({
-        endpoints,
-        birthService,
-        configuredProfiles: configuredReasoningProfiles(birthService),
-      });
-    },
-  );
-  const { endpoints, birthService, configuredProfiles } = preflight;
+  const endpoints = Object.freeze({
+    birthCenter:assertRemoteHttps("staging Birth Center URL", deploymentByService(deployment, "birth-center").baseUrl),
+    worldKernel:assertRemoteHttps("staging World URL", deploymentByService(deployment, "world-kernel").baseUrl),
+    threadPresentation:assertRemoteHttps("staging Thread Presentation URL", deploymentByService(deployment, "thread-presentation").baseUrl),
+    viewer:assertRemoteHttps("staging Viewer origin", deployment.externalViewerOrigin),
+  });
+  const birthService = await birthHealth({ fetchImpl, baseUrl:endpoints.birthCenter, requestTimeoutMs });
+  const configuredProfiles = configuredReasoningProfiles(birthService);
 
-  const beforeBirth = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.prebirth.birth_absence" }),
-    async () => {
-      const inspection = await birthInspection({
-        fetchImpl,
-        baseUrl: endpoints.birthCenter,
-        privateToken,
-        requestId,
-        requestTimeoutMs,
-        allowMissing: true,
-      });
-      if (inspection !== null) throw new Error("staging E2E request identity already exists in Birth Center");
-      return inspection;
-    },
-  );
-  const beforeWorld = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.prebirth.world_absence" }),
-    async () => {
-      const inspection = await worldInspection({
-        fetchImpl,
-        baseUrl: endpoints.worldKernel,
-        privateToken,
-        genesisId: plan.genesisId,
-        threadId: plan.threadId,
-        requestTimeoutMs,
-      });
-      if (!beforeWorldIsEmpty(inspection)) throw new Error("staging E2E request identity already exists in authoritative World state");
-      return inspection;
-    },
-  );
-  const beforePresentation = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.prebirth.presentation_absence" }),
-    async () => {
-      const snapshot = await presentationSnapshot({
-        fetchImpl,
-        baseUrl: endpoints.threadPresentation,
-        viewerOrigin: endpoints.viewer,
-        threadId: plan.threadId,
-        requestTimeoutMs,
-        allowMissing: true,
-      });
-      if (snapshot !== null) throw new Error("staging E2E request identity already exists in Thread Presentation");
-      return snapshot;
-    },
-  );
+  const beforeBirth = await birthInspection({
+    fetchImpl,
+    baseUrl:endpoints.birthCenter,
+    privateToken,
+    requestId,
+    requestTimeoutMs,
+    allowMissing:true,
+  });
+  if (beforeBirth !== null) throw new Error("staging E2E request identity already exists in Birth Center");
+  const beforeWorld = await worldInspection({
+    fetchImpl,
+    baseUrl:endpoints.worldKernel,
+    privateToken,
+    genesisId:plan.genesisId,
+    threadId:plan.threadId,
+    requestTimeoutMs,
+  });
+  if (!beforeWorldIsEmpty(beforeWorld)) throw new Error("staging E2E request identity already exists in authoritative World state");
+  const beforePresentation = await presentationSnapshot({
+    fetchImpl,
+    baseUrl:endpoints.threadPresentation,
+    viewerOrigin:endpoints.viewer,
+    threadId:plan.threadId,
+    requestTimeoutMs,
+    allowMissing:true,
+  });
+  if (beforePresentation !== null) throw new Error("staging E2E request identity already exists in Thread Presentation");
   const before = Object.freeze({ birth: beforeBirth, world: beforeWorld, presentation: beforePresentation });
   if (!beforeIsEmpty(before)) throw new Error("staging E2E request identity is not absent before birth; choose a fresh request ID");
 
-  const activityContext = Object.freeze({
-    requestId,
-    genesisId: plan.genesisId,
-    threadId: plan.threadId,
-    correlationId: requestId,
-    attempt: 1,
-  });
   const lifecycle = await runDevelopmentLifecycle({
     fetchImpl,
     baseUrl: endpoints.birthCenter,
@@ -750,8 +614,6 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
     pollMs,
     sleep,
     emit,
-    activityRecorder,
-    activityContext,
     afterReplay: async () => {
       const birth = await birthInspection({
         fetchImpl,
@@ -776,62 +638,43 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
   const providerCalls = lifecycle.replayWitness.providerCalls;
 
   const convergenceDeadline = Date.now() + convergenceWaitMs;
-  const world = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.world_convergence_wait" }),
-    () => pollWorldConvergence({
-      fetchImpl,
-      worldBaseUrl: endpoints.worldKernel,
-      privateToken,
-      plan,
-      fibreIdentityNumber: lifecycle.replay.fibreIdentityNumber,
-      requestTimeoutMs,
-      convergenceWaitMs,
-      deadline: convergenceDeadline,
-      pollMs,
-      sleep,
-    }),
-  );
-  const presentation = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.presentation_convergence_wait" }),
-    () => pollPresentationConvergence({
-      fetchImpl,
-      presentationBaseUrl: endpoints.threadPresentation,
-      viewerOrigin: endpoints.viewer,
-      plan,
-      world,
-      fibreIdentityNumber: lifecycle.replay.fibreIdentityNumber,
-      requestTimeoutMs,
-      convergenceWaitMs,
-      deadline: convergenceDeadline,
-      pollMs,
-      sleep,
-    }),
-  );
+  const world = await pollWorldConvergence({
+    fetchImpl,
+    worldBaseUrl:endpoints.worldKernel,
+    privateToken,
+    plan,
+    fibreIdentityNumber:lifecycle.replay.fibreIdentityNumber,
+    requestTimeoutMs,
+    convergenceWaitMs,
+    deadline:convergenceDeadline,
+    pollMs,
+    sleep,
+  });
+  const presentation = await pollPresentationConvergence({
+    fetchImpl,
+    presentationBaseUrl:endpoints.threadPresentation,
+    viewerOrigin:endpoints.viewer,
+    plan,
+    world,
+    fibreIdentityNumber:lifecycle.replay.fibreIdentityNumber,
+    requestTimeoutMs,
+    convergenceWaitMs,
+    deadline:convergenceDeadline,
+    pollMs,
+    sleep,
+  });
 
-  const visibility = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.viewer_visibility" }),
-    async () => {
-      const discovery = await discoverThread({
-        fetchImpl,
-        baseUrl: endpoints.threadPresentation,
-        viewerOrigin: endpoints.viewer,
-        threadId: plan.threadId,
-        requestTimeoutMs,
-      });
-      if (discovery === null) throw new Error("staging Viewer-facing discovery does not expose the born Thread");
-      const viewer = await viewerWitness({ fetchImpl, origin: endpoints.viewer, requestTimeoutMs });
-      return Object.freeze({ discovery, viewer });
-    },
-  );
-  const { discovery, viewer } = visibility;
+  const discovery = await discoverThread({
+    fetchImpl,
+    baseUrl:endpoints.threadPresentation,
+    viewerOrigin:endpoints.viewer,
+    threadId:plan.threadId,
+    requestTimeoutMs,
+  });
+  if (discovery === null) throw new Error("staging Viewer-facing discovery does not expose the born Thread");
+  const viewer = await viewerWitness({ fetchImpl, origin:endpoints.viewer, requestTimeoutMs });
 
-  const written = await runActivityStage(
-    activityRecorder,
-    activityMetadata({ requestId, plan, stage: "e2e.evidence_write" }),
-    async () => {
+  const written = await (async () => {
       const assertions = closureAssertions({
         before,
         first: lifecycle.first,
@@ -921,18 +764,11 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
         || resolve(repoRoot, ".fibre", "e2e", "staging");
       const evidencePath = writeEvidence({ root: evidenceRoot, requestId, evidence });
       return Object.freeze({ evidence, evidencePath });
-    },
-  );
+  })();
 
-  await runActivityStage(
-    activityRecorder,
-    activityMetadata({
-      requestId,
-      plan,
-      stage: "e2e.complete",
-      evidence: Object.freeze({ fibreIdentityNumber: lifecycle.replay.fibreIdentityNumber }),
-    }),
-    async () => {
+
+
+  {
       emit({
         event: "genesis-development-staging-e2e-complete",
         requestId,
@@ -942,8 +778,8 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
         sourceGitSha: currentSource.gitSha,
         evidencePath: written.evidencePath,
       });
-    },
-  );
+  }
+
   return written;
 }
 
@@ -955,16 +791,12 @@ export async function runGenesisDevelopmentE2E({
   emit = (event) => process.stdout.write(`${JSON.stringify(event)}\n`),
   sourceResolver = gitSource,
   repoRoot = REPO_ROOT,
-  activityRecorder = null,
 } = {}) {
   if (typeof fetchImpl !== "function") throw new TypeError("Genesis E2E fetchImpl must be a function");
   if (typeof sleep !== "function") throw new TypeError("Genesis E2E sleep must be a function");
   if (typeof emit !== "function") throw new TypeError("Genesis E2E emit must be a function");
-  if (activityRecorder !== null && activityRecorder !== undefined && typeof activityRecorder.record !== "function") {
-    throw new TypeError("Genesis E2E activityRecorder must provide record()");
-  }
   if (mode === "local") return runLocal({ environment, fetchImpl, sleep, emit });
-  if (mode === "staging") return runStaging({ environment, fetchImpl, sleep, emit, sourceResolver, repoRoot, activityRecorder });
+  if (mode === "staging") return runStaging({ environment, fetchImpl, sleep, emit, sourceResolver, repoRoot });
   throw new TypeError(`unsupported Genesis E2E mode ${String(mode)}`);
 }
 
