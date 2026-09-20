@@ -207,7 +207,7 @@ function normalizeCurrentFibreIdentityCard(value) {
   assertExactKeys(name, value, [
     "credentialVersion", "credentialId", "revision", "supersedesCredentialId", "registrationId",
     "issuedAt", "expiresAt", "status", "visibility", "frontMediaRef", "backMediaRef",
-    "issuerAuthorityId", "sourceReferences", "provenanceRef",
+    "issuerAuthorityId", "proofStatus", "sourceReferences", "provenanceRef",
   ]);
   assertId(`${name}.credentialId`, value.credentialId);
   assertFiniteNumber(`${name}.revision`, value.revision, { integer: true, minimum: 1 });
@@ -226,6 +226,7 @@ function normalizeCurrentFibreIdentityCard(value) {
   assertId(`${name}.backMediaRef`, value.backMediaRef);
   if (value.frontMediaRef === value.backMediaRef) throw new TypeError(`${name} front and back media refs must be distinct`);
   assertNonEmpty(`${name}.issuerAuthorityId`, value.issuerAuthorityId);
+  if (value.proofStatus !== "verified") throw new TypeError(`${name}.proofStatus must be verified`);
   assertId(`${name}.provenanceRef`, value.provenanceRef);
   return {
     credentialVersion: FIBRE_IDENTITY_CARD_CURRENT_VERSION,
@@ -240,6 +241,7 @@ function normalizeCurrentFibreIdentityCard(value) {
     frontMediaRef: value.frontMediaRef,
     backMediaRef: value.backMediaRef,
     issuerAuthorityId: value.issuerAuthorityId,
+    proofStatus:"verified",
     sourceReferences: stringRefs(`${name}.sourceReferences`, value.sourceReferences, { required: true }),
     provenanceRef: value.provenanceRef,
   };
@@ -278,6 +280,7 @@ export function fibreIdentityCardDisplayData(presentation) {
       status: identityCard.status,
       visibility: identityCard.visibility,
       issuerAuthorityId: identityCard.issuerAuthorityId,
+      proofStatus:identityCard.proofStatus,
       frontMediaRef: identityCard.frontMediaRef,
       backMediaRef: identityCard.backMediaRef,
     });
