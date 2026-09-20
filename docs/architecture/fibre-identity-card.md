@@ -578,7 +578,7 @@ No FID requirement may block Genesis publication or FIN assignment.
 
 The original FID authority/photo/render lifecycle slices are complete. The remaining card-protection work is now tracked as the Fibre-native FIN Proof sequence:
 
-### FIN-PROOF-A — public proof contract
+### FIN-PROOF-A — public proof contract — implemented
 
 - define `fibre.fin-card-proof.v1`;
 - derive it only from FIA machine-credential/render facts;
@@ -586,12 +586,13 @@ The original FID authority/photo/render lifecycle slices are complete. The remai
 - canonicalize and validate it deterministically;
 - prove front/back side binding and disclosure boundaries.
 
-### FIN-PROOF-B — FIA Ed25519 proof signature
+### FIN-PROOF-B — FIA Ed25519 proof signature — implemented
 
 - sign canonical proof JSON with the existing FIA issuer key;
-- define a compact signature envelope with algorithm, key ID, assertion and signature;
+- define `fibre.fin-card-proof-envelope.v1` with assertion digest plus an explicit Ed25519 signature identity;
+- require assertion issuer, signature identity and FIA signer profile to name the same FIA key;
 - verify with the corresponding FIA public key;
-- fail on assertion/signature/key mutation.
+- fail on assertion/signature/key mutation or non-Ed25519 signer profiles.
 
 ### FIN-PROOF-C — PNG embedding
 
