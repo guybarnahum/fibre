@@ -95,7 +95,6 @@ services:
   thread-presentation:
     runtime: cloudflare-local
     infra: cloudflare-local
-    integrations:
   asset-generator:
     runtime: cloudflare-local
     infra: cloudflare-local
