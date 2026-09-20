@@ -1,4 +1,5 @@
 import { decorateActionButton } from "./fa-icons.js";
+import { createFibreFinCard } from "./fibre-fin-card.js";
 import { openThreadActionDialog } from "./thread-action-dialog.js";
 
 function el(tag, className = null, text = null) {
@@ -519,17 +520,22 @@ export function renderFidSection(identity, threadId) {
   if (card === null) {
     cardPane.append(el("p", "thread-empty-note", "No active Fibre Identity Card is projected for this Thread."));
   } else {
-    const refs = [card.frontMediaRef, card.backMediaRef].filter((value) => typeof value === "string");
-    const cardAssets = refs.map((mediaId) => assets.find((asset) => asset.mediaId === mediaId && asset.url)).filter(Boolean);
-    if (cardAssets.length) {
-      const grid = el("div", "thread-fid-grid");
-      for (const asset of cardAssets) {
-        const side = asset.role === "fibre_identity_card_back" ? "Back" : "Front";
-        const pane = el("article", "thread-fid-card");
-        pane.append(imageButton(asset, `Fibre Identity Card ${side.toLowerCase()}`, "thread-fid-preview"), el("strong", null, side));
-        grid.append(pane);
-      }
-      cardPane.append(grid);
+    const front = typeof card.frontMediaRef === "string"
+      ? assets.find((asset) => asset.mediaId === card.frontMediaRef && asset.url) ?? null
+      : null;
+    const back = typeof card.backMediaRef === "string"
+      ? assets.find((asset) => asset.mediaId === card.backMediaRef && asset.url) ?? null
+      : null;
+    const descriptor = assets.find((asset) => asset.role === "fibre_identity_card"
+      && asset.kind === "document" && asset.url) ?? null;
+
+    if (front && back) {
+      cardPane.append(createFibreFinCard({
+        front,
+        back,
+        descriptor,
+        label:`Fibre Identity Card revision ${card.revision ?? ""}`.trim(),
+      }));
     } else {
       cardPane.append(el("p", "thread-empty-note", card.credentialVersion === "fibre-identity-card-credential-v0.1"
         ? "Legacy identity credential metadata exists; rendered front/back card media has not been issued."
