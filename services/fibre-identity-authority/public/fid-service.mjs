@@ -68,8 +68,8 @@ export function createFidService({ authority, registry, issuanceStore, photoAdmi
     const inspected = inspectThread(threadId);
     const active = inspected.credentials.find((entry) => entry.status === "active") ?? null;
     if (active === null) return null;
-    const contentCredentialStatus = active.issuance?.c2pa?.validationStatus ?? null;
-    if (active.issuance === null || !["verified", "disabled"].includes(contentCredentialStatus)) {
+    const proofStatus = active.issuance?.proof?.validationStatus ?? null;
+    if (active.issuance === null || proofStatus !== "verified") {
       throw new Error(`active FID ${active.credential.credentialId} has no accepted issuance evidence`);
     }
     const { credential, issuance, issuanceRecordDigest } = active;
@@ -86,7 +86,7 @@ export function createFidService({ authority, registry, issuanceStore, photoAdmi
       issuanceRecordDigest,
       photoAdmissionId: issuance.photoAdmissionId,
       photoDigest: issuance.photoDigest,
-      contentCredentialStatus,
+      proofStatus,
       front: Object.freeze({
         objectRef: issuance.front.objectRef,
         digest: issuance.front.finalDigest,
