@@ -107,7 +107,6 @@ async function projectMediaReadySnapshot(presentationServer, current, event, pro
 
 export function createThreadPresentationAssetPublisher({
   infra,
-  credentialSigner = null,
   presentationServer,
 }) {
   requireInfraCapabilities(infra, "catalog");
@@ -123,7 +122,6 @@ export function createThreadPresentationAssetPublisher({
       assertId("channelId", channelId);
       const proof = await verifyProvenancedAssetForPublication({
         infra,
-        credentialSigner,
         receipt,
       });
       const stored = proof.receipt;
@@ -143,7 +141,6 @@ export function createThreadPresentationAssetPublisher({
       }
 
       const currentSnapshot = await presentationServer.getSnapshot(channelId);
-      let identityCredentialMedia = false;
       let publiclyVisible = true;
       if (stored.role === "official_id_photo") {
         const current = currentSnapshot;
@@ -158,7 +155,6 @@ export function createThreadPresentationAssetPublisher({
         if (card === null || card.officialPhotoMediaRef !== context.mediaId) {
           throw new TypeError("official ID photo receipt is not referenced by the current identity card");
         }
-        identityCredentialMedia = stored.credential !== null;
         publiclyVisible = card.visibility === "public";
       }
 
@@ -198,7 +194,7 @@ export function createThreadPresentationAssetPublisher({
       const catalogEntry = {
         kind: "public_presentation_media",
         publiclyVisible,
-        identityCredentialMedia,
+        identityCredentialMedia: false,
         threadId: context.threadId,
         mediaId: context.mediaId,
         role: stored.role,
@@ -209,9 +205,6 @@ export function createThreadPresentationAssetPublisher({
         eventId,
         eventSequence: accepted.event.sequence,
       };
-      if (proof.credentialMode !== "content_credential") {
-        catalogEntry.contentCredentialMode = proof.credentialMode;
-      }
       await infra.catalog.upsert(`media:${stored.objectRef}`, catalogEntry);
 
       return { ...accepted, proof, snapshotProjection };
