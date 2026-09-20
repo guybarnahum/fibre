@@ -80,7 +80,6 @@ test("Slice E resource plan derives isolated staging names while deploy-managed 
     "fibre-asset-completions-staging",
     "fibre-asset-completions-dlq-staging",
   ]);
-  assert.equal(plan.deployManaged.workers["content-credential-signer"], "fibre-content-credential-signer-staging");
   assert.equal(plan.deployManaged.workers["world-kernel"], "fibre-world-kernel-staging");
   assert.equal(plan.deployManaged.workflows[0].name, "fibre-asset-generation-staging");
   assert.deepEqual(plan.deployManaged.customDomains, ["api.staging.insidefibre.com"]);
@@ -187,9 +186,6 @@ test("Slice E secret configuration uploads only each service subset and persists
     "OPENAI_API_KEY=secret-openai",
     "BFL_API_KEY=secret-bfl",
     "FIBRE_PRIVATE_TOKEN=secret-private",
-    "C2PA_SIGNER_TOKEN=test-signer-token",
-    "C2PA_SIGNER_CERT_BASE64=test-cert-b64",
-    "C2PA_SIGNER_KEY_BASE64=test-key-b64",
     "FIA_ISSUER_JWK=secret-fia-jwk",
     "FIA_CREDENTIAL_KEY_BASE64=secret-fid-key",
   ].join("\n"));
@@ -202,11 +198,7 @@ test("Slice E secret configuration uploads only each service subset and persists
     putSecrets: async ({ serviceId, workerName, values }) => uploads.push({ serviceId, workerName, values }),
   });
 
-  assert.equal(uploads.length, 6, "exactly the six deployed services should receive secrets");
-  assert.deepEqual(
-    uploadedSecretKeys(uploads, "content-credential-signer"),
-    ["C2PA_SIGNER_TOKEN", "C2PA_SIGNER_CERT_BASE64", "C2PA_SIGNER_KEY_BASE64"],
-  );
+  assert.equal(uploads.length, 5, "exactly the five deployed services should receive secrets");
   assert.deepEqual(
     uploadedSecretKeys(uploads, "asset-generator"),
     ["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"],
@@ -227,7 +219,6 @@ test("Slice E secret configuration uploads only each service subset and persists
     uploadedSecretKeys(uploads, "fibre-identity-authority"),
     ["FIBRE_PRIVATE_TOKEN", "FIA_ISSUER_JWK", "FIA_CREDENTIAL_KEY_BASE64"],
   );
-  assert.deepEqual(result.runtimeConfigByService["content-credential-signer"], {});
   assert.deepEqual(result.runtimeConfigByService["fibre-identity-authority"], {});
   const asset = await readFile(resolve(repoRoot, state.wranglerConfigs["asset-generator"]), "utf8");
   assertTextDoesNotMatch(asset, /secret-openai|secret-bfl|secret-private|secret-signer/, "generated asset-generator Wrangler config");
@@ -235,10 +226,6 @@ test("Slice E secret configuration uploads only each service subset and persists
   const runtimeConfigText = await readFile(resolve(repoRoot, ".fibre/cloudflare/staging/runtime-config.json"), "utf8");
   assertTextDoesNotMatch(runtimeConfigText, /secret-openai|secret-bfl|secret-private|test-signer-token|test-cert-b64|test-key-b64/, "persisted runtime config");
 
-  const reprovisioned = await provisionCloudflareResources({ repoRoot, environment: "staging", client });
-  const regeneratedFia = JSON.parse(await readFile(resolve(repoRoot, reprovisioned.wranglerConfigs["fibre-identity-authority"]), "utf8"));
-  assert.equal(Object.hasOwn(regeneratedFia.vars, "C2PA_SIGNER_URL"), false);
-  assert.equal(regeneratedFia.services.some((binding) => binding.binding === "CONTENT_CREDENTIAL_SIGNER"), false);
 });
 
 
