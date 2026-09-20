@@ -151,7 +151,7 @@ test("presentation failure is recorded durably and a later retry can deliver the
   const activity = await telemetry.query({ requestId: "req_presentation_1" });
   assert.deepEqual(
     activity
-      .filter((record) => record.stage === "presentation.snapshot.publish")
+      .filter((record) => record.stage === "presentation.genesis.publish")
       .map((record) => [record.status, record.attempt]),
     [
       ["started", 1],
