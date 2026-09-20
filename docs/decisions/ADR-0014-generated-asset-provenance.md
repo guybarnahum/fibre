@@ -2,64 +2,64 @@
 id: adr-0014
 status: accepted
 date: 2026-08-21
+superseded-on: 2026-09-20
 ---
 
-# ADR-0014: Generated asset provenance and embedded Content Credentials
+# ADR-0014: Generated asset provenance
 
 ## Context
 
-Fibre is adding an asynchronous `AssetGenerationService` that can turn approved presentation material into generated images and, later, audio/video. Generated assets are derived presentation artifacts, not Thread-life evidence.
+Fibre generates presentation media from approved semantic material. Generated assets are derived representations, not Thread-life evidence.
 
-A sidecar provenance record alone is insufficient for long-term portability: an asset may be copied outside Fibre, an index may be lost, or an operational workflow record may expire. Conversely, embedding the complete internal generation record into a public asset can leak private Thread material, third-party information, internal object identities, or provider-only details.
+Fibre needs durable provenance that survives retries, provider replacement, storage migration, and publication replay without granting the generator semantic authority over its inputs.
 
-Fibre therefore needs both durable external provenance and portable in-asset provenance.
+FIN card work subsequently established a Fibre-native signed embedded-JSON proof mechanism for PNGs. That makes a separate media-signing trust stack unnecessary.
 
 ## Decision
 
-1. **Every generated Fibre asset has durable Fibre provenance and portable embedded provenance.**
-   - Fibre persists a complete immutable generation record/receipt through `InfraDriver.objects`.
-   - Publishable media embeds a signed C2PA / Content Credentials manifest, or a compatible successor standard if C2PA is replaced.
-   - The exact supported C2PA specification version is implementation configuration, not Fibre domain doctrine.
+1. **Every generated asset has complete immutable Fibre provenance.**
+   Fibre persists the exact generation job, generation attempt, provider request witness, provider output digest, final bytes, and stored receipt.
 
-2. **The full Fibre provenance record is the detailed provenance authority.** It preserves enough material to reconstruct what Fibre asked the provider to do, including:
-   - the normalized `AssetGenerationJob`;
-   - source snapshot/presentation references and digests;
-   - the Fibre semantic generation brief / seed text;
-   - the exact rendered provider prompt or provider request payload actually sent, to the extent Fibre controls and is permitted to retain it;
-   - provider profile, variant, reference-object refs and relevant generation configuration;
-   - actual provider, model, request identifier and generation timestamp;
-   - the digest of provider-returned bytes before provenance embedding when available;
-   - terminal or retryable failure information where applicable.
+2. **The detailed provenance authority is the Fibre record, not embedded metadata.**
+   The immutable `GenerationRecord` preserves the normalized job, semantic brief, secret-stripped provider request, actual provider/model/request identifier, generation configuration, timestamps, and relevant digests.
 
-3. **C2PA carries a public-safe survival subset, not the entire private record by default.** The embedded credential must identify at least:
-   - the asset as AI/generated media using the applicable standard digital-source designation;
-   - Fibre as the claim generator/signer where operationally supported;
-   - `generated_reconstruction` as the Fibre presentation provenance class where applicable;
-   - asset/media identity and role;
-   - actual provider/model when disclosure policy permits;
-   - generation timestamp;
-   - generation-record digest;
-   - source presentation/snapshot digest(s) appropriate for public disclosure;
-   - semantic-brief digest;
-   - exact-provider-prompt/request digest;
-   - reference-asset digests where applicable and safe to disclose.
+3. **Publication fails closed on provenance integrity.**
+   Thread Presentation must reload and verify the immutable receipt, generation record, generation attempt, staged provider bytes, exact final bytes, and current durable demand binding before emitting `media.ready`.
 
-4. **Exact prompt text is retained in Fibre provenance; embedding exact text is policy-controlled.**
-   - The Fibre semantic brief and the exact provider prompt/request are distinct records and both are retained.
-   - Default public C2PA policy is `digest_only`: embed their digests but not their full text.
-   - A caller may explicitly choose `public_text` only when the prompt material is already authorized for public disclosure and contains no private/restricted third-party information.
-   - Sensitive prompt material is never made public merely because the output asset is public.
+4. **Provider output is made durable before later retryable work.**
+   Once provider bytes are durably staged, retries reuse those exact bytes and do not issue another nondeterministic provider request.
 
-5. **The final stored asset is hashed only after provenance embedding/signing.** To avoid a circular hash dependency, the pipeline is ordered:
+5. **Embedded signed proof is optional, not a second authority.**
+   Generic generated media does not currently require an embedded signature. If Fibre chooses to embed signed provenance in a generated PNG, it must reuse or extract the same native mechanism proven by FIN card images:
+   - canonical JSON assertion;
+   - SHA-256 assertion digest;
+   - Ed25519 signature;
+   - Fibre proof envelope;
+   - dedicated Fibre PNG chunk;
+   - extraction, canonicality, signature, and raw-render digest verification before storage.
+
+6. **Generated assets use an asset-specific assertion schema.**
+   Reusing the FIN proof mechanism does not mean importing FIN identity semantics into Asset Generator. The generic cryptographic/PNG-envelope primitive may be shared; the assertion schema and signing authority must be explicit for generated media.
+
+7. **Prompt retention and public disclosure remain separate decisions.**
+   The exact Fibre semantic brief and secret-stripped provider request remain in durable Fibre provenance. Embedded proof, if enabled later, must not expose private prompt material by default.
+
+8. **Provenance does not create Thread authority.**
+   Verified generation lineage does not turn a generated representation into history, autobiographical memory, embodiment authority, Thread expression, or evidence for cognition.
+
+## Current pipeline
 
 ```text
 normalized generation job
         |
         v
-provider request / exact prompt retained
+provider request witness
         |
         v
-provider returns raw bytes
+provider operation / generation attempt
+        |
+        v
+immutable staged provider bytes
         |
         +--> providerOutputDigest
         |
@@ -69,54 +69,33 @@ immutable GenerationRecord
         +--> generationRecordDigest
         |
         v
-build + sign C2PA manifest containing generationRecordDigest
+immutable final asset
+        |
+        +--> finalAssetDigest
         |
         v
-embed credential into asset
+immutable StoredAssetReceipt
         |
         v
-hash final credentialed asset
+independent publication verification
         |
         v
-immutable final asset + StoredAssetReceipt
+media.ready
 ```
 
-The `StoredAssetReceipt` links the final asset digest to the generation-record digest and credential information. Regeneration creates new immutable identities rather than rewriting an existing asset.
-
-6. **Publication fails closed.** A generated asset is not publishable through Thread Presentation until:
-   - the complete immutable generation record exists;
-   - the embedded credential validates according to the configured signing policy;
-   - the final asset digest has been computed after embedding;
-   - the stored receipt links the final asset to the generation record.
-
-7. **Embedded provenance does not create Thread authority.** A valid Fibre Content Credential proves provenance of the generated representation. It does not upgrade the representation into history, autobiographical memory, remembered meaning, embodiment authority, Thread expression, or evidence for cognition.
-
-## Prompt and seed-text terminology
-
-Fibre distinguishes:
-
-```text
-semantic brief / seed text
-  Fibre-owned description + constraints produced by the calling adapter
-
-provider prompt / request
-  exact provider-facing input after adapter compilation/transformation
-
-provider-hidden transformation
-  provider-internal behavior Fibre cannot observe; not falsely claimed as retained
-```
-
-The first two are retained when Fibre controls them. Their digests are always eligible for the public-safe credential; their full text requires explicit disclosure policy.
+If embedded Fibre proof is enabled for an asset class later, the embed/self-verification step occurs between the raw provider bytes and immutable final asset storage, and the receipt records the resulting final digest and proof linkage.
 
 ## Consequences
 
-- Losing a side catalog does not make a copied asset provenance-free; the asset carries a signed portable credential.
-- Stripping embedded metadata does not erase Fibre's immutable generation record/receipt.
-- Future durable soft bindings/fingerprints may help rediscover credentials after metadata stripping, but are deferred rather than required for v1.
-- Prompt reproducibility does not require publicly leaking prompts.
-- Provider adapters must expose the exact request Fibre sent and the actual provider/model metadata needed by the generation record.
-- A future C2PA signer/key implementation may use infrastructure secret/key facilities, but signing-key location is not part of Thread or presentation semantics.
+- Asset Generator has one provenance path rather than credentialed/uncredentialed modes.
+- No external media signer service is part of the runtime or deployment topology.
+- Provider adapters expose the exact request Fibre sent and actual provider/model metadata needed for provenance.
+- A copied file may later carry a Fibre-native portable proof, but Fibre's immutable generation record remains the detailed provenance source.
+- Removing or losing embedded metadata never erases Fibre's internal provenance.
+- Signing-key location and rotation remain authority/deployment concerns, not Thread or presentation semantics.
 
-## Relationship to presentation authority
+## Relationship to FIN
 
-This ADR extends the presentation rule that generated media is `generated_reconstruction`. It does not alter the authority of history, memory, meaning, identity, embodiment, or Thread-authored expression.
+FIN cards remain governed by FIA and their dedicated `fibre.fin-card-proof.v1` assertion schema. This ADR adopts the **proof mechanism** as the reference for future generated-media embedding; it does not make FIA the semantic authority for generated assets.
+
+See [Generated asset provenance v2](../architecture/generated-asset-provenance.md).
