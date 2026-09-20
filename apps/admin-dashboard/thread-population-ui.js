@@ -204,7 +204,7 @@ function reissueFidButton(thread) {
   const label = "Re-issue FIN Card";
   const control = document.createElement("button");
   control.type = "button";
-  control.className = "secondary thread-fid-reissue-action";
+  control.className = "secondary";
   decorateActionButton(control, {
     icon:"id-card",
     label,
