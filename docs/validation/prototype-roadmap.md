@@ -110,7 +110,7 @@ Genesis
 
 The deployed meeting now enters a scene produced by continuous LivedNow rather than by a meeting fixture, and the subsequent encounter remains bound to the exact returned `situationId`.
 
-### M2-N5 — Encounter Story -> Thread Experience — REPLANNED / ACTIVE
+### M2-N5 — Encounter Story -> Thread Experience — ACTIVE (E0 CLOSED, E1 CURRENT)
 
 N5 has been broadened before deployment. The durable primitive is no longer “Thread A meets Thread B.” It is:
 
@@ -124,9 +124,9 @@ World occurrence
 
 A social meeting is one voluntary form of encounter and retains the `accept | decline | defer` participation gate. Environmental occurrences and witnessed behavior do not require permission to exist; they require a credible opportunity to perceive and a Thread-specific noticing/experience step before private consequence.
 
-The first implementation spike is not accepted for staging because it still overfits orchestration to invited social dialogue. Reuse the good parts—LivedNow reconciliation, place compatibility, meeting stance, n-ary story direction, journal/R2/Admin work, selective memory—but reshape them around the general encounter seam.
+E0 has now reconciled the first implementation spike into one green foundation: Encounter Story / Thread Experience own the general persistence vocabulary; social meeting is a wrapper; participation cognition is separate from social story cognition; obsolete dyadic code/tests are removed; journal/R2/Admin work and selective memory remain available.
 
-The required N5 proofs are now:
+E1 is the current slice. The required N5 proofs remain:
 
 1. an unscheduled environmental occurrence can be noticed and selectively matter;
 2. compatible social presence does not force a meeting;
