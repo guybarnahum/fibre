@@ -76,7 +76,13 @@ export function createPublicEncounterApi({
               ...(detail === null ? {} : { detail }),
             }, request, viewerOrigin, 409);
           }
-          return json({ error: "lived_now_unavailable" }, request, viewerOrigin, 503);
+          const code = typeof error?.body?.code === "string" && ID_PATTERN.test(error.body.code)
+            ? error.body.code
+            : null;
+          return json({
+            error: "lived_now_unavailable",
+            ...(code === null ? {} : { code }),
+          }, request, viewerOrigin, 503);
         }
       }
 
