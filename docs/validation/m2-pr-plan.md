@@ -1,25 +1,27 @@
 ---
 id: validation-m2-continuation-plan
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-21
 canonical: false
 ---
 
-# M2 continuation plan — continuous LivedNow and meetings
+# M2 continuation plan — continuous LivedNow and encounters
 
 ## Purpose
 
-The insidefibre.com meeting remains an architectural forcing function, but the closure criterion has changed.
+The insidefibre.com meeting remains an architectural forcing function, but meeting is now treated as one voluntary social form of the broader encounter primitive.
 
 A real meeting is only convincing if the Thread's present is causally real **before** the visitor arrives.
 
 The active M2 question is therefore:
 
-> **Can Fibre take a persistent Thread whose compute has been asleep, reconcile the life that elapsed, establish where that person is now, and then let a Person or another Thread enter that already-existing life?**
+> **Can Fibre take a persistent Thread whose compute has been asleep, reconcile the life that elapsed, establish where that person is now, and then let what happens in that World become personal lived experience without collapsing objective history, attention, journal and memory into one thing?**
 
 Canonical architecture:
 
 - [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
+- [Encounter stories and Thread experience](../architecture/encounters-and-experience.md)
+- [N5 encounter-story implementation slices](n5-encounter-slices.md)
 - [The Lived World of Fibre](../vision/lived-world.md)
 - [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md)
 
@@ -34,14 +36,15 @@ Genesis / existing Thread
   -> elapsed life is reconciled when needed
   -> current Flight Plan
   -> authoritative LivedNow
-  -> Person or Thread meeting
-  -> objective encounter history
-  -> participant-specific private interpretation
+  -> World occurrence / requested meeting
+  -> objective Encounter Story
+  -> Thread-specific noticing / experience
+  -> optional journal
   -> selective memory / relationship / intention consequence
   -> continued life
 ```
 
-The meeting is not a chatbot session and not the life engine.
+The meeting is not a chatbot session and not the life engine. Encounter is the broader lived primitive.
 
 ## Existing closed substrate
 
@@ -206,34 +209,63 @@ The visitor chooses the utterance and causes the encounter. The visitor does not
 
 The first real deployed `/meet` is accepted only after N1-N3 are real.
 
-## N5 — Thread -> Thread meeting
+## N5 — Encounter Story -> Thread Experience — REPLANNED
 
 ### Capability
 
-Two independently maintained Threads can share one encounter.
+One general encounter seam can turn an objective World occurrence into different personal lived experiences without requiring separate engines for conversation, witnessing and environmental moments.
 
-Preconditions:
-
-- both LivedNow states are reconciled;
-- compatible physical place/time or compatible mediated context exists;
-- neither Thread is teleported or silently replanned to satisfy the meeting request.
-
-If a meeting requires invitation, negotiation, plan change or travel, those are prior Fibre events.
-
-### Shared occurrence / private aftermath
+The accepted causal shape is:
 
 ```text
-shared encounter
-   +------------------------+
-   |                        |
-Thread A                 Thread B
-private experience       private experience
-memory or forget         memory or forget
-relationship effect      relationship effect
-plan/state effect        plan/state effect
+World occurrence
+  -> Encounter Story
+  -> Thread-specific noticing / experience
+  -> optional journal
+  -> selective consequence
 ```
 
-Acceptance should require at least one attributable participant-specific asymmetry.
+A social meeting adds a voluntary participation gate before the social story exists:
+
+```text
+exact LivedNow
+  -> accept | decline | defer
+  -> if participation requirements pass:
+       Encounter Story
+       -> Thread Experience(s)
+```
+
+Physical/mediated compatibility remains required for social encounter without teleportation or silent replanning.
+
+### Why the first N5 spike is not accepted
+
+The first implementation spike correctly explored:
+
+- independent LivedNow reconciliation;
+- shared place identity across Thread-specific evidence;
+- meeting stance;
+- n-ary shared-story persistence;
+- witness-aware aftermath;
+- Thread-specific journals;
+- selective memory;
+- private R2 journal presentation.
+
+But its central orchestration still assumed invited social dialogue and did not yet represent bounded noticing for incidental/environmental occurrence.
+
+Do not deploy it or restore old dyadic APIs merely to satisfy obsolete tests.
+
+### Required acceptance proofs
+
+N5 closes only when one coherent seam proves:
+
+1. **environmental noticing** — an unscheduled small World occurrence such as a bee on a flower can be noticed and selectively matter;
+2. **voluntary meeting** — compatible social presence does not force participation;
+3. **silent witness** — a third Thread can witness how A treats B, remain silent, and form a different private experience/consequence;
+4. **journal != memory** — private journal expression and autobiographical retention remain independently selective;
+5. **continuity** — persisted consequence can bend later cognition while unnoticed/unremembered content does not leak.
+
+Detailed execution is governed by [N5 encounter-story implementation slices](n5-encounter-slices.md).
+
 
 ## N6 — rich insidefibre.com meeting
 
