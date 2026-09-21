@@ -53,10 +53,10 @@ test("public progress exposes one flattened canonical render contract", () => {
   assert.deepEqual(progress.statusDefinitions.map(({ id }) => id), STATUS_IDS);
   assert.deepEqual(schema.$defs.status.enum, STATUS_IDS);
   assertContains(markdown, "machine-source: public-progress.json", "public progress markdown");
-  assertContains(markdown, "### M2-A — Meet a Thread", "public progress markdown");
+  assertContains(markdown, "### Continuous LivedNow across dormancy", "public progress markdown");
   assertContains(
     markdown,
-    "Build one Thread whose present life can be seen, entered, interacted with, remembered, and continued.",
+    "A Thread's life should reach “now” before anyone meets them.",
     "public progress markdown",
   );
 });
