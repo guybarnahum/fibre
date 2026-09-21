@@ -562,6 +562,108 @@ function memoriesSection(memories, birthDate, memoryError = null) {
   return wrap;
 }
 
+
+function journalEntries(document) {
+  const lines = String(document ?? "").split(/\r?\n/u);
+  const entries = [];
+  let current = null;
+  for (const line of lines) {
+    if (line.startsWith("## ")) {
+      if (current) entries.push(current);
+      current = { heading:line.slice(3).trim(), lines:[] };
+      continue;
+    }
+    if (current) current.lines.push(line);
+  }
+  if (current) entries.push(current);
+  return entries;
+}
+
+function appendJournalBlocks(host, lines) {
+  let paragraph = [];
+  let list = null;
+  const flushParagraph = () => {
+    const text = paragraph.join(" ").trim();
+    paragraph = [];
+    if (text) host.append(el("p", "thread-journal-prose", text));
+  };
+  const flushList = () => {
+    if (list !== null) {
+      host.append(list);
+      list = null;
+    }
+  };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+    if (line.startsWith("> ")) {
+      flushParagraph();
+      flushList();
+      host.append(el("blockquote", "thread-journal-quote", line.slice(2)));
+      continue;
+    }
+    if (/^#{3,6}\s/u.test(line)) {
+      flushParagraph();
+      flushList();
+      host.append(el("h5", "thread-journal-subhead", line.replace(/^#{3,6}\s+/u, "")));
+      continue;
+    }
+    if (/^[-*]\s/u.test(line)) {
+      flushParagraph();
+      if (list === null) list = el("ul", "thread-journal-list");
+      list.append(el("li", null, line.slice(2)));
+      continue;
+    }
+    flushList();
+    paragraph.push(line);
+  }
+  flushParagraph();
+  flushList();
+}
+
+function journalSection(journal, journalError = null) {
+  const profile = journal?.profile ?? null;
+  const entries = journalEntries(journal?.document);
+  const wrap = section("Journal", profile ? `${entries.length} private ${entries.length === 1 ? "entry" : "entries"} · not memory` : null);
+  wrap.classList.add("thread-journal-section");
+  if (journalError) {
+    wrap.append(el("p", "thread-empty-note", `Journal unavailable · ${journalError}`));
+    return wrap;
+  }
+  if (journal === null || profile === null) {
+    wrap.append(el("p", "thread-empty-note", "This Thread has not started a journal yet."));
+    return wrap;
+  }
+
+  const book = el("div", `thread-journal-book journal-${profile.presentationStyle ?? "classic"}`);
+  const cover = el("header", "thread-journal-cover");
+  cover.append(
+    el("p", "thread-journal-kicker", "Private journal"),
+    el("h4", null, profile.title),
+    el("p", "thread-journal-aesthetic", profile.aestheticNote),
+  );
+  book.append(cover);
+
+  const pages = el("div", "thread-journal-pages");
+  for (const entry of [...entries].reverse()) {
+    const page = el("article", "thread-journal-entry");
+    page.append(el("time", "thread-journal-date", entry.heading));
+    appendJournalBlocks(page, entry.lines);
+    pages.append(page);
+  }
+  if (entries.length === 0) pages.append(el("p", "thread-empty-note", "The journal exists, but it has no entries yet."));
+  book.append(pages);
+  wrap.append(
+    book,
+    el("p", "thread-journal-note", "Journal entries are contemporaneous private reflection. They may shape later cognition, but they do not become autobiographical memory unless Fibre separately retains them."),
+  );
+  return wrap;
+}
+
 export function identityWithFidPublication(identity, result) {
   const snapshot = result?.presentation?.publication?.snapshot ?? null;
   if (!snapshot?.presentation || !Array.isArray(snapshot?.media?.assets)) return identity;
@@ -843,6 +945,8 @@ export async function fetchThreadObservatory(threadId) {
 
   let memories = [];
   let memoryError = null;
+  let journal = null;
+  let journalError = null;
   let deepWorld = null;
   try {
     const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/observatory`, { headers:{ Accept:"application/json" }, cache:"no-store" });
@@ -860,16 +964,27 @@ export async function fetchThreadObservatory(threadId) {
   } catch (error) {
     memoryError = error instanceof Error ? error.message : String(error);
   }
+  try {
+    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/journal`, { headers:{ Accept:"application/json" }, cache:"no-store" });
+    const journalPayload = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(journalPayload?.detail ?? journalPayload?.error ?? `HTTP ${response.status}`);
+    journal = journalPayload?.journal ?? null;
+  } catch (error) {
+    journalError = error instanceof Error ? error.message : String(error);
+  }
+
   const identity = mergeObservatoryWorldIdentity(payload.identity ?? {}, deepWorld);
   return Object.freeze({
     ...payload,
     identity,
     memories:Object.freeze(memories),
     memoryError,
+    journal,
+    journalError,
   });
 }
 
-export function renderThreadObservatory({ identity, threadId, memories = [], memoryError = null } = {}) {
+export function renderThreadObservatory({ identity, threadId, memories = [], memoryError = null, journal = null, journalError = null } = {}) {
   const view = el("div", "thread-person-view");
   view.append(
     observatoryCopyAction({ identity, threadId, memories, memoryError }),
@@ -877,6 +992,7 @@ export function renderThreadObservatory({ identity, threadId, memories = [], mem
     identitySection(identity, threadId),
     renderFidSection(identity, threadId),
     nowSection(identity),
+    journalSection(journal, journalError),
     memoriesSection(memories, firstText(identity.birthDate, identity.world?.thread?.identity?.birthDate), memoryError),
   );
   const who = whoSection(identity); if (who) view.append(who);
