@@ -158,13 +158,16 @@ Thread-to-Thread meetings are intersections of two continuing lives.
 Each participant must independently have:
 
 - a current Flight Plan;
-- a World-owned present;
+- a World-owned physical presence: at a place or in transit between places;
 - a reason for being there;
-- its own identity, relationships, memory and semantic state.
+- its own identity, relationships, memory and semantic state;
+- its own willingness to participate now.
 
-A physical meeting requires compatible place/time presence. A mediated meeting requires compatible mediated context.
+A physical meeting requires compatible place/time presence. A mediated meeting still requires each Thread to remain physically somewhere, plus a compatible mediated context.
 
-Do not teleport Threads together merely because a meeting was requested.
+Compatible presence does not create consent. The first N5 mechanism should be a bounded meeting stance — `accept | decline | defer` — produced from the exact LivedNow plus Thread-owned relationship/interior context. A decline or defer may include an outward explanation or proposed later time. Someone the Thread likes or trusts may receive more accommodation, but relationship context influences rather than determines the choice.
+
+Do not teleport Threads together, silently rewrite either Flight Plan, or force an interruption merely because a meeting was requested.
 
 One shared occurrence may produce different private aftermath:
 
@@ -238,7 +241,7 @@ Prefer a few organism-level proofs:
 2. **historical honesty** — retrospective materialization is inspectable;
 3. **selective retention** — catch-up history can be remembered or forgotten through the normal memory authority;
 4. **Person meet** — `/meet` joins an already-established current scene;
-5. **Thread meet** — two independently current Threads share one encounter but form different private consequences;
+5. **Thread meet** — two independently current Threads independently choose to participate, share one compatible encounter, and form different private consequences;
 6. **continued life** — a later visit finds later life, not a resumed chat session;
 7. **idempotence** — retrying catch-up does not duplicate plans, events, memories or encounters.
 
