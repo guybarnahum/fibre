@@ -67,15 +67,15 @@ Thread-owned bounded Flight Plan
   -> later encounter receiving only persisted memory consequence
 ```
 
-These are bounded proofs. They do not yet maintain an authoritative present across arbitrary wall-clock dormancy.
+These bounded proofs are now joined by N2: an already-lived Thread can restore an authoritative present across a bounded multi-day wall-clock dormancy. Genesis has not yet been proven to enter that continuing path automatically.
 
 ### M2-N1 — ensure LivedNow — CLOSED
 
 Fibre now has one narrow World-owned `ensure({ threadId, at })` seam for times with admitted personal Flight Plan coverage. It deterministically establishes CurrentSituation, respects required care constraints, rejects caller-authored scene fields, and retries idempotently.
 
-If coverage is absent, it fails rather than exposing the stale prior scene. N2 owns that uncovered interval.
+If coverage is absent, it refuses the stale prior scene and hands the interval to the N2 reconciliation path when its World dependencies are available.
 
-### M2-N2 — dormant interval catch-up — CURRENT
+### M2-N2 — dormant interval catch-up — CLOSED
 
 When existing lived coverage does not reach the requested time:
 
@@ -88,9 +88,11 @@ last lived anchor
   -> present now
 ```
 
+The accepted proof crosses a three-day gap with bounded retrospective plan/situation windows, explicit later materialization provenance, continuity from the prior lived place, renewed forward plan coverage and idempotent retry. It intentionally keeps a quiet interval quiet rather than fabricating encounters or memories.
+
 Do not continuously simulate every minute and do not inject memories directly.
 
-### M2-N3 — Genesis -> continuous LivedNow — NEXT
+### M2-N3 — Genesis -> continuous LivedNow — CURRENT
 
 Prove one newly born Thread can move from grounded Genesis prior life into post-birth continuing life:
 
