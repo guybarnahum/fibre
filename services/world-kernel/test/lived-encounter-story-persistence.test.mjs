@@ -53,6 +53,12 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
             { actorThreadId:"thr_e0_noor", kind:"action", text:"Noor moves her notebook aside." },
           ],
         },
+        visualization:{
+          visualizationPrompt:"Generated objective reconstruction of a Fibre Encounter Story.",
+          visualizationPromptDigest:`sha256:${(await import("../src/persistence-common.mjs")).sha256("Generated objective reconstruction of a Fibre Encounter Story.")}`,
+          visualizationSourceReferences:["sit_e0_mina","sit_e0_noor"],
+          depictedThreadRefs:[],
+        },
       });
 
       const mina = store.recordThreadExperience({
