@@ -4,8 +4,8 @@
   "canonical": true,
   "asOf": "2026-09-21",
   "title": "Where Fibre is today",
-  "headline": "Fibre carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E2 are complete and E3 silent-witness encounters are current.",
-  "summary": "N1-N4 are closed. N5 E0-E2 now prove a general Encounter Story / Thread Experience foundation, environmental noticing, and voluntary social meeting without teleportation or forced participation. E3 now proves one shared n-ary story can affect a silent witness differently from the actors.",
+  "headline": "Fibre carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E3 are complete and E4 journal/rendering/Admin acceptance is current.",
+  "summary": "N1-N4 are closed. N5 E0-E3 now prove a general Encounter Story / Thread Experience foundation, environmental noticing, voluntary social meeting without teleportation or forced participation, and silent-witness asymmetry over the same attention authority. E4 is current.",
   "statusDefinitions": [
     {
       "id": "achieved",
@@ -192,11 +192,11 @@
       "status": "demonstrated",
       "simple": {
         "claim": "A bounded encounter can become private reflection and selective autobiographical memory—or be forgotten.",
-        "limitation": "This is demonstrated in bounded lived-person proofs and is not yet integrated with continuous multi-day LivedNow."
+        "limitation": "This is demonstrated across bounded lived-person and N5 encounter proofs; N5 remains undeployed."
       },
       "detail": {
-        "claim": "B1/B2 preserve objective encounter history, private reflection, selective retention or not_remembered, and later cognition receives only autobiographical consequences that persisted.",
-        "limitation": "Retrospective dormant-life catch-up and reciprocal Thread meetings still need to route through the same consequence authorities."
+        "claim": "B1/B2 and N5 E1-E3 preserve objective encounter history, private experience/reflection, selective retention or not_remembered, and later cognition receives only autobiographical consequences that persisted.",
+        "limitation": "Journal/rendering/Admin acceptance and live N5 staging acceptance remain before the current encounter milestone closes."
       },
       "evidence": [
         "docs/state/current-state.md",
@@ -210,12 +210,12 @@
       "label": "General lived encounters and reciprocal meetings",
       "status": "in_progress",
       "simple": {
-        "claim": "Fibre now supports environmental encounters and voluntary social meetings over one Encounter Story / Thread Experience seam; the current step is silent-witness asymmetry.",
-        "limitation": "N-ary witness consequence is not yet proven, and N5 remains undeployed."
+        "claim": "Fibre now supports environmental encounters, voluntary social meetings, and a genuinely co-present silent witness over one Encounter Story / Thread Experience seam.",
+        "limitation": "Journal/rendering/Admin acceptance and live staging validation remain; N5 is not deployed."
       },
       "detail": {
-        "claim": "E2 proves independently current Threads are not teleported or silently replanned into meetings: incompatibility or decline creates no Encounter Story, while mutual acceptance creates one objective story and distinct first-person Thread Experiences through the E1 authority.",
-        "limitation": "E3-E5 still need silent-witness asymmetry, journal/rendering/Admin acceptance and staging validation."
+        "claim": "E2 proves independently current Threads are not teleported or silently replanned into meetings and may decline before history exists. E3 adds an explicit co-present witness who receives no meeting stance or dialogue turn, but may notice the one shared Encounter Story and form her own Thread Experience, journal and selective memory through the E1 authority.",
+        "limitation": "E4-E5 still need journal/rendering/Admin acceptance and staging validation."
       },
       "evidence": [
         "docs/architecture/encounters-and-experience.md",
@@ -244,21 +244,20 @@
   "currentWork": {
     "milestone": "Continuous LivedNow + Encounters",
     "simple": {
-      "summary": "Build E3: one shared social Encounter Story can affect a silent witness differently from the actors.",
-      "currentStep": "Implement E3 n-ary Encounter Story + silent witness over the existing E1/E2 attention and Thread Experience seam.",
+      "summary": "Build E4: make private journal presentation and objective encounter visualization inspectable without collapsing either into memory or evidence.",
+      "currentStep": "Implement E4 journal book, optional encounter rendering, and Admin acceptance over the proven E1-E3 encounter authorities.",
       "nextSteps": [
-        "Use three genuinely co-present Threads without fabricating a third speaker.",
-        "Record one objective Encounter Story for the social occurrence.",
-        "Let each Thread independently form or miss experience from the same story.",
-        "Prove the silent witness can journal or remember observed behavior without being addressed.",
-        "Keep any relationship consequence downstream of private experience rather than automatic."
+        "Keep a stable Thread-specific journal title and aesthetic while preserving free-form private writing.",
+        "Show different private journal accounts of the same shared story without implying autobiographical retention.",
+        "Expose the objective Encounter Story visualization prompt and provenance for inspection.",
+        "Optionally render a still/video from that lineage through existing generated-asset machinery.",
+        "Use canonical Thread visual identity and encounter-time age where bound, while keeping generated media non-authoritative."
       ]
     },
     "detail": {
       "summary": "N5 was deliberately replanned before deployment. Meeting is a gated social special case of a more general encounter primitive.",
-      "currentStep": "E0-E2 are closed and green. E3 is current from docs/validation/n5-encounter-slices.md.",
+      "currentStep": "E0-E3 are closed and green. E4 is current from docs/validation/n5-encounter-slices.md.",
       "nextSteps": [
-        "E3: n-ary story with silent-witness consequence.",
         "E4: journal book, optional rendering and Admin acceptance.",
         "E5: staging acceptance."
       ]

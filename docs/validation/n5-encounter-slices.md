@@ -164,25 +164,60 @@ No calendar or invitation subsystem was added.
 
 Full repository CI validation is green.
 
-## Slice E3 — N-ary story + silent witness — CURRENT
+## Slice E3 — N-ary story + silent witness — CLOSED
 
 **Goal:** prove one shared story can affect more than the speakers.
 
-Use 3 Threads at one place:
+Implemented path:
 
-- A behaves rudely to B;
-- C is present and remains silent;
-- the objective story is recorded once;
-- A, B and C may notice/experience it differently;
-- C may journal or remember A's behavior despite never speaking;
-- the private accounts may diverge;
-- no story mechanically updates relationships.
+```text
+A + B independently current
+  -> compatible voluntary meeting
+  -> A and B accept
+  -> one objective Encounter Story
+       + A presence
+       + B presence
+       + explicitly known, independently current C presence
+  -> A/B participation => durably noticed
+  -> C receives no stance and no story turn
+  -> C uses the E1 attention authority
+       noticed | not_noticed
+       -> if noticed: C Thread Experience
+       -> ordinary private journal / selective memory aftermath
+```
+
+E3 deliberately does not add a witness subsystem. The social wrapper now distinguishes voluntary `participantThreadIds` from explicit `witnessThreadIds`, while Encounter Story remains the single n-ary authority. Every listed Thread is independently reconciled through LivedNow and checked for compatible presence before admission.
+
+Witnesses:
+
+- are not invitees and do not receive `accept | decline | defer`;
+- are excluded from social story cognition and therefore cannot be fabricated as speakers;
+- are included in the one objective `threadPresence` only when their own World-owned current situation establishes co-presence;
+- reuse E1 `noticed | not_noticed` attention;
+- receive Thread Experience and ordinary journal/memory aftermath only when noticed.
+
+No relationship state is mechanically changed by encounter admission or attention.
+
+### E3 organism proof
+
+The accepted proof places Mina, Noor and Sela independently at the same café. Mina speaks rudely to Noor; Noor answers; Sela is at the next table and never speaks.
+
+The proof establishes:
+
+- exactly one Encounter Story carries all three genuine presences;
+- only Mina and Noor receive meeting stance and social story cognition;
+- Sela has no objective story beat;
+- Sela notices the exchange through the general attention authority;
+- all three private experiences cite the same objective story while diverging in lived meaning;
+- Sela can privately journal the incident and selectively retain autobiographical memory despite never being addressed.
+
+Full repository CI validation and all deployment dry-runs are green.
 
 This is the core proof that shared event != shared meaning.
 
 The shared Encounter Story has one objective visualization prompt. A later memory reconstruction for A, B or C is separately derived from that Thread's retained memory and may legitimately look different.
 
-## Slice E4 — Journal book + optional encounter rendering + Admin acceptance
+## Slice E4 — Journal book + optional encounter rendering + Admin acceptance — CURRENT
 
 **Goal:** make private lived reflection inspectable without making it memory authority, and prove the E1 Encounter Story visualization lineage can be inspected and optionally rendered through existing generated-asset machinery.
 

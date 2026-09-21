@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + encounters**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 now builds on the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E2 are closed; E3 is current.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 now builds on the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E3 are closed; E4 is current.
 
 Canonical architecture:
 
@@ -54,7 +54,7 @@ N1  World-owned ensure-LivedNow seam                      CLOSED
 N2  dormant/frozen interval catch-up                      CLOSED
 N3  Genesis -> first LivedNow -> multi-day continuity     CLOSED
 N4  Person -> Thread /meet over real LivedNow             CLOSED
-N5  n-ary Encounter Story + silent witness                 CURRENT
+N5  Encounter Story -> Thread Experience                    CURRENT (E0-E3 closed; E4 active)
 N6  rich insidefibre.com lived encounter                  NEXT
 ```
 
@@ -193,15 +193,15 @@ The useful pieces now proven or retained are:
 - rich Admin journal presentation;
 - journal separated from autobiographical memory.
 
-The obsolete dyadic meeting authority and tests are gone; meeting stance and social story cognition are separate; Encounter Story and Thread Experience own the general persistence vocabulary. E1 adds durable objective visualization lineage and retry-stable `noticed | not_noticed` attention. Its bee/flower proof becomes personal experience and memory while an admitted cloud passes unnoticed with no private aftermath. Full CI is green. N5 remains undeployed.
+The obsolete dyadic meeting authority and tests are gone; meeting stance and social story cognition are separate; Encounter Story and Thread Experience own the general persistence vocabulary. E1 adds durable objective visualization lineage and retry-stable `noticed | not_noticed` attention. Its bee/flower proof becomes personal experience and memory while an admitted cloud passes unnoticed with no private aftermath. E3 now proves a third Thread can be genuinely co-present in that same authority without becoming an invitee or speaker: her own attention may notice the shared social story and produce distinct journal/memory aftermath. Full CI is green. N5 remains undeployed.
 
 The active execution plan is [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md):
 
 1. E0 reconcile the spike and restore one coherent green model — **closed**;
 2. E1 environmental Encounter Story + noticing + Thread Experience + visualization prompt — **closed**;
 3. E2 social meeting as a gated encounter — **closed**;
-4. E3 n-ary story + silent witness consequence — **current**;
-5. E4 journal book/optional rendering/Admin acceptance;
+4. E3 n-ary story + silent witness consequence — **closed**;
+5. E4 journal book/optional rendering/Admin acceptance — **current**;
 6. E5 staging acceptance.
 
 The three core semantic proofs are:

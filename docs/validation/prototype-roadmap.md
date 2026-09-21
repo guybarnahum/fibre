@@ -110,7 +110,7 @@ Genesis
 
 The deployed meeting now enters a scene produced by continuous LivedNow rather than by a meeting fixture, and the subsequent encounter remains bound to the exact returned `situationId`.
 
-### M2-N5 — Encounter Story -> Thread Experience — ACTIVE (E0-E2 CLOSED, E3 CURRENT)
+### M2-N5 — Encounter Story -> Thread Experience — ACTIVE (E0-E3 CLOSED, E4 CURRENT)
 
 N5 has been broadened before deployment. The durable primitive is no longer “Thread A meets Thread B.” It is:
 
@@ -128,12 +128,11 @@ E0 has now reconciled the first implementation spike into one green foundation: 
 
 E1 is closed. Its environmental proof admits an unscheduled occurrence, records a durable objective visualization prompt, persists retry-stable Thread attention, creates Thread Experience only when noticed, and keeps journal/memory selective.
 
-E2 is also closed. Independently current Threads may be incompatible, decline, or mutually participate; only the mutually accepted compatible case creates one Encounter Story, and accepted participants form distinct Thread Experiences through the E1 experience authority.
+E2 is also closed. Independently current Threads may be incompatible, decline, or mutually participate; only the mutually accepted compatible case creates one Encounter Story, and accepted participants form distinct Thread Experiences through the E1 authority.
 
-The remaining N5 proofs are:
+E3 is closed. One explicitly known third Thread can be independently current and genuinely co-present without joining the voluntary meeting: she receives no meeting stance and no story turn, but may notice the shared Encounter Story through the E1 attention authority and form her own private experience, journal and selective memory.
 
-1. one n-ary social story can affect a silent witness differently from the actors;
-2. journal remains subjective and separate from autobiographical memory.
+The remaining N5 proof is E4 journal / optional encounter rendering / Admin acceptance, followed by E5 staging acceptance. Journal must remain subjective and independent from autobiographical retention; encounter media must remain replaceable representation rather than evidence.
 
 Follow [N5 encounter-story implementation slices](n5-encounter-slices.md). N5 closes only after those semantics are green and accepted in staging.
 
