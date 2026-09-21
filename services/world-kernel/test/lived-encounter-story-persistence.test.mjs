@@ -44,7 +44,7 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
     try {
       const story = store.recordEncounterStory({
         occurredAt:"2026-09-21T18:00:00.000Z",
-        participants:[
+        threadPresence:[
           { threadId:"thr_e0_mina", situationId:"sit_e0_mina" },
           { threadId:"thr_e0_noor", situationId:"sit_e0_noor" },
         ],
