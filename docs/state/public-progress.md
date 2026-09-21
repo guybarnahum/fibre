@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E1 are complete and E2 voluntary social encounters are current.**
+**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E2 are complete and E3 silent-witness encounters are current.**
 
 ## What is done
 
@@ -125,7 +125,9 @@ E0 has now reconciled that spike into a green foundation: Encounter Story / Thre
 
 E1 is now done: an unscheduled bee/flower occurrence becomes an objective Encounter Story with a durable rich visualization prompt, enters one Thread's attention, becomes personal experience and may be retained; a separate admitted cloud occurrence remains `not_noticed` and creates no Thread Experience or private aftermath.
 
-E2 is current: social meeting should reuse that same encounter seam, but only after independently current Threads choose whether to `accept | decline | defer`. Compatible presence must not force a meeting.
+E2 is now done: independently current Threads may be incompatible, may decline, or may mutually participate. Incompatibility or decline creates no Encounter Story; mutual acceptance creates one objective story and distinct first-person Thread Experiences through the same E1 authority.
+
+E3 is current: one n-ary social story should be able to affect a silent witness differently from the actors, without fabricating speech or automatically rewriting relationships.
 
 ### Rich insidefibre.com meeting
 
@@ -183,7 +185,7 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- complete E2-E5 of the general Encounter Story -> Thread Experience seam;
+- complete E3-E5 of the general Encounter Story -> Thread Experience seam;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
 - support society-scale institutions and reproduction among live Threads.
