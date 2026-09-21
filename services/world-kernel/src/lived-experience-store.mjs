@@ -23,6 +23,19 @@ function encounterEventId(record) {
   })).slice(0, 48)}`;
 }
 
+function sharedMeetingId(record) {
+  return `meet_${sha256(canonicalJson({
+    occurredAt:record.occurredAt,
+    initiatorThreadId:record.initiatorThreadId,
+    responderThreadId:record.responderThreadId,
+    initiatorSituationId:record.initiatorSituationId,
+    responderSituationId:record.responderSituationId,
+    openingText:record.openingText,
+    responseText:record.responseText,
+    followupText:record.followupText,
+  })).slice(0, 48)}`;
+}
+
 function journalEntryId({ threadId, aboutEventRef, writtenAt, entryText }) {
   return `journal_${sha256(canonicalJson({ threadId, aboutEventRef, writtenAt, entryText })).slice(0, 48)}`;
 }
@@ -43,14 +56,65 @@ export class LivedExperienceStore {
 
   close() { this.#database.close(); }
 
+  recordSharedMeeting(candidate) {
+    assertIsoTimestamp("shared meeting.occurredAt", candidate.occurredAt);
+    assertId("shared meeting.initiatorThreadId", candidate.initiatorThreadId);
+    assertId("shared meeting.responderThreadId", candidate.responderThreadId);
+    if (candidate.initiatorThreadId === candidate.responderThreadId) {
+      throw new TypeError("shared meeting requires two Threads");
+    }
+    assertId("shared meeting.initiatorSituationId", candidate.initiatorSituationId);
+    assertId("shared meeting.responderSituationId", candidate.responderSituationId);
+    assertNonEmpty("shared meeting.openingText", candidate.openingText);
+    assertNonEmpty("shared meeting.responseText", candidate.responseText);
+    assertNonEmpty("shared meeting.followupText", candidate.followupText);
+    const sharedEventId = sharedMeetingId(candidate);
+    const record = { sharedEventId, ...candidate };
+    const recordDigest = digest(record);
+    try {
+      for (const threadId of [candidate.initiatorThreadId, candidate.responderThreadId]) {
+        if (this.#database.prepare("SELECT 1 AS present FROM threads WHERE thread_id=?").get(threadId) === undefined) {
+          throw new TypeError(`Thread ${threadId} was not found`);
+        }
+      }
+      const prior = this.#database.prepare(
+        "SELECT record_digest FROM lived_shared_meeting_records WHERE shared_event_id=?",
+      ).get(sharedEventId);
+      if (prior !== undefined) {
+        if (prior.record_digest !== recordDigest) throw new TypeError(`shared meeting ${sharedEventId} conflicts with its existing record`);
+        return record;
+      }
+      this.#database.prepare(`
+        INSERT INTO lived_shared_meeting_records(
+          shared_event_id,occurred_at,initiator_thread_id,responder_thread_id,
+          initiator_situation_id,responder_situation_id,opening_text,response_text,followup_text,record_digest
+        ) VALUES (?,?,?,?,?,?,?,?,?,?)
+      `).run(
+        sharedEventId,candidate.occurredAt,candidate.initiatorThreadId,candidate.responderThreadId,
+        candidate.initiatorSituationId,candidate.responderSituationId,
+        candidate.openingText,candidate.responseText,candidate.followupText,recordDigest,
+      );
+      return record;
+    } catch (error) { throw translateStorageError(error); }
+  }
+
   recordEncounter(candidate) {
     assertId("encounter.threadId", candidate.threadId);
     assertId("encounter.situationId", candidate.situationId);
     assertIsoTimestamp("encounter.occurredAt", candidate.occurredAt);
     assertNonEmpty("encounter.visitorUtterance", candidate.visitorUtterance);
     assertNonEmpty("encounter.responseText", candidate.responseText);
-    const eventId = encounterEventId(candidate);
-    const record = { eventId, ...candidate };
+    const sharedEventRef = candidate.sharedEventRef ?? null;
+    if (sharedEventRef !== null) assertId("encounter.sharedEventRef", sharedEventRef);
+    const core = {
+      threadId:candidate.threadId,
+      situationId:candidate.situationId,
+      occurredAt:candidate.occurredAt,
+      visitorUtterance:candidate.visitorUtterance,
+      responseText:candidate.responseText,
+    };
+    const eventId = encounterEventId(core);
+    const record = { eventId, ...core };
     const recordDigest = digest(record);
 
     try {
@@ -59,15 +123,28 @@ export class LivedExperienceStore {
       const prior = this.#database.prepare("SELECT record_digest FROM lived_encounter_records WHERE event_id=?").get(eventId);
       if (prior !== undefined) {
         if (prior.record_digest !== recordDigest) throw new TypeError(`encounter ${eventId} conflicts with its existing record`);
-        return record;
+        const linked = this.#database.prepare(
+          "SELECT shared_event_ref FROM lived_encounter_shared_refs WHERE event_id=?",
+        ).get(eventId)?.shared_event_ref ?? null;
+        if (linked !== sharedEventRef) throw new TypeError(`encounter ${eventId} shared meeting link conflicts`);
+        return sharedEventRef === null ? record : { ...record, sharedEventRef };
       }
       this.#database.prepare(`
         INSERT INTO lived_encounter_records(
           event_id,thread_id,situation_id,occurred_at,visitor_utterance,response_text,record_digest
         ) VALUES (?,?,?,?,?,?,?)
-      `).run(eventId, candidate.threadId, candidate.situationId, candidate.occurredAt,
-        candidate.visitorUtterance, candidate.responseText, recordDigest);
-      return record;
+      `).run(eventId, core.threadId, core.situationId, core.occurredAt,
+        core.visitorUtterance, core.responseText, recordDigest);
+      if (sharedEventRef !== null) {
+        const shared = this.#database.prepare(
+          "SELECT 1 AS present FROM lived_shared_meeting_records WHERE shared_event_id=?",
+        ).get(sharedEventRef);
+        if (shared === undefined) throw new TypeError(`shared meeting ${sharedEventRef} was not found`);
+        this.#database.prepare(
+          "INSERT INTO lived_encounter_shared_refs(event_id,shared_event_ref) VALUES (?,?)",
+        ).run(eventId, sharedEventRef);
+      }
+      return sharedEventRef === null ? record : { ...record, sharedEventRef };
     } catch (error) { throw translateStorageError(error); }
   }
 
@@ -106,6 +183,25 @@ export class LivedExperienceStore {
         candidate.writtenAt, candidate.entryText, recordDigest);
       return record;
     } catch (error) { throw translateStorageError(error); }
+  }
+
+  listSharedMeetings(threadId) {
+    assertId("threadId", threadId);
+    return this.#database.prepare(`
+      SELECT * FROM lived_shared_meeting_records
+      WHERE initiator_thread_id=? OR responder_thread_id=?
+      ORDER BY occurred_at,shared_event_id
+    `).all(threadId,threadId).map((row) => ({
+      sharedEventId:row.shared_event_id,
+      occurredAt:row.occurred_at,
+      initiatorThreadId:row.initiator_thread_id,
+      responderThreadId:row.responder_thread_id,
+      initiatorSituationId:row.initiator_situation_id,
+      responderSituationId:row.responder_situation_id,
+      openingText:row.opening_text,
+      responseText:row.response_text,
+      followupText:row.followup_text,
+    }));
   }
 
   listEncounters(threadId) {
