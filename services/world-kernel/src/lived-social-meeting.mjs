@@ -7,6 +7,7 @@ import {
   formSocialEncounterOpening,
 } from "./lived-social-encounter-cognition.mjs";
 import { internalizeThreadEncounterExperience } from "./lived-thread-experience-aftermath.mjs";
+import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import {
   assertId,
   assertIsoTimestamp,
@@ -189,13 +190,21 @@ export function createSocialMeetingService({
       });
       if (closingBeat !== null) story.beats.push(closingBeat);
 
+      const participants = contexts.map((context) => ({
+        threadId:context.thread.threadId,
+        situationId:context.situation.situationId,
+      }));
       const encounterStory = experienceStore.recordEncounterStory({
         occurredAt:input.at,
-        participants:contexts.map((context) => ({
-          threadId:context.thread.threadId,
-          situationId:context.situation.situationId,
-        })),
+        participants,
         story,
+        visualization:createEncounterVisualization({
+          occurredAt:input.at,
+          story,
+          scene:"A small social encounter among Threads whose independent World-owned current situations establish compatible presence.",
+          sourceReferences:participants.map((participant) => participant.situationId),
+          depictedThreadRefs:[],
+        }),
       });
 
       const participantSummaries = contexts.map(participantSummary);
