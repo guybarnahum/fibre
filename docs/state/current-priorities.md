@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-21
 canonical: true
 ---
 
@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + meetings**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, and N3 makes a canonical Genesis birth enter that same continuity seam and survive the same dormant path. N4 is now wired so meeting entry reconciles LivedNow before the visitor enters; the active work is deployed acceptance of that exact path.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 now proves a deployed Person -> Thread meeting can enter that reconciled life and speak into the exact World-owned situation. The active work is N5: reciprocal Thread -> Thread meeting between two independently current lives.
 
 Canonical architecture:
 
@@ -51,8 +51,8 @@ Therefore Fibre should no longer describe the remaining work as merely “run th
 N1  World-owned ensure-LivedNow seam                      CLOSED
 N2  dormant/frozen interval catch-up                      CLOSED
 N3  Genesis -> first LivedNow -> multi-day continuity     CLOSED
-N4  Person -> Thread /meet over real LivedNow             CURRENT
-N5  Thread -> Thread reciprocal meeting                   NEXT
+N4  Person -> Thread /meet over real LivedNow             CLOSED
+N5  Thread -> Thread reciprocal meeting                   CURRENT
 N6  rich insidefibre.com lived meeting                    NEXT
 ```
 
@@ -133,7 +133,7 @@ This is the bridge between Genesis and the lived world.
 
 Genesis supplies grounded prior life. LivedNow owns life after Fibre birth.
 
-## N4 — Person -> Thread meeting — IMPLEMENTED, DEPLOYED ACCEPTANCE PENDING
+## N4 — Person -> Thread meeting — CLOSED
 
 `/meet` now asks World to establish LivedNow before exposing the scene. Meeting is an intersection with ongoing life, not a scene-creation API.
 
@@ -149,9 +149,9 @@ select Thread
 
 The visitor cannot choose the Thread's location, activity, private state or plan.
 
-The automated path proves meeting entry cannot author the scene, reconciles before exposure, and keeps later utterances bound to the returned `situationId`. N4 closes only after the deployed public stack demonstrates that same path against a real Thread.
+The automated path proves meeting entry cannot author the scene, reconciles before exposure, and keeps later utterances bound to the returned `situationId`. Deployed staging acceptance then exercised that exact path against a real Thread: `/meet` established and published a fresh World-owned present, and the subsequent encounter succeeded against the same `situationId` with a response grounded in the Thread's current activity. N4 is closed.
 
-## N5 — Thread -> Thread meeting
+## N5 — Thread -> Thread meeting — CURRENT
 
 Thread-to-Thread meetings are intersections of two continuing lives.
 
