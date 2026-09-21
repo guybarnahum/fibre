@@ -69,13 +69,13 @@ Thread-owned bounded Flight Plan
 
 These are bounded proofs. They do not yet maintain an authoritative present across arbitrary wall-clock dormancy.
 
-### M2-N1 — ensure LivedNow — CURRENT
+### M2-N1 — ensure LivedNow — CLOSED
 
-Compose existing Flight Plan, CurrentSituation, regulation and persistence into one World-owned capability that can establish a valid present for `threadId, at`.
+Fibre now has one narrow World-owned `ensure({ threadId, at })` seam for times with admitted personal Flight Plan coverage. It deterministically establishes CurrentSituation, respects required care constraints, rejects caller-authored scene fields, and retries idempotently.
 
-The caller requests a present. World owns the answer.
+If coverage is absent, it fails rather than exposing the stale prior scene. N2 owns that uncovered interval.
 
-### M2-N2 — dormant interval catch-up — NEXT
+### M2-N2 — dormant interval catch-up — CURRENT
 
 When existing lived coverage does not reach the requested time:
 
