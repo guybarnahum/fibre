@@ -421,9 +421,9 @@ Raw regulator/sensory state and DNA remain private/operator-authorized and are n
 
 [`../concepts/emotions-and-needs.md`](../concepts/emotions-and-needs.md) owns meaning-bearing state doctrine. ADR-0012 still applies: numeric/categorical control state may never replace semantic meaning. It is legitimate here because it performs regulation rather than claiming to summarize the person.
 
-## Implementation detour
+## Implementation status
 
-Continue on `agent/m2-lived-encounter`; do not create a parallel branch or generic simulation framework.
+R1-R4 are closed substrate for the active continuous-LivedNow work. Continue on current `main` unless the owner explicitly selects another branch. Do not create a generic simulation framework.
 
 ### R1 — Layered regulator kernel
 
