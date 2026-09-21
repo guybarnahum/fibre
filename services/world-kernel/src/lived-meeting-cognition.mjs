@@ -25,9 +25,10 @@ function boundedMemories(memories) {
     }));
 }
 
-function relationshipView(relations, requesterId) {
+function relationshipView(relations, requesterIds) {
+  const ids = new Set(requesterIds);
   return (relations ?? [])
-    .filter((relation) => relation?.relatedParty?.partyId === requesterId)
+    .filter((relation) => ids.has(relation?.relatedParty?.partyId))
     .map((relation) => ({
       relationId:relation.relationId,
       relationKind:relation.relationKind,
@@ -36,11 +37,12 @@ function relationshipView(relations, requesterId) {
     }));
 }
 
-function semanticView(states, requesterId) {
+function semanticView(states, requesterIds) {
+  const ids = new Set(requesterIds);
   return (states ?? [])
     .filter((state) => state.domain === "emotion" || state.domain === "need" ||
       state.domain === "relationship_attitude" || state.domain === "intention")
-    .filter((state) => state.domain !== "relationship_attitude" || state.target?.targetId === requesterId)
+    .filter((state) => state.domain !== "relationship_attitude" || ids.has(state.target?.targetId))
     .map((state) => ({
       stateId:state.stateId,
       domain:state.domain,
@@ -77,7 +79,7 @@ export async function formMeetingStance({
   thread,
   situation,
   plan,
-  requester,
+  counterparties,
   relationships = [],
   semanticStates = [],
   memories = [],
@@ -86,8 +88,15 @@ export async function formMeetingStance({
   assertPlainObject("meeting Thread", thread);
   assertId("meeting Thread.threadId", thread.threadId);
   assertPlainObject("meeting situation", situation);
-  assertPlainObject("meeting requester", requester);
-  assertId("meeting requester.threadId", requester.threadId);
+  if (!Array.isArray(counterparties) || counterparties.length < 1) {
+    throw new TypeError("meeting stance requires counterparties");
+  }
+  const counterpartyIds = [];
+  for (const counterparty of counterparties) {
+    assertPlainObject("meeting counterparty", counterparty);
+    assertId("meeting counterparty.threadId", counterparty.threadId);
+    counterpartyIds.push(counterparty.threadId);
+  }
   const input = {
     thread:{
       threadId:thread.threadId,
@@ -99,20 +108,20 @@ export async function formMeetingStance({
     },
     currentSituation:structuredClone(situation),
     remainingFlightPlan:plan === null ? null : structuredClone(plan),
-    requester:{
-      threadId:requester.threadId,
-      name:requester.identity?.name ?? null,
-      selfDescription:requester.identity?.selfDescription ?? "",
-    },
-    relationships:relationshipView(relationships, requester.threadId),
-    semanticStates:semanticView(semanticStates, requester.threadId),
+    counterparties:counterparties.map((counterparty) => ({
+      threadId:counterparty.threadId,
+      name:counterparty.identity?.name ?? null,
+      selfDescription:counterparty.identity?.selfDescription ?? "",
+    })),
+    relationships:relationshipView(relationships, counterpartyIds),
+    semanticStates:semanticView(semanticStates, counterpartyIds),
     autobiographicalMemories:boundedMemories(memories),
   };
   const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are one persistent Fibre Thread deciding whether to meet another Thread right now.
-The currentSituation is World truth and the Flight Plan is this Thread's own intended life. A meeting request is not authority to interrupt either one.
+    systemPrompt:`You are one persistent Fibre Thread deciding whether to join a small encounter with the listed counterparties right now.
+The currentSituation is World truth and the Flight Plan is this Thread's own intended life. A meeting request is not authority to interrupt or rewrite it.
 Choose accept, decline, or defer from this particular Thread's point of view.
-Consider what the Thread is doing, privacy and interruption cost, remaining intentions, needs/feelings, remembered history, and the actual relationship with the requester. Someone liked or trusted may receive more accommodation, but no relationship label mechanically determines the choice.
+Consider what the Thread is doing, privacy and interruption cost, remaining intentions, needs/feelings, remembered history, and the actual relationships with the people present. Someone liked or trusted may receive more accommodation, but no relationship label mechanically determines the choice.
 decline means not now without proposing a concrete later time. defer means not now but with a plausible later time inside the supplied Flight Plan horizon when one is genuinely supported.
 expression is optional outward wording in the Thread's own voice. It may be brief and need not reveal private reasons.
 Do not change location, rewrite the Flight Plan, invent a relationship, or expose private records.`,
@@ -157,7 +166,7 @@ Do not change location, rewrite the Flight Plan, invent a relationship, or expos
   });
 }
 
-export async function formMeetingOpening({ thread, situation, counterparty, modelAdapter }) {
+export async function formMeetingOpening({ thread, situation, counterparties, modelAdapter }) {
   const input = {
     thread:{
       threadId:thread.threadId,
@@ -166,15 +175,15 @@ export async function formMeetingOpening({ thread, situation, counterparty, mode
       selfModel:thread.currentState?.selfModel ?? "",
     },
     currentSituation:structuredClone(situation),
-    counterparty:{
+    counterparties:counterparties.map((counterparty) => ({
       threadId:counterparty.threadId,
       name:counterparty.identity?.name ?? null,
       selfDescription:counterparty.identity?.selfDescription ?? "",
-    },
+    })),
   };
   const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are one persistent Fibre Thread at the start of a mutually accepted meeting with another Thread.
-Say one natural opening line from the life already underway. It may reference the current activity or relationship when natural.
+    systemPrompt:`You are one persistent Fibre Thread at the start of a mutually accepted small-group encounter.
+Say one natural opening line from the life already underway. It may address one or several people and may reference the current activity or relationship when natural.
 Do not narrate private state, explain the system, invent shared history, or change the World situation.`,
     input,
     responseSchema:{
@@ -187,4 +196,76 @@ Do not narrate private state, explain the system, invent shared history, or chan
   });
   assertNonEmpty("meeting opening", invocation.output.responseText);
   return invocation.output.responseText;
+}
+
+
+export async function continueMeetingStory({
+  thread,
+  situation,
+  counterparties,
+  story,
+  modelAdapter,
+}) {
+  assertPlainObject("meeting continuation Thread", thread);
+  assertId("meeting continuation Thread.threadId", thread.threadId);
+  assertPlainObject("meeting continuation situation", situation);
+  if (!Array.isArray(counterparties) || counterparties.length < 1) {
+    throw new TypeError("meeting continuation requires counterparties");
+  }
+  assertPlainObject("meeting story", story);
+  if (!Array.isArray(story.beats) || story.beats.length < 1) {
+    throw new TypeError("meeting story requires prior beats");
+  }
+
+  const input = {
+    thread:{
+      threadId:thread.threadId,
+      name:thread.identity?.name ?? null,
+      selfDescription:thread.identity?.selfDescription ?? "",
+      selfModel:thread.currentState?.selfModel ?? "",
+      stableTendencies:structuredClone(thread.genome?.textualTraits ?? {}),
+    },
+    currentSituation:structuredClone(situation),
+    counterparties:counterparties.map((counterparty) => ({
+      threadId:counterparty.threadId,
+      name:counterparty.identity?.name ?? null,
+      selfDescription:counterparty.identity?.selfDescription ?? "",
+    })),
+    story:structuredClone(story),
+  };
+
+  const invocation = await modelAdapter.invoke({
+    systemPrompt:`You are one persistent Fibre Thread already present in a small shared encounter.
+The supplied story contains only the observable encounter so far. Decide whether this Thread contributes one next observable beat or stays silent.
+Staying silent is normal: a Thread may simply witness what others do.
+If speaking, use this Thread's own voice. If acting, describe only a short outwardly observable action.
+Do not narrate private feelings, hidden thoughts, memory records, system state, or another person's interior.
+Do not rewrite prior beats or move anyone to another place.
+Return both beatKind and beatText as null to remain a witness for this turn.`,
+    input,
+    responseSchema:{
+      type:"object",
+      additionalProperties:false,
+      required:["beatKind","beatText"],
+      properties:{
+        beatKind:{ anyOf:[{ type:"string", enum:["utterance","action"] },{ type:"null" }] },
+        beatText:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
+      },
+    },
+    clientRequestId:requestId("meeting-story", input),
+  });
+
+  assertPlainObject("meeting story continuation", invocation.output);
+  assertExactKeys("meeting story continuation", invocation.output, ["beatKind","beatText"]);
+  const silent = invocation.output.beatKind === null && invocation.output.beatText === null;
+  if (!silent && (invocation.output.beatKind === null || invocation.output.beatText === null)) {
+    throw new TypeError("meeting story beat kind and text must appear together");
+  }
+  if (silent) return null;
+  assertNonEmpty("meeting story beatText", invocation.output.beatText);
+  return Object.freeze({
+    actorThreadId:thread.threadId,
+    kind:invocation.output.beatKind,
+    text:invocation.output.beatText,
+  });
 }
