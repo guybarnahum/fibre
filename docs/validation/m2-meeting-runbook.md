@@ -183,32 +183,32 @@ To deliberately test stale-scene protection, first read a valid present and then
 
 The Admin dashboard is not deployed by the static `deploy:admin-dashboard:cloudflare:dry` command. The real app deployment path resolves the environment-specific custom domain, shared `ACTIVITY_LOG` D1 database and Cloudflare Access configuration before deploying Admin.
 
-From the Fibre repository:
+From the Fibre repository, use the operator deployment path rather than the raw per-Worker Wrangler scripts. The raw `deploy:*:cloudflare` commands assume their queues, D1/R2 resources and Worker secrets already exist.
+
+For staging, the existing one-shot preparation command is the shortest path:
 
 ```bash
 git switch main
 git pull --ff-only origin main
-
 npm run slice:validate
-
-npm run deploy:world-kernel:cloudflare
-npm run deploy:thread-presentation:cloudflare
-```
-
-Then deploy the operator apps for the environment you want to use. This deploys Admin Dashboard and Status Page together using the provisioned environment state and Cloudflare Access configuration:
-
-```bash
-npm run cloud:deploy:apps -- --env staging --file .env
-npm run cloud:deploy:apps -- --env production --file .env
-```
-
-If the environment has not been provisioned/configured yet, prepare staging end-to-end with:
-
-```bash
 npm run cloud:prepare:staging
 ```
 
-For production, provision/configure first if needed, then deploy runtime and apps with the corresponding production environment arguments.
+For production, provision and configure explicitly, then deploy the runtime stack and operator apps:
+
+```bash
+git switch main
+git pull --ff-only origin main
+npm run slice:validate
+npm run cloud:provision -- --env production
+npm run cloud:configure-secrets -- --env production --file .env
+npm run cloud:deploy -- --env production
+npm run cloud:deploy:apps -- --env production --file .env
+```
+
+The provision step is idempotent and owns D1, R2 and queue creation, including the asset-completion queue and DLQ. The secret-configuration step validates the operator file before upload and can bootstrap first Worker drafts with their required secret sets. The deployment step then uses generated environment-specific Wrangler configs, deploys the runtime stack in dependency order, and performs health/acceptance checks.
+
+The operator file must contain the Cloudflare credentials and runtime secrets required by the current service configs. Keep those values only in the operator file/Cloudflare secret store; do not paste them into the runbook, browser, logs or chat.
 
 After app deployment, verify the unauthenticated health endpoint before debugging browser authorization:
 
