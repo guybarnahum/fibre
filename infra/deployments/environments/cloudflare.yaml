@@ -93,6 +93,7 @@ services:
     runtime: cloudflare
     infra: world-cloudflare
     integrations:
+      livedNow: lived-encounter-openai
       encounter: lived-encounter-openai
   birth-center:
     runtime: cloudflare
