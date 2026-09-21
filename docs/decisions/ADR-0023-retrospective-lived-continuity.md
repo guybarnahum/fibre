@@ -29,6 +29,8 @@ It does **not** by itself mean that the Thread's Fibre-world life must be treate
 
 Retired Threads and explicitly suspended life remain separate lifecycle cases.
 
+For a lived Thread, thaw is therefore not a request to reopen the last persisted scene. Thaw means restore lived continuity to the requested present: reconcile elapsed life, admit any resulting consequences, renew current plan coverage when needed, and only then establish CurrentSituation.
+
 ### 2. World may retrospectively realize an uncovered lived interval
 
 When Fibre needs the Thread's present and authoritative lived coverage does not reach the requested time, World may generate and admit a bounded retrospective continuation across the uncovered interval.
@@ -42,6 +44,8 @@ That continuation may include:
 - consequences admitted through their normal authorities.
 
 This is an on-demand reconciliation operation, not a hidden continuous simulation.
+
+A lived Thread should ordinarily have personal Flight Plan coverage across a rolling half-day/day horizon. Catch-up may retrospectively realize missing elapsed plan coverage, while current/future coverage may be newly authored during reconciliation. Intended plan and enacted World history remain distinct authorities.
 
 ### 3. Retrospective provenance is mandatory
 
@@ -110,6 +114,7 @@ For Thread-to-Thread meetings, each participant must independently reach an auth
 
 - The existing `frozen` / `dormant` states remain runtime/lifecycle facts, not proof that world-time life ceased.
 - Fibre needs one World-owned capability equivalent to `ensure LivedNow(threadId, at)`.
+- Rolling half-day/day Flight Plan coverage becomes the normal lived-life expectation, with retrospective plan realization and renewal used only as needed.
 - Flight Plan renewal and dormant catch-up become prerequisites for a robust deployed `/meet`.
 - Lived catch-up must be idempotent for the same interval and inputs.
 - Historical inspection must be able to distinguish retrospectively materialized events from events admitted near their lived time.
