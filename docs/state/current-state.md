@@ -46,7 +46,8 @@ wired /meet over continuous LivedNow                       PROVEN
 live deployed /meet acceptance                             PROVEN
 Encounter Story / Thread Experience E0 foundation         PROVEN
 environmental noticing / Thread Experience E1              PROVEN
-voluntary social meeting / Encounter Story E2               CURRENT
+voluntary social meeting / Encounter Story E2               PROVEN
+silent witness / n-ary encounter E3                         CURRENT
 live deployed N5 acceptance                                NOT YET
 ```
 
@@ -54,7 +55,7 @@ The important correction is:
 
 > **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
 
-N4 is closed in deployment. N5 now proceeds from the accepted insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0 and E1 are closed. E1 proves that an unscheduled World occurrence can become one objective Encounter Story, remain visually reconstructable, enter or miss a Thread's attention, and only when noticed become private Thread Experience and selective autobiographical consequence. E2 is current.
+N4 is closed in deployment. N5 now proceeds from the accepted insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E2 are closed. E2 proves that independently current Threads are not teleported or silently replanned into a meeting, compatible presence does not override decline, and mutual participation produces one Encounter Story plus distinct first-person Thread Experiences through the same E1 attention/experience authority. E3 is current.
 
 See:
 
@@ -96,7 +97,6 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
-- social meeting as a gated special case of the now-proven general encounter seam;
 - silent-witness / n-ary encounter proof;
 - deployed N5 acceptance against real staging Threads;
 - a rich public scene driven by that continuous present.
@@ -262,11 +262,13 @@ Thread B LivedNow ─┘
              -> ordinary private aftermath
 ```
 
-E2 must prove that compatible presence does **not** force a meeting, that no Thread is teleported or silently replanned, and that relationship/history may influence accommodation without becoming a mechanical social score.
+E2 is green in full CI. Social meeting is now only a voluntary gate around the general encounter seam: incompatibility or decline creates no Encounter Story; mutual acceptance produces one story and personal Thread Experiences, with participation recorded as durably noticed rather than adding redundant attention cognition.
 
-Do not add calendars, invitation infrastructure, generic social orchestration or new memory machinery. Reuse the E1 Encounter Story / Thread Experience path.
+E3 is current. It must prove one n-ary Encounter Story can affect a silent witness differently from the actors without fabricating speech or mechanically updating relationships.
 
-Follow [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md). E2 is current; E3 then adds the silent-witness/n-ary proof, E4 validates journal/rendering/Admin presentation, and E5 is staging acceptance.
+Do not add bystander simulation, generic social orchestration or new memory machinery. Reuse the E1/E2 Encounter Story / attention / Thread Experience path.
+
+Follow [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md). E3 is current; E4 validates journal/rendering/Admin presentation, and E5 is staging acceptance.
 
 
 ## Development discipline
