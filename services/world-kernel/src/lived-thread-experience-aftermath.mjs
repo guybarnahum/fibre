@@ -33,7 +33,7 @@ function runStage(activityRecorder, metadata, operation) {
 export async function internalizeThreadEncounterExperience({
   livedContext,
   encounterStory,
-  participantSummaries,
+  presentThreadSummaries,
   experienceRecord = null,
   experienceStore,
   memoryStore,
@@ -47,7 +47,7 @@ export async function internalizeThreadEncounterExperience({
   assertPlainObject("Encounter Story", encounterStory);
   assertId("Encounter Story.encounterId", encounterStory.encounterId);
   if (!Array.isArray(encounterStory.story?.beats)) throw new TypeError("Encounter Story beats are required");
-  if (!Array.isArray(participantSummaries)) throw new TypeError("encounter participant summaries are required");
+  if (!Array.isArray(presentThreadSummaries)) throw new TypeError("encounter present Thread summaries are required");
   if (experienceRecord === null) requireMethod("experienceStore", experienceStore, "recordThreadExperience");
   requireMethod("experienceStore", experienceStore, "recordThreadExperienceJournalEntry");
   requireMethod("memoryStore", memoryStore, "recordMemory");
@@ -100,7 +100,7 @@ export async function internalizeThreadEncounterExperience({
       },
       currentSituation:structuredClone(livedContext.situation),
       experienceText:activeExperience.experienceText ?? null,
-      participants:structuredClone(participantSummaries),
+      presentThreads:structuredClone(presentThreadSummaries),
       story:structuredClone(encounterStory.story),
       semanticStates:livedContext.semanticStates.map((state) => ({
         domain:state.domain,
