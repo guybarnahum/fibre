@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + encounters**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 now builds on the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0 and E1 are closed; E2 is current.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 now builds on the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E2 are closed; E3 is current.
 
 Canonical architecture:
 
@@ -54,7 +54,7 @@ N1  World-owned ensure-LivedNow seam                      CLOSED
 N2  dormant/frozen interval catch-up                      CLOSED
 N3  Genesis -> first LivedNow -> multi-day continuity     CLOSED
 N4  Person -> Thread /meet over real LivedNow             CLOSED
-N5  voluntary social meeting over Encounter Story          CURRENT
+N5  n-ary Encounter Story + silent witness                 CURRENT
 N6  rich insidefibre.com lived encounter                  NEXT
 ```
 
@@ -199,8 +199,8 @@ The active execution plan is [N5 encounter-story implementation slices](../valid
 
 1. E0 reconcile the spike and restore one coherent green model — **closed**;
 2. E1 environmental Encounter Story + noticing + Thread Experience + visualization prompt — **closed**;
-3. E2 social meeting as a gated encounter — **current**;
-4. E3 n-ary story + silent witness consequence;
+3. E2 social meeting as a gated encounter — **closed**;
+4. E3 n-ary story + silent witness consequence — **current**;
 5. E4 journal book/optional rendering/Admin acceptance;
 6. E5 staging acceptance.
 
