@@ -79,18 +79,19 @@ The quiet-gap proof deliberately does not invent an encounter or memory just to 
 
 N4 is closed in staging: public meeting entry asks World to ensure LivedNow at server time, publishes that exact bounded present, and only then exposes the scene. A subsequent live encounter succeeded against the exact returned `situationId`, so the visitor entered an already-existing life rather than creating one.
 
-The visitor may cause the encounter, but cannot choose the Thread's pre-existing place, activity, plan, companions, private memory or feelings.
+The visitor may request an encounter, but cannot choose the Thread's pre-existing place, activity, plan, companions, private memory or feelings. A lived Thread is always physically somewhere in World — at a place or in transit between places — even when exact public location is coarsened.
 
-The implemented path is:
+N4 proved the current automatic-entry path. The next refinement is Thread-owned participation:
 
 ```text
 select Thread
   -> ensure LivedNow(now)
-  -> publish exact bounded present
-  -> visitor enters that scene
-  -> encounter / response
-  -> private experience / selective consequence
+  -> Thread chooses accept / decline / defer
+      -> accept: enter exact scene and encounter
+      -> decline/defer: optional explanation or later suggestion
 ```
+
+That choice should reflect what the Thread is doing, her near-term Flight Plan, needs/feelings/intentions, and relevant relationship/history. Someone she likes may receive more accommodation, but no single relationship label mechanically decides the outcome.
 
 ### Selective experience internalization — Shown working
 
@@ -106,11 +107,11 @@ Retrospective catch-up receives no special memory shortcut; future salient catch
 
 Two Threads should be able to meet as two independently continuing people.
 
-Before the encounter, each needs its own authoritative LivedNow.
+Before the encounter, each needs its own authoritative LivedNow and its own willingness to participate.
 
-A physical meeting requires compatible place/time presence; a mediated meeting requires compatible mediated context.
+A physical meeting requires compatible place/time presence; a mediated meeting requires compatible mediated context while each Thread still remains physically somewhere. Compatible presence alone is not consent.
 
-Once the encounter happens, it may become shared history while producing different private aftermath:
+Once both participate and the encounter happens, it may become shared history while producing different private aftermath:
 
 ```text
 shared encounter
@@ -118,7 +119,7 @@ shared encounter
   -> Thread B remembers / forgets / changes differently
 ```
 
-Fibre should not teleport or silently replan Threads merely to make a meeting happen.
+Fibre should not teleport, silently replan, or force an interruption merely to make a meeting happen.
 
 ### Rich insidefibre.com meeting
 
