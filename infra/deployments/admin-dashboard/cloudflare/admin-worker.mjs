@@ -16,7 +16,7 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
 const THREAD_OBSERVATORY_ROUTE = /^\/api\/threads\/([^/]+)\/observatory$/u;
 const THREAD_JOURNAL_ROUTE = /^\/api\/threads\/([^/]+)\/journal$/u;
-const THREAD_MEETING_ROUTE = /^\/api\/threads\/([^/]+)\/meet-thread$/u;
+const THREAD_MEETING_ROUTE = /^\/api\/threads\/([^/]+)\/meet-threads$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
 const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
@@ -128,10 +128,16 @@ async function proxyThreadMeeting(request, env, initiatorThreadId) {
   let input;
   try { input = await request.json(); }
   catch { return json(400, { error:"invalid_thread_meeting", detail:"meeting request must be JSON" }); }
-  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).join(",") !== "threadId") {
-    return json(400, { error:"invalid_thread_meeting", detail:"meeting request must contain exactly threadId" });
+  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).join(",") !== "threadIds") {
+    return json(400, { error:"invalid_thread_meeting", detail:"meeting request must contain exactly threadIds" });
   }
-  const responderThreadId = id("threadId", input.threadId);
+  if (!Array.isArray(input.threadIds) || input.threadIds.length < 1 || input.threadIds.length > 5) {
+    return json(400, { error:"invalid_thread_meeting", detail:"threadIds must contain 1-5 other Threads" });
+  }
+  const participantThreadIds = [initiatorThreadId, ...input.threadIds.map((threadId) => id("threadId", threadId))];
+  if (new Set(participantThreadIds).size !== participantThreadIds.length) {
+    return json(400, { error:"invalid_thread_meeting", detail:"meeting Threads must be unique" });
+  }
   const upstream = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     "https://world.internal/internal/reciprocal-meeting",
     {
@@ -141,7 +147,7 @@ async function proxyThreadMeeting(request, env, initiatorThreadId) {
         "Content-Type":"application/json",
         "x-fibre-private-token":privateToken(env),
       },
-      body:JSON.stringify({ initiatorThreadId, responderThreadId }),
+      body:JSON.stringify({ initiatorThreadId, participantThreadIds }),
     },
   ));
   const payload = await upstream.text();
