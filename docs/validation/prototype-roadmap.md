@@ -110,7 +110,7 @@ Genesis
 
 The deployed meeting now enters a scene produced by continuous LivedNow rather than by a meeting fixture, and the subsequent encounter remains bound to the exact returned `situationId`.
 
-### M2-N5 — Encounter Story -> Thread Experience — ACTIVE (E0 CLOSED, E1 CURRENT)
+### M2-N5 — Encounter Story -> Thread Experience — ACTIVE (E0-E1 CLOSED, E2 CURRENT)
 
 N5 has been broadened before deployment. The durable primitive is no longer “Thread A meets Thread B.” It is:
 
@@ -126,12 +126,13 @@ A social meeting is one voluntary form of encounter and retains the `accept | de
 
 E0 has now reconciled the first implementation spike into one green foundation: Encounter Story / Thread Experience own the general persistence vocabulary; social meeting is a wrapper; participation cognition is separate from social story cognition; obsolete dyadic code/tests are removed; journal/R2/Admin work and selective memory remain available.
 
-E1 is the current slice. The required N5 proofs remain:
+E1 is now closed. Its environmental proof admits an unscheduled occurrence, records a durable objective visualization prompt, persists retry-stable Thread attention, creates Thread Experience only when noticed, and keeps journal/memory selective. E2 is current.
 
-1. an unscheduled environmental occurrence can be noticed and selectively matter;
-2. compatible social presence does not force a meeting;
-3. one n-ary social story can affect a silent witness differently from the actors;
-4. journal remains subjective and separate from autobiographical memory.
+The remaining N5 proofs are:
+
+1. compatible social presence does not force a meeting;
+2. one n-ary social story can affect a silent witness differently from the actors;
+3. journal remains subjective and separate from autobiographical memory.
 
 Follow [N5 encounter-story implementation slices](n5-encounter-slices.md). N5 closes only after those semantics are green and accepted in staging.
 
