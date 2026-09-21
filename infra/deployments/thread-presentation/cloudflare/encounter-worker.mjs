@@ -21,6 +21,37 @@ function snapshotRequest(request, threadId) {
   });
 }
 
+async function callWorldEnsure(env, threadId) {
+  const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/lived-now/ensure", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-fibre-private-token": env.FIBRE_PRIVATE_TOKEN,
+    },
+    body: JSON.stringify({ threadId }),
+  }));
+  let body = null;
+  try { body = await response.json(); } catch {}
+  if (!response.ok) {
+    const error = new Error(body?.error ?? `World LivedNow failed with HTTP ${response.status}`);
+    error.status = response.status;
+    error.body = body;
+    throw error;
+  }
+  if (body?.result?.present?.situationId !== body?.result?.situationId) {
+    throw new Error("World LivedNow returned an inconsistent present");
+  }
+  return body.result.present;
+}
+
+function worldEnsure(env, activityRecorder, threadId) {
+  if (activityRecorder === null) return callWorldEnsure(env, threadId);
+  return activityRecorder.runStage({
+    threadId,
+    stage: "presentation.meet.world_ensure",
+  }, () => callWorldEnsure(env, threadId));
+}
+
 async function callWorldEncounter(env, input) {
   const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/lived-encounter", {
     method: "POST",
@@ -76,6 +107,9 @@ export default {
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
     const encounterApi = createPublicEncounterApi({
       viewerOrigin: env.VIEWER_ORIGIN ?? null,
+      ensurePublicPresent(threadId) {
+        return worldEnsure(env, activityRecorder, threadId);
+      },
       async readPublicPresent(threadId, originalRequest) {
         const response = await baseWorker.fetch(snapshotRequest(originalRequest, threadId), env, ctx);
         if (!response.ok) return null;
