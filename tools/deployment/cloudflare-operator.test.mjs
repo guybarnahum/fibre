@@ -146,6 +146,7 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
     ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
     ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0003_activity_thread_heads.sql"],
     ["r2", "fibre-presentation-assets-staging"],
+    ["r2", "fibre-thread-objects-staging"],
     ["queue", "fibre-asset-completions-staging"],
     ["queue", "fibre-asset-completions-dlq-staging"],
   ]);
