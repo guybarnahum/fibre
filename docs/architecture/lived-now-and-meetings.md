@@ -1,7 +1,7 @@
 ---
 id: architecture-lived-now-and-meetings-v0-1
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-21
 canonical: false
 ---
 
@@ -61,7 +61,14 @@ A Flight Plan is intention, not World truth. Retrospective plan realization ther
 
 ### CurrentSituation
 
-The World-owned enacted truth for the Thread at a particular time: at a place, in transit, physically or meaningfully mediated somewhere, doing something, with relevant participants and evidence.
+The World-owned enacted truth for the Thread at a particular time: at a physical place or in transit between physical places, possibly also participating in a mediated context, doing something, with relevant participants and evidence.
+
+A lived Thread is never physically nowhere. Every CurrentSituation therefore carries one of:
+
+- `place(placeRef)`;
+- `transit(fromPlaceRef, toPlaceRef, progress)`.
+
+Mediated presence is additional context, not a replacement for physical presence. Public Presentation may coarsen or withhold exact place details, but World must always know the underlying physical presence.
 
 ### LivedNow
 
@@ -92,6 +99,23 @@ Catch-up is not an excuse to write arbitrary biography.
 A shared encounter between entities whose relevant present already exists.
 
 A meeting **intersects ongoing life**; it does not spawn that life. The encountered Thread may be at a destination, in transit between Flight Plan stops, waiting, working, studying, resting, accompanied, or otherwise occupied for reasons that existed before the meeting request.
+
+A request to meet is not automatic access to the Thread. After LivedNow is established, the Thread decides whether this is a moment it is willing to interrupt or share. That judgment may depend on:
+
+- the current activity and whether interruption is plausible;
+- the remaining Flight Plan and near-term commitments;
+- current needs, feelings and unresolved intentions;
+- the requester and the Thread's relationship/history with them;
+- whether the encounter is physical or mediated;
+- whether another time would fit better.
+
+The smallest useful outcome set is:
+
+- **accept** — enter the current situation now;
+- **decline** — do not meet now, optionally explain;
+- **defer** — do not meet now, optionally suggest a later time or condition.
+
+This is Thread agency, not a generic calendar system. A Thread may be more accommodating toward someone it likes or trusts, less accommodating toward someone it resents or barely knows, or make the opposite choice because another value or obligation matters more. Relationship context may influence the decision but must not mechanically determine it.
 
 The first important forms are:
 
@@ -254,15 +278,20 @@ Conceptually:
 ```text
 select Thread
   -> ensure LivedNow(now)
-  -> publish exact current scene
-  -> Person enters that scene
-  -> encounter
-  -> public expression
-  -> objective history
-  -> private experience / selective consequence
+  -> Thread appraises whether to meet now
+      -> decline / defer (+ optional expression)
+      -> accept
+          -> publish exact current scene
+          -> Person enters that scene
+          -> encounter
+          -> public expression
+          -> objective history
+          -> private experience / selective consequence
 ```
 
-The Person's presence becomes part of the event because the meeting occurred, not because the browser was allowed to author the Thread's pre-existing life.
+The participation decision should consume the already-established current situation plus bounded Thread-owned relationship/history/interior context. The requester does not choose those private inputs and cannot force acceptance by requesting a meeting.
+
+The Person's presence becomes part of the event only if the Thread accepts the encounter. The browser never authors the Thread's pre-existing life.
 
 ## Thread-to-Thread meetings
 
@@ -272,11 +301,12 @@ Before a shared encounter can occur, each Thread has:
 
 - its own authoritative current life;
 - its own Flight Plan and reasons for being there;
-- its own identity, relationships, memory and semantic state.
+- its own identity, relationships, memory and semantic state;
+- its own willingness to participate in this encounter now.
 
-A physical Thread meeting requires compatible place/time presence. A mediated meeting requires a compatible mediated context.
+A physical Thread meeting requires compatible place/time presence. A mediated meeting requires a compatible mediated context. Compatible presence is necessary but not sufficient: both Threads must independently accept the encounter.
 
-Fibre must not teleport one Thread or rewrite a plan merely because another Thread requested a meeting. If the meeting requires planning, invitation, negotiation, travel or schedule change, those are earlier world events.
+Fibre must not teleport one Thread, rewrite a plan, or assume consent merely because another Thread requested a meeting. If the meeting requires invitation, negotiation, rescheduling, travel or plan change, those are earlier lived events and may themselves affect relationship state.
 
 Once a meeting occurs:
 
@@ -405,7 +435,9 @@ Route public meeting through ensure-LivedNow. The first deployed proof should sh
 
 ### N5 — Thread-to-Thread meeting
 
-Create one shared encounter between two independently maintained LivedNow participants and prove different participant-specific aftermath.
+Create one shared encounter between two independently maintained LivedNow participants. Each must independently have compatible presence **and choose to participate**. Prove one shared objective occurrence plus different participant-specific aftermath.
+
+The narrow first proof should include one non-meeting outcome as well: a Thread whose current life or relationship context makes it decline or defer rather than being forcibly interrupted.
 
 ### N6 — Rich insidefibre.com meeting
 
