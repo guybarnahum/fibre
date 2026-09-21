@@ -25,7 +25,7 @@ Models provide temporary cognition. Fibre owns continuity, authoritative state, 
 
 ## Current milestone posture
 
-The current north star is **continuous LivedNow + meetings**.
+The current north star is **continuous LivedNow + encounters**.
 
 Existing M2 work has already proven the bounded primitives needed for that goal:
 
@@ -44,8 +44,8 @@ bounded multi-day LivedNow catch-up + plan renewal         PROVEN
 Genesis -> same continuing LivedNow path                   PROVEN
 wired /meet over continuous LivedNow                       PROVEN
 live deployed /meet acceptance                             PROVEN
-general Encounter Story / Thread Experience model         REPLANNED
-N5 implementation spike                                    NOT ACCEPTED
+Encounter Story / Thread Experience E0 foundation         PROVEN
+environmental noticing / Thread Experience E1              CURRENT
 live deployed N5 acceptance                                NOT YET
 ```
 
@@ -53,7 +53,7 @@ The important correction is:
 
 > **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
 
-N4 is closed in deployment. N5 has been replanned around a broader accepted insight: **encounter is the primitive; meeting is one voluntary social form of encounter**. The first N5 implementation spike produced useful pieces—meeting stance, n-ary story direction, witness-aware private aftermath, journal book/R2/Admin work—but overfit the core orchestration to invited social meetings and is not accepted for deployment.
+N4 is closed in deployment. N5 is now proceeding from the broader accepted insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0 is closed: persistence uses Encounter Story / Thread Experience terminology, social meeting is a wrapper rather than the history authority, meeting stance is separated from social story cognition, obsolete dyadic code/tests were removed, and full CI is green. E1 is current.
 
 See:
 
@@ -104,7 +104,7 @@ Fibre still lacks:
 
 Encounter Story should also be visualizable by construction: its durable rich prompt is objective/evidence-bound and separate from any later subjective memory reconstruction. Actual image/video rendering is optional and uses the existing generated-asset pipeline rather than becoming World authority.
 
-The current N5 code after the design spike is intentionally **not deployment-ready**. Local `npm run slice:validate` currently fails because the old dyadic N5 tests still target the superseded meeting-store API; an additional existing live-command acceptance assertion also fails with 403 vs 503 and is being treated separately rather than folded into encounter semantics. Do not restore green by recreating the old pairwise abstraction.
+The E0 reconciliation is green in full CI. The earlier dyadic-test failures are gone, and the local admin-authority test no longer inherits `FIBRE_ADMIN_TOKEN` when it is explicitly testing the unconfigured case. The repository is ready for E1, but N5 remains undeployed.
 
 ## Continuous LivedNow
 
@@ -252,7 +252,7 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 Do not deploy or continue patching the current N5 meeting spike.
 
-First reconcile it around the accepted Encounter Story / Thread Experience model:
+E0 reconciliation is complete. Implement E1 around the accepted Encounter Story / Thread Experience model:
 
 ```text
 LivedNow / World occurrence
@@ -265,7 +265,7 @@ LivedNow / World occurrence
 
 Meeting participation remains a special wrapper around this seam. The first general proof must support environmental noticing, voluntary social meeting and silent witness consequence without separate engines.
 
-Follow [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md). Slice E0 restores one coherent model and green validation; E1-E3 prove environmental encounter, voluntary meeting and witness asymmetry; E4 validates journal/Admin presentation; E5 is staging acceptance.
+Follow [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md). E1 is current: environmental Encounter Story + bounded noticing + Thread Experience + durable visualization prompt. E2-E3 then prove voluntary meeting and witness asymmetry; E4 validates journal/rendering/Admin presentation; E5 is staging acceptance.
 
 
 ## Development discipline
