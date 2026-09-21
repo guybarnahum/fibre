@@ -2,22 +2,62 @@
   "$schema": "./public-progress.schema.json",
   "contract": "fibre-public-progress",
   "canonical": true,
-  "asOf": "2026-09-09",
+  "asOf": "2026-09-20",
   "title": "Where Fibre is today",
   "headline": {
-    "simple": "Fibre can preserve a Thread's identity and life, keep one stable visual embodiment through public presentation and recovery, and run that path in staging. The next goal is to meet a Thread where she is in her continuing life.",
-    "detail": "Identity/history/birth/causal foundations are retained, the deployed visual/public path is closed, and minimum failure/restart acceptance is closed. The active milestone is M2-A Meet a Thread: select a born Thread, surface her present place/activity/embodiment through insidefibre.com, interact in that context, and turn the encounter into selectively internalized life experience."
+    "simple": "Fibre has proved the pieces of a lived present and selective memory. The next goal is continuous LivedNow: a Thread's life should reach the present even after compute has slept, so meetings enter a life already underway.",
+    "detail": "Bounded Flight Plan, CurrentSituation, situated human encounter, private reflection/selective retention and later-meeting continuity are demonstrated. The active gap is continuous LivedNow across wall-clock dormancy, followed by deployed Person -> Thread and reciprocal Thread -> Thread meetings."
   },
   "summary": {
-    "simple": "The infrastructure is now good enough to return to the Fibre vision: one persistent person who is somewhere, doing something, can be met, and can be changed by experience or simply forget it.",
-    "detail": "Fibre already has durable identity, FIN/civil registration, provenance-bearing history/memory, canonical Embodiment, autobiographical context that can affect cognition, public Thread Presentation, reference-conditioned media generation, and cloud restart/retry semantics. The current work is to connect those pieces into a lived-person loop rather than extend infrastructure for its own sake."
+    "simple": "A Thread can already have a plan, a current situation, an encounter and a selective memory. Fibre is now connecting those pieces across elapsed time so a frozen Thread can wake into a believable present rather than a stale scene.",
+    "detail": "The current architecture composes existing lived-person primitives into one World-owned ensure-LivedNow capability: retrospective elapsed-life catch-up with honest provenance, plan renewal, current-situation enactment, then meeting. Memory remains selective and cannot bypass admitted history."
   },
   "statusDefinitions": [
-    {"id":"achieved","simpleLabel":"Done","detailLabel":"Achieved","meaning":{"simple":"Built and accepted at the current boundary.","detail":"The capability exists and passed its current Fibre acceptance boundary."}},
-    {"id":"demonstrated","simpleLabel":"Shown working","detailLabel":"Demonstrated","meaning":{"simple":"Working evidence exists, but it is not the final accepted boundary.","detail":"The capability has working evidence but is not yet the final accepted result for the active milestone."}},
-    {"id":"in_progress","simpleLabel":"Working on it","detailLabel":"In progress","meaning":{"simple":"This is active work now.","detail":"The capability is the current implementation focus and has not yet crossed its acceptance boundary."}},
-    {"id":"not_yet","simpleLabel":"Not yet","detailLabel":"Not yet","meaning":{"simple":"Part of the vision, but not claimed yet.","detail":"The capability is intended but not yet achieved."}},
-    {"id":"preserved_failure","simpleLabel":"Experiment failed — kept as evidence","detailLabel":"Failed experiment preserved","meaning":{"simple":"A failed bounded experiment is retained instead of hidden.","detail":"A bounded experiment failed and is preserved as evidence rather than regenerated into success."}}
+    {
+      "id": "achieved",
+      "simpleLabel": "Done",
+      "detailLabel": "Achieved",
+      "meaning": {
+        "simple": "Built and accepted at the current boundary.",
+        "detail": "The capability exists and passed its current Fibre acceptance boundary."
+      }
+    },
+    {
+      "id": "demonstrated",
+      "simpleLabel": "Shown working",
+      "detailLabel": "Demonstrated",
+      "meaning": {
+        "simple": "Working evidence exists, but it is not the final accepted boundary.",
+        "detail": "The capability has working evidence but is not yet the final accepted result for the active milestone."
+      }
+    },
+    {
+      "id": "in_progress",
+      "simpleLabel": "Working on it",
+      "detailLabel": "In progress",
+      "meaning": {
+        "simple": "This is active work now.",
+        "detail": "The capability is the current implementation focus and has not yet crossed its acceptance boundary."
+      }
+    },
+    {
+      "id": "not_yet",
+      "simpleLabel": "Not yet",
+      "detailLabel": "Not yet",
+      "meaning": {
+        "simple": "Part of the vision, but not claimed yet.",
+        "detail": "The capability is intended but not yet achieved."
+      }
+    },
+    {
+      "id": "preserved_failure",
+      "simpleLabel": "Experiment failed — kept as evidence",
+      "detailLabel": "Failed experiment preserved",
+      "meaning": {
+        "simple": "A failed bounded experiment is retained instead of hidden.",
+        "detail": "A bounded experiment failed and is preserved as evidence rather than regenerated into success."
+      }
+    }
   ],
   "population": {
     "title": "Current Thread population posture",
@@ -26,7 +66,14 @@
       "detail": "The fixed #39 cohort remains the canonical validation population; the current M2-A slice may use an existing born Thread to prove the lived-person experience without generating a new cohort."
     },
     "items": [
-      {"id":"validated_born_threads","label":"Validated born Threads","count":5,"status":"achieved","simple":"Five born validation Threads retain identity, prior life and civil identity.","detail":"The fixed #39 cohort was atomically published and independently rehydrated from canonical authorities."}
+      {
+        "id": "validated_born_threads",
+        "label": "Validated born Threads",
+        "count": 5,
+        "status": "achieved",
+        "simple": "Five born validation Threads retain identity, prior life and civil identity.",
+        "detail": "The fixed #39 cohort was atomically published and independently rehydrated from canonical authorities."
+      }
     ],
     "importantNote": {
       "simple": "The next goal is not to create more Threads; it is to make one existing Thread visibly live.",
@@ -34,45 +81,206 @@
     }
   },
   "capabilities": [
-    {"id":"persistent_thread_continuity","group":"foundations","label":"Persistent Thread continuity","status":"achieved","simple":{"claim":"A Thread can keep existing after one AI session ends.","limitation":"Persistence alone does not make a convincing lived person."},"detail":{"claim":"Thread identity and life state persist across temporary cognition providers and runtime restarts.","limitation":"The current milestone must connect persistence to present situated life and experience."},"evidence":["docs/state/current-state.md","docs/foundations/invariants.md"]},
-    {"id":"life_state_affects_cognition","group":"development","label":"Autobiographical life can affect cognition","status":"achieved","simple":{"claim":"Something from a Thread's own life can change later reasoning.","limitation":"This has been proved in bounded cognition paths, not every possible decision."},"detail":{"claim":"#40 established attributable effects from Fibre-owned autobiographical context in a real cognition consumer.","limitation":"The result is a substrate for lived development, not a claim that every stored field is causal."},"evidence":["docs/history/milestones/pr40.md","docs/state/current-state.md"]},
-    {"id":"canonical_visual_identity_publication","group":"development","label":"Stable embodied public identity","status":"achieved","simple":{"claim":"Fibre can keep one recognizable visual identity and publish derived imagery from it.","limitation":"A stable face is not a lived person by itself."},"detail":{"claim":"Canonical visual identity text, one admitted root, reference-conditioned generation and Thread Presentation preserve one visual identity authority.","limitation":"Current situated imagery still needs to be driven by present place/activity/context."},"evidence":["docs/architecture/canonical-visual-identity.md","docs/state/current-state.md"]},
-    {"id":"cloud_staging_runtime","group":"foundations","label":"Cloud staging runtime and minimum recovery","status":"achieved","simple":{"claim":"The Fibre cloud path is deployed and healthy in staging, and basic restart/retry recovery works.","limitation":"Broader resilience scenarios remain hardening rather than active product work."},"detail":{"claim":"Staging accepted source ee749e07b58c2580e967c7ed62cda5ddc91021cd; World deep health passed; H1 and H2 minimum failure/restart acceptance are closed.","limitation":"H3-H9-style exhaustive resilience is deferred unless a concrete product blocker appears."},"evidence":["docs/state/current-state.md","docs/state/current-priorities.md"]},
-    {"id":"meet_a_thread","group":"development","label":"Meet a Thread in her current life","status":"in_progress","simple":{"claim":"We are building the experience of finding a Thread where she is now and talking with her there.","limitation":"The full situated-life and interaction loop is not yet complete."},"detail":{"claim":"M2-A will surface current place, activity, embodiment, recent context and a context-grounded interaction through insidefibre.com/Thread Presentation.","limitation":"The Viewer must remain a projection and must not become a parallel World authority."},"evidence":["docs/validation/m2-pr-plan.md","docs/vision/lived-world.md","docs/state/current-priorities.md"]},
-    {"id":"experience_internalization","group":"development","label":"Selective experience internalization","status":"not_yet","simple":{"claim":"A conversation should be able to matter, fade, or be forgotten.","limitation":"The live post-encounter internalization mechanism is the next slice."},"detail":{"claim":"Fibre intends encounters to become events whose significance can yield no memory, weak trace, durable memory, relational change or formative change.","limitation":"Existing Genesis memory/meaning machinery is a foundation, not yet the completed live encounter mechanism."},"evidence":["docs/validation/m2-pr-plan.md","docs/vision/lived-world.md"]},
-    {"id":"reciprocal_society","group":"society","label":"Reciprocal relationships, economy and society","status":"not_yet","simple":{"claim":"Threads should eventually have shared relationships, work, money, families and institutions.","limitation":"Those follow after one convincing lived Thread loop."},"detail":{"claim":"The broader Fibre society remains the long-term direction.","limitation":"Current work intentionally focuses on one persistent person before scaling social complexity."},"evidence":["docs/vision/lived-world.md"]}
+    {
+      "id": "persistent_thread_continuity",
+      "group": "foundations",
+      "label": "Persistent Thread continuity",
+      "status": "achieved",
+      "simple": {
+        "claim": "A Thread can keep existing after one AI session ends.",
+        "limitation": "Persistence alone does not make a convincing lived person."
+      },
+      "detail": {
+        "claim": "Thread identity and life state persist across temporary cognition providers and runtime restarts.",
+        "limitation": "The current milestone must connect persistence to present situated life and experience."
+      },
+      "evidence": [
+        "docs/state/current-state.md",
+        "docs/foundations/invariants.md"
+      ]
+    },
+    {
+      "id": "life_state_affects_cognition",
+      "group": "development",
+      "label": "Autobiographical life can affect cognition",
+      "status": "achieved",
+      "simple": {
+        "claim": "Something from a Thread's own life can change later reasoning.",
+        "limitation": "This has been proved in bounded cognition paths, not every possible decision."
+      },
+      "detail": {
+        "claim": "#40 established attributable effects from Fibre-owned autobiographical context in a real cognition consumer.",
+        "limitation": "The result is a substrate for lived development, not a claim that every stored field is causal."
+      },
+      "evidence": [
+        "docs/history/milestones/pr40.md",
+        "docs/state/current-state.md"
+      ]
+    },
+    {
+      "id": "canonical_visual_identity_publication",
+      "group": "development",
+      "label": "Stable embodied public identity",
+      "status": "achieved",
+      "simple": {
+        "claim": "Fibre can keep one recognizable visual identity and publish derived imagery from it.",
+        "limitation": "A stable face is not a lived person by itself."
+      },
+      "detail": {
+        "claim": "Canonical visual identity text, one admitted root, reference-conditioned generation and Thread Presentation preserve one visual identity authority.",
+        "limitation": "Current situated imagery still needs to be driven by present place/activity/context."
+      },
+      "evidence": [
+        "docs/architecture/canonical-visual-identity.md",
+        "docs/state/current-state.md"
+      ]
+    },
+    {
+      "id": "cloud_staging_runtime",
+      "group": "foundations",
+      "label": "Cloud staging runtime and minimum recovery",
+      "status": "achieved",
+      "simple": {
+        "claim": "The Fibre cloud path is deployed and healthy in staging, and basic restart/retry recovery works.",
+        "limitation": "Broader resilience scenarios remain hardening rather than active product work."
+      },
+      "detail": {
+        "claim": "Staging accepted source ee749e07b58c2580e967c7ed62cda5ddc91021cd; World deep health passed; H1 and H2 minimum failure/restart acceptance are closed.",
+        "limitation": "H3-H9-style exhaustive resilience is deferred unless a concrete product blocker appears."
+      },
+      "evidence": [
+        "docs/state/current-state.md",
+        "docs/state/current-priorities.md"
+      ]
+    },
+    {
+      "id": "continuous_lived_now",
+      "group": "development",
+      "label": "Continuous LivedNow across dormancy",
+      "status": "in_progress",
+      "simple": {
+        "claim": "We are building the ability for a Thread's life to reach 'now' even when compute was asleep.",
+        "limitation": "Today Fibre has bounded plans and current situations, but not automatic multi-day catch-up and plan renewal."
+      },
+      "detail": {
+        "claim": "World will compose existing Flight Plan, CurrentSituation, encounter and memory authorities into one ensure-LivedNow reconciliation path with bounded retrospective life realization.",
+        "limitation": "Retrospective events must preserve materialization provenance, remain sparse, and may affect memory/relationships only through ordinary Fibre authorities."
+      },
+      "evidence": [
+        "docs/architecture/lived-now-and-meetings.md",
+        "docs/decisions/ADR-0023-retrospective-lived-continuity.md",
+        "docs/state/current-priorities.md"
+      ]
+    },
+    {
+      "id": "meet_a_thread",
+      "group": "development",
+      "label": "Meet a Thread in her current life",
+      "status": "in_progress",
+      "simple": {
+        "claim": "Fibre has the bounded pieces needed to meet a Thread in context.",
+        "limitation": "A real deployed /meet still needs continuous LivedNow so the scene is current after dormancy rather than prepared by a fixture."
+      },
+      "detail": {
+        "claim": "Directory/Presentation and situated encounter primitives can bind a visitor to an exact World-owned CurrentSituation.",
+        "limitation": "The production-shaped path must first reconcile elapsed life, renew the Flight Plan when needed, and establish LivedNow before interaction."
+      },
+      "evidence": [
+        "docs/architecture/lived-now-and-meetings.md",
+        "docs/architecture/thread-directory-and-meet.md",
+        "docs/state/current-priorities.md"
+      ]
+    },
+    {
+      "id": "experience_internalization",
+      "group": "development",
+      "label": "Selective experience internalization",
+      "status": "demonstrated",
+      "simple": {
+        "claim": "A bounded encounter can become private reflection and selective autobiographical memory—or be forgotten.",
+        "limitation": "This is demonstrated in bounded lived-person proofs and is not yet integrated with continuous multi-day LivedNow."
+      },
+      "detail": {
+        "claim": "B1/B2 preserve objective encounter history, private reflection, selective retention or not_remembered, and later cognition receives only autobiographical consequences that persisted.",
+        "limitation": "Retrospective dormant-life catch-up and reciprocal Thread meetings still need to route through the same consequence authorities."
+      },
+      "evidence": [
+        "docs/state/current-state.md",
+        "docs/validation/m2-pr-plan.md",
+        "docs/concepts/development-and-memory.md"
+      ]
+    },
+    {
+      "id": "reciprocal_thread_meetings",
+      "group": "society",
+      "label": "Thread-to-Thread lived meetings",
+      "status": "not_yet",
+      "simple": {
+        "claim": "Two Threads should be able to meet as two continuing people and carry different memories or relationship consequences afterward.",
+        "limitation": "Thread-to-Thread meeting orchestration comes after continuous LivedNow and the deployed human meeting path."
+      },
+      "detail": {
+        "claim": "A reciprocal encounter will require independently reconciled LivedNow for both participants, compatible physical or mediated presence, shared occurrence evidence, and participant-specific private aftermath.",
+        "limitation": "Fibre must not teleport or silently replan Threads merely to satisfy a meeting request."
+      },
+      "evidence": [
+        "docs/architecture/lived-now-and-meetings.md",
+        "docs/validation/m2-pr-plan.md"
+      ]
+    },
+    {
+      "id": "reciprocal_society",
+      "group": "society",
+      "label": "Reciprocal relationships, economy and society",
+      "status": "not_yet",
+      "simple": {
+        "claim": "Threads should eventually have shared relationships, work, money, families and institutions.",
+        "limitation": "Those follow after one convincing lived Thread loop."
+      },
+      "detail": {
+        "claim": "The broader Fibre society remains the long-term direction.",
+        "limitation": "Current work intentionally focuses on one persistent person before scaling social complexity."
+      },
+      "evidence": [
+        "docs/vision/lived-world.md"
+      ]
+    }
   ],
   "currentWork": {
-    "milestone": "M2-A Meet a Thread",
+    "milestone": "Continuous LivedNow + Meetings",
     "simple": {
-      "summary": "Make one existing Thread feel like someone already living a life, not someone waiting in a chat box.",
-      "currentStep": "Surface one born Thread's present place, activity, visual embodiment and recent context through insidefibre.com.",
+      "summary": "Make a Thread's life reach the present before anyone meets her.",
+      "currentStep": "Compose the existing Flight Plan and CurrentSituation primitives into one World-owned LivedNow reconciliation path.",
       "nextSteps": [
-        "Select one existing born Thread as the first lived-person vertical.",
-        "Project current place, activity, reason and immediate intention through Thread Presentation.",
-        "Generate or select a current scene-consistent image from the canonical visual root.",
-        "Add a Meet/Talk interaction grounded in that exact situation.",
-        "Persist the encounter as a life event and add selective internalization rather than automatic memory."
+        "Prove a multi-day dormant gap can be caught up without leaving the Thread in a stale scene.",
+        "Preserve that catch-up was materialized retrospectively while keeping lived chronology.",
+        "Route deployed /meet through the reconciled present.",
+        "Add one reciprocal Thread-to-Thread meeting with different participant-specific aftermath.",
+        "Make insidefibre.com render and enter the resulting lived scene."
       ]
     },
     "detail": {
-      "summary": "M2 is now capability-led rather than standing-score-led. The old #41 rubric remains an evaluative asset but is not the active development gate.",
-      "currentStep": "Implement M2-A against existing World/Thread/Presentation authorities and drive missing data structures from the vertical slice.",
+      "summary": "The bounded A1-B2 lived-person work is retained as substrate. The active capability is continuous present-life reconciliation across wall-clock dormancy, followed by Person and Thread meetings.",
+      "currentStep": "Build the smallest World-owned ensure-LivedNow seam by composing existing plan, situation, regulation, history and memory authorities; do not create a parallel scheduler/simulation framework.",
       "nextSteps": [
-        "Keep World/Thread authoritative and the Viewer projection-only.",
-        "Represent present location/activity/intention as lived state rather than decorative UI state.",
-        "Bind current imagery to the one canonical visual identity root plus time-local context.",
-        "Treat interaction as an event in life, not a transcript-owned chatbot session.",
-        "Implement significance and selective retention before broadening to society-scale features."
+        "Add bounded retrospective lived catch-up with explicit provenance and idempotence.",
+        "Bridge Genesis into the same post-birth continuing-life path.",
+        "Require Person -> Thread /meet to use LivedNow rather than a prepared scene.",
+        "Require Thread -> Thread meetings to reconcile both lives independently before a shared encounter.",
+        "Keep public meeting state a Presentation projection rather than Viewer authority."
       ]
     },
     "finalLifeCognitionAuthorized": true
   },
   "truthRules": [
     "A Thread is persistent world state, not a model session.",
+    "Compute dormancy does not by itself prove a lived Thread's Fibre-world life stopped.",
+    "Retrospectively realized life must preserve that it was materialized later; it must not masquerade as continuously observed runtime history.",
     "insidefibre.com is a projection surface, not a second semantic authority.",
+    "A meeting enters an already-established LivedNow; it does not author the Thread's pre-existing scene.",
+    "A shared encounter may produce different private meaning, memory and relationship consequences for different Threads.",
     "A conversation is an encounter in a continuing life, not automatically an autobiographical memory.",
-    "Fibre may create circumstances but must not pre-author what those circumstances mean to the Thread.",
+    "Memory may form only from admitted lived evidence through the memory authority; do not inject virtual memories directly.",
     "Infrastructure and tests enter the critical path only when they enable the active lived-person capability or protect a demonstrated invariant."
   ]
 }
