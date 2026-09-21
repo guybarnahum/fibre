@@ -1,143 +1,285 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-09-13
+last-reviewed: 2026-09-20
 canonical: true
 ---
 
 # Current priorities
 
-Fibre has completed the intrinsic-regulation detour and the A1-A5 lived-encounter path. [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md) remains the M2 continuation authority.
+Fibre's active north star is now **continuous LivedNow + meetings**.
+
+The bounded M2 slices proved the core pieces of a lived person, but they do not yet make a Thread continuously current across wall-clock dormancy. The next work is to compose those proven primitives into one World-owned continuity capability and make every meeting enter that life.
+
+Canonical architecture:
+
+- [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
+- [The Lived World of Fibre](../vision/lived-world.md)
+- [ADR-0023: Retrospective lived continuity across compute dormancy](../decisions/ADR-0023-retrospective-lived-continuity.md)
+
+## What is already proven
+
+```text
+R1-R4 intrinsic regulation                                CLOSED
+
+A1 bounded Flight Plan + CurrentSituation                 CLOSED
+A2 care plan + conflicting wills                          CLOSED
+A3 current-life inspection/projection                     CLOSED
+A4 public present projection                              CLOSED
+A5 situated Person -> Thread encounter                    CLOSED
+B1 encounter -> private reflection -> selective memory    CLOSED
+B2 later situation + later encounter continuity           CLOSED
+```
+
+These are valuable **primitives and bounded proofs**.
+
+They do not yet prove:
+
+```text
+wall-clock dormancy
+  -> elapsed-life catch-up
+  -> plan renewal
+  -> authoritative present now
+  -> real deployed /meet
+```
+
+Therefore Fibre should no longer describe the remaining work as merely “run the live meeting.” The deployed meeting depends on continuous LivedNow first.
 
 ## Active sequence
 
 ```text
-R1 Layered regulator kernel + sensorium                  CLOSED
-R2 Social presence + affective resonance                 CLOSED
-R3 Interoception -> semantic feeling                     CLOSED
-R4 Functional drive loop + organism trace                CLOSED
-
-A1 Flight Plan + World-observed Lived Now                CLOSED
-A2 Care plan + conflicting wills in movement             CLOSED
-A3 Current-life projection + Thread Editor               CLOSED
-A4 Public present + insidefibre.com scene                CLOSED
-A5 Situated encounter                                    CLOSED
-B1 Encounter -> journal -> selective memory              CLOSED
-B2 Life continues + second meeting                       CLOSED
-                                                        TRUE-E2E CAPABILITY
-M2 automated acceptance                                  PASSED
-M2 live human meeting                                    PENDING
+N1  World-owned ensure-LivedNow seam                      NEXT
+N2  dormant/frozen interval catch-up                      NEXT
+N3  Genesis -> first LivedNow -> multi-day continuity     NEXT
+N4  Person -> Thread /meet over real LivedNow             NEXT
+N5  Thread -> Thread reciprocal meeting                   NEXT
+N6  rich insidefibre.com lived meeting                    NEXT
 ```
 
-All work remains on `agent/m2-lived-encounter`; do not create per-slice branches.
+Keep these slices narrow. Reuse the existing Flight Plan, CurrentSituation, encounter, memory, relationship, Presentation and canonical embodiment authorities.
+
+Do not create a parallel life engine.
+
+## N1 — ensure LivedNow
+
+Create one World-owned operation equivalent to:
+
+```text
+ensure authoritative LivedNow(threadId, at)
+```
+
+The concrete API name is not fixed yet.
+
+Its job is to compose existing authorities:
+
+```text
+last lived anchor
+  + current/expired plan coverage
+  + Thread-owned context
+  + care/obligation constraints
+  + elapsed wall time
+  -> catch up if needed
+  -> refresh Flight Plan if needed
+  -> enact CurrentSituation at the requested time
+```
+
+Callers may request a current present. They do not author it.
+
+## N2 — dormant interval catch-up
+
+A lived Thread may be computationally frozen while world time passes.
+
+When an uncovered interval exists, World may retrospectively realize the smallest credible continuation:
+
+- bounded retrospective Flight Plans;
+- place/transit/activity episodes;
+- encounters only when warranted;
+- objective history;
+- participant-specific consequences through normal authorities.
+
+Historical honesty is mandatory:
+
+```text
+lived/occurred time
+    !=
+later materialization/admission time
+```
+
+Do not inject “virtual memories.”
+
+The valid path is:
+
+```text
+retrospectively admitted event
+  -> experience / interpretation
+  -> selective memory or not_remembered
+```
+
+Quiet time should remain sparse. This is not a minute-by-minute simulator.
+
+## N3 — Genesis to continuing life
+
+The important E2E is no longer merely:
+
+```text
+Genesis -> born Thread -> presentation
+```
+
+It is:
+
+```text
+Genesis
+  -> born Thread with grounded prior life
+  -> canonical embodiment
+  -> first lived continuity anchor
+  -> first personal Flight Plan
+  -> World CurrentSituation
+  -> compute sleeps
+  -> several days pass
+  -> catch-up + plan renewal
+  -> authoritative present now
+```
+
+This is the bridge between Genesis and the lived world.
+
+Genesis supplies grounded prior life. LivedNow owns life after Fibre birth.
+
+## N4 — Person -> Thread meeting
+
+Only after LivedNow has established the current scene should `/meet` admit the visitor.
+
+```text
+select Thread
+  -> ensure LivedNow(now)
+  -> publish exact bounded present
+  -> Person enters that scene
+  -> objective encounter
+  -> private experience
+  -> selective consequence
+```
+
+The visitor cannot choose the Thread's location, activity, private state or plan.
+
+The first live acceptance should prove the scene came from the Thread's own continuing life rather than a meeting fixture.
+
+## N5 — Thread -> Thread meeting
+
+Thread-to-Thread meetings are intersections of two continuing lives.
+
+Each participant must independently have:
+
+- a current Flight Plan;
+- a World-owned present;
+- a reason for being there;
+- its own identity, relationships, memory and semantic state.
+
+A physical meeting requires compatible place/time presence. A mediated meeting requires compatible mediated context.
+
+Do not teleport Threads together merely because a meeting was requested.
+
+One shared occurrence may produce different private aftermath:
+
+```text
+shared encounter
+  -> Thread A experience / memory / relationship consequence
+  -> Thread B experience / memory / relationship consequence
+```
+
+Shared event does not imply shared meaning.
+
+## N6 — rich insidefibre.com meeting
+
+The public experience should feel like entering a life, not opening a chatbot.
+
+A bounded public scene may expose:
+
+- current embodiment;
+- place or transit state;
+- current activity;
+- temporal texture such as arriving, waiting or preparing;
+- public accompaniment/context;
+- an appropriate near-term intention;
+- scene-consistent imagery;
+- the meeting entry point.
+
+The Viewer remains projection-only.
+
+A later visit should find that the Thread moved on.
 
 ## Current causal loop
 
 ```text
-Thread already living in World
-  -> visitor enters exact enacted situation
-  -> objective encounter history
-  -> optional private first-person journal
-  -> Thread-specific retention appraisal
+continuing Thread
+  -> Flight Plan
+  -> enacted World situation
+  -> elapsed life / catch-up
+  -> present now
+  -> encounter
+  -> objective history
+  -> optional private reflection
+  -> retention appraisal
   -> autobiographical memory or not_remembered
-  -> persisted life continues
-  -> later situation / later meeting
-  -> only retained autobiographical consequence returns to cognition
+  -> possible relationship / intention / state consequence
+  -> future Flight Plan
 ```
 
-The journal is private contemporaneous inner voice, not objective history and not memory. Autobiographical retention is a separate cognition pass conditioned by the particular Thread: identity/self-model, textual inherited tendencies, intentions, Semantic State, bounded prior memories, the encounter and its journaled interpretation.
+## Memory invariant
 
-The LLM proposes subjective content. Fibre owns admissible context, validates references and chronology, and persists only through the existing autobiographical-memory authority.
+A later encounter may receive bounded autobiographical memories.
 
-## B2 closure invariant
-
-A later encounter may receive bounded autobiographical memories. It must not receive hidden historical encounters or journal records and reconstruct them as recollection.
+It must not receive hidden history or private journal records and silently reconstruct them as recollection.
 
 Therefore:
 
 ```text
-history exists + journal exists + not_remembered
-    -> later ordinary cognition has no recollection context
+history exists + not_remembered
+    -> later ordinary cognition has no autobiographical recollection
 
 history exists + retained autobiographical memory
-    -> later ordinary cognition may be shaped by that memory
+    -> later cognition may be shaped by that memory
 ```
 
-The representative B2 proof reopens persisted memory state and places the Thread in a later lived situation before the second encounter. This composes with the existing persisted Flight Plan / CurrentSituation machinery; do not build a second continuation or conversation engine.
+This applies equally to real-time encounters and retrospectively realized catch-up life.
 
-## M2 acceptance state
+## High-value acceptance sequence
 
-The canonical acceptance sequence has passed:
+Prefer a few organism-level proofs:
 
-```bash
-npm run check
-npm run demo:m2
-npm run slice:validate
-```
+1. **multi-day dormant continuity** — a stale Thread becomes current through retrospective lived continuity rather than remaining in the old scene;
+2. **historical honesty** — retrospective materialization is inspectable;
+3. **selective retention** — catch-up history can be remembered or forgotten through the normal memory authority;
+4. **Person meet** — `/meet` joins an already-established current scene;
+5. **Thread meet** — two independently current Threads share one encounter but form different private consequences;
+6. **continued life** — a later visit finds later life, not a resumed chat session;
+7. **idempotence** — retrying catch-up does not duplicate plans, events, memories or encounters.
 
-The automated milestone proof is therefore complete. The remaining M2 closure step is one real deployed human meeting using [`../validation/m2-meeting-runbook.md`](../validation/m2-meeting-runbook.md), followed by inspection that the lived encounter entered the same causal loop shown above.
+## Explicitly not the current priority
 
-## Legacy staging Threads during M2 closure
+- continuous high-frequency simulation;
+- a universal calendar/scheduler product;
+- broad infrastructure abstraction;
+- exhaustive resilience matrices;
+- a conversation/session store;
+- an event-to-memory formula;
+- society-scale economy before reciprocal lived meetings work;
+- security or hardening work unrelated to a demonstrated Fibre need.
 
-Existing staging Threads are retained through M2 closure. They are useful historical/regression evidence, including Threads whose Activity predates causal operation parentage.
+## Development discipline
 
-For current observability validation:
+Always prefer the lightest implementation that preserves the ambitious Fibre architecture.
 
-- create fresh Genesis Threads against the current deployed runtime;
-- accept older Activity as `legacy/pre-lineage` rather than fabricating a hierarchy after the fact;
-- do not retrofit `operationId`, `parentOperationId`, `causationId` or other causal witnesses into historical records;
-- do not manually purge a Thread from only one World/Birth/Presentation/asset/Activity persistence surface.
+Every piece of code should earn its place by advancing a persistent artificial person's lived continuity, individuality, relationship, agency or future possibility.
 
-After M2 closes, follow [`thread-preservation-and-migration.md`](thread-preservation-and-migration.md): archive and verify first, migrate retained Threads conservatively, keep a curated regression/milestone corpus, and only then coordinate removal of disposable E2E identities.
+Tests must be even stricter:
 
-This preservation work is deliberately **not** an additional M2 closure gate.
+- high-value;
+- semantic;
+- non-brittle;
+- short meaningful failures;
+- no incidental HTTP/header/helper trivia unless that boundary itself protects a Fibre invariant.
 
-## Explicit post-M2 Genesis debt: sex-aware development
+## Branch posture
 
-The current Genesis implementation now persists `thread.identity.sex = female | male` and canonical visual identity consumes that authoritative value. This fixes the immediate renderer-default problem but does **not** finish sex-aware Genesis development.
+Current work is on `main` unless the owner explicitly chooses another branch.
 
-After M2 closure, retain the sex-aware Genesis completion plan as explicit debt rather than allowing the current publication/visual slice to look complete. The required follow-on is defined in [`../architecture/thread-genesis-childhood-birth.md`](../architecture/thread-genesis-childhood-birth.md) and tracked in [`future-capability-map.md`](future-capability-map.md).
-
-The minimum revisit includes:
-
-- assign sex before Pass-A/history cognition rather than first at publication;
-- create culturally/linguistically/temporally grounded personal naming that can consume sex where warranted;
-- allow World/culture/era-mediated sex effects in lived history without mapping sex directly to personality or values;
-- identify specific sex-sensitive maturation, physiology, intrinsic-regulation and reproductive mechanisms before implementing them;
-- keep gender identity, pronouns, sexual orientation, relationship role and caregiving role distinct;
-- add counterfactual tests proving sex changes only causally warranted surfaces;
-- preserve legacy Threads without guessing missing sex from portrait, name or stereotypes.
-
-This is **not an M2 closure gate**. It is a named Genesis follow-on that should be addressed before treating Genesis person-development semantics as complete.
-
-## Semantic boundaries
-
-```text
-regulatory drive        != semantic need
-intrinsic affect        != semantic emotion
-mechanical signal       != autobiographical meaning
-objective history       != private journal
-private journal         != autobiographical memory
-historical availability != autobiographical recall
-care requirement        != dependent person's private desire
-```
-
-## Stop rules
-
-- No conversation/session store.
-- No whole-history prompt pretending to be memory.
-- No global event-to-memory salience formula.
-- No second location/current-life authority.
-- No Viewer-owned current state or private journal/memory leakage.
-- No generic memory/vector infrastructure before bounded retrieval proves insufficient.
-- No ad hoc partial-store deletion of a Thread.
-- No retroactive observability enrichment that invents historical causality.
-- Keep tests focused on causal Fibre invariants and one representative lived loop.
-
-## Branch
-
-Continue on:
-
-```text
-agent/m2-lived-encounter
-```
+Historical agent branches are not planning authority.
