@@ -9,7 +9,9 @@ canonical: false
 
 ## Purpose
 
-Define the north-star capability that turns Fibre from a system that can stage isolated lived moments into a world where a Thread can be encountered as someone whose life continued before the visitor arrived.
+Define the north-star capability that turns Fibre from a system that can stage isolated lived moments into a world where a Thread has a continuing present and can accumulate experience from what happens in that world.
+
+The general encounter model is defined in [Encounter stories and Thread experience](encounters-and-experience.md). This document owns continuous LivedNow and how social meeting enters it.
 
 The existing M2 work proved important primitives:
 
@@ -39,12 +41,13 @@ Genesis / existing Thread life
   -> bounded retrospective catch-up when required
   -> current Flight Plan refreshed as needed
   -> World resolves exact LivedNow
-  -> Person or Thread enters that present
-  -> shared encounter becomes history
-  -> each participant privately experiences/interprets it
+  -> World occurrence / requested meeting intersects that present
+  -> bounded encounter story
+  -> each relevant Thread notices / experiences differently
+  -> optional journal
   -> selective memory / relationship / intention / state consequence
   -> life continues
-  -> later meeting begins from what actually persisted
+  -> later encounters begin from what actually persisted
 ```
 
 The meeting is not the life engine. It is one event inside the life engine.
@@ -94,35 +97,24 @@ Catch-up may create:
 
 Catch-up is not an excuse to write arbitrary biography.
 
-### Meeting
+### Encounter and meeting
 
-A shared encounter between entities whose relevant present already exists.
+**Encounter is the general lived primitive. Meeting is one voluntary social form of encounter.**
 
-A meeting **intersects ongoing life**; it does not spawn that life. The encountered Thread may be at a destination, in transit between Flight Plan stops, waiting, working, studying, resting, accompanied, or otherwise occupied for reasons that existed before the meeting request.
+An encounter may arise from another Thread, a Person, a group, an animal, an object, a place, weather or another World occurrence that actually enters the Thread's attention. Physical co-presence alone does not imply private experience.
 
-A request to meet is not automatic access to the Thread. After LivedNow is established, the Thread decides whether this is a moment it is willing to interrupt or share. That judgment may depend on:
+See [Encounter stories and Thread experience](encounters-and-experience.md) for the accepted separation:
 
-- the current activity and whether interruption is plausible;
-- the remaining Flight Plan and near-term commitments;
-- current needs, feelings and unresolved intentions;
-- the requester and the Thread's relationship/history with them;
-- whether the encounter is physical or mediated;
-- whether another time would fit better.
+```text
+World occurrence
+  -> objective encounter story
+  -> Thread-specific noticing / experience
+  -> optional journal
+  -> selective consequence
+```
 
-The smallest useful outcome set is:
+A meeting adds a participation gate before the social encounter occurs. After LivedNow is established, the Thread may `accept | decline | defer` based on current activity, remaining Flight Plan, needs/feelings/intentions and relevant relationship/history. A meeting request cannot author the pre-existing scene or force interruption.
 
-- **accept** — enter the current situation now;
-- **decline** — do not meet now, optionally explain;
-- **defer** — do not meet now, optionally suggest a later time or condition.
-
-This is Thread agency, not a generic calendar system. A Thread may be more accommodating toward someone it likes or trusts, less accommodating toward someone it resents or barely knows, or make the opposite choice because another value or obligation matters more. Relationship context may influence the decision but must not mechanically determine it.
-
-The first important forms are:
-
-- Person -> Thread;
-- Thread -> Thread.
-
-A meeting may matter, barely matter, or be forgotten.
 
 ## Compute dormancy is not necessarily life suspension
 
@@ -293,59 +285,27 @@ The participation decision should consume the already-established current situat
 
 The Person's presence becomes part of the event only if the Thread accepts the encounter. The browser never authors the Thread's pre-existing life.
 
-## Thread-to-Thread meetings
+## Social and group encounters
 
-Thread-to-Thread meetings are the same lived principle with two persistent participants.
+Thread-to-Thread meeting is now treated as one case of the general encounter model.
 
-Before a shared encounter can occur, each Thread has:
+Before a requested social encounter:
 
-- its own authoritative current life;
-- its own Flight Plan and reasons for being there;
-- its own identity, relationships, memory and semantic state;
-- its own willingness to participate in this encounter now.
+- every Thread has an independently reconciled LivedNow;
+- every Thread remains physically grounded at a place or in transit;
+- invited participants independently decide whether to participate;
+- physical or mediated compatibility is required without teleportation or silent replanning.
 
-A physical Thread meeting requires compatible place/time presence. A mediated meeting requires a compatible mediated context. Compatible presence is necessary but not sufficient: both Threads must independently accept the encounter.
+If the meeting occurs, World records **one objective encounter story**, not a pairwise matrix of meetings. Any number of present Threads may then form distinct private experiences from that story. A Thread may speak, act, be addressed, or silently witness what others do.
 
-Fibre must not teleport one Thread, rewrite a plan, or assume consent merely because another Thread requested a meeting. If the meeting requires invitation, negotiation, rescheduling, travel or plan change, those are earlier lived events and may themselves affect relationship state.
+A silent witness can be affected by the encounter even though she never spoke. Conversely, a nearby Thread who does not notice the occurrence should not receive a fabricated experience.
 
-Once a meeting occurs:
+Shared story does not imply shared meaning.
 
-```text
-one shared encounter circumstance
-  -> one shared objective occurrence
-  -> Thread A private encounter history -> A journal -> A retention appraisal
-  -> Thread B private encounter history -> B journal -> B retention appraisal
-  -> possibly different memory
-  -> possibly different relationship consequence
-  -> possibly different future plans
-```
+Journal reflection and autobiographical memory remain separate private consequences. Two Threads may journal the same story differently; either may later remember or forget it independently.
 
-Shared event does not imply shared meaning.
+The durable encounter semantics are owned by [Encounter stories and Thread experience](encounters-and-experience.md).
 
-A journal is the Thread's contemporaneous private account, written in her own voice and allowed to contain feeling, ambivalence, attention and subjective interpretation that objective history does not. The same encounter may therefore appear very differently in two journals. Journal entry does **not** imply autobiographical memory: either Thread may later retain or forget the event independently.
-
-The private journal book may be rendered as a free-form Thread-specific document for Admin inspection, but the book remains downstream of the private journal authority and does not become a second memory or history authority.
-
-One participant may remember a meeting vividly while the other forgets it. One may feel closer while the other becomes cautious. Those differences are valuable Fibre behavior.
-
-## Meeting consequences
-
-An encounter may causally affect:
-
-- autobiographical memory;
-- relationship state;
-- current semantic feeling/need;
-- unresolved intention;
-- later Flight Plans;
-- obligations or invitations;
-- public expression;
-- future willingness to meet;
-- developmental/self-understanding or identity state through the ordinary experience/meaning/identity authorities;
-- opportunities and, later, economic/social state.
-
-No single meeting is required to change any of these.
-
-Consequences must enter through their owning authorities rather than one monolithic “meeting result” record. A meeting never directly rewrites identity merely because it occurred; identity changes only when the Thread's normal developmental/meaning machinery makes that experience consequential.
 
 ## insidefibre.com north-star experience
 
@@ -412,7 +372,7 @@ Missing north-star capability includes:
 - elapsed-time coverage across dormant/frozen intervals;
 - retrospective lived catch-up;
 - a single World-owned ensure-LivedNow seam used by real `/meet`;
-- reciprocal Thread-to-Thread encounter orchestration;
+- a general encounter-story / Thread-experience seam used by social and environmental life;
 - rich public meeting composition against continuously maintained life.
 
 ## Recommended implementation sequence
@@ -437,15 +397,18 @@ Prove a newly born Thread exits Genesis into the same continuing-life seam used 
 
 Route public meeting through ensure-LivedNow. The first deployed proof should show that the returned scene was determined by the Thread's prior life + elapsed continuity, not a meeting fixture.
 
-### N5 — Thread-to-Thread meeting
+### N5 — General encounter seam + reciprocal social proof — REPLANNED
 
-The current implementation reconciles both Threads independently, resolves physical compatibility through each Thread's situated-life place evidence to a shared underlying place identity (or through compatible mediated context), and asks each Thread for an independent `accept | decline | defer` stance before any encounter exists.
+N5 is no longer scoped as a two-Thread conversation engine.
 
-Mutual acceptance produces one bounded shared exchange and one shared objective meeting record. Each participant then receives her own private encounter history, personal journal reflection and independent autobiographical retention appraisal. A decline stops the meeting before shared encounter history is created.
+The accepted target is one light encounter seam that can prove three cases without separate engines:
 
-The in-repository organism proof demonstrates both required outcomes: a compatible meeting that one Thread declines, and an accepted meeting in which two Threads write emotionally different private journal accounts while only one retains an autobiographical memory.
+1. **environmental encounter** — a Thread notices something small in the World, such as a bee on a flower, and may privately react/journal/remember;
+2. **voluntary social meeting** — independently current Threads may accept, decline or defer without teleportation or silent replanning;
+3. **witness consequence** — a third Thread may silently witness how one Thread treats another and form her own private experience/consequence.
 
-N5 remains open until this exact path is provisioned/deployed and exercised between two real staging Threads.
+The first implementation spike produced useful components—meeting stance, n-ary story direction, witness experience direction, journal book and selective memory—but overfit orchestration to invited social meetings. It is therefore **not accepted for deployment** and should be reshaped around Encounter Story -> Thread Experience before N5 staging acceptance.
+
 
 ### N6 — Rich insidefibre.com meeting
 
@@ -459,9 +422,11 @@ Prefer a small number of end-to-end semantic proofs:
 2. **Historical honesty** — catch-up records expose that they were materialized retrospectively while preserving their lived chronology.
 3. **Selective consequence** — an admitted catch-up event may be remembered or not; memory is never injected without event/experience provenance.
 4. **Meet enters life** — `/meet` receives an already-established current situation and cannot choose it.
-5. **Reciprocal asymmetry** — one Thread-to-Thread encounter yields a shared occurrence but participant-specific private interpretation/memory/consequence.
-6. **Continued life** — a later visit finds a later situation, not a chat session continuation.
-7. **Retry safety** — reconciling the same elapsed interval does not duplicate historical events, memories, plans or meetings.
+5. **Environmental encounter** — a small unscheduled World occurrence can be noticed by a Thread and enter the ordinary experience/journal/memory path without being placed on the Flight Plan.
+6. **Witness asymmetry** — one shared social story can affect a silent witness differently from the actors, without fabricating dialogue for the witness.
+7. **Voluntary meeting** — a compatible social request can be declined/deferred before any meeting story is created.
+8. **Continued life** — a later visit finds a later situation, not a chat session continuation.
+9. **Retry safety** — reconciliation does not duplicate historical events, experiences, memories, plans or encounter stories.
 
 ## Explicit non-goals
 
