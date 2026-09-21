@@ -4,8 +4,8 @@
   "canonical": true,
   "asOf": "2026-09-21",
   "title": "Where Fibre is today",
-  "headline": "Fibre now carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E1 are complete and E2 voluntary social encounters are current.",
-  "summary": "N1-N4 are closed. N5 E0 established the general Encounter Story / Thread Experience foundation, and E1 proved unscheduled environmental occurrences can be objectively admitted, visualized, noticed or missed, and only when noticed become personal experience and selective consequence. E2 now makes social meeting a voluntary wrapper over that seam.",
+  "headline": "Fibre carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E2 are complete and E3 silent-witness encounters are current.",
+  "summary": "N1-N4 are closed. N5 E0-E2 now prove a general Encounter Story / Thread Experience foundation, environmental noticing, and voluntary social meeting without teleportation or forced participation. E3 now proves one shared n-ary story can affect a silent witness differently from the actors.",
   "statusDefinitions": [
     {
       "id": "achieved",
@@ -210,12 +210,12 @@
       "label": "General lived encounters and reciprocal meetings",
       "status": "in_progress",
       "simple": {
-        "claim": "Fibre can now admit unscheduled environmental Encounter Stories and selectively turn them into lived Thread Experience; the current step is voluntary social meeting over the same seam.",
-        "limitation": "Social meeting has not yet been accepted as an E2 proof over the E1 experience path, and silent-witness asymmetry remains E3."
+        "claim": "Fibre now supports environmental encounters and voluntary social meetings over one Encounter Story / Thread Experience seam; the current step is silent-witness asymmetry.",
+        "limitation": "N-ary witness consequence is not yet proven, and N5 remains undeployed."
       },
       "detail": {
-        "claim": "E1 proves objective occurrence != lived experience: a bee/flower occurrence can enter attention and become selective memory while a separate admitted cloud remains not_noticed with no Thread Experience or private aftermath.",
-        "limitation": "N5 remains undeployed. E2-E5 still need voluntary social gating, witness asymmetry, journal/rendering/Admin acceptance and staging validation."
+        "claim": "E2 proves independently current Threads are not teleported or silently replanned into meetings: incompatibility or decline creates no Encounter Story, while mutual acceptance creates one objective story and distinct first-person Thread Experiences through the E1 authority.",
+        "limitation": "E3-E5 still need silent-witness asymmetry, journal/rendering/Admin acceptance and staging validation."
       },
       "evidence": [
         "docs/architecture/encounters-and-experience.md",
@@ -244,21 +244,20 @@
   "currentWork": {
     "milestone": "Continuous LivedNow + Encounters",
     "simple": {
-      "summary": "Build E2: independently current Threads may accept, decline or defer a compatible social encounter before any Encounter Story is created.",
-      "currentStep": "Implement E2 social meeting as the smallest voluntary wrapper over the proven E1 Encounter Story / Thread Experience seam.",
+      "summary": "Build E3: one shared social Encounter Story can affect a silent witness differently from the actors.",
+      "currentStep": "Implement E3 n-ary Encounter Story + silent witness over the existing E1/E2 attention and Thread Experience seam.",
       "nextSteps": [
-        "Keep each Thread independently grounded in LivedNow and compatible place/context.",
-        "Use Thread-owned relationship/history/interior context for accept, decline or defer without a social score.",
-        "Create no Encounter Story when participation fails.",
-        "When accepted, route the social occurrence through the same personal Thread Experience and selective aftermath seam.",
-        "Do not add calendars, teleportation or silent replanning."
+        "Use three genuinely co-present Threads without fabricating a third speaker.",
+        "Record one objective Encounter Story for the social occurrence.",
+        "Let each Thread independently form or miss experience from the same story.",
+        "Prove the silent witness can journal or remember observed behavior without being addressed.",
+        "Keep any relationship consequence downstream of private experience rather than automatic."
       ]
     },
     "detail": {
       "summary": "N5 was deliberately replanned before deployment. Meeting is a gated social special case of a more general encounter primitive.",
-      "currentStep": "E0-E1 are closed and green. E2 is current from docs/validation/n5-encounter-slices.md.",
+      "currentStep": "E0-E2 are closed and green. E3 is current from docs/validation/n5-encounter-slices.md.",
       "nextSteps": [
-        "E2: voluntary social meeting as a wrapper over the encounter seam.",
         "E3: n-ary story with silent-witness consequence.",
         "E4: journal book, optional rendering and Admin acceptance.",
         "E5: staging acceptance."
