@@ -35,6 +35,8 @@ canonical: true
 
 **Thread Experience** — What a particular Thread actually noticed and privately experienced from an encounter story. Co-presence does not automatically create experience; different Threads may notice different parts or nothing at all.
 
+**Encounter visualization prompt** — A durable rich media-neutral reconstruction prompt derived from an admitted Encounter Story and bound visual/evidence references. It may later drive a still image, short video or another representation. The prompt is derived reconstruction authority; rendered media is replaceable representation and never World-event evidence.
+
 **Meeting** — A voluntary social encounter that enters one or more already-existing lived presents. A meeting adds a Thread-owned participation stance such as accept, decline or defer before the social encounter occurs. Meeting is a special case of encounter, not the general primitive.
 
 **Journal** — A Thread's private contemporaneous writing about lived experience. Journal is subjective reflection and may contain feelings, ambiguity and personal interpretation; it is neither objective history nor automatically autobiographical memory.
