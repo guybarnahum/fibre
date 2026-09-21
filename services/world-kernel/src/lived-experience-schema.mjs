@@ -15,6 +15,10 @@ export function createLivedExperienceTables(database) {
       encounter_id TEXT PRIMARY KEY,
       occurred_at TEXT NOT NULL,
       story_json TEXT NOT NULL CHECK (json_valid(story_json)),
+      visualization_prompt TEXT NOT NULL,
+      visualization_prompt_digest TEXT NOT NULL CHECK (visualization_prompt_digest LIKE 'sha256:%'),
+      visualization_source_refs_json TEXT NOT NULL CHECK (json_valid(visualization_source_refs_json)),
+      depicted_thread_refs_json TEXT NOT NULL CHECK (json_valid(depicted_thread_refs_json)),
       record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%')
     ) STRICT;
 
@@ -27,12 +31,25 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS thread_encounter_attention (
+      thread_id TEXT NOT NULL,
+      encounter_ref TEXT NOT NULL,
+      situation_id TEXT NOT NULL,
+      occurred_at TEXT NOT NULL,
+      outcome TEXT NOT NULL CHECK (outcome IN ('noticed','not_noticed')),
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      PRIMARY KEY (thread_id, encounter_ref),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (encounter_ref) REFERENCES encounter_story_records(encounter_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS thread_encounter_experiences (
       experience_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL,
       encounter_ref TEXT NOT NULL,
       situation_id TEXT NOT NULL,
       occurred_at TEXT NOT NULL,
+      experience_text TEXT,
       record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
       UNIQUE (thread_id, encounter_ref),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
@@ -71,6 +88,8 @@ export function createLivedExperienceTables(database) {
       ON encounter_story_records(occurred_at, encounter_id);
     CREATE INDEX IF NOT EXISTS idx_encounter_story_presence
       ON encounter_story_thread_presence(thread_id, encounter_ref);
+    CREATE INDEX IF NOT EXISTS idx_thread_attention_time
+      ON thread_encounter_attention(thread_id, occurred_at, encounter_ref);
     CREATE INDEX IF NOT EXISTS idx_thread_experience_time
       ON thread_encounter_experiences(thread_id, occurred_at, experience_id);
     CREATE INDEX IF NOT EXISTS idx_encounter_journal_time
@@ -99,6 +118,14 @@ export function createLivedExperienceTables(database) {
     CREATE TRIGGER IF NOT EXISTS encounter_story_thread_presence_no_delete
       BEFORE DELETE ON encounter_story_thread_presence BEGIN
         SELECT RAISE(ABORT, 'encounter_story_thread_presence is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_encounter_attention_no_update
+      BEFORE UPDATE ON thread_encounter_attention BEGIN
+        SELECT RAISE(ABORT, 'thread_encounter_attention is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_encounter_attention_no_delete
+      BEFORE DELETE ON thread_encounter_attention BEGIN
+        SELECT RAISE(ABORT, 'thread_encounter_attention is append-only');
       END;
     CREATE TRIGGER IF NOT EXISTS thread_encounter_experiences_no_update
       BEFORE UPDATE ON thread_encounter_experiences BEGIN
