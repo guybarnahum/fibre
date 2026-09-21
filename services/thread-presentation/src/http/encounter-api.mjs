@@ -68,7 +68,13 @@ export function createPublicEncounterApi({
           return json({ currentPresent: { payload: present } }, request, viewerOrigin);
         } catch (error) {
           if (error?.status === 409) {
-            return json({ error: "lived_now_unavailable" }, request, viewerOrigin, 409);
+            const detail = typeof error?.body?.detail === "string" && error.body.detail.trim() !== ""
+              ? error.body.detail
+              : null;
+            return json({
+              error: "lived_now_unavailable",
+              ...(detail === null ? {} : { detail }),
+            }, request, viewerOrigin, 409);
           }
           return json({ error: "lived_now_unavailable" }, request, viewerOrigin, 503);
         }
