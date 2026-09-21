@@ -120,6 +120,12 @@ export class LivedExperienceStore {
     try {
       const thread = this.#database.prepare("SELECT 1 AS present FROM threads WHERE thread_id=?").get(candidate.threadId);
       if (thread === undefined) throw new TypeError(`Thread ${candidate.threadId} was not found`);
+      if (sharedEventRef !== null) {
+        const shared = this.#database.prepare(
+          "SELECT 1 AS present FROM lived_shared_meeting_records WHERE shared_event_id=?",
+        ).get(sharedEventRef);
+        if (shared === undefined) throw new TypeError(`shared meeting ${sharedEventRef} was not found`);
+      }
       const prior = this.#database.prepare("SELECT record_digest FROM lived_encounter_records WHERE event_id=?").get(eventId);
       if (prior !== undefined) {
         if (prior.record_digest !== recordDigest) throw new TypeError(`encounter ${eventId} conflicts with its existing record`);
@@ -136,10 +142,6 @@ export class LivedExperienceStore {
       `).run(eventId, core.threadId, core.situationId, core.occurredAt,
         core.visitorUtterance, core.responseText, recordDigest);
       if (sharedEventRef !== null) {
-        const shared = this.#database.prepare(
-          "SELECT 1 AS present FROM lived_shared_meeting_records WHERE shared_event_id=?",
-        ).get(sharedEventRef);
-        if (shared === undefined) throw new TypeError(`shared meeting ${sharedEventRef} was not found`);
         this.#database.prepare(
           "INSERT INTO lived_encounter_shared_refs(event_id,shared_event_ref) VALUES (?,?)",
         ).run(eventId, sharedEventRef);
