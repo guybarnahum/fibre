@@ -35,6 +35,57 @@ function shortId(value) {
   return value.length > 24 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
 }
 
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
+function threadIdCopyButton(threadId) {
+  const control = document.createElement("button");
+  control.type = "button";
+  control.className = "thread-id-copy";
+  const restore = () => {
+    control.classList.remove("copied", "copy-failed");
+    decorateActionButton(control, {
+      icon:"copy",
+      label:shortId(threadId),
+      tooltip:`Copy Thread ID: ${threadId}`,
+    });
+  };
+  restore();
+  control.addEventListener("click", async (event) => {
+    event.stopPropagation();
+    try {
+      await copyText(threadId);
+      control.classList.add("copied");
+      decorateActionButton(control, {
+        icon:"copy",
+        label:"Copied",
+        tooltip:`Copied Thread ID: ${threadId}`,
+      });
+    } catch {
+      control.classList.add("copy-failed");
+      decorateActionButton(control, {
+        icon:"copy",
+        label:"Copy failed",
+        tooltip:`Could not copy Thread ID: ${threadId}`,
+      });
+    }
+    window.setTimeout(restore, 1200);
+  });
+  return control;
+}
+
 function initials(value) {
   const parts = String(value ?? "").trim().split(/\s+/u).filter(Boolean);
   if (parts.length === 0) return "·";
@@ -379,8 +430,10 @@ function threadRow(thread) {
     ? identity.name ?? "Unnamed Thread"
     : thread.admitted === false ? "Activity-only ID" : "Unresolved ID";
   const ids = document.createElement("small");
-  ids.className = "mono";
-  ids.textContent = [identity.fibreIdentityNumber, identity.lifecycleStatus, shortId(thread.threadId)].filter(Boolean).join(" · ");
+  ids.className = "thread-population-identifiers mono";
+  const identityMeta = [identity.fibreIdentityNumber, identity.lifecycleStatus].filter(Boolean);
+  if (identityMeta.length > 0) ids.append(document.createTextNode(`${identityMeta.join(" · ")} · `));
+  ids.append(threadIdCopyButton(thread.threadId));
   personText.append(link, ids);
   personLayout.append(personText);
   person.append(personLayout);
