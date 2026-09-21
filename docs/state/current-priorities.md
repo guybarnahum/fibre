@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + meetings**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, and N3 now makes a canonical Genesis birth enter that same continuity seam and survive the same dormant path. The active work is N4: make the real Person -> Thread meeting reconcile LivedNow before the visitor enters.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, and N3 makes a canonical Genesis birth enter that same continuity seam and survive the same dormant path. N4 is now wired so meeting entry reconciles LivedNow before the visitor enters; the active work is deployed acceptance of that exact path.
 
 Canonical architecture:
 
@@ -133,9 +133,9 @@ This is the bridge between Genesis and the lived world.
 
 Genesis supplies grounded prior life. LivedNow owns life after Fibre birth.
 
-## N4 — Person -> Thread meeting
+## N4 — Person -> Thread meeting — IMPLEMENTED, DEPLOYED ACCEPTANCE PENDING
 
-Only after LivedNow has established the current scene should `/meet` admit the visitor. Meeting is an intersection with ongoing life, not a scene-creation API.
+`/meet` now asks World to establish LivedNow before exposing the scene. Meeting is an intersection with ongoing life, not a scene-creation API.
 
 ```text
 select Thread
@@ -149,7 +149,7 @@ select Thread
 
 The visitor cannot choose the Thread's location, activity, private state or plan.
 
-The first live acceptance should prove the scene came from the Thread's own continuing life rather than a meeting fixture.
+The automated path proves meeting entry cannot author the scene, reconciles before exposure, and keeps later utterances bound to the returned `situationId`. N4 closes only after the deployed public stack demonstrates that same path against a real Thread.
 
 ## N5 — Thread -> Thread meeting
 
