@@ -7,6 +7,7 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
+import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 
 const DECISIONS = Object.freeze(["accept", "decline", "defer"]);
 const MAX_MEMORIES = 6;
@@ -53,13 +54,23 @@ function requestId(kind, input) {
   return `${kind}_${sha256(canonicalJson(input))}`;
 }
 
-export function meetingPresenceCompatible(left, right) {
+function placeIdForRef(placeRef, episodes) {
+  const episode = (episodes ?? []).find((candidate) => placeEpisodeRevisionRef(candidate) === placeRef);
+  return episode?.place?.placeId ?? null;
+}
+
+export function meetingPresenceCompatible(left, right, {
+  leftPlaceEpisodes = [],
+  rightPlaceEpisodes = [],
+} = {}) {
   assertPlainObject("left current situation", left);
   assertPlainObject("right current situation", right);
-  if (left.location?.kind === "place" && right.location?.kind === "place" &&
-      left.location.placeRef === right.location.placeRef) return true;
-  return typeof left.mediatedContext === "string" && left.mediatedContext.trim() !== "" &&
-    left.mediatedContext === right.mediatedContext;
+  if (typeof left.mediatedContext === "string" && left.mediatedContext.trim() !== "" &&
+      left.mediatedContext === right.mediatedContext) return true;
+  if (left.location?.kind !== "place" || right.location?.kind !== "place") return false;
+  const leftPlaceId = placeIdForRef(left.location.placeRef, leftPlaceEpisodes);
+  const rightPlaceId = placeIdForRef(right.location.placeRef, rightPlaceEpisodes);
+  return leftPlaceId !== null && leftPlaceId === rightPlaceId;
 }
 
 export async function formMeetingStance({
