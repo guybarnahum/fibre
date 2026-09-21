@@ -119,7 +119,7 @@ export function createEnvironmentalEncounterService({
       });
       const encounterStory = experienceStore.recordEncounterStory({
         occurredAt:input.at,
-        participants:[{
+        threadPresence:[{
           threadId:input.threadId,
           situationId:context.situation.situationId,
         }],
