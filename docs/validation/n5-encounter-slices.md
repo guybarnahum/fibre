@@ -1,6 +1,6 @@
 ---
 id: validation-n5-encounter-slices-v0-1
-status: proposed-for-review
+status: accepted
 last-reviewed: 2026-09-21
 canonical: false
 ---
@@ -60,27 +60,26 @@ Retain unless the refactor exposes a concrete flaw:
 
 Do not restore green by recreating the old dyadic API just to satisfy those tests.
 
-## Slice E0 — Reconcile the spike
+## Slice E0 — Reconcile the spike — CLOSED
 
 **Goal:** return to one coherent implementation vocabulary before extending behavior.
 
-Work:
+Completed:
 
-- make Encounter Story / Thread Experience the internal domain terms;
-- reserve one durable Encounter Story visualization companion: rich media-neutral `visualizationPrompt`, digest and bound source references; no rendering obligation;
-- keep meeting endpoints as wrappers over the general seam;
-- remove superseded dyadic persistence/orchestration assumptions;
-- keep journal/R2/place/stance work that survives;
-- replace the obsolete N5 tests rather than adapting them to the wrong model;
-- investigate the unrelated local command acceptance regression separately.
+- Encounter Story / Thread Experience now name the general persistence seam;
+- social meeting is a wrapper over that seam rather than the persistence authority;
+- meeting cognition owns participation only; social story progression is separate;
+- superseded dyadic meeting persistence/orchestration and tests were removed rather than compatibility-wrapped;
+- persisted `actor | witness` authority was removed;
+- journal/R2/place/stance work that survived the replan was retained;
+- the admin-disabled process test now explicitly removes inherited `FIBRE_ADMIN_TOKEN`;
+- full repository CI validation, all tests and Cloudflare dry-runs are green.
 
-Stop condition:
+The durable Encounter Story visualization prompt is intentionally implemented in E1, where the Encounter Story itself becomes a complete admitted general encounter record.
 
-- repository builds and `npm run slice:validate` is green;
-- no claim that N5 is deployed or complete;
-- no new capability beyond conceptual reconciliation.
+E0 adds no new lived capability; it establishes one coherent base for E1.
 
-## Slice E1 — Encounter Story + noticing + Thread Experience + visualization prompt
+## Slice E1 — Encounter Story + noticing + Thread Experience + visualization prompt — CURRENT
 
 **Goal:** prove the general lived causal seam and make every admitted Encounter Story reproducibly visualizable without requiring a render.
 
