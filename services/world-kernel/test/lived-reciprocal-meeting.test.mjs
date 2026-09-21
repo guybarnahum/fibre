@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createReciprocalMeetingService } from "../src/lived-reciprocal-meeting.mjs";
+import { placeEpisodeRevisionRef } from "../src/situated-life-evidence.mjs";
 
 const AT = "2026-09-21T18:00:00.000Z";
 
@@ -20,12 +21,36 @@ function thread(threadId, name, selfDescription) {
 const mina = thread("thr_n5_mina", "Mina", "I notice small emotional shifts and prefer unforced closeness.");
 const noor = thread("thr_n5_noor", "Noor", "I am warm but protective of my quiet and my time.");
 
-function situation(threadId, activity) {
+function placeEpisode(threadId, episodeId) {
+  return {
+    episodeId,
+    revision:1,
+    threadId,
+    episodeKind:"formative_presence",
+    place:{
+      placeId:"place_n5_cafe",
+      displayName:"The same neighborhood café",
+      countryCode:"US",
+      region:"AZ",
+      locality:"Tucson",
+      precision:"locality",
+    },
+    startAt:"2026-09-01T00:00:00.000Z",
+    endAt:null,
+    sourceReferences:[`evt_${threadId}_cafe`],
+    visibility:"private",
+    status:"current",
+    provenance:"thread_history",
+    recordedAt:"2026-09-01T00:00:00.000Z",
+  };
+}
+
+function situation(threadId, activity, placeRef) {
   return {
     situationId:`sit_${threadId}`,
     threadId,
     establishedAt:AT,
-    location:{ kind:"place", placeRef:"plce_shared_cafe" },
+    location:{ kind:"place", placeRef },
     mediatedContext:null,
     activity,
   };
@@ -56,9 +81,15 @@ function relations(threadId) {
 }
 
 function service({ stanceFor = () => "accept" } = {}) {
+  const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe");
+  const noorCafe = placeEpisode(noor.threadId, "plce_n5_noor_cafe");
+  const placeEpisodes = new Map([
+    [mina.threadId, [minaCafe]],
+    [noor.threadId, [noorCafe]],
+  ]);
   const situations = new Map([
-    [mina.threadId, situation(mina.threadId, "Reading over coffee.")],
-    [noor.threadId, situation(noor.threadId, "Sketching at the same café table.")],
+    [mina.threadId, situation(mina.threadId, "Reading over coffee.", placeEpisodeRevisionRef(minaCafe))],
+    [noor.threadId, situation(noor.threadId, "Sketching at the same café table.", placeEpisodeRevisionRef(noorCafe))],
   ]);
   const histories = [];
   const journals = [];
@@ -152,6 +183,7 @@ function service({ stanceFor = () => "accept" } = {}) {
     },
     situatedLifeStore:{
       listCurrentLifeRelations(threadId) { return structuredClone(relations(threadId)); },
+      listCurrentPlaceEpisodes(threadId) { return structuredClone(placeEpisodes.get(threadId)); },
     },
     semanticStateStore:{
       listCurrentState(threadId) {
@@ -217,6 +249,11 @@ test("N5 one shared meeting leaves two private accounts and selective memory", a
     at:AT,
   });
 
+  assert.notEqual(
+    fixture.calls.find((call) => call.clientRequestId.startsWith("meeting-stance_")).input.currentSituation.location.placeRef,
+    fixture.calls.filter((call) => call.clientRequestId.startsWith("meeting-stance_"))[1].input.currentSituation.location.placeRef,
+    "Threads should carry independent place evidence",
+  );
   assert.equal(result.outcome, "met", "both Threads should meet");
   assert.equal(fixture.ensured.length, 2, "both lives must be current");
   assert.equal(fixture.shared.length, 1, "meeting must be one shared event");
