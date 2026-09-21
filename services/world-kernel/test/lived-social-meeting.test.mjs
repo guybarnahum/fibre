@@ -209,9 +209,17 @@ function fixture({ stanceFor = () => "accept", compatible = true } = {}) {
         stories.push(structuredClone(candidate));
         return { encounterId:"story_e0_social", ...structuredClone(candidate) };
       },
-      recordThreadExperience(candidate) {
-        experiences.push(structuredClone(candidate));
-        return { experienceId:`exp_${candidate.threadId}`, ...structuredClone(candidate) };
+      recordThreadEncounterAttention(candidate) {
+        const experience = {
+          experienceId:`exp_${candidate.threadId}`,
+          threadId:candidate.threadId,
+          encounterRef:candidate.encounterRef,
+          situationId:candidate.situationId,
+          occurredAt:candidate.occurredAt,
+          experienceText:candidate.experienceText,
+        };
+        experiences.push(structuredClone(experience));
+        return { ...structuredClone(candidate), experience };
       },
       recordThreadExperienceJournalEntry(candidate) {
         journals.push(structuredClone(candidate));
