@@ -1,7 +1,7 @@
 ---
 id: fibre-public-progress
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-21
 canonical: true
 machine-source: public-progress.json
 ---
@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and wires Person -> Thread meeting entry to reconcile that life before interaction; the remaining N4 step is deployed acceptance.**
+**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; reciprocal Thread meetings are now the active step.**
 
 ## What is done
 
@@ -75,9 +75,9 @@ A three-day gap is reconstructed in a bounded number of windows rather than minu
 
 The quiet-gap proof deliberately does not invent an encounter or memory just to make elapsed time look dramatic. If future catch-up life contains an event that warrants consequence, it must use Fibre's ordinary experience and retention authorities.
 
-### Meet a Thread — Working on it
+### Meet a Thread — Done
 
-The N4 code path is now wired: public meeting entry asks World to ensure LivedNow at server time, publishes that exact bounded present, and only then exposes the scene. The later utterance remains bound to the returned `situationId`; it does not reconcile again and silently move the Thread while the visitor is speaking.
+N4 is closed in staging: public meeting entry asks World to ensure LivedNow at server time, publishes that exact bounded present, and only then exposes the scene. A subsequent live encounter succeeded against the exact returned `situationId`, so the visitor entered an already-existing life rather than creating one.
 
 The visitor may cause the encounter, but cannot choose the Thread's pre-existing place, activity, plan, companions, private memory or feelings.
 
@@ -136,9 +136,9 @@ A bounded public scene may show:
 
 A later visit should find later life.
 
-## Genesis to LivedNow — Working on it
+## Genesis to LivedNow — Done at the current boundary
 
-N3 is now the active step. The important end-to-end path is:
+N3 is closed. The accepted end-to-end path is:
 
 ```text
 Genesis
@@ -176,7 +176,6 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- claim N4 deployed acceptance until the current World, Presentation and insidefibre.com path is exercised live;
 - orchestrate reciprocal Thread-to-Thread meetings;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
