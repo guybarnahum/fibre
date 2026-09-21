@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; N5 E0 is complete and E1 environmental encounters are current.**
+**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E1 are complete and E2 voluntary social encounters are current.**
 
 ## What is done
 
@@ -123,7 +123,9 @@ The same objective story may affect different Threads differently. A silent witn
 
 E0 has now reconciled that spike into a green foundation: Encounter Story / Thread Experience own the general persistence vocabulary, social meeting is a wrapper rather than the history authority, participation cognition is separate from social story cognition, and the obsolete dyadic code/tests are gone.
 
-E1 is current: prove that an unscheduled environmental occurrence can become an objective Encounter Story, may be noticed or not noticed by a Thread, and if noticed becomes personal experience with a durable rich visualization prompt.
+E1 is now done: an unscheduled bee/flower occurrence becomes an objective Encounter Story with a durable rich visualization prompt, enters one Thread's attention, becomes personal experience and may be retained; a separate admitted cloud occurrence remains `not_noticed` and creates no Thread Experience or private aftermath.
+
+E2 is current: social meeting should reuse that same encounter seam, but only after independently current Threads choose whether to `accept | decline | defer`. Compatible presence must not force a meeting.
 
 ### Rich insidefibre.com meeting
 
@@ -181,7 +183,7 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- complete E1-E5 of the general Encounter Story -> Thread Experience seam;
+- complete E2-E5 of the general Encounter Story -> Thread Experience seam;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
 - support society-scale institutions and reproduction among live Threads.
