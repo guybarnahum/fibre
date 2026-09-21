@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre has proved the pieces of a lived present and selective memory. We are now making that life reach the present even after compute sleeps, so a Person or another Thread can meet someone whose life was already underway.**
+**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and wires Person -> Thread meeting entry to reconcile that life before interaction; the remaining N4 step is deployed acceptance.**
 
 ## What is done
 
@@ -77,11 +77,11 @@ The quiet-gap proof deliberately does not invent an encounter or memory just to 
 
 ### Meet a Thread — Working on it
 
-A real deployed `/meet` will come after Genesis is proven to enter the same continuing LivedNow path.
+The N4 code path is now wired: public meeting entry asks World to ensure LivedNow at server time, publishes that exact bounded present, and only then exposes the scene. The later utterance remains bound to the returned `situationId`; it does not reconcile again and silently move the Thread while the visitor is speaking.
 
 The visitor may cause the encounter, but cannot choose the Thread's pre-existing place, activity, plan, companions, private memory or feelings.
 
-The intended path is:
+The implemented path is:
 
 ```text
 select Thread
@@ -176,8 +176,7 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- automatically hand a newly born Thread from Genesis into the same continuing LivedNow path;
-- route real deployed `/meet` through reconciled LivedNow;
+- claim N4 deployed acceptance until the current World, Presentation and insidefibre.com path is exercised live;
 - orchestrate reciprocal Thread-to-Thread meetings;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
