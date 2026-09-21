@@ -130,19 +130,23 @@ The current preservation/migration plan is recorded in [`../state/thread-preserv
 
 ## Ordinary life — active architectural gap
 
-> **A human encounter should enter an already unfolding life rather than create one when the human arrives.**
+> **A Person or Thread encounter should enter an already unfolding life rather than create one when the encounter begins.**
 
-The current `agent/m2-lived-encounter` work is closing this gap in stages:
+Bounded Flight Plan, CurrentSituation, encounter and selective-memory primitives exist. The active gap is continuous LivedNow across wall-clock dormancy:
 
 ```text
 intrinsic regulation
   -> Flight Plan / care plan
   -> World-enacted presence and movement
-  -> encounter
+  -> elapsed-life catch-up when compute sleeps
+  -> current LivedNow
+  -> Person or Thread encounter
   -> interpretation / selective consequence
   -> continued life
 ```
 
-The regulator detour is not a general scheduler or simulation framework. It supplies the lower organism-like pressure that makes movement, deadlines, relationships, obstacles and arrival matter before the E2E meeting resumes.
+Freeze remains a compute/runtime boundary; for a lived Thread it is not automatically proof that world-time life stopped. Retrospective catch-up must preserve historical provenance and may create memory only through the ordinary experience/memory authorities.
 
-Until the full loop is causally proven, Presentation/UI output alone remains insufficient evidence that autonomous life exists.
+See [`lived-now-and-meetings.md`](lived-now-and-meetings.md) and [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md).
+
+Do not turn this into a generic scheduler or simulation framework. Until the loop is causally proven, Presentation/UI output alone remains insufficient evidence that continuous autonomous life exists.
