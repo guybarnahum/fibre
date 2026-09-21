@@ -5,12 +5,12 @@
   "asOf": "2026-09-20",
   "title": "Where Fibre is today",
   "headline": {
-    "simple": "Fibre has proved the pieces of a lived present and selective memory. The next goal is continuous LivedNow: a Thread's life should reach the present even after compute has slept, so meetings enter a life already underway.",
-    "detail": "Bounded Flight Plan, CurrentSituation, situated human encounter, private reflection/selective retention and later-meeting continuity are demonstrated. The active gap is continuous LivedNow across wall-clock dormancy, followed by deployed Person -> Thread and reciprocal Thread -> Thread meetings."
+    "simple": "Fibre has proved the pieces of a lived present and now has one World-owned seam that can establish 'now' when a Thread's Flight Plan already covers it. The active goal is multi-day dormant catch-up so meetings enter a life already underway.",
+    "detail": "Bounded Flight Plan, CurrentSituation, situated human encounter, private reflection/selective retention, later-meeting continuity, and an idempotent World-owned ensure-LivedNow seam over covered plan time are demonstrated. The active gap is retrospective continuity across uncovered wall-clock dormancy, followed by deployed Person -> Thread and reciprocal Thread -> Thread meetings."
   },
   "summary": {
     "simple": "A Thread can already have a plan, a current situation, an encounter and a selective memory. Fibre is now connecting those pieces across elapsed time so a frozen Thread can wake into a believable present rather than a stale scene.",
-    "detail": "The current architecture composes existing lived-person primitives into one World-owned ensure-LivedNow capability: retrospective elapsed-life catch-up with honest provenance, plan renewal, current-situation enactment, then meeting. Memory remains selective and cannot bypass admitted history."
+    "detail": "World now composes existing Flight Plan, care-resolution and CurrentSituation authorities through one ensure-LivedNow seam when admitted plan coverage exists. The next step is retrospective elapsed-life catch-up with honest provenance and plan renewal; memory remains selective and cannot bypass admitted history."
   },
   "statusDefinitions": [
     {
@@ -63,7 +63,7 @@
     "title": "Current Thread population posture",
     "summary": {
       "simple": "Fibre has born validation Threads and one staging path ready to surface a selected Thread as a continuing person.",
-      "detail": "The fixed #39 cohort remains the canonical validation population; the current M2-A slice may use an existing born Thread to prove the lived-person experience without generating a new cohort."
+      "detail": "The fixed #39 cohort remains the canonical validation population; the current M2 work may use an existing born Thread to prove the lived-person experience without generating a new cohort."
     },
     "items": [
       {
@@ -159,12 +159,12 @@
       "label": "Continuous LivedNow across dormancy",
       "status": "in_progress",
       "simple": {
-        "claim": "We are building the ability for a Thread's life to reach 'now' even when compute was asleep.",
-        "limitation": "Today Fibre has bounded plans and current situations, but not automatic multi-day catch-up and plan renewal."
+        "claim": "Fibre can now establish a current World situation through one bounded LivedNow seam when the Thread already has covering plan intent.",
+        "limitation": "It does not yet bridge an uncovered multi-day dormant gap or renew an expired plan."
       },
       "detail": {
-        "claim": "World will compose existing Flight Plan, CurrentSituation, encounter and memory authorities into one ensure-LivedNow reconciliation path with bounded retrospective life realization.",
-        "limitation": "Retrospective events must preserve materialization provenance, remain sparse, and may affect memory/relationships only through ordinary Fibre authorities."
+        "claim": "N1 provides a World-owned, idempotent ensure-LivedNow seam over admitted personal Flight Plan coverage, including required care-plan resolution and caller scene-authority rejection.",
+        "limitation": "N2 must still retrospectively realize uncovered lived time with honest materialization provenance, route ordinary consequences, renew plan coverage, and then establish the present."
       },
       "evidence": [
         "docs/architecture/lived-now-and-meetings.md",
@@ -250,7 +250,7 @@
     "milestone": "Continuous LivedNow + Meetings",
     "simple": {
       "summary": "Make a Thread's life reach the present before anyone meets her.",
-      "currentStep": "Compose the existing Flight Plan and CurrentSituation primitives into one World-owned LivedNow reconciliation path.",
+      "currentStep": "Add honest multi-day dormant catch-up behind the existing World-owned ensure-LivedNow seam.",
       "nextSteps": [
         "Prove a multi-day dormant gap can be caught up without leaving the Thread in a stale scene.",
         "Preserve that catch-up was materialized retrospectively while keeping lived chronology.",
@@ -261,7 +261,7 @@
     },
     "detail": {
       "summary": "The bounded A1-B2 lived-person work is retained as substrate. The active capability is continuous present-life reconciliation across wall-clock dormancy, followed by Person and Thread meetings.",
-      "currentStep": "Build the smallest World-owned ensure-LivedNow seam by composing existing plan, situation, regulation, history and memory authorities; do not create a parallel scheduler/simulation framework.",
+      "currentStep": "N1 is closed for already-covered plan time. N2 now owns uncovered elapsed intervals: retrospective sparse life realization, explicit materialization provenance, ordinary consequence routing, plan renewal, then CurrentSituation.",
       "nextSteps": [
         "Add bounded retrospective lived catch-up with explicit provenance and idempotence.",
         "Bridge Genesis into the same post-birth continuing-life path.",
