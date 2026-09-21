@@ -87,7 +87,7 @@ Role alone never decides whether proximity is regulating. The relationship and t
 
 ## Flight Plan and movement
 
-An active Thread should periodically form a bounded **Flight Plan** for roughly the next half-day/day: where and how she wants or needs to be present, what she intends to do, with whom, and when it matters.
+An active/lived Thread should ordinarily have a rolling bounded **Flight Plan** for roughly the next half-day/day: where and how she wants or needs to be present, what she intends to do, with whom, and when it matters. If compute sleeps across part of that life, missing elapsed plan coverage may be retrospectively realized during catch-up rather than forcing Fibre to simulate continuously.
 
 The plan is intention, not World truth.
 
@@ -168,7 +168,7 @@ When the human returns, the Thread may be elsewhere because her life continued.
 
 A meeting between two Threads follows the same rule. Both lives exist before the encounter. Fibre first resolves each participant's LivedNow; a shared encounter can occur only when their physical or mediated presences are compatible. The event is shared, but its private meaning is not: each Thread may remember, interpret and be changed by it differently.
 
-A meeting can therefore bend later plans, relationship state, intentions or memory without becoming a privileged “growth event.” It may also matter very little.
+A meeting can therefore bend later plans, relationship state, intentions, memory, or eventually self-understanding/identity through Fibre's ordinary experience and development authorities without becoming a privileged “growth event.” It may also matter very little.
 
 ## Experience is not automatically memory
 
