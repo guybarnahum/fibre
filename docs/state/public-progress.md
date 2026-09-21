@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; reciprocal Thread meetings are now the active step.**
+**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; N5 is now being rebuilt around general encounters and personal experience.**
 
 ## What is done
 
@@ -103,23 +103,25 @@ Retrospective catch-up receives no special memory shortcut; future salient catch
 
 ## What comes next
 
-### Thread-to-Thread lived meetings
+### General lived encounters — Working on it
 
-Two Threads should be able to meet as two independently continuing people.
+N5 has been broadened before deployment.
 
-Before the encounter, each needs its own authoritative LivedNow and its own willingness to participate.
-
-A physical meeting requires compatible place/time presence; a mediated meeting requires compatible mediated context while each Thread still remains physically somewhere. Compatible presence alone is not consent.
-
-Once both participate and the encounter happens, it may become shared history while producing different private aftermath:
+The new primitive is:
 
 ```text
-shared encounter
-  -> Thread A remembers / forgets / changes differently
-  -> Thread B remembers / forgets / changes differently
+World occurrence
+  -> objective Encounter Story
+  -> Thread-specific noticing / experience
+  -> optional journal
+  -> selective consequence
 ```
 
-Fibre should not teleport, silently replan, or force an interruption merely to make a meeting happen.
+A meeting is one voluntary social form of encounter. It keeps the `accept | decline | defer` participation gate. But a Thread can also encounter a flower, bee, cloud, sound, place, accident or witnessed social behavior without that occurrence being a “meeting.”
+
+The same objective story may affect different Threads differently. A silent witness may be changed by how one Thread treats another, while another nearby Thread may fail to notice the event at all.
+
+The first reciprocal-meeting implementation spike taught us useful things, but it is not being deployed as-is because it overfit the central path to invited social dialogue.
 
 ### Rich insidefibre.com meeting
 
@@ -177,7 +179,7 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- orchestrate reciprocal Thread-to-Thread meetings;
+- complete and deploy the general Encounter Story -> Thread Experience seam;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
 - support society-scale institutions and reproduction among live Threads.
@@ -189,8 +191,10 @@ A Thread may have admitted history it does not remember.
 - Retrospective life must preserve that it was materialized later.
 - insidefibre.com is a projection surface, not a parallel World.
 - A meeting enters an already-existing life; it does not manufacture that life.
+- Encounter is the general lived primitive; meeting is one voluntary social special case.
+- Co-presence does not automatically create experience; noticing is Thread-specific.
 - Shared event does not imply shared private meaning.
-- A chat transcript is not automatically autobiographical memory.
+- A journal is not automatically autobiographical memory.
 - Memory cannot bypass admitted history.
 - Infrastructure and tests support the organism; they do not replace building it.
 
@@ -199,6 +203,8 @@ A Thread may have admitted history it does not remember.
 See:
 
 - [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
+- [Encounter stories and Thread experience](../architecture/encounters-and-experience.md)
+- [N5 encounter-story slices](../validation/n5-encounter-slices.md)
 - [The Lived World of Fibre](../vision/lived-world.md)
 - [Current priorities](current-priorities.md)
 - [M2 continuation plan](../validation/m2-pr-plan.md)
