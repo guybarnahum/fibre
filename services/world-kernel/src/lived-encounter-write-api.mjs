@@ -148,18 +148,20 @@ export function createLivedEncounterWriteApi({
           modelAdapter,
           activityRecorder,
         });
-        if (memoryStore !== null) {
-          await runActivityStage(activityRecorder, {
-            ...activity,
-            stage: "encounter.memory.retain",
-            evidence: { eventId: internalized.historyEvent.eventId },
-          }, () => formLivedEncounterMemory({
-            livedContext,
-            historyEvent: internalized.historyEvent,
-            journalEntry: internalized.journalEntry,
-            memoryStore,
-            modelAdapter,
-          }));
+        if (memoryStore !== null && internalized.privateAftermathComplete) {
+          try {
+            await runActivityStage(activityRecorder, {
+              ...activity,
+              stage: "encounter.memory.retain",
+              evidence: { eventId: internalized.historyEvent.eventId },
+            }, () => formLivedEncounterMemory({
+              livedContext,
+              historyEvent: internalized.historyEvent,
+              journalEntry: internalized.journalEntry,
+              memoryStore,
+              modelAdapter,
+            }));
+          } catch {}
         }
       }
       return json({ ok: true, result });
