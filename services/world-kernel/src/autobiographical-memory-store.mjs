@@ -68,7 +68,7 @@ export class AutobiographicalMemoryStore {
     ).get(threadId, ref);
     if (livedEncounter !== undefined) return livedEncounter;
     return this.#database.prepare(
-      "SELECT occurred_at FROM thread_shared_encounter_experiences WHERE thread_id=? AND experience_id=?",
+      "SELECT occurred_at FROM thread_encounter_experiences WHERE thread_id=? AND experience_id=?",
     ).get(threadId, ref);
   }
 
@@ -87,7 +87,7 @@ export class AutobiographicalMemoryStore {
   #referenceResolves(threadId, ref) {
     if (this.#database.prepare("SELECT 1 AS present FROM thread_events WHERE thread_id=? AND event_id=?").get(threadId, ref) !== undefined) return true;
     if (this.#database.prepare("SELECT 1 AS present FROM lived_encounter_records WHERE thread_id=? AND event_id=?").get(threadId, ref) !== undefined) return true;
-    if (this.#database.prepare("SELECT 1 AS present FROM thread_shared_encounter_experiences WHERE thread_id=? AND experience_id=?").get(threadId, ref) !== undefined) return true;
+    if (this.#database.prepare("SELECT 1 AS present FROM thread_encounter_experiences WHERE thread_id=? AND experience_id=?").get(threadId, ref) !== undefined) return true;
     if (this.#database.prepare("SELECT 1 AS present FROM situated_evidence_witnesses WHERE thread_id=? AND reference=?").get(threadId, ref) !== undefined) return true;
     if (this.#database.prepare("SELECT 1 AS present FROM identity_assertion_records WHERE thread_id=? AND assertion_id=?").get(threadId, ref) !== undefined) return true;
     return false;
