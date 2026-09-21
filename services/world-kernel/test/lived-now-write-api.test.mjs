@@ -114,3 +114,30 @@ test("N4 LivedNow write API returns a safe reconciliation code on unexpected fai
     code: "MODEL_REQUEST_CONFIGURATION_ERROR",
   });
 });
+
+
+test("N4 LivedNow write API includes safe detail for schema constraint failures", async () => {
+  const api = createLivedNowWriteApi({
+    privateToken: TOKEN,
+    livedNow: {
+      async ensure() {
+        const error = new Error("OpenAI model output violates Fibre canonical response schema at $.stops[0].activity: string length 0 is below minLength 1");
+        error.code = "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR";
+        throw error;
+      },
+    },
+    publication: {
+      async publishCurrentSituation() {
+        throw new Error("not reached");
+      },
+    },
+  });
+
+  const response = await api.fetch(request({ threadId: THREAD_ID }));
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    error: "lived_now_reconciliation_failed",
+    code: "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR",
+    detail: "OpenAI model output violates Fibre canonical response schema at $.stops[0].activity: string length 0 is below minLength 1",
+  });
+});
