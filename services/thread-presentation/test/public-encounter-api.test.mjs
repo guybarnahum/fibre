@@ -166,3 +166,37 @@ test("N4 meeting entry preserves safe World reconciliation code on 503", async (
     code: "MODEL_REQUEST_CONFIGURATION_ERROR",
   });
 });
+
+
+test("N4 meeting entry carries safe schema reconciliation detail on 503", async () => {
+  const api = createPublicEncounterApi({
+    viewerOrigin: "https://insidefibre.com",
+    readPublicPresent: async () => null,
+    ensurePublicPresent: async () => {
+      const error = new Error("lived_now_reconciliation_failed");
+      error.status = 503;
+      error.body = {
+        error: "lived_now_reconciliation_failed",
+        code: "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR",
+        detail: "OpenAI model output violates Fibre canonical response schema at $.stops[0].activity: string length 0 is below minLength 1",
+      };
+      throw error;
+    },
+    encounter: async () => { throw new Error("not reached"); },
+  });
+
+  const response = await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/meet`,
+    {
+      method: "POST",
+      headers: { Origin: "https://insidefibre.com" },
+    },
+  ));
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    error: "lived_now_unavailable",
+    code: "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR",
+    detail: "OpenAI model output violates Fibre canonical response schema at $.stops[0].activity: string length 0 is below minLength 1",
+  });
+});
