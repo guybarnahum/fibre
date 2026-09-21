@@ -72,6 +72,20 @@ function normalizeCognition(value) {
   };
 }
 
+function normalizeRetrospectiveMaterialization(name, value, livedThrough) {
+  assertPlainObject(name, value);
+  assertExactKeys(name, value, ["mode", "materializedAt"]);
+  if (value.mode !== "retrospective") throw new TypeError(`${name}.mode must be retrospective`);
+  assertIsoTimestamp(`${name}.materializedAt`, value.materializedAt);
+  if (Date.parse(value.materializedAt) < Date.parse(livedThrough)) {
+    throw new TypeError(`${name}.materializedAt cannot precede lived chronology`);
+  }
+  return {
+    mode: "retrospective",
+    materializedAt: value.materializedAt,
+  };
+}
+
 function normalizeStop(value, index) {
   const name = `lived plan.stops[${index}]`;
   assertPlainObject(name, value);
@@ -185,6 +199,7 @@ export function normalizeLivedPlan(value) {
     "sourceReferences",
     "authority",
     "cognition",
+    "materialization",
   ]);
   assertId("lived plan.planId", value.planId);
   assertEnum("lived plan.kind", value.kind, LIVED_PLAN_KINDS);
@@ -226,6 +241,13 @@ export function normalizeLivedPlan(value) {
     }
   }
   const sourceReferences = normalizeIds("lived plan.sourceReferences", value.sourceReferences, { required: true });
+  const materialization = value.materialization === undefined
+    ? undefined
+    : normalizeRetrospectiveMaterialization(
+        "lived plan.materialization",
+        value.materialization,
+        value.horizonEnd,
+      );
 
   let authority;
   let cognition;
@@ -260,6 +282,7 @@ export function normalizeLivedPlan(value) {
     sourceReferences,
     ...(authority === undefined ? {} : { authority }),
     ...(cognition === undefined ? {} : { cognition }),
+    ...(materialization === undefined ? {} : { materialization }),
   };
 }
 
@@ -372,6 +395,7 @@ export function normalizeCurrentSituation(value) {
     "sourcePlanRefs",
     "resolution",
     "provenance",
+    "materialization",
   ]);
   assertId("current situation.situationId", value.situationId);
   assertId("current situation.threadId", value.threadId);
@@ -408,6 +432,13 @@ export function normalizeCurrentSituation(value) {
   if (value.provenance !== "world_enacted") {
     throw new TypeError("current situation provenance must be world_enacted");
   }
+  const materialization = value.materialization === undefined
+    ? undefined
+    : normalizeRetrospectiveMaterialization(
+        "current situation.materialization",
+        value.materialization,
+        value.establishedAt,
+      );
 
   return {
     situationId: value.situationId,
@@ -424,6 +455,7 @@ export function normalizeCurrentSituation(value) {
       summary: value.resolution.summary,
     },
     provenance: "world_enacted",
+    ...(materialization === undefined ? {} : { materialization }),
   };
 }
 
@@ -462,6 +494,7 @@ export function resolveCurrentSituation(input) {
     "personalPlan",
     "carePlan",
     "observation",
+    "materialization",
   ]);
   assertId("current situation resolution input.situationId", input.situationId);
   assertIsoTimestamp("current situation resolution input.establishedAt", input.establishedAt);
@@ -515,5 +548,6 @@ export function resolveCurrentSituation(input) {
                 : "The personal and caregiver itineraries are compatible and observed life matches the governing position."
         },
     provenance: "world_enacted",
+    ...(input.materialization === undefined ? {} : { materialization: input.materialization }),
   });
 }
