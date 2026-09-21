@@ -134,31 +134,37 @@ This proves that life can grow from what happens **while following plans**, and 
 Full active and complete test suites, repository validation and all Cloudflare deployment dry-runs are green.
 
 
-## Slice E2 — Social meeting as a gated encounter — CURRENT
+## Slice E2 — Social meeting as a gated encounter — CLOSED
 
 **Goal:** reuse the general seam for voluntary social encounter.
 
-Flow:
+Implemented path:
 
 ```text
 independent LivedNow
   -> compatible presence/context
   -> each invited Thread: accept | decline | defer
-  -> if participation requirements pass:
-       EncounterStory
-       -> ThreadExperience(s)
-       -> aftermath
+  -> if every required participant accepts:
+       one objective Encounter Story
+       -> each active participant is durably noticed
+       -> distinct first-person Thread Experience
+       -> ordinary journal / memory aftermath
 ```
 
-Prove:
+E2 proves:
 
-- no teleportation or silent replanning;
-- a compatible Thread can decline/defer and no meeting story is created;
-- relationship/history can influence accommodation without mechanically determining it.
+- the meeting wrapper reconciles each life independently before doing anything social;
+- incompatible physical/mediated presence creates no Encounter Story and does not teleport or silently replan anyone;
+- a compatible Thread may decline, and that stops the voluntary encounter before history exists;
+- relationship, memory and interior state are supplied to meeting stance cognition without becoming a mechanical score;
+- accepted participants reuse the E1 attention/experience authority, with participation making attention deterministically `noticed` rather than adding a redundant attention cognition call;
+- one shared Encounter Story may already produce different private Thread Experiences before journal or memory.
 
-No calendar system.
+No calendar or invitation subsystem was added.
 
-## Slice E3 — N-ary story + silent witness
+Full repository CI validation is green.
+
+## Slice E3 — N-ary story + silent witness — CURRENT
 
 **Goal:** prove one shared story can affect more than the speakers.
 
