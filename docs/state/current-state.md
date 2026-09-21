@@ -48,15 +48,15 @@ Encounter Story / Thread Experience E0 foundation         PROVEN
 environmental noticing / Thread Experience E1              PROVEN
 voluntary social meeting / Encounter Story E2               PROVEN
 silent witness / n-ary encounter E3                         PROVEN
-journal / rendering / Admin acceptance E4                  CURRENT
-live deployed N5 acceptance                                NOT YET
+journal / rendering / Admin acceptance E4                  PROVEN
+live deployed N5 acceptance E5                             CURRENT
 ```
 
 The important correction is:
 
 > **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
 
-N4 is closed in deployment. N5 now proceeds from the accepted insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E3 are closed. E2 proves that independently current Threads are not teleported or silently replanned into a meeting, compatible presence does not override decline, and mutual participation produces one Encounter Story plus distinct first-person Thread Experiences through the same E1 attention/experience authority. E3 proves that one genuinely co-present Thread can remain outside the invitation and dialogue, notice the same objective social story through the E1 attention authority, and form her own private experience, journal and selective memory. E4 is current.
+N4 is closed in deployment. N5 now proceeds from the accepted insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E4 are closed. E2 proves voluntary meeting, E3 proves silent-witness asymmetry, and E4 makes the resulting authorities inspectable without collapsing them: Admin can view objective Encounter Story/visualization lineage, Thread-specific attention, World journal-entry provenance and the private R2 journal book separately from autobiographical memory. The E1 visualization lineage can also be converted into ordinary image/video asset demand with each depicted Thread's own canonical visual reference and encounter-time age. E5 staging acceptance is current.
 
 See:
 
@@ -98,13 +98,12 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
-- E4 journal / optional encounter rendering / Admin acceptance;
-- deployed N5 acceptance against real staging Threads;
+- deployed E5 N5 acceptance against real staging Threads;
 - a rich public scene driven by that continuous present.
 
 Encounter Story is now visualizable by construction: its durable rich prompt is objective/evidence-bound and separate from any later subjective memory reconstruction. Actual image/video rendering remains optional and uses the existing generated-asset pipeline rather than becoming World authority.
 
-E1-E3 are green in full CI. The park proof admits an unscheduled bee/flower occurrence that enters attention and can become memory, while a separate cloud occurrence is objectively admitted but remains `not_noticed` and creates no Thread Experience or private aftermath. E3 adds a genuinely co-present silent witness to one social Encounter Story without inviting her or fabricating speech; her noticing can become a distinct Thread Experience, private journal and selective autobiographical memory. N5 remains undeployed.
+E1-E4 are green in full CI. The park proof admits an unscheduled bee/flower occurrence that enters attention and can become memory, while a separate cloud occurrence remains `not_noticed`; E3 adds a genuinely co-present silent witness; E4 exposes the objective story/visualization lineage and separate private journal authority in Admin and proves the same objective prompt can feed the existing generated-asset demand path for image or video without becoming evidence. N5 remains undeployed until E5 staging acceptance.
 
 ## Continuous LivedNow
 
@@ -250,26 +249,24 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 ## Immediate next action
 
-E0-E3 are complete. Implement E4 over the proven encounter seam:
+E0-E4 are complete. E5 is the staging acceptance slice.
+
+Exercise the real deployed authorities together:
 
 ```text
-Encounter Story
-  -> inspectable objective visualization lineage
-  -> optional still/video representation
-
-Thread Experience
-  -> private journal authority
-  -> Thread-specific journal book / Admin presentation
-  -> selective memory independently
+environmental occurrence
+declined/deferred social request
+accepted multi-Thread story + silent witness
+  -> different Thread Experiences / journals / memory outcomes
+  -> Admin inspection of story + journal authorities
+  -> one optional encounter render request from the admitted visualization lineage
 ```
 
-E3 is green in full CI. Social participants retain the voluntary meeting gate; an explicitly known, genuinely co-present witness is not invited and never receives a dialogue turn. If she notices the admitted story through the E1 attention authority, the same shared history can become a distinct private experience, journal and selectively retained memory.
+E4 is green in full CI. Admin remains read-only: it exposes World encounter/journal authority and the R2 journal presentation without becoming either authority. Encounter rendering remains optional; the E4 proof reaches the ordinary generated-asset job seam and preserves distinct canonical identity references and encounter-time ages, but generated bytes are never required for an Encounter Story to be complete.
 
-E4 should make those already-separated authorities inspectable without changing their ownership: stable Thread-specific journal presentation, optional encounter rendering from the E1 visualization lineage, and canonical visual identity / encounter-time age where bound. Generated media remains representation, never historical evidence.
+E5 should deploy only the already-proven E0-E4 semantics and verify them against real staging Threads. Do not add new encounter concepts, automatic witness discovery, memory shortcuts, or provider-specific video orchestration during acceptance.
 
-Do not add bystander discovery, a rendering obligation, generic social orchestration or new memory machinery.
-
-Follow [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md). E4 is current; E5 remains staging acceptance.
+Follow [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md). E5 is current.
 
 
 ## Development discipline

@@ -217,32 +217,60 @@ This is the core proof that shared event != shared meaning.
 
 The shared Encounter Story has one objective visualization prompt. A later memory reconstruction for A, B or C is separately derived from that Thread's retained memory and may legitimately look different.
 
-## Slice E4 — Journal book + optional encounter rendering + Admin acceptance — CURRENT
+## Slice E4 — Journal book + optional encounter rendering + Admin acceptance — CLOSED
 
 **Goal:** make private lived reflection inspectable without making it memory authority, and prove the E1 Encounter Story visualization lineage can be inspected and optionally rendered through existing generated-asset machinery.
 
-Keep:
+Implemented without adding a second authority:
 
 ```text
-fibre-thread-objects
-  journals/<threadId>/journal.md
+World Encounter Story + Thread attention + World journal-entry provenance
+                    |
+                    +-> Admin read-only inspection
+                    |
+private R2 journal book ------------------------^
+
+Encounter Story.visualizationPrompt
+  + depicted Thread refs
+  + each Thread's canonical visual identity
+  + age(Thread.birthDate, encounter.occurredAt)
+       -> ordinary experience asset slot
+       -> existing generated-asset demand/job machinery
 ```
 
-Prove in Admin:
+Admin now presents the stable Thread-specific journal title/aesthetic and free-form book while also exposing the underlying World journal-entry records separately. The UI names the distinction explicitly: the R2 book is presentation of private journal authority; neither the book nor a journal record implies autobiographical retention.
 
-- stable Thread-specific title/aesthetic;
-- free-form journal entries in the Thread's voice;
-- feelings and subjective interpretation can differ across Threads;
-- journal entry does not imply memory;
-- R2 book is presentation of private journal authority, not semantic authority;
-- Encounter Story exposes the E1 rich visualization prompt and evidence/provenance;
-- optional encounter image/video generation can consume that same prompt lineage through existing generated-asset machinery;
-- generated encounter media is replaceable representation, never World evidence or private experience authority;
-- depicted Threads use their own canonical visual references and chronology-derived ages.
+Admin also exposes, per Encounter Story:
 
-No existing R2 asset migration. Encounter media should use the existing generated-asset pipeline/object-ref semantics rather than the private journal-object layout.
+- the objective story and genuine Thread presence;
+- the E1 objective visualization prompt;
+- prompt digest and source-reference lineage;
+- depicted Thread refs;
+- this Thread's own `noticed | not_noticed` attention / Thread Experience.
 
-## Slice E5 — Staging acceptance
+Optional encounter rendering is now a small planner over the same E1 lineage. It does not create a new render authority or store. It produces the existing `experience` presentation-asset slot shape for either image or video. When a Thread is objectively depicted, the planner requires that Thread's own canonical visual reference and derives target age from the encounter timestamp. Missing required visual identity defers the render rather than inventing a likeness. Video planning additionally refuses to invent identity-specific voice.
+
+Generated encounter media remains replaceable representation. The planner's constraints explicitly prohibit treating it as World evidence, Thread Experience, journal, memory, relationship state or identity authority.
+
+Social Encounter Stories now bind `depictedThreadRefs` from actual observable story actors rather than all co-present Threads, so a silent witness is not visually inserted merely because she was nearby.
+
+### E4 organism proof
+
+The focused E4 proofs establish:
+
+- Admin can receive one objective Encounter Story, its visualization lineage, this Thread's attention and World journal-entry provenance while the Thread has zero autobiographical memories;
+- the same Thread retains her stable private journal presentation independently of memory;
+- one objective social Encounter Story can plan both a still and a video from the same durable prompt;
+- Mina and Noor carry separate canonical visual references and chronology-derived ages into that render demand;
+- private witness interpretation does not enter the objective render brief;
+- the still becomes a normal generated-asset job through existing presentation-demand machinery;
+- omitting Noor's canonical visual reference defers the render instead of inventing her appearance.
+
+The first implementation commit exposed one prohibited private cross-owner Asset Generator import. The repository dependency gate caught it immediately; the planner was simplified to own only its intentional `image | video` choice and delegate ordinary asset validation to the existing demand seam. The replacement full CI run is green.
+
+No existing presentation R2 objects were migrated. No encounter render is required for Encounter Story completion, and E4 does not require a live provider-generated image/video; that remains optional staging evidence.
+
+## Slice E5 — Staging acceptance — CURRENT
 
 Provision the additive private Thread-object bucket and deploy only after E0-E4 are green.
 

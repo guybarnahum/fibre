@@ -4,8 +4,8 @@
   "canonical": true,
   "asOf": "2026-09-21",
   "title": "Where Fibre is today",
-  "headline": "Fibre carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E3 are complete and E4 journal/rendering/Admin acceptance is current.",
-  "summary": "N1-N4 are closed. N5 E0-E3 now prove a general Encounter Story / Thread Experience foundation, environmental noticing, voluntary social meeting without teleportation or forced participation, and silent-witness asymmetry over the same attention authority. E4 is current.",
+  "headline": "Fibre carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E4 are complete and E5 staging acceptance is current.",
+  "summary": "N1-N4 are closed. N5 E0-E4 now prove environmental noticing, voluntary social meeting, silent-witness asymmetry, separate journal/memory authority, inspectable objective encounter visualization lineage, and optional image/video generation demand over that same lineage. E5 staging acceptance is current.",
   "statusDefinitions": [
     {
       "id": "achieved",
@@ -192,11 +192,11 @@
       "status": "demonstrated",
       "simple": {
         "claim": "A bounded encounter can become private reflection and selective autobiographical memory—or be forgotten.",
-        "limitation": "This is demonstrated across bounded lived-person and N5 encounter proofs; N5 remains undeployed."
+        "limitation": "The authority separation is proven through E4; live N5 staging acceptance remains."
       },
       "detail": {
-        "claim": "B1/B2 and N5 E1-E3 preserve objective encounter history, private experience/reflection, selective retention or not_remembered, and later cognition receives only autobiographical consequences that persisted.",
-        "limitation": "Journal/rendering/Admin acceptance and live N5 staging acceptance remain before the current encounter milestone closes."
+        "claim": "B1/B2 and N5 E1-E4 preserve objective Encounter Story, Thread Experience, World journal-entry provenance, private journal presentation, selective autobiographical retention or not_remembered, and separate generated reconstruction lineage.",
+        "limitation": "E5 must exercise the combined encounter path against real staging Threads."
       },
       "evidence": [
         "docs/state/current-state.md",
@@ -210,12 +210,12 @@
       "label": "General lived encounters and reciprocal meetings",
       "status": "in_progress",
       "simple": {
-        "claim": "Fibre now supports environmental encounters, voluntary social meetings, and a genuinely co-present silent witness over one Encounter Story / Thread Experience seam.",
-        "limitation": "Journal/rendering/Admin acceptance and live staging validation remain; N5 is not deployed."
+        "claim": "Fibre now supports environmental encounters, voluntary social meetings, silent witnesses, distinct private journals, and objective encounter visualization lineage over one Encounter Story / Thread Experience seam.",
+        "limitation": "The E0-E4 semantics are green but N5 remains undeployed pending staging acceptance."
       },
       "detail": {
-        "claim": "E2 proves independently current Threads are not teleported or silently replanned into meetings and may decline before history exists. E3 adds an explicit co-present witness who receives no meeting stance or dialogue turn, but may notice the one shared Encounter Story and form her own Thread Experience, journal and selective memory through the E1 authority.",
-        "limitation": "E4-E5 still need journal/rendering/Admin acceptance and staging validation."
+        "claim": "E2 proves voluntary meeting; E3 proves a co-present silent witness can form different private consequence; E4 keeps objective story, personal attention, World journal authority, R2 journal presentation and autobiographical memory distinct in Admin, while the same objective prompt can feed ordinary image/video asset generation with canonical identity and chronology.",
+        "limitation": "E5 live staging acceptance remains before N5 closes."
       },
       "evidence": [
         "docs/architecture/encounters-and-experience.md",
@@ -244,22 +244,23 @@
   "currentWork": {
     "milestone": "Continuous LivedNow + Encounters",
     "simple": {
-      "summary": "Build E4: make private journal presentation and objective encounter visualization inspectable without collapsing either into memory or evidence.",
-      "currentStep": "Implement E4 journal book, optional encounter rendering, and Admin acceptance over the proven E1-E3 encounter authorities.",
+      "summary": "Run E5: accept the complete E0-E4 encounter seam against real staging Threads.",
+      "currentStep": "Deploy and exercise environmental noticing, voluntary refusal/acceptance, silent witnessing, divergent private aftermath, Admin inspection, and one optional encounter render request.",
       "nextSteps": [
-        "Keep a stable Thread-specific journal title and aesthetic while preserving free-form private writing.",
-        "Show different private journal accounts of the same shared story without implying autobiographical retention.",
-        "Expose the objective Encounter Story visualization prompt and provenance for inspection.",
-        "Optionally render a still/video from that lineage through existing generated-asset machinery.",
-        "Use canonical Thread visual identity and encounter-time age where bound, while keeping generated media non-authoritative."
+        "Exercise one environmental encounter against a real staging Thread.",
+        "Exercise one declined or deferred social meeting and one accepted multi-Thread encounter with a silent witness.",
+        "Verify different journal accounts and asymmetric autobiographical retention.",
+        "Inspect journal and Encounter Story visualization lineage in Admin.",
+        "Feed one admitted Encounter Story into the optional render path without changing encounter truth."
       ]
     },
     "detail": {
       "summary": "N5 was deliberately replanned before deployment. Meeting is a gated social special case of a more general encounter primitive.",
-      "currentStep": "E0-E3 are closed and green. E4 is current from docs/validation/n5-encounter-slices.md.",
+      "currentStep": "E0-E4 are closed and green. E5 staging acceptance is current from docs/validation/n5-encounter-slices.md.",
       "nextSteps": [
-        "E4: journal book, optional rendering and Admin acceptance.",
-        "E5: staging acceptance."
+        "E5: deploy the additive private Thread-object bucket and current encounter code.",
+        "Run the live N5 acceptance sequence.",
+        "Close N5 only after staging evidence matches the E0-E4 semantics."
       ]
     },
     "finalLifeCognitionAuthorized": true

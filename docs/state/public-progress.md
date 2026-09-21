@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E3 are complete and E4 journal/rendering/Admin acceptance is current.**
+**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E4 are complete and E5 staging acceptance is current.**
 
 ## What is done
 
@@ -129,7 +129,9 @@ E2 is now done: independently current Threads may be incompatible, may decline, 
 
 E3 is now done: one genuinely co-present Thread can remain outside the invitation and dialogue, notice the same objective social story, and form her own private experience, journal and selective memory. The story is still recorded once, and no relationship is automatically rewritten.
 
-E4 is current: make private journal presentation and objective encounter visualization inspectable in Admin, and optionally render encounter media from the already-admitted visualization lineage without turning generated media into evidence.
+E4 is now done: Admin can inspect objective Encounter Story/visualization provenance, this Thread's attention, World journal-entry provenance and the private journal book as distinct layers. The same admitted objective prompt can enter the existing image/video generation pipeline with each depicted Thread's own canonical visual reference and encounter-time age; missing likeness authority defers rather than invents. Generated media remains optional representation, never evidence.
+
+E5 is current: exercise E0-E4 together against real staging Threads.
 
 ### Rich insidefibre.com meeting
 
@@ -187,7 +189,7 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- complete E4-E5 of the general Encounter Story -> Thread Experience seam;
+- complete E5 staging acceptance of the general Encounter Story -> Thread Experience seam;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
 - support society-scale institutions and reproduction among live Threads.

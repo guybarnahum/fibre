@@ -209,11 +209,11 @@ The visitor chooses the utterance and causes the encounter. The visitor does not
 
 The first real deployed `/meet` is accepted only after N1-N3 are real.
 
-## N5 — Encounter Story -> Thread Experience — E0-E3 CLOSED / E4 CURRENT
+## N5 — Encounter Story -> Thread Experience — E0-E4 CLOSED / E5 CURRENT
 
 ### Capability
 
-E0 is closed: Fibre has one coherent general Encounter Story / Thread Experience persistence vocabulary, with social meeting implemented as a wrapper rather than as history authority. E1 is also closed: an unscheduled environmental occurrence can be objectively admitted with durable visualization lineage, appraised as `noticed | not_noticed`, and only when noticed become first-person Thread Experience and selective aftermath. E2 is closed as well: compatible presence does not force participation, incompatibility or decline creates no story, and mutual acceptance creates one Encounter Story plus distinct Thread Experiences through the E1 authority. E3 is closed: an explicitly known co-present Thread remains outside meeting stance and story cognition, then independently notices or misses the same admitted story through the E1 attention authority. E4 is current.
+E0 is closed: Fibre has one coherent general Encounter Story / Thread Experience persistence vocabulary, with social meeting implemented as a wrapper rather than as history authority. E1 proves environmental attention and durable objective visualization lineage; E2 proves voluntary social meeting; E3 proves silent-witness asymmetry. E4 is also closed: Admin now inspects Encounter Story, visualization provenance, personal attention, World journal-entry provenance and the private journal book without conflating them with memory, and the admitted objective prompt can enter ordinary image/video asset demand with distinct canonical visual references and encounter-time ages. E5 staging acceptance is current.
 
 One general encounter seam can turn an objective World occurrence into different personal lived experiences without requiring separate engines for conversation, witnessing and environmental moments.
 
@@ -260,7 +260,7 @@ N5 closes only when one coherent seam proves:
 
 1. **voluntary meeting — proven E2** — compatible social presence does not force participation;
 2. **silent witness — proven E3** — a third Thread can witness how A treats B, remain silent, and form a different private experience/consequence;
-3. **journal != memory — E4 current** — private journal expression and autobiographical retention remain independently selective;
+3. **journal != memory — proven E4** — private journal expression and autobiographical retention remain independently selective;
 4. **continuity** — persisted consequence can bend later cognition while unnoticed/unremembered content does not leak.
 
 Detailed execution is governed by [N5 encounter-story implementation slices](n5-encounter-slices.md).
