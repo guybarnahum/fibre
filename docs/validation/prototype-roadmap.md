@@ -110,7 +110,7 @@ Genesis
 
 The deployed meeting now enters a scene produced by continuous LivedNow rather than by a meeting fixture, and the subsequent encounter remains bound to the exact returned `situationId`.
 
-### M2-N5 — Encounter Story -> Thread Experience — ACTIVE (E0-E1 CLOSED, E2 CURRENT)
+### M2-N5 — Encounter Story -> Thread Experience — ACTIVE (E0-E2 CLOSED, E3 CURRENT)
 
 N5 has been broadened before deployment. The durable primitive is no longer “Thread A meets Thread B.” It is:
 
@@ -126,13 +126,14 @@ A social meeting is one voluntary form of encounter and retains the `accept | de
 
 E0 has now reconciled the first implementation spike into one green foundation: Encounter Story / Thread Experience own the general persistence vocabulary; social meeting is a wrapper; participation cognition is separate from social story cognition; obsolete dyadic code/tests are removed; journal/R2/Admin work and selective memory remain available.
 
-E1 is now closed. Its environmental proof admits an unscheduled occurrence, records a durable objective visualization prompt, persists retry-stable Thread attention, creates Thread Experience only when noticed, and keeps journal/memory selective. E2 is current.
+E1 is closed. Its environmental proof admits an unscheduled occurrence, records a durable objective visualization prompt, persists retry-stable Thread attention, creates Thread Experience only when noticed, and keeps journal/memory selective.
+
+E2 is also closed. Independently current Threads may be incompatible, decline, or mutually participate; only the mutually accepted compatible case creates one Encounter Story, and accepted participants form distinct Thread Experiences through the E1 experience authority.
 
 The remaining N5 proofs are:
 
-1. compatible social presence does not force a meeting;
-2. one n-ary social story can affect a silent witness differently from the actors;
-3. journal remains subjective and separate from autobiographical memory.
+1. one n-ary social story can affect a silent witness differently from the actors;
+2. journal remains subjective and separate from autobiographical memory.
 
 Follow [N5 encounter-story implementation slices](n5-encounter-slices.md). N5 closes only after those semantics are green and accepted in staging.
 
