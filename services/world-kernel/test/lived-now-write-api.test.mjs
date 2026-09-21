@@ -88,3 +88,29 @@ test("N4 meeting entry cannot choose the Thread's time or scene", async () => {
   assert.equal(response.status, 400);
   assert.equal(ensureCalls, 0);
 });
+
+
+test("N4 LivedNow write API returns a safe reconciliation code on unexpected failure", async () => {
+  const api = createLivedNowWriteApi({
+    privateToken: TOKEN,
+    livedNow: {
+      async ensure() {
+        const error = new Error("provider details stay private");
+        error.code = "MODEL_REQUEST_CONFIGURATION_ERROR";
+        throw error;
+      },
+    },
+    publication: {
+      async publishCurrentSituation() {
+        throw new Error("not reached");
+      },
+    },
+  });
+
+  const response = await api.fetch(request({ threadId: THREAD_ID }));
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    error: "lived_now_reconciliation_failed",
+    code: "MODEL_REQUEST_CONFIGURATION_ERROR",
+  });
+});
