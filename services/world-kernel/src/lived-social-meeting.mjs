@@ -79,7 +79,7 @@ export function createSocialMeetingService({
   requireMethod("memoryStore", memoryStore, "listCurrentMemories");
   requireMethod("memoryStore", memoryStore, "recordMemory");
   requireMethod("experienceStore", experienceStore, "recordEncounterStory");
-  requireMethod("experienceStore", experienceStore, "recordThreadExperience");
+  requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadExperienceJournalEntry");
   requireMethod("modelAdapter", modelAdapter, "invoke");
   if (activityRecorder !== null) requireMethod("activityRecorder", activityRecorder, "runStage");
@@ -219,18 +219,19 @@ export function createSocialMeetingService({
           memories:context.memories,
           modelAdapter,
         });
-        const experienceRecord = experienceStore.recordThreadExperience({
+        const attention = experienceStore.recordThreadEncounterAttention({
           threadId:context.thread.threadId,
           encounterRef:encounterStory.encounterId,
           situationId:context.situation.situationId,
           occurredAt:encounterStory.occurredAt,
+          outcome:"noticed",
           experienceText,
         });
         aftermath[context.thread.threadId] = await internalizeThreadEncounterExperience({
           livedContext:context,
           encounterStory,
           presentThreadSummaries:participantSummaries,
-          experienceRecord,
+          experienceRecord:attention.experience,
           experienceStore,
           memoryStore,
           journalBook,
