@@ -48,7 +48,7 @@ N1 ensure-LivedNow                                         closed
 N2 dormant interval catch-up                               closed
 N3 Genesis -> multi-day continuing life                    closed
 N4 Person -> Thread /meet                                  closed
-N5 Encounter Story -> Thread Experience                    current (E0 closed, E1 active)
+N5 Encounter Story -> Thread Experience                    current (E0-E1 closed, E2 active)
 N6 rich insidefibre.com lived encounter                    next
 ```
 
