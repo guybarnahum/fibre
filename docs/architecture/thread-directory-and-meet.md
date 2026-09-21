@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-directory-and-meet-v0-1
 status: active
-last-reviewed: 2026-09-10
+last-reviewed: 2026-09-20
 canonical: false
 ---
 
@@ -77,9 +77,12 @@ It:
 1. establishes the eligible visible candidate set;
 2. applies optional filters/exclusions;
 3. selects one Thread;
-4. returns the discovery profile plus the public Presentation/current-situation reference needed to encounter that Thread **where they already are**.
+4. asks World to ensure that selected Thread has an authoritative LivedNow for the encounter time;
+5. returns the discovery profile plus the resulting public Presentation/current-situation reference needed to encounter that Thread **where they already are**.
 
-The call must not choose the Thread's location, activity, personal flight plan, caregiver plan or immediate intention. Those facts must already exist through their owning Fibre authorities before selection.
+`meet()` may therefore trigger thaw/catch-up reconciliation. It still does **not** choose the Thread's location, activity, personal Flight Plan, caregiver plan, companions or immediate intention. Those facts are authored/reconciled by their owning Fibre authorities.
+
+If World cannot establish a trustworthy current situation, the Thread is not meetable at that moment. The meeting path must not manufacture a fallback scene.
 
 A seed may make **which eligible Thread is selected** reproducible. It must never seed or manufacture that Thread's life.
 
@@ -116,6 +119,18 @@ Its purpose is not inspection. The selected Thread should appear as a person alr
 
 A dependent person's private will/care negotiation is not automatically public. Presentation decides the bounded exterior projection; World/Thread state remains authoritative underneath it.
 
+## Thread-to-Thread meetings
+
+Directory selection is not the authority that creates a Thread-to-Thread encounter either.
+
+Before a reciprocal meeting, both participants must independently resolve to authoritative LivedNow. A physical encounter requires compatible place/time presence; a mediated encounter requires compatible mediated context.
+
+If two Threads are not already on intersecting paths, any invitation, negotiation, plan change or travel needed to create the meeting happens **before** the encounter through ordinary Fibre authorities.
+
+Once the meeting occurs, Fibre should preserve one shared occurrence or linked shared evidence while allowing separate private experience, memory and relationship consequences for each Thread.
+
+See [Continuous LivedNow and meetings](lived-now-and-meetings.md).
+
 ## Development slices
 
 ### A0.1 — Directory read seam
@@ -131,8 +146,9 @@ A dependent person's private will/care negotiation is not automatically public. 
 - select from the same eligible set;
 - optional filters/exclusions;
 - deterministic seeded **selection**;
-- return the existing Presentation/current-situation reference;
-- never materialize or rewrite the selected Thread's life.
+- request World-owned LivedNow reconciliation for the selected Thread;
+- return the reconciled Presentation/current-situation reference;
+- never author the selected Thread's life inside Directory/Viewer code.
 
 ### A0.3 — Thread Editor
 
