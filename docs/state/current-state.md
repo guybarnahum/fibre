@@ -92,7 +92,7 @@ In particular, Fibre still lacks:
 - automatic renewal of expired Flight Plans;
 - retrospective coverage of multi-hour/multi-day frozen or dormant intervals;
 - explicit provenance for life materialized after its lived time;
-- one World-owned ensure-LivedNow reconciliation seam;
+- catch-up behind the new World-owned ensure-LivedNow seam when plan coverage is absent;
 - a deployed `/meet` path that always reconciles LivedNow before interaction;
 - Thread-to-Thread meetings between two independently current lives;
 - a rich public scene driven by that continuous present.
@@ -232,9 +232,9 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 Do not build another planner, simulator or conversation framework.
 
-Compose the existing LivedNow primitives into one World-owned ensure-LivedNow capability, then prove a multi-day dormant gap.
+The bounded World-owned ensure-LivedNow seam now exists for times already covered by admitted plans. The immediate next work is N2: when that seam encounters an uncovered multi-hour or multi-day gap, retrospectively realize the smallest credible continuation with explicit lived-time/materialization-time provenance, renew plan coverage, then establish the present.
 
-The first implementation should advance this exact capability:
+The next implementation should advance this exact capability:
 
 ```text
 stale lived Thread
@@ -243,7 +243,7 @@ stale lived Thread
   -> be meetable
 ```
 
-Then route deployed Person -> Thread `/meet` through it.
+Only after that path is real should deployed Person -> Thread `/meet` depend on it.
 
 Only after that should Fibre add Thread-to-Thread meeting orchestration and the richer insidefibre.com meeting experience.
 
