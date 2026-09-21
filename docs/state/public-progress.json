@@ -173,11 +173,11 @@
       "status": "achieved",
       "simple": {
         "claim": "A deployed public meeting can enter a freshly reconciled Thread life and speak into that exact World-owned situation.",
-        "limitation": "The accepted public scene is intentionally bounded; richer lived presentation remains N6."
+        "limitation": "The accepted N4 path proves entry into real LivedNow, but it does not yet let the Thread decline or defer a meeting request based on her current life."
       },
       "detail": {
         "claim": "Staging acceptance exercised POST /api/threads/:threadId/meet through World ensure-LivedNow and exact present publication, then completed the subsequent encounter against the same situationId without visitor-authored scene state.",
-        "limitation": "N4 proves Person -> Thread meeting over real LivedNow; reciprocal Thread meetings and richer public scene texture remain separate milestones."
+        "limitation": "Meeting participation is the next refinement: exact LivedNow plus Thread-owned relationship/interior context should produce accept, decline or defer before an encounter begins."
       },
       "evidence": [
         "docs/architecture/lived-now-and-meetings.md",
@@ -210,12 +210,12 @@
       "label": "Thread-to-Thread lived meetings",
       "status": "in_progress",
       "simple": {
-        "claim": "Two Threads should be able to meet as two continuing people and carry different memories or relationship consequences afterward.",
+        "claim": "Two continuing Threads should meet only when their lives are compatible and both choose to participate, then carry different private consequences afterward.",
         "limitation": "This is the active milestone now that continuous LivedNow and deployed Person -> Thread meeting are closed."
       },
       "detail": {
-        "claim": "A reciprocal encounter will require independently reconciled LivedNow for both participants, compatible physical or mediated presence, shared occurrence evidence, and participant-specific private aftermath.",
-        "limitation": "Fibre must not teleport or silently replan Threads merely to satisfy a meeting request."
+        "claim": "N5 requires independently reconciled physical presence for both participants, compatible physical or mediated context, independent meeting stances, one shared occurrence, and participant-specific private aftermath.",
+        "limitation": "Fibre must not teleport, silently replan, or assume willingness merely because another entity requested a meeting."
       },
       "evidence": [
         "docs/architecture/lived-now-and-meetings.md",
@@ -243,23 +243,23 @@
   "currentWork": {
     "milestone": "Continuous LivedNow + Meetings",
     "simple": {
-      "summary": "Make two independently continuing Threads meet without teleportation or shared private meaning.",
-      "currentStep": "Build the first reciprocal Thread -> Thread meeting over independently reconciled LivedNow.",
+      "summary": "Make two independently continuing Threads choose whether to meet, without teleportation or forced interruption.",
+      "currentStep": "Add one bounded meeting stance — accept, decline or defer — over exact LivedNow and Thread-owned relationship/interior context, then use it in the first reciprocal Thread meeting.",
       "nextSteps": [
-        "Reconcile both Threads independently at the meeting time.",
+        "Keep every Thread physically somewhere: at a place or in transit between places.",
+        "Let each Thread independently accept, decline or defer based on current life and relationship context.",
         "Require compatible physical place/time or mediated context without teleporting or silently replanning either Thread.",
-        "Record one shared objective occurrence with participant-specific private aftermath.",
-        "Prove the two Threads can remember, forget, interpret or change differently after the same encounter.",
-        "Then enrich the public meeting scene without moving life authority into the Viewer."
+        "Record one shared objective occurrence only after both participate, with participant-specific private aftermath.",
+        "Prove one credible decline/defer and one asymmetric accepted meeting."
       ]
     },
     "detail": {
       "summary": "N1-N4 are closed. N5 is the active step: two independently current Threads must share one valid encounter while preserving separate private consequence paths.",
-      "currentStep": "Implement independently reconciled LivedNow for both participants -> compatibility check -> one shared occurrence -> separate participant-specific aftermath.",
+      "currentStep": "Implement exact LivedNow -> bounded meeting stance for each participant -> compatibility + mutual participation -> one shared occurrence -> separate private aftermath.",
       "nextSteps": [
-        "Do not create a meeting by teleporting or silently changing either Thread's plan.",
-        "Keep the shared occurrence objective and participant interpretation private and independent.",
-        "Prefer one organism-level proof of asymmetric aftermath over broad orchestration infrastructure."
+        "Reuse existing Flight Plan, CurrentSituation, relationship, memory and interior authorities; do not create a calendar/availability subsystem.",
+        "Relationship context may influence accommodation but must not mechanically determine it.",
+        "Prefer one accepted encounter plus one decline/defer as the organism-level N5 proof."
       ]
     },
     "finalLifeCognitionAuthorized": true
@@ -269,7 +269,9 @@
     "Compute dormancy does not by itself prove a lived Thread's Fibre-world life stopped.",
     "Retrospectively realized life must preserve that it was materialized later; it must not masquerade as continuously observed runtime history.",
     "insidefibre.com is a projection surface, not a second semantic authority.",
+    "A lived Thread is always physically somewhere: at a place or in transit between places; mediated presence does not replace physical presence.",
     "A meeting enters an already-established LivedNow; it does not author the Thread's pre-existing scene.",
+    "A request to meet does not create consent; a Thread may accept, decline or defer based on her current life and Thread-owned context.",
     "A shared encounter may produce different private meaning, memory and relationship consequences for different Threads.",
     "A conversation is an encounter in a continuing life, not automatically an autobiographical memory.",
     "Memory may form only from admitted lived evidence through the memory authority; do not inject virtual memories directly.",
