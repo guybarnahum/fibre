@@ -34,6 +34,7 @@ export async function internalizeThreadEncounterExperience({
   livedContext,
   encounterStory,
   participantSummaries,
+  experienceRecord = null,
   experienceStore,
   memoryStore,
   journalBook = null,
@@ -47,7 +48,7 @@ export async function internalizeThreadEncounterExperience({
   assertId("Encounter Story.encounterId", encounterStory.encounterId);
   if (!Array.isArray(encounterStory.story?.beats)) throw new TypeError("Encounter Story beats are required");
   if (!Array.isArray(participantSummaries)) throw new TypeError("encounter participant summaries are required");
-  requireMethod("experienceStore", experienceStore, "recordThreadExperience");
+  if (experienceRecord === null) requireMethod("experienceStore", experienceStore, "recordThreadExperience");
   requireMethod("experienceStore", experienceStore, "recordThreadExperienceJournalEntry");
   requireMethod("memoryStore", memoryStore, "recordMemory");
   requireMethod("modelAdapter", modelAdapter, "invoke");
@@ -63,16 +64,27 @@ export async function internalizeThreadEncounterExperience({
     correlationId:encounterStory.encounterId,
   });
 
-  const experienceRecord = await runStage(activityRecorder, {
-    ...activity,
-    stage:"encounter.experience.record",
-    evidence:{ encounterRef:encounterStory.encounterId },
-  }, () => experienceStore.recordThreadExperience({
-    threadId,
-    encounterRef:encounterStory.encounterId,
-    situationId:livedContext.situation.situationId,
-    occurredAt:encounterStory.occurredAt,
-  }));
+  const activeExperience = experienceRecord === null
+    ? await runStage(activityRecorder, {
+        ...activity,
+        stage:"encounter.experience.record",
+        evidence:{ encounterRef:encounterStory.encounterId },
+      }, () => experienceStore.recordThreadExperience({
+        threadId,
+        encounterRef:encounterStory.encounterId,
+        situationId:livedContext.situation.situationId,
+        occurredAt:encounterStory.occurredAt,
+        experienceText:null,
+      }))
+    : experienceRecord;
+
+  assertPlainObject("Thread Experience", activeExperience);
+  assertId("Thread Experience.experienceId", activeExperience.experienceId);
+  if (activeExperience.threadId !== threadId
+    || activeExperience.encounterRef !== encounterStory.encounterId
+    || activeExperience.situationId !== livedContext.situation.situationId) {
+    throw new TypeError("Thread Experience does not belong to this lived encounter");
+  }
 
   let journalEntry = null;
   let journalBookRecord = null;
@@ -87,6 +99,7 @@ export async function internalizeThreadEncounterExperience({
         unresolvedIntentions:[...(livedContext.thread.currentState?.unresolvedIntentions ?? [])],
       },
       currentSituation:structuredClone(livedContext.situation),
+      experienceText:activeExperience.experienceText ?? null,
       participants:structuredClone(participantSummaries),
       story:structuredClone(encounterStory.story),
       semanticStates:livedContext.semanticStates.map((state) => ({
@@ -100,7 +113,7 @@ export async function internalizeThreadEncounterExperience({
     const invocation = await runStage(activityRecorder, {
       ...activity,
       stage:"encounter.journal.reflect",
-      evidence:{ experienceId:experienceRecord.experienceId },
+      evidence:{ experienceId:activeExperience.experienceId },
     }, () => modelAdapter.invoke({
       systemPrompt:SYSTEM_PROMPT,
       input,
@@ -120,10 +133,10 @@ export async function internalizeThreadEncounterExperience({
       journalEntry = await runStage(activityRecorder, {
         ...activity,
         stage:"encounter.journal.record",
-        evidence:{ experienceId:experienceRecord.experienceId },
+        evidence:{ experienceId:activeExperience.experienceId },
       }, () => experienceStore.recordThreadExperienceJournalEntry({
         threadId,
-        aboutExperienceRef:experienceRecord.experienceId,
+        aboutExperienceRef:activeExperience.experienceId,
         writtenAt:encounterStory.occurredAt,
         entryText,
       }));
@@ -137,7 +150,7 @@ export async function internalizeThreadEncounterExperience({
           journalBookRecord = await runStage(activityRecorder, {
             ...activity,
             stage:"encounter.journal.book",
-            evidence:{ experienceId:experienceRecord.experienceId },
+            evidence:{ experienceId:activeExperience.experienceId },
           }, () => journalBook.append({
             threadId,
             profile,
@@ -159,10 +172,10 @@ export async function internalizeThreadEncounterExperience({
     memory = await runStage(activityRecorder, {
       ...activity,
       stage:"encounter.memory.retain",
-      evidence:{ experienceId:experienceRecord.experienceId },
+      evidence:{ experienceId:activeExperience.experienceId },
     }, () => formEncounterStoryMemory({
       livedContext,
-      experienceRecord,
+      experienceRecord:activeExperience,
       encounterStory,
       journalEntry,
       memoryStore,
@@ -173,7 +186,7 @@ export async function internalizeThreadEncounterExperience({
   }
 
   return Object.freeze({
-    experienceRecord,
+    experienceRecord:activeExperience,
     journalEntry,
     journalBookRecord,
     memory,
