@@ -48,13 +48,16 @@ N1 ensure-LivedNow                                         closed
 N2 dormant interval catch-up                               closed
 N3 Genesis -> multi-day continuing life                    closed
 N4 Person -> Thread /meet                                  closed
-N5 Thread -> Thread reciprocal meeting                     current
-N6 rich insidefibre.com lived meeting                      next
+N5 Encounter Story -> Thread Experience                    current
+N6 rich insidefibre.com lived encounter                    next
 ```
 
-The active architecture is [`architecture/lived-now-and-meetings.md`](architecture/lived-now-and-meetings.md).
+The active architecture is:
+- [`architecture/lived-now-and-meetings.md`](architecture/lived-now-and-meetings.md)
+- [`architecture/encounters-and-experience.md`](architecture/encounters-and-experience.md)
+- [`validation/n5-encounter-slices.md`](validation/n5-encounter-slices.md)
 
-The E2E meeting remains an architectural forcing function, but the meeting cannot manufacture the present. When making the encounter real exposes a missing life primitive, build that primitive generally in World/LivedNow rather than faking it in the Viewer.
+The E2E meeting remains an architectural forcing function, but meeting is no longer the primitive. When making an encounter real exposes a missing life primitive, build that primitive generally in World/LivedNow rather than faking it in the Viewer or hard-coding it to dialogue.
 
 Current active chain:
 
@@ -64,8 +67,9 @@ World reality + Thread-owned life
   -> enacted presence / movement
   -> elapsed-life reconciliation when compute slept
   -> authoritative LivedNow
-  -> Person or Thread encounter
-  -> participant-specific experience
+  -> World occurrence / requested meeting
+  -> Encounter Story
+  -> Thread-specific noticing / experience
   -> selective consequence
   -> future life
 ```
@@ -103,6 +107,7 @@ Load together when working on present life, childhood, aging, plans or encounter
 - `architecture/thread-lifecycle-accounting.md`
 - `architecture/developmental-continuity-and-past-selves.md`
 - `architecture/thread-directory-and-meet.md`
+- `architecture/encounters-and-experience.md`
 - `architecture/identity-embodiment-contract.md`
 - `concepts/development-and-memory.md`
 - `concepts/emotions-and-needs.md`
