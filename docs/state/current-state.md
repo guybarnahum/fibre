@@ -96,10 +96,13 @@ Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
 - one coherent general encounter seam connecting World occurrence -> objective Encounter Story -> Thread-specific noticing/experience -> optional journal -> selective consequence;
+- a durable rich Encounter Story visualization prompt, evidence-bound and suitable for optional still/video reconstruction without becoming history;
 - social meeting as a gated special case of that encounter seam;
 - silent-witness and environmental-encounter proofs;
 - deployed N5 acceptance against real staging Threads;
 - a rich public scene driven by that continuous present.
+
+Encounter Story should also be visualizable by construction: its durable rich prompt is objective/evidence-bound and separate from any later subjective memory reconstruction. Actual image/video rendering is optional and uses the existing generated-asset pipeline rather than becoming World authority.
 
 The current N5 code after the design spike is intentionally **not deployment-ready**. Local `npm run slice:validate` currently fails because the old dyadic N5 tests still target the superseded meeting-store API; an additional existing live-command acceptance assertion also fails with 403 vs 503 and is being treated separately rather than folded into encounter semantics. Do not restore green by recreating the old pairwise abstraction.
 
