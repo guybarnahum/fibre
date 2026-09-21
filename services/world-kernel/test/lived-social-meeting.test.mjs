@@ -18,14 +18,14 @@ function thread(threadId, name, selfDescription) {
 const mina = thread("thr_n5_mina", "Mina", "I notice small emotional shifts and prefer unforced closeness.");
 const noor = thread("thr_n5_noor", "Noor", "I am warm but protective of my quiet and my time.");
 
-function placeEpisode(threadId, episodeId) {
+function placeEpisode(threadId, episodeId, placeId = "place_n5_cafe") {
   return {
     episodeId,
     revision:1,
     threadId,
     episodeKind:"formative_presence",
     place:{
-      placeId:"place_n5_cafe",
+      placeId,
       displayName:"The same neighborhood café",
       countryCode:"US",
       region:"AZ",
@@ -73,9 +73,13 @@ function relations(threadId) {
       }];
 }
 
-function fixture({ stanceFor = () => "accept" } = {}) {
+function fixture({ stanceFor = () => "accept", compatible = true } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe");
-  const noorCafe = placeEpisode(noor.threadId, "plce_n5_noor_cafe");
+  const noorCafe = placeEpisode(
+    noor.threadId,
+    "plce_n5_noor_cafe",
+    compatible ? "place_n5_cafe" : "place_n5_elsewhere",
+  );
   const placeEpisodes = new Map([
     [mina.threadId, [minaCafe]],
     [noor.threadId, [noorCafe]],
@@ -116,6 +120,16 @@ function fixture({ stanceFor = () => "accept" } = {}) {
               provenance:{ provider:"fixture", modelId:"fixture-e0" },
             };
       }
+      if (call.clientRequestId.startsWith("encounter-experience_")) {
+        return {
+          output:{
+            experienceText:call.input.thread.name === "Noor"
+              ? "I felt the tug between wanting to keep sketching and being glad it was Mina asking."
+              : "I felt relieved that Noor made room without turning the moment into a big thing.",
+          },
+          provenance:{ provider:"fixture", modelId:"fixture-e2" },
+        };
+      }
       if (call.clientRequestId.startsWith("encounter-reflection_")) {
         const isNoor = call.input.thread.name === "Noor";
         return {
@@ -129,6 +143,8 @@ function fixture({ stanceFor = () => "accept" } = {}) {
       }
       if (call.clientRequestId.startsWith("lived-memory_")) {
         const isMina = call.input.thread.selfDescription.startsWith("I notice");
+        assert.equal(typeof call.input.experience.experiencedAs, "string",
+          "memory should receive Thread Experience");
         return {
           output:isMina ? {
             outcome:"retained",
@@ -224,7 +240,7 @@ function fixture({ stanceFor = () => "accept" } = {}) {
   return { meeting, stories, experiences, journals, bookWrites, memories, ensured };
 }
 
-test("E0 accepted meeting is one Encounter Story with separate private aftermath", async () => {
+test("E2 accepted meeting is one Encounter Story with distinct Thread Experiences", async () => {
   const f = fixture();
   const result = await f.meeting.meet({
     initiatorThreadId:mina.threadId,
@@ -235,11 +251,21 @@ test("E0 accepted meeting is one Encounter Story with separate private aftermath
   assert.equal(result.outcome, "met", "meeting should form");
   assert.equal(f.ensured.length, 2, "both lives must be current");
   assert.equal(f.stories.length, 1, "meeting should create one Encounter Story");
-  assert.equal(f.experiences.length, 2, "each participating Thread should own an experience");
+  assert.equal(f.experiences.length, 2, "each participant should own an experience");
   assert.equal(
     f.experiences.every((experience) => experience.encounterRef === result.encounterStory.encounterId),
     true,
     "private experiences must cite the same Encounter Story",
+  );
+  assert.notEqual(
+    f.experiences[0].experienceText,
+    f.experiences[1].experienceText,
+    "same story should feel different to different Threads",
+  );
+  assert.deepEqual(
+    result.encounterStory.threadPresence.map((presence) => presence.situationId).sort(),
+    [`sit_${mina.threadId}`, `sit_${noor.threadId}`].sort(),
+    "meeting must use the lives already underway",
   );
   assert.equal(f.journals.length, 2, "private reflection should stay per Thread");
   assert.notEqual(f.journals[0].entryText, f.journals[1].entryText, "private accounts should remain personal");
@@ -247,9 +273,19 @@ test("E0 accepted meeting is one Encounter Story with separate private aftermath
   assert.equal(f.memories.length, 1, "journal must not imply autobiographical retention");
 });
 
-test("E0 meeting decline creates no Encounter Story", async () => {
-  const f = fixture({ stanceFor:(name) => name === "Noor" ? "decline" : "accept" });
-  const result = await f.meeting.meet({
+test("E2 incompatible presence or decline creates no Encounter Story", async () => {
+  const apart = fixture({ compatible:false });
+  const incompatible = await apart.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+
+  assert.equal(incompatible.outcome, "incompatible", "separate places must stay separate");
+  assert.equal(apart.stories.length, 0, "incompatible lives must not be rearranged into a meeting");
+
+  const declined = fixture({ stanceFor:(name) => name === "Noor" ? "decline" : "accept" });
+  const result = await declined.meeting.meet({
     initiatorThreadId:mina.threadId,
     participantThreadIds:[mina.threadId,noor.threadId],
     at:AT,
@@ -258,7 +294,7 @@ test("E0 meeting decline creates no Encounter Story", async () => {
   assert.equal(result.compatible, true, "presence should be compatible");
   assert.equal(result.outcome, "not_met", "decline should stop the voluntary encounter");
   assert.equal(result.stances[noor.threadId].decision, "decline", "Noor should retain agency");
-  assert.equal(f.stories.length, 0, "decline must not fabricate an Encounter Story");
-  assert.equal(f.experiences.length, 0, "no story means no Thread Experience");
-  assert.equal(f.journals.length, 0, "no story means no private aftermath");
+  assert.equal(declined.stories.length, 0, "decline must not fabricate an Encounter Story");
+  assert.equal(declined.experiences.length, 0, "no story means no Thread Experience");
+  assert.equal(declined.journals.length, 0, "no story means no private aftermath");
 });
