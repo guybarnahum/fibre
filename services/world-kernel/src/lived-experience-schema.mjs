@@ -35,6 +35,7 @@ export function createLivedExperienceTables(database) {
       shared_event_ref TEXT NOT NULL,
       situation_id TEXT NOT NULL,
       occurred_at TEXT NOT NULL,
+      experience_role TEXT NOT NULL CHECK (experience_role IN ('actor','witness')),
       record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
       UNIQUE (thread_id, shared_event_ref),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
