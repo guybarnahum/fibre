@@ -2,10 +2,10 @@
   "$schema": "./public-progress.schema.json",
   "contract": "fibre-public-progress",
   "canonical": true,
-  "asOf": "2026-09-20",
+  "asOf": "2026-09-21",
   "title": "Where Fibre is today",
-  "headline": "Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and wires /meet to reconcile that life before interaction; live deployed acceptance is the current step.",
-  "summary": "N1-N3 establish continuous World-owned LivedNow from canonical Genesis birth through bounded multi-day dormancy. N4 now wires meeting entry through ensure-LivedNow and exact present publication; the remaining acceptance step is to exercise that path in the deployed public meeting.",
+  "headline": "Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; reciprocal Thread meetings are the current step.",
+  "summary": "N1-N4 are closed: Fibre can carry a canonical Genesis-born Thread through bounded dormancy into a fresh World-owned present, publish that present, and complete a deployed Person -> Thread encounter against the exact situationId. N5 now focuses on reciprocal Thread -> Thread meetings between two independently current lives.",
   "statusDefinitions": [
     {
       "id": "achieved",
@@ -170,14 +170,14 @@
       "id": "meet_a_thread",
       "group": "development",
       "label": "Meet a Thread in her current life",
-      "status": "in_progress",
+      "status": "achieved",
       "simple": {
-        "claim": "The public meeting path now asks World to reconcile the Thread's LivedNow before exposing the scene.",
-        "limitation": "The code path is wired and tested; N4 remains open until the deployed public meeting exercises it end to end."
+        "claim": "A deployed public meeting can enter a freshly reconciled Thread life and speak into that exact World-owned situation.",
+        "limitation": "The accepted public scene is intentionally bounded; richer lived presentation remains N6."
       },
       "detail": {
-        "claim": "POST /api/threads/:threadId/meet now invokes World ensure-LivedNow, publishes that exact bounded present, and the later encounter remains bound to its situationId without letting the visitor author or silently advance the scene.",
-        "limitation": "Deployment acceptance still needs to show insidefibre.com entering that reconciled scene and the encounter causal trail succeeding against the same situationId."
+        "claim": "Staging acceptance exercised POST /api/threads/:threadId/meet through World ensure-LivedNow and exact present publication, then completed the subsequent encounter against the same situationId without visitor-authored scene state.",
+        "limitation": "N4 proves Person -> Thread meeting over real LivedNow; reciprocal Thread meetings and richer public scene texture remain separate milestones."
       },
       "evidence": [
         "docs/architecture/lived-now-and-meetings.md",
@@ -208,10 +208,10 @@
       "id": "reciprocal_thread_meetings",
       "group": "society",
       "label": "Thread-to-Thread lived meetings",
-      "status": "not_yet",
+      "status": "in_progress",
       "simple": {
         "claim": "Two Threads should be able to meet as two continuing people and carry different memories or relationship consequences afterward.",
-        "limitation": "Thread-to-Thread meeting orchestration comes after continuous LivedNow and the deployed human meeting path."
+        "limitation": "This is the active milestone now that continuous LivedNow and deployed Person -> Thread meeting are closed."
       },
       "detail": {
         "claim": "A reciprocal encounter will require independently reconciled LivedNow for both participants, compatible physical or mediated presence, shared occurrence evidence, and participant-specific private aftermath.",
@@ -243,23 +243,23 @@
   "currentWork": {
     "milestone": "Continuous LivedNow + Meetings",
     "simple": {
-      "summary": "Make a Thread's life reach the present before anyone meets her.",
-      "currentStep": "Exercise the wired Person -> Thread meeting path in deployment and prove insidefibre.com enters the reconciled current scene.",
+      "summary": "Make two independently continuing Threads meet without teleportation or shared private meaning.",
+      "currentStep": "Build the first reciprocal Thread -> Thread meeting over independently reconciled LivedNow.",
       "nextSteps": [
-        "Deploy current World, Thread Presentation and insidefibre.com meeting code.",
-        "Open /meet and confirm meeting entry reconciles and publishes the Thread's current LivedNow before interaction.",
-        "Send an utterance against that exact situationId and verify the encounter/history/reflection/retention trail.",
-        "Add one reciprocal Thread-to-Thread meeting with different participant-specific aftermath.",
-        "Enrich the public meeting scene without moving life authority into the Viewer."
+        "Reconcile both Threads independently at the meeting time.",
+        "Require compatible physical place/time or mediated context without teleporting or silently replanning either Thread.",
+        "Record one shared objective occurrence with participant-specific private aftermath.",
+        "Prove the two Threads can remember, forget, interpret or change differently after the same encounter.",
+        "Then enrich the public meeting scene without moving life authority into the Viewer."
       ]
     },
     "detail": {
-      "summary": "N1-N3 are closed. N4's meeting-entry implementation is wired and tested; the active acceptance step is the real deployed Person -> Thread meeting.",
-      "currentStep": "Deploy and exercise select Thread -> ensure LivedNow(now) -> publish exact present -> visitor enters that situation -> encounter verifies the same situation.",
+      "summary": "N1-N4 are closed. N5 is the active step: two independently current Threads must share one valid encounter while preserving separate private consequence paths.",
+      "currentStep": "Implement independently reconciled LivedNow for both participants -> compatibility check -> one shared occurrence -> separate participant-specific aftermath.",
       "nextSteps": [
-        "Accept N4 only after the deployed /meet enters a World-reconciled present rather than a prepared or stale scene.",
-        "Require Thread -> Thread meetings to reconcile both lives independently before a shared encounter.",
-        "Keep public meeting state a Presentation projection rather than Viewer authority."
+        "Do not create a meeting by teleporting or silently changing either Thread's plan.",
+        "Keep the shared occurrence objective and participant interpretation private and independent.",
+        "Prefer one organism-level proof of asymmetric aftermath over broad orchestration infrastructure."
       ]
     },
     "finalLifeCognitionAuthorized": true
