@@ -6,12 +6,15 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
+import { formThreadJournalProfile } from "./thread-journal-book.mjs";
 
-const SYSTEM_PROMPT = `You are the private inner voice of one persistent Fibre Thread immediately after a lived encounter.
-The encounter already happened; do not rewrite its facts.
-Decide whether this moment merits a private journal note. Ordinary moments may produce no note.
-If you write, use first person and capture what the moment felt like or meant from the Thread's subjective point of view now.
-Do not copy the exchange as a transcript, diagnose the Thread, or claim durable memory or relationship consequences.
+const SYSTEM_PROMPT = `You are the private journal voice of one persistent Fibre Thread immediately after a lived encounter.
+The encounter already happened; do not rewrite its objective facts.
+Decide whether this moment merits a journal entry. Ordinary moments may produce no entry.
+If you write, write as this particular Thread in first person. Let identity, self-understanding, stable tendencies, current feelings/needs and prior retained memory shape voice, attention, rhythm and what matters.
+Include inner feeling, ambivalence, irritation, delight, embarrassment, tenderness, uncertainty, sensory detail or stray association when genuinely present. A journal is allowed to be subjective, fragmentary and unfair; it is not an incident report.
+Do not copy the exchange as a transcript, diagnose the Thread, or claim that the entry is durable memory or that it automatically changed a relationship.
+Free-form Markdown is welcome: paragraphs, fragments, quotations, emphasis and short headings may be used when they fit the Thread's own voice.
 The journal is private contemporaneous reflection, not objective history and not autobiographical memory.`;
 
 function requestId(input) {
@@ -37,6 +40,8 @@ export async function internalizeLivedEncounter({
   experienceStore,
   modelAdapter,
   activityRecorder = null,
+  journalBook = null,
+  sharedEventRef = null,
 }) {
   const activeThread = livedContext?.thread ?? thread;
   assertPlainObject("Thread", activeThread);
@@ -59,6 +64,11 @@ export async function internalizeLivedEncounter({
   requireMethod("experienceStore", experienceStore, "recordJournalEntry");
   requireMethod("modelAdapter", modelAdapter, "invoke");
   if (activityRecorder !== null) requireMethod("activityRecorder", activityRecorder, "runStage");
+  if (journalBook !== null) {
+    requireMethod("journalBook", journalBook, "getProfile");
+    requireMethod("journalBook", journalBook, "append");
+  }
+  if (sharedEventRef !== null) assertId("lived encounter sharedEventRef", sharedEventRef);
 
   const activity = Object.freeze({
     threadId: activeThread.threadId,
@@ -73,6 +83,7 @@ export async function internalizeLivedEncounter({
     occurredAt: encounter.occurredAt,
     visitorUtterance: encounter.utterance,
     responseText: encounterResult.responseText,
+    ...(sharedEventRef === null ? {} : { sharedEventRef }),
   }));
 
   try {
@@ -83,12 +94,16 @@ export async function internalizeLivedEncounter({
       target: state.target ?? null,
       state: state.state,
     }));
+    const journalProfile = journalBook === null ? null : await journalBook.getProfile(activeThread.threadId);
     const input = {
       thread: {
+        name: activeThread.identity?.name ?? null,
         selfDescription: activeThread.identity?.selfDescription ?? "",
         selfModel: activeThread.currentState?.selfModel ?? "",
+        stableTendencies: structuredClone(activeThread.genome?.textualTraits ?? {}),
         unresolvedIntentions: [...(activeThread.currentState?.unresolvedIntentions ?? [])],
       },
+      journalProfile,
       situationId: encounterResult.grounding.situationId,
       encounter: {
         visitorUtterance: encounter.utterance,
@@ -135,8 +150,27 @@ export async function internalizeLivedEncounter({
           entryText: invocation.output.journalEntry,
         }));
 
-    return { historyEvent, journalEntry, privateAftermathComplete: true };
+    let journalBookRecord = null;
+    if (journalEntry !== null && journalBook !== null) {
+      try {
+        const profile = journalProfile ?? await formThreadJournalProfile({ thread:activeThread, modelAdapter });
+        journalBookRecord = await runActivityStage(activityRecorder, {
+          ...activity,
+          stage:"encounter.journal.book",
+          evidence:{ eventId:historyEvent.eventId },
+        }, () => journalBook.append({
+          threadId:activeThread.threadId,
+          profile,
+          writtenAt:journalEntry.writtenAt,
+          entryText:journalEntry.entryText,
+        }));
+      } catch {
+        journalBookRecord = null;
+      }
+    }
+
+    return { historyEvent, journalEntry, journalBookRecord, privateAftermathComplete: true };
   } catch {
-    return { historyEvent, journalEntry: null, privateAftermathComplete: false };
+    return { historyEvent, journalEntry: null, journalBookRecord:null, privateAftermathComplete: false };
   }
 }
