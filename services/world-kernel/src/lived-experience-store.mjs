@@ -185,6 +185,7 @@ export class LivedExperienceStore {
     assertId("shared experience.sharedEventRef", candidate.sharedEventRef);
     assertId("shared experience.situationId", candidate.situationId);
     assertIsoTimestamp("shared experience.occurredAt", candidate.occurredAt);
+    if (!["actor","witness"].includes(candidate.role)) throw new TypeError("shared experience role is invalid");
     const experienceId = sharedExperienceId(candidate);
     const record = { experienceId, ...candidate };
     const recordDigest = digest(record);
@@ -209,10 +210,10 @@ export class LivedExperienceStore {
       }
       this.#database.prepare(`
         INSERT INTO thread_shared_encounter_experiences(
-          experience_id,thread_id,shared_event_ref,situation_id,occurred_at,record_digest
-        ) VALUES (?,?,?,?,?,?)
+          experience_id,thread_id,shared_event_ref,situation_id,occurred_at,experience_role,record_digest
+        ) VALUES (?,?,?,?,?,?,?)
       `).run(
-        experienceId,candidate.threadId,candidate.sharedEventRef,candidate.situationId,candidate.occurredAt,recordDigest,
+        experienceId,candidate.threadId,candidate.sharedEventRef,candidate.situationId,candidate.occurredAt,candidate.role,recordDigest,
       );
       return record;
     } catch (error) { throw translateStorageError(error); }
