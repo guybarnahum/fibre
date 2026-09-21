@@ -6,6 +6,7 @@ import {
   continueSocialEncounterStory,
   formSocialEncounterOpening,
 } from "./lived-social-encounter-cognition.mjs";
+import { appraiseEncounterAttention } from "./lived-encounter-attention.mjs";
 import { internalizeThreadEncounterExperience } from "./lived-thread-experience-aftermath.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
@@ -79,6 +80,7 @@ export function createSocialMeetingService({
   requireMethod("memoryStore", memoryStore, "listCurrentMemories");
   requireMethod("memoryStore", memoryStore, "recordMemory");
   requireMethod("experienceStore", experienceStore, "recordEncounterStory");
+  requireMethod("experienceStore", experienceStore, "getThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadExperienceJournalEntry");
   requireMethod("modelAdapter", modelAdapter, "invoke");
@@ -92,15 +94,25 @@ export function createSocialMeetingService({
       if (!Array.isArray(input.participantThreadIds)
         || input.participantThreadIds.length < 2
         || input.participantThreadIds.length > MAX_PRESENT_THREADS) {
-        throw new TypeError(`social meeting requires 2-${MAX_PRESENT_THREADS} present Threads`);
+        throw new TypeError(`social meeting requires 2-${MAX_PRESENT_THREADS} participating Threads`);
       }
-      const threadIds = [...input.participantThreadIds];
+      const witnessThreadIds = input.witnessThreadIds ?? [];
+      if (!Array.isArray(witnessThreadIds)) {
+        throw new TypeError("social meeting witnessThreadIds must be an array");
+      }
+
+      const participantThreadIds = [...input.participantThreadIds];
+      const threadIds = [...participantThreadIds, ...witnessThreadIds];
+      if (threadIds.length > MAX_PRESENT_THREADS) {
+        throw new TypeError(`social meeting supports at most ${MAX_PRESENT_THREADS} present Threads`);
+      }
       if (new Set(threadIds).size !== threadIds.length) {
         throw new TypeError("social meeting Threads must be unique");
       }
-      for (const threadId of threadIds) assertId("social meeting participantThreadId", threadId);
-      if (!threadIds.includes(input.initiatorThreadId)) {
-        throw new TypeError("social meeting initiator must be present");
+      for (const threadId of participantThreadIds) assertId("social meeting participantThreadId", threadId);
+      for (const threadId of witnessThreadIds) assertId("social meeting witnessThreadId", threadId);
+      if (!participantThreadIds.includes(input.initiatorThreadId)) {
+        throw new TypeError("social meeting initiator must participate");
       }
 
       for (const threadId of threadIds) {
@@ -115,6 +127,9 @@ export function createSocialMeetingService({
         memoryStore,
       }));
       const byId = new Map(contexts.map((context) => [context.thread.threadId, context]));
+      const participantIds = new Set(participantThreadIds);
+      const participantContexts = contexts.filter((context) => participantIds.has(context.thread.threadId));
+      const witnessContexts = contexts.filter((context) => !participantIds.has(context.thread.threadId));
 
       if (!groupCompatible(contexts, situatedLifeStore)) {
         return Object.freeze({
@@ -127,8 +142,8 @@ export function createSocialMeetingService({
       }
 
       const stances = {};
-      for (const context of contexts) {
-        const counterparties = contexts
+      for (const context of participantContexts) {
+        const counterparties = participantContexts
           .filter((candidate) => candidate.thread.threadId !== context.thread.threadId)
           .map((candidate) => candidate.thread);
         stances[context.thread.threadId] = await formMeetingStance({
@@ -154,7 +169,7 @@ export function createSocialMeetingService({
       }
 
       const initiator = byId.get(input.initiatorThreadId);
-      const others = contexts.filter((context) => context.thread.threadId !== input.initiatorThreadId);
+      const others = participantContexts.filter((context) => context.thread.threadId !== input.initiatorThreadId);
       const story = {
         storyVersion:"encounter-story-v0.1",
         beats:[{
@@ -173,7 +188,7 @@ export function createSocialMeetingService({
         const beat = await continueSocialEncounterStory({
           thread:context.thread,
           situation:context.situation,
-          counterparties:contexts
+          counterparties:participantContexts
             .filter((candidate) => candidate.thread.threadId !== context.thread.threadId)
             .map((candidate) => candidate.thread),
           story,
@@ -208,9 +223,9 @@ export function createSocialMeetingService({
         }),
       });
 
-      const participantSummaries = contexts.map(participantSummary);
+      const presentThreadSummaries = contexts.map(participantSummary);
       const aftermath = {};
-      for (const context of contexts) {
+      for (const context of participantContexts) {
         const experienceText = await formThreadEncounterExperience({
           thread:context.thread,
           situation:context.situation,
@@ -230,7 +245,7 @@ export function createSocialMeetingService({
         aftermath[context.thread.threadId] = await internalizeThreadEncounterExperience({
           livedContext:context,
           encounterStory,
-          presentThreadSummaries:participantSummaries,
+          presentThreadSummaries,
           experienceRecord:attention.experience,
           experienceStore,
           memoryStore,
@@ -238,6 +253,47 @@ export function createSocialMeetingService({
           modelAdapter,
           activityRecorder,
         });
+      }
+
+      for (const context of witnessContexts) {
+        const existing = experienceStore.getThreadEncounterAttention(
+          context.thread.threadId,
+          encounterStory.encounterId,
+        );
+        if (existing !== null) {
+          aftermath[context.thread.threadId] = null;
+          continue;
+        }
+
+        const appraisal = await appraiseEncounterAttention({
+          thread:context.thread,
+          situation:context.situation,
+          encounterStory,
+          semanticStates:context.semanticStates,
+          memories:context.memories,
+          modelAdapter,
+        });
+        const attention = experienceStore.recordThreadEncounterAttention({
+          threadId:context.thread.threadId,
+          encounterRef:encounterStory.encounterId,
+          situationId:context.situation.situationId,
+          occurredAt:encounterStory.occurredAt,
+          outcome:appraisal.outcome,
+          experienceText:appraisal.experienceText,
+        });
+        aftermath[context.thread.threadId] = attention.outcome === "noticed"
+          ? await internalizeThreadEncounterExperience({
+              livedContext:context,
+              encounterStory,
+              presentThreadSummaries,
+              experienceRecord:attention.experience,
+              experienceStore,
+              memoryStore,
+              journalBook,
+              modelAdapter,
+              activityRecorder,
+            })
+          : null;
       }
 
       return Object.freeze({
