@@ -1,5 +1,6 @@
 import { decorateActionButton } from "./fa-icons.js";
 import { createFibreFinCard } from "./fibre-fin-card.js";
+import { threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
 import { openThreadActionDialog } from "./thread-action-dialog.js";
 
 function el(tag, className = null, text = null) {
@@ -563,22 +564,6 @@ function memoriesSection(memories, birthDate, memoryError = null) {
 }
 
 
-function journalEntries(document) {
-  const lines = String(document ?? "").split(/\r?\n/u);
-  const entries = [];
-  let current = null;
-  for (const line of lines) {
-    if (line.startsWith("## ")) {
-      if (current) entries.push(current);
-      current = { heading:line.slice(3).trim(), lines:[] };
-      continue;
-    }
-    if (current) current.lines.push(line);
-  }
-  if (current) entries.push(current);
-  return entries;
-}
-
 function appendJournalBlocks(host, lines) {
   let paragraph = [];
   let list = null;
@@ -626,9 +611,8 @@ function appendJournalBlocks(host, lines) {
 }
 
 function journalSection(journal, journalError = null, authorityEntries = []) {
-  const profile = journal?.profile ?? null;
-  const entries = journalEntries(journal?.document);
-  const authorityCount = Array.isArray(authorityEntries) ? authorityEntries.length : 0;
+  const model = threadJournalPresentationModel(journal, authorityEntries);
+  const { profile, entries, authorityCount } = model;
   const wrap = section(
     "Journal",
     profile
@@ -667,7 +651,7 @@ function journalSection(journal, journalError = null, authorityEntries = []) {
     book,
     el("p", "thread-journal-note", "The book above is the private R2 presentation of journal authority. World journal-entry records remain authoritative provenance, and neither one becomes autobiographical memory unless Fibre separately retains the experience."),
   );
-  if (authorityCount > 0) wrap.append(disclosure("World journal-entry authority", authorityEntries));
+  if (authorityCount > 0) wrap.append(disclosure("World journal-entry authority", model.authorityEntries));
   return wrap;
 }
 
