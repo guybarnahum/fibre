@@ -111,6 +111,8 @@ export async function renderThreadPage(threadId) {
       threadId,
       memories:payload.memories,
       memoryError:payload.memoryError,
+      journal:payload.journal,
+      journalError:payload.journalError,
     });
     observatory.querySelector(".thread-person-hero")?.after(healthSection(threadId));
     host.replaceChildren(observatory);
