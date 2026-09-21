@@ -42,7 +42,8 @@ later situation + later encounter continuity              PROVEN
 World-owned ensure-LivedNow over covered plan time         PROVEN
 bounded multi-day LivedNow catch-up + plan renewal         PROVEN
 Genesis -> same continuing LivedNow path                   PROVEN
-deployed /meet over continuous LivedNow                    NOT YET
+wired /meet over continuous LivedNow                       PROVEN
+live deployed /meet acceptance                             NOT YET
 Thread -> Thread reciprocal meeting                       NOT YET
 ```
 
@@ -50,7 +51,7 @@ The important correction is:
 
 > **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
 
-The active engineering work is N4: make the real Person -> Thread meeting depend on that reconciled present instead of consuming whatever Presentation happened to publish earlier.
+The N4 implementation now makes Person -> Thread meeting entry depend on that reconciled present instead of consuming whatever Presentation happened to publish earlier. The remaining N4 work is deployed acceptance of the full public path.
 
 See:
 
@@ -92,11 +93,11 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
-- a deployed `/meet` path that always reconciles LivedNow before interaction;
+- live deployed acceptance proving `/meet` reconciles LivedNow before interaction;
 - Thread-to-Thread meetings between two independently current lives;
 - a rich public scene driven by that continuous present.
 
-The next risk is therefore no longer “can elapsed time be reconciled at all?” It is whether the whole life starts on this path at birth and every meeting consumes it rather than a prepared scene.
+The next risk is no longer whether life can start and continue on this path—the canonical Genesis and N4 meeting-entry proofs cover that. It is whether the deployed public stack executes the same path against a real Thread without falling back to a prepared or stale scene.
 
 ## Continuous LivedNow
 
@@ -231,7 +232,7 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 Do not build another planner, simulator or conversation framework.
 
-N1 and N2 now provide the same World-owned seam for already-covered time and for a bounded uncovered multi-day dormant interval. N1-N3 now establish the same continuing-life mechanism from birth through dormancy. The immediate next work is N4: deployed Person -> Thread `/meet` must reconcile that life before exposing the scene.
+N1-N3 establish the same continuing-life mechanism from birth through dormancy. N4 now wires Person -> Thread meeting entry through that seam and binds interaction to the exact published `situationId`. The immediate next work is to deploy and exercise that path before calling N4 closed.
 
 The next implementation should advance this exact capability:
 
