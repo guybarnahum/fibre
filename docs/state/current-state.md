@@ -44,15 +44,16 @@ bounded multi-day LivedNow catch-up + plan renewal         PROVEN
 Genesis -> same continuing LivedNow path                   PROVEN
 wired /meet over continuous LivedNow                       PROVEN
 live deployed /meet acceptance                             PROVEN
-Thread -> Thread reciprocal meeting implementation        PROVEN
-live deployed Thread -> Thread acceptance                  NOT YET
+general Encounter Story / Thread Experience model         REPLANNED
+N5 implementation spike                                    NOT ACCEPTED
+live deployed N5 acceptance                                NOT YET
 ```
 
 The important correction is:
 
 > **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
 
-N4 is closed in deployment. N5 is implemented and green in-repository: two independently reconciled Threads form independent participation stances; compatible mutual acceptance creates one shared objective meeting and separate private aftermath; a decline creates no encounter. The active milestone risk is deployed acceptance against real staging Threads.
+N4 is closed in deployment. N5 has been replanned around a broader accepted insight: **encounter is the primitive; meeting is one voluntary social form of encounter**. The first N5 implementation spike produced useful pieces—meeting stance, n-ary story direction, witness-aware private aftermath, journal book/R2/Admin work—but overfit the core orchestration to invited social meetings and is not accepted for deployment.
 
 See:
 
@@ -94,10 +95,13 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
-- deployed acceptance of Thread-to-Thread meeting between two real independently current Threads;
+- one coherent general encounter seam connecting World occurrence -> objective Encounter Story -> Thread-specific noticing/experience -> optional journal -> selective consequence;
+- social meeting as a gated special case of that encounter seam;
+- silent-witness and environmental-encounter proofs;
+- deployed N5 acceptance against real staging Threads;
 - a rich public scene driven by that continuous present.
 
-The reciprocal meeting implementation now proves the intended causal shape in-repository: separate LivedNow reconciliation, independent `accept | decline | defer` appraisal, place/context compatibility, one shared objective meeting only after mutual acceptance, and participant-specific journal/memory aftermath. The remaining N5 risk is whether the deployed staging world has two genuinely compatible lives and executes the same path without arranging or teleporting them.
+The current N5 code after the design spike is intentionally **not deployment-ready**. Local `npm run slice:validate` currently fails because the old dyadic N5 tests still target the superseded meeting-store API; an additional existing live-command acceptance assertion also fails with 403 vs 503 and is being treated separately rather than folded into encounter semantics. Do not restore green by recreating the old pairwise abstraction.
 
 ## Continuous LivedNow
 
@@ -190,31 +194,32 @@ The appraisal should use the current activity/Flight Plan plus bounded Thread-ow
 
 The visitor may cause the request to meet. The Thread decides whether the encounter happens now. The visitor does not create the life that preceded it.
 
-## Meeting another Thread
+## Encounters, meetings and lived attention
 
-A Thread-to-Thread meeting requires two independently continuing lives.
-
-Before the encounter:
-
-- each Thread has its own plan;
-- each has its own World-owned physical presence;
-- each has its own reasons for being there;
-- their physical or mediated presences are compatible;
-- each independently chooses whether to participate now.
-
-Only after compatible presence and mutual participation does the shared encounter become common objective history. Each participant then records her own private encounter experience and may write a journal entry in her own voice before independently retaining or forgetting the event.
+The accepted N5 abstraction is:
 
 ```text
-shared occurrence
-  -> Thread A private journal -> retained memory or not_remembered
-  -> Thread B private journal -> retained memory or not_remembered
+World occurrence
+  -> objective Encounter Story
+  -> Thread-specific noticing / experience
+  -> optional journal
+  -> selective consequence
 ```
 
-The journal is contemporaneous private interpretation, not objective history and not autobiographical memory. The same shared meeting can therefore be described with different feelings and meaning by each Thread without contradiction.
+A **meeting** is one voluntary social encounter. It adds `accept | decline | defer` before the encounter occurs. An environmental or witnessed occurrence does not require consent to exist; what matters is whether the Thread actually notices/experiences it.
 
-The current Admin Observatory can read the private R2 journal book. Journal artifacts live at `journals/<threadId>/journal.md` in the additive private Thread-object bucket; existing immutable presentation assets remain in their established presentation bucket and require no migration.
+This means the same mechanism must support:
 
-Shared event does not imply shared meaning.
+- a Thread noticing a bee on a flower while following an ordinary Flight Plan;
+- several Threads sharing one social story;
+- a silent witness being affected by how one Thread treats another;
+- different private journals and memory outcomes from the same objective story.
+
+Co-presence is not automatically experience. A nearby Thread may fail to notice an occurrence and should not receive fabricated private aftermath.
+
+Journal remains contemporaneous private interpretation, not objective history and not autobiographical memory. The Admin Observatory journal artifact remains useful and lives at `journals/<threadId>/journal.md`; existing presentation R2 assets remain untouched and require no migration.
+
+See [Encounter stories and Thread experience](../architecture/encounters-and-experience.md) and [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md).
 
 ## Genesis to lived continuity
 
@@ -242,24 +247,23 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 ## Immediate next action
 
-Do not build another planner, scheduler, social framework or journal subsystem.
+Do not deploy or continue patching the current N5 meeting spike.
 
-The N5 organism path is implemented. The immediate next work is deployed acceptance:
+First reconcile it around the accepted Encounter Story / Thread Experience model:
 
 ```text
-Thread A ensure LivedNow(now) ─┐
-                               ├-> resolve compatible presence
-Thread B ensure LivedNow(now) ─┘
-        -> independent meeting stances
-        -> mutual acceptance or no meeting
-        -> one shared encounter
-        -> two private journal accounts
-        -> independent memory retention
+LivedNow / World occurrence
+  -> Encounter Story
+  -> noticed | not_noticed
+  -> Thread Experience
+  -> optional journal
+  -> selective memory / other consequence
 ```
 
-Provision the new private Thread-object R2 bucket, deploy World/Admin, then exercise the path using two real staging Threads whose lives are actually compatible. An incompatible result is truthful and must not be repaired by teleporting or silently replanning either Thread.
+Meeting participation remains a special wrapper around this seam. The first general proof must support environmental noticing, voluntary social meeting and silent witness consequence without separate engines.
 
-N5 closes only after live acceptance confirms the shared event plus asymmetric private aftermath and the journal books are inspectable in Admin.
+Follow [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md). Slice E0 restores one coherent model and green validation; E1-E3 prove environmental encounter, voluntary meeting and witness asymmetry; E4 validates journal/Admin presentation; E5 is staging acceptance.
+
 
 ## Development discipline
 
