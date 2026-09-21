@@ -75,64 +75,68 @@ export async function internalizeLivedEncounter({
     responseText: encounterResult.responseText,
   }));
 
-  const semanticRecords = livedContext?.semanticStates ?? semanticStateStore.listCurrentState(activeThread.threadId);
-  const semanticStates = semanticRecords.map((state) => ({
-    domain: state.domain,
-    dimension: state.dimension,
-    target: state.target ?? null,
-    state: state.state,
-  }));
-  const input = {
-    thread: {
-      selfDescription: activeThread.identity?.selfDescription ?? "",
-      selfModel: activeThread.currentState?.selfModel ?? "",
-      unresolvedIntentions: [...(activeThread.currentState?.unresolvedIntentions ?? [])],
-    },
-    situationId: encounterResult.grounding.situationId,
-    encounter: {
-      visitorUtterance: encounter.utterance,
-      responseText: encounterResult.responseText,
-      occurredAt: encounter.occurredAt,
-    },
-    semanticStates,
-  };
-
-  const invocation = await runActivityStage(activityRecorder, {
-    ...activity,
-    stage: "encounter.journal.reflect",
-    evidence: { eventId: historyEvent.eventId },
-  }, () => modelAdapter.invoke({
-    systemPrompt: SYSTEM_PROMPT,
-    input,
-    responseSchema: {
-      type: "object",
-      additionalProperties: false,
-      required: ["journalEntry"],
-      properties: {
-        journalEntry: { anyOf: [{ type: "string", minLength: 1 }, { type: "null" }] },
+  try {
+    const semanticRecords = livedContext?.semanticStates ?? semanticStateStore.listCurrentState(activeThread.threadId);
+    const semanticStates = semanticRecords.map((state) => ({
+      domain: state.domain,
+      dimension: state.dimension,
+      target: state.target ?? null,
+      state: state.state,
+    }));
+    const input = {
+      thread: {
+        selfDescription: activeThread.identity?.selfDescription ?? "",
+        selfModel: activeThread.currentState?.selfModel ?? "",
+        unresolvedIntentions: [...(activeThread.currentState?.unresolvedIntentions ?? [])],
       },
-    },
-    clientRequestId: requestId(input),
-  }));
-  assertPlainObject("lived encounter reflection result", invocation);
-  assertPlainObject("lived encounter reflection output", invocation.output);
-  assertExactKeys("lived encounter reflection output", invocation.output, ["journalEntry"]);
-  if (invocation.output.journalEntry !== null) {
-    assertNonEmpty("lived encounter journalEntry", invocation.output.journalEntry);
+      situationId: encounterResult.grounding.situationId,
+      encounter: {
+        visitorUtterance: encounter.utterance,
+        responseText: encounterResult.responseText,
+        occurredAt: encounter.occurredAt,
+      },
+      semanticStates,
+    };
+
+    const invocation = await runActivityStage(activityRecorder, {
+      ...activity,
+      stage: "encounter.journal.reflect",
+      evidence: { eventId: historyEvent.eventId },
+    }, () => modelAdapter.invoke({
+      systemPrompt: SYSTEM_PROMPT,
+      input,
+      responseSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["journalEntry"],
+        properties: {
+          journalEntry: { anyOf: [{ type: "string", minLength: 1 }, { type: "null" }] },
+        },
+      },
+      clientRequestId: requestId(input),
+    }));
+    assertPlainObject("lived encounter reflection result", invocation);
+    assertPlainObject("lived encounter reflection output", invocation.output);
+    assertExactKeys("lived encounter reflection output", invocation.output, ["journalEntry"]);
+    if (invocation.output.journalEntry !== null) {
+      assertNonEmpty("lived encounter journalEntry", invocation.output.journalEntry);
+    }
+
+    const journalEntry = invocation.output.journalEntry === null
+      ? null
+      : await runActivityStage(activityRecorder, {
+          ...activity,
+          stage: "encounter.journal.record",
+          evidence: { eventId: historyEvent.eventId },
+        }, () => experienceStore.recordJournalEntry({
+          threadId: activeThread.threadId,
+          aboutEventRef: historyEvent.eventId,
+          writtenAt: encounter.occurredAt,
+          entryText: invocation.output.journalEntry,
+        }));
+
+    return { historyEvent, journalEntry, privateAftermathComplete: true };
+  } catch {
+    return { historyEvent, journalEntry: null, privateAftermathComplete: false };
   }
-
-  const journalEntry = invocation.output.journalEntry === null
-    ? null
-    : await runActivityStage(activityRecorder, {
-        ...activity,
-        stage: "encounter.journal.record",
-        evidence: { eventId: historyEvent.eventId },
-      }, () => experienceStore.recordJournalEntry({
-        threadId: activeThread.threadId,
-        aboutEventRef: historyEvent.eventId,
-        writtenAt: encounter.occurredAt,
-        entryText: invocation.output.journalEntry,
-      }));
-
-  return { historyEvent, journalEntry };
 }
