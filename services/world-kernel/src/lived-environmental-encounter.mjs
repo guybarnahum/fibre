@@ -169,7 +169,7 @@ export function createEnvironmentalEncounterService({
       const aftermath = await internalizeThreadEncounterExperience({
         livedContext:context,
         encounterStory,
-        participantSummaries:[{
+        presentThreadSummaries:[{
           threadId:context.thread.threadId,
           name:context.thread.identity?.name ?? null,
           selfDescription:context.thread.identity?.selfDescription ?? "",
