@@ -41,7 +41,6 @@ export async function internalizeLivedEncounter({
   modelAdapter,
   activityRecorder = null,
   journalBook = null,
-  sharedEventRef = null,
 }) {
   const activeThread = livedContext?.thread ?? thread;
   assertPlainObject("Thread", activeThread);
@@ -68,8 +67,6 @@ export async function internalizeLivedEncounter({
     requireMethod("journalBook", journalBook, "getProfile");
     requireMethod("journalBook", journalBook, "append");
   }
-  if (sharedEventRef !== null) assertId("lived encounter sharedEventRef", sharedEventRef);
-
   const activity = Object.freeze({
     threadId: activeThread.threadId,
     correlationId: encounterResult.grounding.situationId,
@@ -83,7 +80,6 @@ export async function internalizeLivedEncounter({
     occurredAt: encounter.occurredAt,
     visitorUtterance: encounter.utterance,
     responseText: encounterResult.responseText,
-    ...(sharedEventRef === null ? {} : { sharedEventRef }),
   }));
 
   try {
