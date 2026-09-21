@@ -1,7 +1,7 @@
 ---
 id: validation-prototype-roadmap
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-21
 canonical: true
 ---
 
@@ -67,7 +67,7 @@ Thread-owned bounded Flight Plan
   -> later encounter receiving only persisted memory consequence
 ```
 
-These bounded proofs are now joined by N2: an already-lived Thread can restore an authoritative present across a bounded multi-day wall-clock dormancy. Genesis has not yet been proven to enter that continuing path automatically.
+These bounded proofs are now joined by N1-N4: a canonical Genesis-born Thread can restore an authoritative present across bounded wall-clock dormancy and a deployed Person -> Thread meeting can enter that exact reconciled life.
 
 ### M2-N1 — ensure LivedNow — CLOSED
 
@@ -92,9 +92,9 @@ The accepted proof crosses a three-day gap with bounded retrospective plan/situa
 
 Do not continuously simulate every minute and do not inject memories directly.
 
-### M2-N3 — Genesis -> continuous LivedNow — CURRENT
+### M2-N3 — Genesis -> continuous LivedNow — CLOSED
 
-Prove one newly born Thread can move from grounded Genesis prior life into post-birth continuing life:
+A newly born Thread now moves from grounded Genesis prior life into post-birth continuing life:
 
 ```text
 Genesis
@@ -106,11 +106,11 @@ Genesis
   -> present now
 ```
 
-### M2-N4 — Person -> Thread /meet — NEXT
+### M2-N4 — Person -> Thread /meet — CLOSED
 
-The first deployed meeting must enter a scene produced by continuous LivedNow rather than by a meeting fixture.
+The deployed meeting now enters a scene produced by continuous LivedNow rather than by a meeting fixture, and the subsequent encounter remains bound to the exact returned `situationId`.
 
-### M2-N5 — Thread -> Thread meeting — NEXT
+### M2-N5 — Thread -> Thread meeting — CURRENT
 
 Prove two independently current Threads can share one physical or mediated encounter while forming different private experience, memory, relationship or plan consequences.
 
