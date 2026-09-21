@@ -4,6 +4,8 @@ import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import { createLivedEncounterWriteApi } from "#services/world-kernel/src/lived-encounter-write-api.mjs";
+import { createEnvironmentalEncounterService } from "#services/world-kernel/src/lived-environmental-encounter.mjs";
+import { createEnvironmentalEncounterWriteApi } from "#services/world-kernel/src/lived-environmental-encounter-write-api.mjs";
 import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
 import { createSocialMeetingWriteApi } from "#services/world-kernel/src/lived-social-meeting-write-api.mjs";
 import { createThreadJournalBook } from "#services/world-kernel/src/thread-journal-book.mjs";
@@ -20,6 +22,7 @@ import { createThreadPresentationPublisher } from "../service-boundaries.mjs";
 
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
 const LIVED_ENCOUNTER_ROUTE = "/internal/lived-encounter";
+const ENVIRONMENTAL_ENCOUNTER_ROUTE = "/internal/environmental-encounter";
 const LIVED_NOW_ROUTE = "/internal/lived-now/ensure";
 const SOCIAL_MEETING_ROUTE = "/internal/social-meeting";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
@@ -53,6 +56,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.livedEncounterApi = null;
+    this.environmentalEncounterApi = null;
     this.livedNowApi = null;
     this.socialMeetingApi = null;
     this.threadJournalApi = null;
@@ -85,6 +89,40 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       });
     }
     return this.livedEncounterApi;
+  }
+
+  environmentalEncounterApiForRequest() {
+    if (this.environmentalEncounterApi === null) {
+      const runtime = this.runtimeForRequest();
+      const deployment = resolveServiceDeployment(DEPLOYMENT, "world-kernel");
+      const livedNowStore = openLivedNowStore(runtime.worldStorage);
+      const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
+      const semanticStateStore = openSemanticStateStore(runtime.worldStorage);
+      const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
+      const experienceStore = openLivedExperienceStore(runtime.worldStorage);
+      const livedNow = createLivedNowService({
+        livedNowStore,
+        worldStore:runtime.worldStore,
+        situatedLifeStore,
+        modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
+      });
+      const encounterService = createEnvironmentalEncounterService({
+        worldReader:runtime.worldStore,
+        livedNow,
+        livedNowStore,
+        situatedLifeStore,
+        semanticStateStore,
+        memoryStore,
+        experienceStore,
+        journalBook:this.journalBookForRequest(),
+        modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
+      });
+      this.environmentalEncounterApi = createEnvironmentalEncounterWriteApi({
+        encounterService,
+        privateToken:this.env.FIBRE_PRIVATE_TOKEN,
+      });
+    }
+    return this.environmentalEncounterApi;
   }
 
   socialMeetingApiForRequest() {
@@ -165,6 +203,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname !== LIVED_ENCOUNTER_ROUTE
+      && url.pathname !== ENVIRONMENTAL_ENCOUNTER_ROUTE
       && url.pathname !== LIVED_NOW_ROUTE
       && url.pathname !== SOCIAL_MEETING_ROUTE
       && !THREAD_JOURNAL_ROUTE.test(url.pathname)) {
@@ -176,9 +215,11 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         ? this.livedNowApiForRequest().fetch(request)
         : url.pathname === LIVED_ENCOUNTER_ROUTE
           ? this.encounterApiForRequest().fetch(request)
-          : url.pathname === SOCIAL_MEETING_ROUTE
-            ? this.socialMeetingApiForRequest().fetch(request)
-            : this.journalApiForRequest().fetch(request),
+          : url.pathname === ENVIRONMENTAL_ENCOUNTER_ROUTE
+            ? this.environmentalEncounterApiForRequest().fetch(request)
+            : url.pathname === SOCIAL_MEETING_ROUTE
+              ? this.socialMeetingApiForRequest().fetch(request)
+              : this.journalApiForRequest().fetch(request),
     );
   }
 
