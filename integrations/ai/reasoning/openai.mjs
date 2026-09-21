@@ -28,8 +28,6 @@ const DEFAULTS = Object.freeze({
 
 const OPENAI_PROJECTED_SCHEMA_KEYWORDS = Object.freeze(new Set([
   "uniqueItems",
-  "minLength",
-  "maxLength",
 ]));
 
 function apiKey(environment) {
