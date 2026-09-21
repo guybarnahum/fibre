@@ -134,3 +134,35 @@ test("N4 meeting entry preserves safe World coverage detail on 409", async () =>
     detail: "Initial LivedNow requires the canonical Thread birth event",
   });
 });
+
+
+test("N4 meeting entry preserves safe World reconciliation code on 503", async () => {
+  const api = createPublicEncounterApi({
+    viewerOrigin: "https://insidefibre.com",
+    readPublicPresent: async () => null,
+    ensurePublicPresent: async () => {
+      const error = new Error("lived_now_reconciliation_failed");
+      error.status = 503;
+      error.body = {
+        error: "lived_now_reconciliation_failed",
+        code: "MODEL_REQUEST_CONFIGURATION_ERROR",
+      };
+      throw error;
+    },
+    encounter: async () => { throw new Error("not reached"); },
+  });
+
+  const response = await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/meet`,
+    {
+      method: "POST",
+      headers: { Origin: "https://insidefibre.com" },
+    },
+  ));
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    error: "lived_now_unavailable",
+    code: "MODEL_REQUEST_CONFIGURATION_ERROR",
+  });
+});
