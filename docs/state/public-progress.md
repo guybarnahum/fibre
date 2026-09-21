@@ -1,7 +1,7 @@
 ---
 id: fibre-public-progress
 status: accepted
-last-reviewed: 2026-09-09
+last-reviewed: 2026-09-20
 canonical: true
 machine-source: public-progress.json
 ---
@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre can preserve a Thread's identity and life, keep one stable visual embodiment through public presentation and recovery, and run that path in staging. We are now building the experience of meeting a Thread where she is in her continuing life.**
+**Fibre has proved the pieces of a lived present and selective memory. We are now making that life reach the present even after compute sleeps, so a Person or another Thread can meet someone whose life was already underway.**
 
 ## What is done
 
@@ -26,99 +26,179 @@ Fibre can preserve civil identity, lineage, prior life, places, memories and mea
 
 ### Life can affect cognition — Done
 
-#40 showed that changing admissible autobiographical context can materially change structured reasoning in a real Fibre cognition consumer. This is bounded evidence, not a claim that every stored fact changes every decision.
+Bounded evidence shows Thread-owned autobiographical context can materially affect later cognition. This is not a claim that every stored fact changes every decision.
 
 ### Stable visual identity and public presentation — Done
 
-Fibre has one canonical visual identity chain: rich identity text -> one admitted reference root -> later Thread-depicting imagery conditioned on that root, chronology and scene/context. Thread Presentation and insidefibre.com expose derived public state without becoming a second identity authority.
+Fibre has one canonical visual identity chain and can project derived public imagery without making Presentation the identity authority.
 
-### Cloud staging and minimum recovery — Done
+### Bounded lived-person primitives — Shown working
 
-The staging deployment was accepted on source:
+Fibre has demonstrated:
 
 ```text
-ee749e07b58c2580e967c7ed62cda5ddc91021cd
+personal Flight Plan
+  -> World CurrentSituation
+  -> public present
+  -> situated Person -> Thread encounter
+  -> objective history
+  -> private reflection
+  -> selective memory or not_remembered
+  -> later situation
+  -> later encounter receiving only persisted memory consequence
 ```
 
-The full active local suite passed `1168/1168`; World deep state health passed in staging; minimum Slice H acceptance is closed:
-
-- H1: restart/persistence-gap recovery;
-- H2: transient provider failure -> bounded retry -> same durable job/identity -> convergence.
-
-Broader H3-H9 resilience scenarios are deferred hardening, not active blockers.
+This matters, but it is still a bounded proof.
 
 ## What we are working on now
 
-### M2-A — Meet a Thread
+### Continuous LivedNow across dormancy — Working on it
 
-The goal is simple:
+The active goal is:
 
-> **Build one Thread whose present life can be seen, entered, interacted with, remembered, and continued.**
+> **A Thread's life should reach “now” before anyone meets them.**
 
-A visitor should be able to open insidefibre.com, select a born Thread, and find her where she is now.
+Today Fibre can persist a Flight Plan and CurrentSituation. It does not yet automatically cover several hours or days of frozen/dormant wall-clock time.
 
-The first version should show:
-
-- who she is;
-- what she looks like now;
-- where she is;
-- what she is doing;
-- why she is there;
-- enough recent context to understand the moment;
-- what she roughly intends next;
-- a way to meet/talk with her in that exact situation.
-
-She should not conceptually appear because the visitor opened a chat. She was already living.
-
-## What comes immediately after
-
-### M2-B — Experience internalization
-
-A conversation becomes an event in the Thread's life, but not automatically a permanent memory.
+The next capability is:
 
 ```text
-experience
-  -> interpretation
-  -> significance
-     -> benign: forgotten
-     -> weak: transient trace
-     -> meaningful: durable memory
-     -> relational: relationship changes
-     -> formative: belief/intention/self changes
+last lived anchor
+  -> elapsed-life catch-up when needed
+  -> honest retrospective history
+  -> current Flight Plan
+  -> World-owned CurrentSituation now
 ```
 
-The Thread owns the meaning. Fibre may create the circumstances but must not tell her what they mean.
+Fibre will not run every Thread every minute. Quiet periods should remain sparse.
 
-### M2-C — Whole-person consolidation
+Retrospective events must expose that Fibre materialized them later; they must not masquerade as continuously observed external reality.
 
-Current place, activity, intentions, relationships, interests, dispositions, self-understanding and embodiment should cohere with immutable/append-only birth, lineage, history and memory.
+### Meet a Thread — Working on it
 
-## What is deliberately not the current priority
+A real deployed `/meet` will come after continuous LivedNow.
 
-- an exhaustive resilience matrix;
-- provider parity for its own sake;
-- infrastructure abstraction not blocking the lived-person loop;
-- optimizing a Whole-Person score before the lived capability exists;
-- building a complete society before one Thread convincingly lives.
+The visitor may cause the encounter, but cannot choose the Thread's pre-existing place, activity, plan, companions, private memory or feelings.
 
-The previous #41 standing-gate material remains useful evaluation science, but it is no longer the active development gate.
+The intended path is:
+
+```text
+select Thread
+  -> ensure LivedNow(now)
+  -> publish exact bounded present
+  -> visitor enters that scene
+  -> encounter / response
+  -> private experience / selective consequence
+```
+
+### Selective experience internalization — Shown working
+
+A bounded encounter can become objective history, private reflection and autobiographical memory—or be forgotten.
+
+Human encounters do not automatically become memory.
+
+The next requirement is to reuse the same authority during retrospective lived catch-up and reciprocal Thread meetings.
+
+## What comes next
+
+### Thread-to-Thread lived meetings
+
+Two Threads should be able to meet as two independently continuing people.
+
+Before the encounter, each needs its own authoritative LivedNow.
+
+A physical meeting requires compatible place/time presence; a mediated meeting requires compatible mediated context.
+
+Once the encounter happens, it may become shared history while producing different private aftermath:
+
+```text
+shared encounter
+  -> Thread A remembers / forgets / changes differently
+  -> Thread B remembers / forgets / changes differently
+```
+
+Fibre should not teleport or silently replan Threads merely to make a meeting happen.
+
+### Rich insidefibre.com meeting
+
+The site should feel like entering a moment, not opening a chatbot.
+
+A bounded public scene may show:
+
+- current embodiment;
+- place or transit;
+- current activity;
+- temporal texture such as arriving, waiting or preparing;
+- appropriate public companions/context;
+- bounded near-term intention;
+- scene-consistent imagery.
+
+A later visit should find later life.
+
+## Genesis to LivedNow
+
+The important end-to-end path is now:
+
+```text
+Genesis
+  -> born Thread with grounded prior life
+  -> canonical embodiment
+  -> first Flight Plan
+  -> CurrentSituation
+  -> compute sleeps
+  -> elapsed life is reconciled
+  -> present now
+  -> Person or Thread meeting
+  -> experience
+  -> continued life
+```
+
+Genesis owns grounded prior life before Fibre birth.
+
+LivedNow owns continuing Fibre-world life after birth.
+
+## Memory truth
+
+Fibre does not create “virtual memories” merely because time passed.
+
+The valid path is:
+
+```text
+retrospectively admitted World event
+  -> participant-specific experience
+  -> optional private reflection
+  -> retention appraisal
+  -> autobiographical memory or not_remembered
+```
+
+A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- continuously live a complete childhood from infancy to adulthood;
-- fully internalize live human encounters with selective forgetting/formation;
-- maintain mature reciprocal/shared relationships between independently living Threads;
+- automatically maintain/restore a current life across arbitrary multi-day dormancy;
+- route real deployed `/meet` through continuous LivedNow;
+- orchestrate reciprocal Thread-to-Thread meetings;
+- keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
-- support full society-scale institutions and reproduction among live Threads.
-
-Those remain part of the direction, but the current test is smaller and more important: **can we meet one person and later return to someone whose life continued?**
+- support society-scale institutions and reproduction among live Threads.
 
 ## Truth rules
 
 - A Thread is persistent world state, not a model session.
+- Compute dormancy does not by itself mean a lived Thread's Fibre-world life stopped.
+- Retrospective life must preserve that it was materialized later.
 - insidefibre.com is a projection surface, not a parallel World.
-- Generated imagery is derived presentation, not semantic identity authority.
+- A meeting enters an already-existing life; it does not manufacture that life.
+- Shared event does not imply shared private meaning.
 - A chat transcript is not automatically autobiographical memory.
-- Experience may be forgotten.
-- Fibre may author circumstances; the Thread owns semantic interpretation.
+- Memory cannot bypass admitted history.
 - Infrastructure and tests support the organism; they do not replace building it.
+
+## Current architecture
+
+See:
+
+- [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
+- [The Lived World of Fibre](../vision/lived-world.md)
+- [Current priorities](current-priorities.md)
+- [M2 continuation plan](../validation/m2-pr-plan.md)
