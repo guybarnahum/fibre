@@ -112,7 +112,9 @@ The deployed meeting now enters a scene produced by continuous LivedNow rather t
 
 ### M2-N5 — Thread -> Thread meeting — CURRENT
 
-Prove two independently current Threads can share one physical or mediated encounter while forming different private experience, memory, relationship or plan consequences.
+Prove two independently current Threads can share one physical or mediated encounter **only when their presence is compatible and each independently chooses to participate**.
+
+The first slice should stay small: one bounded meeting stance (`accept | decline | defer`) driven by exact LivedNow plus Thread-owned relationship/interior context, one accepted shared occurrence, and asymmetric private aftermath. Also prove one credible decline or defer so Fibre does not become an interrupt-anyone-on-demand chat system.
 
 ### M2-N6 — rich public meeting — NEXT
 
