@@ -184,8 +184,8 @@ The Admin dashboard is not deployed by the static `deploy:admin-dashboard:cloudf
 From the Fibre repository:
 
 ```bash
-git switch agent/m2-lived-encounter
-git pull --ff-only
+git switch main
+git pull --ff-only origin main
 
 npm run demo:m2
 npm run slice:validate
@@ -277,13 +277,13 @@ npm run check
 For M2 milestone acceptance, do not run `check` again. Use the semantic M2 proof followed by the broader slice closure gate:
 
 ```bash
-git switch agent/m2-lived-encounter
-git pull --ff-only
+git switch main
+git pull --ff-only origin main
 
 npm run demo:m2
 npm run slice:validate
 ```
 
-`demo:m2` is the focused Fibre-value proof. `slice:validate` runs the full test suite plus repository, World seed, deployment-manifest and test-value validation, so running `npm run check` immediately before it is redundant.
+`demo:m2` is the focused Fibre-value proof. `slice:validate` runs the full active/replay suite plus repository, context, World seed and deployment-manifest validation, so running `npm run check` immediately before it is redundant.
 
-M2 closes only when those acceptance gates and one real deployed `/meet` meeting are green. During the live meeting, God's view should make the encounter's cross-service causal path inspectable without becoming semantic authority or leaking the Thread's private interior. The proof should demonstrate a lived person; passing generic infrastructure tests alone is not the milestone.
+The Person -> Thread meeting step closes only after continuous LivedNow N1-N3 are green and the deployed `/meet` enters the reconciled current scene. During the live meeting, God's view should make the encounter's cross-service causal path inspectable without becoming semantic authority or leaking the Thread's private interior. The proof should demonstrate a lived person; passing generic infrastructure tests alone is not the milestone.
