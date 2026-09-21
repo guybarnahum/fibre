@@ -87,3 +87,32 @@
 .thread-image-close{position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:20px;cursor:pointer}
 @media(max-width:900px){.thread-identity-table{grid-template-columns:repeat(2,minmax(0,1fr))}.thread-fid-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.thread-observatory-page{padding:12px}.thread-identity-table,.thread-fid-visuals,.thread-fid-grid,.thread-fid-meta{grid-template-columns:1fr}.thread-identity-table .thread-person-fact.long,.thread-identity-table .thread-person-fact.wide{grid-column:auto}.thread-memory-track{gap:18px}}
+
+
+/* Thread journal — private book */
+.thread-journal-section{overflow:hidden}
+.thread-journal-book{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.06)}
+.thread-journal-cover{padding:22px 24px;border-bottom:1px solid var(--border);background:var(--surface-subtle)}
+.thread-journal-cover h4{margin:2px 0 8px;font-size:24px;line-height:1.1;font-weight:650}
+.thread-journal-kicker{margin:0;font-size:8px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.thread-journal-aesthetic{margin:0;max-width:720px;font-size:11px;line-height:1.5;color:var(--muted);font-style:italic}
+.thread-journal-pages{display:grid;gap:0}
+.thread-journal-entry{padding:24px;border-top:1px solid var(--border);min-width:0}
+.thread-journal-entry:first-child{border-top:0}
+.thread-journal-date{display:block;margin-bottom:14px;font-size:10px;letter-spacing:.04em;color:var(--muted)}
+.thread-journal-prose{margin:0 0 12px;font-size:14px;line-height:1.72;white-space:pre-wrap}
+.thread-journal-prose:last-child{margin-bottom:0}
+.thread-journal-quote{margin:14px 0;padding:5px 0 5px 16px;border-left:2px solid var(--border-strong);font-size:14px;line-height:1.65;font-style:italic}
+.thread-journal-subhead{margin:16px 0 8px;font-size:13px;letter-spacing:.02em}
+.thread-journal-list{margin:10px 0 14px;padding-left:22px;font-size:13px;line-height:1.6}
+.thread-journal-note{margin:9px 2px 0;font-size:9px;line-height:1.45;color:var(--muted)}
+.thread-journal-book.journal-classic .thread-journal-cover{background:linear-gradient(135deg,var(--surface-subtle),var(--surface))}
+.thread-journal-book.journal-classic .thread-journal-entry{font-family:Georgia,"Times New Roman",serif}
+.thread-journal-book.journal-literary .thread-journal-entry{font-family:Georgia,"Times New Roman",serif;padding-inline:clamp(24px,6vw,72px)}
+.thread-journal-book.journal-literary .thread-journal-prose{font-size:15px;line-height:1.85}
+.thread-journal-book.journal-notebook .thread-journal-entry{background:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,color-mix(in srgb,var(--border) 45%,transparent) 28px)}
+.thread-journal-book.journal-notebook .thread-journal-prose{line-height:28px}
+.thread-journal-book.journal-minimal{box-shadow:none}
+.thread-journal-book.journal-minimal .thread-journal-cover{background:var(--surface);padding-left:0;padding-right:0}
+.thread-journal-book.journal-minimal .thread-journal-entry{padding-left:0;padding-right:0}
+@media(max-width:650px){.thread-journal-cover,.thread-journal-entry{padding:17px}.thread-journal-cover h4{font-size:21px}.thread-journal-book.journal-literary .thread-journal-entry{padding-inline:17px}}
