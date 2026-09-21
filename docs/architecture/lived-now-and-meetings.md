@@ -55,7 +55,9 @@ The meeting is not the life engine. It is one event inside the life engine.
 
 A Thread-owned bounded itinerary for roughly the next half-day/day: where and how the Thread expects, wants or needs to be present, what it expects or intends to do, with whom, and why.
 
-A Flight Plan is intention, not World truth.
+For a Thread participating in continuous LivedNow, this is a **rolling lived-life expectation**: ordinarily there should be admitted personal plan coverage across the current half-day/day horizon. Compute does not need to remain active to maintain that illusion of continuity; missing elapsed plan coverage may be realized retrospectively during catch-up, and current/future coverage may be renewed when the Thread is thawed or otherwise needs a present.
+
+A Flight Plan is intention, not World truth. Retrospective plan realization therefore records what the Thread is admitted to have intended during the elapsed interval; World history separately records what was enacted.
 
 ### CurrentSituation
 
@@ -89,6 +91,8 @@ Catch-up is not an excuse to write arbitrary biography.
 
 A shared encounter between entities whose relevant present already exists.
 
+A meeting **intersects ongoing life**; it does not spawn that life. The encountered Thread may be at a destination, in transit between Flight Plan stops, waiting, working, studying, resting, accompanied, or otherwise occupied for reasons that existed before the meeting request.
+
 The first important forms are:
 
 - Person -> Thread;
@@ -109,6 +113,8 @@ not:
 > **the person's world-time life necessarily stopped at the exact freeze timestamp**
 
 When Fibre later needs the Thread's present—because the Thread is thawed, inspected, scheduled, or selected for a meeting—World reconciles the elapsed interval before claiming a current situation.
+
+**Thaw is therefore not “resume the stale snapshot.”** It is the act of restoring lived continuity: cover the elapsed interval honestly, admit any resulting history/consequences, renew the current Flight Plan when needed, and only then establish the present.
 
 This is an **on-demand continuity model**, not a high-frequency simulation loop.
 
@@ -300,11 +306,12 @@ An encounter may causally affect:
 - obligations or invitations;
 - public expression;
 - future willingness to meet;
+- developmental/self-understanding or identity state through the ordinary experience/meaning/identity authorities;
 - opportunities and, later, economic/social state.
 
 No single meeting is required to change any of these.
 
-Consequences must enter through their owning authorities rather than one monolithic “meeting result” record.
+Consequences must enter through their owning authorities rather than one monolithic “meeting result” record. A meeting never directly rewrites identity merely because it occurred; identity changes only when the Thread's normal developmental/meaning machinery makes that experience consequential.
 
 ## insidefibre.com north-star experience
 
@@ -388,15 +395,19 @@ When plan/history coverage does not reach `at`, synthesize the smallest credible
 
 Prove a multi-day dormant gap.
 
-### N3 — Human /meet over real LivedNow
+### N3 — Genesis -> first continuous LivedNow
+
+Prove a newly born Thread exits Genesis into the same continuing-life seam used later: initial lived anchor, first personal Flight Plan, CurrentSituation, compute dormancy, retrospective catch-up, renewed plan and authoritative present. No demo-only life engine or meeting fixture.
+
+### N4 — Person -> Thread /meet over real LivedNow
 
 Route public meeting through ensure-LivedNow. The first deployed proof should show that the returned scene was determined by the Thread's prior life + elapsed continuity, not a meeting fixture.
 
-### N4 — Thread-to-Thread meeting
+### N5 — Thread-to-Thread meeting
 
 Create one shared encounter between two independently maintained LivedNow participants and prove different participant-specific aftermath.
 
-### N5 — Rich insidefibre.com meeting
+### N6 — Rich insidefibre.com meeting
 
 Render the current scene, movement/activity, public intention/context and current embodiment; allow the encounter; later revisit the same Thread after life has moved.
 
