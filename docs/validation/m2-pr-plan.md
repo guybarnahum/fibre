@@ -209,9 +209,11 @@ The visitor chooses the utterance and causes the encounter. The visitor does not
 
 The first real deployed `/meet` is accepted only after N1-N3 are real.
 
-## N5 — Encounter Story -> Thread Experience — REPLANNED
+## N5 — Encounter Story -> Thread Experience — E0 CLOSED / E1 CURRENT
 
 ### Capability
+
+E0 is closed: Fibre now has one coherent general Encounter Story / Thread Experience persistence vocabulary, with social meeting implemented as a wrapper rather than as history authority. E1 is current.
 
 One general encounter seam can turn an objective World occurrence into different personal lived experiences without requiring separate engines for conversation, witnessing and environmental moments.
 
