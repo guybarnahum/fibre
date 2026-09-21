@@ -625,10 +625,16 @@ function appendJournalBlocks(host, lines) {
   flushList();
 }
 
-function journalSection(journal, journalError = null) {
+function journalSection(journal, journalError = null, authorityEntries = []) {
   const profile = journal?.profile ?? null;
   const entries = journalEntries(journal?.document);
-  const wrap = section("Journal", profile ? `${entries.length} private ${entries.length === 1 ? "entry" : "entries"} · not memory` : null);
+  const authorityCount = Array.isArray(authorityEntries) ? authorityEntries.length : 0;
+  const wrap = section(
+    "Journal",
+    profile
+      ? `${entries.length} private ${entries.length === 1 ? "entry" : "entries"} · ${authorityCount} World ${authorityCount === 1 ? "record" : "records"} · not memory`
+      : null,
+  );
   wrap.classList.add("thread-journal-section");
   if (journalError) {
     wrap.append(el("p", "thread-empty-note", `Journal unavailable · ${journalError}`));
@@ -659,8 +665,58 @@ function journalSection(journal, journalError = null) {
   book.append(pages);
   wrap.append(
     book,
-    el("p", "thread-journal-note", "Journal entries are contemporaneous private reflection. They may shape later cognition, but they do not become autobiographical memory unless Fibre separately retains them."),
+    el("p", "thread-journal-note", "The book above is the private R2 presentation of journal authority. World journal-entry records remain authoritative provenance, and neither one becomes autobiographical memory unless Fibre separately retains the experience."),
   );
+  if (authorityCount > 0) wrap.append(disclosure("World journal-entry authority", authorityEntries));
+  return wrap;
+}
+
+function encounterStorySection(encounterStories, encounterError = null) {
+  const stories = Array.isArray(encounterStories) ? encounterStories : [];
+  const wrap = section(
+    "Encounter stories",
+    stories.length ? `${stories.length} objective ${stories.length === 1 ? "story" : "stories"} · shared facts, personal attention` : null,
+  );
+  if (encounterError) {
+    wrap.append(el("p", "thread-empty-note", `Encounter view unavailable · ${encounterError}`));
+    return wrap;
+  }
+  if (stories.length === 0) {
+    wrap.append(el("p", "thread-empty-note", "No Encounter Stories are recorded for this Thread."));
+    return wrap;
+  }
+
+  const ordered = [...stories].sort((left, right) => Date.parse(right.occurredAt) - Date.parse(left.occurredAt));
+  for (const encounter of ordered) {
+    const firstBeat = encounter.story?.beats?.[0]?.text ?? encounter.encounterId ?? "Encounter";
+    const article = el("article", "thread-encounter-inspection");
+    article.append(disclosure(
+      `${prettyDate(encounter.occurredAt) ?? encounter.occurredAt} · ${firstBeat}`,
+      {
+        encounterId:encounter.encounterId,
+        occurredAt:encounter.occurredAt,
+        threadPresence:encounter.threadPresence ?? [],
+        story:encounter.story ?? null,
+      },
+    ));
+    if (encounter.visualization?.visualizationPrompt) {
+      article.append(
+        disclosure("Objective visualization prompt", encounter.visualization.visualizationPrompt, { prose:true }),
+        disclosure("Visualization provenance", {
+          visualizationPromptDigest:encounter.visualization.visualizationPromptDigest,
+          visualizationSourceReferences:encounter.visualization.visualizationSourceReferences ?? [],
+          depictedThreadRefs:encounter.visualization.depictedThreadRefs ?? [],
+        }),
+      );
+    }
+    if (encounter.attention) article.append(disclosure("This Thread\'s attention / experience", encounter.attention));
+    wrap.append(article);
+  }
+  wrap.append(el(
+    "p",
+    "thread-journal-note",
+    "Encounter Story is objective World history. Its visualization prompt is a reconstruction lineage; generated media is replaceable representation, never evidence or private experience authority.",
+  ));
   return wrap;
 }
 
@@ -945,6 +1001,9 @@ export async function fetchThreadObservatory(threadId) {
 
   let memories = [];
   let memoryError = null;
+  let encounterStories = [];
+  let encounterError = null;
+  let experienceJournalEntries = [];
   let journal = null;
   let journalError = null;
   let deepWorld = null;
@@ -955,6 +1014,10 @@ export async function fetchThreadObservatory(threadId) {
     const observatory = observatoryPayload?.observatory ?? null;
     if (!observatory || observatory.threadId !== threadId) throw new Error("World Observatory returned mismatched Thread");
     memories = Array.isArray(observatory.memories) ? observatory.memories : [];
+    encounterStories = Array.isArray(observatory.encounterStories) ? observatory.encounterStories : [];
+    experienceJournalEntries = Array.isArray(observatory.experienceJournalEntries)
+      ? observatory.experienceJournalEntries
+      : [];
     deepWorld = {
       thread:observatory.thread ?? null,
       civilRegistration:observatory.civilRegistration ?? null,
@@ -962,7 +1025,9 @@ export async function fetchThreadObservatory(threadId) {
       symbolicGenomes:Array.isArray(observatory.symbolicGenomes) ? observatory.symbolicGenomes : [],
     };
   } catch (error) {
-    memoryError = error instanceof Error ? error.message : String(error);
+    const detail = error instanceof Error ? error.message : String(error);
+    memoryError = detail;
+    encounterError = detail;
   }
   try {
     const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/journal`, { headers:{ Accept:"application/json" }, cache:"no-store" });
@@ -979,12 +1044,25 @@ export async function fetchThreadObservatory(threadId) {
     identity,
     memories:Object.freeze(memories),
     memoryError,
+    encounterStories:Object.freeze(encounterStories),
+    encounterError,
+    experienceJournalEntries:Object.freeze(experienceJournalEntries),
     journal,
     journalError,
   });
 }
 
-export function renderThreadObservatory({ identity, threadId, memories = [], memoryError = null, journal = null, journalError = null } = {}) {
+export function renderThreadObservatory({
+  identity,
+  threadId,
+  memories = [],
+  memoryError = null,
+  encounterStories = [],
+  encounterError = null,
+  experienceJournalEntries = [],
+  journal = null,
+  journalError = null,
+} = {}) {
   const view = el("div", "thread-person-view");
   view.append(
     observatoryCopyAction({ identity, threadId, memories, memoryError }),
@@ -992,7 +1070,8 @@ export function renderThreadObservatory({ identity, threadId, memories = [], mem
     identitySection(identity, threadId),
     renderFidSection(identity, threadId),
     nowSection(identity),
-    journalSection(journal, journalError),
+    journalSection(journal, journalError, experienceJournalEntries),
+    encounterStorySection(encounterStories, encounterError),
     memoriesSection(memories, firstText(identity.birthDate, identity.world?.thread?.identity?.birthDate), memoryError),
   );
   const who = whoSection(identity); if (who) view.append(who);

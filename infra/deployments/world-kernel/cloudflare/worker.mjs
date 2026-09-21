@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
+import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { ThreadDirectoryStore } from "#services/world-kernel/src/thread-directory-store.mjs";
 import { createThreadDirectoryService } from "#services/world-kernel/src/thread-directory-service.mjs";
 import { ThreadHealthProjectionStore } from "#services/world-kernel/src/thread-health-projection-store.mjs";
@@ -109,7 +110,12 @@ function threadObservatory(runtime, threadId) {
   const embodiments = runtime.embodimentStore.listCurrent(threadId);
   const symbolicGenomes = runtime.symbolicGenomeStore.listThreadGenomes(threadId);
   const memory = openAutobiographicalMemoryInspectionStore(runtime.worldStorage);
+  const experience = openLivedExperienceStore(runtime.worldStorage);
   try {
+    const encounterStories = experience.listEncounterStories(threadId).map((story) => Object.freeze({
+      ...structuredClone(story),
+      attention:structuredClone(experience.getThreadEncounterAttention(threadId, story.encounterId)),
+    }));
     return Object.freeze({
       threadId,
       fibreIdentityNumber:registration?.fibreIdentityNumber ?? null,
@@ -118,8 +124,11 @@ function threadObservatory(runtime, threadId) {
       embodiments:structuredClone(embodiments),
       symbolicGenomes:structuredClone(symbolicGenomes),
       memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:200 })),
+      encounterStories:Object.freeze(encounterStories),
+      experienceJournalEntries:structuredClone(experience.listThreadExperienceJournal(threadId)),
     });
   } finally {
+    experience.close();
     memory.close();
   }
 }
@@ -218,7 +227,7 @@ export class FibreWorldDurableObject extends DurableObject {
       const observatory = threadObservatory(this.runtimeForRequest(), threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
-        contract:"fibre-world-thread-observatory-v0.1",
+        contract:"fibre-world-thread-observatory-v0.2",
         observatory,
       });
     }

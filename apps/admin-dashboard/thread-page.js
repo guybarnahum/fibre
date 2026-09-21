@@ -111,6 +111,9 @@ export async function renderThreadPage(threadId) {
       threadId,
       memories:payload.memories,
       memoryError:payload.memoryError,
+      encounterStories:payload.encounterStories,
+      encounterError:payload.encounterError,
+      experienceJournalEntries:payload.experienceJournalEntries,
       journal:payload.journal,
       journalError:payload.journalError,
     });

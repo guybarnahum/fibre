@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  fetchThreadObservatory,
   identityWithFidPublication,
   mergeObservatoryWorldIdentity,
   reissueFidCard,
@@ -251,4 +252,82 @@ test("Thread Observatory copy payload carries person state and current repair di
   assert.equal(payload.repair.reconciliation.state, "pending");
   assert.equal(payload.memoryError, null);
   assert.equal(payload.repairError, null);
+});
+
+test("Thread Observatory keeps Encounter Story, journal authority, and memory separate", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/identity")) {
+      return Response.json({
+        environment:"staging",
+        identity:{ threadId:"thr_e4_admin", displayName:"Sela", version:4 },
+      });
+    }
+    if (String(url).endsWith("/observatory")) {
+      return Response.json({
+        observatory:{
+          threadId:"thr_e4_admin",
+          thread:{ threadId:"thr_e4_admin", version:4, status:"active", identity:{ name:"Sela" } },
+          civilRegistration:null,
+          embodiments:[],
+          symbolicGenomes:[],
+          memories:[],
+          encounterStories:[{
+            encounterId:"story_e4_admin",
+            occurredAt:"2026-09-21T18:00:00.000Z",
+            threadPresence:[{ threadId:"thr_e4_admin", situationId:"sit_e4_admin" }],
+            story:{ beats:[{ actorThreadId:"thr_other", kind:"utterance", text:"A sharp remark." }] },
+            visualization:{
+              visualizationPrompt:"OBJECTIVE FIBRE ENCOUNTER RECONSTRUCTION",
+              visualizationPromptDigest:"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              visualizationSourceReferences:["sit_e4_admin"],
+              depictedThreadRefs:["thr_other"],
+            },
+            attention:{
+              threadId:"thr_e4_admin",
+              encounterRef:"story_e4_admin",
+              outcome:"noticed",
+              experience:{ experienceId:"exp_e4_admin", experienceText:"I noticed the edge in it." },
+            },
+          }],
+          experienceJournalEntries:[{
+            journalEntryId:"journal_e4_admin",
+            threadId:"thr_e4_admin",
+            aboutExperienceRef:"exp_e4_admin",
+            writtenAt:"2026-09-21T18:00:00.000Z",
+            entryText:"I stayed quiet, but it changed the room for me.",
+          }],
+        },
+      });
+    }
+    if (String(url).endsWith("/journal")) {
+      return Response.json({
+        journal:{
+          objectKey:"journals/thr_e4_admin/journal.md",
+          profile:{
+            threadId:"thr_e4_admin",
+            title:"Margins",
+            presentationStyle:"notebook",
+            aestheticNote:"Loose notes with room around them.",
+          },
+          document:"# Margins\n\n## 2026-09-21 · 18:00:00Z\n\nI stayed quiet, but it changed the room for me.\n",
+        },
+      });
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  };
+
+  try {
+    const result = await fetchThreadObservatory("thr_e4_admin");
+    assert.equal(result.encounterStories[0].encounterId, "story_e4_admin",
+      "Admin should receive objective Encounter Story authority");
+    assert.equal(result.experienceJournalEntries[0].aboutExperienceRef, "exp_e4_admin",
+      "Admin should receive World journal-entry provenance separately from the R2 book");
+    assert.equal(result.journal.profile.title, "Margins",
+      "Admin should retain the stable Thread-owned journal presentation");
+    assert.equal(result.memories.length, 0,
+      "journal presence must not imply autobiographical retention");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
