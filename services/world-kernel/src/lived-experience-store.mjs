@@ -135,11 +135,11 @@ export class LivedExperienceStore {
     const participantIds = new Set();
     const threadPresence = candidate.threadPresence.map((participant) => {
       if (participant === null || typeof participant !== "object" || Array.isArray(participant)) {
-        throw new TypeError("encounter story participant must be an object");
+        throw new TypeError("encounter story Thread presence must be an object");
       }
-      assertId("encounter story participant.threadId", participant.threadId);
-      assertId("encounter story participant.situationId", participant.situationId);
-      if (participantIds.has(participant.threadId)) throw new TypeError("encounter story participant is duplicated");
+      assertId("encounter story presence.threadId", participant.threadId);
+      assertId("encounter story presence.situationId", participant.situationId);
+      if (participantIds.has(participant.threadId)) throw new TypeError("encounter story Thread presence is duplicated");
       participantIds.add(participant.threadId);
       return { threadId:participant.threadId, situationId:participant.situationId };
     });
@@ -201,7 +201,7 @@ export class LivedExperienceStore {
       if (!required) return null;
       throw new TypeError(`encounter story ${encounterId} was not found`);
     }
-    const participants = this.#database.prepare(`
+    const threadPresence = this.#database.prepare(`
       SELECT thread_id,situation_id
       FROM encounter_story_thread_presence
       WHERE encounter_ref=?
