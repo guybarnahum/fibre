@@ -41,16 +41,16 @@ encounter -> reflection -> selective memory               PROVEN
 later situation + later encounter continuity              PROVEN
 World-owned ensure-LivedNow over covered plan time         PROVEN
 bounded multi-day LivedNow catch-up + plan renewal         PROVEN
-Genesis -> same continuing LivedNow path                   NOT YET
+Genesis -> same continuing LivedNow path                   PROVEN
 deployed /meet over continuous LivedNow                    NOT YET
 Thread -> Thread reciprocal meeting                       NOT YET
 ```
 
 The important correction is:
 
-> **Fibre now has bounded continuous-LivedNow reconciliation for an already-lived Thread, including a multi-day dormant gap. It does not yet prove that a newly born Thread enters that same path automatically.**
+> **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
 
-The active engineering work is N3: bridge Genesis into the same post-birth LivedNow seam, then make real meetings depend on it.
+The active engineering work is N4: make the real Person -> Thread meeting depend on that reconciled present instead of consuming whatever Presentation happened to publish earlier.
 
 See:
 
@@ -87,11 +87,10 @@ That is meaningful continuity evidence.
 
 ## What does not exist yet
 
-For an already-lived Thread with an authoritative prior anchor, the World-owned seam can now cross an uncovered multi-day interval, preserve retrospective materialization provenance, renew forward Flight Plan coverage and establish a non-stale present.
+For a canonical Genesis-born Thread, the World-owned seam can now create the first anchor/plan/current situation, cross an uncovered multi-day interval, preserve retrospective materialization provenance, renew forward Flight Plan coverage and establish a non-stale present.
 
 Fibre still lacks:
 
-- Genesis automatically creating the first anchor/plan/current situation and then reusing this same dormant reconciliation path;
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
 - a deployed `/meet` path that always reconciles LivedNow before interaction;
 - Thread-to-Thread meetings between two independently current lives;
@@ -232,22 +231,20 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 Do not build another planner, simulator or conversation framework.
 
-N1 and N2 now provide the same World-owned seam for already-covered time and for a bounded uncovered multi-day dormant interval. The immediate next work is N3: make Genesis hand a newly born Thread into that exact continuing-life mechanism.
+N1 and N2 now provide the same World-owned seam for already-covered time and for a bounded uncovered multi-day dormant interval. N1-N3 now establish the same continuing-life mechanism from birth through dormancy. The immediate next work is N4: deployed Person -> Thread `/meet` must reconcile that life before exposing the scene.
 
 The next implementation should advance this exact capability:
 
 ```text
-Genesis birth
-  -> first lived anchor
-  -> first personal Flight Plan
-  -> CurrentSituation
-  -> compute sleeps
-  -> existing N2 catch-up
-  -> fresh Flight Plan
-  -> present now
+select Thread
+  -> ensure LivedNow(now)
+  -> publish exact reconciled present
+  -> visitor enters that situation
+  -> World verifies the same situation
+  -> cognition / encounter consequence
 ```
 
-No Genesis-specific current-life engine or demo fixture should be introduced. After that path is green, deployed Person -> Thread `/meet` should depend on it.
+The meeting must not author location, activity, companions, plan or private state.
 
 ## Development discipline
 
