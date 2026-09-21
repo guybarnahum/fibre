@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-21
 canonical: true
 ---
 
@@ -43,7 +43,7 @@ World-owned ensure-LivedNow over covered plan time         PROVEN
 bounded multi-day LivedNow catch-up + plan renewal         PROVEN
 Genesis -> same continuing LivedNow path                   PROVEN
 wired /meet over continuous LivedNow                       PROVEN
-live deployed /meet acceptance                             NOT YET
+live deployed /meet acceptance                             PROVEN
 Thread -> Thread reciprocal meeting                       NOT YET
 ```
 
@@ -51,7 +51,7 @@ The important correction is:
 
 > **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
 
-The N4 implementation now makes Person -> Thread meeting entry depend on that reconciled present instead of consuming whatever Presentation happened to publish earlier. The remaining N4 work is deployed acceptance of the full public path.
+N4 is now closed in deployment: Person -> Thread meeting entry depends on a freshly reconciled World-owned present, and a live encounter succeeded against the exact returned `situationId`. The active milestone risk is now reciprocal Thread -> Thread meeting between two independently current lives.
 
 See:
 
@@ -93,11 +93,10 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
-- live deployed acceptance proving `/meet` reconciles LivedNow before interaction;
 - Thread-to-Thread meetings between two independently current lives;
 - a rich public scene driven by that continuous present.
 
-The next risk is no longer whether life can start and continue on this path—the canonical Genesis and N4 meeting-entry proofs cover that. It is whether the deployed public stack executes the same path against a real Thread without falling back to a prepared or stale scene.
+The deployed public stack now executes that path against a real Thread without falling back to a prepared or stale scene. The next risk is whether two independently continuing Threads can share one compatible encounter while preserving one shared occurrence and different private aftermath.
 
 ## Continuous LivedNow
 
