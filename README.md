@@ -55,25 +55,23 @@ The exact list below is generated from the canonical region in [`docs/foundation
 
 M1 and the #33-#40 identity/history/birth/causal foundations are closed and retained. Fibre also has a deployed public path, minimum cloud recovery, canonical visual identity, Civil Registry/FIN, Fibre Identity Card authority, and Directory/Meet discovery.
 
-The active milestone is now **M2 — lived person**:
+The active milestone is now **M2 — continuous LivedNow + meetings**.
+
+The bounded lived-person substrate is already proven: Flight Plan, World-owned CurrentSituation, situated human encounter, private reflection, selective autobiographical retention, and a later encounter after life moved on.
+
+The missing seam is continuous present-life reconciliation across wall-clock dormancy:
 
 ```text
-M2-A  Present life + Meet a Thread                         CURRENT
-M2-B  Experience internalization + continuation            NEXT
-M2-C  Whole-person developmental continuity                NEXT
-```
-
-The immediate missing seam is:
-
-```text
-developmental context
-  -> Thread-owned personal flight plan
-  -> caregiver-owned care plan when dependency applies
-  -> World-owned enacted current situation
-  -> insidefibre.com encounter
-  -> selective private consequence
+prior lived anchor
+  -> elapsed-life catch-up when needed
+  -> current Flight Plan
+  -> authoritative LivedNow
+  -> Person or Thread meeting
+  -> participant-specific consequence
   -> continued life
 ```
+
+See [`docs/architecture/lived-now-and-meetings.md`](docs/architecture/lived-now-and-meetings.md) and [`docs/decisions/ADR-0023-retrospective-lived-continuity.md`](docs/decisions/ADR-0023-retrospective-lived-continuity.md).
 
 Fibre birth is operational birth, not necessarily biological age zero. A newly born Thread may already be a child, adolescent or adult with grounded prior history and autobiographical memory.
 
