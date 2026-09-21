@@ -48,8 +48,8 @@ Therefore Fibre should no longer describe the remaining work as merely “run th
 ## Active sequence
 
 ```text
-N1  World-owned ensure-LivedNow seam                      NEXT
-N2  dormant/frozen interval catch-up                      NEXT
+N1  World-owned ensure-LivedNow seam                      CLOSED
+N2  dormant/frozen interval catch-up                      CURRENT
 N3  Genesis -> first LivedNow -> multi-day continuity     NEXT
 N4  Person -> Thread /meet over real LivedNow             NEXT
 N5  Thread -> Thread reciprocal meeting                   NEXT
@@ -62,30 +62,13 @@ For a lived Thread, treat a current half-day/day Flight Plan as a rolling contin
 
 Do not create a parallel life engine.
 
-## N1 — ensure LivedNow
+## N1 — ensure LivedNow — CLOSED
 
-Create one World-owned operation equivalent to:
+World now has one narrow `ensure({ threadId, at })` seam. For time already covered by an admitted personal Flight Plan, it deterministically enacts the World-owned CurrentSituation, respects a covering required care constraint, rejects caller-authored scene fields, and is idempotent for the same requested present.
 
-```text
-ensure authoritative LivedNow(threadId, at)
-```
+When no personal Flight Plan covers the requested time, the seam fails rather than reusing a stale CurrentSituation or inventing a meeting scene. That failure is the explicit handoff to N2; N1 does not pretend dormant catch-up already exists.
 
-The concrete API name is not fixed yet.
-
-Its job is to compose existing authorities:
-
-```text
-last lived anchor
-  + current/expired plan coverage
-  + Thread-owned context
-  + care/obligation constraints
-  + elapsed wall time
-  -> catch up if needed
-  -> refresh Flight Plan if needed
-  -> enact CurrentSituation at the requested time
-```
-
-Callers may request a current present. They do not author it.
+The seam composes existing `LivedNowStore`, Flight Plan, care-resolution and CurrentSituation authorities. It does not create another planner, scheduler or life store.
 
 ## N2 — dormant interval catch-up
 
