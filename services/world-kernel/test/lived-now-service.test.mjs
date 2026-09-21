@@ -6,7 +6,7 @@ import test from "node:test";
 
 import { openWorldStore } from "../src/persistence.mjs";
 import { createLivedNowService, LivedNowCoverageError } from "../src/lived-now-service.mjs";
-import { livedPlanId } from "../src/lived-now.mjs";
+import { livedPlanId, livedSituationId } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import {
   lifeRelationId,
@@ -259,7 +259,7 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
     const life = seedLife(databasePath);
     const storage = localWorldStateStorage(databasePath);
     const lived = openLivedNowStore(storage);
-    lived.recordPlan(personalPlan(life));
+    const initialPlan = lived.recordPlan(personalPlan(life));
 
     const world = openWorldStore(storage);
     const situated = openSituatedLifeStore(storage);
@@ -328,18 +328,29 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
     assert.ok(fresh, "catch-up should leave a forward Flight Plan, not only a reconstructed past");
     assert.deepEqual(current.sourcePlanRefs, [fresh.planId]);
 
-    const historicalSituations = [
-      anchor,
-      ...retrospective.map((plan) => lived.getSituation(
-        `sit_${""}`,
-        { required: false },
-      )),
+    const historicalBoundaries = [
+      {
+        at: initialPlan.horizonEnd,
+        governingPlanRef: initialPlan.planId,
+      },
+      ...retrospective.slice(0, -1).map((plan) => ({
+        at: plan.horizonEnd,
+        governingPlanRef: plan.planId,
+      })),
     ];
-    void historicalSituations;
-
-    const allSituationIds = new Set();
-    for (const plan of plans) allSituationIds.add(plan.planId);
-    assert.ok(allSituationIds.size === plans.length);
+    const historicalSituations = historicalBoundaries.map(({ at, governingPlanRef }) =>
+      lived.getSituation(livedSituationId({
+        kind: "retrospective_lived_now_v1",
+        threadId: life.thread.threadId,
+        at,
+        governingPlanRef,
+        materializedAt: targetAt,
+      })));
+    assert.ok(historicalSituations.length >= 2);
+    assert.ok(historicalSituations.every((situation) =>
+      situation.materialization?.mode === "retrospective" &&
+      situation.materialization.materializedAt === targetAt &&
+      Date.parse(situation.establishedAt) < Date.parse(targetAt)));
 
     const callsAfterCatchUp = invocations;
     const retry = await service.ensure({
