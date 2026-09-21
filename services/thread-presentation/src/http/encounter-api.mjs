@@ -31,18 +31,20 @@ function json(value, request, viewerOrigin, status = 200) {
 
 export function createPublicEncounterApi({
   readPublicPresent,
+  ensurePublicPresent,
   encounter,
   viewerOrigin = null,
   now = () => new Date().toISOString(),
 }) {
   if (typeof readPublicPresent !== "function") throw new TypeError("public encounter API requires readPublicPresent");
+  if (typeof ensurePublicPresent !== "function") throw new TypeError("public encounter API requires ensurePublicPresent");
   if (typeof encounter !== "function") throw new TypeError("public encounter API requires encounter");
   if (typeof now !== "function") throw new TypeError("public encounter API requires now");
 
   return Object.freeze({
     async fetch(request) {
       const url = new URL(request.url);
-      const match = /^\/api\/threads\/([^/]+)\/encounter$/.exec(url.pathname);
+      const match = /^\/api\/threads\/([^/]+)\/(meet|encounter)$/.exec(url.pathname);
       if (!match) return null;
       if (request.headers.get("Origin") !== null && allowedOrigin(request, viewerOrigin) === false) {
         return json({ error: "origin_not_allowed" }, request, viewerOrigin, 403);
@@ -50,10 +52,30 @@ export function createPublicEncounterApi({
       if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(request, viewerOrigin) });
       if (request.method !== "POST") return json({ error: "method_not_allowed" }, request, viewerOrigin, 405);
 
-      let body;
       let threadId;
       try {
         threadId = id("threadId", decodeURIComponent(match[1]));
+      } catch (error) {
+        return json({ error: "invalid_encounter", detail: error.message }, request, viewerOrigin, 400);
+      }
+
+      if (match[2] === "meet") {
+        try {
+          const present = await ensurePublicPresent(threadId, request);
+          if (present === null || typeof present?.situationId !== "string") {
+            return json({ error: "public_present_required" }, request, viewerOrigin, 409);
+          }
+          return json({ currentPresent: { payload: present } }, request, viewerOrigin);
+        } catch (error) {
+          if (error?.status === 409) {
+            return json({ error: "lived_now_unavailable" }, request, viewerOrigin, 409);
+          }
+          return json({ error: "lived_now_unavailable" }, request, viewerOrigin, 503);
+        }
+      }
+
+      let body;
+      try {
         body = await request.json();
         if (body === null || typeof body !== "object" || Array.isArray(body)) throw new TypeError("encounter request must be an object");
         const keys = Object.keys(body).sort();
