@@ -19,6 +19,7 @@ test("A5 public encounter passes only an utterance against the already-published
     viewerOrigin: "https://insidefibre.com",
     now: () => "2026-09-11T00:05:00Z",
     readPublicPresent: async () => ({ situationId: SITUATION_ID }),
+    ensurePublicPresent: async () => ({ situationId: SITUATION_ID }),
     encounter: async (input) => {
       forwarded = structuredClone(input);
       return { situationId: SITUATION_ID, responseText: "Hi." };
@@ -40,6 +41,7 @@ test("A5 public encounter rejects visitor-authored life and stale public scenes"
   const api = createPublicEncounterApi({
     viewerOrigin: "https://insidefibre.com",
     readPublicPresent: async () => ({ situationId: SITUATION_ID }),
+    ensurePublicPresent: async () => ({ situationId: SITUATION_ID }),
     encounter: async () => { calls += 1; return { situationId: SITUATION_ID, responseText: "Hi." }; },
   });
 
@@ -54,4 +56,49 @@ test("A5 public encounter rejects visitor-authored life and stale public scenes"
   assert.equal(stale.status, 409);
   assert.equal((await stale.json()).error, "encounter_scene_changed");
   assert.equal(calls, 0);
+});
+
+
+test("N4 meeting entry reconciles LivedNow before exposing the scene", async () => {
+  const order = [];
+  const api = createPublicEncounterApi({
+    viewerOrigin: "https://insidefibre.com",
+    ensurePublicPresent: async (threadId) => {
+      order.push(`ensure:${threadId}`);
+      return {
+        situationId: "sit_reconciled_now",
+        establishedAt: "2026-09-21T03:40:00Z",
+        phase: "at_place",
+        activity: "walking home",
+      };
+    },
+    readPublicPresent: async () => {
+      order.push("read");
+      return { situationId: "sit_old" };
+    },
+    encounter: async () => {
+      order.push("encounter");
+      throw new Error("meeting entry must not start the encounter");
+    },
+  });
+
+  const response = await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/meet`,
+    {
+      method: "POST",
+      headers: { Origin: "https://insidefibre.com" },
+    },
+  ));
+  assert.equal(response.status, 200);
+  assert.deepEqual(order, [`ensure:${THREAD_ID}`]);
+  assert.deepEqual(await response.json(), {
+    currentPresent: {
+      payload: {
+        situationId: "sit_reconciled_now",
+        establishedAt: "2026-09-21T03:40:00Z",
+        phase: "at_place",
+        activity: "walking home",
+      },
+    },
+  }, "meeting entry should expose the scene produced by reconciliation, not the stale prior projection");
 });
