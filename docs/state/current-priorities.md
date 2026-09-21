@@ -7,13 +7,15 @@ canonical: true
 
 # Current priorities
 
-Fibre's active north star is now **continuous LivedNow + meetings**.
+Fibre's active north star is now **continuous LivedNow + encounters**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread meeting can enter that reconciled life. N5 is now implemented and semantically proven in-repository; the active work is deployed acceptance of reciprocal Thread -> Thread meeting plus its private journal aftermath.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 has been replanned around the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**.
 
 Canonical architecture:
 
 - [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
+- [Encounter stories and Thread experience](../architecture/encounters-and-experience.md)
+- [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md)
 - [The Lived World of Fibre](../vision/lived-world.md)
 - [ADR-0023: Retrospective lived continuity across compute dormancy](../decisions/ADR-0023-retrospective-lived-continuity.md)
 
@@ -52,8 +54,8 @@ N1  World-owned ensure-LivedNow seam                      CLOSED
 N2  dormant/frozen interval catch-up                      CLOSED
 N3  Genesis -> first LivedNow -> multi-day continuity     CLOSED
 N4  Person -> Thread /meet over real LivedNow             CLOSED
-N5  Thread -> Thread reciprocal meeting                   CURRENT
-N6  rich insidefibre.com lived meeting                    NEXT
+N5  general Encounter Story -> Thread Experience seam     CURRENT
+N6  rich insidefibre.com lived encounter                  NEXT
 ```
 
 Keep these slices narrow. Reuse the existing Flight Plan, CurrentSituation, encounter, memory, relationship, Presentation and canonical embodiment authorities.
@@ -151,37 +153,65 @@ The visitor cannot choose the Thread's location, activity, private state or plan
 
 The automated path proves meeting entry cannot author the scene, reconciles before exposure, and keeps later utterances bound to the returned `situationId`. Deployed staging acceptance then exercised that exact path against a real Thread: `/meet` established and published a fresh World-owned present, and the subsequent encounter succeeded against the same `situationId` with a response grounded in the Thread's current activity. N4 is closed.
 
-## N5 — Thread -> Thread meeting — CURRENT
+## N5 — Encounter Story -> Thread Experience — CURRENT
 
-Thread-to-Thread meetings are intersections of two continuing lives.
+N5 now asks a more fundamental question than “can two Threads talk?”:
 
-Each participant must independently have:
+> **How does something that happens in the World become this Thread's lived experience and possibly bend her future?**
 
-- a current Flight Plan;
-- a World-owned physical presence: at a place or in transit between places;
-- a reason for being there;
-- its own identity, relationships, memory and semantic state;
-- its own willingness to participate now.
-
-A physical meeting requires compatible place/time presence. A mediated meeting still requires each Thread to remain physically somewhere, plus a compatible mediated context.
-
-Compatible presence does not create consent. The implemented N5 seam produces a bounded `accept | decline | defer` stance for each Thread from exact LivedNow plus Thread-owned relationship/interior context. A decline or defer may include an outward explanation or proposed later time. Someone the Thread likes or trusts may receive more accommodation, but relationship context influences rather than determines the choice.
-
-Physical compatibility is resolved from each Thread's own situated-life place reference to the shared underlying place identity; Fibre does not require two Threads to carry the same private evidence reference. Mediated compatibility remains possible without replacing either Thread's physical presence.
-
-Do not teleport Threads together, silently rewrite either Flight Plan, or force an interruption merely because a meeting was requested.
-
-Mutual acceptance now produces one shared objective meeting plus separate private aftermath:
+The accepted causal shape is:
 
 ```text
-shared encounter
-  -> Thread A private journal -> memory or not_remembered
-  -> Thread B private journal -> memory or not_remembered
+World occurrence
+  -> objective Encounter Story
+  -> Thread-specific noticing / experience
+  -> optional journal
+  -> selective consequence
 ```
 
-The journals are deliberately subjective and Thread-voiced; the same meeting may feel different to each participant. Journal is not memory. The in-repository proof demonstrates one declined compatible meeting and one accepted meeting whose journals diverge emotionally while only one participant retains autobiographical memory.
+Meeting remains a special voluntary social wrapper:
 
-**Current N5 stop condition:** provision the additive private Thread-object R2 bucket, deploy World/Admin, and exercise this exact path between two real staging Threads. Existing presentation R2 assets require no migration.
+```text
+meeting request
+  -> exact LivedNow
+  -> accept | decline | defer
+  -> if participation requirements pass:
+       Encounter Story
+       -> Thread Experience(s)
+```
+
+The first implementation spike produced useful pieces that should be reused where they survive the broader model:
+
+- independent ensure-LivedNow;
+- place compatibility across Thread-specific situated-life evidence;
+- meeting stance;
+- n-ary shared-story persistence direction;
+- witness-aware aftermath direction;
+- Thread-specific journal book in private R2;
+- rich Admin journal presentation;
+- journal separated from autobiographical memory.
+
+But the spike overfit orchestration to invited social meetings. It is **not accepted for deployment**.
+
+Current repository validation is also red at the spike head: the old dyadic N5 tests target a superseded store API, and a separate existing live-command acceptance test reports 403 vs 503. Do not rebuild the dyadic API just to satisfy the obsolete tests.
+
+The approved review target is [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md):
+
+1. E0 reconcile the spike and restore one coherent green model;
+2. E1 environmental Encounter Story + noticing + Thread Experience;
+3. E2 social meeting as a gated encounter;
+4. E3 n-ary story + silent witness consequence;
+5. E4 journal book/Admin acceptance;
+6. E5 staging acceptance.
+
+The three core semantic proofs are:
+
+- **environmental encounter** — an unscheduled bee/flower/cloud/etc. can enter one Thread's attention and selectively matter;
+- **voluntary meeting** — compatible presence does not force participation;
+- **witness asymmetry** — one shared social story can affect a silent witness differently from the actors.
+
+No sensory simulator, generic event bus, universal entity ontology or conversation framework.
+
 
 ## N6 — rich insidefibre.com meeting
 
@@ -245,7 +275,7 @@ Prefer a few organism-level proofs:
 2. **historical honesty** — retrospective materialization is inspectable;
 3. **selective retention** — catch-up history can be remembered or forgotten through the normal memory authority;
 4. **Person meet** — `/meet` joins an already-established current scene;
-5. **Thread meet** — two independently current Threads independently choose to participate, share one compatible encounter, and form different private consequences;
+5. **Encounter** — one objective World story can become different Thread-specific experiences, including environmental noticing, voluntary social encounter and silent witnessing;
 6. **continued life** — a later visit finds later life, not a resumed chat session;
 7. **idempotence** — retrying catch-up does not duplicate plans, events, memories or encounters.
 
