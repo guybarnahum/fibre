@@ -59,6 +59,7 @@ test("E1 an unscheduled World occurrence may enter lived attention or pass unnot
     stateScopeId:"world",
   };
 
+  let experienceStore = null;
   try {
     const activeThread = thread();
     const world = openWorldStore(storage);
@@ -75,7 +76,7 @@ test("E1 an unscheduled World occurrence may enter lived attention or pass unnot
       activity:"walking slowly along a park path, looking down and around without urgency",
       evidenceRefs:["evt_e1_park_presence"],
     };
-    const experienceStore = openLivedExperienceStore(storage);
+    experienceStore = openLivedExperienceStore(storage);
     const retained = [];
     const invocations = [];
 
@@ -173,7 +174,7 @@ test("E1 an unscheduled World occurrence may enter lived attention or pass unnot
     assert.equal(missed.aftermath, null, "unnoticed occurrence must not create private aftermath");
     assert.equal(retained.length, 1, "unnoticed occurrence must not create memory");
   } finally {
-    experienceStore.close();
+    experienceStore?.close();
     rmSync(directory, { recursive:true, force:true });
   }
 });
