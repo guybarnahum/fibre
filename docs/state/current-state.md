@@ -126,7 +126,7 @@ A Thread may be computationally frozen while world time passes.
 
 For a lived Thread, compute dormancy is not automatically treated as a literal pause in the person's Fibre-world life.
 
-When Fibre next needs the present, World may retrospectively realize a bounded continuation across the gap.
+When Fibre next needs the present, World may retrospectively realize a bounded continuation across the gap. Thaw therefore means restoring lived continuity—not reopening the stale last CurrentSituation as though no time passed.
 
 The system must preserve both:
 
