@@ -44,14 +44,15 @@ bounded multi-day LivedNow catch-up + plan renewal         PROVEN
 Genesis -> same continuing LivedNow path                   PROVEN
 wired /meet over continuous LivedNow                       PROVEN
 live deployed /meet acceptance                             PROVEN
-Thread -> Thread reciprocal meeting                       NOT YET
+Thread -> Thread reciprocal meeting implementation        PROVEN
+live deployed Thread -> Thread acceptance                  NOT YET
 ```
 
 The important correction is:
 
 > **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
 
-N4 is now closed in deployment: Person -> Thread meeting entry depends on a freshly reconciled World-owned present, and a live encounter succeeded against the exact returned `situationId`. The active milestone risk is now reciprocal Thread -> Thread meeting between two independently current lives.
+N4 is closed in deployment. N5 is implemented and green in-repository: two independently reconciled Threads form independent participation stances; compatible mutual acceptance creates one shared objective meeting and separate private aftermath; a decline creates no encounter. The active milestone risk is deployed acceptance against real staging Threads.
 
 See:
 
@@ -93,10 +94,10 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
-- Thread-to-Thread meetings between two independently current lives;
+- deployed acceptance of Thread-to-Thread meeting between two real independently current Threads;
 - a rich public scene driven by that continuous present.
 
-The deployed public stack now executes that path against a real Thread without falling back to a prepared or stale scene. The next risk is whether two independently continuing Threads can share one compatible encounter while preserving one shared occurrence and different private aftermath.
+The reciprocal meeting implementation now proves the intended causal shape in-repository: separate LivedNow reconciliation, independent `accept | decline | defer` appraisal, place/context compatibility, one shared objective meeting only after mutual acceptance, and participant-specific journal/memory aftermath. The remaining N5 risk is whether the deployed staging world has two genuinely compatible lives and executes the same path without arranging or teleporting them.
 
 ## Continuous LivedNow
 
@@ -201,13 +202,17 @@ Before the encounter:
 - their physical or mediated presences are compatible;
 - each independently chooses whether to participate now.
 
-Only after compatible presence and mutual participation does the shared encounter become common objective history or linked evidence, while each participant independently interprets and retains it.
+Only after compatible presence and mutual participation does the shared encounter become common objective history. Each participant then records her own private encounter experience and may write a journal entry in her own voice before independently retaining or forgetting the event.
 
 ```text
 shared occurrence
-  -> Thread A private aftermath
-  -> Thread B private aftermath
+  -> Thread A private journal -> retained memory or not_remembered
+  -> Thread B private journal -> retained memory or not_remembered
 ```
+
+The journal is contemporaneous private interpretation, not objective history and not autobiographical memory. The same shared meeting can therefore be described with different feelings and meaning by each Thread without contradiction.
+
+The current Admin Observatory can read the private R2 journal book. Journal artifacts live at `journals/<threadId>/journal.md` in the additive private Thread-object bucket; existing immutable presentation assets remain in their established presentation bucket and require no migration.
 
 Shared event does not imply shared meaning.
 
@@ -237,22 +242,24 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 ## Immediate next action
 
-Do not build another planner, simulator or conversation framework.
+Do not build another planner, scheduler, social framework or journal subsystem.
 
-N1-N3 establish the same continuing-life mechanism from birth through dormancy. N4 now wires Person -> Thread meeting entry through that seam and binds interaction to the exact published `situationId`. The immediate next work is to deploy and exercise that path before calling N4 closed.
-
-The next implementation should advance this exact capability:
+The N5 organism path is implemented. The immediate next work is deployed acceptance:
 
 ```text
-select Thread
-  -> ensure LivedNow(now)
-  -> publish exact reconciled present
-  -> visitor enters that situation
-  -> World verifies the same situation
-  -> cognition / encounter consequence
+Thread A ensure LivedNow(now) ─┐
+                               ├-> resolve compatible presence
+Thread B ensure LivedNow(now) ─┘
+        -> independent meeting stances
+        -> mutual acceptance or no meeting
+        -> one shared encounter
+        -> two private journal accounts
+        -> independent memory retention
 ```
 
-The meeting must not author location, activity, companions, plan or private state.
+Provision the new private Thread-object R2 bucket, deploy World/Admin, then exercise the path using two real staging Threads whose lives are actually compatible. An incompatible result is truthful and must not be repaired by teleporting or silently replanning either Thread.
+
+N5 closes only after live acceptance confirms the shared event plus asymmetric private aftermath and the journal books are inspectable in Admin.
 
 ## Development discipline
 
