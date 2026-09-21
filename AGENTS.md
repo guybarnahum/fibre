@@ -176,6 +176,12 @@ Rules:
 
 ## Implementation rules
 
+- Keep Fibre implementation light and elegant: minimal boilerplate, no generic framework unless a concrete Fibre capability requires it, and no drift into security/hardening or unrelated engineering concerns unless explicitly requested or a demonstrated Fibre need makes them necessary.
+- Every piece of code must justify itself by how much it advances the ambitious Fibre vision — persistent artificial persons with causal identity, history, relationships, agency, lived continuity and consequence — not merely by making the system more complete in a generic software-engineering sense.
+- Prefer the smallest organism-level mechanism that proves the largest credible Fibre architecture. Do not add abstractions merely because they might be useful later.
+- Tests are held to an even higher bar: they must be high-value, semantic and non-brittle; fail with short meaningful messages; and validate a Fibre capability or invariant rather than incidental HTTP, header, CSS, helper-order, adapter-shape or plumbing detail unless that detail itself carries semantic authority.
+
+
 - Domain packages must remain portable and avoid direct Cloudflare/AWS dependencies.
 - LLM output may propose private stance, disclosure, and state changes but may not directly alter balances, permissions, identity facts, relationships, contracts, or authorization.
 - Full task execution requires a request-bound accepted Participation Authorization, not an inferred response or a free-form LLM claim.
