@@ -26,7 +26,7 @@ function response(status, body) {
   };
 }
 
-test("OpenAI transport projects provider-risk constraints and mechanically recovers uniqueItems", async () => {
+test("OpenAI transport preserves supported array bounds and recovers unsupported uniqueness", async () => {
   const frozenHash = passBResponseSchemaHash();
   const canonicalBefore = structuredClone(GENESIS_PASS_B_RESPONSE_SCHEMA);
   const projected = projectOpenAIStructuredOutputSchema(GENESIS_PASS_B_RESPONSE_SCHEMA);
@@ -38,7 +38,7 @@ test("OpenAI transport projects provider-risk constraints and mechanically recov
   assert.equal(Object.hasOwn(projected.properties.episodeRefs, "uniqueItems"), false);
   assert.equal(Object.hasOwn(projected.properties.rememberedContent, "maxLength"), false);
   assert.equal(Object.hasOwn(projected.properties.uncertainty.items, "maxLength"), false);
-  assert.equal(Object.hasOwn(projected.properties.uncertainty, "maxItems"), false);
+  assert.equal(projected.properties.uncertainty.maxItems, 8);
   assert.deepEqual(GENESIS_PASS_B_RESPONSE_SCHEMA, canonicalBefore);
   assert.equal(passBResponseSchemaHash(), frozenHash);
 
@@ -74,7 +74,7 @@ test("OpenAI transport projects provider-risk constraints and mechanically recov
   assert.equal(Object.hasOwn(sent.properties.episodeRefs, "uniqueItems"), false);
   assert.equal(Object.hasOwn(sent.properties.rememberedContent, "maxLength"), false);
   assert.equal(Object.hasOwn(sent.properties.uncertainty.items, "maxLength"), false);
-  assert.equal(Object.hasOwn(sent.properties.uncertainty, "maxItems"), false);
+  assert.equal(sent.properties.uncertainty.maxItems, 8);
   assert.deepEqual(result.output.episodeRefs, ["ep_1", "ep_2"]);
   assert.equal(passBResponseSchemaHash(), frozenHash, "transport recovery must not change Fibre canonical schema identity");
 });
