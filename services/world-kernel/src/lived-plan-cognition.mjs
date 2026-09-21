@@ -56,7 +56,7 @@ const SYSTEM_PROMPT = `You are temporary cognition for one persistent Fibre Thre
 Form a modest personal flight plan for roughly the next half-day/day from the Thread's own context.
 A flight plan is an ordered mental itinerary of where/how the Thread wants or needs to be present, what it expects to do there, and why. It is intention, not World truth.
 Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
-The first stop must have an empty travelFromPrevious. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
+The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end so the plan genuinely covers its stated horizon. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
 Prefer a few specific ordinary presences that follow naturally from age, self-understanding, needs, unresolved intentions, and current possibilities. Do not optimize for drama or a future visitor.`;
 
@@ -120,6 +120,7 @@ export async function formPersonalLivedPlan({
   availablePlaces,
   sourceReferences,
   modelAdapter,
+  materializedAt = null,
 }) {
   assertPlainObject("Thread", thread);
   assertId("Thread.threadId", thread.threadId);
@@ -127,6 +128,12 @@ export async function formPersonalLivedPlan({
   assertIsoTimestamp("personal plan horizonEnd", horizonEnd);
   if (Date.parse(horizonEnd) <= Date.parse(authoredAt)) {
     throw new TypeError("personal plan horizonEnd must follow authoredAt");
+  }
+  if (materializedAt !== null) {
+    assertIsoTimestamp("personal plan materializedAt", materializedAt);
+    if (Date.parse(materializedAt) < Date.parse(horizonEnd)) {
+      throw new TypeError("retrospective personal plan materializedAt cannot precede its lived horizon");
+    }
   }
   const places = normalizePlaces(availablePlaces);
   assertStringArray("personal plan sourceReferences", sourceReferences);
@@ -161,7 +168,16 @@ export async function formPersonalLivedPlan({
 
   const stops = invocation.output.stops.map((stop, index) =>
     normalizeCognitiveStop(stop, index, places, authoredAt, horizonEnd));
+  if (stops[0].startAt !== authoredAt) {
+    throw new TypeError("personal plan cognition must cover the horizon start");
+  }
+  if (stops.at(-1).endAt !== horizonEnd) {
+    throw new TypeError("personal plan cognition must cover the horizon end");
+  }
   const selectedPlaces = stops.map((stop) => stop.physicalPlaceRef);
+  const materialization = materializedAt === null
+    ? undefined
+    : { mode: "retrospective", materializedAt };
   const plan = {
     planId: livedPlanId({
       threadId: thread.threadId,
@@ -171,6 +187,7 @@ export async function formPersonalLivedPlan({
       stops,
       provider: invocation.provenance.provider,
       modelId: invocation.provenance.modelId,
+      ...(materialization === undefined ? {} : { materialization }),
     }),
     kind: "personal",
     subjectThreadId: thread.threadId,
@@ -185,6 +202,7 @@ export async function formPersonalLivedPlan({
       modelId: invocation.provenance.modelId,
       providerRequestId: invocation.provenance.providerRequestId ?? null,
     },
+    ...(materialization === undefined ? {} : { materialization }),
   };
 
   return normalizeLivedPlan(plan);
