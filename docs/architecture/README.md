@@ -8,6 +8,7 @@ Architecture documents define technical authorities, boundaries, flows, storage/
 
 - [`system-overview.md`](system-overview.md) — primary planes and responsibility boundaries.
 - [`intrinsic-regulation.md`](intrinsic-regulation.md) — private predictive drives, intrinsic affect, interoception, person/place presence targets, and the active R1-R4 detour.
+- [`lived-now-and-meetings.md`](lived-now-and-meetings.md) — continuous present-life reconciliation across dormancy, Flight Plan renewal, and Person/Thread meetings that enter already-existing lives.
 - [`../concepts/emotions-and-needs.md`](../concepts/emotions-and-needs.md) — meaning-bearing semantic emotion/need doctrine above the regulatory layer.
 - [`thread-lifecycle.md`](thread-lifecycle.md) — activation, cognition, freeze and lifecycle behavior.
 - [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md) — canonical distinction between evolving old authoritative representations, reconstructing derivable state, and resuming quarantined work.
