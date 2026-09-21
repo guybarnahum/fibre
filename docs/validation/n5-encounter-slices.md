@@ -80,9 +80,9 @@ Stop condition:
 - no claim that N5 is deployed or complete;
 - no new capability beyond conceptual reconciliation.
 
-## Slice E1 — Encounter Story + noticing + Thread Experience
+## Slice E1 — Encounter Story + noticing + Thread Experience + visualization prompt
 
-**Goal:** prove the general lived causal seam.
+**Goal:** prove the general lived causal seam and make every admitted Encounter Story reproducibly visualizable without requiring a render.
 
 Minimal contract:
 
@@ -96,7 +96,20 @@ EncounterStory
 
 Encounter Story owns observable World facts. Thread Experience owns what entered this Thread's lived attention and the immediate subjective experience.
 
-At Encounter Story admission, also derive a rich objective `visualizationPrompt` from admitted observable evidence. The prompt must be rich enough for a still or short video later, but must not contain private Thread interpretation. Rendering remains optional.
+At Encounter Story admission, derive and durably bind a rich objective `visualizationPrompt` from the same admitted observable evidence.
+
+The E1 Encounter Story companion should minimally carry:
+
+```text
+visualizationPrompt
+visualizationPromptDigest
+visualizationSourceReferences[]
+depictedThreadRefs[]
+```
+
+The prompt is media-neutral scene reconstruction authority: rich enough for a still or short video later, but containing no private Thread interpretation. If a depicted Thread has an admitted canonical visual identity, that identity reference and chronology-derived encounter age belong in the bound visualization inputs rather than being re-derived from future mutable state.
+
+Rendering remains optional and is not an encounter completion obligation.
 
 No sensory simulator. No universal entity ontology.
 
@@ -158,9 +171,9 @@ This is the core proof that shared event != shared meaning.
 
 The shared Encounter Story has one objective visualization prompt. A later memory reconstruction for A, B or C is separately derived from that Thread's retained memory and may legitimately look different.
 
-## Slice E4 — Journal book + encounter visualization + Admin acceptance
+## Slice E4 — Journal book + optional encounter rendering + Admin acceptance
 
-**Goal:** make private lived reflection inspectable without making it memory authority, and make the shared Encounter Story reproducibly visualizable without making generated media history.
+**Goal:** make private lived reflection inspectable without making it memory authority, and prove the E1 Encounter Story visualization lineage can be inspected and optionally rendered through existing generated-asset machinery.
 
 Keep:
 
@@ -176,8 +189,8 @@ Prove in Admin:
 - feelings and subjective interpretation can differ across Threads;
 - journal entry does not imply memory;
 - R2 book is presentation of private journal authority, not semantic authority;
-- Encounter Story exposes its rich visualization prompt and evidence/provenance;
-- optional encounter image/video generation can use the same prompt lineage;
+- Encounter Story exposes the E1 rich visualization prompt and evidence/provenance;
+- optional encounter image/video generation can consume that same prompt lineage through existing generated-asset machinery;
 - generated encounter media is replaceable representation, never World evidence or private experience authority;
 - depicted Threads use their own canonical visual references and chronology-derived ages.
 
@@ -195,7 +208,7 @@ Live acceptance should exercise:
 4. different journal accounts from the same shared story;
 5. asymmetric memory retention;
 6. Admin journal rendering;
-7. one Encounter Story visualization prompt that can feed a still render and is semantically suitable for a short-video renderer without changing encounter truth.
+7. one E1 Encounter Story visualization prompt that can feed a still render and is semantically suitable for a short-video renderer without changing encounter truth.
 
 N5 closes only after those behaviors work against real staging Threads.
 
