@@ -123,7 +123,6 @@ export function createThreadJournalBook({ objectStore }) {
       return Object.freeze({
         objectKey:journalKey(threadId),
         profile:activeProfile,
-        document,
       });
     },
   });
