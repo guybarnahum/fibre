@@ -97,7 +97,6 @@ async function chooseThread(options) {
 
 export async function openThreadMeeting({
   threadId,
-  currentPresent = null,
   environment,
   baseUrl,
   fetchImpl = globalThis.fetch,
@@ -106,13 +105,11 @@ export async function openThreadMeeting({
   const selectedThreadId = threadId.trim();
   const encoded = encodeURIComponent(selectedThreadId);
   const api = meetingBaseUrl({ environment, baseUrl });
-  let present = currentPresent?.payload ?? currentPresent;
-  if (present === null) {
-    const snapshot = await body(await fetchImpl(`${api}/api/threads/${encoded}/snapshot`, {
-      headers:{ Accept:"application/json" },
-    }));
-    present = snapshot?.currentPresent?.payload;
-  }
+  const entry = await body(await fetchImpl(`${api}/api/threads/${encoded}/meet`, {
+    method:"POST",
+    headers:{ Accept:"application/json" },
+  }));
+  const present = entry?.currentPresent?.payload;
   const situationId = present?.situationId;
   if (typeof situationId !== "string" || situationId === "") throw new Error("Thread has no published current situation");
 
@@ -186,7 +183,6 @@ async function main(args) {
         await interactiveMeeting({
           ...options,
           threadId:selected.threadId,
-          currentPresent:selected.currentPresent,
         });
         return;
       } catch (error) {
