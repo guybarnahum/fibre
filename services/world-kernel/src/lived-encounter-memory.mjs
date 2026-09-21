@@ -257,27 +257,28 @@ export async function formLivedEncounterMemory({
   });
 }
 
-export async function formSharedEncounterMemory({
+export async function formEncounterStoryMemory({
   livedContext,
   experienceRecord,
-  sharedEncounter,
+  encounterStory,
   journalEntry,
   memoryStore,
   modelAdapter,
 }) {
-  assertPlainObject("shared encounter experience", experienceRecord);
-  assertId("shared encounter experience.experienceId", experienceRecord.experienceId);
-  assertId("shared encounter experience.threadId", experienceRecord.threadId);
-  assertId("shared encounter experience.situationId", experienceRecord.situationId);
-  assertPlainObject("shared encounter", sharedEncounter);
-  assertId("shared encounter.sharedEventId", sharedEncounter.sharedEventId);
-  if (experienceRecord.sharedEventRef !== sharedEncounter.sharedEventId) {
-    throw new TypeError("shared experience does not cite this encounter story");
+  assertPlainObject("Thread experience", experienceRecord);
+  assertId("Thread experience.experienceId", experienceRecord.experienceId);
+  assertId("Thread experience.threadId", experienceRecord.threadId);
+  assertId("Thread experience.situationId", experienceRecord.situationId);
+  assertPlainObject("Encounter Story", encounterStory);
+  assertId("Encounter Story.encounterId", encounterStory.encounterId);
+  if (experienceRecord.encounterRef !== encounterStory.encounterId) {
+    throw new TypeError("Thread experience does not cite this Encounter Story");
   }
   if (journalEntry !== null) {
-    assertPlainObject("shared encounter journal", journalEntry);
-    if (journalEntry.threadId !== experienceRecord.threadId || journalEntry.aboutExperienceRef !== experienceRecord.experienceId) {
-      throw new TypeError("shared encounter journal does not belong to this Thread experience");
+    assertPlainObject("experience journal", journalEntry);
+    if (journalEntry.threadId !== experienceRecord.threadId
+      || journalEntry.aboutExperienceRef !== experienceRecord.experienceId) {
+      throw new TypeError("experience journal does not belong to this Thread experience");
     }
   }
   return formExperienceMemory({
@@ -286,13 +287,12 @@ export async function formSharedEncounterMemory({
     occurredAt:experienceRecord.occurredAt,
     situationId:experienceRecord.situationId,
     experience:{
-      kind:"shared_encounter_story",
-      role:experienceRecord.role,
-      sharedEventRef:sharedEncounter.sharedEventId,
-      story:sharedEncounter.story,
+      kind:"encounter_story",
+      encounterRef:encounterStory.encounterId,
+      story:encounterStory.story,
     },
     journalEntryText:journalEntry?.entryText ?? null,
-    slot:"shared-encounter",
+    slot:"encounter-story",
     memoryStore,
     modelAdapter,
   });
