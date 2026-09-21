@@ -58,9 +58,11 @@ The active goal is:
 
 > **A Thread's life should reach “now” before anyone meets them.**
 
-Today Fibre can persist a Flight Plan and CurrentSituation. It does not yet automatically cover several hours or days of frozen/dormant wall-clock time.
+Fibre now has one World-owned, idempotent ensure-LivedNow seam for a requested time already covered by an admitted personal Flight Plan. It can enact plan-derived movement/presence, respect a required care constraint, and refuses caller-authored scene fields.
 
-The next capability is:
+It still does not automatically cover several hours or days of frozen/dormant wall-clock time. When plan coverage is absent, the seam currently fails rather than presenting a stale scene.
+
+The active N2 capability is:
 
 ```text
 last lived anchor
