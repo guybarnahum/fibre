@@ -56,6 +56,7 @@ const SYSTEM_PROMPT = `You are temporary cognition for one persistent Fibre Thre
 Form a modest personal flight plan for roughly the next half-day/day from the Thread's own context.
 A flight plan is an ordered mental itinerary of where/how the Thread wants or needs to be present, what it expects to do there, and why. It is intention, not World truth.
 Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
+When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end so the plan genuinely covers its stated horizon. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
 Prefer a few specific ordinary presences that follow naturally from age, self-understanding, needs, unresolved intentions, and current possibilities. Do not optimize for drama or a future visitor.`;
@@ -121,6 +122,7 @@ export async function formPersonalLivedPlan({
   sourceReferences,
   modelAdapter,
   materializedAt = null,
+  startingPlaceRef = null,
 }) {
   assertPlainObject("Thread", thread);
   assertId("Thread.threadId", thread.threadId);
@@ -136,6 +138,12 @@ export async function formPersonalLivedPlan({
     }
   }
   const places = normalizePlaces(availablePlaces);
+  if (startingPlaceRef !== null) {
+    assertId("personal plan startingPlaceRef", startingPlaceRef);
+    if (!places.some((place) => place.ref === startingPlaceRef)) {
+      throw new TypeError("personal plan startingPlaceRef must be one of the available places");
+    }
+  }
   assertStringArray("personal plan sourceReferences", sourceReferences);
   if (sourceReferences.length === 0) throw new TypeError("personal plan sourceReferences must not be empty");
   if (modelAdapter === null || typeof modelAdapter !== "object" || typeof modelAdapter.invoke !== "function") {
@@ -147,12 +155,21 @@ export async function formPersonalLivedPlan({
     developmentalContext: context,
     horizon: { startAt: authoredAt, endAt: horizonEnd },
     availablePlaces: places,
+    ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
   };
   const invocation = await modelAdapter.invoke({
     systemPrompt: SYSTEM_PROMPT,
     input,
     responseSchema: PERSONAL_PLAN_SCHEMA,
-    clientRequestId: requestId({ threadId: thread.threadId, authoredAt, horizonEnd, places, sourceReferences }),
+    clientRequestId: requestId({
+      threadId: thread.threadId,
+      authoredAt,
+      horizonEnd,
+      places,
+      sourceReferences,
+      materializedAt,
+      startingPlaceRef,
+    }),
   });
   assertPlainObject("personal plan cognition result", invocation);
   assertPlainObject("personal plan cognition output", invocation.output);
@@ -170,6 +187,9 @@ export async function formPersonalLivedPlan({
     normalizeCognitiveStop(stop, index, places, authoredAt, horizonEnd));
   if (stops[0].startAt !== authoredAt) {
     throw new TypeError("personal plan cognition must cover the horizon start");
+  }
+  if (startingPlaceRef !== null && stops[0].physicalPlaceRef !== startingPlaceRef) {
+    throw new TypeError("personal plan cognition must continue from the supplied starting place");
   }
   if (stops.at(-1).endAt !== horizonEnd) {
     throw new TypeError("personal plan cognition must cover the horizon end");
