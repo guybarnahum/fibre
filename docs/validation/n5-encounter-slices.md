@@ -79,56 +79,62 @@ The durable Encounter Story visualization prompt is intentionally implemented in
 
 E0 adds no new lived capability; it establishes one coherent base for E1.
 
-## Slice E1 — Encounter Story + noticing + Thread Experience + visualization prompt — CURRENT
+## Slice E1 — Encounter Story + noticing + Thread Experience + visualization prompt — CLOSED
 
 **Goal:** prove the general lived causal seam and make every admitted Encounter Story reproducibly visualizable without requiring a render.
 
-Minimal contract:
+Implemented causal path:
 
 ```text
-EncounterStory
-  + exact CurrentSituation
-  + bounded Thread-owned context
-    -> noticed | not_noticed
-    -> if noticed: ThreadExperience
+explicit bounded World occurrence
+  -> exact LivedNow
+  -> objective Encounter Story
+       + Thread presence
+       + durable rich visualization prompt/evidence lineage
+  -> Thread-owned attention appraisal
+       noticed | not_noticed
+  -> if noticed: Thread Experience in first-person natural language
+  -> optional journal
+  -> selective memory / not_remembered
 ```
 
-Encounter Story owns observable World facts. Thread Experience owns what entered this Thread's lived attention and the immediate subjective experience.
+The environmental seam takes only a stable `occurrenceRef` plus natural-language observable description. It does not create a weather engine, sensory simulator or object ontology.
 
-At Encounter Story admission, derive and durably bind a rich objective `visualizationPrompt` from the same admitted observable evidence.
-
-The E1 Encounter Story companion should minimally carry:
+Encounter Story now persists:
 
 ```text
+story
+threadPresence[]
 visualizationPrompt
 visualizationPromptDigest
 visualizationSourceReferences[]
 depictedThreadRefs[]
 ```
 
-The prompt is media-neutral scene reconstruction authority: rich enough for a still or short video later, but containing no private Thread interpretation. If a depicted Thread has an admitted canonical visual identity, that identity reference and chronology-derived encounter age belong in the bound visualization inputs rather than being re-derived from future mutable state.
+The visualization prompt is deterministic, evidence-bound and media-neutral. It contains explicit scene, observable progression, visual direction, unspecified-detail rules and truth constraints so the same authority can later ground a representative still or a short video. Rendering remains optional.
 
-Rendering remains optional and is not an encounter completion obligation.
+If no canonical visual identity is bound, the prompt explicitly refuses to invent an identifiable Thread appearance. E4 will connect optional rendering and admitted identity references.
 
-No sensory simulator. No universal entity ontology.
+Attention is durably recorded so retries cannot turn a previously unnoticed occurrence into a later noticed one. `not_noticed` creates no Thread Experience. `noticed` atomically creates a Thread Experience with the immediate first-person experience text, and journal/memory cognition receives that personal experience rather than only the objective story.
 
-### E1 organism proof: environmental encounter
+### E1 organism proof
 
-A Thread whose Flight Plan puts her in a park encounters a small unscheduled occurrence such as a bee landing on a flower.
+The accepted proof uses a Thread already walking through a park because of ordinary LivedNow:
 
-Prove:
+- a bee landing on a flower is introduced as an unscheduled World occurrence;
+- the objective story is admitted independently of whether the Thread notices it;
+- the bee enters attention and becomes a personal calming/attention-shifting experience;
+- that experience reaches ordinary selective autobiographical retention;
+- a separate cloud occurrence in the same lived setting is admitted but passes `not_noticed`;
+- the unnoticed cloud creates no Thread Experience, journal aftermath or memory;
+- the encounter visualization is rich and reconstructable but does not invent an unbound likeness.
 
-- the bee/flower occurrence is not pre-authored in the Flight Plan;
-- the admitted story has a reproducible rich visualization prompt even if no image/video is generated;
-- the Thread may notice or not notice it;
-- if noticed, her experience is personal and may stir thought/feeling;
-- journal is optional;
-- memory is independently retained or not;
-- later cognition sees only persisted consequence.
+This proves that life can grow from what happens **while following plans**, and that objective World occurrence remains distinct from lived attention.
 
-This proves life can grow from what happens **while** following plans.
+Full active and complete test suites, repository validation and all Cloudflare deployment dry-runs are green.
 
-## Slice E2 — Social meeting as a gated encounter
+
+## Slice E2 — Social meeting as a gated encounter — CURRENT
 
 **Goal:** reuse the general seam for voluntary social encounter.
 
