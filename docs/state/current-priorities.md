@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + meetings**.
 
-The bounded M2 slices proved the core pieces of a lived person, but they do not yet make a Thread continuously current across wall-clock dormancy. The next work is to compose those proven primitives into one World-owned continuity capability and make every meeting enter that life.
+The bounded M2 slices proved the core pieces of a lived person, and N1 now composes covering Flight Plan intent into one World-owned present. Fibre is not yet continuously current across wall-clock dormancy; the active work is N2 retrospective catch-up and plan renewal before any deployed meeting enters that life.
 
 Canonical architecture:
 
