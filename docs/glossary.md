@@ -1,7 +1,7 @@
 ---
 id: fibre-glossary
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-21
 canonical: true
 ---
 
@@ -31,7 +31,13 @@ canonical: true
 
 **Lived catch-up** — Retrospective realization of an uncovered interval in a lived Thread's Fibre-world life. Catch-up history must preserve that it was materialized later, and memory may arise only through normal experience/retention authority.
 
-**Meeting** — A shared encounter that enters one or more already-existing lived presents. A Person -> Thread or Thread -> Thread meeting may create shared history, but each Thread retains separate private interpretation, memory and consequence.
+**Encounter Story** — A bounded objective World account of what observably occurred around one or more Threads. It may involve people, Threads, animals, objects, places, weather or other World phenomena. It owns shared facts, not private interpretation.
+
+**Thread Experience** — What a particular Thread actually noticed and privately experienced from an encounter story. Co-presence does not automatically create experience; different Threads may notice different parts or nothing at all.
+
+**Meeting** — A voluntary social encounter that enters one or more already-existing lived presents. A meeting adds a Thread-owned participation stance such as accept, decline or defer before the social encounter occurs. Meeting is a special case of encounter, not the general primitive.
+
+**Journal** — A Thread's private contemporaneous writing about lived experience. Journal is subjective reflection and may contain feelings, ambiguity and personal interpretation; it is neither objective history nor automatically autobiographical memory.
 
 **Thread Context Capsule** — The bounded, task-relevant context assembled for a cognitive episode.
 
