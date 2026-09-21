@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + meetings**.
 
-The bounded M2 slices proved the core pieces of a lived person, and N1 now composes covering Flight Plan intent into one World-owned present. Fibre is not yet continuously current across wall-clock dormancy; the active work is N2 retrospective catch-up and plan renewal before any deployed meeting enters that life.
+The bounded M2 slices proved the core pieces of a lived person. N1 composes covering Flight Plan intent into one World-owned present, and N2 now restores a stale lived Thread across a bounded multi-day dormant interval with sparse retrospective plan/situation materialization, explicit materialization provenance and fresh forward plan coverage. The active work is N3: make a newly born Thread enter this same continuing-life path without a special fixture.
 
 Canonical architecture:
 
@@ -49,8 +49,8 @@ Therefore Fibre should no longer describe the remaining work as merely “run th
 
 ```text
 N1  World-owned ensure-LivedNow seam                      CLOSED
-N2  dormant/frozen interval catch-up                      CURRENT
-N3  Genesis -> first LivedNow -> multi-day continuity     NEXT
+N2  dormant/frozen interval catch-up                      CLOSED
+N3  Genesis -> first LivedNow -> multi-day continuity     CURRENT
 N4  Person -> Thread /meet over real LivedNow             NEXT
 N5  Thread -> Thread reciprocal meeting                   NEXT
 N6  rich insidefibre.com lived meeting                    NEXT
@@ -66,13 +66,13 @@ Do not create a parallel life engine.
 
 World now has one narrow `ensure({ threadId, at })` seam. For time already covered by an admitted personal Flight Plan, it deterministically enacts the World-owned CurrentSituation, respects a covering required care constraint, rejects caller-authored scene fields, and is idempotent for the same requested present.
 
-When no personal Flight Plan covers the requested time, the seam fails rather than reusing a stale CurrentSituation or inventing a meeting scene. That failure is the explicit handoff to N2; N1 does not pretend dormant catch-up already exists.
+When no personal Flight Plan covers the requested time, the seam still refuses to reuse a stale CurrentSituation or accept a meeting-authored scene. With the N2 reconciliation dependencies present, that uncovered interval now routes into bounded dormant catch-up before the present is established.
 
 The seam composes existing `LivedNowStore`, Flight Plan, care-resolution and CurrentSituation authorities. It does not create another planner, scheduler or life store.
 
-## N2 — dormant interval catch-up
+## N2 — dormant interval catch-up — CLOSED
 
-A lived Thread may be computationally frozen while world time passes.
+A lived Thread may be computationally frozen while world time passes. The first N2 proof now takes a valid prior lived anchor across a three-day dormant gap, consumes the remaining already-authored plan coverage first, materializes only a bounded number of retrospective plan/situation windows, authors fresh forward coverage, and establishes a non-stale present.
 
 When an uncovered interval exists, World may retrospectively realize the smallest credible continuation:
 
@@ -100,7 +100,9 @@ retrospectively admitted event
   -> selective memory or not_remembered
 ```
 
-Quiet time should remain sparse. This is not a minute-by-minute simulator.
+Quiet time remains sparse. This is not a minute-by-minute simulator.
+
+The admitted retrospective records preserve both their lived timestamps and `materialization: { mode: "retrospective", materializedAt }`. Catch-up is bounded to a small number of windows, continues from the prior lived place instead of teleporting, and retrying the same requested present does not regenerate the gap. The quiet-gap proof does not manufacture an encounter or memory merely to demonstrate consequence; when future catch-up synthesis admits an event that warrants consequence, it must use the ordinary experience/retention authorities already proven by B1/B2.
 
 ## N3 — Genesis to continuing life
 
