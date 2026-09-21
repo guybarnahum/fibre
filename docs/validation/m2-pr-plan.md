@@ -131,7 +131,7 @@ The bounded N1 seam is now implemented and green: the same Thread/time/input sta
 
 N1 intentionally does not fill an uncovered interval. That is N2.
 
-## N2 — dormant interval catch-up — CURRENT
+## N2 — dormant interval catch-up — CLOSED
 
 ### Capability
 
@@ -148,17 +148,23 @@ Fill uncovered lived time without continuously running the Thread.
 - run ordinary consequence authorities for events that warrant consequence;
 - quiet intervals may be compressed.
 
-### First proof
+### First proof — accepted
 
-Freeze/dormant a lived Thread with a valid prior anchor, advance several days, reconcile to now, and verify:
+A lived Thread with a valid prior anchor is advanced across a three-day dormant gap and reconciled to the requested present.
+
+The proof verifies:
 
 - the stale prior scene is not reused as current;
-- one or more bounded plans cover the gap/current horizon;
-- catch-up provenance is inspectable;
-- the present follows causally from prior life;
-- retry produces no duplicate history/plans/memories.
+- already-authored plan coverage is consumed before retrospective synthesis;
+- a bounded number of retrospective plan/situation windows cover the elapsed gap;
+- lived chronology remains distinct from later `materializedAt` chronology;
+- retrospective planning continues from the prior lived place rather than teleporting;
+- a fresh forward Flight Plan exists at the requested present;
+- retrying the same present does not regenerate the elapsed life.
 
-## N3 — Genesis -> first continuous life
+This first proof intentionally uses a quiet interval. It does not fabricate an encounter or autobiographical memory solely to make catch-up look consequential. Events that warrant consequence must continue through the existing ordinary history/experience/retention authorities.
+
+## N3 — Genesis -> first continuous life — CURRENT
 
 A new Thread must leave Genesis through the same seam used later.
 
