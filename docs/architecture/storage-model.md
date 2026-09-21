@@ -1,7 +1,7 @@
 ---
 id: architecture-storage-model
 status: accepted
-last-reviewed: 2026-08-31
+last-reviewed: 2026-09-21
 canonical: true
 ---
 
@@ -216,11 +216,29 @@ not in a reconstructed G/H freeze hierarchy.
 
 ## Production object storage boundary
 
-Production Fibre may add R2, S3 or another object-store adapter for large immutable objects such as memory visuals, embodiment/media assets, archival bundles and snapshots.
+Object storage is not a second semantic life authority. Transactional World storage owns authoritative Thread/World state and cross-record invariants; object storage owns substantial artifacts referenced from that life.
 
-Object storage should not become a second semantic life authority. Transactional world storage owns authoritative Thread/World state and cross-record invariants; object storage owns bytes referenced from that state.
+Fibre currently has two deliberately different Cloudflare R2 uses:
 
-Domain records should prefer stable Fibre object IDs over vendor-specific `r2://...` or `s3://...` semantics so the physical object-store provider remains replaceable.
+```text
+fibre-presentation-assets
+  fibre/objects/<opaque Fibre objectRef>
+    immutable generated/publication objects, receipts, snapshots and media
+
+fibre-thread-objects
+  journals/<threadId>/journal.md
+    mutable private Thread-authored artifact
+```
+
+The presentation bucket predates Thread journal books and is intentionally addressed through the InfraDriver immutable-object contract. Its `objectRef` values are Fibre identifiers and the Cloudflare adapter maps them beneath `fibre/objects/`. Asset generation, publication snapshots, FID media and recovery already depend on that contract.
+
+The private Thread-artifact bucket is additive. Journal books use human-readable semantic keys because a journal is a continuing free-form document rather than an immutable generated object. Future top-level prefixes such as `photos/<threadId>/...` should be introduced only when a real private Thread artifact requires them; do not create speculative directory taxonomies or placeholder objects.
+
+**Existing presentation objects are not migrated into the Thread-artifact bucket.** Moving them would change object identity semantics and recovery/publication references without advancing Thread life. New journal storage therefore requires provisioning one new bucket, not rewriting existing R2 contents.
+
+The authoritative journal/history distinction remains in World state: objective encounters and per-entry private journal records are durable life evidence; the R2 Markdown book is the Thread-readable/admin-readable artifact presentation of those reflections. The book does not itself create autobiographical memory.
+
+Domain records should prefer stable Fibre references over vendor-specific `r2://...` or `s3://...` semantics so the physical provider remains replaceable.
 
 A useful architectural shorthand is:
 
