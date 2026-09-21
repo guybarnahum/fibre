@@ -41,7 +41,7 @@ integrations:
     kind: ai.reasoning
     provider: openai
     config:
-      model: gpt-5.1-2025-11-13
+      model: gpt-5.6-sol
       temperature: 0.3
       topP: 1
       reasoningEffort: none
