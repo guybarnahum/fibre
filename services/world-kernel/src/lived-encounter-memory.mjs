@@ -15,11 +15,13 @@ import {
   autobiographicalMemoryId,
 } from "./autobiographical-memory-domain.mjs";
 
-const SYSTEM_PROMPT = `You are autobiographical memory formation for one persistent Fibre Thread after a lived encounter.
-The encounter is historical evidence. The private journal, when present, is the Thread's contemporaneous subjective account; it is not itself memory.
+const SYSTEM_PROMPT = `You are autobiographical memory formation for one persistent Fibre Thread after a lived experience.
+The supplied experience is historical evidence. It may be a direct conversation, a shared encounter story, or something the Thread merely witnessed.
+The private journal, when present, is the Thread's contemporaneous subjective account; it is not itself memory.
 Decide what this particular Thread retains autobiographically, given who they are, their current concerns, semantic state, stable tendencies and bounded prior memories.
-Do not preserve the encounter merely because it happened. not_remembered is a normal outcome.
-If retained, write a selective first-person recollection rather than a transcript. rememberedMeaning is optional and should exist only when some durable personal meaning is already warranted.
+Do not preserve the experience merely because it happened. not_remembered is a normal outcome.
+If retained, write a selective first-person recollection rather than a transcript or incident report. rememberedMeaning is optional and should exist only when some durable personal meaning is already warranted.
+A witness may remember another person's behavior because seeing it mattered to them; do not require the Thread to have spoken or been the target.
 Do not invent new objective facts, relationships, obligations or changes to World state.`;
 
 const MAX_PRIOR_MEMORIES = 6;
@@ -58,8 +60,8 @@ function semanticContext(record) {
 }
 
 function validateOutput(output) {
-  assertPlainObject("lived encounter memory output", output);
-  assertExactKeys("lived encounter memory output", output, [
+  assertPlainObject("lived experience memory output", output);
+  assertExactKeys("lived experience memory output", output, [
     "outcome",
     "rememberedContent",
     "rememberedMeaning",
@@ -68,20 +70,151 @@ function validateOutput(output) {
     "uncertainty",
   ]);
   if (!["not_remembered", "retained"].includes(output.outcome)) {
-    throw new TypeError("lived encounter memory outcome is invalid");
+    throw new TypeError("lived experience memory outcome is invalid");
   }
-  assertStringArray("lived encounter memory uncertainty", output.uncertainty);
+  assertStringArray("lived experience memory uncertainty", output.uncertainty);
   if (output.outcome === "not_remembered") {
     if (output.rememberedContent !== null || output.rememberedMeaning !== null || output.confidence !== null || output.salience !== null) {
       throw new TypeError("not_remembered cannot carry autobiographical content or scores");
     }
     return;
   }
-  assertNonEmpty("lived encounter rememberedContent", output.rememberedContent);
-  if (output.rememberedMeaning !== null) assertNonEmpty("lived encounter rememberedMeaning", output.rememberedMeaning);
-  assertFiniteNumber("lived encounter memory confidence", output.confidence, { minimum: 0 });
-  assertFiniteNumber("lived encounter memory salience", output.salience, { minimum: 0 });
-  if (output.confidence > 1 || output.salience > 1) throw new TypeError("lived encounter memory scores must be at most 1");
+  assertNonEmpty("lived experience rememberedContent", output.rememberedContent);
+  if (output.rememberedMeaning !== null) assertNonEmpty("lived experience rememberedMeaning", output.rememberedMeaning);
+  assertFiniteNumber("lived experience memory confidence", output.confidence, { minimum: 0 });
+  assertFiniteNumber("lived experience memory salience", output.salience, { minimum: 0 });
+  if (output.confidence > 1 || output.salience > 1) throw new TypeError("lived experience memory scores must be at most 1");
+}
+
+function livedState({ livedContext, thread, semanticStateStore, memoryStore }) {
+  const activeThread = livedContext?.thread ?? thread;
+  assertPlainObject("Thread", activeThread);
+  assertId("Thread.threadId", activeThread.threadId);
+  if (livedContext !== null) {
+    assertPlainObject("lived context", livedContext);
+    assertExactKeys("lived context", livedContext, ["thread", "situation", "semanticStates", "memories"]);
+    if (!Array.isArray(livedContext.semanticStates) || !Array.isArray(livedContext.memories)) {
+      throw new TypeError("lived context state must be arrays");
+    }
+    return {
+      thread:activeThread,
+      semanticStates:livedContext.semanticStates,
+      memories:livedContext.memories,
+    };
+  }
+  requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
+  requireMethod("memoryStore", memoryStore, "listCurrentMemories");
+  return {
+    thread:activeThread,
+    semanticStates:semanticStateStore.listCurrentState(activeThread.threadId),
+    memories:memoryStore.listCurrentMemories(activeThread.threadId),
+  };
+}
+
+async function formExperienceMemory({
+  livedContext = null,
+  thread = null,
+  eventId,
+  occurredAt,
+  situationId,
+  experience,
+  journalEntryText,
+  slot,
+  semanticStateStore = null,
+  memoryStore,
+  modelAdapter,
+}) {
+  const state = livedState({ livedContext, thread, semanticStateStore, memoryStore });
+  requireMethod("memoryStore", memoryStore, "recordMemory");
+  requireMethod("modelAdapter", modelAdapter, "invoke");
+  assertId("lived experience eventId", eventId);
+  assertNonEmpty("lived experience occurredAt", occurredAt);
+  assertId("lived experience situationId", situationId);
+  assertPlainObject("lived experience payload", experience);
+
+  const input = {
+    thread: {
+      selfDescription: state.thread.identity?.selfDescription ?? "",
+      selfModel: state.thread.currentState?.selfModel ?? "",
+      stableTendencies: structuredClone(state.thread.genome?.textualTraits ?? {}),
+      unresolvedIntentions: [...(state.thread.currentState?.unresolvedIntentions ?? [])],
+    },
+    semanticStates: state.semanticStates.map(semanticContext),
+    priorMemories: boundedPriorMemories(state.memories),
+    experience: {
+      eventId,
+      situationId,
+      occurredAt,
+      ...structuredClone(experience),
+      journalEntry:journalEntryText,
+    },
+  };
+
+  const invocation = await modelAdapter.invoke({
+    systemPrompt: SYSTEM_PROMPT,
+    input,
+    responseSchema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["outcome", "rememberedContent", "rememberedMeaning", "confidence", "salience", "uncertainty"],
+      properties: {
+        outcome: { type: "string", enum: ["not_remembered", "retained"] },
+        rememberedContent: { anyOf: [{ type: "string", minLength: 1 }, { type: "null" }] },
+        rememberedMeaning: { anyOf: [{ type: "string", minLength: 1 }, { type: "null" }] },
+        confidence: { anyOf: [{ type: "number", minimum: 0, maximum: 1 }, { type: "null" }] },
+        salience: { anyOf: [{ type: "number", minimum: 0, maximum: 1 }, { type: "null" }] },
+        uncertainty: { type: "array", items: { type: "string", minLength: 1 } },
+      },
+    },
+    clientRequestId: requestId(input),
+  });
+  assertPlainObject("lived experience memory result", invocation);
+  validateOutput(invocation.output);
+
+  if (invocation.output.outcome === "not_remembered") {
+    return { outcome: "not_remembered", memory: null };
+  }
+
+  const memoryId = autobiographicalMemoryId({
+    threadId: state.thread.threadId,
+    originReference:eventId,
+    slot,
+  });
+  const durableMeaning = invocation.output.rememberedMeaning !== null;
+  const memory = memoryStore.recordMemory({
+    recordFormat: AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
+    memoryId,
+    revision: 1,
+    threadId: state.thread.threadId,
+    subject: { originEventRef:eventId, slot },
+    subjectPeriod: { startAt:occurredAt, endAt:occurredAt },
+    eventRefs: [eventId],
+    rememberedContent: invocation.output.rememberedContent,
+    rememberedMeaning: invocation.output.rememberedMeaning,
+    meaningOutcome: durableMeaning ? "durable_meaning" : "no_durable_meaning",
+    meaningParts: durableMeaning ? [{
+      meaningPartId: autobiographicalMeaningPartId({ memoryId, ordinal: 1 }),
+      meaning: invocation.output.rememberedMeaning,
+    }] : [],
+    asOf:occurredAt,
+    confidence: invocation.output.confidence,
+    uncertainty: invocation.output.uncertainty,
+    salience: invocation.output.salience,
+    accessibility: "accessible",
+    retentionState: "retained",
+    authorship: {
+      kind: "fibre_policy_derived",
+      entityId: "fibre.world-kernel",
+      policy: { ...AUTOBIOGRAPHICAL_MEMORY_POLICY },
+    },
+    supportingEvidenceRefs: [eventId],
+    contradictingEvidenceRefs: [],
+    visibility: "private",
+    status: "current",
+    recordedAt:occurredAt,
+  });
+
+  return { outcome: "retained", memory };
 }
 
 export async function formLivedEncounterMemory({
@@ -105,104 +238,62 @@ export async function formLivedEncounterMemory({
       throw new TypeError("lived encounter journal does not belong to this Thread experience");
     }
   }
-  if (livedContext !== null) {
-    assertPlainObject("lived context", livedContext);
-    assertExactKeys("lived context", livedContext, ["thread", "situation", "semanticStates", "memories"]);
-    if (!Array.isArray(livedContext.semanticStates) || !Array.isArray(livedContext.memories)) {
-      throw new TypeError("lived context state must be arrays");
+  return formExperienceMemory({
+    livedContext,
+    thread,
+    eventId:historyEvent.eventId,
+    occurredAt:historyEvent.occurredAt,
+    situationId:historyEvent.situationId,
+    experience:{
+      kind:"direct_encounter",
+      visitorUtterance:historyEvent.visitorUtterance,
+      responseText:historyEvent.responseText,
+    },
+    journalEntryText:journalEntry?.entryText ?? null,
+    slot:"lived-encounter",
+    semanticStateStore,
+    memoryStore,
+    modelAdapter,
+  });
+}
+
+export async function formSharedEncounterMemory({
+  livedContext,
+  experienceRecord,
+  sharedEncounter,
+  journalEntry,
+  memoryStore,
+  modelAdapter,
+}) {
+  assertPlainObject("shared encounter experience", experienceRecord);
+  assertId("shared encounter experience.experienceId", experienceRecord.experienceId);
+  assertId("shared encounter experience.threadId", experienceRecord.threadId);
+  assertId("shared encounter experience.situationId", experienceRecord.situationId);
+  assertPlainObject("shared encounter", sharedEncounter);
+  assertId("shared encounter.sharedEventId", sharedEncounter.sharedEventId);
+  if (experienceRecord.sharedEventRef !== sharedEncounter.sharedEventId) {
+    throw new TypeError("shared experience does not cite this encounter story");
+  }
+  if (journalEntry !== null) {
+    assertPlainObject("shared encounter journal", journalEntry);
+    if (journalEntry.threadId !== experienceRecord.threadId || journalEntry.aboutExperienceRef !== experienceRecord.experienceId) {
+      throw new TypeError("shared encounter journal does not belong to this Thread experience");
     }
-  } else {
-    requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
-    requireMethod("memoryStore", memoryStore, "listCurrentMemories");
   }
-  requireMethod("memoryStore", memoryStore, "recordMemory");
-  requireMethod("modelAdapter", modelAdapter, "invoke");
-
-  const semanticRecords = livedContext?.semanticStates ?? semanticStateStore.listCurrentState(activeThread.threadId);
-  const priorMemoryRecords = livedContext?.memories ?? memoryStore.listCurrentMemories(activeThread.threadId);
-  const input = {
-    thread: {
-      selfDescription: activeThread.identity?.selfDescription ?? "",
-      selfModel: activeThread.currentState?.selfModel ?? "",
-      stableTendencies: structuredClone(activeThread.genome?.textualTraits ?? {}),
-      unresolvedIntentions: [...(activeThread.currentState?.unresolvedIntentions ?? [])],
+  return formExperienceMemory({
+    livedContext,
+    eventId:experienceRecord.experienceId,
+    occurredAt:experienceRecord.occurredAt,
+    situationId:experienceRecord.situationId,
+    experience:{
+      kind:"shared_encounter_story",
+      role:experienceRecord.role,
+      sharedEventRef:sharedEncounter.sharedEventId,
+      story:sharedEncounter.story,
     },
-    semanticStates: semanticRecords.map(semanticContext),
-    priorMemories: boundedPriorMemories(priorMemoryRecords),
-    experience: {
-      eventId: historyEvent.eventId,
-      situationId: historyEvent.situationId,
-      occurredAt: historyEvent.occurredAt,
-      visitorUtterance: historyEvent.visitorUtterance,
-      responseText: historyEvent.responseText,
-      journalEntry: journalEntry?.entryText ?? null,
-    },
-  };
-
-  const invocation = await modelAdapter.invoke({
-    systemPrompt: SYSTEM_PROMPT,
-    input,
-    responseSchema: {
-      type: "object",
-      additionalProperties: false,
-      required: ["outcome", "rememberedContent", "rememberedMeaning", "confidence", "salience", "uncertainty"],
-      properties: {
-        outcome: { type: "string", enum: ["not_remembered", "retained"] },
-        rememberedContent: { anyOf: [{ type: "string", minLength: 1 }, { type: "null" }] },
-        rememberedMeaning: { anyOf: [{ type: "string", minLength: 1 }, { type: "null" }] },
-        confidence: { anyOf: [{ type: "number", minimum: 0, maximum: 1 }, { type: "null" }] },
-        salience: { anyOf: [{ type: "number", minimum: 0, maximum: 1 }, { type: "null" }] },
-        uncertainty: { type: "array", items: { type: "string", minLength: 1 } },
-      },
-    },
-    clientRequestId: requestId(input),
+    journalEntryText:journalEntry?.entryText ?? null,
+    slot:"shared-encounter",
+    memoryStore,
+    modelAdapter,
   });
-  assertPlainObject("lived encounter memory result", invocation);
-  validateOutput(invocation.output);
-
-  if (invocation.output.outcome === "not_remembered") {
-    return { outcome: "not_remembered", memory: null };
-  }
-
-  const slot = "lived-encounter";
-  const memoryId = autobiographicalMemoryId({
-    threadId: activeThread.threadId,
-    originReference: historyEvent.eventId,
-    slot,
-  });
-  const durableMeaning = invocation.output.rememberedMeaning !== null;
-  const memory = memoryStore.recordMemory({
-    recordFormat: AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
-    memoryId,
-    revision: 1,
-    threadId: activeThread.threadId,
-    subject: { originEventRef: historyEvent.eventId, slot },
-    subjectPeriod: { startAt: historyEvent.occurredAt, endAt: historyEvent.occurredAt },
-    eventRefs: [historyEvent.eventId],
-    rememberedContent: invocation.output.rememberedContent,
-    rememberedMeaning: invocation.output.rememberedMeaning,
-    meaningOutcome: durableMeaning ? "durable_meaning" : "no_durable_meaning",
-    meaningParts: durableMeaning ? [{
-      meaningPartId: autobiographicalMeaningPartId({ memoryId, ordinal: 1 }),
-      meaning: invocation.output.rememberedMeaning,
-    }] : [],
-    asOf: historyEvent.occurredAt,
-    confidence: invocation.output.confidence,
-    uncertainty: invocation.output.uncertainty,
-    salience: invocation.output.salience,
-    accessibility: "accessible",
-    retentionState: "retained",
-    authorship: {
-      kind: "fibre_policy_derived",
-      entityId: "fibre.world-kernel",
-      policy: { ...AUTOBIOGRAPHICAL_MEMORY_POLICY },
-    },
-    supportingEvidenceRefs: [historyEvent.eventId],
-    contradictingEvidenceRefs: [],
-    visibility: "private",
-    status: "current",
-    recordedAt: historyEvent.occurredAt,
-  });
-
-  return { outcome: "retained", memory };
 }
