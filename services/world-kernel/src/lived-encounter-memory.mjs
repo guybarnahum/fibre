@@ -289,6 +289,7 @@ export async function formEncounterStoryMemory({
     experience:{
       kind:"encounter_story",
       encounterRef:encounterStory.encounterId,
+      experiencedAs:experienceRecord.experienceText ?? null,
       story:encounterStory.story,
     },
     journalEntryText:journalEntry?.entryText ?? null,
