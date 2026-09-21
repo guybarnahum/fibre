@@ -75,7 +75,10 @@ test("Slice E resource plan derives isolated staging names while deploy-managed 
     { binding: "PRESENTATION_CATALOG", name: "fibre-presentation-catalog-staging" },
     { binding: "ACTIVITY_LOG", name: "fibre-activity-log-staging" },
   ]);
-  assert.deepEqual(plan.create.r2, [{ name: "fibre-presentation-assets-staging" }]);
+  assert.deepEqual(plan.create.r2, [
+    { name: "fibre-presentation-assets-staging" },
+    { name: "fibre-thread-objects-staging" },
+  ]);
   assert.deepEqual(plan.create.queues.map((queue) => queue.name), [
     "fibre-asset-completions-staging",
     "fibre-asset-completions-dlq-staging",
