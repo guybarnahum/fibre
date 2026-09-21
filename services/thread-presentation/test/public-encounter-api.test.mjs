@@ -102,3 +102,35 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
     },
   }, "meeting entry should expose the scene produced by reconciliation, not the stale prior projection");
 });
+
+
+test("N4 meeting entry preserves safe World coverage detail on 409", async () => {
+  const api = createPublicEncounterApi({
+    viewerOrigin: "https://insidefibre.com",
+    readPublicPresent: async () => null,
+    ensurePublicPresent: async () => {
+      const error = new Error("lived_now_unavailable");
+      error.status = 409;
+      error.body = {
+        error: "lived_now_unavailable",
+        detail: "Initial LivedNow requires the canonical Thread birth event",
+      };
+      throw error;
+    },
+    encounter: async () => { throw new Error("not reached"); },
+  });
+
+  const response = await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/meet`,
+    {
+      method: "POST",
+      headers: { Origin: "https://insidefibre.com" },
+    },
+  ));
+
+  assert.equal(response.status, 409);
+  assert.deepEqual(await response.json(), {
+    error: "lived_now_unavailable",
+    detail: "Initial LivedNow requires the canonical Thread birth event",
+  });
+});
