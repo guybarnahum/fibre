@@ -22,6 +22,7 @@ concurrency:
 
 jobs:
   staging-acceptance:
+    environment: staging
     runs-on: ubuntu-latest
     timeout-minutes: 50
     env:
