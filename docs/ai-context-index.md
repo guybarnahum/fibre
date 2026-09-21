@@ -44,11 +44,11 @@ R1-R4 intrinsic regulation                                 closed
 bounded Flight Plan / CurrentSituation                     proven
 bounded encounter / selective memory / later meeting       proven
 
-N1 ensure-LivedNow                                         current
-N2 dormant interval catch-up                               next
-N3 Genesis -> multi-day continuing life                    next
-N4 Person -> Thread /meet                                  next
-N5 Thread -> Thread reciprocal meeting                     next
+N1 ensure-LivedNow                                         closed
+N2 dormant interval catch-up                               closed
+N3 Genesis -> multi-day continuing life                    closed
+N4 Person -> Thread /meet                                  closed
+N5 Thread -> Thread reciprocal meeting                     current
 N6 rich insidefibre.com lived meeting                      next
 ```
 
