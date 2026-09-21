@@ -33,7 +33,7 @@ async function callWorldEnsure(env, threadId) {
   let body = null;
   try { body = await response.json(); } catch {}
   if (!response.ok) {
-    const error = new Error(body?.error ?? `World LivedNow failed with HTTP ${response.status}`);
+    const error = new Error(body?.detail ?? body?.error ?? `World LivedNow failed with HTTP ${response.status}`);
     error.status = response.status;
     error.body = body;
     throw error;
