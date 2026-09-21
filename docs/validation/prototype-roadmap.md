@@ -110,13 +110,32 @@ Genesis
 
 The deployed meeting now enters a scene produced by continuous LivedNow rather than by a meeting fixture, and the subsequent encounter remains bound to the exact returned `situationId`.
 
-### M2-N5 — Thread -> Thread meeting — IMPLEMENTED, DEPLOYED ACCEPTANCE PENDING
+### M2-N5 — Encounter Story -> Thread Experience — REPLANNED / ACTIVE
 
-Two independently current Threads now reconcile LivedNow separately, form independent `accept | decline | defer` stances, resolve compatible physical place identity or mediated context, and create no encounter unless both accept.
+N5 has been broadened before deployment. The durable primitive is no longer “Thread A meets Thread B.” It is:
 
-Mutual acceptance creates one shared objective meeting and two participant-specific private aftermath paths. Each Thread may write the same encounter differently in her private journal, and journal entry does not imply autobiographical retention. The organism proof includes both a credible decline with no shared history and an accepted meeting with emotionally different journals and asymmetric memory retention.
+```text
+World occurrence
+  -> objective Encounter Story
+  -> Thread-specific noticing / experience
+  -> optional journal
+  -> selective consequence
+```
 
-The remaining closure step is staging acceptance between two real Threads. Existing presentation R2 objects are not migrated; N5 adds a private Thread-artifact bucket for `journals/<threadId>/journal.md`.
+A social meeting is one voluntary form of encounter and retains the `accept | decline | defer` participation gate. Environmental occurrences and witnessed behavior do not require permission to exist; they require a credible opportunity to perceive and a Thread-specific noticing/experience step before private consequence.
+
+The first implementation spike is not accepted for staging because it still overfits orchestration to invited social dialogue. Reuse the good parts—LivedNow reconciliation, place compatibility, meeting stance, n-ary story direction, journal/R2/Admin work, selective memory—but reshape them around the general encounter seam.
+
+The required N5 proofs are now:
+
+1. an unscheduled environmental occurrence can be noticed and selectively matter;
+2. compatible social presence does not force a meeting;
+3. one n-ary social story can affect a silent witness differently from the actors;
+4. journal remains subjective and separate from autobiographical memory.
+
+Follow [N5 encounter-story implementation slices](n5-encounter-slices.md). N5 closes only after those semantics are green and accepted in staging.
+
+Existing presentation R2 objects are not migrated; the additive private Thread-artifact bucket remains the correct home for `journals/<threadId>/journal.md`.
 
 ### M2-N6 — rich public meeting — NEXT
 
@@ -132,7 +151,7 @@ Generalize the proven lived seam rather than introduce disconnected systems:
 
 ```text
 one convincing continuously lived life
-  -> reciprocal Thread meetings and relationships
+  -> general encounters, reciprocal meetings and relationships
   -> broader autonomous planning / travel / virtual-world activity
   -> work / economy / reputation
   -> reproduction / inheritance / mutation
