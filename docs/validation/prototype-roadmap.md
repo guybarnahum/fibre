@@ -110,11 +110,13 @@ Genesis
 
 The deployed meeting now enters a scene produced by continuous LivedNow rather than by a meeting fixture, and the subsequent encounter remains bound to the exact returned `situationId`.
 
-### M2-N5 — Thread -> Thread meeting — CURRENT
+### M2-N5 — Thread -> Thread meeting — IMPLEMENTED, DEPLOYED ACCEPTANCE PENDING
 
-Prove two independently current Threads can share one physical or mediated encounter **only when their presence is compatible and each independently chooses to participate**.
+Two independently current Threads now reconcile LivedNow separately, form independent `accept | decline | defer` stances, resolve compatible physical place identity or mediated context, and create no encounter unless both accept.
 
-The first slice should stay small: one bounded meeting stance (`accept | decline | defer`) driven by exact LivedNow plus Thread-owned relationship/interior context, one accepted shared occurrence, and asymmetric private aftermath. Also prove one credible decline or defer so Fibre does not become an interrupt-anyone-on-demand chat system.
+Mutual acceptance creates one shared objective meeting and two participant-specific private aftermath paths. Each Thread may write the same encounter differently in her private journal, and journal entry does not imply autobiographical retention. The organism proof includes both a credible decline with no shared history and an accepted meeting with emotionally different journals and asymmetric memory retention.
+
+The remaining closure step is staging acceptance between two real Threads. Existing presentation R2 objects are not migrated; N5 adds a private Thread-artifact bucket for `journals/<threadId>/journal.md`.
 
 ### M2-N6 — rich public meeting — NEXT
 
