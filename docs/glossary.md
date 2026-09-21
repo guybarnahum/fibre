@@ -1,7 +1,7 @@
 ---
 id: fibre-glossary
 status: accepted
-last-reviewed: 2026-08-25
+last-reviewed: 2026-09-20
 canonical: true
 ---
 
@@ -22,6 +22,16 @@ canonical: true
 **Thaw** — Reconstruct relevant Thread context and invoke temporary cognition in response to an event or intention.
 
 **Freeze** — Validate and persist resulting actions, memories, economic changes, and developmental updates, then release runtime resources.
+
+**Flight Plan** — A Thread-owned bounded itinerary for roughly the next half-day/day: where and how the Thread expects, wants or needs to be present, what it intends to do, with whom, and why. It is intention, not World truth.
+
+**CurrentSituation** — The World-owned enacted present of a Thread at a particular time: place or transit, mediated context, activity, relevant participants, evidence, and the resolution between plan/constraints and observed life.
+
+**LivedNow** — Fibre's World-owned capability to establish a causally grounded current life for a Thread at a requested time, including plan renewal and bounded retrospective catch-up when compute has been dormant.
+
+**Lived catch-up** — Retrospective realization of an uncovered interval in a lived Thread's Fibre-world life. Catch-up history must preserve that it was materialized later, and memory may arise only through normal experience/retention authority.
+
+**Meeting** — A shared encounter that enters one or more already-existing lived presents. A Person -> Thread or Thread -> Thread meeting may create shared history, but each Thread retains separate private interpretation, memory and consequence.
 
 **Thread Context Capsule** — The bounded, task-relevant context assembled for a cognitive episode.
 
