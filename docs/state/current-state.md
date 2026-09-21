@@ -165,22 +165,29 @@ A Thread may have catch-up history it does not remember.
 
 ## Meeting a Person
 
-The public meeting path should become:
+A lived Thread always has physical presence in World: either at a physical place or in transit between physical places. A mediated interaction may coexist with that physical presence; it never replaces it.
+
+The accepted N4 path proves that a visitor can enter an already-established scene. The next refinement is Thread-owned meeting participation:
 
 ```text
 insidefibre.com /meet
   -> select eligible Thread
   -> World ensures LivedNow(now)
-  -> Thread Presentation publishes exact bounded scene
-  -> visitor enters that scene
-  -> World verifies same authoritative CurrentSituation
-  -> temporary Thread cognition
-  -> public response
-  -> objective encounter history
-  -> private experience / selective consequence
+  -> Thread appraises whether to meet now
+      -> decline / defer (+ optional expression or later suggestion)
+      -> accept
+          -> Thread Presentation publishes exact bounded scene
+          -> visitor enters that scene
+          -> World verifies same authoritative CurrentSituation
+          -> temporary Thread cognition
+          -> public response
+          -> objective encounter history
+          -> private experience / selective consequence
 ```
 
-The visitor may cause the meeting. The visitor does not create the life that preceded it.
+The appraisal should use the current activity/Flight Plan plus bounded Thread-owned relationship, memory, needs, feelings and intentions. A requester cannot force interruption, and relationship context may make a Thread more or less accommodating without mechanically deciding the outcome.
+
+The visitor may cause the request to meet. The Thread decides whether the encounter happens now. The visitor does not create the life that preceded it.
 
 ## Meeting another Thread
 
@@ -189,11 +196,12 @@ A Thread-to-Thread meeting requires two independently continuing lives.
 Before the encounter:
 
 - each Thread has its own plan;
-- each has its own World-owned current situation;
+- each has its own World-owned physical presence;
 - each has its own reasons for being there;
-- their physical or mediated presences are compatible.
+- their physical or mediated presences are compatible;
+- each independently chooses whether to participate now.
 
-The shared encounter then becomes common objective history or linked evidence, while each participant independently interprets and retains it.
+Only after compatible presence and mutual participation does the shared encounter become common objective history or linked evidence, while each participant independently interprets and retains it.
 
 ```text
 shared occurrence
