@@ -32,6 +32,13 @@ function json(value, status = 200) {
   });
 }
 
+function safeReconciliationDetail(error, code) {
+  if (code !== "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR") return null;
+  return typeof error?.message === "string" && error.message.trim() !== ""
+    ? error.message
+    : null;
+}
+
 export function createLivedNowWriteApi({
   livedNow,
   publication,
@@ -86,7 +93,12 @@ export function createLivedNowWriteApi({
         const code = typeof error?.code === "string" && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u.test(error.code)
           ? error.code
           : "LIVED_NOW_RECONCILIATION_FAILED";
-        return json({ error: "lived_now_reconciliation_failed", code }, 503);
+        const detail = safeReconciliationDetail(error, code);
+        return json({
+          error: "lived_now_reconciliation_failed",
+          code,
+          ...(detail === null ? {} : { detail }),
+        }, 503);
       }
     },
   });
