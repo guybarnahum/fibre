@@ -201,3 +201,59 @@ test("one lived encounter keeps one bounded causal present through cognition, re
   assert.equal(modelCalls[0].input.autobiographicalMemories[0].rememberedContent, "A prior moment. 1");
   assert.equal(modelCalls[2].input.priorMemories[0].rememberedContent, "A prior moment. 1");
 });
+
+
+test("objective encounter survives failed private aftermath", async () => {
+  let historyWrites = 0;
+  let memoryCalls = 0;
+  const livedApi = createLivedEncounterWriteApi({
+    privateToken: "private-token-a5-bridge",
+    worldReader: { getThread: () => structuredClone(thread) },
+    livedNowStore: { getCurrentSituation: () => structuredClone(situation) },
+    semanticStateStore: { listCurrentState: () => [] },
+    experienceStore: {
+      recordEncounter(input) {
+        historyWrites += 1;
+        return {
+          eventId: "evt_aftermath_failure",
+          threadId: input.threadId,
+          situationId: input.situationId,
+          occurredAt: input.occurredAt,
+          visitorUtterance: input.visitorUtterance,
+          responseText: input.responseText,
+        };
+      },
+      recordJournalEntry() { throw new Error("not reached"); },
+    },
+    memoryStore: {
+      listCurrentMemories: () => [],
+      recordMemory() { memoryCalls += 1; throw new Error("not reached"); },
+    },
+    modelAdapter: {
+      async invoke(call) {
+        if (call.clientRequestId.startsWith("lived-encounter_")) {
+          return {
+            output: { responseText: "I’m drawing right now." },
+            provenance: { provider: "fixture", modelId: "fixture-a5" },
+          };
+        }
+        if (call.clientRequestId.startsWith("lived-reflection_")) {
+          throw new Error("private reflection unavailable");
+        }
+        memoryCalls += 1;
+        throw new Error("memory must wait for completed private reflection");
+      },
+    },
+  });
+
+  const response = await livedApi.fetch(request({
+    threadId: thread.threadId,
+    expectedSituationId: situation.situationId,
+    utterance: "What are you doing right now?",
+    occurredAt: "2026-09-11T00:05:00Z",
+  }));
+
+  assert.equal(response.status, 200, "private aftermath must not erase a lived encounter");
+  assert.equal(historyWrites, 1, "the encounter must remain objective history");
+  assert.equal(memoryCalls, 0, "memory must not run after incomplete reflection");
+});
