@@ -122,27 +122,60 @@ function dormantWindows(from, to) {
   return windows;
 }
 
-function activePlacesAt(situatedLifeStore, threadId, at) {
+function knownPlacesAt(situatedLifeStore, threadId, at) {
   const instant = Date.parse(at);
   return situatedLifeStore.listCurrentPlaceEpisodes(threadId)
-    .filter((episode) =>
-      Date.parse(episode.startAt) <= instant &&
-      (episode.endAt === null || instant <= Date.parse(episode.endAt)))
+    .filter((episode) => Date.parse(episode.startAt) <= instant)
     .map((episode) => ({
       ref: placeEpisodeRevisionRef(episode),
       displayName: episode.place.displayName,
     }));
 }
 
+function latestGroundedPlaceRef(situatedLifeStore, threadId, at) {
+  const instant = Date.parse(at);
+  const candidates = situatedLifeStore.listCurrentPlaceEpisodes(threadId)
+    .filter((episode) => Date.parse(episode.startAt) <= instant)
+    .sort((left, right) => {
+      const leftObserved = Math.min(
+        instant,
+        left.endAt === null ? instant : Date.parse(left.endAt),
+      );
+      const rightObserved = Math.min(
+        instant,
+        right.endAt === null ? instant : Date.parse(right.endAt),
+      );
+      return rightObserved - leftObserved ||
+        Date.parse(right.startAt) - Date.parse(left.startAt) ||
+        right.episodeId.localeCompare(left.episodeId);
+    });
+  if (candidates.length === 0) {
+    throw new LivedNowCoverageError("Initial LivedNow requires at least one grounded place from admitted life");
+  }
+  return placeEpisodeRevisionRef(candidates[0]);
+}
+
 function latestEventRefAt(worldStore, threadId, at) {
   const instant = Date.parse(at);
   const event = worldStore.listEvents(threadId)
     .filter((candidate) => Date.parse(candidate.occurredAt) <= instant)
+    .sort((left, right) =>
+      Date.parse(left.occurredAt) - Date.parse(right.occurredAt) ||
+      left.sequence - right.sequence)
     .at(-1);
   if (event === undefined) {
     throw new LivedNowCoverageError("Dormant catch-up has no prior Thread-event witness");
   }
   return event.eventId;
+}
+
+function fibreBirthAt(worldStore, threadId) {
+  const seed = worldStore.listEvents(threadId)
+    .find((event) => event.eventType === "THREAD_SEEDED");
+  if (seed === undefined) {
+    throw new LivedNowCoverageError("Initial LivedNow requires the canonical Thread birth event");
+  }
+  return seed.occurredAt;
 }
 
 function retrospectivePlan(livedNowStore, threadId, startAt, endAt, materializedAt) {
@@ -229,7 +262,7 @@ async function formPlan({
     : retrospectivePlan(livedNowStore, threadId, startAt, endAt, materializedAt);
   if (existing !== null) return existing;
 
-  const places = activePlacesAt(situatedLifeStore, threadId, startAt);
+  const places = knownPlacesAt(situatedLifeStore, threadId, startAt);
   if (places.length === 0) {
     throw new LivedNowCoverageError("Dormant catch-up has no grounded place available at the lived time");
   }
@@ -312,6 +345,54 @@ async function catchUpDormantInterval({
   });
 }
 
+async function establishFirstLivedNow({
+  livedNowStore,
+  worldStore,
+  situatedLifeStore,
+  modelAdapter,
+  threadId,
+  at,
+}) {
+  requireCatchUpDependencies({ worldStore, situatedLifeStore, modelAdapter });
+  const bornAt = fibreBirthAt(worldStore, threadId);
+  if (Date.parse(at) < Date.parse(bornAt)) {
+    throw new LivedNowCoverageError("LivedNow cannot be established before the Thread entered Fibre");
+  }
+
+  const thread = worldStore.getThread(threadId);
+  const placeRef = latestGroundedPlaceRef(situatedLifeStore, threadId, bornAt);
+  const firstHorizonEnd = new Date(Date.parse(bornAt) + FORWARD_PLAN_MS).toISOString();
+  await formPlan({
+    livedNowStore,
+    worldStore,
+    situatedLifeStore,
+    modelAdapter,
+    thread,
+    threadId,
+    startAt: bornAt,
+    endAt: firstHorizonEnd,
+    startingPlace: placeRef,
+  });
+  const first = enact(livedNowStore, threadId, bornAt);
+  if (at === bornAt) return first;
+
+  const coveringPlan = livedNowStore.latestPlan(threadId, "personal", { at });
+  if (planCovers(coveringPlan, at)) {
+    return enact(livedNowStore, threadId, at);
+  }
+
+  await catchUpDormantInterval({
+    livedNowStore,
+    worldStore,
+    situatedLifeStore,
+    modelAdapter,
+    threadId,
+    current: first,
+    at,
+  });
+  return enact(livedNowStore, threadId, at);
+}
+
 export function createLivedNowService({
   livedNowStore,
   worldStore = null,
@@ -344,15 +425,22 @@ export function createLivedNowService({
         return enact(livedNowStore, input.threadId, input.at);
       }
 
-      if (current === null) {
-        throw new LivedNowCoverageError(
-          "Dormant catch-up requires an authoritative lived anchor before the requested time",
-        );
-      }
       if (worldStore === null || situatedLifeStore === null || modelAdapter === null) {
         throw new LivedNowCoverageError(
-          "LivedNow requires retrospective catch-up before the requested time",
+          current === null
+            ? "Initial LivedNow requires World, situated-life and cognition authorities"
+            : "LivedNow requires retrospective catch-up before the requested time",
         );
+      }
+      if (current === null) {
+        return establishFirstLivedNow({
+          livedNowStore,
+          worldStore,
+          situatedLifeStore,
+          modelAdapter,
+          threadId: input.threadId,
+          at: input.at,
+        });
       }
 
       await catchUpDormantInterval({
