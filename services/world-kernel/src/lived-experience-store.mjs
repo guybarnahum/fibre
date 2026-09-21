@@ -28,6 +28,7 @@ function encounterStoryId(record) {
     occurredAt:record.occurredAt,
     participants:record.participants,
     story:record.story,
+    sourceReferences:record.visualization?.visualizationSourceReferences ?? [],
   })).slice(0, 48)}`;
 }
 
