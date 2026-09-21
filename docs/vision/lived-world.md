@@ -1,7 +1,7 @@
 ---
 id: vision-lived-world
 status: accepted
-last-reviewed: 2026-09-10
+last-reviewed: 2026-09-20
 canonical: true
 ---
 
@@ -105,6 +105,27 @@ The immutable plan records intended life. World history records what actually ha
 
 Physical and mediated presence remain distinct: a Thread can stay physically at home while being socially present on Zoom or virtually visiting a real museum, zoo, lecture, city or live feed.
 
+## Life continues while compute sleeps
+
+Fibre should not expose runtime scheduling as the shape of a person's life.
+
+A lived Thread may be computationally frozen while wall-clock time passes. When Fibre next needs that Thread's present, World may retrospectively realize the uncovered Fibre-world interval: bounded Flight Plans, movement/presence, ordinary events and only the consequences that the normal experience authorities admit.
+
+This retrospective life must remain historically honest. Fibre records that an event belongs to an earlier lived time **and** that it was materialized later during catch-up. It does not pretend a model was continuously running or that an external real-world event was directly observed.
+
+The principle is:
+
+```text
+compute may sleep
+life continuity remains reconstructible
+history stays provenance-bearing
+memory still requires lived evidence
+```
+
+A quiet interval should stay sparse. Fibre does not need a minute-by-minute simulator. It needs enough lived continuity that today's location, activity, relationships, intentions and memories can causally follow from yesterday's person.
+
+See [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md) and [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md).
+
 ## Dependency and coupled plans
 
 Children and other dependent persons may have both:
@@ -144,6 +165,10 @@ A visitor should find a Thread **where she happens to be now**: at a place, in m
 The Viewer does not place the Thread, choose her activity, inject a feeling or create her motivation.
 
 When the human returns, the Thread may be elsewhere because her life continued.
+
+A meeting between two Threads follows the same rule. Both lives exist before the encounter. Fibre first resolves each participant's LivedNow; a shared encounter can occur only when their physical or mediated presences are compatible. The event is shared, but its private meaning is not: each Thread may remember, interpret and be changed by it differently.
+
+A meeting can therefore bend later plans, relationship state, intentions or memory without becoming a privileged “growth event.” It may also matter very little.
 
 ## Experience is not automatically memory
 
@@ -196,3 +221,21 @@ It is to create conditions in which persistent artificial lives accumulate enoug
 Something happened.  
 It mattered — or it didn't.  
 And today, their life continues.**
+
+## Current execution boundary
+
+The existing M2 implementation proved bounded Flight Plan, CurrentSituation, situated encounter, selective internalization and later-meeting continuity. That is important substrate, but it is not yet the full north-star LivedNow capability.
+
+The active gap is continuous present-life reconciliation across wall-clock dormancy:
+
+```text
+prior lived anchor
+  -> elapsed-life catch-up when needed
+  -> current Flight Plan
+  -> authoritative LivedNow
+  -> Person or Thread meeting
+  -> participant-specific consequence
+  -> continued life
+```
+
+Current continuation authority is [`../architecture/lived-now-and-meetings.md`](../architecture/lived-now-and-meetings.md) together with [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md). Broader economy and society should generalize this proven lived seam rather than bypass it.
