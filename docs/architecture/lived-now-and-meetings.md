@@ -312,9 +312,9 @@ Once a meeting occurs:
 
 ```text
 one shared encounter circumstance
-  -> shared objective occurrence / linked historical evidence
-  -> Thread A private experience
-  -> Thread B private experience
+  -> one shared objective occurrence
+  -> Thread A private encounter history -> A journal -> A retention appraisal
+  -> Thread B private encounter history -> B journal -> B retention appraisal
   -> possibly different memory
   -> possibly different relationship consequence
   -> possibly different future plans
@@ -322,7 +322,11 @@ one shared encounter circumstance
 
 Shared event does not imply shared meaning.
 
-One participant may remember it vividly while the other forgets it. One may feel closer while the other becomes cautious. Those differences are valuable Fibre behavior.
+A journal is the Thread's contemporaneous private account, written in her own voice and allowed to contain feeling, ambivalence, attention and subjective interpretation that objective history does not. The same encounter may therefore appear very differently in two journals. Journal entry does **not** imply autobiographical memory: either Thread may later retain or forget the event independently.
+
+The private journal book may be rendered as a free-form Thread-specific document for Admin inspection, but the book remains downstream of the private journal authority and does not become a second memory or history authority.
+
+One participant may remember a meeting vividly while the other forgets it. One may feel closer while the other becomes cautious. Those differences are valuable Fibre behavior.
 
 ## Meeting consequences
 
@@ -435,9 +439,13 @@ Route public meeting through ensure-LivedNow. The first deployed proof should sh
 
 ### N5 — Thread-to-Thread meeting
 
-Create one shared encounter between two independently maintained LivedNow participants. Each must independently have compatible presence **and choose to participate**. Prove one shared objective occurrence plus different participant-specific aftermath.
+The current implementation reconciles both Threads independently, resolves physical compatibility through each Thread's situated-life place evidence to a shared underlying place identity (or through compatible mediated context), and asks each Thread for an independent `accept | decline | defer` stance before any encounter exists.
 
-The narrow first proof should include one non-meeting outcome as well: a Thread whose current life or relationship context makes it decline or defer rather than being forcibly interrupted.
+Mutual acceptance produces one bounded shared exchange and one shared objective meeting record. Each participant then receives her own private encounter history, personal journal reflection and independent autobiographical retention appraisal. A decline stops the meeting before shared encounter history is created.
+
+The in-repository organism proof demonstrates both required outcomes: a compatible meeting that one Thread declines, and an accepted meeting in which two Threads write emotionally different private journal accounts while only one retains an autobiographical memory.
+
+N5 remains open until this exact path is provisioned/deployed and exercised between two real staging Threads.
 
 ### N6 — Rich insidefibre.com meeting
 
