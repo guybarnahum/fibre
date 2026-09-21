@@ -52,33 +52,32 @@ This matters, but it is still a bounded proof.
 
 ## What we are working on now
 
-### Continuous LivedNow across dormancy — Working on it
+### Continuous LivedNow across dormancy — Done at the current boundary
 
-The active goal is:
+The goal remains:
 
 > **A Thread's life should reach “now” before anyone meets them.**
 
-Fibre now has one World-owned, idempotent ensure-LivedNow seam for a requested time already covered by an admitted personal Flight Plan. It can enact plan-derived movement/presence, respect a required care constraint, and refuses caller-authored scene fields.
+For an already-lived Thread with an authoritative prior anchor, Fibre now has one World-owned ensure-LivedNow path that handles both already-covered time and a bounded uncovered multi-day dormant interval.
 
-It still does not automatically cover several hours or days of frozen/dormant wall-clock time. When plan coverage is absent, the seam currently fails rather than presenting a stale scene.
-
-The active N2 capability is:
+The accepted N2 proof:
 
 ```text
 last lived anchor
-  -> elapsed-life catch-up when needed
-  -> honest retrospective history
-  -> current Flight Plan
+  -> consume remaining admitted plan coverage
+  -> sparse retrospective catch-up
+  -> explicit later materialization provenance
+  -> fresh forward Flight Plan
   -> World-owned CurrentSituation now
 ```
 
-Fibre will not run every Thread every minute. Quiet periods should remain sparse.
+A three-day gap is reconstructed in a bounded number of windows rather than minute by minute. Retrospective records preserve when the life belongs and when Fibre later materialized it. Reconciliation continues from the prior lived place rather than teleporting, and retrying the same present does not regenerate the gap.
 
-Retrospective events must expose that Fibre materialized them later; they must not masquerade as continuously observed external reality.
+The quiet-gap proof deliberately does not invent an encounter or memory just to make elapsed time look dramatic. If future catch-up life contains an event that warrants consequence, it must use Fibre's ordinary experience and retention authorities.
 
 ### Meet a Thread — Working on it
 
-A real deployed `/meet` will come after continuous LivedNow.
+A real deployed `/meet` will come after Genesis is proven to enter the same continuing LivedNow path.
 
 The visitor may cause the encounter, but cannot choose the Thread's pre-existing place, activity, plan, companions, private memory or feelings.
 
@@ -99,7 +98,7 @@ A bounded encounter can become objective history, private reflection and autobio
 
 Human encounters do not automatically become memory.
 
-The next requirement is to reuse the same authority during retrospective lived catch-up and reciprocal Thread meetings.
+Retrospective catch-up receives no special memory shortcut; future salient catch-up events and reciprocal Thread meetings must reuse this same authority.
 
 ## What comes next
 
@@ -137,9 +136,9 @@ A bounded public scene may show:
 
 A later visit should find later life.
 
-## Genesis to LivedNow
+## Genesis to LivedNow — Working on it
 
-The important end-to-end path is now:
+N3 is now the active step. The important end-to-end path is:
 
 ```text
 Genesis
@@ -177,8 +176,8 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- automatically maintain/restore a current life across arbitrary multi-day dormancy;
-- route real deployed `/meet` through continuous LivedNow;
+- automatically hand a newly born Thread from Genesis into the same continuing LivedNow path;
+- route real deployed `/meet` through reconciled LivedNow;
 - orchestrate reciprocal Thread-to-Thread meetings;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
