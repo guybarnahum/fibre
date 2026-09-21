@@ -1,11 +1,13 @@
 ---
 id: validation-m2-meeting-runbook
 status: accepted
-last-reviewed: 2026-09-11
+last-reviewed: 2026-09-20
 canonical: true
 ---
 
 # Meeting a Thread — M2 runbook
+
+> **Execution status:** this runbook is the N4 deployed Person -> Thread acceptance procedure. Do not treat a meeting against a manually prepared/stale CurrentSituation as M2 closure. N1-N3 continuous LivedNow must establish the current scene first. See [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md).
 
 A meeting is not the creation of a chat session. It is a visitor entering a Thread's already-unfolding life.
 
@@ -40,7 +42,20 @@ It tells us what Fibre did and where a runtime chain succeeded or failed. It mus
 
 ## What must already be true
 
-The Thread must already exist and have a World-owned CurrentSituation. Thread Presentation must have published that present. The public meeting surface does not invent a place, activity, plan, feeling or current situation for a visitor.
+The Thread must already exist and World must be able to establish authoritative LivedNow for the meeting time.
+
+That may require:
+
+```text
+last lived anchor
+  -> elapsed-life catch-up
+  -> Flight Plan renewal
+  -> CurrentSituation now
+```
+
+Thread Presentation must publish that reconciled present before the visitor speaks. The public meeting surface does not invent a place, activity, plan, feeling or current situation for a visitor.
+
+A pre-seeded CurrentSituation is useful for bounded regression testing but is not sufficient evidence for the continuous-LivedNow milestone.
 
 For the deployed path, the World worker needs its configured model credential and the World and Presentation workers must share their private service token. Thread Presentation is exposed at `https://api.insidefibre.com`; `insidefibre.com` talks only to that public Presentation API.
 
@@ -86,7 +101,11 @@ On a failure, use the causal trail to answer the useful question: **where did th
 
 ### Coverage boundary
 
-God's view displays what the deployed runtime actually executes; it does not synthesize missing lifecycle work. Birth/Genesis, publication/materialization and the situated encounter -> history -> journal -> selective-memory chain are Activity-observable. On the current M2 branch, Flight Plan / CurrentSituation continuation is proven by the semantic acceptance path but is not yet deployed as an autonomous life-advancement runtime. Therefore **Life** or **Continuity** may correctly appear as *not observed* in Admin. That is a runtime capability boundary, not something telemetry should pretend happened.
+God's view displays what the deployed runtime actually executes; it does not synthesize missing lifecycle work. Birth/Genesis, publication/materialization and the situated encounter -> history -> journal -> selective-memory chain are Activity-observable.
+
+Until N1-N3 are implemented, Flight Plan / CurrentSituation continuation remains a bounded semantic proof rather than continuous deployed LivedNow. **Life** or **Continuity** may therefore correctly appear as *not observed* in Admin. Telemetry must not pretend catch-up happened when World did not perform it.
+
+Once continuous LivedNow exists, the runbook should inspect the actual catch-up/plan/current-situation causal path before the encounter begins.
 
 Routine reads are also not treated as a request access log. Activity records meaningful operational/cognitive checkpoints, not every store lookup or page fetch.
 
