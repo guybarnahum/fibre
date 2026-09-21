@@ -167,7 +167,7 @@ The proof verifies:
 
 This first proof intentionally uses a quiet interval. It does not fabricate an encounter or autobiographical memory solely to make catch-up look consequential. Events that warrant consequence must continue through the existing ordinary history/experience/retention authorities.
 
-## N3 — Genesis -> first continuous life — CURRENT
+## N3 — Genesis -> first continuous life — CLOSED
 
 A new Thread must leave Genesis through the same seam used later.
 
@@ -186,7 +186,7 @@ Genesis
 
 No demo-only current-life fixture should be required.
 
-## N4 — Person -> Thread /meet
+## N4 — Person -> Thread /meet — CLOSED
 
 ### Capability
 
@@ -209,11 +209,11 @@ The visitor chooses the utterance and causes the encounter. The visitor does not
 
 The first real deployed `/meet` is accepted only after N1-N3 are real.
 
-## N5 — Encounter Story -> Thread Experience — E0 CLOSED / E1 CURRENT
+## N5 — Encounter Story -> Thread Experience — E0-E1 CLOSED / E2 CURRENT
 
 ### Capability
 
-E0 is closed: Fibre now has one coherent general Encounter Story / Thread Experience persistence vocabulary, with social meeting implemented as a wrapper rather than as history authority. E1 is current.
+E0 is closed: Fibre has one coherent general Encounter Story / Thread Experience persistence vocabulary, with social meeting implemented as a wrapper rather than as history authority. E1 is also closed: an unscheduled environmental occurrence can be objectively admitted with durable visualization lineage, appraised as `noticed | not_noticed`, and only when noticed become first-person Thread Experience and selective aftermath. E2 is current.
 
 One general encounter seam can turn an objective World occurrence into different personal lived experiences without requiring separate engines for conversation, witnessing and environmental moments.
 
@@ -239,7 +239,7 @@ exact LivedNow
 
 Physical/mediated compatibility remains required for social encounter without teleportation or silent replanning.
 
-### Why the first N5 spike is not accepted
+### What the first N5 spike contributed
 
 The first implementation spike correctly explored:
 
@@ -252,19 +252,16 @@ The first implementation spike correctly explored:
 - selective memory;
 - private R2 journal presentation.
 
-But its central orchestration still assumed invited social dialogue and did not yet represent bounded noticing for incidental/environmental occurrence.
-
-Do not deploy it or restore old dyadic APIs merely to satisfy obsolete tests.
+E0 removed the obsolete dyadic authority and E1 supplied the missing general environmental noticing seam. The remaining social meeting code is now treated only as an E2 wrapper over the general encounter model.
 
 ### Required acceptance proofs
 
 N5 closes only when one coherent seam proves:
 
-1. **environmental noticing** — an unscheduled small World occurrence such as a bee on a flower can be noticed and selectively matter;
-2. **voluntary meeting** — compatible social presence does not force participation;
-3. **silent witness** — a third Thread can witness how A treats B, remain silent, and form a different private experience/consequence;
-4. **journal != memory** — private journal expression and autobiographical retention remain independently selective;
-5. **continuity** — persisted consequence can bend later cognition while unnoticed/unremembered content does not leak.
+1. **voluntary meeting** — compatible social presence does not force participation;
+2. **silent witness** — a third Thread can witness how A treats B, remain silent, and form a different private experience/consequence;
+3. **journal != memory** — private journal expression and autobiographical retention remain independently selective;
+4. **continuity** — persisted consequence can bend later cognition while unnoticed/unremembered content does not leak.
 
 Detailed execution is governed by [N5 encounter-story implementation slices](n5-encounter-slices.md).
 
