@@ -6,6 +6,7 @@ import test from "node:test";
 
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
+import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 
 const seed = JSON.parse(
@@ -53,12 +54,18 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
             { actorThreadId:"thr_e0_noor", kind:"action", text:"Noor moves her notebook aside." },
           ],
         },
-        visualization:{
-          visualizationPrompt:"Generated objective reconstruction of a Fibre Encounter Story.",
-          visualizationPromptDigest:`sha256:${(await import("../src/persistence-common.mjs")).sha256("Generated objective reconstruction of a Fibre Encounter Story.")}`,
-          visualizationSourceReferences:["sit_e0_mina","sit_e0_noor"],
+        visualization:createEncounterVisualization({
+          occurredAt:"2026-09-21T18:00:00.000Z",
+          story:{
+            beats:[
+              { actorThreadId:"thr_e0_mina", kind:"utterance", text:"Mind if I sit here?" },
+              { actorThreadId:"thr_e0_noor", kind:"action", text:"Noor moves her notebook aside." },
+            ],
+          },
+          scene:"A quiet shared table.",
+          sourceReferences:["sit_e0_mina","sit_e0_noor"],
           depictedThreadRefs:[],
-        },
+        }),
       });
 
       const mina = store.recordThreadExperience({
