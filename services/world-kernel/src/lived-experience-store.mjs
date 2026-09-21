@@ -43,6 +43,41 @@ function journalEntryId({ threadId, aboutEventRef, writtenAt, entryText }) {
   return `journal_${sha256(canonicalJson({ threadId, aboutEventRef, writtenAt, entryText })).slice(0, 48)}`;
 }
 
+function normalizeVisualization(candidate, participantIds) {
+  if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) {
+    throw new TypeError("encounter visualization is required");
+  }
+  assertNonEmpty("encounter visualization.visualizationPrompt", candidate.visualizationPrompt);
+  assertNonEmpty("encounter visualization.visualizationPromptDigest", candidate.visualizationPromptDigest);
+  if (!candidate.visualizationPromptDigest.startsWith("sha256:")) {
+    throw new TypeError("encounter visualization prompt digest is invalid");
+  }
+  if (!Array.isArray(candidate.visualizationSourceReferences)) {
+    throw new TypeError("encounter visualization source references must be an array");
+  }
+  if (!Array.isArray(candidate.depictedThreadRefs)) {
+    throw new TypeError("encounter visualization depicted Thread refs must be an array");
+  }
+  for (const ref of candidate.visualizationSourceReferences) {
+    assertId("encounter visualization sourceReference", ref);
+  }
+  for (const threadId of candidate.depictedThreadRefs) {
+    assertId("encounter visualization depictedThreadRef", threadId);
+    if (!participantIds.has(threadId)) {
+      throw new TypeError("depicted Thread must be present in Encounter Story");
+    }
+  }
+  if (`sha256:${sha256(candidate.visualizationPrompt)}` !== candidate.visualizationPromptDigest) {
+    throw new TypeError("encounter visualization prompt digest does not match prompt");
+  }
+  return {
+    visualizationPrompt:candidate.visualizationPrompt,
+    visualizationPromptDigest:candidate.visualizationPromptDigest,
+    visualizationSourceReferences:[...new Set(candidate.visualizationSourceReferences)],
+    depictedThreadRefs:[...new Set(candidate.depictedThreadRefs)],
+  };
+}
+
 function normalizeStory(candidate, participantIds) {
   if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) {
     throw new TypeError("encounter story must be an object");
@@ -108,7 +143,8 @@ export class LivedExperienceStore {
       return { threadId:participant.threadId, situationId:participant.situationId };
     });
     const story = normalizeStory(candidate.story, participantIds);
-    const normalized = { occurredAt:candidate.occurredAt, participants, story };
+    const visualization = normalizeVisualization(candidate.visualization, participantIds);
+    const normalized = { occurredAt:candidate.occurredAt, participants, story, visualization };
     const encounterId = encounterStoryId(normalized);
     const record = { encounterId, ...normalized };
     const recordDigest = digest(record);
@@ -129,9 +165,20 @@ export class LivedExperienceStore {
           return record;
         }
         this.#database.prepare(`
-          INSERT INTO encounter_story_records(encounter_id,occurred_at,story_json,record_digest)
-          VALUES (?,?,?,?)
-        `).run(encounterId,normalized.occurredAt,canonicalJson(story),recordDigest);
+          INSERT INTO encounter_story_records(
+            encounter_id,occurred_at,story_json,visualization_prompt,visualization_prompt_digest,
+            visualization_source_refs_json,depicted_thread_refs_json,record_digest
+          ) VALUES (?,?,?,?,?,?,?,?)
+        `).run(
+          encounterId,
+          normalized.occurredAt,
+          canonicalJson(story),
+          visualization.visualizationPrompt,
+          visualization.visualizationPromptDigest,
+          canonicalJson(visualization.visualizationSourceReferences),
+          canonicalJson(visualization.depictedThreadRefs),
+          recordDigest,
+        );
         const insertPresence = this.#database.prepare(`
           INSERT INTO encounter_story_thread_presence(encounter_ref,thread_id,situation_id)
           VALUES (?,?,?)
@@ -147,7 +194,7 @@ export class LivedExperienceStore {
   getEncounterStory(encounterId, { required = true } = {}) {
     assertId("encounterId", encounterId);
     const row = this.#database.prepare(
-      "SELECT encounter_id,occurred_at,story_json FROM encounter_story_records WHERE encounter_id=?",
+      "SELECT encounter_id,occurred_at,story_json,visualization_prompt,visualization_prompt_digest,visualization_source_refs_json,depicted_thread_refs_json FROM encounter_story_records WHERE encounter_id=?",
     ).get(encounterId);
     if (row === undefined) {
       if (!required) return null;
@@ -167,6 +214,12 @@ export class LivedExperienceStore {
       occurredAt:row.occurred_at,
       participants,
       story:JSON.parse(row.story_json),
+      visualization:{
+        visualizationPrompt:row.visualization_prompt,
+        visualizationPromptDigest:row.visualization_prompt_digest,
+        visualizationSourceReferences:JSON.parse(row.visualization_source_refs_json),
+        depictedThreadRefs:JSON.parse(row.depicted_thread_refs_json),
+      },
     };
   }
 
@@ -175,8 +228,12 @@ export class LivedExperienceStore {
     assertId("Thread experience.encounterRef", candidate.encounterRef);
     assertId("Thread experience.situationId", candidate.situationId);
     assertIsoTimestamp("Thread experience.occurredAt", candidate.occurredAt);
-    const experienceId = threadExperienceId(candidate);
-    const record = { experienceId, ...candidate };
+    if (candidate.experienceText !== null && candidate.experienceText !== undefined) {
+      assertNonEmpty("Thread experience.experienceText", candidate.experienceText);
+    }
+    const normalizedCandidate = { ...candidate, experienceText:candidate.experienceText ?? null };
+    const experienceId = threadExperienceId(normalizedCandidate);
+    const record = { experienceId, ...normalizedCandidate };
     const recordDigest = digest(record);
 
     try {
@@ -204,13 +261,133 @@ export class LivedExperienceStore {
       }
       this.#database.prepare(`
         INSERT INTO thread_encounter_experiences(
-          experience_id,thread_id,encounter_ref,situation_id,occurred_at,record_digest
-        ) VALUES (?,?,?,?,?,?)
+          experience_id,thread_id,encounter_ref,situation_id,occurred_at,experience_text,record_digest
+        ) VALUES (?,?,?,?,?,?,?)
       `).run(
-        experienceId,candidate.threadId,candidate.encounterRef,
-        candidate.situationId,candidate.occurredAt,recordDigest,
+        experienceId,normalizedCandidate.threadId,normalizedCandidate.encounterRef,
+        normalizedCandidate.situationId,normalizedCandidate.occurredAt,
+        normalizedCandidate.experienceText,recordDigest,
       );
       return record;
+    } catch (error) { throw translateStorageError(error); }
+  }
+
+  getThreadEncounterAttention(threadId, encounterRef) {
+    assertId("attention threadId", threadId);
+    assertId("attention encounterRef", encounterRef);
+    const row = this.#database.prepare(`
+      SELECT thread_id,encounter_ref,situation_id,occurred_at,outcome
+      FROM thread_encounter_attention
+      WHERE thread_id=? AND encounter_ref=?
+    `).get(threadId,encounterRef);
+    if (row === undefined) return null;
+    const experience = row.outcome === "noticed"
+      ? this.#database.prepare(`
+          SELECT experience_id,thread_id,encounter_ref,situation_id,occurred_at,experience_text
+          FROM thread_encounter_experiences
+          WHERE thread_id=? AND encounter_ref=?
+        `).get(threadId,encounterRef)
+      : null;
+    if (row.outcome === "noticed" && experience === undefined) {
+      throw new TypeError("noticed encounter is missing Thread Experience");
+    }
+    return {
+      threadId:row.thread_id,
+      encounterRef:row.encounter_ref,
+      situationId:row.situation_id,
+      occurredAt:row.occurred_at,
+      outcome:row.outcome,
+      experience:experience === null ? null : {
+        experienceId:experience.experience_id,
+        threadId:experience.thread_id,
+        encounterRef:experience.encounter_ref,
+        situationId:experience.situation_id,
+        occurredAt:experience.occurred_at,
+        experienceText:experience.experience_text,
+      },
+    };
+  }
+
+  recordThreadEncounterAttention(candidate) {
+    assertId("attention.threadId", candidate.threadId);
+    assertId("attention.encounterRef", candidate.encounterRef);
+    assertId("attention.situationId", candidate.situationId);
+    assertIsoTimestamp("attention.occurredAt", candidate.occurredAt);
+    if (!["noticed","not_noticed"].includes(candidate.outcome)) {
+      throw new TypeError("attention outcome is invalid");
+    }
+    if (candidate.outcome === "noticed") assertNonEmpty("attention.experienceText", candidate.experienceText);
+    if (candidate.outcome === "not_noticed" && candidate.experienceText !== null) {
+      throw new TypeError("not_noticed cannot carry experience text");
+    }
+    const attention = {
+      threadId:candidate.threadId,
+      encounterRef:candidate.encounterRef,
+      situationId:candidate.situationId,
+      occurredAt:candidate.occurredAt,
+      outcome:candidate.outcome,
+    };
+    const attentionDigest = digest(attention);
+
+    try {
+      return this.#database.transaction(() => {
+        const presence = this.#database.prepare(`
+          SELECT situation_id FROM encounter_story_thread_presence
+          WHERE encounter_ref=? AND thread_id=?
+        `).get(candidate.encounterRef,candidate.threadId);
+        if (presence === undefined) throw new TypeError("attention requires admitted encounter presence");
+        if (presence.situation_id !== candidate.situationId) {
+          throw new TypeError("attention situation does not match encounter presence");
+        }
+        const encounter = this.#database.prepare(
+          "SELECT occurred_at FROM encounter_story_records WHERE encounter_id=?",
+        ).get(candidate.encounterRef);
+        if (encounter === undefined || encounter.occurred_at !== candidate.occurredAt) {
+          throw new TypeError("attention time must match Encounter Story");
+        }
+
+        const prior = this.#database.prepare(`
+          SELECT record_digest FROM thread_encounter_attention
+          WHERE thread_id=? AND encounter_ref=?
+        `).get(candidate.threadId,candidate.encounterRef);
+        if (prior !== undefined) {
+          if (prior.record_digest !== attentionDigest) throw new TypeError("encounter attention conflicts");
+          return this.getThreadEncounterAttention(candidate.threadId,candidate.encounterRef);
+        }
+
+        this.#database.prepare(`
+          INSERT INTO thread_encounter_attention(
+            thread_id,encounter_ref,situation_id,occurred_at,outcome,record_digest
+          ) VALUES (?,?,?,?,?,?)
+        `).run(
+          candidate.threadId,candidate.encounterRef,candidate.situationId,
+          candidate.occurredAt,candidate.outcome,attentionDigest,
+        );
+
+        let experience = null;
+        if (candidate.outcome === "noticed") {
+          const experienceId = threadExperienceId(candidate);
+          const experienceRecord = {
+            experienceId,
+            threadId:candidate.threadId,
+            encounterRef:candidate.encounterRef,
+            situationId:candidate.situationId,
+            occurredAt:candidate.occurredAt,
+            experienceText:candidate.experienceText,
+          };
+          this.#database.prepare(`
+            INSERT INTO thread_encounter_experiences(
+              experience_id,thread_id,encounter_ref,situation_id,occurred_at,experience_text,record_digest
+            ) VALUES (?,?,?,?,?,?,?)
+          `).run(
+            experienceId,candidate.threadId,candidate.encounterRef,candidate.situationId,
+            candidate.occurredAt,candidate.experienceText,digest(experienceRecord),
+          );
+          experience = experienceRecord;
+        }
+
+        return { ...attention, experience };
+      });
     } catch (error) { throw translateStorageError(error); }
   }
 
