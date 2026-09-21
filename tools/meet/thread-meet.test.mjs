@@ -7,7 +7,8 @@ test("a meeting enters and stays in the Thread's published scene", async () => {
   const requests = [];
   const fetchImpl = async (url, init = {}) => {
     requests.push({ url:String(url), init });
-    if (String(url).endsWith("/snapshot")) {
+    if (String(url).endsWith("/meet")) {
+      assert.equal(init.method, "POST");
       return Response.json({
         currentPresent:{ payload:{
           situationId:"sit_current_001",
@@ -41,6 +42,7 @@ test("a meeting enters and stays in the Thread's published scene", async () => {
     mediatedContext:"late afternoon in the park",
     participants:["Mara"],
   }, "meeting must expose the published scene");
+  assert.equal(requests[0].url, "https://fibre.example/api/threads/thr_meeting_001/meet", "meeting must reconcile before reading a scene");
   assert.deepEqual(requests.slice(1).map(({ init }) => JSON.parse(init.body).situationId), [
     "sit_current_001",
     "sit_current_001",
