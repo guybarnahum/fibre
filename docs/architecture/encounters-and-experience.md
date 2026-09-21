@@ -261,6 +261,116 @@ Do not build a sensory simulator. The purpose is to make lived attention causal,
 
 For a voluntarily accepted direct meeting, a minimal experience may be implicit because the Thread deliberately entered the encounter. For incidental witnesses and environmental occurrences, noticing must not be assumed.
 
+## Encounter visualization
+
+Every admitted Encounter Story should be **visualizable by construction**, even when Fibre never renders media for it.
+
+The durable companion is a rich, media-neutral reconstruction prompt bound to the encounter's admitted evidence:
+
+```text
+Encounter Story
+  -> visualizationPrompt
+  -> prompt digest + bound source references
+  -> optional image / video / later media render
+```
+
+This follows the same truth pattern already accepted for autobiographical-memory reconstruction: the prompt-and-evidence lineage is durable; generated media is replaceable derived representation.
+
+Unlike the memory-photo obligation, an encounter does **not** require a rendered asset to be complete. Rendering is optional. The prompt exists so Fibre can later reconstruct the scene faithfully if a product surface, Admin view, memory experience or future medium wants it.
+
+### What the prompt represents
+
+An encounter visualization prompt depicts the **objective Encounter Story**, not any one Thread's private interpretation.
+
+It may richly describe only admitted observable context such as:
+
+- physical place or transit context;
+- time of day, weather, lighting or environmental conditions when known;
+- present Threads/People and non-person subjects;
+- chronology of observable beats;
+- spoken words when the story records them;
+- outward actions, posture and visibly observable expression;
+- spatial relationships that are actually supported;
+- uncertainty and details that must remain visually noncommittal.
+
+It must not convert private experience into objective visual fact.
+
+For example, if B privately felt humiliated when A spoke sharply, an objective encounter reconstruction may depict A's recorded words and observable behavior, but must not depict B as visibly humiliated unless that outward expression is itself admitted encounter evidence.
+
+### Identity and chronology
+
+If a Thread is depicted, the render must use that Thread's admitted canonical visual-identity reference and chronology-derived age at the encounter time.
+
+For a multi-Thread encounter, each depicted Thread carries her own visual-identity reference. One Thread's reference must never be reused as another person's appearance.
+
+Non-person/environmental encounters require no person reference unless a Thread is actually depicted.
+
+Current identity, hairstyle, clothing, relationship state or later embodiment must not be projected backward unless it was already bound to the encounter visualization evidence.
+
+### Image and video from the same source
+
+The prompt should be **media-neutral rich scene direction**, not an image-only sentence.
+
+It should contain enough temporal structure that:
+
+- an image renderer can choose a representative supported moment;
+- a video renderer can follow the ordered encounter beats;
+- a future renderer can create another representation from the same admitted scene without changing encounter truth.
+
+Provider-specific shot syntax, duration, aspect ratio, camera motion or codec settings belong to the generation job, not the semantic encounter record.
+
+For video, observable dialogue may be represented only from admitted story text. Fibre must not invent identity-specific voices. If an authorized voice reference does not exist, the renderer should remain silent/ambient or otherwise avoid claiming a canonical voice.
+
+### Richness without invention
+
+The visualization prompt should be vivid enough to reconstruct a convincing scene, but richness must come from combining admitted evidence rather than filling factual gaps.
+
+A useful shape is:
+
+```text
+Scene:
+  rich natural-language account of the setting and encounter
+
+People / subjects:
+  bound appearance and age evidence for depicted Threads
+  supported non-person subjects
+
+Temporal progression:
+  ordered observable beats
+
+Visual emphasis:
+  suggested representative moments or composition derived from the story
+
+Uncertain / unspecified:
+  facts the renderer must not make precise
+
+Constraints:
+  reconstruction, not documentary evidence
+  do not invent hidden participants, motives, emotions or later facts
+```
+
+The `visualizationPrompt` itself is derived reconstruction authority, not World-event authority. The Encounter Story remains the authority for what happened.
+
+### Objective encounter versus subjective memory
+
+Fibre must preserve two distinct reconstruction classes:
+
+```text
+Encounter Story
+  -> objective encounter visualization
+     "what Fibre's World says observably happened"
+
+Thread Experience / retained Memory
+  -> subjective memory reconstruction
+     "what this Thread later remembers"
+```
+
+Those can legitimately produce different visuals.
+
+A witness may remember A as looming or the room as oppressive even when those details are not objective Encounter Story facts. Such a reconstruction belongs to the Thread's memory lineage, not the shared encounter visualization.
+
+Generated encounter media must never be fed back as evidence for the Encounter Story, Thread Experience, identity, relationship or memory. It is representation.
+
 ## Journal artifact
 
 World remains authoritative for encounter stories, Thread experiences, journal-entry provenance and memory.
