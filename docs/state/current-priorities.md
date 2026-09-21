@@ -58,6 +58,8 @@ N6  rich insidefibre.com lived meeting                    NEXT
 
 Keep these slices narrow. Reuse the existing Flight Plan, CurrentSituation, encounter, memory, relationship, Presentation and canonical embodiment authorities.
 
+For a lived Thread, treat a current half-day/day Flight Plan as a rolling continuity expectation. If compute slept, thaw/catch-up may realize the missing plan/history retrospectively, but it must preserve lived-time versus materialization-time provenance and may form memory only through the normal experience/retention path.
+
 Do not create a parallel life engine.
 
 ## N1 — ensure LivedNow
@@ -146,7 +148,7 @@ Genesis supplies grounded prior life. LivedNow owns life after Fibre birth.
 
 ## N4 — Person -> Thread meeting
 
-Only after LivedNow has established the current scene should `/meet` admit the visitor.
+Only after LivedNow has established the current scene should `/meet` admit the visitor. Meeting is an intersection with ongoing life, not a scene-creation API.
 
 ```text
 select Thread
