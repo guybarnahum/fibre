@@ -99,7 +99,7 @@ last admitted lived state
 
 Until this exists, a deployed `/meet` can still expose stale runtime state or require a fixture to create the scene.
 
-## N1 — ensure LivedNow
+## N1 — ensure LivedNow — CLOSED
 
 ### Capability
 
@@ -127,9 +127,11 @@ A current World-owned situation plus the durable plans/history needed to justify
 
 ### Acceptance
 
-The same Thread/time/input state reconciles idempotently. A caller cannot supply a desired location/activity and call it LivedNow.
+The bounded N1 seam is now implemented and green: the same Thread/time/input state reconciles idempotently; a caller cannot supply a desired location/activity; required care authority can govern enacted life without replacing personal will; and uncovered future time fails instead of reusing the stale CurrentSituation.
 
-## N2 — dormant interval catch-up
+N1 intentionally does not fill an uncovered interval. That is N2.
+
+## N2 — dormant interval catch-up — CURRENT
 
 ### Capability
 
