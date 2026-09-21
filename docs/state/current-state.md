@@ -39,6 +39,7 @@ bounded Flight Plan / CurrentSituation                    PROVEN
 bounded Person -> Thread situated encounter               PROVEN
 encounter -> reflection -> selective memory               PROVEN
 later situation + later encounter continuity              PROVEN
+World-owned ensure-LivedNow over covered plan time         PROVEN
 continuous LivedNow across wall-clock dormancy            NOT YET
 deployed /meet over continuous LivedNow                   NOT YET
 Thread -> Thread reciprocal meeting                       NOT YET
