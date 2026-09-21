@@ -4,8 +4,8 @@ import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import { createLivedEncounterWriteApi } from "#services/world-kernel/src/lived-encounter-write-api.mjs";
-import { createReciprocalMeetingService } from "#services/world-kernel/src/lived-reciprocal-meeting.mjs";
-import { createReciprocalMeetingWriteApi } from "#services/world-kernel/src/lived-reciprocal-meeting-write-api.mjs";
+import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
+import { createSocialMeetingWriteApi } from "#services/world-kernel/src/lived-social-meeting-write-api.mjs";
 import { createThreadJournalBook } from "#services/world-kernel/src/thread-journal-book.mjs";
 import { createThreadJournalReadApi } from "#services/world-kernel/src/thread-journal-read-api.mjs";
 import { createLivedNowPublicationService } from "#services/world-kernel/src/lived-now-publication-service.mjs";
@@ -21,7 +21,7 @@ import { createThreadPresentationPublisher } from "../service-boundaries.mjs";
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
 const LIVED_ENCOUNTER_ROUTE = "/internal/lived-encounter";
 const LIVED_NOW_ROUTE = "/internal/lived-now/ensure";
-const RECIPROCAL_MEETING_ROUTE = "/internal/reciprocal-meeting";
+const SOCIAL_MEETING_ROUTE = "/internal/social-meeting";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
 
 function bindingFetch(binding) {
@@ -54,7 +54,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     super(ctx, env);
     this.livedEncounterApi = null;
     this.livedNowApi = null;
-    this.reciprocalMeetingApi = null;
+    this.socialMeetingApi = null;
     this.threadJournalApi = null;
     this.threadJournalBook = null;
   }
@@ -87,8 +87,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.livedEncounterApi;
   }
 
-  reciprocalMeetingApiForRequest() {
-    if (this.reciprocalMeetingApi === null) {
+  socialMeetingApiForRequest() {
+    if (this.socialMeetingApi === null) {
       const runtime = this.runtimeForRequest();
       const deployment = resolveServiceDeployment(DEPLOYMENT, "world-kernel");
       const livedNowStore = openLivedNowStore(runtime.worldStorage);
@@ -102,7 +102,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         situatedLifeStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
       });
-      const meetingService = createReciprocalMeetingService({
+      const meetingService = createSocialMeetingService({
         worldReader:runtime.worldStore,
         livedNow,
         livedNowStore,
@@ -114,12 +114,12 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
         activityRecorder:createCloudflareActivityRecorder({ env:this.env, service:"world-kernel" }),
       });
-      this.reciprocalMeetingApi = createReciprocalMeetingWriteApi({
+      this.socialMeetingApi = createSocialMeetingWriteApi({
         meetingService,
         privateToken:this.env.FIBRE_PRIVATE_TOKEN,
       });
     }
-    return this.reciprocalMeetingApi;
+    return this.socialMeetingApi;
   }
 
   journalApiForRequest() {
@@ -166,7 +166,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     const url = new URL(request.url);
     if (url.pathname !== LIVED_ENCOUNTER_ROUTE
       && url.pathname !== LIVED_NOW_ROUTE
-      && url.pathname !== RECIPROCAL_MEETING_ROUTE
+      && url.pathname !== SOCIAL_MEETING_ROUTE
       && !THREAD_JOURNAL_ROUTE.test(url.pathname)) {
       return super.fetch(request);
     }
@@ -176,8 +176,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         ? this.livedNowApiForRequest().fetch(request)
         : url.pathname === LIVED_ENCOUNTER_ROUTE
           ? this.encounterApiForRequest().fetch(request)
-          : url.pathname === RECIPROCAL_MEETING_ROUTE
-            ? this.reciprocalMeetingApiForRequest().fetch(request)
+          : url.pathname === SOCIAL_MEETING_ROUTE
+            ? this.socialMeetingApiForRequest().fetch(request)
             : this.journalApiForRequest().fetch(request),
     );
   }
