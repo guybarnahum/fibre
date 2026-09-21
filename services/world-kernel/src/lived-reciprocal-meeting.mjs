@@ -1,11 +1,10 @@
-import { respondToLivedEncounter } from "./lived-encounter-cognition.mjs";
-import { formLivedEncounterMemory } from "./lived-encounter-memory.mjs";
-import { internalizeLivedEncounter } from "./lived-encounter-reflection.mjs";
 import {
+  continueMeetingStory,
   formMeetingOpening,
   formMeetingStance,
   meetingPresenceCompatible,
 } from "./lived-meeting-cognition.mjs";
+import { internalizeSharedEncounterExperience } from "./lived-shared-encounter-aftermath.mjs";
 import {
   assertId,
   assertIsoTimestamp,
@@ -13,6 +12,7 @@ import {
 } from "./persistence-common.mjs";
 
 const MEMORY_LIMIT = 6;
+const MAX_PRESENT_THREADS = 6;
 
 function requireMethod(name, value, method) {
   if (value === null || typeof value !== "object" || typeof value[method] !== "function") {
@@ -24,7 +24,7 @@ function contextFor({ threadId, worldReader, livedNowStore, semanticStateStore, 
   const thread = worldReader.getThread(threadId, { required:false });
   if (thread === null) throw new TypeError(`Thread ${threadId} was not found`);
   const situation = livedNowStore.getCurrentSituation(threadId);
-  if (situation === null) throw new TypeError("reciprocal meeting requires LivedNow");
+  if (situation === null) throw new TypeError("shared encounter requires LivedNow");
   return Object.freeze({
     thread:structuredClone(thread),
     situation:structuredClone(situation),
@@ -36,59 +36,20 @@ function contextFor({ threadId, worldReader, livedNowStore, semanticStateStore, 
   });
 }
 
-async function privateAftermath({
-  livedContext,
-  encounter,
-  encounterResult,
-  sharedEventRef,
-  experienceStore,
-  memoryStore,
-  journalBook,
-  modelAdapter,
-  activityRecorder,
-}) {
-  const internalized = await internalizeLivedEncounter({
-    livedContext,
-    encounter,
-    encounterResult,
-    experienceStore,
-    modelAdapter,
-    activityRecorder,
-    journalBook,
-    sharedEventRef,
-  });
-  let memory = { outcome:"not_attempted", memory:null };
-  if (internalized.privateAftermathComplete) {
-    try {
-      memory = await (activityRecorder === null
-        ? formLivedEncounterMemory({
-            livedContext,
-            historyEvent:internalized.historyEvent,
-            journalEntry:internalized.journalEntry,
-            memoryStore,
-            modelAdapter,
-          })
-        : activityRecorder.runStage({
-            threadId:livedContext.thread.threadId,
-            correlationId:sharedEventRef,
-            stage:"meeting.memory.retain",
-            evidence:{ eventId:internalized.historyEvent.eventId, sharedEventRef },
-          }, () => formLivedEncounterMemory({
-            livedContext,
-            historyEvent:internalized.historyEvent,
-            journalEntry:internalized.journalEntry,
-            memoryStore,
-            modelAdapter,
-          })));
-    } catch {
-      memory = { outcome:"incomplete", memory:null };
-    }
-  }
+function groupCompatible(contexts, situatedLifeStore) {
+  const [first, ...rest] = contexts;
+  const firstEpisodes = situatedLifeStore.listCurrentPlaceEpisodes(first.thread.threadId);
+  return rest.every((context) => meetingPresenceCompatible(first.situation, context.situation, {
+    leftPlaceEpisodes:firstEpisodes,
+    rightPlaceEpisodes:situatedLifeStore.listCurrentPlaceEpisodes(context.thread.threadId),
+  }));
+}
+
+function participantSummary(context) {
   return Object.freeze({
-    historyEvent:internalized.historyEvent,
-    journalEntry:internalized.journalEntry,
-    journalBookRecord:internalized.journalBookRecord,
-    memory,
+    threadId:context.thread.threadId,
+    name:context.thread.identity?.name ?? null,
+    selfDescription:context.thread.identity?.selfDescription ?? "",
   });
 }
 
@@ -113,131 +74,148 @@ export function createReciprocalMeetingService({
   requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
   requireMethod("memoryStore", memoryStore, "listCurrentMemories");
   requireMethod("memoryStore", memoryStore, "recordMemory");
-  requireMethod("experienceStore", experienceStore, "recordSharedMeeting");
-  requireMethod("experienceStore", experienceStore, "recordEncounter");
-  requireMethod("experienceStore", experienceStore, "recordJournalEntry");
+  requireMethod("experienceStore", experienceStore, "recordSharedEncounter");
+  requireMethod("experienceStore", experienceStore, "recordSharedEncounterExperience");
+  requireMethod("experienceStore", experienceStore, "recordSharedEncounterJournalEntry");
   requireMethod("modelAdapter", modelAdapter, "invoke");
   if (activityRecorder !== null) requireMethod("activityRecorder", activityRecorder, "runStage");
 
   return Object.freeze({
     async meet(input) {
-      assertPlainObject("reciprocal meeting input", input);
-      assertId("reciprocal meeting initiatorThreadId", input.initiatorThreadId);
-      assertId("reciprocal meeting responderThreadId", input.responderThreadId);
-      if (input.initiatorThreadId === input.responderThreadId) {
-        throw new TypeError("reciprocal meeting requires two different Threads");
+      assertPlainObject("shared meeting input", input);
+      assertId("shared meeting initiatorThreadId", input.initiatorThreadId);
+      assertIsoTimestamp("shared meeting at", input.at);
+      if (!Array.isArray(input.participantThreadIds)
+        || input.participantThreadIds.length < 2
+        || input.participantThreadIds.length > MAX_PRESENT_THREADS) {
+        throw new TypeError(`shared meeting requires 2-${MAX_PRESENT_THREADS} present Threads`);
       }
-      assertIsoTimestamp("reciprocal meeting at", input.at);
+      const threadIds = [...input.participantThreadIds];
+      if (new Set(threadIds).size !== threadIds.length) throw new TypeError("shared meeting Threads must be unique");
+      for (const threadId of threadIds) assertId("shared meeting participantThreadId", threadId);
+      if (!threadIds.includes(input.initiatorThreadId)) throw new TypeError("shared meeting initiator must be present");
 
-      await livedNow.ensure({ threadId:input.initiatorThreadId, at:input.at });
-      await livedNow.ensure({ threadId:input.responderThreadId, at:input.at });
+      for (const threadId of threadIds) {
+        await livedNow.ensure({ threadId, at:input.at });
+      }
 
-      const left = contextFor({
-        threadId:input.initiatorThreadId,
-        worldReader,livedNowStore,semanticStateStore,memoryStore,
-      });
-      const right = contextFor({
-        threadId:input.responderThreadId,
-        worldReader,livedNowStore,semanticStateStore,memoryStore,
-      });
-      const leftPlan = livedNowStore.latestPlan(left.thread.threadId, "personal", { at:input.at });
-      const rightPlan = livedNowStore.latestPlan(right.thread.threadId, "personal", { at:input.at });
+      const contexts = threadIds.map((threadId) => contextFor({
+        threadId,
+        worldReader,
+        livedNowStore,
+        semanticStateStore,
+        memoryStore,
+      }));
+      const byId = new Map(contexts.map((context) => [context.thread.threadId, context]));
 
-      const leftStance = await formMeetingStance({
-        thread:left.thread,
-        situation:left.situation,
-        plan:leftPlan,
-        requester:right.thread,
-        relationships:situatedLifeStore.listCurrentLifeRelations(left.thread.threadId),
-        semanticStates:left.semanticStates,
-        memories:left.memories,
-        modelAdapter,
-      });
-      const rightStance = await formMeetingStance({
-        thread:right.thread,
-        situation:right.situation,
-        plan:rightPlan,
-        requester:left.thread,
-        relationships:situatedLifeStore.listCurrentLifeRelations(right.thread.threadId),
-        semanticStates:right.semanticStates,
-        memories:right.memories,
-        modelAdapter,
-      });
-
-      const compatible = meetingPresenceCompatible(left.situation, right.situation, {
-        leftPlaceEpisodes:situatedLifeStore.listCurrentPlaceEpisodes(left.thread.threadId),
-        rightPlaceEpisodes:situatedLifeStore.listCurrentPlaceEpisodes(right.thread.threadId),
-      });
-      if (!compatible || leftStance.decision !== "accept" || rightStance.decision !== "accept") {
+      const compatible = groupCompatible(contexts, situatedLifeStore);
+      if (!compatible) {
         return Object.freeze({
-          outcome:compatible ? "not_met" : "incompatible",
-          compatible,
-          stances:Object.freeze({
-            [left.thread.threadId]:leftStance,
-            [right.thread.threadId]:rightStance,
-          }),
+          outcome:"incompatible",
+          compatible:false,
+          stances:Object.freeze({}),
           sharedEvent:null,
           aftermath:null,
         });
       }
 
+      const stances = {};
+      for (const context of contexts) {
+        const counterparties = contexts
+          .filter((candidate) => candidate.thread.threadId !== context.thread.threadId)
+          .map((candidate) => candidate.thread);
+        stances[context.thread.threadId] = await formMeetingStance({
+          thread:context.thread,
+          situation:context.situation,
+          plan:livedNowStore.latestPlan(context.thread.threadId, "personal", { at:input.at }),
+          counterparties,
+          relationships:situatedLifeStore.listCurrentLifeRelations(context.thread.threadId),
+          semanticStates:context.semanticStates,
+          memories:context.memories,
+          modelAdapter,
+        });
+      }
+
+      if (Object.values(stances).some((stance) => stance.decision !== "accept")) {
+        return Object.freeze({
+          outcome:"not_met",
+          compatible:true,
+          stances:Object.freeze(stances),
+          sharedEvent:null,
+          aftermath:null,
+        });
+      }
+
+      const initiator = byId.get(input.initiatorThreadId);
+      const otherContexts = contexts.filter((context) => context.thread.threadId !== input.initiatorThreadId);
       const openingText = await formMeetingOpening({
-        thread:left.thread,
-        situation:left.situation,
-        counterparty:right.thread,
+        thread:initiator.thread,
+        situation:initiator.situation,
+        counterparties:otherContexts.map((context) => context.thread),
         modelAdapter,
       });
-      const rightResponse = await respondToLivedEncounter({
-        livedContext:right,
-        encounter:{ utterance:openingText, occurredAt:input.at },
-        modelAdapter,
-      });
-      const leftFollowup = await respondToLivedEncounter({
-        livedContext:left,
-        encounter:{ utterance:rightResponse.responseText, occurredAt:input.at },
-        modelAdapter,
-      });
+      const story = {
+        storyVersion:"shared-encounter-story-v0.1",
+        beats:[{
+          actorThreadId:initiator.thread.threadId,
+          kind:"utterance",
+          text:openingText,
+        }],
+      };
 
-      const sharedEvent = experienceStore.recordSharedMeeting({
+      for (const context of otherContexts) {
+        const beat = await continueMeetingStory({
+          thread:context.thread,
+          situation:context.situation,
+          counterparties:contexts
+            .filter((candidate) => candidate.thread.threadId !== context.thread.threadId)
+            .map((candidate) => candidate.thread),
+          story,
+          modelAdapter,
+        });
+        if (beat !== null) story.beats.push(beat);
+      }
+
+      const closingBeat = await continueMeetingStory({
+        thread:initiator.thread,
+        situation:initiator.situation,
+        counterparties:otherContexts.map((context) => context.thread),
+        story,
+        modelAdapter,
+      });
+      if (closingBeat !== null) story.beats.push(closingBeat);
+
+      const sharedEvent = experienceStore.recordSharedEncounter({
         occurredAt:input.at,
-        initiatorThreadId:left.thread.threadId,
-        responderThreadId:right.thread.threadId,
-        initiatorSituationId:left.situation.situationId,
-        responderSituationId:right.situation.situationId,
-        openingText,
-        responseText:rightResponse.responseText,
-        followupText:leftFollowup.responseText,
+        initiatorThreadId:input.initiatorThreadId,
+        participants:contexts.map((context) => ({
+          threadId:context.thread.threadId,
+          situationId:context.situation.situationId,
+        })),
+        story,
       });
 
-      const [leftAftermath, rightAftermath] = await Promise.all([
-        privateAftermath({
-          livedContext:left,
-          encounter:{ utterance:rightResponse.responseText, occurredAt:input.at },
-          encounterResult:leftFollowup,
-          sharedEventRef:sharedEvent.sharedEventId,
-          experienceStore,memoryStore,journalBook,modelAdapter,activityRecorder,
-        }),
-        privateAftermath({
-          livedContext:right,
-          encounter:{ utterance:openingText, occurredAt:input.at },
-          encounterResult:rightResponse,
-          sharedEventRef:sharedEvent.sharedEventId,
-          experienceStore,memoryStore,journalBook,modelAdapter,activityRecorder,
-        }),
-      ]);
+      const participantSummaries = contexts.map(participantSummary);
+      const aftermath = {};
+      for (const context of contexts) {
+        aftermath[context.thread.threadId] = await internalizeSharedEncounterExperience({
+          livedContext:context,
+          sharedEncounter:sharedEvent,
+          participantSummaries,
+          experienceStore,
+          memoryStore,
+          journalBook,
+          modelAdapter,
+          activityRecorder,
+        });
+      }
 
       return Object.freeze({
         outcome:"met",
         compatible:true,
-        stances:Object.freeze({
-          [left.thread.threadId]:leftStance,
-          [right.thread.threadId]:rightStance,
-        }),
+        stances:Object.freeze(stances),
         sharedEvent,
-        aftermath:Object.freeze({
-          [left.thread.threadId]:leftAftermath,
-          [right.thread.threadId]:rightAftermath,
-        }),
+        aftermath:Object.freeze(aftermath),
       });
     },
   });
