@@ -109,6 +109,7 @@ export function createReciprocalMeetingService({
   requireMethod("livedNowStore", livedNowStore, "getCurrentSituation");
   requireMethod("livedNowStore", livedNowStore, "latestPlan");
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentLifeRelations");
+  requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentPlaceEpisodes");
   requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
   requireMethod("memoryStore", memoryStore, "listCurrentMemories");
   requireMethod("memoryStore", memoryStore, "recordMemory");
@@ -163,7 +164,10 @@ export function createReciprocalMeetingService({
         modelAdapter,
       });
 
-      const compatible = meetingPresenceCompatible(left.situation, right.situation);
+      const compatible = meetingPresenceCompatible(left.situation, right.situation, {
+        leftPlaceEpisodes:situatedLifeStore.listCurrentPlaceEpisodes(left.thread.threadId),
+        rightPlaceEpisodes:situatedLifeStore.listCurrentPlaceEpisodes(right.thread.threadId),
+      });
       if (!compatible || leftStance.decision !== "accept" || rightStance.decision !== "accept") {
         return Object.freeze({
           outcome:compatible ? "not_met" : "incompatible",
