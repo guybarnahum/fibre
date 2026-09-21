@@ -190,19 +190,19 @@ export function createSocialMeetingService({
       });
       if (closingBeat !== null) story.beats.push(closingBeat);
 
-      const participants = contexts.map((context) => ({
+      const threadPresence = contexts.map((context) => ({
         threadId:context.thread.threadId,
         situationId:context.situation.situationId,
       }));
       const encounterStory = experienceStore.recordEncounterStory({
         occurredAt:input.at,
-        participants,
+        threadPresence,
         story,
         visualization:createEncounterVisualization({
           occurredAt:input.at,
           story,
           scene:"A small social encounter among Threads whose independent World-owned current situations establish compatible presence.",
-          sourceReferences:participants.map((participant) => participant.situationId),
+          sourceReferences:threadPresence.map((presence) => presence.situationId),
           depictedThreadRefs:[],
         }),
       });
@@ -213,7 +213,7 @@ export function createSocialMeetingService({
         aftermath[context.thread.threadId] = await internalizeThreadEncounterExperience({
           livedContext:context,
           encounterStory,
-          participantSummaries,
+          presentThreadSummaries:participantSummaries,
           experienceStore,
           memoryStore,
           journalBook,
