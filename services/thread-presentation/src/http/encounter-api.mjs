@@ -79,9 +79,13 @@ export function createPublicEncounterApi({
           const code = typeof error?.body?.code === "string" && ID_PATTERN.test(error.body.code)
             ? error.body.code
             : null;
+          const detail = typeof error?.body?.detail === "string" && error.body.detail.trim() !== ""
+            ? error.body.detail
+            : null;
           return json({
             error: "lived_now_unavailable",
             ...(code === null ? {} : { code }),
+            ...(detail === null ? {} : { detail }),
           }, request, viewerOrigin, 503);
         }
       }
