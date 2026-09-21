@@ -6,7 +6,9 @@
   "rules": [
     {
       "type": "Text",
-      "globs": ["**/*.yaml"],
+      "globs": [
+        "**/*.yaml"
+      ],
       "fallthrough": true
     }
   ],
@@ -15,7 +17,10 @@
     "FIBRE_WORLD_RECONCILIATION_MS": "5000"
   },
   "secrets": {
-    "required": ["FIBRE_PRIVATE_TOKEN", "OPENAI_API_KEY"]
+    "required": [
+      "FIBRE_PRIVATE_TOKEN",
+      "OPENAI_API_KEY"
+    ]
   },
   "d1_databases": [
     {
@@ -49,5 +54,11 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "r2_buckets": [
+    {
+      "binding": "THREAD_OBJECTS",
+      "bucket_name": "fibre-thread-objects"
+    }
+  ]
 }
