@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + meetings**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 composes covering Flight Plan intent into one World-owned present, and N2 now restores a stale lived Thread across a bounded multi-day dormant interval with sparse retrospective plan/situation materialization, explicit materialization provenance and fresh forward plan coverage. The active work is N3: make a newly born Thread enter this same continuing-life path without a special fixture.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, and N3 now makes a canonical Genesis birth enter that same continuity seam and survive the same dormant path. The active work is N4: make the real Person -> Thread meeting reconcile LivedNow before the visitor enters.
 
 Canonical architecture:
 
@@ -50,8 +50,8 @@ Therefore Fibre should no longer describe the remaining work as merely “run th
 ```text
 N1  World-owned ensure-LivedNow seam                      CLOSED
 N2  dormant/frozen interval catch-up                      CLOSED
-N3  Genesis -> first LivedNow -> multi-day continuity     CURRENT
-N4  Person -> Thread /meet over real LivedNow             NEXT
+N3  Genesis -> first LivedNow -> multi-day continuity     CLOSED
+N4  Person -> Thread /meet over real LivedNow             CURRENT
 N5  Thread -> Thread reciprocal meeting                   NEXT
 N6  rich insidefibre.com lived meeting                    NEXT
 ```
@@ -104,7 +104,9 @@ Quiet time remains sparse. This is not a minute-by-minute simulator.
 
 The admitted retrospective records preserve both their lived timestamps and `materialization: { mode: "retrospective", materializedAt }`. Catch-up is bounded to a small number of windows, continues from the prior lived place instead of teleporting, and retrying the same requested present does not regenerate the gap. The quiet-gap proof does not manufacture an encounter or memory merely to demonstrate consequence; when future catch-up synthesis admits an event that warrants consequence, it must use the ordinary experience/retention authorities already proven by B1/B2.
 
-## N3 — Genesis to continuing life
+## N3 — Genesis to continuing life — CLOSED
+
+A canonical Genesis birth now exits through the same World-owned LivedNow seam used later: the `THREAD_SEEDED` event defines the Fibre birth boundary, the latest grounded Genesis place anchors the first plan/present, and a direct request several days later reuses N2 catch-up rather than a Genesis-specific life engine.
 
 The important E2E is no longer merely:
 
