@@ -26,7 +26,7 @@ function encounterEventId(record) {
 function encounterStoryId(record) {
   return `story_${sha256(canonicalJson({
     occurredAt:record.occurredAt,
-    participants:record.participants,
+    threadPresence:record.threadPresence,
     story:record.story,
     sourceReferences:record.visualization?.visualizationSourceReferences ?? [],
   })).slice(0, 48)}`;
@@ -129,11 +129,11 @@ export class LivedExperienceStore {
 
   recordEncounterStory(candidate) {
     assertIsoTimestamp("encounter story.occurredAt", candidate.occurredAt);
-    if (!Array.isArray(candidate.participants) || candidate.participants.length < 1) {
+    if (!Array.isArray(candidate.threadPresence) || candidate.threadPresence.length < 1) {
       throw new TypeError("encounter story requires at least one Thread presence");
     }
     const participantIds = new Set();
-    const participants = candidate.participants.map((participant) => {
+    const threadPresence = candidate.threadPresence.map((participant) => {
       if (participant === null || typeof participant !== "object" || Array.isArray(participant)) {
         throw new TypeError("encounter story participant must be an object");
       }
@@ -145,14 +145,14 @@ export class LivedExperienceStore {
     });
     const story = normalizeStory(candidate.story, participantIds);
     const visualization = normalizeVisualization(candidate.visualization, participantIds);
-    const normalized = { occurredAt:candidate.occurredAt, participants, story, visualization };
+    const normalized = { occurredAt:candidate.occurredAt, threadPresence, story, visualization };
     const encounterId = encounterStoryId(normalized);
     const record = { encounterId, ...normalized };
     const recordDigest = digest(record);
 
     try {
       return this.#database.transaction(() => {
-        for (const participant of participants) {
+        for (const participant of threadPresence) {
           const thread = this.#database.prepare(
             "SELECT 1 AS present FROM threads WHERE thread_id=?",
           ).get(participant.threadId);
@@ -184,7 +184,7 @@ export class LivedExperienceStore {
           INSERT INTO encounter_story_thread_presence(encounter_ref,thread_id,situation_id)
           VALUES (?,?,?)
         `);
-        for (const participant of participants) {
+        for (const participant of threadPresence) {
           insertPresence.run(encounterId,participant.threadId,participant.situationId);
         }
         return record;
@@ -213,7 +213,7 @@ export class LivedExperienceStore {
     return {
       encounterId:row.encounter_id,
       occurredAt:row.occurred_at,
-      participants,
+      threadPresence,
       story:JSON.parse(row.story_json),
       visualization:{
         visualizationPrompt:row.visualization_prompt,
