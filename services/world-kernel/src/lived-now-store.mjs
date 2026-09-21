@@ -336,6 +336,7 @@ export class LivedNowStore {
       "situationId",
       "establishedAt",
       "observation",
+      "materialization",
     ]);
     assertId("enact current situation input.threadId", input.threadId);
     assertId("enact current situation input.situationId", input.situationId);
@@ -355,6 +356,7 @@ export class LivedNowStore {
           personalPlan,
           carePlan,
           observation: input.observation,
+          ...(input.materialization === undefined ? {} : { materialization: input.materialization }),
         });
 
         for (const reference of observedPlaceRefs(situation)) {
