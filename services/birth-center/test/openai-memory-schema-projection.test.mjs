@@ -26,7 +26,7 @@ function response(status, body) {
   };
 }
 
-test("OpenAI transport preserves supported array bounds and recovers unsupported uniqueness", async () => {
+test("OpenAI transport preserves supported bounds and recovers unsupported uniqueness", async () => {
   const frozenHash = passBResponseSchemaHash();
   const canonicalBefore = structuredClone(GENESIS_PASS_B_RESPONSE_SCHEMA);
   const projected = projectOpenAIStructuredOutputSchema(GENESIS_PASS_B_RESPONSE_SCHEMA);
@@ -36,8 +36,8 @@ test("OpenAI transport preserves supported array bounds and recovers unsupported
   assert.equal(GENESIS_PASS_B_RESPONSE_SCHEMA.properties.uncertainty.items.maxLength, 120);
   assert.equal(GENESIS_PASS_B_RESPONSE_SCHEMA.properties.uncertainty.maxItems, 8);
   assert.equal(Object.hasOwn(projected.properties.episodeRefs, "uniqueItems"), false);
-  assert.equal(Object.hasOwn(projected.properties.rememberedContent, "maxLength"), false);
-  assert.equal(Object.hasOwn(projected.properties.uncertainty.items, "maxLength"), false);
+  assert.equal(projected.properties.rememberedContent.maxLength, 600);
+  assert.equal(projected.properties.uncertainty.items.maxLength, 120);
   assert.equal(projected.properties.uncertainty.maxItems, 8);
   assert.deepEqual(GENESIS_PASS_B_RESPONSE_SCHEMA, canonicalBefore);
   assert.equal(passBResponseSchemaHash(), frozenHash);
@@ -72,8 +72,8 @@ test("OpenAI transport preserves supported array bounds and recovers unsupported
 
   const sent = requestBody.text.format.schema;
   assert.equal(Object.hasOwn(sent.properties.episodeRefs, "uniqueItems"), false);
-  assert.equal(Object.hasOwn(sent.properties.rememberedContent, "maxLength"), false);
-  assert.equal(Object.hasOwn(sent.properties.uncertainty.items, "maxLength"), false);
+  assert.equal(sent.properties.rememberedContent.maxLength, 600);
+  assert.equal(sent.properties.uncertainty.items.maxLength, 120);
   assert.equal(sent.properties.uncertainty.maxItems, 8);
   assert.deepEqual(result.output.episodeRefs, ["ep_1", "ep_2"]);
   assert.equal(passBResponseSchemaHash(), frozenHash, "transport recovery must not change Fibre canonical schema identity");
