@@ -139,7 +139,7 @@ async function proxyThreadMeeting(request, env, initiatorThreadId) {
     return json(400, { error:"invalid_thread_meeting", detail:"meeting Threads must be unique" });
   }
   const upstream = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
-    "https://world.internal/internal/reciprocal-meeting",
+    "https://world.internal/internal/social-meeting",
     {
       method:"POST",
       headers:{
