@@ -38,27 +38,36 @@ For implementation agents, also read repository-root `AGENTS.md` and the relevan
 ```text
 M1 + #33-#40 identity/history/birth/causal foundation     closed
 G/H deployed public path + minimum recovery                closed
-FID + Directory/Meet foundation                            closed
+FID + Directory/Meet selection foundation                 closed
+R1-R4 intrinsic regulation                                 closed
 
-R1-R4 Intrinsic regulation                                 current detour
-M2-A Present life + Meet a Thread                          resumes after R4
-M2-B Experience internalization + continuation             then
+bounded Flight Plan / CurrentSituation                     proven
+bounded encounter / selective memory / later meeting       proven
+
+N1 ensure-LivedNow                                         current
+N2 dormant interval catch-up                               next
+N3 Genesis -> multi-day continuing life                    next
+N4 Person -> Thread /meet                                  next
+N5 Thread -> Thread reciprocal meeting                     next
+N6 rich insidefibre.com lived meeting                      next
 ```
 
-The E2E meeting is an architectural forcing function: when making the encounter real exposes a missing life primitive, build that primitive generally rather than faking it in the Viewer.
+The active architecture is [`architecture/lived-now-and-meetings.md`](architecture/lived-now-and-meetings.md).
+
+The E2E meeting remains an architectural forcing function, but the meeting cannot manufacture the present. When making the encounter real exposes a missing life primitive, build that primitive generally in World/LivedNow rather than faking it in the Viewer.
 
 Current active chain:
 
 ```text
-World reality + desired/avoided conditions
-  -> intrinsic regulation
-  -> private drive / affect
-  -> cognition / semantic feeling
-  -> Flight Plan / action
+World reality + Thread-owned life
+  -> Flight Plan
   -> enacted presence / movement
-  -> encounter / experience
+  -> elapsed-life reconciliation when compute slept
+  -> authoritative LivedNow
+  -> Person or Thread encounter
+  -> participant-specific experience
   -> selective consequence
-  -> continued life
+  -> future life
 ```
 
 ## Intrinsic regulation, emotions and needs
