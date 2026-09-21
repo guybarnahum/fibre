@@ -36,6 +36,7 @@ Retain unless the refactor exposes a concrete flaw:
 - meeting stance: `accept | decline | defer`;
 - one n-ary objective story rather than pairwise meeting records;
 - separate Thread-specific aftermath;
+- existing memory reconstruction precedent: durable rich prompt/evidence lineage with replaceable generated media;
 - selective autobiographical retention / `not_remembered`;
 - journal authority distinct from memory;
 - private R2 journal book at `journals/<threadId>/journal.md`;
@@ -52,6 +53,7 @@ Retain unless the refactor exposes a concrete flaw:
 - no explicit bounded noticing step exists for incidental/environmental occurrence;
 - non-person subjects are not yet first-class encounter subjects;
 - private experience persistence records provenance/role but not yet the actual Thread-specific noticed experience;
+- Encounter Story does not yet carry the durable rich visualization prompt needed for reproducible still/video reconstruction;
 - `actor | witness` is useful derived inspection, but should not become the semantic authority;
 - old N5 tests target the superseded dyadic store API;
 - current `main` is therefore a design spike, not deployment-ready.
@@ -65,6 +67,7 @@ Do not restore green by recreating the old dyadic API just to satisfy those test
 Work:
 
 - make Encounter Story / Thread Experience the internal domain terms;
+- reserve one durable Encounter Story visualization companion: rich media-neutral `visualizationPrompt`, digest and bound source references; no rendering obligation;
 - keep meeting endpoints as wrappers over the general seam;
 - remove superseded dyadic persistence/orchestration assumptions;
 - keep journal/R2/place/stance work that survives;
@@ -93,6 +96,8 @@ EncounterStory
 
 Encounter Story owns observable World facts. Thread Experience owns what entered this Thread's lived attention and the immediate subjective experience.
 
+At Encounter Story admission, also derive a rich objective `visualizationPrompt` from admitted observable evidence. The prompt must be rich enough for a still or short video later, but must not contain private Thread interpretation. Rendering remains optional.
+
 No sensory simulator. No universal entity ontology.
 
 ### E1 organism proof: environmental encounter
@@ -102,6 +107,7 @@ A Thread whose Flight Plan puts her in a park encounters a small unscheduled occ
 Prove:
 
 - the bee/flower occurrence is not pre-authored in the Flight Plan;
+- the admitted story has a reproducible rich visualization prompt even if no image/video is generated;
 - the Thread may notice or not notice it;
 - if noticed, her experience is personal and may stir thought/feeling;
 - journal is optional;
@@ -150,9 +156,11 @@ Use 3 Threads at one place:
 
 This is the core proof that shared event != shared meaning.
 
-## Slice E4 — Journal book + Admin acceptance
+The shared Encounter Story has one objective visualization prompt. A later memory reconstruction for A, B or C is separately derived from that Thread's retained memory and may legitimately look different.
 
-**Goal:** make private lived reflection inspectable without making it memory authority.
+## Slice E4 — Journal book + encounter visualization + Admin acceptance
+
+**Goal:** make private lived reflection inspectable without making it memory authority, and make the shared Encounter Story reproducibly visualizable without making generated media history.
 
 Keep:
 
@@ -167,9 +175,13 @@ Prove in Admin:
 - free-form journal entries in the Thread's voice;
 - feelings and subjective interpretation can differ across Threads;
 - journal entry does not imply memory;
-- R2 book is presentation of private journal authority, not semantic authority.
+- R2 book is presentation of private journal authority, not semantic authority;
+- Encounter Story exposes its rich visualization prompt and evidence/provenance;
+- optional encounter image/video generation can use the same prompt lineage;
+- generated encounter media is replaceable representation, never World evidence or private experience authority;
+- depicted Threads use their own canonical visual references and chronology-derived ages.
 
-No existing R2 asset migration.
+No existing R2 asset migration. Encounter media should use the existing generated-asset pipeline/object-ref semantics rather than the private journal-object layout.
 
 ## Slice E5 — Staging acceptance
 
@@ -182,7 +194,8 @@ Live acceptance should exercise:
 3. one accepted multi-Thread encounter with a silent witness;
 4. different journal accounts from the same shared story;
 5. asymmetric memory retention;
-6. Admin journal rendering.
+6. Admin journal rendering;
+7. one Encounter Story visualization prompt that can feed a still render and is semantically suitable for a short-video renderer without changing encounter truth.
 
 N5 closes only after those behaviors work against real staging Threads.
 
@@ -196,7 +209,8 @@ The required organism-level proofs are:
 2. **Voluntary meeting** — compatible presence does not force a social encounter.
 3. **Witness asymmetry** — one shared story can affect a silent witness differently from the actors.
 4. **Journal != memory** — a journal can exist without autobiographical retention and vice versa where warranted.
-5. **Continuity** — a retained consequence can bend later cognition; not-noticed/not-remembered content does not leak into recollection.
+5. **Visualization truth** — the encounter reconstruction prompt contains only admitted objective scene evidence while a Thread's memory reconstruction remains separately subjective.
+6. **Continuity** — a retained consequence can bend later cognition; not-noticed/not-remembered content does not leak into recollection.
 
 Avoid tests of HTTP status codes, helper shapes, exact prompt wording, R2 prefix mechanics or CSS unless the boundary itself is the semantic capability under proof.
 
@@ -213,7 +227,9 @@ Do not build:
 - automatic memory;
 - personality updates after every occurrence;
 - a second current-life authority;
-- migration of existing presentation R2 assets.
+- migration of existing presentation R2 assets;
+- an encounter render completion obligation;
+- provider-specific video orchestration in World state.
 
 ## Review questions
 
