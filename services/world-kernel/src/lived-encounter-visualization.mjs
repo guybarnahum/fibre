@@ -28,20 +28,32 @@ export function createEncounterVisualization({
     .join(" ");
 
   const prompt = [
-    "Generated objective reconstruction of a Fibre Encounter Story.",
-    `Scene: ${scene}`,
+    "OBJECTIVE FIBRE ENCOUNTER RECONSTRUCTION",
+    "",
+    "Scene",
+    scene,
     `Encounter time: ${occurredAt}.`,
-    `Observable progression: ${progression}`,
-    "Compose a visually rich, natural scene using only these admitted observable facts.",
-    "The same prompt must be suitable as grounding for either a representative still image or a short temporal video reconstruction.",
+    "",
+    "Observable progression",
+    progression,
+    "",
+    "Visual direction",
+    "Create a visually rich, natural reconstruction using only the admitted observable facts above.",
+    "For a still image, choose a representative moment directly supported by the story.",
+    "For video, preserve the observable beat order without adding intermediate actions or dialogue as facts.",
+    "",
+    "Identity / unspecified detail",
     depictedThreadRefs.length === 0
-      ? "No canonical Thread visual identity is bound to this reconstruction; do not invent an identifiable face or body for a Thread. Frame the observable occurrence itself or keep any person non-identifying."
+      ? "No canonical Thread visual identity is bound to this reconstruction. Do not invent an identifiable face or body for a Thread; frame the observable occurrence itself or keep any person non-identifying."
       : `Depicted Thread identity references are bound separately for: ${depictedThreadRefs.join(", ")}.`,
-    "Do not depict private thoughts, feelings, motives, memories, relationship meaning, unseen participants, or details not supported by the Encounter Story.",
-    "Do not turn uncertainty or omitted detail into a precise visual claim.",
+    "Anything not established by the Encounter Story or its bound evidence must remain visually noncommittal rather than being made precise.",
+    "",
+    "Constraints",
+    "Do not depict private thoughts, feelings, motives, memories, relationship meaning, unseen participants, or later facts.",
+    "Do not turn omitted or uncertain detail into a precise visual claim.",
     "This is generated reconstruction, not documentary evidence or an authentic capture.",
     "Avoid text overlays, labels, signatures, watermarks, or claims of authenticity.",
-  ].join(" ");
+  ].join("\n");
 
   const visualizationSourceReferences = unique(sourceReferences);
   const depicted = unique(depictedThreadRefs);
