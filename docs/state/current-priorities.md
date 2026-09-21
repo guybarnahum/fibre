@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + encounters**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 has been replanned around the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 now builds on the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0 reconciliation is closed and E1 is current.
 
 Canonical architecture:
 
@@ -54,7 +54,7 @@ N1  World-owned ensure-LivedNow seam                      CLOSED
 N2  dormant/frozen interval catch-up                      CLOSED
 N3  Genesis -> first LivedNow -> multi-day continuity     CLOSED
 N4  Person -> Thread /meet over real LivedNow             CLOSED
-N5  general Encounter Story -> Thread Experience seam     CURRENT
+N5  Encounter Story -> noticing -> Thread Experience       CURRENT
 N6  rich insidefibre.com lived encounter                  NEXT
 ```
 
@@ -180,7 +180,7 @@ meeting request
        -> Thread Experience(s)
 ```
 
-The first implementation spike produced useful pieces that should be reused where they survive the broader model:
+E0 reconciled the first implementation spike into a green foundation. The useful pieces retained are:
 
 - independent ensure-LivedNow;
 - place compatibility across Thread-specific situated-life evidence;
@@ -191,17 +191,15 @@ The first implementation spike produced useful pieces that should be reused wher
 - rich Admin journal presentation;
 - journal separated from autobiographical memory.
 
-But the spike overfit orchestration to invited social meetings. It is **not accepted for deployment**.
+The obsolete dyadic meeting authority and tests are gone; meeting stance and social story cognition are separate; Encounter Story and Thread Experience own the general persistence vocabulary; full CI is green. Nothing from E0 is deployed as N5 capability yet.
 
-Current repository validation is also red at the spike head: the old dyadic N5 tests target a superseded store API, and a separate existing live-command acceptance test reports 403 vs 503. Do not rebuild the dyadic API just to satisfy the obsolete tests.
+The active execution plan is [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md):
 
-The approved review target is [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md):
-
-1. E0 reconcile the spike and restore one coherent green model;
-2. E1 environmental Encounter Story + noticing + Thread Experience;
+1. E0 reconcile the spike and restore one coherent green model — **closed**;
+2. E1 environmental Encounter Story + noticing + Thread Experience + visualization prompt — **current**;
 3. E2 social meeting as a gated encounter;
 4. E3 n-ary story + silent witness consequence;
-5. E4 journal book/Admin acceptance;
+5. E4 journal book/optional rendering/Admin acceptance;
 6. E5 staging acceptance.
 
 The three core semantic proofs are:
