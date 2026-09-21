@@ -1,13 +1,13 @@
 ---
 id: validation-m2-meeting-runbook
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-21
 canonical: true
 ---
 
 # Meeting a Thread — M2 runbook
 
-> **Execution status:** this runbook is the N4 deployed Person -> Thread acceptance procedure. Do not treat a meeting against a manually prepared/stale CurrentSituation as M2 closure. N1-N3 continuous LivedNow must establish the current scene first. See [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md).
+> **Execution status:** N4 deployed Person -> Thread acceptance is complete. Staging established a fresh World-owned present through `/meet`, then completed an encounter against that exact `situationId`. This runbook remains the regression procedure. Do not treat a meeting against a manually prepared/stale CurrentSituation as equivalent evidence. See [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md).
 
 A meeting is not the creation of a chat session. It is a visitor entering a Thread's already-unfolding life.
 
@@ -283,4 +283,4 @@ npm run slice:validate
 
 `slice:validate` runs the full active/replay suite plus repository, context, World seed and deployment-manifest validation, so running `npm run check` immediately before it is redundant. During development, run individual semantic tests directly when a faster focused loop is useful rather than maintaining a second aggregate acceptance command.
 
-The Person -> Thread meeting step closes only after continuous LivedNow N1-N3 are green and the deployed `/meet` enters the reconciled current scene. During the live meeting, God's view should make the encounter's cross-service causal path inspectable without becoming semantic authority or leaking the Thread's private interior. The proof should demonstrate a lived person; passing generic infrastructure tests alone is not the milestone.
+N4 is closed because continuous LivedNow N1-N3 are green and the deployed `/meet` entered a reconciled current scene before a successful encounter against the same `situationId`. During regressions, God's view should continue to make the encounter's cross-service causal path inspectable without becoming semantic authority or leaking the Thread's private interior. The proof is a lived person, not generic infrastructure.
