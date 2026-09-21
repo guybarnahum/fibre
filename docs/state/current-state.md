@@ -40,16 +40,17 @@ bounded Person -> Thread situated encounter               PROVEN
 encounter -> reflection -> selective memory               PROVEN
 later situation + later encounter continuity              PROVEN
 World-owned ensure-LivedNow over covered plan time         PROVEN
-continuous LivedNow across wall-clock dormancy            NOT YET
-deployed /meet over continuous LivedNow                   NOT YET
+bounded multi-day LivedNow catch-up + plan renewal         PROVEN
+Genesis -> same continuing LivedNow path                   NOT YET
+deployed /meet over continuous LivedNow                    NOT YET
 Thread -> Thread reciprocal meeting                       NOT YET
 ```
 
 The important correction is:
 
-> **Fibre has LivedNow primitives, but not yet continuous LivedNow.**
+> **Fibre now has bounded continuous-LivedNow reconciliation for an already-lived Thread, including a multi-day dormant gap. It does not yet prove that a newly born Thread enters that same path automatically.**
 
-The bounded proofs establish the semantics. The active engineering work is to make those semantics survive elapsed wall-clock time and become the prerequisite for real meetings.
+The active engineering work is N3: bridge Genesis into the same post-birth LivedNow seam, then make real meetings depend on it.
 
 See:
 
@@ -86,19 +87,17 @@ That is meaningful continuity evidence.
 
 ## What does not exist yet
 
-The current implementation does **not** yet provide one production-shaped World capability that can establish a credible present after arbitrary elapsed time.
+For an already-lived Thread with an authoritative prior anchor, the World-owned seam can now cross an uncovered multi-day interval, preserve retrospective materialization provenance, renew forward Flight Plan coverage and establish a non-stale present.
 
-In particular, Fibre still lacks:
+Fibre still lacks:
 
-- automatic renewal of expired Flight Plans;
-- retrospective coverage of multi-hour/multi-day frozen or dormant intervals;
-- explicit provenance for life materialized after its lived time;
-- catch-up behind the new World-owned ensure-LivedNow seam when plan coverage is absent;
+- Genesis automatically creating the first anchor/plan/current situation and then reusing this same dormant reconciliation path;
+- richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
 - a deployed `/meet` path that always reconciles LivedNow before interaction;
 - Thread-to-Thread meetings between two independently current lives;
 - a rich public scene driven by that continuous present.
 
-Without those, a stale persisted CurrentSituation can still expose runtime scheduling rather than life.
+The next risk is therefore no longer “can elapsed time be reconciled at all?” It is whether the whole life starts on this path at birth and every meeting consumes it rather than a prepared scene.
 
 ## Continuous LivedNow
 
@@ -233,20 +232,22 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 Do not build another planner, simulator or conversation framework.
 
-The bounded World-owned ensure-LivedNow seam now exists for times already covered by admitted plans. The immediate next work is N2: when that seam encounters an uncovered multi-hour or multi-day gap, retrospectively realize the smallest credible continuation with explicit lived-time/materialization-time provenance, renew plan coverage, then establish the present.
+N1 and N2 now provide the same World-owned seam for already-covered time and for a bounded uncovered multi-day dormant interval. The immediate next work is N3: make Genesis hand a newly born Thread into that exact continuing-life mechanism.
 
 The next implementation should advance this exact capability:
 
 ```text
-stale lived Thread
-  -> catch up honestly
-  -> become current
-  -> be meetable
+Genesis birth
+  -> first lived anchor
+  -> first personal Flight Plan
+  -> CurrentSituation
+  -> compute sleeps
+  -> existing N2 catch-up
+  -> fresh Flight Plan
+  -> present now
 ```
 
-Only after that path is real should deployed Person -> Thread `/meet` depend on it.
-
-Only after that should Fibre add Thread-to-Thread meeting orchestration and the richer insidefibre.com meeting experience.
+No Genesis-specific current-life engine or demo fixture should be introduced. After that path is green, deployed Person -> Thread `/meet` should depend on it.
 
 ## Development discipline
 
