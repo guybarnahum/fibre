@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + meetings**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 now proves a deployed Person -> Thread meeting can enter that reconciled life and speak into the exact World-owned situation. The active work is N5: reciprocal Thread -> Thread meeting between two independently current lives.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread meeting can enter that reconciled life. N5 is now implemented and semantically proven in-repository; the active work is deployed acceptance of reciprocal Thread -> Thread meeting plus its private journal aftermath.
 
 Canonical architecture:
 
@@ -165,19 +165,23 @@ Each participant must independently have:
 
 A physical meeting requires compatible place/time presence. A mediated meeting still requires each Thread to remain physically somewhere, plus a compatible mediated context.
 
-Compatible presence does not create consent. The first N5 mechanism should be a bounded meeting stance — `accept | decline | defer` — produced from the exact LivedNow plus Thread-owned relationship/interior context. A decline or defer may include an outward explanation or proposed later time. Someone the Thread likes or trusts may receive more accommodation, but relationship context influences rather than determines the choice.
+Compatible presence does not create consent. The implemented N5 seam produces a bounded `accept | decline | defer` stance for each Thread from exact LivedNow plus Thread-owned relationship/interior context. A decline or defer may include an outward explanation or proposed later time. Someone the Thread likes or trusts may receive more accommodation, but relationship context influences rather than determines the choice.
+
+Physical compatibility is resolved from each Thread's own situated-life place reference to the shared underlying place identity; Fibre does not require two Threads to carry the same private evidence reference. Mediated compatibility remains possible without replacing either Thread's physical presence.
 
 Do not teleport Threads together, silently rewrite either Flight Plan, or force an interruption merely because a meeting was requested.
 
-One shared occurrence may produce different private aftermath:
+Mutual acceptance now produces one shared objective meeting plus separate private aftermath:
 
 ```text
 shared encounter
-  -> Thread A experience / memory / relationship consequence
-  -> Thread B experience / memory / relationship consequence
+  -> Thread A private journal -> memory or not_remembered
+  -> Thread B private journal -> memory or not_remembered
 ```
 
-Shared event does not imply shared meaning.
+The journals are deliberately subjective and Thread-voiced; the same meeting may feel different to each participant. Journal is not memory. The in-repository proof demonstrates one declined compatible meeting and one accepted meeting whose journals diverge emotionally while only one participant retains autobiographical memory.
+
+**Current N5 stop condition:** provision the additive private Thread-object R2 bucket, deploy World/Admin, and exercise this exact path between two real staging Threads. Existing presentation R2 assets require no migration.
 
 ## N6 — rich insidefibre.com meeting
 
