@@ -59,7 +59,7 @@ Use only offered physical-place refs. Stops must be ordered, non-overlapping, an
 When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end so the plan genuinely covers its stated horizon. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
-Prefer a few specific ordinary presences that follow naturally from age, self-understanding, needs, unresolved intentions, and current possibilities. Do not optimize for drama or a future visitor.`;
+Return 1 to 8 stops. Prefer a few specific ordinary presences that follow naturally from age, self-understanding, needs, unresolved intentions, and current possibilities; combine nearby activities rather than fragmenting the day into tiny steps. Do not optimize for drama or a future visitor.`;
 
 function requestId(seed) {
   return `lplan-cognition_${sha256(canonicalJson(seed))}`;
