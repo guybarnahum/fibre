@@ -194,7 +194,7 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
     lived.recordPlan(personalPlan(life));
 
     const service = createLivedNowService({ livedNowStore: lived });
-    const moving = service.ensure({
+    const moving = await service.ensure({
       threadId: life.thread.threadId,
       at: "2026-09-10T05:20:00Z",
     });
@@ -204,7 +204,7 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
     assert.ok(moving.location.progress > 0 && moving.location.progress < 1);
 
     lived.recordPlan(requiredCarePlan(life));
-    const constrained = service.ensure({
+    const constrained = await service.ensure({
       threadId: life.thread.threadId,
       at: "2026-09-10T05:45:00Z",
     });
@@ -213,13 +213,13 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
     assert.equal(constrained.resolution.observedDivergence, false);
     assert.match(constrained.activity, /dental appointment/);
 
-    const retry = service.ensure({
+    const retry = await service.ensure({
       threadId: life.thread.threadId,
       at: "2026-09-10T05:45:00Z",
     });
     assert.deepEqual(retry, constrained, "ensuring the same present should be idempotent");
 
-    assert.throws(() => service.ensure({
+    await assert.rejects(() => service.ensure({
       threadId: life.thread.threadId,
       at: "2026-09-10T05:50:00Z",
       activity: "Talk to the visitor instead.",
@@ -235,12 +235,12 @@ test("N1 refuses to present a stale scene when elapsed life has no plan coverage
     lived.recordPlan(personalPlan(life));
 
     const service = createLivedNowService({ livedNowStore: lived });
-    const anchor = service.ensure({
+    const anchor = await service.ensure({
       threadId: life.thread.threadId,
       at: "2026-09-10T05:10:00Z",
     });
 
-    assert.throws(() => service.ensure({
+    await assert.rejects(() => service.ensure({
       threadId: life.thread.threadId,
       at: "2026-09-13T05:10:00Z",
     }), LivedNowCoverageError, "dormant gaps must wait for retrospective catch-up rather than reuse stale life");
@@ -250,5 +250,106 @@ test("N1 refuses to present a stale scene when elapsed life has no plan coverage
       anchor,
       "failed reconciliation must not manufacture a replacement present",
     );
+    lived.close();
+  }));
+
+
+test("N2 restores a multi-day dormant Thread with historically honest bounded catch-up", async () =>
+  withDatabase(async (databasePath) => {
+    const life = seedLife(databasePath);
+    const storage = localWorldStateStorage(databasePath);
+    const lived = openLivedNowStore(storage);
+    lived.recordPlan(personalPlan(life));
+
+    const world = openWorldStore(storage);
+    const situated = openSituatedLifeStore(storage);
+    let invocations = 0;
+    const modelAdapter = {
+      async invoke(input) {
+        invocations += 1;
+        const placeRef = input.input.startingPlaceRef ?? input.input.availablePlaces[0].ref;
+        return {
+          output: {
+            stops: [{
+              startAt: input.input.horizon.startAt,
+              endAt: input.input.horizon.endAt,
+              physicalPlaceRef: placeRef,
+              presenceMode: "physical",
+              mediatedContext: "",
+              activity: "Continue ordinary life from the place already reached.",
+              purpose: "Carry forward existing intentions without inventing a visitor or exceptional event.",
+              travelFromPrevious: "",
+            }],
+          },
+          provenance: {
+            provider: "fixture",
+            modelId: "fixture-continuity-plan",
+            providerRequestId: input.clientRequestId,
+          },
+        };
+      },
+    };
+
+    const service = createLivedNowService({
+      livedNowStore: lived,
+      worldStore: world,
+      situatedLifeStore: situated,
+      modelAdapter,
+    });
+    const anchor = await service.ensure({
+      threadId: life.thread.threadId,
+      at: "2026-09-10T05:10:00Z",
+    });
+    assert.equal(anchor.location.placeRef, life.homeRef);
+
+    const targetAt = "2026-09-13T05:10:00Z";
+    const current = await service.ensure({
+      threadId: life.thread.threadId,
+      at: targetAt,
+    });
+
+    assert.equal(current.establishedAt, targetAt);
+    assert.equal(current.location.placeRef, life.libraryRef, "catch-up should continue from the last place actually reached");
+    assert.equal(current.materialization, undefined, "the requested present is current rather than retrospectively backdated");
+
+    const plans = lived.listPlans(life.thread.threadId, { kind: "personal" });
+    const retrospective = plans.filter((plan) => plan.materialization?.mode === "retrospective");
+    assert.equal(retrospective.length, 3, "a three-day gap should be reconstructed sparsely rather than minute by minute");
+    assert.ok(retrospective.length <= 4, "dormant reconciliation must remain bounded");
+    assert.ok(retrospective.every((plan) => plan.materialization.materializedAt === targetAt));
+    assert.ok(retrospective.every((plan) =>
+      Date.parse(plan.materialization.materializedAt) >= Date.parse(plan.horizonEnd)));
+    assert.equal(retrospective[0].stops[0].physicalPlaceRef, life.libraryRef, "retrospective planning must not teleport from the prior lived boundary");
+
+    const fresh = plans.find((plan) =>
+      plan.authoredAt === targetAt &&
+      plan.materialization === undefined &&
+      Date.parse(plan.horizonEnd) > Date.parse(targetAt));
+    assert.ok(fresh, "catch-up should leave a forward Flight Plan, not only a reconstructed past");
+    assert.deepEqual(current.sourcePlanRefs, [fresh.planId]);
+
+    const historicalSituations = [
+      anchor,
+      ...retrospective.map((plan) => lived.getSituation(
+        `sit_${""}`,
+        { required: false },
+      )),
+    ];
+    void historicalSituations;
+
+    const allSituationIds = new Set();
+    for (const plan of plans) allSituationIds.add(plan.planId);
+    assert.ok(allSituationIds.size === plans.length);
+
+    const callsAfterCatchUp = invocations;
+    const retry = await service.ensure({
+      threadId: life.thread.threadId,
+      at: targetAt,
+    });
+    assert.deepEqual(retry, current, "reconciling the same present should be idempotent");
+    assert.equal(invocations, callsAfterCatchUp, "retry must not regenerate elapsed life");
+
+    situated.close();
+    world.close();
     lived.close();
   }));
