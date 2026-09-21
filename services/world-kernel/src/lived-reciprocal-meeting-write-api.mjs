@@ -46,15 +46,18 @@ export function createReciprocalMeetingWriteApi({
       try {
         body = await request.json();
         assertPlainObject("reciprocal meeting request", body);
-        assertExactKeys("reciprocal meeting request", body, ["initiatorThreadId","responderThreadId"]);
+        assertExactKeys("reciprocal meeting request", body, ["initiatorThreadId","participantThreadIds"]);
         assertId("reciprocal meeting initiatorThreadId", body.initiatorThreadId);
-        assertId("reciprocal meeting responderThreadId", body.responderThreadId);
+        if (!Array.isArray(body.participantThreadIds) || body.participantThreadIds.length < 2 || body.participantThreadIds.length > 6) {
+          throw new TypeError("reciprocal meeting requires 2-6 participantThreadIds");
+        }
+        for (const threadId of body.participantThreadIds) assertId("reciprocal meeting participantThreadId", threadId);
       } catch (error) {
         return json({ error:"invalid_reciprocal_meeting", detail:error.message }, 400);
       }
       const result = await meetingService.meet({
         initiatorThreadId:body.initiatorThreadId,
-        responderThreadId:body.responderThreadId,
+        participantThreadIds:body.participantThreadIds,
         at:now(),
       });
       return json({ ok:true, result });
