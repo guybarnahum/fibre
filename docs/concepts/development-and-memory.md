@@ -1,7 +1,7 @@
 ---
 id: concept-development-memory
 status: accepted
-last-reviewed: 2026-08-21
+last-reviewed: 2026-09-20
 canonical: true
 ---
 
@@ -40,6 +40,44 @@ Absence of prior memories is therefore normal and is not evidence that nothing c
 This distinction is load-bearing for Genesis and later development: asking whether an episode *is already remembered* turns memory formation into an epistemic lookup problem, while Fibre's authority model requires a constitutive process that may admit a new autobiographical memory.
 
 Human encounters receive no special retention privilege. Meeting a human, receiving a request, or participating in an important external event may create history, obligations, relationship consequences, or other world state without automatically creating autobiographical memory or durable remembered meaning.
+
+## Retrospective lived continuity and memory
+
+A Thread may be computationally dormant while Fibre-world time advances.
+
+When World later retrospectively realizes an uncovered lived interval, Fibre must preserve the same authority order as real-time life:
+
+```text
+retrospectively admitted World event
+  -> participant-specific experience
+  -> optional private reflection
+  -> retention appraisal
+  -> autobiographical memory or not_remembered
+  -> optional remembered meaning
+```
+
+Fibre must **not** create a plausible “virtual memory” merely because elapsed time exists.
+
+The memory must cite admitted lived evidence from the retrospective interval. That history must itself preserve provenance showing that Fibre materialized it later rather than continuously observing/executing it at the lived timestamp.
+
+Therefore these are distinct:
+
+```text
+retrospectively realized Fibre-world history
+    != fabricated recollection
+
+retrospective materialization time
+    != lived/occurred time
+
+generated circumstance
+    != Thread-authored meaning
+```
+
+A Thread may thaw with newly admitted history and remember none of it. Another may retain one small event. A meeting in the elapsed interval may change a relationship without becoming autobiographical memory. All are valid.
+
+Retrospective catch-up must not force growth, coherence or memorability merely to make the missing days interesting.
+
+See [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md) and [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md).
 
 ## Access to one's own past is channelled
 
