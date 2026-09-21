@@ -4,8 +4,8 @@
   "canonical": true,
   "asOf": "2026-09-21",
   "title": "Where Fibre is today",
-  "headline": "Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; reciprocal Thread meetings are the current step.",
-  "summary": "N1-N4 are closed: Fibre can carry a canonical Genesis-born Thread through bounded dormancy into a fresh World-owned present, publish that present, and complete a deployed Person -> Thread encounter against the exact situationId. N5 now focuses on reciprocal Thread -> Thread meetings between two independently current lives.",
+  "headline": "Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; N5 is being replanned around general encounters and Thread-specific experience.",
+  "summary": "N1-N4 are closed. N5 now focuses on the general causal seam from World occurrence to objective Encounter Story to Thread-specific noticing/experience and selective consequence. Social meetings remain a voluntary special case; environmental moments and silent witnesses must use the same underlying model.",
   "statusDefinitions": [
     {
       "id": "achieved",
@@ -207,19 +207,20 @@
     {
       "id": "reciprocal_thread_meetings",
       "group": "society",
-      "label": "Thread-to-Thread lived meetings",
+      "label": "General lived encounters and reciprocal meetings",
       "status": "in_progress",
       "simple": {
-        "claim": "Two continuing Threads should meet only when their lives are compatible and both choose to participate, then carry different private consequences afterward.",
-        "limitation": "This is the active milestone now that continuous LivedNow and deployed Person -> Thread meeting are closed."
+        "claim": "Fibre should let the same World occurrence become different lived experiences for different Threads, including meetings, witnesses and small environmental moments.",
+        "limitation": "The first reciprocal-meeting implementation spike was too meeting-specific and is being reshaped before staging."
       },
       "detail": {
-        "claim": "N5 requires independently reconciled physical presence for both participants, compatible physical or mediated context, independent meeting stances, one shared occurrence, and participant-specific private aftermath.",
-        "limitation": "Fibre must not teleport, silently replan, or assume willingness merely because another entity requested a meeting."
+        "claim": "N5 now targets one Encounter Story -> Thread Experience seam that supports environmental noticing, voluntary social participation and silent-witness consequence without separate engines.",
+        "limitation": "The current design-spike head is not deployment-ready; obsolete dyadic tests still fail and the encounter attention/experience seam is not yet complete."
       },
       "evidence": [
-        "docs/architecture/lived-now-and-meetings.md",
-        "docs/validation/m2-pr-plan.md"
+        "docs/architecture/encounters-and-experience.md",
+        "docs/validation/n5-encounter-slices.md",
+        "docs/state/current-priorities.md"
       ]
     },
     {
@@ -241,25 +242,28 @@
     }
   ],
   "currentWork": {
-    "milestone": "Continuous LivedNow + Meetings",
+    "milestone": "Continuous LivedNow + Encounters",
     "simple": {
-      "summary": "Make two independently continuing Threads choose whether to meet, without teleportation or forced interruption.",
-      "currentStep": "Add one bounded meeting stance — accept, decline or defer — over exact LivedNow and Thread-owned relationship/interior context, then use it in the first reciprocal Thread meeting.",
+      "summary": "Make World occurrences become personal Thread experiences without turning every occurrence into memory or every encounter into a chat.",
+      "currentStep": "Reconcile the N5 meeting spike around Encounter Story -> noticed/not_noticed -> Thread Experience.",
       "nextSteps": [
-        "Keep every Thread physically somewhere: at a place or in transit between places.",
-        "Let each Thread independently accept, decline or defer based on current life and relationship context.",
-        "Require compatible physical place/time or mediated context without teleporting or silently replanning either Thread.",
-        "Record one shared objective occurrence only after both participate, with participant-specific private aftermath.",
-        "Prove one credible decline/defer and one asymmetric accepted meeting."
+        "Restore one coherent green encounter model without recreating the obsolete dyadic API.",
+        "Prove an unscheduled environmental encounter can be noticed and selectively matter.",
+        "Reuse accept, decline or defer only for voluntary social meetings.",
+        "Prove a silent witness can be affected differently from the actors in one shared story.",
+        "Keep journal distinct from memory and validate the private journal book in Admin."
       ]
     },
     "detail": {
-      "summary": "N1-N4 are closed. N5 is the active step: two independently current Threads must share one valid encounter while preserving separate private consequence paths.",
-      "currentStep": "Implement exact LivedNow -> bounded meeting stance for each participant -> compatibility + mutual participation -> one shared occurrence -> separate private aftermath.",
+      "summary": "N5 was deliberately replanned before deployment. Meeting is a gated social special case of a more general encounter primitive.",
+      "currentStep": "Follow E0-E5 in docs/validation/n5-encounter-slices.md, beginning with conceptual reconciliation and green validation.",
       "nextSteps": [
-        "Reuse existing Flight Plan, CurrentSituation, relationship, memory and interior authorities; do not create a calendar/availability subsystem.",
-        "Relationship context may influence accommodation but must not mechanically determine it.",
-        "Prefer one accepted encounter plus one decline/defer as the organism-level N5 proof."
+        "E0: reconcile the spike and replace obsolete dyadic tests.",
+        "E1: Encounter Story + bounded noticing + Thread Experience.",
+        "E2: voluntary social meeting as a wrapper over the encounter seam.",
+        "E3: n-ary story with silent-witness consequence.",
+        "E4: journal book and Admin acceptance.",
+        "E5: staging acceptance."
       ]
     },
     "finalLifeCognitionAuthorized": true
@@ -275,6 +279,9 @@
     "A shared encounter may produce different private meaning, memory and relationship consequences for different Threads.",
     "A conversation is an encounter in a continuing life, not automatically an autobiographical memory.",
     "Memory may form only from admitted lived evidence through the memory authority; do not inject virtual memories directly.",
-    "Infrastructure and tests enter the critical path only when they enable the active lived-person capability or protect a demonstrated invariant."
+    "Infrastructure and tests enter the critical path only when they enable the active lived-person capability or protect a demonstrated invariant.",
+    "Encounter is the general lived primitive; meeting is one voluntary social form of encounter.",
+    "Co-presence does not automatically create Thread experience; a Thread may notice only part of an occurrence or nothing at all.",
+    "Objective Encounter Story, private Thread Experience, Journal, and autobiographical Memory are distinct authorities."
   ]
 }
