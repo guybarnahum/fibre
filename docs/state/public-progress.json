@@ -4,8 +4,8 @@
   "canonical": true,
   "asOf": "2026-09-21",
   "title": "Where Fibre is today",
-  "headline": "Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; N5 is being replanned around general encounters and Thread-specific experience.",
-  "summary": "N1-N4 are closed. N5 now focuses on the general causal seam from World occurrence to objective Encounter Story to Thread-specific noticing/experience and selective consequence. Social meetings remain a voluntary special case; environmental moments and silent witnesses must use the same underlying model.",
+  "headline": "Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; N5 E0 is complete and E1 environmental encounters are current.",
+  "summary": "N1-N4 are closed. N5 E0 reconciled the meeting spike into a general Encounter Story / Thread Experience foundation with green full CI. E1 now adds bounded noticing, personal Thread Experience and durable encounter visualization prompts for unscheduled World occurrences.",
   "statusDefinitions": [
     {
       "id": "achieved",
@@ -210,12 +210,12 @@
       "label": "General lived encounters and reciprocal meetings",
       "status": "in_progress",
       "simple": {
-        "claim": "Fibre should let the same World occurrence become different lived experiences for different Threads, including meetings, witnesses and small environmental moments.",
-        "limitation": "The first reciprocal-meeting implementation spike was too meeting-specific and is being reshaped before staging."
+        "claim": "Fibre now has a green general Encounter Story / Thread Experience foundation; the current step is proving unscheduled World occurrences can be noticed and selectively matter.",
+        "limitation": "Environmental noticing and persisted subjective Thread Experience are not implemented yet."
       },
       "detail": {
-        "claim": "N5 now targets one Encounter Story -> Thread Experience seam that supports environmental noticing, voluntary social participation and silent-witness consequence without separate engines.",
-        "limitation": "The current design-spike head is not deployment-ready; obsolete dyadic tests still fail and the encounter attention/experience seam is not yet complete."
+        "claim": "E0 removed the obsolete dyadic meeting authority, made social meeting a wrapper over Encounter Story, separated meeting stance from social story cognition, kept journal/memory boundaries, and restored full CI.",
+        "limitation": "N5 remains undeployed; E1-E5 still need environmental noticing, voluntary meeting proof, witness asymmetry, visualization/Admin acceptance and staging validation."
       },
       "evidence": [
         "docs/architecture/encounters-and-experience.md",
@@ -244,25 +244,24 @@
   "currentWork": {
     "milestone": "Continuous LivedNow + Encounters",
     "simple": {
-      "summary": "Make World occurrences become personal Thread experiences without turning every occurrence into memory or every encounter into a chat.",
-      "currentStep": "Reconcile the N5 meeting spike around Encounter Story -> noticed/not_noticed -> Thread Experience.",
+      "summary": "Build E1: an unscheduled World occurrence becomes an objective Encounter Story, may be noticed or not by a Thread, and if noticed becomes personal experience with a durable visualization prompt.",
+      "currentStep": "Implement E1 environmental Encounter Story + noticed/not_noticed + Thread Experience + visualization prompt.",
       "nextSteps": [
-        "Restore one coherent green encounter model without recreating the obsolete dyadic API.",
-        "Prove an unscheduled environmental encounter can be noticed and selectively matter.",
-        "Reuse accept, decline or defer only for voluntary social meetings.",
-        "Prove a silent witness can be affected differently from the actors in one shared story.",
-        "Keep journal distinct from memory and validate the private journal book in Admin."
+        "Admit one bounded environmental Encounter Story outside the Flight Plan.",
+        "Derive and persist its objective media-neutral visualization prompt and evidence lineage.",
+        "Let exact LivedNow plus bounded Thread context decide noticed or not_noticed.",
+        "Persist Thread Experience only when noticed.",
+        "Keep journal and memory independently selective."
       ]
     },
     "detail": {
       "summary": "N5 was deliberately replanned before deployment. Meeting is a gated social special case of a more general encounter primitive.",
-      "currentStep": "Follow E0-E5 in docs/validation/n5-encounter-slices.md, beginning with conceptual reconciliation and green validation.",
+      "currentStep": "E0 is closed and full CI is green. Implement E1 from docs/validation/n5-encounter-slices.md.",
       "nextSteps": [
-        "E0: reconcile the spike and replace obsolete dyadic tests.",
-        "E1: Encounter Story + bounded noticing + Thread Experience.",
+        "E1: environmental Encounter Story + bounded noticing + Thread Experience + visualization prompt.",
         "E2: voluntary social meeting as a wrapper over the encounter seam.",
         "E3: n-ary story with silent-witness consequence.",
-        "E4: journal book and Admin acceptance.",
+        "E4: journal book, optional rendering and Admin acceptance.",
         "E5: staging acceptance."
       ]
     },
