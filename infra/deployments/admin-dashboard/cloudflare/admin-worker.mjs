@@ -15,6 +15,8 @@ export { FibreAdminInfraMonitor } from "./infra-monitor-do.mjs";
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
 const THREAD_OBSERVATORY_ROUTE = /^\/api\/threads\/([^/]+)\/observatory$/u;
+const THREAD_JOURNAL_ROUTE = /^\/api\/threads\/([^/]+)\/journal$/u;
+const THREAD_MEETING_ROUTE = /^\/api\/threads\/([^/]+)\/meet-thread$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
 const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
@@ -102,6 +104,55 @@ async function proxyAsset(request, env, objectRef) {
     status: upstream.status,
     statusText: upstream.statusText,
     headers,
+  });
+}
+
+async function proxyThreadJournal(env, threadId) {
+  const upstream = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
+    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/journal`,
+    { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
+  ));
+  const payload = await upstream.text();
+  return new Response(payload, {
+    status:upstream.status,
+    headers:{
+      "Content-Type":"application/json; charset=utf-8",
+      "Cache-Control":"no-store",
+      "X-Content-Type-Options":"nosniff",
+      "Referrer-Policy":"no-referrer",
+    },
+  });
+}
+
+async function proxyThreadMeeting(request, env, initiatorThreadId) {
+  let input;
+  try { input = await request.json(); }
+  catch { return json(400, { error:"invalid_thread_meeting", detail:"meeting request must be JSON" }); }
+  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).join(",") !== "threadId") {
+    return json(400, { error:"invalid_thread_meeting", detail:"meeting request must contain exactly threadId" });
+  }
+  const responderThreadId = id("threadId", input.threadId);
+  const upstream = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
+    "https://world.internal/internal/reciprocal-meeting",
+    {
+      method:"POST",
+      headers:{
+        Accept:"application/json",
+        "Content-Type":"application/json",
+        "x-fibre-private-token":privateToken(env),
+      },
+      body:JSON.stringify({ initiatorThreadId, responderThreadId }),
+    },
+  ));
+  const payload = await upstream.text();
+  return new Response(payload, {
+    status:upstream.status,
+    headers:{
+      "Content-Type":"application/json; charset=utf-8",
+      "Cache-Control":"no-store",
+      "X-Content-Type-Options":"nosniff",
+      "Referrer-Policy":"no-referrer",
+    },
   });
 }
 
@@ -234,14 +285,16 @@ export default {
 
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
     const observatoryMatch = THREAD_OBSERVATORY_ROUTE.exec(url.pathname);
+    const journalMatch = THREAD_JOURNAL_ROUTE.exec(url.pathname);
+    const meetingMatch = THREAD_MEETING_ROUTE.exec(url.pathname);
     const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
     const fidReissueMatch = THREAD_FID_REISSUE_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || repairMatch || assetMatch || threadPopulation || infraMonitor);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || infraMonitor);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || finVerify || infraMonitor);
+    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || infraMonitor);
     if (adminGet || adminPost) {
       const gate = await adminPrincipal(request, env);
       if (gate.response) return gate.response;
@@ -273,6 +326,14 @@ export default {
         if (repairMatch) {
           const threadId = id("threadId", decodeURIComponent(repairMatch[1]));
           return proxyThreadRepair(request, env, threadId);
+        }
+        if (meetingMatch) {
+          const threadId = id("threadId", decodeURIComponent(meetingMatch[1]));
+          return proxyThreadMeeting(request, env, threadId);
+        }
+        if (journalMatch) {
+          const threadId = id("threadId", decodeURIComponent(journalMatch[1]));
+          return proxyThreadJournal(env, threadId);
         }
         if (observatoryMatch) {
           const threadId = id("threadId", decodeURIComponent(observatoryMatch[1]));
