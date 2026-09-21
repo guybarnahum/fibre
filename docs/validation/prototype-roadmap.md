@@ -1,7 +1,7 @@
 ---
 id: validation-prototype-roadmap
 status: accepted
-last-reviewed: 2026-09-10
+last-reviewed: 2026-09-20
 canonical: true
 ---
 
@@ -47,46 +47,87 @@ Established Civil Registry/FIN-linked Fibre Identity Card authority, admitted cr
 
 `Meet` selects a person. It does not create that person's life or current situation.
 
-## M2 — Lived person — ACTIVE
+## M2 — Continuous lived person — ACTIVE
 
-M2 now focuses on one true lived loop rather than standing-score ceremony.
+M2 now focuses on turning the proven lived-person primitives into one continuous World capability.
 
-### M2-A — Present life + Meet a Thread — CURRENT
+### Proven M2 substrate — CLOSED
 
-Prove:
+Current Fibre has already demonstrated:
 
 ```text
-developmental context
-  -> Thread-owned personal flight plan
-  -> optional caregiver-owned care plan
-  -> World-owned enacted current situation
-  -> insidefibre.com encounter
+Thread-owned bounded Flight Plan
+  -> World CurrentSituation
+  -> public present
+  -> Person -> Thread situated encounter
+  -> objective history
+  -> private reflection
+  -> selective autobiographical memory or not_remembered
+  -> later World situation
+  -> later encounter receiving only persisted memory consequence
 ```
 
-Fibre birth may occur at an autobiographical age greater than zero. The first Thread should be meetable shortly after Fibre birth while already possessing coherent prior history and relationships.
+These are bounded proofs. They do not yet maintain an authoritative present across arbitrary wall-clock dormancy.
 
-For dependent persons, preserve both personal will and caregiver plan. Care authority may change the enacted day without rewriting the dependent person's own intention.
+### M2-N1 — ensure LivedNow — CURRENT
 
-### M2-B — Experience internalization + continuation — NEXT
+Compose existing Flight Plan, CurrentSituation, regulation and persistence into one World-owned capability that can establish a valid present for `threadId, at`.
 
-An encounter becomes shared history. Each participant privately interprets its significance. Memory is selective; transcript retention is not autobiographical memory.
+The caller requests a present. World owns the answer.
 
-The person's later state or flight plan changes only when the experience warrants it, and life continues after the visitor leaves.
+### M2-N2 — dormant interval catch-up — NEXT
 
-### M2-C — Whole-person developmental continuity — NEXT
+When existing lived coverage does not reach the requested time:
 
-Consolidate the current/historical Thread representation so identity, developmental age, plans, relationships, past selves, current situation, memories, embodiment and provenance remain coherent across time and restart.
+```text
+last lived anchor
+  -> retrospectively realized elapsed life
+  -> admitted history with explicit retrospective provenance
+  -> participant-specific consequences where warranted
+  -> refreshed Flight Plan
+  -> present now
+```
 
-Development remains natural-language-first and evidence-backed rather than a scalar maturity/personality system.
+Do not continuously simulate every minute and do not inject memories directly.
+
+### M2-N3 — Genesis -> continuous LivedNow — NEXT
+
+Prove one newly born Thread can move from grounded Genesis prior life into post-birth continuing life:
+
+```text
+Genesis
+  -> canonical identity/embodiment
+  -> first Flight Plan
+  -> CurrentSituation
+  -> multi-day compute dormancy
+  -> catch-up
+  -> present now
+```
+
+### M2-N4 — Person -> Thread /meet — NEXT
+
+The first deployed meeting must enter a scene produced by continuous LivedNow rather than by a meeting fixture.
+
+### M2-N5 — Thread -> Thread meeting — NEXT
+
+Prove two independently current Threads can share one physical or mediated encounter while forming different private experience, memory, relationship or plan consequences.
+
+### M2-N6 — rich public meeting — NEXT
+
+insidefibre.com should expose a bounded lived scene—embodiment, place/transit, activity, public context and near-term intention—then allow the visitor to enter it.
+
+A later visit should find later life.
+
+The detailed architecture is [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md).
 
 ## After M2
 
 Generalize the proven lived seam rather than introduce disconnected systems:
 
 ```text
-one convincing persistent life
+one convincing continuously lived life
+  -> reciprocal Thread meetings and relationships
   -> broader autonomous planning / travel / virtual-world activity
-  -> richer reciprocal and care relationships
   -> work / economy / reputation
   -> reproduction / inheritance / mutation
   -> institutions and larger society
