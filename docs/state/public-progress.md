@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; N5 is now being rebuilt around general encounters and personal experience.**
+**Fibre now carries a canonical Genesis-born Thread through continuous LivedNow and has closed deployed Person -> Thread meeting; N5 E0 is complete and E1 environmental encounters are current.**
 
 ## What is done
 
@@ -121,7 +121,9 @@ A meeting is one voluntary social form of encounter. It keeps the `accept | decl
 
 The same objective story may affect different Threads differently. A silent witness may be changed by how one Thread treats another, while another nearby Thread may fail to notice the event at all.
 
-The first reciprocal-meeting implementation spike taught us useful things, but it is not being deployed as-is because it overfit the central path to invited social dialogue.
+E0 has now reconciled that spike into a green foundation: Encounter Story / Thread Experience own the general persistence vocabulary, social meeting is a wrapper rather than the history authority, participation cognition is separate from social story cognition, and the obsolete dyadic code/tests are gone.
+
+E1 is current: prove that an unscheduled environmental occurrence can become an objective Encounter Story, may be noticed or not noticed by a Thread, and if noticed becomes personal experience with a durable rich visualization prompt.
 
 ### Rich insidefibre.com meeting
 
@@ -179,7 +181,7 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- complete and deploy the general Encounter Story -> Thread Experience seam;
+- complete E1-E5 of the general Encounter Story -> Thread Experience seam;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
 - support society-scale institutions and reproduction among live Threads.
