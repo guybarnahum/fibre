@@ -11,6 +11,12 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 import { GenesisStore } from "../src/genesis-store.mjs";
+import { createLivedNowService } from "../src/lived-now-service.mjs";
+import { openLivedNowStore } from "../src/lived-now-store.mjs";
+import { livedSituationId } from "../src/lived-now.mjs";
+import { openWorldStore } from "../src/persistence.mjs";
+import { placeEpisodeRevisionRef } from "../src/situated-life-evidence.mjs";
+import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
 import { publicationValidatorSetWitness } from "../src/genesis-domain.mjs";
 import { deriveGenesisLifeContinuity } from "../src/genesis-life-continuity-v1.mjs";
 import { genesisLifeEpisodeEventId } from "../src/genesis-life-episode.mjs";
@@ -22,10 +28,10 @@ const mina = JSON.parse(
 );
 const sha = (char) => `sha256:${char.repeat(64)}`;
 
-function withDatabase(run) {
+async function withDatabase(run) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-genesis-situated-"));
   const databasePath = join(directory, "world.sqlite");
-  try { return run(databasePath); }
+  try { return await run(databasePath); }
   finally { rmSync(directory, { recursive: true, force: true }); }
 }
 
@@ -264,4 +270,105 @@ test("situated continuity is inside the atomic Genesis birth transaction", () =>
       assert.equal(database.prepare(`SELECT count(*) AS n FROM ${table} WHERE ${column}=?`).get(value).n, 0);
     }
     database.close();
+  }));
+
+
+test("N3 Genesis enters the same LivedNow seam and survives multi-day dormancy", () =>
+  withDatabase(async (databasePath) => {
+    const { world, birth } = publicationCandidate();
+    const storage = localWorldStateStorage(databasePath);
+    const genesis = new GenesisStore(storage);
+    genesis.recordWorldSpec(world);
+    genesis.publishBirth(birth);
+    genesis.close();
+
+    const worldStore = openWorldStore(storage);
+    const situatedLifeStore = openSituatedLifeStore(storage);
+    const livedNowStore = openLivedNowStore(storage);
+    const places = situatedLifeStore.listCurrentPlaceEpisodes(birth.thread.threadId);
+    const library = places.find((episode) => episode.place.placeId === "place_library");
+    assert.ok(library, "Genesis should ground the latest lived place");
+    const libraryRef = placeEpisodeRevisionRef(library);
+
+    let cognitionCalls = 0;
+    const modelAdapter = {
+      async invoke(request) {
+        cognitionCalls += 1;
+        const placeRef = request.input.startingPlaceRef ?? request.input.availablePlaces[0].ref;
+        return {
+          output: {
+            stops: [{
+              startAt: request.input.horizon.startAt,
+              endAt: request.input.horizon.endAt,
+              physicalPlaceRef: placeRef,
+              presenceMode: "physical",
+              mediatedContext: "",
+              activity: "Continue ordinary life from the place already reached.",
+              purpose: "Carry existing life forward without inventing a meeting.",
+              travelFromPrevious: "",
+            }],
+          },
+          provenance: {
+            provider: "fixture",
+            modelId: "fixture-genesis-lived-now",
+            providerRequestId: request.clientRequestId,
+          },
+        };
+      },
+    };
+
+    const service = createLivedNowService({
+      livedNowStore,
+      worldStore,
+      situatedLifeStore,
+      modelAdapter,
+    });
+    const bornAt = birth.manifest.publication.publishedAt;
+    const targetAt = "2026-08-23T00:02:00Z";
+    const current = await service.ensure({
+      threadId: birth.thread.threadId,
+      at: targetAt,
+    });
+
+    const plans = livedNowStore.listPlans(birth.thread.threadId, { kind: "personal" });
+    const firstPlan = plans.find((plan) => plan.authoredAt === bornAt && plan.materialization === undefined);
+    assert.ok(firstPlan, "Genesis should author the first personal Flight Plan at Fibre birth");
+    const birthSituation = livedNowStore.getSituation(livedSituationId({
+      kind: "ensure_lived_now_v1",
+      threadId: birth.thread.threadId,
+      at: bornAt,
+      governingPlanRef: firstPlan.planId,
+    }));
+    assert.equal(birthSituation.location.placeRef, libraryRef, "first LivedNow should continue from admitted Genesis life");
+
+    const retrospective = plans.filter((plan) => plan.materialization?.mode === "retrospective");
+    assert.ok(retrospective.length > 0 && retrospective.length <= 4, "post-birth dormancy should reuse bounded N2 catch-up");
+    assert.ok(retrospective.every((plan) => plan.materialization.materializedAt === targetAt));
+    assert.equal(current.establishedAt, targetAt);
+    assert.equal(current.materialization, undefined);
+    assert.equal(current.location.placeRef, libraryRef, "current life should remain causally connected to the birth anchor");
+
+    const fresh = plans.find((plan) =>
+      plan.authoredAt === targetAt &&
+      plan.materialization === undefined &&
+      Date.parse(plan.horizonEnd) > Date.parse(targetAt));
+    assert.ok(fresh, "N3 should leave the born Thread with fresh forward plan coverage");
+
+    const callsAfterFirstEnsure = cognitionCalls;
+    const planCount = plans.length;
+    const retry = await service.ensure({
+      threadId: birth.thread.threadId,
+      at: targetAt,
+    });
+    assert.deepEqual(retry, current, "Genesis-to-now reconciliation should be idempotent");
+    assert.equal(cognitionCalls, callsAfterFirstEnsure, "retry should not regenerate post-birth life");
+    assert.equal(
+      livedNowStore.listPlans(birth.thread.threadId, { kind: "personal" }).length,
+      planCount,
+      "retry should not duplicate Flight Plans",
+    );
+
+    livedNowStore.close();
+    situatedLifeStore.close();
+    worldStore.close();
   }));
