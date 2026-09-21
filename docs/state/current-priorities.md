@@ -204,6 +204,8 @@ The active execution plan is [N5 encounter-story implementation slices](../valid
 5. E4 journal book/optional rendering/Admin acceptance — **closed**;
 6. E5 staging acceptance — **current**.
 
+E5 implementation is ready and repository-green: the deployed World adapter now exposes the existing environmental encounter authority and preserves explicit silent-witness IDs through the social-meeting boundary, and a strict staging runner exercises the complete E1-E4 acceptance sequence against real Threads. Live execution is currently gated because GitHub Actions has no configured staging operator/runtime secrets; this does not count as acceptance and N5 remains open.
+
 The three core semantic proofs are:
 
 - **environmental encounter** — an unscheduled bee/flower/cloud/etc. can enter one Thread's attention and selectively matter;

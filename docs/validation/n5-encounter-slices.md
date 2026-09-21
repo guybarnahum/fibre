@@ -274,6 +274,15 @@ No existing presentation R2 objects were migrated. No encounter render is requir
 
 Provision the additive private Thread-object bucket and deploy only after E0-E4 are green.
 
+The acceptance plumbing is now implemented and green in repository validation:
+
+- deployed World exposes the already-proven E1 environmental encounter authority through a private operator route;
+- the private social-meeting adapter preserves E3's explicit `witnessThreadIds`;
+- the staging runner refreshes real Threads through LivedNow, refuses to fake co-presence, searches boundedly for genuine compatible social presence, requires an actual decline/defer and a separate accepted silent-witness story, checks divergent journals and retained/not-remembered asymmetry durably, runs the same journal presentation model used by Admin, and feeds the admitted objective visualization lineage into the existing generated-asset machinery for one still while validating the corresponding video brief;
+- generated evidence stores references/outcomes/digests rather than private journal or prompt content.
+
+The first GitHub Actions staging attempts could not pass the deployment gate because the repository and the `staging` GitHub environment currently expose none of the required operator/runtime secrets. The workflow is therefore **not** acceptance evidence yet. E5 stays open until the same harness runs against the newly deployed staging SHA.
+
 Live acceptance should exercise:
 
 1. one environmental encounter;

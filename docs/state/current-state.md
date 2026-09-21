@@ -266,6 +266,8 @@ E4 is green in full CI. Admin remains read-only: it exposes World encounter/jour
 
 E5 should deploy only the already-proven E0-E4 semantics and verify them against real staging Threads. Do not add new encounter concepts, automatic witness discovery, memory shortcuts, or provider-specific video orchestration during acceptance.
 
+The E5 staging harness and the two required deployed acceptance seams are now on `main` and green in repository validation. The harness refuses to synthesize co-presence, refusal, journal divergence or memory asymmetry: it must observe those outcomes from real staging Threads, then render one still from the admitted Encounter Story visualization lineage. The first live workflow attempts reached the operator boundary but could not deploy because neither repository nor `staging`-environment GitHub Actions secrets contain the required Cloudflare/runtime credentials. This is an external staging-credential gate, not N5 acceptance evidence; E5 therefore remains open.
+
 Follow [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md). E5 is current.
 
 
