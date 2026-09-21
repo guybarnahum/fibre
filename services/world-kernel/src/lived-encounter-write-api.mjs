@@ -63,6 +63,7 @@ export function createLivedEncounterWriteApi({
   experienceStore = null,
   memoryStore = null,
   activityRecorder = null,
+  journalBook = null,
   privateToken,
 }) {
   requireDependency("worldReader", worldReader, "getThread");
@@ -79,6 +80,10 @@ export function createLivedEncounterWriteApi({
     requireDependency("memoryStore", memoryStore, "recordMemory");
   }
   if (activityRecorder !== null) requireDependency("activityRecorder", activityRecorder, "runStage");
+  if (journalBook !== null) {
+    requireDependency("journalBook", journalBook, "getProfile");
+    requireDependency("journalBook", journalBook, "append");
+  }
   assertNonEmpty("privateToken", privateToken);
 
   return Object.freeze({
@@ -147,6 +152,7 @@ export function createLivedEncounterWriteApi({
           experienceStore,
           modelAdapter,
           activityRecorder,
+          journalBook,
         });
         if (memoryStore !== null && internalized.privateAftermathComplete) {
           try {
