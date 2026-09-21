@@ -1,4 +1,3 @@
-import { ASSET_KINDS } from "#services/asset-generator/src/index.mjs";
 import {
   normalizeThreadVisualIdentityProjection,
   threadVisualIdentityProjectionDigest,
@@ -80,7 +79,7 @@ export function planEncounterPresentationAssetSlot({
   const encounterStory = normalizedEncounter(rawEncounterStory);
   assertId("encounter mediaId", mediaId);
   assertNonEmpty("encounter media variant", variant);
-  if (!ASSET_KINDS.includes(assetKind) || !["image", "video"].includes(assetKind)) {
+  if (!["image", "video"].includes(assetKind)) {
     throw new TypeError("encounter rendering supports image or video");
   }
 
