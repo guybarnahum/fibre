@@ -1,0 +1,254 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
+
+import { openWorldStore } from "../src/persistence.mjs";
+import { createLivedNowService, LivedNowCoverageError } from "../src/lived-now-service.mjs";
+import { livedPlanId } from "../src/lived-now.mjs";
+import { openLivedNowStore } from "../src/lived-now-store.mjs";
+import {
+  lifeRelationId,
+  placeEpisodeId,
+} from "../src/situated-life-domain.mjs";
+import {
+  lifeRelationRevisionRef,
+  placeEpisodeRevisionRef,
+} from "../src/situated-life-evidence.mjs";
+import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
+
+const mina = JSON.parse(
+  readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+);
+
+async function withDatabase(run) {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-ensure-lived-now-"));
+  const databasePath = join(directory, "world.sqlite");
+  try {
+    return await run(databasePath);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+function seedLife(databasePath) {
+  const thread = structuredClone(mina);
+  thread.threadId = "thr_ensure_maya";
+  thread.identity = {
+    ...thread.identity,
+    name: "Maya Vale",
+    selfDescription: "I like drawing animals and following through on plans I chose.",
+  };
+  thread.currentState = {
+    ...thread.currentState,
+    selfModel: "I notice details, make plans, and care about having enough time to finish what I start.",
+    unresolvedIntentions: ["Return my library book after I finish drawing."],
+  };
+  thread.relationshipRefs = [];
+  thread.memoryRefs = [];
+  thread.provenance = {
+    createdAt: "2026-09-10T04:00:00Z",
+    createdBy: "ensure-lived-now-test",
+  };
+
+  const world = openWorldStore(localWorldStateStorage(databasePath));
+  const seeded = world.seedThread(thread).thread;
+  const sourceEvent = world.listEvents(thread.threadId)[0].eventId;
+  world.close();
+
+  const situated = openSituatedLifeStore(localWorldStateStorage(databasePath));
+  const place = (label, displayName) => {
+    const record = situated.recordPlaceEpisode({
+      episodeId: placeEpisodeId({ threadId: thread.threadId, label }),
+      revision: 1,
+      threadId: thread.threadId,
+      episodeKind: label === "home" ? "residence" : "formative_presence",
+      place: {
+        placeId: `place.ensure.${label}`,
+        displayName,
+        countryCode: "US",
+        region: "Arizona",
+        locality: "Tucson",
+        precision: "locality",
+      },
+      startAt: "2025-01-01T00:00:00Z",
+      endAt: null,
+      sourceReferences: [sourceEvent],
+      visibility: "private",
+      provenance: "thread_history",
+      recordedAt: "2026-09-10T04:01:00Z",
+    });
+    return placeEpisodeRevisionRef(record);
+  };
+  const homeRef = place("home", "Home");
+  const libraryRef = place("library", "Neighborhood library");
+
+  const parent = situated.recordLifeRelation({
+    relationId: lifeRelationId({ threadId: thread.threadId, parent: "mother" }),
+    revision: 1,
+    threadId: thread.threadId,
+    relatedParty: {
+      partyId: "human_maya_mother",
+      kind: "human_source",
+      displayName: "Maya's mother",
+    },
+    relationKind: "social_parent",
+    geneticContributionRole: "none",
+    relationshipFacts: ["She coordinates Maya's household care and appointments."],
+    sourceReferences: [sourceEvent],
+    validFrom: "2016-02-08T00:00:00Z",
+    validTo: null,
+    visibility: "private",
+    provenance: "thread_history",
+    recordedAt: "2026-09-10T04:02:00Z",
+  });
+  situated.close();
+
+  return {
+    thread: seeded,
+    sourceEvent,
+    homeRef,
+    libraryRef,
+    parentRef: lifeRelationRevisionRef(parent),
+  };
+}
+
+function personalPlan(life) {
+  const authoredAt = "2026-09-10T05:00:00Z";
+  return {
+    planId: livedPlanId({ threadId: life.thread.threadId, kind: "personal", authoredAt }),
+    kind: "personal",
+    subjectThreadId: life.thread.threadId,
+    owner: { partyId: life.thread.threadId, kind: "thread" },
+    authoredAt,
+    horizonStart: authoredAt,
+    horizonEnd: "2026-09-10T06:30:00Z",
+    stops: [
+      {
+        startAt: "2026-09-10T05:00:00Z",
+        endAt: "2026-09-10T05:15:00Z",
+        physicalPlaceRef: life.homeRef,
+        mediatedContext: null,
+        activity: "Finish a fox sketch before leaving.",
+        purpose: "I want to finish the expression while I still see what is wrong with it.",
+        companionRefs: [],
+        travelFromPrevious: null,
+      },
+      {
+        startAt: "2026-09-10T05:30:00Z",
+        endAt: "2026-09-10T06:30:00Z",
+        physicalPlaceRef: life.libraryRef,
+        mediatedContext: null,
+        activity: "Return a book and look through animal drawing references.",
+        purpose: "I want another look at how animals hold their ears and faces.",
+        companionRefs: [],
+        travelFromPrevious: "Walk to the neighborhood library.",
+      },
+    ],
+    sourceReferences: [life.sourceEvent, life.homeRef, life.libraryRef],
+    cognition: {
+      provider: "fixture",
+      modelId: "fixture-plan",
+      providerRequestId: "req_ensure_personal",
+    },
+  };
+}
+
+function requiredCarePlan(life) {
+  const authoredAt = "2026-09-10T05:25:00Z";
+  return {
+    planId: livedPlanId({ threadId: life.thread.threadId, kind: "care", authoredAt }),
+    kind: "care",
+    subjectThreadId: life.thread.threadId,
+    owner: { partyId: "human_maya_mother", kind: "human_source" },
+    authoredAt,
+    horizonStart: authoredAt,
+    horizonEnd: "2026-09-10T06:00:00Z",
+    stops: [
+      {
+        startAt: "2026-09-10T05:30:00Z",
+        endAt: "2026-09-10T06:00:00Z",
+        physicalPlaceRef: life.homeRef,
+        mediatedContext: null,
+        activity: "Stay home and get ready for the dental appointment.",
+        purpose: "Leave enough time for the household to reach the appointment.",
+        companionRefs: ["human_maya_mother"],
+        travelFromPrevious: null,
+      },
+    ],
+    sourceReferences: [life.parentRef, life.homeRef],
+    authority: {
+      relationRef: life.parentRef,
+      scope: "Same-day household care and appointment coordination.",
+      constraint: "required",
+    },
+  };
+}
+
+test("N1 ensure-LivedNow advances the Thread from its own plans and preserves care authority", async () =>
+  withDatabase(async (databasePath) => {
+    const life = seedLife(databasePath);
+    const lived = openLivedNowStore(localWorldStateStorage(databasePath));
+    lived.recordPlan(personalPlan(life));
+
+    const service = createLivedNowService({ livedNowStore: lived });
+    const moving = service.ensure({
+      threadId: life.thread.threadId,
+      at: "2026-09-10T05:20:00Z",
+    });
+    assert.equal(moving.phase, "in_transit", "LivedNow should enact movement already implied by the Thread's plan");
+    assert.equal(moving.location.fromPlaceRef, life.homeRef);
+    assert.equal(moving.location.toPlaceRef, life.libraryRef);
+    assert.ok(moving.location.progress > 0 && moving.location.progress < 1);
+
+    lived.recordPlan(requiredCarePlan(life));
+    const constrained = service.ensure({
+      threadId: life.thread.threadId,
+      at: "2026-09-10T05:45:00Z",
+    });
+    assert.equal(constrained.resolution.kind, "care_constraint", "required care should govern enacted life without replacing personal will");
+    assert.equal(constrained.location.placeRef, life.homeRef);
+    assert.equal(constrained.resolution.observedDivergence, false);
+    assert.match(constrained.activity, /dental appointment/);
+
+    const retry = service.ensure({
+      threadId: life.thread.threadId,
+      at: "2026-09-10T05:45:00Z",
+    });
+    assert.deepEqual(retry, constrained, "ensuring the same present should be idempotent");
+
+    assert.throws(() => service.ensure({
+      threadId: life.thread.threadId,
+      at: "2026-09-10T05:50:00Z",
+      activity: "Talk to the visitor instead.",
+    }), /activity is not allowed/, "the caller must not author the Thread's scene");
+
+    lived.close();
+  }));
+
+test("N1 refuses to present a stale scene when elapsed life has no plan coverage", async () =>
+  withDatabase(async (databasePath) => {
+    const life = seedLife(databasePath);
+    const lived = openLivedNowStore(localWorldStateStorage(databasePath));
+    lived.recordPlan(personalPlan(life));
+
+    const service = createLivedNowService({ livedNowStore: lived });
+    const anchor = service.ensure({
+      threadId: life.thread.threadId,
+      at: "2026-09-10T05:10:00Z",
+    });
+
+    assert.throws(() => service.ensure({
+      threadId: life.thread.threadId,
+      at: "2026-09-13T05:10:00Z",
+    }), LivedNowCoverageError, "dormant gaps must wait for retrospective catch-up rather than reuse stale life");
+
+    assert.deepEqual(
+      lived.getCurrentSituation(life.thread.threadId),
+      anchor,
+      "failed reconciliation must not manufacture a replacement present",
+    );
+    lived.close();
+  }));
