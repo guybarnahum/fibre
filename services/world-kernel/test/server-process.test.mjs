@@ -60,15 +60,17 @@ async function waitForReady(child, stderr, timeoutMs = 10000) {
 
 async function startProcess(databasePath, { adminToken = ADMIN_TOKEN } = {}) {
   let stderr = "";
+  const env = {
+    ...process.env,
+    OPENAI_API_KEY: "test-world-kernel-key",
+    FIBRE_WORLD_DATABASE: databasePath,
+    FIBRE_WORLD_HOST: "127.0.0.1",
+    FIBRE_WORLD_PORT: "0",
+  };
+  if (adminToken === null) delete env.FIBRE_ADMIN_TOKEN;
+  else env.FIBRE_ADMIN_TOKEN = adminToken;
   const child = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", serverPath], {
-    env: {
-      ...process.env,
-      OPENAI_API_KEY: "test-world-kernel-key",
-      FIBRE_WORLD_DATABASE: databasePath,
-      FIBRE_WORLD_HOST: "127.0.0.1",
-      FIBRE_WORLD_PORT: "0",
-      ...(adminToken === null ? {} : { FIBRE_ADMIN_TOKEN: adminToken }),
-    },
+    env,
     stdio: ["ignore", "pipe", "pipe"],
   });
   child.stderr.on("data", (chunk) => { stderr += chunk.toString("utf8"); });
