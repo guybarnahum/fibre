@@ -7,6 +7,7 @@ import {
   formSocialEncounterOpening,
 } from "./lived-social-encounter-cognition.mjs";
 import { internalizeThreadEncounterExperience } from "./lived-thread-experience-aftermath.mjs";
+import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import {
   assertId,
@@ -210,10 +211,26 @@ export function createSocialMeetingService({
       const participantSummaries = contexts.map(participantSummary);
       const aftermath = {};
       for (const context of contexts) {
+        const experienceText = await formThreadEncounterExperience({
+          thread:context.thread,
+          situation:context.situation,
+          encounterStory,
+          semanticStates:context.semanticStates,
+          memories:context.memories,
+          modelAdapter,
+        });
+        const experienceRecord = experienceStore.recordThreadExperience({
+          threadId:context.thread.threadId,
+          encounterRef:encounterStory.encounterId,
+          situationId:context.situation.situationId,
+          occurredAt:encounterStory.occurredAt,
+          experienceText,
+        });
         aftermath[context.thread.threadId] = await internalizeThreadEncounterExperience({
           livedContext:context,
           encounterStory,
           presentThreadSummaries:participantSummaries,
+          experienceRecord,
           experienceStore,
           memoryStore,
           journalBook,
