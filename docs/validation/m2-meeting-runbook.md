@@ -103,9 +103,9 @@ On a failure, use the causal trail to answer the useful question: **where did th
 
 God's view displays what the deployed runtime actually executes; it does not synthesize missing lifecycle work. Birth/Genesis, publication/materialization and the situated encounter -> history -> journal -> selective-memory chain are Activity-observable.
 
-Until N1-N3 are implemented, Flight Plan / CurrentSituation continuation remains a bounded semantic proof rather than continuous deployed LivedNow. **Life** or **Continuity** may therefore correctly appear as *not observed* in Admin. Telemetry must not pretend catch-up happened when World did not perform it.
+N1-N3 are implemented and N4 meeting entry now invokes that continuity path. **Life** or **Continuity** should therefore be interpreted from the runtime evidence actually emitted for the selected Thread; telemetry must never synthesize catch-up that World did not perform.
 
-Once continuous LivedNow exists, the runbook should inspect the actual catch-up/plan/current-situation causal path before the encounter begins.
+For N4 acceptance, inspect the actual meeting-entry -> World ensure-LivedNow -> published CurrentSituation path before the encounter begins.
 
 Routine reads are also not treated as a request access log. Activity records meaningful operational/cognitive checkpoints, not every store lookup or page fetch.
 
@@ -133,12 +133,14 @@ Discover public Threads:
 curl -sS 'https://api.insidefibre.com/api/threads?limit=50' | jq
 ```
 
-Choose a `threadId`, then inspect the public snapshot:
+Choose a `threadId`, then enter the meeting through LivedNow reconciliation:
 
 ```bash
 THREAD_ID='thr_...'
-curl -sS "https://api.insidefibre.com/api/threads/$THREAD_ID/snapshot" | jq
+curl -sS -X POST "https://api.insidefibre.com/api/threads/$THREAD_ID/meet" | jq
 ```
+
+Use the returned `currentPresent.payload.situationId`. A plain snapshot read is an inspection surface and does not replace meeting entry reconciliation.
 
 Before posting the encounter, open:
 
@@ -146,7 +148,7 @@ Before posting the encounter, open:
 https://admin.insidefibre.com/activity?kind=thread&value=<THREAD_ID>&limit=100
 ```
 
-Copy the `situationId` from the snapshot's published present and send one utterance:
+Copy the `situationId` returned by meeting entry and send one utterance:
 
 ```bash
 THREAD_ID='thr_...'
@@ -196,10 +198,7 @@ npm run deploy:thread-presentation:cloudflare
 Then deploy the operator apps for the environment you want to use. This deploys Admin Dashboard and Status Page together using the provisioned environment state and Cloudflare Access configuration:
 
 ```bash
-# staging
 npm run cloud:deploy:apps -- --env staging --file .env
-
-# production
 npm run cloud:deploy:apps -- --env production --file .env
 ```
 
