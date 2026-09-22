@@ -5,6 +5,9 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { openWorldStore } from "../src/persistence.mjs";
+import { openIdentityStore } from "../src/identity-store.mjs";
+import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
+import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { createLivedNowService, LivedNowCoverageError } from "../src/lived-now-service.mjs";
 import { livedPlanId, livedSituationId } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
@@ -262,24 +265,33 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
     const initialPlan = lived.recordPlan(personalPlan(life));
 
     const world = openWorldStore(storage);
+    const identity = openIdentityStore(storage);
+    const semantic = openSemanticStateStore(storage);
+    const memory = openAutobiographicalMemoryStore(storage);
     const situated = openSituatedLifeStore(storage);
     let invocations = 0;
     const modelAdapter = {
       async invoke(input) {
         invocations += 1;
-        const placeRef = input.input.startingPlaceRef ?? input.input.availablePlaces[0].ref;
+        const context = input.input.concern.externalContext;
+        const placeRef = context.startingPlaceRef ?? context.availablePlaces[0].ref;
         return {
           output: {
-            stops: [{
-              startAt: input.input.horizon.startAt,
-              endAt: input.input.horizon.endAt,
-              physicalPlaceRef: placeRef,
-              presenceMode: "physical",
-              mediatedContext: "",
-              activity: "Continue ordinary life from the place already reached.",
-              purpose: "Carry forward existing intentions without inventing a visitor or exceptional event.",
-              travelFromPrevious: "",
-            }],
+            result: {
+              stops: [{
+                startAt: context.horizon.startAt,
+                endAt: context.horizon.endAt,
+                physicalPlaceRef: placeRef,
+                presenceMode: "physical",
+                mediatedContext: "",
+                activity: "Continue ordinary life from the place already reached.",
+                purpose: "Carry forward existing intentions without inventing a visitor or exceptional event.",
+                travelFromPrevious: "",
+              }],
+            },
+            evidenceRefs: [],
+            conflictingMotives: [],
+            uncertainty: null,
           },
           provenance: {
             provider: "fixture",
@@ -293,6 +305,9 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
     const service = createLivedNowService({
       livedNowStore: lived,
       worldStore: world,
+      identityStore: identity,
+      semanticStateStore: semantic,
+      memoryStore: memory,
       situatedLifeStore: situated,
       modelAdapter,
     });
@@ -361,6 +376,9 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
     assert.equal(invocations, callsAfterCatchUp, "retry must not regenerate elapsed life");
 
     situated.close();
+    memory.close();
+    semantic.close();
+    identity.close();
     world.close();
     lived.close();
   }));

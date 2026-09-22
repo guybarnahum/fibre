@@ -15,6 +15,9 @@ import { createLivedNowService } from "../src/lived-now-service.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { livedSituationId } from "../src/lived-now.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
+import { openIdentityStore } from "../src/identity-store.mjs";
+import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
+import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { placeEpisodeRevisionRef } from "../src/situated-life-evidence.mjs";
 import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
 import { publicationValidatorSetWitness } from "../src/genesis-domain.mjs";
@@ -283,6 +286,9 @@ test("N3 Genesis enters the same LivedNow seam and survives multi-day dormancy",
     genesis.close();
 
     const worldStore = openWorldStore(storage);
+    const identityStore = openIdentityStore(storage);
+    const semanticStateStore = openSemanticStateStore(storage);
+    const memoryStore = openAutobiographicalMemoryStore(storage);
     const situatedLifeStore = openSituatedLifeStore(storage);
     const livedNowStore = openLivedNowStore(storage);
     const places = situatedLifeStore.listCurrentPlaceEpisodes(birth.thread.threadId);
@@ -294,19 +300,25 @@ test("N3 Genesis enters the same LivedNow seam and survives multi-day dormancy",
     const modelAdapter = {
       async invoke(request) {
         cognitionCalls += 1;
-        const placeRef = request.input.startingPlaceRef ?? request.input.availablePlaces[0].ref;
+        const context = request.input.concern.externalContext;
+        const placeRef = context.startingPlaceRef ?? context.availablePlaces[0].ref;
         return {
           output: {
-            stops: [{
-              startAt: request.input.horizon.startAt,
-              endAt: request.input.horizon.endAt,
-              physicalPlaceRef: placeRef,
-              presenceMode: "physical",
-              mediatedContext: "",
-              activity: "Continue ordinary life from the place already reached.",
-              purpose: "Carry existing life forward without inventing a meeting.",
-              travelFromPrevious: "",
-            }],
+            result: {
+              stops: [{
+                startAt: context.horizon.startAt,
+                endAt: context.horizon.endAt,
+                physicalPlaceRef: placeRef,
+                presenceMode: "physical",
+                mediatedContext: "",
+                activity: "Continue ordinary life from the place already reached.",
+                purpose: "Carry existing life forward without inventing a meeting.",
+                travelFromPrevious: "",
+              }],
+            },
+            evidenceRefs: [],
+            conflictingMotives: [],
+            uncertainty: null,
           },
           provenance: {
             provider: "fixture",
@@ -320,6 +332,9 @@ test("N3 Genesis enters the same LivedNow seam and survives multi-day dormancy",
     const service = createLivedNowService({
       livedNowStore,
       worldStore,
+      identityStore,
+      semanticStateStore,
+      memoryStore,
       situatedLifeStore,
       modelAdapter,
     });
@@ -370,5 +385,8 @@ test("N3 Genesis enters the same LivedNow seam and survives multi-day dormancy",
 
     livedNowStore.close();
     situatedLifeStore.close();
+    memoryStore.close();
+    semanticStateStore.close();
+    identityStore.close();
     worldStore.close();
   }));

@@ -16,6 +16,7 @@ import { createLivedNowPublicationService } from "#services/world-kernel/src/liv
 import { createLivedNowService } from "#services/world-kernel/src/lived-now-service.mjs";
 import { createLivedNowWriteApi } from "#services/world-kernel/src/lived-now-write-api.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openAutobiographicalMemoryStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
@@ -107,6 +108,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         livedNowStore,
         worldStore:runtime.worldStore,
+        identityStore:openIdentityStore(runtime.worldStorage),
+        semanticStateStore,
+        memoryStore,
         situatedLifeStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
       });
@@ -141,6 +145,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         livedNowStore,
         worldStore:runtime.worldStore,
+        identityStore:openIdentityStore(runtime.worldStorage),
+        semanticStateStore,
+        memoryStore,
         situatedLifeStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
       });
@@ -173,6 +180,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         livedNowStore,
         worldStore:runtime.worldStore,
+        identityStore:openIdentityStore(runtime.worldStorage),
+        semanticStateStore:openSemanticStateStore(runtime.worldStorage),
+        memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
         situatedLifeStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
       });
@@ -209,6 +219,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         livedNowStore,
         worldStore: runtime.worldStore,
+        identityStore: openIdentityStore(runtime.worldStorage),
+        semanticStateStore: openSemanticStateStore(runtime.worldStorage),
+        memoryStore: openAutobiographicalMemoryStore(runtime.worldStorage),
         situatedLifeStore,
         modelAdapter: selectReasoningIntegration(deployment.integrations.livedNow, { environment: this.env }),
       });

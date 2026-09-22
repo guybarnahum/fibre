@@ -4,11 +4,9 @@ import {
   assertNonEmpty,
   assertPlainObject,
   assertStringArray,
-  canonicalJson,
-  sha256,
 } from "./persistence-common.mjs";
+import { runInteriorCognition } from "./interior-cognition.mjs";
 import {
-  developmentalContextForThread,
   livedPlanId,
   normalizeLivedPlan,
 } from "./lived-now.mjs";
@@ -52,18 +50,18 @@ const PERSONAL_PLAN_SCHEMA = Object.freeze({
   },
 });
 
-const SYSTEM_PROMPT = `You are temporary cognition for one persistent Fibre Thread.
-Form a modest personal flight plan for roughly the next half-day/day from the Thread's own context.
-A flight plan is an ordered mental itinerary of where/how the Thread wants or needs to be present, what it expects to do there, and why. It is intention, not World truth.
+const FLIGHT_PLAN_ADAPTER = Object.freeze({
+  id:"lived-planning",
+  instruction:`Form a modest personal Flight Plan for roughly the next half-day/day.
+The concern's externalContext is World-provided planning reality: the lived horizon, the physical places currently available, and optionally the physical place where the Thread must begin. Treat it as constraint and opportunity, not personality.
+A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
 When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place.
-The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end so the plan genuinely covers its stated horizon. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
+The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
-Return 1 to 8 stops. Prefer a few specific ordinary presences that follow naturally from age, self-understanding, needs, unresolved intentions, and current possibilities; combine nearby activities rather than fragmenting the day into tiny steps. Do not optimize for drama or a future visitor.`;
-
-function requestId(seed) {
-  return `lplan-cognition_${sha256(canonicalJson(seed))}`;
-}
+Return 1 to 8 stops. Prefer a few specific ordinary presences that follow naturally from the developed person and current possibilities; combine nearby activities rather than fragmenting the day into tiny steps. Do not optimize for drama or a future visitor.`,
+  resultSchema:PERSONAL_PLAN_SCHEMA,
+});
 
 function normalizePlaces(value) {
   if (!Array.isArray(value) || value.length === 0) {
@@ -115,17 +113,17 @@ function normalizeCognitiveStop(output, index, places, horizonStart, horizonEnd)
 }
 
 export async function formPersonalLivedPlan({
-  thread,
+  threadId,
   authoredAt,
   horizonEnd,
   availablePlaces,
   sourceReferences,
+  sourceStores,
   modelAdapter,
   materializedAt = null,
   startingPlaceRef = null,
 }) {
-  assertPlainObject("Thread", thread);
-  assertId("Thread.threadId", thread.threadId);
+  assertId("personal plan threadId", threadId);
   assertIsoTimestamp("personal plan authoredAt", authoredAt);
   assertIsoTimestamp("personal plan horizonEnd", horizonEnd);
   if (Date.parse(horizonEnd) <= Date.parse(authoredAt)) {
@@ -146,44 +144,33 @@ export async function formPersonalLivedPlan({
   }
   assertStringArray("personal plan sourceReferences", sourceReferences);
   if (sourceReferences.length === 0) throw new TypeError("personal plan sourceReferences must not be empty");
-  if (modelAdapter === null || typeof modelAdapter !== "object" || typeof modelAdapter.invoke !== "function") {
-    throw new TypeError("personal plan cognition requires a model adapter");
-  }
-
-  const context = developmentalContextForThread(thread, authoredAt);
-  const input = {
-    developmentalContext: context,
-    horizon: { startAt: authoredAt, endAt: horizonEnd },
-    availablePlaces: places,
-    ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
-  };
-  const invocation = await modelAdapter.invoke({
-    systemPrompt: SYSTEM_PROMPT,
-    input,
-    responseSchema: PERSONAL_PLAN_SCHEMA,
-    clientRequestId: requestId({
-      threadId: thread.threadId,
-      authoredAt,
-      horizonEnd,
-      places,
-      sourceReferences,
-      materializedAt,
-      startingPlaceRef,
-    }),
+  const cognition = await runInteriorCognition({
+    threadId,
+    at:authoredAt,
+    concern:{
+      kind:"lived_planning",
+      question:"How do I want to spend this lived horizon?",
+      externalContext:{
+        horizon:{ startAt:authoredAt, endAt:horizonEnd },
+        availablePlaces:places,
+        ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
+      },
+    },
+    adapter:FLIGHT_PLAN_ADAPTER,
+    sourceStores,
+    modelAdapter,
   });
-  assertPlainObject("personal plan cognition result", invocation);
-  assertPlainObject("personal plan cognition output", invocation.output);
-  assertPlainObject("personal plan cognition provenance", invocation.provenance);
-  if (!Array.isArray(invocation.output.stops) || invocation.output.stops.length === 0) {
+  assertPlainObject("personal plan cognition result", cognition.result);
+  if (!Array.isArray(cognition.result.stops) || cognition.result.stops.length === 0) {
     throw new TypeError("personal plan cognition must return at least one stop");
   }
-  if (invocation.output.stops.length > 8) {
+  if (cognition.result.stops.length > 8) {
     throw new TypeError("personal plan cognition may return at most eight stops");
   }
-  assertNonEmpty("personal plan cognition provenance.provider", invocation.provenance.provider);
-  assertNonEmpty("personal plan cognition provenance.modelId", invocation.provenance.modelId);
+  assertNonEmpty("personal plan cognition provenance.provider", cognition.provenance.provider);
+  assertNonEmpty("personal plan cognition provenance.modelId", cognition.provenance.modelId);
 
-  const stops = invocation.output.stops.map((stop, index) =>
+  const stops = cognition.result.stops.map((stop, index) =>
     normalizeCognitiveStop(stop, index, places, authoredAt, horizonEnd));
   if (stops[0].startAt !== authoredAt) {
     throw new TypeError("personal plan cognition must cover the horizon start");
@@ -200,27 +187,27 @@ export async function formPersonalLivedPlan({
     : { mode: "retrospective", materializedAt };
   const plan = {
     planId: livedPlanId({
-      threadId: thread.threadId,
+      threadId,
       kind: "personal",
       authoredAt,
       horizonEnd,
       stops,
-      provider: invocation.provenance.provider,
-      modelId: invocation.provenance.modelId,
+      provider: cognition.provenance.provider,
+      modelId: cognition.provenance.modelId,
       ...(materialization === undefined ? {} : { materialization }),
     }),
     kind: "personal",
-    subjectThreadId: thread.threadId,
-    owner: { partyId: thread.threadId, kind: "thread" },
+    subjectThreadId: threadId,
+    owner: { partyId: threadId, kind: "thread" },
     authoredAt,
     horizonStart: authoredAt,
     horizonEnd,
     stops,
-    sourceReferences: [...new Set([...sourceReferences, ...selectedPlaces])],
+    sourceReferences: [...new Set([...sourceReferences, ...cognition.evidenceRefs, ...selectedPlaces])],
     cognition: {
-      provider: invocation.provenance.provider,
-      modelId: invocation.provenance.modelId,
-      providerRequestId: invocation.provenance.providerRequestId ?? null,
+      provider: cognition.provenance.provider,
+      modelId: cognition.provenance.modelId,
+      providerRequestId: cognition.provenance.providerRequestId ?? null,
     },
     ...(materialization === undefined ? {} : { materialization }),
   };

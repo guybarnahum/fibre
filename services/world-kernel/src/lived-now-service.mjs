@@ -238,19 +238,32 @@ function advanceThroughExistingPlan(livedNowStore, current, requestedAt) {
   });
 }
 
-function requireCatchUpDependencies({ worldStore, situatedLifeStore, modelAdapter }) {
+function requireCatchUpDependencies({
+  worldStore,
+  identityStore,
+  semanticStateStore,
+  memoryStore,
+  situatedLifeStore,
+  modelAdapter,
+}) {
   requireMethod(worldStore, "getThread");
   requireMethod(worldStore, "listEvents");
+  requireMethod(identityStore, "getCurrentIdentityView");
+  requireMethod(semanticStateStore, "listCurrentState");
+  requireMethod(memoryStore, "listCurrentMemories");
   requireMethod(situatedLifeStore, "listCurrentPlaceEpisodes");
+  requireMethod(situatedLifeStore, "listCurrentLifeRelations");
   requireMethod(modelAdapter, "invoke");
 }
 
 async function formPlan({
   livedNowStore,
   worldStore,
+  identityStore,
+  semanticStateStore,
+  memoryStore,
   situatedLifeStore,
   modelAdapter,
-  thread,
   threadId,
   startAt,
   endAt,
@@ -271,11 +284,18 @@ async function formPlan({
   }
 
   const plan = await formPersonalLivedPlan({
-    thread,
+    threadId,
     authoredAt: startAt,
     horizonEnd: endAt,
     availablePlaces: places,
     sourceReferences: [latestEventRefAt(worldStore, threadId, startAt)],
+    sourceStores:{
+      worldStore,
+      identityStore,
+      semanticStateStore,
+      memoryStore,
+      situatedLifeStore,
+    },
     modelAdapter,
     startingPlaceRef: startingPlace,
     ...(materializedAt === null ? {} : { materializedAt }),
@@ -286,16 +306,25 @@ async function formPlan({
 async function catchUpDormantInterval({
   livedNowStore,
   worldStore,
+  identityStore,
+  semanticStateStore,
+  memoryStore,
   situatedLifeStore,
   modelAdapter,
   threadId,
   current,
   at,
 }) {
-  requireCatchUpDependencies({ worldStore, situatedLifeStore, modelAdapter });
+  requireCatchUpDependencies({
+    worldStore,
+    identityStore,
+    semanticStateStore,
+    memoryStore,
+    situatedLifeStore,
+    modelAdapter,
+  });
 
   let anchor = advanceThroughExistingPlan(livedNowStore, current, at);
-  const thread = worldStore.getThread(threadId);
   let placeRef = startingPlaceRef(anchor);
   const windows = dormantWindows(anchor.establishedAt, at);
   let finalRetrospectivePlan = null;
@@ -305,9 +334,11 @@ async function catchUpDormantInterval({
     const plan = await formPlan({
       livedNowStore,
       worldStore,
+      identityStore,
+      semanticStateStore,
+      memoryStore,
       situatedLifeStore,
       modelAdapter,
-      thread,
       threadId,
       startAt: window.startAt,
       endAt: window.endAt,
@@ -335,9 +366,11 @@ async function catchUpDormantInterval({
   await formPlan({
     livedNowStore,
     worldStore,
+    identityStore,
+    semanticStateStore,
+    memoryStore,
     situatedLifeStore,
     modelAdapter,
-    thread,
     threadId,
     startAt: at,
     endAt: futureEnd,
@@ -348,26 +381,37 @@ async function catchUpDormantInterval({
 async function establishFirstLivedNow({
   livedNowStore,
   worldStore,
+  identityStore,
+  semanticStateStore,
+  memoryStore,
   situatedLifeStore,
   modelAdapter,
   threadId,
   at,
 }) {
-  requireCatchUpDependencies({ worldStore, situatedLifeStore, modelAdapter });
+  requireCatchUpDependencies({
+    worldStore,
+    identityStore,
+    semanticStateStore,
+    memoryStore,
+    situatedLifeStore,
+    modelAdapter,
+  });
   const bornAt = fibreBirthAt(worldStore, threadId);
   if (Date.parse(at) < Date.parse(bornAt)) {
     throw new LivedNowCoverageError("LivedNow cannot be established before the Thread entered Fibre");
   }
 
-  const thread = worldStore.getThread(threadId);
   const placeRef = latestGroundedPlaceRef(situatedLifeStore, threadId, bornAt);
   const firstHorizonEnd = new Date(Date.parse(bornAt) + FORWARD_PLAN_MS).toISOString();
   await formPlan({
     livedNowStore,
     worldStore,
+    identityStore,
+    semanticStateStore,
+    memoryStore,
     situatedLifeStore,
     modelAdapter,
-    thread,
     threadId,
     startAt: bornAt,
     endAt: firstHorizonEnd,
@@ -384,6 +428,9 @@ async function establishFirstLivedNow({
   await catchUpDormantInterval({
     livedNowStore,
     worldStore,
+    identityStore,
+    semanticStateStore,
+    memoryStore,
     situatedLifeStore,
     modelAdapter,
     threadId,
@@ -396,6 +443,9 @@ async function establishFirstLivedNow({
 export function createLivedNowService({
   livedNowStore,
   worldStore = null,
+  identityStore = null,
+  semanticStateStore = null,
+  memoryStore = null,
   situatedLifeStore = null,
   modelAdapter = null,
 } = {}) {
@@ -425,7 +475,14 @@ export function createLivedNowService({
         return enact(livedNowStore, input.threadId, input.at);
       }
 
-      if (worldStore === null || situatedLifeStore === null || modelAdapter === null) {
+      if (
+        worldStore === null ||
+        identityStore === null ||
+        semanticStateStore === null ||
+        memoryStore === null ||
+        situatedLifeStore === null ||
+        modelAdapter === null
+      ) {
         throw new LivedNowCoverageError(
           current === null
             ? "Initial LivedNow requires World, situated-life and cognition authorities"
@@ -436,6 +493,9 @@ export function createLivedNowService({
         return establishFirstLivedNow({
           livedNowStore,
           worldStore,
+          identityStore,
+          semanticStateStore,
+          memoryStore,
           situatedLifeStore,
           modelAdapter,
           threadId: input.threadId,
@@ -446,6 +506,9 @@ export function createLivedNowService({
       await catchUpDormantInterval({
         livedNowStore,
         worldStore,
+        identityStore,
+        semanticStateStore,
+        memoryStore,
         situatedLifeStore,
         modelAdapter,
         threadId: input.threadId,

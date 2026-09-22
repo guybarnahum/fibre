@@ -6,6 +6,9 @@ import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
 import { openWorldStore } from "../src/persistence.mjs";
+import { openIdentityStore } from "../src/identity-store.mjs";
+import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
+import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
 import {
   developmentalContextForThread,
@@ -134,28 +137,33 @@ function cognition(homeRef) {
         invocation = structuredClone(input);
         return {
           output: {
-            stops: [
-              {
-                startAt: "2026-09-10T05:03:00Z",
-                endAt: "2026-09-10T05:30:00Z",
-                physicalPlaceRef: homeRef,
-                presenceMode: "mediated",
-                mediatedContext: "Monterey Bay Aquarium live octopus feed",
-                activity: "Watch the octopus livestream closely and sketch the changes I notice.",
-                purpose: "I want to understand how octopuses change their appearance before I stop for the afternoon.",
-                travelFromPrevious: "",
-              },
-              {
-                startAt: "2026-09-10T05:35:00Z",
-                endAt: "2026-09-10T06:00:00Z",
-                physicalPlaceRef: homeRef,
-                presenceMode: "physical",
-                mediatedContext: "",
-                activity: "Finish the sketch from memory and mark the details I want to look up later.",
-                purpose: "I want to keep the parts of the observation that still seem interesting after the stream ends.",
-                travelFromPrevious: "",
-              },
-            ],
+            result: {
+              stops: [
+                {
+                  startAt: "2026-09-10T05:03:00Z",
+                  endAt: "2026-09-10T05:30:00Z",
+                  physicalPlaceRef: homeRef,
+                  presenceMode: "mediated",
+                  mediatedContext: "Monterey Bay Aquarium live octopus feed",
+                  activity: "Watch the octopus livestream closely and sketch the changes I notice.",
+                  purpose: "I want to understand how octopuses change their appearance before I stop for the afternoon.",
+                  travelFromPrevious: "",
+                },
+                {
+                  startAt: "2026-09-10T05:35:00Z",
+                  endAt: "2026-09-10T06:00:00Z",
+                  physicalPlaceRef: homeRef,
+                  presenceMode: "physical",
+                  mediatedContext: "",
+                  activity: "Finish the sketch from memory and mark the details I want to look up later.",
+                  purpose: "I want to keep the parts of the observation that still seem interesting after the stream ends.",
+                  travelFromPrevious: "",
+                },
+              ],
+            },
+            evidenceRefs: [],
+            conflictingMotives: [],
+            uncertainty: null,
           },
           provenance: {
             provider: "fixture",
@@ -264,20 +272,38 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
     assert.match(context.selfDescription, /curious about animals/);
     assert.deepEqual(context.feelings, ["absorbed and curious"]);
 
+    const storage = localWorldStateStorage(databasePath);
+    const worldStore = openWorldStore(storage);
+    const identityStore = openIdentityStore(storage);
+    const semanticStateStore = openSemanticStateStore(storage);
+    const memoryStore = openAutobiographicalMemoryStore(storage);
+    const situatedLifeStore = openSituatedLifeStore(storage);
     const planner = cognition(life.homeRef);
     const formed = await formPersonalLivedPlan({
-      thread: life.thread,
+      threadId: life.thread.threadId,
       authoredAt: "2026-09-10T05:03:00Z",
       horizonEnd: "2026-09-10T06:00:00Z",
       availablePlaces: [{ ref: life.homeRef, displayName: "Home in Haifa" }],
       sourceReferences: [life.sourceEvent],
+      sourceStores:{
+        worldStore,
+        identityStore,
+        semanticStateStore,
+        memoryStore,
+        situatedLifeStore,
+      },
       modelAdapter: planner.adapter,
     });
-    assert.equal(planner.invocation().input.developmentalContext.ageYears, 10);
-    assert.equal(planner.invocation().input.horizon.endAt, "2026-09-10T06:00:00Z");
-    assert.deepEqual(planner.invocation().input.developmentalContext.unresolvedIntentions, [
+    assert.equal(planner.invocation().input.concern.kind, "lived_planning");
+    assert.equal(planner.invocation().input.concern.externalContext.horizon.endAt, "2026-09-10T06:00:00Z");
+    assert.deepEqual(planner.invocation().input.thread.currentState.unresolvedIntentions, [
       "Finish watching the octopus feed and sketch what I notice.",
     ]);
+    situatedLifeStore.close();
+    memoryStore.close();
+    semanticStateStore.close();
+    identityStore.close();
+    worldStore.close();
     assert.equal(formed.owner.partyId, life.thread.threadId);
     assert.equal(formed.cognition.modelId, "fixture-lived-plan-v2");
     assert.equal(formed.stops.length, 2);
