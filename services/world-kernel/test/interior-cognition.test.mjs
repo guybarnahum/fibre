@@ -117,7 +117,7 @@ test("Interior Cognition lets different lived meaning bend the same private conc
       adapter:ADAPTER,
       sourceStores:sourceStores(
         "thr_person_a",
-        "mem_person_a",
+        "mem-person-a",
         "After a long solitary stretch, quiet company restored me without disrupting my work.",
       ),
       modelAdapter:adapter,
@@ -137,8 +137,8 @@ test("Interior Cognition lets different lived meaning bend the same private conc
 
   assert.equal(ada.result.stance, "welcome");
   assert.equal(ben.result.stance, "avoid");
-  assert.deepEqual(ada.evidenceRefs, ["mem_person_a"]);
-  assert.deepEqual(ben.evidenceRefs, ["mem_person_b"]);
+  assert.deepEqual(ada.evidenceRefs, ["mem-person-a"]);
+  assert.deepEqual(ben.evidenceRefs, ["mem-person-b"]);
   assert.equal(ada.metrics.modelCalls, 1);
   assert.equal(ada.metrics.usage.totalTokens, 138);
 });

@@ -161,7 +161,8 @@ export class ThreadIdentityUpdateStore {
     const derivedSelfModel = changes.name === undefined
       ? null
       : derivedSelfModelRename(thread.currentState.selfModel, thread.identity.name, changes.name);
-    const selfModelChange = derivedSelfModel !== thread.currentState.selfModel
+    const selfModelChange = changes.name !== undefined
+      && derivedSelfModel !== thread.currentState.selfModel
       ? { previous:thread.currentState.selfModel, next:derivedSelfModel }
       : null;
     if (selfModelChange !== null) {
