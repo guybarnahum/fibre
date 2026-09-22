@@ -1,10 +1,10 @@
 import {
+  formMeetingInvitation,
   formMeetingStance,
   meetingPresenceCompatible,
 } from "./lived-meeting-cognition.mjs";
 import {
   continueSocialEncounterStory,
-  formSocialEncounterOpening,
 } from "./lived-social-encounter-cognition.mjs";
 import { appraiseEncounterAttention } from "./lived-encounter-attention.mjs";
 import { internalizeThreadEncounterExperience } from "./lived-thread-experience-aftermath.mjs";
@@ -141,8 +141,37 @@ export function createSocialMeetingService({
         });
       }
 
+      const initiator = byId.get(input.initiatorThreadId);
+      const invitees = participantContexts.filter((context) => context.thread.threadId !== input.initiatorThreadId);
+      const initiation = await formMeetingInvitation({
+        thread:initiator.thread,
+        situation:initiator.situation,
+        plan:livedNowStore.latestPlan(initiator.thread.threadId, "personal", { at:input.at }),
+        counterparties:invitees.map((context) => context.thread),
+        relationships:situatedLifeStore.listCurrentLifeRelations(initiator.thread.threadId),
+        semanticStates:initiator.semanticStates,
+        memories:initiator.memories,
+        modelAdapter,
+      });
+
+      if (initiation.decision !== "initiate") {
+        return Object.freeze({
+          outcome:"not_met",
+          compatible:true,
+          initiation,
+          invitation:null,
+          stances:Object.freeze({}),
+          encounterStory:null,
+          aftermath:null,
+        });
+      }
+
+      const invitation = Object.freeze({
+        initiatorThreadId:initiator.thread.threadId,
+        text:initiation.invitationText,
+      });
       const stances = {};
-      for (const context of participantContexts) {
+      for (const context of invitees) {
         const counterparties = participantContexts
           .filter((candidate) => candidate.thread.threadId !== context.thread.threadId)
           .map((candidate) => candidate.thread);
@@ -150,6 +179,7 @@ export function createSocialMeetingService({
           thread:context.thread,
           situation:context.situation,
           plan:livedNowStore.latestPlan(context.thread.threadId, "personal", { at:input.at }),
+          invitation,
           counterparties,
           relationships:situatedLifeStore.listCurrentLifeRelations(context.thread.threadId),
           semanticStates:context.semanticStates,
@@ -162,29 +192,24 @@ export function createSocialMeetingService({
         return Object.freeze({
           outcome:"not_met",
           compatible:true,
+          initiation,
+          invitation,
           stances:Object.freeze(stances),
           encounterStory:null,
           aftermath:null,
         });
       }
 
-      const initiator = byId.get(input.initiatorThreadId);
-      const others = participantContexts.filter((context) => context.thread.threadId !== input.initiatorThreadId);
       const story = {
         storyVersion:"encounter-story-v0.1",
         beats:[{
           actorThreadId:initiator.thread.threadId,
           kind:"utterance",
-          text:await formSocialEncounterOpening({
-            thread:initiator.thread,
-            situation:initiator.situation,
-            counterparties:others.map((context) => context.thread),
-            modelAdapter,
-          }),
+          text:invitation.text,
         }],
       };
 
-      for (const context of others) {
+      for (const context of invitees) {
         const beat = await continueSocialEncounterStory({
           thread:context.thread,
           situation:context.situation,
@@ -200,7 +225,7 @@ export function createSocialMeetingService({
       const closingBeat = await continueSocialEncounterStory({
         thread:initiator.thread,
         situation:initiator.situation,
-        counterparties:others.map((context) => context.thread),
+        counterparties:invitees.map((context) => context.thread),
         story,
         modelAdapter,
       });
@@ -302,6 +327,8 @@ export function createSocialMeetingService({
       return Object.freeze({
         outcome:"met",
         compatible:true,
+        initiation,
+        invitation,
         stances:Object.freeze(stances),
         encounterStory,
         aftermath:Object.freeze(aftermath),

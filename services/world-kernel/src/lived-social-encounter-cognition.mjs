@@ -11,52 +11,6 @@ function requestId(kind, input) {
   return `${kind}_${sha256(canonicalJson(input))}`;
 }
 
-export async function formSocialEncounterOpening({
-  thread,
-  situation,
-  counterparties,
-  modelAdapter,
-}) {
-  assertPlainObject("social encounter Thread", thread);
-  assertId("social encounter Thread.threadId", thread.threadId);
-  assertPlainObject("social encounter situation", situation);
-  if (!Array.isArray(counterparties) || counterparties.length < 1) {
-    throw new TypeError("social encounter opening requires counterparties");
-  }
-
-  const input = {
-    thread:{
-      threadId:thread.threadId,
-      name:thread.identity?.name ?? null,
-      selfDescription:thread.identity?.selfDescription ?? "",
-      selfModel:thread.currentState?.selfModel ?? "",
-    },
-    currentSituation:structuredClone(situation),
-    counterparties:counterparties.map((counterparty) => ({
-      threadId:counterparty.threadId,
-      name:counterparty.identity?.name ?? null,
-      selfDescription:counterparty.identity?.selfDescription ?? "",
-    })),
-  };
-
-  const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are one persistent Fibre Thread at the start of a mutually accepted small-group social encounter.
-Say one natural opening line from the life already underway. It may address one or several people and may reference the current activity or relationship when natural.
-Do not narrate private state, explain the system, invent shared history, or change the World situation.`,
-    input,
-    responseSchema:{
-      type:"object",
-      additionalProperties:false,
-      required:["responseText"],
-      properties:{ responseText:{ type:"string", minLength:1, maxLength:500 } },
-    },
-    clientRequestId:requestId("social-encounter-opening", input),
-  });
-
-  assertNonEmpty("social encounter opening", invocation.output.responseText);
-  return invocation.output.responseText;
-}
-
 export async function continueSocialEncounterStory({
   thread,
   situation,

@@ -143,7 +143,8 @@ Implemented path:
 ```text
 independent LivedNow
   -> compatible presence/context
-  -> each invited Thread: accept | decline | defer
+  -> initiator decides whether to make a concrete outward invitation
+  -> each invitee: accept | decline | defer
   -> if every required participant accepts:
        one objective Encounter Story
        -> each active participant is durably noticed
@@ -155,12 +156,13 @@ E2 proves:
 
 - the meeting wrapper reconciles each life independently before doing anything social;
 - incompatible physical/mediated presence creates no Encounter Story and does not teleport or silently replan anyone;
-- a compatible Thread may decline, and that stops the voluntary encounter before history exists;
-- relationship, memory and interior state are supplied to meeting stance cognition without becoming a mechanical score;
+- the initiator may choose not to initiate at all; when she does initiate, her outward invitation is the first observable beat if the meeting forms;
+- a compatible invitee may decline or defer that concrete invitation, and that stops the voluntary encounter before history exists;
+- relationship, memory and interior state are supplied independently to initiation/stance cognition without becoming a mechanical score;
 - accepted participants reuse the E1 attention/experience authority, with participation making attention deterministically `noticed` rather than adding a redundant attention cognition call;
 - one shared Encounter Story may already produce different private Thread Experiences before journal or memory.
 
-No calendar or invitation subsystem was added.
+No calendar or invitation subsystem was added. The invitation is one bounded Thread-authored social overture inside the already-current scene.
 
 Full repository CI validation is green.
 
@@ -275,6 +277,8 @@ No existing presentation R2 objects were migrated. No encounter render is requir
 `E5` is the roadmap label only. The enduring executable/evidence surface is named `lived-encounters` so commands, events and artifacts continue to describe the Fibre capability after this slice is history.
 
 Provision the additive private Thread-object bucket and deploy only after E0-E4 are green.
+
+Live staging falsified one hidden assumption in the earlier social proof: asking co-present Threads to consent to an abstract, content-free meeting produced coherent repeated refusal. The live path now follows the accepted architecture literally—initiator-owned overture first, then invitee-owned stance—without forcing acceptance or letting the operator author the social reason.
 
 The acceptance plumbing is now implemented and green in repository validation:
 

@@ -78,7 +78,7 @@ function relations(threadId) {
   return [];
 }
 
-function fixture({ stanceFor = () => "accept", compatible = true, rude = false } = {}) {
+function fixture({ initiationFor = () => "initiate", stanceFor = () => "accept", compatible = true, rude = false } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe");
   const noorCafe = placeEpisode(
     noor.threadId,
@@ -99,6 +99,7 @@ function fixture({ stanceFor = () => "accept", compatible = true, rude = false }
   const stories = [];
   const attentions = [];
   const experiences = [];
+  const initiationNames = [];
   const stanceNames = [];
   const storyAuthors = [];
   const journals = [];
@@ -108,22 +109,28 @@ function fixture({ stanceFor = () => "accept", compatible = true, rude = false }
 
   const modelAdapter = {
     async invoke(call) {
-      if (call.clientRequestId.startsWith("meeting-stance_")) {
-        stanceNames.push(call.input.thread.name);
-        return {
-          output:{ decision:stanceFor(call.input.thread.name), expression:null, suggestedAt:null },
-          provenance:{ provider:"fixture", modelId:"fixture-e0" },
-        };
-      }
-      if (call.clientRequestId.startsWith("social-encounter-opening_")) {
-        storyAuthors.push(call.input.thread.name);
+      if (call.clientRequestId.startsWith("meeting-invitation_")) {
+        initiationNames.push(call.input.thread.name);
+        const decision = initiationFor(call.input.thread.name);
         return {
           output:{
-            responseText:rude
-              ? "Noor, move your sketch. You’re taking up too much of the table."
-              : "Hey Noor — mind if I sit with you for a minute?",
+            decision,
+            invitationText:decision === "initiate"
+              ? rude
+                ? "Noor, move your sketch. You’re taking up too much of the table."
+                : "Hey Noor — mind if I sit with you for a minute?"
+              : null,
           },
-          provenance:{ provider:"fixture", modelId:"fixture-e0" },
+          provenance:{ provider:"fixture", modelId:"fixture-social" },
+        };
+      }
+      if (call.clientRequestId.startsWith("meeting-stance_")) {
+        stanceNames.push(call.input.thread.name);
+        assert.equal(call.input.invitation.initiatorThreadId, mina.threadId);
+        assert.equal(typeof call.input.invitation.text, "string");
+        return {
+          output:{ decision:stanceFor(call.input.thread.name), expression:null, suggestedAt:null },
+          provenance:{ provider:"fixture", modelId:"fixture-social" },
         };
       }
       if (call.clientRequestId.startsWith("social-encounter-story_")) {
@@ -320,6 +327,7 @@ function fixture({ stanceFor = () => "accept", compatible = true, rude = false }
     bookWrites,
     memories,
     ensured,
+    initiationNames,
     stanceNames,
     storyAuthors,
   };
@@ -335,6 +343,10 @@ test("E2 accepted meeting is one Encounter Story with distinct Thread Experience
 
   assert.equal(result.outcome, "met", "meeting should form");
   assert.equal(f.ensured.length, 2, "both lives must be current");
+  assert.deepEqual(f.initiationNames, ["Mina"], "meeting must begin from initiator agency");
+  assert.deepEqual(f.stanceNames, ["Noor"], "only invitees should decide whether to accept");
+  assert.equal(result.encounterStory.story.beats[0].text, "Hey Noor — mind if I sit with you for a minute?",
+    "accepted invitation must become the first objective story beat");
   assert.equal(f.stories.length, 1, "meeting should create one Encounter Story");
   assert.equal(f.experiences.length, 2, "each participant should own an experience");
   assert.equal(
@@ -378,6 +390,8 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
 
   assert.equal(result.compatible, true, "presence should be compatible");
   assert.equal(result.outcome, "not_met", "decline should stop the voluntary encounter");
+  assert.equal(result.invitation.text, "Hey Noor — mind if I sit with you for a minute?",
+    "decline must answer a real outward invitation");
   assert.equal(result.stances[noor.threadId].decision, "decline", "Noor should retain agency");
   assert.equal(declined.stories.length, 0, "decline must not fabricate an Encounter Story");
   assert.equal(declined.experiences.length, 0, "no story means no Thread Experience");
@@ -403,6 +417,8 @@ test("E3 one social story may affect a silent co-present witness", async () => {
     "witness presence should belong to the Encounter Story",
   );
   assert.equal(f.stanceNames.includes("Sela"), false, "witness should not be invited");
+  assert.equal(result.encounterStory.story.beats[0].actorThreadId, mina.threadId,
+    "initiator overture should begin the shared story");
   assert.equal(f.storyAuthors.includes("Sela"), false, "witness should remain silent");
   assert.equal(
     result.encounterStory.story.beats.some((beat) => beat.actorThreadId === sela.threadId),

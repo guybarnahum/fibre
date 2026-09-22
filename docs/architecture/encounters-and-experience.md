@@ -116,9 +116,11 @@ A meeting is a **voluntary social encounter**.
 It adds a participation decision before the encounter occurs:
 
 ```text
-request / invitation
+compatible co-presence
   -> establish exact LivedNow
-  -> Thread-owned participation stance
+  -> initiator-owned overture / invitation
+       initiate | not_initiate
+  -> each invitee's Thread-owned participation stance
        accept | decline | defer
   -> if participation requirements are satisfied:
        encounter story
@@ -226,7 +228,7 @@ one shared encounter story
 
 A Thread may be an actor in one beat and a witness for the rest. Fixed social roles are therefore optional derived descriptions, not the semantic authority.
 
-For requested meetings, each invited participant independently decides whether to participate. Incidental witnesses are not fabricated as invitees merely because they are nearby.
+For requested meetings, the social reason is not supplied by the caller: a Thread initiator first decides whether to make an actual outward overture from the life already underway. Each invitee then independently decides whether to participate in response to that concrete invitation. If the initiator does not initiate, or any required invitee declines/defers, no Encounter Story is created. Incidental witnesses are not fabricated as invitees merely because they are nearby.
 
 Automatic incidental-witness discovery is a later extension of the same model: World can derive candidate witnesses from compatible LivedNow presence, then each Thread independently notices or does not notice the occurrence.
 
