@@ -229,7 +229,6 @@ export async function runInteriorCognition({
   adapter,
   sourceStores,
   modelAdapter,
-  profile = INTERIOR_COGNITION_PROFILE,
 } = {}) {
   assertId("Interior Cognition threadId", threadId);
   assertIsoTimestamp("Interior Cognition at", at);
@@ -243,6 +242,7 @@ export async function runInteriorCognition({
   const thread = worldStore.getThread(threadId);
   if (thread?.threadId !== threadId) throw new TypeError("Interior Cognition Thread source mismatch");
 
+  const profile = INTERIOR_COGNITION_PROFILE;
   const selected = selectEvidence(threadId, sourceStores, profile);
   const evidenceRefs = selected.evidence.map((item) => item.ref);
   const currentState = Object.freeze({
@@ -261,6 +261,12 @@ export async function runInteriorCognition({
     concern:normalizedConcern,
     developedSelfEvidence:selected.evidence,
   });
+  const contextDigest = `sha256:${sha256(canonicalJson({
+    threadId,
+    threadVersion:thread.version,
+    currentState,
+    evidence:selected.evidence,
+  }))}`;
 
   const requestId = `interior_${sha256(canonicalJson({
     profile:{ id:profile.id, version:profile.version },
@@ -300,6 +306,9 @@ export async function runInteriorCognition({
       provider:invocation.provenance?.provider ?? modelAdapter.provider ?? null,
       modelId:invocation.provenance?.modelId ?? modelAdapter.modelId ?? null,
       providerRequestId:invocation.provenance?.providerRequestId ?? null,
+      sourceThreadVersion:thread.version,
+      selectedEvidenceRefs:Object.freeze([...evidenceRefs]),
+      contextDigest,
     }),
     metrics:Object.freeze({
       modelCalls:1,
