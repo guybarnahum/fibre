@@ -180,7 +180,7 @@ export async function formMeetingStance({
   assertPlainObject("meeting Thread", thread);
   assertId("meeting Thread.threadId", thread.threadId);
   assertPlainObject("meeting situation", situation);
-  assertPlainObject("social encounter request", invitation);
+  assertPlainObject("social encounter request", request);
   assertId("social encounter request.initiatorThreadId", request.initiatorThreadId);
   assertNonEmpty("social encounter request.text", request.text);
   if (request.initiatorThreadId === thread.threadId) {
