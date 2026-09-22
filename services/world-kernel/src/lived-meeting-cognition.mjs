@@ -113,7 +113,6 @@ export async function formMeetingInvitation({
     },
     currentSituation:structuredClone(situation),
     remainingFlightPlan:plan === null ? null : structuredClone(plan),
-    invitation:structuredClone(invitation),
     counterparties:counterparties.map((counterparty) => ({
       threadId:counterparty.threadId,
       name:counterparty.identity?.name ?? null,
@@ -207,6 +206,7 @@ export async function formMeetingStance({
     },
     currentSituation:structuredClone(situation),
     remainingFlightPlan:plan === null ? null : structuredClone(plan),
+    invitation:structuredClone(invitation),
     counterparties:counterparties.map((counterparty) => ({
       threadId:counterparty.threadId,
       name:counterparty.identity?.name ?? null,
