@@ -80,7 +80,7 @@ export function meetingPresenceCompatible(left, right, {
   return leftPlaceId !== null && leftPlaceId === rightPlaceId;
 }
 
-export async function formMeetingInvitation({
+export async function formSocialEncounterRequest({
   thread,
   situation,
   plan,
@@ -90,16 +90,16 @@ export async function formMeetingInvitation({
   memories = [],
   modelAdapter,
 }) {
-  assertPlainObject("meeting initiator Thread", thread);
-  assertId("meeting initiator Thread.threadId", thread.threadId);
-  assertPlainObject("meeting initiator situation", situation);
+  assertPlainObject("social encounter initiator Thread", thread);
+  assertId("social encounter initiator Thread.threadId", thread.threadId);
+  assertPlainObject("social encounter initiator situation", situation);
   if (!Array.isArray(counterparties) || counterparties.length < 1) {
-    throw new TypeError("meeting invitation requires counterparties");
+    throw new TypeError("social encounter request requires counterparties");
   }
   const counterpartyIds = [];
   for (const counterparty of counterparties) {
-    assertPlainObject("meeting invitation counterparty", counterparty);
-    assertId("meeting invitation counterparty.threadId", counterparty.threadId);
+    assertPlainObject("social encounter request counterparty", counterparty);
+    assertId("social encounter request counterparty.threadId", counterparty.threadId);
     counterpartyIds.push(counterparty.threadId);
   }
 
@@ -127,37 +127,37 @@ export async function formMeetingInvitation({
   const invocation = await modelAdapter.invoke({
     systemPrompt:`You are one persistent Fibre Thread deciding whether to initiate a small social encounter with the listed co-present counterparties right now.
 The currentSituation is World truth and the Flight Plan is this Thread's own intended life. Co-presence creates an opportunity, not an obligation.
-Choose initiate only when this particular Thread has a plausible reason to address these people now from the life already underway. A small situational overture to a stranger may be natural; shared history must never be invented.
-If initiating, write the short outward invitation or opening remark the counterparties would actually hear. It should carry enough social content for them to decide whether to participate.
-Choose not_initiate when the Thread would naturally keep doing what they are doing.
-Do not change location, rewrite the Flight Plan, invent a relationship, expose private records, or manufacture a reason merely to make a meeting happen.`,
+Choose initiate only when this particular Thread actually wants something from the other person or people now: attention, company, help, information, conversation, shared activity, or another concrete social engagement grounded in the life already underway. A small situational ask to a stranger may be natural; shared history must never be invented.
+If initiating, write the short outward request the counterparties would actually hear. It must make clear enough what the Thread is asking for that the other person can meaningfully decide whether to engage.
+Choose not_initiate when the Thread does not genuinely want to ask anything of them now.
+Do not change location, rewrite the Flight Plan, invent a relationship, expose private records, or manufacture a reason merely to make an encounter happen.`,
     input,
     responseSchema:{
       type:"object",
       additionalProperties:false,
-      required:["decision","invitationText"],
+      required:["decision","requestText"],
       properties:{
         decision:{ type:"string", enum:INITIATION_DECISIONS },
-        invitationText:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
+        requestText:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
       },
     },
-    clientRequestId:requestId("meeting-invitation", input),
+    clientRequestId:requestId("social-encounter-request", input),
   });
 
-  assertPlainObject("meeting invitation output", invocation.output);
-  assertExactKeys("meeting invitation output", invocation.output, ["decision","invitationText"]);
+  assertPlainObject("social encounter request output", invocation.output);
+  assertExactKeys("social encounter request output", invocation.output, ["decision","requestText"]);
   if (!INITIATION_DECISIONS.includes(invocation.output.decision)) {
-    throw new TypeError("meeting invitation decision is invalid");
+    throw new TypeError("social encounter request decision is invalid");
   }
   if (invocation.output.decision === "initiate") {
-    assertNonEmpty("meeting invitation invitationText", invocation.output.invitationText);
-  } else if (invocation.output.invitationText !== null) {
-    throw new TypeError("not_initiate cannot carry invitation text");
+    assertNonEmpty("social encounter request requestText", invocation.output.requestText);
+  } else if (invocation.output.requestText !== null) {
+    throw new TypeError("not_initiate cannot carry request text");
   }
 
   return Object.freeze({
     decision:invocation.output.decision,
-    invitationText:invocation.output.invitationText,
+    requestText:invocation.output.requestText,
     cognition:Object.freeze({
       provider:invocation.provenance.provider,
       modelId:invocation.provenance.modelId,
@@ -170,7 +170,7 @@ export async function formMeetingStance({
   thread,
   situation,
   plan,
-  invitation,
+  request,
   counterparties,
   relationships = [],
   semanticStates = [],
@@ -180,11 +180,11 @@ export async function formMeetingStance({
   assertPlainObject("meeting Thread", thread);
   assertId("meeting Thread.threadId", thread.threadId);
   assertPlainObject("meeting situation", situation);
-  assertPlainObject("meeting invitation", invitation);
-  assertId("meeting invitation.initiatorThreadId", invitation.initiatorThreadId);
-  assertNonEmpty("meeting invitation.text", invitation.text);
-  if (invitation.initiatorThreadId === thread.threadId) {
-    throw new TypeError("meeting invitee cannot respond to their own invitation");
+  assertPlainObject("social encounter request", invitation);
+  assertId("social encounter request.initiatorThreadId", request.initiatorThreadId);
+  assertNonEmpty("social encounter request.text", request.text);
+  if (request.initiatorThreadId === thread.threadId) {
+    throw new TypeError("meeting invitee cannot respond to their own request");
   }
   if (!Array.isArray(counterparties) || counterparties.length < 1) {
     throw new TypeError("meeting stance requires counterparties");
@@ -207,7 +207,7 @@ export async function formMeetingStance({
     },
     currentSituation:structuredClone(situation),
     remainingFlightPlan:plan === null ? null : structuredClone(plan),
-    invitation:structuredClone(invitation),
+    socialRequest:structuredClone(request),
     counterparties:counterparties.map((counterparty) => ({
       threadId:counterparty.threadId,
       name:counterparty.identity?.name ?? null,
@@ -219,12 +219,12 @@ export async function formMeetingStance({
   };
 
   const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are one persistent Fibre Thread deciding whether to accept a concrete social invitation from a co-present Thread right now.
-The supplied invitation is the outward overture that was actually made. The currentSituation is World truth and the Flight Plan is this Thread's own intended life. An invitation is not authority to interrupt or rewrite it.
-Choose accept, decline, or defer from this particular Thread's point of view.
-Consider what the Thread is doing, privacy and interruption cost, remaining intentions, needs/feelings, remembered history, and actual relationships. Someone liked or trusted may receive more accommodation, but no relationship label mechanically determines the choice.
+    systemPrompt:`You are one persistent Fibre Thread deciding how to respond to a concrete social request from a co-present Thread right now.
+The supplied socialRequest is what the other Thread actually asked for. The currentSituation is World truth and the Flight Plan is this Thread's own intended life. A request creates no obligation to engage.
+Choose accept, decline, or defer from this particular Thread's point of view after weighing the request against the current situation and the totality of the actual relationship/history supplied here: what the Thread is doing, interruption cost, remaining intentions, needs/feelings, remembered interactions, trust, fondness, resentment, obligations and established relationship facts. No single label or memory mechanically decides the outcome.
+Ordinary civility creates social pressure to acknowledge a direct request, especially from someone with whom the Thread has an ongoing relationship, but civility is pressure rather than consent. The Thread may still decline or defer when busy, unwilling or otherwise disinclined. Its outward expression may be warm, polite, terse, sharp, or absent when ignoring the request is what this Thread would actually do.
 decline means not now without proposing a concrete later time. defer means not now but with a plausible later time inside the supplied Flight Plan horizon when one is genuinely supported.
-expression is optional outward wording in the Thread's own voice and need not reveal private reasons.
+expression is the outward response, if any, and need not reveal private reasons.
 Do not change location, rewrite the Flight Plan, invent a relationship, or expose private records.`,
     input,
     responseSchema:{

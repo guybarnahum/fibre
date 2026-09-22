@@ -118,7 +118,7 @@ It adds a participation decision before the encounter occurs:
 ```text
 compatible co-presence
   -> establish exact LivedNow
-  -> initiator-owned overture / invitation
+  -> initiator-owned encounter request
        initiate | not_initiate
   -> each invitee's Thread-owned participation stance
        accept | decline | defer
@@ -228,7 +228,9 @@ one shared encounter story
 
 A Thread may be an actor in one beat and a witness for the rest. Fixed social roles are therefore optional derived descriptions, not the semantic authority.
 
-For requested meetings, the social reason is not supplied by the caller: a Thread initiator first decides whether to make an actual outward overture from the life already underway. Each invitee then independently decides whether to participate in response to that concrete invitation. If the initiator does not initiate, or any required invitee declines/defers, no Encounter Story is created. Incidental witnesses are not fabricated as invitees merely because they are nearby.
+For requested meetings, the social reason is not supplied by the caller: a Thread initiator first decides whether to make an actual outward request for attention, company, help, conversation, shared activity, or another concrete engagement from the life already underway. Each invitee then independently decides whether to participate in response to that concrete request. If the initiator does not initiate, or any required invitee declines/defers, no Encounter Story is created. Incidental witnesses are not fabricated as invitees merely because they are nearby.
+
+The recipient appraises the request against the current situation and the totality of the actual relationship/history available to the Thread. Ordinary civility may create pressure to acknowledge another person's ask, but that pressure is never consent: a busy or unwilling Thread may decline, defer, answer sharply, answer politely, or sometimes ignore the request.
 
 Automatic incidental-witness discovery is a later extension of the same model: World can derive candidate witnesses from compatible LivedNow presence, then each Thread independently notices or does not notice the occurrence.
 

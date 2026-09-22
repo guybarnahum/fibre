@@ -1,5 +1,5 @@
 import {
-  formMeetingInvitation,
+  formSocialEncounterRequest,
   formMeetingStance,
   meetingPresenceCompatible,
 } from "./lived-meeting-cognition.mjs";
@@ -143,7 +143,7 @@ export function createSocialMeetingService({
 
       const initiator = byId.get(input.initiatorThreadId);
       const invitees = participantContexts.filter((context) => context.thread.threadId !== input.initiatorThreadId);
-      const initiation = await formMeetingInvitation({
+      const initiation = await formSocialEncounterRequest({
         thread:initiator.thread,
         situation:initiator.situation,
         plan:livedNowStore.latestPlan(initiator.thread.threadId, "personal", { at:input.at }),
@@ -159,16 +159,16 @@ export function createSocialMeetingService({
           outcome:"not_met",
           compatible:true,
           initiation,
-          invitation:null,
+          request:null,
           stances:Object.freeze({}),
           encounterStory:null,
           aftermath:null,
         });
       }
 
-      const invitation = Object.freeze({
+      const request = Object.freeze({
         initiatorThreadId:initiator.thread.threadId,
-        text:initiation.invitationText,
+        text:initiation.requestText,
       });
       const stances = {};
       for (const context of invitees) {
@@ -179,7 +179,7 @@ export function createSocialMeetingService({
           thread:context.thread,
           situation:context.situation,
           plan:livedNowStore.latestPlan(context.thread.threadId, "personal", { at:input.at }),
-          invitation,
+          request,
           counterparties,
           relationships:situatedLifeStore.listCurrentLifeRelations(context.thread.threadId),
           semanticStates:context.semanticStates,
@@ -193,7 +193,7 @@ export function createSocialMeetingService({
           outcome:"not_met",
           compatible:true,
           initiation,
-          invitation,
+          request,
           stances:Object.freeze(stances),
           encounterStory:null,
           aftermath:null,
@@ -205,7 +205,7 @@ export function createSocialMeetingService({
         beats:[{
           actorThreadId:initiator.thread.threadId,
           kind:"utterance",
-          text:invitation.text,
+          text:request.text,
         }],
       };
 
@@ -328,7 +328,7 @@ export function createSocialMeetingService({
         outcome:"met",
         compatible:true,
         initiation,
-        invitation,
+        request,
         stances:Object.freeze(stances),
         encounterStory,
         aftermath:Object.freeze(aftermath),

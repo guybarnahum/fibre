@@ -11,6 +11,7 @@ import {
 } from "./persistence-common.mjs";
 
 export const FIBRE_COMMONS_CONTEXT = "fibre:commons:open-room";
+const COMMONS_ENTRY_OFFSET_MS = 10;
 const COMMONS_WINDOW_MS = 45 * 60 * 1000;
 const MIN_COMMONS_WINDOW_MS = 10 * 60 * 1000;
 const MAX_THREADS = 6;
@@ -118,7 +119,7 @@ export function createLivedCommonsService({
           continue;
         }
 
-        const entryAt = new Date(Date.parse(input.at) + 1).toISOString();
+        const entryAt = new Date(Date.parse(input.at) + COMMONS_ENTRY_OFFSET_MS).toISOString();
         const endAt = new Date(Math.min(
           Date.parse(plan.horizonEnd),
           Date.parse(entryAt) + COMMONS_WINDOW_MS,

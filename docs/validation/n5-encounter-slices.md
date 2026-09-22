@@ -143,7 +143,7 @@ Implemented path:
 ```text
 independent LivedNow
   -> compatible presence/context
-  -> initiator decides whether to make a concrete outward invitation
+  -> initiator decides whether to make a concrete outward request
   -> each invitee: accept | decline | defer
   -> if every required participant accepts:
        one objective Encounter Story
@@ -157,13 +157,14 @@ E2 proves:
 - the meeting wrapper reconciles each life independently before doing anything social;
 - incompatible physical/mediated presence creates no Encounter Story and does not teleport or silently replan anyone;
 - physical compatibility requires explicit World-recorded shared-place authority; equal reusable Genesis/Thread-context place IDs do not count as co-presence;
-- the initiator may choose not to initiate at all; when she does initiate, her outward invitation is the first observable beat if the meeting forms;
-- a compatible invitee may decline or defer that concrete invitation, and that stops the voluntary encounter before history exists;
+- the initiator may choose not to initiate at all; when she does initiate, her outward request is the first observable beat if the meeting forms;
+- a compatible invitee may decline or defer that concrete request, and that stops the voluntary encounter before history exists;
 - relationship, memory and interior state are supplied independently to initiation/stance cognition without becoming a mechanical score;
+- the recipient weighs the concrete ask against current life and the totality of supplied relationship/history; civility is a contextual social pressure to respond, never an acceptance rule;
 - accepted participants reuse the E1 attention/experience authority, with participation making attention deterministically `noticed` rather than adding a redundant attention cognition call;
 - one shared Encounter Story may already produce different private Thread Experiences before journal or memory.
 
-No calendar or invitation subsystem was added. The invitation is one bounded Thread-authored social overture inside the already-current scene.
+No calendar or invitation subsystem was added. The request is one bounded Thread-authored social ask inside the already-current scene.
 
 Full repository CI validation is green.
 

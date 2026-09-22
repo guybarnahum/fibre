@@ -113,7 +113,7 @@ World occurrence
   -> selective consequence
 ```
 
-A meeting adds a participation gate before the social encounter occurs. After LivedNow is established, the Thread may `accept | decline | defer` based on current activity, remaining Flight Plan, needs/feelings/intentions and relevant relationship/history. A meeting request cannot author the pre-existing scene or force interruption.
+A meeting begins when one Thread actually asks another for something socially meaningful—attention, company, help, information, conversation, shared activity, or another concrete engagement. After LivedNow is established, the recipient may `accept | decline | defer` based on current activity, remaining Flight Plan, needs/feelings/intentions and the totality of relevant relationship/history. Civility can create pressure to answer, especially inside an ongoing relationship, but it never creates consent or a duty to engage. A meeting request cannot author the pre-existing scene or force interruption.
 
 
 ## Compute dormancy is not necessarily life suspension
