@@ -133,11 +133,11 @@ test("B1 not_remembered preserves encounter and journal without manufacturing me
             return {
               output: {
                 outcome: "not_remembered",
-                rememberedContent: null,
-                rememberedMeaning: null,
-                confidence: null,
-                salience: null,
-                uncertainty: [],
+                rememberedContent: "This generated text must never become memory.",
+                rememberedMeaning: "Nor may this generated meaning leak through.",
+                confidence: 0.91,
+                salience: 0.12,
+                uncertainty: ["The model emitted irrelevant fields after choosing not to remember."],
               },
               provenance: { provider: "fixture", modelId: "fixture-memory" },
             };
@@ -146,7 +146,7 @@ test("B1 not_remembered preserves encounter and journal without manufacturing me
       });
 
       assert.equal(result.outcome, "not_remembered");
-      assert.equal(result.memory, null);
+      assert.equal(result.memory, null, "not_remembered must discard generated memory content");
       assert.equal(experienceStore.listEncounters(thread.threadId).length, 1);
       assert.equal(experienceStore.listJournal(thread.threadId).length, 1);
       assert.equal(memoryStore.listCurrentMemories(thread.threadId).length, 0);

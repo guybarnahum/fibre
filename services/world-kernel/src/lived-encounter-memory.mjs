@@ -59,7 +59,7 @@ function semanticContext(record) {
   };
 }
 
-function validateOutput(output) {
+function normalizeOutput(output) {
   assertPlainObject("lived experience memory output", output);
   assertExactKeys("lived experience memory output", output, [
     "outcome",
@@ -73,17 +73,31 @@ function validateOutput(output) {
     throw new TypeError("lived experience memory outcome is invalid");
   }
   assertStringArray("lived experience memory uncertainty", output.uncertainty);
+
   if (output.outcome === "not_remembered") {
-    if (output.rememberedContent !== null || output.rememberedMeaning !== null || output.confidence !== null || output.salience !== null) {
-      throw new TypeError("not_remembered cannot carry autobiographical content or scores");
-    }
-    return;
+    return Object.freeze({
+      outcome:"not_remembered",
+      rememberedContent:null,
+      rememberedMeaning:null,
+      confidence:null,
+      salience:null,
+      uncertainty:Object.freeze([...output.uncertainty]),
+    });
   }
+
   assertNonEmpty("lived experience rememberedContent", output.rememberedContent);
   if (output.rememberedMeaning !== null) assertNonEmpty("lived experience rememberedMeaning", output.rememberedMeaning);
   assertFiniteNumber("lived experience memory confidence", output.confidence, { minimum: 0 });
   assertFiniteNumber("lived experience memory salience", output.salience, { minimum: 0 });
   if (output.confidence > 1 || output.salience > 1) throw new TypeError("lived experience memory scores must be at most 1");
+  return Object.freeze({
+    outcome:"retained",
+    rememberedContent:output.rememberedContent,
+    rememberedMeaning:output.rememberedMeaning,
+    confidence:output.confidence,
+    salience:output.salience,
+    uncertainty:Object.freeze([...output.uncertainty]),
+  });
 }
 
 function livedState({ livedContext, thread, semanticStateStore, memoryStore }) {
@@ -169,9 +183,9 @@ async function formExperienceMemory({
     clientRequestId: requestId(input),
   });
   assertPlainObject("lived experience memory result", invocation);
-  validateOutput(invocation.output);
+  const output = normalizeOutput(invocation.output);
 
-  if (invocation.output.outcome === "not_remembered") {
+  if (output.outcome === "not_remembered") {
     return { outcome: "not_remembered", memory: null };
   }
 
@@ -180,7 +194,7 @@ async function formExperienceMemory({
     originReference:eventId,
     slot,
   });
-  const durableMeaning = invocation.output.rememberedMeaning !== null;
+  const durableMeaning = output.rememberedMeaning !== null;
   const memory = memoryStore.recordMemory({
     recordFormat: AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
     memoryId,
@@ -189,17 +203,17 @@ async function formExperienceMemory({
     subject: { originEventRef:eventId, slot },
     subjectPeriod: { startAt:occurredAt, endAt:occurredAt },
     eventRefs: [eventId],
-    rememberedContent: invocation.output.rememberedContent,
-    rememberedMeaning: invocation.output.rememberedMeaning,
+    rememberedContent: output.rememberedContent,
+    rememberedMeaning: output.rememberedMeaning,
     meaningOutcome: durableMeaning ? "durable_meaning" : "no_durable_meaning",
     meaningParts: durableMeaning ? [{
       meaningPartId: autobiographicalMeaningPartId({ memoryId, ordinal: 1 }),
-      meaning: invocation.output.rememberedMeaning,
+      meaning: output.rememberedMeaning,
     }] : [],
     asOf:occurredAt,
-    confidence: invocation.output.confidence,
-    uncertainty: invocation.output.uncertainty,
-    salience: invocation.output.salience,
+    confidence: output.confidence,
+    uncertainty: output.uncertainty,
+    salience: output.salience,
     accessibility: "accessible",
     retentionState: "retained",
     authorship: {
