@@ -206,7 +206,13 @@ function applyThreadIdentityUpdate(thread, event) {
   if (event.commandId !== null || event.commandDigest !== null) throw new IntegrityError(`identity event ${event.eventId} must not carry command metadata`);
   if (event.threadId !== thread.threadId) throw new IntegrityError(`identity event ${event.eventId} belongs to another Thread`);
   if (thread.version !== event.expectedVersion) throw new IntegrityError(`identity event ${event.eventId} expected version ${event.expectedVersion}, replay has ${thread.version}`);
-  assertExactKeys(`identity event ${event.eventId} payload`, event.payload, ["changes","previous","operationKey"]);
+  if (event.payloadSchemaVersion === 1) {
+    assertExactKeys(`identity event ${event.eventId} payload`, event.payload, ["changes","previous","operationKey"]);
+  } else if (event.payloadSchemaVersion === 2) {
+    assertExactKeys(`identity event ${event.eventId} payload`, event.payload, ["changes","previous","operationKey","derivedSelfModel"]);
+  } else {
+    throw new IntegrityError(`identity event ${event.eventId} has unsupported payload schema version ${event.payloadSchemaVersion}`);
+  }
   assertPlainObject(`identity event ${event.eventId} changes`, event.payload.changes);
   assertPlainObject(`identity event ${event.eventId} previous`, event.payload.previous);
   assertNonEmpty(`identity event ${event.eventId} operationKey`, event.payload.operationKey);
@@ -268,10 +274,28 @@ function applyThreadIdentityUpdate(thread, event) {
     identity.languages = [...languages];
   }
 
+  let currentState = thread.currentState;
+  if (event.payloadSchemaVersion === 2 && event.payload.derivedSelfModel !== null) {
+    assertPlainObject(`identity event ${event.eventId} derivedSelfModel`, event.payload.derivedSelfModel);
+    assertExactKeys(`identity event ${event.eventId} derivedSelfModel`, event.payload.derivedSelfModel, ["previous","next"]);
+    if (!keys.includes("name")) {
+      throw new IntegrityError(`identity event ${event.eventId} changes self-model without changing name`);
+    }
+    if (event.payload.derivedSelfModel.previous !== thread.currentState.selfModel) {
+      throw new IntegrityError(`identity event ${event.eventId} previous self-model does not match replay`);
+    }
+    const expected = `I am ${identity.name}.`;
+    if (event.payload.derivedSelfModel.next !== expected) {
+      throw new IntegrityError(`identity event ${event.eventId} derived self-model does not match updated name`);
+    }
+    currentState = { ...thread.currentState, selfModel:expected };
+  }
+
   const replayed = {
     ...thread,
     version:thread.version + 1,
     identity,
+    currentState,
     provenance:{ ...thread.provenance, lastEventId:event.eventId },
   };
   validateStoredThread(event.threadId, replayed);

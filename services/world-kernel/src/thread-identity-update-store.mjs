@@ -71,6 +71,16 @@ function eventId(threadId, operationKey) {
   });
 }
 
+function derivedSelfModelRename(selfModel, previousName, nextName) {
+  if (
+    selfModel === "I am a Fibre Thread."
+    || selfModel === `I am ${previousName}.`
+  ) {
+    return `I am ${nextName}.`;
+  }
+  return selfModel;
+}
+
 function requestMatchesExisting(thread, changes, { name, sex, birthDate }) {
   const matches = (field, requested) => {
     if (requested === undefined) return true;
@@ -148,12 +158,21 @@ export class ThreadIdentityUpdateStore {
     const next = structuredClone(thread);
     next.version += 1;
     next.identity = { ...next.identity, ...changes };
+    const derivedSelfModel = changes.name === undefined
+      ? null
+      : derivedSelfModelRename(thread.currentState.selfModel, thread.identity.name, changes.name);
+    const selfModelChange = derivedSelfModel !== thread.currentState.selfModel
+      ? { previous:thread.currentState.selfModel, next:derivedSelfModel }
+      : null;
+    if (selfModelChange !== null) {
+      next.currentState = { ...next.currentState, selfModel:selfModelChange.next };
+    }
     next.provenance = { ...next.provenance, lastEventId:updateEventId };
     validateThreadSnapshot(next);
 
     const stateJson = canonicalJson(next);
     const stateHash = threadStateHash(next);
-    const payload = { changes, previous, operationKey:key };
+    const payload = { changes, previous, operationKey:key, derivedSelfModel:selfModelChange };
     const actor = { entityId:"fibre.admin.operator", kind:"operator", displayName:"Fibre Admin" };
     const provenance = { source:"admin_operator", operationKey:key, notThreadLifeEvent:true };
 
@@ -173,7 +192,7 @@ export class ThreadIdentityUpdateStore {
           event_id,thread_id,sequence,expected_version,resulting_version,event_type,
           command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
           authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-        ) VALUES (?,?,?,?,?,'THREAD_IDENTITY_UPDATED',NULL,NULL,?,?,?,?,NULL,?,?,1,?)
+        ) VALUES (?,?,?,?,?,'THREAD_IDENTITY_UPDATED',NULL,NULL,?,?,?,?,NULL,?,?,2,?)
       `).run(
         updateEventId,
         thread.threadId,

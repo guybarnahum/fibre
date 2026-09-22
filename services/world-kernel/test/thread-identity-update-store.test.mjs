@@ -97,3 +97,42 @@ test("explicit Admin identity decisions are one replayable World event", () => {
     );
   });
 });
+
+
+test("renaming keeps neutral self identity coherent without overwriting developed self-understanding", () => {
+  withWorld(({ world, identity }) => {
+    const source = structuredClone(fixture);
+    source.identity.name = "Luka Beridze";
+    source.currentState.selfModel = "I am Luka Beridze.";
+    const seeded = world.seedThread(source).thread;
+
+    const renamed = identity.update(seeded, {
+      name:"Luka Mzechabuki",
+      operationKey:"admin_name_luka_mzechabuki",
+      changedAt:"2026-09-22T15:55:00.000Z",
+    });
+
+    assert.equal(renamed.thread.identity.name, "Luka Mzechabuki");
+    assert.equal(renamed.thread.currentState.selfModel, "I am Luka Mzechabuki.",
+      "neutral self identity should follow an explicit rename");
+    assert.deepEqual(world.replayThread(seeded.threadId), world.getThread(seeded.threadId),
+      "renamed self identity must replay exactly");
+  });
+
+  withWorld(({ world, identity }) => {
+    const source = structuredClone(fixture);
+    source.identity.name = "Luka Beridze";
+    source.currentState.selfModel = "I am becoming more willing to trust my own judgment.";
+    const seeded = world.seedThread(source).thread;
+
+    const renamed = identity.update(seeded, {
+      name:"Luka Mzechabuki",
+      operationKey:"admin_name_luka_keep_developed_self",
+      changedAt:"2026-09-22T15:56:00.000Z",
+    });
+
+    assert.equal(renamed.thread.currentState.selfModel,
+      "I am becoming more willing to trust my own judgment.",
+      "rename must not overwrite developed self-understanding");
+  });
+});
