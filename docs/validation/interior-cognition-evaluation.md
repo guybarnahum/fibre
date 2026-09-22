@@ -95,6 +95,20 @@ the required developed-self evidence itself is absent / thin
 
 No Interior Cognition behavior should be implemented before that distinction is grounded in the run.
 
+## Slice 2 — compact reusable core
+
+The first implementation slice proves only the shared person-level seam:
+
+- one compact component;
+- no component-owned durable store;
+- bounded Fibre-owned private-context selection;
+- current state, behavioral identity, semantic state, remembered autobiographical meaning and durable relationship facts are eligible;
+- raw symbolic genome is not ordinary cognition input;
+- the domain adapter supplies concern/result semantics but cannot choose private history;
+- the result carries selected evidence refs and lightweight usage/latency metrics.
+
+The focused unit proof may use a fixture model to prove causal wiring. It does **not** count as the live semantic A/B evidence defined below. That evidence begins once a real domain consumer and real model profile are run against frozen Thread episodes.
+
 ## A/B comparison unit
 
 Compare implementations on the same frozen **Interior Episode**:

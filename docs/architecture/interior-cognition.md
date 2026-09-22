@@ -569,6 +569,14 @@ The evaluation contract is [Interior Cognition evaluation](../validation/interio
 
 The architecture is stable; implementation profile choices are experimental.
 
+## Compact core implementation
+
+The first reusable component is now intentionally narrow: `services/world-kernel/src/interior-cognition.mjs`.
+
+It has no store and no domain authority. A caller supplies only a real concern plus a domain adapter that defines the question/result semantics. The component itself reads bounded authoritative current state, behavioral identity assertions, semantic state, autobiographical remembered meaning and durable relationship facts; raw symbolic genome is not read by ordinary cognition.
+
+The first focused proof uses the same external concern for two persistent Thread contexts and verifies that different remembered meaning can reach the same private cognition boundary and support different attributable judgments. This proves the reusable causal seam, not yet the full live semantic quality of a production model. Flight Plan, Commons/social and dignity remain unmigrated until later slices.
+
 ## Implementation status
 
 The lower half is already proven in bounded R1-R4 tests:
