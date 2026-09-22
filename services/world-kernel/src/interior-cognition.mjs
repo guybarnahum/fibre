@@ -79,7 +79,7 @@ function compareMemories(left, right) {
 }
 
 function evidenceCandidate(ref, kind, text) {
-  assertId("Interior Cognition evidence ref", ref);
+  assertNonEmpty("Interior Cognition evidence ref", ref);
   assertNonEmpty("Interior Cognition evidence text", text);
   return Object.freeze({ ref, kind, text });
 }

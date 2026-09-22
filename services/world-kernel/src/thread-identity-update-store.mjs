@@ -71,10 +71,16 @@ function eventId(threadId, operationKey) {
   });
 }
 
+function neutralNameSelfModel(selfModel) {
+  if (selfModel === "I am a Fibre Thread.") return true;
+  return /^I am [\p{L}][\p{L}'’.-]*(?: [\p{L}][\p{L}'’.-]*)+\.$/u.test(selfModel);
+}
+
 function derivedSelfModelRename(selfModel, previousName, nextName) {
   if (
     selfModel === "I am a Fibre Thread."
     || selfModel === `I am ${previousName}.`
+    || (previousName === nextName && neutralNameSelfModel(selfModel))
   ) {
     return `I am ${nextName}.`;
   }
@@ -139,7 +145,11 @@ export class ThreadIdentityUpdateStore {
 
     const changes = {};
     const previous = {};
-    if (nextName !== undefined && nextName !== thread.identity.name) {
+    const repairsNeutralSelfModel = nextName !== undefined
+      && nextName === thread.identity.name
+      && neutralNameSelfModel(thread.currentState.selfModel)
+      && thread.currentState.selfModel !== `I am ${nextName}.`;
+    if (nextName !== undefined && (nextName !== thread.identity.name || repairsNeutralSelfModel)) {
       changes.name = nextName;
       previous.name = thread.identity.name;
     }

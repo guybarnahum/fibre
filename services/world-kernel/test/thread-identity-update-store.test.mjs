@@ -121,6 +121,25 @@ test("renaming keeps neutral self identity coherent without overwriting develope
 
   withWorld(({ world, identity }) => {
     const source = structuredClone(fixture);
+    source.identity.name = "Luka Mzechabuki";
+    source.currentState.selfModel = "I am Luka Beridze.";
+    const seeded = world.seedThread(source).thread;
+
+    const repaired = identity.update(seeded, {
+      name:"Luka Mzechabuki",
+      operationKey:"admin_name_luka_repair_stale_self",
+      changedAt:"2026-09-22T15:55:30.000Z",
+    });
+
+    assert.equal(repaired.thread.identity.name, "Luka Mzechabuki");
+    assert.equal(repaired.thread.currentState.selfModel, "I am Luka Mzechabuki.",
+      "setting the current name again should repair a stale neutral name-model");
+    assert.deepEqual(world.replayThread(seeded.threadId), world.getThread(seeded.threadId),
+      "same-name self-model repair must replay exactly");
+  });
+
+  withWorld(({ world, identity }) => {
+    const source = structuredClone(fixture);
     source.identity.name = "Luka Beridze";
     source.currentState.selfModel = "I am becoming more willing to trust my own judgment.";
     const seeded = world.seedThread(source).thread;
