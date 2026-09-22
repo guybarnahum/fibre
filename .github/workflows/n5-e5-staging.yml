@@ -84,3 +84,12 @@ jobs:
 
       - name: Run N5 E5 staging acceptance
         run: node tools/validation/n5-e5-staging.mjs
+
+      - name: Retain compact E5 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: n5-e5-staging-${{ github.sha }}
+          path: .fibre/n5/e5/**/evidence.json
+          if-no-files-found: ignore
+          retention-days: 30

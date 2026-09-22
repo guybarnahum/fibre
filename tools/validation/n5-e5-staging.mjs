@@ -452,7 +452,10 @@ async function durableSocialProof({ worldBaseUrl, privateToken, accepted }) {
       ? false
       : (observatory.experienceJournalEntries ?? []).some((entry) => entry.aboutExperienceRef === expectedExperience);
     const expectedMemory = aftermath?.memory?.outcome ?? "none";
-    const hasMemory = (observatory.memories ?? []).some((memory) => (memory.eventRefs ?? []).includes(story.encounterId));
+    const hasMemory = expectedExperience !== null && (observatory.memories ?? []).some((memory) =>
+      memory?.subject?.originEventRef === expectedExperience
+      || (memory.eventRefs ?? []).includes(expectedExperience)
+      || (memory.supportingEvidenceRefs ?? []).includes(expectedExperience));
     if (expectedMemory === "retained" && !hasMemory) throw new Error(`Thread ${threadId} retained memory is not durable`);
     if (expectedMemory === "not_remembered" && hasMemory) throw new Error(`Thread ${threadId} not_remembered outcome leaked into autobiographical memory`);
     durable.push(Object.freeze({
