@@ -352,6 +352,8 @@ Cognition may interpret the first form and propose Semantic State through normal
 
 Regulators may change attention, trigger bounded cognition, bias ordinary approach/avoid/explore/rest tendencies, and influence planning/replanning.
 
+The shared cognition boundary above regulation is defined in [Interior cognition](interior-cognition.md). Regulation is the subpersonal source of pressure; Interior Cognition is where that pressure is interpreted through the developed person and may become a private stance, intention, plan, reflection or other domain-specific thought. Raw genome is not ordinary thought content.
+
 They may not mint permission, consent, money, relationship authority or protected external action. A drive can wake a Thread and make something matter; normal Fibre authority still governs action.
 
 For simpler animals, a bounded behavior controller may eventually consume RegulationFrame directly for ordinary non-protected actions.

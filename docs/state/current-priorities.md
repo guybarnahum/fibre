@@ -204,7 +204,9 @@ The active execution plan is [N5 encounter-story implementation slices](../valid
 5. E4 journal book/optional rendering/Admin acceptance — **closed**;
 6. E5 staging acceptance — **current**.
 
-Live staging exposed that equal reusable Genesis place IDs were a false co-presence signal; they are no longer accepted. The missing shared-presence prerequisite is now implemented narrowly as **Fibre Commons**: Threads independently choose whether to keep one stable ambient mediated common space open while continuing ordinary life, a short personal Flight Plan records that choice without changing physical place or requiring social engagement, and World then owns the resulting CurrentSituation. The existing `npm run lived-encounters:staging` harness uses genuine shared World presence first and Fibre Commons only when none exists. N5 stays open until the full live acceptance passes.
+Live staging exposed two useful failures. Equal reusable Genesis place IDs were a false co-presence signal and are no longer accepted. Fibre Commons then proved that shared presence alone is not enough: all staging Threads reached its decision with essentially empty live semantic interior and generic present-life context, and all independently stayed out.
+
+The immediate work is therefore **live Interior Cognition**, not stronger Commons persuasion. Reuse the accepted R1-R4 organismic substrate: authoritative World/body/social/commitment evidence -> intrinsic regulation -> bounded interoception -> Thread-authored semantic state -> developed-self/history deliberation -> domain-specific private result. Raw genome remains private causal substrate and may not be injected as a finished personality or instruction into planning/social cognition. Fibre Commons stays the bounded shared-presence affordance and the existing `npm run lived-encounters:staging` harness remains the acceptance proof after live interior causation exists. N5 stays open until the full live acceptance passes.
 
 The three core semantic proofs are:
 

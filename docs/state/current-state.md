@@ -254,9 +254,11 @@ E0-E4 are complete. E5 remains the staging acceptance slice, but live staging ex
 
 Reusable Genesis place IDs are Thread-world context, not shared live place authority. The previous staging search therefore produced false physical co-presence among independently born Threads that happened to reuse the same Genesis WorldSpec place identifiers. Physical meeting compatibility now requires explicit World-recorded shared place identity (or matching mediated context).
 
-That prerequisite is now implemented as Fibre Commons: a bounded ambient mediated common space. Each Thread independently chooses whether to keep it open in the background; entry authors a short personal Flight Plan that preserves the existing physical place and ongoing activity while adding Thread-owned reason for ambient presence, and lets World establish genuine shared mediated presence. It adds no scheduler, generic room/session framework, teleportation, or automatic meeting.
+Fibre Commons remains the bounded shared-presence affordance, but the next live staging diagnostics exposed a deeper prerequisite: **the deployed LivedNow/social path bypasses Fibre's intrinsic-regulation/interoception loop**. The staging Threads reached Commons with empty semantic needs/feelings/intentions and uniformly generic present-life context, so unanimous `stay_out` was evidence of missing live interior causation rather than a Commons prompt defect.
 
-E5 now exercises the real deployed authorities together:
+The accepted repair is [Interior cognition](../architecture/interior-cognition.md): genome stays private causal substrate; regulation produces pressure; interoception reaches Thread-authored semantic feeling/need; developed self/history mediates that state; then private deliberation may produce a plan, social request, refusal or other domain-specific thought. Do not expose raw genome directly to Flight Plan or Commons cognition.
+
+E5 remains open while one real live Interior Cognition path is wired into present life. After that, E5 exercises the deployed authorities together:
 
 ```text
 environmental occurrence

@@ -7,7 +7,8 @@ Architecture documents define technical authorities, boundaries, flows, storage/
 ## Current organism architecture
 
 - [`system-overview.md`](system-overview.md) — primary planes and responsibility boundaries.
-- [`intrinsic-regulation.md`](intrinsic-regulation.md) — private predictive drives, intrinsic affect, interoception, person/place presence targets, and the active R1-R4 detour.
+- [`intrinsic-regulation.md`](intrinsic-regulation.md) — private predictive drives, intrinsic affect, interoception, person/place presence targets, and the R1-R4 organismic substrate.
+- [`interior-cognition.md`](interior-cognition.md) — reusable private-thought pipeline from organismic pressure through developed-self deliberation to domain-specific stance, plan, reflection or meaning.
 - [`lived-now-and-meetings.md`](lived-now-and-meetings.md) — continuous present-life reconciliation across dormancy, Flight Plan renewal, and Person/Thread meetings that enter already-existing lives.
 - [`../concepts/emotions-and-needs.md`](../concepts/emotions-and-needs.md) — meaning-bearing semantic emotion/need doctrine above the regulatory layer.
 - [`thread-lifecycle.md`](thread-lifecycle.md) — activation, cognition, freeze and lifecycle behavior.
