@@ -258,7 +258,9 @@ Fibre Commons remains the bounded shared-presence affordance, but the next live 
 
 The accepted repair is [Interior cognition](../architecture/interior-cognition.md): genome stays private causal substrate; regulation produces pressure; interoception reaches Thread-authored semantic feeling/need; developed self/history mediates that state; then private deliberation may produce a plan, social request, refusal or other domain-specific thought. Do not expose raw genome directly to Flight Plan or Commons cognition.
 
-E5 remains open while one real live Interior Cognition path is wired into present life. After that, E5 exercises the deployed authorities together:
+The read-only Interior Baseline has now completed against staging. It found a clear split: all 15 inspected Threads had neutral published shells and zero semantic state, while all 15 already had autobiographical memory with durable remembered meaning and life relationships; all 15 memory and relationship fingerprints were distinct. The evidence therefore points first to a **live cognition integration gap** rather than a need to manufacture more developmental biography. It also surfaced one separate identity/publication anomaly: Luka Mzechabuki's published self-model names Luka Beridze. See [Interior Cognition staging baseline](../validation/interior-cognition-baseline.md).
+
+E5 remains open while one real live Interior Cognition path is wired into present life. The next implementation slice is the compact reusable Interior Cognition core, using existing developed-self evidence before adding richer organismic/genome expression. After that, E5 exercises the deployed authorities together:
 
 ```text
 environmental occurrence

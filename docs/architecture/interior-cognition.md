@@ -584,7 +584,9 @@ Live deployed LivedNow does **not yet consume that loop**. Current Flight Plan, 
 
 The 2026-09-21 E5 staging diagnostics exposed that gap directly: the staging cohort reached Commons cognition with empty semantic needs/feelings/intentions and no effective developed-person context, producing uniformly generic present life and unanimous `stay_out` decisions.
 
-The next implementation step is not to make Commons more persuasive. It is to wire one real live Interior Cognition path from authoritative World/regulation evidence into semantic interior and then into present planning/social deliberation.
+The read-only staging baseline is now complete. It found that the staging cohort already has differentiated autobiographical remembered meaning and relationship history even though the published shell is neutral and semantic state is empty. Therefore the next implementation step is not to make Commons more persuasive or generate more biography. It is to prove the compact Interior Cognition component can compose bounded authoritative developed-self evidence into present judgment. Richer organismic/regulatory expression and endogenous semantic-state formation remain part of the architecture, but they are not prerequisites for proving that already-lived experience can bend current thought.
+
+See [Interior Cognition staging baseline](../validation/interior-cognition-baseline.md).
 
 ## Anti-patterns
 
