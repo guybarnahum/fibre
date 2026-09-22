@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { threadJournalPresentationModel } from "../../apps/admin-dashboard/thread-journal-presentation.mjs";
 import { planEncounterPresentationAssetSlot } from "../../services/world-kernel/src/encounter-presentation-asset-planner.mjs";
 import { reconcilePresentationAssets } from "../../services/world-kernel/src/presentation-asset-demand.mjs";
+import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REQUEST_TIMEOUT_MS = 120_000;
@@ -119,14 +120,29 @@ async function publicThreads(presentationBaseUrl, viewerOrigin) {
   return payload.threads;
 }
 
-function presentKey(present) {
-  if (typeof present?.mediatedContext === "string" && present.mediatedContext.trim() !== "") {
-    return `mediated:${present.mediatedContext.trim().toLowerCase()}`;
+function worldPresenceKeys(observatory) {
+  const livedNow = observatory?.livedNow;
+  const situation = livedNow?.currentSituation;
+  if (!situation) return Object.freeze([]);
+
+  const keys = [];
+  if (typeof situation.mediatedContext === "string" && situation.mediatedContext.trim() !== "") {
+    keys.push(`mediated:${situation.mediatedContext.trim()}`);
   }
-  if (present?.location?.kind !== "place") return null;
-  const place = present.location.place;
-  if (!place?.displayName) return null;
-  return `place:${String(place.displayName).trim().toLowerCase()}|${String(place.region ?? "").trim().toLowerCase()}`;
+  if (situation.location?.kind === "place") {
+    const episode = (livedNow.placeEpisodes ?? []).find(
+      (candidate) => placeEpisodeRevisionRef(candidate) === situation.location.placeRef,
+    );
+    if (typeof episode?.place?.placeId === "string" && episode.place.placeId.trim() !== "") {
+      keys.push(`place:${episode.place.placeId.trim()}`);
+    }
+  }
+  return Object.freeze(keys);
+}
+
+function sharesPresence(left, right) {
+  const rightKeys = new Set(right.presenceKeys);
+  return left.presenceKeys.some((key) => rightKeys.has(key));
 }
 
 function establishedAt(thread) {
@@ -150,14 +166,30 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
         { threadId:thread.threadId },
         `LivedNow ${thread.threadId}`,
       );
+      const observatoryPayload = await privateGet(
+        worldBaseUrl,
+        `/internal/threads/${encodeURIComponent(thread.threadId)}/observatory`,
+        privateToken,
+        `World Observatory ${thread.threadId}`,
+      );
+      const observatory = observatoryPayload?.observatory;
+      const currentSituation = observatory?.livedNow?.currentSituation;
+      if (!currentSituation || currentSituation.situationId !== result.situationId) {
+        throw new Error(`World Observatory current situation disagrees with LivedNow for ${thread.threadId}`);
+      }
+      const presenceKeys = worldPresenceKeys(observatory);
       refreshed.push(Object.freeze({
         threadId:thread.threadId,
         displayName:thread.displayName ?? null,
         situationId:result.situationId,
         present:result.present,
-        key:presentKey(result.present),
+        presenceKeys,
       }));
-      emit({ event:"lived-encounters-thread-current", threadId:thread.threadId, presenceKey:presentKey(result.present) });
+      emit({
+        event:"lived-encounters-thread-current",
+        threadId:thread.threadId,
+        presenceModes:presenceKeys.map((key) => key.startsWith("mediated:") ? "mediated" : "physical"),
+      });
     } catch (error) {
       emit({ event:"lived-encounters-thread-skipped", threadId:thread.threadId, reason:error.message.slice(0, 240) });
     }
@@ -166,55 +198,33 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
   return refreshed;
 }
 
-function groupedCandidates(refreshed) {
-  const groups = new Map();
-  for (const candidate of refreshed) {
-    if (candidate.key === null) continue;
-    const group = groups.get(candidate.key) ?? [];
-    group.push(candidate);
-    groups.set(candidate.key, group);
-  }
-  return [...groups.values()].filter((group) => group.length >= 3).sort((a,b) => b.length - a.length);
-}
-
-function triples(values) {
-  const result = [];
-  for (let i = 0; i < values.length; i += 1) {
-    for (let j = i + 1; j < values.length; j += 1) {
-      for (let k = j + 1; k < values.length; k += 1) {
-        result.push([values[i], values[j], values[k]]);
-      }
-    }
-  }
-  return result;
-}
-
 function socialAttempts(refreshed) {
   const ordered = [];
   const seen = new Set();
-  const add = (a,b,c) => {
-    const key = `${a.threadId}|${b.threadId}|${c.threadId}`;
+  const anchors = [...refreshed].sort((left, right) => {
+    const leftPeers = refreshed.filter((candidate) => candidate !== left && sharesPresence(left, candidate)).length;
+    const rightPeers = refreshed.filter((candidate) => candidate !== right && sharesPresence(right, candidate)).length;
+    return rightPeers - leftPeers || left.threadId.localeCompare(right.threadId);
+  });
+
+  const add = (initiator, participant, witness) => {
+    const key = `${initiator.threadId}|${participant.threadId}|${witness.threadId}`;
     if (seen.has(key)) return;
     seen.add(key);
     ordered.push(Object.freeze({
-      participants:Object.freeze([a,b]),
-      witness:c,
+      participants:Object.freeze([initiator, participant]),
+      witness,
     }));
   };
-  for (const group of groupedCandidates(refreshed)) {
-    for (const [a,b,c] of triples(group)) {
-      add(a,b,c);
-      add(a,c,b);
-      add(b,c,a);
-      if (ordered.length >= MAX_SOCIAL_ATTEMPTS) return ordered;
-    }
-  }
-  if (ordered.length < MAX_SOCIAL_ATTEMPTS) {
-    for (const [a,b,c] of triples(refreshed)) {
-      add(a,b,c);
-      add(a,c,b);
-      add(b,c,a);
-      if (ordered.length >= MAX_SOCIAL_ATTEMPTS) break;
+
+  for (const initiator of anchors) {
+    const peers = refreshed.filter((candidate) => candidate !== initiator && sharesPresence(initiator, candidate));
+    for (let left = 0; left < peers.length; left += 1) {
+      for (let right = left + 1; right < peers.length; right += 1) {
+        add(initiator, peers[left], peers[right]);
+        add(initiator, peers[right], peers[left]);
+        if (ordered.length >= MAX_SOCIAL_ATTEMPTS) return ordered;
+      }
     }
   }
   return ordered;
@@ -276,18 +286,18 @@ async function renderPlans({ encounterStory, presentationBaseUrl, viewerOrigin }
   const image = planEncounterPresentationAssetSlot({
     encounterStory,
     visualIdentities,
-    mediaId:`media_e5_encounter_${suffix}`,
+    mediaId:`media_lived_encounter_${suffix}`,
     assetKind:"image",
   });
   const video = planEncounterPresentationAssetSlot({
     encounterStory,
     visualIdentities,
-    mediaId:`video_e5_encounter_${suffix}`,
+    mediaId:`video_lived_encounter_${suffix}`,
     assetKind:"video",
   });
   if (image.status !== "missing" || video.status !== "missing") return null;
   if (!video.brief.description.startsWith(encounterStory.visualization.visualizationPrompt)) {
-    throw new Error("E5 video plan does not preserve the admitted objective visualization prompt");
+    throw new Error("lived-encounters video plan does not preserve the admitted objective visualization prompt");
   }
   return Object.freeze({ image, video, visualIdentities:Object.freeze(visualIdentities) });
 }
@@ -304,8 +314,12 @@ async function findSocialProofs({
   let accepted = null;
   let compatibleAttempts = 0;
   let acceptedStories = 0;
+  const attempts = socialAttempts(refreshed);
+  if (attempts.length === 0) {
+    throw new Error("lived-encounters acceptance found no three independently current Threads with genuinely compatible World presence");
+  }
 
-  for (const attempt of socialAttempts(refreshed)) {
+  for (const attempt of attempts) {
     let result;
     try {
       result = await privatePost(
@@ -385,10 +399,10 @@ async function findSocialProofs({
   }
 
   if (decline === null) {
-    throw new Error(`E5 observed ${compatibleAttempts} compatible staging meeting attempt(s) but none naturally declined or deferred; Fibre cannot claim voluntary-meeting staging acceptance`);
+    throw new Error(`lived-encounters acceptance observed ${compatibleAttempts} compatible staging meeting attempt(s) but none naturally declined or deferred; Fibre cannot claim voluntary-meeting staging acceptance`);
   }
   if (accepted === null) {
-    throw new Error(`E5 observed ${acceptedStories} accepted staging story/stories but none simultaneously proved silent-witness experience, distinct journals, asymmetric retained/not_remembered memory, and renderable canonical identity`);
+    throw new Error(`lived-encounters acceptance observed ${acceptedStories} accepted staging story/stories but none simultaneously proved silent-witness experience, distinct journals, asymmetric retained/not_remembered memory, and renderable canonical identity`);
   }
   return Object.freeze({ decline, accepted, compatibleAttempts, acceptedStories });
 }
@@ -408,7 +422,7 @@ async function environmentalProof({ worldBaseUrl, privateToken, candidate, runId
     "environmental encounter",
   );
   if (!result?.encounterStory?.encounterId || !["noticed","not_noticed"].includes(result?.attention?.outcome)) {
-    throw new Error("E5 environmental encounter did not produce durable Encounter Story attention");
+    throw new Error("lived-encounters environmental encounter did not produce durable Encounter Story attention");
   }
   const observatory = await privateGet(
     worldBaseUrl,
@@ -418,7 +432,7 @@ async function environmentalProof({ worldBaseUrl, privateToken, candidate, runId
   );
   const story = (observatory?.observatory?.encounterStories ?? []).find((entry) => entry.encounterId === result.encounterStory.encounterId);
   if (!story || story.attention?.outcome !== result.attention.outcome) {
-    throw new Error("E5 environmental Encounter Story was not durably inspectable with the same attention outcome");
+    throw new Error("lived-encounters environmental Encounter Story was not durably inspectable with the same attention outcome");
   }
   return Object.freeze({
     threadId:candidate.threadId,
@@ -466,14 +480,14 @@ async function durableSocialProof({ worldBaseUrl, privateToken, accepted }) {
     }));
   }
   const witness = durable.find((entry) => entry.threadId === accepted.witnessId);
-  if (witness?.attention !== "noticed") throw new Error("E5 silent witness did not durably notice the accepted story");
+  if (witness?.attention !== "noticed") throw new Error("lived-encounters silent witness did not durably notice the accepted story");
   return Object.freeze(durable);
 }
 
 async function journalAndAdminProof({ worldBaseUrl, privateToken, accepted, sourceSha, appsEvidence, emit }) {
   const aftermath = accepted.result.aftermath;
   const owner = accepted.privateSummary.journalBookThreads.find((threadId) => aftermath?.[threadId]?.journalEntry?.entryText);
-  if (!owner) throw new Error("E5 accepted social story has no durable journal-book owner");
+  if (!owner) throw new Error("lived-encounters accepted social story has no durable journal-book owner");
   const journalEntry = aftermath[owner].journalEntry;
   const firstPayload = await privateGet(
     worldBaseUrl,
@@ -490,7 +504,7 @@ async function journalAndAdminProof({ worldBaseUrl, privateToken, accepted, sour
   const first = firstPayload.journal;
   const second = secondPayload.journal;
   if (!first?.profile || !second?.profile || JSON.stringify(first.profile) !== JSON.stringify(second.profile)) {
-    throw new Error("E5 journal profile is not stable across staging reads");
+    throw new Error("lived-encounters journal profile is not stable across staging reads");
   }
   const observatoryPayload = await privateGet(
     worldBaseUrl,
@@ -500,24 +514,24 @@ async function journalAndAdminProof({ worldBaseUrl, privateToken, accepted, sour
   );
   const model = threadJournalPresentationModel(first, observatoryPayload.observatory?.experienceJournalEntries ?? []);
   if (!model.profile?.title || !model.profile?.aestheticNote || model.entries.length === 0 || model.authorityCount === 0) {
-    throw new Error("E5 live journal data does not satisfy Admin journal presentation model");
+    throw new Error("lived-encounters live journal data does not satisfy Admin journal presentation model");
   }
   if (!model.entries.some((entry) => entry.lines.join("\n").includes(journalEntry.entryText))) {
-    throw new Error("E5 Admin journal presentation model does not contain the accepted story journal entry");
+    throw new Error("lived-encounters Admin journal presentation model does not contain the accepted story journal entry");
   }
 
   if (appsEvidence?.sourceGitSha !== sourceSha || appsEvidence?.sourceTreeClean !== true) {
-    throw new Error("E5 Admin deployment evidence is not bound to the exact staging source SHA");
+    throw new Error("lived-encounters Admin deployment evidence is not bound to the exact staging source SHA");
   }
   const admin = (appsEvidence.deployments ?? []).find((entry) => entry.appId === "admin-dashboard");
-  if (!admin?.domain) throw new Error("E5 staging app evidence lacks Admin deployment");
+  if (!admin?.domain) throw new Error("lived-encounters staging app evidence lacks Admin deployment");
   const response = await fetch(`https://${admin.domain}/healthz`, {
     headers:{ Accept:"application/json" },
     signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   const health = await responseJson(response, "Admin health");
   if (!response.ok || health?.ok !== true || health?.service !== "admin-dashboard") {
-    throw new Error("E5 deployed Admin health check failed");
+    throw new Error("lived-encounters deployed Admin health check failed");
   }
   emit({ event:"lived-encounters-admin-journal-proven", threadId:owner, entryCount:model.entries.length });
   return Object.freeze({
@@ -535,14 +549,14 @@ async function renderStill({ assetBaseUrl, privateToken, accepted, emit }) {
   const image = accepted.plans.image;
   const video = accepted.plans.video;
   if (image.context.visualizationPromptDigest !== video.context.visualizationPromptDigest) {
-    throw new Error("E5 image/video plans do not share the same objective visualization lineage");
+    throw new Error("lived-encounters image/video plans do not share the same objective visualization lineage");
   }
   const reconciliation = reconcilePresentationAssets({
     slots:[image],
     requestedAt:new Date().toISOString(),
     providerProfile:"bfl-flux-2-pro-v1",
   });
-  if (reconciliation.jobs.length !== 1) throw new Error("E5 still did not become exactly one generated-asset job");
+  if (reconciliation.jobs.length !== 1) throw new Error("lived-encounters still did not become exactly one generated-asset job");
   const [job] = reconciliation.jobs;
   const deadline = Date.now() + RENDER_WAIT_MS;
   let state = null;
@@ -558,10 +572,10 @@ async function renderStill({ assetBaseUrl, privateToken, accepted, emit }) {
     emit({ event:"lived-encounters-render-pending", jobId:job.jobId, workflowStatus:state.workflowStatus ?? null });
     await delay(RENDER_POLL_MS);
   }
-  if (state?.state !== "ready") throw new Error(`E5 encounter still did not complete within ${RENDER_WAIT_MS}ms`);
+  if (state?.state !== "ready") throw new Error(`lived-encounters encounter still did not complete within ${RENDER_WAIT_MS}ms`);
   const receipt = state.proof?.receipt;
   if (!receipt?.objectRef || receipt.context?.eventRef !== accepted.result.encounterStory.encounterId) {
-    throw new Error("E5 generated still receipt is not bound to the accepted Encounter Story");
+    throw new Error("lived-encounters generated still receipt is not bound to the accepted Encounter Story");
   }
   emit({ event:"lived-encounters-render-ready", jobId:job.jobId, objectRef:receipt.objectRef });
   return Object.freeze({

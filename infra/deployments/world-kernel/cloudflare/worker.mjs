@@ -3,6 +3,8 @@ import { DurableObject } from "cloudflare:workers";
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
+import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { openSituatedLifeInspectionStore } from "#services/world-kernel/src/situated-life-store.mjs";
 import { ThreadDirectoryStore } from "#services/world-kernel/src/thread-directory-store.mjs";
 import { createThreadDirectoryService } from "#services/world-kernel/src/thread-directory-service.mjs";
 import { ThreadHealthProjectionStore } from "#services/world-kernel/src/thread-health-projection-store.mjs";
@@ -111,6 +113,8 @@ function threadObservatory(runtime, threadId) {
   const symbolicGenomes = runtime.symbolicGenomeStore.listThreadGenomes(threadId);
   const memory = openAutobiographicalMemoryInspectionStore(runtime.worldStorage);
   const experience = openLivedExperienceStore(runtime.worldStorage);
+  const livedNow = openLivedNowInspectionStore(runtime.worldStorage);
+  const situatedLife = openSituatedLifeInspectionStore(runtime.worldStorage);
   try {
     const encounterStories = experience.listEncounterStories(threadId).map((story) => Object.freeze({
       ...structuredClone(story),
@@ -123,11 +127,17 @@ function threadObservatory(runtime, threadId) {
       civilRegistration:registration === null ? null : structuredClone(registration),
       embodiments:structuredClone(embodiments),
       symbolicGenomes:structuredClone(symbolicGenomes),
+      livedNow:Object.freeze({
+        currentSituation:structuredClone(livedNow.getCurrentSituation(threadId)),
+        placeEpisodes:structuredClone(situatedLife.listCurrentPlaceEpisodes(threadId)),
+      }),
       memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:200 })),
       encounterStories:Object.freeze(encounterStories),
       experienceJournalEntries:structuredClone(experience.listThreadExperienceJournal(threadId)),
     });
   } finally {
+    situatedLife.close();
+    livedNow.close();
     experience.close();
     memory.close();
   }
@@ -227,7 +237,7 @@ export class FibreWorldDurableObject extends DurableObject {
       const observatory = threadObservatory(this.runtimeForRequest(), threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
-        contract:"fibre-world-thread-observatory-v0.2",
+        contract:"fibre-world-thread-observatory-v0.3",
         observatory,
       });
     }
