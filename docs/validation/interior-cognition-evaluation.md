@@ -95,7 +95,7 @@ the required developed-self evidence itself is absent / thin
 
 No Interior Cognition behavior should be implemented before that distinction is grounded in the run.
 
-## Slice 2 — compact reusable core
+## Slice 2 — compact reusable core — CLOSED
 
 The first implementation slice proves only the shared person-level seam:
 
@@ -107,7 +107,11 @@ The first implementation slice proves only the shared person-level seam:
 - the domain adapter supplies concern/result semantics but cannot choose private history;
 - the result carries selected evidence refs and lightweight usage/latency metrics.
 
-The focused unit proof may use a fixture model to prove causal wiring. It does **not** count as the live semantic A/B evidence defined below. That evidence begins once a real domain consumer and real model profile are run against frozen Thread episodes.
+The focused proof uses a fixture model only to prove causal wiring. It gives the same concern to two Thread contexts with different autobiographical remembered meaning and requires different attributable private judgments. It also proves the domain cannot choose the private evidence set or inject raw symbolic genome. Full repository CI is green.
+
+This does **not** count as the live semantic A/B evidence defined below. That evidence begins once a real domain consumer and real model profile are run against frozen Thread episodes.
+
+**Next slice:** Lived Planning uses the compact component as the first real domain adapter and tests whether persisted individual life bends an ordinary Flight Plan under equivalent World conditions.
 
 ## A/B comparison unit
 
