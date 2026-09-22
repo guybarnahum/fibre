@@ -88,6 +88,9 @@ function modelAdapter() {
         "raw genome must not enter ordinary Interior Cognition");
       const memory = call.input.developedSelfEvidence.find((item) => item.kind === "memory");
       assert.ok(memory, "remembered meaning should reach private cognition");
+      const expectedMemoryRef = call.input.thread.threadId === "thr_person_a" ? "mem-person-a" : "mem-person-b";
+      assert.equal(memory.ref, expectedMemoryRef,
+        "Interior Cognition must preserve the authoritative memory reference");
       const welcome = /company restored me/u.test(memory.text);
       return {
         output:{
