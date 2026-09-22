@@ -204,7 +204,7 @@ The active execution plan is [N5 encounter-story implementation slices](../valid
 5. E4 journal book/optional rendering/Admin acceptance — **closed**;
 6. E5 staging acceptance — **current**.
 
-Live staging exposed that equal reusable Genesis place IDs were a false co-presence signal; they are no longer accepted. The missing shared-presence prerequisite is now implemented narrowly as **Fibre Commons**: Threads independently choose whether to enter one stable mediated common room, a short personal Flight Plan records that choice without changing physical place, and World then owns the resulting CurrentSituation. The existing `npm run lived-encounters:staging` harness uses genuine shared World presence first and Fibre Commons only when none exists. N5 stays open until the full live acceptance passes.
+Live staging exposed that equal reusable Genesis place IDs were a false co-presence signal; they are no longer accepted. The missing shared-presence prerequisite is now implemented narrowly as **Fibre Commons**: Threads independently choose whether to keep one stable ambient mediated common space open while continuing ordinary life, a short personal Flight Plan records that choice without changing physical place or requiring social engagement, and World then owns the resulting CurrentSituation. The existing `npm run lived-encounters:staging` harness uses genuine shared World presence first and Fibre Commons only when none exists. N5 stays open until the full live acceptance passes.
 
 The three core semantic proofs are:
 

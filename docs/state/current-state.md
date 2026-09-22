@@ -254,7 +254,7 @@ E0-E4 are complete. E5 remains the staging acceptance slice, but live staging ex
 
 Reusable Genesis place IDs are Thread-world context, not shared live place authority. The previous staging search therefore produced false physical co-presence among independently born Threads that happened to reuse the same Genesis WorldSpec place identifiers. Physical meeting compatibility now requires explicit World-recorded shared place identity (or matching mediated context).
 
-That prerequisite is now implemented as Fibre Commons: a bounded stable mediated common room. Each Thread independently chooses whether to enter; entry authors a short personal Flight Plan with Thread-owned activity/purpose, preserves the existing physical place, and lets World establish genuine shared mediated presence. It adds no scheduler, generic room/session framework, teleportation, or automatic meeting.
+That prerequisite is now implemented as Fibre Commons: a bounded ambient mediated common space. Each Thread independently chooses whether to keep it open in the background; entry authors a short personal Flight Plan that preserves the existing physical place and ongoing activity while adding Thread-owned reason for ambient presence, and lets World establish genuine shared mediated presence. It adds no scheduler, generic room/session framework, teleportation, or automatic meeting.
 
 E5 now exercises the real deployed authorities together:
 

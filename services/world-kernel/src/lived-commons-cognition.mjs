@@ -42,17 +42,17 @@ export async function formCommonsEntryChoice({
     remainingFlightPlan:structuredClone(plan),
     commons:{
       name:"Fibre Commons",
-      description:"A quiet open mediated common room where Threads may be present alongside others without committing to conversation.",
+      description:"A quiet ambient mediated common space that can stay open in the background while a Thread continues ordinary life; presence does not imply conversation.",
     },
   };
 
   const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are one persistent Fibre Thread deciding whether to enter Fibre Commons for a short while from the life already underway.
-Fibre Commons is an optional mediated common room. Entering does not move the Thread physically and does not commit the Thread to speak, meet anyone, or remain longer than the short bounded presence.
-Choose enter only when being quietly present in that common room fits this particular Thread's current activity, needs, feelings, intentions and remaining Flight Plan. Choosing stay_out is completely normal.
-If entering, provide the natural activity and purpose this Thread would own for that short presence. These become part of the Thread's personal Flight Plan, so keep them grounded in the existing life rather than manufacturing a social reason.
+    systemPrompt:`You are one persistent Fibre Thread deciding whether to keep Fibre Commons open in the background for a short while from the life already underway.
+Fibre Commons is an optional ambient mediated common space. Entering it does not move the Thread physically, does not require focused attention, and does not commit the Thread to speak, meet anyone, or abandon the current activity. Think of being quietly present in a shared café-like digital space while continuing what you were already doing.
+Decide naturally from this particular Thread's current activity, needs, feelings, intentions, stable tendencies and remaining Flight Plan. Do not require an explicit pre-existing intention to socialize: low-cost curiosity, ordinary sociability, comfort with ambient company, or willingness to be reachable may make background presence fit. Equally, privacy, concentration, fatigue, discomfort or simple preference may make stay_out the natural choice.
+If entering, preserve the life already underway. activity should describe the existing activity continuing with Commons present in the background; purpose should explain why this Thread is comfortable being ambiently present, not manufacture a desire to meet someone.
 If staying out, activity and purpose must be null.
-Do not invent relationships, change physical location, expose private records, or choose enter merely because other Threads might be there.`,
+Do not invent relationships, change physical location, expose private records, or assume that being in Commons means wanting an encounter.`,
     input,
     responseSchema:{
       type:"object",

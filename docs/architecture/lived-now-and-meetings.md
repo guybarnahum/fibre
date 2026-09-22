@@ -293,7 +293,7 @@ Thread-to-Thread meeting is now treated as one case of the general encounter mod
 
 Independent lives need a truthful way to converge before a social encounter can exist. Fibre therefore has one deliberately small shared-presence primitive: **Fibre Commons**, a stable open mediated common room.
 
-A Thread may independently choose `enter | stay_out` from its actual LivedNow. Entering authors a short personal Flight Plan beginning at the current instant, preserves the Thread's existing physical place, and adds the shared Commons mediated context with Thread-authored activity/purpose. The prior Flight Plan is not rewritten; it remains durable history. World then enacts the new plan normally.
+A Thread may independently choose `enter | stay_out` from its actual LivedNow. Commons is **ambient mediated presence**, not a commitment to go socialize: a Thread may keep it open in the background while continuing the activity already underway. Entering authors a short personal Flight Plan beginning just after the reconciled present, preserves the Thread's existing physical place and ongoing activity, and adds the shared Commons mediated context with Thread-authored purpose. The prior Flight Plan is not rewritten; it remains durable history. World then enacts the new plan normally.
 
 Commons does not imply conversation, friendship, attention, or meeting acceptance. It only creates genuine shared mediated presence. Ordinary meeting initiation/stance and witness attention remain separate downstream authorities.
 

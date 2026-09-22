@@ -123,8 +123,8 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
         return {
           output:{
             decision:"enter",
-            activity:name === "Ada" ? "Reading while keeping the Commons open nearby." : "Sketching with the Commons open in the background.",
-            purpose:"To spend a little time in a shared space without committing to conversation.",
+            activity:"Continuing an ordinary personal activity with Fibre Commons open in the background.",
+            purpose:"Ambient company feels compatible with what I am already doing without committing to conversation.",
           },
           provenance:{ provider:"fixture", modelId:"fixture-commons", providerRequestId:`req_${name.toLowerCase()}` },
         };
@@ -152,6 +152,11 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
     enacted.every((current) => current.mediatedContext === FIBRE_COMMONS_CONTEXT),
     true,
     "entering Threads should share one mediated context",
+  );
+  assert.equal(
+    recordedPlans.every((plan) => /ordinary personal activity/u.test(plan.stops[0].activity)),
+    true,
+    "Commons should remain ambient to life already underway",
   );
   assert.equal(
     meetingPresenceCompatible(enacted[0], enacted[1]),
