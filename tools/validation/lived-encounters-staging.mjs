@@ -464,6 +464,16 @@ async function findSocialProofs({
 
     if (result.compatible !== true) continue;
     compatibleAttempts += 1;
+    emit({
+      event:"lived-encounters-social-initiation",
+      threadId:attempt.participants[0].threadId,
+      decision:result?.initiation?.decision ?? null,
+      reason:result?.initiation?.reason ?? null,
+      cognitionProfile:result?.initiation?.cognition?.implementationProfile?.id ?? null,
+      selectedEvidenceCount:result?.initiation?.cognition?.selectedEvidenceRefs?.length ?? 0,
+      citedEvidenceCount:result?.initiation?.cognition?.evidenceRefs?.length ?? 0,
+      contextDigest:result?.initiation?.cognition?.contextDigest ?? null,
+    });
     const nonAccepting = nonAcceptingStances(result);
     const voluntaryRefusals = result?.initiation?.decision === "not_initiate"
       ? [Object.freeze({

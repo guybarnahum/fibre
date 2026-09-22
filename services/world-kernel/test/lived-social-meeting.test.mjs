@@ -78,7 +78,14 @@ function relations(threadId) {
   return [];
 }
 
-function fixture({ initiationFor = () => "initiate", stanceFor = () => "accept", compatible = true, rude = false, placeProvenance = "world_recorded" } = {}) {
+function fixture({
+  initiationFor = () => "initiate",
+  initiationMemoryMeaning = null,
+  stanceFor = () => "accept",
+  compatible = true,
+  rude = false,
+  placeProvenance = "world_recorded",
+} = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
     noor.threadId,
@@ -269,7 +276,20 @@ function fixture({ initiationFor = () => "initiate", stanceFor = () => "accept",
       },
     },
     memoryStore:{
-      listCurrentMemories() { return []; },
+      listCurrentMemories(threadId) {
+        if (threadId !== mina.threadId || initiationMemoryMeaning === null) return [];
+        return [{
+          memoryId:"mem_mina_social_initiation",
+          threadId:mina.threadId,
+          rememberedMeaning:initiationMemoryMeaning,
+          rememberedContent:null,
+          status:"current",
+          accessibility:"accessible",
+          retentionState:"retained",
+          salience:0.95,
+          asOf:"2026-09-20T12:00:00.000Z",
+        }];
+      },
       recordMemory(candidate) {
         memories.push(structuredClone(candidate));
         return structuredClone(candidate);
@@ -427,6 +447,35 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
   assert.equal(declined.journals.length, 0, "no story means no private aftermath");
 });
 
+
+test("persisted lived meaning can bend social initiation through Interior Cognition", async () => {
+  const f = fixture({
+    initiationMemoryMeaning:"When I tried to keep ambient company around during focused time, I wished I had protected my quiet instead.",
+    initiationFor:(_name, evidence) =>
+      evidence.some((item) => item.kind === "memory" && /protected my quiet/u.test(item.text))
+        ? "not_initiate"
+        : "initiate",
+  });
+  const result = await f.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+
+  assert.equal(result.outcome, "not_met", "remembered lived meaning may support choosing not to initiate");
+  assert.equal(result.initiation.decision, "not_initiate");
+  assert.equal(
+    result.initiation.cognition.implementationProfile.id,
+    "interior-cognition-single-episode",
+    "social initiation should use the shared Interior Cognition profile",
+  );
+  assert.deepEqual(
+    result.initiation.cognition.evidenceRefs,
+    ["mem_mina_social_initiation"],
+    "the private causal memory should remain inspectable",
+  );
+  assert.equal(f.stories.length, 0, "choosing not to initiate must not create social history");
+});
 
 test("E3 one social story may affect a silent co-present witness", async () => {
   const f = fixture({ rude:true });

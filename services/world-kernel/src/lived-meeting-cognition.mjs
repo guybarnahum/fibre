@@ -8,10 +8,31 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
+import { runInteriorCognition } from "./interior-cognition.mjs";
 
 const DECISIONS = Object.freeze(["accept", "decline", "defer"]);
 const INITIATION_DECISIONS = Object.freeze(["initiate", "not_initiate"]);
 const MAX_MEMORIES = 6;
+
+const SOCIAL_INITIATION_ADAPTER = Object.freeze({
+  id:"social-initiation",
+  instruction:`Decide whether this Thread genuinely wants to initiate a small social encounter with one or more co-present counterparties right now.
+Co-presence creates an opportunity, not an obligation. Initiate only when the Thread actually wants something social from them now: attention, company, help, information, conversation, shared activity, or another concrete engagement grounded in the life already underway.
+If initiating, write the short outward request the counterparties would actually hear. It must make the ask clear enough that they can meaningfully decide whether to engage.
+Choose not_initiate when the Thread does not genuinely want to ask anything of them now.
+reason is a concise private operator-facing explanation of the material considerations. Do not change location, rewrite the Flight Plan, invent a relationship, expose private records, or manufacture a motive merely to make an encounter happen.`,
+  resultSchema:{
+    type:"object",
+    additionalProperties:false,
+    required:["decision","requestText","reason"],
+    properties:{
+      decision:{ type:"string", enum:INITIATION_DECISIONS },
+      requestText:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
+      reason:{ type:"string", minLength:1, maxLength:500 },
+    },
+  },
+});
+
 
 function boundedMemories(memories) {
   return [...(memories ?? [])]
@@ -81,87 +102,72 @@ export function meetingPresenceCompatible(left, right, {
 }
 
 export async function formSocialEncounterRequest({
-  thread,
+  threadId,
+  at,
   situation,
   plan,
   counterparties,
-  relationships = [],
-  semanticStates = [],
-  memories = [],
+  sourceStores,
   modelAdapter,
 }) {
-  assertPlainObject("social encounter initiator Thread", thread);
-  assertId("social encounter initiator Thread.threadId", thread.threadId);
+  assertId("social encounter initiator Thread.threadId", threadId);
+  assertIsoTimestamp("social encounter at", at);
   assertPlainObject("social encounter initiator situation", situation);
   if (!Array.isArray(counterparties) || counterparties.length < 1) {
     throw new TypeError("social encounter request requires counterparties");
   }
-  const counterpartyIds = [];
-  for (const counterparty of counterparties) {
+  const counterpartySummaries = counterparties.map((counterparty) => {
     assertPlainObject("social encounter request counterparty", counterparty);
     assertId("social encounter request counterparty.threadId", counterparty.threadId);
-    counterpartyIds.push(counterparty.threadId);
-  }
-
-  const input = {
-    thread:{
-      threadId:thread.threadId,
-      name:thread.identity?.name ?? null,
-      selfDescription:thread.identity?.selfDescription ?? "",
-      selfModel:thread.currentState?.selfModel ?? "",
-      stableTendencies:structuredClone(thread.genome?.textualTraits ?? {}),
-      unresolvedIntentions:[...(thread.currentState?.unresolvedIntentions ?? [])],
-    },
-    currentSituation:structuredClone(situation),
-    remainingFlightPlan:plan === null ? null : structuredClone(plan),
-    counterparties:counterparties.map((counterparty) => ({
+    return Object.freeze({
       threadId:counterparty.threadId,
       name:counterparty.identity?.name ?? null,
       selfDescription:counterparty.identity?.selfDescription ?? "",
-    })),
-    relationships:relationshipView(relationships, counterpartyIds),
-    semanticStates:semanticView(semanticStates, counterpartyIds),
-    autobiographicalMemories:boundedMemories(memories),
-  };
-
-  const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are one persistent Fibre Thread deciding whether to initiate a small social encounter with the listed co-present counterparties right now.
-The currentSituation is World truth and the Flight Plan is this Thread's own intended life. Co-presence creates an opportunity, not an obligation.
-Choose initiate only when this particular Thread actually wants something from the other person or people now: attention, company, help, information, conversation, shared activity, or another concrete social engagement grounded in the life already underway. A small situational ask to a stranger may be natural; shared history must never be invented.
-If initiating, write the short outward request the counterparties would actually hear. It must make clear enough what the Thread is asking for that the other person can meaningfully decide whether to engage.
-Choose not_initiate when the Thread does not genuinely want to ask anything of them now.
-Do not change location, rewrite the Flight Plan, invent a relationship, expose private records, or manufacture a reason merely to make an encounter happen.`,
-    input,
-    responseSchema:{
-      type:"object",
-      additionalProperties:false,
-      required:["decision","requestText"],
-      properties:{
-        decision:{ type:"string", enum:INITIATION_DECISIONS },
-        requestText:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
-      },
-    },
-    clientRequestId:requestId("social-encounter-request", input),
+    });
   });
 
-  assertPlainObject("social encounter request output", invocation.output);
-  assertExactKeys("social encounter request output", invocation.output, ["decision","requestText"]);
-  if (!INITIATION_DECISIONS.includes(invocation.output.decision)) {
+  const cognition = await runInteriorCognition({
+    threadId,
+    at,
+    concern:{
+      kind:"social_initiation",
+      question:"Do I want to ask any of these co-present Threads for something now?",
+      externalContext:{
+        currentSituation:structuredClone(situation),
+        remainingFlightPlan:plan === null ? null : structuredClone(plan),
+        counterparties:counterpartySummaries,
+      },
+    },
+    adapter:SOCIAL_INITIATION_ADAPTER,
+    sourceStores,
+    modelAdapter,
+  });
+
+  assertPlainObject("social encounter request output", cognition.result);
+  assertExactKeys("social encounter request output", cognition.result, ["decision","requestText","reason"]);
+  if (!INITIATION_DECISIONS.includes(cognition.result.decision)) {
     throw new TypeError("social encounter request decision is invalid");
   }
-  if (invocation.output.decision === "initiate") {
-    assertNonEmpty("social encounter request requestText", invocation.output.requestText);
-  } else if (invocation.output.requestText !== null) {
+  assertNonEmpty("social encounter request reason", cognition.result.reason);
+  if (cognition.result.decision === "initiate") {
+    assertNonEmpty("social encounter request requestText", cognition.result.requestText);
+  } else if (cognition.result.requestText !== null) {
     throw new TypeError("not_initiate cannot carry request text");
   }
 
   return Object.freeze({
-    decision:invocation.output.decision,
-    requestText:invocation.output.requestText,
+    decision:cognition.result.decision,
+    requestText:cognition.result.requestText,
+    reason:cognition.result.reason,
     cognition:Object.freeze({
-      provider:invocation.provenance.provider,
-      modelId:invocation.provenance.modelId,
-      providerRequestId:invocation.provenance.providerRequestId ?? null,
+      provider:cognition.provenance.provider,
+      modelId:cognition.provenance.modelId,
+      providerRequestId:cognition.provenance.providerRequestId ?? null,
+      implementationProfile:structuredClone(cognition.implementationProfile),
+      sourceThreadVersion:cognition.provenance.sourceThreadVersion,
+      selectedEvidenceRefs:Object.freeze([...cognition.provenance.selectedEvidenceRefs]),
+      evidenceRefs:Object.freeze([...cognition.evidenceRefs]),
+      contextDigest:cognition.provenance.contextDigest,
     }),
   });
 }

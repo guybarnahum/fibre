@@ -598,7 +598,7 @@ It has no store and no domain authority. A caller supplies only a real concern p
 
 The first focused proof uses the same external concern for two persistent Thread contexts and verifies that different remembered meaning can reach the same private cognition boundary and support different attributable judgments. The domain adapter cannot choose the private evidence set or tune its budgets; the result preserves selected evidence refs, source Thread version, a context digest and lightweight compute usage. Full repository CI is green.
 
-The reusable causal seam is now proven both by the controlled Flight Plan differential and by deployed staging attribution across real current lives. Flight Plan is the first live real adapter. Commons entry is the next narrow migration; social initiation/response and dignity remain separate later adapters rather than parallel minds.
+The reusable causal seam is now proven by controlled differentials and deployed staging across both Lived Planning and Commons entry. Flight Plan and Commons entry are live real adapters. Social initiation is the next narrow migration; invitee response and dignity remain separate later adapters rather than parallel minds.
 
 ## Implementation status
 
@@ -611,7 +611,7 @@ regulation
   -> changed ordinary presence choice
 ```
 
-Live deployed LivedNow does **not yet consume that loop**. Current Flight Plan, Commons and social cognition can therefore bypass the organismic interior and reason from a sparse live Thread snapshot.
+Live deployed planning and Commons entry now consume the shared developed-self cognition boundary, but the organismic regulator/interoception loop itself is still not wired into live semantic state, and social initiation/response still remain to be migrated. The next work should therefore remove those remaining parallel social minds without pretending the deeper organismic loop is already complete.
 
 The 2026-09-21 E5 staging diagnostics exposed that gap directly: the staging cohort reached Commons cognition with empty semantic needs/feelings/intentions and no effective developed-person context, producing uniformly generic present life and unanimous `stay_out` decisions.
 

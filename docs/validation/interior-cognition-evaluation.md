@@ -117,7 +117,9 @@ The deployed proof ran against exact clean staging SHA `83cd269cb42105be0ea51c45
 
 The run also fixed a provenance boundary discovered by staging: private cognition evidence belongs in `plan.cognition.selectedEvidenceRefs/evidenceRefs`, while `plan.sourceReferences` remains World/situated authority required for plan admission and enactment. Do not conflate the two.
 
-**Current validation slice: Commons entry.** Route the bounded `enter | stay_out` decision through Interior Cognition and prove that developed-life evidence can bend voluntary ambient presence while physical life and meeting consent remain unchanged.
+**Commons entry — CLOSED live.** The bounded `enter | stay_out` decision now routes through Interior Cognition. The controlled proof shows developed-life evidence can bend voluntary ambient presence while physical life and meeting consent remain unchanged. Deployed staging on SHA `1490c32a99754324d8d9bfd6b23ae2301ac75742` observed both outcomes under the shared profile: a six-Thread cohort stayed out and a later six-Thread cohort split three entered / three stayed out, with distinct cognition-context digests and optional evidence citation.
+
+**Current validation slice: social initiation.** Route initiator-owned `initiate | not_initiate` through Interior Cognition. Prove that persisted lived meaning can bend whether a co-present Thread chooses to make a concrete social overture, while `not_initiate` remains a valid agency outcome and no Encounter Story is created unless an overture actually occurs.
 
 ## A/B comparison unit
 

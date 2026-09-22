@@ -62,6 +62,7 @@ export function createSocialMeetingService({
   worldReader,
   livedNow,
   livedNowStore,
+  identityStore,
   situatedLifeStore,
   semanticStateStore,
   memoryStore,
@@ -74,6 +75,7 @@ export function createSocialMeetingService({
   requireMethod("livedNow", livedNow, "ensure");
   requireMethod("livedNowStore", livedNowStore, "getCurrentSituation");
   requireMethod("livedNowStore", livedNowStore, "latestPlan");
+  requireMethod("identityStore", identityStore, "getCurrentIdentityView");
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentLifeRelations");
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentPlaceEpisodes");
   requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
@@ -144,13 +146,18 @@ export function createSocialMeetingService({
       const initiator = byId.get(input.initiatorThreadId);
       const invitees = participantContexts.filter((context) => context.thread.threadId !== input.initiatorThreadId);
       const initiation = await formSocialEncounterRequest({
-        thread:initiator.thread,
+        threadId:initiator.thread.threadId,
+        at:input.at,
         situation:initiator.situation,
         plan:livedNowStore.latestPlan(initiator.thread.threadId, "personal", { at:input.at }),
         counterparties:invitees.map((context) => context.thread),
-        relationships:situatedLifeStore.listCurrentLifeRelations(initiator.thread.threadId),
-        semanticStates:initiator.semanticStates,
-        memories:initiator.memories,
+        sourceStores:{
+          worldStore:worldReader,
+          identityStore,
+          semanticStateStore,
+          memoryStore,
+          situatedLifeStore,
+        },
         modelAdapter,
       });
 
