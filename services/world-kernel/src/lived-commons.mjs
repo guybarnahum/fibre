@@ -118,13 +118,14 @@ export function createLivedCommonsService({
           continue;
         }
 
+        const entryAt = new Date(Date.parse(input.at) + 1).toISOString();
         const endAt = new Date(Math.min(
           Date.parse(plan.horizonEnd),
-          Date.parse(input.at) + COMMONS_WINDOW_MS,
+          Date.parse(entryAt) + COMMONS_WINDOW_MS,
         )).toISOString();
         const nextPlan = livedNowStore.recordPlan(commonsPlan({
           threadId,
-          at:input.at,
+          at:entryAt,
           endAt,
           physicalPlaceRef:situation.location.placeRef,
           sourceReferences:plan.sourceReferences,
@@ -135,10 +136,10 @@ export function createLivedCommonsService({
           situationId:livedSituationId({
             kind:"commons_presence_v1",
             threadId,
-            at:input.at,
+            at:entryAt,
             planId:nextPlan.planId,
           }),
-          establishedAt:input.at,
+          establishedAt:entryAt,
           observation:{
             phase:"at_place",
             location:{ kind:"place", placeRef:situation.location.placeRef },
