@@ -32,7 +32,7 @@ function jsonFile(path) {
 
 function sourceGitSha() {
   const value = execFileSync("git", ["rev-parse", "HEAD"], { cwd:REPO_ROOT, encoding:"utf8" }).trim().toLowerCase();
-  if (!GIT_SHA.test(value)) throw new Error("N5 E5 staging acceptance requires an exact Git SHA");
+  if (!GIT_SHA.test(value)) throw new Error("lived-encounters staging acceptance requires an exact Git SHA");
   return value;
 }
 
@@ -157,12 +157,12 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
         present:result.present,
         key:presentKey(result.present),
       }));
-      emit({ event:"n5-e5-thread-current", threadId:thread.threadId, presenceKey:presentKey(result.present) });
+      emit({ event:"lived-encounters-thread-current", threadId:thread.threadId, presenceKey:presentKey(result.present) });
     } catch (error) {
-      emit({ event:"n5-e5-thread-skipped", threadId:thread.threadId, reason:error.message.slice(0, 240) });
+      emit({ event:"lived-encounters-thread-skipped", threadId:thread.threadId, reason:error.message.slice(0, 240) });
     }
   }
-  if (refreshed.length < 3) throw new Error("N5 E5 staging acceptance needs at least three live public Threads with current LivedNow");
+  if (refreshed.length < 3) throw new Error("lived-encounters staging acceptance needs at least three live public Threads with current LivedNow");
   return refreshed;
 }
 
@@ -320,7 +320,7 @@ async function findSocialProofs({
         "social meeting",
       );
     } catch (error) {
-      emit({ event:"n5-e5-social-attempt-error", message:error.message.slice(0, 240) });
+      emit({ event:"lived-encounters-social-attempt-error", message:error.message.slice(0, 240) });
       continue;
     }
 
@@ -332,7 +332,7 @@ async function findSocialProofs({
         participants:Object.freeze(attempt.participants.map((item) => item.threadId)),
         decisions:Object.freeze(nonAccepting),
       });
-      emit({ event:"n5-e5-voluntary-refusal-proven", decisions:nonAccepting.map((entry) => entry.decision) });
+      emit({ event:"lived-encounters-voluntary-refusal-proven", decisions:nonAccepting.map((entry) => entry.decision) });
     }
 
     if (result.outcome !== "met" || !result.encounterStory) {
@@ -364,7 +364,7 @@ async function findSocialProofs({
       && plans !== null;
 
     emit({
-      event:"n5-e5-social-met",
+      event:"lived-encounters-social-met",
       encounterId:result.encounterStory.encounterId,
       witnessExperienced:privateSummary.witnessExperienced,
       distinctJournalCount:privateSummary.distinctJournalCount,
@@ -401,7 +401,7 @@ async function environmentalProof({ worldBaseUrl, privateToken, candidate, runId
     {
       threadId:candidate.threadId,
       occurrence:{
-        occurrenceRef:`occ_e5_${runId}`,
+        occurrenceRef:`occ_lived_encounter_${Date.now().toString(36)}`,
         description:"A sudden sharp clatter sounds nearby, followed by a brief pause before ordinary activity resumes.",
       },
     },
@@ -519,7 +519,7 @@ async function journalAndAdminProof({ worldBaseUrl, privateToken, accepted, sour
   if (!response.ok || health?.ok !== true || health?.service !== "admin-dashboard") {
     throw new Error("E5 deployed Admin health check failed");
   }
-  emit({ event:"n5-e5-admin-journal-proven", threadId:owner, entryCount:model.entries.length });
+  emit({ event:"lived-encounters-admin-journal-proven", threadId:owner, entryCount:model.entries.length });
   return Object.freeze({
     threadId:owner,
     profileStable:true,
@@ -555,7 +555,7 @@ async function renderStill({ assetBaseUrl, privateToken, accepted, emit }) {
       "encounter still generation",
     );
     if (state.state === "ready") break;
-    emit({ event:"n5-e5-render-pending", jobId:job.jobId, workflowStatus:state.workflowStatus ?? null });
+    emit({ event:"lived-encounters-render-pending", jobId:job.jobId, workflowStatus:state.workflowStatus ?? null });
     await delay(RENDER_POLL_MS);
   }
   if (state?.state !== "ready") throw new Error(`E5 encounter still did not complete within ${RENDER_WAIT_MS}ms`);
@@ -563,7 +563,7 @@ async function renderStill({ assetBaseUrl, privateToken, accepted, emit }) {
   if (!receipt?.objectRef || receipt.context?.eventRef !== accepted.result.encounterStory.encounterId) {
     throw new Error("E5 generated still receipt is not bound to the accepted Encounter Story");
   }
-  emit({ event:"n5-e5-render-ready", jobId:job.jobId, objectRef:receipt.objectRef });
+  emit({ event:"lived-encounters-render-ready", jobId:job.jobId, objectRef:receipt.objectRef });
   return Object.freeze({
     jobId:job.jobId,
     objectRef:receipt.objectRef,
@@ -576,13 +576,13 @@ async function renderStill({ assetBaseUrl, privateToken, accepted, emit }) {
 }
 
 function writeEvidence(runId, evidence) {
-  const path = resolve(REPO_ROOT, ".fibre", "n5", "e5", runId, "evidence.json");
+  const path = resolve(REPO_ROOT, ".fibre", "lived-encounters", "staging", runId, "evidence.json");
   mkdirSync(dirname(path), { recursive:true, mode:0o700 });
   writeFileSync(path, `${JSON.stringify(evidence, null, 2)}\n`, { mode:0o600 });
   return path;
 }
 
-export async function runN5E5Staging({
+export async function runLivedEncountersStagingAcceptance({
   environment = process.env,
   emit = (event) => process.stdout.write(`${JSON.stringify(event)}\n`),
 } = {}) {
@@ -593,16 +593,16 @@ export async function runN5E5Staging({
   const deployment = jsonFile(deploymentPath);
   const appsEvidence = jsonFile(appsPath);
   if (deployment.environment !== "staging" || deployment.sourceGitSha !== sourceSha || deployment.sourceTreeClean !== true) {
-    throw new Error("N5 E5 requires staging runtime deployment evidence for the exact clean checkout SHA");
+    throw new Error("lived-encounters acceptance requires staging runtime deployment evidence for the exact clean checkout SHA");
   }
 
   const worldBaseUrl = remoteBase("staging World", deploymentByService(deployment, "world-kernel").baseUrl);
   const presentationBaseUrl = remoteBase("staging Thread Presentation", deploymentByService(deployment, "thread-presentation").baseUrl);
   const assetBaseUrl = remoteBase("staging Asset Generator", deploymentByService(deployment, "asset-generator").baseUrl);
   const viewerOrigin = remoteBase("staging Viewer", deployment.externalViewerOrigin);
-  const runId = `n5-e5-${Date.now().toString(36)}`;
+  const runId = `lived-encounters-${Date.now().toString(36)}`;
 
-  emit({ event:"n5-e5-staging-start", runId, sourceGitSha:sourceSha });
+  emit({ event:"lived-encounters-staging-start", runId, sourceGitSha:sourceSha });
   const refreshed = await refreshStagingThreads({
     worldBaseUrl,
     presentationBaseUrl,
@@ -616,7 +616,7 @@ export async function runN5E5Staging({
     candidate:refreshed[0],
     runId,
   });
-  emit({ event:"n5-e5-environmental-proven", ...environmental });
+  emit({ event:"lived-encounters-environmental-proven", ...environmental });
 
   const social = await findSocialProofs({
     worldBaseUrl,
@@ -648,7 +648,7 @@ export async function runN5E5Staging({
 
   const acceptedStory = social.accepted.result.encounterStory;
   const evidence = Object.freeze({
-    contract:"fibre-n5-e5-staging-acceptance-v0.1",
+    contract:"fibre-lived-encounters-staging-acceptance-v0.1",
     environment:"staging",
     runId,
     sourceGitSha:sourceSha,
@@ -686,7 +686,7 @@ export async function runN5E5Staging({
   });
   const evidencePath = writeEvidence(runId, evidence);
   emit({
-    event:"n5-e5-staging-complete",
+    event:"lived-encounters-staging-complete",
     runId,
     sourceGitSha:sourceSha,
     environmentalEncounterId:environmental.encounterId,
@@ -701,9 +701,9 @@ export async function runN5E5Staging({
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  runN5E5Staging().catch((error) => {
+  runLivedEncountersStagingAcceptance().catch((error) => {
     process.stderr.write(`${JSON.stringify({
-      event:"n5-e5-staging-failed",
+      event:"lived-encounters-staging-failed",
       errorName:error?.constructor?.name ?? "Error",
       message:String(error?.message ?? error).slice(0, 1200),
     })}\n`);

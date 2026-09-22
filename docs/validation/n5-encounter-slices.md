@@ -272,6 +272,8 @@ No existing presentation R2 objects were migrated. No encounter render is requir
 
 ## Slice E5 — Staging acceptance — CURRENT
 
+`E5` is the roadmap label only. The enduring executable/evidence surface is named `lived-encounters` so commands, events and artifacts continue to describe the Fibre capability after this slice is history.
+
 Provision the additive private Thread-object bucket and deploy only after E0-E4 are green.
 
 The acceptance plumbing is now implemented and green in repository validation:
@@ -281,7 +283,7 @@ The acceptance plumbing is now implemented and green in repository validation:
 - the staging runner refreshes real Threads through LivedNow, refuses to fake co-presence, searches boundedly for genuine compatible social presence, requires an actual decline/defer and a separate accepted silent-witness story, checks divergent journals and retained/not-remembered asymmetry durably, runs the same journal presentation model used by Admin, and feeds the admitted objective visualization lineage into the existing generated-asset machinery for one still while validating the corresponding video brief;
 - generated evidence stores references/outcomes/digests rather than private journal or prompt content.
 
-E5 uses the established local staging operator path rather than a separate CI credential path. `npm run cloud:prepare:staging` loads local `.env`, idempotently provisions the declared Cloudflare resources (including `THREAD_OBJECTS`), configures the Worker secrets/runtime values, deploys the exact clean source SHA, and deploys the staging apps. `npm run n5:e5:staging` then runs the strict acceptance harness against that SHA-bound deployment evidence. E5 stays open until this operator-run staging evidence passes.
+E5 uses the established local staging operator path rather than a separate CI credential path. `npm run cloud:prepare:staging` loads local `.env`, idempotently provisions the declared Cloudflare resources (including `THREAD_OBJECTS`), configures the Worker secrets/runtime values, deploys the exact clean source SHA, and deploys the staging apps. `npm run lived-encounters:staging` then runs the strict acceptance harness against that SHA-bound deployment evidence. E5 stays open until this operator-run staging evidence passes.
 
 Live acceptance should exercise:
 

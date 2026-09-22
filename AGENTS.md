@@ -178,6 +178,7 @@ Rules:
 
 - Keep Fibre implementation light and elegant: minimal boilerplate, no generic framework unless a concrete Fibre capability requires it, and no drift into security/hardening or unrelated engineering concerns unless explicitly requested or a demonstrated Fibre need makes them necessary.
 - Every piece of code must justify itself by how much it advances the ambitious Fibre vision — persistent artificial persons with causal identity, history, relationships, agency, lived continuity and consequence — not merely by making the system more complete in a generic software-engineering sense.
+- Enduring Fibre surfaces—runtime/operator event names, commands, evidence contracts, artifact paths, and code-level capability names—must use stable thematic language that carries Fibre meaning. Roadmap coordinates such as `N5`, `E3`, or `E5` belong in planning/history docs only; do not bake them into durable interfaces or telemetry.
 - Prefer the smallest organism-level mechanism that proves the largest credible Fibre architecture. Do not add abstractions merely because they might be useful later.
 - Tests are held to an even higher bar: they must be high-value, semantic and non-brittle; fail with short meaningful messages; and validate a Fibre capability or invariant rather than incidental HTTP, header, CSS, helper-order, adapter-shape or plumbing detail unless that detail itself carries semantic authority.
 
