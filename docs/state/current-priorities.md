@@ -185,7 +185,7 @@ E0 reconciled the first implementation spike into a green foundation. E1 then pr
 The useful pieces now proven or retained are:
 
 - independent ensure-LivedNow;
-- place compatibility across Thread-specific situated-life evidence;
+- place compatibility across Thread-specific situated-life evidence when it resolves to explicit World-recorded shared place authority;
 - meeting stance;
 - n-ary shared-story persistence direction;
 - witness-aware aftermath direction;
@@ -204,7 +204,7 @@ The active execution plan is [N5 encounter-story implementation slices](../valid
 5. E4 journal book/optional rendering/Admin acceptance — **closed**;
 6. E5 staging acceptance — **current**.
 
-E5 implementation is ready for operator validation: the deployed World adapter exposes the existing environmental encounter authority and preserves explicit silent-witness IDs through the social-meeting boundary, and a strict staging runner exercises the complete E1-E4 acceptance sequence against real Threads. Use the existing local operator path: `npm run cloud:prepare:staging` provisions/configures/deploys from local `.env`, then `npm run lived-encounters:staging` runs acceptance. N5 remains open until that staging evidence passes.
+E5's deployed acceptance seams are ready, but live staging exposed a prerequisite: existing Threads do not yet have a genuine shared live place/context authority. Equal reusable Genesis place IDs were a false co-presence signal and are no longer accepted. The immediate N5 work is therefore the smallest general **shared live presence/convergence** capability that lets independently living Threads genuinely enter the same physical or mediated context through Thread/World-owned life, without teleportation, silent replanning, or a caller-authored scene. After that, the existing `npm run lived-encounters:staging` harness remains the acceptance proof. N5 stays open until it passes.
 
 The three core semantic proofs are:
 

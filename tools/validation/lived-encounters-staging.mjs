@@ -133,7 +133,11 @@ function worldPresenceKeys(observatory) {
     const episode = (livedNow.placeEpisodes ?? []).find(
       (candidate) => placeEpisodeRevisionRef(candidate) === situation.location.placeRef,
     );
-    if (typeof episode?.place?.placeId === "string" && episode.place.placeId.trim() !== "") {
+    if (
+      episode?.provenance === "world_recorded"
+      && typeof episode?.place?.placeId === "string"
+      && episode.place.placeId.trim() !== ""
+    ) {
       keys.push(`place:${episode.place.placeId.trim()}`);
     }
   }
@@ -188,7 +192,8 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
       emit({
         event:"lived-encounters-thread-current",
         threadId:thread.threadId,
-        presenceModes:presenceKeys.map((key) => key.startsWith("mediated:") ? "mediated" : "physical"),
+        physicalState:currentSituation.location?.kind ?? null,
+        sharedPresenceModes:presenceKeys.map((key) => key.startsWith("mediated:") ? "mediated" : "physical"),
       });
     } catch (error) {
       emit({ event:"lived-encounters-thread-skipped", threadId:thread.threadId, reason:error.message.slice(0, 240) });
@@ -341,12 +346,18 @@ async function findSocialProofs({
     if (result.compatible !== true) continue;
     compatibleAttempts += 1;
     const nonAccepting = nonAcceptingStances(result);
-    if (decline === null && result.outcome === "not_met" && nonAccepting.length > 0 && result.encounterStory === null) {
+    const voluntaryRefusals = result?.initiation?.decision === "not_initiate"
+      ? [Object.freeze({
+          threadId:attempt.participants[0].threadId,
+          decision:"not_initiate",
+        })]
+      : nonAccepting;
+    if (decline === null && result.outcome === "not_met" && voluntaryRefusals.length > 0 && result.encounterStory === null) {
       decline = Object.freeze({
         participants:Object.freeze(attempt.participants.map((item) => item.threadId)),
-        decisions:Object.freeze(nonAccepting),
+        decisions:Object.freeze(voluntaryRefusals),
       });
-      emit({ event:"lived-encounters-voluntary-refusal-proven", decisions:nonAccepting.map((entry) => entry.decision) });
+      emit({ event:"lived-encounters-voluntary-refusal-proven", decisions:voluntaryRefusals.map((entry) => entry.decision) });
     }
 
     if (result.outcome !== "met" || !result.encounterStory) {
@@ -399,7 +410,7 @@ async function findSocialProofs({
   }
 
   if (decline === null) {
-    throw new Error(`lived-encounters acceptance observed ${compatibleAttempts} compatible staging meeting attempt(s) but none naturally declined or deferred; Fibre cannot claim voluntary-meeting staging acceptance`);
+    throw new Error(`lived-encounters acceptance observed ${compatibleAttempts} compatible staging meeting attempt(s) but none naturally chose not to initiate, declined, or deferred; Fibre cannot claim voluntary-meeting staging acceptance`);
   }
   if (accepted === null) {
     throw new Error(`lived-encounters acceptance observed ${acceptedStories} accepted staging story/stories but none simultaneously proved silent-witness experience, distinct journals, asymmetric retained/not_remembered memory, and renderable canonical identity`);

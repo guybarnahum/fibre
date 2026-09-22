@@ -98,6 +98,7 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
+- a shared live presence/convergence authority that can let independently living Threads genuinely occupy the same physical or mediated social context without teleportation or caller-authored scenes;
 - deployed E5 N5 acceptance against real staging Threads;
 - a rich public scene driven by that continuous present.
 
@@ -249,9 +250,11 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 ## Immediate next action
 
-E0-E4 are complete. E5 is the staging acceptance slice.
+E0-E4 are complete. E5 remains the staging acceptance slice, but live staging exposed a prerequisite rather than a reason to weaken acceptance.
 
-Exercise the real deployed authorities together:
+Reusable Genesis place IDs are Thread-world context, not shared live place authority. The previous staging search therefore produced false physical co-presence among independently born Threads that happened to reuse the same Genesis WorldSpec place identifiers. Physical meeting compatibility now requires explicit World-recorded shared place identity (or matching mediated context).
+
+The next organism-level capability is a light shared-presence/convergence path: independently living Threads must be able to genuinely arrive in the same shared physical or mediated context through Thread/World-owned life and planning, with no teleportation and no caller-authored scene. Once that exists, E5 exercises the real deployed authorities together:
 
 ```text
 environmental occurrence

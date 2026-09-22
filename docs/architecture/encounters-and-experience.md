@@ -243,7 +243,9 @@ Mediated context is additional, not a replacement for physical presence.
 
 Physical co-presence can make an encounter possible, but it does not prove that every Thread noticed the same thing.
 
-For social encounters, Fibre resolves each Thread's private situated-life place evidence to the underlying World place identity rather than requiring identical per-Thread evidence references.
+For social encounters, Fibre resolves each Thread's private situated-life place evidence to an explicit shared World place identity rather than requiring identical per-Thread evidence references.
+
+A reusable Genesis `WorldSpec` place identifier is **not** sufficient shared-place authority. Genesis places describe one Thread's historical/world context and may be reused as authored substrate across births. Equal Genesis/template place IDs across Threads must therefore never manufacture physical co-presence. Current physical meeting compatibility requires a place episode admitted with `world_recorded` provenance for the same shared place identity, or an explicitly matching mediated context.
 
 ## Attention / noticing
 

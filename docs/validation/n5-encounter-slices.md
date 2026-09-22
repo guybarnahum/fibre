@@ -156,6 +156,7 @@ E2 proves:
 
 - the meeting wrapper reconciles each life independently before doing anything social;
 - incompatible physical/mediated presence creates no Encounter Story and does not teleport or silently replan anyone;
+- physical compatibility requires explicit World-recorded shared-place authority; equal reusable Genesis/Thread-context place IDs do not count as co-presence;
 - the initiator may choose not to initiate at all; when she does initiate, her outward invitation is the first observable beat if the meeting forms;
 - a compatible invitee may decline or defer that concrete invitation, and that stops the voluntary encounter before history exists;
 - relationship, memory and interior state are supplied independently to initiation/stance cognition without becoming a mechanical score;
@@ -202,7 +203,7 @@ No relationship state is mechanically changed by encounter admission or attentio
 
 ### E3 organism proof
 
-The accepted proof places Mina, Noor and Sela independently at the same café. Mina speaks rudely to Noor; Noor answers; Sela is at the next table and never speaks.
+The accepted proof places Mina, Noor and Sela independently at the same **World-recorded shared café**. Mina speaks rudely to Noor; Noor answers; Sela is at the next table and never speaks.
 
 The proof establishes:
 
@@ -278,9 +279,14 @@ No existing presentation R2 objects were migrated. No encounter render is requir
 
 Provision the additive private Thread-object bucket and deploy only after E0-E4 are green.
 
-Live staging falsified one hidden assumption in the earlier social proof: asking co-present Threads to consent to an abstract, content-free meeting produced coherent repeated refusal. The live path now follows the accepted architecture literally—initiator-owned overture first, then invitee-owned stance—without forcing acceptance or letting the operator author the social reason.
+Live staging has now falsified two hidden assumptions rather than being weakened around them:
 
-The acceptance plumbing is now implemented and green in repository validation:
+1. asking Threads to consent to an abstract, content-free meeting produced coherent repeated refusal, so the live path now uses initiator-owned overture first and invitee-owned stance second;
+2. reusable Genesis `placeId` values were accidentally being treated as shared live place identity. That is invalid: Genesis `WorldSpec` is reusable context, not shared-society co-presence. Physical compatibility now requires explicit `world_recorded` shared-place authority.
+
+The second finding exposes the next missing organism-level primitive: **shared live presence / convergence**. Existing staging Threads have independently continuing lives but no authority yet that lets several of them genuinely arrive in the same shared physical or mediated context through their own plans. E5 remains open until Fibre can create or inherit such a situation without teleportation, caller-authored scenes, or accidental Genesis-ID reuse.
+
+The acceptance plumbing is implemented and remains the eventual live proof:
 
 - deployed World exposes the already-proven E1 environmental encounter authority through a private operator route;
 - the private social-meeting adapter preserves E3's explicit `witnessThreadIds`;

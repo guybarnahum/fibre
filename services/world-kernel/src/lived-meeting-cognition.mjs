@@ -59,8 +59,9 @@ function requestId(kind, input) {
   return `${kind}_${sha256(canonicalJson(input))}`;
 }
 
-function placeIdForRef(placeRef, episodes) {
+function sharedWorldPlaceIdForRef(placeRef, episodes) {
   const episode = (episodes ?? []).find((candidate) => placeEpisodeRevisionRef(candidate) === placeRef);
+  if (episode?.provenance !== "world_recorded") return null;
   return episode?.place?.placeId ?? null;
 }
 
@@ -74,8 +75,8 @@ export function meetingPresenceCompatible(left, right, {
     && left.mediatedContext.trim() !== ""
     && left.mediatedContext === right.mediatedContext) return true;
   if (left.location?.kind !== "place" || right.location?.kind !== "place") return false;
-  const leftPlaceId = placeIdForRef(left.location.placeRef, leftPlaceEpisodes);
-  const rightPlaceId = placeIdForRef(right.location.placeRef, rightPlaceEpisodes);
+  const leftPlaceId = sharedWorldPlaceIdForRef(left.location.placeRef, leftPlaceEpisodes);
+  const rightPlaceId = sharedWorldPlaceIdForRef(right.location.placeRef, rightPlaceEpisodes);
   return leftPlaceId !== null && leftPlaceId === rightPlaceId;
 }
 

@@ -19,7 +19,7 @@ const mina = thread("thr_n5_mina", "Mina", "I notice small emotional shifts and 
 const noor = thread("thr_n5_noor", "Noor", "I am warm but protective of my quiet and my time.");
 const sela = thread("thr_n5_sela", "Sela", "I pay close attention to how people treat each other, even when I stay out of it.");
 
-function placeEpisode(threadId, episodeId, placeId = "place_n5_cafe") {
+function placeEpisode(threadId, episodeId, placeId = "place_n5_cafe", provenance = "world_recorded") {
   return {
     episodeId,
     revision:1,
@@ -38,7 +38,7 @@ function placeEpisode(threadId, episodeId, placeId = "place_n5_cafe") {
     sourceReferences:[`evt_${threadId}_cafe`],
     visibility:"private",
     status:"current",
-    provenance:"thread_history",
+    provenance,
     recordedAt:"2026-09-01T00:00:00.000Z",
   };
 }
@@ -78,14 +78,15 @@ function relations(threadId) {
   return [];
 }
 
-function fixture({ initiationFor = () => "initiate", stanceFor = () => "accept", compatible = true, rude = false } = {}) {
-  const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe");
+function fixture({ initiationFor = () => "initiate", stanceFor = () => "accept", compatible = true, rude = false, placeProvenance = "world_recorded" } = {}) {
+  const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
     noor.threadId,
     "plce_n5_noor_cafe",
     compatible ? "place_n5_cafe" : "place_n5_elsewhere",
+    placeProvenance,
   );
-  const selaCafe = placeEpisode(sela.threadId, "plce_n5_sela_cafe");
+  const selaCafe = placeEpisode(sela.threadId, "plce_n5_sela_cafe", "place_n5_cafe", placeProvenance);
   const placeEpisodes = new Map([
     [mina.threadId, [minaCafe]],
     [noor.threadId, [noorCafe]],
@@ -380,6 +381,27 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
 
   assert.equal(incompatible.outcome, "incompatible", "separate places must stay separate");
   assert.equal(apart.stories.length, 0, "incompatible lives must not be rearranged into a meeting");
+
+  const reusedGenesisPlace = fixture({ placeProvenance:"genesis_created" });
+  const falseCopresence = await reusedGenesisPlace.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+  assert.equal(falseCopresence.outcome, "incompatible",
+    "reused Genesis place IDs must not manufacture shared presence");
+  assert.equal(reusedGenesisPlace.initiationNames.length, 0,
+    "false co-presence must not reach social cognition");
+
+  const noOverture = fixture({ initiationFor:() => "not_initiate" });
+  const notInitiated = await noOverture.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+  assert.equal(notInitiated.outcome, "not_met", "initiator may choose not to begin an encounter");
+  assert.equal(notInitiated.initiation.decision, "not_initiate", "initiator non-participation must stay explicit");
+  assert.equal(noOverture.stories.length, 0, "no overture means no Encounter Story");
 
   const declined = fixture({ stanceFor:(name) => name === "Noor" ? "decline" : "accept" });
   const result = await declined.meeting.meet({
