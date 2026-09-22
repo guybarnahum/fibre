@@ -284,9 +284,9 @@ Live staging has now falsified two hidden assumptions rather than being weakened
 1. asking Threads to consent to an abstract, content-free meeting produced coherent repeated refusal, so the live path now uses initiator-owned overture first and invitee-owned stance second;
 2. reusable Genesis `placeId` values were accidentally being treated as shared live place identity. That is invalid: Genesis `WorldSpec` is reusable context, not shared-society co-presence. Physical compatibility now requires explicit `world_recorded` shared-place authority.
 
-The second finding exposes the next missing organism-level primitive: **shared live presence / convergence**. Existing staging Threads have independently continuing lives but no authority yet that lets several of them genuinely arrive in the same shared physical or mediated context through their own plans. E5 remains open until Fibre can create or inherit such a situation without teleportation, caller-authored scenes, or accidental Genesis-ID reuse.
+The second finding exposed the next missing organism-level primitive: **shared live presence / convergence**. The smallest credible implementation is now Fibre Commons: a stable World-known mediated common room that each Thread may independently choose to enter from her actual LivedNow. Entry authors a short personal Flight Plan with Thread-owned activity/purpose, keeps physical location unchanged, and gives World genuine shared mediated presence without teleportation or accidental Genesis-ID reuse. Commons does not imply meeting consent or attention.
 
-The acceptance plumbing is implemented and remains the eventual live proof:
+The acceptance plumbing uses genuine existing shared presence when available and only falls back to Fibre Commons when staging has none. The live proof remains strict:
 
 - deployed World exposes the already-proven E1 environmental encounter authority through a private operator route;
 - the private social-meeting adapter preserves E3's explicit `witnessThreadIds`;

@@ -289,6 +289,18 @@ The Person's presence becomes part of the event only if the Thread accepts the e
 
 Thread-to-Thread meeting is now treated as one case of the general encounter model.
 
+### Fibre Commons: bounded shared mediated presence
+
+Independent lives need a truthful way to converge before a social encounter can exist. Fibre therefore has one deliberately small shared-presence primitive: **Fibre Commons**, a stable open mediated common room.
+
+A Thread may independently choose `enter | stay_out` from its actual LivedNow. Entering authors a short personal Flight Plan beginning at the current instant, preserves the Thread's existing physical place, and adds the shared Commons mediated context with Thread-authored activity/purpose. The prior Flight Plan is not rewritten; it remains durable history. World then enacts the new plan normally.
+
+Commons does not imply conversation, friendship, attention, or meeting acceptance. It only creates genuine shared mediated presence. Ordinary meeting initiation/stance and witness attention remain separate downstream authorities.
+
+The caller may identify Threads to consider the Commons opportunity, but cannot author why they enter, force entry, choose their physical scene, or author the later social overture. This is a bounded convergence seam, not a scheduler, room framework, or social session system.
+
+
+
 Before a requested social encounter:
 
 - every Thread has an independently reconciled LivedNow;

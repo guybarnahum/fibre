@@ -235,6 +235,63 @@ function socialAttempts(refreshed) {
   return ordered;
 }
 
+async function establishCommonsPresence({
+  worldBaseUrl,
+  privateToken,
+  refreshed,
+  emit,
+}) {
+  const updated = new Map(refreshed.map((candidate) => [candidate.threadId, candidate]));
+  const entered = new Set();
+
+  for (let offset = 0; offset < refreshed.length && entered.size < 3; offset += 6) {
+    const batch = refreshed.slice(offset, offset + 6);
+    const payload = await privatePost(
+      worldBaseUrl,
+      "/internal/lived-commons",
+      privateToken,
+      { threadIds:batch.map((candidate) => candidate.threadId) },
+      "Fibre Commons",
+    );
+    const entries = payload?.result?.entries ?? [];
+    emit({
+      event:"lived-encounters-commons-considered",
+      entered:entries.filter((entry) => entry.outcome === "entered").length,
+      stayedOut:entries.filter((entry) => entry.outcome === "stayed_out").length,
+      unavailable:entries.filter((entry) => entry.outcome === "unavailable").length,
+    });
+
+    for (const entry of entries) {
+      if (entry.outcome !== "entered") continue;
+      const previous = updated.get(entry.threadId);
+      if (!previous) continue;
+      const observatoryPayload = await privateGet(
+        worldBaseUrl,
+        `/internal/threads/${encodeURIComponent(entry.threadId)}/observatory`,
+        privateToken,
+        `World Observatory ${entry.threadId}`,
+      );
+      const observatory = observatoryPayload?.observatory;
+      const situation = observatory?.livedNow?.currentSituation;
+      const presenceKeys = worldPresenceKeys(observatory);
+      if (!situation || !presenceKeys.some((key) => key.startsWith("mediated:"))) {
+        throw new Error(`Fibre Commons entry did not become durable shared presence for ${entry.threadId}`);
+      }
+      updated.set(entry.threadId, Object.freeze({
+        ...previous,
+        situationId:situation.situationId,
+        presenceKeys,
+      }));
+      entered.add(entry.threadId);
+    }
+  }
+
+  if (entered.size < 3) {
+    throw new Error(`lived-encounters acceptance found only ${entered.size} Thread(s) who voluntarily entered Fibre Commons; three are required for participant + silent witness proof`);
+  }
+  return [...updated.values()];
+}
+
 function nonAcceptingStances(result) {
   return Object.entries(result?.stances ?? {})
     .filter(([,stance]) => stance?.decision === "decline" || stance?.decision === "defer")
@@ -319,9 +376,19 @@ async function findSocialProofs({
   let accepted = null;
   let compatibleAttempts = 0;
   let acceptedStories = 0;
-  const attempts = socialAttempts(refreshed);
+  let candidates = refreshed;
+  let attempts = socialAttempts(candidates);
   if (attempts.length === 0) {
-    throw new Error("lived-encounters acceptance found no three independently current Threads with genuinely compatible World presence");
+    candidates = await establishCommonsPresence({
+      worldBaseUrl,
+      privateToken,
+      refreshed:candidates,
+      emit,
+    });
+    attempts = socialAttempts(candidates);
+  }
+  if (attempts.length === 0) {
+    throw new Error("lived-encounters acceptance established no genuine shared World presence");
   }
 
   for (const attempt of attempts) {

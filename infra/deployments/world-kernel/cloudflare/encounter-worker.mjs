@@ -8,6 +8,8 @@ import { createEnvironmentalEncounterService } from "#services/world-kernel/src/
 import { createEnvironmentalEncounterWriteApi } from "#services/world-kernel/src/lived-environmental-encounter-write-api.mjs";
 import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
 import { createSocialMeetingWriteApi } from "#services/world-kernel/src/lived-social-meeting-write-api.mjs";
+import { createLivedCommonsService } from "#services/world-kernel/src/lived-commons.mjs";
+import { createLivedCommonsWriteApi } from "#services/world-kernel/src/lived-commons-write-api.mjs";
 import { createThreadJournalBook } from "#services/world-kernel/src/thread-journal-book.mjs";
 import { createThreadJournalReadApi } from "#services/world-kernel/src/thread-journal-read-api.mjs";
 import { createLivedNowPublicationService } from "#services/world-kernel/src/lived-now-publication-service.mjs";
@@ -25,6 +27,7 @@ const LIVED_ENCOUNTER_ROUTE = "/internal/lived-encounter";
 const ENVIRONMENTAL_ENCOUNTER_ROUTE = "/internal/environmental-encounter";
 const LIVED_NOW_ROUTE = "/internal/lived-now/ensure";
 const SOCIAL_MEETING_ROUTE = "/internal/social-meeting";
+const LIVED_COMMONS_ROUTE = "/internal/lived-commons";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
 
 function bindingFetch(binding) {
@@ -59,6 +62,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.environmentalEncounterApi = null;
     this.livedNowApi = null;
     this.socialMeetingApi = null;
+    this.livedCommonsApi = null;
     this.threadJournalApi = null;
     this.threadJournalBook = null;
   }
@@ -160,6 +164,32 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.socialMeetingApi;
   }
 
+  livedCommonsApiForRequest() {
+    if (this.livedCommonsApi === null) {
+      const runtime = this.runtimeForRequest();
+      const deployment = resolveServiceDeployment(DEPLOYMENT, "world-kernel");
+      const livedNowStore = openLivedNowStore(runtime.worldStorage);
+      const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
+      const livedNow = createLivedNowService({
+        livedNowStore,
+        worldStore:runtime.worldStore,
+        situatedLifeStore,
+        modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
+      });
+      const commonsService = createLivedCommonsService({
+        worldReader:runtime.worldStore,
+        livedNow,
+        livedNowStore,
+        modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
+      });
+      this.livedCommonsApi = createLivedCommonsWriteApi({
+        commonsService,
+        privateToken:this.env.FIBRE_PRIVATE_TOKEN,
+      });
+    }
+    return this.livedCommonsApi;
+  }
+
   journalApiForRequest() {
     if (this.threadJournalApi === null) {
       this.threadJournalApi = createThreadJournalReadApi({
@@ -206,6 +236,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       && url.pathname !== ENVIRONMENTAL_ENCOUNTER_ROUTE
       && url.pathname !== LIVED_NOW_ROUTE
       && url.pathname !== SOCIAL_MEETING_ROUTE
+      && url.pathname !== LIVED_COMMONS_ROUTE
       && !THREAD_JOURNAL_ROUTE.test(url.pathname)) {
       return super.fetch(request);
     }
@@ -219,7 +250,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
             ? this.environmentalEncounterApiForRequest().fetch(request)
             : url.pathname === SOCIAL_MEETING_ROUTE
               ? this.socialMeetingApiForRequest().fetch(request)
-              : this.journalApiForRequest().fetch(request),
+              : url.pathname === LIVED_COMMONS_ROUTE
+                ? this.livedCommonsApiForRequest().fetch(request)
+                : this.journalApiForRequest().fetch(request),
     );
   }
 

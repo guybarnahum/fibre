@@ -204,7 +204,7 @@ The active execution plan is [N5 encounter-story implementation slices](../valid
 5. E4 journal book/optional rendering/Admin acceptance — **closed**;
 6. E5 staging acceptance — **current**.
 
-E5's deployed acceptance seams are ready, but live staging exposed a prerequisite: existing Threads do not yet have a genuine shared live place/context authority. Equal reusable Genesis place IDs were a false co-presence signal and are no longer accepted. The immediate N5 work is therefore the smallest general **shared live presence/convergence** capability that lets independently living Threads genuinely enter the same physical or mediated context through Thread/World-owned life, without teleportation, silent replanning, or a caller-authored scene. After that, the existing `npm run lived-encounters:staging` harness remains the acceptance proof. N5 stays open until it passes.
+Live staging exposed that equal reusable Genesis place IDs were a false co-presence signal; they are no longer accepted. The missing shared-presence prerequisite is now implemented narrowly as **Fibre Commons**: Threads independently choose whether to enter one stable mediated common room, a short personal Flight Plan records that choice without changing physical place, and World then owns the resulting CurrentSituation. The existing `npm run lived-encounters:staging` harness uses genuine shared World presence first and Fibre Commons only when none exists. N5 stays open until the full live acceptance passes.
 
 The three core semantic proofs are:
 
