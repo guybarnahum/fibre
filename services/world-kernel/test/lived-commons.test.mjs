@@ -116,7 +116,12 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
         const name = call.input.thread.name;
         if (name === "Cleo") {
           return {
-            output:{ decision:"stay_out", activity:null, purpose:null },
+            output:{
+              decision:"stay_out",
+              activity:null,
+              purpose:null,
+              reason:"Cleo wants uninterrupted solitude for the activity already underway.",
+            },
             provenance:{ provider:"fixture", modelId:"fixture-commons", providerRequestId:"req_cleo" },
           };
         }
@@ -125,6 +130,7 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
             decision:"enter",
             activity:"Continuing an ordinary personal activity with Fibre Commons open in the background.",
             purpose:"Ambient company feels compatible with what I am already doing without committing to conversation.",
+            reason:"Background company feels low-cost and compatible with the current activity.",
           },
           provenance:{ provider:"fixture", modelId:"fixture-commons", providerRequestId:`req_${name.toLowerCase()}` },
         };
@@ -141,6 +147,11 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
     result.entries.map((entry) => entry.outcome),
     ["entered","entered","stayed_out"],
     "Commons entry must remain voluntary",
+  );
+  assert.equal(
+    result.entries.every((entry) => typeof entry.diagnostics?.decisionReason === "string"),
+    true,
+    "Commons choices should be inspectable during live debugging",
   );
   assert.equal(recordedPlans.length, 2, "only entering Threads should author Commons plans");
   assert.deepEqual(

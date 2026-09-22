@@ -114,8 +114,18 @@ export function createLivedCommonsService({
           plan,
           modelAdapter,
         });
+        const diagnostics = Object.freeze({
+          name:thread.identity?.name ?? null,
+          currentActivity:situation.activity,
+          currentReason:situation.reason,
+          needs:Object.freeze([...(thread.currentState?.needs ?? [])]),
+          feelings:Object.freeze([...(thread.currentState?.feelings ?? [])]),
+          unresolvedIntentions:Object.freeze([...(thread.currentState?.unresolvedIntentions ?? [])]),
+          stableTendencies:Object.freeze(structuredClone(thread.genome?.textualTraits ?? {})),
+          decisionReason:choice.reason,
+        });
         if (choice.decision !== "enter") {
-          entries.push(Object.freeze({ threadId, outcome:"stayed_out", situationId:situation.situationId }));
+          entries.push(Object.freeze({ threadId, outcome:"stayed_out", situationId:situation.situationId, diagnostics }));
           continue;
         }
 
@@ -156,6 +166,7 @@ export function createLivedCommonsService({
           outcome:"entered",
           situationId:current.situationId,
           planId:nextPlan.planId,
+          diagnostics,
         }));
       }
 

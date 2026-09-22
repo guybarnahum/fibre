@@ -52,26 +52,29 @@ Fibre Commons is an optional ambient mediated common space. Entering it does not
 Decide naturally from this particular Thread's current activity, needs, feelings, intentions, stable tendencies and remaining Flight Plan. Do not require an explicit pre-existing intention to socialize: low-cost curiosity, ordinary sociability, comfort with ambient company, or willingness to be reachable may make background presence fit. Equally, privacy, concentration, fatigue, discomfort or simple preference may make stay_out the natural choice.
 If entering, preserve the life already underway. activity should describe the existing activity continuing with Commons present in the background; purpose should explain why this Thread is comfortable being ambiently present, not manufacture a desire to meet someone.
 If staying out, activity and purpose must be null.
+In reason, give one concise sentence explaining the actual considerations that drove this decision from the supplied Thread context. This is private operator diagnostics, not public speech.
 Do not invent relationships, change physical location, expose private records, or assume that being in Commons means wanting an encounter.`,
     input,
     responseSchema:{
       type:"object",
       additionalProperties:false,
-      required:["decision","activity","purpose"],
+      required:["decision","activity","purpose","reason"],
       properties:{
         decision:{ type:"string", enum:DECISIONS },
         activity:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
         purpose:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
+        reason:{ type:"string", minLength:1, maxLength:500 },
       },
     },
     clientRequestId:requestId(input),
   });
 
   assertPlainObject("Commons entry output", invocation.output);
-  assertExactKeys("Commons entry output", invocation.output, ["decision","activity","purpose"]);
+  assertExactKeys("Commons entry output", invocation.output, ["decision","activity","purpose","reason"]);
   if (!DECISIONS.includes(invocation.output.decision)) {
     throw new TypeError("Commons entry decision is invalid");
   }
+  assertNonEmpty("Commons entry reason", invocation.output.reason);
   if (invocation.output.decision === "enter") {
     assertNonEmpty("Commons entry activity", invocation.output.activity);
     assertNonEmpty("Commons entry purpose", invocation.output.purpose);
@@ -83,6 +86,7 @@ Do not invent relationships, change physical location, expose private records, o
     decision:invocation.output.decision,
     activity:invocation.output.activity,
     purpose:invocation.output.purpose,
+    reason:invocation.output.reason,
     cognition:Object.freeze({
       provider:invocation.provenance.provider,
       modelId:invocation.provenance.modelId,

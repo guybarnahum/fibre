@@ -260,6 +260,21 @@ async function establishCommonsPresence({
       stayedOut:entries.filter((entry) => entry.outcome === "stayed_out").length,
       unavailable:entries.filter((entry) => entry.outcome === "unavailable").length,
     });
+    for (const entry of entries) {
+      if (!entry.diagnostics) continue;
+      process.stderr.write(`DEBUG commons ${JSON.stringify({
+        threadId:entry.threadId,
+        name:entry.diagnostics.name,
+        outcome:entry.outcome,
+        currentActivity:entry.diagnostics.currentActivity,
+        currentReason:entry.diagnostics.currentReason,
+        needs:entry.diagnostics.needs,
+        feelings:entry.diagnostics.feelings,
+        unresolvedIntentions:entry.diagnostics.unresolvedIntentions,
+        stableTendencies:entry.diagnostics.stableTendencies,
+        decisionReason:entry.diagnostics.decisionReason,
+      })}\n`);
+    }
 
     for (const entry of entries) {
       if (entry.outcome !== "entered") continue;
