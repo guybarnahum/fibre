@@ -1,7 +1,7 @@
 ---
 id: architecture-interior-cognition
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-09-22
 canonical: true
 ---
 
@@ -558,6 +558,27 @@ DNA / inherited substrate
 ```
 
 This is operator inspection, not public Thread presentation.
+
+### Domain authority evidence is not cognition evidence
+
+A consequential domain record may need two different provenance classes and must not collapse them.
+
+For personal Flight Plan:
+
+```text
+plan.sourceReferences
+  = World / situated authority required to admit and enact the plan
+
+plan.cognition.selectedEvidenceRefs
+  = bounded Thread-private evidence Interior Cognition considered
+
+plan.cognition.evidenceRefs
+  = selected private evidence the cognition cited as materially shaping the result
+```
+
+Autobiographical memory, semantic state and logical relationship evidence therefore do not become World-observation evidence merely because they influenced a private plan. The cognition witness binds the selected/cited refs to the source Thread version, implementation profile and private context digest. CurrentSituation continues to carry only the World/situated evidence supporting enactment.
+
+This separation is reusable across later domains: **what made the person want or judge something is not automatically the same authority as what makes the resulting World action admissible or true.**
 
 ## Replaceability and tuning
 

@@ -122,6 +122,22 @@ function threadObservatory(runtime, threadId) {
       ...structuredClone(story),
       attention:structuredClone(experience.getThreadEncounterAttention(threadId, story.encounterId)),
     }));
+    const currentSituation = livedNow.getCurrentSituation(threadId);
+    const currentPlanRefs = new Set(currentSituation?.sourcePlanRefs ?? []);
+    const currentPersonalPlan = currentSituation === null
+      ? null
+      : livedNow.listPlans(threadId, { kind:"personal" })
+          .find((plan) => currentPlanRefs.has(plan.planId)) ?? null;
+    const currentPersonalPlanWitness = currentPersonalPlan === null
+      ? null
+      : Object.freeze({
+          planId:currentPersonalPlan.planId,
+          authoredAt:currentPersonalPlan.authoredAt,
+          horizonStart:currentPersonalPlan.horizonStart,
+          horizonEnd:currentPersonalPlan.horizonEnd,
+          sourceReferences:structuredClone(currentPersonalPlan.sourceReferences),
+          cognition:structuredClone(currentPersonalPlan.cognition),
+        });
     return Object.freeze({
       threadId,
       fibreIdentityNumber:registration?.fibreIdentityNumber ?? null,
@@ -133,7 +149,8 @@ function threadObservatory(runtime, threadId) {
       semanticStates:structuredClone(semanticState.listCurrentState(threadId)),
       lifeRelations:structuredClone(situatedLife.listCurrentLifeRelations(threadId)),
       livedNow:Object.freeze({
-        currentSituation:structuredClone(livedNow.getCurrentSituation(threadId)),
+        currentSituation:structuredClone(currentSituation),
+        currentPersonalPlan:currentPersonalPlanWitness,
         placeEpisodes:structuredClone(situatedLife.listCurrentPlaceEpisodes(threadId)),
       }),
       memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:200 })),

@@ -12,6 +12,7 @@ import { ageYearsAt } from "./visual-identity-reference-domain.mjs";
 
 export const LIVED_PLAN_KINDS = Object.freeze(["personal", "care"]);
 export const CARE_CONSTRAINTS = Object.freeze(["preferred", "required"]);
+const SHA256_PATTERN = /^sha256:[0-9a-f]{64}$/u;
 
 function assertEnum(name, value, allowed) {
   if (!allowed.includes(value)) throw new TypeError(`${name} is invalid`);
@@ -61,14 +62,69 @@ function normalizeAuthority(value) {
 
 function normalizeCognition(value) {
   assertPlainObject("personal plan.cognition", value);
-  assertExactKeys("personal plan.cognition", value, ["provider", "modelId", "providerRequestId"]);
+  assertExactKeys("personal plan.cognition", value, [
+    "provider",
+    "modelId",
+    "providerRequestId",
+    "implementationProfile",
+    "sourceThreadVersion",
+    "selectedEvidenceRefs",
+    "evidenceRefs",
+    "contextDigest",
+  ]);
   assertNonEmpty("personal plan.cognition.provider", value.provider);
   assertNonEmpty("personal plan.cognition.modelId", value.modelId);
   if (value.providerRequestId !== null) assertNonEmpty("personal plan.cognition.providerRequestId", value.providerRequestId);
+
+  const hasInteriorWitness = [
+    value.implementationProfile,
+    value.sourceThreadVersion,
+    value.selectedEvidenceRefs,
+    value.evidenceRefs,
+    value.contextDigest,
+  ].some((item) => item !== undefined);
+  if (!hasInteriorWitness) {
+    return {
+      provider:value.provider,
+      modelId:value.modelId,
+      providerRequestId:value.providerRequestId,
+    };
+  }
+
+  assertPlainObject("personal plan.cognition.implementationProfile", value.implementationProfile);
+  assertExactKeys("personal plan.cognition.implementationProfile", value.implementationProfile, ["id", "version"]);
+  assertId("personal plan.cognition.implementationProfile.id", value.implementationProfile.id);
+  assertNonEmpty("personal plan.cognition.implementationProfile.version", value.implementationProfile.version);
+  if (!Number.isSafeInteger(value.sourceThreadVersion) || value.sourceThreadVersion < 1) {
+    throw new TypeError("personal plan.cognition.sourceThreadVersion must be a positive safe integer");
+  }
+  const selectedEvidenceRefs = normalizeIds(
+    "personal plan.cognition.selectedEvidenceRefs",
+    value.selectedEvidenceRefs,
+  );
+  const evidenceRefs = normalizeIds("personal plan.cognition.evidenceRefs", value.evidenceRefs);
+  const selected = new Set(selectedEvidenceRefs);
+  for (const ref of evidenceRefs) {
+    if (!selected.has(ref)) {
+      throw new TypeError("personal plan.cognition.evidenceRefs must be selected Interior Cognition evidence");
+    }
+  }
+  if (typeof value.contextDigest !== "string" || !SHA256_PATTERN.test(value.contextDigest)) {
+    throw new TypeError("personal plan.cognition.contextDigest must be a SHA-256 digest");
+  }
+
   return {
-    provider: value.provider,
-    modelId: value.modelId,
-    providerRequestId: value.providerRequestId,
+    provider:value.provider,
+    modelId:value.modelId,
+    providerRequestId:value.providerRequestId,
+    implementationProfile:{
+      id:value.implementationProfile.id,
+      version:value.implementationProfile.version,
+    },
+    sourceThreadVersion:value.sourceThreadVersion,
+    selectedEvidenceRefs,
+    evidenceRefs,
+    contextDigest:value.contextDigest,
   };
 }
 

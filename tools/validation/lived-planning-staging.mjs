@@ -192,9 +192,18 @@ function inspectCurrentPlanEvidence(threadCard, observatory, ensured) {
   if (!situation || situation.situationId !== ensured.situationId) {
     throw new Error(`World Observatory current situation disagrees with LivedNow for ${threadCard.threadId}`);
   }
+  const plan = observatory?.livedNow?.currentPersonalPlan ?? null;
+  if (plan === null || !(situation.sourcePlanRefs ?? []).includes(plan.planId)) {
+    throw new Error(`World Observatory cannot resolve the current personal Flight Plan for ${threadCard.threadId}`);
+  }
 
   const available = developedEvidenceIndex(observatory);
-  const cited = [...new Set(situation.evidenceRefs ?? [])]
+  const cognition = plan.cognition ?? {};
+  const selected = [...new Set(cognition.selectedEvidenceRefs ?? [])]
+    .filter((ref) => available.has(ref))
+    .sort()
+    .map((ref) => Object.freeze({ ref, kind:available.get(ref) }));
+  const cited = [...new Set(cognition.evidenceRefs ?? [])]
     .filter((ref) => available.has(ref))
     .sort()
     .map((ref) => Object.freeze({ ref, kind:available.get(ref) }));
@@ -206,6 +215,10 @@ function inspectCurrentPlanEvidence(threadCard, observatory, ensured) {
     establishedAt:situation.establishedAt,
     resolutionKind:situation.resolution?.kind ?? null,
     sourcePlanRefs:Object.freeze([...(situation.sourcePlanRefs ?? [])]),
+    personalPlanId:plan.planId,
+    cognitionProfile:cognition.implementationProfile ?? null,
+    cognitionContextDigest:cognition.contextDigest ?? null,
+    selectedDevelopedEvidenceRefs:Object.freeze(selected),
     developedEvidenceRefs:Object.freeze(cited),
     historyEvidenceRefs:Object.freeze(historyCited),
     evidenceFingerprint:sha256(JSON.stringify(cited)),
@@ -275,9 +288,11 @@ export async function runLivedPlanningStagingProof({
       emit({
         event:"lived-planning-thread-inspected",
         threadId:row.threadId,
+        selectedEvidenceCount:row.selectedDevelopedEvidenceRefs.length,
         developedEvidenceCount:row.developedEvidenceRefs.length,
         historyEvidenceCount:row.historyEvidenceRefs.length,
         evidenceKinds:[...new Set(row.developedEvidenceRefs.map((item) => item.kind))],
+        cognitionProfile:row.cognitionProfile?.id ?? null,
       });
     } catch (error) {
       const reason = String(error?.message ?? error).slice(0, 1600);

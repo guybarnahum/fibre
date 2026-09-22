@@ -13,7 +13,10 @@ import { openIdentityStore } from "../src/identity-store.mjs";
 import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
+import { placeEpisodeId } from "../src/situated-life-domain.mjs";
+import { placeEpisodeRevisionRef } from "../src/situated-life-evidence.mjs";
 import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
+import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 
 const mina = JSON.parse(
@@ -218,3 +221,85 @@ test("persisted lived meaning bends an otherwise equivalent personal Flight Plan
     identityStore.close();
     worldStore.close();
   }));
+
+test("personal Flight Plan admission keeps private cognition evidence separate from situated authority", async () =>
+  withDatabase(async (databasePath) => {
+    const storage = localWorldStateStorage(databasePath);
+    const worldStore = openWorldStore(storage);
+    const event = seedThread(
+      worldStore,
+      "thr_lived_plan_admission",
+      "Cara Vale",
+      "2026-09-20T08:00:00.000Z",
+    );
+    const identityStore = openIdentityStore(storage);
+    const semanticStateStore = openSemanticStateStore(storage);
+    const memoryStore = openAutobiographicalMemoryStore(storage);
+    const situatedLifeStore = openSituatedLifeStore(storage);
+    const livedNowStore = openLivedNowStore(storage);
+
+    const memoryId = recordMeaning(memoryStore, {
+      threadId:"thr_lived_plan_admission",
+      event,
+      rememberedMeaning:"After a long solitary stretch, quiet company restored me without disrupting my work.",
+      recordedAt:"2026-09-21T12:00:00.000Z",
+    });
+    const place = situatedLifeStore.recordPlaceEpisode({
+      episodeId:placeEpisodeId({ threadId:"thr_lived_plan_admission", place:"reading-room" }),
+      revision:1,
+      threadId:"thr_lived_plan_admission",
+      episodeKind:"residence",
+      place:{
+        placeId:"place.test.reading-room",
+        displayName:"Reading room",
+        countryCode:"US",
+        region:"Arizona",
+        locality:"Tucson",
+        precision:"locality",
+      },
+      startAt:"2026-09-20T08:00:00.000Z",
+      endAt:null,
+      sourceReferences:[event.eventId],
+      visibility:"private",
+      provenance:"thread_history",
+      recordedAt:"2026-09-20T08:01:00.000Z",
+    });
+    const placeRef = placeEpisodeRevisionRef(place);
+
+    const plan = await formPersonalLivedPlan({
+      threadId:"thr_lived_plan_admission",
+      authoredAt:"2026-09-22T09:00:00.000Z",
+      horizonEnd:"2026-09-22T13:00:00.000Z",
+      availablePlaces:[{ ref:placeRef, displayName:"Reading room" }],
+      startingPlaceRef:placeRef,
+      sourceReferences:[event.eventId],
+      sourceStores:{
+        worldStore,
+        identityStore,
+        semanticStateStore,
+        memoryStore,
+        situatedLifeStore,
+      },
+      modelAdapter:fixturePlanningModel(),
+    });
+
+    const admitted = livedNowStore.recordPlan(plan);
+    assert.deepEqual(
+      admitted.sourceReferences.sort(),
+      [event.eventId, placeRef].sort(),
+      "World plan evidence should contain only situated/event authority",
+    );
+    assert.deepEqual(
+      admitted.cognition.evidenceRefs,
+      [memoryId],
+      "private causal memory should remain inspectable in cognition provenance",
+    );
+
+    livedNowStore.close();
+    situatedLifeStore.close();
+    memoryStore.close();
+    semanticStateStore.close();
+    identityStore.close();
+    worldStore.close();
+  }));
+
