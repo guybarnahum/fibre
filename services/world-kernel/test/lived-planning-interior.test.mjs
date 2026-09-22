@@ -212,8 +212,39 @@ test("persisted lived meaning bends an otherwise equivalent personal Flight Plan
       planB.stops[0].activity,
       "different lives should bend equivalent ordinary planning",
     );
-    assert.ok(planA.sourceReferences.includes(memoryA), "Ada's plan should retain its causal memory evidence");
-    assert.ok(planB.sourceReferences.includes(memoryB), "Ben's plan should retain its causal memory evidence");
+    assert.equal(
+      planA.sourceReferences.includes(memoryA),
+      false,
+      "private memory evidence must not become World/situated plan evidence",
+    );
+    assert.equal(
+      planB.sourceReferences.includes(memoryB),
+      false,
+      "private memory evidence must not become World/situated plan evidence",
+    );
+    assert.ok(
+      planA.cognition.selectedEvidenceRefs.includes(memoryA),
+      "Ada's memory should remain in the private cognition witness",
+    );
+    assert.ok(
+      planB.cognition.selectedEvidenceRefs.includes(memoryB),
+      "Ben's memory should remain in the private cognition witness",
+    );
+    assert.deepEqual(
+      planA.cognition.evidenceRefs,
+      [memoryA],
+      "Ada's cited causal memory should remain inspectable",
+    );
+    assert.deepEqual(
+      planB.cognition.evidenceRefs,
+      [memoryB],
+      "Ben's cited causal memory should remain inspectable",
+    );
+    assert.notEqual(
+      planA.cognition.contextDigest,
+      planB.cognition.contextDigest,
+      "different developed lives should bind different cognition contexts",
+    );
 
     situatedLifeStore.close();
     memoryStore.close();
