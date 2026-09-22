@@ -253,7 +253,7 @@ test("a real LivedNow transition can become current interior state exactly once"
             output:{
               states:[{
                 domain:"emotion",
-                dimension:"felt_state",
+                dimension:"contentment",
                 state:"I feel a small sense of arrival now that I am where I meant to be.",
               }],
             },
