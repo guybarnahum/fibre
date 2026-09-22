@@ -119,7 +119,9 @@ The run also fixed a provenance boundary discovered by staging: private cognitio
 
 **Commons entry — CLOSED live.** The bounded `enter | stay_out` decision now routes through Interior Cognition. The controlled proof shows developed-life evidence can bend voluntary ambient presence while physical life and meeting consent remain unchanged. Deployed staging on SHA `1490c32a99754324d8d9bfd6b23ae2301ac75742` observed both outcomes under the shared profile: a six-Thread cohort stayed out and a later six-Thread cohort split three entered / three stayed out, with distinct cognition-context digests and optional evidence citation.
 
-**Current validation slice: social initiation.** Route initiator-owned `initiate | not_initiate` through Interior Cognition. Prove that persisted lived meaning can bend whether a co-present Thread chooses to make a concrete social overture, while `not_initiate` remains a valid agency outcome and no Encounter Story is created unless an overture actually occurs.
+**Social initiation — CLOSED live wiring.** Initiator-owned `initiate | not_initiate` now routes through Interior Cognition. The controlled tests preserve both accepted overture behavior and causal `not_initiate` without creating an Encounter Story. Deployed staging on SHA `10ca8dc9e60ef59b005f981d25a45e53e647e530` observed six compatible attempts under the shared profile, all naturally choosing `not_initiate`; several cited developed-life evidence. This proves the live integration seam while also showing that acceptance cannot rely on ambient co-presence manufacturing a motive.
+
+**Current validation slice: live organismic motive bridge.** Reuse R1-R4 to prove one grounded present-life regulatory transition can reach interoception, author bounded semantic emotion/need state, and become available to subsequent Interior Cognition. The proof must also preserve the cheap null path: no meaningful regulatory signal means no semantic-state invention and no extra cognition.
 
 ## A/B comparison unit
 
