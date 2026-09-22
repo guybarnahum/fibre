@@ -176,13 +176,16 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const runtime = this.runtimeForRequest();
       const deployment = resolveServiceDeployment(DEPLOYMENT, "world-kernel");
       const livedNowStore = openLivedNowStore(runtime.worldStorage);
+      const identityStore = openIdentityStore(runtime.worldStorage);
+      const semanticStateStore = openSemanticStateStore(runtime.worldStorage);
+      const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
         livedNowStore,
         worldStore:runtime.worldStore,
-        identityStore:openIdentityStore(runtime.worldStorage),
-        semanticStateStore:openSemanticStateStore(runtime.worldStorage),
-        memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
+        identityStore,
+        semanticStateStore,
+        memoryStore,
         situatedLifeStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
       });
@@ -190,6 +193,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         worldReader:runtime.worldStore,
         livedNow,
         livedNowStore,
+        identityStore,
+        semanticStateStore,
+        memoryStore,
+        situatedLifeStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
       });
       this.livedCommonsApi = createLivedCommonsWriteApi({

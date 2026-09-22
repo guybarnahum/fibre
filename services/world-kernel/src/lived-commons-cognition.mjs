@@ -3,94 +3,91 @@ import {
   assertId,
   assertNonEmpty,
   assertPlainObject,
-  canonicalJson,
-  sha256,
 } from "./persistence-common.mjs";
+import { runInteriorCognition } from "./interior-cognition.mjs";
 
 const DECISIONS = Object.freeze(["enter", "stay_out"]);
 
-function requestId(input) {
-  return `commons-entry_${sha256(canonicalJson(input))}`;
-}
+const COMMONS_ENTRY_ADAPTER = Object.freeze({
+  id:"commons-entry",
+  instruction:`Decide whether this Thread wants Fibre Commons open in the background for a short while from the life already underway.
+Fibre Commons is an optional ambient mediated common space. Entering does not move the Thread physically, require focused attention, commit the Thread to speak, meet anyone, or abandon the current activity.
+Weigh the current activity and remaining Flight Plan against the developed person Fibre supplied. Low-cost curiosity, ordinary sociability, comfort with ambient company or willingness to be reachable may make background presence fit. Privacy, concentration, fatigue, discomfort or simple preference may make stay_out fit.
+If entering, preserve the life already underway. activity should describe the existing activity continuing with Commons present in the background; purpose should explain why ambient presence fits now, not manufacture a desire to meet someone.
+If staying out, activity and purpose must be null.
+reason is a concise private operator-facing explanation of the material considerations. Do not invent relationships, change physical location, expose private records, or assume Commons presence means wanting an encounter.`,
+  resultSchema:{
+    type:"object",
+    additionalProperties:false,
+    required:["decision","activity","purpose","reason"],
+    properties:{
+      decision:{ type:"string", enum:DECISIONS },
+      activity:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
+      purpose:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
+      reason:{ type:"string", minLength:1, maxLength:500 },
+    },
+  },
+});
 
 export async function formCommonsEntryChoice({
-  thread,
+  threadId,
+  at,
   situation,
   plan,
+  sourceStores,
   modelAdapter,
 }) {
-  assertPlainObject("Commons Thread", thread);
-  assertId("Commons Thread.threadId", thread.threadId);
+  assertId("Commons Thread threadId", threadId);
   assertPlainObject("Commons situation", situation);
   assertPlainObject("Commons plan", plan);
-  if (!modelAdapter || typeof modelAdapter.invoke !== "function") {
-    throw new TypeError("Commons entry requires modelAdapter.invoke");
-  }
 
-  const input = {
-    thread:{
-      threadId:thread.threadId,
-      name:thread.identity?.name ?? null,
-      selfDescription:thread.identity?.selfDescription ?? "",
-      selfModel:thread.currentState?.selfModel ?? "",
-      stableTendencies:structuredClone(thread.genome?.textualTraits ?? {}),
-      needs:[...(thread.currentState?.needs ?? [])],
-      feelings:[...(thread.currentState?.feelings ?? [])],
-      unresolvedIntentions:[...(thread.currentState?.unresolvedIntentions ?? [])],
-    },
-    currentSituation:structuredClone(situation),
-    remainingFlightPlan:structuredClone(plan),
-    commons:{
-      name:"Fibre Commons",
-      description:"A quiet ambient mediated common space that can stay open in the background while a Thread continues ordinary life; presence does not imply conversation.",
-    },
-  };
-
-  const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are one persistent Fibre Thread deciding whether to keep Fibre Commons open in the background for a short while from the life already underway.
-Fibre Commons is an optional ambient mediated common space. Entering it does not move the Thread physically, does not require focused attention, and does not commit the Thread to speak, meet anyone, or abandon the current activity. Think of being quietly present in a shared café-like digital space while continuing what you were already doing.
-Decide naturally from this particular Thread's current activity, needs, feelings, intentions, stable tendencies and remaining Flight Plan. Do not require an explicit pre-existing intention to socialize: low-cost curiosity, ordinary sociability, comfort with ambient company, or willingness to be reachable may make background presence fit. Equally, privacy, concentration, fatigue, discomfort or simple preference may make stay_out the natural choice.
-If entering, preserve the life already underway. activity should describe the existing activity continuing with Commons present in the background; purpose should explain why this Thread is comfortable being ambiently present, not manufacture a desire to meet someone.
-If staying out, activity and purpose must be null.
-In reason, give one concise sentence explaining the actual considerations that drove this decision from the supplied Thread context. This is private operator diagnostics, not public speech.
-Do not invent relationships, change physical location, expose private records, or assume that being in Commons means wanting an encounter.`,
-    input,
-    responseSchema:{
-      type:"object",
-      additionalProperties:false,
-      required:["decision","activity","purpose","reason"],
-      properties:{
-        decision:{ type:"string", enum:DECISIONS },
-        activity:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
-        purpose:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
-        reason:{ type:"string", minLength:1, maxLength:500 },
+  const cognition = await runInteriorCognition({
+    threadId,
+    at,
+    concern:{
+      kind:"commons_entry",
+      question:"Do I want Fibre Commons quietly present in the background right now?",
+      externalContext:{
+        currentSituation:structuredClone(situation),
+        remainingFlightPlan:structuredClone(plan),
+        commons:{
+          name:"Fibre Commons",
+          description:"A quiet ambient mediated common space that can stay open in the background while ordinary life continues; presence does not imply conversation.",
+        },
       },
     },
-    clientRequestId:requestId(input),
+    adapter:COMMONS_ENTRY_ADAPTER,
+    sourceStores,
+    modelAdapter,
   });
 
-  assertPlainObject("Commons entry output", invocation.output);
-  assertExactKeys("Commons entry output", invocation.output, ["decision","activity","purpose","reason"]);
-  if (!DECISIONS.includes(invocation.output.decision)) {
+  assertPlainObject("Commons entry output", cognition.result);
+  assertExactKeys("Commons entry output", cognition.result, ["decision","activity","purpose","reason"]);
+  if (!DECISIONS.includes(cognition.result.decision)) {
     throw new TypeError("Commons entry decision is invalid");
   }
-  assertNonEmpty("Commons entry reason", invocation.output.reason);
-  if (invocation.output.decision === "enter") {
-    assertNonEmpty("Commons entry activity", invocation.output.activity);
-    assertNonEmpty("Commons entry purpose", invocation.output.purpose);
-  } else if (invocation.output.activity !== null || invocation.output.purpose !== null) {
+  assertNonEmpty("Commons entry reason", cognition.result.reason);
+  if (cognition.result.decision === "enter") {
+    assertNonEmpty("Commons entry activity", cognition.result.activity);
+    assertNonEmpty("Commons entry purpose", cognition.result.purpose);
+  } else if (cognition.result.activity !== null || cognition.result.purpose !== null) {
     throw new TypeError("stay_out cannot author Commons plan content");
   }
 
   return Object.freeze({
-    decision:invocation.output.decision,
-    activity:invocation.output.activity,
-    purpose:invocation.output.purpose,
-    reason:invocation.output.reason,
+    decision:cognition.result.decision,
+    activity:cognition.result.activity,
+    purpose:cognition.result.purpose,
+    reason:cognition.result.reason,
     cognition:Object.freeze({
-      provider:invocation.provenance.provider,
-      modelId:invocation.provenance.modelId,
-      providerRequestId:invocation.provenance.providerRequestId ?? null,
+      provider:cognition.provenance.provider,
+      modelId:cognition.provenance.modelId,
+      providerRequestId:cognition.provenance.providerRequestId ?? null,
+      implementationProfile:structuredClone(cognition.implementationProfile),
+      sourceThreadVersion:cognition.provenance.sourceThreadVersion,
+      selectedEvidenceRefs:Object.freeze([...cognition.provenance.selectedEvidenceRefs]),
+      evidenceRefs:Object.freeze([...cognition.evidenceRefs]),
+      contextDigest:cognition.provenance.contextDigest,
     }),
   });
 }

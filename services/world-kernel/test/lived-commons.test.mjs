@@ -1,4 +1,4 @@
-// fibre-test-purpose: prove-voluntary-shared-mediated-presence-without-rewriting-physical-life
+// fibre-test-purpose: prove-developed-life-can-voluntarily-bend-shared-mediated-presence-without-rewriting-physical-life
 
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -15,6 +15,7 @@ const END = "2026-09-22T04:00:00.000Z";
 function thread(threadId, name) {
   return {
     threadId,
+    version:1,
     identity:{ name, selfDescription:`${name} has an ordinary life already underway.` },
     currentState:{
       selfModel:`${name} chooses social presence selectively.`,
@@ -66,7 +67,20 @@ function plan(threadId, placeRef) {
   };
 }
 
-test("Fibre Commons creates voluntary shared presence without moving anyone", async () => {
+function memory(threadId, meaning) {
+  return {
+    memoryId:`mem_${threadId}`,
+    threadId,
+    rememberedMeaning:meaning,
+    status:"current",
+    accessibility:"accessible",
+    retentionState:"retained",
+    salience:0.9,
+    asOf:"2026-09-21T12:00:00.000Z",
+  };
+}
+
+test("developed life bends voluntary Commons presence without moving anyone", async () => {
   const threads = new Map([
     ["thr_ada", thread("thr_ada", "Ada")],
     ["thr_ben", thread("thr_ben", "Ben")],
@@ -82,13 +96,19 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
     ["thr_ben", plan("thr_ben", "per:plce_ben_library:1")],
     ["thr_cleo", plan("thr_cleo", "per:plce_cleo_cafe:1")],
   ]);
+  const memories = new Map([
+    ["thr_ada", [memory("thr_ada", "Quiet ambient company has helped me feel connected without disrupting focused work.")]],
+    ["thr_ben", [memory("thr_ben", "Being lightly reachable in the background has made solitary work feel easier.")]],
+    ["thr_cleo", [memory("thr_cleo", "Background social presence made concentrated work harder, so I protected solitude afterward.")]],
+  ]);
   const recordedPlans = [];
   const enacted = [];
 
+  const worldReader = {
+    getThread(threadId) { return structuredClone(threads.get(threadId) ?? null); },
+  };
   const service = createLivedCommonsService({
-    worldReader:{
-      getThread(threadId) { return structuredClone(threads.get(threadId) ?? null); },
-    },
+    worldReader,
     livedNow:{
       async ensure({ threadId }) { return structuredClone(situations.get(threadId)); },
     },
@@ -111,28 +131,51 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
         return current;
       },
     },
+    identityStore:{
+      getCurrentIdentityView(threadId) { return { threadId, assertions:[] }; },
+    },
+    semanticStateStore:{
+      listCurrentState() { return []; },
+    },
+    memoryStore:{
+      listCurrentMemories(threadId) { return structuredClone(memories.get(threadId) ?? []); },
+    },
+    situatedLifeStore:{
+      listCurrentLifeRelations() { return []; },
+    },
     modelAdapter:{
+      provider:"fixture",
+      modelId:"fixture-commons",
       async invoke(call) {
-        const name = call.input.thread.name;
-        if (name === "Cleo") {
-          return {
-            output:{
-              decision:"stay_out",
-              activity:null,
-              purpose:null,
-              reason:"Cleo wants uninterrupted solitude for the activity already underway.",
-            },
-            provenance:{ provider:"fixture", modelId:"fixture-commons", providerRequestId:"req_cleo" },
-          };
-        }
+        assert.equal(call.input.concern.kind, "commons_entry");
+        assert.equal(call.input.concern.externalContext.currentSituation.phase, "at_place");
+        const remembered = call.input.developedSelfEvidence.find((item) => item.kind === "memory");
+        assert.ok(remembered, "Commons cognition should receive Fibre-selected remembered meaning");
+        const protectsSolitude = /protected solitude/u.test(remembered.text);
         return {
           output:{
-            decision:"enter",
-            activity:"Continuing an ordinary personal activity with Fibre Commons open in the background.",
-            purpose:"Ambient company feels compatible with what I am already doing without committing to conversation.",
-            reason:"Background company feels low-cost and compatible with the current activity.",
+            result:protectsSolitude
+              ? {
+                  decision:"stay_out",
+                  activity:null,
+                  purpose:null,
+                  reason:"Past background social presence made concentrated work harder, so solitude fits now.",
+                }
+              : {
+                  decision:"enter",
+                  activity:"Continuing an ordinary personal activity with Fibre Commons open in the background.",
+                  purpose:"Ambient company fits the life already underway without committing to conversation.",
+                  reason:"Remembered low-cost ambient company fits the current activity.",
+                },
+            evidenceRefs:[remembered.ref],
+            conflictingMotives:[],
+            uncertainty:null,
           },
-          provenance:{ provider:"fixture", modelId:"fixture-commons", providerRequestId:`req_${name.toLowerCase()}` },
+          provenance:{
+            provider:"fixture",
+            modelId:"fixture-commons",
+            providerRequestId:call.clientRequestId,
+          },
         };
       },
     },
@@ -146,14 +189,29 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
   assert.deepEqual(
     result.entries.map((entry) => entry.outcome),
     ["entered","entered","stayed_out"],
-    "Commons entry must remain voluntary",
+    "persisted lived meaning should support genuinely different Commons choices",
   );
   assert.equal(
-    result.entries.every((entry) => typeof entry.diagnostics?.decisionReason === "string"),
+    result.entries.every((entry) => entry.diagnostics?.cognitionProfile === "interior-cognition-single-episode"),
     true,
-    "Commons choices should be inspectable during live debugging",
+    "Commons choices should route through the shared Interior Cognition profile",
+  );
+  assert.equal(
+    result.entries.every((entry) => entry.diagnostics?.evidenceRefs.length === 1),
+    true,
+    "Commons choices should retain their cited private evidence",
   );
   assert.equal(recordedPlans.length, 2, "only entering Threads should author Commons plans");
+  assert.equal(
+    recordedPlans.every((candidate) => candidate.sourceReferences.every((ref) => !ref.startsWith("mem_"))),
+    true,
+    "private memory evidence must not become World/situated plan evidence",
+  );
+  assert.equal(
+    recordedPlans.every((candidate) => candidate.cognition.evidenceRefs.length === 1),
+    true,
+    "entering plans should retain the private cognition witness",
+  );
   assert.deepEqual(
     enacted.map((current) => current.location.placeRef),
     ["per:plce_ada_home:1","per:plce_ben_library:1"],
@@ -163,11 +221,6 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
     enacted.every((current) => current.mediatedContext === FIBRE_COMMONS_CONTEXT),
     true,
     "entering Threads should share one mediated context",
-  );
-  assert.equal(
-    recordedPlans.every((plan) => /ordinary personal activity/u.test(plan.stops[0].activity)),
-    true,
-    "Commons should remain ambient to life already underway",
   );
   assert.equal(
     meetingPresenceCompatible(enacted[0], enacted[1]),

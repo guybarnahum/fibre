@@ -46,6 +46,7 @@ function commonsPlan({ threadId, at, endAt, physicalPlaceRef, sourceReferences, 
       provider:choice.cognition.provider,
       modelId:choice.cognition.modelId,
       providerRequestId:choice.cognition.providerRequestId,
+      contextDigest:choice.cognition.contextDigest,
     }),
     kind:"personal",
     subjectThreadId:threadId,
@@ -63,6 +64,10 @@ export function createLivedCommonsService({
   worldReader,
   livedNow,
   livedNowStore,
+  identityStore,
+  semanticStateStore,
+  memoryStore,
+  situatedLifeStore,
   modelAdapter,
 }) {
   requireMethod(worldReader, "getThread");
@@ -70,6 +75,10 @@ export function createLivedCommonsService({
   requireMethod(livedNowStore, "latestPlan");
   requireMethod(livedNowStore, "recordPlan");
   requireMethod(livedNowStore, "enactCurrentSituation");
+  requireMethod(identityStore, "getCurrentIdentityView");
+  requireMethod(semanticStateStore, "listCurrentState");
+  requireMethod(memoryStore, "listCurrentMemories");
+  requireMethod(situatedLifeStore, "listCurrentLifeRelations");
   requireMethod(modelAdapter, "invoke");
 
   return Object.freeze({
@@ -109,20 +118,28 @@ export function createLivedCommonsService({
         const thread = worldReader.getThread(threadId, { required:false });
         if (thread === null) throw new Error(`Thread ${threadId} was not found`);
         const choice = await formCommonsEntryChoice({
-          thread,
+          threadId,
+          at:input.at,
           situation,
           plan,
+          sourceStores:{
+            worldStore:worldReader,
+            identityStore,
+            semanticStateStore,
+            memoryStore,
+            situatedLifeStore,
+          },
           modelAdapter,
         });
         const diagnostics = Object.freeze({
           name:thread.identity?.name ?? null,
           currentActivity:situation.activity,
           currentReason:situation.reason,
-          needs:Object.freeze([...(thread.currentState?.needs ?? [])]),
-          feelings:Object.freeze([...(thread.currentState?.feelings ?? [])]),
-          unresolvedIntentions:Object.freeze([...(thread.currentState?.unresolvedIntentions ?? [])]),
-          stableTendencies:Object.freeze(structuredClone(thread.genome?.textualTraits ?? {})),
           decisionReason:choice.reason,
+          cognitionProfile:choice.cognition.implementationProfile.id,
+          selectedEvidenceRefs:Object.freeze([...choice.cognition.selectedEvidenceRefs]),
+          evidenceRefs:Object.freeze([...choice.cognition.evidenceRefs]),
+          contextDigest:choice.cognition.contextDigest,
         });
         if (choice.decision !== "enter") {
           entries.push(Object.freeze({ threadId, outcome:"stayed_out", situationId:situation.situationId, diagnostics }));

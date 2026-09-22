@@ -598,7 +598,7 @@ It has no store and no domain authority. A caller supplies only a real concern p
 
 The first focused proof uses the same external concern for two persistent Thread contexts and verifies that different remembered meaning can reach the same private cognition boundary and support different attributable judgments. The domain adapter cannot choose the private evidence set or tune its budgets; the result preserves selected evidence refs, source Thread version, a context digest and lightweight compute usage. Full repository CI is green.
 
-This proves the reusable causal seam, not yet the full live semantic quality of a production model. Flight Plan is the first intended real adapter; Commons/social and dignity remain unmigrated until later slices.
+The reusable causal seam is now proven both by the controlled Flight Plan differential and by deployed staging attribution across real current lives. Flight Plan is the first live real adapter. Commons entry is the next narrow migration; social initiation/response and dignity remain separate later adapters rather than parallel minds.
 
 ## Implementation status
 

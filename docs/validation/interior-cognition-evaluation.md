@@ -111,9 +111,13 @@ The focused proof uses a fixture model only to prove causal wiring. It gives the
 
 This does **not** count as the live semantic A/B evidence defined below. That evidence begins once a real domain consumer and real model profile are run against frozen Thread episodes.
 
-**Lived Planning — CLOSED locally.** Personal Flight Plan now uses the compact component as its first real domain adapter. The focused proof holds World conditions equivalent and shows persisted autobiographical remembered meaning bending ordinary intended life into different attributable plans.
+**Lived Planning — CLOSED live.** Personal Flight Plan uses the compact component as its first real domain adapter. The controlled proof holds World conditions equivalent and shows persisted autobiographical remembered meaning bending ordinary intended life into different attributable plans.
 
-**Current validation slice: deployed Lived Planning.** Run `npm run lived-planning:staging` only after deploying the exact clean checkout to staging. The probe reuses existing LivedNow and private Observatory surfaces and treats `CurrentSituation.evidenceRefs` as the admitted causal witness from the governing plan. It requires multiple real staging Threads whose current lives cite differentiated autobiographical-memory or relationship evidence and whose current intended-life moments are not identical. It stores opaque refs, digests and counts rather than private prose. This proves deployed integration/attribution; the controlled local differential remains the stronger causal test.
+The deployed proof ran against exact clean staging SHA `83cd269cb42105be0ea51c45aa5acd506aa76353` as `lived-planning-mud30hs6`. It inspected 12 current personal-plan Threads; all 12 carried the `interior-cognition-single-episode` profile, all 12 cited autobiographical-memory and/or relationship history through `plan.cognition.evidenceRefs`, all 12 history fingerprints were distinct, and all 12 current-moment fingerprints were distinct. Three additional requests were skipped by one deployment-time Durable Object reset and two fetch failures. The live probe stores opaque refs/digests/counts rather than private prose. This is deployed integration/attribution evidence; the controlled differential remains the stronger causal test.
+
+The run also fixed a provenance boundary discovered by staging: private cognition evidence belongs in `plan.cognition.selectedEvidenceRefs/evidenceRefs`, while `plan.sourceReferences` remains World/situated authority required for plan admission and enactment. Do not conflate the two.
+
+**Current validation slice: Commons entry.** Route the bounded `enter | stay_out` decision through Interior Cognition and prove that developed-life evidence can bend voluntary ambient presence while physical life and meeting consent remain unchanged.
 
 ## A/B comparison unit
 

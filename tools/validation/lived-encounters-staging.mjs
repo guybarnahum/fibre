@@ -305,11 +305,11 @@ async function establishCommonsPresence({
         outcome:entry.outcome,
         currentActivity:entry.diagnostics.currentActivity,
         currentReason:entry.diagnostics.currentReason,
-        needs:entry.diagnostics.needs,
-        feelings:entry.diagnostics.feelings,
-        unresolvedIntentions:entry.diagnostics.unresolvedIntentions,
-        stableTendencies:entry.diagnostics.stableTendencies,
         decisionReason:entry.diagnostics.decisionReason,
+        cognitionProfile:entry.diagnostics.cognitionProfile,
+        selectedEvidenceCount:entry.diagnostics.selectedEvidenceRefs?.length ?? 0,
+        citedEvidenceCount:entry.diagnostics.evidenceRefs?.length ?? 0,
+        contextDigest:entry.diagnostics.contextDigest,
       })}\n`);
     }
 
