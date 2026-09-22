@@ -56,6 +56,9 @@ function sourceStores(threadId, memoryId, rememberedMeaning) {
     memoryStore:{
       listCurrentMemories(id) {
         assert.equal(id, threadId);
+        const expectedMemoryId = threadId === "thr_person_a" ? "mem-person-a" : "mem-person-b";
+        assert.equal(memoryId, expectedMemoryId,
+          "fixture must retain the authoritative memory ID before selection");
         return [{
           memoryId,
           threadId,
