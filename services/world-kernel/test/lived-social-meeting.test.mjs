@@ -9,6 +9,7 @@ const AT = "2026-09-21T18:00:00.000Z";
 function thread(threadId, name, selfDescription) {
   return {
     threadId,
+    version:1,
     identity:{ name, selfDescription },
     currentState:{ selfModel:selfDescription, unresolvedIntentions:[] },
     genome:{ textualTraits:{ temperament:`${name} has a distinct social rhythm.` } },
@@ -62,6 +63,7 @@ function relations(threadId) {
   if (threadId === mina.threadId) {
     return [{
       relationId:"lrel_mina_noor",
+      threadId:mina.threadId,
       relatedParty:{ partyId:noor.threadId, displayName:"Noor" },
       relationKind:"social_contact",
       relationshipFacts:["Noor is someone Mina likes and is comfortable being quiet with."],
@@ -70,6 +72,7 @@ function relations(threadId) {
   if (threadId === noor.threadId) {
     return [{
       relationId:"lrel_noor_mina",
+      threadId:noor.threadId,
       relatedParty:{ partyId:mina.threadId, displayName:"Mina" },
       relationKind:"social_contact",
       relationshipFacts:["Noor likes Mina but sometimes needs space when already absorbed in something."],
@@ -117,17 +120,32 @@ function fixture({
 
   const modelAdapter = {
     async invoke(call) {
-      if (call.clientRequestId.startsWith("social-encounter-request_")) {
+      if (call.input?.concern?.kind === "social_initiation") {
         initiationNames.push(call.input.thread.name);
-        const decision = initiationFor(call.input.thread.name);
+        assert.equal(Object.hasOwn(call.input.thread, "stableTendencies"), false,
+          "social initiation must not receive raw genome/persona traits");
+        assert.equal(Array.isArray(call.input.developedSelfEvidence), true,
+          "social initiation should receive Fibre-selected developed-self evidence");
+        const decision = initiationFor(call.input.thread.name, call.input.developedSelfEvidence);
+        const cited = call.input.developedSelfEvidence.find((item) => item.kind === "memory")
+          ?? call.input.developedSelfEvidence.find((item) =>
+            item.kind === "relationship" || item.kind === "semantic_state");
         return {
           output:{
-            decision,
-            requestText:decision === "initiate"
-              ? rude
-                ? "Noor, move your sketch. You’re taking up too much of the table."
-                : "Hey Noor — mind if I sit with you for a minute?"
-              : null,
+            result:{
+              decision,
+              requestText:decision === "initiate"
+                ? rude
+                  ? "Noor, move your sketch. You’re taking up too much of the table."
+                  : "Hey Noor — mind if I sit with you for a minute?"
+                : null,
+              reason:decision === "initiate"
+                ? "A small social overture fits what matters to me in this moment."
+                : "I do not want to begin a social exchange right now.",
+            },
+            evidenceRefs:cited ? [cited.ref] : [],
+            conflictingMotives:[],
+            uncertainty:null,
           },
           provenance:{ provider:"fixture", modelId:"fixture-social" },
         };
@@ -260,6 +278,9 @@ function fixture({
       getCurrentSituation(threadId) { return structuredClone(situations.get(threadId)); },
       latestPlan(threadId) { return structuredClone(plan(threadId)); },
     },
+    identityStore:{
+      getCurrentIdentityView(threadId) { return { threadId, assertions:[] }; },
+    },
     situatedLifeStore:{
       listCurrentLifeRelations(threadId) { return structuredClone(relations(threadId)); },
       listCurrentPlaceEpisodes(threadId) { return structuredClone(placeEpisodes.get(threadId)); },
@@ -267,12 +288,12 @@ function fixture({
     semanticStateStore:{
       listCurrentState(threadId) {
         if (threadId === mina.threadId) {
-          return [{ stateId:"sem_mina", domain:"emotion", dimension:"felt_state", target:null, state:"open and quietly affectionate" }];
+          return [{ stateId:"sem_mina", threadId:mina.threadId, domain:"emotion", dimension:"felt_state", target:null, state:"open and quietly affectionate" }];
         }
         if (threadId === noor.threadId) {
-          return [{ stateId:"sem_noor", domain:"need", dimension:"solitude", target:null, state:"wants continuity and low interruption" }];
+          return [{ stateId:"sem_noor", threadId:noor.threadId, domain:"need", dimension:"solitude", target:null, state:"wants continuity and low interruption" }];
         }
-        return [{ stateId:"sem_sela", domain:"emotion", dimension:"felt_state", target:null, state:"quietly observant and sensitive to interpersonal tension" }];
+        return [{ stateId:"sem_sela", threadId:sela.threadId, domain:"emotion", dimension:"felt_state", target:null, state:"quietly observant and sensitive to interpersonal tension" }];
       },
     },
     memoryStore:{
