@@ -73,14 +73,14 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
     ["thr_cleo", thread("thr_cleo", "Cleo")],
   ]);
   const situations = new Map([
-    ["thr_ada", situation("thr_ada", "plce_ada_home@1")],
-    ["thr_ben", situation("thr_ben", "plce_ben_library@1")],
-    ["thr_cleo", situation("thr_cleo", "plce_cleo_cafe@1")],
+    ["thr_ada", situation("thr_ada", "per:plce_ada_home:1")],
+    ["thr_ben", situation("thr_ben", "per:plce_ben_library:1")],
+    ["thr_cleo", situation("thr_cleo", "per:plce_cleo_cafe:1")],
   ]);
   const plans = new Map([
-    ["thr_ada", plan("thr_ada", "plce_ada_home@1")],
-    ["thr_ben", plan("thr_ben", "plce_ben_library@1")],
-    ["thr_cleo", plan("thr_cleo", "plce_cleo_cafe@1")],
+    ["thr_ada", plan("thr_ada", "per:plce_ada_home:1")],
+    ["thr_ben", plan("thr_ben", "per:plce_ben_library:1")],
+    ["thr_cleo", plan("thr_cleo", "per:plce_cleo_cafe:1")],
   ]);
   const recordedPlans = [];
   const enacted = [];
@@ -145,7 +145,7 @@ test("Fibre Commons creates voluntary shared presence without moving anyone", as
   assert.equal(recordedPlans.length, 2, "only entering Threads should author Commons plans");
   assert.deepEqual(
     enacted.map((current) => current.location.placeRef),
-    ["plce_ada_home@1","plce_ben_library@1"],
+    ["per:plce_ada_home:1","per:plce_ben_library:1"],
     "Commons must preserve physical life",
   );
   assert.equal(
