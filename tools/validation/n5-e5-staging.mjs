@@ -138,7 +138,7 @@ function establishedAt(thread) {
 async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewerOrigin, privateToken, emit }) {
   const discovered = await publicThreads(presentationBaseUrl, viewerOrigin);
   const ordered = [...discovered]
-    .filter((thread) => thread?.lifecycleStatus === "active")
+    .filter((thread) => !["genesis_candidate","retired"].includes(thread?.lifecycleStatus))
     .sort((left, right) => establishedAt(right) - establishedAt(left));
   const refreshed = [];
   for (const thread of ordered.slice(0, MAX_REFRESHED_THREADS)) {
