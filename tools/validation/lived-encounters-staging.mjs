@@ -182,6 +182,43 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
         throw new Error(`World Observatory current situation disagrees with LivedNow for ${thread.threadId}`);
       }
       const presenceKeys = worldPresenceKeys(observatory);
+      process.stderr.write(`DEBUG interior-context ${JSON.stringify({
+        threadId:thread.threadId,
+        name:thread.displayName ?? observatory?.thread?.identity?.name ?? null,
+        currentActivity:currentSituation.activity,
+        currentReason:currentSituation.reason,
+        genomeLoci:(observatory?.symbolicGenomes ?? [])
+          .flatMap((bundle) => bundle?.loci ?? [])
+          .sort((left, right) => (left.ordinal ?? 0) - (right.ordinal ?? 0))
+          .slice(0, 12)
+          .map((locus) => locus.value),
+        identityAssertions:(observatory?.identityView?.assertions ?? [])
+          .filter((assertion) => assertion?.isCurrentRevision !== false)
+          .slice(0, 12)
+          .map((assertion) => ({
+            domain:assertion.domain,
+            kind:assertion.kind,
+            meaning:assertion.meaning,
+            behavioralStatus:assertion.behavioralStatus,
+          })),
+        semanticStates:(observatory?.semanticStates ?? []).slice(0, 12).map((state) => ({
+          domain:state.domain,
+          dimension:state.dimension,
+          state:state.state,
+          target:state.target?.displayName ?? null,
+        })),
+        memories:(observatory?.memories ?? []).slice(0, 6).map((memory) => ({
+          rememberedContent:memory.rememberedContent ?? null,
+          rememberedMeaning:memory.rememberedMeaning ?? null,
+          salience:memory.salience ?? null,
+          accessibility:memory.accessibility ?? null,
+        })),
+        lifeRelations:(observatory?.lifeRelations ?? []).slice(0, 12).map((relation) => ({
+          displayName:relation.relatedParty?.displayName ?? null,
+          relationKind:relation.relationKind,
+          relationshipFacts:relation.relationshipFacts ?? [],
+        })),
+      })}\n`);
       refreshed.push(Object.freeze({
         threadId:thread.threadId,
         displayName:thread.displayName ?? null,
