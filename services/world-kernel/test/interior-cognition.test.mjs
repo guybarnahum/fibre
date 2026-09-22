@@ -24,7 +24,7 @@ const ADAPTER = Object.freeze({
   }),
 });
 
-function sourceStores(threadId, memoryId, rememberedMeaning) {
+function sourceStores({ threadId, memoryId, rememberedMeaning }) {
   return {
     worldStore:{
       getThread(id) {
@@ -121,11 +121,11 @@ test("Interior Cognition lets different lived meaning bend the same private conc
       at:AT,
       concern:CONCERN,
       adapter:ADAPTER,
-      sourceStores:sourceStores(
-        "thr_person_a",
-        "mem-person-a",
-        "After a long solitary stretch, quiet company restored me without disrupting my work.",
-      ),
+      sourceStores:sourceStores({
+        threadId:"thr_person_a",
+        memoryId:"mem-person-a",
+        rememberedMeaning:"After a long solitary stretch, quiet company restored me without disrupting my work.",
+      }),
       modelAdapter:adapter,
     }),
     runInteriorCognition({
@@ -133,10 +133,11 @@ test("Interior Cognition lets different lived meaning bend the same private conc
       at:AT,
       concern:CONCERN,
       adapter:ADAPTER,
-      sourceStores:sourceStores(
-        "thr_person_b",
-        "When I let a shared room stay open while concentrating, I became tense and protected solitude afterward.",
-      ),
+      sourceStores:sourceStores({
+        threadId:"thr_person_b",
+        memoryId:"mem-person-b",
+        rememberedMeaning:"When I let a shared room stay open while concentrating, I became tense and protected solitude afterward.",
+      }),
       modelAdapter:adapter,
     }),
   ]);
