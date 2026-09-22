@@ -253,7 +253,7 @@ async function establishCommonsPresence({
       { threadIds:batch.map((candidate) => candidate.threadId) },
       "Fibre Commons",
     );
-    const entries = payload?.result?.entries ?? [];
+    const entries = payload?.entries ?? [];
     emit({
       event:"lived-encounters-commons-considered",
       entered:entries.filter((entry) => entry.outcome === "entered").length,
