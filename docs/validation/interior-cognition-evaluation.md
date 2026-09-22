@@ -1,7 +1,7 @@
 ---
 id: validation-interior-cognition-evaluation
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-09-22
 canonical: true
 ---
 
@@ -111,7 +111,7 @@ The focused proof uses a fixture model only to prove causal wiring. It gives the
 
 This does **not** count as the live semantic A/B evidence defined below. That evidence begins once a real domain consumer and real model profile are run against frozen Thread episodes.
 
-**Next slice:** Lived Planning uses the compact component as the first real domain adapter and tests whether persisted individual life bends an ordinary Flight Plan under equivalent World conditions.
+**Lived Planning — CLOSED locally.** Personal Flight Plan now uses the compact component as its first real domain adapter. The focused proof holds World conditions equivalent and shows persisted autobiographical remembered meaning bending ordinary intended life into different attributable plans.\n\n**Current validation slice: deployed Lived Planning.** Run `npm run lived-planning:staging` only after deploying the exact clean checkout to staging. The probe reuses existing LivedNow and private Observatory surfaces and treats `CurrentSituation.evidenceRefs` as the admitted causal witness from the governing plan. It requires multiple real staging Threads whose current lives cite differentiated autobiographical-memory or relationship evidence and whose current intended-life moments are not identical. It stores opaque refs, digests and counts rather than private prose. This proves deployed integration/attribution; the controlled local differential remains the stronger causal test.
 
 ## A/B comparison unit
 

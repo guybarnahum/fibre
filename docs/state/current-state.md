@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-09-22
 canonical: true
 ---
 
@@ -262,7 +262,7 @@ The read-only Interior Baseline has now completed against staging. It found a cl
 
 The compact reusable Interior Cognition core is now green. It proves the shared private-mind boundary can select bounded authoritative developed-self evidence under Fibre authority and make remembered meaning causally available to a domain-specific private judgment without exposing raw genome or owning domain state.
 
-E5 remains open while one real live Interior Cognition path is wired into present life. The next implementation slice is **Lived Planning**: personal Flight Plan becomes the first real consumer of the shared Interior Cognition component. After that, E5 exercises the deployed authorities together:
+E5 remains open while one real live Interior Cognition path is proven in deployed present life. **Lived Planning is now green locally**: personal Flight Plan is the first real consumer of the shared Interior Cognition component, and the controlled proof shows persisted remembered meaning can causally bend an otherwise equivalent ordinary plan. The current slice is the **Lived Planning Live Proof**: deploy the exact clean SHA and use the existing enacted `CurrentSituation.evidenceRefs` plus private Observatory authorities to verify that real staging plans are actually citing differentiated autobiographical/relationship history. The probe adds no new life semantics and does not force behavior. After that proof is grounded, migrate Commons/social deliberation behind the same Interior Cognition boundary and resume full E5 acceptance:
 
 ```text
 environmental occurrence
