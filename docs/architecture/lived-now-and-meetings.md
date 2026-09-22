@@ -52,7 +52,7 @@ Genesis / existing Thread life
 
 The meeting is not the life engine. It is one event inside the life engine.
 
-The life engine's private cognition must follow [Interior cognition](interior-cognition.md): organismic regulation and interoception create felt pressure; the Thread interprets that through its developed self/history; only then does planning or social deliberation occur. Flight Plan and meeting cognition must not bypass that interior loop by treating the neutral publication snapshot or raw genome as a finished personality.
+The life engine's private cognition must follow [Interior cognition](interior-cognition.md): organismic regulation and interoception create felt pressure; the Thread interprets that through its developed self/history; only then does planning or social deliberation occur. Flight Plan and meeting cognition are domain adapters over that one reusable private-mind component; they must not each construct an independent persona/context prompt. The neutral publication snapshot and raw genome are not finished personality.
 
 ## Terms
 

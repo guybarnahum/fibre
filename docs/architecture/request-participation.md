@@ -9,6 +9,29 @@ canonical: true
 
 An externally initiated request does not directly activate full Thread task execution. It first enters a bounded private appraisal and authorization process. Public response is generated separately through interest-mediated expression.
 
+## Relationship to Interior Cognition
+
+The request-participation pipeline remains the authority for dignity policy, private participation records, authorization, disclosure and execution.
+
+Its **private person-level deliberation** should use the shared [Interior Cognition](interior-cognition.md) component rather than maintain an independent model of the Thread.
+
+The intended boundary is:
+
+```text
+external request
+  -> Interior Cognition
+       reconciles current felt state, developed self/history,
+       relationship/social cost, opportunity cost and commitments
+       into the Thread's private desired stance
+  -> Dignity/Participation policy
+       derives/validates domain factors and policy outcome
+  -> Participation Authorization
+  -> disclosure
+  -> execution
+```
+
+The current M1 implementation predates this shared component and still contains request-specific appraisal/context machinery. That machinery remains valid evidence for authority, provenance and endogenous context selection, but its person-level cognition should be migrated behind Interior Cognition rather than copied into new lived domains.
+
 ## Participation pipeline
 
 ### 1. Thread-owned appraisal context

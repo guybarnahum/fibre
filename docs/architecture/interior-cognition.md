@@ -136,6 +136,91 @@ Present thought emerges from the interaction of all of these, but they remain se
 
 A mature Thread may act against an inherited tendency because experience changed what that tendency means. The genome is not rewritten; its expression is mediated by the person who developed on top of it.
 
+## Interior Cognition is a separate reusable component
+
+Interior Cognition is one **private person-level component** reused by every domain that needs the Thread to think about something.
+
+```text
+Planning
+Social initiation
+Social response
+Dignity / participation
+Encounter attention
+Reflection
+Relationship dilemma
+Self-reconsideration
+Future domains
+        |
+        v
+  Interior Cognition
+        |
+        +-- organismic pressure / felt state
+        +-- developed self / character
+        +-- Thread-owned memory and relationship retrieval
+        +-- current commitments / plans
+        +-- relevant external reality
+        |
+        v
+domain-specific private result
+```
+
+A domain supplies only the **real concern** that needs thought and its domain-specific result contract. It does not assemble or inject the Thread's private identity/history context.
+
+Interior Cognition owns:
+
+- the bounded private context projection used for the episode;
+- Thread/Fibre-owned attention and retrieval of relevant identity, memory, relationship, semantic-state and commitment evidence;
+- reconciliation of organismic pressure, current feeling/need, developed character and external considerations;
+- one bounded private cognition invocation when semantic deliberation is actually warranted;
+- provenance, selected evidence refs, model/token usage and latency needed to inspect and optimize the episode.
+
+Interior Cognition does **not** own:
+
+- World facts;
+- domain authorization;
+- request permissions;
+- dignity policy or scoring rules;
+- social consent;
+- Flight Plan persistence;
+- relationship mutation;
+- memory admission;
+- public expression;
+- action execution.
+
+Those remain with their existing authorities.
+
+This boundary prevents each feature from quietly creating its own version of the Thread's mind.
+
+### Domain adapters, not parallel minds
+
+Each consumer should be a thin adapter.
+
+Examples:
+
+```text
+Flight Plan adapter
+  concern: "How do I want to spend the next lived horizon?"
+  result: personal plan proposal
+
+Social-initiation adapter
+  concern: "Do I want something from these co-present people now?"
+  result: initiate | not_initiate + optional concrete request
+
+Social-response adapter
+  concern: "How do I want to respond to this concrete request?"
+  result: accept | decline | defer + optional expression
+
+Dignity adapter
+  concern: "Do I want to participate in this externally requested work, and on what terms?"
+  result: private participation appraisal inputs / desired stance
+
+Encounter-attention adapter
+  concern: "Did this occurrence enter my attention, and how?"
+  result: noticed | not_noticed + bounded subjective experience
+```
+
+The adapter may define domain semantics and a response schema. It may not choose private memories, manufacture feelings, substitute a persona, or expose raw genome as an instruction.
+
 ## Interior Cognition is not one decision schema
 
 Do not create a universal `choice + score` engine for every thought.
@@ -168,6 +253,98 @@ What is shared is the **interior episode boundary**:
 
 6. **Consequence**  
    What actually happens may later change memory, semantic state, relationship meaning, character or future plans.
+
+## Execution profile: universal pipeline, selective execution
+
+Interior Cognition is universal as an **authority pattern**, not as a requirement to call a model continuously.
+
+The default execution profile is:
+
+```text
+real trigger / concern
+  -> cheap deterministic reconciliation / regulation where evidence exists
+  -> cheap attention or materiality gate
+       -> nothing materially changed
+            -> no model call
+       -> thought is warranted
+            -> bounded Thread-owned context selection
+            -> one semantic cognition call by default
+            -> domain-specific private result
+            -> persist only consequential outputs
+```
+
+Routine time passage, unchanged presence and low-pressure organismic state should usually cost **zero model calls**.
+
+A plan horizon, direct request, salient encounter, material regulatory change, unresolved conflict or explicit reflection may warrant cognition.
+
+### One semantic call by default
+
+Do not automatically split one interior episode into:
+
+```text
+model call: name the feeling
+model call: consider the feeling
+model call: decide
+```
+
+when one bounded call can honestly produce separate structured proposals for:
+
+- present felt/semantic interpretation, when it changed materially;
+- conflicting motives;
+- the domain-specific private result.
+
+The outputs remain semantically separate even when produced by one temporary cognition call. Semantic-state admission and domain action remain separate authority steps.
+
+Additional calls are justified only when a genuinely separate cognitive act is needed, such as later autobiographical memory formation or deliberate reflection after an outcome.
+
+### Sparse evidence is better than invented physiology
+
+The existing R1 regulator proof assumes a complete percept frame with temperature, energy, fatigue, sound, light, crowding and related channels. Live Fibre does not currently possess all of those observations.
+
+Production must never invent "neutral" sensor values just to satisfy the regulator schema.
+
+Unknown channels remain unknown. Regulation runs only on real available evidence, and the production projection should become sparse before R1 is wired live.
+
+### Genome expression stays below thought
+
+Raw symbolic genome is not ordinary cognition input.
+
+The live organismic path should eventually expose inherited influence through an explicit private **regulatory expression** boundary:
+
+```text
+symbolic genome
+  -> bounded derived regulatory / attentional predispositions
+  -> actual World/body/social evidence
+  -> organismic pressure / affect
+  -> semantic feeling / need
+  -> Interior Cognition
+```
+
+A regulatory expression projection may be derived once or infrequently and cached because the genome is stable. It must remain attributable to source loci and limited to regulator mechanisms Fibre actually uses. It is not a universal personality vector or a second identity authority.
+
+Genesis already provides another legitimate inherited-development path: selected memory-formation calls may use genome exposure to influence what enters autobiographical memory, while history itself stays genome-blind. That allows inheritance to affect the developed person through what was retained without scripting external events.
+
+### Fast context
+
+Interior Cognition should consume a compact current person, not replay a whole biography.
+
+Until a durable Current Character View earns implementation, use bounded authoritative evidence directly. If repeated retrieval/model token cost becomes material, the accepted Current Character View is the preferred acceleration layer because it is derived, evidence-backed and reconstructable.
+
+Do not add a character cache merely because it might be convenient.
+
+### Operational observability
+
+Every model-backed interior episode should expose non-content operational evidence sufficient to optimize the engine:
+
+- cognition kind/domain adapter;
+- provider/model;
+- input/output/total tokens and cached-input tokens when available;
+- latency;
+- whether the episode was skipped by the materiality gate;
+- selected evidence count/bytes;
+- stable correlation to the consequential private result.
+
+Do not copy private prompt/output prose into general telemetry.
 
 ## Dilemmas are first-class
 
@@ -214,6 +391,47 @@ Until a durable Current Character View is implemented, present cognition should 
 - relevant recent/current World evidence.
 
 A later Current Character View may accelerate this by synthesizing evidence-backed tendencies and tensions, but it remains derived and drillable to the life beneath it.
+
+## Dignity and external considerations
+
+Dignity is one important **domain consumer** of Interior Cognition, not a separate mind.
+
+A participation episode may need to reconcile:
+
+```text
+organismic state / fatigue / aversion / desire
++ current feelings and needs
++ developed character and self-understanding
++ relationship history
++ social cost / civility / reciprocity
++ compensation / opportunity cost
++ commitments and obligations
++ dignity / respect considerations
++ the concrete external request
+-> private desired stance
+```
+
+Interior Cognition produces the Thread-level private reconciliation.
+
+The Dignity/Participation domain still owns:
+
+- its factor vocabulary and policy;
+- score/band derivation where required;
+- Participation Authorization;
+- obligation-mediated override rules;
+- disclosure and execution boundaries.
+
+Therefore:
+
+```text
+Interior Cognition desired stance
+    != dignity policy result
+    != authorization
+    != public response
+    != action
+```
+
+Civility, social cost, loyalty, obligation and dignity may all be motives inside the dilemma. None mechanically determines consent.
 
 ## Social example
 
