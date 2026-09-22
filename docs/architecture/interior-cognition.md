@@ -277,25 +277,83 @@ Routine time passage, unchanged presence and low-pressure organismic state shoul
 
 A plan horizon, direct request, salient encounter, material regulatory change, unresolved conflict or explicit reflection may warrant cognition.
 
-### One semantic call by default
+### Working hypothesis: one semantic call for one material interior episode
 
-Do not automatically split one interior episode into:
+This is an **engineering hypothesis to test**, not a settled Fibre law.
+
+The current hypothesis is:
+
+> **When one material inner dilemma can be represented faithfully in one bounded cognition episode, one semantic model call can usually reconcile felt state, developed self, relevant history and the current external concern well enough to produce a high-quality domain-specific private result, while materially reducing latency, token use and cost compared with decomposing the same moment across multiple model calls.**
+
+The competing concern is equally important:
+
+> **If one call compresses too much psychological work into one completion, it may flatten tension, reduce causal individuality, make feelings look post-hoc, or produce less coherent behavior than a deliberately staged cognition path.**
+
+Therefore Fibre must not assume that:
 
 ```text
-model call: name the feeling
-model call: consider the feeling
-model call: decide
+one call = elegant
 ```
 
-when one bounded call can honestly produce separate structured proposals for:
+or that:
 
-- present felt/semantic interpretation, when it changed materially;
-- conflicting motives;
-- the domain-specific private result.
+```text
+more calls = richer personhood
+```
 
-The outputs remain semantically separate even when produced by one temporary cognition call. Semantic-state admission and domain action remain separate authority steps.
+Both are empirical claims.
 
-Additional calls are justified only when a genuinely separate cognitive act is needed, such as later autobiographical memory formation or deliberate reflection after an outcome.
+The initial economical candidate is:
+
+```text
+material interior trigger
+  -> bounded Thread-owned context
+  -> one semantic cognition call
+       proposes:
+         current felt/semantic interpretation if materially changed
+         conflicting motives / uncertainty
+         domain-specific private result
+  -> separate authority/admission of each consequential output
+```
+
+The comparison candidate may split the same episode into distinct semantic acts, for example:
+
+```text
+call 1: interpret felt pressure / current meaning
+call 2: deliberate from that admitted state
+```
+
+Additional calls remain justified when they are genuinely different temporal/cognitive acts, such as autobiographical memory formation after an outcome or later deliberate reflection.
+
+#### Hypothesis test
+
+Before treating the one-call profile as the default production strategy, evaluate it against the decomposed profile on the **same persistent Threads, same external situations, same authoritative context and same domain result contract**.
+
+Measure both **personhood quality** and **operational economy**.
+
+Personhood quality should include at least:
+
+- **causal individuality** — material Thread-owned differences produce attributable behavioral differences under the standing differential/counterfactual controls;
+- **within-Thread coherence** — repeated trials remain recognizably characteristic rather than sampling noise;
+- **dilemma fidelity** — competing motives survive when both materially matter instead of being collapsed into a convenient single rationale;
+- **state/result coherence** — proposed feeling/need interpretation and the resulting private stance do not contradict each other without an inspectable reason;
+- **history sensitivity** — relevant memory, relationship and developed-self evidence can change the result while irrelevant context does not dominate;
+- **non-determinism without interchangeability** — Threads remain capable of surprise without collapsing into generic model behavior.
+
+Operational economy should include at least:
+
+- model calls per material interior episode;
+- input, cached-input and output tokens;
+- wall-clock latency;
+- provider cost under the dated pricing schedule used for the experiment;
+- context-selection bytes/items;
+- retry/schema-failure rate.
+
+The experiment should report the tradeoff rather than collapse it into a single magic score.
+
+A one-call profile is preferable only when its operational savings are meaningful **and** its personhood-quality evidence remains materially comparable to the decomposed profile. If quality degrades in a way that matters to Fibre identity, use the richer path. If the richer path adds cost/latency without improving causal individuality or coherence, keep the simpler path.
+
+Do not tune the evaluation fixtures to make either architecture win. Record the hypothesis, frozen scenarios, model/runtime, trial count and evaluation criteria before collecting the decisive results.
 
 ### Sparse evidence is better than invented physiology
 

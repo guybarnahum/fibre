@@ -287,7 +287,9 @@ Live staging has now falsified two hidden assumptions rather than being weakened
 
 The second finding exposed the next missing organism-level primitive: **shared live presence / convergence**. The smallest credible implementation is now Fibre Commons: a stable World-known ambient mediated common space that each Thread may independently keep open from her actual LivedNow while continuing ordinary life. Entry authors a short personal Flight Plan that preserves physical location and ongoing activity, adds Thread-owned reason for ambient presence, and gives World genuine shared mediated presence without teleportation or accidental Genesis-ID reuse. Commons does not imply social motivation, meeting consent or attention.
 
-The acceptance plumbing uses genuine existing shared presence when available and only falls back to Fibre Commons when staging has none. The live proof remains strict:
+The acceptance plumbing uses genuine existing shared presence when available and only falls back to Fibre Commons when staging has none. Before the live interior path is treated as production shape, Fibre will also test the economy/quality hypothesis recorded in [Interior cognition](../architecture/interior-cognition.md): one bounded semantic call per material interior episode versus a decomposed multi-call profile under the same persistent Threads and controlled situations. E5 must not be made to pass by choosing whichever cognition shape happens to produce more agreeable staging behavior; the comparison is about causal individuality, coherence, dilemma fidelity, latency and cost.
+
+The live proof remains strict:
 
 - deployed World exposes the already-proven E1 environmental encounter authority through a private operator route;
 - the private social-meeting adapter preserves E3's explicit `witnessThreadIds`;
