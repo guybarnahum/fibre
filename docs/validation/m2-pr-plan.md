@@ -265,7 +265,7 @@ N5 closes only when one coherent seam proves:
 
 Detailed execution is governed by [N5 encounter-story implementation slices](n5-encounter-slices.md).
 
-E5's deployment/acceptance harness is implemented and green locally in the repository gate, but live staging acceptance has not run: GitHub Actions currently lacks the staging Cloudflare/runtime credentials needed to deploy the exact source SHA. N5 therefore remains open; configuring that operator boundary and rerunning the existing E5 workflow is the next action, not adding more encounter semantics.
+E5's deployment/acceptance harness is implemented. Live staging acceptance is intentionally an operator-run validation using Fibre's existing deployment scripts and local `.env`: run `npm run cloud:prepare:staging` to provision/configure/deploy the exact clean source SHA, then run `npm run n5:e5:staging`. N5 remains open until that evidence passes; the next action is validation, not more encounter semantics.
 
 
 ## N6 — rich insidefibre.com meeting

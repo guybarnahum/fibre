@@ -204,7 +204,7 @@ The active execution plan is [N5 encounter-story implementation slices](../valid
 5. E4 journal book/optional rendering/Admin acceptance — **closed**;
 6. E5 staging acceptance — **current**.
 
-E5 implementation is ready and repository-green: the deployed World adapter now exposes the existing environmental encounter authority and preserves explicit silent-witness IDs through the social-meeting boundary, and a strict staging runner exercises the complete E1-E4 acceptance sequence against real Threads. Live execution is currently gated because GitHub Actions has no configured staging operator/runtime secrets; this does not count as acceptance and N5 remains open.
+E5 implementation is ready for operator validation: the deployed World adapter exposes the existing environmental encounter authority and preserves explicit silent-witness IDs through the social-meeting boundary, and a strict staging runner exercises the complete E1-E4 acceptance sequence against real Threads. Use the existing local operator path: `npm run cloud:prepare:staging` provisions/configures/deploys from local `.env`, then `npm run n5:e5:staging` runs acceptance. N5 remains open until that staging evidence passes.
 
 The three core semantic proofs are:
 
