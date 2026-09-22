@@ -58,6 +58,43 @@ interior-cognition-staged-deliberation
 
 The names describe enduring behavior, not roadmap coordinates.
 
+## Slice 1 — read-only staging baseline
+
+Before implementing Interior Cognition behavior, inspect the real staging cohort without changing it.
+
+Run:
+
+```bash
+npm run interior-cognition:baseline:staging
+```
+
+The baseline performs only GETs against the already-deployed staging World/Presentation surfaces. It does **not** ensure LivedNow, invoke a model, enter Commons, create encounters, or mutate Thread/World state.
+
+It reports, per Thread:
+
+- the intentionally sparse published Thread shell;
+- authoritative symbolic-genome presence and differentiation;
+- current identity-assertion counts;
+- current semantic-state counts/domains;
+- autobiographical-memory and remembered-meaning counts;
+- durable life-relationship counts;
+- the exact currently stored LivedNow activity/reason, if any;
+- bounded private previews for operator inspection.
+
+The cohort summary uses only mechanical counts/fingerprints. It does not label a Thread rich, poor, social, generic or psychologically healthy. Those interpretations require review of the actual evidence.
+
+The private report is written under `.fibre/interior-cognition/baseline/<runId>/report.json`. It is diagnostic evidence, not Thread authority and not a public artifact.
+
+Slice 1 closes when the staging baseline has been run and we can factually distinguish:
+
+```text
+authoritative developed-self evidence exists but current cognition does not consume it
+vs
+the required developed-self evidence itself is absent / thin
+```
+
+No Interior Cognition behavior should be implemented before that distinction is grounded in the run.
+
 ## A/B comparison unit
 
 Compare implementations on the same frozen **Interior Episode**:

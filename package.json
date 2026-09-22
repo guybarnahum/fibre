@@ -67,6 +67,7 @@
     "cloud:e2e": "node tools/deployment/run-with-progress.mjs cloud:e2e node --env-file-if-exists=.env tools/deployment/cloudflare-e2e.mjs",
     "cloud:prepare:staging": "npm run cloud:provision -- --env staging && npm run cloud:configure-secrets -- --env staging --file .env && npm run cloud:deploy -- --env staging && npm run cloud:deploy:apps -- --env staging --file .env",
     "lived-encounters:staging": "node tools/deployment/run-with-progress.mjs lived-encounters:staging node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-encounters-staging.mjs",
+    "interior-cognition:baseline:staging": "node tools/deployment/run-with-progress.mjs interior-cognition:baseline:staging node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/interior-cognition-staging-baseline.mjs",
     "deployment:validate": "node tools/deployment/validate-deployment-manifest.mjs",
     "deployment:validate:remote": "node tools/deployment/validate-deployment-manifest.mjs infra/deployments/environments/cloudflare.yaml",
     "validate": "node tools/repository/validate-repo.mjs && node --disable-warning=ExperimentalWarning tools/repository/validate-world-seed.mjs && node tools/deployment/validate-deployment-manifest.mjs && node tools/deployment/validate-deployment-manifest.mjs infra/deployments/environments/cloudflare.yaml",
