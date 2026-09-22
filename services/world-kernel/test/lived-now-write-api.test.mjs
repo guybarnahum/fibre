@@ -89,3 +89,50 @@ test("N4 meeting entry cannot choose the Thread's time or scene", async () => {
   assert.equal(ensureCalls, 0);
 });
 
+test("private LivedNow failure exposes bounded runtime diagnostics", async () => {
+  const failure = new Error("provider rejected the model request");
+  failure.name = "GuardianModelError";
+  failure.code = "MODEL_HTTP_ERROR";
+  failure.retryable = false;
+  failure.httpStatus = 400;
+  failure.providerErrorCode = "invalid_json_schema";
+  failure.providerErrorType = "invalid_request_error";
+  failure.fibreStage = "interior_cognition.model_invoke";
+  failure.fibreDiagnostics = {
+    adapterId:"lived-planning",
+    selectedEvidenceItems:7,
+    selectedEvidenceBytes:912,
+    selectedEvidenceKinds:{ memory:4, relationship:3 },
+  };
+  const api = createLivedNowWriteApi({
+    privateToken:TOKEN,
+    livedNow:{
+      async ensure() {
+        throw failure;
+      },
+    },
+    publication:{
+      async publishCurrentSituation() {
+        throw new Error("should not publish");
+      },
+    },
+  });
+
+  const originalError = console.error;
+  let logged = "";
+  console.error = (value) => { logged = String(value); };
+  try {
+    const response = await api.fetch(request({ threadId:THREAD_ID }));
+    assert.equal(response.status, 503);
+    const payload = await response.json();
+    assert.equal(payload.code, "MODEL_HTTP_ERROR");
+    assert.equal(payload.detail, "provider rejected the model request");
+    assert.equal(payload.diagnostics.stage, "interior_cognition.model_invoke");
+    assert.equal(payload.diagnostics.httpStatus, 400);
+    assert.equal(payload.diagnostics.providerErrorCode, "invalid_json_schema");
+    assert.equal(payload.diagnostics.interior.selectedEvidenceItems, 7);
+    assert.match(logged, /lived-now-reconciliation-failed/u);
+  } finally {
+    console.error = originalError;
+  }
+});

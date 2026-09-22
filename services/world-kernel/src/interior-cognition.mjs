@@ -277,12 +277,44 @@ export async function runInteriorCognition({
     evidenceRefs,
   })).slice(0, 24)}`;
   const startedAt = Date.now();
-  const invocation = await modelAdapter.invoke({
-    clientRequestId:requestId,
-    systemPrompt:`${BASE_PROMPT}\n\nDomain instruction:\n${normalizedAdapter.instruction}`,
-    input,
-    responseSchema:responseSchema(normalizedAdapter, evidenceRefs),
-  });
+  let invocation;
+  try {
+    invocation = await modelAdapter.invoke({
+      clientRequestId:requestId,
+      systemPrompt:`${BASE_PROMPT}\n\nDomain instruction:\n${normalizedAdapter.instruction}`,
+      input,
+      responseSchema:responseSchema(normalizedAdapter, evidenceRefs),
+    });
+  } catch (error) {
+    if (error !== null && typeof error === "object") {
+      const evidenceKinds = {};
+      for (const item of selected.evidence) {
+        evidenceKinds[item.kind] = (evidenceKinds[item.kind] ?? 0) + 1;
+      }
+      try {
+        error.fibreStage ??= "interior_cognition.model_invoke";
+        error.fibreDiagnostics ??= Object.freeze({
+          requestId,
+          threadId,
+          threadVersion:thread.version,
+          concernKind:normalizedConcern.kind,
+          adapterId:normalizedAdapter.id,
+          provider:modelAdapter.provider ?? null,
+          modelId:modelAdapter.modelId ?? null,
+          selectedEvidenceItems:selected.evidence.length,
+          selectedEvidenceBytes:selected.evidenceBytes,
+          selectedEvidenceKinds:Object.freeze(evidenceKinds),
+          currentState:Object.freeze({
+            needs:currentState.needs.length,
+            feelings:currentState.feelings.length,
+            unresolvedIntentions:currentState.unresolvedIntentions.length,
+            hasSelfModel:typeof currentState.selfModel === "string" && currentState.selfModel.trim() !== "",
+          }),
+        });
+      } catch {}
+    }
+    throw error;
+  }
   const latencyMs = Math.max(0, Date.now() - startedAt);
   const output = invocation.output;
   assertPlainObject("Interior Cognition output", output);

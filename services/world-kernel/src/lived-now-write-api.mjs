@@ -32,11 +32,24 @@ function json(value, status = 200) {
   });
 }
 
-function safeReconciliationDetail(error, code) {
-  if (code !== "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR") return null;
-  return typeof error?.message === "string" && error.message.trim() !== ""
-    ? error.message
-    : null;
+function safeText(value, maximum = 1200) {
+  if (typeof value !== "string" || value.trim() === "") return null;
+  return value.trim().slice(0, maximum);
+}
+
+function reconciliationDiagnostics(error, fallbackStage) {
+  return Object.freeze({
+    stage:safeText(error?.fibreStage, 120) ?? fallbackStage,
+    errorName:safeText(error?.name, 120) ?? error?.constructor?.name ?? "Error",
+    retryable:typeof error?.retryable === "boolean" ? error.retryable : null,
+    httpStatus:Number.isInteger(error?.httpStatus) ? error.httpStatus : null,
+    providerErrorCode:safeText(error?.providerErrorCode, 240),
+    providerErrorType:safeText(error?.providerErrorType, 240),
+    actionHint:safeText(error?.actionHint, 500),
+    interior:error?.fibreDiagnostics && typeof error.fibreDiagnostics === "object"
+      ? structuredClone(error.fibreDiagnostics)
+      : null,
+  });
 }
 
 export function createLivedNowWriteApi({
@@ -71,11 +84,13 @@ export function createLivedNowWriteApi({
         return json({ error: "invalid_lived_now_request", detail: error.message }, 400);
       }
 
+      let stage = "lived_now.ensure";
       try {
         const situation = await livedNow.ensure({
           threadId: body.threadId,
           at: now(),
         });
+        stage = "lived_now.publish_current_situation";
         const published = await publication.publishCurrentSituation(situation);
         return json({
           ok: true,
@@ -93,11 +108,20 @@ export function createLivedNowWriteApi({
         const code = typeof error?.code === "string" && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u.test(error.code)
           ? error.code
           : "LIVED_NOW_RECONCILIATION_FAILED";
-        const detail = safeReconciliationDetail(error, code);
+        const detail = safeText(error?.message);
+        const diagnostics = reconciliationDiagnostics(error, stage);
+        console.error(JSON.stringify({
+          event:"lived-now-reconciliation-failed",
+          threadId:body.threadId,
+          code,
+          detail,
+          diagnostics,
+        }));
         return json({
           error: "lived_now_reconciliation_failed",
           code,
           ...(detail === null ? {} : { detail }),
+          diagnostics,
         }, 503);
       }
     },

@@ -90,7 +90,27 @@ async function privatePost(baseUrl, pathname, privateToken, body, label) {
   });
   const payload = await responseJson(response, label);
   if (!response.ok || payload?.ok !== true) {
-    throw new Error(`${label} failed HTTP ${response.status}: ${payload?.error ?? "unknown"} ${payload?.detail ?? ""}`.trim());
+    const diagnostics = payload?.diagnostics ?? {};
+    const interior = diagnostics?.interior ?? null;
+    const parts = [
+      payload?.error ?? "unknown",
+      payload?.code ? `code=${payload.code}` : null,
+      diagnostics?.stage ? `stage=${diagnostics.stage}` : null,
+      diagnostics?.errorName ? `error=${diagnostics.errorName}` : null,
+      diagnostics?.httpStatus !== null && diagnostics?.httpStatus !== undefined
+        ? `provider_http=${diagnostics.httpStatus}`
+        : null,
+      diagnostics?.providerErrorCode ? `provider_code=${diagnostics.providerErrorCode}` : null,
+      diagnostics?.providerErrorType ? `provider_type=${diagnostics.providerErrorType}` : null,
+      diagnostics?.retryable !== null && diagnostics?.retryable !== undefined
+        ? `retryable=${diagnostics.retryable}`
+        : null,
+      payload?.detail ? `detail=${payload.detail}` : null,
+      interior ? `interior=${JSON.stringify(interior)}` : null,
+    ].filter(Boolean);
+    const error = new Error(`${label} failed HTTP ${response.status}: ${parts.join(" | ")}`);
+    error.payload = payload;
+    throw error;
   }
   return payload.result;
 }
@@ -260,7 +280,7 @@ export async function runLivedPlanningStagingProof({
         evidenceKinds:[...new Set(row.developedEvidenceRefs.map((item) => item.kind))],
       });
     } catch (error) {
-      const reason = String(error?.message ?? error).slice(0, 320);
+      const reason = String(error?.message ?? error).slice(0, 1600);
       skipped.push(Object.freeze({ threadId:thread.threadId, reason }));
       emit({ event:"lived-planning-thread-skipped", threadId:thread.threadId, reason });
     }
