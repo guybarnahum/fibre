@@ -559,6 +559,16 @@ DNA / inherited substrate
 
 This is operator inspection, not public Thread presentation.
 
+## Replaceability and tuning
+
+Interior Cognition should remain one compact, replaceable component. Domain code should depend on its stable concern/result boundary rather than a specific prompt, model, number of calls or context-selection implementation.
+
+This makes it practical to A/B test new cognition profiles against the incumbent without rewriting Flight Plan, social, dignity or reflection domains.
+
+The evaluation contract is [Interior Cognition evaluation](../validation/interior-cognition-evaluation.md). It deliberately keeps quality and compute separate rather than inventing one composite score.
+
+The architecture is stable; implementation profile choices are experimental.
+
 ## Implementation status
 
 The lower half is already proven in bounded R1-R4 tests:
