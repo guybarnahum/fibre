@@ -232,6 +232,31 @@ For requested meetings, the social reason is not supplied by the caller: a Threa
 
 The recipient appraises the request against the current situation and the totality of the actual relationship/history available to the Thread. Ordinary civility may create pressure to acknowledge another person's ask, but that pressure is never consent: a busy or unwilling Thread may decline, defer, answer sharply, answer politely, or sometimes ignore the request.
 
+Recent social interaction also creates **momentum** without becoming a score or consent rule. Encounter Stories and the outward participation record can answer factual questions such as who initiated recently, whether the other Thread accepted/declined/deferred, and how recently the interaction occurred. The perceiving Thread's private experience, journal, memory and relationship state may give that shared history a very different personal meaning.
+
+A private choice not to initiate is not an Encounter Story and is not social history for the other Thread. If no outward request occurred, nothing reciprocal happened.
+
+This lets Fibre distinguish, for example:
+
+```text
+she declined yesterday because she was busy
+```
+
+from:
+
+```text
+she has repeatedly declined my recent approaches
+```
+
+and from:
+
+```text
+she initiated toward me twice this week and I enjoyed both encounters
+```
+
+without collapsing any of them into a permanent relationship label.
+
+
 Automatic incidental-witness discovery is a later extension of the same model: World can derive candidate witnesses from compatible LivedNow presence, then each Thread independently notices or does not notice the occurrence.
 
 ## Presence and place

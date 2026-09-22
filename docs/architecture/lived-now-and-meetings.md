@@ -301,6 +301,38 @@ Commons does not imply conversation, friendship, attention, or meeting acceptanc
 
 The caller may identify Threads to consider the Commons opportunity, but cannot author why they enter, force entry, choose their physical scene, or author the later social overture. This is a bounded convergence seam, not a scheduler, room framework, or social session system.
 
+### Situated social context and momentum
+
+Shared presence is only opportunity. A credible social overture should be formed from a bounded **situated social context** owned by World/Fibre rather than a caller-authored persona packet.
+
+For each potential counterparty, that context may include only authorized observable facts such as:
+
+- canonical visible embodiment / approximate encounter-time age where relevant;
+- current observable activity and outward behavior;
+- whether the counterparty is known or unfamiliar;
+- the actual physical or mediated place and its social affordance;
+- recent admitted outward interaction between the same parties.
+
+The initiator's private relationship facts, memories, feelings, needs and interpretations remain Thread-owned context selected through Interior Cognition. The counterparty's private interior never becomes input merely because she is being considered socially.
+
+Recent reciprocal history should be derived on demand from authoritative social events and stances, for example:
+
+```text
+A initiated -> B accepted
+B initiated -> A accepted
+A initiated -> B deferred
+A initiated -> B declined
+```
+
+This is **social momentum**, not a durable scalar. Do not add a `socialMomentumScore` or mechanically translate recent acceptance into consent. Recency, direction, context and the Thread's own remembered meaning all matter.
+
+A private decision not to initiate creates no shared interaction record. Only outward social action and the other party's observable response can become reciprocal history.
+
+Appearance can be part of observable social reality. Where developmentally appropriate, another person's visible embodiment may become attractive, uninteresting or aversive to this particular Thread through her own orientation, preferences, regulation, experience and cognition. Fibre must not represent beauty or attraction as an objective person-level score.
+
+Place matters similarly. A quiet library, café, household, work session, crowded event, transit setting and Fibre Commons create different affordances even when the same two Threads are present.
+
+
 
 
 Before a requested social encounter:

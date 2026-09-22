@@ -509,6 +509,81 @@ Civility may become one motive in the recipient's deliberation. It is never cons
 
 Presence in Fibre Commons is therefore an affordance, not a manufactured motive.
 
+### Social cognition needs person, history, momentum and place
+
+For a social decision, organismic pressure is only the **motive layer**. The Thread must also perceive enough of the actual social situation to decide why this person, here, now.
+
+A useful causal shape is:
+
+```text
+organismic/social pull or push
+  +
+observable counterparty
+  appearance / age / activity / outward expression / familiarity
+  +
+my history with this counterparty
+  relationship facts
+  remembered prior encounters
+  current relationship attitude
+  +
+recent social momentum
+  who initiated recently
+  accept / decline / defer history
+  reciprocity / interruption / unfinished exchange
+  +
+current place and social affordance
+  physical or mediated setting
+  what each person is doing
+  whether approach is natural, disruptive or ambiguous
+        |
+        v
+Interior Cognition
+        |
+        v
+initiate | not_initiate
+```
+
+These inputs have different authorities and must remain separate.
+
+**Counterparty perception** is observable exterior context only. A Thread may perceive another Thread's canonical embodiment, approximate visible age, outward behavior, current activity and other authorized scene facts. It may not read the other Thread's private feelings, memories or intentions.
+
+Visual appearance may become socially or sexually salient where developmentally appropriate, but Fibre must never store or consume a universal `attractivenessScore`. Observable appearance becomes evidence; the perceiving Thread's own orientation, preferences, history, regulation and cognition determine whether attraction exists or matters.
+
+**Shared history** is not the raw Encounter Story alone. Prior encounters may matter through the initiator's own remembered experience, relationship state and current interpretation. Two Threads may carry different meanings from the same prior meeting.
+
+**Social momentum** is short-lived reciprocal context derived from recent admitted social interaction. Examples include:
+
+```text
+she initiated yesterday and I accepted
+I initiated twice recently and she declined
+we just had an easy conversation
+she deferred because she was busy and the context has now changed
+```
+
+Do not persist a magic `socialMomentumScore`. Derive a small evidence-backed recent-social-history capsule from admitted Encounter Stories, outward requests and participation stances, optionally combined with the Thread's own private experience/memory of those events.
+
+A private `not_initiate` decision is not shared social history. If I considered speaking and stayed silent, the other Thread does not know that happened. An outward request plus accept/decline/defer is shared interaction history and may legitimately affect both participants later, while each retains a different private interpretation.
+
+Momentum should decay and remain contextual rather than becoming permanent relationship truth. A refusal under one circumstance is not a timeless rejection; recent mutual initiation may lower friction without creating consent.
+
+**Place** is part of the concern, not decoration. The same counterparty may create a different social affordance in a quiet library, café, household, work session, crowded event, transit setting or Fibre Commons. Interior Cognition should receive bounded observable scene context rather than only an opaque place reference when World actually knows more.
+
+The eventual social question is therefore not merely:
+
+```text
+Do I need social contact?
+```
+
+It is:
+
+```text
+Something in me is socially pulling or pushing.
+Given who she appears to be, what has happened between us,
+our recent social momentum, and what this place makes natural,
+do I actually want to approach her now?
+```
+
+
 ## Flight Plan example
 
 A Flight Plan should eventually be the output of an interior planning episode, not a generic itinerary generator.
