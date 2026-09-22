@@ -300,6 +300,16 @@ test("N3 Genesis enters the same LivedNow seam and survives multi-day dormancy",
     const modelAdapter = {
       async invoke(request) {
         cognitionCalls += 1;
+        if (request.input?.interoception) {
+          return {
+            output:{ states:[] },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-genesis-interoception",
+              providerRequestId:request.clientRequestId,
+            },
+          };
+        }
         const context = request.input.concern.externalContext;
         const placeRef = context.startingPlaceRef ?? context.availablePlaces[0].ref;
         return {

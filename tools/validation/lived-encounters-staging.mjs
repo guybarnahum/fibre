@@ -326,6 +326,13 @@ async function establishCommonsPresence({
       const observatory = observatoryPayload?.observatory;
       const situation = observatory?.livedNow?.currentSituation;
       const presenceKeys = worldPresenceKeys(observatory);
+      const semanticStates = observatory?.semanticStates ?? [];
+      emit({
+        event:"lived-encounters-commons-interior",
+        threadId:entry.threadId,
+        semanticStateCount:semanticStates.length,
+        semanticDimensions:semanticStates.map((state) => `${state.domain}:${state.dimension}`),
+      });
       if (!situation || !presenceKeys.some((key) => key.startsWith("mediated:"))) {
         throw new Error(`Fibre Commons entry did not become durable shared presence for ${entry.threadId}`);
       }

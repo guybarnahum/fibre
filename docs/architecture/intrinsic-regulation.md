@@ -362,6 +362,26 @@ For simpler animals, a bounded behavior controller may eventually consume Regula
 
 No high-frequency organism simulator is required.
 
+### Sparse live evidence
+
+A live regulator pulse must operate on **only the channels Fibre actually knows at that moment**.
+
+Missing temperature, energy, fatigue, light, sound, crowding or openness is not a neutral value. It is unknown and therefore produces no corresponding drive. A sparse pulse may legitimately contain only an authoritative presence/commitment target from a Flight Plan plus the enacted CurrentSituation.
+
+This lets Fibre connect the organismic loop before it has a complete sensorium without fabricating physiology:
+
+```text
+known Flight Plan presence target
+  + enacted World presence
+  -> sparse RegulationFrame
+  -> meaningful transition?
+       no  -> no cognition
+       yes -> interoception -> possible semantic state
+```
+
+The first production bridge uses this existing plan-vs-lived evidence. Richer body/environment/social channels can join later when they have real authority.
+
+
 Evaluate when something can materially change regulation: World/situation transitions, meaningful clock boundaries, movement/progress, social-presence changes, salient sensory changes, resource/rest/thermal changes, or plans/cognition.
 
 Recompute deterministic time-dependent values lazily. Persist durable targets/configuration and consequential transitions/checkpoints needed for replay, not every numeric tick or sensor sample.

@@ -106,22 +106,30 @@ function normalizeRefs(name, value) {
   return refs;
 }
 
-function normalizeEnvironment(value) {
+function optionalFinite(name, value) {
+  return value === undefined ? undefined : finite(name, value);
+}
+
+function optionalUnit(name, value) {
+  return value === undefined ? undefined : unit(name, value);
+}
+
+function normalizeEnvironment(value = {}) {
   plainObject("perceptFrame.environment", value);
   return {
-    temperatureC: finite("perceptFrame.environment.temperatureC", value.temperatureC),
-    lightLevel: unit("perceptFrame.environment.lightLevel", value.lightLevel),
-    soundLoad: unit("perceptFrame.environment.soundLoad", value.soundLoad),
-    crowding: unit("perceptFrame.environment.crowding", value.crowding),
-    openness: unit("perceptFrame.environment.openness", value.openness),
+    temperatureC: optionalFinite("perceptFrame.environment.temperatureC", value.temperatureC),
+    lightLevel: optionalUnit("perceptFrame.environment.lightLevel", value.lightLevel),
+    soundLoad: optionalUnit("perceptFrame.environment.soundLoad", value.soundLoad),
+    crowding: optionalUnit("perceptFrame.environment.crowding", value.crowding),
+    openness: optionalUnit("perceptFrame.environment.openness", value.openness),
   };
 }
 
-function normalizeInternal(value) {
+function normalizeInternal(value = {}) {
   plainObject("perceptFrame.internal", value);
   return {
-    energy: unit("perceptFrame.internal.energy", value.energy),
-    fatigue: unit("perceptFrame.internal.fatigue", value.fatigue),
+    energy: optionalUnit("perceptFrame.internal.energy", value.energy),
+    fatigue: optionalUnit("perceptFrame.internal.fatigue", value.fatigue),
   };
 }
 
@@ -147,8 +155,8 @@ export function normalizePerceptFrame(value) {
   if (!Array.isArray(social)) throw new TypeError("perceptFrame.social must be an array");
   return {
     asOf: isoTimestamp("perceptFrame.asOf", value.asOf),
-    internal: normalizeInternal(value.internal),
-    environment: normalizeEnvironment(value.environment),
+    internal: normalizeInternal(value.internal ?? {}),
+    environment: normalizeEnvironment(value.environment ?? {}),
     social: social.map(normalizeSocialCue),
     evidenceRefs: normalizeRefs("perceptFrame.evidenceRefs", value.evidenceRefs),
   };
@@ -225,44 +233,86 @@ function drive({ family, targetRef, orientation, pressure, urgency, progressErro
 function basalDrives(percept, profile) {
   const species = THREAD_SPECIES_PROFILE;
   const { environment, internal, evidenceRefs } = percept;
+  const drives = [];
 
-  const thermalPressure = outsideBand(
-    environment.temperatureC,
-    species.thermalComfortC[0],
-    species.thermalComfortC[1],
-    species.thermalShoulderC,
-  ) * profile.sensitivity.thermal;
+  if (environment.temperatureC !== undefined) {
+    const thermalPressure = outsideBand(
+      environment.temperatureC,
+      species.thermalComfortC[0],
+      species.thermalComfortC[1],
+      species.thermalShoulderC,
+    ) * profile.sensitivity.thermal;
+    drives.push(drive({
+      family:"thermal_comfort",
+      targetRef:"self:thermal-comfort",
+      orientation:"maintain",
+      pressure:thermalPressure,
+      urgency:thermalPressure,
+      evidenceRefs,
+    }));
+  }
 
-  const energyPressure = internal.energy >= species.energyFloor
-    ? 0
-    : ((species.energyFloor - internal.energy) / species.energyFloor) * profile.sensitivity.energy;
+  if (internal.energy !== undefined) {
+    const energyPressure = internal.energy >= species.energyFloor
+      ? 0
+      : ((species.energyFloor - internal.energy) / species.energyFloor) * profile.sensitivity.energy;
+    drives.push(drive({
+      family:"energy",
+      targetRef:"self:energy",
+      orientation:"maintain",
+      pressure:energyPressure,
+      urgency:energyPressure,
+      evidenceRefs,
+    }));
+  }
 
-  const restPressure = internal.fatigue <= species.fatigueThreshold
-    ? 0
-    : ((internal.fatigue - species.fatigueThreshold) / (1 - species.fatigueThreshold)) * profile.sensitivity.rest;
+  if (internal.fatigue !== undefined) {
+    const restPressure = internal.fatigue <= species.fatigueThreshold
+      ? 0
+      : ((internal.fatigue - species.fatigueThreshold) / (1 - species.fatigueThreshold)) * profile.sensitivity.rest;
+    drives.push(drive({
+      family:"rest",
+      targetRef:"self:recovery",
+      orientation:"maintain",
+      pressure:restPressure,
+      urgency:restPressure,
+      evidenceRefs,
+    }));
+  }
 
   const comfort = species.sensoryComfort;
-  const lightPressure = environment.lightLevel < comfort.lightMin
-    ? (comfort.lightMin - environment.lightLevel) / comfort.lightMin
-    : environment.lightLevel > comfort.lightMax
-      ? (environment.lightLevel - comfort.lightMax) / (1 - comfort.lightMax)
-      : 0;
-  const enclosurePressure = environment.openness < comfort.opennessMin
-    ? (comfort.opennessMin - environment.openness) / comfort.opennessMin
-    : 0;
-  const sensoryPressure = Math.max(
-    excess(environment.soundLoad, comfort.soundLoad),
-    excess(environment.crowding, comfort.crowding),
-    clamp01(lightPressure),
-    clamp01(enclosurePressure),
-  ) * profile.sensitivity.sensory;
+  const sensorySignals = [];
+  if (environment.soundLoad !== undefined) sensorySignals.push(excess(environment.soundLoad, comfort.soundLoad));
+  if (environment.crowding !== undefined) sensorySignals.push(excess(environment.crowding, comfort.crowding));
+  if (environment.lightLevel !== undefined) {
+    sensorySignals.push(clamp01(
+      environment.lightLevel < comfort.lightMin
+        ? (comfort.lightMin - environment.lightLevel) / comfort.lightMin
+        : environment.lightLevel > comfort.lightMax
+          ? (environment.lightLevel - comfort.lightMax) / (1 - comfort.lightMax)
+          : 0,
+    ));
+  }
+  if (environment.openness !== undefined) {
+    sensorySignals.push(clamp01(
+      environment.openness < comfort.opennessMin
+        ? (comfort.opennessMin - environment.openness) / comfort.opennessMin
+        : 0,
+    ));
+  }
+  if (sensorySignals.length > 0) {
+    const sensoryPressure = Math.max(...sensorySignals) * profile.sensitivity.sensory;
+    drives.push(drive({
+      family:"sensory_load",
+      targetRef:"environment:sensory-load",
+      orientation:"avoid",
+      pressure:sensoryPressure,
+      urgency:sensoryPressure,
+      evidenceRefs,
+    }));
+  }
 
-  return [
-    drive({ family: "thermal_comfort", targetRef: "self:thermal-comfort", orientation: "maintain", pressure: thermalPressure, urgency: thermalPressure, evidenceRefs }),
-    drive({ family: "energy", targetRef: "self:energy", orientation: "maintain", pressure: energyPressure, urgency: energyPressure, evidenceRefs }),
-    drive({ family: "rest", targetRef: "self:recovery", orientation: "maintain", pressure: restPressure, urgency: restPressure, evidenceRefs }),
-    drive({ family: "sensory_load", targetRef: "environment:sensory-load", orientation: "avoid", pressure: sensoryPressure, urgency: sensoryPressure, evidenceRefs }),
-  ];
+  return drives;
 }
 
 function sensedEntityPresence(target, percept) {

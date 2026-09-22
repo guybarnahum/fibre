@@ -231,6 +231,70 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
     lived.close();
   }));
 
+test("a real LivedNow transition can become current interior state exactly once", async () =>
+  withDatabase(async (databasePath) => {
+    const life = seedLife(databasePath);
+    const storage = localWorldStateStorage(databasePath);
+    const lived = openLivedNowStore(storage);
+    const world = openWorldStore(storage);
+    const semantic = openSemanticStateStore(storage);
+    lived.recordPlan(personalPlan(life));
+
+    let interoceptionCalls = 0;
+    const service = createLivedNowService({
+      livedNowStore:lived,
+      worldStore:world,
+      semanticStateStore:semantic,
+      modelAdapter:{
+        async invoke(call) {
+          assert.ok(call.input?.interoception, "only grounded interoception should wake cognition");
+          interoceptionCalls += 1;
+          return {
+            output:{
+              states:[{
+                domain:"emotion",
+                dimension:"felt_state",
+                state:"I feel a small sense of arrival now that I am where I meant to be.",
+              }],
+            },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-lived-now-interoception",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        },
+      },
+    });
+
+    await service.ensure({
+      threadId:life.thread.threadId,
+      at:"2026-09-10T05:20:00Z",
+    });
+    assert.equal(interoceptionCalls, 0, "initial observation should not invent a transition");
+
+    const arrived = await service.ensure({
+      threadId:life.thread.threadId,
+      at:"2026-09-10T05:30:00Z",
+    });
+    assert.equal(arrived.location.placeRef, life.libraryRef);
+    assert.equal(interoceptionCalls, 1, "arrival should earn one grounded interior interpretation");
+
+    const states = semantic.listCurrentState(life.thread.threadId);
+    assert.equal(states.length, 1, "grounded arrival may become current semantic state");
+    assert.match(states[0].state, /where I meant to be/u);
+
+    await service.ensure({
+      threadId:life.thread.threadId,
+      at:"2026-09-10T05:30:00Z",
+    });
+    assert.equal(interoceptionCalls, 1, "retrying the same present must not rethink it");
+
+    semantic.close();
+    world.close();
+    lived.close();
+  }));
+
 test("N1 refuses to present a stale scene when elapsed life has no plan coverage", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
@@ -273,6 +337,16 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
     const modelAdapter = {
       async invoke(input) {
         invocations += 1;
+        if (input.input?.interoception) {
+          return {
+            output:{ states:[] },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-continuity-interoception",
+              providerRequestId:input.clientRequestId,
+            },
+          };
+        }
         const context = input.input.concern.externalContext;
         const placeRef = context.startingPlaceRef ?? context.availablePlaces[0].ref;
         return {

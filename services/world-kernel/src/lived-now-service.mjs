@@ -5,6 +5,7 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 import { formPersonalLivedPlan } from "./lived-plan-cognition.mjs";
+import { runLivedNowRegulationPulse } from "./lived-now-regulation.mjs";
 import {
   livedSituationId,
   plannedPositionAt,
@@ -455,6 +456,25 @@ export function createLivedNowService({
   requireMethod(livedNowStore, "recordPlan");
   requireMethod(livedNowStore, "enactCurrentSituation");
 
+  const regulationReady = worldStore !== null &&
+    semanticStateStore !== null &&
+    modelAdapter !== null &&
+    typeof semanticStateStore.recordState === "function";
+
+  async function finalizePresent(previousSituation, currentSituation) {
+    if (!regulationReady) return currentSituation;
+    await runLivedNowRegulationPulse({
+      threadId:currentSituation.threadId,
+      previousSituation,
+      currentSituation,
+      worldStore,
+      livedNowStore,
+      semanticStateStore,
+      modelAdapter,
+    });
+    return currentSituation;
+  }
+
   return Object.freeze({
     async ensure(input) {
       assertPlainObject("ensure LivedNow input", input);
@@ -472,7 +492,10 @@ export function createLivedNowService({
 
       const personalPlan = livedNowStore.latestPlan(input.threadId, "personal", { at: input.at });
       if (planCovers(personalPlan, input.at)) {
-        return enact(livedNowStore, input.threadId, input.at);
+        return finalizePresent(
+          current,
+          enact(livedNowStore, input.threadId, input.at),
+        );
       }
 
       if (
@@ -490,7 +513,7 @@ export function createLivedNowService({
         );
       }
       if (current === null) {
-        return establishFirstLivedNow({
+        const established = await establishFirstLivedNow({
           livedNowStore,
           worldStore,
           identityStore,
@@ -501,6 +524,7 @@ export function createLivedNowService({
           threadId: input.threadId,
           at: input.at,
         });
+        return finalizePresent(null, established);
       }
 
       await catchUpDormantInterval({
@@ -515,7 +539,10 @@ export function createLivedNowService({
         current,
         at: input.at,
       });
-      return enact(livedNowStore, input.threadId, input.at);
+      return finalizePresent(
+        current,
+        enact(livedNowStore, input.threadId, input.at),
+      );
     },
   });
 }

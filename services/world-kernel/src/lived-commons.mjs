@@ -1,4 +1,5 @@
 import { formCommonsEntryChoice } from "./lived-commons-cognition.mjs";
+import { runLivedNowRegulationPulse } from "./lived-now-regulation.mjs";
 import {
   livedPlanId,
   livedSituationId,
@@ -77,6 +78,7 @@ export function createLivedCommonsService({
   requireMethod(livedNowStore, "enactCurrentSituation");
   requireMethod(identityStore, "getCurrentIdentityView");
   requireMethod(semanticStateStore, "listCurrentState");
+  requireMethod(semanticStateStore, "recordState");
   requireMethod(memoryStore, "listCurrentMemories");
   requireMethod(situatedLifeStore, "listCurrentLifeRelations");
   requireMethod(modelAdapter, "invoke");
@@ -177,6 +179,15 @@ export function createLivedCommonsService({
             participantRefs:[],
             evidenceRefs:[...nextPlan.sourceReferences],
           },
+        });
+        await runLivedNowRegulationPulse({
+          threadId,
+          previousSituation:situation,
+          currentSituation:current,
+          worldStore:worldReader,
+          livedNowStore,
+          semanticStateStore,
+          modelAdapter,
         });
         entries.push(Object.freeze({
           threadId,

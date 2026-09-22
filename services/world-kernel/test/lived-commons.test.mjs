@@ -103,6 +103,7 @@ test("developed life bends voluntary Commons presence without moving anyone", as
   ]);
   const recordedPlans = [];
   const enacted = [];
+  const semanticStates = new Map();
 
   const worldReader = {
     getThread(threadId) { return structuredClone(threads.get(threadId) ?? null); },
@@ -135,7 +136,18 @@ test("developed life bends voluntary Commons presence without moving anyone", as
       getCurrentIdentityView(threadId) { return { threadId, assertions:[] }; },
     },
     semanticStateStore:{
-      listCurrentState() { return []; },
+      listCurrentState(threadId) {
+        return structuredClone(semanticStates.get(threadId) ?? []);
+      },
+      recordState(candidate) {
+        const state = {
+          ...structuredClone(candidate),
+          stateId:`sem_${candidate.threadId}_${candidate.dimension}_${semanticStates.get(candidate.threadId)?.length ?? 0}`,
+        };
+        const current = semanticStates.get(candidate.threadId) ?? [];
+        semanticStates.set(candidate.threadId, [...current, state]);
+        return { state:structuredClone(state), created:true };
+      },
     },
     memoryStore:{
       listCurrentMemories(threadId) { return structuredClone(memories.get(threadId) ?? []); },
@@ -147,6 +159,22 @@ test("developed life bends voluntary Commons presence without moving anyone", as
       provider:"fixture",
       modelId:"fixture-commons",
       async invoke(call) {
+        if (call.input?.interoception) {
+          return {
+            output:{
+              states:[{
+                domain:"need",
+                dimension:"connection",
+                state:"I like having quiet company within reach without needing conversation.",
+              }],
+            },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-interoception",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        }
         assert.equal(call.input.concern.kind, "commons_entry");
         assert.equal(call.input.concern.externalContext.currentSituation.phase, "at_place");
         const remembered = call.input.developedSelfEvidence.find((item) => item.kind === "memory");
@@ -221,6 +249,11 @@ test("developed life bends voluntary Commons presence without moving anyone", as
     enacted.every((current) => current.mediatedContext === FIBRE_COMMONS_CONTEXT),
     true,
     "entering Threads should share one mediated context",
+  );
+  assert.deepEqual(
+    [...semanticStates.keys()].sort(),
+    ["thr_ada","thr_ben"],
+    "entering a real mediated presence should be able to become current interior state",
   );
   assert.equal(
     meetingPresenceCompatible(enacted[0], enacted[1]),

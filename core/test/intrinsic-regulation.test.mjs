@@ -269,3 +269,34 @@ test("R2 observable social cues create resonance without copying named emotions"
   assert.equal(encoded.includes("sad"), false);
   assert.equal(encoded.includes("angry"), false);
 });
+
+
+test("R1 sparse live evidence regulates only what Fibre actually knows", () => {
+  const target = presenceTarget({
+    targetId:"presence_live_commons",
+    targetKind:"mediated",
+    targetRef:"fibre:commons:open-room",
+    relation:"connected_to",
+    actualSatisfaction:1,
+    expectedSatisfaction:1,
+    predictedSatisfaction:1,
+    urgency:1,
+    evidenceRefs:["plan:commons", "world:commons-present"],
+  });
+
+  const frame = evaluateIntrinsicRegulation({
+    perceptFrame:{
+      asOf:"2026-09-22T23:00:00Z",
+      evidenceRefs:["world:commons-present"],
+    },
+    targets:[target],
+  });
+
+  assert.deepEqual(
+    frame.drives.map((item) => item.family),
+    ["presence"],
+    "unknown physiology must not become invented regulation",
+  );
+  assert.equal(frame.drives[0].attained, true);
+  assert.equal(frame.intrinsicAffect.attainment, 1);
+});
