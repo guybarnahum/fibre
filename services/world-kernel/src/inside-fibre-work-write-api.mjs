@@ -35,12 +35,14 @@ function requireMethod(owner, name, method) {
 
 export function createInsideFibreWorkWriteApi({
   workService,
+  workStore,
   fibreCreditStore,
   privateToken,
   now = () => new Date().toISOString(),
 }) {
   requireMethod(workService, "Inside Fibre workService", "considerOffer");
   requireMethod(workService, "Inside Fibre workService", "reconcileAcceptedWork");
+  requireMethod(workStore, "Inside Fibre workStore", "listCommitments");
   requireMethod(fibreCreditStore, "Inside Fibre fibreCreditStore", "balance");
   if (typeof privateToken !== "string" || privateToken.trim() === "") {
     throw new TypeError("Inside Fibre work API requires privateToken");
@@ -68,6 +70,12 @@ export function createInsideFibreWorkWriteApi({
             result:{
               threadId,
               fibreCredits:fibreCreditStore.balance(threadId),
+              commitments:workStore.listCommitments(threadId).map((commitment) => ({
+                commitmentId:commitment.commitmentId,
+                startAt:commitment.startAt,
+                endAt:commitment.endAt,
+                fibreCredits:commitment.compensation.fibreCredits,
+              })),
             },
           });
         } catch (error) {
