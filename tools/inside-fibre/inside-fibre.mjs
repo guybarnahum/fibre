@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { projectDailyRhythm } from "../../services/world-kernel/src/daily-rhythm.mjs";
 import { INSIDE_FIBRE_VISITOR_WORK } from "../../services/world-kernel/src/inside-fibre-work.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -234,7 +235,9 @@ export function classifyInsideFibreRosterEntry({
     displayName:thread.displayName ?? thread.threadId,
     lifecycleStatus:thread.lifecycleStatus ?? null,
     fibreCredits:workState?.fibreCredits ?? null,
+    birthCity:observatory?.thread?.identity?.birthCity ?? null,
     timeZone:threadTimeZone(observatory),
+    dailyRhythm:projectDailyRhythm(observatory?.thread?.genome?.runtimeBaselines ?? {}),
     scene:displayScene({ thread, observatory, at }),
     available,
     activeCommitment:active[0] ?? null,
@@ -435,7 +438,13 @@ function sceneText(entry) {
 function printEntry(entry, commitment = null, at = new Date().toISOString()) {
   process.stdout.write(`${entry.displayName}\n`);
   process.stdout.write(`  ${entry.threadId}\n`);
+  if (entry.birthCity) process.stdout.write(`  Born: ${entry.birthCity}\n`);
   process.stdout.write(`  Local: ${formatThreadTime(at, entry.timeZone)} · ${entry.timeZone ?? "unknown timezone"}\n`);
+  if (entry.dailyRhythm) {
+    process.stdout.write(
+      `  Rhythm: wake ~${entry.dailyRhythm.preferredWakeAround} · sleep ~${entry.dailyRhythm.preferredSleepAround} · ${entry.dailyRhythm.sleepNeedHours}h\n`,
+    );
+  }
   process.stdout.write(`  ${sceneText(entry)}\n`);
   if (commitment !== null) {
     process.stdout.write(
