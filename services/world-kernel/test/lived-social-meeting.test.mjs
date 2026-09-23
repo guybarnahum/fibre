@@ -315,8 +315,9 @@ function fixture({
         };
       }
       if (call.clientRequestId.startsWith("lived-memory_")) {
-        const isMina = call.input.thread.threadId === mina.threadId;
-        const isWitness = call.input.thread.threadId === sela.threadId && rude;
+        const isMina = call.input.experience.situationId === situations.get(mina.threadId).situationId;
+        const isWitness = rude
+          && call.input.experience.situationId === situations.get(sela.threadId).situationId;
         assert.equal(typeof call.input.experience.experiencedAs, "string",
           "memory should receive Thread Experience");
         return {
