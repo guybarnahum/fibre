@@ -102,6 +102,11 @@ test("only voluntary acceptance creates durable Inside Fibre visitor work", asyn
         modelCalls += 1;
         assert.equal(call.input.concern.kind, "inside_fibre_work_offer");
         const external = call.input.concern.externalContext;
+        assert.deepEqual(external.localWorkWindow, {
+          timeZone:"America/Phoenix",
+          start:{ date:"2026-09-24", time:"10:00", weekday:"Thursday" },
+          end:{ date:"2026-09-24", time:"11:00", weekday:"Thursday" },
+        }, "work choice should receive the offered window in the Thread's local civil time");
         if (sharedExternal === null) {
           sharedExternal = structuredClone(external);
         } else {
@@ -134,6 +139,7 @@ test("only voluntary acceptance creates durable Inside Fibre visitor work", asyn
     const livedNowStore = {
       getCurrentSituation() { return null; },
       latestPlan() { return null; },
+      getWorldContext() { return { timeZone:"America/Phoenix" }; },
     };
     const identityStore = {
       getCurrentIdentityView(threadId) { return { threadId, assertions:[] }; },
