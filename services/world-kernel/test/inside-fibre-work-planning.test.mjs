@@ -8,9 +8,11 @@ import test from "node:test";
 
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
+import { createInsideFibreAvailabilityService } from "../src/inside-fibre-availability.mjs";
 import { createInsideFibreWorkService } from "../src/inside-fibre-work.mjs";
 import { openInsideFibreWorkStore } from "../src/inside-fibre-work-store.mjs";
 import { normalizeLivedPlan } from "../src/lived-now.mjs";
+import { createLivedNowService } from "../src/lived-now-service.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { canonicalJson, sha256 } from "../src/persistence-common.mjs";
@@ -356,6 +358,177 @@ test("Flight Planning cannot silently omit accepted visitor work", async () =>
       state.livedNowStore.listPlans(state.accepted.threadId, { kind:"personal" }).length,
       1,
       "a plan that drops accepted work must not be admitted",
+    );
+
+    closeAll(state);
+  }));
+
+
+test("Inside Fibre availability is derived from enacted committed presence", async () =>
+  withDatabase(async (databasePath) => {
+    const state = await setup(databasePath);
+    const workService = createInsideFibreWorkService({
+      worldReader:state.worldStore,
+      livedNowStore:state.livedNowStore,
+      identityStore:state.identityStore,
+      semanticStateStore:state.semanticStateStore,
+      memoryStore:state.memoryStore,
+      situatedLifeStore:state.situatedLifeStore,
+      workStore:state.workStore,
+      modelAdapter:{
+        provider:"fixture",
+        modelId:"fixture-work-planning-presence",
+        async invoke(call) {
+          const external = call.input.concern.externalContext;
+          return {
+            output:{
+              result:{
+                stops:[
+                  {
+                    startAt:ACCEPTED_AT,
+                    endAt:WORK_START,
+                    physicalPlaceRef:external.startingPlaceRef,
+                    presenceMode:"physical",
+                    mediatedContext:"",
+                    activity:"Continue the ordinary afternoon.",
+                    purpose:"Live the day before the accepted shift.",
+                    travelFromPrevious:"",
+                  },
+                  {
+                    startAt:WORK_START,
+                    endAt:WORK_END,
+                    physicalPlaceRef:external.startingPlaceRef,
+                    presenceMode:"mediated",
+                    mediatedContext:MEDIATED_CONTEXT,
+                    activity:"Meet Inside Fibre visitors.",
+                    purpose:"Honor the accepted visitor-availability work.",
+                    travelFromPrevious:"",
+                  },
+                  {
+                    startAt:WORK_END,
+                    endAt:PLAN_END,
+                    physicalPlaceRef:external.startingPlaceRef,
+                    presenceMode:"physical",
+                    mediatedContext:"",
+                    activity:"Continue the evening.",
+                    purpose:"Resume ordinary life after work.",
+                    travelFromPrevious:"",
+                  },
+                ],
+              },
+              evidenceRefs:[],
+              conflictingMotives:[],
+              uncertainty:null,
+            },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-work-planning-presence",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        },
+      },
+    });
+    const replanned = await workService.reconcileAcceptedWork(state.accepted.commitmentId);
+    assert.equal(replanned.state, "planned");
+
+    const livedNow = createLivedNowService({ livedNowStore:state.livedNowStore });
+    const availability = createInsideFibreAvailabilityService({
+      livedNow,
+      livedNowStore:state.livedNowStore,
+      workStore:state.workStore,
+    });
+
+    assert.equal(
+      await availability.current({
+        threadId:state.accepted.threadId,
+        at:"2026-09-23T18:30:00.000Z",
+      }),
+      null,
+      "accepted future work should not make the Thread available early",
+    );
+
+    const during = await availability.current({
+      threadId:state.accepted.threadId,
+      at:"2026-09-23T19:30:00.000Z",
+    });
+    assert.ok(during, "the enacted accepted shift should make the Thread available");
+    assert.equal(during.commitmentId, state.accepted.commitmentId);
+    assert.equal(during.planId, replanned.plan.planId);
+
+    const current = state.livedNowStore.getCurrentSituation(state.accepted.threadId);
+    assert.equal(current.situationId, during.situationId);
+    assert.equal(current.mediatedContext, MEDIATED_CONTEXT);
+    assert.equal(
+      current.location.placeRef,
+      state.placeRef,
+      "mediated work should preserve the Thread's real physical presence",
+    );
+    assert.ok(
+      current.evidenceRefs.includes(state.accepted.commitmentId),
+      "the enacted present should retain the commitment authority",
+    );
+
+    assert.equal(
+      await availability.current({
+        threadId:state.accepted.threadId,
+        at:"2026-09-23T20:30:00.000Z",
+      }),
+      null,
+      "availability should end with the committed window",
+    );
+
+    closeAll(state);
+  }));
+
+test("a mediated-context label alone cannot manufacture Inside Fibre availability", async () =>
+  withDatabase(async (databasePath) => {
+    const state = await setup(databasePath);
+    state.livedNowStore.recordPlan(normalizeLivedPlan({
+      planId:"lplan_uncommitted_inside_context",
+      kind:"personal",
+      subjectThreadId:state.accepted.threadId,
+      owner:{ partyId:state.accepted.threadId, kind:"thread" },
+      authoredAt:ACCEPTED_AT,
+      horizonStart:ACCEPTED_AT,
+      horizonEnd:PLAN_END,
+      stops:[{
+        startAt:ACCEPTED_AT,
+        endAt:PLAN_END,
+        physicalPlaceRef:state.placeRef,
+        mediatedContext:MEDIATED_CONTEXT,
+        activity:"Keep an Inside Fibre page open while doing something else.",
+        purpose:"Ordinary mediated activity, not accepted visitor work.",
+        companionRefs:[],
+        travelFromPrevious:null,
+      }],
+      sourceReferences:[state.event.eventId,state.placeRef],
+      cognition:{
+        provider:"fixture",
+        modelId:"fixture-uncommitted-mediated-context",
+        providerRequestId:"fixture-uncommitted-mediated-context-1",
+        implementationProfile:{ id:"interior-cognition-single-episode", version:"1" },
+        sourceThreadVersion:1,
+        selectedEvidenceRefs:[],
+        evidenceRefs:[],
+        contextDigest:`sha256:${"c".repeat(64)}`,
+      },
+    }));
+
+    const availability = createInsideFibreAvailabilityService({
+      livedNow:createLivedNowService({ livedNowStore:state.livedNowStore }),
+      livedNowStore:state.livedNowStore,
+      workStore:state.workStore,
+    });
+
+    const result = await availability.current({
+      threadId:state.accepted.threadId,
+      at:"2026-09-23T19:30:00.000Z",
+    });
+    assert.equal(
+      result,
+      null,
+      "Inside Fibre availability must trace to the accepted commitment, not a context string",
     );
 
     closeAll(state);
