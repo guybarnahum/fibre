@@ -42,6 +42,7 @@ function verifyGenomeBundle(bundle, label) {
   const computed = symbolicGenomeDigest({
     header: bundle.header,
     loci: bundle.loci,
+    runtimeBaselines:bundle.runtimeBaselines,
     mutations: bundle.mutations ?? [],
   });
   if (computed !== bundle.genomeDigest) fail(`${label} genome digest drift`);
