@@ -8,7 +8,7 @@ import test from "node:test";
 
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
-import { replanForAcceptedInsideFibreWork } from "../src/inside-fibre-work-planning.mjs";
+import { createInsideFibreWorkService } from "../src/inside-fibre-work.mjs";
 import { openInsideFibreWorkStore } from "../src/inside-fibre-work-store.mjs";
 import { normalizeLivedPlan } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
@@ -206,15 +206,14 @@ test("accepted visitor work bends the forward Flight Plan while preserving prior
     const state = await setup(databasePath);
     let observedCommitment = null;
 
-    const result = await replanForAcceptedInsideFibreWork({
-      commitmentId:state.accepted.commitmentId,
-      workStore:state.workStore,
+    const service = createInsideFibreWorkService({
+      worldReader:state.worldStore,
       livedNowStore:state.livedNowStore,
-      worldStore:state.worldStore,
       identityStore:state.identityStore,
       semanticStateStore:state.semanticStateStore,
       memoryStore:state.memoryStore,
       situatedLifeStore:state.situatedLifeStore,
+      workStore:state.workStore,
       modelAdapter:{
         provider:"fixture",
         modelId:"fixture-work-planning",
@@ -271,6 +270,7 @@ test("accepted visitor work bends the forward Flight Plan while preserving prior
         },
       },
     });
+    const result = await service.reconcileAcceptedWork(state.accepted.commitmentId);
 
     assert.equal(result.state, "planned", "accepted work should produce a revised forward plan");
     assert.notEqual(result.plan.planId, state.priorPlan.planId, "accepted work should bend future intention");
@@ -308,15 +308,14 @@ test("Flight Planning cannot silently omit accepted visitor work", async () =>
     const state = await setup(databasePath);
 
     await assert.rejects(
-      replanForAcceptedInsideFibreWork({
-        commitmentId:state.accepted.commitmentId,
-        workStore:state.workStore,
+      createInsideFibreWorkService({
+        worldReader:state.worldStore,
         livedNowStore:state.livedNowStore,
-        worldStore:state.worldStore,
         identityStore:state.identityStore,
         semanticStateStore:state.semanticStateStore,
         memoryStore:state.memoryStore,
         situatedLifeStore:state.situatedLifeStore,
+        workStore:state.workStore,
         modelAdapter:{
           provider:"fixture",
           modelId:"fixture-work-planning-omits-shift",
@@ -348,7 +347,7 @@ test("Flight Planning cannot silently omit accepted visitor work", async () =>
             };
           },
         },
-      }),
+      }).reconcileAcceptedWork(state.accepted.commitmentId),
       TypeError,
       "an accepted commitment must be load-bearing in planning",
     );
