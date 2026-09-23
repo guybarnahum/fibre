@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-directory-and-meet-v0-1
 status: active
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-23
 canonical: false
 ---
 
@@ -116,6 +116,23 @@ The editor remains read-oriented and must not become a generic database browser 
 insidefibre.com consumes public Presentation/Directory projections only.
 
 Its purpose is not inspection. The selected Thread should appear as a person already living a moment: current embodiment, place, activity, relevant accompaniment/context and an encounter entry point grounded in that same situation.
+
+For the public **Meet a Thread** experience, reliability comes from prior voluntary availability rather than click-time coercion. A Thread may accept a bounded paid commitment to meet website visitors during a window. That accepted commitment is owned by ordinary Thread/World life authorities and may shape Flight Planning and mediated presence before a visitor arrives.
+
+The Directory/Viewer may then select only from Threads whose accepted commitment makes them genuinely available. It does not create the commitment, move the Thread, invent willingness or treat payment as a general price for social attention.
+
+Conceptually:
+
+```text
+Thread accepts Inside Fibre availability work
+  -> commitment enters lived life
+  -> Flight Plan / LivedNow establish mediated availability
+  -> Directory exposes eligible available Thread
+  -> visitor clicks Meet
+  -> visitor enters the already-committed mediated meeting
+```
+
+This is intentionally narrower than a general employment marketplace. The first goal is one reliable Person -> Thread meeting on insidefibre.com. Exact job-market, token-ledger and professional-service abstractions remain deferred until this lived seam requires them.
 
 A dependent person's private will/care negotiation is not automatically public. Presentation decides the bounded exterior projection; World/Thread state remains authoritative underneath it.
 
