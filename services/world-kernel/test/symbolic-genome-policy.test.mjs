@@ -21,7 +21,7 @@ test("symbolic genome authorities fail closed on unknown policy versions", () =>
   assert.throws(
     () => normalizeSymbolicGenomeHeader({
       ...genome.header,
-      inheritancePolicy: { id: "fibre_symbolic_genome", version: "2" },
+      inheritancePolicy: { id: "fibre_symbolic_genome", version: "3" },
     }),
     /not a supported v1 policy/,
   );
