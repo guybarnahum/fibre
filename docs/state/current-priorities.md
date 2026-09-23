@@ -222,7 +222,26 @@ The immediate work is therefore **live Interior Cognition**, not stronger Common
 
 The staging run `lived-encounters-mudbwfmb` on exact SHA `0ceda832a0f99c5d73c90c11cca05bf5bb711513` was an important negative result: all refreshed Threads still had empty semantic state before Commons and the sampled lives were overwhelmingly sleeping or winding down; all 15 voluntarily stayed out. That is a valid lived outcome, not a reason to bias Commons or infer loneliness from missing social records. Absence of recorded encounter history is not proof of solitude because Fibre does not yet observe every ordinary social contact.
 
-**Current slice: situated social context / reciprocal momentum.** Persist only actual outward Thread-to-Thread social attempts and observable `accept | decline | defer` responses; private `not_initiate` remains private and creates no shared history. Project a bounded perspective-aware recent history plus the actual current place/activity and observable counterparty activity into later social initiation. Momentum remains derived evidence, never a stored score. Prior admitted Encounter Stories remain separate objective history. Visible embodiment/attraction remains the next refinement after this narrower reciprocal-history seam is grounded.
+**Reciprocal social history — IMPLEMENTED, validation pending.** Actual outward Thread-to-Thread requests plus observable `accept | decline | defer` responses now have a small append-only pairwise record; private `not_initiate` remains private. Later initiation can receive bounded recent reciprocal history plus current setting/activity. This is supporting World evidence, not a social-momentum score and not the new architectural center.
+
+**Roadmap pivot — World -> Situated Percept -> Salience -> Interior Cognition.** The staging failures showed that “get Threads into Commons, then see whether they talk” is too social-first. Fibre should instead put Threads into ordinary lived situations containing people, activities, novelty, interruptions and happenings. The World supplies circumstances; a bounded [Situated Percept](../architecture/situated-perception-and-salience.md) exposes what is observably here; cheap salience decides what deserves cognition; the existing Interior Cognition component decides what this particular person wants to do.
+
+The active sequence is now:
+
+```text
+W0 reciprocal outward social history                    IMPLEMENTED; validate
+W1 Situated Percept -> social initiation                CURRENT
+W2 direct social response -> Interior Cognition         NEXT
+W3 cheap general Salience Gate                          NEXT
+W4 ordinary World opportunities from active LivedNow   NEXT
+W5 grounded exploration/curiosity pressure              LATER
+W6 bounded replayable salience microvariation           EXPERIMENTAL / OPTIONAL
+W7 natural encounter staging proof                      ACCEPTANCE
+```
+
+These are roadmap labels only. Do not bake them into APIs, event names or durable records.
+
+Do not preserve the current social-first harness shape for compatibility. If the natural lived-world loop makes Commons fallback or old staging orchestration obsolete, replace it rather than wrapping it. The new proof must remain light: no perception service hierarchy, social simulator, universal event bus, full object ontology or high-frequency world ticking.
 
 The economical execution profile is intentionally **hypothetical**: start by testing whether one bounded semantic call per material interior episode preserves causal individuality, dilemma fidelity and within-Thread coherence closely enough to justify its lower latency/token/cost versus a decomposed multi-call profile. Interior Cognition should remain one compact replaceable component so prompt/context/call-structure implementations can be isolated and A/B tested without changing the consuming domains. Use the light scorecard in [Interior Cognition evaluation](../validation/interior-cognition-evaluation.md): four quality dimensions (causal individuality, within-Thread stability, dilemma fidelity, development sensitivity), hard Fibre invariants, and direct compute measures (calls, tokens, latency, cost, retries, activation rate). Freeze the same Threads, situations, context authority, model/runtime, trial count and quality/economy criteria before comparing them. Do not promote the one-call shape to doctrine merely because it is simpler, and do not keep extra calls merely because they appear psychologically richer. Raw genome remains private causal substrate and may not be injected as a finished personality or instruction into planning/social cognition. Fibre Commons stays the bounded shared-presence affordance and the existing `npm run lived-encounters:staging` harness remains the acceptance proof after live interior causation exists. N5 stays open until the full live acceptance passes.
 
@@ -262,13 +281,17 @@ continuing Thread
   -> enacted World situation
   -> elapsed life / catch-up
   -> present now
-  -> encounter
-  -> objective history
+  -> Situated Percept
+  -> intrinsic regulation + salience
+  -> Interior Cognition when material
+  -> ordinary action / inaction
+  -> Encounter Story when something occurs
+  -> Thread Experience
   -> optional private reflection
   -> retention appraisal
   -> autobiographical memory or not_remembered
   -> possible relationship / intention / state consequence
-  -> future Flight Plan
+  -> future Flight Plan + future perception
 ```
 
 ## Memory invariant

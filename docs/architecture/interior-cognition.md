@@ -404,6 +404,27 @@ Every model-backed interior episode should expose non-content operational eviden
 
 Do not copy private prompt/output prose into general telemetry.
 
+## Exterior concern comes through Situated Percept
+
+Interior Cognition should not independently reconstruct the exterior scene from unrelated stores.
+
+For ordinary lived decisions, a bounded [Situated Percept](situated-perception-and-salience.md) should supply the authoritative observable concern: actual setting, observable counterpart/activity, admitted recent interaction and other World facts relevant now. The component continues to own selection of the Thread's **private** developed-self evidence.
+
+This keeps the authority split clean:
+
+```text
+World / Situated Percept
+  -> what is observably happening here
+
+Interior Cognition private selection
+  -> what this life makes relevant internally
+
+domain adapter
+  -> what question must be answered
+```
+
+The domain may not smuggle another person's private state into Situated Percept or regain control over private memory/relationship selection.
+
 ## Dilemmas are first-class
 
 A Thread does not need one motive to dominate cleanly.

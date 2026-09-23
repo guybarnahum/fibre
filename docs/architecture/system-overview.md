@@ -1,7 +1,7 @@
 ---
 id: architecture-system-overview
 status: accepted
-last-reviewed: 2026-09-10
+last-reviewed: 2026-09-22
 canonical: true
 ---
 
@@ -17,20 +17,23 @@ The repository contains laws and machinery. Live world stores contain Threads. T
 
 ## Important internal layers
 
-A Thread's interior causality is not all LLM cognition:
+A Thread's lived causality is not all LLM cognition:
 
 ```text
 World reality
-  -> intrinsic regulation
-  -> private drive / affect
-  -> attention / temporary cognition
-  -> semantic meaning / intention
-  -> validated consequence
+  -> LivedNow / CurrentSituation
+  -> Situated Percept
+  -> intrinsic regulation + cheap salience
+  -> Interior Cognition when material
+  -> semantic meaning / intention / ordinary choice
+  -> validated World consequence
+  -> experience / memory / relationship change
+  -> future perception and planning
 ```
 
-[`intrinsic-regulation.md`](intrinsic-regulation.md) defines the lower organism-like control layer. It is deterministic/provider-neutral where possible, may use numeric state because that state is mechanical rather than meaning-bearing, and may trigger cognition without granting protected authority.
+[`situated-perception-and-salience.md`](situated-perception-and-salience.md) defines the bounded exterior-perception and materiality seam. [`intrinsic-regulation.md`](intrinsic-regulation.md) defines the lower organism-like control layer. [`interior-cognition.md`](interior-cognition.md) defines the reusable private-mind boundary above them.
 
-Meaning-bearing emotion, need, relationship state, memory and self-understanding remain natural-language-first and Thread-owned.
+Situated Percept is not a second World store, Salience Gate is not a semantic motive engine, and neither replaces Interior Cognition. Meaning-bearing emotion, need, relationship state, memory and self-understanding remain natural-language-first and Thread-owned.
 
 ## Initial service boundaries
 

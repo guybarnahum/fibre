@@ -27,6 +27,7 @@ For behavior, identity, communication, or request-processing work, also read:
 - `docs/concepts/emotions-and-needs.md`
 - `docs/architecture/interest-mediated-expression.md`
 - `docs/architecture/request-participation.md`
+- `docs/architecture/situated-perception-and-salience.md` for lived perception, attention, ordinary World opportunity, or social encounter work
 - the relevant file under `docs/concepts/`
 
 For public progress, milestone summaries, website status, or claims about what Fibre can do, also read:

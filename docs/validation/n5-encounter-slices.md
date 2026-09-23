@@ -1,7 +1,7 @@
 ---
 id: validation-n5-encounter-slices-v0-1
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-09-22
 canonical: false
 ---
 
@@ -274,41 +274,165 @@ The first implementation commit exposed one prohibited private cross-owner Asset
 
 No existing presentation R2 objects were migrated. No encounter render is required for Encounter Story completion, and E4 does not require a live provider-generated image/video; that remains optional staging evidence.
 
-## Slice E5 — Staging acceptance — CURRENT
+## Slice E5 — Natural lived encounter acceptance — CURRENT
 
-`E5` is the roadmap label only. The enduring executable/evidence surface is named `lived-encounters` so commands, events and artifacts continue to describe the Fibre capability after this slice is history.
+E5 remains the roadmap label, but its forcing model has changed.
 
-Provision the additive private Thread-object bucket and deploy only after E0-E4 are green.
+The previous acceptance path over-centered this sequence:
 
-Live staging has now falsified two hidden assumptions rather than being weakened around them:
+```text
+find/coerce shared presence
+  -> ask whether Threads enter Commons
+  -> ask whether one initiates
+  -> require an accepted meeting
+```
 
-1. asking Threads to consent to an abstract, content-free meeting produced coherent repeated refusal, so the live path now uses initiator-owned overture first and invitee-owned stance second;
-2. reusable Genesis `placeId` values were accidentally being treated as shared live place identity. That is invalid: Genesis `WorldSpec` is reusable context, not shared-society co-presence. Physical compatibility now requires explicit `world_recorded` shared-place authority.
+Staging correctly rejected that simplification. A late-night cohort mostly sleeping or winding down chose to stay out. Earlier cohorts also showed that shared presence can coexist with genuine `not_initiate`. Fibre must preserve those outcomes rather than make the prompts more sociable.
 
-The second finding exposed the next missing organism-level primitive: **shared live presence / convergence**. The smallest credible implementation is now Fibre Commons: a stable World-known ambient mediated common space that each Thread may independently keep open from her actual LivedNow while continuing ordinary life. Entry authors a short personal Flight Plan that preserves physical location and ongoing activity, adds Thread-owned reason for ambient presence, and gives World genuine shared mediated presence without teleportation or accidental Genesis-ID reuse. Commons does not imply social motivation, meeting consent or attention.
+The accepted architecture is now [Situated perception and salience](../architecture/situated-perception-and-salience.md):
 
-The acceptance plumbing uses genuine existing shared presence when available and only falls back to Fibre Commons when staging has none. Before the live interior path is treated as production shape, Fibre will also test the economy/quality hypothesis recorded in [Interior cognition](../architecture/interior-cognition.md) using the compact [Interior Cognition evaluation](interior-cognition-evaluation.md) scorecard: one bounded semantic call per material interior episode versus a decomposed multi-call profile under the same persistent Threads and controlled situations. E5 must not be made to pass by choosing whichever cognition shape happens to produce more agreeable staging behavior; the comparison is about causal individuality, coherence, dilemma fidelity, latency and cost.
+```text
+ordinary World circumstances
+  -> LivedNow / CurrentSituation
+  -> Situated Percept
+  -> regulation + cheap salience
+  -> Interior Cognition when material
+  -> ordinary action / no action
+  -> Encounter Story when something observably happens
+  -> Thread-specific experience and consequence
+```
 
-The live proof remains strict:
+Commons remains one legitimate mediated place, not an acceptance mechanism.
 
-- deployed World exposes the already-proven E1 environmental encounter authority through a private operator route;
-- the private social-meeting adapter preserves E3's explicit `witnessThreadIds`;
-- the staging runner refreshes real Threads through LivedNow, reads the private World Observatory's authoritative current situation/place evidence to rank only genuinely compatible co-presence, refuses to fake or infer placement from public Presentation labels, requires an actual decline/defer and a separate accepted silent-witness story, checks divergent journals and retained/not-remembered asymmetry durably, runs the same journal presentation model used by Admin, and feeds the admitted objective visualization lineage into the existing generated-asset machinery for one still while validating the corresponding video brief;
-- generated evidence stores references/outcomes/digests rather than private journal or prompt content.
+### Pivot slices
 
-E5 uses the established local staging operator path rather than a separate CI credential path. `npm run cloud:prepare:staging` loads local `.env`, idempotently provisions the declared Cloudflare resources (including `THREAD_OBJECTS`), configures the Worker secrets/runtime values, deploys the exact clean source SHA, and deploys the staging apps. `npm run lived-encounters:staging` then runs the strict acceptance harness against that SHA-bound deployment evidence. E5 stays open until this operator-run staging evidence passes.
+#### W0 — Reciprocal outward social history — IMPLEMENTED; validate
 
-Live acceptance should exercise:
+Persist only actual outward Thread-to-Thread requests and observable `accept | decline | defer` responses.
 
-1. one environmental encounter;
-2. one declined/deferred social meeting;
-3. one accepted multi-Thread encounter with a silent witness;
-4. different journal accounts from the same shared story;
-5. asymmetric memory retention;
-6. Admin journal rendering;
-7. one E1 Encounter Story visualization prompt that can feed a still render and is semantically suitable for a short-video renderer without changing encounter truth.
+Private `not_initiate` creates no shared record.
 
-N5 closes only after those behaviors work against real staging Threads.
+The record exists so later perception/cognition can know facts such as “I asked her yesterday and she declined” or “she approached me recently and I accepted.” It is never a momentum score.
+
+**Stop condition:** focused tests and `npm run slice:validate` are green; both participants resolve the same observable request/response; private hesitation leaves no shared record.
+
+#### W1 — Situated Percept -> social initiation — CURRENT
+
+Add one compact `situated-percept.mjs`-level projection inside the existing World Kernel. Do not add a service hierarchy or durable percept store.
+
+For the first consumer, derive only what Fibre already authoritatively knows:
+
+- exact current situation;
+- physical/mediated setting and known place identity/texture;
+- the Thread's current activity;
+- genuinely co-present counterpart identity and observable current activity;
+- bounded recent reciprocal social history;
+- prior admitted Encounter Story refs/facts where useful.
+
+Replace the ad-hoc social exterior packet rather than compatibility-wrapping it.
+
+**High-value proof:** hold initiator, developed-self evidence and counterparty constant; change one meaningful observable situation such as setting/activity or recent reciprocal history; require an attributable change in the private social judgment. Also prove the counterparty's private interior is absent.
+
+This slice is intentionally one consumer. It proves the general percept seam without building a generalized simulation framework.
+
+#### W2 — Direct social response uses the same mind
+
+Migrate `accept | decline | defer` from the remaining legacy meeting-stance prompt into Interior Cognition using the same Situated Percept plus the concrete outward request.
+
+This is where grounded politeness, hospitality, cultural/social expectations, relationship history and interruption cost can matter as **developed-person evidence**. Do not add `politenessScore`, demographic rules or automatic acceptance.
+
+A direct request already warrants appraisal; it need not wait for the ordinary Salience Gate.
+
+Remove raw-genome/persona injection from this path.
+
+**High-value proof:** the same direct ask can coherently produce acceptance, decline or defer for materially different Thread/life contexts while the observable request remains identical; social norm pressure may matter without becoming consent.
+
+#### W3 — Cheap general Salience Gate
+
+Add one small mechanical materiality function before optional cognition for ordinary observable opportunities.
+
+Inputs may include only grounded facts available at the time: novelty/change, interruption cost, relationship/familiarity relevance, recent reciprocal interaction, active commitment pressure and existing regulator signals.
+
+Output only:
+
+```text
+background
+material enough for cognition
+```
+
+plus a bounded replay/debug witness. No semantic feeling, motive or choice is authored.
+
+No randomness in the first version.
+
+**High-value proof:** an irrelevant background opportunity costs zero model calls; a materially relevant opportunity reaches cognition; changing an actually relevant grounded factor can cross the gate. Avoid tests of exact weights or helper structure.
+
+#### W4 — Ordinary World opportunities from active LivedNow
+
+Stop relying on Commons or the operator harness to create the interesting circumstance.
+
+At meaningful active-life transitions, World/LivedNow should expose a **small bounded set of ordinary observable opportunities** consistent with the actual place/activity. Reuse existing World/Encounter authority once an occurrence genuinely happens.
+
+The first proof should remain tiny: one active daytime life, one ordinary environmental or co-presence opportunity, no universal object ontology, no sensory simulator, no high-frequency ticking.
+
+Do not tune opportunity generation to make a conversation happen.
+
+**High-value proof:** a real LivedNow segment produces an opportunity that was not authored by the acceptance runner; the Thread may ignore it or engage through the same salience/cognition path; if an objective occurrence happens, Encounter Story owns it.
+
+#### W5 — Grounded exploration / curiosity pressure
+
+Only after W4 provides trustworthy lived evidence, connect the already-accepted exploration/information/play regulator family to signals Fibre can actually ground, such as sustained low-novelty activity, stalled progress, or a surprising observable cue.
+
+Do not infer boredom merely because time passed. Do not infer loneliness because no social event was recorded; Fibre does not yet observe all ordinary social contact.
+
+**High-value proof:** sustained grounded low-novelty context can make a novel opportunity more salient for a Thread without mechanically authoring “I am bored” or forcing engagement.
+
+Social-contact/privacy regulation remains deferred until Fibre has enough observation to distinguish solitude from missing data.
+
+#### W6 — Bounded salience microvariation — EXPERIMENTAL / OPTIONAL
+
+Only if deterministic salience proves unnaturally rigid, add small replayable variation near ambiguous thresholds.
+
+The variation belongs to attention/materiality, not the final decision. Strong background and strong salient cases should not flip.
+
+Seed from stable episode inputs so retry/replay is stable.
+
+**High-value proof:** strong cases are invariant; genuinely near-threshold cases may vary across distinct episodes without changing on retry.
+
+Delete this slice if it adds complexity without measurable Fibre-quality benefit.
+
+#### W7 — Natural lived encounter staging proof
+
+Replace the social-first forcing assumption with a lived-world acceptance run during credible active periods.
+
+The runner may choose Threads/times to observe, but may not author their scene, private motive, opportunity, salience result or social decision.
+
+Acceptance should demonstrate:
+
+1. ordinary LivedNow produces at least one non-harness-authored opportunity;
+2. at least one opportunity remains background or is explicitly ignored;
+3. at least one materially salient opportunity reaches Interior Cognition;
+4. at least one objective occurrence becomes an Encounter Story and Thread Experience;
+5. if an outward social request occurs, its accept/decline/defer response is durable reciprocal history;
+6. different Threads or different moments need not converge on the same social choice;
+7. retained consequences can bend later perception/cognition through existing memory/relationship mechanisms.
+
+A naturally accepted multi-Thread social story remains valuable live evidence, but Fibre must not manufacture motive or weaken refusal to obtain it. The controlled E2/E3 proofs continue to establish that the accepted multi-Thread path works.
+
+### Engineering constraint for the pivot
+
+Keep the implementation light and replace superseded shapes rather than retaining compatibility layers.
+
+The intended new code surface is approximately:
+
+```text
+situated-percept.mjs    exterior projection
+salience-gate.mjs       cheap mechanical materiality
+interior-cognition.mjs  existing private mind
+```
+
+plus the smallest World/LivedNow opportunity integration required by W4.
+
+No generic perception framework, social simulator, universal event bus, high-frequency organism loop, new conversation store, or second World authority.
 
 ## High-value tests only
 

@@ -254,7 +254,7 @@ E0-E4 are complete. E5 remains the staging acceptance slice, but live staging ex
 
 Reusable Genesis place IDs are Thread-world context, not shared live place authority. The previous staging search therefore produced false physical co-presence among independently born Threads that happened to reuse the same Genesis WorldSpec place identifiers. Physical meeting compatibility now requires explicit World-recorded shared place identity (or matching mediated context).
 
-Fibre Commons remains the bounded shared-presence affordance, but the next live staging diagnostics exposed a deeper prerequisite: **the deployed LivedNow/social path bypasses Fibre's intrinsic-regulation/interoception loop**. The staging Threads reached Commons with empty semantic needs/feelings/intentions and uniformly generic present-life context, so unanimous `stay_out` was evidence of missing live interior causation rather than a Commons prompt defect.
+Fibre Commons remains a valid bounded shared-presence affordance, but it is no longer the organizing mechanism for social life. The later staging run showed that a cohort overwhelmingly sleeping or winding down can coherently choose `stay_out`; unanimous refusal in that context is not itself evidence that Threads need stronger social motivation. The live intrinsic-regulation bridge remains useful substrate, but Fibre must not infer loneliness or social deficit from absence of recorded encounters.
 
 The accepted repair is [Interior cognition](../architecture/interior-cognition.md): genome stays private causal substrate; regulation produces pressure; interoception reaches Thread-authored semantic feeling/need; developed self/history mediates that state; then private deliberation may produce a plan, social request, refusal or other domain-specific thought. Do not expose raw genome directly to Flight Plan or Commons cognition.
 
@@ -272,7 +272,25 @@ The **live organismic motive bridge is implemented but still lacks a deployed po
 
 Staging run `lived-encounters-mudbwfmb` on SHA `0ceda832a0f99c5d73c90c11cca05bf5bb711513` refreshed a cohort whose lives were overwhelmingly sleeping or winding down. All had empty semantic state before Commons and all 15 voluntarily stayed out. The harness therefore stopped before social meeting. This is a valid time/context outcome. Do not infer loneliness from absence of social-event records; Fibre does not yet observe every ordinary social contact.
 
-The current implementation slice is **situated social context, beginning with reciprocal momentum**. An actual outward request plus an observable `accept | decline | defer` response becomes durable pairwise history. Private `not_initiate` remains private. Later initiation receives only a bounded perspective-aware projection of that recent history, prior admitted Encounter Stories, the actual place/activity, and observable counterparty activity; it never receives the other Thread's private interior and never consumes a durable momentum score. Visible embodiment/attraction follows as a separate refinement after this seam is grounded. Then resume full E5 acceptance:
+The social-first framing is now superseded by the accepted [Situated perception and salience](../architecture/situated-perception-and-salience.md) architecture. Reciprocal outward social history is implemented as one evidence source, but Fibre should not attempt to make Threads more agreeable merely to obtain an accepted meeting.
+
+The active implementation target is **Situated Percept**: one small ephemeral exterior projection derived from authoritative LivedNow/World facts. It should contain the actual setting, the Thread's own current activity, observable counterpart identity/activity where genuinely present, and bounded admitted recent interaction. It is not a new store and may never expose the other Thread's private state.
+
+The next causal sequence is:
+
+```text
+World / LivedNow
+  -> Situated Percept
+  -> cheap Salience Gate
+  -> Interior Cognition when material
+  -> action or no action
+  -> Encounter Story if something observably happens
+  -> personal Experience / consequence
+```
+
+Direct social requests remain special only in that being explicitly addressed already warrants appraisal; politeness/cultural pressure belongs in the developed person and current setting, never in a global acceptance score. Boredom/curiosity should later enter through grounded exploration regulation. Small randomness, if useful, belongs only as replayable near-threshold salience variation, never as a `no -> 10% yes` decision flip.
+
+The reciprocal-history commit is a stepping stone into this architecture. The next implementation slice replaces today's ad-hoc social exterior packet with Situated Percept and proves that the same Thread can make a different social judgment when the **actual observable situation** changes while private identity/history is held constant. No compatibility wrapper is required for the superseded packet shape. Then continue toward natural lived encounter acceptance:
 
 ```text
 environmental occurrence

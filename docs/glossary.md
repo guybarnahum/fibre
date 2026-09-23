@@ -1,7 +1,7 @@
 ---
 id: fibre-glossary
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-09-22
 canonical: true
 ---
 
@@ -28,6 +28,10 @@ canonical: true
 **CurrentSituation** — The World-owned enacted present of a Thread at a particular time: place or transit, mediated context, activity, relevant participants, evidence, and the resolution between plan/constraints and observed life.
 
 **LivedNow** — Fibre's World-owned capability to establish a causally grounded current life for a Thread at a requested time, including plan renewal and bounded retrospective catch-up when compute has been dormant.
+
+**Situated Percept** — A bounded ephemeral projection of the exterior situation available to one Thread now: setting, observable entities/activities, admitted recent events and ordinary affordances derived from authoritative World records. It is perception/context, not interpretation, and never exposes another person's private interior.
+
+**Salience Gate** — Cheap mechanical attention machinery that decides whether an observable opportunity is material enough to warrant cognition. It may use bounded numeric control state and later replayable microvariation, but it does not author a semantic feeling, motive, preference or decision.
 
 **Lived catch-up** — Retrospective realization of an uncovered interval in a lived Thread's Fibre-world life. Catch-up history must preserve that it was materialized later, and memory may arise only through normal experience/retention authority.
 

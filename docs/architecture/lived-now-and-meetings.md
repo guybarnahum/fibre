@@ -301,9 +301,11 @@ Commons does not imply conversation, friendship, attention, or meeting acceptanc
 
 The caller may identify Threads to consider the Commons opportunity, but cannot author why they enter, force entry, choose their physical scene, or author the later social overture. This is a bounded convergence seam, not a scheduler, room framework, or social session system.
 
-### Situated social context and momentum
+### Situated perception, then social judgment
 
-Shared presence is only opportunity. A credible social overture should be formed from a bounded **situated social context** owned by World/Fibre rather than a caller-authored persona packet.
+Shared presence is only one kind of opportunity. Social cognition now follows the general [Situated Percept + Salience](situated-perception-and-salience.md) architecture rather than owning a separate social-context model.
+
+A credible social overture should therefore begin with a bounded **Situated Percept** owned by World/Fibre rather than a caller-authored persona packet. The same perceptual seam is intended to support environmental noticing, curiosity, helping, avoidance and other ordinary lived reactions.
 
 For each potential counterparty, that context may include only authorized observable facts such as:
 

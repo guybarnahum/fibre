@@ -1,7 +1,7 @@
 ---
 id: vision-lived-world
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-09-22
 canonical: true
 ---
 
@@ -35,6 +35,31 @@ identity + prior life
 ```
 
 When the E2E path exposes a missing organism-level primitive, Fibre should build that primitive generally rather than manufacture it inside the Viewer.
+
+## World before conversation
+
+A lived Thread should encounter **circumstances**, not periodic invitations to behave socially.
+
+The World may contain another Thread reading nearby, a delayed bus, a dropped object, an unfamiliar sound, a direct question, a dog crossing the path, a shared task, an interesting display or a familiar person arriving. Most of these remain background.
+
+The canonical path is:
+
+```text
+World circumstances
+  -> LivedNow / CurrentSituation
+  -> bounded Situated Percept
+  -> intrinsic regulation + salience
+  -> Interior Cognition only when something matters
+  -> action or no action
+  -> Encounter Story only when something observably happens
+```
+
+This is deliberately broader than social life. Curiosity, helping, attraction, avoidance, interruption, exploration and ordinary environmental noticing should arise through the same loop.
+
+Fibre Commons remains a legitimate mediated place, but it is not the mechanism by which social life exists and must not become a test harness for manufacturing willingness.
+
+See [Situated perception and salience](../architecture/situated-perception-and-salience.md).
+
 
 ## Fibre birth and lived age
 
@@ -191,19 +216,21 @@ Fibre may author circumstances. The Thread owns what they come to mean.
 
 ```text
 developmental context + relationships
-  -> intrinsic regulation
   -> personal Flight Plan
   -> care plan when dependency applies
   -> enacted presence / movement
-  -> intrinsic progress / pressure / surprise
-  -> encounter or experience
-  -> private interpretation
+  -> Situated Percept of what is actually here
+  -> intrinsic regulation + selective salience
+  -> Interior Cognition when material
+  -> ordinary action / inaction
+  -> objective encounter when something occurs
+  -> private Thread Experience
   -> selective memory / forgetting
   -> possible relationship, belief, interest or intention change
-  -> revised regulation / plan
+  -> revised regulation / plan / later perception
 ```
 
-A small world can feel alive if this loop is causal.
+A small world can feel alive if this loop is causal. It does not need minute-by-minute simulation; it needs enough ordinary opportunity that Threads have real things to notice, ignore, approach, avoid and remember.
 
 ## Thread Editor and public encounter
 
