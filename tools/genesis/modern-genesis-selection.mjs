@@ -6,6 +6,49 @@ import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs"
 
 export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v4";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
+const MODERN_BIRTHPLACE_ANCHORS = Object.freeze([
+  "Canada/Vancouver",
+  "United States/Chicago",
+  "Mexico/Mexico City",
+  "Guatemala/Guatemala City",
+  "Colombia/Bogota",
+  "Peru/Lima",
+  "Brazil/Recife",
+  "Argentina/Buenos Aires",
+  "Chile/Santiago",
+  "United Kingdom/Manchester",
+  "Portugal/Lisbon",
+  "Spain/Valencia",
+  "France/Lyon",
+  "Germany/Berlin",
+  "Poland/Warsaw",
+  "Romania/Cluj Napoca",
+  "Morocco/Fes",
+  "Ghana/Accra",
+  "Nigeria/Lagos",
+  "Kenya/Nairobi",
+  "Tanzania/Dar Es Salaam",
+  "South Africa/Cape Town",
+  "Georgia/Tbilisi",
+  "Israel/Jerusalem",
+  "Turkey/Istanbul",
+  "Egypt/Alexandria",
+  "India/Mumbai",
+  "Pakistan/Lahore",
+  "Bangladesh/Dhaka",
+  "Sri Lanka/Colombo",
+  "Thailand/Chiang Mai",
+  "Vietnam/Da Nang",
+  "Taiwan/Kaohsiung",
+  "Japan/Osaka",
+  "South Korea/Busan",
+  "Philippines/Cebu",
+  "Indonesia/Makassar",
+  "Australia/Hobart",
+  "New Zealand/Auckland",
+  "United States/Honolulu",
+]);
+
 
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
@@ -107,6 +150,15 @@ export function normalizeModernWorldSelector(raw) {
     key: `${fold(country)}/${fold(city)}`,
     slug: `${fold(country)}_${fold(city)}`,
   });
+}
+
+export function selectDefaultModernBirthplace(requestId) {
+  const id = nonEmpty("Genesis requestId", requestId);
+  const index = Number.parseInt(
+    createHash("sha256").update(`fibre-modern-birthplace:${id}`).digest("hex").slice(0, 12),
+    16,
+  ) % MODERN_BIRTHPLACE_ANCHORS.length;
+  return normalizeModernWorldSelector(MODERN_BIRTHPLACE_ANCHORS[index]);
 }
 
 export function normalizeModernHeritage(raw) {
@@ -409,34 +461,11 @@ export async function resolveModernWorldSelection({
   repoRoot,
   requestId,
   baseSlotOrdinal,
-  worldSlotOrdinal = baseSlotOrdinal,
   modelId = process.env.FIBRE_GENESIS_WORLD_MODEL?.trim() || DEFAULT_WORLD_MODEL,
   now = () => new Date().toISOString(),
   authorWorld = defaultAuthorWorld,
 } = {}) {
-  if (selector === null) {
-    if (heritage !== null) throw new TypeError("Genesis heritage requires an explicit place");
-    const genomeSlot = cohort.slots[baseSlotOrdinal - 1];
-    const worldSlot = cohort.slots[worldSlotOrdinal - 1];
-    const material = materialFixture.slots.find((item) => item.slot === worldSlotOrdinal);
-    if (!genomeSlot) throw new Error(`modern Genesis genome slot ${baseSlotOrdinal} is unavailable`);
-    if (!worldSlot || !material) throw new Error(`modern Genesis World slot ${worldSlotOrdinal} is unavailable`);
-    const family = fixtureWorldWithFamilyContext(fixture(worldSlot.worldSpecPath), material);
-    return Object.freeze({
-      mode: "fixture",
-      selector: selectorFromBirthCity(material.birthCity),
-      heritage: null,
-      slotOrdinal: baseSlotOrdinal,
-      worldSlotOrdinal,
-      genomePath: genomeSlot.genomePath,
-      worldSpec: family.worldSpec,
-      material:family.material,
-      timeZone: worldSlot.timeZone,
-      participants: worldSlot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
-      placeAffordances: worldSlot.placeAffordances,
-      cachePath: null,
-    });
-  }
+  if (selector === null) throw new TypeError("modern Genesis requires a birthplace selector");
 
   if (!forceNewWorld && heritage === null) {
     const existing = findFixtureWorld({ selector, cohort, materialFixture });
