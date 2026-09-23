@@ -266,6 +266,9 @@ test("work choice distinguishes movable Flight Plan intention from a rigid requi
         latestPlan(_threadId, kind, { at }) {
           if (kind === "personal" && Date.parse(at) >= Date.parse(personalPlan.horizonStart)
             && Date.parse(at) <= Date.parse(personalPlan.horizonEnd)) return personalPlan;
+          if (kind === "care"
+            && Date.parse(at) >= Date.parse(requiredCarePlan.stops[0].startAt)
+            && Date.parse(at) < Date.parse(requiredCarePlan.stops[0].endAt)) return requiredCarePlan;
           return null;
         },
         listPlans(_threadId, { kind }) {
