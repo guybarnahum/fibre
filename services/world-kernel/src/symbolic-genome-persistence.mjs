@@ -64,12 +64,14 @@ export function readSymbolicGenomeInTransaction(
   const header = normalizeSymbolicGenomeHeader(
     parseRecord(`symbolic genome ${genomeId}`, genomeRow.header_json),
   );
-  const runtimeBaselines = normalizeSymbolicRuntimeBaselines(Object.fromEntries(
-    database.prepare(`
-      SELECT baseline_key,value FROM symbolic_genome_runtime_baselines
-      WHERE genome_id=? ORDER BY baseline_key
-    `).all(genomeId).map(({ baseline_key:key, value }) => [key, value]),
-  ));
+  const runtimeBaselines = header.inheritancePolicy.version === "1"
+    ? {}
+    : normalizeSymbolicRuntimeBaselines(Object.fromEntries(
+        database.prepare(`
+          SELECT baseline_key,value FROM symbolic_genome_runtime_baselines
+          WHERE genome_id=? ORDER BY baseline_key
+        `).all(genomeId).map(({ baseline_key:key, value }) => [key, value]),
+      ));
   const loci = database.prepare(`
     SELECT record_json,record_digest FROM symbolic_genome_loci
     WHERE genome_id=? ORDER BY ordinal
@@ -152,10 +154,12 @@ export function assertRecombinedSymbolicGenomeSourcesInTransaction(
     return source;
   });
 
-  const baselineSelections = replayRecombinationRuntimeBaselines(bundle, sources);
-  for (const selection of baselineSelections) {
-    if (bundle.runtimeBaselines[selection.key] !== selection.value) {
-      conflict(ErrorType, `runtime baseline ${selection.key} does not match deterministic inheritance`);
+  if (bundle.header.inheritancePolicy.version !== "1") {
+    const baselineSelections = replayRecombinationRuntimeBaselines(bundle, sources);
+    for (const selection of baselineSelections) {
+      if (bundle.runtimeBaselines[selection.key] !== selection.value) {
+        conflict(ErrorType, `runtime baseline ${selection.key} does not match deterministic inheritance`);
+      }
     }
   }
 
