@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { openFibreCreditStore } from "../src/fibre-credit-store.mjs";
 import { createInsideFibreWorkService } from "../src/inside-fibre-work.mjs";
 import { openInsideFibreWorkStore } from "../src/inside-fibre-work-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
@@ -78,6 +79,7 @@ test("only voluntary acceptance creates durable Inside Fibre visitor work", asyn
     seedThread(worldStore, "thr_inside_decline", "Ben Vale");
 
     let workStore = openInsideFibreWorkStore(storage);
+    const fibreCreditStore = openFibreCreditStore(storage, { worldReader:worldStore });
     const memories = new Map([
       ["thr_inside_accept", [memory(
         "thr_inside_accept",
@@ -154,6 +156,7 @@ test("only voluntary acceptance creates durable Inside Fibre visitor work", asyn
       memoryStore,
       situatedLifeStore,
       workStore,
+      fibreCreditStore,
       modelAdapter,
     });
     const offer = {
@@ -209,6 +212,7 @@ test("only voluntary acceptance creates durable Inside Fibre visitor work", asyn
       "accepted work should survive store restart",
     );
 
+    fibreCreditStore.close();
     workStore.close();
     worldStore.close();
   }));
