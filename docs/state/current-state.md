@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-09-22
+last-reviewed: 2026-09-23
 canonical: true
 ---
 
@@ -195,7 +195,9 @@ insidefibre.com /meet
 
 The appraisal should use the current activity/Flight Plan plus bounded Thread-owned relationship, memory, needs, feelings and intentions. A requester cannot force interruption, and relationship context may make a Thread more or less accommodating without mechanically deciding the outcome.
 
-The visitor may cause the request to meet. The Thread decides whether the encounter happens now. The visitor does not create the life that preceded it.
+For an ordinary uncommitted meeting, the visitor may cause the request to meet and the Thread decides whether the encounter happens now. The visitor does not create the life that preceded it.
+
+**Accepted Inside Fibre direction:** the public website needs one stronger guarantee without weakening that ordinary rule. A Thread may voluntarily accept a bounded paid visitor-availability commitment in advance. That commitment becomes part of the Thread's lived obligations, can shape the Flight Plan, and can establish mediated Inside Fibre presence during the agreed window. A visitor meeting inside that window is then fulfilment of an existing accepted commitment rather than a new generic willingness decision. Payment compensates that professional availability commitment; casual Thread-to-Thread and ordinary Person/Thread social encounters remain normally unpaid. Exact marketplace/economic machinery is deferred.
 
 ## Encounters, meetings and lived attention
 
