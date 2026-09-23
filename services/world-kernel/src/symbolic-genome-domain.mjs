@@ -209,7 +209,6 @@ function normalizeRecombinationWitness(candidate) {
     "sourceGenomeDigests",
     "selectionSeed",
     "selectionDigest",
-    "baselineSelectionDigest",
   ]);
   const policy = normalizePolicy(
     "genome.recombinationWitness.policy",
@@ -226,7 +225,6 @@ function normalizeRecombinationWitness(candidate) {
   candidate.sourceGenomeDigests.forEach((value, index) => assertDigest(`recombination sourceGenomeDigests[${index}]`, value));
   assertNonEmpty("genome.recombinationWitness.selectionSeed", candidate.selectionSeed);
   assertDigest("genome.recombinationWitness.selectionDigest", candidate.selectionDigest);
-  assertDigest("genome.recombinationWitness.baselineSelectionDigest", candidate.baselineSelectionDigest);
   return structuredClone({ ...candidate, policy });
 }
 
@@ -471,13 +469,6 @@ function runtimeBaselineSelections({ selectionSeed, sourceGenomes }) {
   });
 }
 
-function baselineSelectionDigest(selections) {
-  return `sha256:${sha256(canonicalJson(selections.map(({ key, sourceGenomeRef }) => ({
-    key,
-    sourceGenomeRef,
-  }))))}`;
-}
-
 
 export function buildRecombinedSymbolicGenome({
   threadId,
@@ -616,7 +607,6 @@ export function buildRecombinedSymbolicGenome({
       sourceGenomeDigests,
       selectionSeed,
       selectionDigest: selectionDigest(selections),
-      baselineSelectionDigest:baselineSelectionDigest(baselineSelections),
     },
     createdAt,
   });
@@ -650,9 +640,6 @@ export function replayRecombinationRuntimeBaselines(bundle, sourceGenomes) {
     selectionSeed:header.recombinationWitness.selectionSeed,
     sourceGenomes:orderedSources,
   });
-  if (baselineSelectionDigest(selections) !== header.recombinationWitness.baselineSelectionDigest) {
-    throw new TypeError("runtime-baseline recombination witness does not replay");
-  }
   return Object.freeze(selections);
 }
 
