@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 import {
   createWorldAuthoringFetch,
   normalizeModernHeritage,
@@ -207,25 +208,47 @@ test("authored World rejects demographic language inventories for one subject", 
   );
 });
 
-test("default birthplace selection is stable and no longer confined to the five development Worlds", () => {
-  const requestId = "birth-global-anchor-stability";
+test("default births form a stable population-shaped world with a real small-place long tail", () => {
+  const requestId = "birth-global-distribution-stability";
   assert.deepEqual(
-    selectDefaultModernBirthplace(requestId),
-    selectDefaultModernBirthplace(requestId),
+    sampleModernBirthplace(requestId),
+    sampleModernBirthplace(requestId),
     "same birth request changed birthplace",
   );
 
-  const fixturePlaces = new Set(materialFixture.slots.map(({ birthCity }) => birthCity));
-  const sampled = new Map(
-    Array.from({ length:80 }, (_, index) => {
-      const selector = selectDefaultModernBirthplace(`birth-global-anchor-${index}`);
-      return [selector.key, selector.birthCity];
-    }),
+  const samples = Array.from({ length:5000 }, (_, index) =>
+    sampleModernBirthplace(`birth-global-distribution-${index}`));
+  const regions = new Map();
+  const places = new Set();
+  let longTail = 0;
+  for (const sample of samples) {
+    regions.set(sample.region, (regions.get(sample.region) ?? 0) + 1);
+    places.add(sample.place);
+    if (sample.kind === "long_tail") longTail += 1;
+  }
+
+  assert.equal(regions.size, 10, "births lost broad geographic coverage");
+  assert.ok(places.size > 50, "birthplaces collapsed into too few localities");
+  assert.ok(longTail > samples.length * 0.2, "small-place births became exceptional");
+  assert.ok(longTail < samples.length * 0.5, "long-tail births displaced the global anchor base");
+  assert.ok(
+    regions.get("south_asia") > regions.get("north_america")
+      && regions.get("east_asia") > regions.get("oceania"),
+    "birth regions no longer resemble broad human population distribution",
   );
 
-  assert.ok(sampled.size > cohort.slots.length, "default births are still trapped in development Worlds");
+  const fixturePlaces = new Set(materialFixture.slots.map(({ birthCity }) => birthCity));
   assert.ok(
-    [...sampled.values()].some((birthCity) => !fixturePlaces.has(birthCity)),
-    "default births never leave the development fixtures",
+    samples.some(({ place }) => {
+      const selector = normalizeModernWorldSelector(place);
+      return !fixturePlaces.has(selector.birthCity);
+    }),
+    "default births are still trapped in development Worlds",
+  );
+
+  assert.deepEqual(
+    selectDefaultModernBirthplace(requestId),
+    normalizeModernWorldSelector(sampleModernBirthplace(requestId).place),
+    "Genesis default selection diverged from the birthplace sampler",
   );
 });
