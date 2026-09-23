@@ -11,7 +11,7 @@ import {
   GenesisPassBAdmissionError,
   normalizeAdmittedPassBModelOutput,
 } from "./genesis-memory-admission.mjs";
-import { GENESIS_PASS_B_RESPONSE_SCHEMA } from "./genesis-memory-prompts.mjs";
+import { passBResponseSchemaForVisibleEpisodes } from "./genesis-memory-prompts.mjs";
 
 export const GENESIS_LIFE_SPARSE_HISTORY_NOTICE = GENESIS_SPARSE_HISTORY_NOTICE;
 export const GENESIS_LIFE_PASS_B_HORIZONS = Object.freeze([4, 6, 8, 10, 12, 14]);
@@ -42,6 +42,9 @@ export async function generateGenesisPassBMemory({ adapter, input, clientRequest
   if (typeof clientRequestId !== "string" || clientRequestId.trim() === "") throw new TypeError("replacement Pass-B clientRequestId is required");
   const normalizedInput = normalizePassBInput(input);
   const cognitionInput = projectPassBInputForCognition(normalizedInput);
+  const responseSchema = passBResponseSchemaForVisibleEpisodes(
+    normalizedInput.history.map((episode) => episode.episodeId),
+  );
   const calls = [];
 
   const invoke = async ({ prompt, kind, generatedVersion }) => {
@@ -49,7 +52,7 @@ export async function generateGenesisPassBMemory({ adapter, input, clientRequest
     const result = await adapter.invoke({
       systemPrompt: prompt,
       input: cognitionInput,
-      responseSchema: GENESIS_PASS_B_RESPONSE_SCHEMA,
+      responseSchema,
       clientRequestId: `${clientRequestId}:${kind}`,
     });
     calls.push(Object.freeze({
