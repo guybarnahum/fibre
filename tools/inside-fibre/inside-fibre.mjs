@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { plannedPositionAt } from "../../services/world-kernel/src/lived-now.mjs";
 import { INSIDE_FIBRE_VISITOR_WORK } from "../../services/world-kernel/src/inside-fibre-work.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -98,6 +97,16 @@ function futurePendingCommitments(workState, atMs) {
     .sort((left, right) => left.startMs - right.startMs);
 }
 
+function plannedStopAt(plan, at) {
+  const instant = Date.parse(at);
+  if (!Number.isFinite(instant)) return null;
+  return (plan?.stops ?? []).find((stop) => {
+    const start = Date.parse(stop?.startAt ?? "");
+    const end = Date.parse(stop?.endAt ?? "");
+    return Number.isFinite(start) && Number.isFinite(end) && start <= instant && instant < end;
+  }) ?? null;
+}
+
 function commitmentIsEnacted(commitment, observatory, at) {
   const situation = observatory?.livedNow?.currentSituation ?? null;
   const plan = observatory?.livedNow?.currentPersonalPlan ?? null;
@@ -111,9 +120,9 @@ function commitmentIsEnacted(commitment, observatory, at) {
     || !(situation.evidenceRefs ?? []).includes(commitment.commitmentId)
   ) return false;
 
-  const position = plannedPositionAt(plan, at);
-  return position?.kind === "at_place"
-    && position.mediatedContext === INSIDE_FIBRE_VISITOR_WORK.mediatedContext;
+  const stop = plannedStopAt(plan, at);
+  return stop !== null
+    && stop.mediatedContext === INSIDE_FIBRE_VISITOR_WORK.mediatedContext;
 }
 
 function publicScene(thread) {
