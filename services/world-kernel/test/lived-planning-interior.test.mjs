@@ -33,7 +33,7 @@ async function withDatabase(run) {
   }
 }
 
-function seedThread(worldStore, threadId, name, createdAt) {
+function seedThread(worldStore, threadId, name, createdAt, runtimeBaselines = null) {
   const thread = structuredClone(mina);
   thread.threadId = threadId;
   thread.identity = {
@@ -41,6 +41,7 @@ function seedThread(worldStore, threadId, name, createdAt) {
     name,
     selfDescription: "I am still learning what kinds of ordinary surroundings help me do good work.",
   };
+  if (runtimeBaselines !== null) thread.genome.runtimeBaselines = structuredClone(runtimeBaselines);
   thread.currentState = {
     needs: [],
     feelings: [],
@@ -345,6 +346,11 @@ test("Flight Planning receives actual local civil time for a non-UTC World", asy
       "thr_lived_plan_local_time",
       "Nino Vale",
       "2026-09-20T08:00:00.000Z",
+      {
+        circadianPhaseOffsetMinutes:90,
+        sleepNeedMinutes:480,
+        regulatorRestSensitivity:1.05,
+      },
     );
     const identityStore = openIdentityStore(storage);
     const semanticStateStore = openSemanticStateStore(storage);
@@ -352,10 +358,12 @@ test("Flight Planning receives actual local civil time for a non-UTC World", asy
     const situatedLifeStore = openSituatedLifeStore(storage);
 
     let observedLocalHorizon = null;
+    let observedDailyRhythm = null;
     const modelAdapter = {
       async invoke(call) {
         const external = call.input.concern.externalContext;
         observedLocalHorizon = structuredClone(external.localHorizon);
+        observedDailyRhythm = structuredClone(external.dailyRhythm);
         return {
           output:{
             result:{
@@ -406,6 +414,13 @@ test("Flight Planning receives actual local civil time for a non-UTC World", asy
       start:{ date:"2026-09-23", time:"08:30", weekday:"Wednesday" },
       end:{ date:"2026-09-23", time:"20:30", weekday:"Wednesday" },
     }, "planning should see the World's local civil horizon rather than the UTC clock");
+    assert.deepEqual(observedDailyRhythm, {
+      projection:{ id:"daily_rhythm_projection", version:"1" },
+      preferredWakeAround:"09:00",
+      preferredSleepAround:"01:00",
+      sleepNeedHours:8,
+      flexibility:"soft",
+    }, "planning should receive a bounded organismic rhythm projection rather than raw DNA");
 
     situatedLifeStore.close();
     memoryStore.close();
