@@ -230,8 +230,8 @@ The active sequence is now:
 
 ```text
 W0 reciprocal outward social history                    VALIDATED
-W1 Situated Percept -> social initiation                IMPLEMENTED; validate
-W2 direct social response -> Interior Cognition         NEXT
+W1 Situated Percept -> social initiation                VALIDATED
+W2 direct social response -> Interior Cognition         IMPLEMENTED; validate
 W3 cheap general Salience Gate                          NEXT
 W4 ordinary World opportunities from active LivedNow   NEXT
 W5 grounded exploration/curiosity pressure              LATER
@@ -241,7 +241,9 @@ W7 natural encounter staging proof                      ACCEPTANCE
 
 These are roadmap labels only. Do not bake them into APIs, event names or durable records.
 
-W1 now has the intended minimal production shape: one ephemeral `situated-percept.mjs` projection replaces the social-specific `setting + counterparties + recentSocialHistory` packet. It derives only authoritative exterior facts already available from LivedNow, situated-life and encounter/social history authorities, and carries source refs for inspection. Social initiation consumes the percept through Interior Cognition; the counterparty's private state/genome never enters it. The focused organism proof holds Mina, Noor and private developed-self evidence constant while changing Noor's observable current activity and requires the social judgment to change for that exterior reason.
+W1 is validated with a structural causal proof: one ephemeral `situated-percept.mjs` projection replaces the social-specific `setting + counterparties + recentSocialHistory` packet, and the same initiator/private evidence can reach a different social judgment when only a stable observable setting fact changes. No counterparty private state/genome enters the percept.
+
+W2 now removes the remaining legacy invitee persona/history assembly. `accept | decline | defer` runs through the same Interior Cognition component with only the concrete outward request, the recipient's Situated Percept and remaining Flight Plan as exterior context; private identity/state/history is selected by Fibre's shared private-context authority. Raw genome/persona traits are absent. Defer timing remains validated against the actual plan horizon outside cognition. The focused proof holds request, recipient and private selected evidence constant while a structured setting change bends the response.
 
 Do not preserve the current social-first harness shape for compatibility. If the natural lived-world loop makes Commons fallback or old staging orchestration obsolete, replace it rather than wrapping it. The new proof must remain light: no perception service hierarchy, social simulator, universal event bus, full object ontology or high-frequency world ticking.
 

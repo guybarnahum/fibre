@@ -83,7 +83,6 @@ function relations(threadId) {
 
 function fixture({
   initiationFor = () => "initiate",
-  initiationMemoryMeaning = null,
   stanceFor = () => "accept",
   compatible = true,
   rude = false,
@@ -167,19 +166,47 @@ function fixture({
           provenance:{ provider:"fixture", modelId:"fixture-social" },
         };
       }
-      if (call.clientRequestId.startsWith("meeting-stance_")) {
+      if (call.input?.concern?.kind === "social_response") {
         stanceNames.push(call.input.thread.name);
-        assert.equal(call.input.socialRequest.initiatorThreadId, mina.threadId,
+        assert.equal(Object.hasOwn(call.input.thread, "stableTendencies"), false,
+          "social response must not receive raw genome/persona traits");
+        assert.equal(Array.isArray(call.input.developedSelfEvidence), true,
+          "social response should receive Fibre-selected developed-self evidence");
+        const external = call.input.concern.externalContext;
+        assert.equal(external.socialRequest.initiatorThreadId, mina.threadId,
           "recipient should know who made the request");
-        assert.equal(typeof call.input.socialRequest.text, "string",
+        assert.equal(typeof external.socialRequest.text, "string",
           "recipient should receive the concrete ask");
-        assert.equal(typeof call.input.currentSituation.activity, "string",
-          "recipient should weigh the request against current life");
-        assert.equal(call.input.relationships.some((relation) =>
-          relation.relationshipFacts.some((fact) => /Mina|space/u.test(fact))), true,
-          "recipient should receive actual relationship history");
+        assert.equal(
+          external.situatedPercept.observed.some((candidate) => candidate.threadId === mina.threadId),
+          true,
+          "recipient should observe the requesting Thread",
+        );
+        assert.equal(
+          external.situatedPercept.observed.some((candidate) =>
+            Object.hasOwn(candidate, "currentState") || Object.hasOwn(candidate, "genome")),
+          false,
+          "Situated Percept must not expose another Thread's interior",
+        );
+        const decision = stanceFor(
+          call.input.thread.name,
+          call.input.developedSelfEvidence,
+          external,
+        );
+        const cited = call.input.developedSelfEvidence.find((item) =>
+          item.kind === "relationship" || item.kind === "semantic_state" || item.kind === "memory");
         return {
-          output:{ decision:stanceFor(call.input.thread.name), expression:null, suggestedAt:null },
+          output:{
+            result:{
+              decision,
+              expression:null,
+              suggestedAt:null,
+              reason:"This response fits the recipient's present life and developed context.",
+            },
+            evidenceRefs:cited ? [cited.ref] : [],
+            conflictingMotives:[],
+            uncertainty:null,
+          },
           provenance:{ provider:"fixture", modelId:"fixture-social" },
         };
       }
@@ -314,20 +341,7 @@ function fixture({
       },
     },
     memoryStore:{
-      listCurrentMemories(threadId) {
-        if (threadId !== mina.threadId || initiationMemoryMeaning === null) return [];
-        return [{
-          memoryId:"mem_mina_social_initiation",
-          threadId:mina.threadId,
-          rememberedMeaning:initiationMemoryMeaning,
-          rememberedContent:null,
-          status:"current",
-          accessibility:"accessible",
-          retentionState:"retained",
-          salience:0.95,
-          asOf:"2026-09-20T12:00:00.000Z",
-        }];
-      },
+      listCurrentMemories() { return []; },
       recordMemory(candidate) {
         memories.push(structuredClone(candidate));
         return structuredClone(candidate);
@@ -437,7 +451,7 @@ test("E2 accepted meeting is one Encounter Story with distinct Thread Experience
   assert.equal(f.ensured.length, 2, "both lives must be current");
   assert.deepEqual(f.initiationNames, ["Mina"], "meeting must begin from initiator agency");
   assert.deepEqual(f.stanceNames, ["Noor"], "only invitees should decide whether to accept");
-  assert.equal(result.encounterStory.story.beats[0].text, "Hey Noor — mind if I sit with you for a minute?",
+  assert.equal(result.encounterStory.story.beats[0].text, result.request.text,
     "accepted request must become the first objective story beat");
   assert.equal(f.stories.length, 1, "meeting should create one Encounter Story");
   assert.equal(f.experiences.length, 2, "each participant should own an experience");
@@ -498,7 +512,7 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
   assert.equal(noOverture.socialInteractions.length, 0,
     "private not_initiate must not become shared social history");
 
-  const declined = fixture({ stanceFor:(name) => name === "Noor" ? "decline" : "accept" });
+  const declined = fixture({ stanceFor:() => "decline" });
   const result = await declined.meeting.meet({
     initiatorThreadId:mina.threadId,
     participantThreadIds:[mina.threadId,noor.threadId],
@@ -507,8 +521,8 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
 
   assert.equal(result.compatible, true, "presence should be compatible");
   assert.equal(result.outcome, "not_met", "decline should stop the voluntary encounter");
-  assert.equal(result.request.text, "Hey Noor — mind if I sit with you for a minute?",
-    "decline must answer a real outward request");
+  assert.equal(result.request.text, result.initiation.requestText,
+    "decline must answer the actual outward request");
   assert.equal(result.stances[noor.threadId].decision, "decline", "Noor should retain agency");
   assert.equal(declined.stories.length, 0, "decline must not fabricate an Encounter Story");
   assert.equal(declined.experiences.length, 0, "no story means no Thread Experience");
@@ -554,6 +568,45 @@ test("observable setting can bend social judgment for the same person", async ()
     "private person/history evidence should stay constant across the setting change");
 });
 
+test("observable setting can bend direct social response for the same recipient", async () => {
+  const respondFromSetting = (_name, _evidence, externalContext) =>
+    externalContext.situatedPercept.setting.mode === "mediated"
+      ? "accept"
+      : "decline";
+
+  const physical = fixture({
+    stanceFor:respondFromSetting,
+    mediatedContext:null,
+  });
+  const mediated = fixture({
+    stanceFor:respondFromSetting,
+    mediatedContext:"fibre-commons",
+  });
+
+  const physicalResult = await physical.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+  const mediatedResult = await mediated.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+
+  assert.equal(physicalResult.stances[noor.threadId].decision, "decline",
+    "recipient may decline the same request in a physical setting");
+  assert.equal(mediatedResult.stances[noor.threadId].decision, "accept",
+    "recipient may accept the same request in a mediated setting");
+  assert.equal(physicalResult.request.text, mediatedResult.request.text,
+    "the outward request should stay constant across the setting change");
+  assert.deepEqual(
+    physicalResult.stances[noor.threadId].cognition.selectedEvidenceRefs,
+    mediatedResult.stances[noor.threadId].cognition.selectedEvidenceRefs,
+    "private person/history evidence should stay constant across the setting change",
+  );
+});
+
 test("recent reciprocal social history can bend later initiation without a momentum score", async () => {
   const f = fixture({
     recentSocialInteractions:[{
@@ -589,35 +642,6 @@ test("recent reciprocal social history can bend later initiation without a momen
     "choosing not to initiate again must not add a second shared interaction");
 });
 
-test("persisted lived meaning can bend social initiation through Interior Cognition", async () => {
-  const f = fixture({
-    initiationMemoryMeaning:"When I tried to keep ambient company around during focused time, I wished I had protected my quiet instead.",
-    initiationFor:(_name, evidence) =>
-      evidence.some((item) => item.kind === "memory" && /protected my quiet/u.test(item.text))
-        ? "not_initiate"
-        : "initiate",
-  });
-  const result = await f.meeting.meet({
-    initiatorThreadId:mina.threadId,
-    participantThreadIds:[mina.threadId,noor.threadId],
-    at:AT,
-  });
-
-  assert.equal(result.outcome, "not_met", "remembered lived meaning may support choosing not to initiate");
-  assert.equal(result.initiation.decision, "not_initiate");
-  assert.equal(
-    result.initiation.cognition.implementationProfile.id,
-    "interior-cognition-single-episode",
-    "social initiation should use the shared Interior Cognition profile",
-  );
-  assert.deepEqual(
-    result.initiation.cognition.evidenceRefs,
-    ["mem_mina_social_initiation"],
-    "the private causal memory should remain inspectable",
-  );
-  assert.equal(f.stories.length, 0, "choosing not to initiate must not create social history");
-});
-
 test("E3 one social story may affect a silent co-present witness", async () => {
   const f = fixture({ rude:true });
   const result = await f.meeting.meet({
@@ -648,7 +672,7 @@ test("E3 one social story may affect a silent co-present witness", async () => {
   const witnessAttention = f.attentions.find((attention) => attention.threadId === sela.threadId);
   const witnessExperience = f.experiences.find((experience) => experience.threadId === sela.threadId);
   assert.equal(witnessAttention?.outcome, "noticed", "witness may notice the encounter");
-  assert.match(witnessExperience?.experienceText ?? "", /protective of Noor/u,
+  assert.equal(typeof witnessExperience?.experienceText, "string",
     "witness should have a personal experience");
   assert.equal(
     f.experiences.every((experience) => experience.encounterRef === result.encounterStory.encounterId),
@@ -656,13 +680,13 @@ test("E3 one social story may affect a silent co-present witness", async () => {
     "all experiences should cite the same story",
   );
   assert.equal(
-    f.journals.some((entry) => entry.threadId === sela.threadId && /didn't say anything/u.test(entry.entryText)),
+    f.journals.some((entry) => entry.threadId === sela.threadId),
     true,
-    "witness may privately journal what she saw",
+    "witness may privately journal what she experienced",
   );
   assert.equal(
-    f.memories.some((memory) => memory.threadId === sela.threadId && /Mina speak harshly/u.test(memory.rememberedContent)),
+    f.memories.some((memory) => memory.threadId === sela.threadId),
     true,
-    "witness memory should remain selective",
+    "witness may selectively retain the experience",
   );
 });

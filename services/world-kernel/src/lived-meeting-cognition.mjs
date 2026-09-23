@@ -4,15 +4,35 @@ import {
   assertIsoTimestamp,
   assertNonEmpty,
   assertPlainObject,
-  canonicalJson,
-  sha256,
 } from "./persistence-common.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import { runInteriorCognition } from "./interior-cognition.mjs";
 
 const DECISIONS = Object.freeze(["accept", "decline", "defer"]);
 const INITIATION_DECISIONS = Object.freeze(["initiate", "not_initiate"]);
-const MAX_MEMORIES = 6;
+
+const SOCIAL_RESPONSE_ADAPTER = Object.freeze({
+  id:"social-response",
+  instruction:`Decide how this Thread genuinely wants to respond to the concrete social request it just received.
+The request is an actual outward social act and therefore warrants appraisal, but it creates no obligation to engage.
+Choose accept, decline, or defer from this Thread's point of view after reconciling the observable situation, current life, developed self, relevant history and any genuine social or cultural pressure.
+Ordinary civility, hospitality, reciprocity or relationship expectations may matter when grounded in this Thread's life, but they are pressures rather than consent rules.
+decline means not now without proposing a concrete later time. defer means not now but with a plausible later time supported by the supplied Flight Plan.
+expression is the outward reply, if any, and need not reveal private reasons.
+reason is a concise private operator-facing explanation of the material considerations.
+Do not change location, rewrite the Flight Plan, invent a relationship, expose private records, infer another person's private state, or accept merely to make an encounter happen.`,
+  resultSchema:{
+    type:"object",
+    additionalProperties:false,
+    required:["decision","expression","suggestedAt","reason"],
+    properties:{
+      decision:{ type:"string", enum:DECISIONS },
+      expression:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
+      suggestedAt:{ anyOf:[{ type:"string" },{ type:"null" }] },
+      reason:{ type:"string", minLength:1, maxLength:500 },
+    },
+  },
+});
 
 const SOCIAL_INITIATION_ADAPTER = Object.freeze({
   id:"social-initiation",
@@ -33,52 +53,6 @@ reason is a concise private operator-facing explanation of the material consider
   },
 });
 
-
-function boundedMemories(memories) {
-  return [...(memories ?? [])]
-    .sort((left, right) => Date.parse(right.recordedAt) - Date.parse(left.recordedAt))
-    .slice(0, MAX_MEMORIES)
-    .map((memory) => ({
-      memoryId:memory.memoryId,
-      rememberedContent:memory.rememberedContent ?? null,
-      rememberedMeaning:memory.rememberedMeaning ?? null,
-      salience:memory.salience,
-      asOf:memory.asOf,
-    }));
-}
-
-function relationshipView(relations, counterpartyIds) {
-  const ids = new Set(counterpartyIds);
-  return (relations ?? [])
-    .filter((relation) => ids.has(relation?.relatedParty?.partyId))
-    .map((relation) => ({
-      relationId:relation.relationId,
-      relationKind:relation.relationKind,
-      displayName:relation.relatedParty?.displayName ?? null,
-      relationshipFacts:[...(relation.relationshipFacts ?? [])],
-    }));
-}
-
-function semanticView(states, counterpartyIds) {
-  const ids = new Set(counterpartyIds);
-  return (states ?? [])
-    .filter((state) => state.domain === "emotion"
-      || state.domain === "need"
-      || state.domain === "relationship_attitude"
-      || state.domain === "intention")
-    .filter((state) => state.domain !== "relationship_attitude" || ids.has(state.target?.targetId))
-    .map((state) => ({
-      stateId:state.stateId,
-      domain:state.domain,
-      dimension:state.dimension,
-      target:state.target ?? null,
-      state:state.state,
-    }));
-}
-
-function requestId(kind, input) {
-  return `${kind}_${sha256(canonicalJson(input))}`;
-}
 
 function sharedWorldPlaceIdForRef(placeRef, episodes) {
   const episode = (episodes ?? []).find((candidate) => placeEpisodeRevisionRef(candidate) === placeRef);
@@ -112,6 +86,9 @@ export async function formSocialEncounterRequest({
   assertId("social encounter initiator Thread.threadId", threadId);
   assertIsoTimestamp("social encounter at", at);
   assertPlainObject("social encounter Situated Percept", situatedPercept);
+  if (situatedPercept.observerThreadId !== threadId) {
+    throw new TypeError("social encounter Situated Percept belongs to another Thread");
+  }
   if (!Array.isArray(situatedPercept.observed) || situatedPercept.observed.length < 1) {
     throw new TypeError("social encounter requires an observed counterparty");
   }
@@ -162,104 +139,88 @@ export async function formSocialEncounterRequest({
 }
 
 export async function formMeetingStance({
-  thread,
-  situation,
+  threadId,
+  at,
   plan,
   request,
-  counterparties,
-  relationships = [],
-  semanticStates = [],
-  memories = [],
+  situatedPercept,
+  sourceStores,
   modelAdapter,
 }) {
-  assertPlainObject("meeting Thread", thread);
-  assertId("meeting Thread.threadId", thread.threadId);
-  assertPlainObject("meeting situation", situation);
+  assertId("meeting stance Thread.threadId", threadId);
+  assertIsoTimestamp("meeting stance at", at);
   assertPlainObject("social encounter request", request);
   assertId("social encounter request.initiatorThreadId", request.initiatorThreadId);
   assertNonEmpty("social encounter request.text", request.text);
-  if (request.initiatorThreadId === thread.threadId) {
+  if (request.initiatorThreadId === threadId) {
     throw new TypeError("meeting invitee cannot respond to their own request");
   }
-  if (!Array.isArray(counterparties) || counterparties.length < 1) {
-    throw new TypeError("meeting stance requires counterparties");
+  assertPlainObject("meeting stance Situated Percept", situatedPercept);
+  if (situatedPercept.observerThreadId !== threadId) {
+    throw new TypeError("meeting stance Situated Percept belongs to another Thread");
   }
-  const counterpartyIds = [];
-  for (const counterparty of counterparties) {
-    assertPlainObject("meeting counterparty", counterparty);
-    assertId("meeting counterparty.threadId", counterparty.threadId);
-    counterpartyIds.push(counterparty.threadId);
+  if (!Array.isArray(situatedPercept.observed)
+    || !situatedPercept.observed.some((candidate) => candidate.threadId === request.initiatorThreadId)) {
+    throw new TypeError("meeting stance must observe the requesting Thread");
   }
 
-  const input = {
-    thread:{
-      threadId:thread.threadId,
-      name:thread.identity?.name ?? null,
-      selfDescription:thread.identity?.selfDescription ?? "",
-      selfModel:thread.currentState?.selfModel ?? "",
-      stableTendencies:structuredClone(thread.genome?.textualTraits ?? {}),
-      unresolvedIntentions:[...(thread.currentState?.unresolvedIntentions ?? [])],
-    },
-    currentSituation:structuredClone(situation),
-    remainingFlightPlan:plan === null ? null : structuredClone(plan),
-    socialRequest:structuredClone(request),
-    counterparties:counterparties.map((counterparty) => ({
-      threadId:counterparty.threadId,
-      name:counterparty.identity?.name ?? null,
-      selfDescription:counterparty.identity?.selfDescription ?? "",
-    })),
-    relationships:relationshipView(relationships, counterpartyIds),
-    semanticStates:semanticView(semanticStates, counterpartyIds),
-    autobiographicalMemories:boundedMemories(memories),
-  };
-
-  const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are one persistent Fibre Thread deciding how to respond to a concrete social request from a co-present Thread right now.
-The supplied socialRequest is what the other Thread actually asked for. The currentSituation is World truth and the Flight Plan is this Thread's own intended life. A request creates no obligation to engage.
-Choose accept, decline, or defer from this particular Thread's point of view after weighing the request against the current situation and the totality of the actual relationship/history supplied here: what the Thread is doing, interruption cost, remaining intentions, needs/feelings, remembered interactions, trust, fondness, resentment, obligations and established relationship facts. No single label or memory mechanically decides the outcome.
-Ordinary civility creates social pressure to acknowledge a direct request, especially from someone with whom the Thread has an ongoing relationship, but civility is pressure rather than consent. The Thread may still decline or defer when busy, unwilling or otherwise disinclined. Its outward expression may be warm, polite, terse, sharp, or absent when ignoring the request is what this Thread would actually do.
-decline means not now without proposing a concrete later time. defer means not now but with a plausible later time inside the supplied Flight Plan horizon when one is genuinely supported.
-expression is the outward response, if any, and need not reveal private reasons.
-Do not change location, rewrite the Flight Plan, invent a relationship, or expose private records.`,
-    input,
-    responseSchema:{
-      type:"object",
-      additionalProperties:false,
-      required:["decision","expression","suggestedAt"],
-      properties:{
-        decision:{ type:"string", enum:DECISIONS },
-        expression:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
-        suggestedAt:{ anyOf:[{ type:"string" },{ type:"null" }] },
+  const cognition = await runInteriorCognition({
+    threadId,
+    at,
+    concern:{
+      kind:"social_response",
+      question:"How do I want to respond to this concrete social request now?",
+      externalContext:{
+        socialRequest:structuredClone(request),
+        situatedPercept:structuredClone(situatedPercept),
+        remainingFlightPlan:plan === null ? null : structuredClone(plan),
       },
     },
-    clientRequestId:requestId("meeting-stance", input),
+    adapter:SOCIAL_RESPONSE_ADAPTER,
+    sourceStores,
+    modelAdapter,
   });
 
-  assertPlainObject("meeting stance output", invocation.output);
-  assertExactKeys("meeting stance output", invocation.output, ["decision","expression","suggestedAt"]);
-  if (!DECISIONS.includes(invocation.output.decision)) throw new TypeError("meeting stance decision is invalid");
-  if (invocation.output.expression !== null) assertNonEmpty("meeting stance expression", invocation.output.expression);
-  if (invocation.output.suggestedAt !== null) {
-    assertIsoTimestamp("meeting stance suggestedAt", invocation.output.suggestedAt);
-    if (invocation.output.decision !== "defer") throw new TypeError("only deferred meetings may suggest a time");
+  assertPlainObject("meeting stance output", cognition.result);
+  assertExactKeys("meeting stance output", cognition.result, [
+    "decision","expression","suggestedAt","reason",
+  ]);
+  if (!DECISIONS.includes(cognition.result.decision)) {
+    throw new TypeError("meeting stance decision is invalid");
+  }
+  if (cognition.result.expression !== null) {
+    assertNonEmpty("meeting stance expression", cognition.result.expression);
+  }
+  assertNonEmpty("meeting stance reason", cognition.result.reason);
+  if (cognition.result.suggestedAt !== null) {
+    assertIsoTimestamp("meeting stance suggestedAt", cognition.result.suggestedAt);
+    if (cognition.result.decision !== "defer") {
+      throw new TypeError("only deferred meetings may suggest a time");
+    }
     if (plan === null
-      || Date.parse(invocation.output.suggestedAt) < Date.parse(situation.establishedAt)
-      || Date.parse(invocation.output.suggestedAt) > Date.parse(plan.horizonEnd)) {
+      || Date.parse(cognition.result.suggestedAt) < Date.parse(at)
+      || Date.parse(cognition.result.suggestedAt) > Date.parse(plan.horizonEnd)) {
       throw new TypeError("meeting stance suggested time must fit the current Flight Plan");
     }
   }
-  if (invocation.output.decision === "defer" && invocation.output.suggestedAt === null) {
+  if (cognition.result.decision === "defer" && cognition.result.suggestedAt === null) {
     throw new TypeError("deferred meeting requires a suggested time");
   }
 
   return Object.freeze({
-    decision:invocation.output.decision,
-    expression:invocation.output.expression,
-    suggestedAt:invocation.output.suggestedAt,
+    decision:cognition.result.decision,
+    expression:cognition.result.expression,
+    suggestedAt:cognition.result.suggestedAt,
+    reason:cognition.result.reason,
     cognition:Object.freeze({
-      provider:invocation.provenance.provider,
-      modelId:invocation.provenance.modelId,
-      providerRequestId:invocation.provenance.providerRequestId ?? null,
+      provider:cognition.provenance.provider,
+      modelId:cognition.provenance.modelId,
+      providerRequestId:cognition.provenance.providerRequestId ?? null,
+      implementationProfile:structuredClone(cognition.implementationProfile),
+      sourceThreadVersion:cognition.provenance.sourceThreadVersion,
+      selectedEvidenceRefs:Object.freeze([...cognition.provenance.selectedEvidenceRefs]),
+      evidenceRefs:Object.freeze([...cognition.evidenceRefs]),
+      contextDigest:cognition.provenance.contextDigest,
     }),
   });
 }

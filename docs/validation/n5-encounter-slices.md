@@ -316,7 +316,7 @@ The record exists so later perception/cognition can know facts such as “I aske
 
 **Stop condition:** focused tests and `npm run slice:validate` are green; both participants resolve the same observable request/response; private hesitation leaves no shared record.
 
-#### W1 — Situated Percept -> social initiation — IMPLEMENTED; validate
+#### W1 — Situated Percept -> social initiation — VALIDATED
 
 Add one compact `situated-percept.mjs`-level projection inside the existing World Kernel. Do not add a service hierarchy or durable percept store.
 
@@ -337,17 +337,15 @@ Replace the ad-hoc social exterior packet rather than compatibility-wrapping it.
 
 This slice is intentionally one consumer. It proves the general percept seam without building a generalized simulation framework.
 
-#### W2 — Direct social response uses the same mind
+#### W2 — Direct social response uses the same mind — IMPLEMENTED; validate
 
-Migrate `accept | decline | defer` from the remaining legacy meeting-stance prompt into Interior Cognition using the same Situated Percept plus the concrete outward request.
+The remaining legacy meeting-stance persona path is replaced by Interior Cognition using the same Situated Percept plus the concrete outward request.
 
-This is where grounded politeness, hospitality, cultural/social expectations, relationship history and interruption cost can matter as **developed-person evidence**. Do not add `politenessScore`, demographic rules or automatic acceptance.
+Grounded politeness, hospitality, cultural/social expectations, relationship history and interruption cost can matter as **developed-person evidence**. There is no `politenessScore`, demographic rule or automatic acceptance. A direct request already warrants appraisal and therefore does not wait for the ordinary Salience Gate.
 
-A direct request already warrants appraisal; it need not wait for the ordinary Salience Gate.
+Raw-genome/persona injection and the stance-specific manual memory/relationship/semantic-state selectors are removed. The shared Interior Cognition selector is the one private-context authority. `defer` remains a private choice, while Fibre separately validates that a proposed time actually fits the current Flight Plan horizon.
 
-Remove raw-genome/persona injection from this path.
-
-**High-value proof:** the same direct ask can coherently produce acceptance, decline or defer for materially different Thread/life contexts while the observable request remains identical; social norm pressure may matter without becoming consent.
+**High-value proof:** hold the exact outward request, recipient and selected private evidence constant; change only a stable observable setting fact and require the recipient's stance to change. The proof also asserts that the requesting Thread's private interior never enters the recipient's Situated Percept.
 
 #### W3 — Cheap general Salience Gate
 

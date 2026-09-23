@@ -193,18 +193,32 @@ export function createSocialMeetingService({
       });
       const stances = {};
       for (const context of invitees) {
-        const counterparties = participantContexts
-          .filter((candidate) => candidate.thread.threadId !== context.thread.threadId)
-          .map((candidate) => candidate.thread);
-        stances[context.thread.threadId] = await formMeetingStance({
-          thread:context.thread,
+        const inviteePercept = projectSituatedPercept({
+          observerThreadId:context.thread.threadId,
           situation:context.situation,
+          observedThreads:participantContexts
+            .filter((candidate) => candidate.thread.threadId !== context.thread.threadId)
+            .map((candidate) => ({
+              threadId:candidate.thread.threadId,
+              name:candidate.thread.identity?.name ?? null,
+              situation:candidate.situation,
+            })),
+          situatedLifeStore,
+          experienceStore,
+        });
+        stances[context.thread.threadId] = await formMeetingStance({
+          threadId:context.thread.threadId,
+          at:input.at,
           plan:livedNowStore.latestPlan(context.thread.threadId, "personal", { at:input.at }),
           request,
-          counterparties,
-          relationships:situatedLifeStore.listCurrentLifeRelations(context.thread.threadId),
-          semanticStates:context.semanticStates,
-          memories:context.memories,
+          situatedPercept:inviteePercept,
+          sourceStores:{
+            worldStore:worldReader,
+            identityStore,
+            semanticStateStore,
+            memoryStore,
+            situatedLifeStore,
+          },
           modelAdapter,
         });
       }
