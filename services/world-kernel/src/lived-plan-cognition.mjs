@@ -1,4 +1,5 @@
 import {
+  assertExactKeys,
   assertId,
   assertIsoTimestamp,
   assertNonEmpty,
@@ -60,6 +61,7 @@ Use only offered physical-place refs. Stops must be ordered, non-overlapping, an
 When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
+requiredWorkCommitments, when present, are commitments this Thread already voluntarily accepted. Each must appear as one mediated stop with exactly the committed start/end and mediatedContext. Do not revisit whether the Thread should honor an accepted commitment; arrange the rest of the life around it naturally.
 Return 1 to 8 stops. Prefer a few specific ordinary presences that follow naturally from the developed person and current possibilities; combine nearby activities rather than fragmenting the day into tiny steps. Do not optimize for drama or a future visitor.`,
   resultSchema:PERSONAL_PLAN_SCHEMA,
 });
@@ -104,6 +106,54 @@ function normalizePlaces(value) {
     assertId(`availablePlaces[${index}].ref`, item.ref);
     assertNonEmpty(`availablePlaces[${index}].displayName`, item.displayName);
     return { ref: item.ref, displayName: item.displayName };
+  });
+}
+
+function normalizeRequiredWorkCommitments(value, threadId, horizonStart, horizonEnd) {
+  if (!Array.isArray(value)) throw new TypeError("personal plan requiredWorkCommitments must be an array");
+  return value.map((item, index) => {
+    assertPlainObject(`requiredWorkCommitments[${index}]`, item);
+    assertExactKeys(`requiredWorkCommitments[${index}]`, item, [
+      "commitmentId",
+      "kind",
+      "offerId",
+      "threadId",
+      "acceptedAt",
+      "startAt",
+      "endAt",
+      "mediatedContext",
+      "purpose",
+      "compensation",
+      "cognition",
+    ]);
+    assertId(`requiredWorkCommitments[${index}].commitmentId`, item.commitmentId);
+    assertId(`requiredWorkCommitments[${index}].threadId`, item.threadId);
+    if (item.threadId !== threadId) {
+      throw new TypeError("personal plan work commitment must belong to its Thread");
+    }
+    assertIsoTimestamp(`requiredWorkCommitments[${index}].startAt`, item.startAt);
+    assertIsoTimestamp(`requiredWorkCommitments[${index}].endAt`, item.endAt);
+    if (
+      Date.parse(item.startAt) < Date.parse(horizonStart)
+      || Date.parse(item.endAt) > Date.parse(horizonEnd)
+    ) {
+      throw new TypeError("personal plan work commitment must fit inside the planning horizon");
+    }
+    assertNonEmpty(`requiredWorkCommitments[${index}].mediatedContext`, item.mediatedContext);
+    assertNonEmpty(`requiredWorkCommitments[${index}].purpose`, item.purpose);
+    assertPlainObject(`requiredWorkCommitments[${index}].compensation`, item.compensation);
+    assertExactKeys(`requiredWorkCommitments[${index}].compensation`, item.compensation, ["fibreCredits"]);
+    if (!Number.isSafeInteger(item.compensation.fibreCredits) || item.compensation.fibreCredits < 1) {
+      throw new TypeError("personal plan work commitment compensation must be positive Fibre Credits");
+    }
+    return Object.freeze({
+      commitmentId:item.commitmentId,
+      startAt:item.startAt,
+      endAt:item.endAt,
+      mediatedContext:item.mediatedContext,
+      purpose:item.purpose,
+      compensation:Object.freeze({ fibreCredits:item.compensation.fibreCredits }),
+    });
   });
 }
 
@@ -155,6 +205,7 @@ export async function formPersonalLivedPlan({
   materializedAt = null,
   startingPlaceRef = null,
   worldTimeZone = null,
+  requiredWorkCommitments = [],
 }) {
   assertId("personal plan threadId", threadId);
   assertIsoTimestamp("personal plan authoredAt", authoredAt);
@@ -177,6 +228,12 @@ export async function formPersonalLivedPlan({
   }
   assertStringArray("personal plan sourceReferences", sourceReferences);
   if (sourceReferences.length === 0) throw new TypeError("personal plan sourceReferences must not be empty");
+  const workCommitments = normalizeRequiredWorkCommitments(
+    requiredWorkCommitments,
+    threadId,
+    authoredAt,
+    horizonEnd,
+  );
   const timeZone = normalizeTimeZone(worldTimeZone);
   const localHorizon = timeZone === null
     ? null
@@ -196,6 +253,9 @@ export async function formPersonalLivedPlan({
         ...(localHorizon === null ? {} : { localHorizon }),
         availablePlaces:places,
         ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
+        ...(workCommitments.length === 0 ? {} : {
+          requiredWorkCommitments:workCommitments.map((item) => structuredClone(item)),
+        }),
       },
     },
     adapter:FLIGHT_PLAN_ADAPTER,
@@ -223,6 +283,15 @@ export async function formPersonalLivedPlan({
   if (stops.at(-1).endAt !== horizonEnd) {
     throw new TypeError("personal plan cognition must cover the horizon end");
   }
+  for (const commitment of workCommitments) {
+    const matches = stops.filter((stop) =>
+      stop.startAt === commitment.startAt
+      && stop.endAt === commitment.endAt
+      && stop.mediatedContext === commitment.mediatedContext);
+    if (matches.length !== 1) {
+      throw new TypeError("personal Flight Plan must honor each accepted work commitment");
+    }
+  }
   const selectedPlaces = stops.map((stop) => stop.physicalPlaceRef);
   const materialization = materializedAt === null
     ? undefined
@@ -246,7 +315,11 @@ export async function formPersonalLivedPlan({
     horizonStart: authoredAt,
     horizonEnd,
     stops,
-    sourceReferences:[...new Set([...sourceReferences, ...selectedPlaces])],
+    sourceReferences:[...new Set([
+      ...sourceReferences,
+      ...selectedPlaces,
+      ...workCommitments.map((item) => item.commitmentId),
+    ])],
     cognition:{
       provider:cognition.provenance.provider,
       modelId:cognition.provenance.modelId,
