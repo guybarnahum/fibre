@@ -10,6 +10,7 @@ import {
   normalizeModernWorldSelector,
   parseModernGenesisArgs,
   resolveModernWorldSelection,
+  selectDefaultModernBirthplace,
 } from "./modern-genesis-selection.mjs";
 
 function fixture(path) {
@@ -206,25 +207,25 @@ test("authored World rejects demographic language inventories for one subject", 
   );
 });
 
-test("default births choose World independently from genome slot", async (t) => {
-  const root = mkdtempSync(join(tmpdir(), "fibre-world-independence-"));
-  t.after(() => rmSync(root, { recursive:true, force:true }));
+test("default birthplace selection is stable and no longer confined to the five development Worlds", () => {
+  const requestId = "birth-global-anchor-stability";
+  assert.deepEqual(
+    selectDefaultModernBirthplace(requestId),
+    selectDefaultModernBirthplace(requestId),
+    "same birth request changed birthplace",
+  );
 
-  const selected = await resolveModernWorldSelection({
-    selector:null,
-    heritage:null,
-    cohort,
-    materialFixture,
-    fixture,
-    repoRoot:root,
-    requestId:"birth-world-independence",
-    baseSlotOrdinal:1,
-    worldSlotOrdinal:3,
-  });
+  const fixturePlaces = new Set(materialFixture.slots.map(({ birthCity }) => birthCity));
+  const sampled = new Map(
+    Array.from({ length:80 }, (_, index) => {
+      const selector = selectDefaultModernBirthplace(`birth-global-anchor-${index}`);
+      return [selector.key, selector.birthCity];
+    }),
+  );
 
-  assert.equal(selected.genomePath, cohort.slots[0].genomePath, "genome slot changed");
-  assert.equal(selected.material.birthCity, "Recife, Brazil", "World stayed pinned to genome");
-  assert.match(selected.worldSpec.worldSpecId, /^world_pr39_rg1_03_recife_family_/u, "wrong World selected");
-  assert.match(selected.worldSpec.culturalContext, /Family origin context:/u, "family origin did not reach life-generating World context");
-  assert.match(selected.material.appearanceContext, /northeastern Brazilian/u, "fixture appearance prior was not carried");
+  assert.ok(sampled.size > cohort.slots.length, "default births are still trapped in development Worlds");
+  assert.ok(
+    [...sampled.values()].some((birthCity) => !fixturePlaces.has(birthCity)),
+    "default births never leave the development fixtures",
+  );
 });
