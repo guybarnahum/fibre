@@ -312,6 +312,99 @@ test("accepted visitor work bends the forward Flight Plan while preserving prior
     closeAll(state);
   }));
 
+
+test("accepted visitor work can extend the Flight Plan beyond its prior horizon", async () =>
+  withDatabase(async (databasePath) => {
+    const state = await setup(databasePath);
+    const acceptedAt = "2026-09-23T21:00:00.000Z";
+    const futureStart = "2026-09-23T23:00:00.000Z";
+    const futureEnd = "2026-09-23T23:30:00.000Z";
+    const futureOfferId = `work_offer_${sha256(canonicalJson({
+      kind:"inside_fibre_visitor_availability",
+      startAt:futureStart,
+      endAt:futureEnd,
+      mediatedContext:MEDIATED_CONTEXT,
+      purpose:PURPOSE,
+      compensation:{ fibreCredits:12 },
+    })).slice(0, 48)}`;
+    const future = state.workStore.recordAcceptedCommitment({
+      kind:"inside_fibre_visitor_availability",
+      offerId:futureOfferId,
+      threadId:state.accepted.threadId,
+      acceptedAt,
+      startAt:futureStart,
+      endAt:futureEnd,
+      mediatedContext:MEDIATED_CONTEXT,
+      purpose:PURPOSE,
+      compensation:{ fibreCredits:12 },
+      cognition:cognitionWitness(),
+    }).commitment;
+
+    const service = createInsideFibreWorkService({
+      worldReader:state.worldStore,
+      livedNowStore:state.livedNowStore,
+      identityStore:state.identityStore,
+      semanticStateStore:state.semanticStateStore,
+      memoryStore:state.memoryStore,
+      situatedLifeStore:state.situatedLifeStore,
+      workStore:state.workStore,
+      fibreCreditStore:state.fibreCreditStore,
+      modelAdapter:{
+        provider:"fixture",
+        modelId:"fixture-future-work-planning",
+        async invoke(call) {
+          const external = call.input.concern.externalContext;
+          assert.equal(external.requiredWorkCommitments.length, 1);
+          return {
+            output:{
+              result:{
+                stops:[
+                  {
+                    startAt:acceptedAt,
+                    endAt:futureStart,
+                    physicalPlaceRef:external.startingPlaceRef,
+                    presenceMode:"physical",
+                    mediatedContext:"",
+                    activity:"Continue ordinary life until the accepted shift.",
+                    purpose:"Keep the day intact before future work.",
+                    travelFromPrevious:"",
+                  },
+                  {
+                    startAt:futureStart,
+                    endAt:futureEnd,
+                    physicalPlaceRef:external.startingPlaceRef,
+                    presenceMode:"mediated",
+                    mediatedContext:MEDIATED_CONTEXT,
+                    activity:"Meet Inside Fibre visitors.",
+                    purpose:"Honor the accepted future shift.",
+                    travelFromPrevious:"",
+                  },
+                ],
+              },
+              evidenceRefs:[],
+              conflictingMotives:[],
+              uncertainty:null,
+            },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-future-work-planning",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        },
+      },
+    });
+
+    const result = await service.reconcileAcceptedWork(future.commitmentId);
+    assert.equal(result.state, "planned",
+      "accepted future work should immediately become load-bearing future intention");
+    assert.equal(result.plan.horizonEnd, futureEnd,
+      "the revised Flight Plan should extend far enough to honor the commitment");
+    assert.ok(result.plan.sourceReferences.includes(future.commitmentId));
+
+    closeAll(state);
+  }));
+
 test("Flight Planning cannot silently omit accepted visitor work", async () =>
   withDatabase(async (databasePath) => {
     const state = await setup(databasePath);
