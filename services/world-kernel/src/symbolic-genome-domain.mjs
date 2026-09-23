@@ -11,12 +11,18 @@ import {
 
 export const SYMBOLIC_GENOME_POLICY = Object.freeze({
   id: "fibre_symbolic_genome",
-  version: "1",
+  version: "2",
 });
 
 export const SYMBOLIC_RECOMBINATION_POLICY = Object.freeze({
-  id: "deterministic_textual_crossover",
-  version: "1",
+  id: "deterministic_symbolic_crossover",
+  version: "2",
+});
+
+export const SYMBOLIC_RUNTIME_BASELINE_ENVELOPES = Object.freeze({
+  circadianPhaseOffsetMinutes:Object.freeze([-120, 120]),
+  sleepNeedMinutes:Object.freeze([420, 540]),
+  regulatorRestSensitivity:Object.freeze([0.85, 1.15]),
 });
 
 export const SYMBOLIC_MUTATION_POLICY = Object.freeze({
@@ -32,6 +38,70 @@ export const SYMBOLIC_GENOME_OWNER_KINDS = Object.freeze([
 
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
 const MAX_LOCUS_BYTES = 320;
+const RHYTHM_STEP_MINUTES = 15;
+
+function boundedNumber(name, value, [minimum, maximum], { integer = false, step = null } = {}) {
+  assertFiniteNumber(name, value, { integer, minimum, maximum });
+  if (step !== null && value % step !== 0) {
+    throw new TypeError(`${name} must use ${step}-minute increments`);
+  }
+  return value;
+}
+
+export function normalizeSymbolicRuntimeBaselines(candidate) {
+  assertPlainObject("symbolicGenome.runtimeBaselines", candidate);
+  assertExactKeys("symbolicGenome.runtimeBaselines", candidate, Object.keys(SYMBOLIC_RUNTIME_BASELINE_ENVELOPES));
+  return Object.freeze({
+    circadianPhaseOffsetMinutes:boundedNumber(
+      "symbolicGenome.runtimeBaselines.circadianPhaseOffsetMinutes",
+      candidate.circadianPhaseOffsetMinutes,
+      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.circadianPhaseOffsetMinutes,
+      { integer:true, step:RHYTHM_STEP_MINUTES },
+    ),
+    sleepNeedMinutes:boundedNumber(
+      "symbolicGenome.runtimeBaselines.sleepNeedMinutes",
+      candidate.sleepNeedMinutes,
+      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.sleepNeedMinutes,
+      { integer:true, step:RHYTHM_STEP_MINUTES },
+    ),
+    regulatorRestSensitivity:boundedNumber(
+      "symbolicGenome.runtimeBaselines.regulatorRestSensitivity",
+      candidate.regulatorRestSensitivity,
+      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.regulatorRestSensitivity,
+    ),
+  });
+}
+
+function unitFromSeed(seed) {
+  return Number.parseInt(sha256(seed).slice(0, 12), 16) / 0xffffffffffff;
+}
+
+function quantizedFromSeed(seed, [minimum, maximum], step) {
+  const steps = Math.round((maximum - minimum) / step);
+  return minimum + (Math.floor(unitFromSeed(seed) * (steps + 1)) * step);
+}
+
+function runtimeBaselinesForGenome(genomeId) {
+  return normalizeSymbolicRuntimeBaselines({
+    circadianPhaseOffsetMinutes:quantizedFromSeed(
+      `${genomeId}:circadian-phase`,
+      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.circadianPhaseOffsetMinutes,
+      RHYTHM_STEP_MINUTES,
+    ),
+    sleepNeedMinutes:quantizedFromSeed(
+      `${genomeId}:sleep-need`,
+      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.sleepNeedMinutes,
+      RHYTHM_STEP_MINUTES,
+    ),
+    regulatorRestSensitivity:
+      Math.round((
+        SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.regulatorRestSensitivity[0]
+        + unitFromSeed(`${genomeId}:rest-sensitivity`)
+          * (SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.regulatorRestSensitivity[1]
+            - SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.regulatorRestSensitivity[0])
+      ) * 100) / 100,
+  });
+}
 
 function assertDigest(name, value) {
   assertNonEmpty(name, value);
@@ -138,6 +208,7 @@ function normalizeRecombinationWitness(candidate) {
     "sourceGenomeDigests",
     "selectionSeed",
     "selectionDigest",
+    "baselineSelectionDigest",
   ]);
   const policy = normalizePolicy(
     "genome.recombinationWitness.policy",
@@ -154,6 +225,7 @@ function normalizeRecombinationWitness(candidate) {
   candidate.sourceGenomeDigests.forEach((value, index) => assertDigest(`recombination sourceGenomeDigests[${index}]`, value));
   assertNonEmpty("genome.recombinationWitness.selectionSeed", candidate.selectionSeed);
   assertDigest("genome.recombinationWitness.selectionDigest", candidate.selectionDigest);
+  assertDigest("genome.recombinationWitness.baselineSelectionDigest", candidate.baselineSelectionDigest);
   return structuredClone({ ...candidate, policy });
 }
 
@@ -280,11 +352,17 @@ export function normalizeSymbolicGenomeMutation(candidate) {
   return structuredClone({ ...candidate, policy });
 }
 
-export function symbolicGenomeDigest({ header, loci, mutations = [] }) {
+export function symbolicGenomeDigest({ header, loci, runtimeBaselines, mutations = [] }) {
   const normalizedHeader = normalizeSymbolicGenomeHeader(header);
   const normalizedLoci = loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
+  const normalizedRuntimeBaselines = normalizeSymbolicRuntimeBaselines(runtimeBaselines);
   const normalizedMutations = mutations.map(normalizeSymbolicGenomeMutation).sort((a, b) => a.ordinal - b.ordinal);
-  return `sha256:${sha256(canonicalJson({ header: normalizedHeader, loci: normalizedLoci, mutations: normalizedMutations }))}`;
+  return `sha256:${sha256(canonicalJson({
+    header:normalizedHeader,
+    loci:normalizedLoci,
+    runtimeBaselines:normalizedRuntimeBaselines,
+    mutations:normalizedMutations,
+  }))}`;
 }
 
 function assertContiguousLoci(loci) {
@@ -317,7 +395,14 @@ function buildDeNovoForOwner({ owner, genesisId, values, createdAt }) {
     provenance: { kind: "de_novo", sourceGenomeRef: null, sourceLocusRef: null, mutationRef: null },
   }));
   assertContiguousLoci(loci);
-  return { header, loci, mutations: [], genomeDigest: symbolicGenomeDigest({ header, loci }) };
+  const runtimeBaselines = runtimeBaselinesForGenome(genomeId);
+  return {
+    header,
+    loci,
+    runtimeBaselines,
+    mutations: [],
+    genomeDigest: symbolicGenomeDigest({ header, loci, runtimeBaselines }),
+  };
 }
 
 export function buildDeNovoSymbolicGenome({ threadId, genesisId, values, createdAt }) {
@@ -358,6 +443,36 @@ function selectionDigest(selections) {
   }))))}`;
 }
 
+function baselineSourceIndex({ key, selectionSeed, sourceGenomeDigests }) {
+  const digest = sha256(canonicalJson({
+    policy:policyIdentity(SYMBOLIC_RECOMBINATION_POLICY),
+    baseline:key,
+    selectionSeed,
+    sourceGenomeDigests,
+  }));
+  return Number.parseInt(digest.slice(0, 2), 16) % 2;
+}
+
+function runtimeBaselineSelections({ selectionSeed, sourceGenomes }) {
+  const sourceGenomeDigests = sourceGenomes.map((source) => source.genomeDigest);
+  return Object.keys(SYMBOLIC_RUNTIME_BASELINE_ENVELOPES).sort().map((key) => {
+    const sourceIndex = baselineSourceIndex({ key, selectionSeed, sourceGenomeDigests });
+    return Object.freeze({
+      key,
+      sourceGenomeRef:sourceGenomes[sourceIndex].header.genomeId,
+      value:sourceGenomes[sourceIndex].runtimeBaselines[key],
+    });
+  });
+}
+
+function baselineSelectionDigest(selections) {
+  return `sha256:${sha256(canonicalJson(selections.map(({ key, sourceGenomeRef }) => ({
+    key,
+    sourceGenomeRef,
+  }))))}`;
+}
+
+
 export function buildRecombinedSymbolicGenome({
   threadId,
   genesisId,
@@ -372,10 +487,11 @@ export function buildRecombinedSymbolicGenome({
   const normalizedSources = sourceGenomes.map((source, index) => {
     const header = normalizeSymbolicGenomeHeader(source.header);
     const loci = source.loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
+    const runtimeBaselines = normalizeSymbolicRuntimeBaselines(source.runtimeBaselines);
     const sourceMutations = (source.mutations ?? []).map(normalizeSymbolicGenomeMutation).sort((a, b) => a.ordinal - b.ordinal);
     assertContiguousLoci(loci);
     assertDigest(`sourceGenomes[${index}].genomeDigest`, source.genomeDigest);
-    const normalized = { header, loci, mutations: sourceMutations, genomeDigest: source.genomeDigest };
+    const normalized = { header, loci, runtimeBaselines, mutations: sourceMutations, genomeDigest: source.genomeDigest };
     if (symbolicGenomeDigest(normalized) !== source.genomeDigest) {
       throw new TypeError(`source genome ${header.genomeId} digest does not match content`);
     }
@@ -407,6 +523,13 @@ export function buildRecombinedSymbolicGenome({
   const sourceGenomeDigests = normalizedSources.map((source) => source.genomeDigest);
   const sourceOwners = normalizedSources.map((source) => source.header.owner);
   const selections = [];
+  const baselineSelections = runtimeBaselineSelections({
+    selectionSeed,
+    sourceGenomes:normalizedSources,
+  });
+  const runtimeBaselines = normalizeSymbolicRuntimeBaselines(Object.fromEntries(
+    baselineSelections.map(({ key, value }) => [key, value]),
+  ));
   const builtMutations = [];
   const loci = [];
 
@@ -487,6 +610,7 @@ export function buildRecombinedSymbolicGenome({
       sourceGenomeDigests,
       selectionSeed,
       selectionDigest: selectionDigest(selections),
+      baselineSelectionDigest:baselineSelectionDigest(baselineSelections),
     },
     createdAt,
   });
@@ -494,9 +618,36 @@ export function buildRecombinedSymbolicGenome({
   return {
     header,
     loci,
+    runtimeBaselines,
     mutations: builtMutations,
-    genomeDigest: symbolicGenomeDigest({ header, loci, mutations: builtMutations }),
+    genomeDigest: symbolicGenomeDigest({
+      header,
+      loci,
+      runtimeBaselines,
+      mutations: builtMutations,
+    }),
   };
+}
+
+export function replayRecombinationRuntimeBaselines(bundle, sourceGenomes) {
+  const header = normalizeSymbolicGenomeHeader(bundle.header);
+  if (header.originKind !== "recombined") throw new TypeError("replay requires a recombined genome");
+  const orderedSources = header.recombinationWitness.sourceGenomeRefs.map((sourceRef) => {
+    const source = sourceGenomes.find((candidate) => candidate.header.genomeId === sourceRef);
+    if (source === undefined) throw new TypeError(`source genome ${sourceRef} is missing for replay`);
+    return {
+      ...source,
+      runtimeBaselines:normalizeSymbolicRuntimeBaselines(source.runtimeBaselines),
+    };
+  });
+  const selections = runtimeBaselineSelections({
+    selectionSeed:header.recombinationWitness.selectionSeed,
+    sourceGenomes:orderedSources,
+  });
+  if (baselineSelectionDigest(selections) !== header.recombinationWitness.baselineSelectionDigest) {
+    throw new TypeError("runtime-baseline recombination witness does not replay");
+  }
+  return Object.freeze(selections);
 }
 
 export function replayRecombinationSelection(bundle, sourceGenomes) {
