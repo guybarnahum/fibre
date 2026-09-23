@@ -180,6 +180,11 @@ export class LivedNowStore {
     if (situated !== null) return situated;
     const worldPlace = resolveLiveWorldPlace(this.#database, threadId, reference);
     if (worldPlace !== null) return { kind:"world_place", reference, worldPlace };
+    const workTable = this.#database.prepare(`
+      SELECT 1 AS present FROM sqlite_master
+      WHERE type='table' AND name='inside_fibre_work_commitments'
+    `).get();
+    if (workTable === undefined) return null;
     const work = this.#database.prepare(`
       SELECT commitment_id
       FROM inside_fibre_work_commitments
