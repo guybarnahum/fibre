@@ -44,6 +44,7 @@ export function createInsideFibreWorkWriteApi({
   requireMethod(workService, "Inside Fibre workService", "reconcileAcceptedWork");
   requireMethod(workStore, "Inside Fibre workStore", "listCommitments");
   requireMethod(fibreCreditStore, "Inside Fibre fibreCreditStore", "balance");
+  requireMethod(fibreCreditStore, "Inside Fibre fibreCreditStore", "listEntries");
   if (typeof privateToken !== "string" || privateToken.trim() === "") {
     throw new TypeError("Inside Fibre work API requires privateToken");
   }
@@ -75,6 +76,12 @@ export function createInsideFibreWorkWriteApi({
                 startAt:commitment.startAt,
                 endAt:commitment.endAt,
                 fibreCredits:commitment.compensation.fibreCredits,
+              })),
+              settlements:fibreCreditStore.listEntries(threadId).map((entry) => ({
+                commitmentId:entry.commitmentId,
+                encounterStoryId:entry.encounterStoryId,
+                amount:entry.amount,
+                occurredAt:entry.occurredAt,
               })),
             },
           });
