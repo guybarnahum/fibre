@@ -20,9 +20,15 @@ export const SYMBOLIC_RECOMBINATION_POLICY = Object.freeze({
 });
 
 const RUNTIME_BASELINE_SPECS = Object.freeze({
-  circadianPhaseOffsetMinutes:Object.freeze({ minimum:-120, maximum:120, step:15, integer:true }),
-  sleepNeedMinutes:Object.freeze({ minimum:420, maximum:540, step:15, integer:true }),
-  regulatorRestSensitivity:Object.freeze({ minimum:0.85, maximum:1.15, step:0.01, integer:false }),
+  circadianPhaseOffsetMinutes:Object.freeze({
+    minimum:-120, maximum:120, step:15, integer:true, seedSuffix:"circadian-phase",
+  }),
+  sleepNeedMinutes:Object.freeze({
+    minimum:420, maximum:540, step:15, integer:true, seedSuffix:"sleep-need",
+  }),
+  regulatorRestSensitivity:Object.freeze({
+    minimum:0.85, maximum:1.15, step:0.01, integer:false, seedSuffix:"rest-sensitivity",
+  }),
 });
 
 function unitFromSeed(seed) {
@@ -56,9 +62,12 @@ export function normalizeSymbolicRuntimeBaselines(candidate) {
 function runtimeBaselinesForGenome(genomeId) {
   return normalizeSymbolicRuntimeBaselines(Object.fromEntries(
     Object.entries(RUNTIME_BASELINE_SPECS).map(([key, spec]) => {
+      const unit = unitFromSeed(`${genomeId}:${spec.seedSuffix}`);
+      if (!spec.integer) {
+        return [key, Math.round((spec.minimum + unit * (spec.maximum - spec.minimum)) * 100) / 100];
+      }
       const steps = Math.round((spec.maximum - spec.minimum) / spec.step);
-      const value = spec.minimum + Math.floor(unitFromSeed(`${genomeId}:${key}`) * (steps + 1)) * spec.step;
-      return [key, spec.integer ? value : Math.round(value * 100) / 100];
+      return [key, spec.minimum + Math.floor(unit * (steps + 1)) * spec.step];
     }),
   ));
 }
