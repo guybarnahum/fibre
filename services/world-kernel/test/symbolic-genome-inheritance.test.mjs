@@ -137,6 +137,13 @@ test("deterministic crossover preserves exact source loci and explicit mutation 
       assert.equal(locus.value, source.loci[locus.ordinal - 1].value);
     }
 
+    for (const [key, value] of Object.entries(child.runtimeBaselines)) {
+      assert.ok(
+        value === sourceA.runtimeBaselines[key] || value === sourceB.runtimeBaselines[key],
+        `runtime baseline ${key} should come from one parent genome`,
+      );
+    }
+
     const stored = store.recordGenome(child);
     assert.equal(stored.idempotent, false);
     assert.equal(store.recordGenome(child).idempotent, true);
