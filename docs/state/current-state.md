@@ -296,26 +296,23 @@ The reciprocal-history seam and **W1 Situated Percept are validated**. Social in
 
 **W3 cheap general Salience Gate is validated.** One compact pure gate now runs before social-initiation cognition. It does not score attraction, sociability or willingness and does not call a model. Compatible ambient co-presence with no grounded anchor remains background, `initiation:null`, spends zero model calls and creates neither private refusal nor shared history.
 
-**W4 ordinary World opportunities from active LivedNow is validated.** The social wrapper no longer invents its own `co_present_threads` opportunity. `SituatedPercept` derives that opportunity from the current observer/observed situations already underway and binds it to their situation refs. This is the first concrete `World/LivedNow -> opportunity -> Situated Percept -> Salience` path.
+**W4 ordinary World opportunities and W5 grounded exploration/curiosity pressure are validated.** Situated Percept now derives exterior opportunities from current life, and the regulator can use repeated authoritative sameness to create moderate exploration pressure that widens attention without authoring a semantic feeling or social action.
 
-**W5 grounded exploration/curiosity pressure is now implemented pending repository validation.** The regulator kernel now contains the previously documented but missing `exploration` family. Its first live evidence is repeated authoritative sameness: two distinct LivedNow observations at least twenty minutes apart with the same physical place, mediated context, enacted activity and participant set. Only that combination exposes low novelty; time passage alone does not.
+**W6 salience microvariation is deferred.** Fibre has not yet demonstrated that deterministic salience is unnaturally rigid, so randomness should not be added pre-emptively.
 
-The W5 path remains subsemantic and cheap:
+**W7a natural scene / co-presence discovery is now implemented pending repository validation.** Social consideration no longer accepts caller-selected `participantThreadIds`. The caller supplies only the initiating Thread (plus explicit witness IDs in the controlled E3 proof). LivedNow exposes one latest established current situation per Thread at the requested time; the social path discovers compatible co-present Threads from that World state, reconciles each candidate at the same requested time, re-checks compatibility, and then projects one actor-specific opportunity per discovered Thread.
 
-```text
-repeated enacted sameness
-  -> low-novelty PerceptFrame
-  -> exploration RegulationFrame
-  -> Salience Gate anchor
-  -> otherwise-background opportunity becomes material
-  -> Interior Cognition
-```
+The actor opportunities are independent. In one café interval Mina may ignore Noor, notice Sela, or form separate encounters with both. The service therefore returns independent attempts and can admit multiple Encounter Stories at the same lived time rather than treating the room as one caller-authored group.
 
-It does not author “I am bored,” “I am curious,” `need:connection`, or an action. The first low-novelty signal is deliberately moderate and does not by itself wake interoceptive semantic cognition; stronger future evidence may justify registered `emotion:interest` or `need:novelty_growth`. The focused proof deliberately ends with `not_initiate`: curiosity pressure changes attention without forcing social engagement.
+Discovery is intentionally bounded to Threads with already-established current-life evidence. W7a does not wake the entire population simply to ask whether somebody might now be nearby. Automatic incidental-witness discovery is also still deferred; explicit witness IDs remain E3 scaffolding only and do not choose counterparties.
 
-W5 also does not claim the ambient opportunity itself is novel; it proves that grounded low-novelty organismic state can widen attention to an otherwise-background opportunity. Fibre still lacks the authoritative scene facts needed to ground contextual anomalies such as unusual clothing/body state or abrupt movement.
+The architecture now records the matching human extension: a human/person needs authoritative exterior presence/action, not a Thread genome or private state. Ambient person presence can become another actor opportunity. A concrete human utterance addressed to a Thread should enter as an admitted direct social act and warrant Interior Cognition without forcing a response. That person-presence/event seam is not implemented in W7a.
 
-After validation, W6 remains optional experimentation rather than required architecture; then continue toward natural lived encounter acceptance:
+Fibre still lacks the authoritative scene facts needed to ground contextual anomalies such as unusual clothing/body state or abrupt movement.
+
+After validation, proceed to **W7b natural lived encounter staging acceptance**:
+
+
 
 ```text
 environmental occurrence

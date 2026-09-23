@@ -1,7 +1,7 @@
 ---
 id: architecture-situated-perception-salience
 status: accepted
-last-reviewed: 2026-09-22
+last-reviewed: 2026-09-23
 canonical: true
 ---
 
@@ -107,6 +107,54 @@ Examples include:
 An opportunity is not automatically an Encounter Story. Mere co-presence may remain background. A World occurrence that objectively happens can become an Encounter Story whether or not the Thread notices it; personal experience still requires the normal attention/experience path.
 
 Fibre Commons remains one legitimate mediated place. It is not the mechanism by which social life exists and must not be the acceptance harness's artificial source of motivation.
+
+### A scene yields independent actor opportunities
+
+Co-presence is not one aggregate “people nearby” event.
+
+If Mina is in a café with Noor and Sela, the Situated Percept should expose separate actor opportunities:
+
+```text
+actor_presence -> Noor
+actor_presence -> Sela
+```
+
+Each receives its own salience decision and may independently remain background, reach Interior Cognition, or become an encounter. One lived interval may therefore contain several distinct encounters. Fibre must not arbitrarily choose “the first person in the room” merely to bound implementation cost.
+
+The first implementation discovers co-present Threads whose already-established CurrentSituations are compatible with the observer's World-owned current situation. The caller names only the observing/initiating Thread; it does not choose counterparties. Candidate lives are re-reconciled before use and must still be compatibly present.
+
+This is **current-scene discovery**, not whole-population thaw. A Thread with no already-established current-life evidence is not automatically awakened merely to see whether she might now be nearby.
+
+Group interaction remains an open composition path: several actor opportunities may later converge into one group Encounter Story when something actually happens among them. Fibre should not model every person in a café as one forced group meeting.
+
+When several actor opportunities belong to the same lived observation, their initial salience/participation judgments should be formed from the same pre-aftermath state. Do not let arbitrary database/thread ordering make “the first person considered” change the private context used to consider the second. Admit consequences only after the same-scene judgments that depend on that shared starting state are fixed.
+
+### Humans and direct address
+
+The same opportunity vocabulary should eventually include humans and other observable actors. A human does not need a Thread genome, private state or LivedNow; Fibre needs an authoritative exterior presence/action record in the Thread's current scene.
+
+Ambient human presence can behave like any other actor opportunity:
+
+```text
+actor_presence
+  actorKind = person
+  actorRef = person_guy
+```
+
+A concrete action addressed to the Thread is different:
+
+```text
+person speaks to Thread
+  -> admitted direct_social_act
+  -> warrants appraisal
+  -> Interior Cognition
+  -> respond | decline | defer | ignore as the domain permits
+```
+
+Direct address need not pass ordinary low-level salience because being actually addressed is itself a material observable event. It still creates no obligation to answer.
+
+Do not invent a human's feelings, motives, intentions or personality from appearance. Only admitted observable/public facts may enter the Situated Percept. Continuous conversation should remain a continuing encounter made of outward acts, not a separate conversation-store authority.
+
 
 ## Salience is mechanical attention, not meaning
 
@@ -336,16 +384,19 @@ interior-cognition.mjs
 
 World opportunity creation should remain a bounded LivedNow/World capability and reuse Encounter Story once an observable occurrence is admitted.
 
-The first implemented opportunity producer is intentionally narrower: when a Situated Percept is built from authoritative co-present CurrentSituations, it derives a bounded `co_present_threads` opportunity from those situations and their refs. Consumers do not author that opportunity themselves.
-
-This is not yet automatic discovery of every nearby person/object/event. It proves the authority direction first:
+The first implemented opportunity producer is intentionally narrow but endogenous: World/LivedNow exposes the latest established current situations, compatible co-presence is discovered without caller-supplied counterpart IDs, and Situated Percept derives one `actor_presence` opportunity per observed Thread.
 
 ```text
-current World situations
-  -> opportunity projection
-  -> salience
+observer CurrentSituation
+  + World-current situations
+  -> compatible actor discovery
+  -> one actor_presence opportunity per actor
+  -> independent salience
   -> optional cognition
+  -> zero, one or several encounters in the lived interval
 ```
+
+This is not yet automatic discovery of every nearby human, object or environmental event, and it does not thaw the entire population merely to search for possible presence. It proves the authority direction while keeping the implementation bounded.
 
 Do not emit `unexpected_observable` until World has an authoritative observable scene fact that can justify “unexpected relative to this setting.”
 

@@ -128,15 +128,11 @@ async function proxyThreadMeeting(request, env, initiatorThreadId) {
   let input;
   try { input = await request.json(); }
   catch { return json(400, { error:"invalid_thread_meeting", detail:"meeting request must be JSON" }); }
-  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).join(",") !== "threadIds") {
-    return json(400, { error:"invalid_thread_meeting", detail:"meeting request must contain exactly threadIds" });
-  }
-  if (!Array.isArray(input.threadIds) || input.threadIds.length < 1 || input.threadIds.length > 5) {
-    return json(400, { error:"invalid_thread_meeting", detail:"threadIds must contain 1-5 other Threads" });
-  }
-  const participantThreadIds = [initiatorThreadId, ...input.threadIds.map((threadId) => id("threadId", threadId))];
-  if (new Set(participantThreadIds).size !== participantThreadIds.length) {
-    return json(400, { error:"invalid_thread_meeting", detail:"meeting Threads must be unique" });
+  if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).length !== 0) {
+    return json(400, {
+      error:"invalid_thread_meeting",
+      detail:"meeting request no longer selects counterparties; send an empty object",
+    });
   }
   const upstream = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     "https://world.internal/internal/social-meeting",
@@ -147,7 +143,7 @@ async function proxyThreadMeeting(request, env, initiatorThreadId) {
         "Content-Type":"application/json",
         "x-fibre-private-token":privateToken(env),
       },
-      body:JSON.stringify({ initiatorThreadId, participantThreadIds }),
+      body:JSON.stringify({ initiatorThreadId }),
     },
   ));
   const payload = await upstream.text();

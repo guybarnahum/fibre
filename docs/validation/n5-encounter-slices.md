@@ -190,7 +190,7 @@ A + B independently current
        -> ordinary private journal / selective memory aftermath
 ```
 
-E3 deliberately does not add a witness subsystem. The social wrapper now distinguishes voluntary `participantThreadIds` from explicit `witnessThreadIds`, while Encounter Story remains the single n-ary authority. Every listed Thread is independently reconciled through LivedNow and checked for compatible presence before admission.
+E3 deliberately does not add a witness subsystem. Explicit `witnessThreadIds` remain proof scaffolding, while ordinary social counterparties are discovered from World-current co-presence rather than supplied by the caller. Encounter Story remains the single n-ary authority, and every admitted Thread must independently have compatible World-owned presence.
 
 Witnesses:
 
@@ -385,15 +385,16 @@ Background means the opportunity never warranted private social cognition. It cr
 
 The first opportunity producer is deliberately tiny and lives inside the existing Situated Percept projection rather than a new simulator/service.
 
-When authoritative current situations establish observable co-presence, `SituatedPercept` derives:
+When authoritative current situations establish observable co-presence, `SituatedPercept` derives one actor-specific opportunity per observed Thread:
 
 ```text
-co_present_threads
-  subjectRefs = the actually observed Threads
+actor_presence
+  actorRef = one observed Thread
+  subjectRefs = [that Thread]
   sourceReferences = observer + observed CurrentSituation refs
 ```
 
-The social meeting wrapper consumes this derived opportunity; it no longer authors a `co_present_threads` opportunity itself.
+The social path consumes these derived opportunities; it does not author them itself.
 
 This means:
 
@@ -413,7 +414,7 @@ It also does not emit `unexpected_observable` yet. Fibre currently has no author
 
 **High-value organism proof:** a social encounter service receives only current lives/participants; the resulting salience witness names the co-present Thread and cites both current situation refs even though the wrapper never constructs the opportunity. The same derived opportunity can remain background with zero model calls when no salience anchor exists.
 
-#### W5 — Grounded exploration / curiosity pressure — IMPLEMENTED; validate
+#### W5 — Grounded exploration / curiosity pressure — VALIDATED
 
 The previously documented exploration / information / play family now exists in the regulator kernel as an `exploration` drive.
 
@@ -456,7 +457,46 @@ Seed from stable episode inputs so retry/replay is stable.
 
 Delete this slice if it adds complexity without measurable Fibre-quality benefit.
 
-#### W7 — Natural lived encounter staging proof
+#### W7a — Natural scene / co-presence discovery — IMPLEMENTED; validate
+
+The caller may now select **only the initiating Thread**. It may not choose the nearby Threads that should enter social cognition.
+
+The World/LivedNow path is:
+
+```text
+initiator
+  -> ensure initiator LivedNow(at)
+  -> list latest established CurrentSituation per Thread at <= at
+  -> find physically/mediately compatible candidates
+  -> ensure each candidate at the same at
+  -> re-check compatibility
+  -> Situated Percept
+      -> actor_presence(Noor)
+      -> actor_presence(Sela)
+      -> ...
+  -> independent salience/cognition per actor
+```
+
+Discovery is intentionally bounded to Threads that already have current-life evidence. It does not wake the entire population merely to search for possible co-presence.
+
+A café may therefore create several independent opportunities in the same lived interval. The current social seam may admit more than one separate Encounter Story at the same `occurredAt`; it does not arbitrarily select a first actor or collapse everyone present into a single group meeting.
+
+Group conversation remains a preserved extension path: several actor opportunities may later converge into one n-ary Encounter Story when an actual shared event does so. W7a does not add group-selection machinery pre-emptively.
+
+Explicit `witnessThreadIds` remain controlled E3 scaffolding only. They may affect witness attention for an accepted story but never choose the initiating Thread's counterparties. Automatic incidental-witness discovery remains deferred.
+
+Human/person interaction uses the same future exterior seam:
+
+```text
+ambient person presence -> actor_presence
+person directly addresses Thread -> direct_social_act -> appraisal
+```
+
+A human does not receive or expose Thread-private state. Direct address warrants cognition because it is an admitted outward act, but it never compels response. W7a does not implement the person-presence authority yet.
+
+**High-value organism proof:** invoke social consideration with Mina's ID only while World-current state independently contains Noor and Sela in the same café. Fibre must discover both, create two separate actor opportunities, and be capable of admitting two separate Encounter Stories in the same lived interval. A Thread in another place or a reused Genesis-only place identity must not be discovered.
+
+#### W7b — Natural lived encounter staging proof
 
 Replace the social-first forcing assumption with a lived-world acceptance run during credible active periods.
 
@@ -528,6 +568,7 @@ Before implementation resumes:
 
 1. Is Encounter Story the right objective authority, or should it be named simply Encounter?
 2. Should Thread Experience persist the Thread's noticed subjective account as natural language, or store only provenance and let journal/memory be the first textual interpretation?
-3. For invited social meetings, must **all** invitees accept, or can a subset form the actual participant set while decliners simply do not join?
+3. When several actor opportunities become mutually involved in one event, what minimal rule should compose them into a single n-ary Encounter Story rather than separate encounters?
 4. For incidental witnesses, should the first proof use explicitly known co-presence rather than automatic World-wide witness discovery? The proposed answer is yes.
-5. Should environmental occurrence synthesis initially be part of LivedNow/catch-up cognition or a separate bounded World occurrence seam? The proposed first slice keeps it explicit and bounded, then integrates with LivedNow once the causal model is proven.
+5. What authoritative person-presence/action record should let human visitors enter the same Situated Percept opportunity model without giving humans fictitious Thread-private state?
+6. Should environmental occurrence synthesis initially be part of LivedNow/catch-up cognition or a separate bounded World occurrence seam? The proposed first slice keeps it explicit and bounded, then integrates with LivedNow once the causal model is proven.

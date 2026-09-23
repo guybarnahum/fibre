@@ -25,16 +25,17 @@ function currentPlace(threadId, situation, situatedLifeStore) {
 }
 
 function livedOpportunities(situation, observed) {
-  if (observed.length === 0) return Object.freeze([]);
-  return Object.freeze([Object.freeze({
-    kind:"co_present_threads",
-    subjectRefs:Object.freeze(observed.map((candidate) => candidate.threadId)),
+  return Object.freeze(observed.map((candidate) => Object.freeze({
+    kind:"actor_presence",
+    actorRef:candidate.threadId,
+    actorKind:candidate.kind,
+    subjectRefs:Object.freeze([candidate.threadId]),
     observableCues:Object.freeze([]),
     sourceReferences:Object.freeze([
       situation.situationId,
-      ...observed.map((candidate) => candidate.situationRef),
+      candidate.situationRef,
     ]),
-  })]);
+  })));
 }
 
 function recentEvents(experienceStore, observerThreadId, observedIds) {

@@ -360,6 +360,11 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
       first,
       "later lived cognition should be able to recover the immediately preceding World observation",
     );
+    assert.deepEqual(
+      lived.listCurrentSituations({ at:second.establishedAt }),
+      [second],
+      "World should expose one latest current situation per Thread for scene discovery",
+    );
     assert.match(personal.stops[0].activity, /octopus livestream/);
     assert.match(personal.stops[1].activity, /Finish the sketch/);
     lived.close();

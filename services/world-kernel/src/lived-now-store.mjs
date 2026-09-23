@@ -339,6 +339,27 @@ export class LivedNowStore {
     return row === undefined ? null : situationFromRow(row);
   }
 
+  listCurrentSituations({ at } = {}) {
+    if (!at) throw new TypeError("listCurrentSituations requires an at timestamp");
+    assertIsoTimestamp("listCurrentSituations at", at);
+    const rows = this.#database.prepare(`
+      WITH ranked AS (
+        SELECT *,
+          ROW_NUMBER() OVER (
+            PARTITION BY thread_id
+            ORDER BY established_at DESC,situation_id DESC
+          ) AS rn
+        FROM current_situation_records
+        WHERE established_at<=?
+      )
+      SELECT situation_id,thread_id,established_at,record_json,record_digest
+      FROM ranked
+      WHERE rn=1
+      ORDER BY thread_id
+    `).all(at);
+    return rows.map(situationFromRow);
+  }
+
   enactCurrentSituation(input) {
     if (this.#readOnly) throw new LivedNowConflictError("read-only lived-now store cannot write");
     assertPlainObject("enact current situation input", input);

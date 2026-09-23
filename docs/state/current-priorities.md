@@ -222,7 +222,7 @@ The immediate work is therefore **live Interior Cognition**, not stronger Common
 
 The staging run `lived-encounters-mudbwfmb` on exact SHA `0ceda832a0f99c5d73c90c11cca05bf5bb711513` was an important negative result: all refreshed Threads still had empty semantic state before Commons and the sampled lives were overwhelmingly sleeping or winding down; all 15 voluntarily stayed out. That is a valid lived outcome, not a reason to bias Commons or infer loneliness from missing social records. Absence of recorded encounter history is not proof of solitude because Fibre does not yet observe every ordinary social contact.
 
-**Reciprocal social history — IMPLEMENTED, validation pending.** Actual outward Thread-to-Thread requests plus observable `accept | decline | defer` responses now have a small append-only pairwise record; private `not_initiate` remains private. Later initiation can receive bounded recent reciprocal history plus current setting/activity. This is supporting World evidence, not a social-momentum score and not the new architectural center.
+**Reciprocal social history — VALIDATED.** Actual outward Thread-to-Thread requests plus observable `accept | decline | defer` responses now have a small append-only pairwise record; private `not_initiate` remains private. Later initiation can receive bounded recent reciprocal history plus current setting/activity. This is supporting World evidence, not a social-momentum score and not the new architectural center.
 
 **Roadmap pivot — World -> Situated Percept -> Salience -> Interior Cognition.** The staging failures showed that “get Threads into Commons, then see whether they talk” is too social-first. Fibre should instead put Threads into ordinary lived situations containing people, activities, novelty, interruptions and happenings. The World supplies circumstances; a bounded [Situated Percept](../architecture/situated-perception-and-salience.md) exposes what is observably here; cheap salience decides what deserves cognition; the existing Interior Cognition component decides what this particular person wants to do.
 
@@ -234,9 +234,10 @@ W1 Situated Percept -> social initiation                VALIDATED
 W2 direct social response -> Interior Cognition         VALIDATED
 W3 cheap general Salience Gate                          VALIDATED
 W4 ordinary World opportunities from active LivedNow   VALIDATED
-W5 grounded exploration/curiosity pressure              IMPLEMENTED; validate
-W6 bounded replayable salience microvariation           EXPERIMENTAL / OPTIONAL
-W7 natural encounter staging proof                      ACCEPTANCE
+W5 grounded exploration/curiosity pressure              VALIDATED
+W6 bounded replayable salience microvariation           DEFERRED / OPTIONAL
+W7a natural scene / co-presence discovery               IMPLEMENTED; validate
+W7b natural encounter staging proof                     NEXT
 ```
 
 These are roadmap labels only. Do not bake them into APIs, event names or durable records.
@@ -247,9 +248,15 @@ W2 is validated: `accept | decline | defer` now runs through the same Interior C
 
 W3 is validated: one compact zero-model `salience-gate.mjs` now separates background opportunity from material cognition without a score or decision flip. Background is explicitly distinct from `not_initiate`, and an `unexpected_observable` hook exists for future scene-grounded anomalies without assigning semantic meaning.
 
-W4 is validated: `SituatedPercept` now derives the first bounded `co_present_threads` opportunity from the actual current situations it projects, and the social wrapper consumes rather than authors that opportunity. Compatible unanchored ambient presence may remain background with zero cognition.
+W4 and W5 are validated. Situated Percept derives World-owned opportunities from current life, and grounded repeated sameness can create moderate exploration pressure that widens attention without authoring boredom, curiosity or social action.
 
-W5 now implements the missing low-level `exploration` regulator family. It is grounded only when Fibre has two distinct authoritative LivedNow observations at least twenty minutes apart with the same place, mediated context, enacted activity and participant set. That evidence yields low novelty / exploration pressure; elapsed time alone does not. Active exploration pressure may elevate an otherwise-background opportunity through the Salience Gate, but it authors neither boredom nor curiosity nor a social action. The focused organism proof requires that the same ambient opportunity stay background without grounded sameness, become salient with grounded sameness, reach cognition, and still permit `not_initiate`.
+W6 microvariation is deliberately deferred. There is not yet evidence that deterministic salience is too rigid, so Fibre should first observe the live deterministic system before adding stochastic complexity.
+
+**W7a natural scene discovery is implemented pending validation.** The caller now names only the initiating Thread. LivedNow exposes one latest established CurrentSituation per Thread at the requested time; the social path discovers all Threads whose World-owned physical or mediated presence is compatible, refreshes each candidate, re-checks presence, and projects one `actor_presence` opportunity per discovered actor. Each opportunity receives independent salience/cognition and the same lived interval may contain zero, one or several separate Encounter Stories.
+
+There is no arbitrary “first person in the café” cap and no aggregate “everyone here is one meeting” assumption. Group interaction remains an open composition path when several actor opportunities actually converge into one shared event.
+
+Human/person presence and direct address are explicit extension contracts in the architecture: ambient human presence should become another actor opportunity once World has an authoritative person-presence record; a human directly addressing a Thread is an outward event that warrants appraisal without forcing a response. W7a does not fake that evidence before the person-presence seam exists.
 
 Fibre still has no authoritative general scene-observation field for unusual clothing, nudity, abrupt movement or other contextual anomalies, so `unexpected_observable` remains a grounded-future hook rather than generated prose.
 

@@ -36,9 +36,9 @@ Do not change location, rewrite the Flight Plan, invent a relationship, expose p
 
 const SOCIAL_INITIATION_ADAPTER = Object.freeze({
   id:"social-initiation",
-  instruction:`Decide whether this Thread genuinely wants to initiate a small social encounter with one or more co-present counterparties right now.
-Co-presence creates an opportunity, not an obligation. Initiate only when the Thread actually wants something social from them now: attention, company, help, information, conversation, shared activity, or another concrete engagement grounded in the life already underway.
-If initiating, write the short outward request the counterparties would actually hear. It must make the ask clear enough that they can meaningfully decide whether to engage.
+  instruction:`Decide whether this Thread genuinely wants to initiate a small social encounter with this one co-present actor right now.
+Co-presence creates an opportunity, not an obligation. Initiate only when the Thread actually wants something social from this actor now: attention, company, help, information, conversation, shared activity, or another concrete engagement grounded in the life already underway.
+If initiating, write the short outward request this actor would actually hear. It must make the ask clear enough that they can meaningfully decide whether to engage.
 Choose not_initiate when the Thread does not genuinely want to ask anything of them now.
 reason is a concise private operator-facing explanation of the material considerations. Do not change location, rewrite the Flight Plan, invent a relationship, expose private records, or manufacture a motive merely to make an encounter happen.`,
   resultSchema:{
@@ -89,8 +89,8 @@ export async function formSocialEncounterRequest({
   if (situatedPercept.observerThreadId !== threadId) {
     throw new TypeError("social encounter Situated Percept belongs to another Thread");
   }
-  if (!Array.isArray(situatedPercept.observed) || situatedPercept.observed.length < 1) {
-    throw new TypeError("social encounter requires an observed counterparty");
+  if (!Array.isArray(situatedPercept.observed) || situatedPercept.observed.length !== 1) {
+    throw new TypeError("social encounter initiation requires exactly one observed actor opportunity");
   }
 
   const cognition = await runInteriorCognition({
@@ -98,7 +98,7 @@ export async function formSocialEncounterRequest({
     at,
     concern:{
       kind:"social_initiation",
-      question:"Do I want to ask any of these co-present Threads for something now?",
+      question:"Do I want to ask this co-present actor for something now?",
       externalContext:{
         situatedPercept:structuredClone(situatedPercept),
         remainingFlightPlan:plan === null ? null : structuredClone(plan),

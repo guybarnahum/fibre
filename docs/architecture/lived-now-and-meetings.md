@@ -285,7 +285,9 @@ select Thread
 
 The participation decision should consume the already-established current situation plus bounded Thread-owned relationship/history/interior context. The requester does not choose those private inputs and cannot force acceptance by requesting a meeting.
 
-The Person's presence becomes part of the event only if the Thread accepts the encounter. The browser never authors the Thread's pre-existing life.
+For a **requested visitor meeting**, the Person enters the bounded meeting scene only if the Thread accepts. The browser never authors the Thread's pre-existing life.
+
+That rule does not erase independently existing human actions. If a Person is already authoritatively present in the Thread's World scene and directly speaks or acts toward the Thread, that outward act can become objective encounter history whether the Thread answers, declines, ignores it, or walks away. Thread consent governs the Thread's participation and response; it does not rewrite what another person observably did.
 
 ## Social and group encounters
 
@@ -334,17 +336,42 @@ Appearance can be part of observable social reality. Where developmentally appro
 
 Place matters similarly. A quiet library, café, household, work session, crowded event, transit setting and Fibre Commons create different affordances even when the same two Threads are present.
 
+### Scene discovery, not caller-selected counterparties
+
+Thread-to-Thread social consideration now begins from one Thread's World-owned current life. The caller may choose **whose life to advance/inspect**, but not which nearby Thread she should consider.
+
+```text
+ensure initiator LivedNow
+  -> inspect already-established World-current situations
+  -> discover every compatibly co-present Thread
+  -> refresh each discovered candidate
+  -> re-check presence
+  -> Situated Percept projects one actor opportunity per Thread
+  -> independent salience / cognition per opportunity
+```
+
+A café may therefore produce several independent social opportunities in the same lived interval. Mina may ignore one person, approach another, and have separate encounters with two people without those people being collapsed into a caller-authored group.
+
+The first discovery seam is intentionally bounded to Threads that already have current-life evidence. It does not wake the whole population to search for possible co-presence.
+
+Explicit witness IDs remain controlled E3 scaffolding only; automatic incidental-witness discovery is still deferred. Witness selection must not become a way to choose the initiator's social counterparties.
+
+Human presence follows the same exterior model once Fibre has an authoritative person-presence/action record. A human directly addressing a Thread is an admitted outward social act and warrants appraisal, but never forces participation or response.
 
 
 
-Before a requested social encounter:
 
-- every Thread has an independently reconciled LivedNow;
-- every Thread remains physically grounded at a place or in transit;
-- invited participants independently decide whether to participate;
+
+Before an endogenous Thread-to-Thread social encounter:
+
+- the initiating Thread has an independently reconciled LivedNow;
+- nearby candidate Threads come from World-current situations, not caller selection;
+- every discovered candidate is refreshed and must still be physically or mediately compatible;
+- each actor opportunity is considered independently;
+- every addressed Thread independently decides whether to participate;
 - physical or mediated compatibility is required without teleportation or silent replanning.
 
-If the meeting occurs, World records **one objective encounter story**, not a pairwise matrix of meetings. Any number of present Threads may then form distinct private experiences from that story. A Thread may speak, act, be addressed, or silently witness what others do.
+Each actual shared event records **one objective Encounter Story**. Do not split one genuine group event into a pairwise matrix merely because several people participated. Conversely, several distinct interactions in the same café interval remain several Encounter Stories rather than being collapsed into one room-wide meeting. Any number of people present in one actual event may then form distinct private experiences from that story. A Thread may speak, act, be addressed, or silently witness what others do.
 
 A silent witness can be affected by the encounter even though she never spoke. Conversely, a nearby Thread who does not notice the occurrence should not receive a fabricated experience.
 

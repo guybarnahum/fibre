@@ -52,18 +52,10 @@ export function createSocialMeetingWriteApi({
           "social meeting request",
           body,
           hasWitnesses
-            ? ["initiatorThreadId","participantThreadIds","witnessThreadIds"]
-            : ["initiatorThreadId","participantThreadIds"],
+            ? ["initiatorThreadId","witnessThreadIds"]
+            : ["initiatorThreadId"],
         );
         assertId("social meeting initiatorThreadId", body.initiatorThreadId);
-        if (!Array.isArray(body.participantThreadIds)
-          || body.participantThreadIds.length < 2
-          || body.participantThreadIds.length > 6) {
-          throw new TypeError("social meeting requires 2-6 participantThreadIds");
-        }
-        for (const threadId of body.participantThreadIds) {
-          assertId("social meeting participantThreadId", threadId);
-        }
         if (hasWitnesses && !Array.isArray(body.witnessThreadIds)) {
           throw new TypeError("social meeting witnessThreadIds must be an array");
         }
@@ -76,7 +68,6 @@ export function createSocialMeetingWriteApi({
 
       const result = await meetingService.meet({
         initiatorThreadId:body.initiatorThreadId,
-        participantThreadIds:body.participantThreadIds,
         witnessThreadIds:body.witnessThreadIds ?? [],
         at:now(),
       });
