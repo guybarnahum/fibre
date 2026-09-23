@@ -1,3 +1,4 @@
+import { projectDailyRhythm } from "./daily-rhythm.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -54,8 +55,9 @@ const PERSONAL_PLAN_SCHEMA = Object.freeze({
 const FLIGHT_PLAN_ADAPTER = Object.freeze({
   id:"lived-planning",
   instruction:`Form a modest personal Flight Plan for roughly the next half-day/day.
-The concern's externalContext is World-provided planning reality: the lived horizon, local civil time when known, the physical places currently available, and optionally the physical place where the Thread must begin. Treat it as constraint and opportunity, not personality.
+The concern's externalContext is primarily World-provided planning reality: the lived horizon, local civil time when known, the physical places currently available, and optionally the physical place where the Thread must begin. It may also include a bounded dailyRhythm projection from the Thread's inherited organismic baselines. Treat World facts as constraint/opportunity and dailyRhythm as a soft physiological tendency, never personality or destiny.
 When localHorizon is supplied, plan ordinary life for that local civil time rather than treating UTC clock time as the Thread's local day.
+When dailyRhythm is supplied, let sleep/wake timing usually reflect it while allowing developed habits, current life and real commitments to override it. Do not default every Thread to the same conventional bedtime, wake time or morning routine.
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
 When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place.
@@ -242,6 +244,14 @@ export async function formPersonalLivedPlan({
         start:localCivilMoment(authoredAt, timeZone),
         end:localCivilMoment(horizonEnd, timeZone),
       });
+  const worldStore = sourceStores?.worldStore;
+  if (!worldStore || typeof worldStore.getThread !== "function") {
+    throw new TypeError("personal plan sourceStores.worldStore must expose getThread()");
+  }
+  const thread = worldStore.getThread(threadId);
+  const dailyRhythm = timeZone === null
+    ? null
+    : projectDailyRhythm(thread?.genome?.runtimeBaselines ?? {});
   const cognition = await runInteriorCognition({
     threadId,
     at:authoredAt,
@@ -251,6 +261,7 @@ export async function formPersonalLivedPlan({
       externalContext:{
         horizon:{ startAt:authoredAt, endAt:horizonEnd },
         ...(localHorizon === null ? {} : { localHorizon }),
+        ...(dailyRhythm === null ? {} : { dailyRhythm:structuredClone(dailyRhythm) }),
         availablePlaces:places,
         ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
         ...(workCommitments.length === 0 ? {} : {
