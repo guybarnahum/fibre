@@ -2,6 +2,7 @@ import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import baseWorker, { FibrePresentationChannelDurableObject } from "./worker.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createPublicEncounterApi } from "#services/thread-presentation/src/http/encounter-api.mjs";
+import { selectCommittedAvailableThread } from "#services/thread-presentation/src/committed-meet-selection.mjs";
 
 export { FibrePresentationChannelDurableObject };
 
@@ -21,7 +22,7 @@ function snapshotRequest(request, threadId) {
   });
 }
 
-async function callWorldEnsure(env, threadId) {
+async function callWorldMeetingEntry(env, threadId) {
   const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/inside-fibre/meeting-entry", {
     method: "POST",
     headers: {
@@ -42,15 +43,15 @@ async function callWorldEnsure(env, threadId) {
   if (body?.result?.present?.situationId !== body?.result?.situationId) {
     throw new Error("World LivedNow returned an inconsistent present");
   }
-  return body.result.present;
+  return body.result;
 }
 
-function worldEnsure(env, activityRecorder, threadId) {
-  if (activityRecorder === null) return callWorldEnsure(env, threadId);
+function worldMeetingEntry(env, activityRecorder, threadId) {
+  if (activityRecorder === null) return callWorldMeetingEntry(env, threadId);
   return activityRecorder.runStage({
     threadId,
     stage: "presentation.meet.committed_entry",
-  }, () => callWorldEnsure(env, threadId));
+  }, () => callWorldMeetingEntry(env, threadId));
 }
 
 async function callWorldEncounter(env, input) {
@@ -85,6 +86,48 @@ function worldEncounter(env, activityRecorder, input) {
   }, () => callWorldEncounter(env, input));
 }
 
+function selectionRequest(original, url) {
+  const headers = new Headers();
+  const origin = original.headers.get("Origin");
+  if (origin !== null) headers.set("Origin", origin);
+  return new Request(url, { method:"GET", headers });
+}
+
+async function committedMeetSelection(request, env, ctx, activityRecorder) {
+  const selected = await selectCommittedAvailableThread({
+    requestUrl:request.url,
+    async selectCandidate(url) {
+      const response = await baseWorker.fetch(selectionRequest(request, url), env, ctx);
+      if (!response.ok) {
+        const error = new Error(`Thread directory selection failed with HTTP ${response.status}`);
+        error.status = response.status;
+        throw error;
+      }
+      return response.json();
+    },
+    async admitCandidate(threadId) {
+      try {
+        return await worldMeetingEntry(env, activityRecorder, threadId);
+      } catch (error) {
+        if (error?.status === 409) return null;
+        throw error;
+      }
+    },
+  });
+  return Response.json(selected, {
+    status:200,
+    headers:{
+      "Cache-Control":"no-store",
+      ...(request.headers.get("Origin") === null
+        ? {}
+        : {
+            "Access-Control-Allow-Origin":request.headers.get("Origin"),
+            "Vary":"Origin",
+          }),
+    },
+  });
+}
+
 async function infraHealth(env) {
   const health = await createCloudflareInfraDriver({
     objectBucket:env.PRESENTATION_OBJECTS,
@@ -106,10 +149,13 @@ export default {
     if (request.method === "GET" && url.pathname === "/internal/health/infra") return infraHealth(env);
 
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
+    if (request.method === "GET" && url.pathname === "/api/threads/meet") {
+      return committedMeetSelection(request, env, ctx, activityRecorder);
+    }
     const encounterApi = createPublicEncounterApi({
       viewerOrigin: env.VIEWER_ORIGIN ?? null,
       ensurePublicPresent(threadId) {
-        return worldEnsure(env, activityRecorder, threadId);
+        return worldMeetingEntry(env, activityRecorder, threadId);
       },
       async readPublicPresent(threadId, originalRequest) {
         const response = await baseWorker.fetch(snapshotRequest(originalRequest, threadId), env, ctx);
