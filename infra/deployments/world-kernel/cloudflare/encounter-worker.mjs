@@ -248,6 +248,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       });
       this.insideFibreWorkApi = createInsideFibreWorkWriteApi({
         workService,
+        workStore,
         fibreCreditStore,
         privateToken:this.env.FIBRE_PRIVATE_TOKEN,
       });
