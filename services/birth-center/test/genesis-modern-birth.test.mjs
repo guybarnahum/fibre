@@ -46,6 +46,7 @@ test("Genesis birth produces a specific person grounded in a specific world", ()
     subjectIdentity: plan.subjectIdentity,
     worldSpec: plan.worldSpec,
     bornAt: plan.bornAt,
+    runtimeBaselines:plan.genome.runtimeBaselines,
   });
 
   const expectedSex = genesisSexForThread({ threadId: plan.threadId });
@@ -61,4 +62,9 @@ test("Genesis birth produces a specific person grounded in a specific world", ()
   assert.deepEqual(thread.identity.languages, plan.worldSpec.languages, "languages detached from the person's world");
   assert.ok(thread.identity.culture.length > 0, "birth lacks cultural grounding");
   assert.equal(thread.currentState.selfModel, `I am ${expectedName}.`, "newborn self-model is generic");
+  assert.deepEqual(
+    thread.genome.runtimeBaselines,
+    plan.genome.runtimeBaselines,
+    "birth lost inherited organismic baselines",
+  );
 });
