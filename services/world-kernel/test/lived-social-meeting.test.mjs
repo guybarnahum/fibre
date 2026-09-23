@@ -44,13 +44,13 @@ function placeEpisode(threadId, episodeId, placeId = "place_n5_cafe", provenance
   };
 }
 
-function situation(threadId, activity, placeRef) {
+function situation(threadId, activity, placeRef, mediatedContext = null) {
   return {
     situationId:`sit_${threadId}`,
     threadId,
     establishedAt:AT,
     location:{ kind:"place", placeRef },
-    mediatedContext:null,
+    mediatedContext,
     activity,
   };
 }
@@ -90,6 +90,7 @@ function fixture({
   placeProvenance = "world_recorded",
   recentSocialInteractions = [],
   noorActivity = "Sketching at the same café table.",
+  mediatedContext = null,
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
@@ -105,9 +106,9 @@ function fixture({
     [sela.threadId, [selaCafe]],
   ]);
   const situations = new Map([
-    [mina.threadId, situation(mina.threadId, "Reading over coffee.", placeEpisodeRevisionRef(minaCafe))],
-    [noor.threadId, situation(noor.threadId, noorActivity, placeEpisodeRevisionRef(noorCafe))],
-    [sela.threadId, situation(sela.threadId, "Waiting for tea at the next table.", placeEpisodeRevisionRef(selaCafe))],
+    [mina.threadId, situation(mina.threadId, "Reading over coffee.", placeEpisodeRevisionRef(minaCafe), mediatedContext)],
+    [noor.threadId, situation(noor.threadId, noorActivity, placeEpisodeRevisionRef(noorCafe), mediatedContext)],
+    [sela.threadId, situation(sela.threadId, "Waiting for tea at the next table.", placeEpisodeRevisionRef(selaCafe), mediatedContext)],
   ]);
   const stories = [];
   const attentions = [];
@@ -518,41 +519,39 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
 });
 
 
-test("observable situation can bend social judgment for the same person", async () => {
-  const decideFromSituation = (_name, _evidence, externalContext) =>
-    /putting her sketchbook away/iu.test(
-      externalContext.situatedPercept.observed[0]?.currentActivity ?? "",
-    )
+test("observable setting can bend social judgment for the same person", async () => {
+  const decideFromSetting = (_name, _evidence, externalContext) =>
+    externalContext.situatedPercept.setting.mode === "mediated"
       ? "initiate"
       : "not_initiate";
 
-  const absorbed = fixture({
-    initiationFor:decideFromSituation,
-    noorActivity:"Sketching carefully with headphones on.",
+  const physical = fixture({
+    initiationFor:decideFromSetting,
+    mediatedContext:null,
   });
-  const available = fixture({
-    initiationFor:decideFromSituation,
-    noorActivity:"Putting her sketchbook away and looking around the café.",
+  const mediated = fixture({
+    initiationFor:decideFromSetting,
+    mediatedContext:"fibre-commons",
   });
 
-  const absorbedResult = await absorbed.meeting.meet({
+  const physicalResult = await physical.meeting.meet({
     initiatorThreadId:mina.threadId,
     participantThreadIds:[mina.threadId,noor.threadId],
     at:AT,
   });
-  const availableResult = await available.meeting.meet({
+  const mediatedResult = await mediated.meeting.meet({
     initiatorThreadId:mina.threadId,
     participantThreadIds:[mina.threadId,noor.threadId],
     at:AT,
   });
 
-  assert.equal(absorbedResult.initiation.decision, "not_initiate",
-    "absorbed counterpart should remain a real reason not to interrupt");
-  assert.equal(availableResult.initiation.decision, "initiate",
-    "observable availability should be able to change the judgment");
-  assert.deepEqual(absorbedResult.initiation.cognition.selectedEvidenceRefs,
-    availableResult.initiation.cognition.selectedEvidenceRefs,
-    "private person/history evidence should stay constant across the percept change");
+  assert.equal(physicalResult.initiation.decision, "not_initiate",
+    "physical setting should remain a real reason not to interrupt");
+  assert.equal(mediatedResult.initiation.decision, "initiate",
+    "mediated social setting should be able to change the judgment");
+  assert.deepEqual(physicalResult.initiation.cognition.selectedEvidenceRefs,
+    mediatedResult.initiation.cognition.selectedEvidenceRefs,
+    "private person/history evidence should stay constant across the setting change");
 });
 
 test("recent reciprocal social history can bend later initiation without a momentum score", async () => {

@@ -449,7 +449,7 @@ The required organism-level proofs are:
 5. **Visualization truth** — the encounter reconstruction prompt contains only admitted objective scene evidence while a Thread's memory reconstruction remains separately subjective.
 6. **Continuity** — a retained consequence can bend later cognition; not-noticed/not-remembered content does not leak into recollection.
 
-Avoid tests of HTTP status codes, helper shapes, exact prompt wording, R2 prefix mechanics or CSS unless the boundary itself is the semantic capability under proof.
+Avoid tests of HTTP status codes, helper shapes, exact prompt wording, R2 prefix mechanics or CSS unless the boundary itself is the semantic capability under proof. Do not drive causal fixture outcomes by parsing incidental prose or capitalization; prefer stable lived/domain facts such as setting mode, admitted interaction outcome, authority, presence or durable references unless natural language itself is the capability being tested.
 
 ## Explicit non-goals
 
