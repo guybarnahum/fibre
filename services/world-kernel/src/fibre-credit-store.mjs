@@ -144,7 +144,11 @@ export class FibreCreditStore {
     `).get(record.commitmentId);
     if (prior !== undefined) {
       const existing = rowToEntry(prior);
-      if (canonicalJson(existing) !== canonicalJson(record)) {
+      if (
+        existing.threadId !== record.threadId
+        || existing.commitmentId !== record.commitmentId
+        || existing.amount !== record.amount
+      ) {
         throw new IntegrityError(`work commitment ${record.commitmentId} already settled differently`);
       }
       return Object.freeze({ entry:existing, created:false });
