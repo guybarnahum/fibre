@@ -1,131 +1,14 @@
 {
-  "header": {
-    "genomeId": "genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7",
-    "owner": {
-      "kind": "thread",
-      "ownerId": "thr_pr39_rg2_02"
-    },
-    "genesisId": "genesis_pr39_rg2_02",
-    "originKind": "recombined",
-    "inheritancePolicy": {
-      "id": "fibre_symbolic_genome",
-      "version": "2"
-    },
-    "sourceEligibility": {
-      "basis": "symbolic_genome_sources_v1",
-      "sourceGenomeRefs": [
-        "genome_6d7dd15dccba746191fe9299fc9e2f8cffcd05ea",
-        "genome_eacf79800491db417a0927ebc4373e9a47bc4d7e"
-      ],
-      "sourceOwners": [
-        {
-          "kind": "synthetic_ancestor",
-          "ownerId": "ancestor_pr39_rg2_02_a"
-        },
-        {
-          "kind": "synthetic_ancestor",
-          "ownerId": "ancestor_pr39_rg2_02_b"
-        }
-      ]
-    },
-    "recombinationWitness": {
-      "policy": {
-        "id": "deterministic_symbolic_crossover",
-        "version": "2"
-      },
-      "sourceGenomeRefs": [
-        "genome_6d7dd15dccba746191fe9299fc9e2f8cffcd05ea",
-        "genome_eacf79800491db417a0927ebc4373e9a47bc4d7e"
-      ],
-      "sourceGenomeDigests": [
-        "sha256:9169aa65d4a91c4b66d7e4fe5d1c451b4658e2d7299a4fb792debf6c6f189062",
-        "sha256:6f971eb189cf466c69565cea48fa65d4630bce9e378f8a19fefdd82481765e96"
-      ],
-      "selectionSeed": "pr39-replacement-g2-slot2-lineage-v1",
-      "selectionDigest": "sha256:d1be733ece83e52f8263258c41db3779fd290ea87ccb2187e04f49c1b334a7f9",
-      "baselineSelectionDigest": "sha256:150bc883c994a1d4cffa742a7e416b8781c771e72b996f1bdac35ce6ef78f58a"
-    },
-    "createdAt": "2026-08-22T22:00:00Z"
-  },
+  "header": {"genomeId":"genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7","owner":{"kind":"thread","ownerId":"thr_pr39_rg2_02"},"genesisId":"genesis_pr39_rg2_02","originKind":"recombined","inheritancePolicy":{"id":"fibre_symbolic_genome","version":"2"},"sourceEligibility":{"basis":"symbolic_genome_sources_v1","sourceGenomeRefs":["genome_6d7dd15dccba746191fe9299fc9e2f8cffcd05ea","genome_eacf79800491db417a0927ebc4373e9a47bc4d7e"],"sourceOwners":[{"kind":"synthetic_ancestor","ownerId":"ancestor_pr39_rg2_02_a"},{"kind":"synthetic_ancestor","ownerId":"ancestor_pr39_rg2_02_b"}]},"recombinationWitness":{"policy":{"id":"deterministic_symbolic_crossover","version":"2"},"sourceGenomeRefs":["genome_6d7dd15dccba746191fe9299fc9e2f8cffcd05ea","genome_eacf79800491db417a0927ebc4373e9a47bc4d7e"],"sourceGenomeDigests":["sha256:9169aa65d4a91c4b66d7e4fe5d1c451b4658e2d7299a4fb792debf6c6f189062","sha256:6f971eb189cf466c69565cea48fa65d4630bce9e378f8a19fefdd82481765e96"],"selectionSeed":"pr39-replacement-g2-slot2-lineage-v1","selectionDigest":"sha256:d1be733ece83e52f8263258c41db3779fd290ea87ccb2187e04f49c1b334a7f9","baselineSelectionDigest":"sha256:150bc883c994a1d4cffa742a7e416b8781c771e72b996f1bdac35ce6ef78f58a"},"createdAt":"2026-08-22T22:00:00Z"},
   "loci": [
-    {
-      "locusId": "gloc_069ef5cb95867ac44fb98b3457089f8a3b8351d2",
-      "genomeId": "genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7",
-      "ordinal": 1,
-      "value": "keeps a provisional answer open when evidence is incomplete",
-      "provenance": {
-        "kind": "inherited",
-        "sourceGenomeRef": "genome_6d7dd15dccba746191fe9299fc9e2f8cffcd05ea",
-        "sourceLocusRef": "gloc_c8867e19f950d2542e887bc3c86b119d699051e2",
-        "mutationRef": null
-      }
-    },
-    {
-      "locusId": "gloc_2af32a241f50fd2f4d38d597f2cac388a4457c12",
-      "genomeId": "genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7",
-      "ordinal": 2,
-      "value": "learns procedures by trying them in small pieces and inspecting the result",
-      "provenance": {
-        "kind": "inherited",
-        "sourceGenomeRef": "genome_eacf79800491db417a0927ebc4373e9a47bc4d7e",
-        "sourceLocusRef": "gloc_da291ba4af0915ab0d03ac13e104211d5a3d57d2",
-        "mutationRef": null
-      }
-    },
-    {
-      "locusId": "gloc_b3c13117a9ba40ea772cc7ec2c5f9f68e334be10",
-      "genomeId": "genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7",
-      "ordinal": 3,
-      "value": "enters unfamiliar groups by listening for the local rhythm before speaking",
-      "provenance": {
-        "kind": "inherited",
-        "sourceGenomeRef": "genome_eacf79800491db417a0927ebc4373e9a47bc4d7e",
-        "sourceLocusRef": "gloc_08a29e7365ed40ae66af684af98f43842e305a39",
-        "mutationRef": null
-      }
-    },
-    {
-      "locusId": "gloc_368e41b3487fca2031787d879db7c895a68b4666",
-      "genomeId": "genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7",
-      "ordinal": 4,
-      "value": "favors clear commitments when delay itself creates costs",
-      "provenance": {
-        "kind": "inherited",
-        "sourceGenomeRef": "genome_eacf79800491db417a0927ebc4373e9a47bc4d7e",
-        "sourceLocusRef": "gloc_a8867ca21af94c317c8d0215feda46c2d3f9b71b",
-        "mutationRef": null
-      }
-    },
-    {
-      "locusId": "gloc_fe71035252e41d347e3b87470ef3d0ef2bb97f5e",
-      "genomeId": "genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7",
-      "ordinal": 5,
-      "value": "after making an error, records what to check next time",
-      "provenance": {
-        "kind": "inherited",
-        "sourceGenomeRef": "genome_6d7dd15dccba746191fe9299fc9e2f8cffcd05ea",
-        "sourceLocusRef": "gloc_36ac26573ca8946f94a66f772f69ce7ab57b730d",
-        "mutationRef": null
-      }
-    },
-    {
-      "locusId": "gloc_c16468dcd6040ea3139e904c3fb50e8a301a2a53",
-      "genomeId": "genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7",
-      "ordinal": 6,
-      "value": "sustains attention by moving between quiet concentration and brief physical activity",
-      "provenance": {
-        "kind": "inherited",
-        "sourceGenomeRef": "genome_eacf79800491db417a0927ebc4373e9a47bc4d7e",
-        "sourceLocusRef": "gloc_af1f5d91182c91fbd452782c85aadf3dca6d1876",
-        "mutationRef": null
-      }
-    }
+    {"locusId":"gloc_069ef5cb95867ac44fb98b3457089f8a3b8351d2","genomeId":"genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7","ordinal":1,"value":"keeps a provisional answer open when evidence is incomplete","provenance":{"kind":"inherited","sourceGenomeRef":"genome_6d7dd15dccba746191fe9299fc9e2f8cffcd05ea","sourceLocusRef":"gloc_c8867e19f950d2542e887bc3c86b119d699051e2","mutationRef":null}},
+    {"locusId":"gloc_2af32a241f50fd2f4d38d597f2cac388a4457c12","genomeId":"genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7","ordinal":2,"value":"learns procedures by trying them in small pieces and inspecting the result","provenance":{"kind":"inherited","sourceGenomeRef":"genome_eacf79800491db417a0927ebc4373e9a47bc4d7e","sourceLocusRef":"gloc_da291ba4af0915ab0d03ac13e104211d5a3d57d2","mutationRef":null}},
+    {"locusId":"gloc_b3c13117a9ba40ea772cc7ec2c5f9f68e334be10","genomeId":"genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7","ordinal":3,"value":"enters unfamiliar groups by listening for the local rhythm before speaking","provenance":{"kind":"inherited","sourceGenomeRef":"genome_eacf79800491db417a0927ebc4373e9a47bc4d7e","sourceLocusRef":"gloc_08a29e7365ed40ae66af684af98f43842e305a39","mutationRef":null}},
+    {"locusId":"gloc_368e41b3487fca2031787d879db7c895a68b4666","genomeId":"genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7","ordinal":4,"value":"favors clear commitments when delay itself creates costs","provenance":{"kind":"inherited","sourceGenomeRef":"genome_eacf79800491db417a0927ebc4373e9a47bc4d7e","sourceLocusRef":"gloc_a8867ca21af94c317c8d0215feda46c2d3f9b71b","mutationRef":null}},
+    {"locusId":"gloc_fe71035252e41d347e3b87470ef3d0ef2bb97f5e","genomeId":"genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7","ordinal":5,"value":"after making an error, records what to check next time","provenance":{"kind":"inherited","sourceGenomeRef":"genome_6d7dd15dccba746191fe9299fc9e2f8cffcd05ea","sourceLocusRef":"gloc_36ac26573ca8946f94a66f772f69ce7ab57b730d","mutationRef":null}},
+    {"locusId":"gloc_c16468dcd6040ea3139e904c3fb50e8a301a2a53","genomeId":"genome_ab3650cb2a4e817df9845bf5913027acd21b9ff7","ordinal":6,"value":"sustains attention by moving between quiet concentration and brief physical activity","provenance":{"kind":"inherited","sourceGenomeRef":"genome_eacf79800491db417a0927ebc4373e9a47bc4d7e","sourceLocusRef":"gloc_af1f5d91182c91fbd452782c85aadf3dca6d1876","mutationRef":null}}
   ],
+  "runtimeBaselines": {"circadianPhaseOffsetMinutes":-60,"regulatorRestSensitivity":1.03,"sleepNeedMinutes":510},
   "mutations": [],
-  "genomeDigest": "sha256:bbe2b8daf140f8ad09320589084f0af4361c69f6ada1355bae77032b6396407f",
-  "runtimeBaselines": {
-    "circadianPhaseOffsetMinutes": -60,
-    "regulatorRestSensitivity": 1.03,
-    "sleepNeedMinutes": 510
-  }
+  "genomeDigest": "sha256:bbe2b8daf140f8ad09320589084f0af4361c69f6ada1355bae77032b6396407f"
 }
