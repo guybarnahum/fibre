@@ -9,19 +9,11 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 
-const SYMBOLIC_GENOME_POLICY_V1 = Object.freeze({
-  id:"fibre_symbolic_genome",
-  version:"1",
-});
 export const SYMBOLIC_GENOME_POLICY = Object.freeze({
   id:"fibre_symbolic_genome",
   version:"2",
 });
 
-const SYMBOLIC_RECOMBINATION_POLICY_V1 = Object.freeze({
-  id:"deterministic_textual_crossover",
-  version:"1",
-});
 export const SYMBOLIC_RECOMBINATION_POLICY = Object.freeze({
   id:"deterministic_symbolic_crossover",
   version:"2",
@@ -211,14 +203,18 @@ function normalizeSourceEligibility(candidate) {
 function normalizeRecombinationWitness(candidate) {
   if (candidate === null) return null;
   assertPlainObject("genome.recombinationWitness", candidate);
-  const legacy = canonicalJson(candidate.policy) === canonicalJson(policyIdentity(SYMBOLIC_RECOMBINATION_POLICY_V1));
-  assertExactKeys("genome.recombinationWitness", candidate, legacy
-    ? ["policy","sourceGenomeRefs","sourceGenomeDigests","selectionSeed","selectionDigest"]
-    : ["policy","sourceGenomeRefs","sourceGenomeDigests","selectionSeed","selectionDigest","baselineSelectionDigest"]);
+  assertExactKeys("genome.recombinationWitness", candidate, [
+    "policy",
+    "sourceGenomeRefs",
+    "sourceGenomeDigests",
+    "selectionSeed",
+    "selectionDigest",
+    "baselineSelectionDigest",
+  ]);
   const policy = normalizePolicy(
     "genome.recombinationWitness.policy",
     candidate.policy,
-    legacy ? SYMBOLIC_RECOMBINATION_POLICY_V1 : SYMBOLIC_RECOMBINATION_POLICY,
+    SYMBOLIC_RECOMBINATION_POLICY,
   );
   if (!Array.isArray(candidate.sourceGenomeRefs) || candidate.sourceGenomeRefs.length !== 2) {
     throw new TypeError("recombination sourceGenomeRefs must contain exactly two genomes");
@@ -230,9 +226,7 @@ function normalizeRecombinationWitness(candidate) {
   candidate.sourceGenomeDigests.forEach((value, index) => assertDigest(`recombination sourceGenomeDigests[${index}]`, value));
   assertNonEmpty("genome.recombinationWitness.selectionSeed", candidate.selectionSeed);
   assertDigest("genome.recombinationWitness.selectionDigest", candidate.selectionDigest);
-  if (!legacy) {
-    assertDigest("genome.recombinationWitness.baselineSelectionDigest", candidate.baselineSelectionDigest);
-  }
+  assertDigest("genome.recombinationWitness.baselineSelectionDigest", candidate.baselineSelectionDigest);
   return structuredClone({ ...candidate, policy });
 }
 
@@ -254,21 +248,13 @@ export function normalizeSymbolicGenomeHeader(candidate) {
   if (!["de_novo", "recombined"].includes(candidate.originKind)) {
     throw new TypeError("symbolicGenome.originKind is invalid");
   }
-  const legacyPolicy = canonicalJson(candidate.inheritancePolicy)
-    === canonicalJson(policyIdentity(SYMBOLIC_GENOME_POLICY_V1));
   const inheritancePolicy = normalizePolicy(
     "symbolicGenome.inheritancePolicy",
     candidate.inheritancePolicy,
-    legacyPolicy ? SYMBOLIC_GENOME_POLICY_V1 : SYMBOLIC_GENOME_POLICY,
+    SYMBOLIC_GENOME_POLICY,
   );
   const sourceEligibility = normalizeSourceEligibility(candidate.sourceEligibility);
   const recombinationWitness = normalizeRecombinationWitness(candidate.recombinationWitness);
-  if (
-    recombinationWitness !== null
-    && ((inheritancePolicy.version === "1") !== (recombinationWitness.policy.version === "1"))
-  ) {
-    throw new TypeError("symbolic genome and recombination policy generations must match");
-  }
   assertIsoTimestamp("symbolicGenome.createdAt", candidate.createdAt);
   const expectedId = symbolicGenomeId({ owner, genesisId: candidate.genesisId });
   if (candidate.genomeId !== expectedId) throw new TypeError("symbolicGenome.genomeId is not stable for owner+genesisId");
@@ -371,13 +357,6 @@ export function symbolicGenomeDigest({ header, loci, runtimeBaselines, mutations
   const normalizedHeader = normalizeSymbolicGenomeHeader(header);
   const normalizedLoci = loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
   const normalizedMutations = mutations.map(normalizeSymbolicGenomeMutation).sort((a, b) => a.ordinal - b.ordinal);
-  if (normalizedHeader.inheritancePolicy.version === "1") {
-    return `sha256:${sha256(canonicalJson({
-      header:normalizedHeader,
-      loci:normalizedLoci,
-      mutations:normalizedMutations,
-    }))}`;
-  }
   const normalizedRuntimeBaselines = normalizeSymbolicRuntimeBaselines(runtimeBaselines);
   return `sha256:${sha256(canonicalJson({
     header:normalizedHeader,
@@ -450,12 +429,11 @@ function sourceIndexForOrdinal({
   locusCount,
   selectionSeed,
   sourceGenomeDigests,
-  policy = SYMBOLIC_RECOMBINATION_POLICY,
 }) {
   if (ordinal === 1) return 0;
   if (ordinal === locusCount) return 1;
   const digest = sha256(canonicalJson({
-    policy: policyIdentity(policy),
+    policy: policyIdentity(SYMBOLIC_RECOMBINATION_POLICY),
     ordinal,
     selectionSeed,
     sourceGenomeDigests,
@@ -527,12 +505,12 @@ export function buildRecombinedSymbolicGenome({
   });
   const [sourceA, sourceB] = normalizedSources;
   if (sourceA.loci.length !== sourceB.loci.length) {
-    throw new TypeError("v1 textual crossover requires source genomes with equal locus counts");
+    throw new TypeError("symbolic crossover requires source genomes with equal locus counts");
   }
   assertNonEmpty("selectionSeed", selectionSeed);
   if (!Array.isArray(mutations)) throw new TypeError("mutations must be an array");
   if (mutations.length > SYMBOLIC_MUTATION_POLICY.maxReplacements) {
-    throw new TypeError(`v1 allows at most ${SYMBOLIC_MUTATION_POLICY.maxReplacements} locus replacements`);
+    throw new TypeError(`symbolic mutation policy allows at most ${SYMBOLIC_MUTATION_POLICY.maxReplacements} locus replacements`);
   }
   const mutationOrdinals = new Set();
   for (const mutation of mutations) {
@@ -693,7 +671,6 @@ export function replayRecombinationSelection(bundle, sourceGenomes) {
       locusCount: bundle.loci.length,
       selectionSeed: header.recombinationWitness.selectionSeed,
       sourceGenomeDigests,
-      policy:header.recombinationWitness.policy,
     });
     const source = orderedSources[sourceIndex];
     return {
