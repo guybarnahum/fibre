@@ -152,6 +152,7 @@ function threadObservatory(runtime, threadId) {
       livedNow:Object.freeze({
         currentSituation:structuredClone(currentSituation),
         currentPersonalPlan:currentPersonalPlanWitness,
+        worldContext:structuredClone(livedNow.getWorldContext(threadId, { required:false })),
         worldPlaces:structuredClone(livedNow.listWorldPlaces(threadId)),
         placeEpisodes:structuredClone(situatedLife.listCurrentPlaceEpisodes(threadId)),
       }),
