@@ -69,10 +69,8 @@ async function privateGet(baseUrl, pathname, privateToken, query, label) {
   return responseJson(response, label);
 }
 
-function activePendingCommitments(workState, atMs) {
-  const settled = new Set((workState?.settlements ?? []).map((entry) => entry.commitmentId));
+function activeCommitments(workState, atMs) {
   return (workState?.commitments ?? [])
-    .filter((commitment) => !settled.has(commitment.commitmentId))
     .map((commitment) => Object.freeze({
       ...commitment,
       startMs:Date.parse(commitment.startAt),
@@ -83,10 +81,8 @@ function activePendingCommitments(workState, atMs) {
     .sort((left, right) => left.startMs - right.startMs);
 }
 
-function futurePendingCommitments(workState, atMs) {
-  const settled = new Set((workState?.settlements ?? []).map((entry) => entry.commitmentId));
+function futureCommitments(workState, atMs) {
   return (workState?.commitments ?? [])
-    .filter((commitment) => !settled.has(commitment.commitmentId))
     .map((commitment) => Object.freeze({
       ...commitment,
       startMs:Date.parse(commitment.startAt),
@@ -153,8 +149,8 @@ export function classifyInsideFibreRosterEntry({
 }) {
   const atMs = Date.parse(at);
   if (!Number.isFinite(atMs)) throw new TypeError("roster time must be an ISO timestamp");
-  const active = activePendingCommitments(workState, atMs);
-  const scheduled = futurePendingCommitments(workState, atMs);
+  const active = activeCommitments(workState, atMs);
+  const scheduled = futureCommitments(workState, atMs);
   const available = active.find((commitment) => commitmentIsEnacted(commitment, observatory, at)) ?? null;
 
   return Object.freeze({
