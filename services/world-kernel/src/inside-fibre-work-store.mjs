@@ -14,9 +14,21 @@ import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 const WORK_KIND = "inside_fibre_visitor_availability";
 const MEDIATED_CONTEXT = "insidefibre:visitor-work";
+const PURPOSE = "Meet insidefibre.com visitors during the agreed availability window.";
 
 function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
+}
+
+function offerIdFor(candidate) {
+  return `work_offer_${sha256(canonicalJson({
+    kind:WORK_KIND,
+    startAt:candidate.startAt,
+    endAt:candidate.endAt,
+    mediatedContext:MEDIATED_CONTEXT,
+    purpose:PURPOSE,
+    compensation:{ fibreCredits:candidate.compensation.fibreCredits },
+  })).slice(0, 48)}`;
 }
 
 function commitmentId({ threadId, offerId }) {
@@ -84,11 +96,15 @@ function normalizeCommitment(candidate) {
   if (candidate.mediatedContext !== MEDIATED_CONTEXT) {
     throw new TypeError("work commitment mediated context is invalid");
   }
-  assertNonEmpty("work commitment purpose", candidate.purpose);
+  if (candidate.purpose !== PURPOSE) throw new TypeError("work commitment purpose is invalid");
   assertPlainObject("work commitment compensation", candidate.compensation);
   assertExactKeys("work commitment compensation", candidate.compensation, ["fibreCredits"]);
   if (!Number.isSafeInteger(candidate.compensation.fibreCredits) || candidate.compensation.fibreCredits < 1) {
     throw new TypeError("work commitment compensation must be positive Fibre Credits");
+  }
+  const expectedOfferId = offerIdFor(candidate);
+  if (candidate.offerId !== expectedOfferId) {
+    throw new TypeError("work commitment offer ID does not match its terms");
   }
   const expectedId = commitmentId(candidate);
   if (candidate.commitmentId !== expectedId) {
