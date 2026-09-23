@@ -23,7 +23,7 @@ test("symbolic genome authorities fail closed on unknown policy versions", () =>
       ...genome.header,
       inheritancePolicy: { id: "fibre_symbolic_genome", version: "3" },
     }),
-    /not a supported v1 policy/,
+    /not a supported policy/,
   );
 
   const mutationPolicy = { id: "bounded_textual_locus_replacement", version: "1" };
@@ -51,6 +51,6 @@ test("symbolic genome authorities fail closed on unknown policy versions", () =>
       ...mutation,
       policy: { id: mutationPolicy.id, version: "2" },
     }),
-    /not a supported v1 policy/,
+    /not a supported policy/,
   );
 });
