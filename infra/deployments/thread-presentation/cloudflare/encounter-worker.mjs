@@ -22,7 +22,7 @@ function snapshotRequest(request, threadId) {
 }
 
 async function callWorldEnsure(env, threadId) {
-  const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/lived-now/ensure", {
+  const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/inside-fibre/meeting-entry", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -49,12 +49,12 @@ function worldEnsure(env, activityRecorder, threadId) {
   if (activityRecorder === null) return callWorldEnsure(env, threadId);
   return activityRecorder.runStage({
     threadId,
-    stage: "presentation.meet.world_ensure",
+    stage: "presentation.meet.committed_entry",
   }, () => callWorldEnsure(env, threadId));
 }
 
 async function callWorldEncounter(env, input) {
-  const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/lived-encounter", {
+  const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/inside-fibre/visitor-encounter", {
     method: "POST",
     headers: {
       "content-type": "application/json",
