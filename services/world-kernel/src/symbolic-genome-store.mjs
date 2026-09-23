@@ -14,6 +14,7 @@ import {
   normalizeSymbolicGenomeLocus,
   normalizeSymbolicGenomeMutation,
   normalizeSymbolicGenomeOwner,
+  normalizeSymbolicRuntimeBaselines,
   symbolicGenomeDigest,
 } from "./symbolic-genome-domain.mjs";
 import {
@@ -39,6 +40,7 @@ function canonicalBundle(bundle) {
   return canonicalJson({
     header: bundle.header,
     loci: bundle.loci,
+    runtimeBaselines:bundle.runtimeBaselines,
     mutations: bundle.mutations,
     genomeDigest: bundle.genomeDigest,
   });
@@ -101,8 +103,9 @@ export class SymbolicGenomeStore {
     if (this.#readOnly) throw new SymbolicGenomeConflictError("read-only symbolic genome store cannot write");
     const header = normalizeSymbolicGenomeHeader(candidateBundle.header);
     const loci = candidateBundle.loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
+    const runtimeBaselines = normalizeSymbolicRuntimeBaselines(candidateBundle.runtimeBaselines);
     const mutations = (candidateBundle.mutations ?? []).map(normalizeSymbolicGenomeMutation).sort((a, b) => a.ordinal - b.ordinal);
-    const bundle = { header, loci, mutations, genomeDigest: candidateBundle.genomeDigest };
+    const bundle = { header, loci, runtimeBaselines, mutations, genomeDigest: candidateBundle.genomeDigest };
     if (loci.some((locus) => locus.genomeId !== header.genomeId) || mutations.some((mutation) => mutation.genomeId !== header.genomeId)) {
       throw new SymbolicGenomeConflictError("locus/mutation belongs to another genome");
     }
@@ -147,6 +150,13 @@ export class SymbolicGenomeStore {
           bundle.genomeDigest,
           header.createdAt,
         );
+        const baselineInsert = this.#database.prepare(`
+          INSERT INTO symbolic_genome_runtime_baselines(genome_id,baseline_key,value)
+          VALUES (?,?,?)
+        `);
+        for (const [key, value] of Object.entries(runtimeBaselines)) {
+          baselineInsert.run(header.genomeId, key, value);
+        }
         const locusInsert = this.#database.prepare(`
           INSERT INTO symbolic_genome_loci(
             locus_id,genome_id,ordinal,value,provenance_kind,source_genome_ref,
