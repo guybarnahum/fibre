@@ -1,10 +1,5 @@
 import { normalizeSymbolicRuntimeBaselines } from "./symbolic-genome-domain.mjs";
 
-export const DAILY_RHYTHM_PROJECTION = Object.freeze({
-  id:"daily_rhythm_projection",
-  version:"1",
-});
-
 const BASE_WAKE_MINUTE = (7 * 60) + 30;
 
 function hhmm(value) {
@@ -23,7 +18,6 @@ export function projectDailyRhythm(runtimeBaselines = {}) {
   const baselines = normalizeSymbolicRuntimeBaselines(runtimeBaselines);
   const wakeCenter = BASE_WAKE_MINUTE + baselines.circadianPhaseOffsetMinutes;
   return Object.freeze({
-    projection:DAILY_RHYTHM_PROJECTION,
     preferredWakeAround:hhmm(wakeCenter),
     preferredSleepAround:hhmm(wakeCenter - baselines.sleepNeedMinutes),
     sleepNeedHours:Math.round((baselines.sleepNeedMinutes / 60) * 10) / 10,
