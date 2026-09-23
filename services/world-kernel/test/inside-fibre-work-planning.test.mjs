@@ -11,9 +11,11 @@ import { openIdentityStore } from "../src/identity-store.mjs";
 import { createInsideFibreAvailabilityService } from "../src/inside-fibre-availability.mjs";
 import { createInsideFibreWorkService } from "../src/inside-fibre-work.mjs";
 import { openInsideFibreWorkStore } from "../src/inside-fibre-work-store.mjs";
+import { createInsideFibreVisitorMeetingService } from "../src/inside-fibre-visitor-meeting.mjs";
 import { normalizeLivedPlan } from "../src/lived-now.mjs";
 import { createLivedNowService } from "../src/lived-now-service.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
+import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { canonicalJson, sha256 } from "../src/persistence-common.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
@@ -531,5 +533,187 @@ test("a mediated-context label alone cannot manufacture Inside Fibre availabilit
       "Inside Fibre availability must trace to the accepted commitment, not a context string",
     );
 
+    closeAll(state);
+  }));
+
+
+test("a committed website visitor enters the existing lived scene and becomes an Encounter Story", async () =>
+  withDatabase(async (databasePath) => {
+    const state = await setup(databasePath);
+    const workService = createInsideFibreWorkService({
+      worldReader:state.worldStore,
+      livedNowStore:state.livedNowStore,
+      identityStore:state.identityStore,
+      semanticStateStore:state.semanticStateStore,
+      memoryStore:state.memoryStore,
+      situatedLifeStore:state.situatedLifeStore,
+      workStore:state.workStore,
+      modelAdapter:{
+        provider:"fixture",
+        modelId:"fixture-work-plan-for-visitor-meeting",
+        async invoke(call) {
+          const external = call.input.concern.externalContext;
+          return {
+            output:{
+              result:{
+                stops:[
+                  {
+                    startAt:ACCEPTED_AT,
+                    endAt:WORK_START,
+                    physicalPlaceRef:external.startingPlaceRef,
+                    presenceMode:"physical",
+                    mediatedContext:"",
+                    activity:"Continue the afternoon.",
+                    purpose:"Live the day before the accepted shift.",
+                    travelFromPrevious:"",
+                  },
+                  {
+                    startAt:WORK_START,
+                    endAt:WORK_END,
+                    physicalPlaceRef:external.startingPlaceRef,
+                    presenceMode:"mediated",
+                    mediatedContext:MEDIATED_CONTEXT,
+                    activity:"Meet Inside Fibre visitors.",
+                    purpose:"Honor the visitor-availability work already accepted.",
+                    travelFromPrevious:"",
+                  },
+                  {
+                    startAt:WORK_END,
+                    endAt:PLAN_END,
+                    physicalPlaceRef:external.startingPlaceRef,
+                    presenceMode:"physical",
+                    mediatedContext:"",
+                    activity:"Continue the evening.",
+                    purpose:"Resume ordinary life after work.",
+                    travelFromPrevious:"",
+                  },
+                ],
+              },
+              evidenceRefs:[],
+              conflictingMotives:[],
+              uncertainty:null,
+            },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-work-plan-for-visitor-meeting",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        },
+      },
+    });
+    await workService.reconcileAcceptedWork(state.accepted.commitmentId);
+
+    const livedNow = createLivedNowService({ livedNowStore:state.livedNowStore });
+    const availability = createInsideFibreAvailabilityService({
+      livedNow,
+      livedNowStore:state.livedNowStore,
+      workStore:state.workStore,
+    });
+    const experienceStore = openLivedExperienceStore(localWorldStateStorage(databasePath));
+    const modelAdapter = {
+      provider:"fixture",
+      modelId:"fixture-visitor-meeting",
+      async invoke(call) {
+        if (call.clientRequestId.startsWith("lived-encounter_")) {
+          return {
+            output:{ responseText:"Hello. I’m here for my Inside Fibre shift." },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-visitor-response",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        }
+        if (call.clientRequestId.startsWith("encounter-experience_")) {
+          return {
+            output:{ experienceText:"I notice the visitor arriving and turn my attention toward the conversation." },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-visitor-experience",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        }
+        if (call.clientRequestId.startsWith("encounter-reflection_")) {
+          return {
+            output:{ journalEntry:null },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-visitor-journal",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        }
+        if (call.clientRequestId.startsWith("lived-memory_")) {
+          return {
+            output:{
+              outcome:"not_remembered",
+              rememberedContent:null,
+              rememberedMeaning:null,
+              confidence:null,
+              salience:null,
+              uncertainty:[],
+            },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-visitor-memory",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        }
+        throw new Error("unexpected visitor-meeting cognition");
+      },
+    };
+    const meeting = createInsideFibreVisitorMeetingService({
+      availability,
+      worldReader:state.worldStore,
+      livedNowStore:state.livedNowStore,
+      semanticStateStore:state.semanticStateStore,
+      memoryStore:state.memoryStore,
+      experienceStore,
+      modelAdapter,
+    });
+
+    const entered = await meeting.enter({
+      threadId:state.accepted.threadId,
+      at:"2026-09-23T19:30:00.000Z",
+    });
+    assert.ok(entered, "an active accepted shift should admit a website visitor");
+
+    const result = await meeting.encounter({
+      threadId:state.accepted.threadId,
+      expectedSituationId:entered.situation.situationId,
+      utterance:"Hi — are you free to talk for a moment?",
+      at:"2026-09-23T19:31:00.000Z",
+    });
+    assert.ok(result, "the admitted visitor should be able to speak into the committed scene");
+    assert.equal(result.situationId, entered.situation.situationId);
+    assert.equal(result.encounterStory.story.beats[0].actorThreadId, null,
+      "the human visitor must not be fabricated as a Thread");
+    assert.equal(result.encounterStory.story.beats[1].actorThreadId, state.accepted.threadId,
+      "the Thread's reply should be attributable to the Thread");
+    assert.equal(result.attention.outcome, "noticed",
+      "direct participation should become a real Thread Experience");
+    assert.equal(result.attention.experience.encounterRef, result.encounterStory.encounterId);
+    assert.equal(
+      experienceStore.listEncounterStories(state.accepted.threadId)
+        .some((story) => story.encounterId === result.encounterStory.encounterId),
+      true,
+      "the website meeting should use the general Encounter Story authority",
+    );
+
+    assert.equal(
+      await meeting.encounter({
+        threadId:state.accepted.threadId,
+        expectedSituationId:entered.situation.situationId,
+        utterance:"Are you still working?",
+        at:"2026-09-23T20:30:00.000Z",
+      }),
+      null,
+      "the old meeting scene must stop admitting visitor turns after the work window",
+    );
+
+    experienceStore.close();
     closeAll(state);
   }));
