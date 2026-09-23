@@ -24,7 +24,8 @@ const WORK_OFFER_ADAPTER = Object.freeze({
   instruction:`Decide whether this Thread wants to accept the bounded paid Inside Fibre visitor-availability work described in the external context.
 This is real voluntary work: accepting creates a future commitment to be available to meet insidefibre.com visitors during the stated window. Declining creates no commitment.
 Compensation is one consideration, never a command. Consider the actual offered window, its local civil time when supplied, current resources, current lived situation, any Flight Plan coverage Fibre supplied, and the developed person/history selected by Interior Cognition.
-A Flight Plan is current intention, not a binding obligation. Accepting future work may legitimately cause later intentions to be revised. Give stronger weight to what is actually being lived now and to genuine obligations than to ordinary future planned activity.
+A Flight Plan is current intention, not a binding obligation. If ordinary planned activity overlaps the offer, decide whether it can reasonably move, shorten, or happen later while preserving what matters about it. Accepting future work may legitimately revise those intentions.
+requiredConstraintsAtWorkWindow, when present, are hard World constraints rather than ordinary intention. Do not accept work that cannot coexist with them. Give stronger weight to what is actually being lived now and to genuine obligations than to ordinary future planned activity.
 Do not assume the Thread needs money, wants visitors, is free merely because no plan is shown, or should accept because Fibre offered the work.
 Return accept or decline plus a concise private operator-facing reason. Do not author a Flight Plan, move the Thread, promise any work beyond visitor availability, expose private records, or treat acceptance as consent to arbitrary visitor requests.`,
   resultSchema:{
@@ -84,6 +85,25 @@ function localCivilMoment(at, timeZone) {
     date:`${parts.year}-${parts.month}-${parts.day}`,
     time:`${parts.hour}:${parts.minute}`,
     weekday:parts.weekday,
+  });
+}
+
+function requiredConstraintAt(plan, at) {
+  if (plan?.kind !== "care" || plan.authority?.constraint !== "required") return null;
+  const instant = Date.parse(at);
+  const stop = (plan.stops ?? []).find((candidate, index) => {
+    const start = Date.parse(candidate.startAt);
+    const end = Date.parse(candidate.endAt);
+    const lastAtHorizonEnd = index === plan.stops.length - 1 && instant === Date.parse(plan.horizonEnd);
+    return start <= instant && (instant < end || lastAtHorizonEnd);
+  }) ?? null;
+  if (stop === null) return null;
+  return Object.freeze({
+    kind:"required_care",
+    startAt:stop.startAt,
+    endAt:stop.endAt,
+    activity:stop.activity,
+    purpose:stop.purpose,
   });
 }
 
@@ -185,6 +205,10 @@ export function createInsideFibreWorkService({
       const currentSituation = livedNowStore.getCurrentSituation(input.threadId);
       const currentPlan = livedNowStore.latestPlan(input.threadId, "personal", { at:input.at });
       const planAtWorkWindow = livedNowStore.latestPlan(input.threadId, "personal", { at:offer.startAt });
+      const requiredCareAtWorkWindow = requiredConstraintAt(
+        livedNowStore.latestPlan(input.threadId, "care", { at:offer.startAt }),
+        offer.startAt,
+      );
       const worldTimeZone = livedNowStore.getWorldContext(input.threadId, { required:false })?.timeZone ?? null;
 
       const cognition = await runInteriorCognition({
@@ -199,6 +223,9 @@ export function createInsideFibreWorkService({
             currentSituation:currentSituation === null ? null : structuredClone(currentSituation),
             currentFlightPlan:currentPlan === null ? null : structuredClone(currentPlan),
             flightPlanAtWorkWindow:planAtWorkWindow === null ? null : structuredClone(planAtWorkWindow),
+            requiredConstraintsAtWorkWindow:requiredCareAtWorkWindow === null
+              ? []
+              : [structuredClone(requiredCareAtWorkWindow)],
             localWorkWindow:worldTimeZone === null ? null : {
               timeZone:worldTimeZone,
               start:localCivilMoment(offer.startAt, worldTimeZone),
