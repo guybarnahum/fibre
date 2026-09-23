@@ -1,7 +1,7 @@
 ---
 id: architecture-lived-now-and-meetings-v0-1
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-09-23
 canonical: false
 ---
 
@@ -288,6 +288,34 @@ The participation decision should consume the already-established current situat
 For a **requested visitor meeting**, the Person enters the bounded meeting scene only if the Thread accepts. The browser never authors the Thread's pre-existing life.
 
 That rule does not erase independently existing human actions. If a Person is already authoritatively present in the Thread's World scene and directly speaks or acts toward the Thread, that outward act can become objective encounter history whether the Thread answers, declines, ignores it, or walks away. Thread consent governs the Thread's participation and response; it does not rewrite what another person observably did.
+
+### Inside Fibre visitor availability as prior work commitment
+
+insidefibre.com has one deliberately different product requirement from an ordinary social encounter: when the public surface says a Thread is available to meet a visitor, the meeting should actually be available.
+
+Fibre should satisfy that guarantee **before the visitor arrives**, not by weakening agency at meeting time.
+
+A Thread may voluntarily accept a bounded paid work/availability commitment to meet website visitors during a stated window. That acceptance becomes an ordinary commitment in the Thread's life and may shape the Flight Plan. During the accepted window, Inside Fibre is a mediated place of presence: the visitor is meeting a Thread who already chose to be there for that purpose.
+
+```text
+Inside Fibre offers bounded visitor-meeting work
+  -> Thread evaluates it through Interior Cognition
+  -> accept | decline
+  -> accepted commitment
+  -> Flight Plan incorporates the committed window
+  -> Thread becomes mediated-present / available
+  -> visitor requests a meeting during that window
+  -> Thread fulfils the accepted meeting commitment
+  -> Encounter Story
+  -> private experience / selective consequence
+  -> agreed compensation
+```
+
+The agency-bearing decision is the earlier acceptance of the work commitment. Fulfilling that accepted commitment does not require a second fresh decision about whether to show up at all. It also does not authorize arbitrary tasks or erase the Thread's dignity, expression, boundaries or ability to react as herself inside the encounter.
+
+Payment belongs to the professional/availability commitment, not to ordinary human attention. Casual Person/Thread and Thread/Thread encounters are normally unpaid. Fibre may later support paid scarce attention or professional services between Persons and Threads or between Threads, but that is an economic relationship layered on top of encounter—not the default meaning of meeting someone.
+
+The exact contract/storage shape is deliberately deferred. The important authority boundary is stable: **the website may select among Threads who previously chose to be available; it must not manufacture willingness at click time.**
 
 ## Social and group encounters
 
