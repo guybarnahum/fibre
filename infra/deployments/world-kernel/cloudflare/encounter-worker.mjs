@@ -17,6 +17,7 @@ import { createLivedNowService } from "#services/world-kernel/src/lived-now-serv
 import { createLivedNowWriteApi } from "#services/world-kernel/src/lived-now-write-api.mjs";
 import { createInsideFibreAvailabilityService } from "#services/world-kernel/src/inside-fibre-availability.mjs";
 import { openInsideFibreWorkStore } from "#services/world-kernel/src/inside-fibre-work-store.mjs";
+import { openFibreCreditStore } from "#services/world-kernel/src/fibre-credit-store.mjs";
 import { createInsideFibreVisitorMeetingService } from "#services/world-kernel/src/inside-fibre-visitor-meeting.mjs";
 import { createInsideFibreVisitorMeetingWriteApi } from "#services/world-kernel/src/inside-fibre-visitor-meeting-write-api.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
@@ -129,6 +130,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         experienceStore,
+        workStore,
+        fibreCreditStore,
         journalBook:this.journalBookForRequest(),
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
       });
@@ -227,6 +230,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
       const workStore = openInsideFibreWorkStore(runtime.worldStorage);
+      const fibreCreditStore = openFibreCreditStore(runtime.worldStorage, {
+        worldReader:runtime.worldStore,
+      });
       const livedNow = createLivedNowService({
         livedNowStore,
         worldStore:runtime.worldStore,
