@@ -7,40 +7,6 @@ import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs"
 export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v4";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 
-export const DEFAULT_MODERN_BIRTH_PLACES = Object.freeze([
-  "Canada/Vancouver",
-  "United States/Chicago",
-  "Mexico/Mexico City",
-  "Colombia/Bogota",
-  "Brazil/Recife",
-  "Argentina/Buenos Aires",
-  "Chile/Santiago",
-  "Portugal/Lisbon",
-  "United Kingdom/Manchester",
-  "Germany/Berlin",
-  "Poland/Warsaw",
-  "Morocco/Fes",
-  "Ghana/Accra",
-  "Nigeria/Lagos",
-  "Kenya/Nairobi",
-  "South Africa/Cape Town",
-  "Georgia/Tbilisi",
-  "Israel/Jerusalem",
-  "Turkey/Istanbul",
-  "India/Mumbai",
-  "Bangladesh/Dhaka",
-  "Thailand/Chiang Mai",
-  "Taiwan/Kaohsiung",
-  "Japan/Osaka",
-  "South Korea/Busan",
-  "Philippines/Cebu",
-  "Indonesia/Makassar",
-  "Australia/Hobart",
-  "New Zealand/Auckland",
-  "United States/Honolulu",
-]);
-
-
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
   additionalProperties: false,
@@ -141,13 +107,6 @@ export function normalizeModernWorldSelector(raw) {
     key: `${fold(country)}/${fold(city)}`,
     slug: `${fold(country)}_${fold(city)}`,
   });
-}
-
-export function selectDefaultModernWorld(requestId) {
-  const request = nonEmpty("Genesis requestId", requestId);
-  const hash = createHash("sha256").update(`fibre-modern-default-world:${request}`).digest("hex");
-  const index = Number.parseInt(hash.slice(0, 12), 16) % DEFAULT_MODERN_BIRTH_PLACES.length;
-  return normalizeModernWorldSelector(DEFAULT_MODERN_BIRTH_PLACES[index]);
 }
 
 export function normalizeModernHeritage(raw) {
