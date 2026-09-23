@@ -38,7 +38,12 @@ function workState() {
       endAt:"2026-09-23T19:20:00.000Z",
       fibreCredits:12,
     }],
-    settlements:[],
+    settlements:[{
+      commitmentId:COMMITMENT_ID,
+      encounterStoryId:"story_paid_once",
+      amount:12,
+      occurredAt:"2026-09-23T19:02:00.000Z",
+    }],
   };
 }
 
@@ -89,7 +94,7 @@ function observatory({ mediatedContext, evidenceRefs }) {
   };
 }
 
-test("roster advertises availability only when the accepted commitment is actually enacted", () => {
+test("roster advertises an accepted shift only when it is enacted, even after first payment", () => {
   const merelyActive = classifyInsideFibreRosterEntry({
     thread:thread(),
     workState:workState(),
