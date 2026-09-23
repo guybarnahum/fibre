@@ -171,6 +171,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         experienceStore,
+        workStore,
+        fibreCreditStore,
         journalBook:this.journalBookForRequest(),
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
         activityRecorder:createCloudflareActivityRecorder({ env:this.env, service:"world-kernel" }),
