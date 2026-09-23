@@ -139,12 +139,12 @@ const REGIONS = Object.freeze([
       place("United States/Honolulu", 350),
     ]),
     longTail:Object.freeze([
-      place("United States/Santa Fe", 90),
-      place("United States/Flagstaff", 80),
-      place("United States/Burlington", 45),
-      place("United States/Duluth", 85),
-      place("Canada/Kelowna", 145),
-      place("Canada/Whitehorse", 30),
+      place("United States/Santa Fe, New Mexico", 90),
+      place("United States/Flagstaff, Arizona", 80),
+      place("United States/Burlington, Vermont", 45),
+      place("United States/Duluth, Minnesota", 85),
+      place("Canada/Kelowna, British Columbia", 145),
+      place("Canada/Whitehorse, Yukon", 30),
     ]),
   }),
   Object.freeze({
