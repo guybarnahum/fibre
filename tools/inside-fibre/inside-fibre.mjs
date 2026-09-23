@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -5,7 +6,15 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { INSIDE_FIBRE_VISITOR_WORK } from "../../services/world-kernel/src/inside-fibre-work.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 180_000;
+const PREPARE_DURATION_MINUTES = 30;
+const PREPARE_CREDITS = 12;
+const PREPARE_LEAD_MINUTES = 60;
+const PREPARE_SEARCH_HOURS = 24;
+const PREPARE_SLOT_MINUTES = 30;
+const LOCAL_START_HOUR = 7;
+const LOCAL_END_HOUR = 22;
+const GIT_SHA = /^[0-9a-f]{40}$/u;
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
@@ -38,11 +47,32 @@ function remoteBase(name, value) {
   return url.toString().replace(/\/$/u, "");
 }
 
+function deploymentEvidence() {
+  return JSON.parse(readFileSync(
+    resolve(REPO_ROOT, ".fibre", "cloudflare", "staging", "deployment.json"),
+    "utf8",
+  ));
+}
+
+function cleanLocalSource() {
+  const sha = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd:REPO_ROOT,
+    encoding:"utf8",
+  }).trim().toLowerCase();
+  const status = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], {
+    cwd:REPO_ROOT,
+    encoding:"utf8",
+  }).trim();
+  if (!GIT_SHA.test(sha)) throw new Error("Inside Fibre requires an exact Git SHA");
+  if (status !== "") throw new Error("Inside Fibre prepare requires a clean working tree");
+  return sha;
+}
+
 async function responseJson(response, label) {
   const payload = await response.json().catch(() => null);
   if (payload === null) throw new Error(`${label} returned non-JSON HTTP ${response.status}`);
   if (!response.ok) {
-    throw new Error(`${label} failed HTTP ${response.status}: ${payload?.error?.code ?? payload?.error ?? "unknown"}`);
+    throw new Error(`${label} failed HTTP ${response.status}: ${payload?.error?.code ?? payload?.error ?? "unknown"} ${payload?.detail ?? ""}`.trim());
   }
   return payload;
 }
@@ -67,6 +97,22 @@ async function privateGet(baseUrl, pathname, privateToken, query, label) {
     signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   return responseJson(response, label);
+}
+
+async function privatePost(baseUrl, pathname, privateToken, body, label) {
+  const response = await fetch(endpoint(baseUrl, pathname), {
+    method:"POST",
+    headers:{
+      Accept:"application/json",
+      "content-type":"application/json",
+      "x-fibre-private-token":privateToken,
+    },
+    body:JSON.stringify(body),
+    signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  const payload = await responseJson(response, label);
+  if (payload?.ok !== true) throw new Error(`${label} did not return ok`);
+  return payload.result;
 }
 
 function activeCommitments(workState, atMs) {
@@ -164,6 +210,11 @@ function displayScene({ thread, observatory, at }) {
   });
 }
 
+function threadTimeZone(observatory) {
+  const value = observatory?.livedNow?.worldContext?.timeZone;
+  return typeof value === "string" && value !== "" ? value : null;
+}
+
 export function classifyInsideFibreRosterEntry({
   thread,
   workState,
@@ -181,6 +232,7 @@ export function classifyInsideFibreRosterEntry({
     displayName:thread.displayName ?? thread.threadId,
     lifecycleStatus:thread.lifecycleStatus ?? null,
     fibreCredits:workState?.fibreCredits ?? null,
+    timeZone:threadTimeZone(observatory),
     scene:displayScene({ thread, observatory, at }),
     available,
     activeCommitment:active[0] ?? null,
@@ -188,14 +240,135 @@ export function classifyInsideFibreRosterEntry({
   });
 }
 
-function formatTime(value) {
+function localParts(value, timeZone) {
+  if (typeof timeZone !== "string" || timeZone === "") return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year:"numeric",
+      month:"2-digit",
+      day:"2-digit",
+      hour:"2-digit",
+      minute:"2-digit",
+      hourCycle:"h23",
+    }).formatToParts(date);
+    return Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  } catch {
+    return null;
+  }
+}
+
+function localMinuteOfDay(value, timeZone) {
+  const parts = localParts(value, timeZone);
+  if (parts === null) return null;
+  const hour = Number(parts.hour);
+  const minute = Number(parts.minute);
+  return Number.isInteger(hour) && Number.isInteger(minute) ? (hour * 60) + minute : null;
+}
+
+function localDateKey(value, timeZone) {
+  const parts = localParts(value, timeZone);
+  return parts === null ? null : `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function reasonableLocalWindow(startAt, endAt, timeZone) {
+  const endProbe = new Date(Date.parse(endAt) - 1).toISOString();
+  const startMinute = localMinuteOfDay(startAt, timeZone);
+  const endMinute = localMinuteOfDay(endProbe, timeZone);
+  if (startMinute === null || endMinute === null) return false;
+  if (localDateKey(startAt, timeZone) !== localDateKey(endProbe, timeZone)) return false;
+  return startMinute >= LOCAL_START_HOUR * 60
+    && endMinute < LOCAL_END_HOUR * 60;
+}
+
+function commitmentOverlaps(workState, startAt, endAt) {
+  const start = Date.parse(startAt);
+  const end = Date.parse(endAt);
+  return (workState?.commitments ?? []).some((commitment) => (
+    start < Date.parse(commitment.endAt) && end > Date.parse(commitment.startAt)
+  ));
+}
+
+function prepareEligible(record, startAt, endAt, at) {
+  const observatory = record.observatory;
+  const plan = observatory?.livedNow?.currentPersonalPlan ?? null;
+  const situation = observatory?.livedNow?.currentSituation ?? null;
+  const timeZone = threadTimeZone(observatory);
+  if (plan === null || situation === null || timeZone === null) return false;
+  if (situation.phase !== "at_place" && situation.location?.kind !== "place") return false;
+  if (plannedStopAt(plan, at) === null) return false;
+  if (Date.parse(endAt) > Date.parse(plan.horizonEnd)) return false;
+  if (!reasonableLocalWindow(startAt, endAt, timeZone)) return false;
+  if (commitmentOverlaps(record.workState, startAt, endAt)) return false;
+  return true;
+}
+
+function ceilToSlot(valueMs, slotMinutes) {
+  const slotMs = slotMinutes * 60_000;
+  return Math.ceil(valueMs / slotMs) * slotMs;
+}
+
+export function selectPrepareWindow(records, {
+  at,
+  target = 3,
+  durationMinutes = PREPARE_DURATION_MINUTES,
+  leadMinutes = PREPARE_LEAD_MINUTES,
+  searchHours = PREPARE_SEARCH_HOURS,
+  slotMinutes = PREPARE_SLOT_MINUTES,
+} = {}) {
+  const nowMs = Date.parse(at);
+  if (!Number.isFinite(nowMs)) throw new TypeError("prepare time must be an ISO timestamp");
+  if (!Number.isSafeInteger(target) || target < 1) throw new TypeError("prepare target must be positive");
+
+  const durationMs = durationMinutes * 60_000;
+  const firstMs = ceilToSlot(nowMs + (leadMinutes * 60_000), slotMinutes);
+  const lastMs = nowMs + (searchHours * 60 * 60_000);
+  let best = null;
+
+  for (let startMs = firstMs; startMs + durationMs <= lastMs; startMs += slotMinutes * 60_000) {
+    const startAt = new Date(startMs).toISOString();
+    const endAt = new Date(startMs + durationMs).toISOString();
+    const eligible = records.filter((record) => prepareEligible(record, startAt, endAt, at));
+    const candidate = Object.freeze({ startAt, endAt, eligible:Object.freeze(eligible) });
+    if (best === null || eligible.length > best.eligible.length) best = candidate;
+    if (eligible.length >= target) return candidate;
+  }
+  return best?.eligible.length > 0 ? best : null;
+}
+
+function formatOperatorTime(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return value ?? "—";
   return new Intl.DateTimeFormat(undefined, {
+    month:"short",
+    day:"numeric",
     hour:"numeric",
     minute:"2-digit",
     timeZoneName:"short",
   }).format(date);
+}
+
+function formatThreadTime(value, timeZone, { includeDate = false } = {}) {
+  if (timeZone === null) return "timezone unavailable";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value ?? "—";
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone,
+      ...(includeDate ? { month:"short", day:"numeric" } : {}),
+      hour:"numeric",
+      minute:"2-digit",
+    }).format(date);
+  } catch {
+    return "timezone unavailable";
+  }
+}
+
+function localWindowText(startAt, endAt, timeZone) {
+  if (timeZone === null) return "local time unavailable";
+  return `${formatThreadTime(startAt, timeZone, { includeDate:true })}–${formatThreadTime(endAt, timeZone)} · ${timeZone}`;
 }
 
 function sceneAge(establishedAt) {
@@ -216,18 +389,19 @@ function sceneText(entry) {
   return age === null ? `${base} · last enacted` : `${base} · last enacted ${age}`;
 }
 
-function printEntry(entry, commitment = null) {
+function printEntry(entry, commitment = null, at = new Date().toISOString()) {
   process.stdout.write(`${entry.displayName}\n`);
   process.stdout.write(`  ${entry.threadId}\n`);
+  process.stdout.write(`  Local: ${formatThreadTime(at, entry.timeZone)} · ${entry.timeZone ?? "unknown timezone"}\n`);
   process.stdout.write(`  ${sceneText(entry)}\n`);
   if (commitment !== null) {
     process.stdout.write(
-      `  ${formatTime(commitment.startAt)}–${formatTime(commitment.endAt)} · ${commitment.fibreCredits} FC\n`,
+      `  Work: ${localWindowText(commitment.startAt, commitment.endAt, entry.timeZone)} · ${commitment.fibreCredits} FC\n`,
     );
   }
 }
 
-function printSection(title, entries, commitmentOf) {
+function printSection(title, entries, commitmentOf, at) {
   process.stdout.write(`\n${title} (${entries.length})\n`);
   if (entries.length === 0) {
     process.stdout.write("  None\n");
@@ -235,25 +409,95 @@ function printSection(title, entries, commitmentOf) {
   }
   entries.forEach((entry, index) => {
     process.stdout.write(`\n${index + 1}. `);
-    printEntry(entry, commitmentOf(entry));
+    printEntry(entry, commitmentOf(entry), at);
   });
+}
+
+function parsePositiveInt(name, value, { minimum = 1, maximum = 200 } = {}) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number < minimum || number > maximum) {
+    throw new TypeError(`${name} must be an integer from ${minimum} to ${maximum}`);
+  }
+  return number;
 }
 
 function parseArgs(argv) {
   const [command = "scan", ...rest] = argv;
-  if (command !== "scan") throw new TypeError(`unsupported inside-fibre command ${command}`);
+  if (!["scan", "prepare"].includes(command)) {
+    throw new TypeError(`unsupported inside-fibre command ${command}`);
+  }
   let limit = 50;
+  let target = 3;
   for (let index = 0; index < rest.length; index += 1) {
     if (rest[index] === "--limit") {
-      limit = Number(rest[++index]);
-      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 200) {
-        throw new TypeError("--limit must be an integer from 1 to 200");
-      }
+      limit = parsePositiveInt("--limit", rest[++index]);
+    } else if (rest[index] === "--target" && command === "prepare") {
+      target = parsePositiveInt("--target", rest[++index], { maximum:20 });
     } else {
-      throw new TypeError(`unsupported scan argument ${rest[index]}`);
+      throw new TypeError(`unsupported ${command} argument ${rest[index]}`);
     }
   }
-  return Object.freeze({ command, limit });
+  return Object.freeze({ command, limit, target });
+}
+
+function stagingContext(environment, { requireExactDeployment = false } = {}) {
+  const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", environment.FIBRE_PRIVATE_TOKEN);
+  const deployment = deploymentEvidence();
+  if (requireExactDeployment) {
+    const sha = cleanLocalSource();
+    if (
+      deployment.environment !== "staging"
+      || deployment.sourceGitSha !== sha
+      || deployment.sourceTreeClean !== true
+    ) {
+      throw new Error("Inside Fibre prepare requires this exact clean checkout deployed to staging");
+    }
+  }
+  return Object.freeze({
+    privateToken,
+    deployment,
+    worldBaseUrl:remoteBase(
+      "staging World",
+      deploymentByService(deployment, "world-kernel").baseUrl,
+    ),
+    presentationBaseUrl:remoteBase(
+      "staging Thread Presentation",
+      deploymentByService(deployment, "thread-presentation").baseUrl,
+    ),
+    viewerOrigin:remoteBase("staging Viewer", deployment.externalViewerOrigin),
+  });
+}
+
+async function inspectThread({ worldBaseUrl, privateToken, thread, at }) {
+  const [workPayload, observatoryPayload] = await Promise.all([
+    privateGet(
+      worldBaseUrl,
+      "/internal/inside-fibre/work-state",
+      privateToken,
+      { threadId:thread.threadId },
+      `work state ${thread.threadId}`,
+    ),
+    privateGet(
+      worldBaseUrl,
+      `/internal/threads/${encodeURIComponent(thread.threadId)}/observatory`,
+      privateToken,
+      {},
+      `World Observatory ${thread.threadId}`,
+    ),
+  ]);
+  const workState = workPayload?.result ?? null;
+  const observatory = observatoryPayload?.observatory ?? null;
+  return Object.freeze({
+    thread,
+    workState,
+    observatory,
+    entry:classifyInsideFibreRosterEntry({ thread, workState, observatory, at }),
+  });
+}
+
+async function discoverEligiblePublicThreads(context, limit) {
+  return (await publicThreads(context.presentationBaseUrl, context.viewerOrigin, limit))
+    .filter((thread) => !["genesis_candidate", "retired"].includes(thread?.lifecycleStatus));
 }
 
 export async function scanInsideFibre({
@@ -261,51 +505,16 @@ export async function scanInsideFibre({
   argv = process.argv.slice(2),
 } = {}) {
   const { limit } = parseArgs(argv);
-  const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", environment.FIBRE_PRIVATE_TOKEN);
-  const deployment = JSON.parse(readFileSync(
-    resolve(REPO_ROOT, ".fibre", "cloudflare", "staging", "deployment.json"),
-    "utf8",
-  ));
-  const worldBaseUrl = remoteBase(
-    "staging World",
-    deploymentByService(deployment, "world-kernel").baseUrl,
-  );
-  const presentationBaseUrl = remoteBase(
-    "staging Thread Presentation",
-    deploymentByService(deployment, "thread-presentation").baseUrl,
-  );
-  const viewerOrigin = remoteBase("staging Viewer", deployment.externalViewerOrigin);
+  const context = stagingContext(environment);
   const at = new Date().toISOString();
-
-  const discovered = (await publicThreads(presentationBaseUrl, viewerOrigin, limit))
-    .filter((thread) => !["genesis_candidate", "retired"].includes(thread?.lifecycleStatus));
+  const discovered = await discoverEligiblePublicThreads(context, limit);
 
   const roster = [];
   const errors = [];
   for (const thread of discovered) {
     try {
-      const [workPayload, observatoryPayload] = await Promise.all([
-        privateGet(
-          worldBaseUrl,
-          "/internal/inside-fibre/work-state",
-          privateToken,
-          { threadId:thread.threadId },
-          `work state ${thread.threadId}`,
-        ),
-        privateGet(
-          worldBaseUrl,
-          `/internal/threads/${encodeURIComponent(thread.threadId)}/observatory`,
-          privateToken,
-          {},
-          `World Observatory ${thread.threadId}`,
-        ),
-      ]);
-      roster.push(classifyInsideFibreRosterEntry({
-        thread,
-        workState:workPayload?.result ?? null,
-        observatory:observatoryPayload?.observatory ?? null,
-        at,
-      }));
+      const record = await inspectThread({ ...context, thread, at });
+      roster.push(record.entry);
     } catch (error) {
       errors.push(Object.freeze({
         threadId:thread.threadId,
@@ -330,12 +539,12 @@ export async function scanInsideFibre({
   );
 
   process.stdout.write(
-    `Inside Fibre · staging · ${formatTime(at)} · deployed ${deployment.sourceGitSha?.slice(0, 8) ?? "unknown"}\n`,
+    `Inside Fibre · staging · operator ${formatOperatorTime(at)} · deployed ${context.deployment.sourceGitSha?.slice(0, 8) ?? "unknown"}\n`,
   );
-  printSection("AVAILABLE NOW", available, (entry) => entry.available);
-  printSection("SCHEDULED", scheduled, (entry) => entry.scheduled);
-  printSection("ACTIVE COMMITMENT, NOT CURRENTLY ENACTED", activeNotEnacted, (entry) => entry.activeCommitment);
-  printSection("OTHER LIVED THREADS", other, () => null);
+  printSection("AVAILABLE NOW", available, (entry) => entry.available, at);
+  printSection("SCHEDULED", scheduled, (entry) => entry.scheduled, at);
+  printSection("ACTIVE COMMITMENT, NOT CURRENTLY ENACTED", activeNotEnacted, (entry) => entry.activeCommitment, at);
+  printSection("OTHER LIVED THREADS", other, () => null, at);
 
   if (errors.length > 0) {
     process.stdout.write(`\nINSPECTION ERRORS (${errors.length})\n`);
@@ -345,9 +554,134 @@ export async function scanInsideFibre({
   return Object.freeze({ at, roster:Object.freeze(roster), errors:Object.freeze(errors) });
 }
 
+export async function prepareInsideFibre({
+  environment = process.env,
+  argv = process.argv.slice(2),
+} = {}) {
+  const { limit, target } = parseArgs(argv);
+  const context = stagingContext(environment, { requireExactDeployment:true });
+  const at = new Date().toISOString();
+  const discovered = await discoverEligiblePublicThreads(context, limit);
+  const records = [];
+  const skipped = [];
+
+  process.stdout.write(
+    `Inside Fibre prepare · target ${target} · operator ${formatOperatorTime(at)}\n`,
+  );
+
+  for (const thread of discovered) {
+    try {
+      await privatePost(
+        context.worldBaseUrl,
+        "/internal/lived-now/ensure",
+        context.privateToken,
+        { threadId:thread.threadId },
+        `LivedNow ${thread.threadId}`,
+      );
+      const record = await inspectThread({ ...context, thread, at });
+      records.push(record);
+    } catch (error) {
+      skipped.push(Object.freeze({
+        threadId:thread.threadId,
+        displayName:thread.displayName ?? thread.threadId,
+        reason:error instanceof Error ? error.message : String(error),
+      }));
+    }
+  }
+
+  const missingTimeZones = records.filter((record) => threadTimeZone(record.observatory) === null);
+  if (missingTimeZones.length > 0) {
+    throw new Error("Thread World timezone is unavailable; deploy the current World Observatory before prepare");
+  }
+
+  const window = selectPrepareWindow(records, { at, target });
+  if (window === null) {
+    process.stdout.write("\nNo shared locally-reasonable work window exists inside the current Flight Plan horizons.\n");
+    return Object.freeze({ at, target, accepted:Object.freeze([]), declined:Object.freeze([]), skipped:Object.freeze(skipped), window:null });
+  }
+
+  process.stdout.write(
+    `\nShared window · operator ${formatOperatorTime(window.startAt)}–${formatOperatorTime(window.endAt)}\n`
+      + `Eligible Threads: ${window.eligible.length}\n`,
+  );
+
+  const accepted = [];
+  const declined = [];
+  for (const record of window.eligible) {
+    if (accepted.length >= target) break;
+    const timeZone = threadTimeZone(record.observatory);
+    process.stdout.write(
+      `\n${record.thread.displayName ?? record.thread.threadId}\n`
+      + `  Local window: ${localWindowText(window.startAt, window.endAt, timeZone)}\n`,
+    );
+
+    const offer = await privatePost(
+      context.worldBaseUrl,
+      "/internal/inside-fibre/work-offer",
+      context.privateToken,
+      {
+        threadId:record.thread.threadId,
+        startAt:window.startAt,
+        endAt:window.endAt,
+        fibreCredits:PREPARE_CREDITS,
+      },
+      `work offer ${record.thread.threadId}`,
+    );
+
+    if (offer.decision === "decline") {
+      const result = Object.freeze({
+        threadId:record.thread.threadId,
+        displayName:record.thread.displayName ?? record.thread.threadId,
+        reason:offer.reason,
+      });
+      declined.push(result);
+      process.stdout.write(`  DECLINE · ${offer.reason}\n`);
+      continue;
+    }
+
+    if (offer.planning?.state !== "planned" || !offer.planning?.planId) {
+      throw new Error(`accepted work for ${record.thread.threadId} did not become a Flight Plan`);
+    }
+    const result = Object.freeze({
+      threadId:record.thread.threadId,
+      displayName:record.thread.displayName ?? record.thread.threadId,
+      reason:offer.reason,
+      commitmentId:offer.commitmentId,
+      planId:offer.planning.planId,
+    });
+    accepted.push(result);
+    process.stdout.write(`  ACCEPT · ${offer.reason ?? "previously accepted"}\n`);
+  }
+
+  process.stdout.write(
+    `\nPrepared ${accepted.length}/${target} Threads · ${declined.length} declined · ${skipped.length} skipped\n`,
+  );
+  for (const result of accepted) {
+    const record = records.find((candidate) => candidate.thread.threadId === result.threadId);
+    process.stdout.write(
+      `  ${result.displayName} · ${localWindowText(window.startAt, window.endAt, threadTimeZone(record?.observatory))}\n`,
+    );
+  }
+
+  return Object.freeze({
+    at,
+    target,
+    window:Object.freeze({ startAt:window.startAt, endAt:window.endAt }),
+    accepted:Object.freeze(accepted),
+    declined:Object.freeze(declined),
+    skipped:Object.freeze(skipped),
+  });
+}
+
+async function main() {
+  const { command } = parseArgs(process.argv.slice(2));
+  if (command === "prepare") return prepareInsideFibre();
+  return scanInsideFibre();
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  scanInsideFibre().catch((error) => {
-    process.stderr.write(`inside-fibre scan failed: ${error instanceof Error ? error.message : String(error)}\n`);
+  main().catch((error) => {
+    process.stderr.write(`inside-fibre failed: ${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
   });
 }
