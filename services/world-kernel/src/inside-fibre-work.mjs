@@ -88,14 +88,17 @@ function localCivilMoment(at, timeZone) {
   });
 }
 
-function requiredConstraintsDuring(plans, startAt, endAt) {
+function requiredConstraintsDuring(livedNowStore, threadId, startAt, endAt) {
   const start = Date.parse(startAt);
   const end = Date.parse(endAt);
   const constraints = [];
-  for (const plan of plans) {
-    if (plan?.kind !== "care" || plan.authority?.constraint !== "required") continue;
+  for (const plan of livedNowStore.listPlans(threadId, { kind:"care" })) {
+    if (plan?.authority?.constraint !== "required") continue;
     for (const stop of plan.stops ?? []) {
-      if (start >= Date.parse(stop.endAt) || end <= Date.parse(stop.startAt)) continue;
+      const overlapStart = Math.max(start, Date.parse(stop.startAt));
+      if (overlapStart >= Math.min(end, Date.parse(stop.endAt))) continue;
+      const at = new Date(overlapStart).toISOString();
+      if (livedNowStore.latestPlan(threadId, "care", { at })?.planId !== plan.planId) continue;
       constraints.push(Object.freeze({
         kind:"required_care",
         startAt:stop.startAt,
@@ -208,7 +211,8 @@ export function createInsideFibreWorkService({
       const currentPlan = livedNowStore.latestPlan(input.threadId, "personal", { at:input.at });
       const planAtWorkWindow = livedNowStore.latestPlan(input.threadId, "personal", { at:offer.startAt });
       const requiredConstraintsAtWorkWindow = requiredConstraintsDuring(
-        livedNowStore.listPlans(input.threadId, { kind:"care" }),
+        livedNowStore,
+        input.threadId,
         offer.startAt,
         offer.endAt,
       );
