@@ -1,3 +1,5 @@
+import { publicInsideFibreAvailability } from "../inside-fibre-public-availability.mjs";
+
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
 function id(name, value) {
@@ -61,11 +63,15 @@ export function createPublicEncounterApi({
 
       if (match[2] === "meet") {
         try {
-          const present = await ensurePublicPresent(threadId, request);
+          const admitted = await ensurePublicPresent(threadId, request);
+          const present = admitted?.present ?? admitted;
           if (present === null || typeof present?.situationId !== "string") {
             return json({ error: "public_present_required" }, request, viewerOrigin, 409);
           }
-          return json({ currentPresent: { payload: present } }, request, viewerOrigin);
+          return json({
+            currentPresent: { payload: present },
+            availability: publicInsideFibreAvailability(admitted?.availability ?? null),
+          }, request, viewerOrigin);
         } catch (error) {
           if (error?.status === 409) {
             const detail = typeof error?.body?.detail === "string" && error.body.detail.trim() !== ""
