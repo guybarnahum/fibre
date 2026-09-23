@@ -1,13 +1,11 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REQUEST_TIMEOUT_MS = 180_000;
 const MAX_CANDIDATES = 12;
-const SHIFT_LEAD_MS = 5_000;
 const SHIFT_DURATION_MS = 20 * 60_000;
 const COMPENSATION_FC = 12;
 const GIT_SHA = /^[0-9a-f]{40}$/u;
@@ -165,6 +163,34 @@ function newestFirst(threads) {
   });
 }
 
+function pendingCommitments(state, nowMs) {
+  const settled = new Set((state?.settlements ?? []).map((entry) => entry.commitmentId));
+  const pending = (state?.commitments ?? [])
+    .filter((commitment) => !settled.has(commitment.commitmentId))
+    .map((commitment) => Object.freeze({
+      ...commitment,
+      startMs:Date.parse(commitment.startAt),
+      endMs:Date.parse(commitment.endAt),
+    }))
+    .filter((commitment) => Number.isFinite(commitment.startMs) && Number.isFinite(commitment.endMs));
+  return Object.freeze({
+    active:pending
+      .filter((commitment) => commitment.startMs <= nowMs && nowMs < commitment.endMs)
+      .sort((left, right) => left.startMs - right.startMs),
+    future:pending
+      .filter((commitment) => nowMs < commitment.startMs)
+      .sort((left, right) => left.startMs - right.startMs),
+  });
+}
+
+function currentStop(plan, nowMs) {
+  return (plan?.stops ?? []).find((stop) => {
+    const start = Date.parse(stop.startAt);
+    const end = Date.parse(stop.endAt);
+    return Number.isFinite(start) && Number.isFinite(end) && start <= nowMs && nowMs < end;
+  }) ?? null;
+}
+
 function visitorStoryAfter(observatory, priorIds, threadId) {
   return (observatory?.encounterStories ?? []).find((story) => {
     if (priorIds.has(story?.encounterId)) return false;
@@ -181,6 +207,34 @@ function writeEvidence(runId, evidence) {
   mkdirSync(dirname(path), { recursive:true, mode:0o700 });
   writeFileSync(path, `${JSON.stringify(evidence, null, 2)}\n`, { mode:0o600 });
   return path;
+}
+
+function scheduledEvidence({
+  runId,
+  sourceSha,
+  decisions,
+  thread,
+  commitment,
+  planId,
+}) {
+  return Object.freeze({
+    contract:"fibre-inside-fibre-staging-acceptance-v0.2",
+    environment:"staging",
+    status:"scheduled",
+    runId,
+    sourceGitSha:sourceSha,
+    completedAt:new Date().toISOString(),
+    decisions:Object.freeze(decisions),
+    acceptedWork:Object.freeze({
+      threadId:thread.threadId,
+      displayName:thread.displayName ?? null,
+      commitmentId:commitment.commitmentId,
+      planId:planId ?? null,
+      startAt:commitment.startAt,
+      endAt:commitment.endAt,
+      fibreCredits:commitment.fibreCredits,
+    }),
+  });
 }
 
 export async function runInsideFibreStagingAcceptance({
@@ -215,81 +269,196 @@ export async function runInsideFibreStagingAcceptance({
     .filter((thread) => !["genesis_candidate","retired"].includes(thread?.lifecycleStatus))
     .slice(0, MAX_CANDIDATES);
 
-  const decisions = [];
+  const workStates = new Map();
+  const nowMs = Date.now();
   let accepted = null;
+  let scheduled = null;
 
   for (const thread of discovered) {
-    const ensured = await privatePost(
-      worldBaseUrl,
-      "/internal/lived-now/ensure",
-      privateToken,
-      { threadId:thread.threadId },
-      `LivedNow ${thread.threadId}`,
-    );
-
-    if (ensured?.present?.phase !== "at_place") {
-      const skipped = Object.freeze({
-        threadId:thread.threadId,
-        displayName:thread.displayName ?? null,
-        outcome:"not_offered",
-        reason:"current situation is not at_place",
-      });
-      decisions.push(skipped);
-      emit({ event:"inside-fibre-work-candidate", ...skipped });
-      continue;
-    }
-
-    const beforeState = await privateGet(
+    const payload = await privateGet(
       worldBaseUrl,
       "/internal/inside-fibre/work-state",
       privateToken,
       { threadId:thread.threadId },
-      `work state before ${thread.threadId}`,
+      `work state ${thread.threadId}`,
     );
-
-    const offeredAtMs = Date.now();
-    const startAt = new Date(offeredAtMs + SHIFT_LEAD_MS).toISOString();
-    const endAt = new Date(offeredAtMs + SHIFT_LEAD_MS + SHIFT_DURATION_MS).toISOString();
-    const offer = await privatePost(
-      worldBaseUrl,
-      "/internal/inside-fibre/work-offer",
-      privateToken,
-      {
-        threadId:thread.threadId,
-        startAt,
-        endAt,
-        fibreCredits:COMPENSATION_FC,
-      },
-      `work offer ${thread.threadId}`,
-    );
-
-    const decision = Object.freeze({
-      threadId:thread.threadId,
-      displayName:thread.displayName ?? null,
-      outcome:offer.decision,
-      reason:offer.reason,
-      offerId:offer.offerId,
-      commitmentId:offer.commitmentId,
-      planningState:offer.planning?.state ?? null,
-      startAt:offer.startAt,
-      endAt:offer.endAt,
-      fibreCredits:offer.fibreCredits,
-      balanceBefore:beforeState?.result?.fibreCredits ?? null,
-    });
-    decisions.push(decision);
-    emit({ event:"inside-fibre-work-decision", ...decision });
-
-    if (offer.decision === "decline") continue;
-    if (offer.planning?.state !== "planned" || !offer.planning?.planId) {
-      throw new Error(`accepted work for ${thread.threadId} did not become a Flight Plan`);
+    const state = payload?.result ?? null;
+    workStates.set(thread.threadId, state);
+    const pending = pendingCommitments(state, nowMs);
+    if (accepted === null && pending.active.length > 0) {
+      accepted = Object.freeze({
+        thread,
+        commitment:pending.active[0],
+        balanceBefore:state.fibreCredits,
+        planId:null,
+      });
     }
-    accepted = Object.freeze({ thread, offer, balanceBefore:beforeState.result.fibreCredits });
-    break;
+    if (scheduled === null && pending.future.length > 0) {
+      scheduled = Object.freeze({
+        thread,
+        commitment:pending.future[0],
+      });
+    }
+  }
+
+  if (accepted === null && scheduled !== null) {
+    const observatoryPayload = await privateGet(
+      worldBaseUrl,
+      `/internal/threads/${encodeURIComponent(scheduled.thread.threadId)}/observatory`,
+      privateToken,
+      {},
+      "World Observatory for scheduled work",
+    );
+    const plan = observatoryPayload?.observatory?.livedNow?.currentPersonalPlan ?? null;
+    const evidence = scheduledEvidence({
+      runId,
+      sourceSha,
+      decisions:[],
+      thread:scheduled.thread,
+      commitment:scheduled.commitment,
+      planId:plan?.sourceReferences?.includes(scheduled.commitment.commitmentId)
+        ? plan.planId
+        : null,
+    });
+    const evidencePath = writeEvidence(runId, evidence);
+    emit({
+      event:"inside-fibre-staging-scheduled",
+      runId,
+      threadId:scheduled.thread.threadId,
+      startAt:scheduled.commitment.startAt,
+      endAt:scheduled.commitment.endAt,
+      evidencePath,
+    });
+    return Object.freeze({ evidence, evidencePath });
+  }
+
+  const decisions = [];
+
+  if (accepted === null) {
+    for (const thread of discovered) {
+      const ensured = await privatePost(
+        worldBaseUrl,
+        "/internal/lived-now/ensure",
+        privateToken,
+        { threadId:thread.threadId },
+        `LivedNow ${thread.threadId}`,
+      );
+
+      if (ensured?.present?.phase !== "at_place") {
+        const skipped = Object.freeze({
+          threadId:thread.threadId,
+          displayName:thread.displayName ?? null,
+          outcome:"not_offered",
+          reason:"current situation is not at_place",
+        });
+        decisions.push(skipped);
+        emit({ event:"inside-fibre-work-candidate", ...skipped });
+        continue;
+      }
+
+      const observatoryPayload = await privateGet(
+        worldBaseUrl,
+        `/internal/threads/${encodeURIComponent(thread.threadId)}/observatory`,
+        privateToken,
+        {},
+        `World Observatory ${thread.threadId}`,
+      );
+      const plan = observatoryPayload?.observatory?.livedNow?.currentPersonalPlan ?? null;
+      const stop = currentStop(plan, Date.now());
+      if (stop === null) {
+        const skipped = Object.freeze({
+          threadId:thread.threadId,
+          displayName:thread.displayName ?? null,
+          outcome:"not_offered",
+          reason:"current Flight Plan stop could not be resolved",
+        });
+        decisions.push(skipped);
+        emit({ event:"inside-fibre-work-candidate", ...skipped });
+        continue;
+      }
+
+      const startMs = Date.parse(stop.endAt);
+      if (!Number.isFinite(startMs) || startMs <= Date.now()) {
+        const skipped = Object.freeze({
+          threadId:thread.threadId,
+          displayName:thread.displayName ?? null,
+          outcome:"not_offered",
+          reason:"current Flight Plan stop has no future boundary",
+        });
+        decisions.push(skipped);
+        emit({ event:"inside-fibre-work-candidate", ...skipped });
+        continue;
+      }
+      const startAt = new Date(startMs).toISOString();
+      const endAt = new Date(startMs + SHIFT_DURATION_MS).toISOString();
+
+      const beforeState = workStates.get(thread.threadId);
+      const offer = await privatePost(
+        worldBaseUrl,
+        "/internal/inside-fibre/work-offer",
+        privateToken,
+        {
+          threadId:thread.threadId,
+          startAt,
+          endAt,
+          fibreCredits:COMPENSATION_FC,
+        },
+        `work offer ${thread.threadId}`,
+      );
+
+      const decision = Object.freeze({
+        threadId:thread.threadId,
+        displayName:thread.displayName ?? null,
+        outcome:offer.decision,
+        reason:offer.reason,
+        offerId:offer.offerId,
+        commitmentId:offer.commitmentId,
+        planningState:offer.planning?.state ?? null,
+        startAt:offer.startAt,
+        endAt:offer.endAt,
+        fibreCredits:offer.fibreCredits,
+        balanceBefore:beforeState?.fibreCredits ?? null,
+      });
+      decisions.push(decision);
+      emit({ event:"inside-fibre-work-decision", ...decision });
+
+      if (offer.decision === "decline") continue;
+      if (offer.planning?.state !== "planned" || !offer.planning?.planId) {
+        throw new Error(`accepted work for ${thread.threadId} did not become a Flight Plan`);
+      }
+
+      const commitment = Object.freeze({
+        commitmentId:offer.commitmentId,
+        startAt:offer.startAt,
+        endAt:offer.endAt,
+        fibreCredits:offer.fibreCredits,
+      });
+      const evidence = scheduledEvidence({
+        runId,
+        sourceSha,
+        decisions,
+        thread,
+        commitment,
+        planId:offer.planning.planId,
+      });
+      const evidencePath = writeEvidence(runId, evidence);
+      emit({
+        event:"inside-fibre-staging-scheduled",
+        runId,
+        threadId:thread.threadId,
+        decision:"accept",
+        startAt:offer.startAt,
+        endAt:offer.endAt,
+        planId:offer.planning.planId,
+        evidencePath,
+      });
+      return Object.freeze({ evidence, evidencePath });
+    }
   }
 
   if (accepted === null) {
     const evidence = Object.freeze({
-      contract:"fibre-inside-fibre-staging-acceptance-v0.1",
+      contract:"fibre-inside-fibre-staging-acceptance-v0.2",
       environment:"staging",
       status:"no_acceptor",
       runId,
@@ -308,9 +477,6 @@ export async function runInsideFibreStagingAcceptance({
     return Object.freeze({ evidence, evidencePath });
   }
 
-  const startMs = Date.parse(accepted.offer.startAt);
-  if (Date.now() < startMs) await delay(startMs - Date.now() + 100);
-
   const selected = await publicMeetSelection(
     presentationBaseUrl,
     viewerOrigin,
@@ -321,8 +487,8 @@ export async function runInsideFibreStagingAcceptance({
     throw new Error("the accepted Thread was not discoverable through committed public Meet selection");
   }
   if (
-    selected?.availability?.startAt !== accepted.offer.startAt
-    || selected?.availability?.endAt !== accepted.offer.endAt
+    selected?.availability?.startAt !== accepted.commitment.startAt
+    || selected?.availability?.endAt !== accepted.commitment.endAt
   ) {
     throw new Error("public Meet selection availability disagrees with the accepted work window");
   }
@@ -337,8 +503,8 @@ export async function runInsideFibreStagingAcceptance({
     throw new Error("public Meet entry did not return an admitted situation");
   }
   if (
-    entry?.availability?.startAt !== accepted.offer.startAt
-    || entry?.availability?.endAt !== accepted.offer.endAt
+    entry?.availability?.startAt !== accepted.commitment.startAt
+    || entry?.availability?.endAt !== accepted.commitment.endAt
   ) {
     throw new Error("public Meet entry availability disagrees with the accepted work window");
   }
@@ -384,20 +550,20 @@ export async function runInsideFibreStagingAcceptance({
     throw new Error("public visitor encounter did not produce a new noticed Encounter Story");
   }
 
-  const afterState = await privateGet(
+  const afterStatePayload = await privateGet(
     worldBaseUrl,
     "/internal/inside-fibre/work-state",
     privateToken,
     { threadId:accepted.thread.threadId },
     "work state after visitor encounter",
   );
-  const balanceAfter = afterState?.result?.fibreCredits;
-  if (balanceAfter !== accepted.balanceBefore + accepted.offer.fibreCredits) {
+  const balanceAfter = afterStatePayload?.result?.fibreCredits;
+  if (balanceAfter !== accepted.balanceBefore + accepted.commitment.fibreCredits) {
     throw new Error("completed visitor work did not produce the agreed Fibre Credit consequence");
   }
 
   const evidence = Object.freeze({
-    contract:"fibre-inside-fibre-staging-acceptance-v0.1",
+    contract:"fibre-inside-fibre-staging-acceptance-v0.2",
     environment:"staging",
     status:"closed",
     runId,
@@ -407,12 +573,11 @@ export async function runInsideFibreStagingAcceptance({
     acceptedWork:Object.freeze({
       threadId:accepted.thread.threadId,
       displayName:accepted.thread.displayName ?? null,
-      offerId:accepted.offer.offerId,
-      commitmentId:accepted.offer.commitmentId,
-      planId:accepted.offer.planning.planId,
-      startAt:accepted.offer.startAt,
-      endAt:accepted.offer.endAt,
-      fibreCredits:accepted.offer.fibreCredits,
+      commitmentId:accepted.commitment.commitmentId,
+      planId:accepted.planId,
+      startAt:accepted.commitment.startAt,
+      endAt:accepted.commitment.endAt,
+      fibreCredits:accepted.commitment.fibreCredits,
     }),
     publicMeeting:Object.freeze({
       selectedThreadId:selected.thread.threadId,
