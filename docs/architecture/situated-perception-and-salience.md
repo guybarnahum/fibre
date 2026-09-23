@@ -141,6 +141,38 @@ A direct request may bypass ordinary low-level salience because another person h
 
 The gate should be cheap, deterministic where its evidence is deterministic, inspectable and zero-model for background events.
 
+The first accepted implementation is intentionally non-numeric. For co-present Thread opportunities it treats only grounded materiality anchors as sufficient:
+
+```text
+shared mediated context
+planned/enacted participant presence
+recent admitted observable interaction history
+unexpected observable / scene anomaly
+```
+
+The last category is **context-relative**, never a universal weirdness score. The World/opportunity producer may mark an `unexpected_observable` only when it can ground the deviation in actual scene evidence. The Salience Gate consumes that cue; it does not invent it.
+
+Examples:
+
+```text
+oversized neon hat at a funeral       -> may be unexpected_observable
+same hat at a costume party           -> probably ordinary
+
+nudity in an ordinary café            -> likely unexpected_observable
+nudity at a nudist beach              -> probably ordinary
+
+someone sprinting through a library   -> likely unexpected_observable
+someone sprinting on a track          -> ordinary
+```
+
+The cue says only **this observable state is unusual enough here to enter attention**. It does not say funny, attractive, sexual, threatening, shameful, rude or important. Those meanings belong downstream to regulation and Interior Cognition.
+
+If no materiality anchor is present, compatible co-presence remains `background`. That outcome is **not** `not_initiate`: no private social decision occurred, no refusal happened, and no shared social history may be authored.
+
+If an anchor is present, the gate returns `salient` and ordinary Interior Cognition may still decide `not_initiate`. The gate therefore controls whether cognition is warranted, not what the person wants.
+
+This first profile is deliberately conservative and incomplete. W4/W5 may add grounded opportunity/change/regulation signals as Fibre learns more of the lived World. Do not convert the initial anchors into a universal human-attention formula or weighted score.
+
 ## Social and cultural pressure belongs to the developed person
 
 Politeness, hospitality, conversational norms, deference, directness and expectations about acknowledging another person are not universal numeric constants.

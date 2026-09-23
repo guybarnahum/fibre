@@ -131,6 +131,7 @@ export function projectSituatedPercept({
       mediatedContext:situation.mediatedContext ?? null,
       place:currentPlace(observerThreadId, situation, situatedLifeStore),
       currentActivity:situation.activity ?? null,
+      participantRefs:Object.freeze([...(situation.participantRefs ?? [])]),
     }),
     observed:Object.freeze(observed),
     recentEvents:Object.freeze(events.map((event) => Object.freeze(structuredClone(event)))),

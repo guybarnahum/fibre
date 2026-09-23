@@ -16,6 +16,7 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 import { projectSituatedPercept } from "./situated-percept.mjs";
+import { evaluateSalience } from "./salience-gate.mjs";
 
 const MEMORY_LIMIT = 6;
 const MAX_PRESENT_THREADS = 6;
@@ -160,6 +161,26 @@ export function createSocialMeetingService({
         situatedLifeStore,
         experienceStore,
       });
+      const salience = evaluateSalience({
+        opportunity:{
+          kind:"co_present_threads",
+          subjectRefs:invitees.map((context) => context.thread.threadId),
+        },
+        situatedPercept,
+      });
+      if (salience.outcome === "background") {
+        return Object.freeze({
+          outcome:"not_met",
+          compatible:true,
+          salience,
+          initiation:null,
+          request:null,
+          stances:Object.freeze({}),
+          encounterStory:null,
+          aftermath:null,
+        });
+      }
+
       const initiation = await formSocialEncounterRequest({
         threadId:initiator.thread.threadId,
         at:input.at,
@@ -179,6 +200,7 @@ export function createSocialMeetingService({
         return Object.freeze({
           outcome:"not_met",
           compatible:true,
+          salience,
           initiation,
           request:null,
           stances:Object.freeze({}),
@@ -242,6 +264,7 @@ export function createSocialMeetingService({
         return Object.freeze({
           outcome:"not_met",
           compatible:true,
+          salience,
           initiation,
           request,
           stances:Object.freeze(stances),
@@ -377,6 +400,7 @@ export function createSocialMeetingService({
       return Object.freeze({
         outcome:"met",
         compatible:true,
+        salience,
         initiation,
         request,
         stances:Object.freeze(stances),

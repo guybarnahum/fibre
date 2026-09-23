@@ -337,7 +337,7 @@ Replace the ad-hoc social exterior packet rather than compatibility-wrapping it.
 
 This slice is intentionally one consumer. It proves the general percept seam without building a generalized simulation framework.
 
-#### W2 — Direct social response uses the same mind — IMPLEMENTED; validate
+#### W2 — Direct social response uses the same mind — VALIDATED
 
 The remaining legacy meeting-stance persona path is replaced by Interior Cognition using the same Situated Percept plus the concrete outward request.
 
@@ -347,24 +347,39 @@ Raw-genome/persona injection and the stance-specific manual memory/relationship/
 
 **High-value proof:** hold the exact outward request, recipient and selected private evidence constant; change only a stable observable setting fact and require the recipient's stance to change. The proof also asserts that the requesting Thread's private interior never enters the recipient's Situated Percept.
 
-#### W3 — Cheap general Salience Gate
+#### W3 — Cheap general Salience Gate — IMPLEMENTED; validate
 
-Add one small mechanical materiality function before optional cognition for ordinary observable opportunities.
+One small pure materiality function now sits before optional social-initiation cognition.
 
-Inputs may include only grounded facts available at the time: novelty/change, interruption cost, relationship/familiarity relevance, recent reciprocal interaction, active commitment pressure and existing regulator signals.
+The first profile is intentionally non-numeric and consumes only grounded anchors already available or explicitly produced by World opportunity code:
 
-Output only:
+```text
+shared mediated context
+planned/enacted participant presence
+recent admitted observable interaction history
+unexpected_observable
+```
+
+`unexpected_observable` is context-relative scene deviation, not a weirdness score. A producer may eventually ground it from facts such as unusual dress/body state, abrupt movement or another observable change **relative to the current setting**. The gate does not decide whether a hat is funny, nudity is sexual, or running is threatening; it only decides whether the unusual observable deserves cognition.
+
+Output is only:
 
 ```text
 background
-material enough for cognition
+salient
 ```
 
-plus a bounded replay/debug witness. No semantic feeling, motive or choice is authored.
+plus a bounded mechanical witness of the anchors/source refs. No semantic feeling, motive or choice is authored. No randomness exists in this version.
 
-No randomness in the first version.
+Critically:
 
-**High-value proof:** an irrelevant background opportunity costs zero model calls; a materially relevant opportunity reaches cognition; changing an actually relevant grounded factor can cross the gate. Avoid tests of exact weights or helper structure.
+```text
+background != not_initiate
+```
+
+Background means the opportunity never warranted private social cognition. It creates no refusal and no shared social history.
+
+**High-value organism proof:** real compatible ambient co-presence with no materiality anchor must return `background`, `initiation:null`, spend zero model calls, and create neither reciprocal interaction nor Encounter Story. Existing planned/mediated/recent-history paths prove that an anchored opportunity can continue into Interior Cognition. W4 must prove that World-produced observable anomaly/change cues are grounded rather than caller decoration.
 
 #### W4 — Ordinary World opportunities from active LivedNow
 

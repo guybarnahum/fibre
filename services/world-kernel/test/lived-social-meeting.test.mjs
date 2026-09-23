@@ -44,7 +44,7 @@ function placeEpisode(threadId, episodeId, placeId = "place_n5_cafe", provenance
   };
 }
 
-function situation(threadId, activity, placeRef, mediatedContext = null) {
+function situation(threadId, activity, placeRef, mediatedContext = null, participantRefs = []) {
   return {
     situationId:`sit_${threadId}`,
     threadId,
@@ -52,6 +52,7 @@ function situation(threadId, activity, placeRef, mediatedContext = null) {
     location:{ kind:"place", placeRef },
     mediatedContext,
     activity,
+    participantRefs:[...participantRefs],
   };
 }
 
@@ -90,6 +91,7 @@ function fixture({
   recentSocialInteractions = [],
   noorActivity = "Sketching at the same café table.",
   mediatedContext = null,
+  plannedCompanions = true,
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
@@ -105,9 +107,27 @@ function fixture({
     [sela.threadId, [selaCafe]],
   ]);
   const situations = new Map([
-    [mina.threadId, situation(mina.threadId, "Reading over coffee.", placeEpisodeRevisionRef(minaCafe), mediatedContext)],
-    [noor.threadId, situation(noor.threadId, noorActivity, placeEpisodeRevisionRef(noorCafe), mediatedContext)],
-    [sela.threadId, situation(sela.threadId, "Waiting for tea at the next table.", placeEpisodeRevisionRef(selaCafe), mediatedContext)],
+    [mina.threadId, situation(
+      mina.threadId,
+      "Reading over coffee.",
+      placeEpisodeRevisionRef(minaCafe),
+      mediatedContext,
+      plannedCompanions ? [noor.threadId] : [],
+    )],
+    [noor.threadId, situation(
+      noor.threadId,
+      noorActivity,
+      placeEpisodeRevisionRef(noorCafe),
+      mediatedContext,
+      plannedCompanions ? [mina.threadId] : [],
+    )],
+    [sela.threadId, situation(
+      sela.threadId,
+      "Waiting for tea at the next table.",
+      placeEpisodeRevisionRef(selaCafe),
+      mediatedContext,
+      [],
+    )],
   ]);
   const stories = [];
   const attentions = [];
@@ -120,9 +140,11 @@ function fixture({
   const memories = [];
   const ensured = [];
   const socialInteractions = structuredClone(recentSocialInteractions);
+  let modelCalls = 0;
 
   const modelAdapter = {
     async invoke(call) {
+      modelCalls += 1;
       if (call.input?.concern?.kind === "social_initiation") {
         initiationNames.push(call.input.thread.name);
         assert.equal(Object.hasOwn(call.input.thread, "stableTendencies"), false,
@@ -436,6 +458,7 @@ function fixture({
     initiationNames,
     stanceNames,
     storyAuthors,
+    modelCallCount:() => modelCalls,
   };
 }
 
@@ -448,6 +471,8 @@ test("E2 accepted meeting is one Encounter Story with distinct Thread Experience
   });
 
   assert.equal(result.outcome, "met", "meeting should form");
+  assert.equal(result.salience.outcome, "salient",
+    "planned co-presence should be material enough for social cognition");
   assert.equal(f.ensured.length, 2, "both lives must be current");
   assert.deepEqual(f.initiationNames, ["Mina"], "meeting must begin from initiator agency");
   assert.deepEqual(f.stanceNames, ["Noor"], "only invitees should decide whether to accept");
@@ -533,6 +558,31 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
 });
 
 
+test("background co-presence costs no cognition and creates no private refusal", async () => {
+  const f = fixture({
+    plannedCompanions:false,
+    mediatedContext:null,
+  });
+
+  const result = await f.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+
+  assert.equal(result.compatible, true, "co-presence may be real without becoming salient");
+  assert.equal(result.salience.outcome, "background",
+    "unanchored ambient co-presence should remain background");
+  assert.equal(result.initiation, null,
+    "background opportunity must not be rewritten as not_initiate");
+  assert.equal(f.modelCallCount(), 0,
+    "background opportunity should cost zero cognition");
+  assert.equal(f.socialInteractions.length, 0,
+    "background opportunity must create no shared social history");
+  assert.equal(f.stories.length, 0,
+    "background opportunity must create no Encounter Story");
+});
+
 test("observable setting can bend social judgment for the same person", async () => {
   const decideFromSetting = (_name, _evidence, externalContext) =>
     externalContext.situatedPercept.setting.mode === "mediated"
@@ -609,6 +659,7 @@ test("observable setting can bend direct social response for the same recipient"
 
 test("recent reciprocal social history can bend later initiation without a momentum score", async () => {
   const f = fixture({
+    plannedCompanions:false,
     recentSocialInteractions:[{
       interactionId:"social_prior_decline",
       occurredAt:"2026-09-20T18:00:00.000Z",
