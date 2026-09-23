@@ -66,10 +66,18 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
     ensurePublicPresent: async (threadId) => {
       order.push(`ensure:${threadId}`);
       return {
-        situationId: "sit_reconciled_now",
-        establishedAt: "2026-09-21T03:40:00Z",
-        phase: "at_place",
-        activity: "walking home",
+        present:{
+          situationId: "sit_reconciled_now",
+          establishedAt: "2026-09-21T03:40:00Z",
+          phase: "at_place",
+          activity: "meeting Inside Fibre visitors",
+        },
+        availability:{
+          startAt:"2026-09-21T03:00:00Z",
+          endAt:"2026-09-21T04:00:00Z",
+          commitmentId:"work_private_001",
+          compensation:{ fibreCredits:12 },
+        },
       };
     },
     readPublicPresent: async () => {
@@ -91,15 +99,23 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
   ));
   assert.equal(response.status, 200);
   assert.deepEqual(order, [`ensure:${THREAD_ID}`]);
-  assert.deepEqual(await response.json(), {
-    currentPresent: {
-      payload: {
-        situationId: "sit_reconciled_now",
-        establishedAt: "2026-09-21T03:40:00Z",
-        phase: "at_place",
-        activity: "walking home",
-      },
+  const body = await response.json();
+  assert.deepEqual(body.currentPresent, {
+    payload: {
+      situationId: "sit_reconciled_now",
+      establishedAt: "2026-09-21T03:40:00Z",
+      phase: "at_place",
+      activity: "meeting Inside Fibre visitors",
     },
   }, "meeting entry should expose the scene produced by reconciliation, not the stale prior projection");
+  assert.deepEqual(body.availability, {
+    startAt:"2026-09-21T03:00:00Z",
+    endAt:"2026-09-21T04:00:00Z",
+  }, "public meeting entry should expose only the bounded availability window");
+  const publicJson = JSON.stringify(body);
+  assert.equal(publicJson.includes("work_private_001"), false,
+    "public meeting entry must not expose the work commitment identity");
+  assert.equal(publicJson.includes("fibreCredits"), false,
+    "public meeting entry must not expose compensation");
 });
 
