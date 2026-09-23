@@ -71,7 +71,7 @@ async function callWorldEncounter(env, input) {
     throw error;
   }
   return {
-    situationId: body.result.grounding.situationId,
+    situationId: body.result.situationId,
     responseText: body.result.responseText,
   };
 }
