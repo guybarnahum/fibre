@@ -2,7 +2,6 @@ import {
   buildFibreCivilRegistration,
   mintFibreIdentityNumber,
 } from "#core/src/fibre-civil-identity.mjs";
-import { genesisDailyRhythmBaselines } from "#core/src/thread-daily-rhythm.mjs";
 import { attachGenesisCanonicalVisualIdentity } from "fibre/world-kernel/genesis-authority-contracts";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
@@ -116,10 +115,7 @@ export function buildNeutralGenesisThreadSeed({ threadId, createdAt, subjectIden
     version: 1,
     status: "frozen",
     identity,
-    genome: {
-      textualTraits: {},
-      runtimeBaselines: genesisDailyRhythmBaselines(threadId),
-    },
+    genome: { textualTraits: {}, runtimeBaselines: {} },
     currentState: {
       needs: [],
       feelings: [],
