@@ -325,6 +325,7 @@ test("Flight Planning cannot silently omit accepted visitor work", async () =>
         memoryStore:state.memoryStore,
         situatedLifeStore:state.situatedLifeStore,
         workStore:state.workStore,
+        fibreCreditStore:state.fibreCreditStore,
         modelAdapter:{
           provider:"fixture",
           modelId:"fixture-work-planning-omits-shift",
@@ -679,6 +680,8 @@ test("a committed website visitor enters the existing lived scene and becomes an
       semanticStateStore:state.semanticStateStore,
       memoryStore:state.memoryStore,
       experienceStore,
+      workStore:state.workStore,
+      fibreCreditStore:state.fibreCreditStore,
       modelAdapter,
     });
 
