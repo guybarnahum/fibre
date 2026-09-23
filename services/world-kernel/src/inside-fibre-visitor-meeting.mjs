@@ -45,6 +45,8 @@ export function createInsideFibreVisitorMeetingService({
   semanticStateStore,
   memoryStore,
   experienceStore,
+  workStore,
+  fibreCreditStore,
   modelAdapter,
   journalBook = null,
   activityRecorder = null,
@@ -60,6 +62,8 @@ export function createInsideFibreVisitorMeetingService({
   requireMethod(experienceStore, "Inside Fibre experienceStore", "getThreadEncounterAttention");
   requireMethod(experienceStore, "Inside Fibre experienceStore", "recordThreadEncounterAttention");
   requireMethod(experienceStore, "Inside Fibre experienceStore", "recordThreadExperienceJournalEntry");
+  requireMethod(workStore, "Inside Fibre workStore", "getCommitment");
+  requireMethod(fibreCreditStore, "Inside Fibre fibreCreditStore", "recordWorkCompensation");
   requireMethod(modelAdapter, "Inside Fibre modelAdapter", "invoke");
   if (journalBook !== null) {
     requireMethod(journalBook, "Inside Fibre journalBook", "getProfile");
@@ -154,6 +158,18 @@ export function createInsideFibreVisitorMeetingService({
         }),
       });
 
+      const commitment = workStore.getCommitment(currentAvailability.commitmentId);
+      if (commitment.threadId !== input.threadId) {
+        throw new TypeError("Inside Fibre work commitment belongs to another Thread");
+      }
+      const settlement = fibreCreditStore.recordWorkCompensation({
+        threadId:input.threadId,
+        commitmentId:commitment.commitmentId,
+        encounterStoryId:encounterStory.encounterId,
+        occurredAt:input.at,
+        amount:commitment.compensation.fibreCredits,
+      });
+
       const existing = experienceStore.getThreadEncounterAttention(
         input.threadId,
         encounterStory.encounterId,
@@ -166,6 +182,7 @@ export function createInsideFibreVisitorMeetingService({
           encounterStory,
           attention:existing,
           aftermath:null,
+          settlement,
           reused:true,
         });
       }
@@ -209,6 +226,7 @@ export function createInsideFibreVisitorMeetingService({
         encounterStory,
         attention,
         aftermath,
+        settlement,
         reused:false,
       });
     },
