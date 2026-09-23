@@ -57,15 +57,6 @@ export async function replanForAcceptedInsideFibreWork({
     throw new TypeError("accepted Inside Fibre work requires an existing personal Flight Plan");
   }
 
-  if (Date.parse(commitment.startAt) > Date.parse(priorPlan.horizonEnd)) {
-    return Object.freeze({
-      state:"awaiting_plan_horizon",
-      commitment,
-      priorPlan,
-      plan:null,
-    });
-  }
-
   const position = plannedPositionAt(priorPlan, commitment.acceptedAt);
   if (position?.kind !== "at_place") {
     return Object.freeze({
