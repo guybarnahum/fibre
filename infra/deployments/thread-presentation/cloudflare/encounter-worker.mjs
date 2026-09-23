@@ -94,38 +94,37 @@ function selectionRequest(original, url) {
 }
 
 async function committedMeetSelection(request, env, ctx, activityRecorder) {
-  const selected = await selectCommittedAvailableThread({
-    requestUrl:request.url,
-    async selectCandidate(url) {
-      const response = await baseWorker.fetch(selectionRequest(request, url), env, ctx);
-      if (!response.ok) {
-        const error = new Error(`Thread directory selection failed with HTTP ${response.status}`);
-        error.status = response.status;
-        throw error;
-      }
-      return response.json();
-    },
-    async admitCandidate(threadId) {
-      try {
-        return await worldMeetingEntry(env, activityRecorder, threadId);
-      } catch (error) {
-        if (error?.status === 409) return null;
-        throw error;
-      }
-    },
-  });
-  return Response.json(selected, {
-    status:200,
-    headers:{
-      "Cache-Control":"no-store",
-      ...(request.headers.get("Origin") === null
-        ? {}
-        : {
-            "Access-Control-Allow-Origin":request.headers.get("Origin"),
-            "Vary":"Origin",
-          }),
-    },
-  });
+  let selectionHeaders = null;
+  let selected;
+  try {
+    selected = await selectCommittedAvailableThread({
+      requestUrl:request.url,
+      async selectCandidate(url) {
+        const response = await baseWorker.fetch(selectionRequest(request, url), env, ctx);
+        if (!response.ok) {
+          const error = new Error(`Thread directory selection failed with HTTP ${response.status}`);
+          error.response = response;
+          throw error;
+        }
+        selectionHeaders = new Headers(response.headers);
+        return response.json();
+      },
+      async admitCandidate(threadId) {
+        try {
+          return await worldMeetingEntry(env, activityRecorder, threadId);
+        } catch (error) {
+          if (error?.status === 409) return null;
+          throw error;
+        }
+      },
+    });
+  } catch (error) {
+    if (error?.response instanceof Response) return error.response;
+    throw error;
+  }
+  const headers = selectionHeaders ?? new Headers();
+  headers.set("Cache-Control", "no-store");
+  return Response.json(selected, { status:200, headers });
 }
 
 async function infraHealth(env) {
