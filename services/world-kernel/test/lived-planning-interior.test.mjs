@@ -334,3 +334,82 @@ test("personal Flight Plan admission keeps private cognition evidence separate f
     worldStore.close();
   }));
 
+
+
+test("Flight Planning receives actual local civil time for a non-UTC World", async () =>
+  withDatabase(async (databasePath) => {
+    const storage = localWorldStateStorage(databasePath);
+    const worldStore = openWorldStore(storage);
+    const event = seedThread(
+      worldStore,
+      "thr_lived_plan_local_time",
+      "Nino Vale",
+      "2026-09-20T08:00:00.000Z",
+    );
+    const identityStore = openIdentityStore(storage);
+    const semanticStateStore = openSemanticStateStore(storage);
+    const memoryStore = openAutobiographicalMemoryStore(storage);
+    const situatedLifeStore = openSituatedLifeStore(storage);
+
+    let observedLocalHorizon = null;
+    const modelAdapter = {
+      async invoke(call) {
+        const external = call.input.concern.externalContext;
+        observedLocalHorizon = structuredClone(external.localHorizon);
+        return {
+          output:{
+            result:{
+              stops:[{
+                startAt:external.horizon.startAt,
+                endAt:external.horizon.endAt,
+                physicalPlaceRef:external.startingPlaceRef,
+                presenceMode:"physical",
+                mediatedContext:"",
+                activity:"Continue the ordinary day from the current place.",
+                purpose:"Follow the life already underway.",
+                travelFromPrevious:"",
+              }],
+            },
+            evidenceRefs:[],
+            conflictingMotives:[],
+            uncertainty:null,
+          },
+          provenance:{
+            provider:"fixture",
+            modelId:"fixture-local-civil-time",
+            providerRequestId:call.clientRequestId,
+          },
+        };
+      },
+    };
+
+    await formPersonalLivedPlan({
+      threadId:"thr_lived_plan_local_time",
+      authoredAt:"2026-09-23T04:30:00.000Z",
+      horizonEnd:"2026-09-23T16:30:00.000Z",
+      availablePlaces:[{ ref:"place_current", displayName:"Current place" }],
+      startingPlaceRef:"place_current",
+      sourceReferences:[event.eventId],
+      sourceStores:{
+        worldStore,
+        identityStore,
+        semanticStateStore,
+        memoryStore,
+        situatedLifeStore,
+      },
+      modelAdapter,
+      worldTimeZone:"Asia/Tbilisi",
+    });
+
+    assert.deepEqual(observedLocalHorizon, {
+      timeZone:"Asia/Tbilisi",
+      start:{ date:"2026-09-23", time:"08:30", weekday:"Wednesday" },
+      end:{ date:"2026-09-23", time:"20:30", weekday:"Wednesday" },
+    }, "planning should see the World's local civil horizon rather than the UTC clock");
+
+    situatedLifeStore.close();
+    memoryStore.close();
+    semanticStateStore.close();
+    identityStore.close();
+    worldStore.close();
+  }));
