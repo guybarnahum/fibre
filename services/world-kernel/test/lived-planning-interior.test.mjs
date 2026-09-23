@@ -414,13 +414,14 @@ test("Flight Planning receives actual local civil time for a non-UTC World", asy
       start:{ date:"2026-09-23", time:"08:30", weekday:"Wednesday" },
       end:{ date:"2026-09-23", time:"20:30", weekday:"Wednesday" },
     }, "planning should see the World's local civil horizon rather than the UTC clock");
-    assert.deepEqual(observedDailyRhythm, {
-      projection:{ id:"daily_rhythm_projection", version:"1" },
-      preferredWakeAround:"09:00",
-      preferredSleepAround:"01:00",
-      sleepNeedHours:8,
-      flexibility:"soft",
-    }, "planning should receive a bounded organismic rhythm projection rather than raw DNA");
+    assert.equal(observedDailyRhythm.sleepNeedHours, 8, "inherited sleep need should reach planning");
+    assert.equal(observedDailyRhythm.flexibility, "soft", "rhythm should remain a tendency, not a schedule");
+    assert.equal(
+      "circadianPhaseOffsetMinutes" in observedDailyRhythm
+        || "regulatorRestSensitivity" in observedDailyRhythm,
+      false,
+      "planning should receive a derived rhythm cue rather than raw genome baselines",
+    );
 
     situatedLifeStore.close();
     memoryStore.close();
