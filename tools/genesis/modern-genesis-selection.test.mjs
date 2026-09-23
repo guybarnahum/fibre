@@ -184,6 +184,72 @@ test("uncommon local appearance remains valid when family origin makes it causal
   assert.doesNotMatch(created.material.appearanceContext, /Tbilisi|Georgia/iu, "appearance prior must remain physical rather than geographic");
 });
 
+test("automatic long-tail birth authors one World, reuses it, and leaves genome selection independent", async (t) => {
+  const root = mkdtempSync(join(tmpdir(), "fibre-auto-long-tail-world-"));
+  t.after(() => rmSync(root, { recursive:true, force:true }));
+
+  let sampledRequestId = null;
+  for (let index = 0; index < 10_000; index += 1) {
+    const requestId = `birth-auto-long-tail-${index}`;
+    if (sampleModernBirthplace(requestId).place === "Romania/Sibiu") {
+      sampledRequestId = requestId;
+      break;
+    }
+  }
+  assert.ok(sampledRequestId, "sampler never produced the long-tail locality");
+
+  const selector = selectDefaultModernBirthplace(sampledRequestId);
+  const authored = {
+    ...authoredJerusalem,
+    timeZone:"Europe/Bucharest",
+    languages:["Romanian", "English"],
+    femaleGivenNames:["Ana", "Maria", "Ioana", "Elena", "Andreea", "Diana"],
+    maleGivenNames:["Andrei", "Mihai", "Alexandru", "Vlad", "Radu", "Cristian"],
+    familyNames:["Popescu", "Ionescu", "Munteanu", "Stan", "Dumitru", "Radu"],
+    culturalContext:"An ordinary household in Sibiu participates in local Romanian civic, school, family and neighborhood life.",
+    heritageContext:"No operator-supplied heritage label.",
+    familyOriginContext:"The household has longstanding family roots in Romania, with relatives in Sibiu and elsewhere in the country.",
+    appearanceContext:"A broad family appearance range with ordinary variation in complexion, hair and eye color, facial proportions and other inherited physical traits.",
+  };
+
+  let authoredCalls = 0;
+  const first = await resolveModernWorldSelection({
+    selector,
+    heritage:null,
+    cohort,
+    materialFixture,
+    fixture,
+    repoRoot:root,
+    requestId:sampledRequestId,
+    baseSlotOrdinal:1,
+    authorWorld:async ({ selector: received }) => {
+      authoredCalls += 1;
+      assert.equal(received.key, selector.key, "sampled birthplace changed before World authoring");
+      return authored;
+    },
+  });
+
+  const second = await resolveModernWorldSelection({
+    selector:selectDefaultModernBirthplace(sampledRequestId),
+    heritage:null,
+    cohort,
+    materialFixture,
+    fixture,
+    repoRoot:root,
+    requestId:sampledRequestId,
+    baseSlotOrdinal:2,
+    authorWorld:async () => { throw new Error("automatic World should have been reused"); },
+  });
+
+  assert.equal(first.mode, "created", "first automatic birth did not author its World");
+  assert.equal(second.mode, "cached", "second automatic birth did not reuse its World");
+  assert.equal(first.material.birthCity, "Sibiu, Romania", "sampled locality was lost");
+  assert.equal(second.worldSpec.worldSpecId, first.worldSpec.worldSpecId, "reused World changed identity");
+  assert.equal(first.genomePath, cohort.slots[0].genomePath, "first birthplace selected the genome");
+  assert.equal(second.genomePath, cohort.slots[1].genomePath, "reused birthplace selected the genome");
+  assert.equal(authoredCalls, 1, "automatic locality was authored more than once");
+});
+
 test("authored World rejects demographic language inventories for one subject", async (t) => {
   const root = mkdtempSync(join(tmpdir(), "fibre-language-inventory-"));
   t.after(() => rmSync(root, { recursive:true, force:true }));
