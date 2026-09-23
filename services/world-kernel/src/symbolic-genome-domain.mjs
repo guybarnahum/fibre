@@ -9,14 +9,22 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 
+const SYMBOLIC_GENOME_POLICY_V1 = Object.freeze({
+  id:"fibre_symbolic_genome",
+  version:"1",
+});
 export const SYMBOLIC_GENOME_POLICY = Object.freeze({
-  id: "fibre_symbolic_genome",
-  version: "2",
+  id:"fibre_symbolic_genome",
+  version:"2",
 });
 
+const SYMBOLIC_RECOMBINATION_POLICY_V1 = Object.freeze({
+  id:"deterministic_textual_crossover",
+  version:"1",
+});
 export const SYMBOLIC_RECOMBINATION_POLICY = Object.freeze({
-  id: "deterministic_symbolic_crossover",
-  version: "2",
+  id:"deterministic_symbolic_crossover",
+  version:"2",
 });
 
 export const SYMBOLIC_RUNTIME_BASELINE_ENVELOPES = Object.freeze({
@@ -202,18 +210,14 @@ function normalizeSourceEligibility(candidate) {
 function normalizeRecombinationWitness(candidate) {
   if (candidate === null) return null;
   assertPlainObject("genome.recombinationWitness", candidate);
-  assertExactKeys("genome.recombinationWitness", candidate, [
-    "policy",
-    "sourceGenomeRefs",
-    "sourceGenomeDigests",
-    "selectionSeed",
-    "selectionDigest",
-    "baselineSelectionDigest",
-  ]);
+  const legacy = canonicalJson(candidate.policy) === canonicalJson(policyIdentity(SYMBOLIC_RECOMBINATION_POLICY_V1));
+  assertExactKeys("genome.recombinationWitness", candidate, legacy
+    ? ["policy","sourceGenomeRefs","sourceGenomeDigests","selectionSeed","selectionDigest"]
+    : ["policy","sourceGenomeRefs","sourceGenomeDigests","selectionSeed","selectionDigest","baselineSelectionDigest"]);
   const policy = normalizePolicy(
     "genome.recombinationWitness.policy",
     candidate.policy,
-    SYMBOLIC_RECOMBINATION_POLICY,
+    legacy ? SYMBOLIC_RECOMBINATION_POLICY_V1 : SYMBOLIC_RECOMBINATION_POLICY,
   );
   if (!Array.isArray(candidate.sourceGenomeRefs) || candidate.sourceGenomeRefs.length !== 2) {
     throw new TypeError("recombination sourceGenomeRefs must contain exactly two genomes");
@@ -225,7 +229,9 @@ function normalizeRecombinationWitness(candidate) {
   candidate.sourceGenomeDigests.forEach((value, index) => assertDigest(`recombination sourceGenomeDigests[${index}]`, value));
   assertNonEmpty("genome.recombinationWitness.selectionSeed", candidate.selectionSeed);
   assertDigest("genome.recombinationWitness.selectionDigest", candidate.selectionDigest);
-  assertDigest("genome.recombinationWitness.baselineSelectionDigest", candidate.baselineSelectionDigest);
+  if (!legacy) {
+    assertDigest("genome.recombinationWitness.baselineSelectionDigest", candidate.baselineSelectionDigest);
+  }
   return structuredClone({ ...candidate, policy });
 }
 
@@ -247,13 +253,21 @@ export function normalizeSymbolicGenomeHeader(candidate) {
   if (!["de_novo", "recombined"].includes(candidate.originKind)) {
     throw new TypeError("symbolicGenome.originKind is invalid");
   }
+  const legacyPolicy = canonicalJson(candidate.inheritancePolicy)
+    === canonicalJson(policyIdentity(SYMBOLIC_GENOME_POLICY_V1));
   const inheritancePolicy = normalizePolicy(
     "symbolicGenome.inheritancePolicy",
     candidate.inheritancePolicy,
-    SYMBOLIC_GENOME_POLICY,
+    legacyPolicy ? SYMBOLIC_GENOME_POLICY_V1 : SYMBOLIC_GENOME_POLICY,
   );
   const sourceEligibility = normalizeSourceEligibility(candidate.sourceEligibility);
   const recombinationWitness = normalizeRecombinationWitness(candidate.recombinationWitness);
+  if (
+    recombinationWitness !== null
+    && ((inheritancePolicy.version === "1") !== (recombinationWitness.policy.version === "1"))
+  ) {
+    throw new TypeError("symbolic genome and recombination policy generations must match");
+  }
   assertIsoTimestamp("symbolicGenome.createdAt", candidate.createdAt);
   const expectedId = symbolicGenomeId({ owner, genesisId: candidate.genesisId });
   if (candidate.genomeId !== expectedId) throw new TypeError("symbolicGenome.genomeId is not stable for owner+genesisId");
@@ -355,8 +369,15 @@ export function normalizeSymbolicGenomeMutation(candidate) {
 export function symbolicGenomeDigest({ header, loci, runtimeBaselines, mutations = [] }) {
   const normalizedHeader = normalizeSymbolicGenomeHeader(header);
   const normalizedLoci = loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
-  const normalizedRuntimeBaselines = normalizeSymbolicRuntimeBaselines(runtimeBaselines);
   const normalizedMutations = mutations.map(normalizeSymbolicGenomeMutation).sort((a, b) => a.ordinal - b.ordinal);
+  if (normalizedHeader.inheritancePolicy.version === "1") {
+    return `sha256:${sha256(canonicalJson({
+      header:normalizedHeader,
+      loci:normalizedLoci,
+      mutations:normalizedMutations,
+    }))}`;
+  }
+  const normalizedRuntimeBaselines = normalizeSymbolicRuntimeBaselines(runtimeBaselines);
   return `sha256:${sha256(canonicalJson({
     header:normalizedHeader,
     loci:normalizedLoci,
@@ -423,11 +444,17 @@ export function buildSyntheticAncestorSymbolicGenome({ ancestorId, genesisId, va
   });
 }
 
-function sourceIndexForOrdinal({ ordinal, locusCount, selectionSeed, sourceGenomeDigests }) {
+function sourceIndexForOrdinal({
+  ordinal,
+  locusCount,
+  selectionSeed,
+  sourceGenomeDigests,
+  policy = SYMBOLIC_RECOMBINATION_POLICY,
+}) {
   if (ordinal === 1) return 0;
   if (ordinal === locusCount) return 1;
   const digest = sha256(canonicalJson({
-    policy: policyIdentity(SYMBOLIC_RECOMBINATION_POLICY),
+    policy: policyIdentity(policy),
     ordinal,
     selectionSeed,
     sourceGenomeDigests,
@@ -665,6 +692,7 @@ export function replayRecombinationSelection(bundle, sourceGenomes) {
       locusCount: bundle.loci.length,
       selectionSeed: header.recombinationWitness.selectionSeed,
       sourceGenomeDigests,
+      policy:header.recombinationWitness.policy,
     });
     const source = orderedSources[sourceIndex];
     return {
