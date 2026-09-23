@@ -520,7 +520,7 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
 
 test("observable situation can bend social judgment for the same person", async () => {
   const decideFromSituation = (_name, _evidence, externalContext) =>
-    /putting her sketchbook away/u.test(
+    /putting her sketchbook away/iu.test(
       externalContext.situatedPercept.observed[0]?.currentActivity ?? "",
     )
       ? "initiate"
