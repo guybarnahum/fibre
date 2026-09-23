@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-genesis-childhood-birth
 status: accepted
-last-reviewed: 2026-09-13
+last-reviewed: 2026-09-23
 canonical: true
 ---
 
@@ -61,6 +61,20 @@ intellectual environment
 A WorldSpec describes circumstances, not personality. It may not smuggle conclusions such as `independent child`, `strict culture`, `creative family`, desired politics/morality or future profession into history generation.
 
 Two de-novo Threads from genuinely different worlds should be capable of becoming more distinct than two Threads that differ only by an origin label.
+
+
+### Birthplace distribution
+
+Automatic modern Genesis chooses birthplace **before** World authoring. The choice is deterministic for a birth request, independent from genome selection, and shaped approximately by where people live globally rather than by the small set of development fixtures.
+
+The current sampler deliberately combines:
+
+- a reusable base of roughly forty globally distributed anchor localities;
+- a meaningful long tail of smaller and regional localities;
+- coarse population-shaped geographic weights;
+- softened locality weighting so smaller places remain common enough to matter.
+
+This is not a demographic simulator or quota system. The locality is factual World input: it can change language, institutions, mobility, family/community context and later lived history, but it does not prescribe personality, competence, values or destiny. Unknown localities use the existing author-once/cache path; explicit operator birthplace selection remains authoritative when supplied.
 
 ## Sex as a pre-development birth fact
 
