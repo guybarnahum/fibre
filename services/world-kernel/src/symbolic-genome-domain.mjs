@@ -49,7 +49,8 @@ const MAX_LOCUS_BYTES = 320;
 const RHYTHM_STEP_MINUTES = 15;
 
 function boundedNumber(name, value, [minimum, maximum], { integer = false, step = null } = {}) {
-  assertFiniteNumber(name, value, { integer, minimum, maximum });
+  assertFiniteNumber(name, value, { integer, minimum });
+  if (value > maximum) throw new TypeError(`${name} must be at most ${maximum}`);
   if (step !== null && value % step !== 0) {
     throw new TypeError(`${name} must use ${step}-minute increments`);
   }
