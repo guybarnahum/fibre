@@ -159,12 +159,12 @@ function prepareRecord(threadId, timeZone, horizonEnd) {
   };
 }
 
-test("prepare chooses one shared window that is locally reasonable and inside each Flight Plan horizon", () => {
+test("prepare chooses a locally reasonable shared window without treating the current Flight Plan horizon as a veto", () => {
   const records = [
-    prepareRecord("thr_utc", "UTC", "2026-09-23T18:00:00.000Z"),
-    prepareRecord("thr_berlin", "Europe/Berlin", "2026-09-23T18:00:00.000Z"),
-    prepareRecord("thr_new_york", "America/New_York", "2026-09-23T18:00:00.000Z"),
-    prepareRecord("thr_tokyo", "Asia/Tokyo", "2026-09-23T18:00:00.000Z"),
+    prepareRecord("thr_utc", "UTC", "2026-09-23T12:30:00.000Z"),
+    prepareRecord("thr_berlin", "Europe/Berlin", "2026-09-23T12:30:00.000Z"),
+    prepareRecord("thr_new_york", "America/New_York", "2026-09-23T12:30:00.000Z"),
+    prepareRecord("thr_tokyo", "Asia/Tokyo", "2026-09-23T12:30:00.000Z"),
   ];
 
   const selected = selectPrepareWindow(records, {
@@ -177,6 +177,6 @@ test("prepare chooses one shared window that is locally reasonable and inside ea
   assert.deepEqual(
     selected?.eligible.map((record) => record.thread.threadId),
     ["thr_utc", "thr_berlin", "thr_new_york"],
-    "the shared offer window should respect each Thread's local civil time rather than UTC alone",
+    "the shared offer window should respect local civil time without mistaking an expiring plan horizon for a rigid commitment",
   );
 });
