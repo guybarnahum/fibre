@@ -55,6 +55,7 @@ test("Genesis carries explicit sex place and heritage into life context and embo
     subjectIdentity: plan.subjectIdentity,
     worldSpec: plan.worldSpec,
     bornAt: plan.bornAt,
+    runtimeBaselines:plan.genome.runtimeBaselines,
   });
   assert.equal(seed.identity.sex, "female");
   assert.equal(seed.identity.name, "Mariam Beridze");
