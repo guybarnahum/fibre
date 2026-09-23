@@ -712,6 +712,70 @@ test("a committed website visitor enters the existing lived scene and becomes an
       true,
       "the website meeting should use the general Encounter Story authority",
     );
+    assert.equal(result.settlement.created, true,
+      "the first real visitor encounter should settle the accepted work");
+    assert.equal(result.settlement.entry.amount, 12);
+    assert.equal(state.fibreCreditStore.balance(state.accepted.threadId), 37,
+      "completed work should durably increase Fibre Credits");
+
+    const continued = await meeting.encounter({
+      threadId:state.accepted.threadId,
+      expectedSituationId:entered.situation.situationId,
+      utterance:"What has your day been like?",
+      at:"2026-09-23T19:32:00.000Z",
+    });
+    assert.ok(continued, "the same committed meeting should continue normally");
+    assert.equal(continued.settlement.created, false,
+      "later turns must not pay the same work commitment twice");
+    assert.equal(state.fibreCreditStore.listEntries(state.accepted.threadId).length, 1,
+      "one accepted work commitment should have one compensation entry");
+    assert.equal(state.fibreCreditStore.balance(state.accepted.threadId), 37,
+      "continuing the conversation should not mint more Fibre Credits");
+
+    let resourcesSeen = null;
+    const laterWork = createInsideFibreWorkService({
+      worldReader:state.worldStore,
+      livedNowStore:state.livedNowStore,
+      identityStore:state.identityStore,
+      semanticStateStore:state.semanticStateStore,
+      memoryStore:state.memoryStore,
+      situatedLifeStore:state.situatedLifeStore,
+      workStore:state.workStore,
+      fibreCreditStore:state.fibreCreditStore,
+      modelAdapter:{
+        provider:"fixture",
+        modelId:"fixture-later-work-choice",
+        async invoke(call) {
+          assert.equal(call.input.concern.kind, "inside_fibre_work_offer");
+          resourcesSeen = structuredClone(call.input.concern.externalContext.currentResources);
+          return {
+            output:{
+              result:{
+                decision:"decline",
+                reason:"I do not want another shift tomorrow.",
+              },
+              evidenceRefs:[],
+              conflictingMotives:[],
+              uncertainty:null,
+            },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-later-work-choice",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        },
+      },
+    });
+    await laterWork.considerOffer({
+      threadId:state.accepted.threadId,
+      at:"2026-09-23T20:40:00.000Z",
+      startAt:"2026-09-24T19:00:00.000Z",
+      endAt:"2026-09-24T20:00:00.000Z",
+      fibreCredits:10,
+    });
+    assert.equal(resourcesSeen?.fibreCredits, 37,
+      "earned Fibre Credits should enter the Thread's next work decision");
 
     assert.equal(
       await meeting.encounter({
