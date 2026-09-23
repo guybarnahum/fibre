@@ -28,9 +28,10 @@ Start with:
 8. `state/current-priorities.md`
 9. `validation/m2-pr-plan.md`
 10. `architecture/intrinsic-regulation.md`
-11. `architecture/interior-cognition.md`
-12. `decisions/ADR-0020-vision-led-development-discipline.md`
-13. the relevant architecture/ADR for the task
+11. `architecture/situated-perception-and-salience.md`
+12. `architecture/interior-cognition.md`
+13. `decisions/ADR-0020-vision-led-development-discipline.md`
+14. the relevant architecture/ADR for the task
 
 For implementation agents, also read repository-root `AGENTS.md` and the relevant subsystem README/contract.
 
@@ -55,6 +56,7 @@ N6 rich insidefibre.com lived encounter                    next
 
 The active architecture is:
 - [`architecture/lived-now-and-meetings.md`](architecture/lived-now-and-meetings.md)
+- [`architecture/situated-perception-and-salience.md`](architecture/situated-perception-and-salience.md)
 - [`architecture/interior-cognition.md`](architecture/interior-cognition.md)
 - [`architecture/encounters-and-experience.md`](architecture/encounters-and-experience.md)
 - [`validation/n5-encounter-slices.md`](validation/n5-encounter-slices.md)
@@ -107,6 +109,7 @@ Load together when working on present life, childhood, aging, plans or encounter
 
 - `vision/lived-world.md`
 - `architecture/intrinsic-regulation.md`
+- `architecture/situated-perception-and-salience.md`
 - `architecture/thread-lifecycle-accounting.md`
 - `architecture/developmental-continuity-and-past-selves.md`
 - `architecture/thread-directory-and-meet.md`
