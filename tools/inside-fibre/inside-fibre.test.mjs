@@ -172,11 +172,11 @@ test("prepare chooses a locally reasonable shared window without treating the cu
     target:3,
   });
 
-  assert.equal(selected?.startAt, "2026-09-23T13:00:00.000Z");
-  assert.equal(selected?.endAt, "2026-09-23T13:30:00.000Z");
+  assert.equal(selected?.startAt, "2026-09-23T14:00:00.000Z");
+  assert.equal(selected?.endAt, "2026-09-23T14:30:00.000Z");
   assert.deepEqual(
     selected?.eligible.map((record) => record.thread.threadId),
     ["thr_utc", "thr_berlin", "thr_new_york"],
-    "the shared offer window should respect local civil time without mistaking an expiring plan horizon for a rigid commitment",
+    "the shared offer window should prefer ordinary local daytime without mistaking an expiring plan horizon for a rigid commitment",
   );
 });
