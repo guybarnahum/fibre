@@ -3,53 +3,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
+import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 
 export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v4";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
-const MODERN_BIRTHPLACE_ANCHORS = Object.freeze([
-  "Canada/Vancouver",
-  "United States/Chicago",
-  "Mexico/Mexico City",
-  "Guatemala/Guatemala City",
-  "Colombia/Bogota",
-  "Peru/Lima",
-  "Brazil/Recife",
-  "Argentina/Buenos Aires",
-  "Chile/Santiago",
-  "United Kingdom/Manchester",
-  "Portugal/Lisbon",
-  "Spain/Valencia",
-  "France/Lyon",
-  "Germany/Berlin",
-  "Poland/Warsaw",
-  "Romania/Cluj Napoca",
-  "Morocco/Fes",
-  "Ghana/Accra",
-  "Nigeria/Lagos",
-  "Kenya/Nairobi",
-  "Tanzania/Dar Es Salaam",
-  "South Africa/Cape Town",
-  "Georgia/Tbilisi",
-  "Israel/Jerusalem",
-  "Turkey/Istanbul",
-  "Egypt/Alexandria",
-  "India/Mumbai",
-  "Pakistan/Lahore",
-  "Bangladesh/Dhaka",
-  "Sri Lanka/Colombo",
-  "Thailand/Chiang Mai",
-  "Vietnam/Da Nang",
-  "Taiwan/Kaohsiung",
-  "Japan/Osaka",
-  "South Korea/Busan",
-  "Philippines/Cebu",
-  "Indonesia/Makassar",
-  "Australia/Hobart",
-  "New Zealand/Auckland",
-  "United States/Honolulu",
-]);
-
-
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
   additionalProperties: false,
@@ -153,12 +110,7 @@ export function normalizeModernWorldSelector(raw) {
 }
 
 export function selectDefaultModernBirthplace(requestId) {
-  const id = nonEmpty("Genesis requestId", requestId);
-  const index = Number.parseInt(
-    createHash("sha256").update(`fibre-modern-birthplace:${id}`).digest("hex").slice(0, 12),
-    16,
-  ) % MODERN_BIRTHPLACE_ANCHORS.length;
-  return normalizeModernWorldSelector(MODERN_BIRTHPLACE_ANCHORS[index]);
+  return normalizeModernWorldSelector(sampleModernBirthplace(nonEmpty("Genesis requestId", requestId)).place);
 }
 
 export function normalizeModernHeritage(raw) {
