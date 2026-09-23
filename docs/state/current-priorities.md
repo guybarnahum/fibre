@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-09-22
+last-reviewed: 2026-09-23
 canonical: true
 ---
 
@@ -237,8 +237,8 @@ W4 ordinary World opportunities from active LivedNow   VALIDATED
 W5 grounded exploration/curiosity pressure              VALIDATED
 W6 bounded replayable salience microvariation           DEFERRED / OPTIONAL
 W7a natural scene / co-presence discovery               VALIDATED
-W7p shared live World-place + local-time authority       IMPLEMENTED; validate
-W7b natural encounter staging proof                     BLOCKED ON W7p; then rerun
+W7p shared live World-place + local-time authority       IMPLEMENTED; admission proven, natural plan uptake pending
+W7b natural encounter staging proof                     WAITING FOR POST-W7p NATURAL CO-PRESENCE
 ```
 
 These are roadmap labels only. Do not bake them into APIs, event names or durable records.
@@ -255,7 +255,7 @@ W6 microvariation is deliberately deferred. There is not yet evidence that deter
 
 **W7a natural scene discovery is validated.** The caller names only the initiating Thread. LivedNow exposes established CurrentSituations, the social path discovers all compatible World-present Threads, refreshes/re-checks each candidate, and projects one independent `actor_presence` opportunity per actor. One lived interval may therefore contain zero, one or several separate Encounter Stories without an arbitrary first-person cap.
 
-**W7p shared live World-place + local-time authority is implemented pending validation.** The first W7b live run correctly found zero actor opportunities across all 15 inspected scenes. Direct diagnostics showed that current physical refs were still private `genesis_created` PlaceEpisode revisions and that most Tbilisi/Jerusalem Threads were planning sleep/wind-down during their local morning. W7b therefore exposed two missing World facts rather than a social-cognition defect.
+**W7p shared live World-place + local-time authority is implemented; admission is now proven, natural plan uptake is still pending.** The first W7b live run correctly found zero actor opportunities across all 15 inspected scenes. Direct diagnostics showed that current physical refs were still private `genesis_created` PlaceEpisode revisions. A follow-up inspection then showed all 15 active personal Flight Plans had been authored before the W7p deployment, while the new admitted `wpl_*` venues were already available. The zero-co-presence result therefore does not show that post-W7p planning rejected shared venues; it shows that existing intentions were correctly preserved across deployment.
 
 W7p adds one explicit immutable `live_world_place_records` authority. A Genesis WorldSpec/place identifier remains insufficient physical truth; it is only source material. Fibre explicitly admits a new `wpl_*` live venue under a versioned policy, and only that live record may establish shared physical place identity. The first policy intentionally admits only `library_or_learning`: homes stay private and broad commerce/market regions stay excluded until spatial granularity is credible. Under v1, Threads registered to the same Genesis source World are explicitly admitted into one new live-world namespace for that bounded venue; this is live-society policy, not a claim that their Genesis histories were shared. Flight Planning may choose admitted `wpl_*` refs; CurrentSituation carries them unchanged; matching admitted refs can establish physical co-presence.
 
@@ -271,6 +271,25 @@ Human/person presence and direct address remain explicit extension contracts rat
 
 Do not preserve the current social-first harness shape for compatibility. If the natural lived-world loop makes Commons fallback or old staging orchestration obsolete, replace it rather than wrapping it. The new proof must remain light: no perception service hierarchy, social simulator, universal event bus, full object ontology or high-frequency world ticking.
 
+### Two social paths from here
+
+Do not collapse the next work into one "get a meeting to pass" objective.
+
+**Casual Thread -> Thread** remains the natural-lived-world path. Let current pre-W7p plans expire, observe newly authored plans with admitted shared venues, and rerun natural encounter acceptance when real co-presence exists. Do not pay, schedule or socially bias Threads merely to manufacture this proof. If post-W7p plans naturally use a shared venue, W7b should discover actors through World authority; if they do not, inspect the planning evidence rather than force movement.
+
+**insidefibre.com Person -> Thread** is a different product path. Reliability should come from a prior voluntary work/availability commitment and mediated presence. Once a Thread accepts that bounded commitment, honoring a visitor meeting during the window is fulfilment of an existing obligation, not a fresh generic social-willingness lottery. This path may proceed without waiting for a lucky casual Thread-to-Thread collision because its convergence mechanism is semantically different and explicit.
+
+Both paths converge again at the same general machinery:
+
+```text
+authoritative presence
+  -> Encounter Story
+  -> participant-specific Experience
+  -> optional journal
+  -> selective memory / relationship / intention consequence
+  -> future life
+```
+
 The economical execution profile is intentionally **hypothetical**: start by testing whether one bounded semantic call per material interior episode preserves causal individuality, dilemma fidelity and within-Thread coherence closely enough to justify its lower latency/token/cost versus a decomposed multi-call profile. Interior Cognition should remain one compact replaceable component so prompt/context/call-structure implementations can be isolated and A/B tested without changing the consuming domains. Use the light scorecard in [Interior Cognition evaluation](../validation/interior-cognition-evaluation.md): four quality dimensions (causal individuality, within-Thread stability, dilemma fidelity, development sensitivity), hard Fibre invariants, and direct compute measures (calls, tokens, latency, cost, retries, activation rate). Freeze the same Threads, situations, context authority, model/runtime, trial count and quality/economy criteria before comparing them. Do not promote the one-call shape to doctrine merely because it is simpler, and do not keep extra calls merely because they appear psychologically richer. Raw genome remains private causal substrate and may not be injected as a finished personality or instruction into planning/social cognition. Fibre Commons stays one bounded shared-presence affordance but is no longer a staging fallback; `npm run lived-encounters:staging` must accept only naturally discovered scene actors. N5 stays open until the full live acceptance passes.
 
 The three core semantic proofs are:
@@ -282,24 +301,34 @@ The three core semantic proofs are:
 No sensory simulator, generic event bus, universal entity ontology or conversation framework.
 
 
-## N6 — rich insidefibre.com meeting
+## N6 — reliable insidefibre.com Person -> Thread meeting
 
-The public experience should feel like entering a life, not opening a chatbot.
+The first concrete public goal is now narrower and stronger:
 
-A bounded public scene may expose:
+> **A real visitor to insidefibre.com can meet a persistent Thread who voluntarily chose in advance to be available for that work.**
 
-- current embodiment;
-- place or transit state;
-- current activity;
-- temporal texture such as arriving, waiting or preparing;
-- public accompaniment/context;
-- an appropriate near-term intention;
-- scene-consistent imagery;
-- the meeting entry point.
+The website needs a reliable meeting, while ordinary Fibre social life must remain voluntary and opportunistic. Fibre should therefore guarantee website availability through a prior bounded work commitment rather than by making a Thread unusually agreeable at click time.
+
+```text
+Inside Fibre offers visitor-meeting work
+  -> Thread evaluates accept | decline through Interior Cognition
+  -> accepted commitment enters lived life
+  -> Flight Plan includes the availability window
+  -> LivedNow establishes matching mediated presence
+  -> Directory exposes the Thread as available
+  -> visitor clicks Meet
+  -> Person -> Thread Encounter Story
+  -> Thread Experience / selective consequence
+  -> agreed compensation
+```
+
+The first slice should add only the minimum commitment fact needed to make that causal chain real. Do **not** build a general jobs marketplace, economic ontology, scheduler or professional-services framework. Reuse the existing commitment/obligation, Flight Plan, mediated-presence, Directory, LivedNow, Encounter Story, Experience and token/resource authorities where they already fit.
+
+Payment is compensation for an accepted professional availability commitment. It is not the ordinary price of attention. Casual Person/Thread and Thread/Thread encounters remain normally unpaid; paid attention/services may later exist where a genuine professional relationship requires it.
+
+The public experience should still feel like entering a life, not opening a chatbot. During the accepted work window the Thread is genuinely there because that commitment is part of her life. Outside that window a later visit may find her elsewhere.
 
 The Viewer remains projection-only.
-
-A later visit should find that the Thread moved on.
 
 ## Current causal loop
 
