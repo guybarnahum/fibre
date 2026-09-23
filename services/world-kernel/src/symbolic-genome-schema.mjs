@@ -15,6 +15,14 @@ export function createSymbolicGenomeTables(database) {
       UNIQUE (owner_kind, owner_id, genesis_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS symbolic_genome_runtime_baselines (
+      genome_id TEXT NOT NULL,
+      baseline_key TEXT NOT NULL,
+      value REAL NOT NULL,
+      PRIMARY KEY (genome_id, baseline_key),
+      FOREIGN KEY (genome_id) REFERENCES symbolic_genomes(genome_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS symbolic_genome_loci (
       locus_id TEXT PRIMARY KEY,
       genome_id TEXT NOT NULL,
@@ -61,6 +69,12 @@ export function createSymbolicGenomeTables(database) {
     CREATE TRIGGER IF NOT EXISTS symbolic_genomes_no_delete
       BEFORE DELETE ON symbolic_genomes
       BEGIN SELECT RAISE(ABORT,'symbolic_genomes is immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS symbolic_genome_runtime_baselines_no_update
+      BEFORE UPDATE ON symbolic_genome_runtime_baselines
+      BEGIN SELECT RAISE(ABORT,'symbolic_genome_runtime_baselines is immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS symbolic_genome_runtime_baselines_no_delete
+      BEFORE DELETE ON symbolic_genome_runtime_baselines
+      BEGIN SELECT RAISE(ABORT,'symbolic_genome_runtime_baselines is immutable'); END;
     CREATE TRIGGER IF NOT EXISTS symbolic_genome_loci_no_update
       BEFORE UPDATE ON symbolic_genome_loci
       BEGIN SELECT RAISE(ABORT,'symbolic_genome_loci is immutable'); END;
