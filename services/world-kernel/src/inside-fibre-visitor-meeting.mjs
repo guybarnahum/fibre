@@ -162,7 +162,7 @@ export function createInsideFibreVisitorMeetingService({
       if (commitment.threadId !== input.threadId) {
         throw new TypeError("Inside Fibre work commitment belongs to another Thread");
       }
-      const settlement = fibreCreditStore.recordWorkCompensation({
+      const settle = () => fibreCreditStore.recordWorkCompensation({
         threadId:input.threadId,
         commitmentId:commitment.commitmentId,
         encounterStoryId:encounterStory.encounterId,
@@ -182,7 +182,7 @@ export function createInsideFibreVisitorMeetingService({
           encounterStory,
           attention:existing,
           aftermath:null,
-          settlement,
+          settlement:settle(),
           reused:true,
         });
       }
@@ -203,6 +203,7 @@ export function createInsideFibreVisitorMeetingService({
         outcome:"noticed",
         experienceText,
       });
+      const settlement = settle();
       const aftermath = await internalizeThreadEncounterExperience({
         livedContext:context,
         encounterStory,
