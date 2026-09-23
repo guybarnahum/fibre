@@ -232,9 +232,9 @@ The active sequence is now:
 W0 reciprocal outward social history                    VALIDATED
 W1 Situated Percept -> social initiation                VALIDATED
 W2 direct social response -> Interior Cognition         VALIDATED
-W3 cheap general Salience Gate                          IMPLEMENTED; validate
-W4 ordinary World opportunities from active LivedNow   NEXT
-W5 grounded exploration/curiosity pressure              LATER
+W3 cheap general Salience Gate                          VALIDATED
+W4 ordinary World opportunities from active LivedNow   IMPLEMENTED; validate
+W5 grounded exploration/curiosity pressure              NEXT
 W6 bounded replayable salience microvariation           EXPERIMENTAL / OPTIONAL
 W7 natural encounter staging proof                      ACCEPTANCE
 ```
@@ -245,7 +245,11 @@ W1 is validated with a structural causal proof: one ephemeral `situated-percept.
 
 W2 is validated: `accept | decline | defer` now runs through the same Interior Cognition component with only the concrete outward request, the recipient's Situated Percept and remaining Flight Plan as exterior context; private identity/state/history is selected by Fibre's shared private-context authority. Raw genome/persona traits are absent, and defer timing remains validated outside cognition.
 
-W3 now adds one compact zero-model `salience-gate.mjs`. Its first consumer is co-present social opportunity, but the gate itself is mechanical rather than social cognition. It has no score and no model call. A co-present Thread is material only when Fibre has a grounded anchor such as shared mediated context, planned/enacted participant presence, recent observable interaction history, or a producer-grounded `unexpected_observable` scene anomaly. Otherwise the opportunity remains `background`; this is explicitly distinct from `not_initiate`. The anomaly cue is context-relative and carries no semantic judgment such as funny, attractive, threatening or rude. The organism proof requires compatible background co-presence to spend zero model calls and create neither private refusal nor shared history.
+W3 is validated: one compact zero-model `salience-gate.mjs` now separates background opportunity from material cognition without a score or decision flip. Background is explicitly distinct from `not_initiate`, and an `unexpected_observable` hook exists for future scene-grounded anomalies without assigning semantic meaning.
+
+W4 now moves the first opportunity production out of the social wrapper. `SituatedPercept` derives a bounded `co_present_threads` opportunity from the actual current situations it is projecting, including the observer/observed situation refs. `lived-social-meeting` consumes that opportunity rather than constructing one. Planned/enacted participant presence can make it salient; compatible unanchored ambient presence still remains background and costs zero cognition.
+
+This is intentionally the smallest World-opportunity proof. Fibre still has no authoritative general scene-observation field for unusual clothing, nudity, abrupt movement or other contextual anomalies, so W4 does **not** emit `unexpected_observable` from guessed prose or caller labels. That extension remains open once World has grounded scene facts.
 
 Do not preserve the current social-first harness shape for compatibility. If the natural lived-world loop makes Commons fallback or old staging orchestration obsolete, replace it rather than wrapping it. The new proof must remain light: no perception service hierarchy, social simulator, universal event bus, full object ontology or high-frequency world ticking.
 

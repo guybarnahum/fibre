@@ -161,11 +161,13 @@ export function createSocialMeetingService({
         situatedLifeStore,
         experienceStore,
       });
+      const opportunity = situatedPercept.opportunities.find((candidate) =>
+        candidate.kind === "co_present_threads");
+      if (opportunity === undefined) {
+        throw new Error("compatible social presence produced no Situated Percept opportunity");
+      }
       const salience = evaluateSalience({
-        opportunity:{
-          kind:"co_present_threads",
-          subjectRefs:invitees.map((context) => context.thread.threadId),
-        },
+        opportunity,
         situatedPercept,
       });
       if (salience.outcome === "background") {

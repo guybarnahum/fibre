@@ -473,6 +473,14 @@ test("E2 accepted meeting is one Encounter Story with distinct Thread Experience
   assert.equal(result.outcome, "met", "meeting should form");
   assert.equal(result.salience.outcome, "salient",
     "planned co-presence should be material enough for social cognition");
+  assert.deepEqual(result.salience.subjectRefs, [noor.threadId],
+    "the opportunity should come from the co-present life already underway");
+  assert.equal(
+    result.salience.sourceReferences.includes(`sit_${mina.threadId}`)
+      && result.salience.sourceReferences.includes(`sit_${noor.threadId}`),
+    true,
+    "the opportunity should remain grounded in both current situations",
+  );
   assert.equal(f.ensured.length, 2, "both lives must be current");
   assert.deepEqual(f.initiationNames, ["Mina"], "meeting must begin from initiator agency");
   assert.deepEqual(f.stanceNames, ["Noor"], "only invitees should decide whether to accept");
@@ -573,6 +581,8 @@ test("background co-presence costs no cognition and creates no private refusal",
   assert.equal(result.compatible, true, "co-presence may be real without becoming salient");
   assert.equal(result.salience.outcome, "background",
     "unanchored ambient co-presence should remain background");
+  assert.deepEqual(result.salience.subjectRefs, [noor.threadId],
+    "ambient co-presence should still exist as a World opportunity before attention");
   assert.equal(result.initiation, null,
     "background opportunity must not be rewritten as not_initiate");
   assert.equal(f.modelCallCount(), 0,

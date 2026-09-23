@@ -347,7 +347,7 @@ Raw-genome/persona injection and the stance-specific manual memory/relationship/
 
 **High-value proof:** hold the exact outward request, recipient and selected private evidence constant; change only a stable observable setting fact and require the recipient's stance to change. The proof also asserts that the requesting Thread's private interior never enters the recipient's Situated Percept.
 
-#### W3 — Cheap general Salience Gate — IMPLEMENTED; validate
+#### W3 — Cheap general Salience Gate — VALIDATED
 
 One small pure materiality function now sits before optional social-initiation cognition.
 
@@ -381,17 +381,37 @@ Background means the opportunity never warranted private social cognition. It cr
 
 **High-value organism proof:** real compatible ambient co-presence with no materiality anchor must return `background`, `initiation:null`, spend zero model calls, and create neither reciprocal interaction nor Encounter Story. Existing planned/mediated/recent-history paths prove that an anchored opportunity can continue into Interior Cognition. W4 must prove that World-produced observable anomaly/change cues are grounded rather than caller decoration.
 
-#### W4 — Ordinary World opportunities from active LivedNow
+#### W4 — Ordinary World opportunities from active LivedNow — IMPLEMENTED; validate
 
-Stop relying on Commons or the operator harness to create the interesting circumstance.
+The first opportunity producer is deliberately tiny and lives inside the existing Situated Percept projection rather than a new simulator/service.
 
-At meaningful active-life transitions, World/LivedNow should expose a **small bounded set of ordinary observable opportunities** consistent with the actual place/activity. Reuse existing World/Encounter authority once an occurrence genuinely happens.
+When authoritative current situations establish observable co-presence, `SituatedPercept` derives:
 
-The first proof should remain tiny: one active daytime life, one ordinary environmental or co-presence opportunity, no universal object ontology, no sensory simulator, no high-frequency ticking.
+```text
+co_present_threads
+  subjectRefs = the actually observed Threads
+  sourceReferences = observer + observed CurrentSituation refs
+```
 
-Do not tune opportunity generation to make a conversation happen.
+The social meeting wrapper consumes this derived opportunity; it no longer authors a `co_present_threads` opportunity itself.
 
-**High-value proof:** a real LivedNow segment produces an opportunity that was not authored by the acceptance runner; the Thread may ignore it or engage through the same salience/cognition path; if an objective occurrence happens, Encounter Story owns it.
+This means:
+
+```text
+LivedNow / current situations
+  -> Situated Percept
+  -> ordinary co-presence opportunity
+  -> Salience Gate
+  -> background | Interior Cognition
+```
+
+Planned/enacted participant presence can make the opportunity salient. Compatible ambient co-presence with no materiality anchor remains a real opportunity but stays background and costs zero cognition.
+
+This first W4 proof intentionally does **not** build nearby-entity discovery, a world object registry, environmental event generator, scene simulator or universal event bus.
+
+It also does not emit `unexpected_observable` yet. Fibre currently has no authoritative general scene-fact record from which to prove that an unusual hat, nudity, abrupt running or another observable is anomalous **in this setting**. W3 preserves that cue as a consumer contract, but W4 refuses to fill it from caller labels or generated prose. A later World-observation extension can add it once the evidence is real.
+
+**High-value organism proof:** a social encounter service receives only current lives/participants; the resulting salience witness names the co-present Thread and cites both current situation refs even though the wrapper never constructs the opportunity. The same derived opportunity can remain background with zero model calls when no salience anchor exists.
 
 #### W5 — Grounded exploration / curiosity pressure
 

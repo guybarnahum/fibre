@@ -24,6 +24,19 @@ function currentPlace(threadId, situation, situatedLifeStore) {
   });
 }
 
+function livedOpportunities(situation, observed) {
+  if (observed.length === 0) return Object.freeze([]);
+  return Object.freeze([Object.freeze({
+    kind:"co_present_threads",
+    subjectRefs:Object.freeze(observed.map((candidate) => candidate.threadId)),
+    observableCues:Object.freeze([]),
+    sourceReferences:Object.freeze([
+      situation.situationId,
+      ...observed.map((candidate) => candidate.situationRef),
+    ]),
+  })]);
+}
+
 function recentEvents(experienceStore, observerThreadId, observedIds) {
   const observed = new Set(observedIds);
 
@@ -113,6 +126,7 @@ export function projectSituatedPercept({
     observerThreadId,
     observed.map((candidate) => candidate.threadId),
   );
+  const opportunities = livedOpportunities(situation, observed);
   const sourceReferences = [
     situation.situationId,
     situation.location?.placeRef ?? null,
@@ -134,6 +148,7 @@ export function projectSituatedPercept({
       participantRefs:Object.freeze([...(situation.participantRefs ?? [])]),
     }),
     observed:Object.freeze(observed),
+    opportunities,
     recentEvents:Object.freeze(events.map((event) => Object.freeze(structuredClone(event)))),
     sourceReferences:Object.freeze([...new Set(sourceReferences)]),
   });

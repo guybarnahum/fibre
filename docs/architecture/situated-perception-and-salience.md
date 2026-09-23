@@ -334,6 +334,19 @@ interior-cognition.mjs
 
 World opportunity creation should remain a bounded LivedNow/World capability and reuse Encounter Story once an observable occurrence is admitted.
 
+The first implemented opportunity producer is intentionally narrower: when a Situated Percept is built from authoritative co-present CurrentSituations, it derives a bounded `co_present_threads` opportunity from those situations and their refs. Consumers do not author that opportunity themselves.
+
+This is not yet automatic discovery of every nearby person/object/event. It proves the authority direction first:
+
+```text
+current World situations
+  -> opportunity projection
+  -> salience
+  -> optional cognition
+```
+
+Do not emit `unexpected_observable` until World has an authoritative observable scene fact that can justify “unexpected relative to this setting.”
+
 The standard remains:
 
 > **Build the smallest proof that preserves the largest credible Fibre architecture.**
