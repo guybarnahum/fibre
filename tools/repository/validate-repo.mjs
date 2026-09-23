@@ -4,7 +4,6 @@ import { join } from "node:path";
 import {
   expectedContextPacks,
   loadContextManifest,
-  resolveProfileSources,
   validateContextManifest,
 } from "./context-pack-lib.mjs";
 import { validateDocumentIntegrity } from "./document-integrity.mjs";
@@ -82,22 +81,6 @@ function walk(dir) {
   });
 }
 
-function parseFrontMatter(text) {
-  if (!text.startsWith("---\n")) return {};
-  const end = text.indexOf("\n---\n", 4);
-  if (end < 0) return {};
-
-  return Object.fromEntries(
-    text.slice(4, end).split("\n").flatMap((line) => {
-      const separator = line.indexOf(":");
-      if (separator < 0) return [];
-      const key = line.slice(0, separator).trim();
-      const value = line.slice(separator + 1).trim().replace(/^['"]|['"]$/g, "");
-      return key ? [[key, value]] : [];
-    }),
-  );
-}
-
 const serviceFiles = walk("services").map((path) => path.replaceAll("\\", "/"));
 for (const error of validateRuntimeNames(serviceFiles)) report(error);
 
@@ -147,44 +130,6 @@ try {
 }
 
 if (manifest) {
-  const coverage = manifest.coverage?.acceptedCanonicalDocuments;
-  if (!coverage || typeof coverage !== "object") {
-    report("AI context manifest must define coverage.acceptedCanonicalDocuments");
-  } else {
-    const directory = coverage.directory;
-    const profileNames = coverage.profiles;
-    if (typeof directory !== "string" || !directory.trim()) {
-      report("acceptedCanonicalDocuments.directory must be a non-empty string");
-    }
-    if (!Array.isArray(profileNames) || profileNames.length === 0) {
-      report("acceptedCanonicalDocuments.profiles must be a non-empty array");
-    } else {
-      const coveredSources = new Set();
-      for (const profileName of profileNames) {
-        if (!Object.hasOwn(manifest.profiles, profileName)) {
-          report(`Canonical document coverage references unknown profile: ${profileName}`);
-          continue;
-        }
-        for (const source of resolveProfileSources(manifest, profileName)) {
-          coveredSources.add(source);
-        }
-      }
-
-      if (typeof directory === "string" && directory.trim()) {
-        for (const file of walk(directory)) {
-          if (!file.endsWith(".md")) continue;
-          const metadata = parseFrontMatter(readFileSync(file, "utf8"));
-          if (metadata.status === "accepted" && metadata.canonical === "true") {
-            const normalized = file.replaceAll("\\", "/");
-            if (!coveredSources.has(normalized)) {
-              report(`Accepted canonical document is absent from AI context profiles: ${normalized}`);
-            }
-          }
-        }
-      }
-    }
-  }
-
   if (requireGenerated) {
     try {
       for (const [path, expected] of expectedContextPacks(manifest)) {

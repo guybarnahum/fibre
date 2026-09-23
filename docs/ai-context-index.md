@@ -12,6 +12,8 @@ Profiles follow evidence lifecycle:
 - `request-processing` — appraisal, authorization, disclosure, affect and response behavior built on `core`;
 - `full` — broad current context plus selected historical/sealed evidence with continuing explanatory value.
 
+Profiles are **curated bounded working sets**, not an index of every accepted canonical document. Canonical status means a document is authoritative for its subject; profile membership means that document is useful enough to include in a particular bounded AI context. Adding a canonical document does not by itself require adding it to a profile or block runtime deployment.
+
 Use the smallest profile sufficient for the task. Historical milestone/gate material explains why current rules exist; it does not override current state or roadmap authority.
 
 ## Understand Fibre now
