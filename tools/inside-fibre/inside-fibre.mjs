@@ -294,10 +294,8 @@ function commitmentOverlaps(workState, startAt, endAt) {
 function prepareEligible(record, startAt, endAt, at) {
   const observatory = record.observatory;
   const plan = observatory?.livedNow?.currentPersonalPlan ?? null;
-  const situation = observatory?.livedNow?.currentSituation ?? null;
   const timeZone = threadTimeZone(observatory);
-  if (plan === null || situation === null || timeZone === null) return false;
-  if (situation.phase !== "at_place" && situation.location?.kind !== "place") return false;
+  if (plan === null || timeZone === null) return false;
   if (plannedStopAt(plan, at) === null) return false;
   if (Date.parse(endAt) > Date.parse(plan.horizonEnd)) return false;
   if (!reasonableLocalWindow(startAt, endAt, timeZone)) return false;
@@ -571,13 +569,6 @@ export async function prepareInsideFibre({
 
   for (const thread of discovered) {
     try {
-      await privatePost(
-        context.worldBaseUrl,
-        "/internal/lived-now/ensure",
-        context.privateToken,
-        { threadId:thread.threadId },
-        `LivedNow ${thread.threadId}`,
-      );
       const record = await inspectThread({ ...context, thread, at });
       records.push(record);
     } catch (error) {
