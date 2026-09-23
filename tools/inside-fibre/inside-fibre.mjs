@@ -297,7 +297,6 @@ function prepareEligible(record, startAt, endAt, at) {
   const timeZone = threadTimeZone(observatory);
   if (plan === null || timeZone === null) return false;
   if (plannedStopAt(plan, at) === null) return false;
-  if (Date.parse(endAt) > Date.parse(plan.horizonEnd)) return false;
   if (!reasonableLocalWindow(startAt, endAt, timeZone)) return false;
   if (commitmentOverlaps(record.workState, startAt, endAt)) return false;
   return true;
