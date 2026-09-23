@@ -16,6 +16,8 @@ import { createLivedNowPublicationService } from "#services/world-kernel/src/liv
 import { createLivedNowService } from "#services/world-kernel/src/lived-now-service.mjs";
 import { createLivedNowWriteApi } from "#services/world-kernel/src/lived-now-write-api.mjs";
 import { createInsideFibreAvailabilityService } from "#services/world-kernel/src/inside-fibre-availability.mjs";
+import { createInsideFibreWorkService } from "#services/world-kernel/src/inside-fibre-work.mjs";
+import { createInsideFibreWorkWriteApi } from "#services/world-kernel/src/inside-fibre-work-write-api.mjs";
 import { openInsideFibreWorkStore } from "#services/world-kernel/src/inside-fibre-work-store.mjs";
 import { openFibreCreditStore } from "#services/world-kernel/src/fibre-credit-store.mjs";
 import { createInsideFibreVisitorMeetingService } from "#services/world-kernel/src/inside-fibre-visitor-meeting.mjs";
@@ -34,6 +36,8 @@ const ENVIRONMENTAL_ENCOUNTER_ROUTE = "/internal/environmental-encounter";
 const LIVED_NOW_ROUTE = "/internal/lived-now/ensure";
 const SOCIAL_MEETING_ROUTE = "/internal/social-meeting";
 const LIVED_COMMONS_ROUTE = "/internal/lived-commons";
+const INSIDE_FIBRE_WORK_OFFER_ROUTE = "/internal/inside-fibre/work-offer";
+const INSIDE_FIBRE_WORK_STATE_ROUTE = "/internal/inside-fibre/work-state";
 const INSIDE_FIBRE_MEETING_ENTRY_ROUTE = "/internal/inside-fibre/meeting-entry";
 const INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE = "/internal/inside-fibre/visitor-encounter";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
@@ -71,6 +75,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.livedNowApi = null;
     this.socialMeetingApi = null;
     this.livedCommonsApi = null;
+    this.insideFibreWorkApi = null;
     this.insideFibreMeetingApi = null;
     this.threadJournalApi = null;
     this.threadJournalBook = null;
@@ -217,6 +222,39 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.livedCommonsApi;
   }
 
+  insideFibreWorkApiForRequest() {
+    if (this.insideFibreWorkApi === null) {
+      const runtime = this.runtimeForRequest();
+      const deployment = resolveServiceDeployment(DEPLOYMENT, "world-kernel");
+      const livedNowStore = openLivedNowStore(runtime.worldStorage);
+      const identityStore = openIdentityStore(runtime.worldStorage);
+      const semanticStateStore = openSemanticStateStore(runtime.worldStorage);
+      const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
+      const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
+      const workStore = openInsideFibreWorkStore(runtime.worldStorage);
+      const fibreCreditStore = openFibreCreditStore(runtime.worldStorage, {
+        worldReader:runtime.worldStore,
+      });
+      const workService = createInsideFibreWorkService({
+        worldReader:runtime.worldStore,
+        livedNowStore,
+        identityStore,
+        semanticStateStore,
+        memoryStore,
+        situatedLifeStore,
+        workStore,
+        fibreCreditStore,
+        modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
+      });
+      this.insideFibreWorkApi = createInsideFibreWorkWriteApi({
+        workService,
+        fibreCreditStore,
+        privateToken:this.env.FIBRE_PRIVATE_TOKEN,
+      });
+    }
+    return this.insideFibreWorkApi;
+  }
+
   insideFibreMeetingApiForRequest() {
     if (this.insideFibreMeetingApi === null) {
       const runtime = this.runtimeForRequest();
@@ -326,6 +364,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       && url.pathname !== LIVED_NOW_ROUTE
       && url.pathname !== SOCIAL_MEETING_ROUTE
       && url.pathname !== LIVED_COMMONS_ROUTE
+      && url.pathname !== INSIDE_FIBRE_WORK_OFFER_ROUTE
+      && url.pathname !== INSIDE_FIBRE_WORK_STATE_ROUTE
       && url.pathname !== INSIDE_FIBRE_MEETING_ENTRY_ROUTE
       && url.pathname !== INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE
       && !THREAD_JOURNAL_ROUTE.test(url.pathname)) {
@@ -343,7 +383,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
               ? this.socialMeetingApiForRequest().fetch(request)
               : url.pathname === LIVED_COMMONS_ROUTE
                 ? this.livedCommonsApiForRequest().fetch(request)
-                : url.pathname === INSIDE_FIBRE_MEETING_ENTRY_ROUTE
+                : url.pathname === INSIDE_FIBRE_WORK_OFFER_ROUTE
+                  || url.pathname === INSIDE_FIBRE_WORK_STATE_ROUTE
+                  ? this.insideFibreWorkApiForRequest().fetch(request)
+                  : url.pathname === INSIDE_FIBRE_MEETING_ENTRY_ROUTE
                   || url.pathname === INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE
                   ? this.insideFibreMeetingApiForRequest().fetch(request)
                   : this.journalApiForRequest().fetch(request),
