@@ -188,28 +188,31 @@ test("automatic long-tail birth authors one World, reuses it, and leaves genome 
   const root = mkdtempSync(join(tmpdir(), "fibre-auto-long-tail-world-"));
   t.after(() => rmSync(root, { recursive:true, force:true }));
 
+  const fixtureKeys = new Set(materialFixture.slots.map(({ birthCity }) =>
+    normalizeModernWorldSelector(birthCity.split(", ").reverse().join("/")).key));
   let sampledRequestId = null;
+  let sampled = null;
   for (let index = 0; index < 10_000; index += 1) {
     const requestId = `birth-auto-long-tail-${index}`;
-    if (sampleModernBirthplace(requestId).place === "Romania/Sibiu") {
+    const candidate = sampleModernBirthplace(requestId);
+    const selector = normalizeModernWorldSelector(candidate.place);
+    if (candidate.kind === "long_tail" && !fixtureKeys.has(selector.key)) {
       sampledRequestId = requestId;
+      sampled = candidate;
       break;
     }
   }
-  assert.ok(sampledRequestId, "sampler never produced the long-tail locality");
+  assert.ok(sampledRequestId && sampled, "sampler produced no non-fixture long-tail locality");
 
   const selector = selectDefaultModernBirthplace(sampledRequestId);
   const authored = {
     ...authoredJerusalem,
-    timeZone:"Europe/Bucharest",
-    languages:["Romanian", "English"],
-    femaleGivenNames:["Ana", "Maria", "Ioana", "Elena", "Andreea", "Diana"],
-    maleGivenNames:["Andrei", "Mihai", "Alexandru", "Vlad", "Radu", "Cristian"],
-    familyNames:["Popescu", "Ionescu", "Munteanu", "Stan", "Dumitru", "Radu"],
-    culturalContext:"An ordinary household in Sibiu participates in local Romanian civic, school, family and neighborhood life.",
+    timeZone:"UTC",
+    languages:["English"],
+    culturalContext:`Ordinary civic, school, family and neighborhood life in ${selector.birthCity}.`,
     heritageContext:"No operator-supplied heritage label.",
-    familyOriginContext:"The household has longstanding family roots in Romania, with relatives in Sibiu and elsewhere in the country.",
-    appearanceContext:"A broad family appearance range with ordinary variation in complexion, hair and eye color, facial proportions and other inherited physical traits.",
+    familyOriginContext:`The household has longstanding family roots in ${selector.country}, with relatives connected to ${selector.city} and elsewhere in the country.`,
+    appearanceContext:"A broad family appearance range with ordinary inherited variation and no single implied phenotype.",
   };
 
   let authoredCalls = 0;
@@ -243,7 +246,7 @@ test("automatic long-tail birth authors one World, reuses it, and leaves genome 
 
   assert.equal(first.mode, "created", "first automatic birth did not author its World");
   assert.equal(second.mode, "cached", "second automatic birth did not reuse its World");
-  assert.equal(first.material.birthCity, "Sibiu, Romania", "sampled locality was lost");
+  assert.equal(first.material.birthCity, selector.birthCity, "sampled locality was lost");
   assert.equal(second.worldSpec.worldSpecId, first.worldSpec.worldSpecId, "reused World changed identity");
   assert.equal(first.genomePath, cohort.slots[0].genomePath, "first birthplace selected the genome");
   assert.equal(second.genomePath, cohort.slots[1].genomePath, "reused birthplace selected the genome");
