@@ -102,6 +102,8 @@ test("only voluntary acceptance creates durable Inside Fibre visitor work", asyn
         modelCalls += 1;
         assert.equal(call.input.concern.kind, "inside_fibre_work_offer");
         const external = call.input.concern.externalContext;
+        assert.deepEqual(external.requiredConstraintsAtWorkWindow, [],
+          "ordinary work choice should not invent rigid constraints");
         assert.deepEqual(external.localWorkWindow, {
           timeZone:"America/Phoenix",
           start:{ date:"2026-09-24", time:"10:00", weekday:"Thursday" },
@@ -139,6 +141,7 @@ test("only voluntary acceptance creates durable Inside Fibre visitor work", asyn
     const livedNowStore = {
       getCurrentSituation() { return null; },
       latestPlan() { return null; },
+      listPlans() { return []; },
       getWorldContext() { return { timeZone:"America/Phoenix" }; },
     };
     const identityStore = {
@@ -217,6 +220,109 @@ test("only voluntary acceptance creates durable Inside Fibre visitor work", asyn
       accepted.commitment.commitmentId,
       "accepted work should survive store restart",
     );
+
+    fibreCreditStore.close();
+    workStore.close();
+    worldStore.close();
+  }));
+
+
+test("work choice distinguishes movable Flight Plan intention from a rigid required constraint", async () =>
+  withDatabase(async (databasePath) => {
+    const storage = localWorldStateStorage(databasePath);
+    const worldStore = openWorldStore(storage);
+    seedThread(worldStore, "thr_inside_rigid", "Cara Vale");
+    const workStore = openInsideFibreWorkStore(storage);
+    const fibreCreditStore = openFibreCreditStore(storage, { worldReader:worldStore });
+
+    const personalPlan = {
+      planId:"lplan_personal_overlap",
+      kind:"personal",
+      horizonStart:"2026-09-24T16:00:00.000Z",
+      horizonEnd:"2026-09-24T20:00:00.000Z",
+      stops:[{
+        startAt:"2026-09-24T16:00:00.000Z",
+        endAt:"2026-09-24T20:00:00.000Z",
+        activity:"Study at home.",
+        purpose:"Make progress on a personally chosen goal.",
+      }],
+    };
+    const requiredCarePlan = {
+      planId:"lplan_required_care",
+      kind:"care",
+      authority:{ constraint:"required" },
+      stops:[{
+        startAt:"2026-09-24T17:30:00.000Z",
+        endAt:"2026-09-24T18:30:00.000Z",
+        activity:"Attend a required care appointment.",
+        purpose:"Honor a non-movable care requirement.",
+      }],
+    };
+
+    const service = createInsideFibreWorkService({
+      worldReader:worldStore,
+      livedNowStore:{
+        getCurrentSituation() { return null; },
+        latestPlan(_threadId, kind, { at }) {
+          if (kind === "personal" && Date.parse(at) >= Date.parse(personalPlan.horizonStart)
+            && Date.parse(at) <= Date.parse(personalPlan.horizonEnd)) return personalPlan;
+          return null;
+        },
+        listPlans(_threadId, { kind }) {
+          return kind === "care" ? [requiredCarePlan] : [];
+        },
+        getWorldContext() { return { timeZone:"America/Phoenix" }; },
+      },
+      identityStore:{ getCurrentIdentityView(threadId) { return { threadId, assertions:[] }; } },
+      semanticStateStore:{ listCurrentState() { return []; } },
+      memoryStore:{ listCurrentMemories() { return []; } },
+      situatedLifeStore:{ listCurrentLifeRelations() { return []; } },
+      workStore,
+      fibreCreditStore,
+      modelAdapter:{
+        provider:"fixture",
+        modelId:"fixture-rigid-work-choice",
+        async invoke(call) {
+          const external = call.input.concern.externalContext;
+          assert.equal(external.flightPlanAtWorkWindow.planId, personalPlan.planId,
+            "ordinary overlapping intention should remain visible to the Thread");
+          assert.deepEqual(external.requiredConstraintsAtWorkWindow, [{
+            kind:"required_care",
+            startAt:"2026-09-24T17:30:00.000Z",
+            endAt:"2026-09-24T18:30:00.000Z",
+            activity:"Attend a required care appointment.",
+            purpose:"Honor a non-movable care requirement.",
+          }], "rigid authority should be presented separately from movable intention");
+          return {
+            output:{
+              result:{
+                decision:"decline",
+                reason:"I can move the study block, but I cannot take a shift that overlaps the required appointment.",
+              },
+              evidenceRefs:[],
+              conflictingMotives:[],
+              uncertainty:null,
+            },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-rigid-work-choice",
+              providerRequestId:call.clientRequestId,
+            },
+          };
+        },
+      },
+    });
+
+    const result = await service.considerOffer({
+      threadId:"thr_inside_rigid",
+      at:AT,
+      startAt:START,
+      endAt:END,
+      fibreCredits:12,
+    });
+    assert.equal(result.decision, "decline");
+    assert.deepEqual(workStore.listCommitments("thr_inside_rigid"), [],
+      "a Thread declining because of a rigid constraint should create no work commitment");
 
     fibreCreditStore.close();
     workStore.close();
