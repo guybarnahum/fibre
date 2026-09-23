@@ -179,9 +179,15 @@ export class LivedNowStore {
     const situated = resolveSituatedReference(this.#database, threadId, reference);
     if (situated !== null) return situated;
     const worldPlace = resolveLiveWorldPlace(this.#database, threadId, reference);
-    return worldPlace === null
+    if (worldPlace !== null) return { kind:"world_place", reference, worldPlace };
+    const work = this.#database.prepare(`
+      SELECT commitment_id
+      FROM inside_fibre_work_commitments
+      WHERE commitment_id=? AND thread_id=?
+    `).get(reference,threadId);
+    return work === undefined
       ? null
-      : { kind:"world_place", reference, worldPlace };
+      : { kind:"work_commitment", reference };
   }
 
   #resolveLivedReferences(threadId, references) {
