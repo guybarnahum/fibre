@@ -32,6 +32,20 @@ function encounterStoryId(record) {
   })).slice(0, 48)}`;
 }
 
+function socialInteractionId(record) {
+  return `social_${sha256(canonicalJson({
+    occurredAt:record.occurredAt,
+    initiatorThreadId:record.initiatorThreadId,
+    recipientThreadId:record.recipientThreadId,
+    initiatorSituationId:record.initiatorSituationId,
+    recipientSituationId:record.recipientSituationId,
+    requestText:record.requestText,
+    responseDecision:record.responseDecision,
+    responseExpression:record.responseExpression ?? null,
+    suggestedAt:record.suggestedAt ?? null,
+  })).slice(0, 48)}`;
+}
+
 function threadExperienceId({ threadId, encounterRef }) {
   return `exp_${sha256(canonicalJson({ threadId, encounterRef })).slice(0, 48)}`;
 }
@@ -222,6 +236,111 @@ export class LivedExperienceStore {
         depictedThreadRefs:JSON.parse(row.depicted_thread_refs_json),
       },
     };
+  }
+
+  recordSocialInteraction(candidate) {
+    assertIsoTimestamp("social interaction.occurredAt", candidate.occurredAt);
+    assertId("social interaction.initiatorThreadId", candidate.initiatorThreadId);
+    assertId("social interaction.recipientThreadId", candidate.recipientThreadId);
+    if (candidate.initiatorThreadId === candidate.recipientThreadId) {
+      throw new TypeError("social interaction requires two different Threads");
+    }
+    assertId("social interaction.initiatorSituationId", candidate.initiatorSituationId);
+    assertId("social interaction.recipientSituationId", candidate.recipientSituationId);
+    assertNonEmpty("social interaction.requestText", candidate.requestText);
+    if (!["accept","decline","defer"].includes(candidate.responseDecision)) {
+      throw new TypeError("social interaction responseDecision is invalid");
+    }
+    if (candidate.responseExpression !== null && candidate.responseExpression !== undefined) {
+      assertNonEmpty("social interaction.responseExpression", candidate.responseExpression);
+    }
+    if (candidate.suggestedAt !== null && candidate.suggestedAt !== undefined) {
+      assertIsoTimestamp("social interaction.suggestedAt", candidate.suggestedAt);
+    }
+
+    const normalized = {
+      occurredAt:candidate.occurredAt,
+      initiatorThreadId:candidate.initiatorThreadId,
+      recipientThreadId:candidate.recipientThreadId,
+      initiatorSituationId:candidate.initiatorSituationId,
+      recipientSituationId:candidate.recipientSituationId,
+      requestText:candidate.requestText,
+      responseDecision:candidate.responseDecision,
+      responseExpression:candidate.responseExpression ?? null,
+      suggestedAt:candidate.suggestedAt ?? null,
+    };
+    const interactionId = socialInteractionId(normalized);
+    const record = { interactionId, ...normalized };
+    const recordDigest = digest(record);
+
+    try {
+      return this.#database.transaction(() => {
+        for (const threadId of [record.initiatorThreadId,record.recipientThreadId]) {
+          const thread = this.#database.prepare(
+            "SELECT 1 AS present FROM threads WHERE thread_id=?",
+          ).get(threadId);
+          if (thread === undefined) throw new TypeError(`Thread ${threadId} was not found`);
+        }
+        const prior = this.#database.prepare(
+          "SELECT record_digest FROM social_interaction_records WHERE interaction_id=?",
+        ).get(interactionId);
+        if (prior !== undefined) {
+          if (prior.record_digest !== recordDigest) {
+            throw new TypeError(`social interaction ${interactionId} conflicts`);
+          }
+          return record;
+        }
+        this.#database.prepare(`
+          INSERT INTO social_interaction_records(
+            interaction_id,occurred_at,initiator_thread_id,recipient_thread_id,
+            initiator_situation_id,recipient_situation_id,request_text,response_decision,
+            response_expression,suggested_at,record_digest
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        `).run(
+          record.interactionId,record.occurredAt,record.initiatorThreadId,record.recipientThreadId,
+          record.initiatorSituationId,record.recipientSituationId,record.requestText,record.responseDecision,
+          record.responseExpression,record.suggestedAt,recordDigest,
+        );
+        return record;
+      });
+    } catch (error) { throw translateStorageError(error); }
+  }
+
+  listSocialInteractions(threadId, { withThreadId = null, limit = 8, newestFirst = true } = {}) {
+    assertId("social interaction threadId", threadId);
+    if (withThreadId !== null) assertId("social interaction withThreadId", withThreadId);
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+      throw new TypeError("social interaction limit must be 1-100");
+    }
+    if (typeof newestFirst !== "boolean") throw new TypeError("social interaction newestFirst must be boolean");
+
+    const rows = this.#database.prepare(`
+      SELECT interaction_id,occurred_at,initiator_thread_id,recipient_thread_id,
+        initiator_situation_id,recipient_situation_id,request_text,response_decision,
+        response_expression,suggested_at
+      FROM social_interaction_records
+      WHERE initiator_thread_id=? OR recipient_thread_id=?
+    `).all(threadId,threadId).map((row) => ({
+      interactionId:row.interaction_id,
+      occurredAt:row.occurred_at,
+      initiatorThreadId:row.initiator_thread_id,
+      recipientThreadId:row.recipient_thread_id,
+      initiatorSituationId:row.initiator_situation_id,
+      recipientSituationId:row.recipient_situation_id,
+      requestText:row.request_text,
+      responseDecision:row.response_decision,
+      responseExpression:row.response_expression,
+      suggestedAt:row.suggested_at,
+    })).filter((record) => withThreadId === null
+      || record.initiatorThreadId === withThreadId
+      || record.recipientThreadId === withThreadId);
+
+    rows.sort((left,right) => {
+      const time = Date.parse(left.occurredAt) - Date.parse(right.occurredAt);
+      const ordered = time || left.interactionId.localeCompare(right.interactionId);
+      return newestFirst ? -ordered : ordered;
+    });
+    return rows.slice(0,limit);
   }
 
   recordThreadExperience(candidate) {

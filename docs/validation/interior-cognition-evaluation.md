@@ -121,7 +121,9 @@ The run also fixed a provenance boundary discovered by staging: private cognitio
 
 **Social initiation — CLOSED live wiring.** Initiator-owned `initiate | not_initiate` now routes through Interior Cognition. The controlled tests preserve both accepted overture behavior and causal `not_initiate` without creating an Encounter Story. Deployed staging on SHA `10ca8dc9e60ef59b005f981d25a45e53e647e530` observed six compatible attempts under the shared profile, all naturally choosing `not_initiate`; several cited developed-life evidence. This proves the live integration seam while also showing that acceptance cannot rely on ambient co-presence manufacturing a motive.
 
-**Current validation slice: live organismic motive bridge.** Reuse R1-R4 to prove one grounded present-life regulatory transition can reach interoception, author bounded semantic emotion/need state, and become available to subsequent Interior Cognition. The proof must also preserve the cheap null path: no meaningful regulatory signal means no semantic-state invention and no extra cognition.
+**Live organismic motive bridge — implemented, live transition witness still pending.** The focused proof now establishes the cheap null path and the causal positive path: sparse authoritative presence transitions can wake interoception and author bounded semantic state, while initial/unchanged/retried present does not. Staging run `lived-encounters-mudbwfmb` on SHA `0ceda832a0f99c5d73c90c11cca05bf5bb711513` did not encounter such a transition before Commons; its cohort was overwhelmingly in sleep/wind-down life and all voluntarily stayed out. Treat this as environmental evidence, not a quality failure or permission to synthesize loneliness.
+
+**Current validation slice: reciprocal social momentum.** Prove an actual outward request plus `accept | decline | defer` becomes durable shared social history visible to both participants, while private `not_initiate` leaves no shared record. Then hold present conditions constant and show bounded recent reciprocal history can causally bend later initiation without a scalar momentum score.
 
 ## A/B comparison unit
 

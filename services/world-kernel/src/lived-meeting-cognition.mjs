@@ -107,6 +107,8 @@ export async function formSocialEncounterRequest({
   situation,
   plan,
   counterparties,
+  setting,
+  recentSocialHistory,
   sourceStores,
   modelAdapter,
 }) {
@@ -121,10 +123,15 @@ export async function formSocialEncounterRequest({
     assertId("social encounter request counterparty.threadId", counterparty.threadId);
     return Object.freeze({
       threadId:counterparty.threadId,
-      name:counterparty.identity?.name ?? null,
-      selfDescription:counterparty.identity?.selfDescription ?? "",
+      name:counterparty.name ?? null,
+      selfDescription:counterparty.selfDescription ?? "",
+      currentActivity:counterparty.currentActivity ?? null,
     });
   });
+  assertPlainObject("social encounter setting", setting);
+  if (!Array.isArray(recentSocialHistory)) {
+    throw new TypeError("social encounter recentSocialHistory must be an array");
+  }
 
   const cognition = await runInteriorCognition({
     threadId,
@@ -135,7 +142,9 @@ export async function formSocialEncounterRequest({
       externalContext:{
         currentSituation:structuredClone(situation),
         remainingFlightPlan:plan === null ? null : structuredClone(plan),
+        setting:structuredClone(setting),
         counterparties:counterpartySummaries,
+        recentSocialHistory:structuredClone(recentSocialHistory),
       },
     },
     adapter:SOCIAL_INITIATION_ADAPTER,

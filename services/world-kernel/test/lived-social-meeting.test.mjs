@@ -88,6 +88,7 @@ function fixture({
   compatible = true,
   rude = false,
   placeProvenance = "world_recorded",
+  recentSocialInteractions = [],
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
@@ -117,6 +118,7 @@ function fixture({
   const bookWrites = [];
   const memories = [];
   const ensured = [];
+  const socialInteractions = structuredClone(recentSocialInteractions);
 
   const modelAdapter = {
     async invoke(call) {
@@ -126,7 +128,21 @@ function fixture({
           "social initiation must not receive raw genome/persona traits");
         assert.equal(Array.isArray(call.input.developedSelfEvidence), true,
           "social initiation should receive Fibre-selected developed-self evidence");
-        const decision = initiationFor(call.input.thread.name, call.input.developedSelfEvidence);
+        assert.equal(
+          call.input.concern.externalContext.setting.place?.displayName,
+          "The same neighborhood café",
+          "social initiation should know the actual current setting",
+        );
+        assert.equal(
+          call.input.concern.externalContext.counterparties[0]?.currentActivity,
+          "Sketching at the same café table.",
+          "social initiation should know what the counterparty is observably doing",
+        );
+        const decision = initiationFor(
+          call.input.thread.name,
+          call.input.developedSelfEvidence,
+          call.input.concern.externalContext,
+        );
         const cited = call.input.developedSelfEvidence.find((item) => item.kind === "memory")
           ?? call.input.developedSelfEvidence.find((item) =>
             item.kind === "relationship" || item.kind === "semantic_state");
@@ -318,8 +334,33 @@ function fixture({
     },
     experienceStore:{
       recordEncounterStory(candidate) {
-        stories.push(structuredClone(candidate));
-        return { encounterId:"story_e0_social", ...structuredClone(candidate) };
+        const record = { encounterId:`story_e0_social_${stories.length + 1}`, ...structuredClone(candidate) };
+        stories.push(structuredClone(record));
+        return record;
+      },
+      listEncounterStories(threadId) {
+        return structuredClone(stories.filter((story) =>
+          story.threadPresence.some((presence) => presence.threadId === threadId)));
+      },
+      recordSocialInteraction(candidate) {
+        const record = {
+          interactionId:`social_fixture_${socialInteractions.length + 1}`,
+          ...structuredClone(candidate),
+        };
+        socialInteractions.push(structuredClone(record));
+        return record;
+      },
+      listSocialInteractions(threadId, { withThreadId = null, limit = 8, newestFirst = true } = {}) {
+        let records = socialInteractions.filter((record) =>
+          record.initiatorThreadId === threadId || record.recipientThreadId === threadId);
+        if (withThreadId !== null) {
+          records = records.filter((record) =>
+            record.initiatorThreadId === withThreadId || record.recipientThreadId === withThreadId);
+        }
+        records = [...records].sort((left,right) =>
+          Date.parse(left.occurredAt) - Date.parse(right.occurredAt));
+        if (newestFirst) records.reverse();
+        return structuredClone(records.slice(0,limit));
       },
       getThreadEncounterAttention(threadId, encounterRef) {
         return structuredClone(
@@ -376,6 +417,7 @@ function fixture({
     bookWrites,
     memories,
     ensured,
+    socialInteractions,
     initiationNames,
     stanceNames,
     storyAuthors,
@@ -417,6 +459,8 @@ test("E2 accepted meeting is one Encounter Story with distinct Thread Experience
   assert.notEqual(f.journals[0].entryText, f.journals[1].entryText, "private accounts should remain personal");
   assert.equal(f.bookWrites.length, 2, "both journal books should receive their private entry");
   assert.equal(f.memories.length, 1, "journal must not imply autobiographical retention");
+  assert.equal(f.socialInteractions.length, 1, "an actual accepted overture should become shared social history");
+  assert.equal(f.socialInteractions[0].responseDecision, "accept");
 });
 
 test("E2 incompatible presence or decline creates no Encounter Story", async () => {
@@ -450,6 +494,8 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
   assert.equal(notInitiated.outcome, "not_met", "initiator may choose not to begin an encounter");
   assert.equal(notInitiated.initiation.decision, "not_initiate", "initiator non-participation must stay explicit");
   assert.equal(noOverture.stories.length, 0, "no overture means no Encounter Story");
+  assert.equal(noOverture.socialInteractions.length, 0,
+    "private not_initiate must not become shared social history");
 
   const declined = fixture({ stanceFor:(name) => name === "Noor" ? "decline" : "accept" });
   const result = await declined.meeting.meet({
@@ -466,8 +512,46 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
   assert.equal(declined.stories.length, 0, "decline must not fabricate an Encounter Story");
   assert.equal(declined.experiences.length, 0, "no story means no Thread Experience");
   assert.equal(declined.journals.length, 0, "no story means no private aftermath");
+  assert.equal(declined.socialInteractions.length, 1,
+    "an outward request plus decline should remain available as shared social history");
+  assert.equal(declined.socialInteractions[0].responseDecision, "decline");
 });
 
+
+test("recent reciprocal social history can bend later initiation without a momentum score", async () => {
+  const f = fixture({
+    recentSocialInteractions:[{
+      interactionId:"social_prior_decline",
+      occurredAt:"2026-09-20T18:00:00.000Z",
+      initiatorThreadId:mina.threadId,
+      recipientThreadId:noor.threadId,
+      initiatorSituationId:"sit_prior_mina",
+      recipientSituationId:"sit_prior_noor",
+      requestText:"Want to talk for a minute?",
+      responseDecision:"decline",
+      responseExpression:"Not right now — I want to finish this first.",
+      suggestedAt:null,
+    }],
+    initiationFor:(_name, _evidence, externalContext) =>
+      externalContext.recentSocialHistory.some((item) =>
+        item.kind === "request_response"
+        && item.direction === "outgoing"
+        && item.responseDecision === "decline")
+        ? "not_initiate"
+        : "initiate",
+  });
+
+  const result = await f.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+
+  assert.equal(result.initiation.decision, "not_initiate",
+    "recent real reciprocal history should be available to present social judgment");
+  assert.equal(f.socialInteractions.length, 1,
+    "choosing not to initiate again must not add a second shared interaction");
+});
 
 test("persisted lived meaning can bend social initiation through Interior Cognition", async () => {
   const f = fixture({

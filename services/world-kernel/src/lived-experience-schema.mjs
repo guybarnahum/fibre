@@ -31,6 +31,22 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS social_interaction_records (
+      interaction_id TEXT PRIMARY KEY,
+      occurred_at TEXT NOT NULL,
+      initiator_thread_id TEXT NOT NULL,
+      recipient_thread_id TEXT NOT NULL,
+      initiator_situation_id TEXT NOT NULL,
+      recipient_situation_id TEXT NOT NULL,
+      request_text TEXT NOT NULL,
+      response_decision TEXT NOT NULL CHECK (response_decision IN ('accept','decline','defer')),
+      response_expression TEXT,
+      suggested_at TEXT,
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      FOREIGN KEY (initiator_thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (recipient_thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS thread_encounter_attention (
       thread_id TEXT NOT NULL,
       encounter_ref TEXT NOT NULL,
@@ -88,6 +104,10 @@ export function createLivedExperienceTables(database) {
       ON encounter_story_records(occurred_at, encounter_id);
     CREATE INDEX IF NOT EXISTS idx_encounter_story_presence
       ON encounter_story_thread_presence(thread_id, encounter_ref);
+    CREATE INDEX IF NOT EXISTS idx_social_interaction_initiator_time
+      ON social_interaction_records(initiator_thread_id, occurred_at, interaction_id);
+    CREATE INDEX IF NOT EXISTS idx_social_interaction_recipient_time
+      ON social_interaction_records(recipient_thread_id, occurred_at, interaction_id);
     CREATE INDEX IF NOT EXISTS idx_thread_attention_time
       ON thread_encounter_attention(thread_id, occurred_at, encounter_ref);
     CREATE INDEX IF NOT EXISTS idx_thread_experience_time
@@ -118,6 +138,14 @@ export function createLivedExperienceTables(database) {
     CREATE TRIGGER IF NOT EXISTS encounter_story_thread_presence_no_delete
       BEFORE DELETE ON encounter_story_thread_presence BEGIN
         SELECT RAISE(ABORT, 'encounter_story_thread_presence is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS social_interaction_records_no_update
+      BEFORE UPDATE ON social_interaction_records BEGIN
+        SELECT RAISE(ABORT, 'social_interaction_records is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS social_interaction_records_no_delete
+      BEFORE DELETE ON social_interaction_records BEGIN
+        SELECT RAISE(ABORT, 'social_interaction_records is append-only');
       END;
     CREATE TRIGGER IF NOT EXISTS thread_encounter_attention_no_update
       BEFORE UPDATE ON thread_encounter_attention BEGIN

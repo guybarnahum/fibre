@@ -68,6 +68,28 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
         }),
       });
 
+      const social = store.recordSocialInteraction({
+        occurredAt:"2026-09-21T17:59:00.000Z",
+        initiatorThreadId:"thr_e0_mina",
+        recipientThreadId:"thr_e0_noor",
+        initiatorSituationId:"sit_e0_mina",
+        recipientSituationId:"sit_e0_noor",
+        requestText:"Mind if I sit here?",
+        responseDecision:"accept",
+        responseExpression:"Sure.",
+        suggestedAt:null,
+      });
+      assert.equal(
+        store.listSocialInteractions("thr_e0_mina", { withThreadId:"thr_e0_noor" })[0].interactionId,
+        social.interactionId,
+        "actual request/response should survive as reciprocal social history",
+      );
+      assert.equal(
+        store.listSocialInteractions("thr_e0_noor", { withThreadId:"thr_e0_mina" })[0].responseDecision,
+        "accept",
+        "both participants should resolve the same observable response",
+      );
+
       const mina = store.recordThreadExperience({
         threadId:"thr_e0_mina",
         encounterRef:story.encounterId,
