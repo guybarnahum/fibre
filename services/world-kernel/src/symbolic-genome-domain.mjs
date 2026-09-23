@@ -19,89 +19,48 @@ export const SYMBOLIC_RECOMBINATION_POLICY = Object.freeze({
   version:"2",
 });
 
-export const SYMBOLIC_RUNTIME_BASELINE_ENVELOPES = Object.freeze({
-  circadianPhaseOffsetMinutes:Object.freeze([-120, 120]),
-  sleepNeedMinutes:Object.freeze([420, 540]),
-  regulatorRestSensitivity:Object.freeze([0.85, 1.15]),
+const RUNTIME_BASELINE_SPECS = Object.freeze({
+  circadianPhaseOffsetMinutes:Object.freeze({ minimum:-120, maximum:120, step:15, integer:true }),
+  sleepNeedMinutes:Object.freeze({ minimum:420, maximum:540, step:15, integer:true }),
+  regulatorRestSensitivity:Object.freeze({ minimum:0.85, maximum:1.15, step:0.01, integer:false }),
 });
 
-export const SYMBOLIC_MUTATION_POLICY = Object.freeze({
-  id: "bounded_textual_locus_replacement",
-  version: "1",
-  maxReplacements: 2,
-});
+function unitFromSeed(seed) {
+  return Number.parseInt(sha256(seed).slice(0, 12), 16) / 0xffffffffffff;
+}
 
-export const SYMBOLIC_GENOME_OWNER_KINDS = Object.freeze([
-  "thread",
-  "synthetic_ancestor",
-]);
-
-const DIGEST = /^sha256:[0-9a-f]{64}$/;
-const MAX_LOCUS_BYTES = 320;
-const RHYTHM_STEP_MINUTES = 15;
-
-function boundedNumber(name, value, [minimum, maximum], { integer = false, step = null } = {}) {
-  assertFiniteNumber(name, value, { integer, minimum });
-  if (value > maximum) throw new TypeError(`${name} must be at most ${maximum}`);
-  if (step !== null && value % step !== 0) {
-    throw new TypeError(`${name} must use ${step}-minute increments`);
+function normalizeRuntimeBaseline(key, value) {
+  const spec = RUNTIME_BASELINE_SPECS[key];
+  assertFiniteNumber(`symbolicGenome.runtimeBaselines.${key}`, value, {
+    integer:spec.integer,
+    minimum:spec.minimum,
+  });
+  if (value > spec.maximum) {
+    throw new TypeError(`symbolicGenome.runtimeBaselines.${key} must be at most ${spec.maximum}`);
+  }
+  const steps = Math.round((value - spec.minimum) / spec.step);
+  if (Math.abs((spec.minimum + steps * spec.step) - value) > 1e-9) {
+    throw new TypeError(`symbolicGenome.runtimeBaselines.${key} is outside its allowed resolution`);
   }
   return value;
 }
 
 export function normalizeSymbolicRuntimeBaselines(candidate) {
   assertPlainObject("symbolicGenome.runtimeBaselines", candidate);
-  assertExactKeys("symbolicGenome.runtimeBaselines", candidate, Object.keys(SYMBOLIC_RUNTIME_BASELINE_ENVELOPES));
-  return Object.freeze({
-    circadianPhaseOffsetMinutes:boundedNumber(
-      "symbolicGenome.runtimeBaselines.circadianPhaseOffsetMinutes",
-      candidate.circadianPhaseOffsetMinutes,
-      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.circadianPhaseOffsetMinutes,
-      { integer:true, step:RHYTHM_STEP_MINUTES },
-    ),
-    sleepNeedMinutes:boundedNumber(
-      "symbolicGenome.runtimeBaselines.sleepNeedMinutes",
-      candidate.sleepNeedMinutes,
-      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.sleepNeedMinutes,
-      { integer:true, step:RHYTHM_STEP_MINUTES },
-    ),
-    regulatorRestSensitivity:boundedNumber(
-      "symbolicGenome.runtimeBaselines.regulatorRestSensitivity",
-      candidate.regulatorRestSensitivity,
-      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.regulatorRestSensitivity,
-    ),
-  });
-}
-
-function unitFromSeed(seed) {
-  return Number.parseInt(sha256(seed).slice(0, 12), 16) / 0xffffffffffff;
-}
-
-function quantizedFromSeed(seed, [minimum, maximum], step) {
-  const steps = Math.round((maximum - minimum) / step);
-  return minimum + (Math.floor(unitFromSeed(seed) * (steps + 1)) * step);
+  assertExactKeys("symbolicGenome.runtimeBaselines", candidate, Object.keys(RUNTIME_BASELINE_SPECS));
+  return Object.freeze(Object.fromEntries(
+    Object.keys(RUNTIME_BASELINE_SPECS).map((key) => [key, normalizeRuntimeBaseline(key, candidate[key])]),
+  ));
 }
 
 function runtimeBaselinesForGenome(genomeId) {
-  return normalizeSymbolicRuntimeBaselines({
-    circadianPhaseOffsetMinutes:quantizedFromSeed(
-      `${genomeId}:circadian-phase`,
-      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.circadianPhaseOffsetMinutes,
-      RHYTHM_STEP_MINUTES,
-    ),
-    sleepNeedMinutes:quantizedFromSeed(
-      `${genomeId}:sleep-need`,
-      SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.sleepNeedMinutes,
-      RHYTHM_STEP_MINUTES,
-    ),
-    regulatorRestSensitivity:
-      Math.round((
-        SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.regulatorRestSensitivity[0]
-        + unitFromSeed(`${genomeId}:rest-sensitivity`)
-          * (SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.regulatorRestSensitivity[1]
-            - SYMBOLIC_RUNTIME_BASELINE_ENVELOPES.regulatorRestSensitivity[0])
-      ) * 100) / 100,
-  });
+  return normalizeSymbolicRuntimeBaselines(Object.fromEntries(
+    Object.entries(RUNTIME_BASELINE_SPECS).map(([key, spec]) => {
+      const steps = Math.round((spec.maximum - spec.minimum) / spec.step);
+      const value = spec.minimum + Math.floor(unitFromSeed(`${genomeId}:${key}`) * (steps + 1)) * spec.step;
+      return [key, spec.integer ? value : Math.round(value * 100) / 100];
+    }),
+  ));
 }
 
 function assertDigest(name, value) {
@@ -459,7 +418,7 @@ function baselineSourceIndex({ key, selectionSeed, sourceGenomeDigests }) {
 
 function runtimeBaselineSelections({ selectionSeed, sourceGenomes }) {
   const sourceGenomeDigests = sourceGenomes.map((source) => source.genomeDigest);
-  return Object.keys(SYMBOLIC_RUNTIME_BASELINE_ENVELOPES).sort().map((key) => {
+  return Object.keys(RUNTIME_BASELINE_SPECS).sort().map((key) => {
     const sourceIndex = baselineSourceIndex({ key, selectionSeed, sourceGenomeDigests });
     return Object.freeze({
       key,
