@@ -88,23 +88,24 @@ function localCivilMoment(at, timeZone) {
   });
 }
 
-function requiredConstraintAt(plan, at) {
-  if (plan?.kind !== "care" || plan.authority?.constraint !== "required") return null;
-  const instant = Date.parse(at);
-  const stop = (plan.stops ?? []).find((candidate, index) => {
-    const start = Date.parse(candidate.startAt);
-    const end = Date.parse(candidate.endAt);
-    const lastAtHorizonEnd = index === plan.stops.length - 1 && instant === Date.parse(plan.horizonEnd);
-    return start <= instant && (instant < end || lastAtHorizonEnd);
-  }) ?? null;
-  if (stop === null) return null;
-  return Object.freeze({
-    kind:"required_care",
-    startAt:stop.startAt,
-    endAt:stop.endAt,
-    activity:stop.activity,
-    purpose:stop.purpose,
-  });
+function requiredConstraintsDuring(plans, startAt, endAt) {
+  const start = Date.parse(startAt);
+  const end = Date.parse(endAt);
+  const constraints = [];
+  for (const plan of plans) {
+    if (plan?.kind !== "care" || plan.authority?.constraint !== "required") continue;
+    for (const stop of plan.stops ?? []) {
+      if (start >= Date.parse(stop.endAt) || end <= Date.parse(stop.startAt)) continue;
+      constraints.push(Object.freeze({
+        kind:"required_care",
+        startAt:stop.startAt,
+        endAt:stop.endAt,
+        activity:stop.activity,
+        purpose:stop.purpose,
+      }));
+    }
+  }
+  return Object.freeze(constraints);
 }
 
 function cognitionWitness(cognition) {
@@ -134,6 +135,7 @@ export function createInsideFibreWorkService({
   requireMethod(worldReader, "Inside Fibre worldReader", "getThread");
   requireMethod(livedNowStore, "Inside Fibre livedNowStore", "getCurrentSituation");
   requireMethod(livedNowStore, "Inside Fibre livedNowStore", "latestPlan");
+  requireMethod(livedNowStore, "Inside Fibre livedNowStore", "listPlans");
   requireMethod(livedNowStore, "Inside Fibre livedNowStore", "getWorldContext");
   requireMethod(identityStore, "Inside Fibre identityStore", "getCurrentIdentityView");
   requireMethod(semanticStateStore, "Inside Fibre semanticStateStore", "listCurrentState");
@@ -205,9 +207,10 @@ export function createInsideFibreWorkService({
       const currentSituation = livedNowStore.getCurrentSituation(input.threadId);
       const currentPlan = livedNowStore.latestPlan(input.threadId, "personal", { at:input.at });
       const planAtWorkWindow = livedNowStore.latestPlan(input.threadId, "personal", { at:offer.startAt });
-      const requiredCareAtWorkWindow = requiredConstraintAt(
-        livedNowStore.latestPlan(input.threadId, "care", { at:offer.startAt }),
+      const requiredConstraintsAtWorkWindow = requiredConstraintsDuring(
+        livedNowStore.listPlans(input.threadId, { kind:"care" }),
         offer.startAt,
+        offer.endAt,
       );
       const worldTimeZone = livedNowStore.getWorldContext(input.threadId, { required:false })?.timeZone ?? null;
 
@@ -223,9 +226,7 @@ export function createInsideFibreWorkService({
             currentSituation:currentSituation === null ? null : structuredClone(currentSituation),
             currentFlightPlan:currentPlan === null ? null : structuredClone(currentPlan),
             flightPlanAtWorkWindow:planAtWorkWindow === null ? null : structuredClone(planAtWorkWindow),
-            requiredConstraintsAtWorkWindow:requiredCareAtWorkWindow === null
-              ? []
-              : [structuredClone(requiredCareAtWorkWindow)],
+            requiredConstraintsAtWorkWindow:structuredClone(requiredConstraintsAtWorkWindow),
             localWorkWindow:worldTimeZone === null ? null : {
               timeZone:worldTimeZone,
               start:localCivilMoment(offer.startAt, worldTimeZone),
