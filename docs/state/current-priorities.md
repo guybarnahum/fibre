@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + encounters**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 now builds on the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E4 are closed; E5 is current.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 builds on the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E5 are now closed live. The active north-star slice is N6: a rich insidefibre.com encounter over the already-proven lived/work/encounter authorities.
 
 Canonical architecture:
 
@@ -54,8 +54,8 @@ N1  World-owned ensure-LivedNow seam                      CLOSED
 N2  dormant/frozen interval catch-up                      CLOSED
 N3  Genesis -> first LivedNow -> multi-day continuity     CLOSED
 N4  Person -> Thread /meet over real LivedNow             CLOSED
-N5  Encounter Story -> Thread Experience                    CURRENT (E0-E4 closed; E5 active)
-N6  rich insidefibre.com lived encounter                  NEXT
+N5  Encounter Story -> Thread Experience                  CLOSED LIVE
+N6  rich insidefibre.com lived encounter                  CURRENT
 ```
 
 Keep these slices narrow. Reuse the existing Flight Plan, CurrentSituation, encounter, memory, relationship, Presentation and canonical embodiment authorities.
@@ -153,7 +153,7 @@ The visitor cannot choose the Thread's location, activity, private state or plan
 
 The automated path proves meeting entry cannot author the scene, reconciles before exposure, and keeps later utterances bound to the returned `situationId`. Deployed staging acceptance then exercised that exact path against a real Thread: `/meet` established and published a fresh World-owned present, and the subsequent encounter succeeded against the same `situationId` with a response grounded in the Thread's current activity. N4 is closed.
 
-## N5 — Encounter Story -> Thread Experience — CURRENT
+## N5 — Encounter Story -> Thread Experience — CLOSED LIVE
 
 N5 now asks a more fundamental question than “can two Threads talk?”:
 
@@ -193,7 +193,7 @@ The useful pieces now proven or retained are:
 - rich Admin journal presentation;
 - journal separated from autobiographical memory.
 
-The obsolete dyadic meeting authority and tests are gone; meeting stance and social story cognition are separate; Encounter Story and Thread Experience own the general persistence vocabulary. E1 adds objective visualization lineage and retry-stable attention; E3 proves a genuinely co-present silent witness can form distinct private aftermath without becoming an invitee or speaker. E4 now makes the separation inspectable: Admin shows the objective story/prompt/provenance, this Thread's attention, World journal-entry authority and the private R2 journal book separately from autobiographical memory. The same objective prompt can produce a normal image/video asset job with distinct canonical visual references and chronology-derived ages, while missing likeness authority defers rendering. Full CI is green. N5 remains undeployed pending E5.
+The obsolete dyadic meeting authority and tests are gone; meeting stance and social story cognition are separate; Encounter Story and Thread Experience own the general persistence vocabulary. E1 adds objective visualization lineage and retry-stable attention; E3 proves a genuinely co-present silent witness can form distinct private aftermath without becoming an invitee or speaker. E4 now makes the separation inspectable: Admin shows the objective story/prompt/provenance, this Thread's attention, World journal-entry authority and the private R2 journal book separately from autobiographical memory. The same objective prompt can produce a normal image/video asset job with distinct canonical visual references and chronology-derived ages, while missing likeness authority defers rendering. Full CI is green. E5 is now closed in staging through a real insidefibre.com visitor-work path: a Thread voluntarily accepted future paid visitor availability, that commitment revised the Flight Plan, LivedNow later enacted the mediated work presence, public Meet discovered the Thread during the accepted window, a real visitor utterance produced a new Encounter Story and noticed Thread Experience, and the agreed Fibre Credits settled exactly once.
 
 The active execution plan is [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md):
 
@@ -202,7 +202,9 @@ The active execution plan is [N5 encounter-story implementation slices](../valid
 3. E2 social meeting as a gated encounter — **closed**;
 4. E3 n-ary story + silent witness consequence — **closed**;
 5. E4 journal book/optional rendering/Admin acceptance — **closed**;
-6. E5 staging acceptance — **current**.
+6. E5 staging acceptance — **closed live**.
+
+**E5 live closure.** Staging run `inside-fibre-muegy2ai` on SHA `9bf65debfe2636b13c7ca1dbffa5d265072f486d` completed the end-to-end visitor-work path for Luka Mzechabuki. Earlier in the same live sequence, Sara Mizrahi and John Lakewood independently declined future paid availability while Luka accepted a 20-minute, 12-FC shift because the compensation had practical value and he judged the ordinary future plan could be revised. Fibre persisted commitment `work_39779538e78db25b1fcbecf9567d18e34b065a908910ed39`, revised his Flight Plan, later admitted the active work scene through public Meet, recorded Encounter Story `story_2a0816db192e5ab2f82f4cc446e46b145f69e78dec963a32`, admitted his Thread Experience, and moved the derived Fibre Credit balance from 0 to 12. This closes N5 without weakening agency: refusal remained valid, and acceptance was prior voluntary commitment rather than click-time coercion.
 
 Live staging exposed two useful failures. Equal reusable Genesis place IDs were a false co-presence signal and are no longer accepted. Fibre Commons then proved that shared presence alone is not enough: all staging Threads reached its decision with essentially empty live semantic interior and generic present-life context, and all independently stayed out.
 
