@@ -17,6 +17,7 @@ import {
 } from "./persistence-common.mjs";
 import { projectSituatedPercept } from "./situated-percept.mjs";
 import { evaluateSalience } from "./salience-gate.mjs";
+import { explorationRegulationForLivedContinuity } from "./lived-now-regulation.mjs";
 
 const MEMORY_LIMIT = 6;
 const MAX_PRESENT_THREADS = 6;
@@ -76,6 +77,7 @@ export function createSocialMeetingService({
   requireMethod("worldReader", worldReader, "getThread");
   requireMethod("livedNow", livedNow, "ensure");
   requireMethod("livedNowStore", livedNowStore, "getCurrentSituation");
+  requireMethod("livedNowStore", livedNowStore, "getPreviousSituation");
   requireMethod("livedNowStore", livedNowStore, "latestPlan");
   requireMethod("identityStore", identityStore, "getCurrentIdentityView");
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentLifeRelations");
@@ -166,9 +168,18 @@ export function createSocialMeetingService({
       if (opportunity === undefined) {
         throw new Error("compatible social presence produced no Situated Percept opportunity");
       }
+      const explorationRegulation = explorationRegulationForLivedContinuity({
+        thread:initiator.thread,
+        previousSituation:livedNowStore.getPreviousSituation(
+          initiator.thread.threadId,
+          initiator.situation.establishedAt,
+        ),
+        currentSituation:initiator.situation,
+      });
       const salience = evaluateSalience({
         opportunity,
         situatedPercept,
+        regulationFrame:explorationRegulation,
       });
       if (salience.outcome === "background") {
         return Object.freeze({

@@ -171,7 +171,9 @@ If no materiality anchor is present, compatible co-presence remains `background`
 
 If an anchor is present, the gate returns `salient` and ordinary Interior Cognition may still decide `not_initiate`. The gate therefore controls whether cognition is warranted, not what the person wants.
 
-This first profile is deliberately conservative and incomplete. W4/W5 may add grounded opportunity/change/regulation signals as Fibre learns more of the lived World. Do not convert the initial anchors into a universal human-attention formula or weighted score.
+This first profile is deliberately conservative and incomplete. W4 adds World-derived opportunities; W5 adds one grounded organismic anchor: active `exploration` pressure derived from repeated authoritative lived sameness. Exploration pressure may elevate an otherwise-background opportunity into cognition, but it does not force engagement or label the opportunity novel.
+
+Do not convert these anchors into a universal human-attention formula or weighted score.
 
 ## Social and cultural pressure belongs to the developed person
 

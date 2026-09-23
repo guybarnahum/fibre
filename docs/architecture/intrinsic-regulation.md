@@ -382,6 +382,34 @@ For simpler animals, a bounded behavior controller may eventually consume Regula
 
 No high-frequency organism simulator is required.
 
+### Grounded exploration pressure
+
+The exploration / information / play family now has a first live mechanical input: **repeated authoritative sameness**.
+
+Fibre may expose low novelty to the regulator only when it has two distinct World-owned LivedNow observations that remain the same in the relevant enacted structure: same physical place, mediated context, activity and participant set, separated by a meaningful interval. The first implementation uses twenty minutes as a conservative minimum observation gap.
+
+This means:
+
+```text
+two distinct enacted observations
++ same place/context/activity/participants
++ >= 20 minutes apart
+  -> low-novelty percept evidence
+  -> exploration drive pressure
+```
+
+It does **not** mean:
+
+```text
+20 minutes passed -> bored
+same room -> bored
+no recorded social event -> lonely
+```
+
+The regulator outputs only an `exploration` drive. It does not author `I am bored`, `I am curious`, a social need, or an action. The first repeated-sameness signal is intentionally moderate: it may widen attention but does not by itself cross the existing regulator threshold that wakes interoceptive semantic cognition. Interoception may later interpret stronger exploration pressure into registered semantic state such as `emotion:interest` or `need:novelty_growth` when richer evidence warrants it.
+
+The Salience Gate may use active exploration pressure as a mechanical reason to admit an otherwise-background opportunity to cognition. Interior Cognition still decides whether the opportunity is interesting, social, useful, annoying, irrelevant, or worth acting on.
+
 ### Sparse live evidence
 
 A live regulator pulse must operate on **only the channels Fibre actually knows at that moment**.

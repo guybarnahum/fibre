@@ -296,11 +296,26 @@ The reciprocal-history seam and **W1 Situated Percept are validated**. Social in
 
 **W3 cheap general Salience Gate is validated.** One compact pure gate now runs before social-initiation cognition. It does not score attraction, sociability or willingness and does not call a model. Compatible ambient co-presence with no grounded anchor remains background, `initiation:null`, spends zero model calls and creates neither private refusal nor shared history.
 
-**W4 ordinary World opportunities from active LivedNow is now implemented pending repository validation.** The social wrapper no longer invents its own `co_present_threads` opportunity. `SituatedPercept` derives that opportunity from the current observer/observed situations already underway and binds it to their situation refs. The same derived opportunity may remain background or become salient according to W3 anchors. This is the first concrete `World/LivedNow -> opportunity -> Situated Percept -> Salience` path.
+**W4 ordinary World opportunities from active LivedNow is validated.** The social wrapper no longer invents its own `co_present_threads` opportunity. `SituatedPercept` derives that opportunity from the current observer/observed situations already underway and binds it to their situation refs. This is the first concrete `World/LivedNow -> opportunity -> Situated Percept -> Salience` path.
 
-W4 deliberately does not fabricate environmental novelty. Fibre still lacks an authoritative scene-fact surface for things such as unusual clothing/body state, abrupt movement or contextual anomaly, so `unexpected_observable` is not emitted from free text or caller decoration. The hook remains in W3 for the later World observation seam that can actually ground it.
+**W5 grounded exploration/curiosity pressure is now implemented pending repository validation.** The regulator kernel now contains the previously documented but missing `exploration` family. Its first live evidence is repeated authoritative sameness: two distinct LivedNow observations at least twenty minutes apart with the same physical place, mediated context, enacted activity and participant set. Only that combination exposes low novelty; time passage alone does not.
 
-After validation, proceed to **W5 grounded exploration/curiosity pressure**. Then continue toward natural lived encounter acceptance:
+The W5 path remains subsemantic and cheap:
+
+```text
+repeated enacted sameness
+  -> low-novelty PerceptFrame
+  -> exploration RegulationFrame
+  -> Salience Gate anchor
+  -> otherwise-background opportunity becomes material
+  -> Interior Cognition
+```
+
+It does not author “I am bored,” “I am curious,” `need:connection`, or an action. The first low-novelty signal is deliberately moderate and does not by itself wake interoceptive semantic cognition; stronger future evidence may justify registered `emotion:interest` or `need:novelty_growth`. The focused proof deliberately ends with `not_initiate`: curiosity pressure changes attention without forcing social engagement.
+
+W5 also does not claim the ambient opportunity itself is novel; it proves that grounded low-novelty organismic state can widen attention to an otherwise-background opportunity. Fibre still lacks the authoritative scene facts needed to ground contextual anomalies such as unusual clothing/body state or abrupt movement.
+
+After validation, W6 remains optional experimentation rather than required architecture; then continue toward natural lived encounter acceptance:
 
 ```text
 environmental occurrence

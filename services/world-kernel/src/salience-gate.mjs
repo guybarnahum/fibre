@@ -14,7 +14,7 @@ function observedEventInvolves(event, subjectRefs) {
   return false;
 }
 
-export function evaluateSalience({ opportunity, situatedPercept }) {
+export function evaluateSalience({ opportunity, situatedPercept, regulationFrame = null }) {
   assertPlainObject("salience opportunity", opportunity);
   assertNonEmpty("salience opportunity.kind", opportunity.kind);
   if (!Array.isArray(opportunity.subjectRefs) || opportunity.subjectRefs.length === 0) {
@@ -32,6 +32,12 @@ export function evaluateSalience({ opportunity, situatedPercept }) {
   assertPlainObject("salience Situated Percept", situatedPercept);
   assertId("salience Situated Percept.observerThreadId", situatedPercept.observerThreadId);
   assertPlainObject("salience Situated Percept.setting", situatedPercept.setting);
+  if (regulationFrame !== null) {
+    assertPlainObject("salience RegulationFrame", regulationFrame);
+    if (!Array.isArray(regulationFrame.drives)) {
+      throw new TypeError("salience RegulationFrame.drives must be an array");
+    }
+  }
 
   const anchors = [];
   const observableCues = opportunity.observableCues ?? [];
@@ -61,11 +67,20 @@ export function evaluateSalience({ opportunity, situatedPercept }) {
     anchors.push("recent_observable_history");
   }
 
+  const exploration = regulationFrame?.drives.find((drive) =>
+    drive.family === "exploration" && drive.pressure > 0);
+  if (exploration !== undefined) {
+    anchors.push("exploration_pressure");
+  }
+
+  const regulationRefs = exploration?.evidenceRefs ?? [];
   return Object.freeze({
     outcome:anchors.length === 0 ? "background" : "salient",
     opportunityKind:opportunity.kind,
     subjectRefs:Object.freeze([...subjectRefs]),
     anchors:Object.freeze(anchors),
-    sourceReferences:Object.freeze([...(situatedPercept.sourceReferences ?? [])]),
+    sourceReferences:Object.freeze([
+      ...new Set([...(situatedPercept.sourceReferences ?? []), ...regulationRefs]),
+    ]),
   });
 }

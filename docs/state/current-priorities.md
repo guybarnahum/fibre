@@ -233,8 +233,8 @@ W0 reciprocal outward social history                    VALIDATED
 W1 Situated Percept -> social initiation                VALIDATED
 W2 direct social response -> Interior Cognition         VALIDATED
 W3 cheap general Salience Gate                          VALIDATED
-W4 ordinary World opportunities from active LivedNow   IMPLEMENTED; validate
-W5 grounded exploration/curiosity pressure              NEXT
+W4 ordinary World opportunities from active LivedNow   VALIDATED
+W5 grounded exploration/curiosity pressure              IMPLEMENTED; validate
 W6 bounded replayable salience microvariation           EXPERIMENTAL / OPTIONAL
 W7 natural encounter staging proof                      ACCEPTANCE
 ```
@@ -247,9 +247,11 @@ W2 is validated: `accept | decline | defer` now runs through the same Interior C
 
 W3 is validated: one compact zero-model `salience-gate.mjs` now separates background opportunity from material cognition without a score or decision flip. Background is explicitly distinct from `not_initiate`, and an `unexpected_observable` hook exists for future scene-grounded anomalies without assigning semantic meaning.
 
-W4 now moves the first opportunity production out of the social wrapper. `SituatedPercept` derives a bounded `co_present_threads` opportunity from the actual current situations it is projecting, including the observer/observed situation refs. `lived-social-meeting` consumes that opportunity rather than constructing one. Planned/enacted participant presence can make it salient; compatible unanchored ambient presence still remains background and costs zero cognition.
+W4 is validated: `SituatedPercept` now derives the first bounded `co_present_threads` opportunity from the actual current situations it projects, and the social wrapper consumes rather than authors that opportunity. Compatible unanchored ambient presence may remain background with zero cognition.
 
-This is intentionally the smallest World-opportunity proof. Fibre still has no authoritative general scene-observation field for unusual clothing, nudity, abrupt movement or other contextual anomalies, so W4 does **not** emit `unexpected_observable` from guessed prose or caller labels. That extension remains open once World has grounded scene facts.
+W5 now implements the missing low-level `exploration` regulator family. It is grounded only when Fibre has two distinct authoritative LivedNow observations at least twenty minutes apart with the same place, mediated context, enacted activity and participant set. That evidence yields low novelty / exploration pressure; elapsed time alone does not. Active exploration pressure may elevate an otherwise-background opportunity through the Salience Gate, but it authors neither boredom nor curiosity nor a social action. The focused organism proof requires that the same ambient opportunity stay background without grounded sameness, become salient with grounded sameness, reach cognition, and still permit `not_initiate`.
+
+Fibre still has no authoritative general scene-observation field for unusual clothing, nudity, abrupt movement or other contextual anomalies, so `unexpected_observable` remains a grounded-future hook rather than generated prose.
 
 Do not preserve the current social-first harness shape for compatibility. If the natural lived-world loop makes Commons fallback or old staging orchestration obsolete, replace it rather than wrapping it. The new proof must remain light: no perception service hierarchy, social simulator, universal event bus, full object ontology or high-frequency world ticking.
 

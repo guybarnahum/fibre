@@ -7,6 +7,53 @@ import {
 import { interpretIntrinsicRegulation } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 
+const MIN_SUSTAINED_SAMENESS_MS = 20 * 60 * 1000;
+
+function sameParticipants(left = [], right = []) {
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
+  const a = [...left].sort();
+  const b = [...right].sort();
+  return a.every((value, index) => value === b[index]);
+}
+
+function sustainedLivedSameness(previousSituation, currentSituation) {
+  if (previousSituation === null || currentSituation === null) return false;
+  if (previousSituation.location?.kind !== "place" || currentSituation.location?.kind !== "place") return false;
+  const elapsedMs = Date.parse(currentSituation.establishedAt) - Date.parse(previousSituation.establishedAt);
+  if (!Number.isFinite(elapsedMs) || elapsedMs < MIN_SUSTAINED_SAMENESS_MS) return false;
+
+  return previousSituation.location.placeRef === currentSituation.location.placeRef
+    && (previousSituation.mediatedContext ?? null) === (currentSituation.mediatedContext ?? null)
+    && previousSituation.activity === currentSituation.activity
+    && sameParticipants(previousSituation.participantRefs ?? [], currentSituation.participantRefs ?? []);
+}
+
+export function explorationRegulationForLivedContinuity({
+  thread,
+  previousSituation,
+  currentSituation,
+}) {
+  if (!thread || typeof thread !== "object" || typeof thread.threadId !== "string") {
+    throw new TypeError("Thread is required for exploration regulation");
+  }
+  if (currentSituation?.threadId !== thread.threadId) {
+    throw new TypeError("current situation must belong to the exploration-regulated Thread");
+  }
+  if (previousSituation !== null && previousSituation?.threadId !== thread.threadId) {
+    throw new TypeError("previous situation must belong to the exploration-regulated Thread");
+  }
+  if (!sustainedLivedSameness(previousSituation, currentSituation)) return null;
+
+  return evaluateIntrinsicRegulation({
+    perceptFrame:{
+      asOf:currentSituation.establishedAt,
+      exploration:{ novelty:0 },
+      evidenceRefs:[previousSituation.situationId, currentSituation.situationId],
+    },
+    runtimeBaselines:thread.genome?.runtimeBaselines ?? {},
+  });
+}
+
 function requireMethod(owner, name) {
   if (!owner || typeof owner[name] !== "function") {
     throw new TypeError(`${name} is required for LivedNow regulation`);

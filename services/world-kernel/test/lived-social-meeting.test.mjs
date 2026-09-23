@@ -92,6 +92,7 @@ function fixture({
   noorActivity = "Sketching at the same café table.",
   mediatedContext = null,
   plannedCompanions = true,
+  sustainedSameness = false,
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
@@ -342,6 +343,15 @@ function fixture({
     },
     livedNowStore:{
       getCurrentSituation(threadId) { return structuredClone(situations.get(threadId)); },
+      getPreviousSituation(threadId) {
+        if (!sustainedSameness) return null;
+        const current = situations.get(threadId);
+        return {
+          ...structuredClone(current),
+          situationId:`sit_previous_${threadId}`,
+          establishedAt:new Date(Date.parse(current.establishedAt) - (30 * 60 * 1000)).toISOString(),
+        };
+      },
       latestPlan(threadId) { return structuredClone(plan(threadId)); },
     },
     identityStore:{
@@ -591,6 +601,46 @@ test("background co-presence costs no cognition and creates no private refusal",
     "background opportunity must create no shared social history");
   assert.equal(f.stories.length, 0,
     "background opportunity must create no Encounter Story");
+});
+
+test("grounded sustained sameness can raise exploration salience without forcing engagement", async () => {
+  const ordinary = fixture({
+    plannedCompanions:false,
+    sustainedSameness:false,
+    initiationFor:() => "not_initiate",
+  });
+  const lowNovelty = fixture({
+    plannedCompanions:false,
+    sustainedSameness:true,
+    initiationFor:() => "not_initiate",
+  });
+
+  const ordinaryResult = await ordinary.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+  const lowNoveltyResult = await lowNovelty.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+
+  assert.equal(ordinaryResult.salience.outcome, "background",
+    "ambient opportunity should stay background without a grounded pressure");
+  assert.equal(ordinary.modelCallCount(), 0,
+    "background ambient opportunity should remain zero-cognition");
+
+  assert.equal(lowNoveltyResult.salience.outcome, "salient",
+    "sustained enacted sameness should make an otherwise-background opportunity material");
+  assert.equal(lowNoveltyResult.salience.anchors.includes("exploration_pressure"), true,
+    "salience should expose exploration pressure as the materiality reason");
+  assert.equal(lowNoveltyResult.initiation.decision, "not_initiate",
+    "exploration pressure must not force social engagement");
+  assert.equal(lowNovelty.modelCallCount() > 0, true,
+    "salient opportunity should earn cognition before refusal");
+  assert.equal(lowNovelty.socialInteractions.length, 0,
+    "private refusal after curiosity must still create no shared interaction");
 });
 
 test("observable setting can bend social judgment for the same person", async () => {

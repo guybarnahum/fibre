@@ -16,6 +16,7 @@ const DEFAULT_SENSITIVITY = Object.freeze({
   sensory: 1,
   presence: 1,
   social: 1,
+  exploration: 1,
 });
 
 export const THREAD_SPECIES_PROFILE = Object.freeze({
@@ -31,6 +32,7 @@ export const THREAD_SPECIES_PROFILE = Object.freeze({
     lightMax: 0.95,
     opennessMin: 0.08,
   }),
+  explorationNoveltyFloor: 0.35,
   sensitivityEnvelope: Object.freeze([0.85, 1.15]),
 });
 
@@ -41,6 +43,7 @@ const BASELINE_KEYS = Object.freeze({
   regulatorSensorySensitivity: "sensory",
   regulatorPresenceSensitivity: "presence",
   regulatorSocialSensitivity: "social",
+  regulatorExplorationSensitivity: "exploration",
 });
 
 function plainObject(name, value) {
@@ -133,6 +136,13 @@ function normalizeInternal(value = {}) {
   };
 }
 
+function normalizeExploration(value = {}) {
+  plainObject("perceptFrame.exploration", value);
+  return {
+    novelty: optionalUnit("perceptFrame.exploration.novelty", value.novelty),
+  };
+}
+
 function normalizeSocialCue(value, index) {
   const name = `perceptFrame.social[${index}]`;
   plainObject(name, value);
@@ -157,6 +167,7 @@ export function normalizePerceptFrame(value) {
     asOf: isoTimestamp("perceptFrame.asOf", value.asOf),
     internal: normalizeInternal(value.internal ?? {}),
     environment: normalizeEnvironment(value.environment ?? {}),
+    exploration: normalizeExploration(value.exploration ?? {}),
     social: social.map(normalizeSocialCue),
     evidenceRefs: normalizeRefs("perceptFrame.evidenceRefs", value.evidenceRefs),
   };
@@ -232,7 +243,7 @@ function drive({ family, targetRef, orientation, pressure, urgency, progressErro
 
 function basalDrives(percept, profile) {
   const species = THREAD_SPECIES_PROFILE;
-  const { environment, internal, evidenceRefs } = percept;
+  const { environment, internal, exploration, evidenceRefs } = percept;
   const drives = [];
 
   if (environment.temperatureC !== undefined) {
@@ -308,6 +319,21 @@ function basalDrives(percept, profile) {
       orientation:"avoid",
       pressure:sensoryPressure,
       urgency:sensoryPressure,
+      evidenceRefs,
+    }));
+  }
+
+  if (exploration.novelty !== undefined) {
+    const floor = species.explorationNoveltyFloor;
+    const explorationPressure = exploration.novelty >= floor
+      ? 0
+      : 0.5 * ((floor - exploration.novelty) / floor) * profile.sensitivity.exploration;
+    drives.push(drive({
+      family:"exploration",
+      targetRef:"world:novelty",
+      orientation:"approach",
+      pressure:explorationPressure,
+      urgency:explorationPressure,
       evidenceRefs,
     }));
   }

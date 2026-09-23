@@ -381,7 +381,7 @@ Background means the opportunity never warranted private social cognition. It cr
 
 **High-value organism proof:** real compatible ambient co-presence with no materiality anchor must return `background`, `initiation:null`, spend zero model calls, and create neither reciprocal interaction nor Encounter Story. Existing planned/mediated/recent-history paths prove that an anchored opportunity can continue into Interior Cognition. W4 must prove that World-produced observable anomaly/change cues are grounded rather than caller decoration.
 
-#### W4 — Ordinary World opportunities from active LivedNow — IMPLEMENTED; validate
+#### W4 — Ordinary World opportunities from active LivedNow — VALIDATED
 
 The first opportunity producer is deliberately tiny and lives inside the existing Situated Percept projection rather than a new simulator/service.
 
@@ -413,13 +413,34 @@ It also does not emit `unexpected_observable` yet. Fibre currently has no author
 
 **High-value organism proof:** a social encounter service receives only current lives/participants; the resulting salience witness names the co-present Thread and cites both current situation refs even though the wrapper never constructs the opportunity. The same derived opportunity can remain background with zero model calls when no salience anchor exists.
 
-#### W5 — Grounded exploration / curiosity pressure
+#### W5 — Grounded exploration / curiosity pressure — IMPLEMENTED; validate
 
-Only after W4 provides trustworthy lived evidence, connect the already-accepted exploration/information/play regulator family to signals Fibre can actually ground, such as sustained low-novelty activity, stalled progress, or a surprising observable cue.
+The previously documented exploration / information / play family now exists in the regulator kernel as an `exploration` drive.
 
-Do not infer boredom merely because time passed. Do not infer loneliness because no social event was recorded; Fibre does not yet observe all ordinary social contact.
+The first live evidence is deliberately narrow:
 
-**High-value proof:** sustained grounded low-novelty context can make a novel opportunity more salient for a Thread without mechanically authoring “I am bored” or forcing engagement.
+```text
+previous authoritative CurrentSituation
+current authoritative CurrentSituation
+  + distinct observations
+  + >= 20 minutes apart
+  + same physical place
+  + same mediated context
+  + same enacted activity
+  + same participant set
+  -> low novelty
+  -> exploration pressure
+```
+
+Neither time passage nor absence of social records is sufficient on its own. The implementation does not classify activities as “boring,” parse activity prose for keywords, infer loneliness, or create a social-contact deficit.
+
+The Salience Gate may consume active exploration pressure as one mechanical anchor. This lets an otherwise-background opportunity earn cognition because the organism is under grounded novelty-seeking pressure.
+
+The first slice remains subsemantic. It does not require an interoception model call or persist `emotion:interest` / `need:novelty_growth`, though those registered dimensions remain available when later evidence justifies semantic interpretation.
+
+**High-value organism proof:** hold the same ambient co-present opportunity and Thread context constant. Without grounded sustained sameness it remains background and costs zero cognition. With two qualifying prior/current LivedNow observations it becomes salient through `exploration_pressure`, reaches cognition, and may still choose `not_initiate` with no shared interaction record. Thus exploration changes attention without forcing social behavior.
+
+The first proof does not claim the ambient opportunity itself is novel. It proves that low-novelty organismic state can widen attention. Opportunity-specific novelty/anomaly still requires authoritative World scene evidence.
 
 Social-contact/privacy regulation remains deferred until Fibre has enough observation to distinguish solitude from missing data.
 

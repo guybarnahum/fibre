@@ -355,6 +355,11 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
     assert.equal(second.mediatedContext, "Monterey Bay Aquarium live octopus feed");
     assert.deepEqual(second.sourcePlanRefs, [personal.planId, care.planId]);
     assert.deepEqual(lived.latestPlan(life.thread.threadId, "personal", { at: second.establishedAt }), personal);
+    assert.deepEqual(
+      lived.getPreviousSituation(life.thread.threadId, second.establishedAt),
+      first,
+      "later lived cognition should be able to recover the immediately preceding World observation",
+    );
     assert.match(personal.stops[0].activity, /octopus livestream/);
     assert.match(personal.stops[1].activity, /Finish the sketch/);
     lived.close();
