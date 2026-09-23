@@ -49,14 +49,14 @@ environmental noticing / Thread Experience E1              PROVEN
 voluntary social meeting / Encounter Story E2               PROVEN
 silent witness / n-ary encounter E3                         PROVEN
 journal / rendering / Admin acceptance E4                  PROVEN
-live deployed N5 acceptance E5                             CURRENT
+live deployed N5 acceptance E5                             PROVEN
 ```
 
 The important correction is:
 
 > **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
 
-N4 is closed in deployment. N5 now proceeds from the accepted insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E4 are closed. E2 proves voluntary meeting, E3 proves silent-witness asymmetry, and E4 makes the resulting authorities inspectable without collapsing them: Admin can view objective Encounter Story/visualization lineage, Thread-specific attention, World journal-entry provenance and the private R2 journal book separately from autobiographical memory. The E1 visualization lineage can also be converted into ordinary image/video asset demand with each depicted Thread's own canonical visual reference and encounter-time age. E5 staging acceptance is current.
+N4 is closed in deployment. N5 is now closed live on the accepted insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E5 are closed. E2 proves voluntary meeting, E3 proves silent-witness asymmetry, E4 makes the resulting authorities inspectable without collapsing them, and E5 proves the combined path against a real staging Thread through prior voluntary visitor-work commitment, enacted LivedNow presence, public Meet, Encounter Story, Thread Experience and exactly-once Fibre Credit consequence.
 
 See:
 
@@ -98,13 +98,12 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
-- deployed E5 N5 acceptance against real staging Threads;
 - richer shared-world convergence beyond the bounded Fibre Commons mediated-presence proof;
 - a rich public scene driven by that continuous present.
 
 Encounter Story is now visualizable by construction: its durable rich prompt is objective/evidence-bound and separate from any later subjective memory reconstruction. Actual image/video rendering remains optional and uses the existing generated-asset pipeline rather than becoming World authority.
 
-E1-E4 are green in full CI. The park proof admits an unscheduled bee/flower occurrence that enters attention and can become memory, while a separate cloud occurrence remains `not_noticed`; E3 adds a genuinely co-present silent witness; E4 exposes the objective story/visualization lineage and separate private journal authority in Admin and proves the same objective prompt can feed the existing generated-asset demand path for image or video without becoming evidence. N5 remains undeployed until E5 staging acceptance.
+E1-E4 are green in full CI. The park proof admits an unscheduled bee/flower occurrence that enters attention and can become memory, while a separate cloud occurrence remains `not_noticed`; E3 adds a genuinely co-present silent witness; E4 exposes the objective story/visualization lineage and separate private journal authority in Admin and proves the same objective prompt can feed the existing generated-asset demand path for image or video without becoming evidence. N5 is deployed and accepted in staging. Run `inside-fibre-muegy2ai` on SHA `9bf65debfe2636b13c7ca1dbffa5d265072f486d` closed the live path for Luka Mzechabuki: prior voluntary acceptance -> revised Flight Plan -> active mediated work presence -> public Meet -> Encounter Story `story_2a0816db192e5ab2f82f4cc446e46b145f69e78dec963a32` -> noticed Thread Experience -> Fibre Credit balance 0 -> 12.
 
 ## Continuous LivedNow
 
@@ -252,7 +251,7 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 ## Immediate next action
 
-E0-E4 are complete. E5 remains the staging acceptance slice, but live staging exposed a prerequisite rather than a reason to weaken acceptance.
+E0-E5 are complete and N5 is closed live. The immediate target is N6: turn the proven insidefibre.com visitor-work path into a rich public lived encounter without moving authority into the Viewer. The site should surface genuinely available Threads, enter their already-lived scene, let the encounter occur through the proven Encounter Story/Experience path, and later reveal that life continued.
 
 Reusable Genesis place IDs are Thread-world context, not shared live place authority. Earlier controlled work correctly rejected false physical co-presence among independently born Threads that happened to reuse the same Genesis WorldSpec place identifiers. Physical meeting compatibility now requires the same explicitly admitted live `wpl_*` authority (or matching mediated context).
 
