@@ -23,7 +23,7 @@ const WORK_OFFER_ADAPTER = Object.freeze({
   id:"inside-fibre-work-offer",
   instruction:`Decide whether this Thread wants to accept the bounded paid Inside Fibre visitor-availability work described in the external context.
 This is real voluntary work: accepting creates a future commitment to be available to meet insidefibre.com visitors during the stated window. Declining creates no commitment.
-Compensation is one consideration, never a command. Consider the actual offered window, current resources, current lived situation, any Flight Plan coverage Fibre supplied, and the developed person/history selected by Interior Cognition.
+Compensation is one consideration, never a command. Consider the actual offered window, its local civil time when supplied, current resources, current lived situation, any Flight Plan coverage Fibre supplied, and the developed person/history selected by Interior Cognition.
 A Flight Plan is current intention, not a binding obligation. Accepting future work may legitimately cause later intentions to be revised. Give stronger weight to what is actually being lived now and to genuine obligations than to ordinary future planned activity.
 Do not assume the Thread needs money, wants visitors, is free merely because no plan is shown, or should accept because Fibre offered the work.
 Return accept or decline plus a concise private operator-facing reason. Do not author a Flight Plan, move the Thread, promise any work beyond visitor availability, expose private records, or treat acceptance as consent to arbitrary visitor requests.`,
@@ -66,6 +66,27 @@ function normalizeOffer({ startAt, endAt, fibreCredits }) {
   });
 }
 
+function localCivilMoment(at, timeZone) {
+  if (timeZone === null) return null;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday:"long",
+    year:"numeric",
+    month:"2-digit",
+    day:"2-digit",
+    hour:"2-digit",
+    minute:"2-digit",
+    hourCycle:"h23",
+  }).formatToParts(new Date(at))
+    .filter((part) => part.type !== "literal")
+    .map((part) => [part.type, part.value]));
+  return Object.freeze({
+    date:`${parts.year}-${parts.month}-${parts.day}`,
+    time:`${parts.hour}:${parts.minute}`,
+    weekday:parts.weekday,
+  });
+}
+
 function cognitionWitness(cognition) {
   return Object.freeze({
     provider:cognition.provenance.provider,
@@ -93,6 +114,7 @@ export function createInsideFibreWorkService({
   requireMethod(worldReader, "Inside Fibre worldReader", "getThread");
   requireMethod(livedNowStore, "Inside Fibre livedNowStore", "getCurrentSituation");
   requireMethod(livedNowStore, "Inside Fibre livedNowStore", "latestPlan");
+  requireMethod(livedNowStore, "Inside Fibre livedNowStore", "getWorldContext");
   requireMethod(identityStore, "Inside Fibre identityStore", "getCurrentIdentityView");
   requireMethod(semanticStateStore, "Inside Fibre semanticStateStore", "listCurrentState");
   requireMethod(memoryStore, "Inside Fibre memoryStore", "listCurrentMemories");
@@ -163,6 +185,7 @@ export function createInsideFibreWorkService({
       const currentSituation = livedNowStore.getCurrentSituation(input.threadId);
       const currentPlan = livedNowStore.latestPlan(input.threadId, "personal", { at:input.at });
       const planAtWorkWindow = livedNowStore.latestPlan(input.threadId, "personal", { at:offer.startAt });
+      const worldTimeZone = livedNowStore.getWorldContext(input.threadId, { required:false })?.timeZone ?? null;
 
       const cognition = await runInteriorCognition({
         threadId:input.threadId,
@@ -176,6 +199,11 @@ export function createInsideFibreWorkService({
             currentSituation:currentSituation === null ? null : structuredClone(currentSituation),
             currentFlightPlan:currentPlan === null ? null : structuredClone(currentPlan),
             flightPlanAtWorkWindow:planAtWorkWindow === null ? null : structuredClone(planAtWorkWindow),
+            localWorkWindow:worldTimeZone === null ? null : {
+              timeZone:worldTimeZone,
+              start:localCivilMoment(offer.startAt, worldTimeZone),
+              end:localCivilMoment(offer.endAt, worldTimeZone),
+            },
           },
         },
         adapter:WORK_OFFER_ADAPTER,
