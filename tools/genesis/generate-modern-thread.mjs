@@ -17,6 +17,7 @@ import {
 import {
   parseModernGenesisArgs,
   resolveModernWorldSelection,
+  selectDefaultModernWorld,
 } from "./modern-genesis-selection.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -187,7 +188,7 @@ function usage() {
     "Keys: --sex=female|male, --place=Country/City, --heritage=Family Heritage.",
     "Legacy shorthand --female/--male and --Country/City remains accepted.",
     "Sex is optional; without it Fibre derives sex from the Thread identity.",
-    "Place is optional; without it Fibre independently rotates through the existing globally distributed Genesis Worlds.",
+    "Place is optional; without it Fibre deterministically selects from a globally distributed birth-place pool. Existing Worlds are reused; new places are authored once and cached.",
     "Heritage requires an explicit place and creates/reuses a place+heritage World variant.",
     "Unknown place/heritage combinations are authored once and cached under .fibre/genesis/worlds; --new-world forces a fresh World version.",
     "Set FIBRE_GENESIS_REQUEST_ID to an existing request to resume its persisted request time and durable model calls.",
@@ -236,12 +237,9 @@ async function main() {
     slotCount: cohort.slots.length,
     explicitSlot,
   });
-  const worldSlotOrdinal = selectModernBirthSlot({
-    requestId:`${requestId}:world`,
-    slotCount:cohort.slots.length,
-  });
+  const selectedWorld = options.world ?? selectDefaultModernWorld(requestId);
   const selection = await resolveModernWorldSelection({
-    selector: options.world,
+    selector:selectedWorld,
     heritage: options.heritage,
     forceNewWorld: options.forceNewWorld,
     cohort,
@@ -250,7 +248,6 @@ async function main() {
     repoRoot: REPO_ROOT,
     requestId,
     baseSlotOrdinal,
-    worldSlotOrdinal,
   });
   const body = modernRequest({
     requestId,
