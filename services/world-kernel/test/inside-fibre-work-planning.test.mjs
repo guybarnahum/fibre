@@ -289,10 +289,15 @@ test("accepted visitor work bends the forward Flight Plan while preserving prior
       "the revised plan should cite the accepted commitment");
     assert.equal(result.plan.sourceReferences.includes("mem_private_work_choice"), false,
       "private acceptance evidence must not become World plan authority");
-    assert.deepEqual(
-      Object.keys(observedCommitment).sort(),
-      ["commitmentId","compensation","endAt","mediatedContext","purpose","startAt"].sort(),
-      "planning should receive the accepted work fact, not its private acceptance cognition",
+    assert.equal(
+      observedCommitment.commitmentId,
+      state.accepted.commitmentId,
+      "planning should receive the accepted work authority",
+    );
+    assert.equal(
+      Object.hasOwn(observedCommitment, "cognition"),
+      false,
+      "private acceptance cognition must not become planning context",
     );
 
     closeAll(state);
@@ -344,7 +349,7 @@ test("Flight Planning cannot silently omit accepted visitor work", async () =>
           },
         },
       }),
-      /must honor each accepted work commitment/u,
+      TypeError,
       "an accepted commitment must be load-bearing in planning",
     );
 
