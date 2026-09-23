@@ -15,13 +15,19 @@ import {
   resolveCurrentSituation,
 } from "./lived-now.mjs";
 import {
-  assertAllSituatedReferencesResolve,
   resolveSituatedReference,
 } from "./situated-identity-grounding.mjs";
 import {
   normalizeLifeRelation,
   situatedLifeRecordIsCurrent,
 } from "./situated-life-domain.mjs";
+import {
+  createLiveWorldPlaceTables,
+  ensureLiveWorldPlaces,
+  liveWorldContext,
+  listLiveWorldPlaces,
+  resolveLiveWorldPlace,
+} from "./live-world-place.mjs";
 
 export class LivedNowConflictError extends Error {}
 export class LivedNowNotFoundError extends Error {}
@@ -78,6 +84,7 @@ function createTables(database) {
       BEFORE DELETE ON current_situation_records
       BEGIN SELECT RAISE(ABORT,'current_situation_records is append-only'); END;
   `);
+  createLiveWorldPlaceTables(database);
 }
 
 function parseJson(name, value) {
@@ -168,11 +175,30 @@ export class LivedNowStore {
     }
   }
 
+  #resolveLivedReference(threadId, reference) {
+    const situated = resolveSituatedReference(this.#database, threadId, reference);
+    if (situated !== null) return situated;
+    const worldPlace = resolveLiveWorldPlace(this.#database, threadId, reference);
+    return worldPlace === null
+      ? null
+      : { kind:"world_place", reference, worldPlace };
+  }
+
+  #resolveLivedReferences(threadId, references) {
+    return references.map((reference) => {
+      const witness = this.#resolveLivedReference(threadId, reference);
+      if (witness === null) {
+        throw new IntegrityError(`unresolved lived reference ${reference} for Thread ${threadId}`);
+      }
+      return witness;
+    });
+  }
+
   #requirePlace(threadId, reference) {
-    const witness = resolveSituatedReference(this.#database, threadId, reference);
-    if (witness?.kind !== "place_episode_revision") {
+    const witness = this.#resolveLivedReference(threadId, reference);
+    if (!["place_episode_revision","world_place"].includes(witness?.kind)) {
       throw new LivedNowConflictError(
-        `physical place ${reference} must resolve to this Thread's situated place authority`,
+        `physical place ${reference} must resolve to situated or shared World-place authority`,
       );
     }
   }
@@ -232,8 +258,7 @@ export class LivedNowStore {
 
         const placeRefs = physicalPlaceRefs(record);
         placeRefs.forEach((reference) => this.#requirePlace(record.subjectThreadId, reference));
-        const resolved = assertAllSituatedReferencesResolve(
-          this.#database,
+        const resolved = this.#resolveLivedReferences(
           record.subjectThreadId,
           record.sourceReferences,
         );
@@ -305,6 +330,37 @@ export class LivedNowStore {
       LIMIT 1
     `).get(threadId, kind, at, at, at);
     return row === undefined ? null : planFromRow(row);
+  }
+
+  ensureWorldPlaces(threadId) {
+    this.#requireThread(threadId);
+    if (this.#readOnly) {
+      throw new LivedNowConflictError("read-only LivedNow store cannot admit shared World places");
+    }
+    return ensureLiveWorldPlaces(this.#database, threadId);
+  }
+
+  getWorldContext(threadId, { required = false } = {}) {
+    this.#requireThread(threadId);
+    const context = liveWorldContext(this.#database, threadId);
+    if (context === null && required) {
+      throw new LivedNowNotFoundError(`live World context was not found for Thread ${threadId}`);
+    }
+    return context;
+  }
+
+  listWorldPlaces(threadId) {
+    this.#requireThread(threadId);
+    return listLiveWorldPlaces(this.#database, threadId);
+  }
+
+  getWorldPlace(threadId, reference, { required = true } = {}) {
+    this.#requireThread(threadId);
+    const place = resolveLiveWorldPlace(this.#database, threadId, reference);
+    if (place === null && required) {
+      throw new LivedNowNotFoundError(`shared World place ${reference} was not found for Thread ${threadId}`);
+    }
+    return place;
   }
 
   getSituation(situationId, { required = true } = {}) {
@@ -394,8 +450,7 @@ export class LivedNowStore {
         for (const reference of observedPlaceRefs(situation)) {
           this.#requirePlace(input.threadId, reference);
         }
-        assertAllSituatedReferencesResolve(
-          this.#database,
+        this.#resolveLivedReferences(
           input.threadId,
           situation.evidenceRefs,
         );

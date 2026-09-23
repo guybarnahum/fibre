@@ -135,6 +135,7 @@ function threadObservatory(runtime, threadId) {
           authoredAt:currentPersonalPlan.authoredAt,
           horizonStart:currentPersonalPlan.horizonStart,
           horizonEnd:currentPersonalPlan.horizonEnd,
+          stops:structuredClone(currentPersonalPlan.stops),
           sourceReferences:structuredClone(currentPersonalPlan.sourceReferences),
           cognition:structuredClone(currentPersonalPlan.cognition),
         });
@@ -151,6 +152,7 @@ function threadObservatory(runtime, threadId) {
       livedNow:Object.freeze({
         currentSituation:structuredClone(currentSituation),
         currentPersonalPlan:currentPersonalPlanWitness,
+        worldPlaces:structuredClone(livedNow.listWorldPlaces(threadId)),
         placeEpisodes:structuredClone(situatedLife.listCurrentPlaceEpisodes(threadId)),
       }),
       memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:200 })),
@@ -264,7 +266,7 @@ export class FibreWorldDurableObject extends DurableObject {
       const observatory = threadObservatory(this.runtimeForRequest(), threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
-        contract:"fibre-world-thread-observatory-v0.5",
+        contract:"fibre-world-thread-observatory-v0.6",
         observatory,
       });
     }

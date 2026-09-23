@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre now carries canonical Threads through continuous LivedNow, natural scene discovery, selective salience and reciprocal encounter cognition; live W7b staging acceptance is current.**
+**Fibre now carries canonical Threads through continuous LivedNow, selective salience and natural scene discovery; W7p is adding explicit shared live-place and local-time authority before W7b acceptance resumes.**
 
 ## What is done
 
@@ -131,7 +131,7 @@ E3 is now done: one genuinely co-present Thread can remain outside the invitatio
 
 E4 is now done: Admin can inspect objective Encounter Story/visualization provenance, this Thread's attention, World journal-entry provenance and the private journal book as distinct layers. The same admitted objective prompt can enter the existing image/video generation pipeline with each depicted Thread's own canonical visual reference and encounter-time age; missing likeness authority defers rather than invents. Generated media remains optional representation, never evidence.
 
-W7a is validated: the caller now selects only an initiator, while World discovers co-present Threads and projects independent actor opportunities. W7b is current: exercise that natural scene path against real staging Threads without caller-selected counterparties or Commons fallback.
+W7a is validated: the caller selects only an initiator and World discovers actor opportunities from current life. The first W7b staging run then exposed a missing World primitive: live Threads had no explicit shared physical-place authority, so all inspected scenes discovered zero actors. W7p is current: admit a bounded immutable live public venue, expose authoritative local civil time to planning, then rerun W7b without caller-selected counterparties or Commons fallback.
 
 ### Rich insidefibre.com meeting
 
@@ -189,7 +189,7 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- complete W7b live staging acceptance of naturally discovered social opportunities through the Encounter Story -> Thread Experience seam;
+- validate W7p shared live-place/local-time authority and complete W7b live staging acceptance of naturally discovered social opportunities;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
 - support society-scale institutions and reproduction among live Threads.

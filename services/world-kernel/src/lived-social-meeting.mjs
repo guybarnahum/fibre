@@ -44,10 +44,10 @@ function contextFor({ threadId, worldReader, livedNowStore, semanticStateStore, 
   });
 }
 
-function compatible(left, right, situatedLifeStore) {
+function compatible(left, right, livedNowStore) {
   return meetingPresenceCompatible(left.situation, right.situation, {
-    leftPlaceEpisodes:situatedLifeStore.listCurrentPlaceEpisodes(left.thread.threadId),
-    rightPlaceEpisodes:situatedLifeStore.listCurrentPlaceEpisodes(right.thread.threadId),
+    leftWorldPlaces:livedNowStore.listWorldPlaces(left.thread.threadId),
+    rightWorldPlaces:livedNowStore.listWorldPlaces(right.thread.threadId),
   });
 }
 
@@ -85,6 +85,7 @@ export function createSocialMeetingService({
   requireMethod("livedNowStore", livedNowStore, "getCurrentSituation");
   requireMethod("livedNowStore", livedNowStore, "getPreviousSituation");
   requireMethod("livedNowStore", livedNowStore, "listCurrentSituations");
+  requireMethod("livedNowStore", livedNowStore, "listWorldPlaces");
   requireMethod("livedNowStore", livedNowStore, "latestPlan");
   requireMethod("identityStore", identityStore, "getCurrentIdentityView");
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentLifeRelations");
@@ -127,10 +128,10 @@ export function createSocialMeetingService({
         semanticStates:Object.freeze([]),
         memories:Object.freeze([]),
       });
-      if (!compatible(initiator, candidate, situatedLifeStore)) continue;
+      if (!compatible(initiator, candidate, livedNowStore)) continue;
 
       const refreshed = await currentContext(candidateSituation.threadId, at);
-      if (compatible(initiator, refreshed, situatedLifeStore)) discovered.push(refreshed);
+      if (compatible(initiator, refreshed, livedNowStore)) discovered.push(refreshed);
     }
 
     return Object.freeze(discovered);
@@ -141,8 +142,8 @@ export function createSocialMeetingService({
     for (const threadId of witnessThreadIds) {
       if (threadId === initiator.thread.threadId || threadId === counterparty.thread.threadId) continue;
       const witness = await currentContext(threadId, at);
-      if (compatible(initiator, witness, situatedLifeStore)
-        && compatible(counterparty, witness, situatedLifeStore)) {
+      if (compatible(initiator, witness, livedNowStore)
+        && compatible(counterparty, witness, livedNowStore)) {
         contexts.push(witness);
       }
     }
@@ -322,6 +323,7 @@ export function createSocialMeetingService({
         situation:initiator.situation,
         observedThreads:discovered.map(observedThread),
         situatedLifeStore,
+        livedNowStore,
         experienceStore,
       });
       const opportunities = perceived.opportunities.filter((opportunity) =>
@@ -350,6 +352,7 @@ export function createSocialMeetingService({
           situation:initiator.situation,
           observedThreads:[observedThread(counterparty)],
           situatedLifeStore,
+          livedNowStore,
           experienceStore,
         });
         const actorOpportunity = situatedPercept.opportunities[0];
@@ -411,6 +414,7 @@ export function createSocialMeetingService({
           situation:counterparty.situation,
           observedThreads:[observedThread(initiator)],
           situatedLifeStore,
+          livedNowStore,
           experienceStore,
         });
         const stance = await formMeetingStance({

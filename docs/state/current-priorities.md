@@ -185,7 +185,7 @@ E0 reconciled the first implementation spike into a green foundation. E1 then pr
 The useful pieces now proven or retained are:
 
 - independent ensure-LivedNow;
-- place compatibility across Thread-specific situated-life evidence when it resolves to explicit World-recorded shared place authority;
+- place compatibility through explicit admitted live World-place authority or matching mediated context;
 - meeting stance;
 - n-ary shared-story persistence direction;
 - witness-aware aftermath direction;
@@ -237,7 +237,8 @@ W4 ordinary World opportunities from active LivedNow   VALIDATED
 W5 grounded exploration/curiosity pressure              VALIDATED
 W6 bounded replayable salience microvariation           DEFERRED / OPTIONAL
 W7a natural scene / co-presence discovery               VALIDATED
-W7b natural encounter staging proof                     IMPLEMENTED; deploy + run
+W7p shared live World-place + local-time authority       IMPLEMENTED; validate
+W7b natural encounter staging proof                     BLOCKED ON W7p; then rerun
 ```
 
 These are roadmap labels only. Do not bake them into APIs, event names or durable records.
@@ -253,6 +254,12 @@ W4 and W5 are validated. Situated Percept derives World-owned opportunities from
 W6 microvariation is deliberately deferred. There is not yet evidence that deterministic salience is too rigid, so Fibre should first observe the live deterministic system before adding stochastic complexity.
 
 **W7a natural scene discovery is validated.** The caller names only the initiating Thread. LivedNow exposes established CurrentSituations, the social path discovers all compatible World-present Threads, refreshes/re-checks each candidate, and projects one independent `actor_presence` opportunity per actor. One lived interval may therefore contain zero, one or several separate Encounter Stories without an arbitrary first-person cap.
+
+**W7p shared live World-place + local-time authority is implemented pending validation.** The first W7b live run correctly found zero actor opportunities across all 15 inspected scenes. Direct diagnostics showed that current physical refs were still private `genesis_created` PlaceEpisode revisions and that most Tbilisi/Jerusalem Threads were planning sleep/wind-down during their local morning. W7b therefore exposed two missing World facts rather than a social-cognition defect.
+
+W7p adds one explicit immutable `live_world_place_records` authority. A Genesis WorldSpec/place identifier remains insufficient physical truth; it is only source material. Fibre explicitly admits a new `wpl_*` live venue under a versioned policy, and only that live record may establish shared physical place identity. The first policy intentionally admits only `library_or_learning`: homes stay private and broad commerce/market regions stay excluded until spatial granularity is credible. Under v1, Threads registered to the same Genesis source World are explicitly admitted into one new live-world namespace for that bounded venue; this is live-society policy, not a claim that their Genesis histories were shared. Flight Planning may choose admitted `wpl_*` refs; CurrentSituation carries them unchanged; matching admitted refs can establish physical co-presence.
+
+The same World projection supplies the historical-envelope IANA time zone as structured local-civil-time context to Flight Planning. This prevents UTC clock time from silently becoming the Thread's local day. Neither place admission nor local time authors motive or movement: existing Flight Plans remain intact, and the Thread still independently chooses whether/when to go to an offered shared venue.
 
 **W7b natural staging acceptance is implemented pending deployment/run.** The staging harness no longer constructs participant/witness triples and no longer falls back to Fibre Commons to manufacture shared presence. It refreshes a bounded live cohort, chooses initiators to inspect, calls the social path with only `initiatorThreadId`, and evaluates the actor opportunities World actually discovers.
 

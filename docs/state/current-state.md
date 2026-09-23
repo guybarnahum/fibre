@@ -252,7 +252,7 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 E0-E4 are complete. E5 remains the staging acceptance slice, but live staging exposed a prerequisite rather than a reason to weaken acceptance.
 
-Reusable Genesis place IDs are Thread-world context, not shared live place authority. The previous staging search therefore produced false physical co-presence among independently born Threads that happened to reuse the same Genesis WorldSpec place identifiers. Physical meeting compatibility now requires explicit World-recorded shared place identity (or matching mediated context).
+Reusable Genesis place IDs are Thread-world context, not shared live place authority. Earlier controlled work correctly rejected false physical co-presence among independently born Threads that happened to reuse the same Genesis WorldSpec place identifiers. Physical meeting compatibility now requires the same explicitly admitted live `wpl_*` authority (or matching mediated context).
 
 Fibre Commons remains a valid bounded shared-presence affordance, but it is no longer the organizing mechanism for social life. The later staging run showed that a cohort overwhelmingly sleeping or winding down can coherently choose `stay_out`; unanimous refusal in that context is not itself evidence that Threads need stronger social motivation. The live intrinsic-regulation bridge remains useful substrate, but Fibre must not infer loneliness or social deficit from absence of recorded encounters.
 
@@ -302,6 +302,12 @@ The reciprocal-history seam and **W1 Situated Percept are validated**. Social in
 
 **W7a natural scene / co-presence discovery is validated.** The production social path no longer accepts caller-selected counterparties. It discovers compatible co-present Threads from World-current situations, refreshes/re-checks them, and projects one actor-specific opportunity per discovered Thread. The controlled proof also demonstrates that one café interval can admit two separate encounters at the same lived time.
 
+**W7p shared live World-place + local-time authority is implemented pending repository validation.** The first natural W7b staging run inspected fifteen initiator scenes and discovered zero actor opportunities. The debug evidence showed current place refs remained private `genesis_created` situated-life revisions; repository audit confirmed there was no production path creating the former `world_recorded` shared-place authority. The run also showed many Tbilisi/Jerusalem Threads sleeping or winding down during their local morning because planning received absolute UTC horizons without the Genesis World's IANA time zone.
+
+W7p fixes the missing World seam without treating reusable Genesis place IDs as live truth. Fibre now materializes a distinct immutable `live_world_place_records` record under `live-world-place-admission-v1`. Genesis WorldSpec + historical-envelope `placeKind` are provenance/source material only. The first admission policy creates only bounded `library_or_learning` live venues; home and broad commerce remain excluded. Flight Plans can choose the resulting `wpl_*` ref, LivedNow can enact it, Situated Percept can describe it, and physical co-presence requires that explicit live authority (or the already accepted mediated path).
+
+Flight Planning also receives a structured `localHorizon` derived from the same historical-envelope IANA time-zone authority. This changes factual planning context, not personality or desire.
+
 **W7b natural lived encounter staging acceptance is now implemented pending deployment/run.** The staging harness has been rewritten around the W7a result shape. It no longer constructs participant pairs, no longer sends `participantThreadIds`, no longer nominates a witness, and no longer invokes Fibre Commons as a fallback when natural shared presence is absent.
 
 The runner may still choose which live Threads to inspect; that is observation, not authorship. For each selected initiator it submits only `initiatorThreadId` and records the World-discovered actors and independent attempts. Acceptance requires real evidence of selective attention/agency (background or refusal), salient cognition, natural refusal, and a naturally accepted encounter. The accepted encounter must preserve participant-specific experiences, at least two distinct journals, asymmetric autobiographical retention, durable observatory state, stable Admin journal presentation, and admitted visualization lineage through a generated still.
@@ -312,7 +318,7 @@ The staging evidence contract is now `fibre-lived-encounters-staging-acceptance-
 
 Fibre still lacks the authoritative scene facts needed to ground contextual anomalies such as unusual clothing/body state or abrupt movement.
 
-After validation, proceed to **W7b natural lived encounter staging acceptance**:
+After W7p validation/deployment, rerun **W7b natural lived encounter staging acceptance**:
 
 
 

@@ -20,7 +20,7 @@ const mina = thread("thr_n5_mina", "Mina", "I notice small emotional shifts and 
 const noor = thread("thr_n5_noor", "Noor", "I am warm but protective of my quiet and my time.");
 const sela = thread("thr_n5_sela", "Sela", "I pay close attention to how people treat each other, even when I stay out of it.");
 
-function placeEpisode(threadId, episodeId, placeId = "place_n5_cafe", provenance = "world_recorded") {
+function placeEpisode(threadId, episodeId, placeId = "place_n5_cafe", provenance = "genesis_created") {
   return {
     episodeId,
     revision:1,
@@ -87,7 +87,8 @@ function fixture({
   stanceFor = () => "accept",
   compatible = true,
   rude = false,
-  placeProvenance = "world_recorded",
+  placeProvenance = "genesis_created",
+  sharedWorldPlace = true,
   recentSocialInteractions = [],
   noorActivity = "Sketching at the same café table.",
   mediatedContext = null,
@@ -114,25 +115,33 @@ function fixture({
     [noor.threadId, [noorCafe]],
     [sela.threadId, [selaCafe]],
   ]);
+  const worldPlaceFor = (threadId) => {
+    if (!sharedWorldPlace) return null;
+    if (threadId === mina.threadId) return "wpl_n5_cafe";
+    if (threadId === noor.threadId) return compatible ? "wpl_n5_cafe" : "wpl_n5_elsewhere";
+    return selaPresent ? "wpl_n5_cafe" : "wpl_n5_elsewhere_sela";
+  };
+  const situationPlaceRef = (threadId, episode) =>
+    worldPlaceFor(threadId) ?? placeEpisodeRevisionRef(episode);
   const situations = new Map([
     [mina.threadId, situation(
       mina.threadId,
       "Reading over coffee.",
-      placeEpisodeRevisionRef(minaCafe),
+      situationPlaceRef(mina.threadId, minaCafe),
       mediatedContext,
       plannedCompanionRefs ?? (plannedCompanions ? [noor.threadId] : []),
     )],
     [noor.threadId, situation(
       noor.threadId,
       noorActivity,
-      placeEpisodeRevisionRef(noorCafe),
+      situationPlaceRef(noor.threadId, noorCafe),
       mediatedContext,
       plannedCompanions ? [mina.threadId] : [],
     )],
     [sela.threadId, situation(
       sela.threadId,
       "Waiting for tea at the next table.",
-      placeEpisodeRevisionRef(selaCafe),
+      situationPlaceRef(sela.threadId, selaCafe),
       selaPresent ? mediatedContext : null,
       [],
     )],
@@ -368,6 +377,22 @@ function fixture({
     livedNowStore:{
       getCurrentSituation(threadId) { return structuredClone(situations.get(threadId)); },
       listCurrentSituations() { return structuredClone([...situations.values()]); },
+      listWorldPlaces(threadId) {
+        const ref = worldPlaceFor(threadId);
+        if (ref === null) return [];
+        return [{
+          ref,
+          worldRef:"world_n5_shared",
+          placeId:ref === "wpl_n5_cafe" ? "place_n5_cafe" : ref.replace("wpl_", "place_"),
+          placeKind:"market_or_commerce",
+          displayName:"The same neighborhood café",
+        }];
+      },
+      getWorldPlace(threadId, ref, { required = true } = {}) {
+        const place = this.listWorldPlaces(threadId).find((candidate) => candidate.ref === ref) ?? null;
+        if (place === null && required) throw new Error(`missing fixture World place ${ref}`);
+        return place;
+      },
       getPreviousSituation(threadId) {
         if (!sustainedSameness) return null;
         const current = situations.get(threadId);
@@ -576,7 +601,10 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
     "no discovered counterpart means no social consideration");
   assert.equal(apart.stories.length, 0, "incompatible lives must not be rearranged into a meeting");
 
-  const reusedGenesisPlace = fixture({ placeProvenance:"genesis_created" });
+  const reusedGenesisPlace = fixture({
+    placeProvenance:"genesis_created",
+    sharedWorldPlace:false,
+  });
   const falseCopresence = await reusedGenesisPlace.meeting.meet({
     initiatorThreadId:mina.threadId,
     at:AT,

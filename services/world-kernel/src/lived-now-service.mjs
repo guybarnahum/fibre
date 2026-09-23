@@ -123,14 +123,20 @@ function dormantWindows(from, to) {
   return windows;
 }
 
-function knownPlacesAt(situatedLifeStore, threadId, at) {
+function knownPlacesAt(livedNowStore, situatedLifeStore, threadId, at) {
   const instant = Date.parse(at);
-  return situatedLifeStore.listCurrentPlaceEpisodes(threadId)
+  const situated = situatedLifeStore.listCurrentPlaceEpisodes(threadId)
     .filter((episode) => Date.parse(episode.startAt) <= instant)
     .map((episode) => ({
-      ref: placeEpisodeRevisionRef(episode),
-      displayName: episode.place.displayName,
+      ref:placeEpisodeRevisionRef(episode),
+      displayName:episode.place.displayName,
     }));
+  const shared = livedNowStore.ensureWorldPlaces(threadId)
+    .map((place) => ({
+      ref:place.ref,
+      displayName:place.displayName,
+    }));
+  return [...situated, ...shared];
 }
 
 function latestGroundedPlaceRef(situatedLifeStore, threadId, at) {
@@ -276,7 +282,7 @@ async function formPlan({
     : retrospectivePlan(livedNowStore, threadId, startAt, endAt, materializedAt);
   if (existing !== null) return existing;
 
-  const places = knownPlacesAt(situatedLifeStore, threadId, startAt);
+  const places = knownPlacesAt(livedNowStore, situatedLifeStore, threadId, startAt);
   if (places.length === 0) {
     throw new LivedNowCoverageError("Dormant catch-up has no grounded place available at the lived time");
   }
@@ -284,6 +290,7 @@ async function formPlan({
     throw new LivedNowCoverageError("Dormant catch-up cannot continue from an ungrounded prior place");
   }
 
+  const worldContext = livedNowStore.getWorldContext(threadId, { required:false });
   const plan = await formPersonalLivedPlan({
     threadId,
     authoredAt: startAt,
@@ -299,6 +306,7 @@ async function formPlan({
     },
     modelAdapter,
     startingPlaceRef: startingPlace,
+    worldTimeZone:worldContext?.timeZone ?? null,
     ...(materializedAt === null ? {} : { materializedAt }),
   });
   return livedNowStore.recordPlan(plan);
@@ -455,6 +463,8 @@ export function createLivedNowService({
   requireMethod(livedNowStore, "listPlans");
   requireMethod(livedNowStore, "recordPlan");
   requireMethod(livedNowStore, "enactCurrentSituation");
+  requireMethod(livedNowStore, "ensureWorldPlaces");
+  requireMethod(livedNowStore, "getWorldContext");
 
   const regulationReady = worldStore !== null &&
     semanticStateStore !== null &&
@@ -482,6 +492,7 @@ export function createLivedNowService({
       assertId("ensure LivedNow input.threadId", input.threadId);
       assertIsoTimestamp("ensure LivedNow input.at", input.at);
 
+      livedNowStore.ensureWorldPlaces(input.threadId);
       const current = livedNowStore.getCurrentSituation(input.threadId);
       if (current !== null) {
         if (current.establishedAt === input.at) return current;

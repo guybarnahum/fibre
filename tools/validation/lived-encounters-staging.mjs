@@ -130,16 +130,10 @@ function worldPresenceKeys(observatory) {
     keys.push(`mediated:${situation.mediatedContext.trim()}`);
   }
   if (situation.location?.kind === "place") {
-    const episode = (livedNow.placeEpisodes ?? []).find(
-      (candidate) => placeEpisodeRevisionRef(candidate) === situation.location.placeRef,
+    const worldPlace = (livedNow.worldPlaces ?? []).find(
+      (candidate) => candidate.ref === situation.location.placeRef,
     );
-    if (
-      episode?.provenance === "world_recorded"
-      && typeof episode?.place?.placeId === "string"
-      && episode.place.placeId.trim() !== ""
-    ) {
-      keys.push(`place:${episode.place.placeId.trim()}`);
-    }
+    if (worldPlace !== undefined) keys.push(`world-place:${worldPlace.ref}`);
   }
   return Object.freeze(keys);
 }
@@ -195,6 +189,9 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
         name:thread.displayName ?? observatory?.thread?.identity?.name ?? null,
         birthCity:observatory?.thread?.identity?.birthCity ?? null,
         currentPlaceRef,
+        currentWorldPlace:(observatory?.livedNow?.worldPlaces ?? [])
+          .find((candidate) => candidate.ref === currentPlaceRef) ?? null,
+        availableWorldPlaces:observatory?.livedNow?.worldPlaces ?? [],
         currentPlaceEpisode:currentPlaceEpisode === null ? null : {
           placeId:currentPlaceEpisode.place?.placeId ?? null,
           displayName:currentPlaceEpisode.place?.displayName ?? null,

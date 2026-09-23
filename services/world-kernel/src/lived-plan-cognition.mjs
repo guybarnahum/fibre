@@ -53,7 +53,8 @@ const PERSONAL_PLAN_SCHEMA = Object.freeze({
 const FLIGHT_PLAN_ADAPTER = Object.freeze({
   id:"lived-planning",
   instruction:`Form a modest personal Flight Plan for roughly the next half-day/day.
-The concern's externalContext is World-provided planning reality: the lived horizon, the physical places currently available, and optionally the physical place where the Thread must begin. Treat it as constraint and opportunity, not personality.
+The concern's externalContext is World-provided planning reality: the lived horizon, local civil time when known, the physical places currently available, and optionally the physical place where the Thread must begin. Treat it as constraint and opportunity, not personality.
+When localHorizon is supplied, plan ordinary life for that local civil time rather than treating UTC clock time as the Thread's local day.
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
 When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place.
@@ -62,6 +63,37 @@ For physical presence, mediatedContext must be empty. For mediated presence, med
 Return 1 to 8 stops. Prefer a few specific ordinary presences that follow naturally from the developed person and current possibilities; combine nearby activities rather than fragmenting the day into tiny steps. Do not optimize for drama or a future visitor.`,
   resultSchema:PERSONAL_PLAN_SCHEMA,
 });
+
+function localCivilMoment(at, timeZone) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday:"long",
+    year:"numeric",
+    month:"2-digit",
+    day:"2-digit",
+    hour:"2-digit",
+    minute:"2-digit",
+    hourCycle:"h23",
+  }).formatToParts(new Date(at))
+    .filter((part) => part.type !== "literal")
+    .map((part) => [part.type, part.value]));
+  return Object.freeze({
+    date:`${parts.year}-${parts.month}-${parts.day}`,
+    time:`${parts.hour}:${parts.minute}`,
+    weekday:parts.weekday,
+  });
+}
+
+function normalizeTimeZone(value) {
+  if (value === null) return null;
+  assertNonEmpty("personal plan worldTimeZone", value);
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone:value }).format(new Date(0));
+  } catch {
+    throw new TypeError("personal plan worldTimeZone must be an IANA time zone");
+  }
+  return value;
+}
 
 function normalizePlaces(value) {
   if (!Array.isArray(value) || value.length === 0) {
@@ -122,6 +154,7 @@ export async function formPersonalLivedPlan({
   modelAdapter,
   materializedAt = null,
   startingPlaceRef = null,
+  worldTimeZone = null,
 }) {
   assertId("personal plan threadId", threadId);
   assertIsoTimestamp("personal plan authoredAt", authoredAt);
@@ -144,6 +177,14 @@ export async function formPersonalLivedPlan({
   }
   assertStringArray("personal plan sourceReferences", sourceReferences);
   if (sourceReferences.length === 0) throw new TypeError("personal plan sourceReferences must not be empty");
+  const timeZone = normalizeTimeZone(worldTimeZone);
+  const localHorizon = timeZone === null
+    ? null
+    : Object.freeze({
+        timeZone,
+        start:localCivilMoment(authoredAt, timeZone),
+        end:localCivilMoment(horizonEnd, timeZone),
+      });
   const cognition = await runInteriorCognition({
     threadId,
     at:authoredAt,
@@ -152,6 +193,7 @@ export async function formPersonalLivedPlan({
       question:"How do I want to spend this lived horizon?",
       externalContext:{
         horizon:{ startAt:authoredAt, endAt:horizonEnd },
+        ...(localHorizon === null ? {} : { localHorizon }),
         availablePlaces:places,
         ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
       },

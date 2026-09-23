@@ -143,3 +143,12 @@ Before implementation, freeze:
 - whether shared live entities/events require a separate future shared-world event authority.
 
 Capability status: **Deferred optimization with preserved architecture direction**. The optimization must remain visible until implemented or explicitly superseded.
+
+## Current live-place transition seam
+
+The full `PlaceSpec -> WorldSlice -> ThreadWorldContext` migration remains deferred. Current lived-world work introduces a deliberately smaller authority that preserves this direction: immutable live WorldPlace records.
+
+A live WorldPlace may use a Genesis WorldSpec/place-kind record as **source material**, but receives a new live identity and explicit admission record. This is crucial: reusable Genesis place IDs remain insufficient co-presence authority. The live record establishes a current shared venue without mutating Genesis history or claiming that prior Thread-specific place episodes were shared events.
+
+When the fuller reusable-place model arrives, it should replace the *source/admission resolution* behind live WorldPlace creation, not collapse live presence back into Thread biography.
+

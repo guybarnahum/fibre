@@ -13,14 +13,27 @@ function requireMethod(name, value, method) {
   }
 }
 
-function currentPlace(threadId, situation, situatedLifeStore) {
+function currentPlace(threadId, situation, situatedLifeStore, livedNowStore) {
   if (situation.location?.kind !== "place") return null;
   const episode = situatedLifeStore.listCurrentPlaceEpisodes(threadId)
     .find((candidate) => placeEpisodeRevisionRef(candidate) === situation.location.placeRef) ?? null;
-  if (episode === null) return null;
+  if (episode !== null) {
+    return Object.freeze({
+      placeId:episode.place?.placeId ?? null,
+      displayName:episode.place?.displayName ?? null,
+      authority:"situated_life",
+    });
+  }
+  const worldPlace = livedNowStore?.getWorldPlace?.(
+    threadId,
+    situation.location.placeRef,
+    { required:false },
+  ) ?? null;
+  if (worldPlace === null) return null;
   return Object.freeze({
-    placeId:episode.place?.placeId ?? null,
-    displayName:episode.place?.displayName ?? null,
+    placeId:worldPlace.ref,
+    displayName:worldPlace.displayName,
+    authority:"shared_world",
   });
 }
 
@@ -92,6 +105,7 @@ export function projectSituatedPercept({
   situation,
   observedThreads = [],
   situatedLifeStore,
+  livedNowStore = null,
   experienceStore,
 }) {
   assertId("Situated Percept observerThreadId", observerThreadId);
@@ -144,7 +158,7 @@ export function projectSituatedPercept({
         ? "mediated"
         : "physical",
       mediatedContext:situation.mediatedContext ?? null,
-      place:currentPlace(observerThreadId, situation, situatedLifeStore),
+      place:currentPlace(observerThreadId, situation, situatedLifeStore, livedNowStore),
       currentActivity:situation.activity ?? null,
       participantRefs:Object.freeze([...(situation.participantRefs ?? [])]),
     }),

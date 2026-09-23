@@ -249,6 +249,131 @@ test("Genesis birth publishes participant/place continuity through canonical sit
     database.close();
   }));
 
+test("a Genesis public venue can become live shared World presence without rewriting historical place evidence", async () =>
+  withDatabase(async (databasePath) => {
+    const { world, birth } = publicationCandidate();
+    const storage = localWorldStateStorage(databasePath);
+    const genesis = new GenesisStore(storage);
+    genesis.recordWorldSpec(world);
+    genesis.publishBirth(birth);
+    genesis.close();
+
+    const worldStore = openWorldStore(storage);
+    const identityStore = openIdentityStore(storage);
+    const semanticStateStore = openSemanticStateStore(storage);
+    const memoryStore = openAutobiographicalMemoryStore(storage);
+    const situatedLifeStore = openSituatedLifeStore(storage);
+    const livedNowStore = openLivedNowStore(storage);
+
+    const historicalPlaces = situatedLifeStore.listCurrentPlaceEpisodes(birth.thread.threadId);
+    const sharedPlaces = livedNowStore.ensureWorldPlaces(birth.thread.threadId);
+    assert.deepEqual(
+      sharedPlaces.map((place) => place.sourcePlaceId),
+      ["place_library"],
+      "only a public Genesis venue should project into live shared World-place authority",
+    );
+    assert.equal(
+      sharedPlaces.some((place) => place.sourcePlaceId === "place_home"),
+      false,
+      "private home history must not become shared physical space",
+    );
+    const sharedLibrary = sharedPlaces[0];
+
+    const modelAdapter = {
+      async invoke(request) {
+        if (request.input?.interoception) {
+          return {
+            output:{ states:[] },
+            provenance:{
+              provider:"fixture",
+              modelId:"fixture-shared-place-interoception",
+              providerRequestId:request.clientRequestId,
+            },
+          };
+        }
+        const context = request.input.concern.externalContext;
+        const starting = context.startingPlaceRef;
+        assert.ok(starting, "first live plan should continue from admitted private history");
+        assert.equal(
+          context.availablePlaces.some((place) => place.ref === sharedLibrary.ref),
+          true,
+          "Flight Planning should receive the shared public World venue as a real option",
+        );
+        assert.equal(context.localHorizon?.timeZone, "UTC",
+          "Flight Planning should receive authoritative local civil-time context");
+        const midpoint = new Date(Date.parse(context.horizon.startAt) + 30 * 60 * 1000).toISOString();
+        return {
+          output:{
+            result:{
+              stops:[
+                {
+                  startAt:context.horizon.startAt,
+                  endAt:midpoint,
+                  physicalPlaceRef:starting,
+                  presenceMode:"physical",
+                  mediatedContext:"",
+                  activity:"Finish getting ready before going out.",
+                  purpose:"Leave from the life already underway.",
+                  travelFromPrevious:"",
+                },
+                {
+                  startAt:midpoint,
+                  endAt:context.horizon.endAt,
+                  physicalPlaceRef:sharedLibrary.ref,
+                  presenceMode:"physical",
+                  mediatedContext:"",
+                  activity:"Read and work quietly at the public library.",
+                  purpose:"Spend some time somewhere public with books and room to focus.",
+                  travelFromPrevious:"Walk to the library.",
+                },
+              ],
+            },
+            evidenceRefs:[],
+            conflictingMotives:[],
+            uncertainty:null,
+          },
+          provenance:{
+            provider:"fixture",
+            modelId:"fixture-shared-world-place",
+            providerRequestId:request.clientRequestId,
+          },
+        };
+      },
+    };
+
+    const service = createLivedNowService({
+      livedNowStore,
+      worldStore,
+      identityStore,
+      semanticStateStore,
+      memoryStore,
+      situatedLifeStore,
+      modelAdapter,
+    });
+    const bornAt = birth.manifest.publication.publishedAt;
+    const first = await service.ensure({ threadId:birth.thread.threadId, at:bornAt });
+    assert.notEqual(first.location.placeRef, sharedLibrary.ref,
+      "Fibre birth should begin from admitted personal history, not teleport into a public venue");
+
+    const laterAt = new Date(Date.parse(bornAt) + 60 * 60 * 1000).toISOString();
+    const later = await service.ensure({ threadId:birth.thread.threadId, at:laterAt });
+    assert.equal(later.location.placeRef, sharedLibrary.ref,
+      "the Thread should be able to independently enact presence in shared World space");
+
+    assert.deepEqual(
+      situatedLifeStore.listCurrentPlaceEpisodes(birth.thread.threadId),
+      historicalPlaces,
+      "live public presence must not rewrite historical situated-life evidence",
+    );
+
+    livedNowStore.close();
+    situatedLifeStore.close();
+    memoryStore.close();
+    semanticStateStore.close();
+    identityStore.close();
+    worldStore.close();
+  }));
+
 test("situated continuity is inside the atomic Genesis birth transaction", () =>
   withDatabase((databasePath) => {
     const { world, birth } = publicationCandidate();

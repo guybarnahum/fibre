@@ -270,9 +270,13 @@ Mediated context is additional, not a replacement for physical presence.
 
 Physical co-presence can make an encounter possible, but it does not prove that every Thread noticed the same thing.
 
-For social encounters, Fibre resolves each Thread's private situated-life place evidence to an explicit shared World place identity rather than requiring identical per-Thread evidence references.
+For social encounters, current shared physical presence belongs to explicit live World-place authority. Thread-private situated-life place evidence remains biography/history and does not itself establish shared current space.
 
-A reusable Genesis `WorldSpec` place identifier is **not** sufficient shared-place authority. Genesis places describe one Thread's historical/world context and may be reused as authored substrate across births. Equal Genesis/template place IDs across Threads must therefore never manufacture physical co-presence. Current physical meeting compatibility requires a place episode admitted with `world_recorded` provenance for the same shared place identity, or an explicitly matching mediated context. Fibre Commons is the first bounded live convergence path for the latter: Threads independently choose whether to enter one World-known mediated common room while remaining physically where their own lives already put them.
+A reusable Genesis `WorldSpec` place identifier is **not** sufficient shared-place authority. Genesis places describe historical/authored substrate and may be reused across births. Equal Genesis/template place IDs across Threads must therefore never manufacture physical co-presence.
+
+Current live physical presence uses a separate explicit World authority: an immutable admitted `live_world_place_records` record with a stable `wpl_*` reference. Genesis WorldSpec and historical-envelope place-kind evidence may be source material for admission, but the new live record—not the Genesis place ID—is the co-presence authority. Thread-private PlaceEpisodes remain biography/situated history and are not rewritten to represent ordinary transient presence.
+
+The first live admission policy is deliberately narrow and currently admits only bounded public `library_or_learning` venues. Home is never promoted by this policy, and broad commerce/school/transit spaces remain deferred until their spatial/perceptual granularity is credible. Two CurrentSituations may establish physical co-presence when both validly carry the same admitted `wpl_*` reference. Explicitly matching mediated context remains the other shared-presence path; Fibre Commons is one such bounded mediated affordance.
 
 ## Attention / noticing
 

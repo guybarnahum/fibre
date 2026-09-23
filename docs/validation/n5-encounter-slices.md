@@ -156,7 +156,7 @@ E2 proves:
 
 - the meeting wrapper reconciles each life independently before doing anything social;
 - incompatible physical/mediated presence creates no Encounter Story and does not teleport or silently replan anyone;
-- physical compatibility requires explicit World-recorded shared-place authority; equal reusable Genesis/Thread-context place IDs do not count as co-presence;
+- physical compatibility requires the same explicitly admitted live `wpl_*` authority; equal reusable Genesis/Thread-context place IDs do not count as co-presence;
 - the initiator may choose not to initiate at all; when she does initiate, her outward request is the first observable beat if the meeting forms;
 - a compatible invitee may decline or defer that concrete request, and that stops the voluntary encounter before history exists;
 - relationship, memory and interior state are supplied independently to initiation/stance cognition without becoming a mechanical score;
@@ -204,7 +204,7 @@ No relationship state is mechanically changed by encounter admission or attentio
 
 ### E3 organism proof
 
-The accepted proof places Mina, Noor and Sela independently at the same **World-recorded shared café**. Mina speaks rudely to Noor; Noor answers; Sela is at the next table and never speaks.
+The accepted proof places Mina, Noor and Sela independently at the same **explicit admitted live World place**. Mina speaks rudely to Noor; Noor answers; Sela is at the next table and never speaks.
 
 The proof establishes:
 
@@ -496,7 +496,44 @@ A human does not receive or expose Thread-private state. Direct address warrants
 
 **High-value organism proof:** invoke social consideration with Mina's ID only while World-current state independently contains Noor and Sela in the same café. Fibre must discover both, create two separate actor opportunities, and be capable of admitting two separate Encounter Stories in the same lived interval. A Thread in another place or a reused Genesis-only place identity must not be discovered.
 
-#### W7b — Natural lived encounter staging proof — IMPLEMENTED; deploy + run
+#### W7p — Shared live World-place + local-time authority — IMPLEMENTED; validate
+
+The first live W7b run found no actor opportunities because Fibre had no production physical shared-place authority. Existing Genesis PlaceEpisodes are Thread-specific historical/situated evidence and must remain so. Equal Genesis/WorldSpec place IDs are reusable authored substrate, not proof that two live Threads occupy the same physical venue.
+
+W7p introduces one explicit live authority:
+
+```text
+Genesis Civil Registry world_ref
++ immutable WorldSpec source material
++ historical-envelope placeKind/timeZone
+        ↓ explicit admission policy
+live_world_place_records
+        ↓
+wpl_* shared live venue ref
+        ↓
+Flight Plan may choose it
+        ↓
+CurrentSituation may enact it
+        ↓
+matching admitted wpl_* refs may establish physical co-presence
+```
+
+The first admission policy is deliberately conservative:
+
+- admit only `library_or_learning`;
+- do not admit `home`;
+- do not yet admit broad `market_or_commerce`, school or transit places whose spatial granularity may not establish actual perceptual co-presence;
+- never treat matching Genesis place IDs as physical truth.
+
+The live-place record is immutable and versioned. Genesis WorldSpec/place identity is provenance for creating it, not the live co-presence authority itself. This is a small transition seam compatible with the longer-term `PlaceSpec -> WorldSlice -> ThreadWorldContext` architecture; it does not redefine reusable Genesis substrate as shared live reality.
+
+Under `live-world-place-admission-v1`, Civil Registry membership in the same Genesis source World is the explicit admission input for one new live-world namespace. This is a versioned operational policy for the live society, not a historical inference. The resulting `lworld_*` / `wpl_*` identities are new authority records.
+
+The same World authority supplies the historical-envelope IANA time zone to Flight Planning as a structured `localHorizon`. Local civil time is factual context; it does not mechanically create activity, boredom, sociability or motive.
+
+**High-value proof:** a real Genesis-published Thread admits a public live venue but not its home; the shared venue appears in ordinary Flight Planning with local civil-time context; the Thread independently chooses it and LivedNow later enacts the `wpl_*` ref without rewriting historical PlaceEpisodes. Social organism tests use `wpl_*` as the positive co-presence path while a matching Genesis-only place remains a negative case.
+
+#### W7b — Natural lived encounter staging proof — BLOCKED ON W7p; then rerun
 
 Replace the social-first forcing assumption with a lived-world acceptance run during credible active periods.
 

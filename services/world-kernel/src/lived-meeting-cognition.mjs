@@ -5,7 +5,6 @@ import {
   assertNonEmpty,
   assertPlainObject,
 } from "./persistence-common.mjs";
-import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import { runInteriorCognition } from "./interior-cognition.mjs";
 
 const DECISIONS = Object.freeze(["accept", "decline", "defer"]);
@@ -54,15 +53,9 @@ reason is a concise private operator-facing explanation of the material consider
 });
 
 
-function sharedWorldPlaceIdForRef(placeRef, episodes) {
-  const episode = (episodes ?? []).find((candidate) => placeEpisodeRevisionRef(candidate) === placeRef);
-  if (episode?.provenance !== "world_recorded") return null;
-  return episode?.place?.placeId ?? null;
-}
-
 export function meetingPresenceCompatible(left, right, {
-  leftPlaceEpisodes = [],
-  rightPlaceEpisodes = [],
+  leftWorldPlaces = [],
+  rightWorldPlaces = [],
 } = {}) {
   assertPlainObject("left current situation", left);
   assertPlainObject("right current situation", right);
@@ -70,9 +63,10 @@ export function meetingPresenceCompatible(left, right, {
     && left.mediatedContext.trim() !== ""
     && left.mediatedContext === right.mediatedContext) return true;
   if (left.location?.kind !== "place" || right.location?.kind !== "place") return false;
-  const leftPlaceId = sharedWorldPlaceIdForRef(left.location.placeRef, leftPlaceEpisodes);
-  const rightPlaceId = sharedWorldPlaceIdForRef(right.location.placeRef, rightPlaceEpisodes);
-  return leftPlaceId !== null && leftPlaceId === rightPlaceId;
+
+  return left.location.placeRef === right.location.placeRef
+    && leftWorldPlaces.some((place) => place.ref === left.location.placeRef)
+    && rightWorldPlaces.some((place) => place.ref === right.location.placeRef);
 }
 
 export async function formSocialEncounterRequest({

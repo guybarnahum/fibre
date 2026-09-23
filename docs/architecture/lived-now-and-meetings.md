@@ -336,6 +336,19 @@ Appearance can be part of observable social reality. Where developmentally appro
 
 Place matters similarly. A quiet library, café, household, work session, crowded event, transit setting and Fibre Commons create different affordances even when the same two Threads are present.
 
+### Shared live physical places
+
+Thread-situated PlaceEpisodes and live physical presence are distinct authorities. PlaceEpisodes describe admitted personal history/context. Ordinary CurrentSituation presence at a shared venue should not rewrite that history.
+
+Fibre therefore admits bounded shared live venues as immutable World records with stable `wpl_*` references. Genesis WorldSpec/place-kind evidence may seed admission, but reusable Genesis IDs are not themselves live identity. Flight Planning may choose an admitted `wpl_*`; World then enacts that ref through the normal LivedNow path. Only matching valid live refs (or matching mediated context) can establish Thread-to-Thread co-presence.
+
+The first admission policy intentionally exposes only a public library/learning venue. This is a proof of the authority seam, not a permanent one-library society. More venue types require credible spatial/perceptual granularity rather than widening the policy merely to manufacture meetings.
+
+Version 1 also makes one explicit society-admission choice: Threads whose Civil Registry records point to the same Genesis source World are admitted into the same new `liveWorldRef` namespace for these bounded public venues. That grouping is **new live World policy**, not evidence that their Genesis histories, homes, schools or past events were shared. A later `PlaceSpec / WorldSlice / ThreadWorldContext` model may replace the grouping rule while preserving the separate live-place authority.
+
+Flight Planning also receives the World-authoritative IANA time zone as local civil-time context. This lets the Thread plan a morning as morning without Fibre turning UTC into a behavioral rule.
+
+
 ### Scene discovery, not caller-selected counterparties
 
 Thread-to-Thread social consideration now begins from one Thread's World-owned current life. The caller may choose **whose life to advance/inspect**, but not which nearby Thread she should consider.
