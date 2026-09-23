@@ -60,7 +60,7 @@
     {
       "slot":2,"threadId":"thr_pr39_rg2_02","genesisId":"genesis_pr39_rg2_02","originMode":"synthetic_lineage","timeZone":"Asia/Taipei",
       "worldSpecPath":"fixtures/genesis/pr39/worlds/kaohsiung.json","worldSpecDigest":"sha256:0e9f49b7321793a19bfb8e562ed7c8f24e1c9566b5a1330b87fdbe1c710eaa2c",
-      "genomePath":"fixtures/genesis/pr39/genomes/thread-02.json","genomeDigest":"sha256:bbe2b8daf140f8ad09320589084f0af4361c69f6ada1355bae77032b6396407f",
+      "genomePath":"fixtures/genesis/pr39/genomes/thread-02.json","genomeDigest":"sha256:8ac8ccb31b5ef71962fa6d71fac878940a207c8fb4e1f755cf92b57230d11714",
       "participants":[
         {"participantId":"thr_pr39_rg2_02","factualRoles":["subject"],"relationshipFacts":["This is the provisional Thread whose prior life is being generated."]},
         {"participantId":"person_rg4_s02_caregiver_1","factualRoles":["caregiver"],"relationshipFacts":["Lives in the subject household in Kaohsiung."]},
@@ -118,7 +118,7 @@
     {
       "slot":5,"threadId":"thr_pr39_rg2_05","genesisId":"genesis_pr39_rg2_05","originMode":"synthetic_lineage","timeZone":"Australia/Hobart",
       "worldSpecPath":"fixtures/genesis/pr39/worlds/hobart.json","worldSpecDigest":"sha256:0b13f606442989a682257cb833b53f3693a831a96456cbad6ee2c1dfb13dcedd",
-      "genomePath":"fixtures/genesis/pr39/genomes/thread-05.json","genomeDigest":"sha256:00ab932092c776700dba708e70bd09f599512e02e1cfb355dbed15a24eecd652",
+      "genomePath":"fixtures/genesis/pr39/genomes/thread-05.json","genomeDigest":"sha256:b264e88bdef4c1b13ba4952b7a3d0757298cbe2faf5c238f923906b731e77ef4",
       "participants":[
         {"participantId":"thr_pr39_rg2_05","factualRoles":["subject"],"relationshipFacts":["This is the provisional Thread whose prior life is being generated."]},
         {"participantId":"person_rg4_s05_caregiver_resident","factualRoles":["caregiver"],"relationshipFacts":["Lives in the subject household in Hobart."]},
