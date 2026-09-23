@@ -64,6 +64,7 @@ export function syntheticLineageWitnessFromRecombinedGenome(bundle) {
   const actualDigest = symbolicGenomeDigest({
     header,
     loci: bundle.loci,
+    runtimeBaselines:bundle.runtimeBaselines,
     mutations: bundle.mutations ?? [],
   });
   if (bundle.genomeDigest !== actualDigest) throw new TypeError("synthetic lineage genome digest does not match its symbolic genome content");
