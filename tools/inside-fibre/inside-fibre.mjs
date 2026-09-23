@@ -14,6 +14,8 @@ const PREPARE_SEARCH_HOURS = 24;
 const PREPARE_SLOT_MINUTES = 30;
 const LOCAL_START_HOUR = 7;
 const LOCAL_END_HOUR = 22;
+const PREFERRED_LOCAL_START_HOUR = 10;
+const PREFERRED_LOCAL_END_HOUR = 18;
 const GIT_SHA = /^[0-9a-f]{40}$/u;
 
 function nonEmpty(name, value) {
@@ -283,6 +285,25 @@ function reasonableLocalWindow(startAt, endAt, timeZone) {
     && endMinute < LOCAL_END_HOUR * 60;
 }
 
+function localDisruptionScore(startAt, endAt, timeZone) {
+  const startMinute = localMinuteOfDay(startAt, timeZone);
+  const endProbe = new Date(Date.parse(endAt) - 1).toISOString();
+  const endMinute = localMinuteOfDay(endProbe, timeZone);
+  if (startMinute === null || endMinute === null) return Number.POSITIVE_INFINITY;
+  const preferredStart = PREFERRED_LOCAL_START_HOUR * 60;
+  const preferredEnd = PREFERRED_LOCAL_END_HOUR * 60;
+  return Math.max(0, preferredStart - startMinute)
+    + Math.max(0, endMinute - preferredEnd);
+}
+
+function candidateDisruptionScore(eligible, startAt, endAt, target) {
+  return eligible
+    .map((record) => localDisruptionScore(startAt, endAt, threadTimeZone(record.observatory)))
+    .sort((left, right) => left - right)
+    .slice(0, Math.min(target, eligible.length))
+    .reduce((sum, score) => sum + score, 0);
+}
+
 function commitmentOverlaps(workState, startAt, endAt) {
   const start = Date.parse(startAt);
   const end = Date.parse(endAt);
@@ -322,17 +343,42 @@ export function selectPrepareWindow(records, {
   const durationMs = durationMinutes * 60_000;
   const firstMs = ceilToSlot(nowMs + (leadMinutes * 60_000), slotMinutes);
   const lastMs = nowMs + (searchHours * 60 * 60_000);
-  let best = null;
+  let bestMeetingTarget = null;
+  let bestFallback = null;
 
   for (let startMs = firstMs; startMs + durationMs <= lastMs; startMs += slotMinutes * 60_000) {
     const startAt = new Date(startMs).toISOString();
     const endAt = new Date(startMs + durationMs).toISOString();
     const eligible = records.filter((record) => prepareEligible(record, startAt, endAt, at));
-    const candidate = Object.freeze({ startAt, endAt, eligible:Object.freeze(eligible) });
-    if (best === null || eligible.length > best.eligible.length) best = candidate;
-    if (eligible.length >= target) return candidate;
+    if (eligible.length === 0) continue;
+    const disruptionScore = candidateDisruptionScore(eligible, startAt, endAt, target);
+    const candidate = Object.freeze({
+      startAt,
+      endAt,
+      disruptionScore,
+      eligible:Object.freeze(eligible),
+    });
+
+    if (
+      bestFallback === null
+      || eligible.length > bestFallback.eligible.length
+      || (eligible.length === bestFallback.eligible.length
+        && disruptionScore < bestFallback.disruptionScore)
+    ) {
+      bestFallback = candidate;
+    }
+
+    if (eligible.length < target) continue;
+    if (
+      bestMeetingTarget === null
+      || disruptionScore < bestMeetingTarget.disruptionScore
+      || (disruptionScore === bestMeetingTarget.disruptionScore
+        && startMs < Date.parse(bestMeetingTarget.startAt))
+    ) {
+      bestMeetingTarget = candidate;
+    }
   }
-  return best?.eligible.length > 0 ? best : null;
+  return bestMeetingTarget ?? bestFallback;
 }
 
 function formatOperatorTime(value) {
