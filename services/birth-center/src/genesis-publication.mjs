@@ -108,14 +108,21 @@ export function assertModernGenesisThreadIdentity(thread) {
   return true;
 }
 
-export function buildNeutralGenesisThreadSeed({ threadId, createdAt, subjectIdentity, worldSpec, bornAt }) {
+export function buildNeutralGenesisThreadSeed({
+  threadId,
+  createdAt,
+  subjectIdentity,
+  worldSpec,
+  bornAt,
+  runtimeBaselines,
+}) {
   const identity = modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt });
   const thread = {
     threadId,
     version: 1,
     status: "frozen",
     identity,
-    genome: { textualTraits: {}, runtimeBaselines: {} },
+    genome: { textualTraits: {}, runtimeBaselines: structuredClone(runtimeBaselines) },
     currentState: {
       needs: [],
       feelings: [],
@@ -285,6 +292,7 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
     subjectIdentity: slotPlan.subjectIdentity,
     worldSpec: slotPlan.worldSpec,
     bornAt: slotPlan.bornAt,
+    runtimeBaselines:slotPlan.genome.runtimeBaselines,
   });
   const parentIds = (slotPlan.genome.header.sourceEligibility?.sourceOwners ?? []).map((owner) => owner.ownerId);
   const thread = attachGenesisCanonicalVisualIdentity(
