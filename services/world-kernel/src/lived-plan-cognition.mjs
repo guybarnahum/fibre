@@ -1,4 +1,3 @@
-import { dailyRhythmCue } from "#core/src/thread-daily-rhythm.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -55,9 +54,8 @@ const PERSONAL_PLAN_SCHEMA = Object.freeze({
 const FLIGHT_PLAN_ADAPTER = Object.freeze({
   id:"lived-planning",
   instruction:`Form a modest personal Flight Plan for roughly the next half-day/day.
-The concern's externalContext includes World-provided planning reality plus, when available, a bounded organismic dailyRhythm cue. World facts constrain what can happen; dailyRhythm is a soft physiological tendency, not personality and not a rigid schedule.
+The concern's externalContext is World-provided planning reality: the lived horizon, local civil time when known, the physical places currently available, and optionally the physical place where the Thread must begin. Treat it as constraint and opportunity, not personality.
 When localHorizon is supplied, plan ordinary life for that local civil time rather than treating UTC clock time as the Thread's local day.
-When dailyRhythm is supplied, let sleep/wake timing usually reflect it while allowing developed habits, lived context and real commitments to override it. Do not force every Thread into the same conventional bedtime, wake time, or generic morning routine.
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
 When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place.
@@ -244,17 +242,6 @@ export async function formPersonalLivedPlan({
         start:localCivilMoment(authoredAt, timeZone),
         end:localCivilMoment(horizonEnd, timeZone),
       });
-  const worldStore = sourceStores?.worldStore;
-  if (!worldStore || typeof worldStore.getThread !== "function") {
-    throw new TypeError("personal plan sourceStores.worldStore must expose getThread()");
-  }
-  const thread = worldStore.getThread(threadId);
-  const rhythm = timeZone === null
-    ? null
-    : dailyRhythmCue({
-        threadId,
-        runtimeBaselines:thread?.genome?.runtimeBaselines ?? {},
-      });
   const cognition = await runInteriorCognition({
     threadId,
     at:authoredAt,
@@ -264,7 +251,6 @@ export async function formPersonalLivedPlan({
       externalContext:{
         horizon:{ startAt:authoredAt, endAt:horizonEnd },
         ...(localHorizon === null ? {} : { localHorizon }),
-        ...(rhythm === null ? {} : { dailyRhythm:structuredClone(rhythm) }),
         availablePlaces:places,
         ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
         ...(workCommitments.length === 0 ? {} : {
