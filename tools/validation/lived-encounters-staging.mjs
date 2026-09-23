@@ -182,6 +182,37 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
         throw new Error(`World Observatory current situation disagrees with LivedNow for ${thread.threadId}`);
       }
       const presenceKeys = worldPresenceKeys(observatory);
+      const currentPlaceRef = currentSituation.location?.kind === "place"
+        ? currentSituation.location.placeRef
+        : null;
+      const currentPlaceEpisode = currentPlaceRef === null
+        ? null
+        : (observatory?.livedNow?.placeEpisodes ?? []).find(
+            (candidate) => placeEpisodeRevisionRef(candidate) === currentPlaceRef,
+          ) ?? null;
+      process.stderr.write(`DEBUG lived-place ${JSON.stringify({
+        threadId:thread.threadId,
+        name:thread.displayName ?? observatory?.thread?.identity?.name ?? null,
+        birthCity:observatory?.thread?.identity?.birthCity ?? null,
+        currentPlaceRef,
+        currentPlaceEpisode:currentPlaceEpisode === null ? null : {
+          placeId:currentPlaceEpisode.place?.placeId ?? null,
+          displayName:currentPlaceEpisode.place?.displayName ?? null,
+          provenance:currentPlaceEpisode.provenance ?? null,
+          countryCode:currentPlaceEpisode.place?.countryCode ?? null,
+          region:currentPlaceEpisode.place?.region ?? null,
+          locality:currentPlaceEpisode.place?.locality ?? null,
+        },
+        currentPlanPlaceRefs:(observatory?.livedNow?.currentPersonalPlan?.stops ?? [])
+          .map((stop) => stop.physicalPlaceRef),
+        allPlaceEpisodes:(observatory?.livedNow?.placeEpisodes ?? []).map((episode) => ({
+          ref:placeEpisodeRevisionRef(episode),
+          placeId:episode.place?.placeId ?? null,
+          displayName:episode.place?.displayName ?? null,
+          provenance:episode.provenance ?? null,
+          locality:episode.place?.locality ?? null,
+        })),
+      })}\n`);
       process.stderr.write(`DEBUG interior-context ${JSON.stringify({
         threadId:thread.threadId,
         name:thread.displayName ?? observatory?.thread?.identity?.name ?? null,
