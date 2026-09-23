@@ -85,6 +85,11 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
     baseSlotOrdinal:1,
   });
   assert.equal(existing.mode, "fixture");
+  assert.equal(
+    existing.genomePath,
+    cohort.slots[0].genomePath,
+    "birthplace must not select the Thread genome",
+  );
   assert.match(existing.worldSpec.worldSpecId, /^world_pr39_rg1_03_recife_family_/u);
   assert.match(existing.worldSpec.culturalContext, /Family origin context:/u);
   assert.match(existing.material.familyOriginContext, /northeastern Brazil/u);
