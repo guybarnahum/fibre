@@ -132,7 +132,9 @@ Thread accepts Inside Fibre availability work
   -> visitor enters the already-committed mediated meeting
 ```
 
-This is intentionally narrower than a general employment marketplace. The first goal is one reliable Person -> Thread meeting on insidefibre.com. Exact job-market, token-ledger and professional-service abstractions remain deferred until this lived seam requires them.
+This is intentionally narrower than a general employment marketplace. The first goal is one reliable Person -> Thread meeting on insidefibre.com. Exact job-market and professional-service abstractions remain deferred until this lived seam requires them.
+
+That first reliable path is now closed live in staging. A real Thread voluntarily accepted a bounded future visitor-availability shift; the commitment revised the Flight Plan; LivedNow later enacted the mediated work presence; public Meet selected the Thread only during that active committed window; the visitor exchange became a normal Encounter Story and Thread Experience; and the agreed Fibre Credits settled exactly once. Public Presentation exposes only bounded availability timing, never the commitment ID, compensation or private acceptance reasoning.
 
 A dependent person's private will/care negotiation is not automatically public. Presentation decides the bounded exterior projection; World/Thread state remains authoritative underneath it.
 
