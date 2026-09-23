@@ -9,6 +9,7 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import { runInteriorCognition } from "./interior-cognition.mjs";
+import { replanForAcceptedInsideFibreWork } from "./inside-fibre-work-planning.mjs";
 
 export const INSIDE_FIBRE_VISITOR_WORK = Object.freeze({
   kind:"inside_fibre_visitor_availability",
@@ -107,6 +108,20 @@ export function createInsideFibreWorkService({
   });
 
   return Object.freeze({
+    async reconcileAcceptedWork(commitmentId) {
+      return replanForAcceptedInsideFibreWork({
+        commitmentId,
+        workStore,
+        livedNowStore,
+        worldStore:worldReader,
+        identityStore,
+        semanticStateStore,
+        memoryStore,
+        situatedLifeStore,
+        modelAdapter,
+      });
+    },
+
     async considerOffer(input) {
       assertPlainObject("Inside Fibre work offer input", input);
       assertExactKeys("Inside Fibre work offer input", input, [
