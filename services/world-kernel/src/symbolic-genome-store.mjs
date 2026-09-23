@@ -103,7 +103,9 @@ export class SymbolicGenomeStore {
     if (this.#readOnly) throw new SymbolicGenomeConflictError("read-only symbolic genome store cannot write");
     const header = normalizeSymbolicGenomeHeader(candidateBundle.header);
     const loci = candidateBundle.loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
-    const runtimeBaselines = normalizeSymbolicRuntimeBaselines(candidateBundle.runtimeBaselines);
+    const runtimeBaselines = header.inheritancePolicy.version === "1"
+      ? {}
+      : normalizeSymbolicRuntimeBaselines(candidateBundle.runtimeBaselines);
     const mutations = (candidateBundle.mutations ?? []).map(normalizeSymbolicGenomeMutation).sort((a, b) => a.ordinal - b.ordinal);
     const bundle = { header, loci, runtimeBaselines, mutations, genomeDigest: candidateBundle.genomeDigest };
     if (loci.some((locus) => locus.genomeId !== header.genomeId) || mutations.some((mutation) => mutation.genomeId !== header.genomeId)) {
