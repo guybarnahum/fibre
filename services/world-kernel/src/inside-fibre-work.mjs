@@ -86,6 +86,7 @@ export function createInsideFibreWorkService({
   memoryStore,
   situatedLifeStore,
   workStore,
+  fibreCreditStore,
   modelAdapter,
 }) {
   requireMethod(worldReader, "Inside Fibre worldReader", "getThread");
@@ -97,6 +98,7 @@ export function createInsideFibreWorkService({
   requireMethod(situatedLifeStore, "Inside Fibre situatedLifeStore", "listCurrentLifeRelations");
   requireMethod(workStore, "Inside Fibre workStore", "getForOffer");
   requireMethod(workStore, "Inside Fibre workStore", "recordAcceptedCommitment");
+  requireMethod(fibreCreditStore, "Inside Fibre fibreCreditStore", "balance");
   requireMethod(modelAdapter, "Inside Fibre modelAdapter", "invoke");
 
   const sourceStores = Object.freeze({
@@ -154,7 +156,7 @@ export function createInsideFibreWorkService({
       if (thread === null || thread === undefined) {
         throw new TypeError(`Thread ${input.threadId} was not found`);
       }
-      const fibreCredits = thread.accounts?.fibreCredits ?? 0;
+      const fibreCredits = fibreCreditStore.balance(input.threadId);
       assertFiniteNumber("Thread Fibre Credits", fibreCredits, { integer:true, minimum:0 });
 
       const currentSituation = livedNowStore.getCurrentSituation(input.threadId);
