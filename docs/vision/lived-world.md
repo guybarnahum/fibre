@@ -1,7 +1,7 @@
 ---
 id: vision-lived-world
 status: accepted
-last-reviewed: 2026-09-22
+last-reviewed: 2026-09-23
 canonical: true
 ---
 
@@ -192,6 +192,8 @@ The Viewer does not place the Thread, choose her activity, inject a feeling or c
 When the human returns, the Thread may be elsewhere because her life continued.
 
 A meeting between two Threads follows the same rule. Both lives exist before the encounter. Fibre first resolves each participant's LivedNow; a shared encounter can occur only when their physical or mediated presences are compatible. The event is shared, but its private meaning is not: each Thread may remember, interpret and be changed by it differently.
+
+insidefibre.com adds one useful special case without changing that principle. A Thread may voluntarily accept a bounded paid commitment to be available for website visitors during a future window. That commitment becomes part of the life that already exists before the browser opens. The website can therefore guarantee a meeting by selecting among Threads who already chose to work that window, rather than summoning someone or weakening meeting consent at click time. Payment compensates the professional availability commitment; ordinary social attention and casual Thread-to-Thread encounters remain normally unpaid.
 
 A meeting can therefore bend later plans, relationship state, intentions, memory, or eventually self-understanding/identity through Fibre's ordinary experience and development authorities without becoming a privileged “growth event.” It may also matter very little.
 
