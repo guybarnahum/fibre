@@ -24,6 +24,25 @@ export const GENESIS_PASS_B_RESPONSE_SCHEMA = Object.freeze({
   }),
 });
 
+export function passBResponseSchemaForVisibleEpisodes(episodeRefs) {
+  if (!Array.isArray(episodeRefs) || episodeRefs.length === 0) {
+    throw new TypeError("Pass-B visible episode refs are required");
+  }
+  return Object.freeze({
+    ...GENESIS_PASS_B_RESPONSE_SCHEMA,
+    properties:Object.freeze({
+      ...GENESIS_PASS_B_RESPONSE_SCHEMA.properties,
+      episodeRefs:Object.freeze({
+        ...GENESIS_PASS_B_RESPONSE_SCHEMA.properties.episodeRefs,
+        items:Object.freeze({
+          ...GENESIS_PASS_B_RESPONSE_SCHEMA.properties.episodeRefs.items,
+          enum:Object.freeze([...episodeRefs]),
+        }),
+      }),
+    }),
+  });
+}
+
 function digest(value) { return `sha256:${sha256(canonicalJson(value))}`; }
 export function passBPromptHash() { return digest({ version: GENESIS_PASS_B_PROMPT_VERSION, formProfile: GENESIS_PASS_B_FORM_PROFILE, prompt: GENESIS_PASS_B_PROMPT }); }
 export function passBResponseSchemaHash() { return digest(GENESIS_PASS_B_RESPONSE_SCHEMA); }
