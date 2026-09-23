@@ -643,7 +643,10 @@ export async function prepareInsideFibre({
 
   const accepted = [];
   const declined = [];
-  for (const record of window.eligible) {
+  const orderedEligible = [...window.eligible].sort((left, right) =>
+    localDisruptionScore(window.startAt, window.endAt, threadTimeZone(left.observatory))
+      - localDisruptionScore(window.startAt, window.endAt, threadTimeZone(right.observatory)));
+  for (const record of orderedEligible) {
     if (accepted.length >= target) break;
     const timeZone = threadTimeZone(record.observatory);
     process.stdout.write(
