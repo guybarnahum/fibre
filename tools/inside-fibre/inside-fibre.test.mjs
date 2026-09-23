@@ -1,6 +1,6 @@
 // fibre-test-lifecycle: regression
 // fibre-test-scope: tools
-// fibre-test-purpose: inside-fibre-roster-requires-enacted-committed-availability
+// fibre-test-purpose: inside-fibre-terminal-roster-and-voluntary-cohort-authority
 
 import assert from "node:assert/strict";
 import test from "node:test";
