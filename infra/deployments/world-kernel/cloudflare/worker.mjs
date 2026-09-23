@@ -154,6 +154,10 @@ function threadObservatory(runtime, threadId) {
         placeEpisodes:structuredClone(situatedLife.listCurrentPlaceEpisodes(threadId)),
       }),
       memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:200 })),
+      socialInteractions:structuredClone(experience.listSocialInteractions(threadId, {
+        newestFirst:true,
+        limit:100,
+      })),
       encounterStories:Object.freeze(encounterStories),
       experienceJournalEntries:structuredClone(experience.listThreadExperienceJournal(threadId)),
     });
@@ -260,7 +264,7 @@ export class FibreWorldDurableObject extends DurableObject {
       const observatory = threadObservatory(this.runtimeForRequest(), threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
-        contract:"fibre-world-thread-observatory-v0.4",
+        contract:"fibre-world-thread-observatory-v0.5",
         observatory,
       });
     }

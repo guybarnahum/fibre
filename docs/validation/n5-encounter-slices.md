@@ -457,7 +457,7 @@ Seed from stable episode inputs so retry/replay is stable.
 
 Delete this slice if it adds complexity without measurable Fibre-quality benefit.
 
-#### W7a — Natural scene / co-presence discovery — IMPLEMENTED; validate
+#### W7a — Natural scene / co-presence discovery — VALIDATED
 
 The caller may now select **only the initiating Thread**. It may not choose the nearby Threads that should enter social cognition.
 
@@ -496,23 +496,33 @@ A human does not receive or expose Thread-private state. Direct address warrants
 
 **High-value organism proof:** invoke social consideration with Mina's ID only while World-current state independently contains Noor and Sela in the same café. Fibre must discover both, create two separate actor opportunities, and be capable of admitting two separate Encounter Stories in the same lived interval. A Thread in another place or a reused Genesis-only place identity must not be discovered.
 
-#### W7b — Natural lived encounter staging proof
+#### W7b — Natural lived encounter staging proof — IMPLEMENTED; deploy + run
 
 Replace the social-first forcing assumption with a lived-world acceptance run during credible active periods.
 
 The runner may choose Threads/times to observe, but may not author their scene, private motive, opportunity, salience result or social decision.
 
-Acceptance should demonstrate:
+The staging runner may choose Threads/times to **inspect**, but it may not choose their social counterparties, author the opportunity, force Commons entry, assign a witness, alter salience, or weaken a private/social refusal.
 
-1. ordinary LivedNow produces at least one non-harness-authored opportunity;
-2. at least one opportunity remains background or is explicitly ignored;
-3. at least one materially salient opportunity reaches Interior Cognition;
-4. at least one objective occurrence becomes an Encounter Story and Thread Experience;
-5. if an outward social request occurs, its accept/decline/defer response is durable reciprocal history;
-6. different Threads or different moments need not converge on the same social choice;
-7. retained consequences can bend later perception/cognition through existing memory/relationship mechanisms.
+The implemented harness now calls `/internal/social-meeting` with only `initiatorThreadId` and evaluates the returned World-discovered actor attempts.
 
-A naturally accepted multi-Thread social story remains valuable live evidence, but Fibre must not manufacture motive or weaken refusal to obtain it. The controlled E2/E3 proofs continue to establish that the accepted multi-Thread path works.
+Acceptance requires:
+
+1. at least one non-harness-authored `actor_presence` opportunity discovered from ordinary World/LivedNow state;
+2. at least one background opportunity or explicit voluntary refusal, proving selective attention/agency;
+3. at least one salient opportunity that reaches Interior Cognition;
+4. at least one natural `not_initiate | decline | defer`;
+5. at least one naturally accepted Encounter Story with both participant Thread Experiences durable;
+6. at least two distinct private journals from that accepted story;
+7. asymmetric `retained | not_remembered` autobiographical memory across the participants;
+8. durable observatory agreement for the story/experience/journal/memory outcomes;
+9. stable Admin journal presentation and one generated still bound to the admitted Encounter Story visualization lineage.
+
+The evidence contract also records whether any inspected scene naturally produced multiple separate encounters in the same lived interval, but that is observational evidence rather than a mandatory staging outcome because W7a already proves the capability structurally.
+
+Live W7b does **not** nominate a silent witness. E3 remains the controlled witness-asymmetry proof until witness discovery itself becomes endogenous; caller-supplied witness membership would contradict the natural-scene acceptance goal.
+
+A naturally accepted social story remains required live evidence, but Fibre must not manufacture motive or weaken refusal to obtain it.
 
 ### Engineering constraint for the pivot
 

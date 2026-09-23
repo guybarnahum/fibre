@@ -2,10 +2,10 @@
   "$schema": "./public-progress.schema.json",
   "contract": "fibre-public-progress",
   "canonical": true,
-  "asOf": "2026-09-21",
+  "asOf": "2026-09-23",
   "title": "Where Fibre is today",
-  "headline": "Fibre carries a canonical Genesis-born Thread through continuous LivedNow; N5 E0-E4 are complete and E5 staging acceptance is current.",
-  "summary": "N1-N4 are closed. N5 E0-E4 now prove environmental noticing, voluntary social meeting, silent-witness asymmetry, separate journal/memory authority, inspectable objective encounter visualization lineage, and optional image/video generation demand over that same lineage. E5 staging acceptance is current.",
+  "headline": "Fibre carries canonical Threads through continuous LivedNow and natural scene discovery; W7b live staging acceptance is current.",
+  "summary": "N1-N4 are closed. N5 now includes validated Situated Percept, salience, grounded exploration, and natural co-presence discovery on top of the E0-E4 encounter semantics. W7b staging acceptance is current and no longer selects counterparties or uses Commons fallback.",
   "statusDefinitions": [
     {
       "id": "achieved",
@@ -211,7 +211,7 @@
       "status": "in_progress",
       "simple": {
         "claim": "Fibre now supports environmental encounters, voluntary social meetings, silent witnesses, distinct private journals, and objective encounter visualization lineage over one Encounter Story / Thread Experience seam.",
-        "limitation": "The E0-E4 semantics are green but N5 remains undeployed pending staging acceptance."
+        "limitation": "The encounter semantics and natural scene discovery are green locally, but N5 remains open pending W7b live staging acceptance."
       },
       "detail": {
         "claim": "E2 proves voluntary meeting; E3 proves a co-present silent witness can form different private consequence; E4 keeps objective story, personal attention, World journal authority, R2 journal presentation and autobiographical memory distinct in Admin, while the same objective prompt can feed ordinary image/video asset generation with canonical identity and chronology.",
@@ -244,23 +244,23 @@
   "currentWork": {
     "milestone": "Continuous LivedNow + Encounters",
     "simple": {
-      "summary": "Run E5: accept the complete E0-E4 encounter seam against real staging Threads.",
-      "currentStep": "Deploy and exercise environmental noticing, voluntary refusal/acceptance, silent witnessing, divergent private aftermath, Admin inspection, and one optional encounter render request.",
+      "summary": "Run W7b: accept natural actor discovery and reciprocal encounter semantics against real staging Threads.",
+      "currentStep": "Deploy and inspect initiator-only natural scenes; require discovered actor opportunities, selective attention or refusal, one naturally accepted encounter, divergent private aftermath, reciprocal-history durability, Admin inspection, and one optional render request.",
       "nextSteps": [
-        "Exercise one environmental encounter against a real staging Thread.",
-        "Exercise one declined or deferred social meeting and one accepted multi-Thread encounter with a silent witness.",
-        "Verify different journal accounts and asymmetric autobiographical retention.",
-        "Inspect journal and Encounter Story visualization lineage in Admin.",
-        "Feed one admitted Encounter Story into the optional render path without changing encounter truth."
+        "Deploy the exact clean W7b source SHA to staging.",
+        "Run lived-encounters:staging without caller-selected counterparties or Commons fallback.",
+        "Verify at least one natural refusal and one naturally accepted encounter.",
+        "Verify distinct journals, asymmetric autobiographical retention, and shared reciprocal interaction history.",
+        "Inspect Admin journal/Encounter Story lineage and render one admitted story without changing encounter truth."
       ]
     },
     "detail": {
       "summary": "N5 was deliberately replanned before deployment. Meeting is a gated social special case of a more general encounter primitive.",
-      "currentStep": "E0-E4 are closed and green. E5 staging acceptance is current from docs/validation/n5-encounter-slices.md.",
+      "currentStep": "W7a natural scene discovery is validated locally; W7b staging acceptance is implemented and awaiting deployment/run.",
       "nextSteps": [
-        "E5: deploy the additive private Thread-object bucket and current encounter code.",
-        "Run the live N5 acceptance sequence.",
-        "Close N5 only after staging evidence matches the E0-E4 semantics."
+        "Deploy the exact clean W7b source SHA.",
+        "Run the live natural-scene acceptance sequence.",
+        "Close N5 only after staging evidence proves natural opportunity discovery plus durable reciprocal/private consequence semantics."
       ]
     },
     "finalLifeCognitionAuthorized": true

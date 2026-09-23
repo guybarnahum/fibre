@@ -13,7 +13,7 @@ import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situate
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REQUEST_TIMEOUT_MS = 120_000;
 const MAX_REFRESHED_THREADS = 18;
-const MAX_SOCIAL_ATTEMPTS = 18;
+const MAX_SOCIAL_INITIATORS = 18;
 const RENDER_WAIT_MS = 600_000;
 const RENDER_POLL_MS = 5_000;
 const GIT_SHA = /^[0-9a-f]{40}$/u;
@@ -240,142 +240,36 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
   return refreshed;
 }
 
-function socialAttempts(refreshed) {
-  const ordered = [];
-  const seen = new Set();
-  const anchors = [...refreshed].sort((left, right) => {
+function orderedSocialInitiators(refreshed) {
+  return [...refreshed].sort((left, right) => {
     const leftPeers = refreshed.filter((candidate) => candidate !== left && sharesPresence(left, candidate)).length;
     const rightPeers = refreshed.filter((candidate) => candidate !== right && sharesPresence(right, candidate)).length;
     return rightPeers - leftPeers || left.threadId.localeCompare(right.threadId);
   });
-
-  const add = (initiator, participant, witness) => {
-    const key = `${initiator.threadId}|${participant.threadId}|${witness.threadId}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    ordered.push(Object.freeze({
-      participants:Object.freeze([initiator, participant]),
-      witness,
-    }));
-  };
-
-  for (const initiator of anchors) {
-    const peers = refreshed.filter((candidate) => candidate !== initiator && sharesPresence(initiator, candidate));
-    for (let left = 0; left < peers.length; left += 1) {
-      for (let right = left + 1; right < peers.length; right += 1) {
-        add(initiator, peers[left], peers[right]);
-        add(initiator, peers[right], peers[left]);
-        if (ordered.length >= MAX_SOCIAL_ATTEMPTS) return ordered;
-      }
-    }
-  }
-  return ordered;
 }
 
-async function establishCommonsPresence({
-  worldBaseUrl,
-  privateToken,
-  refreshed,
-  emit,
-}) {
-  const updated = new Map(refreshed.map((candidate) => [candidate.threadId, candidate]));
-  const entered = new Set();
-
-  for (let offset = 0; offset < refreshed.length && entered.size < 3; offset += 6) {
-    const batch = refreshed.slice(offset, offset + 6);
-    const payload = await privatePost(
-      worldBaseUrl,
-      "/internal/lived-commons",
-      privateToken,
-      { threadIds:batch.map((candidate) => candidate.threadId) },
-      "Fibre Commons",
-    );
-    const entries = payload?.entries ?? [];
-    emit({
-      event:"lived-encounters-commons-considered",
-      entered:entries.filter((entry) => entry.outcome === "entered").length,
-      stayedOut:entries.filter((entry) => entry.outcome === "stayed_out").length,
-      unavailable:entries.filter((entry) => entry.outcome === "unavailable").length,
-    });
-    for (const entry of entries) {
-      if (!entry.diagnostics) continue;
-      process.stderr.write(`DEBUG commons ${JSON.stringify({
-        threadId:entry.threadId,
-        name:entry.diagnostics.name,
-        outcome:entry.outcome,
-        currentActivity:entry.diagnostics.currentActivity,
-        currentReason:entry.diagnostics.currentReason,
-        decisionReason:entry.diagnostics.decisionReason,
-        cognitionProfile:entry.diagnostics.cognitionProfile,
-        selectedEvidenceCount:entry.diagnostics.selectedEvidenceRefs?.length ?? 0,
-        citedEvidenceCount:entry.diagnostics.evidenceRefs?.length ?? 0,
-        contextDigest:entry.diagnostics.contextDigest,
-      })}\n`);
-    }
-
-    for (const entry of entries) {
-      if (entry.outcome !== "entered") continue;
-      const previous = updated.get(entry.threadId);
-      if (!previous) continue;
-      const observatoryPayload = await privateGet(
-        worldBaseUrl,
-        `/internal/threads/${encodeURIComponent(entry.threadId)}/observatory`,
-        privateToken,
-        `World Observatory ${entry.threadId}`,
-      );
-      const observatory = observatoryPayload?.observatory;
-      const situation = observatory?.livedNow?.currentSituation;
-      const presenceKeys = worldPresenceKeys(observatory);
-      const semanticStates = observatory?.semanticStates ?? [];
-      emit({
-        event:"lived-encounters-commons-interior",
-        threadId:entry.threadId,
-        semanticStateCount:semanticStates.length,
-        semanticDimensions:semanticStates.map((state) => `${state.domain}:${state.dimension}`),
-      });
-      if (!situation || !presenceKeys.some((key) => key.startsWith("mediated:"))) {
-        throw new Error(`Fibre Commons entry did not become durable shared presence for ${entry.threadId}`);
-      }
-      updated.set(entry.threadId, Object.freeze({
-        ...previous,
-        situationId:situation.situationId,
-        presenceKeys,
-      }));
-      entered.add(entry.threadId);
-    }
-  }
-
-  if (entered.size < 3) {
-    throw new Error(`lived-encounters acceptance found only ${entered.size} Thread(s) who voluntarily entered Fibre Commons; three are required for participant + silent witness proof`);
-  }
-  return [...updated.values()];
-}
-
-function nonAcceptingStances(result) {
-  return Object.entries(result?.stances ?? {})
-    .filter(([,stance]) => stance?.decision === "decline" || stance?.decision === "defer")
-    .map(([threadId,stance]) => Object.freeze({ threadId, decision:stance.decision }));
-}
-
-function socialPrivateSummary(result, participants, witness) {
-  const ids = [...participants.map((item) => item.threadId), witness.threadId];
-  const aftermath = result?.aftermath ?? {};
-  const journals = ids
+function socialPrivateSummary(attempt, participantIds) {
+  const aftermath = attempt?.aftermath ?? {};
+  const journals = participantIds
     .map((threadId) => ({ threadId, entry:aftermath[threadId]?.journalEntry?.entryText ?? null }))
     .filter((entry) => typeof entry.entry === "string" && entry.entry.trim() !== "");
-  const memories = ids.map((threadId) => ({
+  const memories = participantIds.map((threadId) => ({
     threadId,
     outcome:aftermath[threadId]?.memory?.outcome ?? "none",
   }));
+  const experiences = participantIds.filter((threadId) =>
+    typeof aftermath[threadId]?.experienceRecord?.experienceId === "string");
   return Object.freeze({
-    ids:Object.freeze(ids),
+    participantIds:Object.freeze([...participantIds]),
+    experienceThreads:Object.freeze(experiences),
     journalCount:journals.length,
     distinctJournalCount:new Set(journals.map((entry) => sha256(entry.entry))).size,
     journalThreads:Object.freeze(journals.map((entry) => entry.threadId)),
     memoryOutcomes:Object.freeze(memories),
-    asymmetricMemory:new Set(memories.map((entry) => entry.outcome).filter((outcome) => ["retained","not_remembered"].includes(outcome))).size > 1,
-    witnessExperienced:Boolean(aftermath[witness.threadId]?.experienceRecord?.experienceId),
-    journalBookThreads:Object.freeze(ids.filter((threadId) => aftermath[threadId]?.journalBookRecord?.objectKey)),
+    asymmetricMemory:new Set(memories.map((entry) => entry.outcome)
+      .filter((outcome) => ["retained","not_remembered"].includes(outcome))).size > 1,
+    journalBookThreads:Object.freeze(participantIds.filter((threadId) =>
+      aftermath[threadId]?.journalBookRecord?.objectKey)),
   });
 }
 
@@ -431,127 +325,175 @@ async function findSocialProofs({
   refreshed,
   emit,
 }) {
-  let decline = null;
+  let refusal = null;
   let accepted = null;
-  let compatibleAttempts = 0;
+  let initiatorsConsidered = 0;
+  let opportunityCount = 0;
+  let backgroundCount = 0;
+  let salientCount = 0;
   let acceptedStories = 0;
-  let candidates = refreshed;
-  let attempts = socialAttempts(candidates);
-  if (attempts.length === 0) {
-    candidates = await establishCommonsPresence({
-      worldBaseUrl,
-      privateToken,
-      refreshed:candidates,
-      emit,
-    });
-    attempts = socialAttempts(candidates);
-  }
-  if (attempts.length === 0) {
-    throw new Error("lived-encounters acceptance established no genuine shared World presence");
-  }
+  let multiEncounterScenes = 0;
+  const discoveredActors = new Set();
 
-  for (const attempt of attempts) {
+  const initiators = orderedSocialInitiators(refreshed).slice(0, MAX_SOCIAL_INITIATORS);
+  for (const initiator of initiators) {
     let result;
     try {
       result = await privatePost(
         worldBaseUrl,
         "/internal/social-meeting",
         privateToken,
-        {
-          initiatorThreadId:attempt.participants[0].threadId,
-          participantThreadIds:attempt.participants.map((item) => item.threadId),
-          witnessThreadIds:[attempt.witness.threadId],
-        },
-        "social meeting",
+        { initiatorThreadId:initiator.threadId },
+        `natural social scene ${initiator.threadId}`,
       );
     } catch (error) {
-      emit({ event:"lived-encounters-social-attempt-error", message:error.message.slice(0, 240) });
+      emit({
+        event:"lived-encounters-social-scene-error",
+        threadId:initiator.threadId,
+        message:error.message.slice(0, 240),
+      });
       continue;
     }
 
-    if (result.compatible !== true) continue;
-    compatibleAttempts += 1;
+    initiatorsConsidered += 1;
+    const discoveredThreadIds = Array.isArray(result?.discoveredThreadIds)
+      ? result.discoveredThreadIds
+      : [];
+    for (const threadId of discoveredThreadIds) discoveredActors.add(threadId);
+    if ((result?.encounterCount ?? 0) > 1) multiEncounterScenes += 1;
+
     emit({
-      event:"lived-encounters-social-initiation",
-      threadId:attempt.participants[0].threadId,
-      decision:result?.initiation?.decision ?? null,
-      reason:result?.initiation?.reason ?? null,
-      cognitionProfile:result?.initiation?.cognition?.implementationProfile?.id ?? null,
-      selectedEvidenceCount:result?.initiation?.cognition?.selectedEvidenceRefs?.length ?? 0,
-      citedEvidenceCount:result?.initiation?.cognition?.evidenceRefs?.length ?? 0,
-      contextDigest:result?.initiation?.cognition?.contextDigest ?? null,
+      event:"lived-encounters-scene-discovered",
+      threadId:initiator.threadId,
+      discoveredThreadCount:discoveredThreadIds.length,
+      discoveredThreadIds,
+      encounterCount:result?.encounterCount ?? 0,
     });
-    const nonAccepting = nonAcceptingStances(result);
-    const voluntaryRefusals = result?.initiation?.decision === "not_initiate"
-      ? [Object.freeze({
-          threadId:attempt.participants[0].threadId,
+
+    for (const attempt of result?.attempts ?? []) {
+      opportunityCount += 1;
+      discoveredActors.add(attempt.counterpartyThreadId);
+      const salienceOutcome = attempt?.salience?.outcome ?? null;
+      if (salienceOutcome === "background") backgroundCount += 1;
+      if (salienceOutcome === "salient") salientCount += 1;
+
+      emit({
+        event:"lived-encounters-actor-opportunity",
+        initiatorThreadId:initiator.threadId,
+        actorThreadId:attempt.counterpartyThreadId,
+        outcome:attempt.outcome,
+        salience:salienceOutcome,
+        salienceAnchors:attempt?.salience?.anchors ?? [],
+        initiationDecision:attempt?.initiation?.decision ?? null,
+        responseDecision:attempt?.stance?.decision ?? null,
+        cognitionProfile:attempt?.initiation?.cognition?.implementationProfile?.id ?? null,
+      });
+
+      if (refusal === null && attempt.outcome === "not_initiated"
+        && attempt?.initiation?.decision === "not_initiate") {
+        refusal = Object.freeze({
+          initiatorThreadId:initiator.threadId,
+          counterpartyThreadId:attempt.counterpartyThreadId,
           decision:"not_initiate",
-        })]
-      : nonAccepting;
-    if (decline === null && result.outcome === "not_met" && voluntaryRefusals.length > 0 && result.encounterStory === null) {
-      decline = Object.freeze({
-        participants:Object.freeze(attempt.participants.map((item) => item.threadId)),
-        decisions:Object.freeze(voluntaryRefusals),
+        });
+        emit({ event:"lived-encounters-voluntary-refusal-proven", decision:"not_initiate" });
+      }
+      if (refusal === null && attempt.outcome === "not_met"
+        && ["decline","defer"].includes(attempt?.stance?.decision)) {
+        refusal = Object.freeze({
+          initiatorThreadId:initiator.threadId,
+          counterpartyThreadId:attempt.counterpartyThreadId,
+          decision:attempt.stance.decision,
+        });
+        emit({ event:"lived-encounters-voluntary-refusal-proven", decision:attempt.stance.decision });
+      }
+
+      if (attempt.outcome !== "met" || !attempt.encounterStory) continue;
+
+      acceptedStories += 1;
+      const participantIds = Object.freeze([
+        initiator.threadId,
+        attempt.counterpartyThreadId,
+      ]);
+      const presence = new Set(
+        (attempt.encounterStory.threadPresence ?? []).map((entry) => entry.threadId),
+      );
+      const privateSummary = socialPrivateSummary(attempt, participantIds);
+      const plans = await renderPlans({
+        encounterStory:attempt.encounterStory,
+        presentationBaseUrl,
+        viewerOrigin,
+      }).catch(() => null);
+
+      const qualifies = participantIds.every((threadId) => presence.has(threadId))
+        && privateSummary.experienceThreads.length === participantIds.length
+        && privateSummary.distinctJournalCount >= 2
+        && privateSummary.asymmetricMemory
+        && privateSummary.journalBookThreads.length >= 1
+        && plans !== null;
+
+      emit({
+        event:"lived-encounters-social-met",
+        encounterId:attempt.encounterStory.encounterId,
+        initiatorThreadId:initiator.threadId,
+        counterpartyThreadId:attempt.counterpartyThreadId,
+        distinctJournalCount:privateSummary.distinctJournalCount,
+        asymmetricMemory:privateSummary.asymmetricMemory,
+        renderable:plans !== null,
       });
-      emit({ event:"lived-encounters-voluntary-refusal-proven", decisions:voluntaryRefusals.map((entry) => entry.decision) });
+
+      if (accepted === null && qualifies) {
+        accepted = Object.freeze({
+          result:attempt,
+          initiatorThreadId:initiator.threadId,
+          counterpartyThreadId:attempt.counterpartyThreadId,
+          participantIds,
+          privateSummary,
+          plans,
+        });
+      }
     }
 
-    if (result.outcome !== "met" || !result.encounterStory) {
-      if (decline !== null && accepted !== null) break;
-      continue;
-    }
-
-    acceptedStories += 1;
-    const witnessId = attempt.witness.threadId;
-    const participantIds = attempt.participants.map((item) => item.threadId);
-    const presence = new Set((result.encounterStory.threadPresence ?? []).map((entry) => entry.threadId));
-    const witnessHasStance = Object.hasOwn(result.stances ?? {}, witnessId);
-    const witnessSpoke = (result.encounterStory.story?.beats ?? []).some((beat) => beat.actorThreadId === witnessId);
-    const privateSummary = socialPrivateSummary(result, attempt.participants, attempt.witness);
-    const plans = await renderPlans({
-      encounterStory:result.encounterStory,
-      presentationBaseUrl,
-      viewerOrigin,
-    }).catch(() => null);
-
-    const qualifies = participantIds.every((threadId) => presence.has(threadId))
-      && presence.has(witnessId)
-      && !witnessHasStance
-      && !witnessSpoke
-      && privateSummary.witnessExperienced
-      && privateSummary.distinctJournalCount >= 2
-      && privateSummary.asymmetricMemory
-      && privateSummary.journalBookThreads.length >= 1
-      && plans !== null;
-
-    emit({
-      event:"lived-encounters-social-met",
-      encounterId:result.encounterStory.encounterId,
-      witnessExperienced:privateSummary.witnessExperienced,
-      distinctJournalCount:privateSummary.distinctJournalCount,
-      asymmetricMemory:privateSummary.asymmetricMemory,
-      renderable:plans !== null,
-    });
-
-    if (accepted === null && qualifies) {
-      accepted = Object.freeze({
-        result,
-        participantIds:Object.freeze(participantIds),
-        witnessId,
-        privateSummary,
-        plans,
-      });
-    }
-    if (decline !== null && accepted !== null) break;
+    if (refusal !== null && accepted !== null && (backgroundCount > 0 || opportunityCount > 1)) break;
   }
 
-  if (decline === null) {
-    throw new Error(`lived-encounters acceptance observed ${compatibleAttempts} compatible staging meeting attempt(s) but none naturally chose not to initiate, declined, or deferred; Fibre cannot claim voluntary-meeting staging acceptance`);
+  if (opportunityCount === 0) {
+    throw new Error(
+      `lived-encounters acceptance inspected ${initiatorsConsidered} initiator scene(s) but World discovered no actor opportunities`,
+    );
+  }
+  if (salientCount === 0) {
+    throw new Error(
+      `lived-encounters acceptance observed ${opportunityCount} natural actor opportunity/opportunities but none became salient`,
+    );
+  }
+  if (backgroundCount === 0 && refusal === null) {
+    throw new Error(
+      "lived-encounters acceptance observed no background opportunity or voluntary refusal; selective attention/agency remains unproven",
+    );
+  }
+  if (refusal === null) {
+    throw new Error(
+      `lived-encounters acceptance observed ${salientCount} salient natural opportunity/opportunities but none naturally chose not to initiate, declined, or deferred`,
+    );
   }
   if (accepted === null) {
-    throw new Error(`lived-encounters acceptance observed ${acceptedStories} accepted staging story/stories but none simultaneously proved silent-witness experience, distinct journals, asymmetric retained/not_remembered memory, and renderable canonical identity`);
+    throw new Error(
+      `lived-encounters acceptance observed ${acceptedStories} accepted natural story/stories but none simultaneously proved distinct participant journals, asymmetric retained/not_remembered memory, and renderable canonical identity`,
+    );
   }
-  return Object.freeze({ decline, accepted, compatibleAttempts, acceptedStories });
+
+  return Object.freeze({
+    refusal,
+    accepted,
+    initiatorsConsidered,
+    discoveredActorCount:discoveredActors.size,
+    opportunityCount,
+    backgroundCount,
+    salientCount,
+    acceptedStories,
+    multiEncounterScenes,
+  });
 }
 
 async function environmentalProof({ worldBaseUrl, privateToken, candidate, runId }) {
@@ -592,9 +534,10 @@ async function environmentalProof({ worldBaseUrl, privateToken, candidate, runId
 
 async function durableSocialProof({ worldBaseUrl, privateToken, accepted }) {
   const story = accepted.result.encounterStory;
-  const ids = [...accepted.participantIds, accepted.witnessId];
   const durable = [];
-  for (const threadId of ids) {
+  const interactionIds = new Set();
+
+  for (const threadId of accepted.participantIds) {
     const payload = await privateGet(
       worldBaseUrl,
       `/internal/threads/${encodeURIComponent(threadId)}/observatory`,
@@ -602,32 +545,53 @@ async function durableSocialProof({ worldBaseUrl, privateToken, accepted }) {
       `observatory ${threadId}`,
     );
     const observatory = payload.observatory;
-    const encounter = (observatory?.encounterStories ?? []).find((entry) => entry.encounterId === story.encounterId);
-    if (!encounter) throw new Error(`Encounter Story ${story.encounterId} is missing from ${threadId} observatory`);
+    const encounter = (observatory?.encounterStories ?? [])
+      .find((entry) => entry.encounterId === story.encounterId);
+    if (!encounter) {
+      throw new Error(`Encounter Story ${story.encounterId} is missing from ${threadId} observatory`);
+    }
+
+    const interaction = (observatory?.socialInteractions ?? []).find((entry) =>
+      entry.initiatorThreadId === accepted.initiatorThreadId
+      && entry.recipientThreadId === accepted.counterpartyThreadId
+      && entry.requestText === accepted.result.request.text
+      && entry.responseDecision === accepted.result.stance.decision);
+    if (!interaction) {
+      throw new Error(`Thread ${threadId} observatory is missing the accepted reciprocal social interaction`);
+    }
+    interactionIds.add(interaction.interactionId);
+
     const aftermath = accepted.result.aftermath?.[threadId] ?? null;
     const expectedExperience = aftermath?.experienceRecord?.experienceId ?? null;
-    if (expectedExperience !== null && encounter.attention?.experience?.experienceId !== expectedExperience) {
+    if (expectedExperience === null
+      || encounter.attention?.experience?.experienceId !== expectedExperience) {
       throw new Error(`Thread ${threadId} durable attention disagrees with accepted social experience`);
     }
-    const journalDurable = expectedExperience === null
-      ? false
-      : (observatory.experienceJournalEntries ?? []).some((entry) => entry.aboutExperienceRef === expectedExperience);
+    const journalDurable = (observatory.experienceJournalEntries ?? [])
+      .some((entry) => entry.aboutExperienceRef === expectedExperience);
     const expectedMemory = aftermath?.memory?.outcome ?? "none";
-    const hasMemory = expectedExperience !== null && (observatory.memories ?? []).some((memory) =>
+    const hasMemory = (observatory.memories ?? []).some((memory) =>
       memory?.subject?.originEventRef === expectedExperience
       || (memory.eventRefs ?? []).includes(expectedExperience)
       || (memory.supportingEvidenceRefs ?? []).includes(expectedExperience));
-    if (expectedMemory === "retained" && !hasMemory) throw new Error(`Thread ${threadId} retained memory is not durable`);
-    if (expectedMemory === "not_remembered" && hasMemory) throw new Error(`Thread ${threadId} not_remembered outcome leaked into autobiographical memory`);
+    if (expectedMemory === "retained" && !hasMemory) {
+      throw new Error(`Thread ${threadId} retained memory is not durable`);
+    }
+    if (expectedMemory === "not_remembered" && hasMemory) {
+      throw new Error(`Thread ${threadId} not_remembered outcome leaked into autobiographical memory`);
+    }
     durable.push(Object.freeze({
       threadId,
       attention:encounter.attention?.outcome ?? null,
       journalDurable,
       memoryOutcome:expectedMemory,
+      socialInteractionId:interaction.interactionId,
     }));
   }
-  const witness = durable.find((entry) => entry.threadId === accepted.witnessId);
-  if (witness?.attention !== "noticed") throw new Error("lived-encounters silent witness did not durably notice the accepted story");
+
+  if (interactionIds.size !== 1) {
+    throw new Error("accepted social interaction did not resolve to one shared reciprocal-history record");
+  }
   return Object.freeze(durable);
 }
 
@@ -809,25 +773,32 @@ export async function runLivedEncountersStagingAcceptance({
 
   const acceptedStory = social.accepted.result.encounterStory;
   const evidence = Object.freeze({
-    contract:"fibre-lived-encounters-staging-acceptance-v0.1",
+    contract:"fibre-lived-encounters-staging-acceptance-v0.2",
     environment:"staging",
     runId,
     sourceGitSha:sourceSha,
     completedAt:new Date().toISOString(),
     environmental,
+    naturalScene:Object.freeze({
+      initiatorsConsidered:social.initiatorsConsidered,
+      discoveredActorCount:social.discoveredActorCount,
+      opportunityCount:social.opportunityCount,
+      backgroundCount:social.backgroundCount,
+      salientCount:social.salientCount,
+      multiEncounterScenes:social.multiEncounterScenes,
+    }),
     voluntaryMeeting:Object.freeze({
-      participantThreadIds:social.decline.participants,
-      decisions:social.decline.decisions,
+      initiatorThreadId:social.refusal.initiatorThreadId,
+      counterpartyThreadId:social.refusal.counterpartyThreadId,
+      decision:social.refusal.decision,
       encounterStoryCreated:false,
     }),
     acceptedSocial:Object.freeze({
       encounterId:acceptedStory.encounterId,
+      initiatorThreadId:social.accepted.initiatorThreadId,
+      counterpartyThreadId:social.accepted.counterpartyThreadId,
       participantThreadIds:social.accepted.participantIds,
-      witnessThreadId:social.accepted.witnessId,
       threadPresence:(acceptedStory.threadPresence ?? []).map((entry) => entry.threadId),
-      witnessAuthoredBeat:false,
-      witnessReceivedStance:false,
-      witnessExperienced:true,
       distinctJournalCount:social.accepted.privateSummary.distinctJournalCount,
       memoryOutcomes:social.accepted.privateSummary.memoryOutcomes,
       durableThreads:durableSocial,
@@ -841,7 +812,9 @@ export async function runLivedEncountersStagingAcceptance({
     }),
     attemptSummary:Object.freeze({
       refreshedThreadCount:refreshed.length,
-      compatibleMeetingAttempts:social.compatibleAttempts,
+      initiatorsConsidered:social.initiatorsConsidered,
+      naturalActorOpportunities:social.opportunityCount,
+      salientActorOpportunities:social.salientCount,
       acceptedStoriesExamined:social.acceptedStories,
     }),
   });
@@ -852,7 +825,8 @@ export async function runLivedEncountersStagingAcceptance({
     sourceGitSha:sourceSha,
     environmentalEncounterId:environmental.encounterId,
     socialEncounterId:acceptedStory.encounterId,
-    witnessThreadId:social.accepted.witnessId,
+    discoveredActorCount:social.discoveredActorCount,
+    opportunityCount:social.opportunityCount,
     distinctJournalCount:social.accepted.privateSummary.distinctJournalCount,
     memoryOutcomes:social.accepted.privateSummary.memoryOutcomes.map((entry) => entry.outcome),
     renderObjectRef:render.objectRef,
