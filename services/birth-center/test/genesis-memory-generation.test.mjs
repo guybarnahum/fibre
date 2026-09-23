@@ -131,10 +131,12 @@ test("Birth memory formation keeps the promoted schedule and exact validated pro
 test("Birth memory cognition hides experimental-arm metadata", async () => {
   const prompts = [];
   const cognitionInputs = [];
+  const responseSchemas = [];
   const adapter = {
-    invoke: async ({ systemPrompt, input }) => {
+    invoke: async ({ systemPrompt, input, responseSchema }) => {
       prompts.push(systemPrompt);
       cognitionInputs.push(input);
+      responseSchemas.push(responseSchema);
       return {
         output: {
           outcome: "remembered",
@@ -155,6 +157,11 @@ test("Birth memory cognition hides experimental-arm metadata", async () => {
   assert.ok(prompts[0].includes(GENESIS_LIFE_SPARSE_HISTORY_NOTICE));
   assert.equal(Object.hasOwn(cognitionInputs[0], "assignment"), false);
   assert.deepEqual(cognitionInputs[0].policyWitness, { policyVersion: GENESIS_PASS_B_POLICY.version });
+  assert.deepEqual(
+    responseSchemas[0].properties.episodeRefs.items.enum,
+    history().map(({ episodeId }) => episodeId),
+    "provider schema must allow only visible history refs",
+  );
 });
 
 test("Birth memory admission rejects verbatim genome text and retries once without echoing rejected content", async () => {
