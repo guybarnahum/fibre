@@ -5,7 +5,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { classifyInsideFibreRosterEntry } from "./inside-fibre.mjs";
+import {
+  classifyInsideFibreRosterEntry,
+  selectPrepareWindow,
+} from "./inside-fibre.mjs";
 
 const AT = "2026-09-23T19:05:00.000Z";
 const THREAD_ID = "thr_roster_001";
@@ -119,4 +122,61 @@ test("roster advertises an accepted shift only when it is enacted, even after fi
   });
   assert.equal(enacted.available?.commitmentId, COMMITMENT_ID,
     "the roster should advertise work only when World and the governing plan enact it");
+});
+
+
+function prepareRecord(threadId, timeZone, horizonEnd) {
+  return {
+    thread:{ threadId, displayName:threadId, lifecycleStatus:"active" },
+    workState:{ fibreCredits:0, commitments:[], settlements:[] },
+    observatory:{
+      livedNow:{
+        worldContext:{ timeZone },
+        currentSituation:{
+          threadId,
+          situationId:`sit_${threadId}`,
+          establishedAt:"2026-09-23T12:00:00.000Z",
+          phase:"at_place",
+          location:{ kind:"place", placeRef:"place_home" },
+          resolution:{ governingPlanRef:`plan_${threadId}`, observedDivergence:false },
+          evidenceRefs:["evt_prior"],
+        },
+        currentPersonalPlan:{
+          planId:`plan_${threadId}`,
+          horizonStart:"2026-09-23T12:00:00.000Z",
+          horizonEnd,
+          stops:[{
+            startAt:"2026-09-23T12:00:00.000Z",
+            endAt:horizonEnd,
+            physicalPlaceRef:"place_home",
+            mediatedContext:null,
+            activity:"ordinary life",
+          }],
+          sourceReferences:["evt_prior"],
+        },
+      },
+    },
+  };
+}
+
+test("prepare chooses one shared window that is locally reasonable and inside each Flight Plan horizon", () => {
+  const records = [
+    prepareRecord("thr_utc", "UTC", "2026-09-23T18:00:00.000Z"),
+    prepareRecord("thr_berlin", "Europe/Berlin", "2026-09-23T18:00:00.000Z"),
+    prepareRecord("thr_new_york", "America/New_York", "2026-09-23T18:00:00.000Z"),
+    prepareRecord("thr_tokyo", "Asia/Tokyo", "2026-09-23T18:00:00.000Z"),
+  ];
+
+  const selected = selectPrepareWindow(records, {
+    at:"2026-09-23T12:00:00.000Z",
+    target:3,
+  });
+
+  assert.equal(selected?.startAt, "2026-09-23T13:00:00.000Z");
+  assert.equal(selected?.endAt, "2026-09-23T13:30:00.000Z");
+  assert.deepEqual(
+    selected?.eligible.map((record) => record.thread.threadId),
+    ["thr_utc", "thr_berlin", "thr_new_york"],
+    "the shared offer window should respect each Thread's local civil time rather than UTC alone",
+  );
 });
