@@ -141,6 +141,29 @@ function publicScene(thread) {
   });
 }
 
+function currentPlannedStop(observatory, at) {
+  return plannedStopAt(observatory?.livedNow?.currentPersonalPlan ?? null, at);
+}
+
+function displayScene({ thread, observatory, at }) {
+  const stop = currentPlannedStop(observatory, at);
+  if (stop !== null) {
+    return Object.freeze({
+      source:"plan",
+      establishedAt:null,
+      place:null,
+      activity:stop.activity,
+    });
+  }
+  const scene = publicScene(thread);
+  return scene === null ? null : Object.freeze({
+    source:"last_enacted",
+    establishedAt:scene.establishedAt,
+    place:scene.place,
+    activity:scene.activity,
+  });
+}
+
 export function classifyInsideFibreRosterEntry({
   thread,
   workState,
@@ -158,7 +181,7 @@ export function classifyInsideFibreRosterEntry({
     displayName:thread.displayName ?? thread.threadId,
     lifecycleStatus:thread.lifecycleStatus ?? null,
     fibreCredits:workState?.fibreCredits ?? null,
-    scene:publicScene(thread),
+    scene:displayScene({ thread, observatory, at }),
     available,
     activeCommitment:active[0] ?? null,
     scheduled:scheduled[0] ?? null,
@@ -175,11 +198,22 @@ function formatTime(value) {
   }).format(date);
 }
 
+function sceneAge(establishedAt) {
+  const time = Date.parse(establishedAt ?? "");
+  if (!Number.isFinite(time)) return null;
+  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000));
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  return `${hours}h ago`;
+}
+
 function sceneText(entry) {
   const place = entry.scene?.place;
   const activity = entry.scene?.activity;
-  if (place && activity) return `${place} · ${activity}`;
-  return place ?? activity ?? "No public current scene";
+  const base = place && activity ? `${place} · ${activity}` : (place ?? activity ?? "No lived scene");
+  if (entry.scene?.source === "plan") return `${base} · planned now`;
+  const age = sceneAge(entry.scene?.establishedAt);
+  return age === null ? `${base} · last enacted` : `${base} · last enacted ${age}`;
 }
 
 function printEntry(entry, commitment = null) {
