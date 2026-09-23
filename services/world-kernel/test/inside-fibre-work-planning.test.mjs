@@ -7,6 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
+import { openFibreCreditStore } from "../src/fibre-credit-store.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 import { createInsideFibreAvailabilityService } from "../src/inside-fibre-availability.mjs";
 import { createInsideFibreWorkService } from "../src/inside-fibre-work.mjs";
@@ -167,6 +168,7 @@ async function setup(databasePath) {
   );
 
   const workStore = openInsideFibreWorkStore(storage);
+  const fibreCreditStore = openFibreCreditStore(storage, { worldReader:worldStore });
   const accepted = workStore.recordAcceptedCommitment({
     kind:"inside_fibre_visitor_availability",
     offerId:offerId(),
@@ -188,6 +190,7 @@ async function setup(databasePath) {
     situatedLifeStore,
     livedNowStore,
     workStore,
+    fibreCreditStore,
     event,
     placeRef,
     priorPlan,
@@ -196,6 +199,7 @@ async function setup(databasePath) {
 }
 
 function closeAll(state) {
+  state.fibreCreditStore.close();
   state.workStore.close();
   state.livedNowStore.close();
   state.situatedLifeStore.close();
@@ -218,6 +222,7 @@ test("accepted visitor work bends the forward Flight Plan while preserving prior
       memoryStore:state.memoryStore,
       situatedLifeStore:state.situatedLifeStore,
       workStore:state.workStore,
+      fibreCreditStore:state.fibreCreditStore,
       modelAdapter:{
         provider:"fixture",
         modelId:"fixture-work-planning",
@@ -377,6 +382,7 @@ test("Inside Fibre availability is derived from enacted committed presence", asy
       memoryStore:state.memoryStore,
       situatedLifeStore:state.situatedLifeStore,
       workStore:state.workStore,
+      fibreCreditStore:state.fibreCreditStore,
       modelAdapter:{
         provider:"fixture",
         modelId:"fixture-work-planning-presence",
@@ -548,6 +554,7 @@ test("a committed website visitor enters the existing lived scene and becomes an
       memoryStore:state.memoryStore,
       situatedLifeStore:state.situatedLifeStore,
       workStore:state.workStore,
+      fibreCreditStore:state.fibreCreditStore,
       modelAdapter:{
         provider:"fixture",
         modelId:"fixture-work-plan-for-visitor-meeting",
