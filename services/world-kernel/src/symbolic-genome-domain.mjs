@@ -72,6 +72,20 @@ function runtimeBaselinesForGenome(genomeId) {
   ));
 }
 
+export const SYMBOLIC_MUTATION_POLICY = Object.freeze({
+  id: "bounded_textual_locus_replacement",
+  version: "1",
+  maxReplacements: 2,
+});
+
+export const SYMBOLIC_GENOME_OWNER_KINDS = Object.freeze([
+  "thread",
+  "synthetic_ancestor",
+]);
+
+const DIGEST = /^sha256:[0-9a-f]{64}$/;
+const MAX_LOCUS_BYTES = 320;
+
 function assertDigest(name, value) {
   assertNonEmpty(name, value);
   if (!DIGEST.test(value)) throw new TypeError(`${name} must be a SHA-256 digest`);
