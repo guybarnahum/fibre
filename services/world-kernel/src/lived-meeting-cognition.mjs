@@ -104,33 +104,16 @@ export function meetingPresenceCompatible(left, right, {
 export async function formSocialEncounterRequest({
   threadId,
   at,
-  situation,
   plan,
-  counterparties,
-  setting,
-  recentSocialHistory,
+  situatedPercept,
   sourceStores,
   modelAdapter,
 }) {
   assertId("social encounter initiator Thread.threadId", threadId);
   assertIsoTimestamp("social encounter at", at);
-  assertPlainObject("social encounter initiator situation", situation);
-  if (!Array.isArray(counterparties) || counterparties.length < 1) {
-    throw new TypeError("social encounter request requires counterparties");
-  }
-  const counterpartySummaries = counterparties.map((counterparty) => {
-    assertPlainObject("social encounter request counterparty", counterparty);
-    assertId("social encounter request counterparty.threadId", counterparty.threadId);
-    return Object.freeze({
-      threadId:counterparty.threadId,
-      name:counterparty.name ?? null,
-      selfDescription:counterparty.selfDescription ?? "",
-      currentActivity:counterparty.currentActivity ?? null,
-    });
-  });
-  assertPlainObject("social encounter setting", setting);
-  if (!Array.isArray(recentSocialHistory)) {
-    throw new TypeError("social encounter recentSocialHistory must be an array");
+  assertPlainObject("social encounter Situated Percept", situatedPercept);
+  if (!Array.isArray(situatedPercept.observed) || situatedPercept.observed.length < 1) {
+    throw new TypeError("social encounter requires an observed counterparty");
   }
 
   const cognition = await runInteriorCognition({
@@ -140,11 +123,8 @@ export async function formSocialEncounterRequest({
       kind:"social_initiation",
       question:"Do I want to ask any of these co-present Threads for something now?",
       externalContext:{
-        currentSituation:structuredClone(situation),
+        situatedPercept:structuredClone(situatedPercept),
         remainingFlightPlan:plan === null ? null : structuredClone(plan),
-        setting:structuredClone(setting),
-        counterparties:counterpartySummaries,
-        recentSocialHistory:structuredClone(recentSocialHistory),
       },
     },
     adapter:SOCIAL_INITIATION_ADAPTER,

@@ -290,7 +290,11 @@ World / LivedNow
 
 Direct social requests remain special only in that being explicitly addressed already warrants appraisal; politeness/cultural pressure belongs in the developed person and current setting, never in a global acceptance score. Boredom/curiosity should later enter through grounded exploration regulation. Small randomness, if useful, belongs only as replayable near-threshold salience variation, never as a `no -> 10% yes` decision flip.
 
-The reciprocal-history commit is a stepping stone into this architecture. The next implementation slice replaces today's ad-hoc social exterior packet with Situated Percept and proves that the same Thread can make a different social judgment when the **actual observable situation** changes while private identity/history is held constant. No compatibility wrapper is required for the superseded packet shape. Then continue toward natural lived encounter acceptance:
+The reciprocal-history seam is now validated, and **W1 Situated Percept is implemented pending repository validation**. Social initiation no longer receives the ad-hoc `setting + counterparties + recentSocialHistory` packet. One compact ephemeral projection now derives the actual setting, observer activity, genuinely co-present Thread identity/activity, bounded reciprocal request/response history, prior admitted Encounter Story facts and source refs. The projection does not persist and does not expose counterpart private state or genome.
+
+The focused W1 proof holds the initiator, counterparty and private developed-self evidence constant while changing only the counterparty's observable current activity; that exterior difference must be able to change `initiate | not_initiate`. This is the first concrete proof of `World -> Situated Percept -> Interior Cognition` rather than social behavior authored by a meeting wrapper.
+
+After validation, the next slice is **W2 direct social response through Interior Cognition**: replace the remaining legacy `accept | decline | defer` persona prompt with the same percept/private-mind architecture, preserving social/cultural pressure as developed-person context rather than an acceptance score. Then continue toward natural lived encounter acceptance:
 
 ```text
 environmental occurrence

@@ -89,6 +89,7 @@ function fixture({
   rude = false,
   placeProvenance = "world_recorded",
   recentSocialInteractions = [],
+  noorActivity = "Sketching at the same café table.",
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
@@ -105,7 +106,7 @@ function fixture({
   ]);
   const situations = new Map([
     [mina.threadId, situation(mina.threadId, "Reading over coffee.", placeEpisodeRevisionRef(minaCafe))],
-    [noor.threadId, situation(noor.threadId, "Sketching at the same café table.", placeEpisodeRevisionRef(noorCafe))],
+    [noor.threadId, situation(noor.threadId, noorActivity, placeEpisodeRevisionRef(noorCafe))],
     [sela.threadId, situation(sela.threadId, "Waiting for tea at the next table.", placeEpisodeRevisionRef(selaCafe))],
   ]);
   const stories = [];
@@ -128,16 +129,15 @@ function fixture({
           "social initiation must not receive raw genome/persona traits");
         assert.equal(Array.isArray(call.input.developedSelfEvidence), true,
           "social initiation should receive Fibre-selected developed-self evidence");
-        assert.equal(
-          call.input.concern.externalContext.setting.place?.displayName,
-          "The same neighborhood café",
-          "social initiation should know the actual current setting",
-        );
-        assert.equal(
-          call.input.concern.externalContext.counterparties[0]?.currentActivity,
-          "Sketching at the same café table.",
-          "social initiation should know what the counterparty is observably doing",
-        );
+        const percept = call.input.concern.externalContext.situatedPercept;
+        assert.equal(percept.setting.place?.displayName, "The same neighborhood café",
+          "social cognition should receive the actual setting");
+        assert.equal(percept.observed[0]?.currentActivity, noorActivity,
+          "social cognition should receive observable counterparty activity");
+        assert.equal(Object.hasOwn(percept.observed[0], "currentState"), false,
+          "Situated Percept must not expose counterparty interior state");
+        assert.equal(Object.hasOwn(percept.observed[0], "genome"), false,
+          "Situated Percept must not expose counterparty genome");
         const decision = initiationFor(
           call.input.thread.name,
           call.input.developedSelfEvidence,
@@ -518,6 +518,43 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
 });
 
 
+test("observable situation can bend social judgment for the same person", async () => {
+  const decideFromSituation = (_name, _evidence, externalContext) =>
+    /putting her sketchbook away/u.test(
+      externalContext.situatedPercept.observed[0]?.currentActivity ?? "",
+    )
+      ? "initiate"
+      : "not_initiate";
+
+  const absorbed = fixture({
+    initiationFor:decideFromSituation,
+    noorActivity:"Sketching carefully with headphones on.",
+  });
+  const available = fixture({
+    initiationFor:decideFromSituation,
+    noorActivity:"Putting her sketchbook away and looking around the café.",
+  });
+
+  const absorbedResult = await absorbed.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+  const availableResult = await available.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    participantThreadIds:[mina.threadId,noor.threadId],
+    at:AT,
+  });
+
+  assert.equal(absorbedResult.initiation.decision, "not_initiate",
+    "absorbed counterpart should remain a real reason not to interrupt");
+  assert.equal(availableResult.initiation.decision, "initiate",
+    "observable availability should be able to change the judgment");
+  assert.deepEqual(absorbedResult.initiation.cognition.selectedEvidenceRefs,
+    availableResult.initiation.cognition.selectedEvidenceRefs,
+    "private person/history evidence should stay constant across the percept change");
+});
+
 test("recent reciprocal social history can bend later initiation without a momentum score", async () => {
   const f = fixture({
     recentSocialInteractions:[{
@@ -533,8 +570,8 @@ test("recent reciprocal social history can bend later initiation without a momen
       suggestedAt:null,
     }],
     initiationFor:(_name, _evidence, externalContext) =>
-      externalContext.recentSocialHistory.some((item) =>
-        item.kind === "request_response"
+      externalContext.situatedPercept.recentEvents.some((item) =>
+        item.kind === "social_request_response"
         && item.direction === "outgoing"
         && item.responseDecision === "decline")
         ? "not_initiate"

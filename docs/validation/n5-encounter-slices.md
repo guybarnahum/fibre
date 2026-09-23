@@ -306,7 +306,7 @@ Commons remains one legitimate mediated place, not an acceptance mechanism.
 
 ### Pivot slices
 
-#### W0 — Reciprocal outward social history — IMPLEMENTED; validate
+#### W0 — Reciprocal outward social history — VALIDATED
 
 Persist only actual outward Thread-to-Thread requests and observable `accept | decline | defer` responses.
 
@@ -316,7 +316,7 @@ The record exists so later perception/cognition can know facts such as “I aske
 
 **Stop condition:** focused tests and `npm run slice:validate` are green; both participants resolve the same observable request/response; private hesitation leaves no shared record.
 
-#### W1 — Situated Percept -> social initiation — CURRENT
+#### W1 — Situated Percept -> social initiation — IMPLEMENTED; validate
 
 Add one compact `situated-percept.mjs`-level projection inside the existing World Kernel. Do not add a service hierarchy or durable percept store.
 
@@ -331,7 +331,9 @@ For the first consumer, derive only what Fibre already authoritatively knows:
 
 Replace the ad-hoc social exterior packet rather than compatibility-wrapping it.
 
-**High-value proof:** hold initiator, developed-self evidence and counterparty constant; change one meaningful observable situation such as setting/activity or recent reciprocal history; require an attributable change in the private social judgment. Also prove the counterparty's private interior is absent.
+**Implemented shape:** one ephemeral `situated-percept.mjs` projection now derives exterior setting, observer activity, co-present Thread identity/activity, bounded reciprocal request/response history, prior admitted Encounter Story facts and source references from existing authorities. Social initiation consumes this single percept plus its own remaining Flight Plan. The prior social-specific packet is removed rather than wrapped.
+
+**High-value proof:** hold initiator, developed-self evidence and counterparty constant; change the counterparty's observable current activity and require an attributable change in the private social judgment. The proof also asserts that counterpart private state/genome never enters the percept.
 
 This slice is intentionally one consumer. It proves the general percept seam without building a generalized simulation framework.
 

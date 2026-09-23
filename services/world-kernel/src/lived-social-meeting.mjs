@@ -15,7 +15,7 @@ import {
   assertIsoTimestamp,
   assertPlainObject,
 } from "./persistence-common.mjs";
-import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
+import { projectSituatedPercept } from "./situated-percept.mjs";
 
 const MEMORY_LIMIT = 6;
 const MAX_PRESENT_THREADS = 6;
@@ -57,79 +57,6 @@ function participantSummary(context) {
     name:context.thread.identity?.name ?? null,
     selfDescription:context.thread.identity?.selfDescription ?? "",
   });
-}
-
-function socialCounterpartySummary(context) {
-  return Object.freeze({
-    ...participantSummary(context),
-    currentActivity:context.situation.activity ?? null,
-  });
-}
-
-function currentSetting(context, situatedLifeStore) {
-  const situation = context.situation;
-  const episode = situation.location?.kind === "place"
-    ? situatedLifeStore.listCurrentPlaceEpisodes(context.thread.threadId)
-      .find((candidate) => placeEpisodeRevisionRef(candidate) === situation.location.placeRef) ?? null
-    : null;
-  return Object.freeze({
-    mode:typeof situation.mediatedContext === "string" && situation.mediatedContext.trim() !== ""
-      ? "mediated"
-      : "physical",
-    mediatedContext:situation.mediatedContext ?? null,
-    place:episode === null ? null : Object.freeze({
-      placeId:episode.place?.placeId ?? null,
-      displayName:episode.place?.displayName ?? null,
-    }),
-    currentActivity:situation.activity ?? null,
-  });
-}
-
-function recentSocialHistory(experienceStore, initiatorThreadId, counterpartyThreadIds) {
-  const counterparties = new Set(counterpartyThreadIds);
-  const interactions = experienceStore.listSocialInteractions(initiatorThreadId, {
-    limit:12,
-    newestFirst:true,
-  }).map((record) => {
-    const counterpartyThreadId = record.initiatorThreadId === initiatorThreadId
-      ? record.recipientThreadId
-      : record.initiatorThreadId;
-    if (!counterparties.has(counterpartyThreadId)) return null;
-    return {
-      kind:"request_response",
-      ref:record.interactionId,
-      occurredAt:record.occurredAt,
-      counterpartyThreadId,
-      direction:record.initiatorThreadId === initiatorThreadId ? "outgoing" : "incoming",
-      requestText:record.requestText,
-      responseDecision:record.responseDecision,
-      responseExpression:record.responseExpression,
-      suggestedAt:record.suggestedAt,
-    };
-  }).filter(Boolean);
-
-  const encounters = experienceStore.listEncounterStories(initiatorThreadId)
-    .filter((story) => story.threadPresence.some((presence) =>
-      presence.threadId !== initiatorThreadId && counterparties.has(presence.threadId)))
-    .sort((left,right) => Date.parse(right.occurredAt) - Date.parse(left.occurredAt))
-    .slice(0,4)
-    .map((story) => ({
-      kind:"encounter",
-      ref:story.encounterId,
-      occurredAt:story.occurredAt,
-      counterpartyThreadIds:story.threadPresence
-        .map((presence) => presence.threadId)
-        .filter((threadId) => threadId !== initiatorThreadId && counterparties.has(threadId)),
-      beats:story.story.beats.slice(0,4).map((beat) => ({
-        actorThreadId:beat.actorThreadId,
-        kind:beat.kind,
-        text:beat.text,
-      })),
-    }));
-
-  return [...interactions,...encounters]
-    .sort((left,right) => Date.parse(right.occurredAt) - Date.parse(left.occurredAt) || left.ref.localeCompare(right.ref))
-    .slice(0,8);
 }
 
 export function createSocialMeetingService({
@@ -222,18 +149,22 @@ export function createSocialMeetingService({
 
       const initiator = byId.get(input.initiatorThreadId);
       const invitees = participantContexts.filter((context) => context.thread.threadId !== input.initiatorThreadId);
+      const situatedPercept = projectSituatedPercept({
+        observerThreadId:initiator.thread.threadId,
+        situation:initiator.situation,
+        observedThreads:invitees.map((context) => ({
+          threadId:context.thread.threadId,
+          name:context.thread.identity?.name ?? null,
+          situation:context.situation,
+        })),
+        situatedLifeStore,
+        experienceStore,
+      });
       const initiation = await formSocialEncounterRequest({
         threadId:initiator.thread.threadId,
         at:input.at,
-        situation:initiator.situation,
         plan:livedNowStore.latestPlan(initiator.thread.threadId, "personal", { at:input.at }),
-        counterparties:invitees.map(socialCounterpartySummary),
-        setting:currentSetting(initiator, situatedLifeStore),
-        recentSocialHistory:recentSocialHistory(
-          experienceStore,
-          initiator.thread.threadId,
-          invitees.map((context) => context.thread.threadId),
-        ),
+        situatedPercept,
         sourceStores:{
           worldStore:worldReader,
           identityStore,

@@ -229,8 +229,8 @@ The staging run `lived-encounters-mudbwfmb` on exact SHA `0ceda832a0f99c5d73c90c
 The active sequence is now:
 
 ```text
-W0 reciprocal outward social history                    IMPLEMENTED; validate
-W1 Situated Percept -> social initiation                CURRENT
+W0 reciprocal outward social history                    VALIDATED
+W1 Situated Percept -> social initiation                IMPLEMENTED; validate
 W2 direct social response -> Interior Cognition         NEXT
 W3 cheap general Salience Gate                          NEXT
 W4 ordinary World opportunities from active LivedNow   NEXT
@@ -240,6 +240,8 @@ W7 natural encounter staging proof                      ACCEPTANCE
 ```
 
 These are roadmap labels only. Do not bake them into APIs, event names or durable records.
+
+W1 now has the intended minimal production shape: one ephemeral `situated-percept.mjs` projection replaces the social-specific `setting + counterparties + recentSocialHistory` packet. It derives only authoritative exterior facts already available from LivedNow, situated-life and encounter/social history authorities, and carries source refs for inspection. Social initiation consumes the percept through Interior Cognition; the counterparty's private state/genome never enters it. The focused organism proof holds Mina, Noor and private developed-self evidence constant while changing Noor's observable current activity and requires the social judgment to change for that exterior reason.
 
 Do not preserve the current social-first harness shape for compatibility. If the natural lived-world loop makes Commons fallback or old staging orchestration obsolete, replace it rather than wrapping it. The new proof must remain light: no perception service hierarchy, social simulator, universal event bus, full object ontology or high-frequency world ticking.
 
