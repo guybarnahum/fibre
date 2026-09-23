@@ -119,7 +119,7 @@ function normalizePolicy(name, candidate, expected = null) {
   assertNonEmpty(`${name}.version`, candidate.version);
   const normalized = { id: candidate.id, version: candidate.version };
   if (expected !== null && canonicalJson(normalized) !== canonicalJson(policyIdentity(expected))) {
-    throw new TypeError(`${name} is not a supported v1 policy`);
+    throw new TypeError(`${name} is not a supported policy`);
   }
   return normalized;
 }
