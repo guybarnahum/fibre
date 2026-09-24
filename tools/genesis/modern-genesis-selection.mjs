@@ -5,7 +5,7 @@ import { dirname, resolve } from "node:path";
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v6";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v7";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
@@ -13,6 +13,7 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
   required: [
     "timeZone",
     "languages",
+    "raisedLanguages",
     "nameOrder",
     "femaleGivenNames",
     "maleGivenNames",
@@ -39,7 +40,15 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
       minItems: 1,
       maxItems: 3,
       uniqueItems: true,
-      description:"Languages this one subject plausibly uses across home, civic life, or schooling by the end of the Genesis chronology; never a list of languages present in the country or city.",
+      description:"Languages this one subject plausibly uses by the end of the Genesis chronology; these may include languages acquired through school or sustained later exposure.",
+      items: { type: "string", minLength: 1 },
+    },
+    raisedLanguages: {
+      type: "array",
+      minItems: 1,
+      maxItems: 3,
+      uniqueItems: true,
+      description:"Languages actually used in the subject's household or early upbringing. Do not include a school-acquired language merely because the subject later learns it.",
       items: { type: "string", minLength: 1 },
     },
     nameOrder: { type: "string", enum: ["given_family", "family_given"] },
@@ -264,6 +273,11 @@ function appearanceLoci({ selector, heritage, value }) {
 function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEndsAt, createdAt }) {
   const timeZone = assertTimeZone(nonEmpty("authored world timeZone", authored.timeZone));
   const languages = subjectLanguages(authored.languages);
+  const raisedLanguages = subjectLanguages(authored.raisedLanguages);
+  const spokenKeys = new Set(languages.map((language) => language.toLocaleLowerCase("en-US")));
+  if (raisedLanguages.some((language) => !spokenKeys.has(language.toLocaleLowerCase("en-US")))) {
+    throw new TypeError("authored raised languages must be included in the subject's eventual spoken languages");
+  }
   const sourceDigest = digest({ selector, heritage, authored }).slice(0, 12);
   const worldSpecId = `world_modern_${selector.slug}_${heritage?.slug ?? "default"}_${sourceDigest}`;
   const place = (kind) => `place_${selector.slug}_${sourceDigest}_${kind}`;
@@ -291,7 +305,7 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
     ]),
     householdShape,
     familyRelations: Object.freeze(["The sibling is two years older than the subject."]),
-    languages,
+    languages: raisedLanguages,
     materialCircumstances: "Housing, food, schooling and routine mobility are stable enough for ordinary daily life; household spending choices matter without assigning the family a fixed socioeconomic identity.",
     mobilityPattern: authored.mobilityPattern,
     schoolingOrCommunityContext: authored.schoolingOrCommunityContext,
@@ -316,6 +330,7 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
     familyOriginContext,
     appearanceContext: appearancePrior({ selector, heritage, value: authored.appearanceContext }),
     appearanceLoci: appearanceLoci({ selector, heritage, value: authored.appearanceLoci }),
+    languages,
     nameOrder: authored.nameOrder,
     femaleGivenNames: Object.freeze([...authored.femaleGivenNames]),
     maleGivenNames: Object.freeze([...authored.maleGivenNames]),
@@ -370,10 +385,10 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "Author bounded ordinary-life material for a Fibre Genesis World.",
       "The operator explicitly supplies place and may supply household heritage. Treat both as input, never as an inference about the operator.",
       "Keep two causal layers distinct: place defines the surrounding civic/physical world; heritage defines inherited household/community cultural context inside that place.",
-      "The languages field is personal, not demographic: list only languages this one subject plausibly uses by the end of the Genesis chronology. Never return a city's or country's language inventory.",
-      "Choose a coherent household language path. A minority or ancestry language belongs in languages only when this household plausibly uses it; unrelated minority languages must not be combined merely because their communities exist in the same country.",
-      "Use at most three personal languages. A typical path is the household/civic language, optionally one heritage/home language, and optionally one language learned through school or sustained public exposure. Do not imply equal fluency.",
-      "Keep language domains realistic: heritage/ancestry languages are ordinarily home/family/community languages unless the local civic context independently uses them; school languages may become usable without becoming home languages. Put broader regional multilingualism in culturalContext, not in the subject's languages.",
+      "Author two distinct personal language facts. raisedLanguages is the language or languages actually used in the subject's household or early upbringing; languages is the set the subject plausibly uses by the end of the Genesis chronology.",
+      "Every raised language must also appear in languages. A school-acquired language may appear in languages without appearing in raisedLanguages.",
+      "Neither field is a city or country language inventory. Choose one coherent household path; unrelated minority languages must not be combined merely because their communities exist nearby.",
+      "Use at most three eventual personal languages. Heritage/ancestry languages belong in raisedLanguages only when this household plausibly uses them; school languages may become usable later without becoming upbringing languages. Put broader regional multilingualism in culturalContext.",
       "Author familyOriginContext before appearanceContext. familyOriginContext is a concise causal household history: local family roots, mixed ancestry, migration, diaspora, adoption, or other family-origin facts only when plausibly warranted.",
       "When no heritage is supplied, choose a plausible family-origin path for this place weighted toward ordinary local household histories rather than uniform global diversity. Less common diaspora or mixed-origin households are valid, but if chosen the familyOriginContext must explicitly explain the migration or family connection that makes them part of this place.",
       "When heritage is supplied, make familyOriginContext, naming material, the household language path, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
