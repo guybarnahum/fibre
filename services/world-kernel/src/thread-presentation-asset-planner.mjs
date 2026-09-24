@@ -74,34 +74,23 @@ function memoryBrief(memory, {
   };
 }
 
-function officialPhotoAwkwardness(visualIdentityDigest) {
-  const options = [
-    "Expression is carefully neutral, with the slight stiffness of trying not to smile.",
-    "Expression is a little too serious for the occasion, but natural and dignified.",
-    "Expression is mildly surprised by the shutter timing while remaining neutral and composed.",
-    "Expression is politely neutral with a faint caught-at-the-wrong-instant quality.",
-  ];
-  return options[Number.parseInt(visualIdentityDigest.at(-1), 16) % options.length];
-}
-
 function officialIdPhotoBrief(visualIdentity, targetAgeYears) {
-  const identityDigest = threadVisualIdentityProjectionDigest(visualIdentity);
+  threadVisualIdentityProjectionDigest(visualIdentity);
   return {
     description: [
       "Generated official identity photograph derived only from an authorized Thread visual-identity projection and its canonical reference image.",
       `Authorized subject appearance: ${visualIdentity.subjectDescription}`,
       `Authorized rendering continuity: ${visualIdentity.renderDescription}`,
       ageInstruction(targetAgeYears),
-      officialPhotoAwkwardness(identityDigest),
+      "Neutral, natural administrative portrait with a calm expression.",
     ].join(" "),
     constraints: [
-      "Use the supplied canonical reference image as the identity anchor; do not invent or materially redesign the person's face or body.",
+      "Use the supplied canonical reference image as the identity anchor and preserve the same recognizable person.",
       "Age-transform naturally to the requested target age while preserving identity-defining proportions, asymmetries, and distinctive marks.",
       "Use front-facing or almost front-facing head-and-shoulders administrative ID-photo framing.",
-      "Use a plain neutral background, even boring administrative lighting, ordinary focus, and minimal styling.",
-      "No cinematic depth of field, glamour treatment, dramatic pose, fashion-editorial styling, or flattering beauty retouching.",
-      "The mild ID-photo awkwardness must remain subtle, affectionate, natural, and dignity-preserving.",
-      "Do not make the subject cartoonish, grotesque, humiliated, distressed, intoxicated, incompetent, or visibly degraded.",
+      "Use a plain neutral background, even administrative lighting, ordinary focus, natural skin detail, and minimal styling.",
+      "Keep expression, pose, grooming, and clothing ordinary and understated.",
+      "Keep the result realistic, dignified, and suitable for an identity credential.",
       "Do not add text, numbers, cards, badges, QR codes, signatures, watermarks, borders, or document graphics to the image itself.",
       "This generated photograph is derived presentation media, not embodiment, identity, historical, or autobiographical evidence.",
     ],
