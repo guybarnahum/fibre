@@ -199,12 +199,13 @@ test("official-photo demand carries the canonical root, reference age, credentia
   assert.ok(official.inputReferences.includes(CANONICAL_ROOT));
   assert.match(official.brief.description, /22 years old/);
   assert.match(official.brief.description, /normalized reference age 25/);
-  assert.match(official.brief.description, /neutral administrative identity photograph/i);
+  assert.match(official.brief.description, /neutral head-and-shoulders administrative portrait/i);
+  const officialBrief = JSON.stringify(official.brief);
   assert.equal(
-    official.brief.description.includes(current.bundle.presentation.visualIdentity.subjectDescription)
-      || official.brief.description.includes(current.bundle.presentation.visualIdentity.renderDescription),
+    officialBrief.includes(current.bundle.presentation.visualIdentity.subjectDescription)
+      || officialBrief.includes(current.bundle.presentation.visualIdentity.renderDescription),
     false,
-    "downstream photo prompt must stop carrying canonical phenotype text after root admission",
+    "reference-conditioned official photo must not restate internal visual-identity prose",
   );
 });
 
