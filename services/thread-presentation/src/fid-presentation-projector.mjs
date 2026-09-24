@@ -256,6 +256,10 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
   const provenanceRef = provenanceId(fid.credentialId);
   const sourceReferences = [fid.credentialId, fid.issuanceRecordDigest, fid.photoAdmissionId, fid.photoDigest];
   const photo = fidPhotoMedia(fid, provenanceRef, sourceReferences);
+  const provenanceReferences = [...new Set([
+    ...sourceReferences,
+    ...(photo?.sourceReferences ?? []),
+  ])];
   const front = fidMedia(fid, "front", provenanceRef, sourceReferences);
   const back = fidMedia(fid, "back", provenanceRef, sourceReferences);
   const cardAsset = fidCardMedia(fid, provenanceRef, sourceReferences);
@@ -285,7 +289,7 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
       entries: [...base.provenance.entries, {
         provenanceId: provenanceRef,
         kind: "fibre_projection",
-        sourceReferences,
+        sourceReferences:provenanceReferences,
         note: "Active Fibre Identity Card projected from Fibre Identity Authority; presentation does not issue or alter the credential.",
       }],
     },
