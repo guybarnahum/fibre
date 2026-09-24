@@ -205,6 +205,17 @@ function fidCardMedia(active, provenanceRef, sourceReferences) {
   };
 }
 
+function samePublishedMedia(left, right) {
+  return left?.mediaId === right?.mediaId
+    && left?.role === right?.role
+    && left?.status === right?.status
+    && left?.locator === right?.locator
+    && left?.mediaType === right?.mediaType
+    && left?.sha256 === right?.sha256
+    && left?.provenanceRef === right?.provenanceRef
+    && JSON.stringify(left?.sourceReferences ?? []) === JSON.stringify(right?.sourceReferences ?? []);
+}
+
 function alreadyProjectsActiveFid(bundle, active, visibility) {
   const card = bundle.presentation.identityCard;
   if (active === null) return card === null;
@@ -357,6 +368,13 @@ export function createFidPresentationProjectionService({ presentationServer, inf
         for (const part of ["photo", "front", "back", "card"]) {
           const media = projected.media.assets.find((asset) => asset.mediaId === mediaId(active.credentialId, part));
           if (!media) continue;
+          const prior = currentBundle.media.assets.find((asset) => asset.mediaId === media.mediaId) ?? null;
+          if (prior !== null) {
+            if (!samePublishedMedia(prior, media)) {
+              throw new Error(`active FID ${part} media changed under the same credential`);
+            }
+            continue;
+          }
           const accepted = await presentationServer.appendEvent({
             streamVersion: THREAD_PRESENTATION_STREAM_VERSION,
             eventId: `fid_media_${active.credentialId}_${part}`,
