@@ -3,12 +3,15 @@ import test from "node:test";
 
 import { createFidLifecycleReconciler } from "../src/fid-lifecycle-reconciler.mjs";
 
-function active(revision) {
+function active(revision, canonicalReferenceObjectRef = null) {
   return {
     threadId:"thr_fid_lifecycle",
     credentialId:`fidc_${revision}`,
     revision,
     supersedesCredentialId:revision === 1 ? null : `fidc_${revision - 1}`,
+    ...(canonicalReferenceObjectRef === null ? {} : {
+      photo:{ sourceReferences:[canonicalReferenceObjectRef] },
+    }),
   };
 }
 
@@ -56,6 +59,38 @@ test("FID lifecycle ensure reuses active identity while reissue advances it", as
   assert.equal(replacement.credential.supersedesCredentialId, initial.credential.credentialId, "reissue lost predecessor");
   assert.equal(cuts, 2, "wrong number of FID cuts");
   assert.deepEqual(projected, ["fidc_1","fidc_1","fidc_2"], "active FID was not projected");
+});
+
+
+test("FID ensure replaces a card whose photo belongs to an older canonical root", async () => {
+  let current = active(1, "visual_identity_reference_old");
+  let cuts = 0;
+  const reconciler = createFidLifecycleReconciler({
+    fidAuthority:{
+      async getActive() { return current; },
+      async cut() {
+        cuts += 1;
+        current = active(2, "visual_identity_reference_new");
+        return { result:{ state:"active" }, active:current };
+      },
+    },
+    presentationProjection:{
+      async reconcile({ activeFid }) {
+        return { changed:true, credentialId:activeFid.credentialId };
+      },
+    },
+  });
+
+  const result = await reconciler.reconcile({
+    threadId:"thr_fid_lifecycle",
+    idempotencyKey:"fid_visual_revision_2",
+    mode:"ensure",
+    canonicalReferenceObjectRef:"visual_identity_reference_new",
+  });
+
+  assert.equal(cuts, 1, "stale visual identity reused an old FIN Card");
+  assert.equal(result.credential.credentialId, "fidc_2", "corrected visual identity did not get a replacement FIN Card");
+  assert.equal(result.credential.supersedesCredentialId, "fidc_1", "replacement lost the prior FIN Card lineage");
 });
 
 test("FID lifecycle waits for issuance before projecting a credential", async () => {
