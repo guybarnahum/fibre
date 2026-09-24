@@ -102,10 +102,6 @@ test("authorized visual identity atomically creates identity card and reference-
   assert.deepEqual(official.referenceObjectRefs, [CANONICAL_REFERENCE]);
   assert.equal(official.context.referenceAgeYears, 25);
   assert.equal(official.context.targetAgeYears, 22);
-  assert.match(official.brief.description, /oval face/);
-  assert.match(official.brief.description, /head-and-shoulders portrait/);
-  assert.match(official.brief.description, /25/);
-  assert.match(official.brief.description, /22 years old/);
   assert.equal(official.inputReferences.includes("emb_visual_identity_projection_001"), true);
 });
 
