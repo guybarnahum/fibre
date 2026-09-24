@@ -64,8 +64,6 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
       console.error(JSON.stringify({
         event: "birth-center-development-failed",
         message: error instanceof Error ? error.message : String(error),
-        gate: error?.gate ?? null,
-        causeGate: error?.cause?.gate ?? null,
       }));
     },
   });
