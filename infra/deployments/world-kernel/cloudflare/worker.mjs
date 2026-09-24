@@ -19,7 +19,7 @@ const THREAD_IDENTITY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]
 const THREAD_OBSERVATORY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/observatory$/u;
 const THREAD_REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
 const THREAD_DIRECTORY_ROUTE = "/internal/thread-directory/search";
-const THREAD_REPAIR_CONTRACT = "fibre-thread-repair-v0.6";
+const THREAD_REPAIR_CONTRACT = "fibre-thread-repair-v0.7";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
