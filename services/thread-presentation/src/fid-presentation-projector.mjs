@@ -97,6 +97,18 @@ function activeFid(value, threadId) {
       throw new TypeError(`active FID ${side} media must be a sized PNG`);
     }
   }
+  if (value.photo !== undefined && value.photo !== null) {
+    nonEmpty("active FID photo objectRef", value.photo.objectRef);
+    nonEmpty("active FID photo digest", value.photo.digest);
+    if (value.photo.mediaType !== "image/png"
+      || !Number.isSafeInteger(value.photo.width)
+      || !Number.isSafeInteger(value.photo.height)) {
+      throw new TypeError("active FID photo must be a sized PNG");
+    }
+    if (!Array.isArray(value.photo.sourceReferences)) {
+      throw new TypeError("active FID photo sourceReferences are required");
+    }
+  }
   if (value.cardAsset !== undefined && value.cardAsset !== null) {
     nonEmpty("active FID card asset objectRef", value.cardAsset.objectRef);
     nonEmpty("active FID card asset digest", value.cardAsset.digest);
@@ -113,8 +125,13 @@ function withoutPriorCard(bundle) {
   const cardMedia = new Set([
     card.frontMediaRef,
     card.backMediaRef,
+    card.officialPhotoMediaRef,
   ].filter(Boolean));
-  const removedAssets = bundle.media.assets.filter((asset) => cardMedia.has(asset.mediaId) || CARD_ROLES.has(asset.role));
+  const removedAssets = bundle.media.assets.filter((asset) => (
+    cardMedia.has(asset.mediaId)
+    || CARD_ROLES.has(asset.role)
+    || asset.role === "official_id_photo"
+  ));
   const removedProvenance = new Set([card.provenanceRef, ...removedAssets.map((asset) => asset.provenanceRef)]);
   return {
     presentation: { ...bundle.presentation, identityCard: null },
@@ -141,6 +158,28 @@ function fidMedia(active, side, provenanceRef, sourceReferences) {
     sourceReferences,
     provenanceRef,
     generation: null,
+  };
+}
+
+function fidPhotoMedia(active, provenanceRef, sourceReferences) {
+  const photo = active.photo;
+  if (!photo) return null;
+  return {
+    mediaId:mediaId(active.credentialId, "photo"),
+    kind:"image",
+    role:"official_id_photo",
+    status:"ready",
+    locator:photo.objectRef,
+    mediaType:photo.mediaType,
+    sha256:photo.digest,
+    width:photo.width,
+    height:photo.height,
+    durationMs:null,
+    posterRef:null,
+    unavailableReason:null,
+    sourceReferences:[...new Set([...sourceReferences, ...photo.sourceReferences])],
+    provenanceRef,
+    generation:null,
   };
 }
 
@@ -177,6 +216,12 @@ function alreadyProjectsActiveFid(bundle, active, visibility) {
     const media = bundle.media.assets.find((asset) => asset.mediaId === ref);
     if (!media || media.locator !== active[side].objectRef || media.sha256 !== active[side].digest) return false;
   }
+  if (active.photo) {
+    const photos = bundle.media.assets.filter((asset) => asset.role === "official_id_photo");
+    if (photos.length !== 1
+      || photos[0].locator !== active.photo.objectRef
+      || photos[0].sha256 !== active.photo.digest) return false;
+  }
   if (active.cardAsset) {
     const cardMedia = bundle.media.assets.find((asset) => asset.mediaId === mediaId(active.credentialId, "card"));
     if (!cardMedia || cardMedia.role !== "fibre_identity_card"
@@ -210,6 +255,7 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
 
   const provenanceRef = provenanceId(fid.credentialId);
   const sourceReferences = [fid.credentialId, fid.issuanceRecordDigest, fid.photoAdmissionId, fid.photoDigest];
+  const photo = fidPhotoMedia(fid, provenanceRef, sourceReferences);
   const front = fidMedia(fid, "front", provenanceRef, sourceReferences);
   const back = fidMedia(fid, "back", provenanceRef, sourceReferences);
   const cardAsset = fidCardMedia(fid, provenanceRef, sourceReferences);
@@ -232,7 +278,7 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
 
   return normalizeThreadPresentationBundle({
     presentation: { ...base.presentation, manifest: { ...base.presentation.manifest, generatedAt: at }, identityCard },
-    media: { ...base.media, generatedAt: at, assets: [...base.media.assets, front, back, ...(cardAsset ? [cardAsset] : [])] },
+    media: { ...base.media, generatedAt: at, assets: [...base.media.assets, ...(photo ? [photo] : []), front, back, ...(cardAsset ? [cardAsset] : [])] },
     provenance: {
       ...base.provenance,
       generatedAt: at,
@@ -248,6 +294,12 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
 
 async function requireStoredMedia(infra, active) {
   if (active === null) return;
+  if (active.photo) {
+    const stored = await infra.objects.get(active.photo.objectRef);
+    if (stored === null || stored.digest !== active.photo.digest) {
+      throw new Error("active FID photo does not match immutable object storage");
+    }
+  }
   for (const side of ["front", "back"]) {
     const stored = await infra.objects.get(active[side].objectRef);
     if (stored === null || stored.digest !== active[side].digest) {
@@ -291,7 +343,7 @@ export function createFidPresentationProjectionService({ presentationServer, inf
 
       const events = [];
       if (active !== null) {
-        for (const part of ["front", "back", "card"]) {
+        for (const part of ["photo", "front", "back", "card"]) {
           const media = projected.media.assets.find((asset) => asset.mediaId === mediaId(active.credentialId, part));
           if (!media) continue;
           const accepted = await presentationServer.appendEvent({
