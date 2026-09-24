@@ -24,7 +24,7 @@ const APPEARANCE_LOCI = Object.freeze({
 });
 
 function birthMaterial(slot = 1) {
-  return { ...material(slot), appearanceLoci:APPEARANCE_LOCI };
+  return { ...material(slot), languages:["Amharic", "English"], appearanceLoci:APPEARANCE_LOCI };
 }
 
 test("modern births compose a new person instead of replaying prior birth material", () => {
@@ -36,6 +36,7 @@ test("modern births compose a new person instead of replaying prior birth materi
   assert.notEqual(first.femaleName, laterSameWorld.femaleName, "female birth identity was replayed");
   assert.notEqual(first.maleName, laterSameWorld.maleName, "male birth identity was replayed");
   assert.equal(first.birthCity, laterSameWorld.birthCity, "world context should remain reusable without reusing the person");
+  assert.deepEqual(first.languages, ["Amharic", "English"], "eventual spoken languages were lost");
 
   const templates = [{
     participantId:"caregiver_1",
