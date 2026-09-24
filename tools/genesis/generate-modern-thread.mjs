@@ -62,9 +62,6 @@ function modernRequest({ requestId, requestedAt, cohort, selection, sexSelection
       }),
     }),
     ...(selection.heritage === null ? {} : { heritage: selection.heritage.display }),
-    ...(typeof selection.material?.appearanceContext === "string" && selection.material.appearanceContext.trim() !== ""
-      ? { appearanceContext: selection.material.appearanceContext.trim() }
-      : {}),
   });
   return Object.freeze({
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
