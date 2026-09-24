@@ -75,7 +75,7 @@ export function buildGenesisPublicationCognition({
 function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt }) {
   if (!subjectIdentity || typeof subjectIdentity !== "object") throw new TypeError("Genesis birth requires subject identity material");
   if (!worldSpec || typeof worldSpec !== "object") throw new TypeError("Genesis birth requires WorldSpec identity context");
-  if (!Array.isArray(worldSpec.languages) || worldSpec.languages.length === 0) throw new TypeError("modern Genesis birth requires at least one raised-language World context");
+  if (!Array.isArray(worldSpec.languages) || worldSpec.languages.length === 0) throw new TypeError("modern Genesis birth requires World language context");
   if (typeof worldSpec.culturalContext !== "string" || worldSpec.culturalContext.trim() === "") throw new TypeError("modern Genesis birth requires WorldSpec cultural context");
   if (typeof subjectIdentity.birthCity !== "string" || subjectIdentity.birthCity.trim() === "") throw new TypeError("modern Genesis birth requires an explicit birth city");
   const sex = subjectIdentity.sex ?? genesisSexForThread({ threadId });
