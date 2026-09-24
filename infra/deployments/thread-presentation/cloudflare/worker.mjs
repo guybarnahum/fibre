@@ -80,7 +80,6 @@ function createInfra(env, { includeWorkflows = true } = {}) {
 }
 
 function createVisualReconciler(env, infra, presentationServer, activityRecorder) {
-  const fidLifecycle = createFidLifecycle(env, infra, presentationServer);
   return createThreadPresentationVisualPublicationReconciler({
     presentationServer,
     infra,
@@ -90,7 +89,11 @@ function createVisualReconciler(env, infra, presentationServer, activityRecorder
     ),
     createDemandService: createPresentationAssetDemandService,
     createVisualRewrite: createThreadPresentationEmbodimentRewriteService,
-    ensureFid:({ threadId, idempotencyKey, canonicalReferenceObjectRef }) => fidLifecycle.reconcile({
+    ensureFid:({ threadId, idempotencyKey, canonicalReferenceObjectRef }) => createFidLifecycle(
+      env,
+      infra,
+      presentationServer,
+    ).reconcile({
       threadId,
       idempotencyKey,
       mode:"ensure",
