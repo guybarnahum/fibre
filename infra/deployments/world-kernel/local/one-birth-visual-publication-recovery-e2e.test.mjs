@@ -244,7 +244,7 @@ function createBflFixtureFetch({ expectedReferenceBase64 }) {
       const body = JSON.parse(init.body);
       assert.equal(body.input_image, expectedReferenceBase64);
       assert.equal(body.input_image_2, undefined);
-      assert.match(body.prompt, /canonical reference image as the identity anchor/i);
+      assert.match(body.prompt, /preserve .*identity/i);
       return jsonResponse({
         id: "bfl_h_reference_task",
         polling_url: "https://api.bfl.ai/v1/get_result?id=bfl_h_reference_task",
