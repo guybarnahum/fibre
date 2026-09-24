@@ -22,6 +22,14 @@ function activeFid() {
     issuedAt:"2026-09-19T20:00:00.000Z",
     expiresAt:null,
     status:"active",
+    photo:{
+      objectRef:"asset_fid_photo_card_asset_2",
+      digest:"sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      mediaType:"image/png",
+      width:512,
+      height:512,
+      sourceReferences:["photo_admission_card_asset","visual_identity_reference_card_asset"],
+    },
     front:{
       objectRef:"fidcard_fidc_card_asset_2_front",
       digest:"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -188,5 +196,51 @@ test("FID projection publishes front, back and one logical rich card asset", asy
   );
   assert.equal(projected.presentation.identityCard.frontMediaRef, "media_fid_fidc_card_asset_2_front");
   assert.equal(projected.presentation.identityCard.backMediaRef, "media_fid_fidc_card_asset_2_back");
+  const photo = projected.media.assets.find((asset) => asset.role === "official_id_photo");
+  assert.equal(photo?.locator, "asset_fid_photo_card_asset_2");
+});
+
+test("FID reissue replaces the prior official photo instead of retaining stale media", async () => {
+  const infra = createMemoryInfraDriver();
+  const first = await materializeFidCardAsset(infra, activeFid());
+  const firstProjection = projectFidThreadPresentation({
+    bundle:presentationBundle(),
+    activeFid:first,
+    projectedAt:"2026-09-19T20:05:00.000Z",
+    visibility:"public",
+  });
+
+  const next = {
+    ...activeFid(),
+    credentialId:"fidc_card_asset_3",
+    revision:3,
+    supersedesCredentialId:"fidc_card_asset_2",
+    photo:{
+      ...activeFid().photo,
+      objectRef:"asset_fid_photo_card_asset_3",
+      digest:"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    },
+    front:{
+      ...activeFid().front,
+      objectRef:"fidcard_fidc_card_asset_3_front",
+      digest:"sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    },
+    back:{
+      ...activeFid().back,
+      objectRef:"fidcard_fidc_card_asset_3_back",
+      digest:"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    },
+  };
+  const enriched = await materializeFidCardAsset(infra, next);
+  const projected = projectFidThreadPresentation({
+    bundle:firstProjection,
+    activeFid:enriched,
+    projectedAt:"2026-09-19T20:06:00.000Z",
+    visibility:"public",
+  });
+
+  const photos = projected.media.assets.filter((asset) => asset.role === "official_id_photo");
+  assert.equal(photos.length, 1, "FID reissue retained a stale official photo");
+  assert.equal(photos[0].locator, "asset_fid_photo_card_asset_3");
 });
 
