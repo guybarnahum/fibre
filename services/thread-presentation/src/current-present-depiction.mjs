@@ -17,7 +17,7 @@ function sceneLocation(location) {
   return `in transit from ${from} toward ${to}`;
 }
 
-function presentBrief(present, visualIdentity, targetAgeYears) {
+function presentBrief(present, targetAgeYears) {
   const people = present.participants.length === 0
     ? "No other publicly named participant is established in this scene."
     : `Publicly named participants: ${present.participants.join(", ")}.`;
@@ -77,7 +77,7 @@ export function planCurrentPresentDepiction({ present, presentation }) {
     role: "present_scene",
     variant: "current",
     status: referenceReady ? "missing" : "deferred",
-    brief: referenceReady ? presentBrief(present, visualIdentity, targetAgeYears) : null,
+    brief: referenceReady ? presentBrief(present, targetAgeYears) : null,
     inputReferences: referenceReady
       ? [...new Set([
           present.situationId,
