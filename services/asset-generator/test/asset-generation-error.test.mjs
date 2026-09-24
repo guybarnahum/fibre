@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { InfraImmutableObjectConflictError } from "#infra";
 import {
   AssetGenerationError,
+  assetGenerationProviderFallbackDecision,
   assetGenerationRetryDecision,
   parseRetryAfterMs,
   toAssetGenerationError,
@@ -62,6 +63,61 @@ test("retry policy retries bounded provider failures but never terminal categori
   });
   assert.equal(assetGenerationRetryDecision(terminal).retry, false);
   assert.equal(assetGenerationRetryDecision(terminal).reason, "terminal_category");
+});
+
+test("provider rejection falls back while ambiguous or resumable primary operations do not", () => {
+  for (const category of [
+    "rate_limited",
+    "provider_unavailable",
+    "quota_exhausted",
+    "authentication",
+    "unsupported_capability",
+    "moderation_rejected",
+    "invalid_request",
+    "unknown",
+  ]) {
+    const decision = assetGenerationProviderFallbackDecision(new AssetGenerationError("provider rejected", {
+      phase:"provider_generation",
+      category,
+      provider:"bfl",
+    }));
+    assert.equal(decision.fallback, true, `${category} should use the secondary before acceptance`);
+  }
+
+  for (const category of ["network", "provider_timeout"]) {
+    const decision = assetGenerationProviderFallbackDecision(new AssetGenerationError("ambiguous transport", {
+      phase:"provider_generation",
+      category,
+      provider:"bfl",
+    }));
+    assert.equal(decision.fallback, false);
+    assert.equal(decision.reason, "ambiguous_provider_acceptance");
+  }
+
+  for (const category of ["rate_limited", "provider_unavailable"]) {
+    const decision = assetGenerationProviderFallbackDecision(new AssetGenerationError("accepted operation is transiently unavailable", {
+      phase:"provider_generation",
+      category,
+      provider:"bfl",
+      providerOperationDurable:true,
+    }));
+    assert.equal(decision.fallback, false);
+    assert.equal(decision.reason, "resume_primary_operation");
+  }
+
+  const terminalAccepted = assetGenerationProviderFallbackDecision(new AssetGenerationError("provider rejected accepted task", {
+    phase:"provider_generation",
+    category:"moderation_rejected",
+    provider:"bfl",
+    providerOperationDurable:true,
+  }));
+  assert.equal(terminalAccepted.fallback, true);
+
+  const localValidation = assetGenerationProviderFallbackDecision(new AssetGenerationError("missing reference", {
+    phase:"reference_loading",
+    category:"missing_reference",
+  }));
+  assert.equal(localValidation.fallback, false, "Fibre/local failures must not masquerade as provider rejection");
 });
 
 test("post-provider transient failures become retryable automatically once staged output is durable", () => {
