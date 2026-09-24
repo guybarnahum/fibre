@@ -14,6 +14,12 @@ function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
 }
 
+function announceThreadUpdated(threadId, change) {
+  window.dispatchEvent(new CustomEvent("fibre:thread-updated", {
+    detail:{ threadId, change },
+  }));
+}
+
 function labelFor(code) {
   const labels = {
     THREAD_NOT_FOUND:"World admission",
@@ -291,6 +297,7 @@ function renderMigrationActions(host, threadId, diagnosis, reconciliation) {
             diagnosis:payload.migration.after,
             reconciliation:payload.reconciliation ?? reconciliation,
           }, `Migration complete · ${migration.label ?? human(migration.id)}.`);
+          announceThreadUpdated(threadId, "migration");
         },
       });
     }, {
@@ -313,6 +320,7 @@ function renderRepairAction(host, threadId, diagnosis, reconciliation) {
       diagnosis:payload.result.after,
       reconciliation:payload.reconciliation ?? null,
     }, names ? `Applied: ${names}` : "No repair action was required.");
+    announceThreadUpdated(threadId, "repair");
   }, {
     icon:reconciliation?.state === "dead_letter" ? "heart-pulse" : "wrench",
     tooltip:reconciliation?.state === "dead_letter"
@@ -333,6 +341,7 @@ function renderPendingReconciliationAction(host, threadId, diagnosis, reconcilia
       diagnosis:payload.result.after,
       reconciliation:payload.reconciliation ?? null,
     }, "Reconciliation state resolved from current authoritative health.");
+    announceThreadUpdated(threadId, "reconciliation");
   }, {
     icon:"rotate",
     tooltip:"Resolve reconciliation — retire stale pending reconciliation after authoritative health is verified.",
@@ -351,6 +360,7 @@ function renderRecoveryAction(host, threadId, diagnosis, reconciliation) {
       diagnosis,
       reconciliation:payload.recovery.after,
     }, "Recovered · reconciliation is pending.");
+    announceThreadUpdated(threadId, "recovery");
   }, {
     icon:"heart-pulse",
     tooltip:"Recover — return this healthy Thread from dead-letter quarantine to reconciliation processing.",
