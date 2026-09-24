@@ -1,4 +1,4 @@
-const THREAD_HEALTH_PROJECTION_VERSION = "thread-health-v0.1";
+const THREAD_HEALTH_PROJECTION_VERSION = "thread-health-v0.2";
 
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") {
