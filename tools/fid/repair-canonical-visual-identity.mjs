@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
-import { FIBRE_IDENTITY_CARD_CURRENT_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
@@ -120,21 +119,6 @@ async function repairCanonical({
   return payload(response, "canonical visual identity repair");
 }
 
-async function reissueFid({ threadPresentation, privateToken, threadId, idempotencyKey }) {
-  const response = await fetch(
-    `${threadPresentation}/internal/fid/reconcile`,
-    {
-      method:"POST",
-      headers:{
-        "content-type":"application/json",
-        "x-fibre-private-token":privateToken,
-      },
-      body:JSON.stringify({ threadId, idempotencyKey, mode:"reissue" }),
-    },
-  );
-  return payload(response, "FID reissue", [200, 202]);
-}
-
 async function main() {
   const { threadId, specFile, reason } = options(process.argv.slice(2));
   const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
@@ -183,30 +167,23 @@ async function main() {
     (body) => body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0] === canonicalReferenceObjectRef,
   );
 
-  const fidKey = `${operationKey}.fid`;
-  const fid = await poll(
-    "FID reissue from corrected canonical root",
-    () => reissueFid({ threadPresentation, privateToken, threadId, idempotencyKey:fidKey }),
-    (body) => body?.result?.complete === true && body?.result?.credential?.credentialId,
-  );
-  const credential = fid.result.credential;
-  if (previousFidCredentialId !== null) {
-    if (credential.credentialId === previousFidCredentialId) {
-      throw new Error("FID repair reused the credential that still carries the prior visual identity");
-    }
-    if (
-      previousFidCredentialVersion === FIBRE_IDENTITY_CARD_CURRENT_VERSION
-      && credential.supersedesCredentialId !== previousFidCredentialId
-    ) {
-      throw new Error("FID repair did not supersede the previously active FIA credential");
-    }
-  }
-
-  await poll(
-    "corrected FID projection",
+  const correctedPresentation = await poll(
+    "automatic FID projection from corrected canonical root",
     () => presentation({ threadPresentation, threadId }),
-    (body) => body?.snapshot?.presentation?.identityCard?.credentialId === credential.credentialId,
+    (body) => {
+      const card = body?.snapshot?.presentation?.identityCard ?? null;
+      const photos = (body?.snapshot?.media?.assets ?? []).filter((asset) => (
+        asset?.role === "official_id_photo"
+        && asset?.status === "ready"
+        && Array.isArray(asset?.sourceReferences)
+        && asset.sourceReferences.includes(canonicalReferenceObjectRef)
+      ));
+      return card?.credentialId
+        && (previousFidCredentialId === null || card.credentialId !== previousFidCredentialId)
+        && photos.length === 1;
+    },
   );
+  const credential = correctedPresentation.snapshot.presentation.identityCard;
 
   process.stdout.write(`${JSON.stringify({
     event:"canonical-visual-identity-repair-complete",
