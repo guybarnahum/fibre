@@ -62,6 +62,40 @@ test("different Thread identities do not collapse to one interchangeable phenoty
   assert.notEqual(left.specification.subject.description, right.specification.subject.description);
 });
 
+test("family appearance context constrains morphology while Thread identity supplies neutral individuality", () => {
+  const appearanceContext = "Family members span medium-brown to deeper-brown skin tones, tightly coiled to loosely curly dark hair, deep-brown eyes, and substantial ordinary variation in facial proportions, nose and lip geometry.";
+  const leftId = "thr_contextual_visual_left";
+  const rightId = "thr_contextual_visual_right";
+
+  const leftLoci = deNovoVisualPhenotypeLoci({ threadId:leftId, appearanceContext });
+  const rightLoci = deNovoVisualPhenotypeLoci({ threadId:rightId, appearanceContext });
+  const ancestrySensitiveDomains = new Set(["face", "eyes", "nose", "mouth", "jaw", "skin", "hair"]);
+
+  assert.equal(
+    leftLoci.some((locus) => ancestrySensitiveDomains.has(locus.domain)),
+    false,
+    "family prior was overridden by generic morphology",
+  );
+  assert.notDeepEqual(
+    leftLoci.map((locus) => locus.value),
+    rightLoci.map((locus) => locus.value),
+    "family-compatible Threads lost individual visual variation",
+  );
+
+  const left = buildDeNovoCanonicalVisualIdentity({
+    threadId:leftId,
+    sex:"male",
+    appearanceContext,
+  });
+  const replay = buildDeNovoCanonicalVisualIdentity({
+    threadId:leftId,
+    sex:"male",
+    appearanceContext,
+  });
+  assert.deepEqual(left, replay, "contextual phenotype did not replay deterministically");
+  assert.match(left.specification.subject.description, /broad family appearance prior:/u);
+});
+
 test("synthetic-lineage phenotype recombines textual loci from parent identities", () => {
   const parentIds = ["thr_visual_parent_a", "thr_visual_parent_b"];
   const loci = recombineVisualPhenotypeLoci({
