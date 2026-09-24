@@ -60,11 +60,10 @@ function normalizedEncounter(encounterStory) {
 }
 
 function identityInstructions(depicted) {
-  return depicted.map(({ threadId, visualIdentity, targetAgeYears }) => [
-    `Thread ${threadId}: ${visualIdentity.subjectDescription}`,
-    `Rendering continuity: ${visualIdentity.renderDescription}`,
+  return depicted.map(({ threadId, targetAgeYears }) => [
+    `Thread ${threadId}: use that Thread's supplied canonical reference image as the complete likeness anchor.`,
     targetAgeYears === null
-      ? `Preserve this identity from the canonical reference at normalized age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} without asserting an unsupported exact encounter age.`
+      ? `Preserve this identity from normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} without asserting an unsupported exact encounter age.`
       : `Preserve this identity while age-transforming naturally from normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} to ${targetAgeYears} years old at the encounter time.`,
   ].join(" "));
 }
