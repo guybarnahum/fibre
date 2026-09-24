@@ -110,7 +110,7 @@ export class ThreadVisualPublicationWorksetStore {
       VALUES (?,'pending',NULL,?)
       ON CONFLICT(thread_id) DO UPDATE SET
         state='pending', last_error_json=NULL, updated_at=excluded.updated_at
-      WHERE ${TABLE}.state='dead_letter'
+      WHERE ${TABLE}.state<>'pending'
     `).run(threadId, updatedAt);
     return Number(result.changes) === 1;
   }
