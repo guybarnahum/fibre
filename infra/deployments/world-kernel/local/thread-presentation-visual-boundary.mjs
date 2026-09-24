@@ -1,8 +1,6 @@
 import { createThreadPresentationVisualPublicationReconciler } from "#services/thread-presentation/src/visual-publication-reconciler.mjs";
 import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
-import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
 import { createThreadPresentationEmbodimentRewriteService } from "#services/world-kernel/src/thread-presentation-embodiment-rewrite-service.mjs";
-import { createThreadPresentationIdentityMediaRewriteService } from "#services/world-kernel/src/thread-presentation-identity-media-rewrite-service.mjs";
 
 /**
  * Deployment composition for the current Presentation migration boundary.
@@ -16,6 +14,7 @@ export function createThreadPresentationVisualBoundary({
   presentationServer,
   infra,
   selectProviderProfile,
+  ensureFid,
   createDemandService = createPresentationAssetDemandService,
 } = {}) {
   return createThreadPresentationVisualPublicationReconciler({
@@ -24,7 +23,6 @@ export function createThreadPresentationVisualBoundary({
     selectProviderProfile,
     createDemandService,
     createVisualRewrite: createThreadPresentationEmbodimentRewriteService,
-    createIdentityRewrite: createThreadPresentationIdentityMediaRewriteService,
-    planSlots: planThreadPresentationAssetSlots,
+    ensureFid,
   });
 }
