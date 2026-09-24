@@ -114,8 +114,9 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.match(created.worldSpec.culturalContext, /family roots|migration/iu, "family origin must become causal World context");
   assert.match(created.worldSpec.householdShape, /Family origin context:/u);
   assert.match(created.material.familyOriginContext, /Yemeni Jewish family roots/u);
-  assert.deepEqual(created.worldSpec.languages, ["Hebrew"], "raised languages must reflect upbringing rather than later school acquisition");
-  assert.deepEqual(created.material.languages, ["Hebrew", "English"], "eventual spoken languages must retain later acquisition");
+  assert.deepEqual(created.worldSpec.languages, ["Hebrew", "English"], "World language context lost later acquisition");
+  assert.deepEqual(created.material.languages, ["Hebrew", "English"], "eventual spoken languages were lost");
+  assert.deepEqual(created.material.raisedLanguages, ["Hebrew"], "raised languages absorbed a school-acquired language");
   assert.doesNotMatch(created.material.appearanceContext, /Yemeni Jewish|Jerusalem|Israel/iu, "portrait appearance prior must not carry place/heritage labels");
 
   const reused = await resolveModernWorldSelection({
