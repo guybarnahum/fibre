@@ -79,6 +79,7 @@ function normalizeSubjectIdentity(candidate) {
     "sex",
     "place",
     "heritage",
+    "languages",
     "appearanceContext",
   ]);
   for (const key of Object.keys(identity)) {
@@ -105,6 +106,13 @@ function normalizeSubjectIdentity(candidate) {
   }
   if (Object.hasOwn(identity, "heritage")) {
     normalized.heritage = nonEmpty("Genesis development request subjectIdentity.heritage", identity.heritage);
+  }
+  if (Object.hasOwn(identity, "languages")) {
+    normalized.languages = Object.freeze(stringArray(
+      "Genesis development request subjectIdentity.languages",
+      identity.languages,
+      { minimum: 1 },
+    ));
   }
   if (Object.hasOwn(identity, "appearanceContext")) {
     normalized.appearanceContext = nonEmpty("Genesis development request subjectIdentity.appearanceContext", identity.appearanceContext);
