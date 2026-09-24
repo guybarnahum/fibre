@@ -264,6 +264,9 @@ function buildManifest({ candidate, slotPlan, thread, memories, cognition, publi
     sourceBundleRefs: [],
     parentOrAncestorRefs,
     genomeRef: slotPlan.genome.header.genomeId,
+    ...(Array.isArray(slotPlan.subjectIdentity?.raisedLanguages)
+      ? { raisedLanguages:Object.freeze([...slotPlan.subjectIdentity.raisedLanguages]) }
+      : {}),
     cognition,
     publication: {
       status: "published",
