@@ -87,10 +87,11 @@ function createVisualReconciler(env, infra, presentationServer, activityRecorder
     ),
     createDemandService: createPresentationAssetDemandService,
     createVisualRewrite: createThreadPresentationEmbodimentRewriteService,
-    ensureFid:({ threadId, idempotencyKey }) => fidLifecycle.reconcile({
+    ensureFid:({ threadId, idempotencyKey, canonicalReferenceObjectRef }) => fidLifecycle.reconcile({
       threadId,
       idempotencyKey,
       mode:"ensure",
+      canonicalReferenceObjectRef,
     }),
     activityRecorder,
   });
