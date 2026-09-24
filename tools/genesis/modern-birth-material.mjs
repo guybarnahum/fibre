@@ -42,19 +42,15 @@ function appearanceValue(requestId, domain, values) {
 }
 
 function composeAppearanceContext(requestId, material) {
-  const family = typeof material.appearanceContext === "string" && material.appearanceContext.trim() !== ""
-    ? material.appearanceContext.trim()
-    : null;
-  if (!material.appearanceLoci) return family;
+  if (!material.appearanceLoci) {
+    throw new TypeError("modern birth requires authored family-compatible appearance loci");
+  }
   const concrete = APPEARANCE_DOMAINS.map((domain) => appearanceValue(
     requestId,
     domain,
     material.appearanceLoci[domain],
   ));
-  return [
-    `Concrete inherited phenotype selected for this individual: ${concrete.join("; ")}.`,
-    ...(family === null ? [] : [`Family appearance envelope used only as plausibility evidence: ${family}`]),
-  ].join(" ");
+  return `Concrete inherited phenotype selected for this individual: ${concrete.join("; ")}.`;
 }
 
 export function composeModernSubjectIdentity({ requestId, material }) {
