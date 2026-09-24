@@ -346,6 +346,6 @@ The active suite covers the legacy packet boundary plus v0.2 identity credential
 - official ID photo is generated-reconstruction image media;
 - visual authority is required before ID-photo demand is scheduled;
 - pending demand is not duplicated;
-- image briefs are administrative rather than glamour portraits and bound mild awkwardness safely;
+- image briefs are neutral administrative portraits grounded in the canonical visual identity;
 - card reissue/snapshot changes do not change an unchanged embodiment's generation workflow input;
 - private card/photo access fails closed against public catalog mistakes.
