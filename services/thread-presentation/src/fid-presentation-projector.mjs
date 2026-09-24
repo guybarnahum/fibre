@@ -79,6 +79,7 @@ export async function materializeFidCardAsset(infra, active) {
 
 function mediaId(credentialId, side) { return `media_fid_${credentialId}_${side}`; }
 function provenanceId(credentialId) { return `prov_fid_${credentialId}`; }
+function photoProvenanceId(credentialId) { return `prov_fid_photo_${credentialId}`; }
 
 function activeFid(value, threadId) {
   if (value === null) return null;
@@ -161,7 +162,7 @@ function fidMedia(active, side, provenanceRef, sourceReferences) {
   };
 }
 
-function fidPhotoMedia(active, provenanceRef, sourceReferences) {
+function fidPhotoMedia(active, provenanceRef) {
   const photo = active.photo;
   if (!photo) return null;
   return {
@@ -177,7 +178,7 @@ function fidPhotoMedia(active, provenanceRef, sourceReferences) {
     durationMs:null,
     posterRef:null,
     unavailableReason:null,
-    sourceReferences:[...new Set([...sourceReferences, ...photo.sourceReferences])],
+    sourceReferences:[...new Set(photo.sourceReferences)],
     provenanceRef,
     generation:null,
   };
@@ -254,12 +255,9 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
   }
 
   const provenanceRef = provenanceId(fid.credentialId);
+  const photoProvenanceRef = photoProvenanceId(fid.credentialId);
   const sourceReferences = [fid.credentialId, fid.issuanceRecordDigest, fid.photoAdmissionId, fid.photoDigest];
-  const photo = fidPhotoMedia(fid, provenanceRef, sourceReferences);
-  const provenanceReferences = [...new Set([
-    ...sourceReferences,
-    ...(photo?.sourceReferences ?? []),
-  ])];
+  const photo = fidPhotoMedia(fid, photoProvenanceRef);
   const front = fidMedia(fid, "front", provenanceRef, sourceReferences);
   const back = fidMedia(fid, "back", provenanceRef, sourceReferences);
   const cardAsset = fidCardMedia(fid, provenanceRef, sourceReferences);
@@ -286,12 +284,21 @@ export function projectFidThreadPresentation({ bundle: candidate, activeFid: can
     provenance: {
       ...base.provenance,
       generatedAt: at,
-      entries: [...base.provenance.entries, {
-        provenanceId: provenanceRef,
-        kind: "fibre_projection",
-        sourceReferences:provenanceReferences,
-        note: "Active Fibre Identity Card projected from Fibre Identity Authority; presentation does not issue or alter the credential.",
-      }],
+      entries: [
+        ...base.provenance.entries,
+        ...(photo ? [{
+          provenanceId:photoProvenanceRef,
+          kind:"generated_reconstruction",
+          sourceReferences:photo.sourceReferences,
+          note:"Official identity photo derived from the admitted canonical visual reference and admitted by Fibre Identity Authority.",
+        }] : []),
+        {
+          provenanceId: provenanceRef,
+          kind: "fibre_projection",
+          sourceReferences,
+          note: "Active Fibre Identity Card projected from Fibre Identity Authority; presentation does not issue or alter the credential.",
+        },
+      ],
     },
   });
 }
@@ -386,7 +393,7 @@ export function createFidPresentationProjectionService({ presentationServer, inf
           objectRef: media.locator,
           digest: media.sha256,
           mediaType: media.mediaType,
-          provenanceClass: "fibre_projection",
+          provenanceClass: media.role === "official_id_photo" ? "generated_reconstruction" : "fibre_projection",
           eventId: event.eventId,
           eventSequence: event.sequence,
         });
