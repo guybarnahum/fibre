@@ -65,11 +65,11 @@ test("public status does not hide a new infrastructure failure behind stale heal
   assert.equal((await currentPublicStatus(env, { fetchImpl:viewerOk })).status, "degraded");
 });
 
-test("elevated cached infrastructure degrades public status without exposing monitor detail", async () => {
+test("elevated resource use stays operational while remaining visible", async () => {
   const result = await currentPublicStatus(environment({ ADMIN_DASHBOARD:infraBinding("elevated") }), { fetchImpl:viewerOk });
-  assert.equal(result.status, "degraded");
+  assert.equal(result.status, "operational");
   const infra = result.components.find((component) => component.key === "infra");
-  assert.equal(infra.status, "degraded");
+  assert.equal(infra.status, "operational");
   assert.match(infra.description, /elevated/u);
 });
 
