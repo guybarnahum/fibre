@@ -26,6 +26,8 @@ test("Genesis carries explicit sex place and heritage into life context and embo
     sex: "female",
     place: { country: "Georgia", city: "Tbilisi" },
     heritage: "Georgian Jewish",
+    languages:["Georgian", "English"],
+    raisedLanguages:["Georgian"],
     appearanceContext,
   };
   const plan = buildGenesisDevelopmentPlan({
@@ -48,6 +50,8 @@ test("Genesis carries explicit sex place and heritage into life context and embo
   assert.match(subjectFacts, /Sex at birth: female/u);
   assert.match(subjectFacts, /Born in Tbilisi, Georgia/u);
   assert.match(subjectFacts, /Georgian Jewish heritage/u);
+  assert.match(subjectFacts, /Raised with these household\/early-upbringing languages: Georgian/u);
+  assert.match(subjectFacts, /By young-adult entry the subject uses these languages: Georgian, English/u);
 
   const seed = buildNeutralGenesisThreadSeed({
     threadId: plan.threadId,
