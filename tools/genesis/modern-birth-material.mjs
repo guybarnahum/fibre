@@ -64,7 +64,7 @@ export function composeModernSubjectIdentity({ requestId, material }) {
     femaleName: fullName(femaleGiven, family, material.nameOrder),
     maleName: fullName(maleGiven, family, material.nameOrder),
     birthCity: material.birthCity,
-    ...(appearanceContext === null ? {} : { appearanceContext }),
+    appearanceContext,
   });
 }
 
