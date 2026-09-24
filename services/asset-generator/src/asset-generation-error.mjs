@@ -237,6 +237,32 @@ export function parseRetryAfterMs(value, { nowMs = Date.now() } = {}) {
   return Math.max(0, timestamp - nowMs);
 }
 
+export function assetGenerationProviderFallbackDecision(error) {
+  const normalized = error instanceof AssetGenerationError
+    ? error
+    : toAssetGenerationError(error, { retryable:false });
+
+  if (normalized.phase !== "provider_generation" || normalized.providerOutputDurable) {
+    return Object.freeze({ fallback:false, reason:"not_provider_rejection" });
+  }
+
+  // Transport/timeout failures can be ambiguous: the provider may already have
+  // accepted the request. Preserve the resumable/retry path instead of paying
+  // for a second render that could race the first.
+  if (["network", "provider_timeout"].includes(normalized.category)) {
+    return Object.freeze({ fallback:false, reason:"ambiguous_provider_acceptance" });
+  }
+
+  // Once an accepted operation is durable, transient provider failures should
+  // resume that exact operation. Terminal provider rejection may use secondary.
+  if (normalized.providerOperationDurable
+    && ["rate_limited", "provider_unavailable"].includes(normalized.category)) {
+    return Object.freeze({ fallback:false, reason:"resume_primary_operation" });
+  }
+
+  return Object.freeze({ fallback:true, reason:"provider_rejected" });
+}
+
 export function assetGenerationRetryDecision(error, {
   attempt = 1,
   providerOperationDurable = error?.providerOperationDurable === true,
