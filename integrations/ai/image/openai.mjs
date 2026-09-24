@@ -9,6 +9,7 @@ import {
 
 const DEFAULT_MODEL = "gpt-image-2-2026-04-21";
 const DEFAULT_ENDPOINT = "https://api.openai.com/v1/images/generations";
+const DEFAULT_EDIT_ENDPOINT = "https://api.openai.com/v1/images/edits";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
@@ -34,6 +35,60 @@ function dimensions(size) {
   const match = /^(\d+)x(\d+)$/.exec(size);
   if (!match) throw new TypeError(`unsupported image size ${size}`);
   return { width: Number(match[1]), height: Number(match[2]) };
+}
+
+function referenceBytes(value, index) {
+  const name = `OpenAI image referenceObjects[${index}].bytes`;
+  if (typeof value === "string") return new TextEncoder().encode(value);
+  if (value instanceof Uint8Array) return value;
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (ArrayBuffer.isView(value)) return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  throw new TypeError(`${name} must be bytes`);
+}
+
+function referenceExtension(mediaType) {
+  if (mediaType === "image/png") return "png";
+  if (mediaType === "image/jpeg") return "jpg";
+  if (mediaType === "image/webp") return "webp";
+  if (mediaType === "image/gif") return "gif";
+  return null;
+}
+
+function normalizeReferenceObjects(rawReferenceObjects, model) {
+  const values = rawReferenceObjects === undefined ? [] : rawReferenceObjects;
+  if (!Array.isArray(values)) throw new TypeError("OpenAI image referenceObjects must be an array");
+  return values.map((value, index) => {
+    plain(`OpenAI image referenceObjects[${index}]`, value);
+    const objectRef = nonEmpty(`OpenAI image referenceObjects[${index}].objectRef`, value.objectRef);
+    const digest = nonEmpty(`OpenAI image referenceObjects[${index}].digest`, value.digest);
+    const bytes = referenceBytes(value.bytes, index);
+    if (bytes.length === 0) throw new TypeError(`OpenAI image referenceObjects[${index}].bytes must not be empty`);
+    const metadata = value.metadata && typeof value.metadata === "object" && !Array.isArray(value.metadata)
+      ? value.metadata
+      : {};
+    const mediaType = typeof metadata.mediaType === "string" ? metadata.mediaType.trim().toLowerCase() : "";
+    const extension = referenceExtension(mediaType);
+    if (extension === null) {
+      throw new AssetGenerationError(`OpenAI image reference object ${objectRef} has unsupported media type ${mediaType || "unknown"}`, {
+        phase: "validation",
+        category: "unsupported_capability",
+        retryable: false,
+        provider: "openai",
+        model,
+      });
+    }
+    const kind = typeof metadata.kind === "string" && metadata.kind.trim() !== "" ? metadata.kind : null;
+    return Object.freeze({ objectRef, digest, mediaType, extension, kind, bytes });
+  });
+}
+
+function referenceWitness(reference) {
+  return Object.freeze({
+    objectRef: reference.objectRef,
+    digest: reference.digest,
+    mediaType: reference.mediaType,
+    kind: reference.kind,
+  });
 }
 
 function header(response, name) {
@@ -90,6 +145,7 @@ export function createOpenAIImageProvider({
   apiKey,
   model = DEFAULT_MODEL,
   endpoint = DEFAULT_ENDPOINT,
+  editEndpoint = DEFAULT_EDIT_ENDPOINT,
   size = "1024x1024",
   quality = "medium",
   outputFormat = "png",
@@ -99,6 +155,7 @@ export function createOpenAIImageProvider({
   nonEmpty("OpenAI API key", apiKey);
   nonEmpty("OpenAI image model", model);
   nonEmpty("OpenAI image endpoint", endpoint);
+  nonEmpty("OpenAI image edit endpoint", editEndpoint);
   nonEmpty("OpenAI image size", size);
   nonEmpty("OpenAI image quality", quality);
   nonEmpty("OpenAI image output format", outputFormat);
@@ -121,19 +178,9 @@ export function createOpenAIImageProvider({
             model,
           });
         }
-        if (request.referenceObjects?.length) {
-          throw new AssetGenerationError(
-            "OpenAI image generation v1 does not yet accept reference objects; use a future edit provider profile",
-            {
-              phase: "validation",
-              category: "unsupported_capability",
-              provider: "openai",
-              model,
-            },
-          );
-        }
+        const references = normalizeReferenceObjects(request.referenceObjects, model);
         const prompt = compileOpenAIImagePrompt({ brief: request.brief, role: request.role });
-        const body = {
+        const logicalBody = {
           model,
           prompt,
           n: 1,
@@ -141,15 +188,43 @@ export function createOpenAIImageProvider({
           quality,
           output_format: outputFormat,
         };
+        const selectedEndpoint = references.length > 0 ? editEndpoint : endpoint;
+        const requestWitness = references.length > 0
+          ? {
+              mediaType:"multipart/form-data",
+              body:{ ...logicalBody, referenceInputs:references.map(referenceWitness) },
+              secretsRemoved:true,
+            }
+          : {
+              mediaType:"application/json",
+              body:logicalBody,
+              secretsRemoved:true,
+            };
+
+        let requestBody;
+        const headers = { Authorization: `Bearer ${apiKey}` };
+        if (references.length > 0) {
+          const form = new FormData();
+          for (const [key, value] of Object.entries(logicalBody)) form.append(key, String(value));
+          references.forEach((reference, index) => {
+            form.append(
+              "image[]",
+              new Blob([reference.bytes], { type:reference.mediaType }),
+              `reference-${index + 1}.${reference.extension}`,
+            );
+          });
+          requestBody = form;
+        } else {
+          headers["Content-Type"] = "application/json";
+          requestBody = JSON.stringify(logicalBody);
+        }
+
         let response;
         try {
-          response = await fetchImpl(endpoint, {
+          response = await fetchImpl(selectedEndpoint, {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(body),
+            headers,
+            body: requestBody,
           });
         } catch (error) {
           throw new AssetGenerationError("OpenAI image generation network failure", {
@@ -199,11 +274,7 @@ export function createOpenAIImageProvider({
         const mediaType = outputFormat === "jpeg" ? "image/jpeg" : `image/${outputFormat}`;
 
         return {
-          requestWitness: {
-            mediaType: "application/json",
-            body,
-            secretsRemoved: true,
-          },
+          requestWitness,
           result: {
             assetKind: "image",
             bytes,
@@ -216,7 +287,7 @@ export function createOpenAIImageProvider({
             providerRequestId: header(response, "x-request-id"),
             generatedAt,
             configuration: {
-              endpoint: "/v1/images/generations",
+              endpoint: references.length > 0 ? "/v1/images/edits" : "/v1/images/generations",
               size,
               quality,
               outputFormat,
