@@ -21,7 +21,7 @@ function shortNumber(value) {
 }
 
 function statusLabel(level) {
-  return ({ normal:"Normal", elevated:"Elevated", critical:"Critical", unavailable:"Unavailable" })[level] ?? "Unavailable";
+  return ({ normal:"Normal", elevated:"Elevated usage", critical:"Critical", unavailable:"Unavailable" })[level] ?? "Unavailable";
 }
 
 function checkLabel(check) {
@@ -37,7 +37,7 @@ function setBadge(level, title = null) {
   button.querySelector(".infra-health-label").textContent = statusLabel(normalized);
 }
 
-function degradedDetail(sample, fallback) {
+function statusDetail(sample, fallback) {
   const check = (sample?.checks ?? []).find((candidate) => candidate.level === "critical")
     ?? (sample?.checks ?? []).find((candidate) => candidate.level === "elevated");
   if (check?.error?.detail) return check.error.detail;
@@ -53,8 +53,8 @@ function setBanner(level, sample = null, fallback = null) {
   }
   const normalized = ["elevated", "critical"].includes(level) ? level : "unavailable";
   banner.dataset.level = normalized;
-  bannerTitle.textContent = normalized === "critical" ? "Infrastructure critical" : "Infrastructure degraded";
-  bannerDetail.textContent = degradedDetail(sample, fallback);
+  bannerTitle.textContent = normalized === "critical" ? "Infrastructure critical" : "Infrastructure usage elevated";
+  bannerDetail.textContent = statusDetail(sample, fallback);
   banner.hidden = false;
 }
 
