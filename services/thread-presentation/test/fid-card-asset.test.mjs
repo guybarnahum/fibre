@@ -198,6 +198,9 @@ test("FID projection publishes front, back and one logical rich card asset", asy
   assert.equal(projected.presentation.identityCard.backMediaRef, "media_fid_fidc_card_asset_2_back");
   const photo = projected.media.assets.find((asset) => asset.role === "official_id_photo");
   assert.equal(photo?.locator, "asset_fid_photo_card_asset_2");
+  const photoProvenance = projected.provenance.entries.find((entry) => entry.provenanceId === photo?.provenanceRef);
+  assert.equal(photoProvenance?.kind, "generated_reconstruction");
+  assert.equal(photoProvenance?.sourceReferences.includes("visual_identity_reference_card_asset"), true);
 });
 
 test("FID ensure replaces stale official photo media for the active credential", async () => {
