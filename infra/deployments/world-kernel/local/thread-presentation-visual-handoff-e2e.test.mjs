@@ -5,6 +5,7 @@ import test from "node:test";
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createThreadPresentationVisualPublicationReconciler } from "#services/thread-presentation/src/visual-publication-reconciler.mjs";
 import { createVisualPublicationWriteApi } from "#services/thread-presentation/src/http/visual-publication-write-api.mjs";
+import { embodimentSpecificationDigest } from "#services/world-kernel/src/embodiment-domain.mjs";
 import { createThreadPresentationEmbodimentRewriteService } from "#services/world-kernel/src/thread-presentation-embodiment-rewrite-service.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import { createThreadPresentationVisualHttpBoundary } from "./thread-presentation-visual-http-boundary.mjs";
@@ -58,6 +59,12 @@ async function initialPresentationBundle() {
 }
 
 function embodiment() {
+  const specification = {
+    subject:{ partyId:THREAD_ID, description:"One concrete synthetic person with stable individual facial identity." },
+    method:"canonical synthetic portrait specification",
+    description:"Preserve this person's stable visual identity across derived media.",
+    model:"replaceable-renderer",
+  };
   return {
     embodimentId:"emb_slice_b_remote_visual_handoff",
     revision:2,
@@ -69,13 +76,8 @@ function embodiment() {
     rightsBasis:"thread_self_owned",
     permissionReferences:[],
     sourceReferences:[`evt_seed_${THREAD_ID}`],
-    specification:{
-      subject:{ partyId:THREAD_ID, description:"One concrete synthetic person with stable individual facial identity." },
-      method:"canonical synthetic portrait specification",
-      description:"Preserve this person's stable visual identity across derived media.",
-      model:"replaceable-renderer",
-    },
-    specificationDigest:`sha256:${"b".repeat(64)}`,
+    specification,
+    specificationDigest:embodimentSpecificationDigest(specification),
     respecification:null,
     status:"available",
     unavailableReason:null,
