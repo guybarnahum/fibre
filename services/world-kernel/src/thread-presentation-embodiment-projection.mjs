@@ -4,6 +4,23 @@ import {
   normalizeThreadVisualIdentityProjection,
 } from "./thread-presentation-identity-domain.mjs";
 
+const FAMILY_APPEARANCE_PREFIX = "broad family appearance prior:";
+const FAMILY_APPEARANCE_RENDER_SENTENCE = "When a broad family appearance prior is present, use it only to bound plausible skin/hair/appearance variation; do not infer culture, religion, nationality, heritage, personality or worth from appearance.";
+
+function downstreamSubjectDescription(description) {
+  return description
+    .split("; ")
+    .filter((part) => !part.startsWith(FAMILY_APPEARANCE_PREFIX))
+    .join("; ");
+}
+
+function downstreamRenderDescription(description) {
+  return description
+    .replace(FAMILY_APPEARANCE_RENDER_SENTENCE, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 /**
  * Convert one committed canonical portrait Embodiment record into the bounded
  * authority projection Thread Presentation is allowed to consume.
@@ -33,8 +50,8 @@ export function projectPublicEmbodimentVisualIdentity(
     embodimentId: embodiment.embodimentId,
     embodimentRevision: embodiment.revision,
     specificationDigest: embodiment.specificationDigest,
-    subjectDescription: embodiment.specification.subject.description,
-    renderDescription: embodiment.specification.description,
+    subjectDescription: downstreamSubjectDescription(embodiment.specification.subject.description),
+    renderDescription: downstreamRenderDescription(embodiment.specification.description),
     sourceReferences: [embodiment.embodimentId, ...embodiment.sourceReferences],
     permissionReferences: embodiment.permissionReferences,
     referenceObjectRefs: [embodiment.asset.referenceObjectRef],
