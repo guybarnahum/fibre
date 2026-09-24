@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createThreadHealthProjectionService } from "../src/thread-health-projection-service.mjs";
+import {
+  createThreadHealthProjectionService,
+  THREAD_HEALTH_PROJECTION_VERSION,
+} from "../src/thread-health-projection-service.mjs";
 
 test("Thread health reuses unchanged authority and invalidates only on diagnosis inputs", async () => {
   const threadId = "thr_health_projection_001";
@@ -9,7 +12,19 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
   let presentationDigest = "sha256:presentation-a";
   let reconciliationState = "complete";
   let deepDiagnoses = 0;
-  let cached = null;
+  let cached = {
+    witness:JSON.stringify({
+      projectionVersion:"thread-health-v0.1",
+      world:{
+        thread:{ version:worldVersion, stateHash:`sha256:world-${worldVersion}`, updatedAt:"2026-09-18T00:00:00Z" },
+        civilRegistrationDigest:"sha256:civil",
+        embodimentHeads:[],
+        genesisPublication:null,
+      },
+      presentationSnapshotDigest:presentationDigest,
+    }),
+    diagnosis:{ threadId, exists:true, health:"repairable", findings:[{ code:"STALE_DIAGNOSIS" }] },
+  };
 
   const projectionStore = {
     worldWitness(id) {
@@ -48,7 +63,10 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
     },
   });
 
-  assert.equal((await service.inspect(threadId)).cacheHit, false);
+  assert.equal(THREAD_HEALTH_PROJECTION_VERSION, "thread-health-v0.2");
+  const refreshed = await service.inspect(threadId);
+  assert.equal(refreshed.cacheHit, false, "older diagnostic semantics were reused");
+  assert.equal(refreshed.diagnosis.health, "healthy", "stale cached health survived semantic revision");
   assert.equal(deepDiagnoses, 1);
 
   assert.equal((await service.inspect(threadId)).cacheHit, true);
