@@ -186,26 +186,6 @@ export function parseModernGenesisArgs(argv = []) {
   return Object.freeze({ sex, world, heritage, forceNewWorld, help });
 }
 
-function selectorFromBirthCity(value) {
-  const pieces = String(value ?? "").split(",");
-  if (pieces.length < 2) return null;
-  const city = pieces.shift().trim();
-  const country = pieces.join(",").trim();
-  if (!city || !country) return null;
-  return normalizeModernWorldSelector(`${country}/${city}`);
-}
-
-export function findFixtureWorld({ selector, cohort, materialFixture }) {
-  for (const material of materialFixture.slots ?? []) {
-    const candidate = selectorFromBirthCity(material.birthCity);
-    if (candidate?.key !== selector.key) continue;
-    const slot = (cohort.slots ?? []).find((item) => item.slot === material.slot);
-    if (!slot) throw new Error(`modern Genesis material slot ${material.slot} lacks its cohort slot`);
-    return Object.freeze({ slot, material, selector: candidate });
-  }
-  return null;
-}
-
 function cachePath(repoRoot, selector, heritage) {
   return resolve(
     repoRoot,
@@ -232,32 +212,6 @@ function readCache(repoRoot, selector, heritage) {
 
 function digest(value) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
-}
-
-function fixtureWorldWithFamilyContext(worldSpec, material) {
-  const familyOriginContext = typeof material?.familyOriginContext === "string" ? material.familyOriginContext.trim() : "";
-  const appearanceContext = typeof material?.appearanceContext === "string" ? material.appearanceContext.trim() : "";
-  if (familyOriginContext === "" || appearanceContext === "") return Object.freeze({ worldSpec, material });
-
-  const suffix = `family_${digest({
-    worldSpecId:worldSpec.worldSpecId,
-    familyOriginContext,
-    appearanceContext,
-  }).slice(0, 12)}`;
-  const nextWorld = Object.freeze({
-    ...worldSpec,
-    worldSpecId:`${worldSpec.worldSpecId}_${suffix}`,
-    householdShape:`${worldSpec.householdShape} Family origin context: ${familyOriginContext}`,
-    culturalContext:[
-      worldSpec.culturalContext,
-      `Family origin context: ${familyOriginContext}`,
-      "Family origin may shape ordinary experiences of belonging, language, peer perception, family stories, travel, community ties, or identity questions when context makes those effects plausible. Do not force every episode to concern ancestry or visible difference, and do not infer personality, ability, values, trauma, or social outcome from ancestry or appearance.",
-    ].join("\n"),
-  });
-  return Object.freeze({
-    worldSpec:nextWorld,
-    material:Object.freeze({ ...material, familyOriginContext, appearanceContext }),
-  });
 }
 
 function assertTimeZone(value) {
@@ -445,8 +399,6 @@ export async function resolveModernWorldSelection({
   heritage = null,
   forceNewWorld = false,
   cohort,
-  materialFixture,
-  fixture,
   repoRoot,
   requestId,
   baseSlotOrdinal,
@@ -455,29 +407,6 @@ export async function resolveModernWorldSelection({
   authorWorld = defaultAuthorWorld,
 } = {}) {
   if (selector === null) throw new TypeError("modern Genesis requires a birthplace selector");
-
-  if (!forceNewWorld && heritage === null) {
-    const existing = findFixtureWorld({ selector, cohort, materialFixture });
-    if (existing) {
-      const genomeSlot = cohort.slots[baseSlotOrdinal - 1];
-      if (!genomeSlot) throw new Error(`modern Genesis genome slot ${baseSlotOrdinal} is unavailable`);
-      const family = fixtureWorldWithFamilyContext(fixture(existing.slot.worldSpecPath), existing.material);
-      return Object.freeze({
-        mode: "fixture",
-        selector,
-        heritage: null,
-        slotOrdinal: baseSlotOrdinal,
-        worldSlotOrdinal: existing.slot.slot,
-        genomePath: genomeSlot.genomePath,
-        worldSpec: family.worldSpec,
-        material: family.material,
-        timeZone: existing.slot.timeZone,
-        participants: existing.slot.participants.filter((participant) => !participant.factualRoles.includes("subject")),
-        placeAffordances: existing.slot.placeAffordances,
-        cachePath: null,
-      });
-    }
-  }
 
   if (!forceNewWorld) {
     const cached = readCache(repoRoot, selector, heritage);
