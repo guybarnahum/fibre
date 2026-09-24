@@ -72,7 +72,7 @@ integrations:
     provider: openai
     config:
       model: gpt-image-2-2026-04-21
-      acceptsReferenceObjects: false
+      acceptsReferenceObjects: true
       presentationDefault: true
       presentationReferenceDefault: false
     secrets:
