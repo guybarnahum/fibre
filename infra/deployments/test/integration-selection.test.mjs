@@ -54,8 +54,10 @@ test("presentation image profile selection is deployment-owned and reference-awa
       selectImageProviderProfile(assetGenerator, { requiresReferenceObjects: true }),
       "bfl-flux-2-pro-v1",
     );
-    assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].config.acceptsReferenceObjects, false);
+    assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].config.acceptsReferenceObjects, true);
     assert.equal(assetGenerator.integrations["bfl-flux-2-pro-v1"].config.acceptsReferenceObjects, true);
+    assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].config.presentationReferenceDefault, false);
+    assert.equal(assetGenerator.integrations["bfl-flux-2-pro-v1"].config.presentationReferenceDefault, true);
   }
 });
 
