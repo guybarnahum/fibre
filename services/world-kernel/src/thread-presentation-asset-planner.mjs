@@ -74,18 +74,16 @@ function memoryBrief(memory, {
   };
 }
 
-function officialIdPhotoBrief(visualIdentity, targetAgeYears) {
+function officialIdPhotoBrief(targetAgeYears) {
   return {
     description: [
-      "Generated official identity photograph derived only from an authorized Thread visual-identity projection and its canonical reference image.",
-      `Authorized subject appearance: ${visualIdentity.subjectDescription}`,
-      `Authorized rendering continuity: ${visualIdentity.renderDescription}`,
+      "Generate a neutral administrative identity photograph of the person in the supplied canonical reference image.",
       ageInstruction(targetAgeYears),
-      "Neutral, natural administrative portrait with a calm expression.",
+      "Use a calm, natural expression.",
     ].join(" "),
     constraints: [
-      "Use the supplied canonical reference image as the identity anchor and preserve the same recognizable person.",
-      "Age-transform naturally to the requested target age while preserving identity-defining proportions, asymmetries, and distinctive marks.",
+      "Treat the supplied canonical reference image as the complete likeness anchor; do not re-derive appearance from ancestry, family, demographic, or phenotype text.",
+      "Preserve the same recognizable person while age-transforming naturally to the requested target age.",
       "Use front-facing or almost front-facing head-and-shoulders administrative ID-photo framing.",
       "Use a plain neutral background, even administrative lighting, ordinary focus, natural skin detail, and minimal styling.",
       "Keep expression, pose, grooming, and clothing ordinary and understated.",
@@ -182,7 +180,7 @@ export function planThreadPresentationAssetSlots({
           targetAgeYears,
           referenceAgeYears: CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
         };
-        brief = officialIdPhotoBrief(visualIdentity, targetAgeYears);
+        brief = officialIdPhotoBrief(targetAgeYears);
         referenceObjectRefs = [...visualIdentity.referenceObjectRefs];
         extraInputReferences = unique([
           identityCard.credentialId,
