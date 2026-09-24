@@ -58,9 +58,10 @@ test("asset generation runtime receives InfraDriver rather than selecting an inf
   const runtime = createAssetGenerationRuntime({
     infra: infra(sent),
     provider: { providerId: "fixture" },
-    executeJob: async ({ infra: injected, provider, job: injectedJob }) => {
+    executeJob: async ({ infra: injected, provider, job: injectedJob, allowProviderSwitch }) => {
       assert.equal(injected.driverId, "asset-runtime-test");
       assert.equal(provider.providerId, "fixture");
+      assert.equal(allowProviderSwitch, true);
       return {
         receipt: { jobId: injectedJob.jobId },
         receiptObjectRef: "receipt_1",
@@ -73,7 +74,7 @@ test("asset generation runtime receives InfraDriver rather than selecting an inf
     },
   });
 
-  const generated = await runtime.execute(job());
+  const generated = await runtime.execute(job(), { allowProviderSwitch:true });
   assert.equal(generated.receipt.jobId, "job_1");
   await runtime.publishCompletion({
     completionVersion: "asset-generation-completion-v0.1",
