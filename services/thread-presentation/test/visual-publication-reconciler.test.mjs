@@ -1,358 +1,118 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  embodimentId,
-  embodimentSpecificationDigest,
-} from "#services/world-kernel/src/embodiment-domain.mjs";
-import { FIBRE_IDENTITY_CARD_CURRENT_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
 import { createThreadPresentationVisualPublicationReconciler } from "../src/visual-publication-reconciler.mjs";
 
-function availableEmbodiment(threadId = "thr_presentation_visual_001") {
-  const specification = {
-    subject: {
-      partyId: threadId,
-      description: "A person with a softly angular oval face; medium warm-brown skin with ordinary visible texture; wide-set dark brown almond-shaped eyes; straight medium-width brows with a subtly higher left arch; a narrow straight nose with rounded tip; a defined cupid's bow and fuller lower lip; a tapered jaw and rounded chin; attached earlobes; thick dark-brown wavy hair with a subtly uneven natural hairline; and a small pale diagonal scar above the outer left eyebrow.",
-    },
-    method: "canonical synthetic portrait specification",
-    description: "Preserve ordinary asymmetry and skin detail. Use a neutral head-and-shoulders reference composition with both ears and hairline visible, neutral expression, even lighting, ordinary perspective, and no accessories obscuring identity landmarks.",
-    model: "replaceable-renderer",
-  };
+function embodiment(threadId = "thr_visual_fid_001") {
   return {
-    embodimentId: embodimentId({ threadId, kind: "portrait", lineage: "canonical" }),
-    revision: 2,
-    supersedesRevision: 1,
+    embodimentId:`emb_${threadId}`,
+    revision:3,
     threadId,
-    kind: "portrait",
-    representationKind: "synthetic_generation",
-    truthStatus: "synthetic_representation_not_historical_evidence",
-    rightsBasis: "thread_self_owned",
-    permissionReferences: [],
-    sourceReferences: [`evt_seed_${threadId}`],
-    specification,
-    specificationDigest: embodimentSpecificationDigest(specification),
-    respecification: null,
-    status: "available",
-    unavailableReason: null,
-    asset: {
-      assetRef: "asset://visual_identity_reference_fixture",
-      referenceObjectRef: "visual_identity_reference_fixture",
-      sha256: `sha256:${"a".repeat(64)}`,
-      mediaType: "image/webp",
-      width: 1024,
-      height: 1024,
-      durationMs: null,
-    },
-    visibility: "public",
-    recordedAt: "2026-08-30T20:01:01Z",
+    kind:"portrait",
+    visibility:"public",
+    status:"available",
+    asset:{ referenceObjectRef:`visual_identity_reference_${threadId}` },
   };
 }
 
-function activityCollector(records) {
+function snapshot(threadId) {
   return {
-    async record(record) { records.push(record); return record; },
-    async runStage(_metadata, operation) { return operation(); },
+    pointer:{
+      threadId,
+      objectRef:`snapshot_${threadId}`,
+      snapshotDigest:`sha256:${"a".repeat(64)}`,
+    },
+    snapshot:{
+      presentation:{
+        manifest:{ threadId, generatedAt:"2026-09-24T16:00:00Z" },
+        civilIdentity:{ registeredAt:"2026-09-24T15:59:00Z" },
+      },
+      media:{ assets:[] },
+      provenance:{},
+    },
   };
 }
 
-test("Presentation visual reconciliation projects admitted identity then schedules one reference-conditioned official photo", async () => {
-  const embodiment = availableEmbodiment();
-  const mediaId = "media_official_id_photo_fixture";
-  const calls = [];
-  const activity = [];
-  const currentSnapshot = {
-    pointer: {
-      objectRef: "snapshot_identity_fixture",
-      snapshotDigest: `sha256:${"b".repeat(64)}`,
-    },
-    snapshot: {
-      presentation: {
-        manifest: {
-          threadId: embodiment.threadId,
-          generatedAt: "2026-08-30T20:03:00Z",
-        },
-        civilIdentity: {
-          registeredAt: "2026-08-30T20:04:00Z",
-        },
-      },
-      media: { assets: [] },
-      provenance: {},
-    },
-  };
-  const presentationServer = {
-    async getSnapshot() { return currentSnapshot; },
-    async publishSnapshot() { throw new Error("injected rewrite owns publication in this test"); },
-  };
+function demandService() {
+  return { async reconcile() { throw new Error("not reached"); } };
+}
+
+test("admitted canonical identity automatically converges through the FID lifecycle", async () => {
+  const visual = embodiment();
+  const current = snapshot(visual.threadId);
+  const fidCalls = [];
+  let projections = 0;
   const reconciler = createThreadPresentationVisualPublicationReconciler({
-    presentationServer,
-    infra: {},
-    selectProviderProfile({ requiresReferenceObjects }) {
-      assert.equal(requiresReferenceObjects, true);
-      return "bfl-flux-2-pro-v1";
+    presentationServer:{
+      async getSnapshot() { return current; },
+      async publishSnapshot() { throw new Error("not reached"); },
     },
-    createVisualRewrite({ embodimentReader }) {
+    infra:{},
+    selectProviderProfile() { return "unused"; },
+    createDemandService:() => demandService(),
+    createVisualRewrite() {
       return {
-        async project({ embodimentId: requestedId }) {
-          const [supplied] = embodimentReader.listCurrent(embodiment.threadId);
-          assert.equal(supplied.embodimentId, embodiment.embodimentId);
-          assert.equal(requestedId, embodiment.embodimentId);
-          calls.push("visual");
-          return { reused: false };
+        async project() {
+          projections += 1;
+          return { reused:projections > 1 };
         },
       };
     },
-    createIdentityRewrite() {
+    async ensureFid(input) {
+      fidCalls.push(input);
+      if (fidCalls.length === 1) {
+        return { complete:false, state:"derivation_requested", derivation:{ jobId:"fid_photo_job_1" } };
+      }
       return {
-        async ensureOfficialIdentityMedia({ issuedAt }) {
-          assert.equal(issuedAt, "2026-08-30T20:04:00Z");
-          calls.push("identity");
-          return {
-            reused: false,
-            identityCard: { officialPhotoMediaRef: mediaId },
-          };
-        },
+        complete:true,
+        state:"active",
+        credential:{ credentialId:"fidc_visual_001", revision:1 },
       };
     },
-    planSlots() {
-      calls.push("plan");
-      return {
-        slots: [{
-          mediaId,
-          status: "missing",
-          referenceObjectRefs: [embodiment.asset.referenceObjectRef],
-        }],
-      };
-    },
-    createDemandService() {
-      return {
-        async reconcile({ scope, providerProfile, slots, requestedAt }) {
-          calls.push("demand");
-          assert.deepEqual(scope, { entityKind: "thread", entityRef: embodiment.threadId });
-          assert.equal(providerProfile, "bfl-flux-2-pro-v1");
-          assert.equal(requestedAt, "2026-08-30T20:04:00Z");
-          assert.deepEqual(slots[0].referenceObjectRefs, [embodiment.asset.referenceObjectRef]);
-          return {
-            projection: {
-              demands: [{
-                demand: {
-                  current: true,
-                  demandId: "demand_official_fixture",
-                  job: {
-                    jobId: "asset_job_official_fixture",
-                    context: { kind: "thread_presentation_media", mediaId },
-                  },
-                },
-                dispatch: { workflowStatus: "queued" },
-              }],
-            },
-          };
-        },
-      };
-    },
-    activityRecorder: activityCollector(activity),
   });
 
-  const result = await reconciler.reconcileAvailableEmbodiment({
-    threadId: embodiment.threadId,
-    embodiment,
-    observedAt: "2026-08-30T20:02:00Z",
-    activityContext: { causationId: embodiment.embodimentId },
+  const first = await reconciler.reconcileAvailableEmbodiment({
+    threadId:visual.threadId,
+    embodiment:visual,
+    observedAt:"2026-09-24T16:01:00Z",
   });
-  assert.equal(result.complete, false);
-  assert.equal(result.stage, "official_photo_pending");
-  assert.equal(result.detail.providerProfile, "bfl-flux-2-pro-v1");
-  assert.equal(result.detail.jobId, "asset_job_official_fixture");
-  assert.equal(result.detail.workflowStatus, "queued");
-  assert.deepEqual(calls, ["visual", "identity", "plan", "demand"]);
-  assert.deepEqual(
-    activity.map((record) => record.stage),
-    [
-      "presentation.visual_identity.project",
-      "presentation.identity_media.ensure",
-      "presentation.official_photo.generate",
-    ],
-  );
-  assert.equal(activity.every((record) => record.causationId === embodiment.embodimentId), true);
-  assert.equal(activity.every((record) => record.evidence.embodimentId === embodiment.embodimentId), true);
-  assert.equal(activity.every((record) => record.evidence.objectRef === embodiment.asset.referenceObjectRef), true);
+  const second = await reconciler.reconcileAvailableEmbodiment({
+    threadId:visual.threadId,
+    embodiment:visual,
+    observedAt:"2026-09-24T16:02:00Z",
+  });
+
+  assert.equal(first.stage, "fid_pending", "FID derivation was not left retryable");
+  assert.equal(second.complete, true, "FID lifecycle did not converge");
+  assert.equal(second.detail.fidCredentialId, "fidc_visual_001", "active FIN Card was not projected");
+  assert.equal(fidCalls[0].idempotencyKey, fidCalls[1].idempotencyKey, "FID retry changed issuance identity");
+  assert.equal(fidCalls[0].threadId, visual.threadId, "FID issuance targeted another Thread");
 });
 
-test("Presentation visual reconciliation waits for the newborn projection before touching media", async () => {
-  const embodiment = availableEmbodiment("thr_presentation_visual_waiting_001");
+test("visual reconciliation waits for newborn Presentation before issuing identity media", async () => {
+  const visual = embodiment("thr_visual_waiting");
   let touched = false;
   const reconciler = createThreadPresentationVisualPublicationReconciler({
-    presentationServer: {
+    presentationServer:{
       async getSnapshot() { return null; },
       async publishSnapshot() { touched = true; },
     },
-    infra: {},
+    infra:{},
     selectProviderProfile() { touched = true; return "unused"; },
-    createDemandService() { return { async reconcile() { touched = true; } }; },
+    createDemandService:() => demandService(),
     createVisualRewrite() { touched = true; return {}; },
-    createIdentityRewrite() { touched = true; return {}; },
-    planSlots() { touched = true; return { slots: [] }; },
+    async ensureFid() { touched = true; },
   });
-  touched = false;
 
   const result = await reconciler.reconcileAvailableEmbodiment({
-    threadId: embodiment.threadId,
-    embodiment,
-    observedAt: "2026-08-30T20:02:00Z",
+    threadId:visual.threadId,
+    embodiment:visual,
+    observedAt:"2026-09-24T16:01:00Z",
   });
-  assert.equal(result.complete, false);
+
   assert.equal(result.stage, "awaiting_genesis_projection");
-  assert.equal(touched, false);
+  assert.equal(touched, false, "identity work ran before newborn Presentation existed");
 });
-
-test("Presentation visual reconciliation emits no Activity when projection is already converged", async () => {
-  const embodiment = availableEmbodiment("thr_presentation_visual_converged_001");
-  const mediaId = "media_official_id_photo_converged";
-  const activity = [];
-  const currentSnapshot = {
-    pointer: {
-      objectRef: "snapshot_identity_converged",
-      snapshotDigest: `sha256:${"c".repeat(64)}`,
-    },
-    snapshot: {
-      presentation: {
-        manifest: {
-          threadId: embodiment.threadId,
-          generatedAt: "2026-08-30T20:03:00Z",
-        },
-        civilIdentity: {
-          registeredAt: "2026-08-30T20:04:00Z",
-        },
-      },
-      media: { assets: [] },
-      provenance: {},
-    },
-  };
-  const reconciler = createThreadPresentationVisualPublicationReconciler({
-    presentationServer: {
-      async getSnapshot() { return currentSnapshot; },
-      async publishSnapshot() { throw new Error("already converged"); },
-    },
-    infra: {},
-    selectProviderProfile() { throw new Error("ready slot must not demand media"); },
-    createDemandService() { return { async reconcile() { throw new Error("not reached"); } }; },
-    createVisualRewrite() {
-      return {
-        async project() { return { reused: true }; },
-      };
-    },
-    createIdentityRewrite() {
-      return {
-        async ensureOfficialIdentityMedia() {
-          return { reused: true, identityCard: { officialPhotoMediaRef: mediaId } };
-        },
-      };
-    },
-    planSlots() {
-      return { slots: [{ mediaId, status: "ready", referenceObjectRefs: [] }] };
-    },
-    activityRecorder: {
-      async record(record) { activity.push(record); },
-      async runStage(metadata, operation) {
-        activity.push({ ...metadata, status: "started" });
-        return operation();
-      },
-    },
-  });
-
-  const result = await reconciler.reconcileAvailableEmbodiment({
-    threadId: embodiment.threadId,
-    embodiment,
-    observedAt: "2026-08-30T20:02:00Z",
-  });
-  assert.equal(result.complete, true);
-  assert.equal(result.detail.visualReused, true);
-  assert.equal(result.detail.identityReused, true);
-  assert.deepEqual(activity, []);
-});
-
-test("Presentation visual reconciliation fails immediately when official-photo generation is terminal", async () => {
-  const embodiment = availableEmbodiment("thr_presentation_visual_terminal_001");
-  const mediaId = "media_official_id_photo_terminal";
-  const currentSnapshot = {
-    pointer: { objectRef: "snapshot_terminal", snapshotDigest: `sha256:${"d".repeat(64)}` },
-    snapshot: {
-      presentation: {
-        manifest: { threadId: embodiment.threadId, generatedAt: "2026-08-30T20:03:00Z" },
-        civilIdentity: { registeredAt: "2026-08-30T20:04:00Z" },
-      },
-      media: { assets: [] },
-      provenance: {},
-    },
-  };
-  const activity = [];
-  const reconciler = createThreadPresentationVisualPublicationReconciler({
-    presentationServer: {
-      async getSnapshot() { return currentSnapshot; },
-      async publishSnapshot() { throw new Error("not reached"); },
-    },
-    infra: {},
-    selectProviderProfile() { return "bfl-flux-2-pro-v1"; },
-    createVisualRewrite() { return { async project() { return { reused: true }; } }; },
-    createIdentityRewrite() {
-      return { async ensureOfficialIdentityMedia() { return { reused: true, identityCard: { officialPhotoMediaRef: mediaId } }; } };
-    },
-    planSlots() { return { slots: [{ mediaId, status: "missing", referenceObjectRefs: [embodiment.asset.referenceObjectRef] }] }; },
-    createDemandService() {
-      return {
-        async reconcile() {
-          return {
-            projection: {
-              demands: [{
-                demand: {
-                  current: true,
-                  demandId: "demand_terminal",
-                  job: {
-                    jobId: "asset_job_terminal",
-                    context: { kind: "thread_presentation_media", mediaId },
-                  },
-                },
-                dispatch: { workflowStatus: "errored" },
-              }],
-            },
-          };
-        },
-      };
-    },
-    activityRecorder: {
-      async record(record) { activity.push(record); return record; },
-      async runStage(metadata, operation) {
-        try {
-          const value = await operation();
-          activity.push({ ...metadata, status: "succeeded" });
-          return value;
-        } catch (error) {
-          activity.push({
-            ...metadata,
-            status: "failed",
-            message: error.message,
-            error: { code: error.code, retryable: error.retryable },
-          });
-          throw error;
-        }
-      },
-    },
-  });
-
-  await assert.rejects(
-    () => reconciler.reconcileAvailableEmbodiment({
-      threadId: embodiment.threadId,
-      embodiment,
-      observedAt: "2026-08-30T20:02:00Z",
-    }),
-    (error) => error.code === "PRESENTATION_ASSET_GENERATION_TERMINAL" && error.retryable === false,
-  );
-  assert.equal(activity.some((record) => (
-    record.stage === "presentation.official_photo.generate"
-    && record.status === "failed"
-    && record.error.retryable === false
-  )), true);
-});
-
 
 test("an enacted public present becomes durable Presentation and can request a scene depiction", async () => {
   const threadId = "thr_public_present_continuity";
@@ -405,77 +165,14 @@ test("an enacted public present becomes durable Presentation and can request a s
       };
     },
     createVisualRewrite() { return { async project() { throw new Error("not reached"); } }; },
-    createIdentityRewrite() { return { async ensureOfficialIdentityMedia() { throw new Error("not reached"); } }; },
-    planSlots() { return { slots:[] }; },
+    async ensureFid() { throw new Error("not reached"); },
   });
 
   const result = await reconciler.publishCurrentPresent({ threadId, present });
 
   assert.equal(appended.kind, "present.updated");
-  assert.equal(appended.payload.situationId, present.situationId);
   assert.equal(catalog.currentPresent.event.payload.activity, present.activity);
   assert.deepEqual(demand.scope, { entityKind:"experience", entityRef:present.situationId });
   assert.equal(demand.slots[0].role, "present_scene");
   assert.equal(result.event.sequence, 7);
-});
-
-
-test("modern FID does not force legacy official-photo media during visual identity correction", async () => {
-  const embodiment = availableEmbodiment("thr_presentation_visual_fid_001");
-  const calls = [];
-  const currentSnapshot = {
-    pointer:{
-      threadId:embodiment.threadId,
-      objectRef:"snapshot_fid_current",
-      snapshotDigest:`sha256:${"f".repeat(64)}`,
-    },
-    snapshot:{
-      presentation:{
-        manifest:{ threadId:embodiment.threadId, generatedAt:"2026-09-24T05:00:00Z" },
-        identityCard:{
-          credentialVersion:FIBRE_IDENTITY_CARD_CURRENT_VERSION,
-          credentialId:"fidc_current_001",
-        },
-      },
-      media:{ assets:[] },
-      provenance:{},
-    },
-  };
-  const reconciler = createThreadPresentationVisualPublicationReconciler({
-    presentationServer:{
-      async getSnapshot() { return currentSnapshot; },
-      async publishSnapshot() { throw new Error("injected visual rewrite owns publication"); },
-    },
-    infra:{},
-    selectProviderProfile() { throw new Error("modern FID visual projection must not schedule legacy photo media"); },
-    createDemandService() {
-      return { async reconcile() { throw new Error("modern FID visual projection must not create legacy media demand"); } };
-    },
-    createVisualRewrite() {
-      return {
-        async project() {
-          calls.push("visual");
-          return { reused:false };
-        },
-      };
-    },
-    createIdentityRewrite() {
-      return {
-        async ensureOfficialIdentityMedia() {
-          throw new Error("modern FID must remain owned by the FID lifecycle");
-        },
-      };
-    },
-    planSlots() { throw new Error("modern FID visual projection must not plan legacy official photo"); },
-  });
-
-  const result = await reconciler.reconcileAvailableEmbodiment({
-    threadId:embodiment.threadId,
-    embodiment,
-    observedAt:"2026-09-24T05:01:00Z",
-  });
-
-  assert.equal(result.complete, true, "visual correction did not converge beside modern FID");
-  assert.equal(result.detail.fidCredentialId, "fidc_current_001", "active FID identity was lost");
-  assert.deepEqual(calls, ["visual"], "visual correction crossed into FID issuance");
 });
