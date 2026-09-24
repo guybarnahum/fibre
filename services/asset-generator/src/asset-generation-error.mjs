@@ -242,21 +242,27 @@ export function assetGenerationProviderFallbackDecision(error) {
     ? error
     : toAssetGenerationError(error, { retryable:false });
 
-  if (normalized.phase !== "provider_generation" || normalized.providerOutputDurable) {
+  const providerBoundary = normalized.phase === "provider_generation"
+    || (normalized.phase === "validation" && normalized.provider !== null);
+  if (!providerBoundary || normalized.providerOutputDurable) {
     return Object.freeze({ fallback:false, reason:"not_provider_rejection" });
   }
 
-  // Transport/timeout failures can be ambiguous: the provider may already have
-  // accepted the request. Preserve the resumable/retry path instead of paying
-  // for a second render that could race the first.
+  // A transport/timeout failure before a durable task identity is ambiguous:
+  // the provider may already have accepted the request. Do not race it with a
+  // second paid render. Once the task identity is durable, resume that task.
   if (["network", "provider_timeout"].includes(normalized.category)) {
-    return Object.freeze({ fallback:false, reason:"ambiguous_provider_acceptance" });
+    return Object.freeze({
+      fallback:false,
+      reason:normalized.providerOperationDurable
+        ? "resume_primary_operation"
+        : "ambiguous_provider_acceptance",
+    });
   }
 
-  // Once an accepted operation is durable, transient provider failures should
-  // resume that exact operation. Terminal provider rejection may use secondary.
-  if (normalized.providerOperationDurable
-    && ["rate_limited", "provider_unavailable"].includes(normalized.category)) {
+  // A durable accepted task that reports a retryable transient should stay on
+  // that exact operation. A terminal rejection of that task may use secondary.
+  if (normalized.providerOperationDurable && normalized.retryable) {
     return Object.freeze({ fallback:false, reason:"resume_primary_operation" });
   }
 
