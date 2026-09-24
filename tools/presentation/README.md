@@ -24,7 +24,7 @@ Thread Presentation fixture
   -> image provider
   -> immutable object storage
   -> completion Queue
-  -> Presentation admission / media.ready
+  -> Presentation admission / ready Thread media
   -> public asset resolver
   -> Fibre provenance classification
 ```
@@ -44,5 +44,7 @@ npm run test:asset-live:cloudflare -- \
   --primary-profile bfl-flux-2-pro-v1 \
   --provider-mode secondary
 ```
+
+The smoke watches the published Thread snapshot for the requested media to become ready. It intentionally does not depend on presentation stream replay; provider failover acceptance should prove the user-visible media consequence, not an incidental observer endpoint.
 
 The fixture endpoints are local/e2e-only under `P3_FIXTURE_MODE=1`. Paid generation is never part of ordinary repository validation or CI.
