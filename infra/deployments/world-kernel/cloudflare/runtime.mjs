@@ -5,6 +5,7 @@ import { openEmbodimentStore } from "#services/world-kernel/src/embodiment-store
 import { GenesisBirthSexEvidence } from "#services/world-kernel/src/genesis-birth-sex-evidence.mjs";
 import { createGenesisBirthPublicationService } from "#services/world-kernel/src/genesis-birth-publication-service.mjs";
 import { createGenesisBirthWriteApi } from "#services/world-kernel/src/genesis-birth-write-api.mjs";
+import { createCanonicalVisualIdentityRepairService } from "#services/world-kernel/src/canonical-visual-identity-repair.mjs";
 import { createGenesisCanonicalEmbodimentMaterializer } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
 import { GenesisPresentationOutboxStore } from "#services/world-kernel/src/genesis-presentation-outbox-store.mjs";
 import { GenesisSexMigrationStore } from "#services/world-kernel/src/genesis-sex-migration-store.mjs";
@@ -222,6 +223,10 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     privateToken,
   });
   const presentationReader = createPresentationReader(presentationFetch);
+  const visualIdentityRepairService = createCanonicalVisualIdentityRepairService({
+    embodimentStore,
+    now,
+  });
   const repairService = createThreadGenesisRepairService({
     worldReader:worldStore,
     civilRegistry:civilRegistryStore,
@@ -289,6 +294,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const repairApi = createThreadGenesisRepairApi({
     repairService,
     identityService,
+    visualIdentityRepairService,
     privateToken,
     reconciliationWorkset:visualPublicationWorkset,
     async onRepair({ threadId, result }) {
@@ -307,6 +313,9 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
       }
     },
     async onRecover() {
+      await reconciliationRuntime.requestWake();
+    },
+    async onVisualIdentityCorrection() {
       await reconciliationRuntime.requestWake();
     },
     async onIdentityUpdate({ threadId, result }) {
@@ -389,6 +398,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     visualRecoveryApi,
     repairService,
     identityService,
+    visualIdentityRepairService,
     repairApi,
     reconciliationProcess,
     reconciliationRuntime,
