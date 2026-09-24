@@ -5,7 +5,7 @@ import { dirname, resolve } from "node:path";
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v4";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v5";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
@@ -62,7 +62,7 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     appearanceContext: {
       type: "string",
       minLength: 1,
-      description:"A broad physical-family appearance prior causally compatible with familyOriginContext. Do not invent ancestry that familyOriginContext does not support.",
+      description:"A broad physical-family appearance prior causally compatible with familyOriginContext. Describe enough inherited morphology range to ground a plausible person: complexion/skin variation, hair texture/color, eye/eyelid range, face proportions, brow range, nose bridge/base/tip range, mouth/lip range, jaw/chin range, and build where relevant. Preserve substantial within-family variation and do not invent ancestry that familyOriginContext does not support.",
     },
     availableInstitutions: { type: "array", minItems: 3, uniqueItems: true, items: { type: "string", minLength: 1 } },
     intellectualEnvironment: { type: "string", minLength: 1 },
@@ -203,9 +203,9 @@ function readCache(repoRoot, selector, heritage) {
   const path = cachePath(repoRoot, selector, heritage);
   if (!existsSync(path)) return null;
   const cached = JSON.parse(readFileSync(path, "utf8"));
+  if (cached?.cacheVersion !== MODERN_WORLD_CACHE_VERSION) return null;
   if (
-    cached?.cacheVersion !== MODERN_WORLD_CACHE_VERSION
-    || cached?.selector?.key !== selector.key
+    cached?.selector?.key !== selector.key
     || (cached?.heritage?.key ?? null) !== (heritage?.key ?? null)
   ) {
     throw new Error(`invalid modern Genesis world cache ${path}`);
@@ -389,7 +389,7 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "When heritage is supplied, make familyOriginContext, naming material, the household language path, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
       "familyOriginContext is causal World material. It may shape ordinary life through language at home, relatives, family stories, visits, community ties, being visibly unusual or ordinary in the local environment, peer perception, belonging, or identity questions when appropriate. Do not make every episode about ancestry or visible difference, and do not assume discrimination, trauma, personality, ability, values, or social outcomes.",
       "Do not infer the future subject's religion, religious observance, politics, personality, class identity, profession, competence, trauma or values from ancestry, appearance, place, or heritage. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
-      "Return appearanceContext as a broad family-appearance prior causally supported by familyOriginContext. If the appearance range would be uncommon in the selected place, familyOriginContext must contain the corresponding migration, mixed-ancestry, adoption, or diaspora history rather than leaving the appearance unexplained. Do not repeat the heritage label, country, city, religion, nationality or community name in appearanceContext; describe only a broad plausible physical range. Preserve substantial within-family variation and never connect appearance to personality or worth.",
+      "Return appearanceContext as a broad family-appearance prior causally supported by familyOriginContext. It must be physically informative enough to ground a coherent individual without demographic labels: include plausible ranges for complexion/skin variation, hair texture/color, eye and eyelid morphology, overall face proportions, brows, nose bridge/base/tip, mouth/lip geometry, jaw/chin geometry, and build where relevant. Describe ranges, not one stereotyped face. If the appearance range would be uncommon in the selected place, familyOriginContext must contain the corresponding migration, mixed-ancestry, adoption, or diaspora history rather than leaving the appearance unexplained. Do not repeat the heritage label, country, city, religion, nationality or community name in appearanceContext. Preserve substantial within-family variation and never connect appearance to personality or worth.",
       "Names are reusable local/heritage naming material only, never pre-authored people. Supply at least six distinct female given names, six distinct male given names and six family names.",
       "Use an IANA time-zone identifier. Keep civic descriptions concrete enough to ground ordinary episodes, but avoid unsupported hyper-specific claims.",
     ].join("\n"),
