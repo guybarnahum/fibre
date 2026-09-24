@@ -24,6 +24,8 @@ Until M2 closes:
 
 After M2, keep a small curated corpus of milestone, regression and useful failure Threads. Disposable E2E identities may then be removed through coordinated cleanup after verified archival.
 
+A narrow exception is the symbolic-genome v1 -> v2 representation migration required by retained staging Threads. It is an explicit operator migration, not a runtime compatibility mode: for a v1 de-novo genome Fibre verifies the old aggregate digest, preserves `genomeId` and every symbolic locus exactly, derives the deterministic current runtime baselines, writes the current v2 header/digest, and records migration provenance outside lived history. V1 recombined genomes are not silently rewritten because changing recombination policy could change inherited meaning.
+
 ## Archive before migration
 
 A migration begins by preserving the source Thread exactly enough to reconstruct what Fibre knew and owned at that point in time.

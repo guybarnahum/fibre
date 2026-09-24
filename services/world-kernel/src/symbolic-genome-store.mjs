@@ -56,7 +56,10 @@ function parseStoredJson(name, value) {
 }
 
 function samePolicy(left, right) {
-  return canonicalJson(left) === canonicalJson({ id:right.id, version:right.version });
+  return left !== null
+    && typeof left === "object"
+    && !Array.isArray(left)
+    && canonicalJson(left) === canonicalJson({ id:right.id, version:right.version });
 }
 
 function threadGenomeRows(database, threadId) {
