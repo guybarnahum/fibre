@@ -279,6 +279,17 @@ If the selected provider cannot accept the canonical reference, the asset demand
 
 Both current image integrations preserve Fibre's reference-object requirement. BFL/FLUX sends canonical references through its native reference inputs; the OpenAI adapter uses the Images edits endpoint when a job carries reference objects and the generations endpoint when it does not. Deployment composition still chooses the provider profile; the semantic job retains the same reference requirement independent of provider.
 
+Image profiles may name a deployment-owned secondary profile. Current routing is:
+
+```text
+reference-conditioned image: BFL FLUX.2 Pro -> OpenAI GPT Image 2
+reference-free image:        OpenAI GPT Image 2 -> BFL FLUX.2 Pro
+```
+
+A provider rejection can therefore fail over without dropping the canonical reference or changing the semantic job. Fibre does not switch providers for ambiguous transport/timeouts where the first provider may already have accepted work, and it resumes a durable accepted provider operation rather than racing it with another render. Provider rejections and failover are logged.
+
+For explicit validation, a deliberately crafted Asset Generation job may set `context.imageProviderMode = "secondary"`. This bypasses the primary for that job only and exists as an operator/test seam; ordinary planners leave it unset.
+
 ## Supersession and correction
 
 The canonical reference is expected to be generated once per visual identity lineage, not periodically regenerated as the Thread ages.
