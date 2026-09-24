@@ -100,7 +100,7 @@ export function createCanonicalVisualIdentityRepairService({
         currentEmbodiment: current,
         correctedSpecification,
         reason,
-        evidenceReferences: [...new Set([rootRef, ...evidenceReferences])],
+        evidenceReferences: [...new Set([...current.sourceReferences, ...evidenceReferences])],
         recordedAt: now(),
       });
       const embodiment = embodimentStore.record(repaired);
