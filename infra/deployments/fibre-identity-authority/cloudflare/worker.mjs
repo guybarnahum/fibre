@@ -23,6 +23,7 @@ import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { selectImageProviderProfile } from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { createFidCredentialCrypto } from "#integrations/fid-credentials/webcrypto.mjs";
+import { fidPhotoSourceMatchesCanonicalReference } from "#services/fibre-identity-authority/src/fid-photo-source-policy.mjs";
 
 import oceanFrontBase from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/front-base.png";
 import oceanFrontForeground from "../../../../services/fibre-identity-authority/assets/fid-card/v0.3-ocean/front-foreground.png";
@@ -150,7 +151,7 @@ function ageAt(birthDate, at) {
   return age >= 0 ? age : null;
 }
 
-function priorFidPhotoSource({ registry, admissions, threadId }) {
+function priorFidPhotoSource({ registry, admissions, threadId, canonicalReferenceObjectRef }) {
   const history = registry.listByThreadId(threadId);
   for (let index = history.length - 1; index >= 0; index -= 1) {
     const issuance = registry.getIssuanceByCredentialId(history[index].credential.credentialId, { required:false })?.record ?? null;
@@ -159,7 +160,7 @@ function priorFidPhotoSource({ registry, admissions, threadId }) {
     const accepted = admissions.getByAdmissionId(admissionId, { required:false });
     if (accepted?.receipt?.decision !== "accepted") continue;
     const receipt = accepted.receipt;
-    return {
+    const candidate = {
       role:"official_id_photo",
       threadId,
       candidatePhotoRef:receipt.candidatePhotoRef,
@@ -171,6 +172,7 @@ function priorFidPhotoSource({ registry, admissions, threadId }) {
       targetAgeYears:null,
       candidateEvidence:{ previouslyAdmitted:true, ready:true },
     };
+    if (fidPhotoSourceMatchesCanonicalReference(candidate, canonicalReferenceObjectRef)) return candidate;
   }
   return null;
 }
@@ -191,9 +193,6 @@ async function renderPhotoDigest(infra, objectRef) {
 function createPhotoSource({ env, infra, registry, admissions, providerProfile }) {
   return Object.freeze({
     async resolveCandidate({ threadId, at, workflow }) {
-      const prior = priorFidPhotoSource({ registry, admissions, threadId });
-      if (prior !== null && await infra.objects.head(prior.candidatePhotoRef) !== null) return prior;
-
       const snapshot = await presentationSnapshot(env, threadId);
       const presentation = snapshot?.presentation ?? null;
       const visual = presentation?.visualIdentity ?? null;
@@ -201,6 +200,13 @@ function createPhotoSource({ env, infra, registry, admissions, providerProfile }
         ? visual.referenceObjectRefs[0]
         : null;
       const canonical = canonicalRef === null ? null : await infra.objects.head(canonicalRef);
+      const prior = priorFidPhotoSource({
+        registry,
+        admissions,
+        threadId,
+        canonicalReferenceObjectRef:canonicalRef,
+      });
+      if (prior !== null && await infra.objects.head(prior.candidatePhotoRef) !== null) return prior;
       const sourceReferences = refs([
         canonicalRef,
         visual?.embodimentId,
@@ -212,9 +218,16 @@ function createPhotoSource({ env, infra, registry, admissions, providerProfile }
       const assets = Array.isArray(snapshot?.media?.assets) ? snapshot.media.assets : [];
       const officialMediaId = presentation?.identityCard?.officialPhotoMediaRef ?? null;
       const media = assets.find((asset) => asset?.mediaId === officialMediaId
-        && asset?.role === "official_id_photo" && asset?.status === "ready" && asset?.mediaType === "image/png")
+        && asset?.role === "official_id_photo"
+        && asset?.status === "ready"
+        && asset?.mediaType === "image/png"
+        && Array.isArray(asset?.sourceReferences)
+        && asset.sourceReferences.includes(canonicalRef))
         ?? assets.find((asset) => asset?.role === "official_id_photo"
-          && asset?.status === "ready" && asset?.mediaType === "image/png")
+          && asset?.status === "ready"
+          && asset?.mediaType === "image/png"
+          && Array.isArray(asset?.sourceReferences)
+          && asset.sourceReferences.includes(canonicalRef))
         ?? null;
 
       if (canonical !== null && media?.locator && media?.sha256 && media?.provenanceRef) {
