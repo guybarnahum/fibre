@@ -25,7 +25,6 @@ import { createPresentationAssetDemandService } from "#services/world-kernel/src
 import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
 import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
 import { createThreadPresentationEmbodimentRewriteService } from "#services/world-kernel/src/thread-presentation-embodiment-rewrite-service.mjs";
-import { createThreadPresentationIdentityMediaRewriteService } from "#services/world-kernel/src/thread-presentation-identity-media-rewrite-service.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
@@ -36,7 +35,6 @@ import {
   COMPLETION_QUEUE_MAX_RETRIES,
   completionQueueFailureDisposition,
 } from "./completion-queue-policy.mjs";
-import { createCompletedWorkflowRecoveryReconciler } from "./completed-workflow-recovery.mjs";
 import { createFidAuthorityBoundary } from "../fid-authority-boundary.mjs";
 
 export { FibrePresentationChannelDurableObject };
@@ -79,7 +77,8 @@ function createInfra(env, { includeWorkflows = true } = {}) {
 }
 
 function createVisualReconciler(env, infra, presentationServer, activityRecorder) {
-  const reconciler = createThreadPresentationVisualPublicationReconciler({
+  const fidLifecycle = createFidLifecycle(env, infra, presentationServer);
+  return createThreadPresentationVisualPublicationReconciler({
     presentationServer,
     infra,
     selectProviderProfile: ({ requiresReferenceObjects }) => selectImageProviderProfile(
@@ -88,14 +87,12 @@ function createVisualReconciler(env, infra, presentationServer, activityRecorder
     ),
     createDemandService: createPresentationAssetDemandService,
     createVisualRewrite: createThreadPresentationEmbodimentRewriteService,
-    createIdentityRewrite: createThreadPresentationIdentityMediaRewriteService,
-    planSlots: planThreadPresentationAssetSlots,
+    ensureFid:({ threadId, idempotencyKey }) => fidLifecycle.reconcile({
+      threadId,
+      idempotencyKey,
+      mode:"ensure",
+    }),
     activityRecorder,
-  });
-  return createCompletedWorkflowRecoveryReconciler({
-    reconciler,
-    infra,
-    completionConsumer: createCompletionConsumer(env, infra, presentationServer),
   });
 }
 
