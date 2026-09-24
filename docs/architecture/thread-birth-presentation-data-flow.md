@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-birth-presentation-data-flow
 status: accepted
-last-reviewed: 2026-08-30
+last-reviewed: 2026-09-24
 canonical: true
 ---
 
@@ -231,7 +231,11 @@ The Fibre Identity Number (FIN) is permanent civil identity. Birth Center prepar
 
 An identity card and official photograph are derived presentation credentials. They do not create the Thread and cannot change the FIN.
 
-Birth must not depend on an image provider being available. A Thread can be born and registered while canonical visual identity remains pending and presentation media remains `missing` or `deferred`.
+Birth must not depend on an image provider being available. A Thread can be born and registered while canonical visual identity remains pending.
+
+Once the canonical visual root is admitted and projected, Thread Presentation automatically asks the existing FID lifecycle to **ensure** the credential against that exact canonical root. If no active FID exists, FIA performs initial issuance. If the active credential's admitted photo belongs to an older canonical root, FIA performs a replacement and preserves credential lineage. Presentation does not cut cards itself.
+
+Modern Genesis also keeps language authority separated: eventual/spoken languages remain available to life generation and Thread identity, while the languages actually used in early upbringing are recorded separately as Genesis `raisedLanguages` evidence. A later school-acquired language must not appear as a raised language merely because the Thread speaks it by young-adult entry.
 
 ## Canonical visual identity before derived portraits
 
