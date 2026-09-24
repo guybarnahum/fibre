@@ -1,7 +1,7 @@
 ---
 id: fibre-operator-surfaces
 status: accepted
-last-reviewed: 2026-09-16
+last-reviewed: 2026-09-24
 canonical: true
 ---
 
@@ -43,6 +43,8 @@ Admin must keep three operations visibly distinct:
 - **Recover** — reactivate one quarantined/dead-letter work item after its blocker is resolved.
 
 A named migration may declare explicit operator inputs when its domain rule genuinely requires them. Admin may collect and pass only those migration-specific inputs; it must not expose a generic arbitrary-field editor as a substitute for migration authority.
+
+Canonical appearance correction is likewise not generic **Fix**. Fix reconstructs derived state from existing authority; changing the authoritative canonical visual specification creates a new Embodiment revision and therefore requires an explicit operator action with a reason and a complete corrected specification. The manual procedure is defined in [`canonical-visual-identity.md`](canonical-visual-identity.md#operator-runbook-correcting-appearance). A future Admin control should surface this as a distinct **Correct appearance** action and let normal visual/FID reconciliation perform the downstream regeneration.
 
 A compound UI action such as **Fix & Recover** may sequence those operations but does not merge their authority. A Thread with unresolved `migration_required`, integrity conflict or operator-decision state remains quarantined rather than being retried merely because an operator opened the page.
 
