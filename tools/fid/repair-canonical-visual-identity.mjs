@@ -9,6 +9,14 @@ const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
 const POLL_MS = 2_000;
 
+function progress(stage, detail = {}) {
+  process.stderr.write(`${JSON.stringify({
+    event:"canonical-visual-identity-repair-progress",
+    stage,
+    ...detail,
+  })}\n`);
+}
+
 function required(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
   return value.trim();
@@ -128,6 +136,7 @@ async function main() {
     .digest("hex")
     .slice(0, 24)}`;
 
+  progress("inspect_current_identity", { threadId });
   const deployed = deployment();
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
@@ -136,6 +145,11 @@ async function main() {
   const previousFidCard = beforePresentation?.snapshot?.presentation?.identityCard ?? null;
   const previousFidCredentialId = previousFidCard?.credentialId ?? null;
   const previousFidCredentialVersion = previousFidCard?.credentialVersion ?? null;
+
+  progress("submit_canonical_correction", {
+    previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
+    previousFidCredentialId,
+  });
   const repaired = await repairCanonical({
     worldKernel,
     privateToken,
@@ -147,6 +161,7 @@ async function main() {
   const pendingRevision = repaired?.visualIdentityCorrection?.embodiment?.revision;
   if (!Number.isSafeInteger(pendingRevision)) throw new Error("visual repair did not return a corrected Embodiment revision");
 
+  progress("await_canonical_root", { pendingRevision });
   const admitted = await poll(
     "corrected canonical root admission",
     () => observatory({ worldKernel, privateToken, threadId }),
@@ -160,13 +175,20 @@ async function main() {
   );
   const corrected = canonicalPortrait(admitted);
   const canonicalReferenceObjectRef = corrected.asset.referenceObjectRef;
+  progress("canonical_root_admitted", {
+    correctedEmbodimentRevision:corrected.revision,
+    correctedCanonicalReferenceObjectRef:canonicalReferenceObjectRef,
+  });
 
+  progress("await_presentation_projection");
   await poll(
     "corrected visual identity projection",
     () => presentation({ threadPresentation, threadId }),
     (body) => body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0] === canonicalReferenceObjectRef,
   );
+  progress("presentation_projected", { correctedCanonicalReferenceObjectRef:canonicalReferenceObjectRef });
 
+  progress("await_fin_card", { previousFidCredentialId });
   const correctedPresentation = await poll(
     "automatic FID projection from corrected canonical root",
     () => presentation({ threadPresentation, threadId }),
@@ -184,6 +206,11 @@ async function main() {
     },
   );
   const credential = correctedPresentation.snapshot.presentation.identityCard;
+  progress("fin_card_active", {
+    fidCredentialId:credential.credentialId,
+    fidRevision:credential.revision,
+    fidSupersedesCredentialId:credential.supersedesCredentialId,
+  });
 
   process.stdout.write(`${JSON.stringify({
     event:"canonical-visual-identity-repair-complete",
