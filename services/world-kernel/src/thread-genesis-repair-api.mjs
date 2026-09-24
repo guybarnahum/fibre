@@ -1,6 +1,6 @@
 const TOKEN_ENCODER = new TextEncoder();
 const REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
-const CONTRACT = "fibre-thread-repair-v0.6";
+const CONTRACT = "fibre-thread-repair-v0.7";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -41,6 +41,20 @@ async function repairBody(request) {
       if (!Array.isArray(value.languages)) throw new TypeError();
       return Object.freeze({ action:"raised_languages", operationKey:value.operationKey.trim(), languages:value.languages });
     }
+    if (value.action === "canonical_visual_identity") {
+      if (typeof value.operationKey !== "string" || value.operationKey.trim() === "") throw new TypeError();
+      if (!value.correctedSpecification || typeof value.correctedSpecification !== "object" || Array.isArray(value.correctedSpecification)) throw new TypeError();
+      if (typeof value.reason !== "string" || value.reason.trim() === "") throw new TypeError();
+      const evidenceReferences = value.evidenceReferences ?? [];
+      if (!Array.isArray(evidenceReferences) || !evidenceReferences.every((entry) => typeof entry === "string" && entry.trim() !== "")) throw new TypeError();
+      return Object.freeze({
+        action:"canonical_visual_identity",
+        operationKey:value.operationKey.trim(),
+        correctedSpecification:value.correctedSpecification,
+        reason:value.reason.trim(),
+        evidenceReferences:Object.freeze(evidenceReferences.map((entry) => entry.trim())),
+      });
+    }
     if (value.action === "migrate") {
       if (typeof value.migrationId !== "string" || value.migrationId.trim() === "") throw new TypeError();
       if (typeof value.migrationKey !== "string" || value.migrationKey.trim() === "") throw new TypeError();
@@ -63,11 +77,13 @@ async function repairBody(request) {
 export function createThreadGenesisRepairApi({
   repairService,
   identityService,
+  visualIdentityRepairService,
   privateToken,
   reconciliationWorkset = null,
   onRepair = null,
   onRecover = null,
   onIdentityUpdate = null,
+  onVisualIdentityCorrection = null,
 } = {}) {
   if (!repairService
     || typeof repairService.diagnose !== "function"
@@ -77,6 +93,9 @@ export function createThreadGenesisRepairApi({
   }
   if (!identityService || typeof identityService.update !== "function") {
     throw new TypeError("Thread repair API requires identityService.update()");
+  }
+  if (!visualIdentityRepairService || typeof visualIdentityRepairService.repair !== "function") {
+    throw new TypeError("Thread repair API requires visualIdentityRepairService.repair()");
   }
   if (typeof privateToken !== "string" || privateToken.length < 16) {
     throw new TypeError("Thread repair privateToken must be at least 16 characters");
@@ -93,6 +112,9 @@ export function createThreadGenesisRepairApi({
   }
   if (onIdentityUpdate !== null && typeof onIdentityUpdate !== "function") {
     throw new TypeError("Thread repair onIdentityUpdate must be a function or null");
+  }
+  if (onVisualIdentityCorrection !== null && typeof onVisualIdentityCorrection !== "function") {
+    throw new TypeError("Thread repair onVisualIdentityCorrection must be a function or null");
   }
 
   return Object.freeze({
@@ -145,6 +167,16 @@ export function createThreadGenesisRepairApi({
           return json(result.before.exists ? 200 : 404, {
             contract:CONTRACT,
             raisedLanguagesUpdate:result,
+            reconciliation:reconciliationWorkset?.get(threadId) ?? null,
+          });
+        }
+        if (command.action === "canonical_visual_identity") {
+          const result = visualIdentityRepairService.repair({ threadId, ...command });
+          const requeued = reconciliationWorkset?.requeue(threadId) ?? false;
+          await onVisualIdentityCorrection?.({ threadId, result, requeued });
+          return json(200, {
+            contract:CONTRACT,
+            visualIdentityCorrection:result,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
         }
