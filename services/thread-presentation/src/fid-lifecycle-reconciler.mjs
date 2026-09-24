@@ -8,6 +8,17 @@ function lifecycleMode(value) {
   return value;
 }
 
+function optionalCanonicalReference(value) {
+  if (value === null || value === undefined) return null;
+  return nonEmpty("canonicalReferenceObjectRef", value);
+}
+
+function activeMatchesCanonical(active, canonicalReferenceObjectRef) {
+  if (active === null || canonicalReferenceObjectRef === null) return true;
+  return Array.isArray(active.photo?.sourceReferences)
+    && active.photo.sourceReferences.includes(canonicalReferenceObjectRef);
+}
+
 export function createFidLifecycleReconciler({
   fidAuthority,
   presentationProjection,
@@ -26,11 +37,14 @@ export function createFidLifecycleReconciler({
       threadId:candidateThreadId,
       idempotencyKey:candidateKey,
       mode:candidateMode = "ensure",
+      canonicalReferenceObjectRef:candidateCanonicalReference = null,
     } = {}) {
       const threadId = nonEmpty("threadId", candidateThreadId);
       const idempotencyKey = nonEmpty("FID lifecycle idempotencyKey", candidateKey);
       const mode = lifecycleMode(candidateMode);
+      const canonicalReferenceObjectRef = optionalCanonicalReference(candidateCanonicalReference);
       let active = mode === "reissue" ? null : await fidAuthority.getActive(threadId);
+      if (!activeMatchesCanonical(active, canonicalReferenceObjectRef)) active = null;
 
       if (active === null) {
         const cut = await fidAuthority.cut({ threadId, idempotencyKey });
