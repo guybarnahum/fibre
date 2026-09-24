@@ -176,6 +176,40 @@ test("replaying the same admitted Embodiment is an exact no-op", async () => {
   assert.deepEqual(repeatedPointer, firstPointer);
 });
 
+test("the same canonical Embodiment may refresh derived projection text", async () => {
+  const current = await fixture();
+  await current.service.project({ channelId: CHANNEL_ID, embodimentId: EMBODIMENT_ID });
+
+  const projected = await current.server.getSnapshot(CHANNEL_ID);
+  const authoritative = projected.snapshot.presentation.visualIdentity;
+  const stale = {
+    ...authoritative,
+    subjectDescription:`broad family appearance prior: creation-time family evidence; ${authoritative.subjectDescription}`,
+    renderDescription:`When a broad family appearance prior is present, do not infer protected traits from appearance. ${authoritative.renderDescription}`,
+  };
+  await current.server.publishSnapshot({
+    channelId:CHANNEL_ID,
+    objectRef:"snapshot_stale_visual_projection_text",
+    snapshotVersion:"stale-visual-projection-text",
+    bundle:{
+      presentation:{ ...projected.snapshot.presentation, visualIdentity:stale },
+      media:projected.snapshot.media,
+      provenance:projected.snapshot.provenance,
+    },
+    expectedSequence:projected.pointer.sequence ?? projected.snapshot.cursor,
+  });
+
+  const refreshed = await current.service.project({
+    channelId:CHANNEL_ID,
+    embodimentId:EMBODIMENT_ID,
+  });
+
+  assert.equal(refreshed.rewritten, true, "current projection text did not refresh");
+  assert.equal(refreshed.projection.specificationDigest, authoritative.specificationDigest);
+  assert.deepEqual(refreshed.projection.referenceObjectRefs, authoritative.referenceObjectRefs);
+  assert.doesNotMatch(refreshed.projection.subjectDescription, /broad family appearance prior/);
+});
+
 test("a stale or different current Embodiment lineage cannot overwrite public visual identity", async () => {
   const current = await fixture();
   current.authority.set(embodiment({ revision: 3, recordedAt: "2026-08-30T05:25:00Z" }));
