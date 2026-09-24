@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { FIBRE_IDENTITY_CARD_CURRENT_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
@@ -148,7 +149,9 @@ async function main() {
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   const before = canonicalPortrait(await observatory({ worldKernel, privateToken, threadId }));
   const beforePresentation = await presentation({ threadPresentation, threadId });
-  const previousFidCredentialId = beforePresentation?.snapshot?.presentation?.identityCard?.credentialId ?? null;
+  const previousFidCard = beforePresentation?.snapshot?.presentation?.identityCard ?? null;
+  const previousFidCredentialId = previousFidCard?.credentialId ?? null;
+  const previousFidCredentialVersion = previousFidCard?.credentialVersion ?? null;
   const repaired = await repairCanonical({
     worldKernel,
     privateToken,
@@ -191,8 +194,11 @@ async function main() {
     if (credential.credentialId === previousFidCredentialId) {
       throw new Error("FID repair reused the credential that still carries the prior visual identity");
     }
-    if (credential.supersedesCredentialId !== previousFidCredentialId) {
-      throw new Error("FID repair did not supersede the previously active credential");
+    if (
+      previousFidCredentialVersion === FIBRE_IDENTITY_CARD_CURRENT_VERSION
+      && credential.supersedesCredentialId !== previousFidCredentialId
+    ) {
+      throw new Error("FID repair did not supersede the previously active FIA credential");
     }
   }
 
@@ -210,6 +216,7 @@ async function main() {
     correctedCanonicalReferenceObjectRef:canonicalReferenceObjectRef,
     correctedEmbodimentRevision:corrected.revision,
     previousFidCredentialId,
+    previousFidCredentialVersion,
     fidCredentialId:credential.credentialId,
     fidRevision:credential.revision,
     fidSupersedesCredentialId:credential.supersedesCredentialId,
