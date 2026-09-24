@@ -1,4 +1,7 @@
-import { THREAD_PRESENTATION_STREAM_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
+import {
+  FIBRE_IDENTITY_CARD_CURRENT_VERSION,
+  THREAD_PRESENTATION_STREAM_VERSION,
+} from "fibre/world-kernel/thread-presentation-contracts";
 import { planCurrentPresentDepiction } from "./current-present-depiction.mjs";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
 
@@ -288,6 +291,16 @@ export function createThreadPresentationVisualPublicationReconciler({
       const projected = await presentationServer.getSnapshot(channelId);
       if (projected === null) {
         throw new Error(`Thread ${threadId} presentation disappeared during visual identity projection`);
+      }
+      const activeFid = projected.snapshot.presentation?.identityCard ?? null;
+      if (activeFid?.credentialVersion === FIBRE_IDENTITY_CARD_CURRENT_VERSION) {
+        return result(true, "complete", {
+          officialPhotoMediaId:null,
+          visualReused:visual.reused === true,
+          identityReused:true,
+          regenerationKey:normalizedRegenerationKey,
+          fidCredentialId:activeFid.credentialId,
+        });
       }
       const issuedAt = latestIsoTimestamp("identity media issuance authority time", [
         observedAt,
