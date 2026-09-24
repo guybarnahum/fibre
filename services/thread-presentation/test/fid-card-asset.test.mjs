@@ -200,47 +200,34 @@ test("FID projection publishes front, back and one logical rich card asset", asy
   assert.equal(photo?.locator, "asset_fid_photo_card_asset_2");
 });
 
-test("FID reissue replaces the prior official photo instead of retaining stale media", async () => {
+test("FID ensure replaces stale official photo media for the active credential", async () => {
   const infra = createMemoryInfraDriver();
-  const first = await materializeFidCardAsset(infra, activeFid());
+  const active = await materializeFidCardAsset(infra, activeFid());
   const firstProjection = projectFidThreadPresentation({
     bundle:presentationBundle(),
-    activeFid:first,
+    activeFid:active,
     projectedAt:"2026-09-19T20:05:00.000Z",
     visibility:"public",
   });
+  const stale = structuredClone(firstProjection);
+  stale.media.assets = stale.media.assets.map((asset) => asset.role === "official_id_photo"
+    ? {
+        ...asset,
+        mediaId:"media_legacy_official_photo",
+        locator:"asset_legacy_official_photo",
+        sha256:"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      }
+    : asset);
 
-  const next = {
-    ...activeFid(),
-    credentialId:"fidc_card_asset_3",
-    revision:3,
-    supersedesCredentialId:"fidc_card_asset_2",
-    photo:{
-      ...activeFid().photo,
-      objectRef:"asset_fid_photo_card_asset_3",
-      digest:"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-    },
-    front:{
-      ...activeFid().front,
-      objectRef:"fidcard_fidc_card_asset_3_front",
-      digest:"sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-    },
-    back:{
-      ...activeFid().back,
-      objectRef:"fidcard_fidc_card_asset_3_back",
-      digest:"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    },
-  };
-  const enriched = await materializeFidCardAsset(infra, next);
   const projected = projectFidThreadPresentation({
-    bundle:firstProjection,
-    activeFid:enriched,
+    bundle:stale,
+    activeFid:active,
     projectedAt:"2026-09-19T20:06:00.000Z",
     visibility:"public",
   });
 
   const photos = projected.media.assets.filter((asset) => asset.role === "official_id_photo");
-  assert.equal(photos.length, 1, "FID reissue retained a stale official photo");
-  assert.equal(photos[0].locator, "asset_fid_photo_card_asset_3");
+  assert.equal(photos.length, 1, "FID ensure retained stale official photo media");
+  assert.equal(photos[0].locator, "asset_fid_photo_card_asset_2");
 });
 
