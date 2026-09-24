@@ -1,10 +1,18 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
+
 import {
+  embodimentId,
   embodimentSpecificationDigest,
   normalizeEmbodimentRepresentation,
 } from "../src/embodiment-domain.mjs";
+import { openEmbodimentStore } from "../src/embodiment-store.mjs";
+import { openWorldStore } from "../src/persistence.mjs";
 import {
   createCanonicalVisualIdentityRepairService,
   repairCanonicalVisualIdentity,
@@ -121,4 +129,108 @@ test("operator repair service records one corrected canonical lineage head", () 
     "correction was not grounded in durable Thread evidence",
   );
   assert.equal(current.revision, 3, "corrected lineage head was not recorded");
+});
+
+
+test("operator repair is accepted by real Embodiment authority", () => {
+  const fixture = JSON.parse(
+    readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+  );
+  const dir = mkdtempSync(join(tmpdir(), "fibre-canonical-repair-"));
+  const databasePath = join(dir, "world.sqlite");
+  try {
+    const storage = localWorldStateStorage(databasePath);
+    const world = openWorldStore(storage);
+    const seeded = world.seedThread(structuredClone(fixture)).thread;
+    world.close();
+
+    const threadId = seeded.threadId;
+    const eventRef = seeded.provenance.lastEventId;
+    const spec = {
+      subject:{
+        partyId:threadId,
+        description:"adult female person; stable individual facial proportions, dark eyes, natural dark hair, ordinary skin texture, and subtle facial asymmetry",
+      },
+      method:"canonical synthetic portrait specification",
+      description:"Preserve the listed stable individual identity cues across age transformations in a neutral realistic portrait.",
+      model:"replaceable-renderer",
+    };
+    const id = embodimentId({ threadId, kind:"portrait", lineage:"canonical" });
+    const store = openEmbodimentStore(storage);
+    store.record({
+      embodimentId:id,
+      revision:1,
+      threadId,
+      kind:"portrait",
+      representationKind:"synthetic_generation",
+      truthStatus:"synthetic_representation_not_historical_evidence",
+      rightsBasis:"thread_self_owned",
+      permissionReferences:[],
+      sourceReferences:[eventRef],
+      specification:spec,
+      specificationDigest:embodimentSpecificationDigest(spec),
+      respecification:null,
+      status:"pending_generation",
+      unavailableReason:null,
+      asset:null,
+      visibility:"public",
+      recordedAt:"2026-08-02T17:01:00Z",
+    });
+    store.record({
+      embodimentId:id,
+      revision:2,
+      supersedesRevision:1,
+      threadId,
+      kind:"portrait",
+      representationKind:"synthetic_generation",
+      truthStatus:"synthetic_representation_not_historical_evidence",
+      rightsBasis:"thread_self_owned",
+      permissionReferences:[],
+      sourceReferences:[eventRef],
+      specification:spec,
+      specificationDigest:embodimentSpecificationDigest(spec),
+      respecification:null,
+      status:"available",
+      unavailableReason:null,
+      asset:{
+        assetRef:"asset://visual_identity_reference_mina_old",
+        referenceObjectRef:"visual_identity_reference_mina_old",
+        sha256:`sha256:${"b".repeat(64)}`,
+        mediaType:"image/png",
+        width:1024,
+        height:1024,
+        durationMs:null,
+      },
+      visibility:"public",
+      recordedAt:"2026-08-02T17:02:00Z",
+    });
+
+    const corrected = {
+      ...spec,
+      subject:{
+        ...spec.subject,
+        description:"adult female person; softly oval face with balanced proportions, deep-brown eyes, natural dark hairline, ordinary skin texture, and subtle left-right brow asymmetry",
+      },
+    };
+    const service = createCanonicalVisualIdentityRepairService({
+      embodimentStore:store,
+      now:() => "2026-08-02T17:03:00Z",
+    });
+    const result = service.repair({
+      threadId,
+      operationKey:"repair_visual_mina_001",
+      correctedSpecification:corrected,
+      reason:"Correct a materially inaccurate admitted canonical visual identity.",
+    });
+
+    assert.equal(result.embodiment.status, "pending_generation", "repair did not reach Embodiment authority");
+    assert.deepEqual(
+      result.embodiment.respecification.evidenceReferences,
+      [eventRef],
+      "repair did not retain a durable Thread witness",
+    );
+    store.close();
+  } finally {
+    rmSync(dir, { recursive:true, force:true });
+  }
 });
