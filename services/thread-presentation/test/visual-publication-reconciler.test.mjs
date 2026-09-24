@@ -87,6 +87,11 @@ test("admitted canonical identity automatically converges through the FID lifecy
   assert.equal(second.detail.fidCredentialId, "fidc_visual_001", "active FIN Card was not projected");
   assert.equal(fidCalls[0].idempotencyKey, fidCalls[1].idempotencyKey, "FID retry changed issuance identity");
   assert.equal(fidCalls[0].threadId, visual.threadId, "FID issuance targeted another Thread");
+  assert.equal(
+    fidCalls[0].canonicalReferenceObjectRef,
+    visual.asset.referenceObjectRef,
+    "FID issuance was not bound to the canonical root",
+  );
 });
 
 test("visual reconciliation waits for newborn Presentation before issuing identity media", async () => {
