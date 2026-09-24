@@ -55,6 +55,9 @@ function composeAppearanceContext(requestId, material) {
 
 export function composeModernSubjectIdentity({ requestId, material }) {
   if (!material || typeof material !== "object") throw new TypeError("modern birth material is required");
+  if (!Array.isArray(material.languages) || material.languages.length === 0) {
+    throw new TypeError("modern birth requires eventual spoken languages");
+  }
   const ordinal = positiveOrdinal(requestId);
   const family = valueAt(material.familyNames, Math.floor((ordinal - 1) / 6) + 1);
   const femaleGiven = valueAt(material.femaleGivenNames, ordinal);
@@ -64,6 +67,7 @@ export function composeModernSubjectIdentity({ requestId, material }) {
     femaleName: fullName(femaleGiven, family, material.nameOrder),
     maleName: fullName(maleGiven, family, material.nameOrder),
     birthCity: material.birthCity,
+    languages: Object.freeze([...material.languages]),
     appearanceContext,
   });
 }
