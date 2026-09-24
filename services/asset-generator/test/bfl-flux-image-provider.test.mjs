@@ -218,30 +218,33 @@ test("BFL FLUX retries transient polling inside one submitted task rather than r
   assert.equal(generated.result.providerRequestId, "bfl_task_poll_retry");
 });
 
-test("BFL FLUX moderation is terminal and keeps the accepted task identity", async () => {
-  const provider = createBflFluxImageProvider({
-    apiKey: "bfl-fixture",
-    sleep: async () => {},
-    fetchImpl: async (url, init = {}) => {
-      if (init.method === "POST") {
-        return jsonResponse({
-          payload: {
-            id: "bfl_task_moderated",
-            polling_url: "https://api.bfl.ai/v1/get_result?id=bfl_task_moderated",
-          },
-        });
-      }
-      return jsonResponse({ payload: { id: "bfl_task_moderated", status: "Content Moderated", result: null } });
-    },
-  });
+test("BFL FLUX moderation is terminal and preserves the provider's exact moderation stage", async () => {
+  for (const status of ["Request Moderated", "Content Moderated"]) {
+    const provider = createBflFluxImageProvider({
+      apiKey: "bfl-fixture",
+      sleep: async () => {},
+      fetchImpl: async (url, init = {}) => {
+        if (init.method === "POST") {
+          return jsonResponse({
+            payload: {
+              id: "bfl_task_moderated",
+              polling_url: "https://api.bfl.ai/v1/get_result?id=bfl_task_moderated",
+            },
+          });
+        }
+        return jsonResponse({ payload: { id: "bfl_task_moderated", status, result: null } });
+      },
+    });
 
-  await assert.rejects(
-    () => provider.generate(imageRequest()),
-    (error) => error instanceof AssetGenerationError
-      && error.category === "moderation_rejected"
-      && error.retryable === false
-      && error.providerRequestId === "bfl_task_moderated",
-  );
+    await assert.rejects(
+      () => provider.generate(imageRequest()),
+      (error) => error instanceof AssetGenerationError
+        && error.category === "moderation_rejected"
+        && error.retryable === false
+        && error.providerRequestId === "bfl_task_moderated"
+        && error.message.includes(status),
+    );
+  }
 });
 
 test("BFL FLUX rejects malformed reference objects before submission", async () => {
