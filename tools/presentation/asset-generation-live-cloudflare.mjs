@@ -36,6 +36,7 @@ function parseArgs(argv) {
     mediaId: DEFAULT_LIVE_MEDIA_ID,
     baseUrl: process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8788",
     providerMode:"primary",
+    primaryProfile:null,
     dryRun: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -62,6 +63,11 @@ function parseArgs(argv) {
       if (!["primary", "secondary"].includes(parsed.providerMode)) {
         throw new TypeError("--provider-mode must be primary or secondary");
       }
+      continue;
+    }
+    if (value === "--primary-profile") {
+      if (index + 1 >= argv.length) throw new TypeError("--primary-profile requires a value");
+      parsed.primaryProfile = nonEmpty("primary-profile", argv[++index]);
       continue;
     }
     throw new TypeError(`unknown Cloudflare live asset argument: ${value}`);
@@ -136,6 +142,7 @@ export async function runCloudflareLiveAssetSmoke({
   timeoutMs = Number(process.env.ASSET_LIVE_CLOUDFLARE_TIMEOUT_MS ?? 10 * 60 * 1000),
   pollMs = Number(process.env.ASSET_LIVE_CLOUDFLARE_POLL_MS ?? 2000),
   providerMode = "primary",
+  primaryProfile = null,
 } = {}) {
   if (!["primary", "secondary"].includes(providerMode)) throw new TypeError("providerMode must be primary or secondary");
   const target = await loadThreadPresentationLiveTarget({ fixture, mediaId });
@@ -155,7 +162,7 @@ export async function runCloudflareLiveAssetSmoke({
     body: JSON.stringify({ bundle: target.bundle }),
   });
 
-  console.log(`[4/5] Scheduling the selected media through Presentation → Workflow → Asset Generator (provider=${providerMode})...`);
+  console.log(`[4/5] Scheduling the selected media through Presentation → Workflow → Asset Generator (mode=${providerMode}${primaryProfile ? `, primary=${primaryProfile}` : ""})...`);
   const scheduled = await jsonFetch(`${base}/__p3/fixtures/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -163,6 +170,7 @@ export async function runCloudflareLiveAssetSmoke({
       threadId:target.threadId,
       mediaId:target.mediaAsset.mediaId,
       providerMode,
+      primaryProfile,
     }),
   });
   console.log(`      job=${scheduled.jobId}`);
@@ -223,6 +231,7 @@ export async function runCloudflareLiveAssetSmoke({
     mediaId: target.mediaAsset.mediaId,
     label: target.label,
     providerMode,
+    requestedPrimaryProfile:primaryProfile,
     providerProfile:scheduled.providerProfile,
     demandId: scheduled.demandId,
     jobId: scheduled.jobId,
@@ -263,6 +272,7 @@ async function main() {
     console.log(`Target: ${target.label} (${target.mediaAsset.mediaId})`);
     console.log(`Presentation: ${args.baseUrl}`);
     console.log(`Provider mode: ${args.providerMode}`);
+    console.log(`Primary profile: ${args.primaryProfile ?? "deployment default"}`);
     return;
   }
   await runCloudflareLiveAssetSmoke(args);
