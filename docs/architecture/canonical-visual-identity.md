@@ -287,6 +287,81 @@ A superseding root is exceptional and must be explicit. Valid reasons may includ
 
 Ordinary age, fashion, hairstyle, expression or aesthetic preference do not justify a root replacement.
 
+## Operator runbook: correcting appearance
+
+A canonical appearance correction is an **authority correction**, not a presentation tweak. Use it only when the admitted canonical specification/root is materially wrong for this Thread: for example, renderer-selected morphology escaped the Thread's grounded family/inheritance evidence, the wrong subject was bound, or the admitted specification itself is incorrect.
+
+Do not use this path for aging, hairstyle, grooming, clothing, expression, temporary injury, weight variation, or aesthetic preference. Those belong to time-local appearance or derived presentation state.
+
+The operator should first inspect the Thread's existing authoritative evidence and write **one concrete person**, not a demographic label or a range. For a native synthetic Thread, preserve the Thread's already-established identity cues and use its Genesis family/inheritance evidence only to correct the mistaken phenotype. Birthplace, nationality, culture, or ancestry labels are not themselves rendering instructions.
+
+A correction file has the canonical specification shape:
+
+```json
+{
+  "subject": {
+    "partyId": "thr_...",
+    "description": "adult person; one concrete skin tone; one concrete hair morphology/color; one concrete eye color/shape; concrete face, brow, nose, mouth, jaw/chin and build; stable asymmetries and marks"
+  },
+  "method": "canonical synthetic portrait specification from operator-reviewed authority correction",
+  "description": "Preserve the listed stable identity geometry and phenotype across derived media. Do not infer personality, character, culture or competence from appearance. Render a neutral normalized age-25 head-and-shoulders reference without glamour, caricature or stylization drift.",
+  "model": "replaceable-renderer"
+}
+```
+
+The subject description should be specific enough to constrain one recognizable individual. Prefer concrete atomic traits over alternatives such as “light-to-medium”, “straight or wavy”, or “brown or hazel”. Preserve known asymmetries, hairline details and stable marks when they are part of the established identity.
+
+Run the correction from the repo root:
+
+```bash
+npm run fid:visual:repair -- \
+  --thread-id=thr_... \
+  --spec-file=/tmp/thread-visual.json \
+  --reason="Correct canonical visual identity: <concise factual reason>."
+```
+
+The tool verifies that the local checkout matches staging deployment evidence, submits the authoritative correction, and reports progress while Fibre converges:
+
+```text
+inspect_current_identity
+submit_canonical_correction
+await_canonical_root
+canonical_root_admitted
+await_presentation_projection
+presentation_projected
+await_fin_card
+fin_card_active
+```
+
+Successful completion reports the old and new canonical root references, corrected Embodiment revision, and resulting FID credential. The expected causal chain is:
+
+```text
+current canonical specification/root
+        -> explicit operator correction
+        -> pending corrected Embodiment revision
+        -> newly generated and admitted canonical root
+        -> Thread Presentation projects that root
+        -> FID lifecycle ensures the credential against that root
+        -> derived official photo / FIN Card converge automatically
+```
+
+Do **not** manually edit Presentation media or cut a separate card to make the correction “stick”. Presentation and FIN media are downstream projections and should converge from the corrected World/Embodiment authority.
+
+After completion, verify in Thread Observatory:
+
+1. the canonical visual specification describes the intended one concrete person;
+2. the current canonical Embodiment is available and references the new root;
+3. Thread Presentation's visual identity references that same root;
+4. any official identity photo is derived from that root;
+5. the active FIN Card is current for that root;
+6. the prior root and prior credential/provenance remain historical, not current.
+
+### Admin UI semantics
+
+The generic **Fix** action in Thread Admin is deliberately not an appearance editor. **Fix** repairs derived state from existing authority; it must not author a new canonical person.
+
+If Admin exposes this workflow, it should be a separate explicit operator action such as **Correct appearance**, with the same authority semantics as the CLI: review the current canonical specification/evidence, submit one complete corrected specification with a reason, then let normal visual/FID reconciliation converge. It must not be hidden inside ordinary Fix or implemented as direct image replacement.
+
 ## Required end-to-end proof
 
 The deployment E2E must ultimately prove one birth flowing through:
