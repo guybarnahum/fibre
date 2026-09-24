@@ -124,7 +124,8 @@ test("OpenAI image provider uses image edits for canonical reference inputs and 
       kind:"provenanced_generated_media",
     },
   ]);
-  assert.equal(JSON.stringify(generated.requestWitness).includes("reference-one"), true);
+  assert.equal("bytes" in generated.requestWitness.body.referenceInputs[0], false);
+  assert.equal("bytes" in generated.requestWitness.body.referenceInputs[1], false);
   assert.equal(JSON.stringify(generated.requestWitness).includes("sk-secret-never-persist"), false);
   assert.equal(generated.result.configuration.endpoint, "/v1/images/edits");
   assert.equal(generated.result.providerRequestId, "req_openai_edit_fixture");
