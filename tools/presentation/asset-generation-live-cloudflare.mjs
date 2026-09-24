@@ -175,7 +175,8 @@ export async function runCloudflareLiveAssetSmoke({
   });
   console.log(`      job=${scheduled.jobId}`);
 
-  let readyEvent = null;
+  let readyAsset = null;
+  let readySnapshot = null;
   let workflow = scheduled.workflow;
   let heartbeatWidth = 0;
   while (Date.now() - startedAt < timeoutMs) {
@@ -186,27 +187,30 @@ export async function runCloudflareLiveAssetSmoke({
       throw new Error(describeWorkflowFailure({ jobId: scheduled.jobId, workflow }));
     }
 
-    const events = await jsonFetch(`${base}/api/threads/${encodeURIComponent(target.threadId)}/events?after=0`);
-    readyEvent = events.events.find((event) => event.kind === "media.ready" && event.payload?.mediaId === target.mediaAsset.mediaId) ?? null;
-    if (readyEvent) {
+    const snapshot = await jsonFetch(`${base}/api/threads/${encodeURIComponent(target.threadId)}/snapshot`);
+    readyAsset = snapshot.snapshot?.media?.assets?.find((asset) =>
+      asset.mediaId === target.mediaAsset.mediaId && asset.status === "ready"
+    ) ?? null;
+    if (readyAsset) {
+      readySnapshot = snapshot;
       clearWaiting(heartbeatWidth);
       break;
     }
     heartbeatWidth = renderWaiting({
       startedAt,
       workflowStatus: workflow.status,
-      head: events.head,
+      head: snapshot.pointer?.sequence ?? snapshot.snapshot?.cursor ?? 0,
       width: heartbeatWidth,
       jobId: scheduled.jobId,
     });
     await sleep(pollMs);
   }
   clearWaiting(heartbeatWidth);
-  if (!readyEvent) throw new Error(`timed out waiting for ${target.mediaAsset.mediaId} media.ready`);
-  if (readyEvent.payload.objectRef !== scheduled.objectRef) throw new Error("media.ready objectRef does not match scheduled job");
+  if (!readyAsset || !readySnapshot) throw new Error(`timed out waiting for ${target.mediaAsset.mediaId} to become ready in the Thread snapshot`);
+  if (readyAsset.locator !== scheduled.objectRef) throw new Error("ready media objectRef does not match scheduled job");
 
   console.log("[5/5] Fetching the published asset and verifying Fibre provenance classification...");
-  const mediaResponse = await fetch(`${base}/api/assets/${encodeURIComponent(readyEvent.payload.objectRef)}`);
+  const mediaResponse = await fetch(`${base}/api/assets/${encodeURIComponent(readyAsset.locator)}`);
   if (!mediaResponse.ok) throw new Error(`generated asset fetch failed ${mediaResponse.status}`);
   if (mediaResponse.headers.get("x-fibre-provenance") !== "generated_reconstruction") {
     throw new Error("generated media is missing generated_reconstruction serving classification");
@@ -223,7 +227,7 @@ export async function runCloudflareLiveAssetSmoke({
   await writeFile(imagePath, bytes);
 
   const evidence = {
-    evidenceVersion: "fibre-cloudflare-live-asset-smoke-v0.1",
+    evidenceVersion: "fibre-cloudflare-live-asset-smoke-v0.2",
     runStartedAt,
     fixture: target.fixtureName,
     threadId: target.threadId,
@@ -236,20 +240,21 @@ export async function runCloudflareLiveAssetSmoke({
     demandId: scheduled.demandId,
     jobId: scheduled.jobId,
     workflowStatus: workflow.status,
-    eventSequence: readyEvent.sequence,
-    eventId: readyEvent.eventId,
-    objectRef: readyEvent.payload.objectRef,
-    finalAssetDigest: readyEvent.payload.digest,
+    snapshotVersion: readySnapshot.pointer?.snapshotVersion ?? null,
+    snapshotDigest: readySnapshot.pointer?.snapshotDigest ?? null,
+    snapshotCursor: readySnapshot.pointer?.sequence ?? readySnapshot.snapshot?.cursor ?? null,
+    objectRef: readyAsset.locator,
+    finalAssetDigest: readyAsset.sha256,
     mediaType,
     byteLength: bytes.length,
     provenance: {
       classification: mediaResponse.headers.get("x-fibre-provenance"),
       etag: mediaResponse.headers.get("etag"),
-      finalAssetDigest: readyEvent.payload.digest,
+      finalAssetDigest: readyAsset.sha256,
     },
     path: {
       scheduling: "thread-presentation -> InfraDriver.workflows -> Cloudflare Workflow -> asset-generator",
-      completion: "InfraDriver.queues -> Cloudflare Queue -> thread-presentation -> media.ready",
+      completion: "InfraDriver.queues -> Cloudflare Queue -> thread-presentation -> ready media in Thread snapshot",
       serving: "GET /api/assets/:objectRef -> provider-neutral resolver -> InfraDriver.objects",
     },
     output: imagePath.slice(REPO_ROOT.length + 1),
