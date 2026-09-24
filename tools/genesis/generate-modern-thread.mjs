@@ -158,13 +158,13 @@ function assertModernReference({ body, plan, world, presentation }) {
   if (identity.sex !== expectedSex) throw new Error("modern Thread sex did not persist");
   if (identity.birthDate !== body.bornAt.slice(0, 10)) throw new Error("modern Thread birth date did not persist");
   if (identity.birthCity !== body.subjectIdentity.birthCity) throw new Error("modern Thread birth city did not persist");
-  if (JSON.stringify(identity.languages) !== JSON.stringify(body.worldSpec.languages)) throw new Error("modern Thread language context did not persist");
+  if (JSON.stringify(identity.languages) !== JSON.stringify(body.subjectIdentity.languages)) throw new Error("modern Thread spoken languages did not persist");
   if (!Array.isArray(identity.culture) || identity.culture[0] !== `${body.subjectIdentity.birthCity} formative context`) throw new Error("modern Thread cultural context did not persist");
 
   const publicPresentation = presentation?.snapshot?.presentation;
   if (publicPresentation?.subject?.displayName !== expectedName) throw new Error("public Presentation does not expose modern Thread name");
   if (publicPresentation.subject.birthDate !== body.bornAt.slice(0, 10)) throw new Error("public Presentation does not expose birth date");
-  if (JSON.stringify(publicPresentation.subject.languages) !== JSON.stringify(body.worldSpec.languages)) throw new Error("public Presentation does not expose languages");
+  if (JSON.stringify(publicPresentation.subject.languages) !== JSON.stringify(body.subjectIdentity.languages)) throw new Error("public Presentation does not expose spoken languages");
   if (!(publicPresentation.places ?? []).some(({ displayName }) => displayName === body.subjectIdentity.birthCity)) {
     throw new Error("public Presentation does not expose authoritative birth place");
   }
