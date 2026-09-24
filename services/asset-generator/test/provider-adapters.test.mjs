@@ -58,13 +58,93 @@ test("OpenAI image provider preserves exact request witness without API secret",
   assert.equal(new TextDecoder().decode(generated.result.bytes), "png-fixture");
 });
 
-test("OpenAI image provider refuses reference objects as unsupported capability before any provider call", async () => {
+test("OpenAI image provider uses image edits for canonical reference inputs and preserves provenance", async () => {
+  const seen = [];
+  const first = new TextEncoder().encode("reference-one");
+  const second = new TextEncoder().encode("reference-two");
+  const provider = createOpenAIImageProvider({
+    apiKey: "sk-secret-never-persist",
+    fetchImpl: async (url, init) => {
+      seen.push({ url, init });
+      return response({
+        status: 200,
+        headers: { "x-request-id": "req_openai_edit_fixture" },
+        payload: {
+          created: 1787364000,
+          data: [{ b64_json: btoa("edited-png-fixture") }],
+        },
+      });
+    },
+  });
+
+  const generated = await provider.generate(imageRequest({
+    role:"official_id_photo",
+    referenceObjects:[
+      {
+        objectRef:"visual_identity_reference_1",
+        digest:"sha256:reference-one",
+        bytes:first,
+        metadata:{ kind:"provenanced_generated_media", mediaType:"image/png" },
+      },
+      {
+        objectRef:"visual_identity_reference_2",
+        digest:"sha256:reference-two",
+        bytes:second,
+        metadata:{ kind:"provenanced_generated_media", mediaType:"image/jpeg" },
+      },
+    ],
+  }));
+
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].url, "https://api.openai.com/v1/images/edits");
+  assert.equal(seen[0].init.headers.Authorization, "Bearer sk-secret-never-persist");
+  assert.equal(seen[0].init.headers["Content-Type"], undefined);
+  assert.ok(seen[0].init.body instanceof FormData);
+  assert.equal(seen[0].init.body.get("model"), "gpt-image-2-2026-04-21");
+  assert.equal(seen[0].init.body.get("quality"), "medium");
+  assert.equal(seen[0].init.body.get("size"), "1024x1024");
+  assert.equal(seen[0].init.body.getAll("image[]").length, 2);
+  assert.deepEqual(
+    seen[0].init.body.getAll("image[]").map((image) => image.type),
+    ["image/png", "image/jpeg"],
+  );
+
+  assert.equal(generated.requestWitness.mediaType, "multipart/form-data");
+  assert.deepEqual(generated.requestWitness.body.referenceInputs, [
+    {
+      objectRef:"visual_identity_reference_1",
+      digest:"sha256:reference-one",
+      mediaType:"image/png",
+      kind:"provenanced_generated_media",
+    },
+    {
+      objectRef:"visual_identity_reference_2",
+      digest:"sha256:reference-two",
+      mediaType:"image/jpeg",
+      kind:"provenanced_generated_media",
+    },
+  ]);
+  assert.equal(JSON.stringify(generated.requestWitness).includes("reference-one"), true);
+  assert.equal(JSON.stringify(generated.requestWitness).includes("sk-secret-never-persist"), false);
+  assert.equal(generated.result.configuration.endpoint, "/v1/images/edits");
+  assert.equal(generated.result.providerRequestId, "req_openai_edit_fixture");
+  assert.equal(new TextDecoder().decode(generated.result.bytes), "edited-png-fixture");
+});
+
+test("OpenAI image provider rejects a non-image reference before the provider call", async () => {
   const provider = createOpenAIImageProvider({
     apiKey: "sk-fixture",
     fetchImpl: async () => { throw new Error("must not call provider"); },
   });
   await assert.rejects(
-    () => provider.generate(imageRequest({ referenceObjects: [{ objectRef: "reference_1" }] })),
+    () => provider.generate(imageRequest({
+      referenceObjects:[{
+        objectRef:"reference_1",
+        digest:"sha256:reference",
+        bytes:new TextEncoder().encode("not-an-image"),
+        metadata:{ mediaType:"application/json" },
+      }],
+    })),
     (error) => error instanceof AssetGenerationError
       && error.phase === "validation"
       && error.category === "unsupported_capability"
