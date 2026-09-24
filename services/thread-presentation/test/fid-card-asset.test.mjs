@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createMemoryInfraDriver } from "#infra/providers/local";
+import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import {
   createFidCardAssetDescriptor,
+  createFidPresentationProjectionService,
   materializeFidCardAsset,
   projectFidThreadPresentation,
 } from "../src/fid-presentation-projector.mjs";
@@ -234,3 +236,54 @@ test("FID ensure replaces stale official photo media for the active credential",
   assert.equal(photos[0].locator, "asset_fid_photo_card_asset_2");
 });
 
+
+
+test("FID ensure adds a missing admitted photo without replaying existing card media events", async () => {
+  const infra = createMemoryInfraDriver();
+  const server = createThreadPresentationServer({ infra });
+  const channelId = "presentation:thr_card_asset";
+  await server.publishSnapshot({
+    channelId,
+    objectRef:"snapshot_fid_photo_repair_base",
+    snapshotVersion:"fid-photo-repair-base",
+    bundle:presentationBundle(),
+  });
+
+  const withoutPhoto = { ...activeFid(), photo:undefined };
+  const first = await materializeFidCardAsset(infra, withoutPhoto);
+  for (const media of [first.front, first.back]) {
+    await infra.objects.putImmutable(media.objectRef, new Uint8Array([1]), media.digest, {});
+  }
+
+  const service = createFidPresentationProjectionService({
+    presentationServer:server,
+    infra,
+  });
+  await service.reconcile({
+    threadId:"thr_card_asset",
+    activeFid:first,
+    projectedAt:"2026-09-19T20:05:00.000Z",
+  });
+  assert.equal((await server.getHead(channelId)).sequence, 3);
+
+  const withPhoto = await materializeFidCardAsset(infra, activeFid());
+  await infra.objects.putImmutable(
+    withPhoto.photo.objectRef,
+    new Uint8Array([2]),
+    withPhoto.photo.digest,
+    {},
+  );
+
+  const repaired = await service.reconcile({
+    threadId:"thr_card_asset",
+    activeFid:withPhoto,
+    projectedAt:"2026-09-19T20:06:00.000Z",
+  });
+
+  assert.equal(repaired.changed, true);
+  assert.equal((await server.getHead(channelId)).sequence, 4, "ensure replayed unchanged FID media events");
+  const current = await server.getSnapshot(channelId);
+  const photos = current.snapshot.media.assets.filter((asset) => asset.role === "official_id_photo");
+  assert.equal(photos.length, 1);
+  assert.equal(photos[0].locator, "asset_fid_photo_card_asset_2");
+});
