@@ -17,7 +17,7 @@ test("Cloudflare live smoke leaves durable 12-hex refs unchanged and shortens le
 
 test("Cloudflare live smoke unwraps structured terminal generation diagnostics from Workflow errors", () => {
   const observation = {
-    failureVersion: "asset-generation-failure-observation-v0.1",
+    failureVersion: "asset-generation-failure-observation-v0.2",
     phase: "credentialed_asset_generation",
     provider: "openai",
     model: "gpt-image-2-2026-04-21",
