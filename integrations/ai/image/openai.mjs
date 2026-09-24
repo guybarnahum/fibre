@@ -9,9 +9,6 @@ import {
 
 const DEFAULT_MODEL = "gpt-image-2-2026-04-21";
 const DEFAULT_ENDPOINT = "https://api.openai.com/v1/images/generations";
-const DEFAULT_EDIT_ENDPOINT = "https://api.openai.com/v1/images/edits";
-const MAX_REFERENCE_IMAGES = 16;
-const BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
@@ -31,51 +28,6 @@ function decodeBase64(value) {
   const bytes = new Uint8Array(binary.length);
   for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
   return bytes;
-}
-
-function referenceBytes(value, index) {
-  const bytes = value?.bytes;
-  if (bytes instanceof Uint8Array) return bytes;
-  if (bytes instanceof ArrayBuffer) return new Uint8Array(bytes);
-  if (ArrayBuffer.isView(bytes)) return new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  throw new TypeError(`OpenAI image referenceObjects[${index}].bytes must be bytes`);
-}
-
-function base64Encode(bytes) {
-  let result = "";
-  for (let index = 0; index < bytes.length; index += 3) {
-    const a = bytes[index];
-    const b = index + 1 < bytes.length ? bytes[index + 1] : 0;
-    const d = index + 2 < bytes.length ? bytes[index + 2] : 0;
-    const value = (a << 16) | (b << 8) | d;
-    result += BASE64_ALPHABET[(value >>> 18) & 63];
-    result += BASE64_ALPHABET[(value >>> 12) & 63];
-    result += index + 1 < bytes.length ? BASE64_ALPHABET[(value >>> 6) & 63] : "=";
-    result += index + 2 < bytes.length ? BASE64_ALPHABET[value & 63] : "=";
-  }
-  return result;
-}
-
-function normalizeReferenceObjects(raw) {
-  const values = raw ?? [];
-  if (!Array.isArray(values)) throw new TypeError("OpenAI image referenceObjects must be an array");
-  if (values.length > MAX_REFERENCE_IMAGES) {
-    throw new AssetGenerationError(`OpenAI image edits support at most ${MAX_REFERENCE_IMAGES} reference images`, {
-      phase:"validation",
-      category:"unsupported_capability",
-      provider:"openai",
-    });
-  }
-  return values.map((value, index) => {
-    plain(`OpenAI image referenceObjects[${index}]`, value);
-    const objectRef = nonEmpty(`OpenAI image referenceObjects[${index}].objectRef`, value.objectRef);
-    const digest = nonEmpty(`OpenAI image referenceObjects[${index}].digest`, value.digest);
-    const bytes = referenceBytes(value, index);
-    const mediaType = typeof value.metadata?.mediaType === "string" && value.metadata.mediaType.startsWith("image/")
-      ? value.metadata.mediaType
-      : "image/png";
-    return Object.freeze({ objectRef, digest, bytes, mediaType });
-  });
 }
 
 function dimensions(size) {
@@ -138,7 +90,6 @@ export function createOpenAIImageProvider({
   apiKey,
   model = DEFAULT_MODEL,
   endpoint = DEFAULT_ENDPOINT,
-  editEndpoint = DEFAULT_EDIT_ENDPOINT,
   size = "1024x1024",
   quality = "medium",
   outputFormat = "png",
@@ -148,7 +99,6 @@ export function createOpenAIImageProvider({
   nonEmpty("OpenAI API key", apiKey);
   nonEmpty("OpenAI image model", model);
   nonEmpty("OpenAI image endpoint", endpoint);
-  nonEmpty("OpenAI image edit endpoint", editEndpoint);
   nonEmpty("OpenAI image size", size);
   nonEmpty("OpenAI image quality", quality);
   nonEmpty("OpenAI image output format", outputFormat);
@@ -171,33 +121,29 @@ export function createOpenAIImageProvider({
             model,
           });
         }
-        const references = normalizeReferenceObjects(request.referenceObjects);
+        if (request.referenceObjects?.length) {
+          throw new AssetGenerationError(
+            "OpenAI image generation v1 does not yet accept reference objects; use a future edit provider profile",
+            {
+              phase: "validation",
+              category: "unsupported_capability",
+              provider: "openai",
+              model,
+            },
+          );
+        }
         const prompt = compileOpenAIImagePrompt({ brief: request.brief, role: request.role });
-        const editing = references.length > 0;
-        const body = editing
-          ? {
-              model,
-              images:references.map((reference) => ({
-                image_url:`data:${reference.mediaType};base64,${base64Encode(reference.bytes)}`,
-              })),
-              prompt,
-              n:1,
-              size,
-              quality,
-              output_format:outputFormat,
-            }
-          : {
-              model,
-              prompt,
-              n:1,
-              size,
-              quality,
-              output_format:outputFormat,
-            };
-        const requestEndpoint = editing ? editEndpoint : endpoint;
+        const body = {
+          model,
+          prompt,
+          n: 1,
+          size,
+          quality,
+          output_format: outputFormat,
+        };
         let response;
         try {
-          response = await fetchImpl(requestEndpoint, {
+          response = await fetchImpl(endpoint, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${apiKey}`,
@@ -254,14 +200,9 @@ export function createOpenAIImageProvider({
 
         return {
           requestWitness: {
-            mediaType:"application/json",
-            body:editing
-              ? {
-                  ...body,
-                  images:references.map(({ objectRef, digest, mediaType }) => ({ objectRef, digest, mediaType })),
-                }
-              : body,
-            secretsRemoved:true,
+            mediaType: "application/json",
+            body,
+            secretsRemoved: true,
           },
           result: {
             assetKind: "image",
@@ -275,7 +216,7 @@ export function createOpenAIImageProvider({
             providerRequestId: header(response, "x-request-id"),
             generatedAt,
             configuration: {
-              endpoint:editing ? "/v1/images/edits" : "/v1/images/generations",
+              endpoint: "/v1/images/generations",
               size,
               quality,
               outputFormat,
