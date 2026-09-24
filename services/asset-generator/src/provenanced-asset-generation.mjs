@@ -526,6 +526,7 @@ export async function executeProvenancedAssetGenerationJob({
   job: rawJob,
   attemptNumber = 1,
   now = () => new Date().toISOString(),
+  allowProviderSwitch = false,
 } = {}) {
   let phase = "validation";
   let providerName = null;
@@ -547,6 +548,7 @@ export async function executeProvenancedAssetGenerationJob({
       job,
       attemptNumber: checkedAttemptNumber,
       now,
+      allowProviderSwitch,
     });
     const portableInfra = withGenerationAttemptObjects(infra);
     const objects = portableInfra.objects;
