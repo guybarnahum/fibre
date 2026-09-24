@@ -238,6 +238,7 @@ export function createThreadPresentationVisualPublicationReconciler({
       const fid = await ensureFid({
         threadId,
         idempotencyKey:`fid_ensure_${embodiment.embodimentId}_${embodiment.revision}`,
+        canonicalReferenceObjectRef:canonicalObjectRef,
       });
       if (fid?.complete !== true) {
         return result(false, "fid_pending", {
