@@ -44,6 +44,7 @@ export async function renderThreadPage(threadId) {
   const load = ++threadPageLoad;
   const main = document.querySelector(".main");
   document.querySelector("#record-dialog")?.remove();
+  document.querySelector("#thread-image-dialog")?.remove();
   for (const item of document.querySelectorAll(".nav-item")) item.classList.remove("active");
 
   main.replaceChildren();
