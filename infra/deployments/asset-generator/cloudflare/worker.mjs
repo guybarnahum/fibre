@@ -7,6 +7,7 @@ import { createService } from "#infra/service";
 import {
   ASSET_GENERATION_COMPLETION_QUEUE,
   AssetGenerationError,
+  assetGenerationProviderFallbackDecision,
   assetGenerationRetryDecision,
   createAssetGenerationCompletion,
   createAssetGenerationControlService,
@@ -21,7 +22,10 @@ import {
   parseDeploymentManifest,
   resolveServiceDeployment,
 } from "../../manifest.mjs";
-import { selectImageIntegration } from "../../integration-selection.mjs";
+import {
+  selectImageIntegration,
+  selectImageProviderRoute,
+} from "../../integration-selection.mjs";
 
 const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
 const WORKFLOW_RETRY_LIMIT = 5;
@@ -95,22 +99,98 @@ function completionActivityContext(job) {
   });
 }
 
-function createRuntime(env, job) {
+function imageProviderMode(job) {
+  const mode = job?.context?.imageProviderMode ?? "primary";
+  if (!["primary", "secondary"].includes(mode)) {
+    throw new AssetGenerationError("imageProviderMode must be primary or secondary", {
+      phase:"validation",
+      category:"invalid_request",
+      retryable:false,
+      safeDetail:"imageProviderMode must be primary or secondary",
+    });
+  }
+  return mode;
+}
+
+function imageRoute(deployment, job) {
+  return selectImageProviderRoute(deployment, {
+    primaryProfile:job?.providerProfile,
+    requiresReferenceObjects:Array.isArray(job?.referenceObjectRefs) && job.referenceObjectRefs.length > 0,
+    mode:imageProviderMode(job),
+  });
+}
+
+function createRuntime(env, deployment, profile) {
   if (!env || typeof env !== "object") throw new TypeError("Cloudflare asset generation env is required");
   if (!env.ASSET_OBJECTS) throw new TypeError("ASSET_OBJECTS binding is required");
   if (!env.ASSET_COMPLETIONS) throw new TypeError("ASSET_COMPLETIONS binding is required");
 
-  const deployment = serviceDeployment(env);
   const baseInfra = createCloudflareInfraDriver({ objectBucket: env.ASSET_OBJECTS });
   const infra = withCloudflareQueueBindings(baseInfra, {
     [ASSET_GENERATION_COMPLETION_QUEUE]: env.ASSET_COMPLETIONS,
   });
-  const provider = selectImageIntegration(imageSelection(deployment, job?.providerProfile), {
+  const provider = selectImageIntegration(imageSelection(deployment, profile), {
     environment: env,
   });
   const activityRecorder = createCloudflareActivityRecorder({ env, service: "asset-generator" });
 
   return createAssetGenerationRuntime({ infra, provider, activityRecorder });
+}
+
+function workflowFailure(error, attempt) {
+  const decision = assetGenerationRetryDecision(error, { attempt });
+  const observation = generationFailureObservation(error, { attempt, decision });
+  console.error(JSON.stringify({ event:"asset_generation_attempt_failed", ...observation }));
+  if (!decision.retry) {
+    throw new NonRetryableError(JSON.stringify(observation), "AssetGenerationError");
+  }
+  throw error;
+}
+
+async function executeImageRoute({ env, deployment, job, route, attempt }) {
+  const selectedRuntime = createRuntime(env, deployment, route.selectedProfile);
+  if (route.mode === "secondary") {
+    console.log(JSON.stringify({
+      event:"asset_generation_secondary_forced",
+      jobId:job.jobId,
+      providerProfile:route.selectedProfile,
+      attempt,
+    }));
+    try {
+      return await selectedRuntime.execute(job, {
+        attemptNumber:attempt,
+        allowProviderSwitch:true,
+      });
+    } catch (error) {
+      return workflowFailure(error, attempt);
+    }
+  }
+
+  try {
+    return await selectedRuntime.execute(job, { attemptNumber:attempt });
+  } catch (error) {
+    const fallback = assetGenerationProviderFallbackDecision(error);
+    if (fallback.fallback && route.secondaryProfile !== null) {
+      const decision = assetGenerationRetryDecision(error, { attempt });
+      console.error(JSON.stringify({
+        event:"asset_generation_provider_fallback",
+        jobId:job.jobId,
+        primaryProfile:route.primaryProfile,
+        secondaryProfile:route.secondaryProfile,
+        fallbackReason:fallback.reason,
+        ...generationFailureObservation(error, { attempt, decision }),
+      }));
+      try {
+        return await createRuntime(env, deployment, route.secondaryProfile).execute(job, {
+          attemptNumber:attempt,
+          allowProviderSwitch:true,
+        });
+      } catch (secondaryError) {
+        return workflowFailure(secondaryError, attempt);
+      }
+    }
+    return workflowFailure(error, attempt);
+  }
 }
 
 function createControlApi(env) {
@@ -133,7 +213,9 @@ function createControlApi(env) {
 export class AssetGenerationWorkflow extends WorkflowEntrypoint {
   async run(event, step) {
     const job = event.payload;
-    const runtime = createRuntime(this.env, job);
+    const deployment = serviceDeployment(this.env);
+    const route = imageRoute(deployment, job);
+    const runtime = createRuntime(this.env, deployment, route.selectedProfile);
     const generated = await step.do(
       "generate provenanced asset",
       {
@@ -143,22 +225,13 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
           delay: workflowRetryDelay,
         },
       },
-      async (ctx) => {
-        try {
-          return await runtime.execute(job, { attemptNumber: ctx.attempt });
-        } catch (error) {
-          const decision = assetGenerationRetryDecision(error, { attempt: ctx.attempt });
-          const observation = generationFailureObservation(error, { attempt: ctx.attempt, decision });
-          console.error(JSON.stringify({ event: "asset_generation_attempt_failed", ...observation }));
-          if (!decision.retry) {
-            throw new NonRetryableError(
-              JSON.stringify(observation),
-              "AssetGenerationError",
-            );
-          }
-          throw error;
-        }
-      },
+      async (ctx) => executeImageRoute({
+        env:this.env,
+        deployment,
+        job,
+        route,
+        attempt:ctx.attempt,
+      }),
     );
 
     if (shouldPublishPresentationAssetCompletion(job)) {
