@@ -41,7 +41,7 @@ The resulting bytes are not automatically identity. They become canonical only a
 The canonical reference remains stable as the Thread ages.
 
 
-A broad family appearance prior may help author the native canonical root **before any image exists**. Once Fibre has admitted the canonical reference image, that family-level prior is no longer needed in downstream generation prompts. The reference image becomes the operational likeness authority, while downstream text should retain only the individual's stable geometry, marks and rendering continuity. This avoids repeatedly turning family-level appearance context into derived-image conditioning.
+A broad family appearance prior may help author the native canonical root **before any image exists**. Once Fibre has admitted the canonical reference image, that family-level prior and the rich canonical phenotype prose stop at that boundary. The reference image becomes the operational likeness authority for downstream image generation. Derived prompts should describe only the requested age, time-local appearance, scene and rendering purpose; they should not replay ancestry, family, demographic or canonical phenotype text.
 
 ### Derived depictions
 
@@ -49,7 +49,6 @@ All later generated imagery depicting the Thread is derived. The generation requ
 
 ```text
 canonical reference image
-+ individual identity geometry/marks + rendering continuity
 + target age
 + time-local appearance
 + scene/context
@@ -249,7 +248,6 @@ Its generation brief includes:
 ```text
 canonical reference image at age 25
 + target current age
-+ individual stable identity cues
 + administrative ID-photo framing constraints
 ```
 
