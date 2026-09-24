@@ -558,6 +558,12 @@ export async function executeProvenancedAssetGenerationJob({
       throughAttemptNumber: prepared.attemptNumber,
     });
     if (staged === null) {
+      phase = "reference_loading";
+      const referenceObjects = await Promise.all(job.referenceObjectRefs.map(async (objectRef) => {
+        const stored = await objects.get(objectRef);
+        if (stored === null) throw new TypeError(`reference object ${objectRef} does not exist`);
+        return { objectRef, ...stored };
+      }));
       phase = "provider_generation";
       const witnessed = normalizeWitnessedMediaGenerationResult(await prepared.provider.generate({
         assetKind: job.assetKind,
@@ -565,11 +571,7 @@ export async function executeProvenancedAssetGenerationJob({
         variant: job.variant,
         brief: job.brief,
         inputReferences: job.inputReferences,
-        referenceObjects: await Promise.all(job.referenceObjectRefs.map(async (objectRef) => {
-          const stored = await objects.get(objectRef);
-          if (stored === null) throw new TypeError(`reference object ${objectRef} does not exist`);
-          return { objectRef, ...stored };
-        })),
+        referenceObjects,
         providerProfile: job.providerProfile,
         context: job.context,
       }), { expectedKind: job.assetKind });
