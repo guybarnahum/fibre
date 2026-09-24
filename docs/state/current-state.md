@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-09-23
+last-reviewed: 2026-09-24
 canonical: true
 ---
 
@@ -22,6 +22,8 @@ Models provide temporary cognition. Fibre owns continuity, authoritative state, 
 - Identity is authoritative. Presentation is projection. Publication is permission.
 - Civil identity/FIN and Fibre Identity Card issuance have explicit authority boundaries.
 - Visual identity uses one canonical root/reference chain across age and scene.
+- Modern Genesis keeps **Raised languages** as immutable Genesis upbringing evidence distinct from the Thread's eventual/current **Spoken languages**; school-acquired languages may enter Spoken without being rewritten as upbringing.
+- Once an admitted canonical visual root reaches Thread Presentation, the existing FIA lifecycle is automatically reconciled: no active FIN Card triggers initial issuance, while a card whose admitted photo belongs to an older canonical root is replaced through the same FID authority.
 
 ## Current milestone posture
 
