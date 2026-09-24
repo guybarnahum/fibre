@@ -238,7 +238,7 @@ test("FID ensure replaces stale official photo media for the active credential",
 
 
 
-test("FID ensure adds a missing admitted photo without replaying existing card media events", async () => {
+test("FID ensure recovers a partially published admitted photo without replaying card media", async () => {
   const infra = createMemoryInfraDriver();
   const server = createThreadPresentationServer({ infra });
   const channelId = "presentation:thr_card_asset";
@@ -274,14 +274,40 @@ test("FID ensure adds a missing admitted photo without replaying existing card m
     {},
   );
 
+  const projected = projectFidThreadPresentation({
+    bundle:(await server.getSnapshot(channelId)).snapshot,
+    activeFid:withPhoto,
+    projectedAt:"2026-09-19T20:06:00.000Z",
+    visibility:"public",
+  });
+  const photo = projected.media.assets.find((asset) => asset.role === "official_id_photo");
+  await server.appendEvent({
+    streamVersion:"thread-presentation-stream-v0.1",
+    eventId:`fid_media_${withPhoto.credentialId}_photo`,
+    threadId:"thr_card_asset",
+    channelId,
+    occurredAt:"2026-09-19T20:06:00.000Z",
+    emittedAt:"2026-09-19T20:06:00.000Z",
+    kind:"media.ready",
+    provenanceRef:photo.provenanceRef,
+    sourceReferences:photo.sourceReferences,
+    payload:{
+      mediaId:photo.mediaId,
+      objectRef:photo.locator,
+      mediaType:photo.mediaType,
+      digest:photo.sha256,
+    },
+  });
+  assert.equal((await server.getHead(channelId)).sequence, 4);
+
   const repaired = await service.reconcile({
     threadId:"thr_card_asset",
     activeFid:withPhoto,
-    projectedAt:"2026-09-19T20:06:00.000Z",
+    projectedAt:"2026-09-19T20:07:00.000Z",
   });
 
   assert.equal(repaired.changed, true);
-  assert.equal((await server.getHead(channelId)).sequence, 4, "ensure replayed unchanged FID media events");
+  assert.equal((await server.getHead(channelId)).sequence, 4, "ensure replayed a partially published media event");
   const current = await server.getSnapshot(channelId);
   const photos = current.snapshot.media.assets.filter((asset) => asset.role === "official_id_photo");
   assert.equal(photos.length, 1);
