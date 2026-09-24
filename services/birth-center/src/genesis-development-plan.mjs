@@ -305,6 +305,12 @@ function subjectRelationshipFacts(subjectIdentity) {
   if (subjectIdentity === null) return Object.freeze(facts);
   if (subjectIdentity.sex) facts.push(`Sex at birth: ${subjectIdentity.sex}.`);
   facts.push(`Born in ${subjectIdentity.birthCity}.`);
+  if (Array.isArray(subjectIdentity.raisedLanguages)) {
+    facts.push(`Raised with these household/early-upbringing languages: ${subjectIdentity.raisedLanguages.join(", ")}.`);
+  }
+  if (Array.isArray(subjectIdentity.languages)) {
+    facts.push(`By young-adult entry the subject uses these languages: ${subjectIdentity.languages.join(", ")}. Languages not listed as raised may have been acquired later through schooling or sustained public exposure.`);
+  }
   if (subjectIdentity.heritage) {
     facts.push(`Born into a household with ${subjectIdentity.heritage} heritage. This is family/community cultural context and does not determine the subject's beliefs, personality, politics, competence or destiny.`);
   }
