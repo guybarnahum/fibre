@@ -61,6 +61,7 @@ export function canonicalVisualIdentityBrief(embodimentCandidate) {
     constraints: [
       "Generate from the supplied canonical identity text only; there is intentionally no prior reference image for this one root image.",
       "Depict exactly one person and preserve every concrete facial, hair, skin, body, asymmetry, and distinctive-mark detail stated in the identity specification.",
+      "When the identity specification states a concrete inherited phenotype selected for this individual, treat those selected skin, hair, eye, face, brow, nose, mouth, jaw, and build traits as hard identity constraints. Do not choose again from the broader family envelope and do not substitute generic portrait defaults.",
       `Depict the person at the normalized reference age of ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS}, without implying that this image is a historical event or current photograph.`,
       "Use a neutral head-and-shoulders reference composition, mostly front-facing, even natural lighting, ordinary lens perspective, and enough detail to support later identity-preserving image generation.",
       "Use a neutral natural expression; avoid strong emotion, dramatic pose, stylization, glamour retouching, cinematic lighting, or fashion-editorial treatment.",
