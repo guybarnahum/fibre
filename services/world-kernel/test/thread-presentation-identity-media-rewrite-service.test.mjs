@@ -199,7 +199,13 @@ test("official-photo demand carries the canonical root, reference age, credentia
   assert.ok(official.inputReferences.includes(CANONICAL_ROOT));
   assert.match(official.brief.description, /22 years old/);
   assert.match(official.brief.description, /normalized reference age 25/);
-  assert.match(official.brief.description, /Neutral, natural administrative portrait/);
+  assert.match(official.brief.description, /neutral administrative identity photograph/i);
+  assert.equal(
+    official.brief.description.includes(current.bundle.presentation.visualIdentity.subjectDescription)
+      || official.brief.description.includes(current.bundle.presentation.visualIdentity.renderDescription),
+    false,
+    "downstream photo prompt must stop carrying canonical phenotype text after root admission",
+  );
 });
 
 test("self-depicting memory demand uses the same canonical root and event-derived age while place imagery stays reference-free", async () => {
