@@ -383,6 +383,41 @@ function createRuntime(ctx, env) {
   return Object.freeze({ infra, fidService, issuerSigner });
 }
 
+async function activePhoto(runtime, active) {
+  const inspected = runtime.fidService.inspectThread(active.threadId);
+  const credential = inspected.credentials.find((entry) => (
+    entry.credential?.credentialId === active.credentialId
+  )) ?? null;
+  const admissionId = credential?.issuance?.photoAdmissionId ?? active.photoAdmissionId ?? null;
+  if (admissionId === null) throw new Error(`active FID ${active.credentialId} has no admitted photo`);
+  const admission = inspected.workflows
+    .map((entry) => entry.photoAdmission)
+    .find((entry) => entry?.admissionId === admissionId) ?? null;
+  if (admission?.decision !== "accepted" || !admission.candidatePhotoRef) {
+    throw new Error(`active FID ${active.credentialId} photo admission is unavailable`);
+  }
+  const stored = await runtime.infra.objects.head(admission.candidatePhotoRef);
+  if (stored === null) throw new Error(`active FID ${active.credentialId} photo object is missing`);
+  const metadata = stored.metadata ?? {};
+  if (metadata.mediaType !== "image/png"
+    || !Number.isSafeInteger(metadata.width)
+    || !Number.isSafeInteger(metadata.height)) {
+    throw new Error(`active FID ${active.credentialId} photo metadata is incomplete`);
+  }
+  return Object.freeze({
+    objectRef:admission.candidatePhotoRef,
+    digest:stored.digest,
+    mediaType:metadata.mediaType,
+    width:metadata.width,
+    height:metadata.height,
+    sourceReferences:refs([
+      admission.admissionId,
+      admission.canonicalVisualReferenceRef,
+      admission.derivationReceiptRef,
+    ]),
+  });
+}
+
 export class FibreIdentityAuthorityDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -456,9 +491,8 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
     if (request.method === "GET" && activeMatch !== null) {
       try {
         const active = runtime.fidService.getActivePresentation(fibreId("threadId", decodeURIComponent(activeMatch[1])));
-        return active === null
-          ? Response.json({ error:{ code:"FID_NOT_ISSUED" } }, { status:404 })
-          : Response.json({ active });
+        if (active === null) return Response.json({ error:{ code:"FID_NOT_ISSUED" } }, { status:404 });
+        return Response.json({ active:Object.freeze({ ...active, photo:await activePhoto(runtime, active) }) });
       } catch (error) {
         return Response.json({ error:{ code:"FID_LOOKUP_FAILED", detail:error.message } }, { status:503 });
       }
