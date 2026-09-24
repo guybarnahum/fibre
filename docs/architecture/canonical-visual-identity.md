@@ -1,7 +1,7 @@
 ---
 id: architecture-canonical-visual-identity
 status: accepted
-last-reviewed: 2026-08-30
+last-reviewed: 2026-09-24
 canonical: true
 ---
 
@@ -40,13 +40,16 @@ The resulting bytes are not automatically identity. They become canonical only a
 
 The canonical reference remains stable as the Thread ages.
 
+
+A broad family appearance prior may help author the native canonical root **before any image exists**. Once Fibre has admitted the canonical reference image, that family-level prior is no longer needed in downstream generation prompts. The reference image becomes the operational likeness authority, while downstream text should retain only the individual's stable geometry, marks and rendering continuity. This avoids repeatedly turning family-level appearance context into derived-image conditioning.
+
 ### Derived depictions
 
 All later generated imagery depicting the Thread is derived. The generation request uses:
 
 ```text
 canonical reference image
-+ canonical visual identity text/provenance
++ individual identity geometry/marks + rendering continuity
 + target age
 + time-local appearance
 + scene/context
@@ -246,7 +249,7 @@ Its generation brief includes:
 ```text
 canonical reference image at age 25
 + target current age
-+ canonical identity text
++ individual stable identity cues
 + administrative ID-photo framing constraints
 ```
 
