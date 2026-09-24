@@ -436,7 +436,7 @@ export function createBflFluxImageProvider({
 
         const status = pollPayload?.status;
         if (moderationStatus(status)) {
-          throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} was moderated`, {
+          throw new AssetGenerationError(`BFL FLUX task ${providerRequestId} ended as ${status}`, {
             phase: "provider_generation",
             category: "moderation_rejected",
             retryable: false,
