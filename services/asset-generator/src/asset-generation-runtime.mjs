@@ -127,7 +127,7 @@ export function createAssetGenerationRuntime({
   if (typeof executeJob !== "function") throw new TypeError("executeJob must be a function");
 
   return Object.freeze({
-    async execute(job, { attemptNumber = 1, activityContext = {} } = {}) {
+    async execute(job, { attemptNumber = 1, activityContext = {}, allowProviderSwitch = false } = {}) {
       const checkedAttemptNumber = positiveAttemptNumber(attemptNumber);
       const context = activityIdentity(job, activityContext);
       const evidence = jobEvidence(job);
@@ -153,6 +153,7 @@ export function createAssetGenerationRuntime({
             provider,
             job,
             attemptNumber: checkedAttemptNumber,
+            allowProviderSwitch,
           });
           return runtimeResult(result);
         } catch (error) {
