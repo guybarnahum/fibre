@@ -70,9 +70,9 @@ function embodiment() {
     permissionReferences:[],
     sourceReferences:[`evt_seed_${THREAD_ID}`],
     specification:{
-      subject:{ partyId:THREAD_ID, description:"One concrete synthetic person." },
+      subject:{ partyId:THREAD_ID, description:"One concrete synthetic person with stable individual facial identity." },
       method:"canonical synthetic portrait specification",
-      description:"Preserve identity.",
+      description:"Preserve this person's stable visual identity across derived media.",
       model:"replaceable-renderer",
     },
     specificationDigest:`sha256:${"b".repeat(64)}`,
