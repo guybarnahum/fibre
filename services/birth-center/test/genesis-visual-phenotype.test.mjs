@@ -62,24 +62,35 @@ test("different Thread identities do not collapse to one interchangeable phenoty
   assert.notEqual(left.specification.subject.description, right.specification.subject.description);
 });
 
-test("family appearance context constrains morphology while Thread identity supplies neutral individuality", () => {
-  const appearanceContext = "Family members span medium-brown to deeper-brown skin tones, tightly coiled to loosely curly dark hair, deep-brown eyes, and substantial ordinary variation in facial proportions, nose and lip geometry.";
+test("selected inherited phenotype is canonical authority before rendering", () => {
+  const appearanceContext = [
+    "Concrete inherited phenotype selected for this individual:",
+    "medium-deep warm brown skin with ordinary tonal variation;",
+    "dense near-black tightly coiled hair;",
+    "deep-brown almond-shaped eyes with subtly hooded upper lids;",
+    "slightly long oval face with moderate cheek width;",
+    "dense gently arched brows;",
+    "medium-width nasal bridge with a broader rounded base and softly rounded tip;",
+    "full balanced lips with a fuller lower lip;",
+    "moderately defined jaw with a rounded chin;",
+    "lean-to-average skeletal frame.",
+  ].join(" ");
   const leftId = "thr_contextual_visual_left";
   const rightId = "thr_contextual_visual_right";
 
   const leftLoci = deNovoVisualPhenotypeLoci({ threadId:leftId, appearanceContext });
   const rightLoci = deNovoVisualPhenotypeLoci({ threadId:rightId, appearanceContext });
-  const ancestrySensitiveDomains = new Set(["face", "eyes", "nose", "mouth", "jaw", "skin", "hair"]);
+  const inheritedDomains = new Set(["face", "eyes", "nose", "mouth", "jaw", "skin", "hair"]);
 
   assert.equal(
-    leftLoci.some((locus) => ancestrySensitiveDomains.has(locus.domain)),
+    leftLoci.some((locus) => inheritedDomains.has(locus.domain)),
     false,
-    "family prior was overridden by generic morphology",
+    "individualizing loci overrode inherited morphology",
   );
   assert.notDeepEqual(
     leftLoci.map((locus) => locus.value),
     rightLoci.map((locus) => locus.value),
-    "family-compatible Threads lost individual visual variation",
+    "individual variation collapsed",
   );
 
   const left = buildDeNovoCanonicalVisualIdentity({
@@ -92,8 +103,20 @@ test("family appearance context constrains morphology while Thread identity supp
     sex:"male",
     appearanceContext,
   });
-  assert.deepEqual(left, replay, "contextual phenotype did not replay deterministically");
-  assert.match(left.specification.subject.description, /broad family appearance prior:/u);
+  assert.deepEqual(left, replay, "selected phenotype changed on replay");
+  assert.match(left.specification.subject.description, /medium-deep warm brown skin/u);
+  assert.match(left.specification.subject.description, /dense near-black tightly coiled hair/u);
+  assert.match(left.specification.subject.description, /deep-brown almond-shaped eyes/u);
+  assert.doesNotMatch(left.specification.subject.description, /family appearance|broad family|envelope|range/iu);
+  assert.match(left.specification.description, /Do not choose phenotype again/u);
+  assert.throws(
+    () => buildDeNovoCanonicalVisualIdentity({
+      threadId:leftId,
+      sex:"male",
+      appearanceContext:"A broad family appearance range.",
+    }),
+    /one concrete inherited phenotype/u,
+  );
 });
 
 test("synthetic-lineage phenotype recombines textual loci from parent identities", () => {
