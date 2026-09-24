@@ -34,22 +34,22 @@ function presentationVisualState(snapshot, embodiment) {
   if (embodiment === null) return "not_applicable";
   const objectRef = embodiment.asset?.referenceObjectRef ?? null;
   const visualRefs = snapshot?.presentation?.visualIdentity?.referenceObjectRefs ?? [];
-  const officialPhotoMediaRef = snapshot?.presentation?.identityCard?.officialPhotoMediaRef ?? null;
-  const media = snapshot?.media?.assets ?? [];
-  const projected = typeof objectRef === "string" && visualRefs.includes(objectRef);
-  const published = projected
-    && typeof officialPhotoMediaRef === "string"
-    && media.some((asset) => asset?.mediaId === officialPhotoMediaRef && asset?.status === "ready" && typeof asset?.locator === "string");
-  if (published) return "published";
-  if (projected) return "projected";
-  return "missing";
+  return typeof objectRef === "string" && visualRefs.includes(objectRef)
+    ? "projected"
+    : "missing";
 }
 
-function presentationPortraitObjectRef(snapshot) {
-  const mediaId = snapshot?.presentation?.identityCard?.officialPhotoMediaRef ?? null;
-  if (typeof mediaId !== "string") return null;
-  const asset = (snapshot?.media?.assets ?? []).find((entry) => entry?.mediaId === mediaId && entry?.status === "ready");
-  return text(asset?.locator);
+function presentationPortraitObjectRef(snapshot, embodiment) {
+  const objectRef = embodiment?.asset?.referenceObjectRef ?? null;
+  if (typeof objectRef !== "string") return null;
+  const photo = (snapshot?.media?.assets ?? []).find((asset) => (
+    asset?.role === "official_id_photo"
+    && asset?.status === "ready"
+    && typeof asset?.locator === "string"
+    && Array.isArray(asset?.sourceReferences)
+    && asset.sourceReferences.includes(objectRef)
+  ));
+  return text(photo?.locator) ?? objectRef;
 }
 
 function finding(code, state, action = null, detail = {}) {
@@ -407,7 +407,7 @@ export function createThreadGenesisRepairService({
       : finding("PRESENTATION", "healthy"));
 
     if (embodiment !== null && embodiment.status === "available") {
-      findings.push(visualState === "published"
+      findings.push(visualState === "projected"
         ? finding("CANONICAL_VISUAL_PUBLICATION", "healthy")
         : finding("CANONICAL_VISUAL_NOT_PUBLISHED", "repairable", "reconcile_visual_publication", { visualState }));
     }
@@ -418,7 +418,7 @@ export function createThreadGenesisRepairService({
       exists: true,
       identity:completeness.facts,
       presentation:Object.freeze({
-        portraitObjectRef:visualState === "published" ? presentationPortraitObjectRef(presentation) : null,
+        portraitObjectRef:visualState === "projected" ? presentationPortraitObjectRef(presentation, embodiment) : null,
       }),
       findings: Object.freeze(findings),
     });
