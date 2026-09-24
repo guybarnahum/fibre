@@ -43,6 +43,68 @@ function imageProfileFlag(profile, integration, key) {
   return value;
 }
 
+function optionalImageProfile(name, value) {
+  if (value === undefined || value === null) return null;
+  return nonEmpty(name, value);
+}
+
+export function selectImageProviderRoute(serviceDeployment, {
+  primaryProfile,
+  requiresReferenceObjects = false,
+  mode = "primary",
+} = {}) {
+  if (!serviceDeployment || typeof serviceDeployment !== "object" || Array.isArray(serviceDeployment)) {
+    throw new TypeError("asset-generator service deployment is required");
+  }
+  if (serviceDeployment.serviceId !== "asset-generator") {
+    throw new TypeError("image provider routing requires the asset-generator service deployment");
+  }
+  const primary = nonEmpty("primary image provider profile", primaryProfile);
+  if (typeof requiresReferenceObjects !== "boolean") {
+    throw new TypeError("requiresReferenceObjects must be boolean");
+  }
+  if (!["primary", "secondary"].includes(mode)) {
+    throw new TypeError("image provider mode must be primary or secondary");
+  }
+
+  const integration = serviceDeployment.integrations?.[primary];
+  if (!integration || integration.kind !== "ai.image") {
+    throw new TypeError(`asset-generator deployment has no ai.image provider profile ${primary}`);
+  }
+  if (requiresReferenceObjects && imageProfileFlag(primary, integration, "acceptsReferenceObjects") !== true) {
+    throw new TypeError(`image provider profile ${primary} cannot accept reference objects`);
+  }
+
+  const secondaryProfile = optionalImageProfile(
+    `asset image provider profile ${primary} config.secondaryProfile`,
+    integration.config?.secondaryProfile,
+  );
+  let secondary = null;
+  if (secondaryProfile !== null) {
+    secondary = serviceDeployment.integrations?.[secondaryProfile];
+    if (!secondary || secondary.kind !== "ai.image") {
+      throw new TypeError(`asset image provider profile ${primary} names unknown secondary profile ${secondaryProfile}`);
+    }
+    if (secondaryProfile === primary) {
+      throw new TypeError(`asset image provider profile ${primary} cannot use itself as secondary`);
+    }
+    if (requiresReferenceObjects && imageProfileFlag(secondaryProfile, secondary, "acceptsReferenceObjects") !== true) {
+      throw new TypeError(`secondary image provider profile ${secondaryProfile} cannot accept reference objects`);
+    }
+  }
+
+  if (mode === "secondary" && secondaryProfile === null) {
+    throw new TypeError(`asset image provider profile ${primary} has no secondary provider profile`);
+  }
+
+  return Object.freeze({
+    primaryProfile:primary,
+    secondaryProfile,
+    selectedProfile:mode === "secondary" ? secondaryProfile : primary,
+    mode,
+  });
+}
+
 export function selectImageProviderProfile(serviceDeployment, {
   requiresReferenceObjects = false,
 } = {}) {
