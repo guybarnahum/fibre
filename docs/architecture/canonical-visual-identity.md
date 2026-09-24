@@ -277,7 +277,7 @@ Later Thread-depicting generation requires a provider profile capable of referen
 
 If the selected provider cannot accept the canonical reference, the asset demand remains deferred or selects another explicitly configured reference-capable provider.
 
-The current BFL/FLUX integration already has a portable reference-object seam. OpenAI's current text-generation adapter deliberately rejects reference objects until a reference/edit-capable profile is implemented. Deployment composition chooses the provider; the semantic job retains the reference requirement.
+Both current image integrations preserve Fibre's reference-object requirement. BFL/FLUX sends canonical references through its native reference inputs; the OpenAI adapter uses the Images edits endpoint when a job carries reference objects and the generations endpoint when it does not. Deployment composition still chooses the provider profile; the semantic job retains the same reference requirement independent of provider.
 
 ## Supersession and correction
 
