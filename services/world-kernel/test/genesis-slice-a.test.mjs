@@ -111,6 +111,7 @@ function publishedManifest(thread = genesisThread(), overrides = {}) {
     sourceBundleRefs: [],
     parentOrAncestorRefs: [],
     genomeRef: null,
+    raisedLanguages: ["English"],
     cognition: cognition(),
     publication: {
       status: "published",
@@ -173,6 +174,12 @@ test("Raised-language correction preserves the Thread and original Genesis evide
     const before = world.getThread(thread.threadId);
     const eventCount = world.listEvents(thread.threadId).length;
 
+    assert.deepEqual(
+      genesis.getRaisedLanguagesForThread(thread.threadId).languages,
+      ["English"],
+      "Genesis raised-language evidence did not remain distinct from World languages",
+    );
+
     const correction = genesis.correctRaisedLanguages(thread.threadId, {
       languages:["Korean"],
       operationKey:"admin_raised_languages_1",
@@ -181,7 +188,8 @@ test("Raised-language correction preserves the Thread and original Genesis evide
 
     assert.equal(correction.changed, true, "raised-language correction was not recorded");
     assert.deepEqual(genesis.getRaisedLanguagesForThread(thread.threadId).languages, ["Korean"], "raised languages did not change");
-    assert.deepEqual(genesis.getWorldSpec(published.manifest.worldSpecRef).record.languages, ["English", "Korean"], "original Genesis evidence changed");
+    assert.deepEqual(genesis.getWorldSpec(published.manifest.worldSpecRef).record.languages, ["English", "Korean"], "World language context changed");
+    assert.deepEqual(published.manifest.raisedLanguages, ["English"], "original raised-language evidence changed");
     assert.deepEqual(world.getThread(thread.threadId), before, "raised-language correction changed the Thread");
     assert.equal(world.listEvents(thread.threadId).length, eventCount, "raised-language correction created lived history");
 
