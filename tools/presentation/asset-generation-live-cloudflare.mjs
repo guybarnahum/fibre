@@ -13,7 +13,7 @@ import {
 const THIS_FILE = fileURLToPath(import.meta.url);
 const REPO_ROOT = resolve(dirname(THIS_FILE), "../..");
 const OUTPUT_ROOT = join(REPO_ROOT, "artifacts/generated/asset-live-cloudflare");
-const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.1";
+const FAILURE_OBSERVATION_VERSION = "asset-generation-failure-observation-v0.2";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
