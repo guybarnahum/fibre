@@ -61,9 +61,15 @@ function ensureProgression(current, next) {
       `stale Embodiment revision ${next.embodimentRevision} cannot replace projected revision ${current.embodimentRevision}`,
     );
   }
-  if (current.embodimentRevision === next.embodimentRevision && !same(current, next)) {
+  if (
+    current.embodimentRevision === next.embodimentRevision
+    && (
+      current.specificationDigest !== next.specificationDigest
+      || !same(current.referenceObjectRefs, next.referenceObjectRefs)
+    )
+  ) {
     throw new ThreadPresentationVisualIdentityConflictError(
-      "the projected Embodiment revision already exists with different visual identity content",
+      "the projected Embodiment revision disagrees with canonical identity authority",
     );
   }
 }
