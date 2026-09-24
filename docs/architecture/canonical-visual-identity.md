@@ -68,9 +68,11 @@ rich canonical identity text
 
 No external image identity is required.
 
-For a de-novo birth with grounded family-origin appearance evidence, Genesis must not bolt an unrelated global facial-feature palette onto that family prior. The family appearance context supplies a broad inherited morphology envelope; deterministic Thread-specific loci add only individualizing proportions, asymmetries, hairline, build and stable marks that do not override that envelope. The resulting text must still describe one distinct person rather than a demographic stereotype. When no grounded family appearance evidence exists, Fibre may use the generic de-novo phenotype fallback.
+For a de-novo birth with grounded family-origin appearance evidence, World authoring supplies a bounded set of family-compatible textual appearance loci. Genesis deterministically selects one concrete inherited phenotype from those loci **before** canonical identity is created, then adds Thread-specific proportions, asymmetries, hairline details and stable marks that do not override the inherited selection.
 
-This is intentionally a small proof rather than a population-genetics simulator. The extension path remains open for richer inherited textual phenotype loci and mutation witnesses; the canonical text and reference-root authority boundary do not change.
+The family envelope is upstream plausibility evidence only. It must not cross the canonical rendering boundary. The canonical specification describes one concrete person; the image renderer depicts that person and has no authority to choose skin, hair, eyes, facial morphology, nose, mouth, jaw or build from a range.
+
+This is intentionally a small proof rather than a population-genetics simulator. The extension path remains open for richer inherited textual phenotype recombination and mutation witnesses; the canonical text and reference-root authority boundary do not change.
 
 ### Thread-parent / inherited lineage
 
