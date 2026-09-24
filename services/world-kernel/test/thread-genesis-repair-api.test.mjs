@@ -22,6 +22,21 @@ function api(options = {}) {
         };
       },
     },
+    visualIdentityRepairService:{
+      repair({ threadId, operationKey, correctedSpecification, reason, evidenceReferences }) {
+        return {
+          threadId,
+          operationKey,
+          previous:{ revision:2, referenceObjectRef:"visual_identity_reference_old" },
+          embodiment:{
+            revision:3,
+            status:"pending_generation",
+            specification:correctedSpecification,
+            respecification:{ reason, evidenceReferences:["visual_identity_reference_old", ...evidenceReferences] },
+          },
+        };
+      },
+    },
     repairService:{
       async diagnose(threadId) {
         if (threadId === "thr_missing") return { threadId, exists:false, health:"unrecoverable", findings:[] };
@@ -94,6 +109,51 @@ test("Admin identity input changes World authority without requiring a repair di
   const body = await response.json();
   assert.deepEqual(body.identityUpdate.identity, { name:"Maya Cohen", sex:"female", birthDate:"2004-08-20" });
   assert.equal(body.identityUpdate.changed, true);
+});
+
+test("canonical visual correction replaces authority then reopens reconciliation", async () => {
+  let state = {
+    threadId:"thr_1",
+    state:"complete",
+    lastError:null,
+    updatedAt:"2026-09-24T04:00:00.000Z",
+  };
+  let wakes = 0;
+  const workset = {
+    get() { return state; },
+    requeue() {
+      state = { ...state, state:"pending", updatedAt:"2026-09-24T05:10:00.000Z" };
+      return true;
+    },
+  };
+  const repairApi = api({
+    reconciliationWorkset:workset,
+    onVisualIdentityCorrection:async () => { wakes += 1; },
+  });
+  const correctedSpecification = {
+    subject:{ partyId:"thr_1", description:"adult male person with concrete corrected stable visual identity landmarks" },
+    method:"canonical synthetic portrait specification",
+    description:"Preserve the corrected stable visual identity across age transformations and derived imagery.",
+    model:"replaceable-renderer",
+  };
+
+  const response = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body:JSON.stringify({
+      action:"canonical_visual_identity",
+      operationKey:"repair_visual_1",
+      correctedSpecification,
+      reason:"Correct a materially wrong admitted canonical root.",
+      evidenceReferences:[],
+    }),
+  }));
+  const body = await response.json();
+
+  assert.equal(response.status, 200, "visual correction failed");
+  assert.equal(body.visualIdentityCorrection.embodiment.status, "pending_generation", "canonical root was not reopened");
+  assert.equal(body.reconciliation.state, "pending", "corrected identity did not re-enter reconciliation");
+  assert.equal(wakes, 1, "corrected identity did not schedule reconciliation");
 });
 
 test("Raised languages use Genesis correction rather than identity mutation", async () => {
