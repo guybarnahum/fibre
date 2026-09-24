@@ -65,6 +65,8 @@ async function loadProviderOperation(objects, {
   job,
   jobDigest,
   throughAttemptNumber,
+  providerAdapterId = null,
+  allowProviderSwitch = false,
 }) {
   for (let candidate = 1; candidate <= throughAttemptNumber; candidate += 1) {
     const objectRef = providerOperationObjectRef(jobDigest, candidate);
@@ -87,6 +89,7 @@ async function loadProviderOperation(objects, {
       || stored.metadata?.providerRequestId !== checkpoint.operation.providerRequestId) {
       throw new InfraImmutableObjectConflictError(`provider operation metadata for ${objectRef} is inconsistent`);
     }
+    if (allowProviderSwitch && providerAdapterId !== null && checkpoint.providerAdapterId !== providerAdapterId) continue;
     return { checkpoint, objectRef, digest: stored.digest };
   }
   return null;
@@ -134,9 +137,11 @@ export async function prepareResumableProviderExecution({
   job: rawJob,
   attemptNumber = 1,
   now = () => new Date().toISOString(),
+  allowProviderSwitch = false,
 }) {
   requireInfraCapabilities(infra, "objects");
   const checkedAttemptNumber = positiveAttemptNumber(attemptNumber);
+  if (typeof allowProviderSwitch !== "boolean") throw new TypeError("allowProviderSwitch must be boolean");
   const job = normalizeAssetGenerationJob(rawJob);
   const jobDigest = await assetGenerationJobDigest(job);
   const currentProviderAdapterId = providerAdapterId(provider);
@@ -148,6 +153,8 @@ export async function prepareResumableProviderExecution({
       job,
       jobDigest,
       throughAttemptNumber: checkedAttemptNumber,
+      providerAdapterId:currentProviderAdapterId,
+      allowProviderSwitch,
     });
   } catch (error) {
     throw toAssetGenerationError(error, {
