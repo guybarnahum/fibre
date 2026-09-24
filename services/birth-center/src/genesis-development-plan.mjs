@@ -80,6 +80,7 @@ function normalizeSubjectIdentity(candidate) {
     "place",
     "heritage",
     "languages",
+    "raisedLanguages",
     "appearanceContext",
   ]);
   for (const key of Object.keys(identity)) {
@@ -111,6 +112,13 @@ function normalizeSubjectIdentity(candidate) {
     normalized.languages = Object.freeze(stringArray(
       "Genesis development request subjectIdentity.languages",
       identity.languages,
+      { minimum: 1 },
+    ));
+  }
+  if (Object.hasOwn(identity, "raisedLanguages")) {
+    normalized.raisedLanguages = Object.freeze(stringArray(
+      "Genesis development request subjectIdentity.raisedLanguages",
+      identity.raisedLanguages,
       { minimum: 1 },
     ));
   }
