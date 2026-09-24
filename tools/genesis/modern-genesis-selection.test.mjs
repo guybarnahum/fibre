@@ -24,6 +24,7 @@ const materialFixture = fixture("fixtures/genesis/pr39/modern-birth-material-v1.
 const authoredJerusalem = Object.freeze({
   timeZone:"Asia/Jerusalem",
   languages:["Hebrew", "English"],
+  raisedLanguages:["Hebrew"],
   nameOrder:"given_family",
   femaleGivenNames:["Noa", "Maya", "Yael", "Tamar", "Shira", "Lior", "Michal", "Roni", "Neta", "Adi"],
   maleGivenNames:["Noam", "Eitan", "Daniel", "Yoni", "Ariel", "Omer", "Avi", "Nadav", "Gil", "Ron"],
@@ -113,7 +114,8 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.match(created.worldSpec.culturalContext, /family roots|migration/iu, "family origin must become causal World context");
   assert.match(created.worldSpec.householdShape, /Family origin context:/u);
   assert.match(created.material.familyOriginContext, /Yemeni Jewish family roots/u);
-  assert.deepEqual(created.worldSpec.languages, ["Hebrew", "English"], "personal languages must not become a Jerusalem demographic inventory");
+  assert.deepEqual(created.worldSpec.languages, ["Hebrew"], "raised languages must reflect upbringing rather than later school acquisition");
+  assert.deepEqual(created.material.languages, ["Hebrew", "English"], "eventual spoken languages must retain later acquisition");
   assert.doesNotMatch(created.material.appearanceContext, /Yemeni Jewish|Jerusalem|Israel/iu, "portrait appearance prior must not carry place/heritage labels");
 
   const reused = await resolveModernWorldSelection({
@@ -140,6 +142,7 @@ test("uncommon local appearance remains valid when family origin makes it causal
     ...authoredJerusalem,
     timeZone:"Asia/Tbilisi",
     languages:["Georgian", "English"],
+    raisedLanguages:["Georgian"],
     femaleGivenNames:["Nino", "Mariam", "Salome", "Ana", "Tamar", "Elene"],
     maleGivenNames:["Giorgi", "Irakli", "Levan", "Sandro", "Dato", "Nikoloz"],
     familyNames:["Beridze", "Kapanadze", "Mensah", "Gelashvili", "Lomidze", "Tsiklauri"],
@@ -192,6 +195,7 @@ test("automatic long-tail birth authors one World, reuses it, and leaves genome 
     ...authoredJerusalem,
     timeZone:"UTC",
     languages:["English"],
+    raisedLanguages:["English"],
     culturalContext:`Ordinary civic, school, family and neighborhood life in ${selector.birthCity}.`,
     heritageContext:"No operator-supplied heritage label.",
     familyOriginContext:`The household has longstanding family roots in ${selector.country}, with relatives connected to ${selector.city} and elsewhere in the country.`,
