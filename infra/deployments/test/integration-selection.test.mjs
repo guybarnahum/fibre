@@ -63,10 +63,18 @@ test("presentation image profile selection is deployment-owned and reference-awa
 
 test("reference-aware profile selection fails closed when deployment has no capable image profile", () => {
   const assetGenerator = resolveServiceDeployment(local, "asset-generator");
+  const openai = assetGenerator.integrations["openai-gpt-image-2-medium-v1"];
   const incapable = {
     ...assetGenerator,
-    integrations: Object.freeze({
-      "openai-gpt-image-2-medium-v1": assetGenerator.integrations["openai-gpt-image-2-medium-v1"],
+    integrations:Object.freeze({
+      "text-only-image-v1":Object.freeze({
+        ...openai,
+        config:Object.freeze({
+          ...openai.config,
+          acceptsReferenceObjects:false,
+          presentationReferenceDefault:false,
+        }),
+      }),
     }),
   };
   assert.throws(
