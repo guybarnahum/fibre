@@ -94,24 +94,36 @@ test("provider rejection falls back while ambiguous or resumable primary operati
     assert.equal(decision.reason, "ambiguous_provider_acceptance");
   }
 
-  for (const category of ["rate_limited", "provider_unavailable"]) {
+  for (const category of ["rate_limited", "provider_unavailable", "provider_timeout"]) {
     const decision = assetGenerationProviderFallbackDecision(new AssetGenerationError("accepted operation is transiently unavailable", {
       phase:"provider_generation",
       category,
       provider:"bfl",
       providerOperationDurable:true,
+      retryable:true,
     }));
     assert.equal(decision.fallback, false);
     assert.equal(decision.reason, "resume_primary_operation");
   }
 
-  const terminalAccepted = assetGenerationProviderFallbackDecision(new AssetGenerationError("provider rejected accepted task", {
-    phase:"provider_generation",
-    category:"moderation_rejected",
+  for (const category of ["moderation_rejected", "provider_unavailable", "unknown"]) {
+    const terminalAccepted = assetGenerationProviderFallbackDecision(new AssetGenerationError("provider rejected accepted task", {
+      phase:"provider_generation",
+      category,
+      provider:"bfl",
+      providerOperationDurable:true,
+      retryable:false,
+    }));
+    assert.equal(terminalAccepted.fallback, true, `terminal accepted ${category} should use secondary`);
+  }
+
+  const providerValidation = assetGenerationProviderFallbackDecision(new AssetGenerationError("primary adapter cannot satisfy request", {
+    phase:"validation",
+    category:"unsupported_capability",
     provider:"bfl",
-    providerOperationDurable:true,
+    retryable:false,
   }));
-  assert.equal(terminalAccepted.fallback, true);
+  assert.equal(providerValidation.fallback, true, "provider-specific validation may use a capable secondary");
 
   const localValidation = assetGenerationProviderFallbackDecision(new AssetGenerationError("missing reference", {
     phase:"reference_loading",
