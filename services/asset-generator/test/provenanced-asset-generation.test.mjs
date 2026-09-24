@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { createMemoryInfraDriver } from "#infra/providers/local";
 import { ASSET_GENERATION_JOB_VERSION } from "../src/asset-generation-domain.mjs";
+import { AssetGenerationError } from "../src/asset-generation-error.mjs";
 import {
   WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
 } from "../src/asset-provenance-domain.mjs";
@@ -102,4 +103,75 @@ test("Fibre-native generation retains durable provider provenance and exact fina
   assert.equal(replay.finalAssetReused, true);
   assert.equal(replay.receipt.sha256, first.receipt.sha256);
   assert.equal(replay.receipt.generationRecordDigest, first.receipt.generationRecordDigest);
+});
+
+
+test("explicit secondary provider can satisfy the same job after a durable primary rejection", async () => {
+  const infra = createMemoryInfraDriver();
+  const primary = {
+    providerVersion:WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
+    providerId:"fixture-primary-resumable",
+    capabilities:["image"],
+    async startOperation() {
+      return {
+        requestWitness:{
+          mediaType:"application/json",
+          body:{ provider:"primary" },
+          secretsRemoved:true,
+        },
+        operation:{
+          provider:"primary",
+          model:"primary-v1",
+          providerRequestId:"primary-task-001",
+          continuation:{ task:"primary-task-001" },
+          secretsRemoved:true,
+        },
+      };
+    },
+    async resumeOperation() {
+      throw new AssetGenerationError("primary rejected render", {
+        phase:"provider_generation",
+        category:"moderation_rejected",
+        retryable:false,
+        provider:"primary",
+        model:"primary-v1",
+        providerRequestId:"primary-task-001",
+      });
+    },
+    async generate() {
+      throw new Error("resumable primary must execute through start/resume");
+    },
+  };
+
+  await assert.rejects(
+    () => executeProvenancedAssetGenerationJob({
+      infra,
+      provider:primary,
+      job:job(),
+      attemptNumber:1,
+      now:() => "2026-09-01T02:52:00Z",
+    }),
+    (error) => error instanceof AssetGenerationError
+      && error.category === "moderation_rejected"
+      && error.providerOperationDurable === true,
+  );
+
+  const secondaryCalls = [];
+  const secondary = {
+    ...provider(secondaryCalls),
+    providerId:"fixture-secondary",
+  };
+  const recovered = await executeProvenancedAssetGenerationJob({
+    infra,
+    provider:secondary,
+    job:job(),
+    attemptNumber:1,
+    allowProviderSwitch:true,
+    now:() => "2026-09-01T02:53:00Z",
+  });
+
+  assert.equal(secondaryCalls.length, 1);
+  assert.equal(recovered.generationRecord.generation.provider, "fixture");
+  assert.equal(recovered.generationAttempt.providerAdapterId, "fixture-secondary");
+  assert.equal(recovered.receipt.status, "ready");
 });
