@@ -440,7 +440,7 @@ export class GenesisStore {
     }
     const hasCorrections = tableExists(this.#database, "genesis_raised_language_corrections");
     const row = this.#database.prepare(`
-      SELECT m.world_spec_id,w.record_json
+      SELECT m.world_spec_id,m.record_json AS manifest_json,w.record_json
         ${hasCorrections ? ",c.correction_id,c.languages_json" : ",NULL AS correction_id,NULL AS languages_json"}
       FROM genesis_manifests m
       JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id
@@ -459,13 +459,19 @@ export class GenesisStore {
       throw new GenesisNotFoundError(`Thread ${threadId} has no published Genesis world context`);
     }
     const worldSpec = normalizeGenesisWorldSpec(parseRecord(`WorldSpec ${row.world_spec_id}`, row.record_json));
+    const manifest = normalizeGenesisManifest(parseRecord(`Genesis manifest for ${threadId}`, row.manifest_json));
+    const authored = Array.isArray(manifest.raisedLanguages)
+      ? normalizeRaisedLanguages(manifest.raisedLanguages)
+      : [...worldSpec.languages];
     const languages = row.languages_json === null
-      ? [...worldSpec.languages]
+      ? authored
       : normalizeRaisedLanguages(parseRecord(`Raised languages for ${threadId}`, row.languages_json));
     return Object.freeze({
       worldSpecId:row.world_spec_id,
       languages:Object.freeze(languages),
-      source:row.correction_id === null ? "world_spec" : "admin_correction",
+      source:row.correction_id === null
+        ? (Array.isArray(manifest.raisedLanguages) ? "genesis_manifest" : "world_spec")
+        : "admin_correction",
       correctionId:row.correction_id ?? null,
     });
   }
