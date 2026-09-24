@@ -213,10 +213,6 @@ async function main() {
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   const viewerOrigin = required("staging viewer origin", deployed.externalViewerOrigin);
   const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
-  const materialFixture = fixture("fixtures/genesis/pr39/modern-birth-material-v1.json");
-  if (materialFixture.fixtureVersion !== "pr39-modern-birth-material-v1") {
-    throw new Error("unexpected modern birth material fixture version");
-  }
 
   const explicitRequestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || null;
   const requestId = explicitRequestId ?? `genesis-modern-${Date.now().toString(36)}`;
@@ -239,8 +235,6 @@ async function main() {
     heritage: options.heritage,
     forceNewWorld: options.forceNewWorld,
     cohort,
-    materialFixture,
-    fixture,
     repoRoot: REPO_ROOT,
     requestId,
     baseSlotOrdinal,
