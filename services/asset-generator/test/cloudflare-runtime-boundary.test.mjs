@@ -102,7 +102,11 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
     /class AssetGenerationWorkflow extends WorkflowEntrypoint/,
     /NonRetryableError/,
     /assetGenerationRetryDecision/,
-    /attemptNumber: ctx\.attempt/,
+    /assetGenerationProviderFallbackDecision/,
+    /selectImageProviderRoute/,
+    /asset_generation_provider_fallback/,
+    /imageProviderMode/,
+    /allowProviderSwitch:true/,
     /providerOperationDurable: error\?\.providerOperationDurable === true/,
     /providerOutputDurable: error\?\.providerOutputDurable === true/,
     /ASSET_OBJECTS/,
@@ -126,6 +130,8 @@ test("Asset Generator runtime stages provider attempts portably and Cloudflare o
   for (const pattern of [
     /createOpenAIImageProvider/,
     /createBflFluxImageProvider/,
+    /selectImageProviderRoute/,
+    /secondaryProfile/,
   ]) assertSourceMatches(integrationSelection, pattern, "deployment integration selection");
   assertSourceDoesNotMatch(integrationSelection, /world-kernel|thread-presentation|presentationServer|media\.ready/, "deployment integration selection");
 });
