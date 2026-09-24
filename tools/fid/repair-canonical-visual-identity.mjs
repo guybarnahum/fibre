@@ -2,9 +2,12 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
+const DEFAULT_TIMEOUT_MS = 900_000;
+const POLL_MS = 2_000;
 
 function required(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
@@ -34,22 +37,71 @@ function deployment() {
   if (record.sourceGitSha !== head) {
     throw new Error(`staging deployment ${record.sourceGitSha} does not match current checkout ${head}`);
   }
-  const matches = (record.deployments ?? []).filter((entry) => entry?.serviceId === "world-kernel");
-  if (matches.length !== 1) throw new Error("deployment evidence must contain exactly one world-kernel");
-  return required("world-kernel baseUrl", matches[0].baseUrl).replace(/\/$/u, "");
+  return record;
 }
 
-async function main() {
-  const { threadId, specFile, reason } = options(process.argv.slice(2));
-  const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
-  const specification = JSON.parse(readFileSync(resolve(process.cwd(), specFile), "utf8"));
-  const operationKey = `visual_identity_repair_${createHash("sha256")
-    .update(JSON.stringify({ threadId, specification }))
-    .digest("hex")
-    .slice(0, 24)}`;
+function serviceBase(record, serviceId) {
+  const matches = (record.deployments ?? []).filter((entry) => entry?.serviceId === serviceId);
+  if (matches.length !== 1) throw new Error(`deployment evidence must contain exactly one ${serviceId}`);
+  return required(`${serviceId} baseUrl`, matches[0].baseUrl).replace(/\/$/u, "");
+}
 
+async function payload(response, label, accepted = [200]) {
+  const body = await response.json().catch(() => null);
+  if (!accepted.includes(response.status)) {
+    throw new Error(`${label} failed: HTTP ${response.status} ${JSON.stringify(body)}`);
+  }
+  if (body === null) throw new Error(`${label} returned non-JSON HTTP ${response.status}`);
+  return body;
+}
+
+async function poll(label, probe, ready, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const deadline = Date.now() + timeoutMs;
+  let latest = null;
+  while (Date.now() < deadline) {
+    latest = await probe();
+    if (ready(latest)) return latest;
+    await delay(POLL_MS);
+  }
+  throw new Error(`${label} did not converge within ${timeoutMs}ms; latest=${JSON.stringify(latest)}`);
+}
+
+async function observatory({ worldKernel, privateToken, threadId }) {
   const response = await fetch(
-    `${deployment()}/internal/threads/${encodeURIComponent(threadId)}/repair`,
+    `${worldKernel}/internal/threads/${encodeURIComponent(threadId)}/observatory`,
+    { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken } },
+  );
+  return payload(response, "World observatory");
+}
+
+async function presentation({ threadPresentation, threadId }) {
+  const response = await fetch(
+    `${threadPresentation}/api/threads/${encodeURIComponent(threadId)}/snapshot`,
+    { headers:{ Accept:"application/json" } },
+  );
+  return payload(response, "Thread Presentation snapshot");
+}
+
+function canonicalPortrait(observatoryBody) {
+  const portraits = (observatoryBody?.observatory?.embodiments ?? []).filter((entry) => (
+    entry?.kind === "portrait"
+    && entry?.representationKind === "synthetic_generation"
+    && entry?.visibility === "public"
+  ));
+  if (portraits.length !== 1) throw new Error(`expected one current canonical portrait, found ${portraits.length}`);
+  return portraits[0];
+}
+
+async function repairCanonical({
+  worldKernel,
+  privateToken,
+  threadId,
+  operationKey,
+  specification,
+  reason,
+}) {
+  const response = await fetch(
+    `${worldKernel}/internal/threads/${encodeURIComponent(threadId)}/repair`,
     {
       method:"POST",
       headers:{
@@ -64,21 +116,92 @@ async function main() {
       }),
     },
   );
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(`canonical visual identity repair failed: HTTP ${response.status} ${JSON.stringify(body)}`);
-  }
+  return payload(response, "canonical visual identity repair");
+}
 
-  const correction = body?.visualIdentityCorrection;
-  process.stdout.write(`${JSON.stringify({
-    event:"canonical-visual-identity-repaired",
+async function reissueFid({ threadPresentation, privateToken, threadId, idempotencyKey }) {
+  const response = await fetch(
+    `${threadPresentation}/internal/fid/reconcile`,
+    {
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "x-fibre-private-token":privateToken,
+      },
+      body:JSON.stringify({ threadId, idempotencyKey, mode:"reissue" }),
+    },
+  );
+  return payload(response, "FID reissue", [200, 202]);
+}
+
+async function main() {
+  const { threadId, specFile, reason } = options(process.argv.slice(2));
+  const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
+  const specification = JSON.parse(readFileSync(resolve(process.cwd(), specFile), "utf8"));
+  const operationKey = `visual_identity_repair_${createHash("sha256")
+    .update(JSON.stringify({ threadId, specification }))
+    .digest("hex")
+    .slice(0, 24)}`;
+
+  const deployed = deployment();
+  const worldKernel = serviceBase(deployed, "world-kernel");
+  const threadPresentation = serviceBase(deployed, "thread-presentation");
+  const before = canonicalPortrait(await observatory({ worldKernel, privateToken, threadId }));
+  const repaired = await repairCanonical({
+    worldKernel,
+    privateToken,
     threadId,
     operationKey,
-    previous:correction?.previous ?? null,
-    correctedRevision:correction?.embodiment?.revision ?? null,
-    correctedSpecificationDigest:correction?.embodiment?.specificationDigest ?? null,
-    status:correction?.embodiment?.status ?? null,
-    reconciliation:body?.reconciliation ?? null,
+    specification,
+    reason,
+  });
+  const pendingRevision = repaired?.visualIdentityCorrection?.embodiment?.revision;
+  if (!Number.isSafeInteger(pendingRevision)) throw new Error("visual repair did not return a corrected Embodiment revision");
+
+  const admitted = await poll(
+    "corrected canonical root admission",
+    () => observatory({ worldKernel, privateToken, threadId }),
+    (body) => {
+      const portrait = canonicalPortrait(body);
+      return portrait.status === "available"
+        && portrait.revision > pendingRevision
+        && portrait.asset?.referenceObjectRef
+        && portrait.asset.referenceObjectRef !== before.asset?.referenceObjectRef;
+    },
+  );
+  const corrected = canonicalPortrait(admitted);
+  const canonicalReferenceObjectRef = corrected.asset.referenceObjectRef;
+
+  await poll(
+    "corrected visual identity projection",
+    () => presentation({ threadPresentation, threadId }),
+    (body) => body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0] === canonicalReferenceObjectRef,
+  );
+
+  const fidKey = `${operationKey}.fid`;
+  const fid = await poll(
+    "FID reissue from corrected canonical root",
+    () => reissueFid({ threadPresentation, privateToken, threadId, idempotencyKey:fidKey }),
+    (body) => body?.result?.complete === true && body?.result?.credential?.credentialId,
+  );
+  const credential = fid.result.credential;
+
+  await poll(
+    "corrected FID projection",
+    () => presentation({ threadPresentation, threadId }),
+    (body) => body?.snapshot?.presentation?.identityCard?.credentialId === credential.credentialId,
+  );
+
+  process.stdout.write(`${JSON.stringify({
+    event:"canonical-visual-identity-repair-complete",
+    threadId,
+    operationKey,
+    previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
+    correctedCanonicalReferenceObjectRef:canonicalReferenceObjectRef,
+    correctedEmbodimentRevision:corrected.revision,
+    fidCredentialId:credential.credentialId,
+    fidRevision:credential.revision,
+    fidSupersedesCredentialId:credential.supersedesCredentialId,
   }, null, 2)}\n`);
 }
 
