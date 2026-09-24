@@ -147,6 +147,8 @@ async function main() {
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   const before = canonicalPortrait(await observatory({ worldKernel, privateToken, threadId }));
+  const beforePresentation = await presentation({ threadPresentation, threadId });
+  const previousFidCredentialId = beforePresentation?.snapshot?.presentation?.identityCard?.credentialId ?? null;
   const repaired = await repairCanonical({
     worldKernel,
     privateToken,
@@ -185,6 +187,14 @@ async function main() {
     (body) => body?.result?.complete === true && body?.result?.credential?.credentialId,
   );
   const credential = fid.result.credential;
+  if (previousFidCredentialId !== null) {
+    if (credential.credentialId === previousFidCredentialId) {
+      throw new Error("FID repair reused the credential that still carries the prior visual identity");
+    }
+    if (credential.supersedesCredentialId !== previousFidCredentialId) {
+      throw new Error("FID repair did not supersede the previously active credential");
+    }
+  }
 
   await poll(
     "corrected FID projection",
@@ -199,6 +209,7 @@ async function main() {
     previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
     correctedCanonicalReferenceObjectRef:canonicalReferenceObjectRef,
     correctedEmbodimentRevision:corrected.revision,
+    previousFidCredentialId,
     fidCredentialId:credential.credentialId,
     fidRevision:credential.revision,
     fidSupersedesCredentialId:credential.supersedesCredentialId,
