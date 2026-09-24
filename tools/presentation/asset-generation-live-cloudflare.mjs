@@ -34,7 +34,7 @@ function parseArgs(argv) {
   const parsed = {
     fixture: DEFAULT_LIVE_FIXTURE,
     mediaId: DEFAULT_LIVE_MEDIA_ID,
-    baseUrl: process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8787",
+    baseUrl: process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8788",
     providerMode:"primary",
     dryRun: false,
   };
@@ -70,7 +70,12 @@ function parseArgs(argv) {
 }
 
 async function jsonFetch(url, init) {
-  const response = await fetch(url, init);
+  let response;
+  try {
+    response = await fetch(url, init);
+  } catch (error) {
+    throw new Error(`${init?.method ?? "GET"} ${url} could not connect: ${error instanceof Error ? error.message : String(error)}`);
+  }
   const payload = await response.json().catch(() => null);
   if (!response.ok) throw new Error(`${init?.method ?? "GET"} ${url} failed ${response.status}: ${JSON.stringify(payload)}`);
   return payload;
@@ -127,7 +132,7 @@ function clearWaiting(width) {
 export async function runCloudflareLiveAssetSmoke({
   fixture = DEFAULT_LIVE_FIXTURE,
   mediaId = DEFAULT_LIVE_MEDIA_ID,
-  baseUrl = process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8787",
+  baseUrl = process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8788",
   timeoutMs = Number(process.env.ASSET_LIVE_CLOUDFLARE_TIMEOUT_MS ?? 10 * 60 * 1000),
   pollMs = Number(process.env.ASSET_LIVE_CLOUDFLARE_POLL_MS ?? 2000),
   providerMode = "primary",
@@ -140,7 +145,7 @@ export async function runCloudflareLiveAssetSmoke({
 
   console.log("FIBRE CLOUDFLARE LIVE ASSET SMOKE: START");
   console.log(`[1/5] Target: ${target.label} (${target.mediaAsset.mediaId}) on Thread ${target.threadId}`);
-  console.log("[2/5] Checking Cloudflare Presentation runtime...");
+  console.log(`[2/5] Checking Cloudflare Presentation runtime at ${base}...`);
   await jsonFetch(`${base}/healthz`);
 
   console.log("[3/5] Seeding the selected fixture through the Cloudflare dev-only fixture seam...");
