@@ -186,7 +186,7 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
           ) ?? null;
       process.stderr.write(`DEBUG lived-place ${JSON.stringify({
         threadId:thread.threadId,
-        name:thread.displayName ?? observatory?.thread?.identity?.name ?? null,
+        name:observatory?.thread?.identity?.name ?? thread.displayName ?? null,
         birthCity:observatory?.thread?.identity?.birthCity ?? null,
         currentPlaceRef,
         currentWorldPlace:(observatory?.livedNow?.worldPlaces ?? [])
@@ -212,7 +212,7 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
       })}\n`);
       process.stderr.write(`DEBUG interior-context ${JSON.stringify({
         threadId:thread.threadId,
-        name:thread.displayName ?? observatory?.thread?.identity?.name ?? null,
+        name:observatory?.thread?.identity?.name ?? thread.displayName ?? null,
         currentActivity:currentSituation.activity,
         currentReason:currentSituation.reason,
         genomeLoci:(observatory?.symbolicGenomes ?? [])
@@ -249,7 +249,7 @@ async function refreshStagingThreads({ worldBaseUrl, presentationBaseUrl, viewer
       })}\n`);
       refreshed.push(Object.freeze({
         threadId:thread.threadId,
-        displayName:thread.displayName ?? null,
+        displayName:observatory?.thread?.identity?.name ?? thread.displayName ?? null,
         situationId:result.situationId,
         present:result.present,
         presenceKeys,

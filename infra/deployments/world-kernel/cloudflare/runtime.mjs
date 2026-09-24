@@ -320,7 +320,6 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
       await reconciliationRuntime.requestWake();
     },
     async onIdentityUpdate({ threadId, result }) {
-      if (result.changed !== true) return Object.freeze({ state:"current", changed:false });
       try {
         const projected = await presentationDelivery.reconcileThreadPresentationIdentity(threadId);
         return Object.freeze({

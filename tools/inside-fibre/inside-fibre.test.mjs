@@ -180,3 +180,30 @@ test("prepare chooses a locally reasonable shared window without treating the cu
     "the shared offer window should prefer ordinary local daytime without mistaking an expiring plan horizon for a rigid commitment",
   );
 });
+
+
+test("Inside Fibre roster uses World identity and exposes a stale public name projection", () => {
+  const publicThread = { ...thread(), displayName:"Luka Beridze" };
+  const world = observatory({
+    mediatedContext:null,
+    evidenceRefs:["evt_prior"],
+  });
+  world.thread = {
+    identity:{
+      name:"Luka Mzechabuki",
+      birthCity:"Tbilisi, Georgia",
+    },
+    genome:{ runtimeBaselines:{} },
+  };
+
+  const entry = classifyInsideFibreRosterEntry({
+    thread:publicThread,
+    workState:{ fibreCredits:0, commitments:[], settlements:[] },
+    observatory:world,
+    at:AT,
+  });
+
+  assert.equal(entry.displayName, "Luka Mzechabuki", "public projection overrode authoritative World name");
+  assert.equal(entry.publicDisplayName, "Luka Beridze", "stale public projection was hidden");
+  assert.equal(entry.nameProjectionStale, true, "name projection mismatch was not surfaced");
+});

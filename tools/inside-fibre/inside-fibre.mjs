@@ -24,6 +24,20 @@ function nonEmpty(name, value) {
   return value.trim();
 }
 
+function cleanText(value) {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+function rosterIdentity(thread, observatory) {
+  const authoritativeName = cleanText(observatory?.thread?.identity?.name);
+  const publicName = cleanText(thread?.displayName);
+  return Object.freeze({
+    displayName:authoritativeName ?? publicName ?? thread.threadId,
+    publicDisplayName:publicName,
+    nameProjectionStale:authoritativeName !== null && publicName !== null && authoritativeName !== publicName,
+  });
+}
+
 function endpoint(baseUrl, pathname) {
   const url = new URL(baseUrl);
   url.pathname = pathname;
@@ -229,10 +243,13 @@ export function classifyInsideFibreRosterEntry({
   const active = activeCommitments(workState, atMs);
   const scheduled = futureCommitments(workState, atMs);
   const available = active.find((commitment) => commitmentIsEnacted(commitment, observatory, at)) ?? null;
+  const identity = rosterIdentity(thread, observatory);
 
   return Object.freeze({
     threadId:thread.threadId,
-    displayName:thread.displayName ?? thread.threadId,
+    displayName:identity.displayName,
+    publicDisplayName:identity.publicDisplayName,
+    nameProjectionStale:identity.nameProjectionStale,
     lifecycleStatus:thread.lifecycleStatus ?? null,
     fibreCredits:workState?.fibreCredits ?? null,
     birthCity:observatory?.thread?.identity?.birthCity ?? null,
@@ -438,6 +455,7 @@ function sceneText(entry) {
 function printEntry(entry, commitment = null, at = new Date().toISOString()) {
   process.stdout.write(`${entry.displayName}\n`);
   process.stdout.write(`  ${entry.threadId}\n`);
+  if (entry.nameProjectionStale) process.stdout.write(`  Public name stale: ${entry.publicDisplayName}\n`);
   if (entry.birthCity) process.stdout.write(`  Born: ${entry.birthCity}\n`);
   process.stdout.write(`  Local: ${formatThreadTime(at, entry.timeZone)} · ${entry.timeZone ?? "unknown timezone"}\n`);
   if (entry.dailyRhythm) {
@@ -659,7 +677,7 @@ export async function prepareInsideFibre({
     if (accepted.length >= target) break;
     const timeZone = threadTimeZone(record.observatory);
     process.stdout.write(
-      `\n${record.thread.displayName ?? record.thread.threadId}\n`
+      `\n${record.entry.displayName}\n`
       + `  Local window: ${localWindowText(window.startAt, window.endAt, timeZone)}\n`,
     );
 
@@ -679,7 +697,7 @@ export async function prepareInsideFibre({
     if (offer.decision === "decline") {
       const result = Object.freeze({
         threadId:record.thread.threadId,
-        displayName:record.thread.displayName ?? record.thread.threadId,
+        displayName:record.entry.displayName,
         reason:offer.reason,
       });
       declined.push(result);
@@ -692,7 +710,7 @@ export async function prepareInsideFibre({
     }
     const result = Object.freeze({
       threadId:record.thread.threadId,
-      displayName:record.thread.displayName ?? record.thread.threadId,
+      displayName:record.entry.displayName,
       reason:offer.reason,
       commitmentId:offer.commitmentId,
       planId:offer.planning.planId,
