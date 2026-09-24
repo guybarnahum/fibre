@@ -199,6 +199,7 @@ test("official-photo demand carries the canonical root, reference age, credentia
   assert.ok(official.inputReferences.includes(CANONICAL_ROOT));
   assert.match(official.brief.description, /22 years old/);
   assert.match(official.brief.description, /normalized reference age 25/);
+  assert.match(official.brief.description, /Neutral, natural administrative portrait/);
 });
 
 test("self-depicting memory demand uses the same canonical root and event-derived age while place imagery stays reference-free", async () => {
