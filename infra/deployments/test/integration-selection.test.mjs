@@ -9,6 +9,7 @@ import {
 import {
   selectImageIntegration,
   selectImageProviderProfile,
+  selectImageProviderRoute,
   selectReasoningIntegration,
 } from "../integration-selection.mjs";
 
@@ -58,6 +59,36 @@ test("presentation image profile selection is deployment-owned and reference-awa
     assert.equal(assetGenerator.integrations["bfl-flux-2-pro-v1"].config.acceptsReferenceObjects, true);
     assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].config.presentationReferenceDefault, false);
     assert.equal(assetGenerator.integrations["bfl-flux-2-pro-v1"].config.presentationReferenceDefault, true);
+  }
+});
+
+test("image provider routes declare primary and secondary and can explicitly select secondary", () => {
+  for (const manifest of [local, cloudflare]) {
+    const assetGenerator = resolveServiceDeployment(manifest, "asset-generator");
+
+    const referenced = selectImageProviderRoute(assetGenerator, {
+      primaryProfile:"bfl-flux-2-pro-v1",
+      requiresReferenceObjects:true,
+    });
+    assert.deepEqual(referenced, {
+      primaryProfile:"bfl-flux-2-pro-v1",
+      secondaryProfile:"openai-gpt-image-2-medium-v1",
+      selectedProfile:"bfl-flux-2-pro-v1",
+      mode:"primary",
+    });
+
+    const forcedSecondary = selectImageProviderRoute(assetGenerator, {
+      primaryProfile:"bfl-flux-2-pro-v1",
+      requiresReferenceObjects:true,
+      mode:"secondary",
+    });
+    assert.equal(forcedSecondary.selectedProfile, "openai-gpt-image-2-medium-v1");
+
+    const textOnly = selectImageProviderRoute(assetGenerator, {
+      primaryProfile:"openai-gpt-image-2-medium-v1",
+      requiresReferenceObjects:false,
+    });
+    assert.equal(textOnly.secondaryProfile, "bfl-flux-2-pro-v1");
   }
 });
 
