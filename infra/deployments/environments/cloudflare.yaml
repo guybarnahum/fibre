@@ -75,6 +75,7 @@ integrations:
       acceptsReferenceObjects: true
       presentationDefault: true
       presentationReferenceDefault: false
+      secondaryProfile: bfl-flux-2-pro-v1
     secrets:
       apiKey: OPENAI_API_KEY
   asset-image-bfl:
@@ -85,6 +86,7 @@ integrations:
       acceptsReferenceObjects: true
       presentationDefault: false
       presentationReferenceDefault: true
+      secondaryProfile: openai-gpt-image-2-medium-v1
     secrets:
       apiKey: BFL_API_KEY
 
