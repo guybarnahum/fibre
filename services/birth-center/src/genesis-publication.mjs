@@ -75,7 +75,7 @@ export function buildGenesisPublicationCognition({
 function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt }) {
   if (!subjectIdentity || typeof subjectIdentity !== "object") throw new TypeError("Genesis birth requires subject identity material");
   if (!worldSpec || typeof worldSpec !== "object") throw new TypeError("Genesis birth requires WorldSpec identity context");
-  if (!Array.isArray(worldSpec.languages) || worldSpec.languages.length === 0) throw new TypeError("modern Genesis birth requires at least one WorldSpec language");
+  if (!Array.isArray(worldSpec.languages) || worldSpec.languages.length === 0) throw new TypeError("modern Genesis birth requires at least one raised-language World context");
   if (typeof worldSpec.culturalContext !== "string" || worldSpec.culturalContext.trim() === "") throw new TypeError("modern Genesis birth requires WorldSpec cultural context");
   if (typeof subjectIdentity.birthCity !== "string" || subjectIdentity.birthCity.trim() === "") throw new TypeError("modern Genesis birth requires an explicit birth city");
   const sex = subjectIdentity.sex ?? genesisSexForThread({ threadId });
@@ -84,11 +84,14 @@ function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt })
   if (typeof name !== "string" || name.trim() === "" || name === "Fibre Thread") throw new TypeError("modern Genesis birth requires a proper sex-compatible name");
   const birthInstant = new Date(bornAt);
   if (!Number.isFinite(birthInstant.getTime())) throw new TypeError("modern Genesis birth requires a valid bornAt timestamp");
+  const languages = Array.isArray(subjectIdentity.languages) && subjectIdentity.languages.length > 0
+    ? subjectIdentity.languages
+    : worldSpec.languages;
   return Object.freeze({
     name: name.trim(),
     sex,
     birthDate: birthInstant.toISOString().slice(0, 10),
-    languages: Object.freeze([...worldSpec.languages]),
+    languages: Object.freeze([...languages]),
     birthCity: subjectIdentity.birthCity.trim(),
     culture: Object.freeze([`${subjectIdentity.birthCity.trim()} formative context`]),
     originOrientation: "original",
