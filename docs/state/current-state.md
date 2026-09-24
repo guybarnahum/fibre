@@ -247,7 +247,7 @@ Genesis
 
 Genesis remains the authority for prior life before Fibre birth.
 
-Modern de-novo Genesis visual identity now separates **family morphology** from **individual variation**. A grounded family appearance prior defines the inherited plausibility envelope; deterministic Thread-specific loci add neutral proportions, asymmetries, hairline, build and stable marks without imposing an unrelated global facial-feature palette. Generic phenotype loci remain only as the fallback when no grounded family appearance evidence exists. This is intentionally not a population-genetics simulator; richer inherited textual phenotype recombination remains an open extension path.
+Modern de-novo Genesis visual identity now selects **one concrete inherited phenotype before rendering**. World authoring provides family-compatible textual options for skin, hair, eyes, face, brows, nose, mouth, jaw and build; Genesis deterministically selects one option per domain for the new Thread and then adds neutral individual asymmetries and stable marks. The broad family envelope remains upstream evidence and is not passed to the renderer. The canonical root therefore depicts a person Genesis already defined rather than asking the image model to choose a phenotype. This remains intentionally lighter than a population-genetics simulator; richer inherited textual phenotype recombination is an open extension path.
 
 Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
