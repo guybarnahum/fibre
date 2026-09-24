@@ -1,4 +1,5 @@
 import { publicInsideFibreAvailability } from "./inside-fibre-public-availability.mjs";
+import { projectInsideFibreLivedScene } from "./inside-fibre-lived-scene.mjs";
 
 export const COMMITTED_MEET_SELECTION_POLICY = "inside-fibre-committed-meet-v1";
 
@@ -34,6 +35,7 @@ export async function selectCommittedAvailableThread({
         thread:null,
         selection:selected.selection ?? null,
         currentPresent:null,
+        livedScene:null,
         availability:null,
         availabilityPolicyVersion:COMMITTED_MEET_SELECTION_POLICY,
       });
@@ -52,10 +54,19 @@ export async function selectCommittedAvailableThread({
       throw new TypeError("committed meeting admission must return a public present");
     }
 
+    const livedScene = projectInsideFibreLivedScene({
+      present:admitted.present,
+      availability:admitted.availability,
+    });
+    if (livedScene === null) {
+      throw new TypeError("committed meeting admission requires active visitor availability");
+    }
+
     return Object.freeze({
       thread,
       selection:selected.selection ?? null,
       currentPresent:Object.freeze({ payload:admitted.present }),
+      livedScene,
       availability:publicInsideFibreAvailability(admitted.availability),
       availabilityPolicyVersion:COMMITTED_MEET_SELECTION_POLICY,
     });
@@ -65,6 +76,7 @@ export async function selectCommittedAvailableThread({
     thread:null,
     selection:null,
     currentPresent:null,
+    livedScene:null,
     availability:null,
     availabilityPolicyVersion:COMMITTED_MEET_SELECTION_POLICY,
   });

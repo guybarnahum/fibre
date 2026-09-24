@@ -35,7 +35,12 @@ test("Meet selection skips public Threads who are not actually committed and ava
           situationId:"sit_committed_now",
           establishedAt:"2026-09-23T18:20:00Z",
           phase:"at_place",
+          location:{ kind:"place", place:{ displayName:"Home", region:"Tucson" } },
+          mediatedContext:null,
           activity:"Meeting Inside Fibre visitors.",
+          reason:null,
+          participants:[],
+          depictionMediaId:"media_present_committed_now",
         },
         availability:{
           threadId,
@@ -58,6 +63,21 @@ test("Meet selection skips public Threads who are not actually committed and ava
   assert.equal(result.thread.threadId, "thr_committed_available",
     "Meet should return a Thread whose current World state admits the visitor");
   assert.equal(result.currentPresent.payload.situationId, "sit_committed_now");
+  assert.deepEqual(result.livedScene, {
+    sceneVersion:"inside-fibre-lived-scene-v0.1",
+    situationId:"sit_committed_now",
+    establishedAt:"2026-09-23T18:20:00Z",
+    phase:"at_place",
+    location:{ kind:"place", place:{ displayName:"Home", region:"Tucson" } },
+    activity:"Meeting Inside Fibre visitors.",
+    participants:[],
+    depictionMediaId:"media_present_committed_now",
+    encounterAvailability:{
+      kind:"inside_fibre_visitor_availability",
+      startAt:"2026-09-23T18:00:00Z",
+      endAt:"2026-09-23T19:00:00Z",
+    },
+  }, "Meet should return one public lived moment");
   assert.deepEqual(result.availability, {
     startAt:"2026-09-23T18:00:00Z",
     endAt:"2026-09-23T19:00:00Z",
@@ -87,5 +107,6 @@ test("Meet selection returns nobody when no public candidate is currently availa
   assert.equal(result.thread, null,
     "Meet should not offer a Thread merely because the Thread has public Presentation");
   assert.equal(result.currentPresent, null);
+  assert.equal(result.livedScene, null);
   assert.equal(result.availability, null);
 });

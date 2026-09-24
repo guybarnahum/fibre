@@ -1,4 +1,5 @@
 import { publicInsideFibreAvailability } from "../inside-fibre-public-availability.mjs";
+import { projectInsideFibreLivedScene } from "../inside-fibre-lived-scene.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
@@ -68,9 +69,15 @@ export function createPublicEncounterApi({
           if (present === null || typeof present?.situationId !== "string") {
             return json({ error: "public_present_required" }, request, viewerOrigin, 409);
           }
+          const availability = publicInsideFibreAvailability(admitted?.availability ?? null);
+          const livedScene = projectInsideFibreLivedScene({
+            present,
+            availability:admitted?.availability ?? null,
+          });
           return json({
             currentPresent: { payload: present },
-            availability: publicInsideFibreAvailability(admitted?.availability ?? null),
+            livedScene,
+            availability,
           }, request, viewerOrigin);
         } catch (error) {
           if (error?.status === 409) {

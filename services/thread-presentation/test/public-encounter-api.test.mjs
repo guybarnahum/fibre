@@ -70,12 +70,19 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
           situationId: "sit_reconciled_now",
           establishedAt: "2026-09-21T03:40:00Z",
           phase: "at_place",
+          location:{ kind:"place", place:{ displayName:"Home", region:"Tucson" } },
+          mediatedContext:null,
           activity: "meeting Inside Fibre visitors",
+          reason:null,
+          participants:[],
+          depictionMediaId:"media_present_reconciled_now",
         },
         availability:{
           startAt:"2026-09-21T03:00:00Z",
           endAt:"2026-09-21T04:00:00Z",
+          situationId:"sit_reconciled_now",
           commitmentId:"work_private_001",
+          planId:"lplan_private_001",
           compensation:{ fibreCredits:12 },
         },
       };
@@ -105,9 +112,29 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
       situationId: "sit_reconciled_now",
       establishedAt: "2026-09-21T03:40:00Z",
       phase: "at_place",
+      location:{ kind:"place", place:{ displayName:"Home", region:"Tucson" } },
+      mediatedContext:null,
       activity: "meeting Inside Fibre visitors",
+      reason:null,
+      participants:[],
+      depictionMediaId:"media_present_reconciled_now",
     },
   }, "meeting entry should expose the scene produced by reconciliation, not the stale prior projection");
+  assert.deepEqual(body.livedScene, {
+    sceneVersion:"inside-fibre-lived-scene-v0.1",
+    situationId:"sit_reconciled_now",
+    establishedAt:"2026-09-21T03:40:00Z",
+    phase:"at_place",
+    location:{ kind:"place", place:{ displayName:"Home", region:"Tucson" } },
+    activity:"meeting Inside Fibre visitors",
+    participants:[],
+    depictionMediaId:"media_present_reconciled_now",
+    encounterAvailability:{
+      kind:"inside_fibre_visitor_availability",
+      startAt:"2026-09-21T03:00:00Z",
+      endAt:"2026-09-21T04:00:00Z",
+    },
+  }, "meeting entry should compose one public lived moment");
   assert.deepEqual(body.availability, {
     startAt:"2026-09-21T03:00:00Z",
     endAt:"2026-09-21T04:00:00Z",
@@ -117,5 +144,7 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
     "public meeting entry must not expose the work commitment identity");
   assert.equal(publicJson.includes("fibreCredits"), false,
     "public meeting entry must not expose compensation");
+  assert.equal(publicJson.includes("lplan_private_001"), false,
+    "public meeting entry must not expose the governing plan");
 });
 

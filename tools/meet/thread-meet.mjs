@@ -37,28 +37,18 @@ function locationText(location) {
   return null;
 }
 
-function publicScene(present) {
-  return Object.freeze({
-    establishedAt:present.establishedAt ?? null,
-    phase:present.phase ?? null,
-    location:locationText(present.location),
-    activity:present.activity ?? null,
-    reason:present.reason ?? null,
-    mediatedContext:present.mediatedContext ?? null,
-    participants:Object.freeze([...(present.participants ?? [])]),
-  });
-}
-
 function printScene(meeting) {
   const scene = meeting.scene;
   console.log(`Meeting ${meeting.threadId} · ${meeting.situationId}`);
   console.log("Right now:");
-  if (scene.location) console.log(`  setting: ${scene.location}`);
+  const location = locationText(scene.location);
+  if (location) console.log(`  setting: ${location}`);
   if (scene.activity) console.log(`  doing:   ${scene.activity}`);
-  if (scene.reason) console.log(`  reason:  ${scene.reason}`);
-  if (scene.mediatedContext) console.log(`  context: ${scene.mediatedContext}`);
   if (scene.participants.length > 0) console.log(`  with:    ${scene.participants.join(", ")}`);
   if (scene.establishedAt) console.log(`  since:   ${scene.establishedAt}`);
+  if (scene.encounterAvailability?.endAt) {
+    console.log(`  available until: ${scene.encounterAvailability.endAt}`);
+  }
   console.log("Type :q to leave the meeting without adding another encounter.");
 }
 
@@ -109,14 +99,14 @@ export async function openThreadMeeting({
     method:"POST",
     headers:{ Accept:"application/json" },
   }));
-  const present = entry?.currentPresent?.payload;
-  const situationId = present?.situationId;
-  if (typeof situationId !== "string" || situationId === "") throw new Error("Thread has no published current situation");
+  const scene = entry?.livedScene;
+  const situationId = scene?.situationId;
+  if (typeof situationId !== "string" || situationId === "") throw new Error("Thread has no public lived scene");
 
   return Object.freeze({
     threadId:selectedThreadId,
     situationId,
-    scene:publicScene(present),
+    scene:Object.freeze(scene),
     async say(utterance) {
       if (typeof utterance !== "string" || utterance.trim() === "") throw new TypeError("utterance is required");
       const result = await body(await fetchImpl(`${api}/api/threads/${encoded}/encounter`, {
@@ -186,7 +176,7 @@ async function main(args) {
         });
         return;
       } catch (error) {
-        if (error?.message !== "Thread has no published current situation") throw error;
+        if (error?.message !== "Thread has no public lived scene") throw error;
         const name = selected.displayName ?? selected.threadId;
         console.log(`${name} is not currently in a published situation. Choose another Thread.\n`);
       }

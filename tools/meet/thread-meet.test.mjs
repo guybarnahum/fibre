@@ -3,8 +3,24 @@ import test from "node:test";
 
 import { openThreadMeeting } from "./thread-meet.mjs";
 
-test("a meeting enters and stays in the Thread's published scene", async () => {
+test("a meeting consumes one public lived scene and stays bound to its situation", async () => {
   const requests = [];
+  const livedScene = {
+    sceneVersion:"inside-fibre-lived-scene-v0.1",
+    situationId:"sit_current_001",
+    establishedAt:"2026-09-17T18:00:00Z",
+    phase:"at_place",
+    location:{ kind:"place", place:{ displayName:"Mission Dolores Park", region:"San Francisco" } },
+    activity:"sketching people on the lawn",
+    participants:["Mara"],
+    depictionMediaId:"media_present_current_001",
+    encounterAvailability:{
+      kind:"inside_fibre_visitor_availability",
+      startAt:"2026-09-17T17:30:00Z",
+      endAt:"2026-09-17T18:30:00Z",
+    },
+  };
+
   const fetchImpl = async (url, init = {}) => {
     requests.push({ url:String(url), init });
     if (String(url).endsWith("/meet")) {
@@ -13,13 +29,12 @@ test("a meeting enters and stays in the Thread's published scene", async () => {
         currentPresent:{ payload:{
           situationId:"sit_current_001",
           establishedAt:"2026-09-17T18:00:00Z",
-          phase:"at_place",
-          location:{ kind:"place", place:{ displayName:"Mission Dolores Park", region:"San Francisco" } },
-          mediatedContext:"late afternoon in the park",
-          activity:"sketching people on the lawn",
-          reason:"taking a break after work",
-          participants:["Mara"],
         } },
+        livedScene,
+        availability:{
+          startAt:"2026-09-17T17:30:00Z",
+          endAt:"2026-09-17T18:30:00Z",
+        },
       });
     }
     return Response.json({ situationId:"sit_current_001", responseText:"I am still here." });
@@ -33,18 +48,10 @@ test("a meeting enters and stays in the Thread's published scene", async () => {
   await meeting.say("What are you doing?");
   await meeting.say("Tell me more.");
 
-  assert.deepEqual(meeting.scene, {
-    establishedAt:"2026-09-17T18:00:00Z",
-    phase:"at_place",
-    location:"Mission Dolores Park, San Francisco",
-    activity:"sketching people on the lawn",
-    reason:"taking a break after work",
-    mediatedContext:"late afternoon in the park",
-    participants:["Mara"],
-  }, "meeting must expose the published scene");
-  assert.equal(requests[0].url, "https://fibre.example/api/threads/thr_meeting_001/meet", "meeting must reconcile before reading a scene");
+  assert.deepEqual(meeting.scene, livedScene, "meeting should consume Presentation's public lived-scene projection");
+  assert.equal(requests[0].url, "https://fibre.example/api/threads/thr_meeting_001/meet", "meeting must reconcile before entering the scene");
   assert.deepEqual(requests.slice(1).map(({ init }) => JSON.parse(init.body).situationId), [
     "sit_current_001",
     "sit_current_001",
-  ], "every turn must stay in that scene");
+  ], "every turn must stay in that lived situation");
 });
