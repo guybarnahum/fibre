@@ -58,6 +58,9 @@ export function composeModernSubjectIdentity({ requestId, material }) {
   if (!Array.isArray(material.languages) || material.languages.length === 0) {
     throw new TypeError("modern birth requires eventual spoken languages");
   }
+  if (!Array.isArray(material.raisedLanguages) || material.raisedLanguages.length === 0) {
+    throw new TypeError("modern birth requires raised languages");
+  }
   const ordinal = positiveOrdinal(requestId);
   const family = valueAt(material.familyNames, Math.floor((ordinal - 1) / 6) + 1);
   const femaleGiven = valueAt(material.femaleGivenNames, ordinal);
@@ -68,6 +71,7 @@ export function composeModernSubjectIdentity({ requestId, material }) {
     maleName: fullName(maleGiven, family, material.nameOrder),
     birthCity: material.birthCity,
     languages: Object.freeze([...material.languages]),
+    raisedLanguages: Object.freeze([...material.raisedLanguages]),
     appearanceContext,
   });
 }
