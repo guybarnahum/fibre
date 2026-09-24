@@ -31,7 +31,7 @@ test("spec reporter keeps test lines and collapses the Node footer to one summar
   assert.equal(output, [
     "✔ R3 regulation reaches cognition (3.293125ms)",
     "✔ R3 regulation differs by Thread (0.374ms)",
-    "ℹ tests 2, suites 0, pass 2, fail 0, cancelled 0, skipped 0, todo 0, duration_ms 68.9985",
+    "tests 2, suites 0, pass 2, fail 0, cancelled 0, skipped 0, todo 0, duration_ms 68.9985",
     "",
   ].join("\n"));
 });
@@ -69,5 +69,5 @@ test("spec reporter preserves failure details", async () => {
   ], { color: false });
 
   assert.match(output, /^✖ R3 failed boundary \(1\.2ms\)\n  Error: boom/mu);
-  assert.match(output, /ℹ tests 1, suites 0, pass 0, fail 1, cancelled 0, skipped 0, todo 0, duration_ms 5\n$/u);
+  assert.match(output, /tests 1, suites 0, pass 0, fail 1, cancelled 0, skipped 0, todo 0, duration_ms 5\n$/u);
 });

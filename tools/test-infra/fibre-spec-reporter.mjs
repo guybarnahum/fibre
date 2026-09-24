@@ -50,7 +50,7 @@ export function renderSpecSummary(summary, { color = false } = {}) {
   const todo = counts.todo ?? 0;
   const durationMs = summary?.duration_ms ?? 0;
   const state = (label, value, code) => paint(`${label} ${value}`, code, color && value > 0);
-  return `ℹ tests ${tests}, suites ${suites}, ${state("pass", passed, GREEN)}, ${state("fail", failed, RED)}, ${state("cancelled", cancelled, RED)}, ${state("skipped", skipped, YELLOW)}, ${state("todo", todo, YELLOW)}, duration_ms ${durationMs}\n`;
+  return `tests ${tests}, suites ${suites}, ${state("pass", passed, GREEN)}, ${state("fail", failed, RED)}, ${state("cancelled", cancelled, RED)}, ${state("skipped", skipped, YELLOW)}, ${state("todo", todo, YELLOW)}, duration_ms ${durationMs}\n`;
 }
 
 export async function* fibreSpecReporter(
