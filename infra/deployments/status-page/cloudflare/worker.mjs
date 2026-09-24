@@ -44,7 +44,7 @@ async function probeInfra(env, timeoutMs) {
     const level = payload?.level;
     return {
       ...base,
-      status:level === "normal" && payload?.stale !== true ? "operational" : "degraded",
+      status:["normal","elevated"].includes(level) && payload?.stale !== true ? "operational" : "degraded",
       description:level === "critical"
         ? "Infrastructure availability is critical"
         : level === "elevated"
