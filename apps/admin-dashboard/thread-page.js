@@ -191,3 +191,9 @@ window.addEventListener("fibre:thread-identity-updated", (event) => {
   if (threadId === null || threadId !== renderedThreadId) return;
   void renderThreadPage(threadId);
 });
+
+window.addEventListener("fibre:thread-updated", (event) => {
+  const threadId = event?.detail?.threadId ?? null;
+  if (threadId === null || threadId !== renderedThreadId) return;
+  void renderThreadPage(threadId);
+});
