@@ -239,6 +239,7 @@ function normalizePublication(candidate) {
 
 export function normalizeGenesisManifest(candidate) {
   assertPlainObject("manifest", candidate);
+  const hasRaisedLanguages = Object.hasOwn(candidate, "raisedLanguages");
   assertExactKeys("manifest", candidate, [
     "genesisId",
     "threadId",
@@ -249,6 +250,7 @@ export function normalizeGenesisManifest(candidate) {
     "parentOrAncestorRefs",
     "genomeRef",
     "cognition",
+    ...(hasRaisedLanguages ? ["raisedLanguages"] : []),
     "publication",
     "createdAt",
   ]);
@@ -260,6 +262,12 @@ export function normalizeGenesisManifest(candidate) {
   assertStringArray("manifest.sourceBundleRefs", candidate.sourceBundleRefs);
   assertStringArray("manifest.parentOrAncestorRefs", candidate.parentOrAncestorRefs);
   if (candidate.genomeRef !== null) assertId("manifest.genomeRef", candidate.genomeRef);
+  if (hasRaisedLanguages) {
+    assertStringArray("manifest.raisedLanguages", candidate.raisedLanguages);
+    if (candidate.raisedLanguages.length < 1 || candidate.raisedLanguages.length > 3) {
+      throw new TypeError("manifest.raisedLanguages must contain 1 to 3 languages");
+    }
+  }
   normalizeGenesisCognition(candidate.cognition);
   const publication = normalizePublication(candidate.publication);
   if (publication.status === "published" && publication.civilRegistration !== undefined) {
