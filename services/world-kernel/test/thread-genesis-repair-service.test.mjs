@@ -78,9 +78,9 @@ function fixture() {
           presentation:{
             ...publicIdentity,
             visualIdentity:{ referenceObjectRefs:[objectRef] },
-            identityCard:{ officialPhotoMediaRef:officialMediaId },
+            identityCard:null,
           },
-          media:{ assets:[{ mediaId:officialMediaId, status:"ready", locator:"identity_photo_1" }] },
+          media:{ assets:[] },
         };
         return { complete:true, stage:"complete" };
       },
@@ -130,22 +130,22 @@ test("R2-R3 rebuild missing Presentation before existing visual reconciliation",
   assert.equal(result.after.health, "healthy");
 });
 
-test("R4 keeps authoritative identity complete while public Presentation stays a projection", async () => {
+test("R4 canonical visual health follows the canonical projection, not FIN media", async () => {
   const { service, state, threadId } = fixture();
   state.presentation = {
     presentation:{
       subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
       civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
       visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
-      identityCard:{ officialPhotoMediaRef:"media_identity_1" },
+      identityCard:null,
     },
-    media:{ assets:[{ mediaId:"media_identity_1", status:"ready", locator:"identity_photo_1" }] },
+    media:{ assets:[] },
   };
   const diagnosis = await service.diagnose(threadId);
   assert.equal(diagnosis.identity.name, "Repair Thread", "World name must remain authoritative");
   assert.equal(diagnosis.identity.sex, "female", "World sex must remain authoritative");
   assert.equal(diagnosis.identity.fibreIdentityNumber, "ABCD-12-EFGH", "civil identity must remain authoritative");
-  assert.equal(diagnosis.presentation.portraitObjectRef, "identity_photo_1", "published portrait must stay discoverable");
+  assert.equal(diagnosis.presentation.portraitObjectRef, "visual_identity_reference_1", "canonical root was not reported");
   assert.equal(diagnosis.findings.some((entry) => entry.code === "SEX_PRESENTATION_MISSING"), false, "public Presentation must not become sex authority");
   assert.equal(diagnosis.health, "healthy", "complete authoritative identity should be healthy");
 });
