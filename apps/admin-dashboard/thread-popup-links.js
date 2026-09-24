@@ -154,6 +154,12 @@ window.addEventListener("fibre:thread-identity-updated", (event) => {
   void openThread(threadId);
 });
 
+window.addEventListener("fibre:thread-updated", (event) => {
+  const threadId = event?.detail?.threadId ?? null;
+  if (threadId !== openThreadId || !dialog?.open) return;
+  void openThread(threadId);
+});
+
 new MutationObserver((mutations) => {
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
