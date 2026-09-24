@@ -77,19 +77,14 @@ function memoryBrief(memory, {
 function officialIdPhotoBrief(targetAgeYears) {
   return {
     description: [
-      "Generate a neutral administrative identity photograph of the person in the supplied canonical reference image.",
+      "Using the supplied canonical reference image, generate a neutral head-and-shoulders administrative portrait of the same person.",
       ageInstruction(targetAgeYears),
-      "Use a calm, natural expression.",
     ].join(" "),
     constraints: [
-      "Treat the supplied canonical reference image as the complete likeness anchor; do not re-derive appearance from ancestry, family, demographic, or phenotype text.",
-      "Preserve the same recognizable person while age-transforming naturally to the requested target age.",
-      "Use front-facing or almost front-facing head-and-shoulders administrative ID-photo framing.",
-      "Use a plain neutral background, even administrative lighting, ordinary focus, natural skin detail, and minimal styling.",
-      "Keep expression, pose, grooming, and clothing ordinary and understated.",
-      "Keep the result realistic, dignified, and suitable for an identity credential.",
-      "Do not add text, numbers, cards, badges, QR codes, signatures, watermarks, borders, or document graphics to the image itself.",
-      "This generated photograph is derived presentation media, not embodiment, identity, historical, or autobiographical evidence.",
+      "The supplied reference image is the complete likeness authority; preserve that person's recognizable identity.",
+      "Use a plain neutral background, even lighting, ordinary grooming and clothing, and a calm natural expression.",
+      "Keep the result realistic and suitable for an identity credential.",
+      "Do not add text, cards, badges, QR codes, signatures, watermarks, borders, or document graphics.",
     ],
   };
 }
