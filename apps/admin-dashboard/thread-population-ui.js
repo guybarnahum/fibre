@@ -17,6 +17,7 @@ let population = [];
 let stillborn = [];
 let sortState = { key:"lastActivity", direction:"desc" };
 const populationPortraitCache = new Map();
+let populationPortraitPreview = null;
 const populationPortraitObserver = typeof IntersectionObserver === "function"
   ? new IntersectionObserver((entries) => {
       for (const entry of entries) {
@@ -121,6 +122,38 @@ async function resolvePopulationPortrait(threadId) {
   return pending;
 }
 
+function hidePopulationPortraitPreview() {
+  if (populationPortraitPreview) populationPortraitPreview.hidden = true;
+}
+
+function showPopulationPortraitPreview(portrait, url, name) {
+  if (!url) return;
+  if (!populationPortraitPreview) {
+    populationPortraitPreview = document.createElement("div");
+    populationPortraitPreview.className = "thread-population-portrait-preview";
+    populationPortraitPreview.hidden = true;
+    document.body.append(populationPortraitPreview);
+  }
+  const image = document.createElement("img");
+  image.src = url;
+  image.alt = `${name ?? "Thread"} portrait preview`;
+  populationPortraitPreview.replaceChildren(image);
+  populationPortraitPreview.hidden = false;
+
+  const size = 200;
+  const gap = 10;
+  const rect = portrait.getBoundingClientRect();
+  const left = rect.right + gap + size <= window.innerWidth
+    ? rect.right + gap
+    : Math.max(8, rect.left - size - gap);
+  const top = Math.min(
+    Math.max(8, rect.top + (rect.height - size) / 2),
+    Math.max(8, window.innerHeight - size - 8),
+  );
+  populationPortraitPreview.style.left = `${Math.round(left)}px`;
+  populationPortraitPreview.style.top = `${Math.round(top)}px`;
+}
+
 function setPopulationPortrait(portrait, url, name) {
   portrait.replaceChildren();
   portrait.removeAttribute("role");
@@ -141,7 +174,14 @@ function setPopulationPortrait(portrait, url, name) {
   portrait.setAttribute("role", "button");
   portrait.tabIndex = 0;
   portrait.append(image);
-  image.addEventListener("error", () => setPopulationPortrait(portrait, null, name), { once:true });
+  portrait.addEventListener("pointerenter", () => showPopulationPortraitPreview(portrait, url, name));
+  portrait.addEventListener("pointerleave", hidePopulationPortraitPreview);
+  portrait.addEventListener("focus", () => showPopulationPortraitPreview(portrait, url, name));
+  portrait.addEventListener("blur", hidePopulationPortraitPreview);
+  image.addEventListener("error", () => {
+    hidePopulationPortraitPreview();
+    setPopulationPortrait(portrait, null, name);
+  }, { once:true });
 }
 
 async function hydratePopulationPortrait(portrait) {
@@ -498,6 +538,7 @@ function renderSortHeaders() {
 }
 
 function renderPopulation() {
+  hidePopulationPortraitPreview();
   populationPortraitObserver?.disconnect();
   const ordered = [...population].sort((left, right) => compare(left, right, sortState.key, sortState.direction));
   rows.replaceChildren(...ordered.map(threadRow));
@@ -753,6 +794,23 @@ for (const control of document.querySelectorAll("[data-thread-sort]")) {
     renderPopulation();
   });
 }
+
+function refreshPopulationAfterThreadChange(event) {
+  const threadId = event?.detail?.threadId ?? null;
+  if (!active || populationMode !== "threads" || typeof threadId !== "string") return;
+  populationPortraitCache.delete(threadId);
+  void loadPopulation();
+}
+
+for (const eventName of [
+  "fibre:thread-identity-updated",
+  "fibre:fid-card-reissued",
+  "fibre:thread-updated",
+]) {
+  window.addEventListener(eventName, refreshPopulationAfterThreadChange);
+}
+window.addEventListener("scroll", hidePopulationPortraitPreview, true);
+window.addEventListener("resize", hidePopulationPortraitPreview);
 
 const initialMode = new URLSearchParams(location.search).get("mode");
 if (initialMode === "threads") enterThreads();
