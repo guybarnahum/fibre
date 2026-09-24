@@ -37,4 +37,12 @@ Force the configured secondary image provider without waiting for a primary fail
 npm run test:asset-live:cloudflare -- --provider-mode secondary
 ```
 
+To exercise the BFL → OpenAI route specifically, make BFL the fixture's explicit primary and force its configured secondary:
+
+```bash
+npm run test:asset-live:cloudflare -- \
+  --primary-profile bfl-flux-2-pro-v1 \
+  --provider-mode secondary
+```
+
 The fixture endpoints are local/e2e-only under `P3_FIXTURE_MODE=1`. Paid generation is never part of ordinary repository validation or CI.
