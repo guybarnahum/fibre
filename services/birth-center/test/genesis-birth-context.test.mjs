@@ -18,7 +18,7 @@ test("Genesis carries explicit sex place and heritage into life context and embo
   const slot = cohort.slots[0];
   const worldSpec = fixture(slot.worldSpecPath);
   const genome = fixture(slot.genomePath);
-  const appearanceContext = "This family context permits a broad range of West Asian and Caucasus-region appearance, including substantial variation in complexion, hair texture and eye color; it does not imply a single facial type or stereotyped phenotype.";
+  const appearanceContext = "Concrete inherited phenotype selected for this individual: medium olive-brown skin; dense near-black wavy hair; deep-brown almond-shaped eyes; balanced oval face; dense gently arched brows; medium-width straight nasal bridge with rounded tip; medium-full balanced lips; softly defined jaw with rounded chin; lean-to-average frame.";
   const subjectIdentity = {
     femaleName: "Mariam Beridze",
     maleName: "Giorgi Beridze",
@@ -71,6 +71,6 @@ test("Genesis carries explicit sex place and heritage into life context and embo
   });
   const visualDescription = visual.specification.subject.description;
   assert.match(visualDescription, /adult female person/u);
-  assert.match(visualDescription, /broad family appearance prior/u);
+  assert.match(visualDescription, /Concrete inherited phenotype selected for this individual/u);
   assert.doesNotMatch(visualDescription, /Georgian Jewish/u, "heritage label must not become a portrait prompt");
 });
