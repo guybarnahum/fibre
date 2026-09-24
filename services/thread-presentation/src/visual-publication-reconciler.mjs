@@ -1,12 +1,6 @@
-import {
-  FIBRE_IDENTITY_CARD_CURRENT_VERSION,
-  THREAD_PRESENTATION_STREAM_VERSION,
-} from "fibre/world-kernel/thread-presentation-contracts";
+import { THREAD_PRESENTATION_STREAM_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
 import { planCurrentPresentDepiction } from "./current-present-depiction.mjs";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
-
-const TERMINAL_WORKFLOW_STATUSES = new Set(["errored", "terminated"]);
-const ASSET_GENERATION_WORKFLOW = "asset_generation_v1";
 
 function assertId(name, value) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -28,16 +22,6 @@ function optionalRegenerationKey(value) {
     throw new TypeError("regenerationKey must be a non-empty string when supplied");
   }
   return value.trim();
-}
-
-function latestIsoTimestamp(name, values) {
-  const checked = values
-    .filter((value) => value !== null && value !== undefined)
-    .map((value, index) => assertIsoTimestamp(`${name}[${index}]`, value));
-  if (checked.length === 0) throw new TypeError(`${name} requires at least one ISO timestamp`);
-  return checked.reduce((latest, candidate) => (
-    Date.parse(candidate) > Date.parse(latest) ? candidate : latest
-  ));
 }
 
 function requireFunction(name, value) {
@@ -121,41 +105,6 @@ function suppliedEmbodimentReader(embodiment) {
   });
 }
 
-async function terminalGenerationError({ infra, threadId, mediaId, active }) {
-  const status = active?.dispatch?.workflowStatus;
-  if (!TERMINAL_WORKFLOW_STATUSES.has(status)) return null;
-  let workflow = null;
-  if (typeof infra?.workflows?.get === "function") {
-    try {
-      workflow = await infra.workflows.get(ASSET_GENERATION_WORKFLOW, active.demand.job.jobId);
-    } catch {}
-  }
-  const detail = workflow?.error?.message ?? "no generation failure detail reported";
-  const error = new Error(
-    `Thread ${threadId} official identity-photo generation ${active.demand.job.jobId} ended terminally (${status}): ${detail}`,
-  );
-  error.name = "PresentationAssetGenerationTerminalError";
-  error.code = "PRESENTATION_ASSET_GENERATION_TERMINAL";
-  error.activityCategory = "generation";
-  error.retryable = false;
-  error.threadId = threadId;
-  error.mediaId = mediaId;
-  error.jobId = active.demand.job.jobId;
-  error.workflowStatus = status;
-  return error;
-}
-
-function reconciliationFailure(error) {
-  const code = typeof error?.code === "string" && error.code !== ""
-    ? error.code
-    : "PRESENTATION_RECONCILIATION_FAILED";
-  return Object.freeze({
-    category: typeof error?.activityCategory === "string" ? error.activityCategory : "reconciliation",
-    code,
-    retryable: error?.retryable === true,
-  });
-}
-
 async function retainLatestPresent(catalog, channelId, event, channelRecord) {
   const prior = channelRecord?.currentPresent;
   if (Number.isSafeInteger(prior?.sequence) && prior.sequence > event.sequence) return prior;
@@ -234,8 +183,7 @@ export function createThreadPresentationVisualPublicationReconciler({
   selectProviderProfile,
   createDemandService,
   createVisualRewrite,
-  createIdentityRewrite,
-  planSlots,
+  ensureFid,
   activityRecorder = null,
 } = {}) {
   if (!presentationServer
@@ -247,11 +195,9 @@ export function createThreadPresentationVisualPublicationReconciler({
   requireProviderSelector(selectProviderProfile);
   requireFunction("createDemandService", createDemandService);
   requireFunction("createVisualRewrite", createVisualRewrite);
-  requireFunction("createIdentityRewrite", createIdentityRewrite);
-  requireFunction("planSlots", planSlots);
+  requireFunction("ensureFid", ensureFid);
   const activity = optionalActivityRecorder(activityRecorder);
   const demandService = createDemandService({ infra });
-  const identityRewrite = createIdentityRewrite({ presentationServer });
 
   return Object.freeze({
     async reconcileAvailableEmbodiment({
@@ -288,121 +234,25 @@ export function createThreadPresentationVisualPublicationReconciler({
         channelId,
         embodimentId: embodiment.embodimentId,
       }), (entry) => entry?.reused !== true);
-      const projected = await presentationServer.getSnapshot(channelId);
-      if (projected === null) {
-        throw new Error(`Thread ${threadId} presentation disappeared during visual identity projection`);
-      }
-      const activeFid = projected.snapshot.presentation?.identityCard ?? null;
-      if (activeFid?.credentialVersion === FIBRE_IDENTITY_CARD_CURRENT_VERSION) {
-        return result(true, "complete", {
-          officialPhotoMediaId:null,
+
+      const fid = await ensureFid({
+        threadId,
+        idempotencyKey:`fid_ensure_${embodiment.embodimentId}_${embodiment.revision}`,
+      });
+      if (fid?.complete !== true) {
+        return result(false, "fid_pending", {
           visualReused:visual.reused === true,
-          identityReused:true,
           regenerationKey:normalizedRegenerationKey,
-          fidCredentialId:activeFid.credentialId,
-        });
-      }
-      const issuedAt = latestIsoTimestamp("identity media issuance authority time", [
-        observedAt,
-        projected.snapshot.presentation?.manifest?.generatedAt,
-        projected.snapshot.presentation?.civilIdentity?.registeredAt,
-      ]);
-      const identity = await runChangedStage(activity, {
-        ...context,
-        stage: "presentation.identity_media.ensure",
-        attempt: 1,
-        evidence: { embodimentId: embodiment.embodimentId, objectRef: canonicalObjectRef },
-      }, async () => identityRewrite.ensureOfficialIdentityMedia({
-        channelId,
-        issuedAt,
-      }), (entry) => entry?.reused !== true);
-      const current = await presentationServer.getSnapshot(channelId);
-      if (current === null) throw new Error(`Thread ${threadId} presentation disappeared during visual reconciliation`);
-
-      const slots = planSlots({
-        bundle: {
-          presentation: current.snapshot.presentation,
-          media: current.snapshot.media,
-          provenance: current.snapshot.provenance,
-        },
-        snapshotObjectRef: current.pointer.objectRef,
-        snapshotDigest: current.pointer.snapshotDigest,
-      });
-      const mediaId = identity.identityCard.officialPhotoMediaRef;
-      const stableDemandRequestedAt = identity.identityCard.issuedAt === undefined
-        ? issuedAt
-        : assertIsoTimestamp("official identity-photo demand requestedAt", identity.identityCard.issuedAt);
-      const slot = slots.slots.find((entry) => entry.mediaId === mediaId);
-      if (!slot) throw new Error(`Thread ${threadId} official identity-photo slot was not planned`);
-
-      const common = {
-        officialPhotoMediaId: mediaId,
-        visualReused: visual.reused === true,
-        identityReused: identity.reused === true,
-        regenerationKey: normalizedRegenerationKey,
-      };
-      if (slot.status === "ready") {
-        return result(true, "complete", common);
-      }
-      if (slot.status !== "missing") {
-        return result(false, "official_photo_unavailable", {
-          ...common,
-          slotStatus: slot.status,
+          fidState:fid?.state ?? "pending",
+          derivation:fid?.derivation ?? null,
         });
       }
 
-      const providerProfile = selectProviderProfile({
-        requiresReferenceObjects: slot.referenceObjectRefs.length > 0,
-      });
-      const activityMetadata = {
-        ...context,
-        stage: "presentation.official_photo.generate",
-        attempt: 1,
-        evidence: {
-          embodimentId: embodiment.embodimentId,
-          objectRef: canonicalObjectRef,
-          regenerationKey: normalizedRegenerationKey,
-        },
-      };
-      let demand;
-      let active;
-      try {
-        demand = await demandService.reconcile({
-          scope: { entityKind: "thread", entityRef: threadId },
-          slots: [slot],
-          requestedAt: stableDemandRequestedAt,
-          providerProfile,
-          regenerationKey: normalizedRegenerationKey,
-        });
-        active = demand.projection.demands.find((entry) => (
-          entry.demand.current
-          && entry.demand.job.context?.kind === "thread_presentation_media"
-          && entry.demand.job.context.mediaId === mediaId
-        ));
-        if (!active) throw new Error(`Thread ${threadId} official identity-photo demand did not become current`);
-        const terminal = await terminalGenerationError({ infra, threadId, mediaId, active });
-        if (terminal !== null) throw terminal;
-        if (demand.changed !== false) {
-          await bestEffortRecord(activity, { ...activityMetadata, status: "succeeded" });
-        }
-      } catch (error) {
-        if (demand?.changed !== false && error?.suppressActivity !== true) {
-          await bestEffortRecord(activity, {
-            ...activityMetadata,
-            status: "failed",
-            message: error instanceof Error ? error.message : String(error),
-            error: reconciliationFailure(error),
-          });
-        }
-        throw error;
-      }
-
-      return result(false, "official_photo_pending", {
-        ...common,
-        providerProfile,
-        demandId: active.demand.demandId,
-        jobId: active.demand.job.jobId,
-        workflowStatus: active.dispatch?.workflowStatus ?? null,
+      return result(true, "complete", {
+        visualReused:visual.reused === true,
+        regenerationKey:normalizedRegenerationKey,
+        fidCredentialId:fid.credential?.credentialId ?? null,
+        fidRevision:fid.credential?.revision ?? null,
       });
     },
     publishCurrentPresent(input = {}) {
