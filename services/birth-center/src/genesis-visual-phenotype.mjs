@@ -197,9 +197,14 @@ export function visualPhenotypeLociForBirth({ threadId, originMode, parentIds = 
 
 function canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContext = null }) {
   const normalizedAppearance = optionalText("appearanceContext", appearanceContext);
+  const hasConcreteInheritedPhenotype = normalizedAppearance?.startsWith(
+    "Concrete inherited phenotype selected for this individual:",
+  ) === true;
   const subjectDescription = [
     `adult ${normalizeGenesisSex(sex)} person`,
-    ...(normalizedAppearance === null ? [] : [`broad family appearance prior: ${normalizedAppearance}`]),
+    ...(normalizedAppearance === null ? [] : [
+      `${hasConcreteInheritedPhenotype ? "concrete family-grounded inherited appearance" : "broad family appearance prior"}: ${normalizedAppearance}`,
+    ]),
     ...loci.map((locus) => locus.value),
   ].join("; ");
   if (encoder.encode(subjectDescription).byteLength < 500) {
@@ -210,7 +215,9 @@ function canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContex
     specification: Object.freeze({
       subject: Object.freeze({ partyId: threadId, description: subjectDescription }),
       method: "canonical synthetic portrait specification from bounded family appearance evidence plus deterministic individualizing textual loci",
-      description: "Create one coherent individual inside the broad family appearance envelope. Preserve sex and that person's chosen morphology, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. The family prior constrains inherited physical plausibility; the individualizing loci add person-specific proportion, asymmetry, hairline, build, and stable-mark variation without overriding that morphology envelope. Do not infer culture, religion, nationality, heritage, personality or worth from appearance. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25, mostly frontal, both ears and hairline visible, ordinary skin texture, even daylight-balanced illumination, and ordinary perspective without glamour or stylization drift.",
+      description: hasConcreteInheritedPhenotype
+        ? "Render the concrete inherited phenotype already selected for this individual; do not choose again from the broader family envelope and do not substitute generic/default skin, hair, eye, facial, nose, lip, jaw, or build traits. Preserve sex and that person's stated morphology, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. The family envelope is plausibility evidence only; the concrete selected phenotype is the identity authority. The individualizing loci add person-specific proportion, asymmetry, hairline, build, and stable-mark variation without overriding the selected inherited morphology. Do not infer culture, religion, nationality, heritage, personality or worth from appearance. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25, mostly frontal, both ears and hairline visible, ordinary skin texture, even daylight-balanced illumination, and ordinary perspective without glamour or stylization drift."
+        : "Create one coherent individual inside the broad family appearance envelope. Preserve sex and that person's chosen morphology, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. The family prior constrains inherited physical plausibility; the individualizing loci add person-specific proportion, asymmetry, hairline, build, and stable-mark variation without overriding that morphology envelope. Do not infer culture, religion, nationality, heritage, personality or worth from appearance. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25, mostly frontal, both ears and hairline visible, ordinary skin texture, even daylight-balanced illumination, and ordinary perspective without glamour or stylization drift.",
       model: "replaceable-renderer",
     }),
   });
