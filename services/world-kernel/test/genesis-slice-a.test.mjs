@@ -7,6 +7,7 @@ import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
 import { openWorldStore } from "../src/persistence.mjs";
+import { ThreadDirectoryStore } from "../src/thread-directory-store.mjs";
 import {
   GenesisConflictError,
   GenesisStore,
@@ -159,6 +160,26 @@ test("Slice A WorldSpec is immutable, factual-shaped, and rejects extra personal
     );
     assert.equal(created.recordDigest, genesisRecordDigest("world_spec", created.record));
     store.close();
+  }));
+
+test("Directory keeps raised languages distinct from spoken languages", () =>
+  withDatabase((databasePath) => {
+    const storage = localWorldStateStorage(databasePath);
+    const genesis = new GenesisStore(storage);
+    genesis.recordWorldSpec(worldSpec());
+    const thread = genesisThread();
+    thread.identity.languages = ["English", "Korean"];
+    genesis.publishBirth(registeredBirth(thread, publishedManifest(thread, {
+      raisedLanguages:["English"],
+    })));
+
+    const directory = new ThreadDirectoryStore(storage);
+    const entry = directory.getEntry(thread.threadId);
+    assert.deepEqual(entry.languages, ["English", "Korean"], "spoken languages were altered");
+    assert.deepEqual(entry.raisedAs.languages, ["English"], "raised languages collapsed into spoken languages");
+
+    directory.close();
+    genesis.close();
   }));
 
 test("Raised-language correction preserves the Thread and original Genesis evidence", () =>
