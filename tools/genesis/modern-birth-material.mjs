@@ -31,16 +31,44 @@ function fullName(given, family, order) {
   throw new TypeError(`unsupported modern birth name order ${String(order)}`);
 }
 
+const APPEARANCE_DOMAINS = Object.freeze(["skin", "hair", "eyes", "face", "brows", "nose", "mouth", "jaw", "build"]);
+
+function appearanceValue(requestId, domain, values) {
+  if (!Array.isArray(values) || values.length === 0) {
+    throw new TypeError(`modern birth appearance material ${domain} must be non-empty`);
+  }
+  const digest = createHash("sha256").update(`${requestId}:appearance:${domain}`).digest("hex").slice(0, 12);
+  return values[Number.parseInt(digest, 16) % values.length];
+}
+
+function composeAppearanceContext(requestId, material) {
+  const family = typeof material.appearanceContext === "string" && material.appearanceContext.trim() !== ""
+    ? material.appearanceContext.trim()
+    : null;
+  if (!material.appearanceLoci) return family;
+  const concrete = APPEARANCE_DOMAINS.map((domain) => appearanceValue(
+    requestId,
+    domain,
+    material.appearanceLoci[domain],
+  ));
+  return [
+    `Concrete inherited phenotype selected for this individual: ${concrete.join("; ")}.`,
+    ...(family === null ? [] : [`Family appearance envelope used only as plausibility evidence: ${family}`]),
+  ].join(" ");
+}
+
 export function composeModernSubjectIdentity({ requestId, material }) {
   if (!material || typeof material !== "object") throw new TypeError("modern birth material is required");
   const ordinal = positiveOrdinal(requestId);
   const family = valueAt(material.familyNames, Math.floor((ordinal - 1) / 6) + 1);
   const femaleGiven = valueAt(material.femaleGivenNames, ordinal);
   const maleGiven = valueAt(material.maleGivenNames, ordinal, 2);
+  const appearanceContext = composeAppearanceContext(requestId, material);
   return Object.freeze({
     femaleName: fullName(femaleGiven, family, material.nameOrder),
     maleName: fullName(maleGiven, family, material.nameOrder),
     birthCity: material.birthCity,
+    ...(appearanceContext === null ? {} : { appearanceContext }),
   });
 }
 
