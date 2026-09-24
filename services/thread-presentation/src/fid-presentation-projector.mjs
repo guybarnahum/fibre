@@ -216,6 +216,27 @@ function samePublishedMedia(left, right) {
     && JSON.stringify(left?.sourceReferences ?? []) === JSON.stringify(right?.sourceReferences ?? []);
 }
 
+function sameReadyEvent(event, media) {
+  return event?.kind === "media.ready"
+    && event?.provenanceRef === media.provenanceRef
+    && event?.payload?.mediaId === media.mediaId
+    && event?.payload?.objectRef === media.locator
+    && event?.payload?.mediaType === media.mediaType
+    && event?.payload?.digest === media.sha256
+    && JSON.stringify(event?.sourceReferences ?? []) === JSON.stringify(media.sourceReferences ?? []);
+}
+
+async function existingReadyEvent(presentationServer, channelId, media) {
+  let after = 0;
+  for (;;) {
+    const page = await presentationServer.readEvents({ channelId, after, limit:100 });
+    const found = page.find((event) => sameReadyEvent(event, media));
+    if (found) return found;
+    if (page.length < 100) return null;
+    after = page.at(-1).sequence;
+  }
+}
+
 function alreadyProjectsActiveFid(bundle, active, visibility) {
   const card = bundle.presentation.identityCard;
   if (active === null) return card === null;
@@ -339,7 +360,9 @@ async function requireStoredMedia(infra, active) {
 export function createFidPresentationProjectionService({ presentationServer, infra } = {}) {
   requireInfraCapabilities(infra, "objects", "catalog");
   if (!presentationServer || typeof presentationServer.getSnapshot !== "function"
-    || typeof presentationServer.publishSnapshot !== "function" || typeof presentationServer.appendEvent !== "function") {
+    || typeof presentationServer.publishSnapshot !== "function"
+    || typeof presentationServer.appendEvent !== "function"
+    || typeof presentationServer.readEvents !== "function") {
     throw new TypeError("FID presentation projection requires a PresentationServer");
   }
 
@@ -373,6 +396,11 @@ export function createFidPresentationProjectionService({ presentationServer, inf
             if (!samePublishedMedia(prior, media)) {
               throw new Error(`active FID ${part} media changed under the same credential`);
             }
+            continue;
+          }
+          const priorEvent = await existingReadyEvent(presentationServer, channelId, media);
+          if (priorEvent !== null) {
+            events.push({ media, event:priorEvent });
             continue;
           }
           const accepted = await presentationServer.appendEvent({
