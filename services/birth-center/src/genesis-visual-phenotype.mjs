@@ -72,6 +72,71 @@ const LOCI = Object.freeze({
 });
 
 const ORDER = Object.freeze(Object.keys(LOCI));
+
+const CONTEXTUAL_INDIVIDUALITY_LOCI = Object.freeze({
+  faceProportion: Object.freeze([
+    "balanced facial length and width with slightly fuller left mid-cheek than right",
+    "slightly longer-than-wide facial proportions with moderate cheek width and a subtly shorter right lower face",
+    "slightly broader midface with balanced upper-to-lower face proportions and mild left-right cheek asymmetry",
+    "oval overall proportions with a gently tapered lower face and a subtly fuller right cheek",
+  ]),
+  eyeSpacing: Object.freeze([
+    "medium-spaced eyes with the left upper lid resting slightly lower than the right",
+    "slightly wide-set eyes with a subtly deeper right upper-lid fold",
+    "medium-to-close eye spacing with mild asymmetry in the outer-corner height",
+    "medium-spaced eyes with a slightly more open left palpebral aperture",
+  ]),
+  brows: Object.freeze([
+    "natural brows with the left arch resting slightly higher than the right",
+    "moderately full brows with a subtly shorter right tail",
+    "mostly level brows with a small natural break over the left pupil",
+    "softly arched brows with mild asymmetry at the inner corners",
+  ]),
+  noseDetail: Object.freeze([
+    "subtle left-right nostril asymmetry with a softly rounded tip",
+    "nearly straight nasal alignment with a faint rightward tip deviation",
+    "softly defined nasal tip with the left nostril sitting marginally higher",
+    "small natural asymmetry through the lower nose without changing the family morphology envelope",
+  ]),
+  mouthDetail: Object.freeze([
+    "resting mouth with the right corner marginally higher than the left",
+    "balanced lip closure with a subtly fuller lower lip and mild left-right asymmetry",
+    "soft cupid's-bow definition with the left upper-lip peak slightly higher",
+    "medium resting mouth width with a faintly deeper smile line on the right",
+  ]),
+  jawDetail: Object.freeze([
+    "balanced lower-face taper with a rounded chin and slightly stronger left jaw definition",
+    "softly defined jaw corners with a rounded chin and mild rightward chin offset",
+    "moderate jaw definition with the left angle sitting slightly higher",
+    "gently tapered lower face with a rounded chin and subtle left-right asymmetry",
+  ]),
+  hairline: Object.freeze([
+    "natural hairline with a small left-temple irregularity",
+    "softly rounded natural hairline with a slight right-side cowlick",
+    "natural hairline with a subtle central asymmetry",
+    "slightly uneven natural hairline with a small left frontal cowlick",
+  ]),
+  ears: Object.freeze([
+    "the left ear sits marginally higher than the right",
+    "the right upper ear is slightly more prominent than the left",
+    "the left upper ear has a subtle outward flare",
+    "the right ear sits marginally closer to the head",
+  ]),
+  build: Object.freeze([
+    "lean-to-average skeletal frame with relaxed shoulders and a proportionate neck",
+    "compact average frame with level shoulders and a medium-length neck",
+    "slender-to-average frame with gently sloped shoulders",
+    "average-to-broad skeletal frame with relaxed shoulders and a proportionate neck",
+  ]),
+  marks: Object.freeze([
+    "small pale diagonal scar above the outer left eyebrow",
+    "small dark mole below the right cheekbone",
+    "faint narrow scar near the left side of the chin",
+    "two small freckles close together below the outer right eye",
+  ]),
+});
+
+const CONTEXTUAL_ORDER = Object.freeze(Object.keys(CONTEXTUAL_INDIVIDUALITY_LOCI));
 const encoder = new TextEncoder();
 
 function nonEmpty(name, value) {
@@ -89,17 +154,23 @@ function indexFor(seed, domain, length) {
   return Number.parseInt(digest.slice(0, 8), 16) % length;
 }
 
-function locusForOwner(ownerId, domain) {
-  return LOCI[domain][indexFor(ownerId, domain, LOCI[domain].length)];
+function locusForOwner(ownerId, domain, table = LOCI) {
+  return table[domain][indexFor(ownerId, domain, table[domain].length)];
 }
 
-export function deNovoVisualPhenotypeLoci({ threadId } = {}) {
-  const ownerId = nonEmpty("threadId", threadId);
-  return Object.freeze(ORDER.map((domain) => Object.freeze({
+function lociForOwner(ownerId, order, table) {
+  return Object.freeze(order.map((domain) => Object.freeze({
     domain,
-    value: locusForOwner(ownerId, domain),
+    value: locusForOwner(ownerId, domain, table),
     provenance: Object.freeze({ kind: "de_novo", sourceOwnerId: null, mutationRef: null }),
   })));
+}
+
+export function deNovoVisualPhenotypeLoci({ threadId, appearanceContext = null } = {}) {
+  const ownerId = nonEmpty("threadId", threadId);
+  return optionalText("appearanceContext", appearanceContext) === null
+    ? lociForOwner(ownerId, ORDER, LOCI)
+    : lociForOwner(ownerId, CONTEXTUAL_ORDER, CONTEXTUAL_INDIVIDUALITY_LOCI);
 }
 
 export function recombineVisualPhenotypeLoci({ threadId, parentIds } = {}) {
@@ -118,21 +189,18 @@ export function recombineVisualPhenotypeLoci({ threadId, parentIds } = {}) {
   }));
 }
 
-export function visualPhenotypeLociForBirth({ threadId, originMode, parentIds = [] } = {}) {
-  if (originMode === "de_novo") return deNovoVisualPhenotypeLoci({ threadId });
+export function visualPhenotypeLociForBirth({ threadId, originMode, parentIds = [], appearanceContext = null } = {}) {
+  if (originMode === "de_novo") return deNovoVisualPhenotypeLoci({ threadId, appearanceContext });
   if (originMode === "synthetic_lineage") return recombineVisualPhenotypeLoci({ threadId, parentIds });
   throw new TypeError(`unsupported Genesis visual phenotype origin mode ${String(originMode)}`);
 }
 
 function canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContext = null }) {
   const normalizedAppearance = optionalText("appearanceContext", appearanceContext);
-  const identityLoci = normalizedAppearance === null
-    ? loci
-    : loci.filter((locus) => locus.domain !== "skin" && locus.domain !== "hair");
   const subjectDescription = [
     `adult ${normalizeGenesisSex(sex)} person`,
     ...(normalizedAppearance === null ? [] : [`broad family appearance prior: ${normalizedAppearance}`]),
-    ...identityLoci.map((locus) => locus.value),
+    ...loci.map((locus) => locus.value),
   ].join("; ");
   if (encoder.encode(subjectDescription).byteLength < 500) {
     throw new Error("canonical visual phenotype is too thin for durable cross-age identity");
@@ -141,8 +209,8 @@ function canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContex
     policyRef: GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY,
     specification: Object.freeze({
       subject: Object.freeze({ partyId: threadId, description: subjectDescription }),
-      method: "canonical synthetic portrait specification from deterministic textual phenotype loci plus bounded family appearance evidence",
-      description: "Preserve sex and the listed geometry, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. When a broad family appearance prior is present, use it only to bound plausible skin/hair/appearance variation; do not infer culture, religion, nationality, heritage, personality or worth from appearance. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25, mostly frontal, both ears and hairline visible, ordinary skin texture, even daylight-balanced illumination, and ordinary perspective without glamour or stylization drift.",
+      method: "canonical synthetic portrait specification from bounded family appearance evidence plus deterministic individualizing textual loci",
+      description: "Create one coherent individual inside the broad family appearance envelope, then preserve that person's chosen morphology, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. The family prior constrains inherited physical plausibility; the individualizing loci add person-specific proportion, asymmetry, hairline, build, and stable-mark variation without overriding that morphology envelope. Do not infer culture, religion, nationality, heritage, personality or worth from appearance. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25, mostly frontal, both ears and hairline visible, ordinary skin texture, even daylight-balanced illumination, and ordinary perspective without glamour or stylization drift.",
       model: "replaceable-renderer",
     }),
   });
@@ -157,7 +225,7 @@ export function buildGenesisCanonicalVisualIdentity({
   heritage: _heritage = null,
   appearanceContext = null,
 } = {}) {
-  const loci = visualPhenotypeLociForBirth({ threadId, originMode, parentIds });
+  const loci = visualPhenotypeLociForBirth({ threadId, originMode, parentIds, appearanceContext });
   return canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContext });
 }
 
