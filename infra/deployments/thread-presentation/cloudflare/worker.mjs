@@ -189,17 +189,28 @@ async function publishP3Fixture({ bundle, presentationServer, objectRef = null, 
   return { ok: true, fixture: true, reused: false, threadId, channelId, lifecycleStatus: presentation.manifest.lifecycleStatus, snapshotVersion: result.pointer.snapshotVersion, snapshotDigest: result.pointer.snapshotDigest, cursor: result.pointer.sequence };
 }
 
-async function scheduleP3Media({ env, infra, presentationServer, threadId, mediaId }) {
+async function scheduleP3Media({ env, infra, presentationServer, threadId, mediaId, providerMode = "primary" }) {
+  if (!["primary", "secondary"].includes(providerMode)) throw new TypeError("providerMode must be primary or secondary");
   const slot = await p3Slot(presentationServer, { threadId, mediaId });
   const requestedAt = new Date().toISOString();
   const providerProfile = selectImageProviderProfile(assetGeneratorDeployment(env), { requiresReferenceObjects: slot.referenceObjectRefs.length > 0 });
+  const routedSlot = {
+    ...slot,
+    context:{ ...slot.context, imageProviderMode:providerMode },
+  };
   const demandService = createPresentationAssetDemandService({ infra });
-  const reconciled = await demandService.reconcile({ scope: { entityKind: "thread", entityRef: threadId }, slots: [slot], requestedAt, providerProfile });
+  const reconciled = await demandService.reconcile({
+    scope:{ entityKind:"thread", entityRef:threadId },
+    slots:[routedSlot],
+    requestedAt,
+    providerProfile,
+    regenerationKey:`fixture_provider_${providerMode}`,
+  });
   const current = reconciled.projection.demands.find((entry) => entry.demand.current && entry.demand.job.context?.kind === "thread_presentation_media" && entry.demand.job.context.mediaId === mediaId);
   if (!current) throw new Error(`fixture media demand ${mediaId} did not persist as current`);
   const service = createAssetGenerationService({ infra });
   const workflow = await service.status(current.demand.job.jobId);
-  return { ok: true, fixture: true, threadId, mediaId, providerProfile, demandId: current.demand.demandId, jobId: current.demand.job.jobId, objectRef: current.demand.job.outputObjectRef, workflow: workflow ?? current.dispatch };
+  return { ok: true, fixture: true, threadId, mediaId, providerProfile, providerMode, demandId: current.demand.demandId, jobId: current.demand.job.jobId, objectRef: current.demand.job.outputObjectRef, workflow: workflow ?? current.dispatch };
 }
 
 async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
@@ -215,7 +226,14 @@ async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
     if (!env.ASSET_GENERATION) return Response.json({ error: "asset_workflow_not_configured" }, { status: 503 });
     const body = await requestJson(request);
     if (body === null) return Response.json({ error: "invalid_json" }, { status: 400 });
-    try { return Response.json(await scheduleP3Media({ env, infra, presentationServer, threadId: nonEmpty("threadId", body.threadId), mediaId: nonEmpty("mediaId", body.mediaId) })); }
+    try { return Response.json(await scheduleP3Media({
+      env,
+      infra,
+      presentationServer,
+      threadId:nonEmpty("threadId", body.threadId),
+      mediaId:nonEmpty("mediaId", body.mediaId),
+      providerMode:body.providerMode ?? "primary",
+    })); }
     catch (error) { return Response.json({ error: "invalid_p3_generation_request", detail: error.message }, { status: 400 }); }
   }
   if (url.pathname === "/__p3/fixtures/can-tho" && request.method === "POST") {
