@@ -75,7 +75,6 @@ function memoryBrief(memory, {
 }
 
 function officialIdPhotoBrief(visualIdentity, targetAgeYears) {
-  threadVisualIdentityProjectionDigest(visualIdentity);
   return {
     description: [
       "Generated official identity photograph derived only from an authorized Thread visual-identity projection and its canonical reference image.",
