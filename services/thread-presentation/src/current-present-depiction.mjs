@@ -29,8 +29,6 @@ function presentBrief(present, visualIdentity, targetAgeYears) {
       ...(present.reason === null ? [] : [`Observed situation context: ${present.reason}`]),
       ...(present.mediatedContext === null ? [] : [`Mediated presence: ${present.mediatedContext}`]),
       people,
-      `Authorized subject appearance: ${visualIdentity.subjectDescription}`,
-      `Authorized rendering continuity: ${visualIdentity.renderDescription}`,
       targetAgeYears === null
         ? `The canonical identity reference depicts the same person at normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS}; preserve identity without asserting an unsupported exact age.`
         : `Preserve the canonical identity while age-transforming naturally from normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} to ${targetAgeYears} years old for this scene.`,
@@ -39,7 +37,7 @@ function presentBrief(present, visualIdentity, targetAgeYears) {
       "This image is a generated presentation reconstruction of an enacted current situation, not World evidence or a documentary photograph.",
       "Use only the supplied public scene facts; do not infer or depict private plans, regulation, emotion, memory, relationship meaning, or hidden participants.",
       "Observed situation context is not a claim about the Thread's private motive or feeling.",
-      "Use the supplied canonical visual-identity reference as the Thread's identity anchor; do not materially redesign the person.",
+      "Use the supplied canonical visual-identity reference as the complete likeness anchor; do not re-derive appearance from ancestry, family, demographic, or phenotype text.",
       "Do not add identifiable people beyond the publicly named participants.",
       "Avoid text overlays, labels, signatures, watermarks, or claims of authentic capture.",
     ],
