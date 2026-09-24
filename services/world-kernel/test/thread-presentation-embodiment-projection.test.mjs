@@ -17,10 +17,10 @@ function portrait({
   const specification = {
     subject: {
       partyId: threadId,
-      description: "A young adult with an oval face, warm brown eyes, dark wavy hair, and a small scar above the left eyebrow.",
+      description: "adult male person; broad family appearance prior: medium-brown skin and tightly curled dark hair occur in the extended family; softly angular oval face; wide-set deep-brown almond-shaped eyes; small pale diagonal scar above the outer left eyebrow",
     },
     method: "canonical synthetic portrait specification",
-    description: "Natural head-and-shoulders portrait with neutral expression, even frontal lighting, and faithful facial proportions.",
+    description: "Preserve sex and the listed geometry, proportions, stable marks, asymmetries, hairline, and other identity cues across age transformations. When a broad family appearance prior is present, use it only to bound plausible skin/hair/appearance variation; do not infer culture, religion, nationality, heritage, personality or worth from appearance. Treat age, grooming, hairstyle, clothing, expression, weight variation, and temporary injury as time-local appearance rather than replacements for canonical identity. Render a neutral head-and-shoulders reference at normalized age 25.",
     model: "replaceable-renderer",
   };
   return {
@@ -63,8 +63,11 @@ test("verified public canonical portrait image becomes the visual identity refer
   assert.equal(projected.embodimentId, embodiment.embodimentId);
   assert.equal(projected.embodimentRevision, 1);
   assert.equal(projected.specificationDigest, embodiment.specificationDigest);
-  assert.equal(projected.subjectDescription, embodiment.specification.subject.description);
-  assert.equal(projected.renderDescription, embodiment.specification.description);
+  assert.match(projected.subjectDescription, /softly angular oval face/);
+  assert.match(projected.subjectDescription, /small pale diagonal scar/);
+  assert.doesNotMatch(projected.subjectDescription, /broad family appearance prior/);
+  assert.doesNotMatch(projected.renderDescription, /culture, religion, nationality, heritage/);
+  assert.match(projected.renderDescription, /Preserve sex and the listed geometry/);
   assert.deepEqual(projected.sourceReferences, [
     embodiment.embodimentId,
     "evt_seed_thr_embodiment_projection_001",
