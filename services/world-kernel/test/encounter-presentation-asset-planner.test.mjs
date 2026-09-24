@@ -83,6 +83,12 @@ test("E4 objective Encounter Story can feed replaceable image or video generatio
     "rendering should consume the durable objective visualization lineage");
   assert.equal(image.brief.description.includes("protective of Noor"), false,
     "private witness experience must not enter objective rendering");
+  assert.equal(
+    image.brief.description.includes(visualIdentities[0].visualIdentity.subjectDescription)
+      || image.brief.description.includes(visualIdentities[0].visualIdentity.renderDescription),
+    false,
+    "encounter rendering must stop carrying phenotype prose after canonical-root admission",
+  );
   assert.equal(video.brief.description.startsWith(shared.visualization.visualizationPrompt), true,
     "video should consume the same admitted scene prompt");
   assert.equal(video.brief.constraints.some((value) => value.includes("voice")), true,
