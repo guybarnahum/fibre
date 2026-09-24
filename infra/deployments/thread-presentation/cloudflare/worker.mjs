@@ -29,7 +29,10 @@ import { createThreadPresentationServer } from "#services/world-kernel/src/threa
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
-import { selectImageProviderProfile } from "../../integration-selection.mjs";
+import {
+  selectImageProviderProfile,
+  selectImageProviderRoute,
+} from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import {
   COMPLETION_QUEUE_MAX_RETRIES,
@@ -189,11 +192,28 @@ async function publishP3Fixture({ bundle, presentationServer, objectRef = null, 
   return { ok: true, fixture: true, reused: false, threadId, channelId, lifecycleStatus: presentation.manifest.lifecycleStatus, snapshotVersion: result.pointer.snapshotVersion, snapshotDigest: result.pointer.snapshotDigest, cursor: result.pointer.sequence };
 }
 
-async function scheduleP3Media({ env, infra, presentationServer, threadId, mediaId, providerMode = "primary" }) {
+async function scheduleP3Media({
+  env,
+  infra,
+  presentationServer,
+  threadId,
+  mediaId,
+  providerMode = "primary",
+  primaryProfile = null,
+}) {
   if (!["primary", "secondary"].includes(providerMode)) throw new TypeError("providerMode must be primary or secondary");
   const slot = await p3Slot(presentationServer, { threadId, mediaId });
   const requestedAt = new Date().toISOString();
-  const providerProfile = selectImageProviderProfile(assetGeneratorDeployment(env), { requiresReferenceObjects: slot.referenceObjectRefs.length > 0 });
+  const deployment = assetGeneratorDeployment(env);
+  const requiresReferenceObjects = slot.referenceObjectRefs.length > 0;
+  const providerProfile = primaryProfile === null
+    ? selectImageProviderProfile(deployment, { requiresReferenceObjects })
+    : nonEmpty("primaryProfile", primaryProfile);
+  selectImageProviderRoute(deployment, {
+    primaryProfile:providerProfile,
+    requiresReferenceObjects,
+    mode:providerMode,
+  });
   const routedSlot = {
     ...slot,
     context:{ ...slot.context, imageProviderMode:providerMode },
@@ -233,6 +253,7 @@ async function maybeHandleP3Fixture(request, env, infra, presentationServer) {
       threadId:nonEmpty("threadId", body.threadId),
       mediaId:nonEmpty("mediaId", body.mediaId),
       providerMode:body.providerMode ?? "primary",
+      primaryProfile:body.primaryProfile ?? null,
     })); }
     catch (error) { return Response.json({ error: "invalid_p3_generation_request", detail: error.message }, { status: 400 }); }
   }
