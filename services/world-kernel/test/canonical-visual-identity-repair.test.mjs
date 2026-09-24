@@ -113,8 +113,12 @@ test("operator repair service records one corrected canonical lineage head", () 
     reason: "Correct the canonical visual identity after the admitted root failed to faithfully realize the intended appearance.",
   });
 
-  assert.equal(result.previous.referenceObjectRef, priorRoot, "prior root evidence was lost");
+  assert.equal(result.previous.referenceObjectRef, priorRoot, "prior root history was lost");
   assert.equal(result.embodiment.status, "pending_generation", "correction did not reopen root generation");
-  assert.equal(result.embodiment.respecification.evidenceReferences.includes(priorRoot), true, "prior root was not retained as correction evidence");
+  assert.deepEqual(
+    result.embodiment.respecification.evidenceReferences,
+    ["evt_visual_identity_origin_001"],
+    "correction was not grounded in durable Thread evidence",
+  );
   assert.equal(current.revision, 3, "corrected lineage head was not recorded");
 });
