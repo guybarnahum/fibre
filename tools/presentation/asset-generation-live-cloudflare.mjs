@@ -35,6 +35,7 @@ function parseArgs(argv) {
     fixture: DEFAULT_LIVE_FIXTURE,
     mediaId: DEFAULT_LIVE_MEDIA_ID,
     baseUrl: process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8787",
+    providerMode:"primary",
     dryRun: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -53,6 +54,14 @@ function parseArgs(argv) {
     if (value === "--base-url") {
       if (index + 1 >= argv.length) throw new TypeError("--base-url requires a value");
       parsed.baseUrl = nonEmpty("base-url", argv[++index]).replace(/\/$/, "");
+      continue;
+    }
+    if (value === "--provider-mode") {
+      if (index + 1 >= argv.length) throw new TypeError("--provider-mode requires primary or secondary");
+      parsed.providerMode = nonEmpty("provider-mode", argv[++index]);
+      if (!["primary", "secondary"].includes(parsed.providerMode)) {
+        throw new TypeError("--provider-mode must be primary or secondary");
+      }
       continue;
     }
     throw new TypeError(`unknown Cloudflare live asset argument: ${value}`);
@@ -121,7 +130,9 @@ export async function runCloudflareLiveAssetSmoke({
   baseUrl = process.env.FIBRE_PRESENTATION_URL ?? "http://127.0.0.1:8787",
   timeoutMs = Number(process.env.ASSET_LIVE_CLOUDFLARE_TIMEOUT_MS ?? 10 * 60 * 1000),
   pollMs = Number(process.env.ASSET_LIVE_CLOUDFLARE_POLL_MS ?? 2000),
+  providerMode = "primary",
 } = {}) {
+  if (!["primary", "secondary"].includes(providerMode)) throw new TypeError("providerMode must be primary or secondary");
   const target = await loadThreadPresentationLiveTarget({ fixture, mediaId });
   const base = nonEmpty("baseUrl", baseUrl).replace(/\/$/, "");
   const startedAt = Date.now();
@@ -139,11 +150,15 @@ export async function runCloudflareLiveAssetSmoke({
     body: JSON.stringify({ bundle: target.bundle }),
   });
 
-  console.log("[4/5] Scheduling the selected media through Presentation → Workflow → Asset Generator...");
+  console.log(`[4/5] Scheduling the selected media through Presentation → Workflow → Asset Generator (provider=${providerMode})...`);
   const scheduled = await jsonFetch(`${base}/__p3/fixtures/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ threadId: target.threadId, mediaId: target.mediaAsset.mediaId }),
+    body: JSON.stringify({
+      threadId:target.threadId,
+      mediaId:target.mediaAsset.mediaId,
+      providerMode,
+    }),
   });
   console.log(`      job=${scheduled.jobId}`);
 
@@ -202,6 +217,8 @@ export async function runCloudflareLiveAssetSmoke({
     lifecycleStatus: target.lifecycleStatus,
     mediaId: target.mediaAsset.mediaId,
     label: target.label,
+    providerMode,
+    providerProfile:scheduled.providerProfile,
     demandId: scheduled.demandId,
     jobId: scheduled.jobId,
     workflowStatus: workflow.status,
@@ -240,6 +257,7 @@ async function main() {
     console.log(`Thread: ${target.threadId}`);
     console.log(`Target: ${target.label} (${target.mediaAsset.mediaId})`);
     console.log(`Presentation: ${args.baseUrl}`);
+    console.log(`Provider mode: ${args.providerMode}`);
     return;
   }
   await runCloudflareLiveAssetSmoke(args);
