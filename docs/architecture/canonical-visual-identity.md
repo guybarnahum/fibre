@@ -41,7 +41,7 @@ The resulting bytes are not automatically identity. They become canonical only a
 The canonical reference remains stable as the Thread ages.
 
 
-A broad family appearance prior may help author the native canonical root **before any image exists**. Once Fibre has admitted the canonical reference image, that family-level prior and the rich canonical phenotype prose stop at that boundary. The reference image becomes the operational likeness authority for downstream image generation. Derived prompts should describe only the requested age, time-local appearance, scene and rendering purpose; they should not replay ancestry, family, demographic or canonical phenotype text.
+A broad family appearance prior may help World authoring produce family-compatible phenotype material **before any image exists**, but the prior itself is not renderer authority. Genesis selects one concrete inherited phenotype from that material and the canonical specification carries only the selected person's concrete traits plus individual identity cues. Once Fibre has admitted the canonical reference image, even that rich canonical phenotype prose stops at the boundary: the reference image becomes the operational likeness authority for downstream image generation. Derived prompts should describe only the requested age, time-local appearance, scene and rendering purpose; they should not replay ancestry, family, demographic or canonical phenotype text.
 
 ### Derived depictions
 
