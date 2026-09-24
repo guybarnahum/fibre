@@ -24,6 +24,7 @@ test("Genesis birth produces a specific person grounded in a specific world", ()
     femaleName: identityFixture.femaleName,
     maleName: identityFixture.maleName,
     birthCity: identityFixture.birthCity,
+    languages: [...worldSpec.languages, "French"],
   };
   const requestedAt = "2026-09-14T22:41:35Z";
   const plan = buildGenesisDevelopmentPlan({
@@ -59,7 +60,8 @@ test("Genesis birth produces a specific person grounded in a specific world", ()
   assert.notEqual(thread.identity.name, "Fibre Thread", "birth fell back to a generic person");
   assert.equal(thread.identity.birthDate, plan.bornAt.slice(0, 10), "birth date drifted from Genesis chronology");
   assert.equal(thread.identity.birthCity, plan.subjectIdentity.birthCity, "birth place drifted from the birth plan");
-  assert.deepEqual(thread.identity.languages, plan.worldSpec.languages, "languages detached from the person's world");
+  assert.deepEqual(thread.identity.languages, plan.subjectIdentity.languages, "acquired language was lost at birth");
+  assert.notDeepEqual(thread.identity.languages, plan.worldSpec.languages, "spoken languages collapsed back into raised languages");
   assert.ok(thread.identity.culture.length > 0, "birth lacks cultural grounding");
   assert.equal(thread.currentState.selfModel, `I am ${expectedName}.`, "newborn self-model is generic");
   assert.deepEqual(
