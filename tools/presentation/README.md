@@ -29,6 +29,12 @@ Thread Presentation fixture
   -> Fibre provenance classification
 ```
 
-Start the local Cloudflare stack first; see `infra/deployments/asset-generator/cloudflare/README.md` and `infra/deployments/thread-presentation/cloudflare/README.md`.
+Start the local Cloudflare stack first; see `infra/deployments/asset-generator/cloudflare/README.md` and `infra/deployments/thread-presentation/cloudflare/README.md`. The stack listens on `http://127.0.0.1:8788` by default.
+
+Force the configured secondary image provider without waiting for a primary failure:
+
+```bash
+npm run test:asset-live:cloudflare -- --provider-mode secondary
+```
 
 The fixture endpoints are local/e2e-only under `P3_FIXTURE_MODE=1`. Paid generation is never part of ordinary repository validation or CI.
