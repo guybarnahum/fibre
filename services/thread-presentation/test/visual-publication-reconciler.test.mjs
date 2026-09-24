@@ -5,6 +5,7 @@ import {
   embodimentId,
   embodimentSpecificationDigest,
 } from "#services/world-kernel/src/embodiment-domain.mjs";
+import { FIBRE_IDENTITY_CARD_CURRENT_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
 import { createThreadPresentationVisualPublicationReconciler } from "../src/visual-publication-reconciler.mjs";
 
 function availableEmbodiment(threadId = "thr_presentation_visual_001") {
@@ -416,4 +417,65 @@ test("an enacted public present becomes durable Presentation and can request a s
   assert.deepEqual(demand.scope, { entityKind:"experience", entityRef:present.situationId });
   assert.equal(demand.slots[0].role, "present_scene");
   assert.equal(result.event.sequence, 7);
+});
+
+
+test("modern FID does not force legacy official-photo media during visual identity correction", async () => {
+  const embodiment = availableEmbodiment("thr_presentation_visual_fid_001");
+  const calls = [];
+  const currentSnapshot = {
+    pointer:{
+      threadId:embodiment.threadId,
+      objectRef:"snapshot_fid_current",
+      snapshotDigest:`sha256:${"f".repeat(64)}`,
+    },
+    snapshot:{
+      presentation:{
+        manifest:{ threadId:embodiment.threadId, generatedAt:"2026-09-24T05:00:00Z" },
+        identityCard:{
+          credentialVersion:FIBRE_IDENTITY_CARD_CURRENT_VERSION,
+          credentialId:"fidc_current_001",
+        },
+      },
+      media:{ assets:[] },
+      provenance:{},
+    },
+  };
+  const reconciler = createThreadPresentationVisualPublicationReconciler({
+    presentationServer:{
+      async getSnapshot() { return currentSnapshot; },
+      async publishSnapshot() { throw new Error("injected visual rewrite owns publication"); },
+    },
+    infra:{},
+    selectProviderProfile() { throw new Error("modern FID visual projection must not schedule legacy photo media"); },
+    createDemandService() {
+      return { async reconcile() { throw new Error("modern FID visual projection must not create legacy media demand"); } };
+    },
+    createVisualRewrite() {
+      return {
+        async project() {
+          calls.push("visual");
+          return { reused:false };
+        },
+      };
+    },
+    createIdentityRewrite() {
+      return {
+        async ensureOfficialIdentityMedia() {
+          throw new Error("modern FID must remain owned by the FID lifecycle");
+        },
+      };
+    },
+    planSlots() { throw new Error("modern FID visual projection must not plan legacy official photo"); },
+  });
+
+  const result = await reconciler.reconcileAvailableEmbodiment({
+    threadId:embodiment.threadId,
+    embodiment,
+    observedAt:"2026-09-24T05:01:00Z",
+  });
+
+  assert.equal(result.complete, true, "visual correction did not converge beside modern FID");
+  assert.equal(result.detail.fidCredentialId, "fidc_current_001", "active FID identity was lost");
+  assert.deepEqual(calls, ["visual"], "visual correction crossed into FID issuance");
 });
