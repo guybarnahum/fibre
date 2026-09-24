@@ -342,6 +342,7 @@ export function createThreadGenesisRepairService({
   visualReconciler,
   genesisSexEvidence,
   genesisSexMigrator,
+  symbolicGenomeMigrator = null,
   genesisAuthority,
   identityUpdater,
   activityRecorder = null,
@@ -356,6 +357,10 @@ export function createThreadGenesisRepairService({
   requireMethod("visualReconciler", visualReconciler, "reconcileThread");
   requireMethod("genesisSexEvidence", genesisSexEvidence, "resolve");
   requireMethod("genesisSexMigrator", genesisSexMigrator, "migrate");
+  if (symbolicGenomeMigrator !== null) {
+    requireMethod("symbolicGenomeMigrator", symbolicGenomeMigrator, "inspectThreadGenomeMigration");
+    requireMethod("symbolicGenomeMigrator", symbolicGenomeMigrator, "migrateThreadGenomeV1ToV2");
+  }
   requireMethod("genesisAuthority", genesisAuthority, "getRaisedLanguagesForThread");
   requireMethod("genesisAuthority", genesisAuthority, "correctRaisedLanguages");
   requireMethod("identityUpdater", identityUpdater, "update");
@@ -384,6 +389,24 @@ export function createThreadGenesisRepairService({
     const raisedLanguages = genesisAuthority.getRaisedLanguagesForThread(threadId, { required:false })?.languages ?? [];
     const completeness = identityCompleteness(thread, registration, presentation, sexEvidence, raisedLanguages);
     const findings = [...completeness.findings];
+
+    const genomeMigration = symbolicGenomeMigrator?.inspectThreadGenomeMigration(threadId) ?? null;
+    if (genomeMigration?.state === "legacy_v1_de_novo") {
+      findings.push(finding("SYMBOLIC_GENOME_V1", "migration_required", null, {
+        reason:"symbolic genome predates inherited runtime baselines",
+        genomeIds:genomeMigration.legacyGenomeIds,
+        migration:Object.freeze({ id:"symbolic_genome_v1_to_v2", label:"Symbolic genome v2", input:null }),
+      }));
+    } else if (genomeMigration?.state === "legacy_v1_recombined") {
+      findings.push(finding("SYMBOLIC_GENOME_V1_RECOMBINED", "migration_required", null, {
+        reason:"recombined v1 genome cannot be upgraded without a lineage-preserving migration",
+        genomeIds:genomeMigration.legacyGenomeIds,
+      }));
+    } else if (genomeMigration?.state === "unsupported") {
+      findings.push(finding("SYMBOLIC_GENOME_POLICY_UNSUPPORTED", "integrity_error", null, {
+        genomeIds:genomeMigration.unsupportedGenomeIds,
+      }));
+    }
 
     const canonicalSpec = thread.identity?.canonicalVisualIdentity?.specification ?? null;
     if (embodiment === null) {
@@ -461,8 +484,53 @@ export function createThreadGenesisRepairService({
 
   async function migrate(threadId, { migrationId, migrationKey, input = null } = {}) {
     const root = operationKey("migrationKey", migrationKey);
-    if (migrationId !== "genesis_sex_v1") throw new TypeError("unsupported Thread migration");
     const suppliedInput = migrationInput(input);
+    if (migrationId === "symbolic_genome_v1_to_v2") {
+      if (symbolicGenomeMigrator === null) throw new TypeError("symbolic genome migration is unavailable");
+      if (suppliedInput !== null && Object.keys(suppliedInput).length !== 0) {
+        throw new TypeError("symbolic_genome_v1_to_v2 does not accept operator input");
+      }
+      const before = await diagnose(threadId);
+      if (!before.exists) return Object.freeze({ threadId, migrationId, migrationKey:root, before, after:before, migrated:false });
+      const available = before.findings.some((entry) => entry.migration?.id === migrationId);
+      if (!available) throw new TypeError(`migration ${migrationId} is not available for Thread ${threadId}`);
+
+      await record(activity, {
+        threadId,
+        operationId:root,
+        stage:"thread.migration.start",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ migrationId },
+      });
+      const result = symbolicGenomeMigrator.migrateThreadGenomeV1ToV2(threadId);
+      await record(activity, {
+        threadId,
+        operationId:childOperation(root, "symbolic_genome"),
+        parentOperationId:root,
+        stage:"thread.migration.symbolic_genome",
+        status:"succeeded",
+        attempt:1,
+        evidence:{
+          migrationId,
+          migrated:result.migrated === true,
+          genomes:result.genomes.map(({ genomeId, beforeDigest, afterDigest }) => ({ genomeId, beforeDigest, afterDigest })),
+        },
+      });
+      const after = await diagnose(threadId);
+      await record(activity, {
+        threadId,
+        operationId:childOperation(root, "complete"),
+        parentOperationId:root,
+        stage:"thread.migration.complete",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ migrationId, health:after.health },
+      });
+      return Object.freeze({ threadId, migrationId, migrationKey:root, before, after, migrated:result.migrated === true, result });
+    }
+
+    if (migrationId !== "genesis_sex_v1") throw new TypeError("unsupported Thread migration");
     if (suppliedInput !== null && Object.keys(suppliedInput).length !== 0) {
       throw new TypeError("genesis_sex_v1 does not accept operator input");
     }

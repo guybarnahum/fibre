@@ -14,7 +14,7 @@ const NO_IDENTITY_UPDATE = Object.freeze({
   update() { throw new Error("identity update should not run in this test"); },
 });
 
-function fixture() {
+function fixture({ symbolicGenomeMigrator = null } = {}) {
   const threadId = "thr_repair_1";
   const objectRef = "visual_identity_reference_1";
   const officialMediaId = "media_identity_1";
@@ -87,6 +87,7 @@ function fixture() {
     },
     genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("sex migration should not run for a complete Thread"); } },
+    symbolicGenomeMigrator,
     genesisAuthority:{
       getRaisedLanguagesForThread() { return { languages:[...state.raisedLanguages] }; },
       correctRaisedLanguages(id, { languages }) {
@@ -383,4 +384,45 @@ test("R7 records one repair root with causally parented repair actions", async (
     "repair_test_1.visual",
     "repair_test_1.complete",
   ]);
+});
+
+test("symbolic genome migration is explicit, preserves repair separation, and converges diagnosis", async () => {
+  let legacy = true;
+  const symbolicGenomeMigrator = {
+    inspectThreadGenomeMigration() {
+      return legacy
+        ? { state:"legacy_v1_de_novo", genomeIds:["genome_legacy"], legacyGenomeIds:["genome_legacy"] }
+        : { state:"current", genomeIds:["genome_legacy"] };
+    },
+    migrateThreadGenomeV1ToV2() {
+      legacy = false;
+      return {
+        migrated:true,
+        genomes:[{
+          genomeId:"genome_legacy",
+          beforeDigest:`sha256:${"a".repeat(64)}`,
+          afterDigest:`sha256:${"b".repeat(64)}`,
+        }],
+      };
+    },
+  };
+  const { service, state, threadId } = fixture({ symbolicGenomeMigrator });
+
+  const before = await service.diagnose(threadId);
+  assert.equal(before.health, "migration_required");
+  assert.equal(before.findings.find((entry) => entry.code === "SYMBOLIC_GENOME_V1").migration.id, "symbolic_genome_v1_to_v2");
+
+  const repair = await service.repair(threadId, { repairKey:"repair_before_genome_migration" });
+  assert.deepEqual(repair.actions, [], "ordinary repair performed an authoritative genome migration");
+
+  const migration = await service.migrate(threadId, {
+    migrationId:"symbolic_genome_v1_to_v2",
+    migrationKey:"migration_symbolic_genome_v2",
+  });
+  assert.equal(migration.migrated, true);
+  assert.equal(migration.after.findings.some((entry) => entry.code === "SYMBOLIC_GENOME_V1"), false);
+  assert.deepEqual(
+    state.activity.filter((entry) => entry.stage.startsWith("thread.migration.")).map((entry) => entry.stage),
+    ["thread.migration.start", "thread.migration.symbolic_genome", "thread.migration.complete"],
+  );
 });

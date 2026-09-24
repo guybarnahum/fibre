@@ -6,6 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
+import { canonicalJson, sha256 } from "../src/persistence-common.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import {
   assertAtomicGenomeLocus,
@@ -286,4 +287,83 @@ test("read-only genome inspection is empty on worlds that never enabled symbolic
       sources: [],
     });
     reader.close();
+  }));
+
+
+test("v1 de_novo genome migration preserves symbolic identity while adding current inherited baselines", () =>
+  withDatabase((databasePath) => {
+    const threadId = "thr_legacy_genome_migration";
+    const genesisId = "gen_legacy_genome_migration";
+    const current = buildDeNovoSymbolicGenome({
+      threadId,
+      genesisId,
+      values:parentAValues,
+      createdAt:"2026-08-15T18:45:00Z",
+    });
+    const legacyHeader = {
+      ...current.header,
+      inheritancePolicy:{ id:"fibre_symbolic_genome", version:"1" },
+    };
+    const legacyDigest = `sha256:${sha256(canonicalJson({
+      header:legacyHeader,
+      loci:current.loci,
+      mutations:[],
+    }))}`;
+
+    const schema = new SymbolicGenomeStore(localWorldStateStorage(databasePath));
+    schema.close();
+    const raw = new DatabaseSync(databasePath);
+    raw.exec("PRAGMA foreign_keys=ON");
+    raw.prepare(`
+      INSERT INTO symbolic_genomes(
+        genome_id,owner_kind,owner_id,genesis_id,origin_kind,header_json,genome_digest,created_at
+      ) VALUES (?,?,?,?,?,?,?,?)
+    `).run(
+      current.header.genomeId,
+      "thread",
+      threadId,
+      genesisId,
+      "de_novo",
+      canonicalJson(legacyHeader),
+      legacyDigest,
+      legacyHeader.createdAt,
+    );
+    const insertLocus = raw.prepare(`
+      INSERT INTO symbolic_genome_loci(
+        locus_id,genome_id,ordinal,value,provenance_kind,source_genome_ref,
+        source_locus_ref,mutation_ref,record_json,record_digest
+      ) VALUES (?,?,?,?,?,?,?,?,?,?)
+    `);
+    for (const locus of current.loci) {
+      insertLocus.run(
+        locus.locusId,
+        locus.genomeId,
+        locus.ordinal,
+        locus.value,
+        locus.provenance.kind,
+        locus.provenance.sourceGenomeRef,
+        locus.provenance.sourceLocusRef,
+        locus.provenance.mutationRef,
+        canonicalJson(locus),
+        `sha256:${sha256(canonicalJson({ kind:"locus", record:locus }))}`,
+      );
+    }
+    raw.close();
+
+    const store = new SymbolicGenomeStore(localWorldStateStorage(databasePath));
+    const before = store.inspectThreadGenomeMigration(threadId);
+    assert.equal(before.state, "legacy_v1_de_novo");
+    assert.deepEqual(before.legacyGenomeIds, [current.header.genomeId]);
+
+    const migrated = store.migrateThreadGenomeV1ToV2(threadId);
+    assert.equal(migrated.migrated, true);
+    assert.equal(migrated.after.state, "current");
+
+    const genome = store.listThreadGenomes(threadId)[0];
+    assert.equal(genome.header.genomeId, current.header.genomeId, "migration changed genome identity");
+    assert.deepEqual(genome.loci, current.loci, "migration changed symbolic loci");
+    assert.deepEqual(genome.runtimeBaselines, current.runtimeBaselines, "migration did not restore current inherited baselines");
+    assert.equal(genome.genomeDigest, current.genomeDigest, "migration did not converge on current genome digest");
+    assert.equal(store.migrateThreadGenomeV1ToV2(threadId).migrated, false, "migration was not idempotent");
+    store.close();
   }));

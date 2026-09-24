@@ -236,6 +236,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     visualReconciler,
     genesisSexEvidence:genesisBirthSexEvidence,
     genesisSexMigrator:genesisSexMigrationStore,
+    symbolicGenomeMigrator:symbolicGenomeStore,
     genesisAuthority:genesisStore,
     identityUpdater:threadIdentityUpdateStore,
     activityRecorder,
