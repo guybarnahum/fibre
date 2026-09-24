@@ -349,6 +349,9 @@ export default {
     const identityWriteResponse = await identityWriteApi.fetch(request);
     if (identityWriteResponse !== null) return identityWriteResponse;
 
+    const fixtureResponse = await maybeHandleP3Fixture(request, env, infra, presentationServer);
+    if (fixtureResponse !== null) return fixtureResponse;
+
     if (url.pathname === "/internal/fid/reconcile") {
       const fidWriteApi = createFidLifecycleWriteApi({
         reconciler:createFidLifecycle(env, infra, presentationServer),
@@ -364,9 +367,6 @@ export default {
     });
     const visualWriteResponse = await visualWriteApi.fetch(request);
     if (visualWriteResponse !== null) return visualWriteResponse;
-
-    const fixtureResponse = await maybeHandleP3Fixture(request, env, infra, presentationServer);
-    if (fixtureResponse !== null) return fixtureResponse;
 
     const api = createPresentationReadApi({
       infra,
