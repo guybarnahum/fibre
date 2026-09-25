@@ -66,9 +66,21 @@ export async function generateGenesisPassBMemory({ adapter, input, clientRequest
     return result.output;
   };
 
+  const admittedOutput = (candidate) => {
+    try {
+      return normalizeAdmittedPassBModelOutput(candidate, normalizedInput);
+    } catch (error) {
+      if (error instanceof GenesisPassBAdmissionError) throw error;
+      if (!(error instanceof TypeError)) throw error;
+      const rejected = new GenesisPassBAdmissionError("pass_b_output_validity", error.message);
+      rejected.cause = error;
+      throw rejected;
+    }
+  };
+
   const initial = await invoke({ prompt: GENESIS_LIFE_PASS_B_COGNITION_PROMPT, kind: "initial", generatedVersion: 1 });
   try {
-    return Object.freeze({ output: normalizeAdmittedPassBModelOutput(initial, normalizedInput), calls: Object.freeze([...calls]) });
+    return Object.freeze({ output: admittedOutput(initial), calls: Object.freeze([...calls]) });
   } catch (error) {
     if (!(error instanceof GenesisPassBAdmissionError) || error.gate !== GENESIS_PASS_B_GENOME_COPY_GATE) throw error;
   }
@@ -79,7 +91,7 @@ export async function generateGenesisPassBMemory({ adapter, input, clientRequest
     generatedVersion: 2,
   });
   try {
-    return Object.freeze({ output: normalizeAdmittedPassBModelOutput(retry, normalizedInput), calls: Object.freeze([...calls]) });
+    return Object.freeze({ output: admittedOutput(retry), calls: Object.freeze([...calls]) });
   } catch (error) {
     if (error instanceof GenesisPassBAdmissionError) error.calls = structuredClone(calls);
     throw error;
