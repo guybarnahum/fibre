@@ -412,6 +412,29 @@ test("Fix restores unambiguous malformed birth geography from existing World ide
   assert.equal(result.after.health, "healthy");
 });
 
+test("safe birth geography repair is not blocked by unrelated operator input", async () => {
+  const identityUpdater = {
+    update(current, { birthPlace }) {
+      current.identity.birthCity = birthPlace.displayName;
+      current.identity.birthPlace = structuredClone(birthPlace);
+      return { changed:true, eventId:"evt_birth_geography_repaired", changes:{ birthPlace }, thread:current };
+    },
+  };
+  const { service, threadId, thread } = fixture({ identityUpdater });
+  thread.identity.birthCity = "Hilo, Hawaii, United SAtates";
+  delete thread.identity.birthDate;
+
+  const before = await service.diagnose(threadId);
+  assert.equal(before.health, "operator_decision_required");
+  assert.ok(before.findings.some((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE"));
+
+  const result = await service.repair(threadId, { repairKey:"repair_birth_geography_with_input_pending" });
+
+  assert.equal(thread.identity.birthCity, "Hilo, Hawaii, United States", "safe geography repair stayed blocked");
+  assert.equal(result.after.health, "operator_decision_required", "repair hid unresolved operator input");
+});
+
+
 test("R7 records one repair root with causally parented repair actions", async () => {
   const { service, state, threadId } = fixture();
   await service.repair(threadId, { repairKey:"repair_test_1" });
