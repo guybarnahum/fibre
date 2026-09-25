@@ -19,6 +19,23 @@ function parse(name, value) {
   catch (error) { throw new IntegrityError(`${name} is not valid JSON: ${error.message}`); }
 }
 
+function birthLocation(identity) {
+  const place = identity?.birthPlace;
+  if (
+    !place
+    || typeof place !== "object"
+    || !Number.isFinite(place.lat)
+    || !Number.isFinite(place.long)
+  ) return null;
+  return Object.freeze({
+    displayName:clean(place.displayName) ?? clean(identity.birthCity),
+    country:clean(place.country),
+    city:clean(place.city),
+    lat:place.lat,
+    long:place.long,
+  });
+}
+
 function registryEntry(row) {
   const thread = parse(`Thread ${row.thread_id}`, row.state_json);
   const identity = thread?.identity ?? {};
@@ -44,6 +61,7 @@ function registryEntry(row) {
     originOrientation: clean(identity.originOrientation),
     birthDate: clean(identity.birthDate),
     birthPlace: clean(identity.birthCity),
+    birthLocation:birthLocation(identity),
     culture: strings(identity.culture),
     languages: strings(identity.languages),
     raisedAs,
