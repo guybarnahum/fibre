@@ -13,6 +13,7 @@ import {
 } from "../src/persistence.mjs";
 import { openIdentityInspectionStore } from "../src/identity-store.mjs";
 import { openRuntimeStore } from "../src/runtime-store.mjs";
+import { ThreadDirectoryStore } from "../src/thread-directory-store.mjs";
 import { openFreezeStore } from "../src/freeze-store.mjs";
 import { M1FreezeWorldKernelService } from "../src/freeze-service.mjs";
 import {
@@ -208,6 +209,12 @@ test("atomically freezes a Guardian-approved runtime, records memory, and surviv
     assert.ok(thread.memoryRefs.includes(result.freeze.memories[0].memoryId));
     assert.equal(runtime.service.getRuntime(fixture.threadId, prepared.session.sessionId).session.status, "completed");
     assert.equal(runtime.service.getRuntime(fixture.threadId, prepared.session.sessionId).lease.status, "released");
+    const directory = new ThreadDirectoryStore(localWorldStateStorage(databasePath));
+    try {
+      assert.equal(directory.getEntry(fixture.threadId).runtime, null, "frozen Thread still looked active");
+    } finally {
+      directory.close();
+    }
     assert.equal(runtime.store.verifyThreadIntegrity(fixture.threadId).version, 2);
     assert.equal(runtime.service.verifyFreezeIntegrity(fixture.threadId, prepared.session.sessionId).runtimeCompleted, true);
 
