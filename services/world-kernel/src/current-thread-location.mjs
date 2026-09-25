@@ -9,7 +9,7 @@ function finiteCoordinates(value) {
     && value.long >= -180 && value.long <= 180;
 }
 
-function localityGeography(place, fallback) {
+function localityGeography(place) {
   for (const candidate of [
     place?.locality && place?.region ? `${place.locality}, ${place.region}` : null,
     place?.locality ?? null,
@@ -18,7 +18,7 @@ function localityGeography(place, fallback) {
     const resolved = resolveLocalityGeography(candidate);
     if (resolved !== null) return resolved;
   }
-  return fallback;
+  return null;
 }
 
 function fallbackGeography(entry) {
@@ -42,7 +42,7 @@ function resolvedPlace(reference, { worldPlaces, placeEpisodes, fallback }) {
     return Object.freeze({
       ref:reference,
       displayName:episode.place.displayName,
-      geography:localityGeography(episode.place, fallback),
+      geography:localityGeography(episode.place),
       authority:"situated_life",
     });
   }
@@ -50,7 +50,7 @@ function resolvedPlace(reference, { worldPlaces, placeEpisodes, fallback }) {
   return Object.freeze({
     ref:reference,
     displayName:null,
-    geography:fallback,
+    geography:null,
     authority:"unresolved_place_ref",
   });
 }
