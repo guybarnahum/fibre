@@ -235,7 +235,7 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
       locationSource:null,
       sex:identity?.sex ?? null,
       timing:birthTiming(request, nowMs),
-      terminalFailure:disposition?.failureCode !== null && disposition?.failureCode !== undefined,
+      terminalFailure:disposition?.failureRetryable === false,
     }));
   }
 
@@ -296,7 +296,7 @@ export async function reconcileStaleBirths(runtime, {
     }
 
     const timing = birthTiming(request, nowMs);
-    const terminalFailure = disposition?.failureCode !== null && disposition?.failureCode !== undefined;
+    const terminalFailure = disposition?.failureRetryable === false;
     if ((!timing.stale && !terminalFailure) || !request.threadId) continue;
     developmentCandidates.push(Object.freeze({ request, disposition, modernRequest }));
     threadIds.add(request.threadId);
@@ -338,7 +338,7 @@ export async function reconcileStaleBirths(runtime, {
       bornRequests.add(request.requestId);
       continue;
     }
-    if (disposition?.failureCode === "GENESIS_PASS_A_VALIDATION_ERROR") {
+    if (disposition?.failureRetryable === false) {
       runtime.developmentRequestStore.settleStillborn(request.requestId);
       stillbornRequests.add(request.requestId);
     }
