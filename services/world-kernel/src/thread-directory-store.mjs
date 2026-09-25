@@ -37,15 +37,22 @@ function birthLocation(identity) {
       source:"thread_identity",
     });
   }
-  const legacy = resolveLocalityGeography(identity?.birthCity);
-  if (legacy === null) return null;
+  const structured = place && typeof place === "object"
+    ? resolveLocalityGeography(
+      clean(place.country) && clean(place.city)
+        ? `${clean(place.country)}/${clean(place.city)}`
+        : clean(place.displayName),
+    )
+    : null;
+  const inferred = structured ?? resolveLocalityGeography(identity?.birthCity);
+  if (inferred === null) return null;
   return Object.freeze({
-    displayName:clean(identity?.birthCity) ?? legacy.displayName,
-    country:legacy.country,
-    city:legacy.city,
-    lat:legacy.lat,
-    long:legacy.long,
-    source:"legacy_identity_projection",
+    displayName:clean(place?.displayName) ?? clean(identity?.birthCity) ?? inferred.displayName,
+    country:inferred.country,
+    city:inferred.city,
+    lat:inferred.lat,
+    long:inferred.long,
+    source:"identity_geography_projection",
   });
 }
 
