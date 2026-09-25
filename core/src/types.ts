@@ -35,6 +35,13 @@ export interface ThreadSnapshot {
     birthDate?: string;
     languages?: string[];
     birthCity?: string;
+    birthPlace?: {
+      displayName: string;
+      country: string;
+      city: string;
+      lat: number;
+      long: number;
+    };
     currentWorkCity?: string;
     culture?: string[];
   };
