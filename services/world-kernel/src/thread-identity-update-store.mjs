@@ -196,7 +196,10 @@ export class ThreadIdentityUpdateStore {
       changes.birthDate = nextBirthDate;
       previous.birthDate = thread.identity.birthDate ?? null;
     }
-    if (nextBirthPlace !== undefined && canonicalJson(nextBirthPlace) !== canonicalJson(thread.identity.birthPlace ?? null)) {
+    if (nextBirthPlace !== undefined && (
+      canonicalJson(nextBirthPlace) !== canonicalJson(thread.identity.birthPlace ?? null)
+      || nextBirthPlace.displayName !== thread.identity.birthCity
+    )) {
       changes.birthCity = nextBirthPlace.displayName;
       previous.birthCity = thread.identity.birthCity ?? null;
       changes.birthPlace = nextBirthPlace;
