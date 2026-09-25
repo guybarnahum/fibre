@@ -643,6 +643,25 @@ function renderThreadsTopSummary(summary = null) {
   $("#metric-view-context").textContent = "population / World health";
 }
 
+function renderBirthCenterTopSummary() {
+  const counts = pendingBirthSnapshot.reduce((result, birth) => {
+    const stage = birthStage(birth);
+    result[stage] = (result[stage] ?? 0) + 1;
+    return result;
+  }, {});
+  $("#metric-label-records").textContent = "Pending";
+  $("#metric-context-records").textContent = "durable births";
+  $("#metric-records").textContent = pendingBirthSnapshot.length;
+  $("#metric-label-failures").textContent = "Genesis";
+  $("#metric-context-failures").textContent = "authoring";
+  $("#metric-failures").textContent = counts.genesis ?? 0;
+  $("#metric-label-retries").textContent = "Developing";
+  $("#metric-context-retries").textContent = "prior life";
+  $("#metric-retries").textContent = counts.developing ?? 0;
+  $("#metric-view").textContent = "Birth Center";
+  $("#metric-view-context").textContent = `${counts.emerging ?? 0} emerging`;
+}
+
 function renderStillbornTopSummary(summary = null) {
   $("#metric-label-records").textContent = "Stillborn";
   $("#metric-context-records").textContent = "unrecoverable observed IDs";
@@ -1099,18 +1118,24 @@ async function submitBirth(event) {
   if (active && populationMode === "threads") void loadPopulation();
 }
 
-function holdThreadsMode() {
+function holdOperatorMode() {
   if (!active) return;
   $("#causal-view").hidden = true;
   $("#raw-view").hidden = true;
+  birthCenterView.hidden = populationMode !== "birth-center";
   view.hidden = populationMode !== "threads";
   stillbornView.hidden = populationMode !== "stillborn";
   document.querySelector("#thread-context").hidden = true;
   for (const control of document.querySelectorAll(".view-switch button")) {
     control.classList.toggle("active", control.dataset.mode === populationMode);
   }
-  $("#chain-title").textContent = populationMode === "stillborn" ? "Stillborn Threads" : "Threads";
-  if (populationMode === "stillborn") renderStillbornTopSummary();
+  $("#chain-title").textContent = populationMode === "birth-center"
+    ? "Birth Center"
+    : populationMode === "stillborn"
+      ? "Stillborn Threads"
+      : "Threads";
+  if (populationMode === "birth-center") renderBirthCenterTopSummary();
+  else if (populationMode === "stillborn") renderStillbornTopSummary();
   else {
     $("#metric-view").textContent = "Threads";
     $("#metric-view-context").textContent = "population / World health";
@@ -1118,11 +1143,11 @@ function holdThreadsMode() {
 }
 
 async function loadPopulation() {
-  if (!active || loading) return;
+  if (!active || populationMode === "birth-center" || loading) return;
   loading = true;
-  holdThreadsMode();
+  holdOperatorMode();
   $("#refresh-button").disabled = true;
-  $("#refresh-button").textContent = "Refreshing…";
+  setButtonWaiting($("#refresh-button"), "Refreshing");
   $("#chain-summary").textContent = "Reading Activity-discovered identities and authoritative World health…";
   try {
     const response = await fetch("/api/threads/population", { headers:{ Accept:"application/json" }, cache:"no-store" });
@@ -1152,9 +1177,9 @@ async function loadPopulation() {
     $("#chain-summary").textContent = `Thread population unavailable: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
     loading = false;
-    holdThreadsMode();
+    holdOperatorMode();
     $("#refresh-button").disabled = false;
-    $("#refresh-button").textContent = "Refresh";
+    setButtonLabel($("#refresh-button"), "Refresh");
     setPopulationControlsDisabled(false);
   }
 }
@@ -1168,12 +1193,20 @@ function setActivityChrome(hidden) {
 }
 
 function enterPopulation(nextMode) {
+  const previousMode = populationMode;
   populationMode = nextMode;
   if (active) {
-    holdThreadsMode();
-    if (populationMode === "stillborn") {
+    if (previousMode === "birth-center" && nextMode !== "birth-center") stopPendingPolling();
+    holdOperatorMode();
+    if (populationMode === "birth-center") {
+      renderBirthCenterTopSummary();
+      $("#chain-summary").textContent = `${pendingBirthSnapshot.length} active birth${pendingBirthSnapshot.length === 1 ? "" : "s"}.`;
+      startPendingPolling();
+      void loadBirthCenter();
+    } else if (populationMode === "stillborn") {
       renderStillbornTopSummary({ stillborn:stillborn.length });
       $("#chain-summary").textContent = `${stillborn.length} unrecoverable Thread ${stillborn.length === 1 ? "identifier" : "identifiers"} parked outside the admitted population.`;
+      void loadPopulation();
     } else {
       renderThreadsTopSummary({
         total:population.length,
@@ -1181,6 +1214,7 @@ function enterPopulation(nextMode) {
         deadLetter:population.filter((thread) => thread.reconciliation?.state === "dead_letter").length,
       });
       $("#chain-summary").textContent = `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn.`;
+      void loadPopulation();
     }
     const params = new URLSearchParams(location.search);
     params.set("mode", populationMode);
@@ -1192,21 +1226,26 @@ function enterPopulation(nextMode) {
   $("#auto-refresh").checked = false;
   $("#auto-refresh").dispatchEvent(new Event("change"));
   setActivityChrome(true);
-  if (populationMode === "stillborn") renderStillbornTopSummary();
+  if (populationMode === "birth-center") renderBirthCenterTopSummary();
+  else if (populationMode === "stillborn") renderStillbornTopSummary();
   else renderThreadsTopSummary();
-  holdThreadsMode();
-  $("#chain-summary").textContent = "Loading population…";
-  const params = new URLSearchParams(location.search); params.set("mode", populationMode);
+  holdOperatorMode();
+  $("#chain-summary").textContent = populationMode === "birth-center" ? "Loading Birth Center…" : "Loading population…";
+  const params = new URLSearchParams(location.search);
+  params.set("mode", populationMode);
   history.replaceState(null, "", `${location.pathname}?${params}`);
-  void loadPopulation();
+  if (populationMode === "birth-center") void loadBirthCenter();
+  else void loadPopulation();
 }
 
+function enterBirthCenter() { enterPopulation("birth-center"); }
 function enterThreads() { enterPopulation("threads"); }
 function enterStillborn() { enterPopulation("stillborn"); }
-
-function exitThreads(nextMode) {
+function exitOperatorMode(nextMode) {
   if (!active) return;
   active = false;
+  stopPendingPolling();
+  birthCenterView.hidden = true;
   view.hidden = true;
   stillbornView.hidden = true;
   setActivityChrome(false);
@@ -1216,14 +1255,13 @@ function exitThreads(nextMode) {
   $("#auto-refresh").dispatchEvent(new Event("change"));
 
   const params = new URLSearchParams(location.search);
-  if (["threads","stillborn"].includes(params.get("mode"))) {
+  if (["birth-center","threads","stillborn"].includes(params.get("mode"))) {
     params.set("mode", nextMode);
     history.replaceState(null, "", `${location.pathname}?${params}`);
     $("#refresh-button").click();
   }
 }
 
-$("#thread-birth-button").addEventListener("click", () => void openBirthDialog());
 birthLocation.addEventListener("input", renderBirthSearch);
 birthRandomLocation.addEventListener("click", () => setBirthLocation("", null));
 birthMap.addEventListener("click", chooseFromMap);
@@ -1233,28 +1271,24 @@ birthMap.addEventListener("keydown", (event) => {
   const rect = birthMap.getBoundingClientRect();
   chooseFromMap({ clientX:rect.left + rect.width / 2, clientY:rect.top + rect.height / 2 });
 });
-for (const input of birthForm.querySelectorAll('input[name="birth-count"]')) {
+for (const input of birthForm.querySelectorAll('input[name="birth-count"], input[name="sex"]')) {
   input.addEventListener("change", syncBirthMode);
 }
 birthPendingRefresh.addEventListener("click", () => void loadPendingBirths());
-$("#thread-birth-close").addEventListener("click", closeBirthDialog);
-$("#thread-birth-cancel").addEventListener("click", closeBirthDialog);
 birthForm.addEventListener("submit", submitBirth);
-birthDialog.addEventListener("click", (event) => {
-  if (event.target === birthDialog) closeBirthDialog();
-});
-birthDialog.addEventListener("close", stopPendingPolling);
 
+$("#view-birth-center").addEventListener("click", enterBirthCenter);
 $("#view-threads").addEventListener("click", enterThreads);
 $("#view-stillborn").addEventListener("click", enterStillborn);
 for (const [id, nextMode] of [["view-causal", "causal"], ["view-raw", "raw"]]) {
-  $(`#${id}`).addEventListener("click", () => exitThreads(nextMode));
+  $(`#${id}`).addEventListener("click", () => exitOperatorMode(nextMode));
 }
 $("#refresh-button").addEventListener("click", (event) => {
   if (!active) return;
   event.preventDefault();
   event.stopImmediatePropagation();
-  void loadPopulation();
+  if (populationMode === "birth-center") void loadBirthCenter();
+  else void loadPopulation();
 }, { capture:true });
 for (const control of document.querySelectorAll("[data-thread-sort]")) {
   control.addEventListener("click", () => {
@@ -1284,5 +1318,6 @@ window.addEventListener("scroll", hidePopulationPortraitPreview, true);
 window.addEventListener("resize", hidePopulationPortraitPreview);
 
 const initialMode = new URLSearchParams(location.search).get("mode");
+if (initialMode === "birth-center") enterBirthCenter();
 if (initialMode === "threads") enterThreads();
 if (initialMode === "stillborn") enterStillborn();
