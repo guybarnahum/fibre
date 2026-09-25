@@ -135,6 +135,16 @@ for (const place of FIBRE_BIRTHPLACE_GEOGRAPHY) {
   ALIASES.set(normalized(place.place), place);
   ALIASES.set(normalized(place.displayName), place);
 }
+const byCity = new Map();
+for (const place of FIBRE_BIRTHPLACE_GEOGRAPHY) {
+  const key = normalized(place.city);
+  const matches = byCity.get(key) ?? [];
+  matches.push(place);
+  byCity.set(key, matches);
+}
+for (const [city, matches] of byCity) {
+  if (matches.length === 1) ALIASES.set(city, matches[0]);
+}
 for (const [alias, place] of [
   ["Los Angeles, California", "United States/Los Angeles, California"],
   ["Baltimore, Maryland", "United States/Baltimore, Maryland"],
