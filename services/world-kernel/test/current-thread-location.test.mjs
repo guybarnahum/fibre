@@ -74,3 +74,16 @@ test("missing LivedNow never plots birthplace as current presence", () => {
 
   assert.equal(location, null, "Threads-now map must not substitute birthplace for current World presence");
 });
+
+
+test("unresolved current place never falls back to birthplace", () => {
+  const location = projectCurrentThreadLocation({
+    entry,
+    currentSituation:{
+      establishedAt:"2026-09-25T18:00:00.000Z",
+      location:{ kind:"place", placeRef:"per:missing_current_place:1" },
+    },
+  });
+
+  assert.equal(location, null, "unresolved current place was plotted as birthplace");
+});
