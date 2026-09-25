@@ -170,6 +170,9 @@ function admittedThread(entry, lastActivityAt) {
       originOrientation:clean(entry.originOrientation),
       birthDate:clean(entry.birthDate),
       birthPlace:clean(entry.birthPlace),
+      birthLocation:entry.birthLocation === null || entry.birthLocation === undefined
+        ? null
+        : structuredClone(entry.birthLocation),
       culture:Object.freeze([...(entry.culture ?? [])]),
       languages:Object.freeze([...(entry.languages ?? [])]),
       raisedAs:entry.raisedAs === null ? null : structuredClone(entry.raisedAs),
