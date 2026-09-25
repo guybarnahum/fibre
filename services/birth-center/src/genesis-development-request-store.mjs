@@ -116,12 +116,6 @@ function admissionIdentity(admission) {
   });
 }
 
-function terminalGenesisFailure(code, message) {
-  return code === "GENESIS_PASS_A_VALIDATION_ERROR"
-    || code === "GENESIS_EPISODE_PLACE_CONFLICT"
-    || /^Pass-B model output episodeRef .+ is not visible history$/u.test(message);
-}
-
 export function createGenesisDevelopmentRequestStore(storage, {
   now = () => new Date().toISOString(),
 } = {}) {
@@ -320,7 +314,7 @@ export function createGenesisDevelopmentRequestStore(storage, {
     const message = error instanceof Error ? error.message : String(error);
     const retryable = error?.retryable === true
       ? 1
-      : error?.retryable === false || terminalGenesisFailure(code, message)
+      : error?.retryable === false
         ? 0
         : null;
     upsertFailure.run(id, code, message, retryable, now());
