@@ -14,7 +14,7 @@ const NO_IDENTITY_UPDATE = Object.freeze({
   update() { throw new Error("identity update should not run in this test"); },
 });
 
-function fixture({ symbolicGenomeMigrator = null } = {}) {
+function fixture({ symbolicGenomeMigrator = null, identityUpdater = NO_IDENTITY_UPDATE } = {}) {
   const threadId = "thr_repair_1";
   const objectRef = "visual_identity_reference_1";
   const officialMediaId = "media_identity_1";
@@ -97,7 +97,7 @@ function fixture({ symbolicGenomeMigrator = null } = {}) {
         return { changed:true, correctionId:"grc_test", languages:[...languages], previousLanguages };
       },
     },
-    identityUpdater:NO_IDENTITY_UPDATE,
+    identityUpdater,
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
   });
   return { service, state, threadId, thread };
@@ -364,6 +364,52 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
   assert.equal(migration.migrated, true);
   assert.equal(migration.after.findings.find((entry) => entry.code === "SEX").state, "healthy");
   assert.equal(migration.after.health, "healthy");
+});
+
+test("Fix restores unambiguous malformed birth geography from existing World identity", async () => {
+  const identityUpdater = {
+    update(current, { birthPlace, operationKey }) {
+      assert.equal(operationKey, "repair_birth_geography_1.birth_geography");
+      current.identity.birthCity = birthPlace.displayName;
+      current.identity.birthPlace = structuredClone(birthPlace);
+      return {
+        changed:true,
+        eventId:"evt_birth_geography_repaired",
+        changes:{ birthCity:birthPlace.displayName, birthPlace:structuredClone(birthPlace) },
+        thread:current,
+      };
+    },
+  };
+  const { service, state, threadId, thread } = fixture({ identityUpdater });
+  thread.identity.birthCity = "Hilo Hawaii, USA";
+  state.presentation = {
+    presentation:{
+      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
+      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
+      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
+      identityCard:null,
+    },
+    media:{ assets:[] },
+  };
+
+  const before = await service.diagnose(threadId);
+  const finding = before.findings.find((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE");
+  assert.equal(finding.action, "repair_birth_geography", "unambiguous birthplace was not repairable");
+  assert.equal(finding.recovered.displayName, "Hilo, Hawaii, United States");
+
+  const result = await service.repair(threadId, { repairKey:"repair_birth_geography_1" });
+
+  assert.deepEqual(result.actions.map((entry) => entry.action), ["repair_birth_geography"], "Fix did more than birth geography repair");
+  assert.equal(thread.identity.birthCity, "Hilo, Hawaii, United States");
+  assert.deepEqual(thread.identity.birthPlace, {
+    displayName:"Hilo, Hawaii, United States",
+    country:"United States",
+    city:"Hilo, Hawaii",
+    lat:19.70737,
+    long:-155.08158,
+  });
+  assert.equal(result.after.findings.some((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE"), false);
+  assert.equal(result.after.health, "healthy");
 });
 
 test("R7 records one repair root with causally parented repair actions", async () => {
