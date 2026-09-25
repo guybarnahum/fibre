@@ -110,9 +110,10 @@ test("one World check settles duplicate stale birth records as born", async () =
   };
 
   const result = await reconcileStaleBirths(runtime, {
-    worldBinding:{ fetch:async () => {
+    worldBinding:{ fetch:async (worldRequest) => {
       worldChecks += 1;
-      return Response.json({ identity:{ threadId:request.threadId } });
+      assert.equal(new URL(worldRequest.url).pathname, "/internal/thread-directory/presence");
+      return Response.json({ presentThreadIds:[request.threadId] });
     } },
     privateToken:TOKEN,
     nowMs:() => NOW,
@@ -149,11 +150,54 @@ test("terminal Pass-A failure becomes stillborn only after confirmed World absen
   };
 
   const result = await reconcileStaleBirths(runtime, {
-    worldBinding:{ fetch:async () => Response.json({ error:"not_found" }, { status:404 }) },
+    worldBinding:{ fetch:async () => Response.json({ presentThreadIds:[] }) },
     privateToken:TOKEN,
     nowMs:() => NOW,
   });
 
   assert.equal(stillborn, 1, "terminal birth did not settle stillborn");
   assert.equal(result.stillborn, 1);
+});
+
+
+test("distinct stale births share one bounded World presence query", async () => {
+  const first = staleModern();
+  const second = staleModern({
+    requestId:"admin_birth_stale_2",
+    genesisId:"gen_stale_2",
+    threadId:"thr_stale_2",
+  });
+  let worldChecks = 0;
+  let published = 0;
+  const runtime = {
+    modernBirthRequestStore:{
+      recent:() => [first, second],
+      isActive:(status) => status === "developing",
+      progress:(_requestId, patch) => { if (patch.status === "published") published += 1; },
+    },
+    provisionalBirthStore:{ get:() => ({ status:"pending" }) },
+    developmentRequestStore:{
+      recent:() => [],
+      getDisposition:() => null,
+    },
+  };
+
+  const result = await reconcileStaleBirths(runtime, {
+    worldBinding:{ fetch:async (worldRequest) => {
+      worldChecks += 1;
+      const body = await worldRequest.json();
+      assert.deepEqual(
+        [...body.threadIds].sort(),
+        [first.threadId, second.threadId].sort(),
+        "World presence query lost stale Threads",
+      );
+      return Response.json({ presentThreadIds:body.threadIds });
+    } },
+    privateToken:TOKEN,
+    nowMs:() => NOW,
+  });
+
+  assert.equal(worldChecks, 1, "stale cohort fanned out into multiple World calls");
+  assert.equal(published, 2, "admitted stale births did not converge");
+  assert.equal(result.checked, 2);
 });
