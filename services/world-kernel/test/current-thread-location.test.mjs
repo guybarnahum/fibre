@@ -66,6 +66,43 @@ test("shared current venue uses current situation while retaining World-locality
   assert.equal(location.authority, "live_world_place");
 });
 
+
+
+test("authoritative situated place prose resolves a uniquely named locality", () => {
+  const location = projectCurrentThreadLocation({
+    entry:{ threadId:"thr_legacy_situated", birthPlace:null, birthLocation:null },
+    currentSituation:{
+      establishedAt:"2026-09-25T18:00:00.000Z",
+      location:{ kind:"place", placeRef:"per:plce_tbilisi_home:1" },
+    },
+    placeEpisodes:[{
+      episodeId:"plce_tbilisi_home",
+      revision:1,
+      threadId:"thr_legacy_situated",
+      episodeKind:"formative_presence",
+      place:{
+        placeId:"place_home",
+        displayName:"A mid-rise apartment building in Tbilisi's Saburtalo district near shops and bus routes.",
+        countryCode:null,
+        region:null,
+        locality:null,
+        precision:"unspecified",
+      },
+      startAt:"2026-09-25T10:00:00.000Z",
+      endAt:null,
+      sourceReferences:["evt_tbilisi_home"],
+      visibility:"private",
+      status:"current",
+      provenance:"genesis_created",
+      recordedAt:"2026-09-25T10:00:00.000Z",
+    }],
+  });
+
+  assert.equal(location?.locality, "Tbilisi", "situated Thread stayed unmapped despite explicit locality evidence");
+  assert.equal(location?.country, "Georgia");
+  assert.equal(location?.current, true);
+});
+
 test("missing LivedNow never plots birthplace as current presence", () => {
   const location = projectCurrentThreadLocation({
     entry,
