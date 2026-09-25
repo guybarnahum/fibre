@@ -68,8 +68,6 @@ function registryEntry(row) {
   const runtime = row.runtime_session_status === "active" && row.runtime_lease_status === "active"
     ? Object.freeze({
       state:"active",
-      sessionId:clean(row.runtime_session_id),
-      leaseId:clean(row.runtime_lease_id),
       startedAt:clean(row.runtime_started_at),
       expiresAt:clean(row.runtime_expires_at),
     })
@@ -133,10 +131,8 @@ export class ThreadDirectoryStore {
         ${this.#tables.has("thread_visual_publication_work") ? "v.last_error_json" : "NULL"} AS reconciliation_error_json,
         ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at,
         ${hasRuntime ? "s.status" : "NULL"} AS runtime_session_status,
-        ${hasRuntime ? "s.session_id" : "NULL"} AS runtime_session_id,
         ${hasRuntime ? "s.started_at" : "NULL"} AS runtime_started_at,
         ${hasRuntime ? "l.status" : "NULL"} AS runtime_lease_status,
-        ${hasRuntime ? "l.lease_id" : "NULL"} AS runtime_lease_id,
         ${hasRuntime ? "l.expires_at" : "NULL"} AS runtime_expires_at
       FROM threads t
       ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
@@ -191,10 +187,8 @@ export class ThreadDirectoryStore {
         ${this.#tables.has("thread_visual_publication_work") ? "v.last_error_json" : "NULL"} AS reconciliation_error_json,
         ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at,
         ${hasRuntime ? "s.status" : "NULL"} AS runtime_session_status,
-        ${hasRuntime ? "s.session_id" : "NULL"} AS runtime_session_id,
         ${hasRuntime ? "s.started_at" : "NULL"} AS runtime_started_at,
         ${hasRuntime ? "l.status" : "NULL"} AS runtime_lease_status,
-        ${hasRuntime ? "l.lease_id" : "NULL"} AS runtime_lease_id,
         ${hasRuntime ? "l.expires_at" : "NULL"} AS runtime_expires_at
       FROM threads t
       ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
