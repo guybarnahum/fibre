@@ -111,16 +111,30 @@ function birthOperationalState(request, timing, worldPresence = null) {
   });
 }
 
-function pendingProjection(request, { status, stage, location, locationSource, sex, timing, worldPresence = null }) {
+function pendingProjection(request, {
+  source,
+  status,
+  stage,
+  location,
+  locationSource,
+  sex,
+  timing,
+  worldPresence = null,
+}) {
   const operational = birthOperationalState(request, timing, worldPresence);
   return Object.freeze({
+    source,
     requestId:request.requestId,
+    requestedAt:request.requestedAt ?? request.plan?.genome?.header?.createdAt ?? null,
+    requestedLocation:request.requestedLocation ?? null,
+    requestedSex:request.requestedSex ?? null,
     genesisId:request.genesisId,
     threadId:request.threadId,
     location,
     locationSource,
     sex,
     status,
+    error:request.error ?? null,
     stage,
     createdAt:request.createdAt,
     updatedAt:request.updatedAt,
@@ -166,6 +180,7 @@ export async function pendingBirths(runtime, {
     }
 
     queued.push(pendingProjection(request, {
+      source:"modern",
       status:request.status,
       stage:operatorBirthStage(request.status),
       location:request.location ?? request.requestedLocation,
@@ -197,6 +212,7 @@ export async function pendingBirths(runtime, {
     const place = identity?.place ?? null;
     const status = request.status === "reserved" || request.status === "ready" ? "developing" : "publishing";
     queued.push(pendingProjection(request, {
+      source:"development",
       status,
       stage:operatorBirthStage(status),
       location:place?.country && place?.city ? `${place.country}/${place.city}` : identity?.birthCity ?? null,
