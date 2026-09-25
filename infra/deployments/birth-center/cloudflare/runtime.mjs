@@ -177,9 +177,6 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
   for (const request of runtime.modernBirthRequestStore.recent({ limit:64 })) {
     known.add(request.requestId);
     if (request.status === "published") continue;
-    if (request.genesisId !== null && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
-      continue;
-    }
 
     const active = runtime.modernBirthRequestStore.isActive(request.status);
     if (!active && request.status !== "failed") continue;
@@ -205,9 +202,6 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
     if (known.has(request.requestId)) continue;
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
-    if (request.status === "submitted" && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
-      continue;
-    }
 
     const identity = request.plan?.subjectIdentity ?? null;
     const place = identity?.place ?? null;
@@ -242,11 +236,13 @@ export async function reconcileStaleBirths(runtime, {
   const result = { checked:0, born:0, stillborn:0, unavailable:0 };
   const modern = runtime.modernBirthRequestStore.recent({ limit:64 });
   const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
+  const publishedModern = new Set();
 
   for (const request of modern) {
     if (request.status === "published") continue;
     if (request.genesisId !== null && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
       runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+      publishedModern.add(request.requestId);
       result.born += 1;
       continue;
     }
@@ -256,6 +252,7 @@ export async function reconcileStaleBirths(runtime, {
     const worldPresence = await presenceFor(request.threadId);
     if (worldPresence === "present") {
       runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+      publishedModern.add(request.requestId);
       result.born += 1;
     } else if (worldPresence === "unavailable") {
       result.unavailable += 1;
@@ -269,8 +266,13 @@ export async function reconcileStaleBirths(runtime, {
     const modernRequest = modernByRequest.get(request.requestId) ?? null;
     if (request.status === "submitted" && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
       runtime.developmentRequestStore.settleBorn(request.requestId);
-      if (modernRequest !== null && modernRequest.status !== "published") {
+      if (
+        modernRequest !== null
+        && modernRequest.status !== "published"
+        && !publishedModern.has(request.requestId)
+      ) {
         runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+        publishedModern.add(request.requestId);
       }
       result.born += 1;
       continue;
@@ -283,8 +285,13 @@ export async function reconcileStaleBirths(runtime, {
     const worldPresence = await presenceFor(request.threadId);
     if (worldPresence === "present") {
       runtime.developmentRequestStore.settleBorn(request.requestId);
-      if (modernRequest !== null && modernRequest.status !== "published") {
+      if (
+        modernRequest !== null
+        && modernRequest.status !== "published"
+        && !publishedModern.has(request.requestId)
+      ) {
         runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+        publishedModern.add(request.requestId);
       }
       result.born += 1;
     } else if (
