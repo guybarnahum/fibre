@@ -8,6 +8,7 @@ import {
   groupThreadsByCurrentLocation,
   renderWorldCountMarkers,
   renderWorldTimeZoneLines,
+  threadMapState,
   worldMapPoint,
 } from "./world-map-ui.js";
 
@@ -957,9 +958,12 @@ function showThreadMapPopover(location, marker) {
   const title = document.createElement("strong");
   title.textContent = [location.place.city, location.place.country].filter(Boolean).join(", ");
   const count = document.createElement("span");
-  count.textContent = location.awaitingLivedNowCount > 0
-    ? `${location.currentCount ?? 0} current · ${location.awaitingLivedNowCount} awaiting LivedNow`
-    : `${location.count} Thread${location.count === 1 ? "" : "s"}`;
+  count.textContent = [
+    location.activeCount > 0 ? `${location.activeCount} active` : null,
+    location.frozenSituatedCount > 0 ? `${location.frozenSituatedCount} frozen · situated` : null,
+    location.transitionCount > 0 ? `${location.transitionCount} transitioning` : null,
+    location.awaitingLivedNowCount > 0 ? `${location.awaitingLivedNowCount} awaiting LivedNow` : null,
+  ].filter(Boolean).join(" · ") || `${location.count} Thread${location.count === 1 ? "" : "s"}`;
   heading.append(title, count);
 
   const faces = document.createElement("div");
@@ -968,12 +972,23 @@ function showThreadMapPopover(location, marker) {
     const thread = population.find((candidate) => candidate.threadId === threadId);
     if (!thread) continue;
     const link = document.createElement("a");
-    link.className = "thread-map-face";
+    const state = threadMapState(thread);
+    link.className = `thread-map-face map-state-${state.kind}`;
     link.href = `/thread/${encodeURIComponent(threadId)}`;
     link.dataset.threadId = threadId;
-    link.title = thread.identity?.name
-      ? `Open ${thread.identity.name} in Thread Observatory`
-      : `Open ${threadId} in Thread Observatory`;
+    const situatedAt = thread.currentLocation?.establishedAt
+      ? ` · situation ${elapsedText(thread.currentLocation.establishedAt)}`
+      : "";
+    const stateLabel = state.kind === "active"
+      ? "active"
+      : state.kind === "frozen_situated"
+        ? "frozen · situated"
+        : state.kind === "awaiting_lived_now"
+          ? "frozen · awaiting LivedNow"
+          : state.kind === "active_unsituated"
+            ? "active · situation missing"
+            : state.lifecycle;
+    link.title = `${thread.identity?.name ?? threadId} · ${stateLabel}${situatedAt}`;
     link.textContent = initials(thread.identity?.name);
     faces.append(link);
     void hydrateThreadMapFace(link, thread);
@@ -1015,8 +1030,12 @@ function renderThreadPopulationMap() {
   }
   const places = grouped.locations.length;
   threadPopulationMapSummary.textContent =
-    `${places} mapped area${places === 1 ? "" : "s"} · ${grouped.mapped} Thread${grouped.mapped === 1 ? "" : "s"} · ${grouped.authoritative} current`
+    `${places} mapped area${places === 1 ? "" : "s"} · ${grouped.mapped} living Thread${grouped.mapped === 1 ? "" : "s"}`
+    + (grouped.active > 0 ? ` · ${grouped.active} active` : "")
+    + (grouped.frozenSituated > 0 ? ` · ${grouped.frozenSituated} frozen + situated` : "")
+    + (grouped.transitioning > 0 ? ` · ${grouped.transitioning} transitioning` : "")
     + (grouped.awaitingLivedNow > 0 ? ` · ${grouped.awaitingLivedNow} awaiting LivedNow` : "")
+    + (grouped.activeUnsituated > 0 ? ` · ${grouped.activeUnsituated} active without situation` : "")
     + (grouped.unmapped > 0 ? ` · ${grouped.unmapped} unmapped` : "");
 }
 
