@@ -431,7 +431,7 @@ function actionCell(thread) {
 
   const deadLetter = thread.reconciliation?.state === "dead_letter";
   const pending = thread.reconciliation?.state === "pending";
-  if (hasRepair(thread) && thread.health === "repairable") {
+  if (hasRepair(thread)) {
     const label = deadLetter ? "Repair & recover" : "Repair";
     controls.append(button(label, {
       kind:"repair",
