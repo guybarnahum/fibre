@@ -21,9 +21,9 @@ Applies to a birth attempt before or at the World authority boundary.
 
 - `provisional` — Birth Center work exists but World has not accepted a Thread.
 - `born` — World accepted the birth and assigned authoritative identity state.
-- `stillborn` — the birth was rejected as structurally invalid and no authoritative Thread exists.
+- `stillborn` — Genesis ended in an explicit terminal, non-retryable pre-admission failure and World confirms no authoritative Thread exists.
 
-A stillborn attempt retains diagnostic provenance but never receives a live Thread lifecycle or becomes a silently repaired different birth.
+A stillborn attempt retains diagnostic provenance but never receives a live Thread lifecycle or becomes a silently repaired different birth. Retryable provider or machinery interruption remains provisional/recoverable; age alone never makes a birth stillborn.
 
 ### Authoritative Thread lifecycle
 
