@@ -94,17 +94,28 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
   return next;
 }
 
-async function worldThreadPresence({ worldBinding, privateToken, threadId }) {
+async function worldThreadPresenceSet({ worldBinding, privateToken, threadIds }) {
+  if (threadIds.length === 0) return new Set();
   try {
     const response = await worldBinding.fetch(new Request(
-      `https://world-kernel.internal/internal/threads/${encodeURIComponent(threadId)}/identity`,
-      { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken } },
+      "https://world-kernel.internal/internal/thread-directory/presence",
+      {
+        method:"POST",
+        headers:{
+          Accept:"application/json",
+          "Content-Type":"application/json",
+          "x-fibre-private-token":privateToken,
+        },
+        body:JSON.stringify({ threadIds }),
+      },
     ));
-    if (response.ok) return "present";
-    if (response.status === 404) return "absent";
-    return "unavailable";
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return Array.isArray(payload?.presentThreadIds)
+      ? new Set(payload.presentThreadIds)
+      : null;
   } catch {
-    return "unavailable";
+    return null;
   }
 }
 
@@ -226,22 +237,21 @@ export async function reconcileStaleBirths(runtime, {
   privateToken,
   nowMs = Date.now,
 } = {}) {
-  const presence = new Map();
-  const presenceFor = async (threadId) => {
-    if (!presence.has(threadId)) {
-      presence.set(threadId, await worldThreadPresence({ worldBinding, privateToken, threadId }));
-    }
-    return presence.get(threadId);
-  };
   const bornRequests = new Set();
   const stillbornRequests = new Set();
+  const publishedModern = new Set();
   const modern = runtime.modernBirthRequestStore.recent({ limit:64 });
   const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
-  const publishedModern = new Set();
+  const modernCandidates = [];
+  const developmentCandidates = [];
+  const threadIds = new Set();
 
   for (const request of modern) {
     if (request.status === "published") continue;
-    if (request.genesisId !== null && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
+    if (
+      request.genesisId !== null
+      && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published"
+    ) {
       runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
       publishedModern.add(request.requestId);
       bornRequests.add(request.requestId);
@@ -249,12 +259,8 @@ export async function reconcileStaleBirths(runtime, {
     }
     const timing = birthTiming(request, nowMs);
     if ((!timing.stale && request.status !== "failed") || !request.threadId) continue;
-    const worldPresence = await presenceFor(request.threadId);
-    if (worldPresence === "present") {
-      runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
-      publishedModern.add(request.requestId);
-      bornRequests.add(request.requestId);
-    }
+    modernCandidates.push(request);
+    threadIds.add(request.threadId);
   }
 
   for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
@@ -262,7 +268,10 @@ export async function reconcileStaleBirths(runtime, {
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
 
     const modernRequest = modernByRequest.get(request.requestId) ?? null;
-    if (request.status === "submitted" && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
+    if (
+      request.status === "submitted"
+      && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published"
+    ) {
       runtime.developmentRequestStore.settleBorn(request.requestId);
       if (
         modernRequest !== null
@@ -279,8 +288,34 @@ export async function reconcileStaleBirths(runtime, {
     const timing = birthTiming(request, nowMs);
     const terminalFailure = disposition?.failureCode !== null && disposition?.failureCode !== undefined;
     if ((!timing.stale && !terminalFailure) || !request.threadId) continue;
-    const worldPresence = await presenceFor(request.threadId);
-    if (worldPresence === "present") {
+    developmentCandidates.push(Object.freeze({ request, disposition, modernRequest }));
+    threadIds.add(request.threadId);
+  }
+
+  const candidates = [...threadIds];
+  const present = await worldThreadPresenceSet({
+    worldBinding,
+    privateToken,
+    threadIds:candidates,
+  });
+  if (present === null) {
+    return Object.freeze({
+      checked:0,
+      born:bornRequests.size,
+      stillborn:stillbornRequests.size,
+      unavailable:candidates.length,
+    });
+  }
+
+  for (const request of modernCandidates) {
+    if (!present.has(request.threadId)) continue;
+    runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+    publishedModern.add(request.requestId);
+    bornRequests.add(request.requestId);
+  }
+
+  for (const { request, disposition, modernRequest } of developmentCandidates) {
+    if (present.has(request.threadId)) {
       runtime.developmentRequestStore.settleBorn(request.requestId);
       if (
         modernRequest !== null
@@ -291,20 +326,19 @@ export async function reconcileStaleBirths(runtime, {
         publishedModern.add(request.requestId);
       }
       bornRequests.add(request.requestId);
-    } else if (
-      worldPresence === "absent"
-      && disposition?.failureCode === "GENESIS_PASS_A_VALIDATION_ERROR"
-    ) {
+      continue;
+    }
+    if (disposition?.failureCode === "GENESIS_PASS_A_VALIDATION_ERROR") {
       runtime.developmentRequestStore.settleStillborn(request.requestId);
       stillbornRequests.add(request.requestId);
     }
   }
 
   return Object.freeze({
-    checked:presence.size,
+    checked:candidates.length,
     born:bornRequests.size,
     stillborn:stillbornRequests.size,
-    unavailable:[...presence.values()].filter((value) => value === "unavailable").length,
+    unavailable:0,
   });
 }
 
