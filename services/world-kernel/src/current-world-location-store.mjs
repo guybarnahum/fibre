@@ -125,6 +125,9 @@ export class CurrentWorldLocationStore {
           ) AS rank
         FROM current_situation_records
         WHERE established_at<=?
+          AND thread_id IN (
+            SELECT thread_id FROM threads WHERE status<>'retired'
+          )
       )
       SELECT
         s.situation_id,s.thread_id,s.established_at,s.situation_json,s.situation_digest,
