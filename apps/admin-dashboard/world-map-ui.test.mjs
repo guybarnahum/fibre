@@ -4,56 +4,103 @@ import assert from "node:assert/strict";
 import {
   catalogPlaceForLocation,
   groupThreadsByCurrentLocation,
+  threadMapState,
 } from "./world-map-ui.js";
 
-test("Threads map includes every mappable living Thread without calling birthplace current", () => {
+test("Threads map exposes active, frozen-situated and awaiting-LivedNow states without inventing presence", () => {
   const threads = [
     {
-      threadId:"thr_a",
+      threadId:"thr_active",
       identity:{
+        lifecycleStatus:"active",
         birthPlace:"Tbilisi, Georgia",
         birthLocation:{ displayName:"Tbilisi, Georgia", city:"Tbilisi", country:"Georgia", lat:41.69143, long:44.83412 },
       },
-      currentLocation:{ current:true, locality:"Jerusalem", country:"Israel", lat:31.76904, long:35.21633 },
+      currentLocation:{ current:true, establishedAt:"2026-09-25T20:00:00Z", locality:"Jerusalem", country:"Israel", lat:31.76904, long:35.21633 },
     },
     {
-      threadId:"thr_b",
+      threadId:"thr_frozen",
       identity:{
+        lifecycleStatus:"frozen",
         birthPlace:"Kaohsiung, Taiwan",
         birthLocation:{ displayName:"Kaohsiung, Taiwan", city:"Kaohsiung", country:"Taiwan", lat:22.62728, long:120.30144 },
       },
-      currentLocation:{ current:true, locality:"Jerusalem", country:"Israel", lat:31.76904, long:35.21633 },
+      currentLocation:{ current:true, establishedAt:"2026-09-25T18:00:00Z", locality:"Jerusalem", country:"Israel", lat:31.76904, long:35.21633 },
     },
     {
-      threadId:"thr_c",
+      threadId:"thr_transition",
       identity:{
+        lifecycleStatus:"freezing",
         birthPlace:"Jerusalem, Israel",
         birthLocation:{ displayName:"Jerusalem, Israel", city:"Jerusalem", country:"Israel", lat:31.76904, long:35.21633 },
       },
-      currentLocation:{ current:true, locality:"Tbilisi", country:"Georgia", lat:41.69143, long:44.83412 },
+      currentLocation:{ current:true, establishedAt:"2026-09-25T19:00:00Z", locality:"Tbilisi", country:"Georgia", lat:41.69143, long:44.83412 },
     },
     {
       threadId:"thr_waiting",
       identity:{
+        lifecycleStatus:"dormant",
         birthPlace:"Tbilisi, Georgia",
         birthLocation:{ displayName:"Tbilisi, Georgia", city:"Tbilisi", country:"Georgia", lat:41.69143, long:44.83412 },
       },
       currentLocation:null,
     },
-    { threadId:"thr_unmapped", identity:{ birthPlace:null, birthLocation:null }, currentLocation:null },
+    {
+      threadId:"thr_active_unsituated",
+      identity:{
+        lifecycleStatus:"active",
+        birthPlace:"Kaohsiung, Taiwan",
+        birthLocation:{ displayName:"Kaohsiung, Taiwan", city:"Kaohsiung", country:"Taiwan", lat:22.62728, long:120.30144 },
+      },
+      currentLocation:null,
+    },
+    {
+      threadId:"thr_retired",
+      identity:{
+        lifecycleStatus:"retired",
+        birthPlace:"Jerusalem, Israel",
+        birthLocation:{ displayName:"Jerusalem, Israel", city:"Jerusalem", country:"Israel", lat:31.76904, long:35.21633 },
+      },
+      currentLocation:{ current:true, locality:"Jerusalem", country:"Israel", lat:31.76904, long:35.21633 },
+    },
+    {
+      threadId:"thr_unmapped",
+      identity:{ lifecycleStatus:"frozen", birthPlace:null, birthLocation:null },
+      currentLocation:null,
+    },
   ];
 
   const grouped = groupThreadsByCurrentLocation(threads);
 
   assert.deepEqual(
-    grouped.locations.map((entry) => [entry.place.city, entry.count, entry.currentCount, entry.awaitingLivedNowCount]),
-    [["Jerusalem", 2, 2, 0], ["Tbilisi", 2, 1, 1]],
-    "map lost enacted or awaiting-LivedNow Threads",
+    grouped.locations.map((entry) => [
+      entry.place.city,
+      entry.count,
+      entry.activeCount,
+      entry.frozenSituatedCount,
+      entry.transitionCount,
+      entry.awaitingLivedNowCount,
+    ]),
+    [
+      ["Jerusalem", 2, 1, 1, 0, 0],
+      ["Kaohsiung", 1, 1, 0, 0, 1],
+      ["Tbilisi", 2, 0, 0, 1, 1],
+    ],
+    "map lifecycle states lost their lived meaning",
   );
-  assert.equal(grouped.mapped, 4, "mappable living Thread disappeared");
-  assert.equal(grouped.authoritative, 3, "authoritative current-location count changed");
-  assert.equal(grouped.awaitingLivedNow, 1, "birthplace placeholder was not explicitly marked");
-  assert.equal(grouped.unmapped, 1, "truly unmappable Thread was hidden");
+  assert.equal(grouped.mapped, 5, "mappable living Thread disappeared");
+  assert.equal(grouped.situated, 3, "situated-life evidence was miscounted");
+  assert.equal(grouped.active, 2, "active Thread count changed");
+  assert.equal(grouped.frozenSituated, 1, "frozen situated Thread was lost");
+  assert.equal(grouped.transitioning, 1, "runtime transition was lost");
+  assert.equal(grouped.awaitingLivedNow, 2, "unsituated living Thread was not explicit");
+  assert.equal(grouped.activeUnsituated, 1, "active-without-situation anomaly was hidden");
+  assert.equal(grouped.retired, 1, "retired Thread was not excluded from living map");
+  assert.equal(grouped.unmapped, 1, "truly unmappable living Thread was hidden");
+
+  assert.equal(threadMapState(threads[0]).kind, "active");
+  assert.equal(threadMapState(threads[1]).kind, "frozen_situated");
+  assert.equal(threadMapState(threads[3]).kind, "awaiting_lived_now");
 });
 
 test("World place lookup does not guess an ambiguous city", () => {
