@@ -21,6 +21,7 @@ const threadPopulationWorldPath = $("#thread-population-world-path");
 const threadPopulationTimezones = $("#thread-population-timezones");
 const threadPopulationMapMarkers = $("#thread-population-map-markers");
 const threadPopulationMapSummary = $("#thread-population-map-summary");
+const threadPopulationRepairGeography = $("#thread-population-repair-geography");
 const stillbornView = $("#stillborn-view");
 const stillbornRows = $("#stillborn-rows");
 const stillbornEmpty = $("#stillborn-empty");
@@ -404,6 +405,7 @@ function actionCell(thread) {
         return {
           action:commandAction,
           operationKey:`${commandAction === "raised_languages" ? "admin_raised_languages" : "admin_identity"}_${Date.now().toString(36)}`,
+          ...(action.fixed ?? {}),
           ...input,
         };
       },
@@ -1010,6 +1012,50 @@ function showThreadMapPopover(location, marker) {
   popover.style.top = `${Math.round(top)}px`;
 }
 
+function birthGeographyRepairs() {
+  return population.flatMap((thread) => {
+    const action = identityActions(thread).find((candidate) => candidate.id === "repair_birth_geography") ?? null;
+    return action === null ? [] : [{ thread, action }];
+  });
+}
+
+function renderBirthGeographyRepairControl() {
+  const repairs = birthGeographyRepairs();
+  threadPopulationRepairGeography.hidden = repairs.length === 0;
+  threadPopulationRepairGeography.textContent = repairs.length === 0
+    ? ""
+    : `Repair ${repairs.length} map location${repairs.length === 1 ? "" : "s"}`;
+  threadPopulationRepairGeography.title = repairs.length === 0
+    ? ""
+    : "Restore malformed birth geography only where World already resolved one unambiguous canonical place.";
+}
+
+async function repairBirthGeographyBatch() {
+  const repairs = birthGeographyRepairs();
+  if (repairs.length === 0) return;
+  threadPopulationRepairGeography.disabled = true;
+  let repaired = 0;
+  let failed = 0;
+  const batch = Date.now().toString(36);
+  for (let index = 0; index < repairs.length; index += 1) {
+    const { thread, action } = repairs[index];
+    try {
+      await command(thread.threadId, {
+        action:"identity",
+        operationKey:`admin_birth_geography_${batch}_${index + 1}`,
+        ...(action.fixed ?? {}),
+      });
+      repaired += 1;
+    } catch {
+      failed += 1;
+    }
+  }
+  await loadPopulation();
+  $("#chain-summary").textContent = failed === 0
+    ? `Repaired ${repaired} malformed birth location${repaired === 1 ? "" : "s"}.`
+    : `Repaired ${repaired} birth locations · ${failed} still need attention.`;
+}
+
 function renderThreadPopulationMap() {
   if (!threadPopulationMapInitialized) {
     threadPopulationWorldPath.setAttribute("d", WORLD_MAP_PATH);
@@ -1037,6 +1083,7 @@ function renderThreadPopulationMap() {
     + (grouped.awaitingLivedNow > 0 ? ` · ${grouped.awaitingLivedNow} awaiting LivedNow` : "")
     + (grouped.activeUnsituated > 0 ? ` · ${grouped.activeUnsituated} active without situation` : "")
     + (grouped.unmapped > 0 ? ` · ${grouped.unmapped} unmapped` : "");
+  renderBirthGeographyRepairControl();
 }
 
 function selectedBirthSex() {
@@ -1434,6 +1481,7 @@ for (const input of birthForm.querySelectorAll('input[name="birth-count"], input
   input.addEventListener("change", syncBirthMode);
 }
 birthPendingRefresh.addEventListener("click", () => void loadPendingBirths());
+threadPopulationRepairGeography.addEventListener("click", () => void repairBirthGeographyBatch());
 birthForm.addEventListener("submit", submitBirth);
 
 $("#view-birth-center").addEventListener("click", enterBirthCenter);
