@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { discoverTestSuites } from "./test-suite-lifecycle.mjs";
 
-const TTY_REPORTER = fileURLToPath(new URL("./fibre-tty-reporter.mjs", import.meta.url));
+const SPEC_REPORTER = fileURLToPath(new URL("./fibre-spec-reporter.mjs", import.meta.url));
 
 export function parseTestSuiteArgs(argv) {
   const [suite = "active", ...rest] = argv;
@@ -17,18 +17,12 @@ function hasExplicitReporter(nodeTestArgs) {
   return nodeTestArgs.some((arg) => arg === "--test-reporter" || arg.startsWith("--test-reporter="));
 }
 
-export function testSuiteCommand(
-  argv = process.argv.slice(2),
-  {
-    isTTY = process.stdout.isTTY === true,
-    isCI = process.env.CI === "true",
-  } = {},
-) {
+export function testSuiteCommand(argv = process.argv.slice(2)) {
   const { suite, nodeTestArgs } = parseTestSuiteArgs(argv);
   const suites = discoverTestSuites();
   const files = suites[suite];
-  const reporterArgs = (isTTY || isCI) && !hasExplicitReporter(nodeTestArgs)
-    ? [`--test-reporter=${TTY_REPORTER}`]
+  const reporterArgs = !hasExplicitReporter(nodeTestArgs)
+    ? [`--test-reporter=${SPEC_REPORTER}`]
     : [];
   return {
     suite,
