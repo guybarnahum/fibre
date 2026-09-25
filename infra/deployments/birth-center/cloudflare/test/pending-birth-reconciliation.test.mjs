@@ -93,9 +93,9 @@ test("one World check settles duplicate stale birth records as born", async () =
   });
 
   assert.equal(worldChecks, 1, "same Thread caused duplicate World checks");
-  assert.equal(published, 2, "healthy birth records did not converge");
+  assert.equal(published, 1, "healthy birth published more than once");
   assert.equal(born, 1, "development birth did not settle born");
-  assert.equal(result.born, 2);
+  assert.equal(result.born, 1);
 });
 
 test("terminal Pass-A failure becomes stillborn only after confirmed World absence", async () => {
