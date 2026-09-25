@@ -43,6 +43,7 @@ function labelFor(code) {
     BIRTH_DATE_MISSING:"Birth date",
     BIRTH_DATE_PRESENTATION_MISSING:"Birth date",
     BIRTH_DATE_CONFLICT:"Birth date",
+    BIRTH_GEOGRAPHY_RECOVERABLE:"Birth place",
     SPOKEN_LANGUAGES:"Spoken languages",
     SPOKEN_LANGUAGES_PRESENTATION_STALE:"Spoken languages",
     RAISED_LANGUAGES:"Raised languages",
