@@ -38,6 +38,8 @@ The existing `apps/thread-editor` remains a separate loopback-only M1 inspection
 
 ## Operator-initiated Thread birth
 
-The Threads view can initiate a modern Genesis birth through Birth Center. Admin sends only bounded operator intent: optional `location` as `Country/City` and optional `sex` as `female` or `male`. Birth Center owns composition of the Genesis development request and the normal birth pipeline remains authoritative.
+Birth Center is a first-class Admin view for initiating and observing modern Genesis births. Admin sends only bounded operator intent: optional `location` as `Country/City`, optional `sex` as `female` or `male`, and a cohort size of 1, 3, 5, or 11. Birth Center owns composition of every Genesis development request and the normal birth pipeline remains authoritative.
 
-If location is omitted, Fibre uses the shared modern birthplace sampler: 40 globally distributed major-city anchors plus a 34% smaller-place long tail. If sex is omitted, Fibre derives it deterministically from the new Thread identity so retries cannot change the person. The Admin dialog keeps one request ID and request timestamp across retries, allowing an interrupted request to resume the same prospective Thread rather than creating a duplicate.
+If location is omitted, each request independently uses the shared modern birthplace sampler: globally distributed major-city anchors plus a smaller-place long tail. If an explicit location is selected, the cohort shares that birthplace. Each birth still receives its own request ID. If sex is omitted, Fibre derives it deterministically from each new Thread identity so retries cannot change the person.
+
+The Admin map is a static world projection over Birth Center's own birthplace catalog. It shows restrained timezone meridians and the active birth pipeline as `genesis -> developing -> emerging -> in-world`; these are operator-facing stage names over the existing durable birth states, not a second lifecycle authority. Pending births remain durable Birth Center state, while World remains authoritative for whether a Thread is actually in-world.
