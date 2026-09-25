@@ -226,6 +226,7 @@
   vector-effect:non-scaling-stroke;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.24));
 }
+#thread-birth-map-marker[hidden] { display:none; }
 .thread-birth-stage-marker {
   stroke:var(--surface);
   stroke-width:2.5;
