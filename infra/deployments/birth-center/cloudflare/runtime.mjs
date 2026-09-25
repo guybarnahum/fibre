@@ -254,7 +254,6 @@ export async function reconcileStaleBirths(runtime, {
       runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
       publishedModern.add(request.requestId);
       bornRequests.add(request.requestId);
-    } else if (worldPresence === "unavailable") {
     }
   }
 
@@ -298,7 +297,6 @@ export async function reconcileStaleBirths(runtime, {
     ) {
       runtime.developmentRequestStore.settleStillborn(request.requestId);
       stillbornRequests.add(request.requestId);
-    } else if (worldPresence === "unavailable") {
     }
   }
 
