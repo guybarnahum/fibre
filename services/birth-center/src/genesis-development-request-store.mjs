@@ -291,7 +291,7 @@ export function createGenesisDevelopmentRequestStore(storage, {
     const id = nonEmpty("Genesis development requestId", requestId);
     if (get(id) === null) throw new Error(`Genesis development request ${id} does not exist`);
     const existing = getDisposition(id);
-    if (existing?.outcome !== null && existing?.outcome !== outcome) {
+    if (existing !== null && existing.outcome !== null && existing.outcome !== outcome) {
       throw new GenesisDevelopmentRequestConflictError(
         `Genesis development request ${id} is already settled as ${existing.outcome}`,
       );
