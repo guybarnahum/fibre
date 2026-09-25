@@ -58,23 +58,17 @@ function migrate(session) {
       ALTER TABLE genesis_development_dispositions
       ADD COLUMN failure_retryable INTEGER
         CHECK (failure_retryable IS NULL OR failure_retryable IN (0,1));
+
+      UPDATE genesis_development_dispositions
+      SET failure_retryable=0
+      WHERE outcome IS NULL
+        AND (
+          failure_code='GENESIS_PASS_A_VALIDATION_ERROR'
+          OR failure_message LIKE 'Pass-B model output episodeRef % is not visible history'
+          OR failure_message LIKE '%observableAction narrates an explicit scene setting incompatible with authoritative placeRef%'
+        );
     `);
   }
-
-  // These pre-v2 failures are already durable structural Genesis evidence.
-  // Backfill only cases whose historical message/code unambiguously records
-  // non-retryable candidate invalidity; leave ambiguous old failures unresolved.
-  session.exec(`
-    UPDATE genesis_development_dispositions
-    SET failure_retryable=0
-    WHERE failure_retryable IS NULL
-      AND outcome IS NULL
-      AND (
-        failure_code='GENESIS_PASS_A_VALIDATION_ERROR'
-        OR failure_message LIKE 'Pass-B model output episodeRef % is not visible history'
-        OR failure_message LIKE '%observableAction narrates an explicit scene setting incompatible with authoritative placeRef%'
-      );
-  `);
 }
 
 function normalize(row) {
