@@ -56,6 +56,34 @@ function normalizeBirthDate(value) {
   throw new TypeError("Thread birth date must be YYYY-MM-DD, YYYYMMDD, MM/DD/YYYY, or MMDDYYYY");
 }
 
+function normalizeBirthPlace(value) {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new TypeError("Thread birth place must be an object");
+  }
+  const expected = ["displayName","country","city","lat","long"];
+  const keys = Object.keys(value).sort();
+  if (JSON.stringify(keys) !== JSON.stringify([...expected].sort())) {
+    throw new TypeError("Thread birth place must contain displayName, country, city, lat, and long");
+  }
+  for (const field of ["displayName","country","city"]) {
+    if (typeof value[field] !== "string" || value[field].trim() === "") {
+      throw new TypeError(`Thread birth place ${field} is required`);
+    }
+  }
+  if (!Number.isFinite(value.lat) || value.lat < -90 || value.lat > 90
+    || !Number.isFinite(value.long) || value.long < -180 || value.long > 180) {
+    throw new TypeError("Thread birth place coordinates are invalid");
+  }
+  return Object.freeze({
+    displayName:value.displayName.trim(),
+    country:value.country.trim(),
+    city:value.city.trim(),
+    lat:value.lat,
+    long:value.long,
+  });
+}
+
 function normalizeOperationKey(value) {
   if (typeof value !== "string" || !OPERATION_KEY.test(value)) {
     throw new TypeError("identity operationKey must be a Fibre identifier up to 221 characters");
@@ -87,13 +115,19 @@ function derivedSelfModelRename(selfModel, previousName, nextName) {
   return selfModel;
 }
 
-function requestMatchesExisting(thread, changes, { name, sex, birthDate }) {
+function requestMatchesExisting(thread, changes, { name, sex, birthDate, birthPlace }) {
   const matches = (field, requested) => {
     if (requested === undefined) return true;
-    if (Object.prototype.hasOwnProperty.call(changes, field)) return changes[field] === requested;
-    return thread.identity?.[field] === requested;
+    const actual = Object.prototype.hasOwnProperty.call(changes, field)
+      ? changes[field]
+      : thread.identity?.[field];
+    return canonicalJson(actual ?? null) === canonicalJson(requested ?? null);
   };
-  return matches("name", name) && matches("sex", sex) && matches("birthDate", birthDate);
+  return matches("name", name)
+    && matches("sex", sex)
+    && matches("birthDate", birthDate)
+    && matches("birthPlace", birthPlace)
+    && (birthPlace === undefined || matches("birthCity", birthPlace.displayName));
 }
 
 export class ThreadIdentityUpdateStore {
@@ -105,14 +139,15 @@ export class ThreadIdentityUpdateStore {
 
   close() { this.#database.close(); }
 
-  update(thread, { name, sex, birthDate, operationKey, changedAt = new Date().toISOString() } = {}) {
+  update(thread, { name, sex, birthDate, birthPlace, operationKey, changedAt = new Date().toISOString() } = {}) {
     validateThreadSnapshot(thread);
     const key = normalizeOperationKey(operationKey);
     const nextName = normalizeName(name);
     const nextSex = sex === undefined ? undefined : normalizeGenesisSex(sex);
     const nextBirthDate = normalizeBirthDate(birthDate);
-    if (nextName === undefined && nextSex === undefined && nextBirthDate === undefined) {
-      throw new TypeError("identity update requires name, sex, or birthDate");
+    const nextBirthPlace = normalizeBirthPlace(birthPlace);
+    if (nextName === undefined && nextSex === undefined && nextBirthDate === undefined && nextBirthPlace === undefined) {
+      throw new TypeError("identity update requires name, sex, birthDate, or birthPlace");
     }
 
     const updateEventId = eventId(thread.threadId, key);
@@ -125,7 +160,7 @@ export class ThreadIdentityUpdateStore {
       }
       const payload = JSON.parse(existing.payload_json);
       const existingChanges = payload?.changes ?? {};
-      if (payload?.operationKey !== key || !requestMatchesExisting(thread, existingChanges, { name:nextName, sex:nextSex, birthDate:nextBirthDate })) {
+      if (payload?.operationKey !== key || !requestMatchesExisting(thread, existingChanges, { name:nextName, sex:nextSex, birthDate:nextBirthDate, birthPlace:nextBirthPlace })) {
         throw new TypeError(`identity operationKey ${key} was already used with different identity input`);
       }
       const currentRow = this.#database.prepare("SELECT state_json FROM threads WHERE thread_id=?").get(thread.threadId);
@@ -160,6 +195,12 @@ export class ThreadIdentityUpdateStore {
     if (nextBirthDate !== undefined && nextBirthDate !== thread.identity.birthDate) {
       changes.birthDate = nextBirthDate;
       previous.birthDate = thread.identity.birthDate ?? null;
+    }
+    if (nextBirthPlace !== undefined && canonicalJson(nextBirthPlace) !== canonicalJson(thread.identity.birthPlace ?? null)) {
+      changes.birthCity = nextBirthPlace.displayName;
+      previous.birthCity = thread.identity.birthCity ?? null;
+      changes.birthPlace = nextBirthPlace;
+      previous.birthPlace = thread.identity.birthPlace ?? null;
     }
     if (Object.keys(changes).length === 0) {
       return Object.freeze({ changed:false, reused:true, eventId:thread.provenance.lastEventId, changes:Object.freeze({}), thread });
