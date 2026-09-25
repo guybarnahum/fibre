@@ -75,19 +75,21 @@ test("Threads map exposes active, frozen-situated and awaiting-LivedNow states w
   const grouped = groupThreadsByCurrentLocation(threads);
 
   assert.deepEqual(
-    grouped.locations.map((entry) => [
+    Object.fromEntries(grouped.locations.map((entry) => [
       entry.place.city,
-      entry.count,
-      entry.activeCount,
-      entry.frozenSituatedCount,
-      entry.transitionCount,
-      entry.awaitingLivedNowCount,
-    ]),
-    [
-      ["Jerusalem", 2, 1, 1, 0, 0],
-      ["Kaohsiung", 1, 1, 0, 0, 1],
-      ["Tbilisi", 2, 0, 0, 1, 1],
-    ],
+      {
+        count:entry.count,
+        active:entry.activeCount,
+        frozenSituated:entry.frozenSituatedCount,
+        transitioning:entry.transitionCount,
+        awaitingLivedNow:entry.awaitingLivedNowCount,
+      },
+    ])),
+    {
+      Jerusalem:{ count:2, active:1, frozenSituated:1, transitioning:0, awaitingLivedNow:0 },
+      Tbilisi:{ count:2, active:0, frozenSituated:0, transitioning:1, awaitingLivedNow:1 },
+      Kaohsiung:{ count:1, active:1, frozenSituated:0, transitioning:0, awaitingLivedNow:1 },
+    },
     "map lifecycle states lost their lived meaning",
   );
   assert.equal(grouped.mapped, 5, "mappable living Thread disappeared");
