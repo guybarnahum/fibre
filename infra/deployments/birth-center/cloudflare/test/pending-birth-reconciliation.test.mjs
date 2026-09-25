@@ -125,7 +125,7 @@ test("one World check settles duplicate stale birth records as born", async () =
   assert.equal(result.born, 1);
 });
 
-test("terminal Pass-A failure becomes stillborn only after confirmed World absence", async () => {
+test("terminal pre-admission failure becomes stillborn only after confirmed World absence", async () => {
   const request = staleModern({
     status:"failed",
     error:"replacement Pass-A exhausted 3 generated versions",
@@ -142,7 +142,8 @@ test("terminal Pass-A failure becomes stillborn only after confirmed World absen
       recent:() => [developmentFor(request)],
       getDisposition:() => ({
         outcome:null,
-        failureCode:"GENESIS_PASS_A_VALIDATION_ERROR",
+        failureCode:"ERROR",
+        failureRetryable:false,
       }),
       settleBorn:() => { throw new Error("absent Thread became born"); },
       settleStillborn:() => { stillborn += 1; },
@@ -155,7 +156,7 @@ test("terminal Pass-A failure becomes stillborn only after confirmed World absen
     nowMs:() => NOW,
   });
 
-  assert.equal(stillborn, 1, "terminal birth did not settle stillborn");
+  assert.equal(stillborn, 1, "terminal pre-admission failure did not settle stillborn");
   assert.equal(result.stillborn, 1);
 });
 
@@ -200,4 +201,37 @@ test("distinct stale births share one bounded World presence query", async () =>
   assert.equal(worldChecks, 1, "stale cohort fanned out into multiple World calls");
   assert.equal(published, 2, "admitted stale births did not converge");
   assert.equal(result.checked, 2);
+});
+
+
+test("retryable pre-admission failure remains recoverable when World is absent", async () => {
+  const request = staleModern({ status:"failed", error:"provider unavailable" });
+  let stillborn = 0;
+  const runtime = {
+    modernBirthRequestStore:{
+      recent:() => [request],
+      isActive:() => false,
+      progress:() => {},
+    },
+    provisionalBirthStore:{ get:() => null },
+    developmentRequestStore:{
+      recent:() => [developmentFor(request)],
+      getDisposition:() => ({
+        outcome:null,
+        failureCode:"MODEL_PROVIDER_UNAVAILABLE",
+        failureRetryable:true,
+      }),
+      settleBorn:() => { throw new Error("absent Thread became born"); },
+      settleStillborn:() => { stillborn += 1; },
+    },
+  };
+
+  const result = await reconcileStaleBirths(runtime, {
+    worldBinding:{ fetch:async () => Response.json({ presentThreadIds:[] }) },
+    privateToken:TOKEN,
+    nowMs:() => NOW,
+  });
+
+  assert.equal(stillborn, 0, "retryable Genesis interruption became stillborn");
+  assert.equal(result.stillborn, 0);
 });
