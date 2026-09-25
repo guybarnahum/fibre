@@ -19,8 +19,10 @@ import {
 } from "./situated-identity-grounding.mjs";
 import {
   normalizeLifeRelation,
+  normalizePlaceEpisode,
   situatedLifeRecordIsCurrent,
 } from "./situated-life-domain.mjs";
+import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {
   createLiveWorldPlaceTables,
   ensureLiveWorldPlaces,
@@ -93,6 +95,32 @@ function parseJson(name, value) {
   } catch (error) {
     throw new IntegrityError(`${name} is not valid JSON: ${error.message}`);
   }
+}
+
+function worldPlaceEvidence(ref, json, storedDigest) {
+  if (json === null) return null;
+  const record = parseJson(`live World place ${ref}`, json);
+  if (
+    record?.ref !== ref
+    || canonicalJson(record) !== json
+    || digest(record) !== storedDigest
+  ) {
+    throw new IntegrityError(`live World place ${ref} integrity mismatch`);
+  }
+  return Object.freeze(record);
+}
+
+function placeEpisodeEvidence(ref, json, recordDigest, witnessDigest) {
+  if (json === null) return null;
+  const record = normalizePlaceEpisode(parseJson(`place episode ${ref}`, json));
+  if (
+    placeEpisodeRevisionRef(record) !== ref
+    || canonicalJson(record) !== json
+    || recordDigest !== witnessDigest
+  ) {
+    throw new IntegrityError(`place episode ${ref} integrity mismatch`);
+  }
+  return record;
 }
 
 function planFromRow(row) {
@@ -425,6 +453,57 @@ export class LivedNowStore {
       ORDER BY thread_id
     `).all(at);
     return rows.map(situationFromRow);
+  }
+
+  listCurrentLocationEvidence({ at } = {}) {
+    const situations = this.listCurrentSituations({ at });
+    if (situations.length === 0) return [];
+
+    const references = [...new Set(situations.flatMap(observedPlaceRefs))];
+    const tables = new Set(this.#database.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table'",
+    ).all().map((row) => row.name));
+    const hasWorld = tables.has("live_world_place_records");
+    const hasSituated = tables.has("situated_evidence_witnesses")
+      && tables.has("place_episode_records");
+
+    const rows = this.#database.prepare(`
+      WITH refs(ref) AS (SELECT value FROM json_each(?))
+      SELECT
+        refs.ref,
+        ${hasWorld ? "w.record_json AS world_json,w.record_digest AS world_digest" : "NULL AS world_json,NULL AS world_digest"},
+        ${hasSituated
+          ? "p.record_json AS place_json,p.record_digest AS place_digest,e.record_digest AS witness_digest"
+          : "NULL AS place_json,NULL AS place_digest,NULL AS witness_digest"}
+      FROM refs
+      ${hasWorld ? "LEFT JOIN live_world_place_records w ON w.place_ref=refs.ref" : ""}
+      ${hasSituated
+        ? "LEFT JOIN situated_evidence_witnesses e ON e.reference=refs.ref AND e.witness_kind='place_episode_revision' LEFT JOIN place_episode_records p ON p.thread_id=e.thread_id AND p.episode_id=e.source_id AND p.revision=e.revision"
+        : ""}
+      ORDER BY refs.ref
+    `).all(JSON.stringify(references));
+
+    const evidenceByRef = new Map(rows.map((row) => [row.ref, Object.freeze({
+      worldPlace:worldPlaceEvidence(row.ref, row.world_json, row.world_digest),
+      placeEpisode:placeEpisodeEvidence(
+        row.ref,
+        row.place_json,
+        row.place_digest,
+        row.witness_digest,
+      ),
+    })]));
+
+    return situations.map((currentSituation) => {
+      const evidence = observedPlaceRefs(currentSituation)
+        .map((ref) => evidenceByRef.get(ref))
+        .filter(Boolean);
+      return Object.freeze({
+        threadId:currentSituation.threadId,
+        currentSituation,
+        worldPlaces:Object.freeze(evidence.map((item) => item.worldPlace).filter(Boolean)),
+        placeEpisodes:Object.freeze(evidence.map((item) => item.placeEpisode).filter(Boolean)),
+      });
+    });
   }
 
   enactCurrentSituation(input) {
