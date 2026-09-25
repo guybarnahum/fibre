@@ -48,7 +48,7 @@ export function createThreadDirectoryService({ directoryStore }) {
         throw new TypeError("Thread directory store must expose presentThreadIds()");
       }
       return Object.freeze({
-        presentThreadIds:Object.freeze(directoryStore.presentThreadIds(threadIds)),
+        presentThreadIds:Object.freeze([...new Set(directoryStore.presentThreadIds(threadIds))]),
       });
     },
     search({ query = null, fin = null, limit = 50 } = {}) {
