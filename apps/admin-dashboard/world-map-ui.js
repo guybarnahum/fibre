@@ -240,6 +240,11 @@ export function renderWorldCountMarkers(group, locations, { className = "thread-
     if (location.activeCount > 0) marker.classList.add("active");
     if (location.activeUnsituatedCount > 0) marker.classList.add("active-unsituated");
     if (location.transitionCount > 0) marker.classList.add("transition");
+    if (
+      location.activeCount === 0
+      && location.transitionCount === 0
+      && location.frozenSituatedCount > 0
+    ) marker.classList.add("frozen-situated");
     if (location.awaitingLivedNowCount > 0 && location.situatedCount === 0) {
       marker.classList.add("awaiting-lived-now");
     } else if (location.awaitingLivedNowCount > 0) {
