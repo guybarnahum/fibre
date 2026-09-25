@@ -1,5 +1,5 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
-import { decorateActionButton, iconForIdentityAction } from "./fa-icons.js";
+import { decorateActionButton, faIcon, iconForIdentityAction } from "./fa-icons.js";
 import { reissueFidCard } from "./thread-observatory.js";
 import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
 
@@ -10,11 +10,13 @@ const empty = $("#thread-population-empty");
 const stillbornView = $("#stillborn-view");
 const stillbornRows = $("#stillborn-rows");
 const stillbornEmpty = $("#stillborn-empty");
-const birthDialog = $("#thread-birth-dialog");
+const birthCenterView = $("#birth-center-view");
 const birthForm = $("#thread-birth-form");
 const birthLocation = $("#thread-birth-location");
 const birthMap = $("#thread-birth-map");
 const birthWorldPath = $("#thread-birth-world-path");
+const birthTimezones = $("#thread-birth-timezones");
+const birthPipelineMarkers = $("#thread-birth-pipeline-markers");
 const birthMapMarker = $("#thread-birth-map-marker");
 const birthMapSelection = $("#thread-birth-map-selection");
 const birthSearchResults = $("#thread-birth-search-results");
@@ -30,6 +32,9 @@ let birthplaces = null;
 let selectedBirthplace = null;
 let pendingBirthSnapshot = [];
 let pendingBirthTimer = null;
+let birthCenterInitialized = false;
+let birthLoading = false;
+const recentInWorldBirths = new Map();
 let active = false;
 let populationMode = "threads";
 let loading = false;
@@ -51,10 +56,6 @@ const populationPortraitObserver = typeof IntersectionObserver === "function"
 
 function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
-}
-
-function shortId(value) {
-  return value.length > 24 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
 }
 
 async function copyText(value) {
@@ -80,7 +81,7 @@ function threadIdCopyButton(threadId) {
     control.classList.remove("copied", "copy-failed");
     decorateActionButton(control, {
       icon:"copy",
-      label:shortId(threadId),
+      label:threadId,
       tooltip:`Copy Thread ID: ${threadId}`,
     });
   };
@@ -572,8 +573,8 @@ function stillbornRow(thread) {
   tr.className = "stillborn-row";
 
   const identifier = document.createElement("td");
-  identifier.className = "mono";
-  identifier.textContent = thread.threadId;
+  identifier.className = "mono stillborn-thread-identifier";
+  identifier.append(threadIdCopyButton(thread.threadId));
 
   const lastActivity = document.createElement("td");
   lastActivity.className = "time";
@@ -708,6 +709,89 @@ function nearestBirthplace(point) {
   }, null)?.candidate ?? null;
 }
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function setButtonWaiting(button, label) {
+  const icon = faIcon("rotate");
+  icon.classList.add("fa-spin");
+  const text = document.createElement("span");
+  text.textContent = label;
+  button.replaceChildren(icon, text);
+}
+
+function setButtonLabel(button, label) {
+  button.textContent = label;
+}
+
+function renderTimeZoneLines() {
+  birthTimezones.replaceChildren();
+  for (let longitude = -165; longitude <= 165; longitude += 15) {
+    const line = document.createElementNS(SVG_NS, "line");
+    const x = mapPoint(0, longitude).x.toFixed(1);
+    line.setAttribute("x1", x);
+    line.setAttribute("x2", x);
+    line.setAttribute("y1", "0");
+    line.setAttribute("y2", String(WORLD_MAP_BOUNDS.height));
+    if (longitude === 0 || longitude % 60 === 0) line.classList.add("major");
+    birthTimezones.append(line);
+  }
+}
+
+function birthStage(birth) {
+  if (["genesis","developing","emerging","in-world"].includes(birth?.stage)) return birth.stage;
+  return ({
+    queued:"genesis",
+    authoring:"genesis",
+    reserved:"developing",
+    ready:"developing",
+    developing:"developing",
+    submitted:"emerging",
+    publishing:"emerging",
+    published:"in-world",
+  })[birth?.status] ?? "genesis";
+}
+
+function birthplaceForBirth(birth) {
+  if (!birth?.location || !Array.isArray(birthplaces)) return null;
+  return birthplaces.find((place) => place.place === birth.location) ?? null;
+}
+
+function renderBirthPipelineMarkers() {
+  birthPipelineMarkers.replaceChildren();
+  const now = Date.now();
+  for (const [key, birth] of recentInWorldBirths) {
+    if (birth.until <= now) recentInWorldBirths.delete(key);
+  }
+  if (!Array.isArray(birthplaces)) return;
+  const visible = [...pendingBirthSnapshot, ...recentInWorldBirths.values()];
+  const groups = new Map();
+  for (const birth of visible) {
+    const place = birthplaceForBirth(birth);
+    if (place === null) continue;
+    if (!groups.has(place.place)) groups.set(place.place, []);
+    groups.get(place.place).push({ birth, place });
+  }
+  for (const entries of groups.values()) {
+    entries.forEach(({ birth, place }, index) => {
+      const point = mapPoint(place.lat, place.long);
+      const count = entries.length;
+      const angle = count === 1 ? 0 : (Math.PI * 2 * index) / count;
+      const spread = count === 1 ? 0 : Math.min(13, 4 + count);
+      const stage = birthStage(birth);
+      const circle = document.createElementNS(SVG_NS, "circle");
+      circle.setAttribute("cx", (point.x + Math.cos(angle) * spread).toFixed(1));
+      circle.setAttribute("cy", (point.y + Math.sin(angle) * spread).toFixed(1));
+      circle.setAttribute("r", ({ genesis:5, developing:6.5, emerging:8, "in-world":9 })[stage] ?? 5);
+      circle.classList.add("thread-birth-stage-marker", `stage-${stage}`);
+      circle.style.animationDelay = `${-(index % 5) * 180}ms`;
+      const title = document.createElementNS(SVG_NS, "title");
+      title.textContent = `${place.city}, ${place.country} · ${stage}${birth.threadId ? ` · ${birth.threadId}` : ""}`;
+      circle.append(title);
+      birthPipelineMarkers.append(circle);
+    });
+  }
+}
+
 function renderBirthMarker(place) {
   if (place === null) {
     birthMapMarker.hidden = true;
@@ -723,17 +807,16 @@ function syncBirthMode() {
   const value = birthLocation.value.trim();
   const random = value === "";
   birthRandomLocation.classList.toggle("selected", random);
-  birthCountField.hidden = !random;
   birthMapSelection.textContent = random
-    ? "Random worldwide"
+    ? "Random Location"
     : selectedBirthplace?.place === value
       ? selectedBirthplace.place.replace("/", " · ")
       : value;
   renderBirthMarker(random ? null : selectedBirthplace?.place === value ? selectedBirthplace : null);
-  const count = random ? selectedBirthCount() : 1;
+  renderBirthPipelineMarkers();
+  const count = selectedBirthCount();
   birthSubmit.textContent = count === 1 ? "Birth Thread" : `Birth ${count} Threads`;
 }
-
 function setBirthLocation(value, place = null) {
   birthLocation.value = value ?? "";
   selectedBirthplace = place;
@@ -802,6 +885,7 @@ async function loadBirthplaces() {
     throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
   }
   birthplaces = payload.places;
+  renderBirthPipelineMarkers();
   return birthplaces;
 }
 
@@ -826,16 +910,27 @@ function elapsedText(value) {
   return `${hours}h ${minutes % 60}m ago`;
 }
 
-function pendingStatusText(status) {
-  return ({
-    queued:"Queued",
-    authoring:"Authoring life context",
-    developing:"Developing prior life",
-    publishing:"Publishing to World",
-  })[status] ?? human(status ?? "pending");
+function pendingStatusText(birth) {
+  return birthStage(birth);
+}
+
+function pendingBirthKey(birth) {
+  return birth?.requestId ?? birth?.threadId ?? null;
+}
+
+function rememberCompletedBirths(nextBirths) {
+  const nextKeys = new Set(nextBirths.map(pendingBirthKey).filter(Boolean));
+  const now = Date.now();
+  for (const previous of pendingBirthSnapshot) {
+    const key = pendingBirthKey(previous);
+    if (key !== null && !nextKeys.has(key) && previous.threadId && ["developing","emerging"].includes(birthStage(previous))) {
+      recentInWorldBirths.set(key, { ...previous, stage:"in-world", until:now + 20_000 });
+    }
+  }
 }
 
 function renderPendingBirths(births) {
+  rememberCompletedBirths(births);
   pendingBirthSnapshot = births;
   birthPending.replaceChildren();
   birthPendingCount.textContent = births.length === 0 ? "" : String(births.length);
@@ -844,30 +939,42 @@ function renderPendingBirths(births) {
     empty.className = "thread-birth-pending-empty";
     empty.textContent = "No unfinished births.";
     birthPending.append(empty);
-    return;
+  } else {
+    for (const birth of births) {
+      const row = document.createElement("article");
+      row.className = "thread-birth-pending-row";
+      const copy = document.createElement("div");
+      const location = document.createElement("strong");
+      location.textContent = birth.location?.replace("/", " · ") ?? "Selecting birthplace…";
+      const meta = document.createElement("span");
+      meta.textContent = `${birth.sex ? human(birth.sex) : "Random sex"} · ${pendingStatusText(birth)} · started ${elapsedText(birth.createdAt)}`;
+      copy.append(location, meta);
+      if (birth.threadId) {
+        const id = threadIdCopyButton(birth.threadId);
+        id.classList.add("thread-birth-thread-id");
+        copy.append(id);
+      } else if (birth.requestId) {
+        const id = document.createElement("small");
+        id.className = "mono";
+        id.textContent = birth.requestId;
+        copy.append(id);
+      }
+      const status = badge(pendingStatusText(birth), "retrying");
+      row.append(copy, status);
+      birthPending.append(row);
+    }
   }
-  for (const birth of births) {
-    const row = document.createElement("article");
-    row.className = "thread-birth-pending-row";
-    const copy = document.createElement("div");
-    const location = document.createElement("strong");
-    location.textContent = birth.location?.replace("/", " · ") ?? "Selecting worldwide birthplace…";
-    const meta = document.createElement("span");
-    meta.textContent = `${birth.sex ? human(birth.sex) : "Random sex"} · ${pendingStatusText(birth.status)} · started ${elapsedText(birth.createdAt)}`;
-    const id = document.createElement("small");
-    id.className = "mono";
-    id.textContent = shortId(birth.threadId ?? birth.requestId ?? "pending");
-    copy.append(location, meta, id);
-    const status = badge(pendingStatusText(birth.status), "retrying");
-    row.append(copy, status);
-    birthPending.append(row);
-  }
+  renderBirthPipelineMarkers();
+  if (active && populationMode === "birth-center") renderBirthCenterTopSummary();
 }
-
 async function loadPendingBirths({ quiet = false } = {}) {
-  if (!quiet && pendingBirthSnapshot.length === 0) {
-    birthPending.textContent = "Loading…";
-    birthPendingCount.textContent = "";
+  if (!quiet) {
+    birthPendingRefresh.disabled = true;
+    setButtonWaiting(birthPendingRefresh, "Refreshing");
+    if (pendingBirthSnapshot.length === 0) {
+      birthPending.textContent = "Loading…";
+      birthPendingCount.textContent = "";
+    }
   }
   try {
     const response = await fetch("/api/threads/births/pending", {
@@ -884,13 +991,18 @@ async function loadPendingBirths({ quiet = false } = {}) {
       birthPending.textContent = `Pending births unavailable: ${error instanceof Error ? error.message : String(error)}`;
       birthPendingCount.textContent = "";
     }
+  } finally {
+    if (!quiet) {
+      birthPendingRefresh.disabled = false;
+      setButtonLabel(birthPendingRefresh, "Refresh");
+    }
   }
 }
 
 function startPendingPolling() {
   stopPendingPolling();
   pendingBirthTimer = window.setInterval(() => {
-    if (!birthDialog.open) return;
+    if (!active || populationMode !== "birth-center") return;
     if (pendingBirthSnapshot.length > 0) renderPendingBirths(pendingBirthSnapshot);
     void loadPendingBirths({ quiet:true });
   }, 2000);
@@ -906,44 +1018,45 @@ function chooseFromMap(event) {
   if (place !== null) setBirthLocation(place.place, place);
 }
 
-function closeBirthDialog() {
-  stopPendingPolling();
-  if (birthDialog?.open) birthDialog.close();
-}
-
-async function openBirthDialog() {
-  if (!birthDialog) return;
-  birthForm.reset();
-  selectedBirthplace = null;
-  birthWorldPath.setAttribute("d", WORLD_MAP_PATH);
-  birthResult.replaceChildren();
-  birthResult.classList.remove("failed");
-  birthSubmit.disabled = false;
-  syncBirthMode();
-  birthDialog.showModal();
-  startPendingPolling();
-  void loadPendingBirths();
+async function loadBirthCenter() {
+  if (!active || populationMode !== "birth-center" || birthLoading) return;
+  birthLoading = true;
+  holdOperatorMode();
+  $("#refresh-button").disabled = true;
+  setButtonWaiting($("#refresh-button"), "Refreshing");
+  $("#chain-summary").textContent = "Reading durable Birth Center progress and birthplace catalog…";
   try {
-    await loadBirthplaces();
-    renderBirthSearch();
+    if (!birthCenterInitialized) {
+      birthWorldPath.setAttribute("d", WORLD_MAP_PATH);
+      renderTimeZoneLines();
+      syncBirthMode();
+      birthCenterInitialized = true;
+    }
+    startPendingPolling();
+    await Promise.all([loadPendingBirths(), loadBirthplaces()]);
+    renderBirthPipelineMarkers();
+    renderBirthCenterTopSummary();
+    $("#chain-summary").textContent = `${pendingBirthSnapshot.length} active birth${pendingBirthSnapshot.length === 1 ? "" : "s"} · genesis → developing → emerging → in-world.`;
   } catch (error) {
-    birthMapSelection.textContent = `Birthplace catalog unavailable: ${error instanceof Error ? error.message : String(error)}`;
+    $("#chain-summary").textContent = `Birth Center unavailable: ${error instanceof Error ? error.message : String(error)}`;
+  } finally {
+    birthLoading = false;
+    $("#refresh-button").disabled = false;
+    setButtonLabel($("#refresh-button"), "Refresh");
   }
-  window.setTimeout(() => birthLocation.focus(), 0);
 }
-
 function renderBirthBatchProgress({ total, accepted, failed }) {
   birthResult.classList.toggle("failed", failed > 0);
   birthResult.textContent = failed === 0
-    ? `${accepted} of ${total} birth request${total === 1 ? "" : "s"} queued. Progress appears below.`
-    : `${accepted} queued · ${failed} failed to enqueue.`;
+    ? `${accepted} of ${total} birth${total === 1 ? "" : "s"} started. Progress appears below.`
+    : `${accepted} started · ${failed} failed to start.`;
 }
 
 async function submitBirth(event) {
   event.preventDefault();
   if (birthSubmit.disabled) return;
   const location = birthLocation.value.trim();
-  const count = location === "" ? selectedBirthCount() : 1;
+  const count = selectedBirthCount();
   const sex = selectedBirthSex();
   const requestedAt = new Date().toISOString();
   const requests = Array.from({ length:count }, () => ({
@@ -954,7 +1067,7 @@ async function submitBirth(event) {
   }));
 
   birthSubmit.disabled = true;
-  birthSubmit.textContent = "Queueing…";
+  setButtonWaiting(birthSubmit, "Starting");
   birthResult.classList.remove("failed");
   renderBirthBatchProgress({ total:count, accepted:0, failed:0 });
 
