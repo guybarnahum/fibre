@@ -12,6 +12,7 @@ import {
   openWorldStore,
 } from "../src/persistence.mjs";
 import { openRuntimeStore } from "../src/runtime-store.mjs";
+import { ThreadDirectoryStore } from "../src/thread-directory-store.mjs";
 import { M1RuntimeWorldKernelService } from "../src/runtime-service.mjs";
 import {
   ParticipationAuthorizationRejectedError,
@@ -210,6 +211,12 @@ test("acquires accepted authorization and a Thread-owned context with kernel-sta
     );
     assert.deepEqual(first.runtime.session.context.relevantMemories, ["mem_mina_first_review"]);
     assert.equal(first.runtime.session.context.proposedCommands, undefined);
+    const directory = new ThreadDirectoryStore(localWorldStateStorage(databasePath));
+    try {
+      assert.equal(directory.getEntry(fixture.threadId).runtime?.state, "active", "active thaw was invisible to World inspection");
+    } finally {
+      directory.close();
+    }
     assert.equal(runtime.service.getThread(fixture.threadId).status, "frozen");
     assert.equal(runtime.service.listEvents(fixture.threadId).length, 1);
 
