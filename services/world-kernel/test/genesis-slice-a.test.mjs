@@ -177,6 +177,9 @@ test("Directory keeps raised languages distinct from spoken languages", () =>
     const entry = directory.getEntry(thread.threadId);
     assert.deepEqual(entry.languages, ["English", "Korean"], "spoken languages were altered");
     assert.deepEqual(entry.raisedAs.languages, ["English"], "raised languages collapsed into spoken languages");
+    assert.equal(entry.birthLocation.source, "legacy_identity_projection", "legacy birthplace was not made mappable");
+    assert.equal(entry.birthLocation.city, "Los Angeles, California");
+    assert.equal(entry.birthLocation.lat, 34.05223);
 
     directory.close();
     genesis.close();
