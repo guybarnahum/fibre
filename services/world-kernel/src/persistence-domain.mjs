@@ -58,8 +58,11 @@ export function validateThreadSnapshot(thread) {
     assertNonEmpty("thread.identity.birthPlace.displayName", thread.identity.birthPlace.displayName);
     assertNonEmpty("thread.identity.birthPlace.country", thread.identity.birthPlace.country);
     assertNonEmpty("thread.identity.birthPlace.city", thread.identity.birthPlace.city);
-    assertFiniteNumber("thread.identity.birthPlace.lat", thread.identity.birthPlace.lat, { minimum:-90, maximum:90 });
-    assertFiniteNumber("thread.identity.birthPlace.long", thread.identity.birthPlace.long, { minimum:-180, maximum:180 });
+    assertFiniteNumber("thread.identity.birthPlace.lat", thread.identity.birthPlace.lat, { minimum:-90 });
+    assertFiniteNumber("thread.identity.birthPlace.long", thread.identity.birthPlace.long, { minimum:-180 });
+    if (thread.identity.birthPlace.lat > 90 || thread.identity.birthPlace.long > 180) {
+      throw new TypeError("thread.identity.birthPlace coordinates are invalid");
+    }
     if (
       thread.identity.birthCity !== undefined
       && thread.identity.birthPlace.displayName !== thread.identity.birthCity
