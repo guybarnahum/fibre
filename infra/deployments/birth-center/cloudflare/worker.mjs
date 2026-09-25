@@ -50,6 +50,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
   async ensureSchedulerForStatefulRequest(cloud) {
     if (this.schedulerBootstrapped) return;
     await cloud.runtime.ensureScheduled();
+    await cloud.ensureBirthStatusScheduled();
     this.schedulerBootstrapped = true;
   }
 
@@ -74,11 +75,17 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       const modernBirthResponse = await cloud.modernBirthApi.fetch(request, {
         defer:(promise) => this.ctx.waitUntil(promise),
       });
-      if (modernBirthResponse !== null) return modernBirthResponse;
+      if (modernBirthResponse !== null) {
+        await cloud.ensureBirthStatusScheduled();
+        return modernBirthResponse;
+      }
     }
     if (cloud.developmentApi !== null) {
       const developmentResponse = await cloud.developmentApi.fetch(request);
-      if (developmentResponse !== null) return developmentResponse;
+      if (developmentResponse !== null) {
+        await cloud.ensureBirthStatusScheduled();
+        return developmentResponse;
+      }
     }
     const birthResponse = await cloud.birthApi.fetch(request);
     if (birthResponse !== null) return birthResponse;
@@ -86,7 +93,14 @@ export class FibreBirthCenterDurableObject extends DurableObject {
   }
 
   async alarm() {
-    return this.runtimeForRequest().runtime.handleWake();
+    const cloud = this.runtimeForRequest();
+    let publication = null;
+    try {
+      publication = await cloud.runtime.handleWake();
+    } finally {
+      await cloud.ensureBirthStatusScheduled();
+    }
+    return publication;
   }
 }
 
