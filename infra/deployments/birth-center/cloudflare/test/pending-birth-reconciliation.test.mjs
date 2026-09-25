@@ -49,7 +49,7 @@ test("pending births is local observation", () => {
       isActive:(status) => status === "developing",
       progress:() => { throw new Error("pending read mutated birth state"); },
     },
-    provisionalBirthStore:{ get:() => ({ status:"pending" }) },
+    provisionalBirthStore:{ get:() => { throw new Error("pending read inspected publication state"); } },
     developmentRequestStore:{
       recent:() => [developmentFor(request)],
       getDisposition:() => null,
