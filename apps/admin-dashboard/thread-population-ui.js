@@ -12,9 +12,30 @@ const stillbornEmpty = $("#stillborn-empty");
 const birthDialog = $("#thread-birth-dialog");
 const birthForm = $("#thread-birth-form");
 const birthLocation = $("#thread-birth-location");
-const birthSex = $("#thread-birth-sex");
+const birthMapPins = $("#thread-birth-map-pins");
+const birthMapSelection = $("#thread-birth-map-selection");
+const birthRandomLocation = $("#thread-birth-location-random");
+const birthPending = $("#thread-birth-pending");
+const birthPendingCount = $("#thread-birth-pending-count");
+const birthPendingRefresh = $("#thread-birth-pending-refresh");
 const birthResult = $("#thread-birth-result");
 const birthSubmit = $("#thread-birth-submit");
+
+const BIRTH_MAP_PLACES = Object.freeze([
+  ["India/Mumbai",19.076,72.878], ["Bangladesh/Dhaka",23.8103,90.4125],
+  ["Nepal/Kathmandu",27.7172,85.324], ["China/Chengdu",30.5728,104.0668],
+  ["Japan/Osaka",34.6937,135.5023], ["South Korea/Busan",35.1796,129.0756],
+  ["Indonesia/Makassar",-5.1477,119.4327], ["Philippines/Cebu",10.3157,123.8854],
+  ["Vietnam/Da Nang",16.0544,108.2022], ["Nigeria/Lagos",6.5244,3.3792],
+  ["Ethiopia/Addis Ababa",8.9806,38.7578], ["Kenya/Nairobi",-1.2921,36.8219],
+  ["South Africa/Cape Town",-33.9249,18.4241], ["Turkey/Istanbul",41.0082,28.9784],
+  ["Israel/Jerusalem",31.7683,35.2137], ["Germany/Berlin",52.52,13.405],
+  ["Portugal/Lisbon",38.7223,-9.1393], ["Mexico/Mexico City",19.4326,-99.1332],
+  ["Colombia/Bogota",4.711,-74.0721], ["Brazil/Recife",-8.0476,-34.877],
+  ["Argentina/Buenos Aires",-34.6037,-58.3816], ["United States/Chicago",41.8781,-87.6298],
+  ["Canada/Vancouver",49.2827,-123.1207], ["Georgia/Tbilisi",41.7151,44.8271],
+  ["New Zealand/Auckland",-36.8509,174.7645],
+]);
 let active = false;
 let birthAttempt = null;
 let populationMode = "threads";
@@ -657,6 +678,99 @@ function renderSummary(summary) {
   renderThreadsTopSummary(summary);
 }
 
+function mapPercent(latitude, longitude) {
+  return {
+    left:`${((longitude + 180) / 360) * 100}%`,
+    top:`${((90 - latitude) / 180) * 100}%`,
+  };
+}
+
+function syncBirthMapSelection() {
+  const selected = birthLocation.value.trim();
+  birthMapSelection.textContent = selected || "Random worldwide";
+  for (const pin of birthMapPins.querySelectorAll(".thread-birth-map-pin")) {
+    const activePin = pin.dataset.location === selected;
+    pin.classList.toggle("selected", activePin);
+    pin.setAttribute("aria-pressed", String(activePin));
+  }
+  birthRandomLocation.classList.toggle("selected", selected === "");
+}
+
+function setBirthLocation(value) {
+  birthLocation.value = value ?? "";
+  syncBirthMapSelection();
+}
+
+function initBirthMap() {
+  if (birthMapPins.childElementCount > 0) return;
+  for (const [location, latitude, longitude] of BIRTH_MAP_PLACES) {
+    const pin = document.createElement("button");
+    const position = mapPercent(latitude, longitude);
+    pin.type = "button";
+    pin.className = "thread-birth-map-pin";
+    pin.dataset.location = location;
+    pin.title = location.replace("/", " · ");
+    pin.setAttribute("aria-label", `Choose ${location.replace("/", ", ")} as birthplace`);
+    pin.setAttribute("aria-pressed", "false");
+    pin.style.left = position.left;
+    pin.style.top = position.top;
+    pin.addEventListener("click", () => setBirthLocation(location));
+    birthMapPins.append(pin);
+  }
+  syncBirthMapSelection();
+}
+
+function selectedBirthSex() {
+  return birthForm.querySelector('input[name="sex"]:checked')?.value ?? "";
+}
+
+function renderPendingBirths(births) {
+  birthPending.replaceChildren();
+  birthPendingCount.textContent = births.length === 0 ? "" : String(births.length);
+  if (births.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "thread-birth-pending-empty";
+    empty.textContent = "No unfinished births.";
+    birthPending.append(empty);
+    return;
+  }
+  for (const birth of births) {
+    const row = document.createElement("article");
+    row.className = "thread-birth-pending-row";
+    const copy = document.createElement("div");
+    const location = document.createElement("strong");
+    location.textContent = birth.location ?? "Location pending";
+    const meta = document.createElement("span");
+    meta.textContent = `${birth.sex ? human(birth.sex) : "Random sex"} · ${human(birth.status)} · ${when(birth.updatedAt ?? birth.createdAt)}`;
+    const id = document.createElement("small");
+    id.className = "mono";
+    id.textContent = shortId(birth.threadId ?? birth.requestId ?? "pending");
+    copy.append(location, meta, id);
+    const status = badge(birth.status ?? "pending", "retrying");
+    row.append(copy, status);
+    birthPending.append(row);
+  }
+}
+
+async function loadPendingBirths() {
+  birthPending.textContent = "Loading…";
+  birthPendingCount.textContent = "";
+  try {
+    const response = await fetch("/api/threads/births/pending", {
+      headers:{ Accept:"application/json" },
+      cache:"no-store",
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.ok !== true || !Array.isArray(payload.births)) {
+      throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+    }
+    renderPendingBirths(payload.births);
+  } catch (error) {
+    birthPending.textContent = `Pending births unavailable: ${error instanceof Error ? error.message : String(error)}`;
+    birthPendingCount.textContent = "";
+  }
+}
+
 function closeBirthDialog() {
   if (birthDialog?.open) birthDialog.close();
 }
@@ -668,11 +782,14 @@ function openBirthDialog() {
     requestedAt:new Date().toISOString(),
   });
   birthForm.reset();
+  initBirthMap();
+  syncBirthMapSelection();
   birthResult.replaceChildren();
   birthResult.classList.remove("failed");
   birthSubmit.disabled = false;
   birthSubmit.textContent = "Birth Thread";
   birthDialog.showModal();
+  void loadPendingBirths();
   window.setTimeout(() => birthLocation.focus(), 0);
 }
 
@@ -700,7 +817,7 @@ async function submitBirth(event) {
   birthResult.textContent = "Authoring a life context and generating Genesis history. This can take a little while.";
   try {
     const location = birthLocation.value.trim();
-    const sex = birthSex.value;
+    const sex = selectedBirthSex();
     const response = await fetch("/api/threads/birth", {
       method:"POST",
       headers:{ Accept:"application/json", "content-type":"application/json" },
@@ -716,6 +833,7 @@ async function submitBirth(event) {
     }
     birthResult.replaceChildren(birthResultNode(payload.birth));
     birthSubmit.textContent = "Born";
+    void loadPendingBirths();
     if (active && populationMode === "threads") void loadPopulation();
   } catch (error) {
     birthResult.textContent = `Birth failed: ${error instanceof Error ? error.message : String(error)}`;
@@ -852,6 +970,9 @@ function exitThreads(nextMode) {
 }
 
 $("#thread-birth-button").addEventListener("click", openBirthDialog);
+birthLocation.addEventListener("input", syncBirthMapSelection);
+birthRandomLocation.addEventListener("click", () => setBirthLocation(""));
+birthPendingRefresh.addEventListener("click", () => void loadPendingBirths());
 $("#thread-birth-close").addEventListener("click", closeBirthDialog);
 $("#thread-birth-cancel").addEventListener("click", closeBirthDialog);
 birthForm.addEventListener("submit", submitBirth);

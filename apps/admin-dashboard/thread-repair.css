@@ -102,7 +102,7 @@
 .thread-population-toolbar strong { font-size:11px; }
 .thread-population-toolbar span { color:var(--muted); font-size:9px; }
 
-.thread-birth-dialog { width:min(520px,calc(100vw - 28px)); }
+.thread-birth-dialog { width:min(680px,calc(100vw - 28px)); }
 .thread-birth-dialog form { display:grid; }
 .thread-birth-body { display:grid; gap:13px; }
 .thread-birth-note {
@@ -114,8 +114,154 @@
 .thread-birth-field { display:grid; gap:5px; }
 .thread-birth-field > span { font-size:10px; font-weight:700; }
 .thread-birth-field small { color:var(--muted); font-weight:500; }
-.thread-birth-field input,
-.thread-birth-field select { width:100%; }
+.thread-birth-field input { width:100%; }
+.thread-birth-map-shell {
+  display:grid;
+  gap:6px;
+  padding:9px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface-subtle);
+}
+.thread-birth-map-head,
+.thread-birth-pending-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.thread-birth-map-head > span,
+.thread-birth-pending-head strong { font-size:10px; font-weight:700; }
+.thread-birth-random-location {
+  min-height:0;
+  padding:4px 7px;
+  border:0;
+  border-radius:999px;
+  background:transparent;
+  color:var(--muted);
+  font-size:9px;
+}
+.thread-birth-random-location:hover,
+.thread-birth-random-location.selected { background:var(--surface); color:var(--text); }
+.thread-birth-map {
+  position:relative;
+  aspect-ratio:2/1;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:
+    radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--accent) 5%,transparent),transparent 55%),
+    var(--surface);
+}
+.thread-birth-map-land { position:absolute; inset:0; width:100%; height:100%; }
+.thread-birth-map-land path {
+  fill:color-mix(in srgb,var(--text) 10%,var(--surface-subtle));
+  stroke:color-mix(in srgb,var(--text) 16%,transparent);
+  stroke-width:1.2;
+  vector-effect:non-scaling-stroke;
+}
+.thread-birth-map-pins { position:absolute; inset:0; }
+.thread-birth-map-pin {
+  position:absolute;
+  width:9px;
+  height:9px;
+  min-width:0;
+  min-height:0;
+  padding:0;
+  transform:translate(-50%,-50%);
+  border:2px solid var(--surface);
+  border-radius:999px;
+  background:var(--muted);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--text) 18%,transparent);
+}
+.thread-birth-map-pin:hover,
+.thread-birth-map-pin:focus-visible {
+  z-index:2;
+  width:13px;
+  height:13px;
+  background:var(--text);
+  outline:none;
+}
+.thread-birth-map-pin.selected {
+  z-index:3;
+  width:14px;
+  height:14px;
+  background:var(--accent);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 24%,transparent);
+}
+.thread-birth-map-selection { color:var(--muted); font-size:9px; }
+.thread-birth-sex-field { display:grid; gap:5px; padding:0; margin:0; border:0; }
+.thread-birth-sex-field legend { margin-bottom:5px; font-size:10px; font-weight:700; }
+.thread-birth-sex-toggle {
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  padding:3px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface-subtle);
+  overflow:hidden;
+}
+.thread-birth-sex-toggle::before {
+  content:"";
+  position:absolute;
+  z-index:0;
+  top:3px;
+  bottom:3px;
+  left:3px;
+  width:calc((100% - 6px) / 3);
+  border-radius:7px;
+  background:var(--surface);
+  box-shadow:0 1px 5px rgba(0,0,0,.12);
+  transition:transform 150ms ease;
+}
+.thread-birth-sex-toggle:has(#thread-birth-sex-random:checked)::before { transform:translateX(100%); }
+.thread-birth-sex-toggle:has(#thread-birth-sex-female:checked)::before { transform:translateX(200%); }
+.thread-birth-sex-toggle input {
+  position:absolute;
+  inline-size:1px;
+  block-size:1px;
+  opacity:0;
+  pointer-events:none;
+}
+.thread-birth-sex-toggle label {
+  position:relative;
+  z-index:1;
+  padding:7px 9px;
+  text-align:center;
+  border-radius:7px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:650;
+  cursor:pointer;
+}
+.thread-birth-sex-toggle input:checked + label { color:var(--text); }
+.thread-birth-sex-toggle input:focus-visible + label { outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent); }
+.thread-birth-pending-section {
+  display:grid;
+  gap:7px;
+  padding-top:3px;
+  border-top:1px solid var(--border);
+}
+.thread-birth-pending-head > div { display:flex; align-items:baseline; gap:6px; }
+.thread-birth-pending-head span { color:var(--muted); font-size:9px; }
+.thread-birth-pending-head button { min-height:0; padding:4px 7px; font-size:9px; }
+.thread-birth-pending { display:grid; gap:5px; color:var(--muted); font-size:9px; }
+.thread-birth-pending-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:7px 8px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--surface-subtle);
+}
+.thread-birth-pending-row > div { display:grid; gap:2px; min-width:0; }
+.thread-birth-pending-row strong { color:var(--text); font-size:10px; }
+.thread-birth-pending-row span,
+.thread-birth-pending-row small { color:var(--muted); overflow-wrap:anywhere; }
+.thread-birth-pending-empty { padding:4px 1px; }
 .thread-birth-result {
   min-height:18px;
   color:var(--muted);

@@ -1,0 +1,54 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { createModernBirthInitiationApi } from "../src/modern-birth-api.mjs";
+
+const TOKEN = "private-token-for-modern-birth-test";
+
+test("modern birth API exposes durable pending births without changing initiation", async () => {
+  const pending = [{
+    requestId:"admin_birth_1",
+    genesisId:"genesis_1",
+    threadId:"thr_1",
+    location:"Georgia/Tbilisi",
+    sex:null,
+    status:"developing",
+    createdAt:"2026-09-25T05:00:00.000Z",
+    updatedAt:"2026-09-25T05:00:00.000Z",
+  }];
+  const api = createModernBirthInitiationApi({
+    service:{
+      async initiate(input) {
+        return {
+          requestId:input.requestId,
+          threadId:"thr_2",
+          genesisId:"genesis_2",
+          location:"Israel/Jerusalem",
+          sex:"female",
+          development:{ status:"pending" },
+        };
+      },
+    },
+    pendingBirths:async () => pending,
+    privateToken:TOKEN,
+  });
+
+  const list = await api.fetch(new Request("https://birth.internal/internal/births/pending", {
+    headers:{ "x-fibre-private-token":TOKEN },
+  }));
+  assert.equal(list.status, 200);
+  assert.deepEqual(await list.json(), { ok:true, births:pending });
+
+  const initiate = await api.fetch(new Request("https://birth.internal/internal/births/initiate", {
+    method:"POST",
+    headers:{ "content-type":"application/json", "x-fibre-private-token":TOKEN },
+    body:JSON.stringify({
+      requestId:"admin_birth_2",
+      requestedAt:"2026-09-25T05:10:00.000Z",
+      location:"Israel/Jerusalem",
+      sex:"female",
+    }),
+  }));
+  assert.equal(initiate.status, 202);
+  assert.equal((await initiate.json()).birth.threadId, "thr_2");
+});

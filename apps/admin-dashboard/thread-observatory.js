@@ -1,4 +1,4 @@
-import { decorateActionButton } from "./fa-icons.js";
+import { decorateActionButton, faIcon } from "./fa-icons.js";
 import { createFibreFinCard } from "./fibre-fin-card.js";
 import { threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
 import { openThreadActionDialog } from "./thread-action-dialog.js";
@@ -384,9 +384,9 @@ function hero(identity, threadId) {
     );
   } else {
     portrait.append(
-      el("span", "thread-person-portrait-mark", "◌"),
+      faIcon("id-card", "thread-person-portrait-icon"),
       el("strong", null, "Canonical image not materialized"),
-      el("small", null, phenotype(identity) ? "Visual identity is defined in World" : "No canonical visual identity available"),
+      el("small", null, phenotype(identity) ? "Visual identity is defined in World; its image has not been materialized yet." : "No canonical visual identity available"),
     );
   }
 

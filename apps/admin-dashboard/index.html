@@ -164,20 +164,49 @@
         <button id="thread-birth-close" class="icon-button" type="button" aria-label="Close">×</button>
       </div>
       <div class="dialog-body thread-birth-body">
-        <p class="thread-birth-note">Location and sex are optional. Without a location Fibre samples globally from 40 major-city anchors with a meaningful long tail of smaller places. Without sex Fibre derives it from the new Thread identity.</p>
+        <p class="thread-birth-note">Choose a birthplace or leave it random. Random births use Fibre's globally distributed major-city anchors plus a meaningful long tail of smaller places.</p>
         <label class="thread-birth-field">
-          <span>Location <small>optional</small></span>
+          <span>Birthplace <small>optional</small></span>
           <input id="thread-birth-location" name="location" autocomplete="off" placeholder="Country/City · e.g. Israel/Jerusalem">
         </label>
-        <label class="thread-birth-field">
-          <span>Sex</span>
-          <select id="thread-birth-sex" name="sex">
-            <option value="">Random</option>
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-          </select>
-        </label>
+        <div class="thread-birth-map-shell">
+          <div class="thread-birth-map-head">
+            <span>World picker</span>
+            <button id="thread-birth-location-random" class="thread-birth-random-location" type="button">Random worldwide</button>
+          </div>
+          <div id="thread-birth-map" class="thread-birth-map">
+            <svg class="thread-birth-map-land" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M72 115L128 76L213 83L263 115L286 155L252 190L215 184L194 219L156 224L125 194L92 184Z"/>
+              <path d="M246 232L300 222L337 248L345 301L324 368L291 432L268 389L277 331L252 286Z"/>
+              <path d="M280 46L335 38L362 68L335 102L296 88Z"/>
+              <path d="M430 111L483 88L550 96L607 72L699 80L796 111L883 121L925 160L893 202L818 214L758 190L697 217L637 201L592 220L540 190L494 198L456 169Z"/>
+              <path d="M475 206L548 201L598 233L605 300L566 376L522 389L493 337L463 270Z"/>
+              <path d="M800 330L863 310L912 335L900 382L849 400L805 377Z"/>
+              <path d="M735 235L760 226L779 246L763 266L739 258Z"/>
+            </svg>
+            <div id="thread-birth-map-pins" class="thread-birth-map-pins" aria-label="Suggested birthplaces"></div>
+          </div>
+          <small id="thread-birth-map-selection" class="thread-birth-map-selection">Random worldwide</small>
+        </div>
+        <fieldset class="thread-birth-sex-field">
+          <legend>Sex</legend>
+          <div class="thread-birth-sex-toggle">
+            <input id="thread-birth-sex-male" type="radio" name="sex" value="male">
+            <label for="thread-birth-sex-male">Male</label>
+            <input id="thread-birth-sex-random" type="radio" name="sex" value="" checked>
+            <label for="thread-birth-sex-random">Random</label>
+            <input id="thread-birth-sex-female" type="radio" name="sex" value="female">
+            <label for="thread-birth-sex-female">Female</label>
+          </div>
+        </fieldset>
         <div id="thread-birth-result" class="thread-birth-result" role="status" aria-live="polite"></div>
+        <section class="thread-birth-pending-section" aria-labelledby="thread-birth-pending-title">
+          <div class="thread-birth-pending-head">
+            <div><strong id="thread-birth-pending-title">Pending births</strong><span id="thread-birth-pending-count"></span></div>
+            <button id="thread-birth-pending-refresh" class="secondary" type="button">Refresh</button>
+          </div>
+          <div id="thread-birth-pending" class="thread-birth-pending">Loading…</div>
+        </section>
       </div>
       <div class="thread-birth-actions">
         <button id="thread-birth-cancel" class="secondary" type="button">Cancel</button>

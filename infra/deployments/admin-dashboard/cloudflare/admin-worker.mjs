@@ -23,6 +23,7 @@ const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
+const THREAD_PENDING_BIRTHS_ROUTE = "/api/threads/births/pending";
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
 const INFRA_HEALTH_ROUTE = "/internal/infra-health";
 
@@ -303,6 +304,29 @@ async function proxyThreadBirth(request, env) {
   return json(upstream.status, payload);
 }
 
+async function proxyPendingBirths(env) {
+  const upstream = await serviceBinding(env, "BIRTH_CENTER").fetch(new Request(
+    "https://birth-center.internal/internal/births/pending",
+    {
+      method:"GET",
+      headers:{
+        Accept:"application/json",
+        "x-fibre-private-token":privateToken(env),
+      },
+    },
+  ));
+  const payload = await upstream.text();
+  return new Response(payload, {
+    status:upstream.status,
+    headers:{
+      "Content-Type":"application/json; charset=utf-8",
+      "Cache-Control":"no-store",
+      "X-Content-Type-Options":"nosniff",
+      "Referrer-Policy":"no-referrer",
+    },
+  });
+}
+
 async function threadRegistry(env, limit) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     `https://world.internal/internal/thread-directory/search?limit=${encodeURIComponent(String(limit))}`,
@@ -335,8 +359,9 @@ export default {
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
+    const pendingBirths = url.pathname === THREAD_PENDING_BIRTHS_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || infraMonitor);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || pendingBirths || infraMonitor);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor);
     if (adminGet || adminPost) {
@@ -349,6 +374,7 @@ export default {
           return json(200, await readAdminInfraMonitor({ env, environment, force }));
         }
         if (threadBirth) return proxyThreadBirth(request, env);
+        if (pendingBirths) return proxyPendingBirths(env);
         if (threadPopulation) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const population = await readAdminThreadPopulation({
