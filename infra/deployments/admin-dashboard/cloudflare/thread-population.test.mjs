@@ -73,7 +73,7 @@ test("World Registry defines admitted population while Activity remains observat
     activityLog,
     environment:"staging",
     readRegistry:async (limit) => {
-      assert.ok(limit > 0 && limit <= 200, "population must use a bounded World Registry read");
+      assert.equal(limit, 5000, "Threads map must request the complete bounded World Registry population");
       return registry;
     },
   });
