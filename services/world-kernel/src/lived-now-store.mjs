@@ -434,7 +434,7 @@ export class LivedNowStore {
     return row === undefined ? null : situationFromRow(row);
   }
 
-  listCurrentSituations({ at } = {}) {
+  listCurrentSituations({ at, livingOnly = false } = {}) {
     if (!at) throw new TypeError("listCurrentSituations requires an at timestamp");
     assertIsoTimestamp("listCurrentSituations at", at);
     const rows = this.#database.prepare(`
@@ -446,6 +446,7 @@ export class LivedNowStore {
           ) AS rn
         FROM current_situation_records
         WHERE established_at<=?
+          ${livingOnly ? "AND thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')" : ""}
       )
       SELECT situation_id,thread_id,established_at,record_json,record_digest
       FROM ranked
@@ -456,7 +457,7 @@ export class LivedNowStore {
   }
 
   listCurrentLocationEvidence({ at } = {}) {
-    const situations = this.listCurrentSituations({ at });
+    const situations = this.listCurrentSituations({ at, livingOnly:true });
     if (situations.length === 0) return [];
 
     const references = [...new Set(situations.flatMap(observedPlaceRefs))];
@@ -497,6 +498,12 @@ export class LivedNowStore {
       const evidence = observedPlaceRefs(currentSituation)
         .map((ref) => evidenceByRef.get(ref))
         .filter(Boolean);
+      if (evidence.some((item) =>
+        item.placeEpisode !== null
+        && item.placeEpisode.threadId !== currentSituation.threadId
+      )) {
+        throw new IntegrityError(`current place evidence belongs to another Thread ${currentSituation.threadId}`);
+      }
       return Object.freeze({
         threadId:currentSituation.threadId,
         currentSituation,
