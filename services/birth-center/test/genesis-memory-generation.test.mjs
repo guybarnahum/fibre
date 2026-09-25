@@ -206,3 +206,34 @@ test("Birth memory admission rejects verbatim genome text and retries once witho
   assert.equal(result.output.rememberedContent, safe.rememberedContent);
   assert.equal(result.output.formationMode, "life_plus_genome");
 });
+
+
+test("Birth memory rejects invented history as terminal pre-admission failure", async () => {
+  const adapter = {
+    async invoke() {
+      return {
+        output:{
+          outcome:"remembered",
+          episodeRefs:["ep_not_visible"],
+          rememberedContent:"I remember an event that is not in my admitted history.",
+          uncertainty:[],
+        },
+        provenance:{ provider:"fixture" },
+      };
+    },
+  };
+
+  await assert.rejects(
+    () => generateGenesisPassBMemory({
+      adapter,
+      input:lifeOnlyInput(),
+      clientRequestId:"birth-memory-invalid-history",
+    }),
+    (error) => (
+      error instanceof GenesisPassBAdmissionError
+      && error.code === "GENESIS_PASS_B_ADMISSION_ERROR"
+      && error.retryable === false
+    ),
+    "invented history was not terminally rejected",
+  );
+});
