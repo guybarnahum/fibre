@@ -449,10 +449,9 @@
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.22));
 }
 .thread-world-count-marker.awaiting-lived-now .thread-world-marker-core {
-  fill:var(--surface);
-  stroke:var(--accent);
+  fill:color-mix(in srgb,#e8f3fb 82%,var(--surface));
+  stroke:color-mix(in srgb,var(--accent) 42%,#b8d8eb);
   stroke-width:2;
-  stroke-dasharray:3 2;
 }
 .thread-world-count-marker.mixed-presence .thread-world-marker-core,
 .thread-world-count-marker.transition .thread-world-marker-core {
