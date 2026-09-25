@@ -67,26 +67,25 @@ function distinct(records) {
 
 export class CurrentWorldLocationStore {
   #database;
-  #tables;
 
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, {
       readOnly:true,
       storeName:"CurrentWorldLocationStore",
     });
-    this.#tables = new Set(this.#database.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table'",
-    ).all().map((row) => row.name));
   }
 
   close() { this.#database.close(); }
 
   list({ at = new Date().toISOString() } = {}) {
-    if (!this.#tables.has("current_situation_records")) return Object.freeze([]);
+    const tables = new Set(this.#database.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table'",
+    ).all().map((row) => row.name));
+    if (!tables.has("current_situation_records")) return Object.freeze([]);
 
-    const world = this.#tables.has("live_world_place_records");
-    const situated = this.#tables.has("situated_evidence_witnesses")
-      && this.#tables.has("place_episode_records");
+    const world = tables.has("live_world_place_records");
+    const situated = tables.has("situated_evidence_witnesses")
+      && tables.has("place_episode_records");
 
     const worldSelect = (alias) => world
       ? `${alias}.record_json AS ${alias}_json, ${alias}.record_digest AS ${alias}_digest`
