@@ -2,6 +2,7 @@ import { logD1Cost } from "../../cloudflare-d1-cost.mjs";
 
 const MAX_ADMITTED_THREADS = 5000;
 const MAX_ACTIVITY_THREADS = 200;
+const CURRENT_LOCATION_MAX_AGE_MS = 5 * 60 * 1000;
 const PLACEHOLDER_NAMES = new Set(["fibre thread", "fiber thread"]);
 
 function clean(value) {
@@ -209,6 +210,18 @@ function missingActivityHeads(error) {
   return /no such table:\s*fibre_activity_thread_heads/iu.test(error?.message ?? String(error));
 }
 
+export function threadNeedsCurrentLocation(entry, {
+  nowMs = Date.now(),
+  maxAgeMs = CURRENT_LOCATION_MAX_AGE_MS,
+} = {}) {
+  if (clean(entry?.status) === "retired") return false;
+  const location = entry?.currentLocation;
+  if (location?.current !== true) return true;
+  const established = Date.parse(location.establishedAt ?? "");
+  if (!Number.isFinite(established)) return true;
+  return Math.max(0, nowMs - established) > maxAgeMs;
+}
+
 async function readActivityHeads(activityLog, environment) {
   try {
     const result = await activityLog.prepare(`
@@ -233,14 +246,38 @@ async function readActivityHeads(activityLog, environment) {
   }
 }
 
-export async function readAdminThreadPopulation({ activityLog, environment, readRegistry }) {
+export async function readAdminThreadPopulation({
+  activityLog,
+  environment,
+  readRegistry,
+  ensureCurrentLocations = null,
+  nowMs = Date.now,
+} = {}) {
   if (!activityLog?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
   if (typeof readRegistry !== "function") throw new TypeError("Thread population requires readRegistry()");
+  if (ensureCurrentLocations !== null && typeof ensureCurrentLocations !== "function") {
+    throw new TypeError("Thread population ensureCurrentLocations must be a function");
+  }
 
-  const [registryEntries, activity] = await Promise.all([
+  const [initialRegistryEntries, activity] = await Promise.all([
     readRegistry(MAX_ADMITTED_THREADS),
     readActivityHeads(activityLog, environment),
   ]);
+  if (!Array.isArray(initialRegistryEntries)) throw new Error("World Thread Registry returned an invalid population");
+
+  let registryEntries = initialRegistryEntries;
+  if (ensureCurrentLocations !== null) {
+    const instant = nowMs();
+    const staleThreadIds = registryEntries
+      .filter((entry) => threadNeedsCurrentLocation(entry, { nowMs:instant }))
+      .map((entry) => entry.threadId);
+    if (staleThreadIds.length > 0) {
+      await ensureCurrentLocations(staleThreadIds);
+      registryEntries = await readRegistry(MAX_ADMITTED_THREADS);
+      if (!Array.isArray(registryEntries)) throw new Error("World Thread Registry returned an invalid refreshed population");
+    }
+  }
+
   const activityResult = activity.result;
   logD1Cost({
     database:"activity-log",
@@ -248,8 +285,6 @@ export async function readAdminThreadPopulation({ activityLog, environment, read
     operation:activity.operation,
     result:activityResult,
   });
-  if (!Array.isArray(registryEntries)) throw new Error("World Thread Registry returned an invalid population");
-
   const activityRows = Array.isArray(activityResult?.results) ? activityResult.results : [];
   const activityByThread = new Map(activityRows.map((row) => [row.thread_id, row.last_activity_at ?? null]));
   const admittedIds = new Set(registryEntries.map((entry) => entry.threadId));
