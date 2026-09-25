@@ -1,5 +1,6 @@
 const TOKEN_ENCODER = new TextEncoder();
 const ROUTE = "/internal/births/initiate";
+const PENDING_ROUTE = "/internal/births/pending";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -53,10 +54,14 @@ function exactInput(value) {
 
 export function createModernBirthInitiationApi({
   service,
+  pendingBirths = null,
   privateToken,
 } = {}) {
   if (!service || typeof service.initiate !== "function") {
     throw new TypeError("modern birth API requires service.initiate()");
+  }
+  if (pendingBirths !== null && typeof pendingBirths !== "function") {
+    throw new TypeError("modern birth API pendingBirths must be a function or null");
   }
   if (typeof privateToken !== "string" || privateToken.length < 16) {
     throw new TypeError("modern birth API privateToken must be at least 16 characters");
@@ -65,12 +70,24 @@ export function createModernBirthInitiationApi({
   return Object.freeze({
     async fetch(request) {
       const url = new URL(request.url);
-      if (url.pathname !== ROUTE) return null;
+      if (url.pathname !== ROUTE && url.pathname !== PENDING_ROUTE) return null;
       if (url.search !== "") return json(400, { error:"query_not_supported" });
-      if (request.method !== "POST") return json(405, { error:"method_not_allowed" });
       if (!constantTimeEqual(request.headers.get("x-fibre-private-token"), privateToken)) {
         return json(403, { error:"private_token_required" });
       }
+      if (url.pathname === PENDING_ROUTE) {
+        if (request.method !== "GET") return json(405, { error:"method_not_allowed" });
+        if (pendingBirths === null) return json(503, { error:"pending_births_not_configured" });
+        try {
+          return json(200, { ok:true, births:await pendingBirths() });
+        } catch (error) {
+          return json(500, {
+            error:"pending_births_failed",
+            detail:error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+      if (request.method !== "POST") return json(405, { error:"method_not_allowed" });
       try {
         let body;
         try { body = await request.json(); }

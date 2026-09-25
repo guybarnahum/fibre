@@ -103,6 +103,13 @@ export function createGenesisDevelopmentRequestStore(storage, {
            admission_digest,admission_json,status,submission_result_json,created_at,updated_at
     FROM genesis_development_requests WHERE genesis_id=? OR thread_id=? LIMIT 1
   `);
+  const selectRecent = session.prepare(`
+    SELECT request_id,request_digest,plan_digest,genesis_id,thread_id,plan_json,
+           admission_digest,admission_json,status,submission_result_json,created_at,updated_at
+    FROM genesis_development_requests
+    ORDER BY created_at DESC,request_id DESC
+    LIMIT ?
+  `);
   const insertReservation = session.prepare(`
     INSERT INTO genesis_development_requests (
       request_id,request_digest,plan_digest,genesis_id,thread_id,plan_json,
@@ -126,6 +133,13 @@ export function createGenesisDevelopmentRequestStore(storage, {
 
   function getByGenesisId(genesisId) {
     return normalize(selectByGenesis.get(nonEmpty("Genesis development genesisId", genesisId)));
+  }
+
+  function recent({ limit = 32 } = {}) {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 256) {
+      throw new TypeError("Genesis development recent limit must be an integer from 1 through 256");
+    }
+    return selectRecent.all(limit).map(normalize);
   }
 
   function reserve({ requestId, requestDigest, plan } = {}) {
@@ -225,6 +239,7 @@ export function createGenesisDevelopmentRequestStore(storage, {
     stateScopeId: session.scopeId,
     get,
     getByGenesisId,
+    recent,
     reserve,
     saveAdmission,
     markSubmitted,

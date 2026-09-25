@@ -37,6 +37,33 @@ function reconciliationRetryMs(env) {
   return value;
 }
 
+function pendingBirths(runtime) {
+  return runtime.developmentRequestStore.recent({ limit:32 }).flatMap((request) => {
+    const provisional = runtime.provisionalBirthStore.get(request.genesisId);
+    if (request.status === "submitted" && provisional?.status === "published") return [];
+    const identity = request.plan?.subjectIdentity ?? null;
+    const place = identity?.place ?? null;
+    const location = place?.country && place?.city
+      ? `${place.country}/${place.city}`
+      : identity?.birthCity ?? null;
+    const status = request.status === "reserved"
+      ? "developing"
+      : request.status === "ready"
+        ? "preparing"
+        : "publishing";
+    return [Object.freeze({
+      requestId:request.requestId,
+      genesisId:request.genesisId,
+      threadId:request.threadId,
+      location,
+      sex:identity?.sex ?? null,
+      status,
+      createdAt:request.createdAt,
+      updatedAt:request.updatedAt,
+    })];
+  });
+}
+
 function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters, activityRecorder, now, randomIntFn }) {
   if (reasoningAdapters === null || reasoningAdapters === undefined) {
     return Object.freeze({
@@ -79,6 +106,7 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
   });
   const modernBirthApi = createModernBirthInitiationApi({
     service:modernBirthService,
+    pendingBirths:() => pendingBirths(runtime),
     privateToken,
   });
   return Object.freeze({

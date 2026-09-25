@@ -98,3 +98,25 @@ test("ready admission and submitted result survive restart and reject changed ma
   });
   restarted.close();
 });
+
+
+test("recent Genesis development requests expose durable pending-order state", (t) => {
+  const state = tempBirthState(t);
+  let now = "2026-09-25T05:00:00Z";
+  const store = createGenesisDevelopmentRequestStore(state.storage(), { now:() => now });
+
+  const first = plan({ requestId:"request-durable-older", genesisId:"genesis_durable_older", threadId:"thr_durable_older" });
+  store.reserve({ requestId:first.requestId, requestDigest:first.requestDigest, plan:first });
+
+  now = "2026-09-25T05:01:00Z";
+  const second = plan({ requestId:"request-durable-newer", genesisId:"genesis_durable_newer", threadId:"thr_durable_newer" });
+  store.reserve({ requestId:second.requestId, requestDigest:second.requestDigest, plan:second });
+
+  assert.deepEqual(
+    store.recent({ limit:2 }).map((entry) => entry.requestId),
+    ["request-durable-newer","request-durable-older"],
+    "pending-birth inspection must read durable development requests newest first",
+  );
+  assert.throws(() => store.recent({ limit:0 }), /recent limit/);
+  store.close();
+});
