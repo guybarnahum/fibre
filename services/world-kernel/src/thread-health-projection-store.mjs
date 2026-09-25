@@ -63,6 +63,9 @@ export class ThreadHealthProjectionStore {
     const genesisPublishedSelect = this.#tables.has("genesis_birth_publications")
       ? "(SELECT published_at FROM genesis_birth_publications WHERE thread_id=t.thread_id LIMIT 1)"
       : "NULL";
+    const raisedLanguagesSelect = this.#tables.has("genesis_raised_language_corrections")
+      ? "(SELECT languages_json FROM genesis_raised_language_corrections WHERE thread_id=t.thread_id ORDER BY recorded_at DESC,correction_id DESC LIMIT 1)"
+      : "NULL";
 
     const row = this.#database.prepare(`
       SELECT
@@ -73,7 +76,8 @@ export class ThreadHealthProjectionStore {
         ${reconciliationUpdatedSelect} AS reconciliation_updated_at,
         ${genesisIdSelect} AS genesis_id,
         ${genesisDigestSelect} AS genesis_request_digest,
-        ${genesisPublishedSelect} AS genesis_published_at
+        ${genesisPublishedSelect} AS genesis_published_at,
+        ${raisedLanguagesSelect} AS raised_languages_json
       FROM threads t
       WHERE t.thread_id=?
     `).get(threadId);
@@ -91,6 +95,18 @@ export class ThreadHealthProjectionStore {
           recordDigest:entry.record_digest,
           headDigest:entry.head_digest,
           recordedAt:entry.recorded_at,
+        }))
+      : [];
+
+    const symbolicGenomes = this.#tables.has("symbolic_genomes")
+      ? this.#database.prepare(`
+          SELECT genome_id,genome_digest
+          FROM symbolic_genomes
+          WHERE owner_kind='thread' AND owner_id=?
+          ORDER BY created_at,genome_id
+        `).all(threadId).map((entry) => Object.freeze({
+          genomeId:entry.genome_id,
+          genomeDigest:entry.genome_digest,
         }))
       : [];
 
@@ -115,6 +131,8 @@ export class ThreadHealthProjectionStore {
         civilRegistrationDigest:row.civil_registration_digest ?? null,
         embodimentHeads:Object.freeze(embodiments),
         genesisPublication,
+        raisedLanguages:row.raised_languages_json === null ? null : parseJson(row.raised_languages_json),
+        symbolicGenomes:Object.freeze(symbolicGenomes),
       }),
       reconciliation,
     });

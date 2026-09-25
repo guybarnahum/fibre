@@ -11,6 +11,8 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
   let worldVersion = 7;
   let presentationDigest = "sha256:presentation-a";
   let reconciliationState = "complete";
+  let symbolicGenomeDigest = "sha256:genome-a";
+  let raisedLanguages = ["Georgian", "English"];
   let deepDiagnoses = 0;
   let cached = {
     witness:JSON.stringify({
@@ -20,6 +22,8 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
         civilRegistrationDigest:"sha256:civil",
         embodimentHeads:[],
         genesisPublication:null,
+        raisedLanguages,
+        symbolicGenomes:[{ genomeId:"genome_1", genomeDigest:symbolicGenomeDigest }],
       },
       presentationSnapshotDigest:presentationDigest,
     }),
@@ -35,6 +39,8 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
           civilRegistrationDigest:"sha256:civil",
           embodimentHeads:[],
           genesisPublication:null,
+        raisedLanguages,
+        symbolicGenomes:[{ genomeId:"genome_1", genomeDigest:symbolicGenomeDigest }],
         },
         reconciliation:{ state:reconciliationState, lastError:null, updatedAt:"2026-09-18T00:00:00Z" },
       };
@@ -63,7 +69,7 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
     },
   });
 
-  assert.equal(THREAD_HEALTH_PROJECTION_VERSION, "thread-health-v0.2");
+  assert.equal(THREAD_HEALTH_PROJECTION_VERSION, "thread-health-v0.3");
   const refreshed = await service.inspect(threadId);
   assert.equal(refreshed.cacheHit, false, "older diagnostic semantics were reused");
   assert.equal(refreshed.diagnosis.health, "healthy", "stale cached health survived semantic revision");
@@ -80,7 +86,15 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
   assert.equal((await service.inspect(threadId)).cacheHit, false);
   assert.equal(deepDiagnoses, 2, "Presentation changes must invalidate cached health");
 
+  symbolicGenomeDigest = "sha256:genome-b";
+  assert.equal((await service.inspect(threadId)).cacheHit, false);
+  assert.equal(deepDiagnoses, 3, "symbolic genome migration must invalidate cached health");
+
+  raisedLanguages = ["Georgian"];
+  assert.equal((await service.inspect(threadId)).cacheHit, false);
+  assert.equal(deepDiagnoses, 4, "Raised-language correction must invalidate cached health");
+
   worldVersion = 8;
   assert.equal((await service.inspect(threadId)).cacheHit, false);
-  assert.equal(deepDiagnoses, 3, "World authority changes must invalidate cached health");
+  assert.equal(deepDiagnoses, 5, "World authority changes must invalidate cached health");
 });
