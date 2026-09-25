@@ -52,22 +52,84 @@ function operatorBirthStage(status) {
   })[status] ?? status;
 }
 
-function staleActiveRequest(request, nowMs) {
-  if (!request?.threadId) return false;
-  const updated = Date.parse(request.updatedAt ?? request.createdAt ?? "");
-  return Number.isFinite(updated) && nowMs() - updated >= STALE_ACTIVE_BIRTH_MS;
+function birthTiming(request, nowMs) {
+  const current = nowMs();
+  const created = Date.parse(request?.createdAt ?? "");
+  const updated = Date.parse(request?.updatedAt ?? request?.createdAt ?? "");
+  const ageMs = Number.isFinite(created) ? Math.max(0, current - created) : null;
+  const idleMs = Number.isFinite(updated) ? Math.max(0, current - updated) : null;
+  return Object.freeze({
+    ageMs,
+    idleMs,
+    stale:idleMs !== null && idleMs >= STALE_ACTIVE_BIRTH_MS,
+  });
 }
 
-async function threadExistsInWorld({ worldBinding, privateToken, threadId }) {
+async function worldThreadPresence({ worldBinding, privateToken, threadId }) {
   try {
     const response = await worldBinding.fetch(new Request(
       `https://world-kernel.internal/internal/threads/${encodeURIComponent(threadId)}/identity`,
       { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken } },
     ));
-    return response.ok;
+    if (response.ok) return "present";
+    if (response.status === 404) return "absent";
+    return "unavailable";
   } catch {
-    return false;
+    return "unavailable";
   }
+}
+
+function birthOperationalState(request, timing, worldPresence = null) {
+  if (!timing.stale) {
+    return Object.freeze({ stale:false, classification:"active", staleReason:null });
+  }
+  if (!request?.threadId) {
+    return Object.freeze({
+      stale:true,
+      classification:"stale_before_identity",
+      staleReason:"No Thread identity has been reserved after five minutes without progress.",
+    });
+  }
+  if (worldPresence === "absent") {
+    return Object.freeze({
+      stale:true,
+      classification:"stale_not_in_world",
+      staleReason:"Birth has stopped progressing and its Thread is not admitted in World.",
+    });
+  }
+  if (worldPresence === "unavailable") {
+    return Object.freeze({
+      stale:true,
+      classification:"stale_world_check_unavailable",
+      staleReason:"Birth has stopped progressing; World confirmation is currently unavailable.",
+    });
+  }
+  return Object.freeze({
+    stale:true,
+    classification:"stale",
+    staleReason:"Birth has stopped progressing.",
+  });
+}
+
+function pendingProjection(request, { status, stage, location, locationSource, sex, timing, worldPresence = null }) {
+  const operational = birthOperationalState(request, timing, worldPresence);
+  return Object.freeze({
+    requestId:request.requestId,
+    genesisId:request.genesisId,
+    threadId:request.threadId,
+    location,
+    locationSource,
+    sex,
+    status,
+    stage,
+    createdAt:request.createdAt,
+    updatedAt:request.updatedAt,
+    ageMs:timing.ageMs,
+    idleMs:timing.idleMs,
+    stale:operational.stale,
+    classification:operational.classification,
+    staleReason:operational.staleReason,
+  });
 }
 
 export async function pendingBirths(runtime, {
@@ -77,6 +139,7 @@ export async function pendingBirths(runtime, {
 } = {}) {
   const queued = [];
   const known = new Set();
+
   for (const request of runtime.modernBirthRequestStore.recent({ limit:64, activeOnly:true })) {
     known.add(request.requestId);
     if (request.genesisId !== null) {
@@ -86,26 +149,30 @@ export async function pendingBirths(runtime, {
         continue;
       }
     }
+
+    const timing = birthTiming(request, nowMs);
+    let worldPresence = null;
     if (
-      staleActiveRequest(request, nowMs)
+      timing.stale
+      && request.threadId
       && worldBinding !== null
       && typeof privateToken === "string"
-      && await threadExistsInWorld({ worldBinding, privateToken, threadId:request.threadId })
     ) {
-      runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
-      continue;
+      worldPresence = await worldThreadPresence({ worldBinding, privateToken, threadId:request.threadId });
+      if (worldPresence === "present") {
+        runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+        continue;
+      }
     }
-    queued.push(Object.freeze({
-      requestId:request.requestId,
-      genesisId:request.genesisId,
-      threadId:request.threadId,
+
+    queued.push(pendingProjection(request, {
+      status:request.status,
+      stage:operatorBirthStage(request.status),
       location:request.location ?? request.requestedLocation,
       locationSource:request.locationSource,
       sex:request.sex ?? request.requestedSex,
-      status:request.status,
-      stage:operatorBirthStage(request.status),
-      createdAt:request.createdAt,
-      updatedAt:request.updatedAt,
+      timing,
+      worldPresence,
     }));
   }
 
@@ -113,30 +180,36 @@ export async function pendingBirths(runtime, {
     if (known.has(request.requestId)) continue;
     const provisional = runtime.provisionalBirthStore.get(request.genesisId);
     if (request.status === "submitted" && provisional?.status === "published") continue;
+
+    const timing = birthTiming(request, nowMs);
+    let worldPresence = null;
     if (
-      staleActiveRequest(request, nowMs)
+      timing.stale
+      && request.threadId
       && worldBinding !== null
       && typeof privateToken === "string"
-      && await threadExistsInWorld({ worldBinding, privateToken, threadId:request.threadId })
-    ) continue;
+    ) {
+      worldPresence = await worldThreadPresence({ worldBinding, privateToken, threadId:request.threadId });
+      if (worldPresence === "present") continue;
+    }
+
     const identity = request.plan?.subjectIdentity ?? null;
     const place = identity?.place ?? null;
     const status = request.status === "reserved" || request.status === "ready" ? "developing" : "publishing";
-    queued.push(Object.freeze({
-      requestId:request.requestId,
-      genesisId:request.genesisId,
-      threadId:request.threadId,
+    queued.push(pendingProjection(request, {
+      status,
+      stage:operatorBirthStage(status),
       location:place?.country && place?.city ? `${place.country}/${place.city}` : identity?.birthCity ?? null,
       locationSource:null,
       sex:identity?.sex ?? null,
-      status,
-      stage:operatorBirthStage(status),
-      createdAt:request.createdAt,
-      updatedAt:request.updatedAt,
+      timing,
+      worldPresence,
     }));
   }
+
   return queued.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 }
+
 function createDevelopmentComponents({ runtime, privateToken, worldBinding, reasoningAdapters, activityRecorder, now, nowMs, randomIntFn }) {
   if (reasoningAdapters === null || reasoningAdapters === undefined) {
     return Object.freeze({
