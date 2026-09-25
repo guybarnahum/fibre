@@ -67,6 +67,7 @@
           <div class="view-switch" role="group" aria-label="Activity view">
             <button id="view-causal" type="button" data-mode="causal">Causal trail</button>
             <button id="view-raw" type="button" data-mode="raw">Raw activity</button>
+            <button id="view-birth-center" type="button" data-mode="birth-center">Birth Center</button>
             <button id="view-threads" type="button" data-mode="threads">Threads</button>
             <button id="view-stillborn" type="button" data-mode="stillborn">Stillborn</button>
           </div>
@@ -91,10 +92,91 @@
           </div>
         </div>
 
+        <div id="birth-center-view" class="activity-view thread-birth-center-view" hidden>
+          <div class="birth-center-intro">
+            <div><p class="eyebrow">Genesis</p><h3>Birth Center</h3></div>
+            <p>Start Threads, watch Genesis progress around the world, and see each birth emerge into World.</p>
+          </div>
+          <form id="thread-birth-form" class="thread-birth-form">
+            <div class="thread-birth-body">
+<p class="thread-birth-note">Choose one supported birthplace or leave it random. Random births use Fibre's global birthplace distribution and may be started as a cohort.</p>
+
+        <div class="thread-birth-place-controls">
+          <label class="thread-birth-field">
+            <span>Birthplace</span>
+            <input id="thread-birth-location" name="location" autocomplete="off" placeholder="Search city or country">
+          </label>
+          <button id="thread-birth-location-random" class="thread-birth-random-location selected" type="button">Random Location</button>
+        </div>
+        <div id="thread-birth-search-results" class="thread-birth-search-results" hidden></div>
+
+        <div class="thread-birth-map-shell">
+          <div id="thread-birth-map" class="thread-birth-map" role="button" tabindex="0" aria-label="Choose nearest supported Fibre birthplace from the world map">
+            <svg class="thread-birth-map-land" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">
+              <path id="thread-birth-world-path"></path>
+              <g id="thread-birth-timezones" class="thread-birth-timezones"></g>
+              <g id="thread-birth-pipeline-markers" class="thread-birth-pipeline-markers"></g>
+              <circle id="thread-birth-map-marker" r="10" hidden></circle>
+            </svg>
+          </div>
+          <div class="thread-birth-map-caption">
+            <strong id="thread-birth-map-selection">Random Location</strong>
+            <span>Timezone meridians · click the map to select the nearest Fibre-supported birthplace.</span>
+          </div>
+          <div class="thread-birth-stage-legend" aria-label="Birth stages">
+            <span class="stage-genesis">genesis</span>
+            <span class="stage-developing">developing</span>
+            <span class="stage-emerging">emerging</span>
+            <span class="stage-in-world">in-world</span>
+          </div>
+        </div>
+
+        <div class="thread-birth-options-row">
+<fieldset class="thread-birth-sex-field">
+          <legend>Sex</legend>
+          <div class="thread-birth-sex-toggle">
+            <input id="thread-birth-sex-male" type="radio" name="sex" value="male">
+            <label for="thread-birth-sex-male">Male</label>
+            <input id="thread-birth-sex-random" type="radio" name="sex" value="" checked>
+            <label for="thread-birth-sex-random">Random</label>
+            <input id="thread-birth-sex-female" type="radio" name="sex" value="female">
+            <label for="thread-birth-sex-female">Female</label>
+          </div>
+        </fieldset>
+
+<fieldset id="thread-birth-count-field" class="thread-birth-count-field">
+          <legend>Number of births</legend>
+          <div class="thread-birth-count-toggle">
+            <input id="thread-birth-count-1" type="radio" name="birth-count" value="1" checked>
+            <label for="thread-birth-count-1">1</label>
+            <input id="thread-birth-count-3" type="radio" name="birth-count" value="3">
+            <label for="thread-birth-count-3">3</label>
+            <input id="thread-birth-count-5" type="radio" name="birth-count" value="5">
+            <label for="thread-birth-count-5">5</label>
+            <input id="thread-birth-count-11" type="radio" name="birth-count" value="11">
+            <label for="thread-birth-count-11">11</label>
+          </div>
+        </fieldset>
+        </div>
+        <div id="thread-birth-result" class="thread-birth-result" role="status" aria-live="polite"></div>
+
+        <section class="thread-birth-pending-section" aria-labelledby="thread-birth-pending-title">
+          <div class="thread-birth-pending-head">
+            <div><strong id="thread-birth-pending-title">Pending births</strong><span id="thread-birth-pending-count"></span></div>
+            <button id="thread-birth-pending-refresh" class="secondary" type="button">Refresh</button>
+          </div>
+          <div id="thread-birth-pending" class="thread-birth-pending">Loading…</div>
+        </section>
+      </div>
+            </div>
+            <div class="thread-birth-actions">
+              <button id="thread-birth-submit" class="primary" type="submit">Birth Thread</button>
+            </div>
+          </form>
+        </div>
         <div id="threads-view" class="activity-view" hidden>
           <div class="thread-population-toolbar">
             <div><strong>Thread population</strong><span>Admitted and recoverable persons in World.</span></div>
-            <button id="thread-birth-button" class="primary" type="button">Birth Thread</button>
           </div>
           <div class="thread-population-metrics" aria-label="Thread population summary">
             <article><span>Threads</span><strong id="thread-stat-total">—</strong></article>
@@ -156,81 +238,6 @@
       </section>
     </main>
   </div>
-
-  <dialog id="thread-birth-dialog" class="thread-birth-dialog">
-    <form id="thread-birth-form" method="dialog">
-      <div class="dialog-head">
-        <div><p class="eyebrow">Genesis</p><h2>Birth Threads</h2></div>
-        <button id="thread-birth-close" class="icon-button" type="button" aria-label="Close">×</button>
-      </div>
-      <div class="dialog-body thread-birth-body">
-        <p class="thread-birth-note">Choose one supported birthplace or leave it random. Random births use Fibre's global birthplace distribution and may be started as a cohort.</p>
-
-        <div class="thread-birth-place-controls">
-          <label class="thread-birth-field">
-            <span>Birthplace</span>
-            <input id="thread-birth-location" name="location" autocomplete="off" placeholder="Search city or country">
-          </label>
-          <button id="thread-birth-location-random" class="thread-birth-random-location selected" type="button">Random worldwide</button>
-        </div>
-        <div id="thread-birth-search-results" class="thread-birth-search-results" hidden></div>
-
-        <div class="thread-birth-map-shell">
-          <div id="thread-birth-map" class="thread-birth-map" role="button" tabindex="0" aria-label="Choose nearest supported Fibre birthplace from the world map">
-            <svg class="thread-birth-map-land" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">
-              <path id="thread-birth-world-path"></path>
-              <circle id="thread-birth-map-marker" r="9" hidden></circle>
-            </svg>
-          </div>
-          <div class="thread-birth-map-caption">
-            <strong id="thread-birth-map-selection">Random worldwide</strong>
-            <span>Click the map to select the nearest Fibre-supported birthplace.</span>
-          </div>
-        </div>
-
-        <fieldset id="thread-birth-count-field" class="thread-birth-count-field">
-          <legend>Random births</legend>
-          <div class="thread-birth-count-toggle">
-            <input id="thread-birth-count-1" type="radio" name="birth-count" value="1" checked>
-            <label for="thread-birth-count-1">1</label>
-            <input id="thread-birth-count-3" type="radio" name="birth-count" value="3">
-            <label for="thread-birth-count-3">3</label>
-            <input id="thread-birth-count-5" type="radio" name="birth-count" value="5">
-            <label for="thread-birth-count-5">5</label>
-            <input id="thread-birth-count-11" type="radio" name="birth-count" value="11">
-            <label for="thread-birth-count-11">11</label>
-          </div>
-          <small>Each Thread gets an independently sampled worldwide birthplace.</small>
-        </fieldset>
-
-        <fieldset class="thread-birth-sex-field">
-          <legend>Sex</legend>
-          <div class="thread-birth-sex-toggle">
-            <input id="thread-birth-sex-male" type="radio" name="sex" value="male">
-            <label for="thread-birth-sex-male">Male</label>
-            <input id="thread-birth-sex-random" type="radio" name="sex" value="" checked>
-            <label for="thread-birth-sex-random">Random</label>
-            <input id="thread-birth-sex-female" type="radio" name="sex" value="female">
-            <label for="thread-birth-sex-female">Female</label>
-          </div>
-        </fieldset>
-
-        <div id="thread-birth-result" class="thread-birth-result" role="status" aria-live="polite"></div>
-
-        <section class="thread-birth-pending-section" aria-labelledby="thread-birth-pending-title">
-          <div class="thread-birth-pending-head">
-            <div><strong id="thread-birth-pending-title">Pending births</strong><span id="thread-birth-pending-count"></span></div>
-            <button id="thread-birth-pending-refresh" class="secondary" type="button">Refresh</button>
-          </div>
-          <div id="thread-birth-pending" class="thread-birth-pending">Loading…</div>
-        </section>
-      </div>
-      <div class="thread-birth-actions">
-        <button id="thread-birth-cancel" class="secondary" type="button">Close</button>
-        <button id="thread-birth-submit" class="primary" type="submit">Birth Thread</button>
-      </div>
-    </form>
-  </dialog>
 
   <dialog id="record-dialog">
     <div class="dialog-head"><div><p id="dialog-eyebrow" class="eyebrow">Activity record</p><h2 id="dialog-title">Details</h2></div><button id="dialog-close" class="icon-button" aria-label="Close">×</button></div>
