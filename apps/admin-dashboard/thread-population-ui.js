@@ -957,7 +957,9 @@ function showThreadMapPopover(location, marker) {
   const title = document.createElement("strong");
   title.textContent = [location.place.city, location.place.country].filter(Boolean).join(", ");
   const count = document.createElement("span");
-  count.textContent = `${location.count} Thread${location.count === 1 ? "" : "s"}`;
+  count.textContent = location.awaitingLivedNowCount > 0
+    ? `${location.currentCount ?? 0} current · ${location.awaitingLivedNowCount} awaiting LivedNow`
+    : `${location.count} Thread${location.count === 1 ? "" : "s"}`;
   heading.append(title, count);
 
   const faces = document.createElement("div");
@@ -1013,8 +1015,9 @@ function renderThreadPopulationMap() {
   }
   const places = grouped.locations.length;
   threadPopulationMapSummary.textContent =
-    `${places} current area${places === 1 ? "" : "s"} · ${grouped.mapped} Thread${grouped.mapped === 1 ? "" : "s"}`
-    + (grouped.unmapped > 0 ? ` · ${grouped.unmapped} current location unavailable` : "");
+    `${places} mapped area${places === 1 ? "" : "s"} · ${grouped.mapped} Thread${grouped.mapped === 1 ? "" : "s"} · ${grouped.authoritative} current`
+    + (grouped.awaitingLivedNow > 0 ? ` · ${grouped.awaitingLivedNow} awaiting LivedNow` : "")
+    + (grouped.unmapped > 0 ? ` · ${grouped.unmapped} unmapped` : "");
 }
 
 function selectedBirthSex() {
