@@ -16,6 +16,11 @@ test("modern birth API exposes durable pending births without changing initiatio
     createdAt:"2026-09-25T05:00:00.000Z",
     updatedAt:"2026-09-25T05:00:00.000Z",
   }];
+  const events = [];
+  const requestStore = {
+    enqueue(input) { events.push(["enqueue", input.requestId]); },
+    fail(requestId) { events.push(["fail", requestId]); },
+  };
   const api = createModernBirthInitiationApi({
     service:{
       async initiate(input) {
@@ -30,6 +35,8 @@ test("modern birth API exposes durable pending births without changing initiatio
       },
     },
     pendingBirths:async () => pending,
+    birthplaces:[{ place:"Georgia/Tbilisi", lat:41.69, long:44.83 }],
+    requestStore,
     privateToken:TOKEN,
   });
 
@@ -38,6 +45,12 @@ test("modern birth API exposes durable pending births without changing initiatio
   }));
   assert.equal(list.status, 200);
   assert.deepEqual(await list.json(), { ok:true, births:pending });
+
+  const places = await api.fetch(new Request("https://birth.internal/internal/births/places", {
+    headers:{ "x-fibre-private-token":TOKEN },
+  }));
+  assert.equal(places.status, 200);
+  assert.equal((await places.json()).places[0].place, "Georgia/Tbilisi");
 
   const initiate = await api.fetch(new Request("https://birth.internal/internal/births/initiate", {
     method:"POST",
@@ -51,4 +64,5 @@ test("modern birth API exposes durable pending births without changing initiatio
   }));
   assert.equal(initiate.status, 202);
   assert.equal((await initiate.json()).birth.threadId, "thr_2");
+  assert.deepEqual(events, [["enqueue","admin_birth_2"]], "birth must be durable before authoring starts");
 });

@@ -5,6 +5,7 @@ import { createGenesisDevelopmentInspectionService } from "#services/birth-cente
 import { createGenesisDevelopmentService } from "#services/birth-center/src/genesis-development-service.mjs";
 import { createModernBirthInitiationService } from "#services/birth-center/src/modern-birth-initiation.mjs";
 import { createModernBirthInitiationApi } from "#services/birth-center/src/modern-birth-api.mjs";
+import { MODERN_BIRTHPLACES } from "#services/birth-center/src/modern-birthplace-sampler.mjs";
 import { createBirthCenterRuntime } from "#services/birth-center/src/runtime.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createWorldKernelBirthPublisher } from "../world-kernel-boundary.mjs";
@@ -38,30 +39,49 @@ function reconciliationRetryMs(env) {
 }
 
 function pendingBirths(runtime) {
-  return runtime.developmentRequestStore.recent({ limit:32 }).flatMap((request) => {
-    const provisional = runtime.provisionalBirthStore.get(request.genesisId);
-    if (request.status === "submitted" && provisional?.status === "published") return [];
-    const identity = request.plan?.subjectIdentity ?? null;
-    const place = identity?.place ?? null;
-    const location = place?.country && place?.city
-      ? `${place.country}/${place.city}`
-      : identity?.birthCity ?? null;
-    const status = request.status === "reserved"
-      ? "developing"
-      : request.status === "ready"
-        ? "preparing"
-        : "publishing";
-    return [Object.freeze({
+  const queued = [];
+  const known = new Set();
+  for (const request of runtime.modernBirthRequestStore.recent({ limit:64, activeOnly:true })) {
+    known.add(request.requestId);
+    if (request.status === "publishing" && request.genesisId !== null) {
+      const provisional = runtime.provisionalBirthStore.get(request.genesisId);
+      if (provisional?.status === "published") {
+        runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+        continue;
+      }
+    }
+    queued.push(Object.freeze({
       requestId:request.requestId,
       genesisId:request.genesisId,
       threadId:request.threadId,
-      location,
-      sex:identity?.sex ?? null,
-      status,
+      location:request.location ?? request.requestedLocation,
+      locationSource:request.locationSource,
+      sex:request.sex ?? request.requestedSex,
+      status:request.status,
       createdAt:request.createdAt,
       updatedAt:request.updatedAt,
-    })];
-  });
+    }));
+  }
+
+  for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
+    if (known.has(request.requestId)) continue;
+    const provisional = runtime.provisionalBirthStore.get(request.genesisId);
+    if (request.status === "submitted" && provisional?.status === "published") continue;
+    const identity = request.plan?.subjectIdentity ?? null;
+    const place = identity?.place ?? null;
+    queued.push(Object.freeze({
+      requestId:request.requestId,
+      genesisId:request.genesisId,
+      threadId:request.threadId,
+      location:place?.country && place?.city ? `${place.country}/${place.city}` : identity?.birthCity ?? null,
+      locationSource:null,
+      sex:identity?.sex ?? null,
+      status:request.status === "reserved" ? "developing" : request.status === "ready" ? "developing" : "publishing",
+      createdAt:request.createdAt,
+      updatedAt:request.updatedAt,
+    }));
+  }
+  return queued.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 }
 
 function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters, activityRecorder, now, randomIntFn }) {
@@ -103,10 +123,13 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
     creativeAdapter,
     birthRuntime:runtime,
     activityRecorder,
+    onProgress:(progress) => runtime.modernBirthRequestStore.progress(progress.requestId, progress),
   });
   const modernBirthApi = createModernBirthInitiationApi({
     service:modernBirthService,
     pendingBirths:() => pendingBirths(runtime),
+    birthplaces:MODERN_BIRTHPLACES,
+    requestStore:runtime.modernBirthRequestStore,
     privateToken,
   });
   return Object.freeze({

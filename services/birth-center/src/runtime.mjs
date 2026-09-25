@@ -5,10 +5,11 @@ import {
   createStateModelInvocationJournal,
 } from "./model-runtime/durable-invocation-journal.mjs";
 import { createGenesisDevelopmentRequestStore } from "./genesis-development-request-store.mjs";
+import { createModernBirthRequestStore } from "./modern-birth-request-store.mjs";
 import { createProvisionalBirthStore } from "./provisional-birth-store.mjs";
 import { createBirthReconciliationRuntime } from "./birth-reconciliation-process.mjs";
 
-export const BIRTH_CENTER_RUNTIME_VERSION = "fibre-birth-center-runtime-v3";
+export const BIRTH_CENTER_RUNTIME_VERSION = "fibre-birth-center-runtime-v4";
 
 function assertPublisher(publisher) {
   if (publisher === null) return;
@@ -48,10 +49,13 @@ export function createBirthCenterRuntime({
   const invocationJournal = createStateModelInvocationJournal(storage, { now });
   let provisionalBirthStore = null;
   let developmentRequestStore = null;
+  let modernBirthRequestStore = null;
   try {
     provisionalBirthStore = createProvisionalBirthStore(storage, { now });
     developmentRequestStore = createGenesisDevelopmentRequestStore(storage, { now });
+    modernBirthRequestStore = createModernBirthRequestStore(storage, { now });
   } catch (error) {
+    try { modernBirthRequestStore?.close(); } catch {}
     try { developmentRequestStore?.close(); } catch {}
     try { provisionalBirthStore?.close(); } catch {}
     invocationJournal.close();
@@ -83,6 +87,7 @@ export function createBirthCenterRuntime({
     invocationJournal,
     provisionalBirthStore,
     developmentRequestStore,
+    modernBirthRequestStore,
     reconciliationRuntime,
     worldPublicationConfigured: worldPublisher !== null,
 
@@ -127,6 +132,7 @@ export function createBirthCenterRuntime({
     close() {
       if (closed) return;
       closed = true;
+      modernBirthRequestStore.close();
       developmentRequestStore.close();
       provisionalBirthStore.close();
       invocationJournal.close();

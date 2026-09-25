@@ -278,6 +278,7 @@ export function createModernBirthInitiationService({
   creativeAdapter,
   birthRuntime,
   activityRecorder = null,
+  onProgress = null,
 } = {}) {
   if (!developmentService || typeof developmentService.develop !== "function") {
     throw new TypeError("modern birth initiation requires developmentService.develop()");
@@ -288,6 +289,10 @@ export function createModernBirthInitiationService({
   if (!birthRuntime || typeof birthRuntime.durableAdapter !== "function") {
     throw new TypeError("modern birth initiation requires Birth Center durable model support");
   }
+  if (onProgress !== null && typeof onProgress !== "function") {
+    throw new TypeError("modern birth initiation onProgress must be a function or null");
+  }
+  const progress = onProgress ?? (() => {});
   const authorAdapter = birthRuntime.durableAdapter(creativeAdapter);
   const runStage = activityRecorder?.runStage
     ? (metadata, operation) => activityRecorder.runStage(metadata, operation)
@@ -298,13 +303,20 @@ export function createModernBirthInitiationService({
       const id = nonEmpty("modern birth requestId", requestId);
       const at = nonEmpty("modern birth requestedAt", requestedAt);
       if (Number.isNaN(Date.parse(at))) throw new TypeError("modern birth requestedAt must be an ISO timestamp");
+      const requestedSex = sex === null ? null : normalizeGenesisSex(sex);
       const selection = selectedLocation(id, location);
+      await progress({
+        requestId:id,
+        status:"authoring",
+        location:selection.selector.display,
+        locationSource:selection.source,
+        sex:null,
+      });
       const authored = await runStage({
         requestId:id,
         stage:"birth.world.author",
       }, () => authorContext({ adapter:authorAdapter, requestId:id, selector:selection.selector }));
 
-      const requestedSex = sex === null ? null : normalizeGenesisSex(sex);
       const request = buildDevelopmentRequest({
         requestId:id,
         requestedAt:at,
@@ -314,7 +326,25 @@ export function createModernBirthInitiationService({
       });
       const plan = buildGenesisDevelopmentPlan(request);
       const selectedSex = requestedSex ?? genesisSexForThread({ threadId:plan.threadId });
+      await progress({
+        requestId:id,
+        status:"developing",
+        location:selection.selector.display,
+        locationSource:selection.source,
+        sex:selectedSex,
+        threadId:plan.threadId,
+        genesisId:plan.genesisId,
+      });
       const development = await developmentService.develop(request);
+      await progress({
+        requestId:id,
+        status:development.status === "published" ? "published" : "publishing",
+        location:selection.selector.display,
+        locationSource:selection.source,
+        sex:selectedSex,
+        threadId:plan.threadId,
+        genesisId:plan.genesisId,
+      });
       return Object.freeze({
         requestId:id,
         threadId:plan.threadId,

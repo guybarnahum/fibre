@@ -7,6 +7,7 @@ import { createModernBirthInitiationService } from "../src/modern-birth-initiati
 import {
   MODERN_BIRTHPLACE_ANCHOR_COUNT,
   MODERN_BIRTHPLACE_LONG_TAIL_SHARE,
+  MODERN_BIRTHPLACES,
 } from "../src/modern-birthplace-sampler.mjs";
 
 const AUTHORED = Object.freeze({
@@ -31,6 +32,7 @@ const AUTHORED = Object.freeze({
 
 function harness() {
   let developed = null;
+  const progress = [];
   const creativeAdapter = {
     provider:"test",
     modelId:"test",
@@ -57,13 +59,15 @@ function harness() {
       developmentService,
       creativeAdapter,
       birthRuntime,
+      onProgress:(entry) => progress.push(entry),
     }),
     developed:() => developed,
+    progress:() => progress,
   };
 }
 
 test("operator birth can omit location and sex without losing stable identity", async () => {
-  const { service, developed } = harness();
+  const { service, developed, progress } = harness();
   const birth = await service.initiate({
     requestId:"admin_birth_random_001",
     requestedAt:"2026-09-25T04:00:00.000Z",
@@ -77,6 +81,8 @@ test("operator birth can omit location and sex without losing stable identity", 
   assert.equal(Object.hasOwn(request.subjectIdentity, "sex"), false);
   assert.equal(birth.sex, genesisSexForThread({ threadId:plan.threadId }));
   assert.equal(birth.threadId, plan.threadId);
+  assert.deepEqual(progress().map((entry) => entry.status), ["authoring","developing","publishing"]);
+  assert.equal(progress()[0].location, birth.location);
 });
 
 test("operator birth respects an explicit place and sex", async () => {
@@ -96,4 +102,15 @@ test("operator birth respects an explicit place and sex", async () => {
     city:"Jerusalem",
   });
   assert.equal(developed().subjectIdentity.sex, "female");
+});
+
+
+test("modern birthplace catalog is the sampler's shared geographic authority", () => {
+  assert.equal(MODERN_BIRTHPLACES.length, 100);
+  const tbilisi = MODERN_BIRTHPLACES.find((place) => place.place === "Georgia/Tbilisi");
+  assert.deepEqual(
+    { lat:tbilisi.lat, long:tbilisi.long, region:tbilisi.region, tier:tbilisi.tier },
+    { lat:41.69143, long:44.83412, region:"central_asia_caucasus", tier:"anchor" },
+  );
+  assert.equal(MODERN_BIRTHPLACES.every((place) => Number.isFinite(place.lat) && Number.isFinite(place.long)), true);
 });
