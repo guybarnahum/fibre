@@ -154,8 +154,9 @@ export async function pendingBirths(runtime, {
   const queued = [];
   const known = new Set();
 
-  for (const request of runtime.modernBirthRequestStore.recent({ limit:64, activeOnly:true })) {
+  for (const request of runtime.modernBirthRequestStore.recent({ limit:64 })) {
     known.add(request.requestId);
+    if (request.status === "published") continue;
     if (request.genesisId !== null) {
       const provisional = runtime.provisionalBirthStore.get(request.genesisId);
       if (provisional?.status === "published") {
@@ -179,6 +180,7 @@ export async function pendingBirths(runtime, {
       }
     }
 
+    if (!runtime.modernBirthRequestStore.isActive(request.status)) continue;
     queued.push(pendingProjection(request, {
       source:"modern",
       status:request.status,
@@ -193,8 +195,14 @@ export async function pendingBirths(runtime, {
 
   for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
     if (known.has(request.requestId)) continue;
+    const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
+    if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
+
     const provisional = runtime.provisionalBirthStore.get(request.genesisId);
-    if (request.status === "submitted" && provisional?.status === "published") continue;
+    if (request.status === "submitted" && provisional?.status === "published") {
+      runtime.developmentRequestStore.settleBorn(request.requestId);
+      continue;
+    }
 
     const timing = birthTiming(request, nowMs);
     let worldPresence = null;
@@ -205,7 +213,17 @@ export async function pendingBirths(runtime, {
       && typeof privateToken === "string"
     ) {
       worldPresence = await worldThreadPresence({ worldBinding, privateToken, threadId:request.threadId });
-      if (worldPresence === "present") continue;
+      if (worldPresence === "present") {
+        runtime.developmentRequestStore.settleBorn(request.requestId);
+        continue;
+      }
+      if (
+        worldPresence === "absent"
+        && disposition?.failureCode === "GENESIS_PASS_A_VALIDATION_ERROR"
+      ) {
+        runtime.developmentRequestStore.settleStillborn(request.requestId);
+        continue;
+      }
     }
 
     const identity = request.plan?.subjectIdentity ?? null;
