@@ -1012,11 +1012,9 @@ function renderThreadPopulationMap() {
     return;
   }
   const places = grouped.locations.length;
-  const awaitingLivedNow = grouped.mapped - grouped.authoritative;
   threadPopulationMapSummary.textContent =
     `${places} current area${places === 1 ? "" : "s"} · ${grouped.mapped} Thread${grouped.mapped === 1 ? "" : "s"}`
-    + (awaitingLivedNow > 0 ? ` · ${awaitingLivedNow} awaiting enacted LivedNow` : "")
-    + (grouped.unmapped > 0 ? ` · ${grouped.unmapped} without geographic projection` : "");
+    + (grouped.unmapped > 0 ? ` · ${grouped.unmapped} current location unavailable` : "");
 }
 
 function selectedBirthSex() {
