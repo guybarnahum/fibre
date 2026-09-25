@@ -60,7 +60,7 @@ test("stale birth distinguishes absent World state from an unavailable World che
     updatedAt:"2026-09-01T00:05:00.000Z",
   };
   const runtime = {
-    modernBirthRequestStore:{ recent:() => [request], progress:() => {} },
+    modernBirthRequestStore:{ recent:() => [request], progress:() => {}, isActive:() => true },
     provisionalBirthStore:{ get:() => ({ status:"pending" }) },
     developmentRequestStore:{ recent:() => [], getDisposition:() => null, settleBorn:() => {}, settleStillborn:() => {} },
   };
