@@ -80,3 +80,19 @@ test("World Thread Registry exposes bounded cultural naming context in one read"
   assert.equal("genome" in byFin.threads[0], false);
   assert.equal("currentState" in byFin.threads[0], false);
 });
+
+
+test("World Thread Registry accepts the full bounded population read", () => {
+  const { directory } = fixture();
+  const population = directory.search({ limit:5000 });
+  assert.deepEqual(
+    population.threads.map(({ threadId }) => threadId),
+    ["thr_mira", "thr_nilo"],
+    "full population read did not return all admitted fixture Threads",
+  );
+  assert.throws(
+    () => directory.search({ limit:5001 }),
+    /between 1 and 5000/,
+    "registry accepted a population read beyond its bounded capacity",
+  );
+});
