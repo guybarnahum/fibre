@@ -10,7 +10,7 @@ import {
   buildGenesisDevelopmentPlan,
 } from "./genesis-development-plan.mjs";
 import { sha256 } from "./genesis-development-contracts.mjs";
-import { resolveBirthplaceGeography } from "#core/src/birthplace-geography.mjs";
+import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
 import { genesisSexForThread, normalizeGenesisSex } from "./genesis-sex.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 
@@ -109,7 +109,7 @@ function normalizeLocation(raw) {
   const country = displayPart(parts[0]);
   const city = displayPart(parts[1]);
   const display = `${country}/${city}`;
-  const geography = resolveBirthplaceGeography(display);
+  const geography = resolveLocalityGeography(display);
   if (geography === null) {
     throw new TypeError(`location ${display} has no Fibre birthplace coordinates`);
   }
