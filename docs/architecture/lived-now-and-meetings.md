@@ -75,6 +75,8 @@ A lived Thread is never physically nowhere. Every CurrentSituation therefore car
 
 Mediated presence is additional context, not a replacement for physical presence. Public Presentation may coarsen or withhold exact place details, but World must always know the underlying physical presence.
 
+Operator maps are projections of this authority, not a new place authority. A Threads world map must choose the Thread's position from CurrentSituation and its resolved place reference. Latitude/longitude may project that authoritative place onto a geographic map, but coordinate coincidence is never evidence of physical co-presence and birthplace is never a substitute for current presence. If a legacy Thread has not yet enacted LivedNow, a UI may show its known World locality only when it explicitly marks that point as awaiting enacted LivedNow.
+
 ### LivedNow
 
 The World capability that can answer:
