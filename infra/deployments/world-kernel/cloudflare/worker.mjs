@@ -78,7 +78,7 @@ function directorySearch(url) {
   const limitText = url.searchParams.get("limit") ?? "50";
   if (!/^\d+$/u.test(limitText)) throw new TypeError("Thread directory limit is invalid");
   const limit = Number(limitText);
-  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 200) throw new TypeError("Thread directory limit is invalid");
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 5000) throw new TypeError("Thread directory limit is invalid");
   const query = url.searchParams.get("q");
   const fin = url.searchParams.get("fin");
   if (query !== null && query.length > 240) throw new TypeError("Thread directory query is too long");
