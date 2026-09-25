@@ -174,3 +174,55 @@ test("Thread population returns admitted people without blocking on missing Live
   assert.deepEqual(population.threads.map(({ threadId }) => threadId), ["thr_live_map"]);
   assert.equal(population.threads[0].currentLocation, null, "missing LivedNow was silently invented");
 });
+
+
+test("recovered birth geography is exposed as one explicit World identity repair", async () => {
+  const activityLog = {
+    prepare() {
+      return { bind() { return { async all() { return { results:[] }; } }; } };
+    },
+  };
+  const recovered = {
+    displayName:"San Francisco, California, United States",
+    country:"United States",
+    city:"San Francisco, California",
+    lat:37.77493,
+    long:-122.41942,
+    source:"identity_geography_recovered",
+  };
+  const population = await readAdminThreadPopulation({
+    activityLog,
+    environment:"staging",
+    readRegistry:async () => [{
+      threadId:"thr_malformed_geo",
+      fibreIdentityNumber:"FIN-GEO",
+      displayName:"Emily Grace Nguyen",
+      sex:"female",
+      status:"frozen",
+      originOrientation:"original",
+      birthDate:"2004-03-18",
+      birthPlace:"San Francisco Califronia,, USA",
+      birthLocation:recovered,
+      culture:[],
+      languages:["English"],
+      raisedAs:{ languages:["English"] },
+      currentLocation:null,
+      runtime:null,
+      version:1,
+      stateHash:"sha256:geo",
+      updatedAt:"2026-09-25T22:00:00.000Z",
+    }],
+  });
+
+  const thread = population.threads[0];
+  const finding = thread.findings.find((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE");
+  assert.equal(thread.health, "repairable", "malformed geography looked healthy");
+  assert.equal(finding.identityAction.id, "repair_birth_geography", "repair action was not exposed");
+  assert.deepEqual(finding.identityAction.fixed.birthPlace, {
+    displayName:recovered.displayName,
+    country:recovered.country,
+    city:recovered.city,
+    lat:recovered.lat,
+    long:recovered.long,
+  }, "repair did not preserve the canonical recovered place");
+});
