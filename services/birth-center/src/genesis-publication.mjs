@@ -1,3 +1,4 @@
+import { resolveBirthplaceGeography } from "#core/src/birthplace-geography.mjs";
 import {
   buildFibreCivilRegistration,
   mintFibreIdentityNumber,
@@ -87,12 +88,32 @@ function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt })
   const languages = Array.isArray(subjectIdentity.languages) && subjectIdentity.languages.length > 0
     ? subjectIdentity.languages
     : worldSpec.languages;
+  const authoredPlace = subjectIdentity.place;
+  const geography = authoredPlace
+    && Number.isFinite(authoredPlace.lat)
+    && Number.isFinite(authoredPlace.long)
+      ? Object.freeze({
+          displayName:subjectIdentity.birthCity.trim(),
+          country:authoredPlace.country,
+          city:authoredPlace.city,
+          lat:authoredPlace.lat,
+          long:authoredPlace.long,
+        })
+      : resolveBirthplaceGeography(subjectIdentity.birthCity);
+  if (geography === null) throw new TypeError(`modern Genesis birth place ${subjectIdentity.birthCity} is not mappable`);
   return Object.freeze({
     name: name.trim(),
     sex,
     birthDate: birthInstant.toISOString().slice(0, 10),
     languages: Object.freeze([...languages]),
     birthCity: subjectIdentity.birthCity.trim(),
+    birthPlace:Object.freeze({
+      displayName:subjectIdentity.birthCity.trim(),
+      country:geography.country,
+      city:geography.city,
+      lat:geography.lat,
+      long:geography.long,
+    }),
     culture: Object.freeze([`${subjectIdentity.birthCity.trim()} formative context`]),
     originOrientation: "original",
     selfDescription: `I am ${name.trim()}.`,
@@ -106,6 +127,12 @@ export function assertModernGenesisThreadIdentity(thread) {
   if (typeof identity.birthDate !== "string" || identity.birthDate.trim() === "") fail("modern Genesis Thread lacks birth date");
   if (!Array.isArray(identity.languages) || identity.languages.length === 0) fail("modern Genesis Thread lacks language context");
   if (typeof identity.birthCity !== "string" || identity.birthCity.trim() === "") fail("modern Genesis Thread lacks birth place");
+  if (
+    !identity.birthPlace
+    || identity.birthPlace.displayName !== identity.birthCity
+    || !Number.isFinite(identity.birthPlace.lat)
+    || !Number.isFinite(identity.birthPlace.long)
+  ) fail("modern Genesis Thread lacks mappable birth place");
   if (!Array.isArray(identity.culture) || identity.culture.length === 0) fail("modern Genesis Thread lacks cultural context");
   if (typeof identity.selfDescription !== "string" || identity.selfDescription === "I am a Fibre Thread.") fail("modern Genesis Thread retains generic self-description");
   return true;
