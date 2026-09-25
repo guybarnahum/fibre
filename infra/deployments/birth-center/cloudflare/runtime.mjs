@@ -233,7 +233,8 @@ export async function reconcileStaleBirths(runtime, {
     }
     return presence.get(threadId);
   };
-  const result = { checked:0, born:0, stillborn:0, unavailable:0 };
+  const bornRequests = new Set();
+  const stillbornRequests = new Set();
   const modern = runtime.modernBirthRequestStore.recent({ limit:64 });
   const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
   const publishedModern = new Set();
@@ -243,19 +244,17 @@ export async function reconcileStaleBirths(runtime, {
     if (request.genesisId !== null && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
       runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
       publishedModern.add(request.requestId);
-      result.born += 1;
+      bornRequests.add(request.requestId);
       continue;
     }
     const timing = birthTiming(request, nowMs);
     if ((!timing.stale && request.status !== "failed") || !request.threadId) continue;
-    result.checked += 1;
     const worldPresence = await presenceFor(request.threadId);
     if (worldPresence === "present") {
       runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
       publishedModern.add(request.requestId);
-      result.born += 1;
+      bornRequests.add(request.requestId);
     } else if (worldPresence === "unavailable") {
-      result.unavailable += 1;
     }
   }
 
@@ -274,14 +273,13 @@ export async function reconcileStaleBirths(runtime, {
         runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
         publishedModern.add(request.requestId);
       }
-      result.born += 1;
+      bornRequests.add(request.requestId);
       continue;
     }
 
     const timing = birthTiming(request, nowMs);
     const terminalFailure = disposition?.failureCode !== null && disposition?.failureCode !== undefined;
     if ((!timing.stale && !terminalFailure) || !request.threadId) continue;
-    result.checked += 1;
     const worldPresence = await presenceFor(request.threadId);
     if (worldPresence === "present") {
       runtime.developmentRequestStore.settleBorn(request.requestId);
@@ -293,19 +291,23 @@ export async function reconcileStaleBirths(runtime, {
         runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
         publishedModern.add(request.requestId);
       }
-      result.born += 1;
+      bornRequests.add(request.requestId);
     } else if (
       worldPresence === "absent"
       && disposition?.failureCode === "GENESIS_PASS_A_VALIDATION_ERROR"
     ) {
       runtime.developmentRequestStore.settleStillborn(request.requestId);
-      result.stillborn += 1;
+      stillbornRequests.add(request.requestId);
     } else if (worldPresence === "unavailable") {
-      result.unavailable += 1;
     }
   }
 
-  return Object.freeze(result);
+  return Object.freeze({
+    checked:presence.size,
+    born:bornRequests.size,
+    stillborn:stillbornRequests.size,
+    unavailable:[...presence.values()].filter((value) => value === "unavailable").length,
+  });
 }
 
 async function ensureBirthStatusScheduled(runtime, { nowMs } = {}) {
