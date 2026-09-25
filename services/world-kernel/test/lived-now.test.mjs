@@ -5,7 +5,6 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
-import { CurrentWorldLocationStore } from "../src/current-world-location-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
@@ -366,9 +365,7 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
       [second],
       "World should expose one latest current situation per Thread for scene discovery",
     );
-    const locations = new CurrentWorldLocationStore(storage);
-    const locationSnapshot = locations.list({ at:second.establishedAt });
-    locations.close();
+    const locationSnapshot = lived.listCurrentLocationEvidence({ at:second.establishedAt });
     const mayaNow = locationSnapshot.find((entry) => entry.threadId === life.thread.threadId);
     assert.equal(mayaNow.currentSituation.situationId, second.situationId, "live map lost the current situation");
     assert.equal(mayaNow.placeEpisodes[0].place.locality, "Haifa", "live map lost current place evidence");
