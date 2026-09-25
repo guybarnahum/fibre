@@ -41,6 +41,7 @@
     "test": "npm run build && node tools/test-infra/run-test-suite.mjs active",
     "test:replay": "npm run build && node tools/test-infra/run-test-suite.mjs replay",
     "test:all": "npm run build && node tools/test-infra/run-test-suite.mjs all",
+    "test:focused": "node --test --test-reporter=./tools/test-infra/fibre-spec-reporter.mjs",
     "test:asset-live": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/presentation/asset-generation-live-smoke.mjs",
     "test:asset-live:cloudflare": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/presentation/asset-generation-live-cloudflare.mjs",
     "provider:bfl:probe": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/providers/probe-bfl-shape.mjs",
