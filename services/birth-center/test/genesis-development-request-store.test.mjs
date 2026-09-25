@@ -128,16 +128,19 @@ test("Genesis birth disposition survives restart without rewriting the developme
   store.reserve({ requestId:plan().requestId, requestDigest:plan().requestDigest, plan:plan() });
   store.recordFailure(plan().requestId, Object.assign(new Error("Pass-A exhausted"), {
     code:"GENESIS_PASS_A_VALIDATION_ERROR",
+    retryable:false,
   }));
   const born = store.settleBorn(plan().requestId);
   assert.equal(born.outcome, "born");
   assert.equal(born.failureCode, "GENESIS_PASS_A_VALIDATION_ERROR");
+  assert.equal(born.failureRetryable, false);
   store.close();
 
   const restarted = createGenesisDevelopmentRequestStore(state.storage());
   const recovered = restarted.getDisposition(plan().requestId);
   assert.equal(recovered.outcome, "born", "settled birth outcome was not durable");
   assert.equal(recovered.failureCode, "GENESIS_PASS_A_VALIDATION_ERROR", "historical failure evidence was lost");
+  assert.equal(recovered.failureRetryable, false, "terminal failure disposition lost retryability");
   restarted.close();
 });
 
@@ -152,5 +155,20 @@ test("unsettled Genesis development request can settle born directly", (t) => {
   const born = store.settleBorn(plan().requestId);
 
   assert.equal(born.outcome, "born", "first birth settlement did not become born");
+  store.close();
+});
+
+
+test("Genesis failure disposition preserves whether machinery may retry", (t) => {
+  const state = tempBirthState(t);
+  const store = createGenesisDevelopmentRequestStore(state.storage());
+  store.reserve({ requestId:plan().requestId, requestDigest:plan().requestDigest, plan:plan() });
+
+  const disposition = store.recordFailure(plan().requestId, Object.assign(
+    new Error("provider temporarily unavailable"),
+    { code:"MODEL_PROVIDER_UNAVAILABLE", retryable:true },
+  ));
+
+  assert.equal(disposition.failureRetryable, true, "retryable Genesis failure became terminal");
   store.close();
 });
