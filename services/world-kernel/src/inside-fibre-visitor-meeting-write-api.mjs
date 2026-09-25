@@ -86,7 +86,7 @@ export function createInsideFibreVisitorMeetingWriteApi({
           threadId:body.threadId,
           at:now(),
         });
-        if (admitted === null) return json({ error:"inside_fibre_unavailable" }, 409);
+        if (admitted === null) return json({ error:"thread_meeting_unavailable" }, 409);
         const published = await publication.publishCurrentSituation(admitted.situation);
         return json({
           ok:true,
@@ -105,7 +105,7 @@ export function createInsideFibreVisitorMeetingWriteApi({
         utterance:body.utterance,
         at:body.occurredAt,
       });
-      if (result === null) return json({ error:"inside_fibre_meeting_changed" }, 409);
+      if (result === null) return json({ error:"thread_meeting_changed" }, 409);
       return json({
         ok:true,
         result:{

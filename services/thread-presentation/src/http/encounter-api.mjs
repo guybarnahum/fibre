@@ -88,8 +88,8 @@ export function createPublicEncounterApi({
               ? error.body.detail
               : null;
             return json({
-              error:worldError === "inside_fibre_unavailable"
-                ? "inside_fibre_unavailable"
+              error:worldError === "thread_meeting_unavailable"
+                ? "thread_meeting_unavailable"
                 : "lived_now_unavailable",
               ...(detail === null ? {} : { detail }),
             }, request, viewerOrigin, 409);

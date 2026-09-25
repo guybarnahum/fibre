@@ -154,9 +154,9 @@ test("meeting entry preserves visitor unavailability instead of calling it a Liv
   const api = createPublicEncounterApi({
     viewerOrigin:"https://insidefibre.com",
     ensurePublicPresent:async () => {
-      const error = new Error("inside_fibre_unavailable");
+      const error = new Error("thread_meeting_unavailable");
       error.status = 409;
-      error.body = { error:"inside_fibre_unavailable" };
+      error.body = { error:"thread_meeting_unavailable" };
       throw error;
     },
     readPublicPresent:async () => null,
@@ -168,6 +168,6 @@ test("meeting entry preserves visitor unavailability instead of calling it a Liv
     { method:"POST", headers:{ Origin:"https://insidefibre.com" } },
   ));
   assert.equal(response.status, 409);
-  assert.deepEqual(await response.json(), { error:"inside_fibre_unavailable" },
+  assert.deepEqual(await response.json(), { error:"thread_meeting_unavailable" },
     "pre-window visitor unavailability was mislabeled as a LivedNow failure");
 });

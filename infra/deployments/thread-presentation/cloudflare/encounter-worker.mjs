@@ -38,8 +38,8 @@ async function callWorldMeetingEntry(env, threadId) {
     error.status = response.status;
     error.body = body;
     if (typeof body?.code === "string") error.code = body.code;
-    if (response.status === 409 && body?.error === "inside_fibre_unavailable") {
-      error.code = "INSIDE_FIBRE_UNAVAILABLE";
+    if (response.status === 409 && body?.error === "thread_meeting_unavailable") {
+      error.code = "THREAD_MEETING_UNAVAILABLE";
       error.activityCategory = "conflict";
       error.retryable = true;
     }
@@ -79,7 +79,7 @@ function worldMeetingEntry(env, activityRecorder, threadId) {
       stage: "presentation.meet.admission",
     },
     () => callWorldMeetingEntry(env, threadId),
-    (error) => expectedWorldConflict(error, "inside_fibre_unavailable"),
+    (error) => expectedWorldConflict(error, "thread_meeting_unavailable"),
   );
 }
 
@@ -98,8 +98,8 @@ async function callWorldEncounter(env, input) {
     const error = new Error(body?.error ?? `World encounter failed with HTTP ${response.status}`);
     error.status = response.status;
     error.body = body;
-    if (response.status === 409 && body?.error === "inside_fibre_meeting_changed") {
-      error.code = "INSIDE_FIBRE_MEETING_CHANGED";
+    if (response.status === 409 && body?.error === "thread_meeting_changed") {
+      error.code = "THREAD_MEETING_CHANGED";
       error.activityCategory = "conflict";
       error.retryable = true;
     }
@@ -120,7 +120,7 @@ function worldEncounter(env, activityRecorder, input) {
       stage: "presentation.encounter.world_submit",
     },
     () => callWorldEncounter(env, input),
-    (error) => expectedWorldConflict(error, "inside_fibre_meeting_changed"),
+    (error) => expectedWorldConflict(error, "thread_meeting_changed"),
   );
 }
 
