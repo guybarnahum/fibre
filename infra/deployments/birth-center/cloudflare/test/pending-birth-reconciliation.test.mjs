@@ -42,3 +42,45 @@ test("stale birth leaves pending when its Thread is already in World", async () 
     "durable birth was not reconciled to published",
   );
 });
+
+test("stale birth distinguishes absent World state from an unavailable World check", async () => {
+  const request = {
+    requestId:"admin_birth_stalled",
+    genesisId:"gen_stalled",
+    threadId:"thr_stalled",
+    location:"Georgia/Tbilisi",
+    requestedLocation:null,
+    locationSource:"sampled",
+    sex:"male",
+    requestedSex:null,
+    status:"developing",
+    createdAt:"2026-09-01T00:00:00.000Z",
+    updatedAt:"2026-09-01T00:05:00.000Z",
+  };
+  const runtime = {
+    modernBirthRequestStore:{ recent:() => [request], progress:() => {} },
+    provisionalBirthStore:{ get:() => ({ status:"pending" }) },
+    developmentRequestStore:{ recent:() => [] },
+  };
+  const options = {
+    privateToken:"private-token-for-birth-reconciliation",
+    nowMs:() => Date.parse("2026-09-25T15:00:00.000Z"),
+  };
+
+  const absent = await pendingBirths(runtime, {
+    ...options,
+    worldBinding:{ fetch:async () => Response.json({ error:"not_found" }, { status:404 }) },
+  });
+  assert.equal(absent[0].stale, true, "stalled birth was not marked stale");
+  assert.equal(absent[0].classification, "stale_not_in_world", "World absence was not identified");
+
+  const unavailable = await pendingBirths(runtime, {
+    ...options,
+    worldBinding:{ fetch:async () => Response.json({ error:"unavailable" }, { status:503 }) },
+  });
+  assert.equal(
+    unavailable[0].classification,
+    "stale_world_check_unavailable",
+    "World outage was misclassified as Thread absence",
+  );
+});
