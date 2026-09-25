@@ -57,6 +57,10 @@ function fixture() {
           reads += 1;
           return fin === null ? entries : entries.filter((entry) => entry.fibreIdentityNumber === fin);
         },
+        presentThreadIds(threadIds) {
+          const admitted = new Set(entries.map((entry) => entry.threadId));
+          return threadIds.filter((threadId) => admitted.has(threadId)).sort();
+        },
       },
     }),
     reads:() => reads,
@@ -94,5 +98,15 @@ test("World Thread Registry accepts the full bounded population read", () => {
     () => directory.search({ limit:5001 }),
     /between 1 and 5000/,
     "registry accepted a population read beyond its bounded capacity",
+  );
+});
+
+
+test("World answers bounded Thread presence as one set", () => {
+  const { directory } = fixture();
+  assert.deepEqual(
+    directory.presence(["thr_missing", "thr_nilo", "thr_mira", "thr_nilo"]).presentThreadIds,
+    ["thr_mira", "thr_nilo"],
+    "bulk presence did not reflect admitted World Threads",
   );
 });
