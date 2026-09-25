@@ -61,17 +61,57 @@ export function catalogPlaceForLocation(catalog, location) {
   return cityMatches.length === 1 ? cityMatches[0] : null;
 }
 
-function mappableLocation(thread) {
+export function threadMapState(thread) {
+  const lifecycle = thread?.identity?.lifecycleStatus ?? "dormant";
   const current = thread?.currentLocation;
-  if (current && Number.isFinite(current.lat) && Number.isFinite(current.long)) {
-    return Object.freeze({ ...current, mapMode:"current" });
+  const situated = current && Number.isFinite(current.lat) && Number.isFinite(current.long);
+
+  if (lifecycle === "retired") {
+    return Object.freeze({ kind:"retired", lifecycle, situated:false, active:false });
   }
+  if (lifecycle === "active") {
+    return Object.freeze({
+      kind:situated ? "active" : "active_unsituated",
+      lifecycle,
+      situated:Boolean(situated),
+      active:true,
+    });
+  }
+  if (lifecycle === "thawing" || lifecycle === "freezing") {
+    return Object.freeze({
+      kind:situated ? "transition" : "transition_unsituated",
+      lifecycle,
+      situated:Boolean(situated),
+      active:false,
+    });
+  }
+  return Object.freeze({
+    kind:situated ? "frozen_situated" : "awaiting_lived_now",
+    lifecycle,
+    situated:Boolean(situated),
+    active:false,
+  });
+}
+
+function mappableLocation(thread, state = threadMapState(thread)) {
+  if (state.kind === "retired") return null;
+
+  const current = thread?.currentLocation;
+  if (state.situated) {
+    return Object.freeze({
+      ...current,
+      mapMode:"situated",
+      threadState:state.kind,
+    });
+  }
+
   const birth = thread?.identity?.birthLocation;
   if (birth && Number.isFinite(birth.lat) && Number.isFinite(birth.long)) {
     return Object.freeze({
       current:false,
       awaitingLivedNow:true,
-      mapMode:"awaiting_lived_now",
+      mapMode:"placeholder",
+      threadState:state.kind,
       displayName:birth.displayName ?? thread?.identity?.birthPlace ?? birth.city ?? "Birthplace",
       locality:birth.city ?? birth.displayName ?? "Birthplace",
       country:birth.country ?? "",
@@ -86,16 +126,39 @@ function mappableLocation(thread) {
 export function groupThreadsByCurrentLocation(threads) {
   const groups = new Map();
   let unmapped = 0;
-  let authoritative = 0;
+  let retired = 0;
+  let situated = 0;
+  let active = 0;
+  let frozenSituated = 0;
+  let transitioning = 0;
   let awaitingLivedNow = 0;
+  let activeUnsituated = 0;
+
   for (const thread of Array.isArray(threads) ? threads : []) {
-    const location = mappableLocation(thread);
+    const state = threadMapState(thread);
+    if (state.kind === "retired") {
+      retired += 1;
+      continue;
+    }
+
+    const location = mappableLocation(thread, state);
     if (location === null) {
       unmapped += 1;
       continue;
     }
-    if (location.mapMode === "current") authoritative += 1;
-    else awaitingLivedNow += 1;
+
+    if (state.situated) situated += 1;
+    if (state.kind === "active") active += 1;
+    if (state.kind === "frozen_situated") frozenSituated += 1;
+    if (state.kind === "transition" || state.kind === "transition_unsituated") transitioning += 1;
+    if (state.kind === "awaiting_lived_now") awaitingLivedNow += 1;
+    if (state.kind === "active_unsituated") {
+      active += 1;
+      activeUnsituated += 1;
+      awaitingLivedNow += 1;
+    }
+    if (state.kind === "transition_unsituated") awaitingLivedNow += 1;
+
     const locality = location.locality ?? location.displayName ?? "Location";
     const country = location.country ?? "";
     const key = `${location.lat.toFixed(4)}:${location.long.toFixed(4)}:${normalized(locality)}:${normalized(country)}`;
@@ -107,32 +170,57 @@ export function groupThreadsByCurrentLocation(threads) {
       lat:location.lat,
       long:location.long,
     });
-    const current = groups.get(key) ?? {
+    const group = groups.get(key) ?? {
       place,
       threadIds:[],
-      currentCount:0,
+      situatedCount:0,
+      activeCount:0,
+      frozenSituatedCount:0,
+      transitionCount:0,
       awaitingLivedNowCount:0,
+      activeUnsituatedCount:0,
     };
-    current.threadIds.push(thread.threadId);
-    if (location.mapMode === "current") current.currentCount += 1;
-    else current.awaitingLivedNowCount += 1;
-    groups.set(key, current);
+    group.threadIds.push(thread.threadId);
+    if (state.situated) group.situatedCount += 1;
+    if (state.kind === "active") group.activeCount += 1;
+    if (state.kind === "frozen_situated") group.frozenSituatedCount += 1;
+    if (state.kind === "transition" || state.kind === "transition_unsituated") group.transitionCount += 1;
+    if (state.kind === "awaiting_lived_now" || state.kind === "transition_unsituated") {
+      group.awaitingLivedNowCount += 1;
+    }
+    if (state.kind === "active_unsituated") {
+      group.activeCount += 1;
+      group.activeUnsituatedCount += 1;
+      group.awaitingLivedNowCount += 1;
+    }
+    groups.set(key, group);
   }
+
   const locations = [...groups.values()]
-    .map(({ place, threadIds, currentCount, awaitingLivedNowCount }) => Object.freeze({
-      place,
-      count:threadIds.length,
-      currentCount,
-      awaitingLivedNowCount,
-      threadIds:Object.freeze([...threadIds]),
+    .map((group) => Object.freeze({
+      place:group.place,
+      count:group.threadIds.length,
+      situatedCount:group.situatedCount,
+      activeCount:group.activeCount,
+      frozenSituatedCount:group.frozenSituatedCount,
+      transitionCount:group.transitionCount,
+      awaitingLivedNowCount:group.awaitingLivedNowCount,
+      activeUnsituatedCount:group.activeUnsituatedCount,
+      threadIds:Object.freeze([...group.threadIds]),
     }))
     .sort((left, right) => right.count - left.count || left.place.place.localeCompare(right.place.place));
+
   return Object.freeze({
     locations:Object.freeze(locations),
     mapped:locations.reduce((sum, location) => sum + location.count, 0),
-    authoritative,
+    situated,
+    active,
+    frozenSituated,
+    transitioning,
     awaitingLivedNow,
+    activeUnsituated,
     unmapped,
+    retired,
   });
 }
 
@@ -145,13 +233,26 @@ export function renderWorldCountMarkers(group, locations, { className = "thread-
     marker.classList.add(className);
     marker.setAttribute("transform", `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`);
 
-    if (location.awaitingLivedNowCount > 0 && location.currentCount === 0) {
+    if (location.activeCount > 0) marker.classList.add("active");
+    if (location.activeUnsituatedCount > 0) marker.classList.add("active-unsituated");
+    if (location.transitionCount > 0) marker.classList.add("transition");
+    if (location.awaitingLivedNowCount > 0 && location.situatedCount === 0) {
       marker.classList.add("awaiting-lived-now");
     } else if (location.awaitingLivedNowCount > 0) {
       marker.classList.add("mixed-presence");
     }
+
+    const radius = location.count > 1 ? 13 : 6;
+    if (location.activeCount > 0) {
+      const halo = document.createElementNS(SVG_NS, "circle");
+      halo.classList.add("thread-world-active-halo");
+      halo.setAttribute("r", String(radius + 2));
+      marker.append(halo);
+    }
+
     const circle = document.createElementNS(SVG_NS, "circle");
-    circle.setAttribute("r", location.count > 1 ? "13" : "6");
+    circle.classList.add("thread-world-marker-core");
+    circle.setAttribute("r", String(radius));
     marker.append(circle);
 
     if (location.count > 1) {
@@ -172,10 +273,13 @@ export function renderWorldCountMarkers(group, locations, { className = "thread-
 
     const title = document.createElementNS(SVG_NS, "title");
     const placeLabel = [location.place.city, location.place.country].filter(Boolean).join(", ");
-    const presence = location.awaitingLivedNowCount > 0
-      ? ` · ${location.currentCount ?? 0} current · ${location.awaitingLivedNowCount} awaiting LivedNow`
-      : "";
-    title.textContent = `${placeLabel} · ${location.count} Thread${location.count === 1 ? "" : "s"}${presence}`;
+    const states = [
+      location.activeCount > 0 ? `${location.activeCount} active` : null,
+      location.frozenSituatedCount > 0 ? `${location.frozenSituatedCount} frozen · situated` : null,
+      location.transitionCount > 0 ? `${location.transitionCount} transitioning` : null,
+      location.awaitingLivedNowCount > 0 ? `${location.awaitingLivedNowCount} awaiting LivedNow` : null,
+    ].filter(Boolean).join(" · ");
+    title.textContent = `${placeLabel} · ${location.count} Thread${location.count === 1 ? "" : "s"}${states ? ` · ${states}` : ""}`;
     marker.append(title);
     group.append(marker);
     rendered.push(Object.freeze({ marker, location }));
