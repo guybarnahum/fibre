@@ -50,6 +50,23 @@ export function validateThreadSnapshot(thread) {
       throw new TypeError("thread.identity.birthDate is invalid");
     }
   }
+  if (thread.identity.birthPlace !== undefined) {
+    assertPlainObject("thread.identity.birthPlace", thread.identity.birthPlace);
+    assertExactKeys("thread.identity.birthPlace", thread.identity.birthPlace, [
+      "displayName","country","city","lat","long",
+    ]);
+    assertNonEmpty("thread.identity.birthPlace.displayName", thread.identity.birthPlace.displayName);
+    assertNonEmpty("thread.identity.birthPlace.country", thread.identity.birthPlace.country);
+    assertNonEmpty("thread.identity.birthPlace.city", thread.identity.birthPlace.city);
+    assertFiniteNumber("thread.identity.birthPlace.lat", thread.identity.birthPlace.lat, { minimum:-90, maximum:90 });
+    assertFiniteNumber("thread.identity.birthPlace.long", thread.identity.birthPlace.long, { minimum:-180, maximum:180 });
+    if (
+      thread.identity.birthCity !== undefined
+      && thread.identity.birthPlace.displayName !== thread.identity.birthCity
+    ) {
+      throw new TypeError("thread.identity.birthPlace.displayName must match birthCity");
+    }
+  }
   assertPlainObject("thread.genome", thread.genome);
   assertPlainObject("thread.genome.textualTraits", thread.genome.textualTraits);
   assertPlainObject("thread.genome.runtimeBaselines", thread.genome.runtimeBaselines);
