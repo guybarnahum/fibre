@@ -9,15 +9,15 @@ function api(options = {}) {
   return createThreadGenesisRepairApi({
     privateToken,
     identityService:{
-      async update(threadId, { operationKey, name, sex, birthDate }) {
+      async update(threadId, { operationKey, name, sex, birthDate, birthPlace }) {
         return {
           threadId,
           operationKey,
           exists:threadId !== "thr_missing",
           changed:threadId !== "thr_missing",
           eventId:threadId === "thr_missing" ? null : "evt_identity_1",
-          changes:threadId === "thr_missing" ? {} : { name, sex, birthDate },
-          identity:threadId === "thr_missing" ? null : { name:name ?? "Thread", sex:sex ?? null, birthDate:birthDate ?? null },
+          changes:threadId === "thr_missing" ? {} : { name, sex, birthDate, birthPlace },
+          identity:threadId === "thr_missing" ? null : { name:name ?? "Thread", sex:sex ?? null, birthDate:birthDate ?? null, birthPlace:birthPlace ?? null },
           version:threadId === "thr_missing" ? null : 2,
         };
       },
@@ -107,8 +107,31 @@ test("Admin identity input changes World authority without requiring a repair di
   }));
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.deepEqual(body.identityUpdate.identity, { name:"Maya Cohen", sex:"female", birthDate:"2004-08-20" });
+  assert.deepEqual(body.identityUpdate.identity, { name:"Maya Cohen", sex:"female", birthDate:"2004-08-20", birthPlace:null });
   assert.equal(body.identityUpdate.changed, true);
+});
+
+test("Admin can apply only the recovered canonical birth geography", async () => {
+  const birthPlace = {
+    displayName:"San Francisco, California, United States",
+    country:"United States",
+    city:"San Francisco, California",
+    lat:37.77493,
+    long:-122.41942,
+  };
+  const response = await api().fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body:JSON.stringify({
+      action:"identity",
+      operationKey:"admin_birth_geography_1",
+      birthPlace,
+    }),
+  }));
+  const body = await response.json();
+
+  assert.equal(response.status, 200, "birth geography repair failed");
+  assert.deepEqual(body.identityUpdate.identity.birthPlace, birthPlace, "recovered place was not preserved");
 });
 
 test("canonical visual correction replaces authority then reopens reconciliation", async () => {
