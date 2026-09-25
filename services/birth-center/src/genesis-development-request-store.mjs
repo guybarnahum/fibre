@@ -72,27 +72,13 @@ function migrate(session) {
         OR failure_message LIKE '%observableAction narrates an explicit scene setting incompatible with authoritative placeRef%'
       );
 
+    -- Four retained staging attempts predate durable retryability capture. Their
+    -- retained Activity was manually adjudicated as terminal; preserve any
+    -- original failure text/code if present and add only the missing terminal bit.
     INSERT INTO genesis_development_dispositions(
       request_id,outcome,failure_code,failure_message,failure_retryable,settled_at,updated_at
     )
-    SELECT
-      request_id,
-      NULL,
-      CASE thread_id
-        WHEN 'thr_bceb56abf94f52e4caeb9f2830b5c2288cf5d2c8' THEN 'GENESIS_PASS_A_VALIDATION_ERROR'
-        WHEN 'thr_3609c3953fa371755ddea576e70964a9922e3c27' THEN 'GENESIS_PASS_A_VALIDATION_ERROR'
-        WHEN 'thr_654122d83fd271e3352d0cdba679f06e548d7d2c' THEN 'GENESIS_PASS_B_ADMISSION_ERROR'
-        WHEN 'thr_72bde089b036d01d489382cec37c8f99fa240b36' THEN 'GENESIS_EPISODE_PLACE_CONFLICT'
-      END,
-      CASE thread_id
-        WHEN 'thr_bceb56abf94f52e4caeb9f2830b5c2288cf5d2c8' THEN 'replacement Pass-A exhausted generated versions'
-        WHEN 'thr_3609c3953fa371755ddea576e70964a9922e3c27' THEN 'replacement Pass-A exhausted generated versions'
-        WHEN 'thr_654122d83fd271e3352d0cdba679f06e548d7d2c' THEN 'Pass-B model output referenced history outside its visible history'
-        WHEN 'thr_72bde089b036d01d489382cec37c8f99fa240b36' THEN 'Genesis episode place narration conflicted with authoritative placeRef'
-      END,
-      0,
-      NULL,
-      updated_at
+    SELECT request_id,NULL,NULL,NULL,0,NULL,updated_at
     FROM genesis_development_requests
     WHERE thread_id IN (
       'thr_bceb56abf94f52e4caeb9f2830b5c2288cf5d2c8',
