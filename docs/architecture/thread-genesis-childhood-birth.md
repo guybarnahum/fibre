@@ -76,6 +76,8 @@ The current sampler deliberately combines:
 
 This is not a demographic simulator or quota system. The locality is factual World input: it can change language, institutions, mobility, family/community context and later lived history, but it does not prescribe personality, competence, values or destiny. Unknown localities use the existing author-once/cache path; explicit operator birthplace selection remains authoritative when supplied.
 
+A newly admitted modern Thread must carry a mappable canonical birthplace: the human-readable birthplace and a bounded geographic coordinate for that locality travel together through birth and publication. The coordinate is identity/geographic metadata, not current-location authority. Current physical presence belongs to CurrentSituation/LivedNow and may later be anywhere its lived World permits.
+
 ## Sex as a pre-development birth fact
 
 Biological/embodied sex is a basic Thread/animal attribute. It is more fundamental than visual phenotype and is not a personality trait.
