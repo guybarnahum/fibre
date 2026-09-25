@@ -36,7 +36,49 @@ test("naming a Thread does not inspect unrelated birth evidence", async () => {
     operationKey:"admin_name_1",
     name:"Maya Cohen",
   });
-  assert.deepEqual(result.identity, { name:"Maya Cohen", sex:null, birthDate:null, languages:[] });
+  assert.deepEqual(result.identity, { name:"Maya Cohen", sex:null, birthDate:null, birthPlace:null, languages:[] });
+  assert.equal(result.changed, true);
+});
+
+test("birth geography is carried through the identity command boundary", async () => {
+  const current = thread({ birthCity:"San Francisco Califronia,, USA" });
+  let persisted = structuredClone(current);
+  const birthPlace = {
+    displayName:"San Francisco, California, United States",
+    country:"United States",
+    city:"San Francisco, California",
+    lat:37.77493,
+    long:-122.41942,
+  };
+  const service = createThreadIdentityCommandService({
+    worldReader:{ getThread:() => structuredClone(persisted) },
+    genesisSexEvidence:{ resolve() { throw new Error("birth geography must not inspect sex evidence"); } },
+    identityUpdater:{
+      update(value, { birthPlace:requested }) {
+        assert.deepEqual(requested, birthPlace);
+        const next = {
+          ...value,
+          version:value.version + 1,
+          identity:{ ...value.identity, birthCity:birthPlace.displayName, birthPlace },
+          provenance:{ ...value.provenance, lastEventId:"evt_birth_place" },
+        };
+        persisted = structuredClone(next);
+        return {
+          changed:true,
+          eventId:"evt_birth_place",
+          changes:{ birthCity:birthPlace.displayName, birthPlace },
+          thread:next,
+        };
+      },
+    },
+  });
+
+  const result = await service.update(current.threadId, {
+    operationKey:"admin_birth_place_1",
+    birthPlace,
+  });
+
+  assert.equal(result.identity.birthPlace.displayName, "San Francisco, California, United States");
   assert.equal(result.changed, true);
 });
 
