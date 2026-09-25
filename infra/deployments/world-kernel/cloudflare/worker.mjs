@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
+import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
@@ -204,6 +205,30 @@ export class FibreWorldDurableObject extends DurableObject {
     return this.threadDirectory;
   }
 
+  directoryPopulationForRequest(search) {
+    const result = this.directoryForRequest().search(search);
+    const runtime = this.runtimeForRequest();
+    const livedNow = openLivedNowInspectionStore(runtime.worldStorage);
+    const situatedLife = openSituatedLifeInspectionStore(runtime.worldStorage);
+    try {
+      return Object.freeze({
+        ...result,
+        threads:Object.freeze(result.threads.map((entry) => Object.freeze({
+          ...entry,
+          currentLocation:projectCurrentThreadLocation({
+            entry,
+            currentSituation:livedNow.getCurrentSituation(entry.threadId),
+            worldPlaces:livedNow.listWorldPlaces(entry.threadId),
+            placeEpisodes:situatedLife.listCurrentPlaceEpisodes(entry.threadId),
+          }),
+        }))),
+      });
+    } finally {
+      situatedLife.close();
+      livedNow.close();
+    }
+  }
+
   healthProjectionForRequest() {
     if (this.threadHealthProjection === null) {
       this.threadHealthProjectionStore = new ThreadHealthProjectionStore(this.worldStorage);
@@ -240,8 +265,8 @@ export class FibreWorldDurableObject extends DurableObject {
       }
       try {
         return Response.json({
-          contract:"fibre-world-thread-registry-v0.1",
-          ...this.directoryForRequest().search(directorySearch(url)),
+          contract:"fibre-world-thread-registry-v0.2",
+          ...this.directoryPopulationForRequest(directorySearch(url)),
         });
       } catch (error) {
         if (error instanceof TypeError) return Response.json({ error:{ code:"INVALID_REQUEST", detail:error.message } }, { status:400 });
