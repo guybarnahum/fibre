@@ -137,7 +137,8 @@ export function compileOpenAIImagePrompt({ brief, role }) {
     `Asset role: ${nonEmpty("role", role)}.`,
     "Rendering constraints:",
     ...constraints.map((value) => `- ${value}`),
-    "- Render a plausible reconstruction only; do not add captions, watermarks, labels, signatures, or metadata text into the pixels.",
+    "- Generate the image content itself edge-to-edge; do not create a page, poster, card, document, frame, border, matte, margin, caption area, footer, title area, or surrounding whitespace.",
+    "- Do not render text or typography of any kind into the pixels, including names, ages, numbers, captions, labels, logos, watermarks, signatures, or metadata.",
   ].join("\n");
 }
 

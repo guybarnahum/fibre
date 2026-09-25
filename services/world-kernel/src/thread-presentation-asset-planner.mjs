@@ -77,14 +77,18 @@ function memoryBrief(memory, {
 function officialIdPhotoBrief(targetAgeYears) {
   return {
     description: [
-      "Using the supplied canonical reference image, generate a neutral head-and-shoulders administrative portrait of the same person.",
+      "Using the supplied canonical reference image, generate one square edge-to-edge photographic head-and-shoulders portrait of the same person.",
       ageInstruction(targetAgeYears),
+      "The requested age changes only the person's visible appearance; never display the age as text.",
+      "Fibre may later place this portrait inside an identity credential, but this generated asset is only the portrait photograph, never the credential or its layout.",
     ].join(" "),
     constraints: [
       "The supplied reference image is the complete likeness authority; preserve that person's recognizable identity.",
-      "Use a plain neutral background, even lighting, ordinary grooming and clothing, and a calm natural expression.",
-      "Keep the result realistic and suitable for an identity credential.",
-      "Do not add text, cards, badges, QR codes, signatures, watermarks, borders, or document graphics.",
+      "Fill the entire image canvas edge-to-edge with the photographic scene.",
+      "Do not create a page, poster, card, document, frame, border, matte, margin, footer, title area, or surrounding whitespace.",
+      "Do not render text or typography of any kind, including names, ages, numbers, captions, labels, logos, QR codes, signatures, watermarks, or metadata.",
+      "Use a plain neutral photographic background, even lighting, ordinary grooming and clothing, and a calm natural expression.",
+      "Use a natural photographic composition; do not create a graphic design or UI layout.",
     ],
   };
 }

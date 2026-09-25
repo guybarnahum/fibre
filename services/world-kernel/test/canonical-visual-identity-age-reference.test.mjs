@@ -115,4 +115,9 @@ test("one immutable canonical visual-identity root conditions current and histor
   assert.match(memory.brief.description, /10 years old/);
   assert.match(official.brief.description, /normalized reference age 25/);
   assert.match(memory.brief.description, /normalized reference age 25/);
+  assert.match(official.brief.description, /age changes only the person's visible appearance/i);
+  assert.match(official.brief.description, /only the portrait photograph, never the credential or its layout/i);
+  assert.equal(official.brief.constraints.some((value) => /edge-to-edge/i.test(value)), true);
+  assert.equal(official.brief.constraints.some((value) => /page, poster, card, document/i.test(value)), true);
+  assert.equal(official.brief.constraints.some((value) => /text or typography of any kind/i.test(value)), true);
 });
