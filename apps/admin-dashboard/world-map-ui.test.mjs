@@ -11,6 +11,7 @@ test("Threads map groups admitted people by authoritative birthplace", () => {
   const threads = [
     { threadId:"thr_a", identity:{ birthPlace:"Tbilisi, Georgia" } },
     { threadId:"thr_b", identity:{ birthPlace:"Georgia/Tbilisi" } },
+    { threadId:"thr_city_only", identity:{ birthPlace:"Tbilisi" } },
     { threadId:"thr_c", identity:{ birthPlace:"Shanghai, China" } },
     { threadId:"thr_legacy", identity:{ birthPlace:"Unknown Place" } },
   ];
@@ -19,9 +20,21 @@ test("Threads map groups admitted people by authoritative birthplace", () => {
 
   assert.deepEqual(
     grouped.locations.map((entry) => [entry.place.place, entry.count]),
-    [["Georgia/Tbilisi", 2], ["China/Shanghai", 1]],
+    [["Georgia/Tbilisi", 3], ["China/Shanghai", 1]],
     "birthplace clusters changed",
   );
-  assert.equal(grouped.mapped, 3, "mapped Thread count changed");
+  assert.equal(grouped.mapped, 4, "mapped Thread count changed");
   assert.equal(grouped.unmapped, 1, "unmapped Threads must stay explicit");
+});
+
+test("city-only birthplace stays unmapped when the catalog is ambiguous", () => {
+  const catalog = [
+    { place:"US/Springfield, Illinois", country:"US", city:"Springfield", lat:39.78, long:-89.64 },
+    { place:"US/Springfield, Missouri", country:"US", city:"Springfield", lat:37.21, long:-93.29 },
+  ];
+  const grouped = groupThreadsByBirthplace([
+    { threadId:"thr_ambiguous", identity:{ birthPlace:"Springfield" } },
+  ], catalog);
+  assert.equal(grouped.mapped, 0, "ambiguous city was guessed");
+  assert.equal(grouped.unmapped, 1, "ambiguous city must remain explicit");
 });
