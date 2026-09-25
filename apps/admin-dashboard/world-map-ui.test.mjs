@@ -17,6 +17,7 @@ test("Threads map exposes active, frozen-situated and awaiting-LivedNow states w
         birthLocation:{ displayName:"Tbilisi, Georgia", city:"Tbilisi", country:"Georgia", lat:41.69143, long:44.83412 },
       },
       currentLocation:{ current:true, establishedAt:"2026-09-25T20:00:00Z", locality:"Jerusalem", country:"Israel", lat:31.76904, long:35.21633 },
+      runtime:{ state:"active", expiresAt:"2099-01-01T00:00:00Z" },
     },
     {
       threadId:"thr_frozen",
@@ -53,6 +54,7 @@ test("Threads map exposes active, frozen-situated and awaiting-LivedNow states w
         birthLocation:{ displayName:"Kaohsiung, Taiwan", city:"Kaohsiung", country:"Taiwan", lat:22.62728, long:120.30144 },
       },
       currentLocation:null,
+      runtime:{ state:"active", expiresAt:"2099-01-01T00:00:00Z" },
     },
     {
       threadId:"thr_retired",
