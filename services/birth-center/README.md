@@ -12,6 +12,8 @@ The authenticated `POST /internal/births/develop` route accepts narrow origin ma
 
 A request is durably reserved before the first provider call. The completed admission package is persisted before World submission. Replaying the exact request therefore resumes the same canonical plan/admission and never regenerates an already-built birth package; changing material under the same request identity is a conflict.
 
+Birth Center also keeps a durable disposition for interrupted development attempts. Its scheduler periodically reconciles stale reservations against World authority: if World already contains the Thread, the attempt settles as `born` and leaves the active pipeline even when an older local development attempt recorded a failure; a recorded pre-admission Pass-A validation failure may settle as `stillborn` only when World explicitly confirms the Thread is absent. World-unavailable or otherwise ambiguous cases remain unresolved rather than being guessed.
+
 Local and Cloudflare deployments expose the same route when World publication, private authentication, and the `creative`/`repair` reasoning integrations are configured. The operator E2E command is:
 
 ```bash
