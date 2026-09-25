@@ -65,13 +65,13 @@ function birthTiming(request, nowMs) {
   });
 }
 
-function nextBirthStatusCheckAt(runtime, nowMs) {
+export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = false } = {}) {
   const now = nowMs();
   let next = null;
   const consider = (request) => {
     const timing = birthTiming(request, nowMs);
     const candidate = timing.stale
-      ? now + STALE_ACTIVE_BIRTH_MS
+      ? now + (reconcileStaleNow ? 0 : STALE_ACTIVE_BIRTH_MS)
       : now + Math.max(100, STALE_ACTIVE_BIRTH_MS - (timing.idleMs ?? 0));
     if (next === null || candidate < next) next = candidate;
   };
@@ -308,8 +308,11 @@ export async function reconcileStaleBirths(runtime, {
   });
 }
 
-async function ensureBirthStatusScheduled(runtime, { nowMs } = {}) {
-  const next = nextBirthStatusCheckAt(runtime, nowMs);
+async function ensureBirthStatusScheduled(runtime, {
+  nowMs,
+  reconcileStaleNow = false,
+} = {}) {
+  const next = nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow });
   if (next === null) return Object.freeze({ scheduledAt:null });
   const current = await runtime.infraDriver.scheduler.get(BIRTH_SCOPE_ID);
   if (current === null || next < current) {
@@ -446,7 +449,8 @@ export function createBirthCenterCloudflareRuntime({
       privateToken,
       nowMs,
     }),
-    ensureBirthStatusScheduled:() => ensureBirthStatusScheduled(runtime, { nowMs }),
+    ensureBirthStatusScheduled:({ reconcileStaleNow = false } = {}) =>
+      ensureBirthStatusScheduled(runtime, { nowMs, reconcileStaleNow }),
     close() { runtime.close(); },
   });
 }
