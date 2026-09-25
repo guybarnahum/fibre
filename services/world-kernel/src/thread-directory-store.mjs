@@ -52,7 +52,7 @@ function birthLocation(identity) {
     city:inferred.city,
     lat:inferred.lat,
     long:inferred.long,
-    source:"identity_geography_projection",
+    source:structured === null ? "legacy_identity_projection" : "identity_geography_projection",
   });
 }
 
