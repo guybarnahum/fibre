@@ -80,7 +80,10 @@ export function createModernBirthInitiationApi({
   }
 
   return Object.freeze({
-    async fetch(request) {
+    async fetch(request, { defer = null } = {}) {
+      if (defer !== null && typeof defer !== "function") {
+        throw new TypeError("modern birth API defer must be a function or null");
+      }
       const url = new URL(request.url);
       if (![ROUTE,PENDING_ROUTE,PLACES_ROUTE].includes(url.pathname)) return null;
       if (url.search !== "") return json(400, { error:"query_not_supported" });
@@ -116,7 +119,25 @@ export function createModernBirthInitiationApi({
           requestStore.enqueue(input);
           enqueued = true;
         }
-        const birth = await service.initiate(input);
+        const work = service.initiate(input);
+        if (defer !== null) {
+          defer(work.catch((error) => {
+            if (requestStore !== null) {
+              try { requestStore.fail(input.requestId, error); } catch {}
+            }
+            return null;
+          }));
+          return json(202, {
+            ok:true,
+            birth:{
+              requestId:input.requestId,
+              status:"queued",
+              location:input.location,
+              sex:input.sex,
+            },
+          });
+        }
+        const birth = await work;
         return json(birth.development.status === "published" ? 200 : 202, { ok:true, birth });
       } catch (error) {
         if (enqueued && input !== null) {
