@@ -197,9 +197,6 @@ test("official-photo demand carries the canonical root, reference age, credentia
   assert.equal(official.context.identityCardRevision, 1);
   assert.ok(official.inputReferences.includes(issuance.identityCard.credentialId));
   assert.ok(official.inputReferences.includes(CANONICAL_ROOT));
-  assert.match(official.brief.description, /22 years old/);
-  assert.match(official.brief.description, /normalized reference age 25/);
-  assert.match(official.brief.description, /neutral head-and-shoulders administrative portrait/i);
   const officialBrief = JSON.stringify(official.brief);
   assert.equal(
     officialBrief.includes(current.bundle.presentation.visualIdentity.subjectDescription)

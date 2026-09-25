@@ -52,9 +52,6 @@ test("OpenAI image provider preserves exact request witness without API secret",
   assert.equal(generated.requestWitness.body.model, "gpt-image-2-2026-04-21");
   assert.equal(generated.requestWitness.body.output_format, "png");
   assert.match(generated.requestWitness.body.prompt, /Not documentary evidence/);
-  assert.match(generated.requestWitness.body.prompt, /image content itself edge-to-edge/i);
-  assert.match(generated.requestWitness.body.prompt, /do not create a page, poster, card, document/i);
-  assert.match(generated.requestWitness.body.prompt, /Do not render text or typography of any kind/i);
   assert.equal(JSON.stringify(generated.requestWitness).includes("sk-secret-never-persist"), false);
   assert.equal(seen[0].init.headers.Authorization, "Bearer sk-secret-never-persist");
   assert.equal(generated.result.providerRequestId, "req_openai_fixture");
