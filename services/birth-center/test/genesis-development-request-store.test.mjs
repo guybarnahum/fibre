@@ -175,7 +175,7 @@ test("Genesis failure disposition preserves whether machinery may retry", (t) =>
 });
 
 
-test("historical terminal Genesis failures acquire explicit stillbirth evidence", (t) => {
+test("historical terminal Genesis failures acquire explicit terminal evidence", (t) => {
   const state = tempBirthState(t);
   const database = new DatabaseSync(state.databasePath);
   database.exec(`
@@ -184,13 +184,14 @@ test("historical terminal Genesis failures acquire explicit stillbirth evidence"
       outcome TEXT,
       failure_code TEXT,
       failure_message TEXT,
+      failure_retryable INTEGER,
       settled_at TEXT,
       updated_at TEXT NOT NULL
     ) STRICT;
     INSERT INTO genesis_development_dispositions VALUES
-      ('old_pass_a',NULL,'GENESIS_PASS_A_VALIDATION_ERROR','Pass-A exhausted',NULL,'2026-09-25T00:00:00Z'),
-      ('old_pass_b',NULL,'ERROR','Pass-B model output episodeRef ep_missing is not visible history',NULL,'2026-09-25T00:00:00Z'),
-      ('old_place',NULL,'ERROR','episode ep_1 observableAction narrates an explicit scene setting incompatible with authoritative placeRef plc_1 (school)',NULL,'2026-09-25T00:00:00Z');
+      ('old_pass_a',NULL,'GENESIS_PASS_A_VALIDATION_ERROR','Pass-A exhausted',NULL,NULL,'2026-09-25T00:00:00Z'),
+      ('old_pass_b',NULL,'ERROR','Pass-B model output episodeRef ep_missing is not visible history',NULL,NULL,'2026-09-25T00:00:00Z'),
+      ('old_place',NULL,'ERROR','episode ep_1 observableAction narrates an explicit scene setting incompatible with authoritative placeRef plc_1 (school)',NULL,NULL,'2026-09-25T00:00:00Z');
   `);
   database.close();
 
