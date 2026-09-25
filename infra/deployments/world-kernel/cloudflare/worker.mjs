@@ -62,6 +62,14 @@ async function presentationSnapshotDigest(env, threadId) {
   return typeof digest === "string" && digest !== "" ? digest : undefined;
 }
 
+function optionalLivedRead(read, fallback) {
+  try { return read(); }
+  catch (error) {
+    if (/no such table:/iu.test(error?.message ?? String(error))) return fallback;
+    throw error;
+  }
+}
+
 function directorySearch(url) {
   const allowed = new Set(["q", "fin", "limit"]);
   for (const key of url.searchParams.keys()) {
@@ -217,9 +225,18 @@ export class FibreWorldDurableObject extends DurableObject {
           ...entry,
           currentLocation:projectCurrentThreadLocation({
             entry,
-            currentSituation:livedNow.getCurrentSituation(entry.threadId),
-            worldPlaces:livedNow.listWorldPlaces(entry.threadId),
-            placeEpisodes:situatedLife.listCurrentPlaceEpisodes(entry.threadId),
+            currentSituation:optionalLivedRead(
+              () => livedNow.getCurrentSituation(entry.threadId),
+              null,
+            ),
+            worldPlaces:optionalLivedRead(
+              () => livedNow.listWorldPlaces(entry.threadId),
+              [],
+            ),
+            placeEpisodes:optionalLivedRead(
+              () => situatedLife.listCurrentPlaceEpisodes(entry.threadId),
+              [],
+            ),
           }),
         }))),
       });
