@@ -38,6 +38,11 @@ async function callWorldMeetingEntry(env, threadId) {
     error.status = response.status;
     error.body = body;
     if (typeof body?.code === "string") error.code = body.code;
+    if (response.status === 409 && body?.error === "inside_fibre_unavailable") {
+      error.code = "INSIDE_FIBRE_UNAVAILABLE";
+      error.activityCategory = "conflict";
+      error.retryable = true;
+    }
     throw error;
   }
   if (body?.result?.present?.situationId !== body?.result?.situationId) {
@@ -46,12 +51,36 @@ async function callWorldMeetingEntry(env, threadId) {
   return body.result;
 }
 
+function expectedWorldConflict(error, worldError) {
+  return error?.status === 409 && error?.body?.error === worldError;
+}
+
+async function runWorldStage(activityRecorder, metadata, operation, expectedConflict) {
+  if (activityRecorder === null) return operation();
+  let expectedError = null;
+  const result = await activityRecorder.runStage(metadata, async () => {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!expectedConflict(error)) throw error;
+      expectedError = error;
+      return null;
+    }
+  });
+  if (expectedError !== null) throw expectedError;
+  return result;
+}
+
 function worldMeetingEntry(env, activityRecorder, threadId) {
-  if (activityRecorder === null) return callWorldMeetingEntry(env, threadId);
-  return activityRecorder.runStage({
-    threadId,
-    stage: "presentation.meet.committed_entry",
-  }, () => callWorldMeetingEntry(env, threadId));
+  return runWorldStage(
+    activityRecorder,
+    {
+      threadId,
+      stage: "presentation.meet.admission",
+    },
+    () => callWorldMeetingEntry(env, threadId),
+    (error) => expectedWorldConflict(error, "inside_fibre_unavailable"),
+  );
 }
 
 async function callWorldEncounter(env, input) {
@@ -69,6 +98,11 @@ async function callWorldEncounter(env, input) {
     const error = new Error(body?.error ?? `World encounter failed with HTTP ${response.status}`);
     error.status = response.status;
     error.body = body;
+    if (response.status === 409 && body?.error === "inside_fibre_meeting_changed") {
+      error.code = "INSIDE_FIBRE_MEETING_CHANGED";
+      error.activityCategory = "conflict";
+      error.retryable = true;
+    }
     throw error;
   }
   return {
@@ -78,12 +112,16 @@ async function callWorldEncounter(env, input) {
 }
 
 function worldEncounter(env, activityRecorder, input) {
-  if (activityRecorder === null) return callWorldEncounter(env, input);
-  return activityRecorder.runStage({
-    threadId: input.threadId,
-    correlationId: input.expectedSituationId,
-    stage: "presentation.encounter.world_submit",
-  }, () => callWorldEncounter(env, input));
+  return runWorldStage(
+    activityRecorder,
+    {
+      threadId: input.threadId,
+      correlationId: input.expectedSituationId,
+      stage: "presentation.encounter.world_submit",
+    },
+    () => callWorldEncounter(env, input),
+    (error) => expectedWorldConflict(error, "inside_fibre_meeting_changed"),
+  );
 }
 
 function selectionRequest(original, url) {
