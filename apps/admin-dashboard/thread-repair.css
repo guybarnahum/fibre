@@ -187,7 +187,7 @@
   display:grid;
   gap:7px;
 }
-.thread-birth-map {
+.thread-world-map {
   position:relative;
   aspect-ratio:2/1;
   overflow:hidden;
@@ -196,24 +196,24 @@
   background:linear-gradient(180deg,
     color-mix(in srgb,var(--surface-subtle) 60%,var(--surface)),
     var(--surface));
-  cursor:crosshair;
 }
+.thread-birth-map { cursor:crosshair; }
 .thread-birth-map:focus-visible {
   outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent);
   outline-offset:2px;
 }
-.thread-birth-map-land { display:block; width:100%; height:100%; }
-.thread-birth-timezones line {
+.thread-world-map-svg { display:block; width:100%; height:100%; }
+.thread-world-timezones line {
   stroke:color-mix(in srgb,var(--text) 11%,transparent);
   stroke-width:.55;
   stroke-dasharray:2 5;
   vector-effect:non-scaling-stroke;
 }
-.thread-birth-timezones line.major {
+.thread-world-timezones line.major {
   stroke:color-mix(in srgb,var(--text) 20%,transparent);
   stroke-width:.8;
 }
-#thread-birth-world-path {
+.thread-world-map-path {
   fill:color-mix(in srgb,var(--text) 7%,var(--surface));
   stroke:color-mix(in srgb,var(--text) 23%,transparent);
   stroke-width:.65;
@@ -391,6 +391,12 @@
 .thread-birth-pending-row strong { color:var(--text); font-size:10px; }
 .thread-birth-pending-row span,
 .thread-birth-pending-row small { color:var(--muted); overflow-wrap:anywhere; }
+.thread-birth-pending-row.stale {
+  border-color:color-mix(in srgb,#f79009 42%,var(--border));
+  background:color-mix(in srgb,#f79009 6%,var(--surface-subtle));
+}
+.thread-birth-stale-reason { color:#b54708 !important; line-height:1.4; }
+.thread-birth-pending-status { display:grid; justify-items:end; gap:4px; flex:0 0 auto; }
 .thread-birth-pending-row .status { flex:0 0 auto; }
 .thread-birth-pending-empty { padding:4px 1px; }
 .thread-birth-result {
@@ -418,6 +424,34 @@
   padding:12px 16px 16px;
 }
 
+.thread-population-map-shell {
+  display:grid;
+  gap:7px;
+  padding:10px 12px 12px;
+  border-bottom:1px solid var(--border);
+}
+.thread-population-map { cursor:default; }
+.thread-population-map-caption {
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+}
+.thread-population-map-caption strong { font-size:10px; }
+.thread-population-map-caption span { color:var(--muted); font-size:8.5px; text-align:right; }
+.thread-world-count-marker circle {
+  fill:var(--accent);
+  stroke:var(--surface);
+  stroke-width:3;
+  vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.22));
+}
+.thread-world-count-marker text {
+  fill:var(--surface);
+  font-size:10px;
+  font-weight:800;
+  pointer-events:none;
+}
 .thread-population-metrics {
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(92px,1fr));
