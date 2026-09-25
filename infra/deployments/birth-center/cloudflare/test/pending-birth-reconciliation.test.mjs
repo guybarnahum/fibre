@@ -46,6 +46,7 @@ test("stale birth leaves pending when its Thread is already in World", async () 
 test("stale birth distinguishes absent World state from an unavailable World check", async () => {
   const request = {
     requestId:"admin_birth_stalled",
+    requestedAt:"2026-09-01T00:00:00.000Z",
     genesisId:"gen_stalled",
     threadId:"thr_stalled",
     location:"Georgia/Tbilisi",
@@ -73,6 +74,9 @@ test("stale birth distinguishes absent World state from an unavailable World che
   });
   assert.equal(absent[0].stale, true, "stalled birth was not marked stale");
   assert.equal(absent[0].classification, "stale_not_in_world", "World absence was not identified");
+  assert.equal(absent[0].source, "modern", "stale birth lost its durable source");
+  assert.equal(absent[0].requestedAt, request.requestedAt, "stale birth lost replay time");
+  assert.equal(absent[0].requestedLocation, null, "random-location intent was not preserved");
 
   const unavailable = await pendingBirths(runtime, {
     ...options,
