@@ -1,3 +1,4 @@
+import { resolveBirthplaceGeography } from "#core/src/birthplace-geography.mjs";
 import { IntegrityError } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
@@ -22,17 +23,29 @@ function parse(name, value) {
 function birthLocation(identity) {
   const place = identity?.birthPlace;
   if (
-    !place
-    || typeof place !== "object"
-    || !Number.isFinite(place.lat)
-    || !Number.isFinite(place.long)
-  ) return null;
+    place
+    && typeof place === "object"
+    && Number.isFinite(place.lat)
+    && Number.isFinite(place.long)
+  ) {
+    return Object.freeze({
+      displayName:clean(place.displayName) ?? clean(identity.birthCity),
+      country:clean(place.country),
+      city:clean(place.city),
+      lat:place.lat,
+      long:place.long,
+      source:"thread_identity",
+    });
+  }
+  const legacy = resolveBirthplaceGeography(identity?.birthCity);
+  if (legacy === null) return null;
   return Object.freeze({
-    displayName:clean(place.displayName) ?? clean(identity.birthCity),
-    country:clean(place.country),
-    city:clean(place.city),
-    lat:place.lat,
-    long:place.long,
+    displayName:clean(identity?.birthCity) ?? legacy.displayName,
+    country:legacy.country,
+    city:legacy.city,
+    lat:legacy.lat,
+    long:legacy.long,
+    source:"legacy_identity_projection",
   });
 }
 
