@@ -1140,17 +1140,30 @@ async function loadPendingBirths({ quiet = false } = {}) {
   }
 }
 
-function startPendingPolling() {
+function pendingPollDelay() {
+  if (pendingBirthSnapshot.some((birth) => birth.stale !== true)) return 2000;
+  if (pendingBirthSnapshot.length > 0) return 10000;
+  return 30000;
+}
+
+function schedulePendingPoll() {
   stopPendingPolling();
-  pendingBirthTimer = window.setInterval(() => {
+  if (!active || populationMode !== "birth-center") return;
+  pendingBirthTimer = window.setTimeout(async () => {
+    pendingBirthTimer = null;
     if (!active || populationMode !== "birth-center") return;
     if (pendingBirthSnapshot.length > 0) renderPendingBirths(pendingBirthSnapshot);
-    void loadPendingBirths({ quiet:true });
-  }, 2000);
+    await loadPendingBirths({ quiet:true });
+    schedulePendingPoll();
+  }, pendingPollDelay());
+}
+
+function startPendingPolling() {
+  schedulePendingPoll();
 }
 
 function stopPendingPolling() {
-  if (pendingBirthTimer !== null) window.clearInterval(pendingBirthTimer);
+  if (pendingBirthTimer !== null) window.clearTimeout(pendingBirthTimer);
   pendingBirthTimer = null;
 }
 
