@@ -53,7 +53,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     this.ctx.waitUntil((async () => {
       try {
         await cloud.runtime.ensureScheduled();
-        await cloud.ensureBirthStatusScheduled();
+        await cloud.ensureBirthStatusScheduled({ reconcileStaleNow:true });
       } catch (error) {
         console.error(JSON.stringify({
           event:"birth-center-scheduler-bootstrap-failed",
