@@ -41,7 +41,8 @@ function assertRuntime(runtime) {
     !runtime.developmentRequestStore ||
     typeof runtime.developmentRequestStore.reserve !== "function" ||
     typeof runtime.developmentRequestStore.saveAdmission !== "function" ||
-    typeof runtime.developmentRequestStore.markSubmitted !== "function"
+    typeof runtime.developmentRequestStore.markSubmitted !== "function" ||
+    typeof runtime.developmentRequestStore.recordFailure !== "function"
   ) {
     throw new TypeError("Genesis development service requires durable development request reservation");
   }
@@ -246,68 +247,73 @@ export function createGenesisDevelopmentService({
 
       let admission = reservation.admission;
       if (admission === null) {
-        const candidate = await runActivityStage(activity, {
-          ...context,
-          stage: "birth.genesis.start",
-          attempt: 1,
-        }, async ({ operationId: genesisOperationId }) => {
-          let cognitionParentOperationId = genesisOperationId;
-          const cognitionContext = () => cognitionParentOperationId === null
-            ? context
-            : Object.freeze({ ...context, parentOperationId:cognitionParentOperationId });
-          const creative = instrumentDurableCognitionAdapter({
-            baseAdapter: creativeBase,
-            birthRuntime,
-            activity,
-            context: cognitionContext,
-          });
-          const repair = instrumentDurableCognitionAdapter({
-            baseAdapter: repairBase,
-            birthRuntime,
-            activity,
-            context: cognitionContext,
-          });
-          const phaseContext = genesisOperationId === null
-            ? context
-            : Object.freeze({ ...context, parentOperationId:genesisOperationId });
-          const runPhase = (stage, operation) => runActivityStage(activity, {
-            ...phaseContext,
-            stage,
+        try {
+          const candidate = await runActivityStage(activity, {
+            ...context,
+            stage: "birth.genesis.start",
             attempt: 1,
-          }, async ({ operationId: phaseOperationId }) => {
-            const priorParent = cognitionParentOperationId;
-            cognitionParentOperationId = phaseOperationId ?? genesisOperationId;
-            try { return await operation(); }
-            finally { cognitionParentOperationId = priorParent; }
-          });
-          return generateGenesisLifeCandidate({
-            slotPlan: plan,
-            adapter: creative,
-            repairAdapter: repair,
-            attemptStartedAt: reservation.createdAt,
-            runPhase,
-          });
-        });
-        admission = await runActivityStage(activity, {
-          ...context,
-          stage: "birth.genesis.compile",
-          attempt: 1,
-          evidence: { digest: planDigest },
-        }, async () => {
-          const publicationAt = now();
-          let compiled = {
-            ...buildGenesisAdmissionPackage({
-              candidate,
+          }, async ({ operationId: genesisOperationId }) => {
+            let cognitionParentOperationId = genesisOperationId;
+            const cognitionContext = () => cognitionParentOperationId === null
+              ? context
+              : Object.freeze({ ...context, parentOperationId:cognitionParentOperationId });
+            const creative = instrumentDurableCognitionAdapter({
+              baseAdapter: creativeBase,
+              birthRuntime,
+              activity,
+              context: cognitionContext,
+            });
+            const repair = instrumentDurableCognitionAdapter({
+              baseAdapter: repairBase,
+              birthRuntime,
+              activity,
+              context: cognitionContext,
+            });
+            const phaseContext = genesisOperationId === null
+              ? context
+              : Object.freeze({ ...context, parentOperationId:genesisOperationId });
+            const runPhase = (stage, operation) => runActivityStage(activity, {
+              ...phaseContext,
+              stage,
+              attempt: 1,
+            }, async ({ operationId: phaseOperationId }) => {
+              const priorParent = cognitionParentOperationId;
+              cognitionParentOperationId = phaseOperationId ?? genesisOperationId;
+              try { return await operation(); }
+              finally { cognitionParentOperationId = priorParent; }
+            });
+            return generateGenesisLifeCandidate({
               slotPlan: plan,
-              cognition: currentCognition({ creativeAdapter: creativeBase, repairAdapter: repairBase }),
-              publicationAt,
-              randomIntFn,
-            }),
-            developmentPlanDigest: planDigest,
-          };
-          compiled = birthRuntime.developmentRequestStore.saveAdmission(plan.requestId, compiled).admission;
-          return compiled;
-        });
+              adapter: creative,
+              repairAdapter: repair,
+              attemptStartedAt: reservation.createdAt,
+              runPhase,
+            });
+          });
+          admission = await runActivityStage(activity, {
+            ...context,
+            stage: "birth.genesis.compile",
+            attempt: 1,
+            evidence: { digest: planDigest },
+          }, async () => {
+            const publicationAt = now();
+            let compiled = {
+              ...buildGenesisAdmissionPackage({
+                candidate,
+                slotPlan: plan,
+                cognition: currentCognition({ creativeAdapter: creativeBase, repairAdapter: repairBase }),
+                publicationAt,
+                randomIntFn,
+              }),
+              developmentPlanDigest: planDigest,
+            };
+            compiled = birthRuntime.developmentRequestStore.saveAdmission(plan.requestId, compiled).admission;
+            return compiled;
+          });
+        } catch (error) {
+          birthRuntime.developmentRequestStore.recordFailure(plan.requestId, error);
+          throw error;
+        }
       } else {
         await bestEffortRecord(activity, {
           ...context,
