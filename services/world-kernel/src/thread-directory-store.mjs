@@ -131,6 +131,26 @@ export class ThreadDirectoryStore {
     return row === undefined ? null : registryEntry(row);
   }
 
+  presentThreadIds(threadIds) {
+    if (!Array.isArray(threadIds) || threadIds.length < 1 || threadIds.length > 256) {
+      throw new TypeError("Thread directory presence requires 1 through 256 Thread IDs");
+    }
+    const normalized = [...new Set(threadIds.map((threadId) => {
+      if (typeof threadId !== "string" || threadId.trim() === "") {
+        throw new TypeError("Thread directory presence requires non-empty Thread IDs");
+      }
+      return threadId.trim();
+    }))];
+    if (!this.#tables.has("threads")) return [];
+    return this.#database.prepare(`
+      WITH requested(thread_id) AS (SELECT value FROM json_each(?))
+      SELECT t.thread_id
+      FROM requested r
+      JOIN threads t ON t.thread_id=r.thread_id
+      ORDER BY t.thread_id
+    `).all(JSON.stringify(normalized)).map((row) => row.thread_id);
+  }
+
   listEntries({ limit = MAX_THREADS, fin = null } = {}) {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_THREADS) {
       throw new TypeError(`Thread directory limit must be between 1 and ${MAX_THREADS}`);
