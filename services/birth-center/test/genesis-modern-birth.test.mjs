@@ -61,6 +61,9 @@ test("Genesis birth produces a specific person grounded in a specific world", ()
   assert.notEqual(thread.identity.name, "Fibre Thread", "birth fell back to a generic person");
   assert.equal(thread.identity.birthDate, plan.bornAt.slice(0, 10), "birth date drifted from Genesis chronology");
   assert.equal(thread.identity.birthCity, plan.subjectIdentity.birthCity, "birth place drifted from the birth plan");
+  assert.equal(thread.identity.birthPlace.displayName, plan.subjectIdentity.birthCity, "mappable birthplace label drifted");
+  assert.equal(Number.isFinite(thread.identity.birthPlace.lat), true, "birthplace latitude is missing");
+  assert.equal(Number.isFinite(thread.identity.birthPlace.long), true, "birthplace longitude is missing");
   assert.deepEqual(thread.identity.languages, plan.subjectIdentity.languages, "spoken languages were lost at birth");
   assert.deepEqual(plan.subjectIdentity.raisedLanguages, [worldSpec.languages[0]], "raised languages were lost from the birth plan");
   assert.ok(thread.identity.culture.length > 0, "birth lacks cultural grounding");
