@@ -238,6 +238,12 @@ export function renderWorldCountMarkers(group, locations, { className = "thread-
     marker.setAttribute("transform", `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`);
 
     if (location.activeCount > 0) marker.classList.add("active");
+    if (
+      location.frozenSituatedCount > 0
+      && location.activeCount === 0
+      && location.transitionCount === 0
+      && location.awaitingLivedNowCount === 0
+    ) marker.classList.add("frozen-situated");
     if (location.activeUnsituatedCount > 0) marker.classList.add("active-unsituated");
     if (location.transitionCount > 0) marker.classList.add("transition");
     if (
