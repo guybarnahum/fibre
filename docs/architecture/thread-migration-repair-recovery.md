@@ -43,6 +43,8 @@ Examples include rebuilding a missing Presentation projection, reconstructing a 
 
 Repair may reconstruct or republish derived/current state. It must not create a new biographical fact, reinterpret ambiguous legacy evidence as certainty, or silently perform a migration.
 
+A malformed or incomplete birth-place projection is therefore repairable only when the existing World birth record resolves to exactly one canonical Fibre locality. **Fix Thread** may then restore the canonical structured birthplace and coordinates from that same fact. If the retained birth record is ambiguous or missing, Fix does nothing; Fibre requires explicit evidence or an operator decision rather than guessing.
+
 A repair should be safe to repeat and should report the authoritative evidence from which the repaired state was derived.
 
 ## Recovery
