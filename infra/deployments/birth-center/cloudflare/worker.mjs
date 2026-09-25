@@ -86,24 +86,28 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         defer:(promise) => this.ctx.waitUntil(promise),
       });
       if (modernBirthResponse !== null) {
-        this.ctx.waitUntil(cloud.ensureBirthStatusScheduled().catch((error) => {
-          console.error(JSON.stringify({
-            event:"birth-center-status-schedule-failed",
-            message:error instanceof Error ? error.message : String(error),
+        if (request.method === "POST") {
+          this.ctx.waitUntil(cloud.ensureBirthStatusScheduled().catch((error) => {
+            console.error(JSON.stringify({
+              event:"birth-center-status-schedule-failed",
+              message:error instanceof Error ? error.message : String(error),
+            }));
           }));
-        }));
+        }
         return modernBirthResponse;
       }
     }
     if (cloud.developmentApi !== null) {
       const developmentResponse = await cloud.developmentApi.fetch(request);
       if (developmentResponse !== null) {
-        this.ctx.waitUntil(cloud.ensureBirthStatusScheduled().catch((error) => {
-          console.error(JSON.stringify({
-            event:"birth-center-status-schedule-failed",
-            message:error instanceof Error ? error.message : String(error),
+        if (request.method === "POST") {
+          this.ctx.waitUntil(cloud.ensureBirthStatusScheduled().catch((error) => {
+            console.error(JSON.stringify({
+              event:"birth-center-status-schedule-failed",
+              message:error instanceof Error ? error.message : String(error),
+            }));
           }));
-        }));
+        }
         return developmentResponse;
       }
     }
@@ -118,7 +122,11 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     try {
       publication = await cloud.runtime.handleWake();
     } finally {
-      await cloud.ensureBirthStatusScheduled();
+      try {
+        await cloud.reconcileStaleBirths();
+      } finally {
+        await cloud.ensureBirthStatusScheduled();
+      }
     }
     return publication;
   }
