@@ -72,20 +72,7 @@ export function projectCurrentThreadLocation({
   placeEpisodes = [],
 } = {}) {
   const fallback = fallbackGeography(entry);
-  if (currentSituation === null || currentSituation === undefined) {
-    if (!finiteCoordinates(fallback)) return null;
-    return Object.freeze({
-      kind:"world_locality",
-      current:false,
-      establishedAt:null,
-      displayName:fallback.displayName ?? entry?.birthPlace ?? null,
-      locality:fallback.city ?? null,
-      country:fallback.country ?? null,
-      lat:fallback.lat,
-      long:fallback.long,
-      authority:"lived_now_missing",
-    });
-  }
+  if (currentSituation === null || currentSituation === undefined) return null;
 
   const location = currentSituation.location;
   if (location?.kind === "place") {
