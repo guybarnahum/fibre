@@ -39,6 +39,14 @@ function migrate(session) {
       CHECK (status = 'reserved' OR admission_json IS NOT NULL),
       CHECK (status != 'submitted' OR submission_result_json IS NOT NULL)
     );
+    CREATE TABLE IF NOT EXISTS genesis_development_dispositions (
+      request_id TEXT PRIMARY KEY,
+      outcome TEXT CHECK (outcome IS NULL OR outcome IN ('born','stillborn')),
+      failure_code TEXT,
+      failure_message TEXT,
+      settled_at TEXT,
+      updated_at TEXT NOT NULL
+    ) STRICT;
   `);
 }
 
@@ -125,6 +133,28 @@ export function createGenesisDevelopmentRequestStore(storage, {
     UPDATE genesis_development_requests
     SET status='submitted', submission_result_json=?, updated_at=?
     WHERE request_id=? AND status IN ('ready','submitted')
+  `);
+  const selectDisposition = session.prepare(`
+    SELECT request_id,outcome,failure_code,failure_message,settled_at,updated_at
+    FROM genesis_development_dispositions WHERE request_id=?
+  `);
+  const upsertFailure = session.prepare(`
+    INSERT INTO genesis_development_dispositions(
+      request_id,outcome,failure_code,failure_message,settled_at,updated_at
+    ) VALUES (?,NULL,?,?,NULL,?)
+    ON CONFLICT(request_id) DO UPDATE SET
+      failure_code=excluded.failure_code,
+      failure_message=excluded.failure_message,
+      updated_at=excluded.updated_at
+  `);
+  const upsertOutcome = session.prepare(`
+    INSERT INTO genesis_development_dispositions(
+      request_id,outcome,failure_code,failure_message,settled_at,updated_at
+    ) VALUES (?,?,NULL,NULL,?,?)
+    ON CONFLICT(request_id) DO UPDATE SET
+      outcome=excluded.outcome,
+      settled_at=excluded.settled_at,
+      updated_at=excluded.updated_at
   `);
 
   function get(requestId) {
@@ -234,6 +264,43 @@ export function createGenesisDevelopmentRequestStore(storage, {
     });
   }
 
+  function getDisposition(requestId) {
+    const id = nonEmpty("Genesis development requestId", requestId);
+    const row = selectDisposition.get(id);
+    if (row === undefined) return null;
+    return Object.freeze({
+      requestId:row.request_id,
+      outcome:row.outcome,
+      failureCode:row.failure_code,
+      failureMessage:row.failure_message,
+      settledAt:row.settled_at,
+      updatedAt:row.updated_at,
+    });
+  }
+
+  function recordFailure(requestId, error) {
+    const id = nonEmpty("Genesis development requestId", requestId);
+    if (get(id) === null) throw new Error(`Genesis development request ${id} does not exist`);
+    const code = typeof error?.code === "string" && error.code.trim() !== "" ? error.code.trim() : null;
+    const message = error instanceof Error ? error.message : String(error);
+    upsertFailure.run(id, code, message, now());
+    return getDisposition(id);
+  }
+
+  function settle(requestId, outcome) {
+    const id = nonEmpty("Genesis development requestId", requestId);
+    if (get(id) === null) throw new Error(`Genesis development request ${id} does not exist`);
+    const existing = getDisposition(id);
+    if (existing?.outcome !== null && existing?.outcome !== outcome) {
+      throw new GenesisDevelopmentRequestConflictError(
+        `Genesis development request ${id} is already settled as ${existing.outcome}`,
+      );
+    }
+    const timestamp = now();
+    upsertOutcome.run(id, outcome, timestamp, timestamp);
+    return getDisposition(id);
+  }
+
   return Object.freeze({
     storeVersion: GENESIS_DEVELOPMENT_REQUEST_STORE_VERSION,
     stateScopeId: session.scopeId,
@@ -243,6 +310,10 @@ export function createGenesisDevelopmentRequestStore(storage, {
     reserve,
     saveAdmission,
     markSubmitted,
+    getDisposition,
+    recordFailure,
+    settleBorn(requestId) { return settle(requestId, "born"); },
+    settleStillborn(requestId) { return settle(requestId, "stillborn"); },
     close() { session.close(); },
   });
 }
