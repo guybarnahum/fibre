@@ -109,12 +109,22 @@ async function worldThreadPresenceSet({ worldBinding, privateToken, threadIds })
         body:JSON.stringify({ threadIds }),
       },
     ));
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(JSON.stringify({
+        event:"birth-center-world-presence-unavailable",
+        status:response.status,
+      }));
+      return null;
+    }
     const payload = await response.json();
     return Array.isArray(payload?.presentThreadIds)
       ? new Set(payload.presentThreadIds)
       : null;
-  } catch {
+  } catch (error) {
+    console.error(JSON.stringify({
+      event:"birth-center-world-presence-unavailable",
+      message:error instanceof Error ? error.message : String(error),
+    }));
     return null;
   }
 }
