@@ -2,11 +2,23 @@ import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js"
 import { decorateActionButton, faIcon, iconForIdentityAction } from "./fa-icons.js";
 import { reissueFidCard } from "./thread-observatory.js";
 import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
+import {
+  SVG_NS,
+  catalogPlaceForLocation,
+  groupThreadsByBirthplace,
+  renderWorldCountMarkers,
+  renderWorldTimeZoneLines,
+  worldMapPoint,
+} from "./world-map-ui.js";
 
 const $ = (selector) => document.querySelector(selector);
 const view = $("#threads-view");
 const rows = $("#thread-population-rows");
 const empty = $("#thread-population-empty");
+const threadPopulationWorldPath = $("#thread-population-world-path");
+const threadPopulationTimezones = $("#thread-population-timezones");
+const threadPopulationMapMarkers = $("#thread-population-map-markers");
+const threadPopulationMapSummary = $("#thread-population-map-summary");
 const stillbornView = $("#stillborn-view");
 const stillbornRows = $("#stillborn-rows");
 const stillbornEmpty = $("#stillborn-empty");
@@ -33,6 +45,7 @@ let selectedBirthplace = null;
 let pendingBirthSnapshot = [];
 let pendingBirthTimer = null;
 let birthCenterInitialized = false;
+let threadPopulationMapInitialized = false;
 let birthLoading = false;
 const recentInWorldBirths = new Map();
 let active = false;
@@ -643,23 +656,33 @@ function renderThreadsTopSummary(summary = null) {
   $("#metric-view-context").textContent = "population / World health";
 }
 
-function renderBirthCenterTopSummary() {
-  const counts = pendingBirthSnapshot.reduce((result, birth) => {
+function activeBirthStageCounts() {
+  return pendingBirthSnapshot.reduce((result, birth) => {
     const stage = birthStage(birth);
-    result[stage] = (result[stage] ?? 0) + 1;
+    if (stage === "genesis" || stage === "developing" || stage === "emerging") result[stage] += 1;
     return result;
-  }, {});
+  }, { genesis:0, developing:0, emerging:0 });
+}
+
+function birthCenterSummaryText() {
+  const counts = activeBirthStageCounts();
+  const total = pendingBirthSnapshot.length;
+  return `${total} active birth${total === 1 ? "" : "s"} · ${counts.genesis} genesis → ${counts.developing} developing → ${counts.emerging} emerging`;
+}
+
+function renderBirthCenterTopSummary() {
+  const counts = activeBirthStageCounts();
   $("#metric-label-records").textContent = "Pending";
   $("#metric-context-records").textContent = "durable births";
   $("#metric-records").textContent = pendingBirthSnapshot.length;
   $("#metric-label-failures").textContent = "Genesis";
   $("#metric-context-failures").textContent = "authoring";
-  $("#metric-failures").textContent = counts.genesis ?? 0;
+  $("#metric-failures").textContent = counts.genesis;
   $("#metric-label-retries").textContent = "Developing";
   $("#metric-context-retries").textContent = "prior life";
-  $("#metric-retries").textContent = counts.developing ?? 0;
+  $("#metric-retries").textContent = counts.developing;
   $("#metric-view").textContent = "Birth Center";
-  $("#metric-view-context").textContent = `${counts.emerging ?? 0} emerging`;
+  $("#metric-view-context").textContent = `${counts.emerging} emerging`;
 }
 
 function renderStillbornTopSummary(summary = null) {
@@ -691,14 +714,6 @@ function renderSummary(summary) {
   renderThreadsTopSummary(summary);
 }
 
-function mapPoint(latitude, longitude) {
-  const x = ((longitude + 180) / 360) * WORLD_MAP_BOUNDS.width;
-  const clamped = Math.max(WORLD_MAP_BOUNDS.minLat, Math.min(WORLD_MAP_BOUNDS.maxLat, latitude));
-  const y = ((WORLD_MAP_BOUNDS.maxLat - clamped)
-    / (WORLD_MAP_BOUNDS.maxLat - WORLD_MAP_BOUNDS.minLat)) * WORLD_MAP_BOUNDS.height;
-  return { x, y };
-}
-
 function mapCoordinates(event) {
   const rect = birthMap.getBoundingClientRect();
   const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
@@ -728,8 +743,6 @@ function nearestBirthplace(point) {
   }, null)?.candidate ?? null;
 }
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-
 function setButtonWaiting(button, label) {
   const icon = faIcon("rotate");
   icon.classList.add("fa-spin");
@@ -740,20 +753,6 @@ function setButtonWaiting(button, label) {
 
 function setButtonLabel(button, label) {
   button.textContent = label;
-}
-
-function renderTimeZoneLines() {
-  birthTimezones.replaceChildren();
-  for (let longitude = -165; longitude <= 165; longitude += 15) {
-    const line = document.createElementNS(SVG_NS, "line");
-    const x = mapPoint(0, longitude).x.toFixed(1);
-    line.setAttribute("x1", x);
-    line.setAttribute("x2", x);
-    line.setAttribute("y1", "0");
-    line.setAttribute("y2", String(WORLD_MAP_BOUNDS.height));
-    if (longitude === 0 || longitude % 60 === 0) line.classList.add("major");
-    birthTimezones.append(line);
-  }
 }
 
 function birthStage(birth) {
@@ -771,8 +770,7 @@ function birthStage(birth) {
 }
 
 function birthplaceForBirth(birth) {
-  if (!birth?.location || !Array.isArray(birthplaces)) return null;
-  return birthplaces.find((place) => place.place === birth.location) ?? null;
+  return catalogPlaceForLocation(birthplaces, birth?.location);
 }
 
 function renderBirthPipelineMarkers() {
@@ -792,7 +790,7 @@ function renderBirthPipelineMarkers() {
   }
   for (const entries of groups.values()) {
     entries.forEach(({ birth, place }, index) => {
-      const point = mapPoint(place.lat, place.long);
+      const point = worldMapPoint(place.lat, place.long);
       const count = entries.length;
       const angle = count === 1 ? 0 : (Math.PI * 2 * index) / count;
       const spread = count === 1 ? 0 : Math.min(13, 4 + count);
@@ -816,7 +814,7 @@ function renderBirthMarker(place) {
     birthMapMarker.hidden = true;
     return;
   }
-  const point = mapPoint(place.lat, place.long);
+  const point = worldMapPoint(place.lat, place.long);
   birthMapMarker.setAttribute("cx", point.x.toFixed(1));
   birthMapMarker.setAttribute("cy", point.y.toFixed(1));
   birthMapMarker.hidden = false;
@@ -905,7 +903,37 @@ async function loadBirthplaces() {
   }
   birthplaces = payload.places;
   renderBirthPipelineMarkers();
+  renderThreadPopulationMap();
   return birthplaces;
+}
+
+function renderThreadPopulationMap() {
+  if (!threadPopulationMapInitialized) {
+    threadPopulationWorldPath.setAttribute("d", WORLD_MAP_PATH);
+    renderWorldTimeZoneLines(threadPopulationTimezones);
+    threadPopulationMapInitialized = true;
+  }
+  if (!Array.isArray(birthplaces)) {
+    threadPopulationMapMarkers.replaceChildren();
+    threadPopulationMapSummary.textContent = "Loading birthplace coordinates…";
+    return;
+  }
+  const grouped = groupThreadsByBirthplace(population, birthplaces);
+  renderWorldCountMarkers(threadPopulationMapMarkers, grouped.locations);
+  if (population.length === 0) {
+    threadPopulationMapSummary.textContent = "No admitted Threads.";
+    return;
+  }
+  const places = grouped.locations.length;
+  threadPopulationMapSummary.textContent =
+    `${places} mapped birthplace${places === 1 ? "" : "s"} · ${grouped.mapped} Thread${grouped.mapped === 1 ? "" : "s"}`
+    + (grouped.unmapped > 0 ? ` · ${grouped.unmapped} without mapped coordinates` : "");
+}
+
+function setThreadPopulationMapUnavailable(error) {
+  threadPopulationMapMarkers.replaceChildren();
+  threadPopulationMapSummary.textContent =
+    `Birthplace map unavailable: ${error instanceof Error ? error.message : String(error)}`;
 }
 
 function selectedBirthSex() {
@@ -962,12 +990,19 @@ function renderPendingBirths(births) {
     for (const birth of births) {
       const row = document.createElement("article");
       row.className = "thread-birth-pending-row";
+      row.classList.toggle("stale", birth.stale === true);
       const copy = document.createElement("div");
       const location = document.createElement("strong");
       location.textContent = birth.location?.replace("/", " · ") ?? "Selecting birthplace…";
       const meta = document.createElement("span");
-      meta.textContent = `${birth.sex ? human(birth.sex) : "Random sex"} · ${pendingStatusText(birth)} · started ${elapsedText(birth.createdAt)}`;
+      meta.textContent = `${birth.sex ? human(birth.sex) : "Random sex"} · ${pendingStatusText(birth)} · started ${elapsedText(birth.createdAt)} · last update ${elapsedText(birth.updatedAt)}`;
       copy.append(location, meta);
+      if (birth.stale === true) {
+        const stale = document.createElement("span");
+        stale.className = "thread-birth-stale-reason";
+        stale.textContent = `${human(birth.classification ?? "stale")} · ${birth.staleReason ?? "Birth has stopped making progress."}`;
+        copy.append(stale);
+      }
       if (birth.threadId) {
         const id = threadIdCopyButton(birth.threadId);
         id.classList.add("thread-birth-thread-id");
@@ -978,13 +1013,19 @@ function renderPendingBirths(births) {
         id.textContent = birth.requestId;
         copy.append(id);
       }
-      const status = badge(pendingStatusText(birth), "retrying");
-      row.append(copy, status);
+      const statuses = document.createElement("div");
+      statuses.className = "thread-birth-pending-status";
+      statuses.append(badge(pendingStatusText(birth), "retrying"));
+      if (birth.stale === true) statuses.append(badge("stale", "failed"));
+      row.append(copy, statuses);
       birthPending.append(row);
     }
   }
   renderBirthPipelineMarkers();
-  if (active && populationMode === "birth-center") renderBirthCenterTopSummary();
+  if (active && populationMode === "birth-center") {
+    renderBirthCenterTopSummary();
+    $("#chain-summary").textContent = birthCenterSummaryText();
+  }
 }
 async function loadPendingBirths({ quiet = false } = {}) {
   if (!quiet) {
@@ -1047,7 +1088,7 @@ async function loadBirthCenter() {
   try {
     if (!birthCenterInitialized) {
       birthWorldPath.setAttribute("d", WORLD_MAP_PATH);
-      renderTimeZoneLines();
+      renderWorldTimeZoneLines(birthTimezones);
       syncBirthMode();
       birthCenterInitialized = true;
     }
@@ -1055,7 +1096,7 @@ async function loadBirthCenter() {
     await Promise.all([loadPendingBirths(), loadBirthplaces()]);
     renderBirthPipelineMarkers();
     renderBirthCenterTopSummary();
-    $("#chain-summary").textContent = `${pendingBirthSnapshot.length} active birth${pendingBirthSnapshot.length === 1 ? "" : "s"} · genesis → developing → emerging → in-world.`;
+    $("#chain-summary").textContent = birthCenterSummaryText();
   } catch (error) {
     $("#chain-summary").textContent = `Birth Center unavailable: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
@@ -1159,6 +1200,8 @@ async function loadPopulation() {
     renderSummary(payload.summary ?? {});
     renderPopulation();
     renderStillborn();
+    renderThreadPopulationMap();
+    void loadBirthplaces().then(renderThreadPopulationMap).catch(setThreadPopulationMapUnavailable);
     $("#environment-pill").textContent = payload.environment ?? "—";
     if (populationMode === "stillborn") {
       renderStillbornTopSummary(payload.summary ?? {});
@@ -1174,6 +1217,7 @@ async function loadPopulation() {
     else renderThreadsTopSummary();
     renderPopulation();
     renderStillborn();
+    renderThreadPopulationMap();
     $("#chain-summary").textContent = `Thread population unavailable: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
     loading = false;
@@ -1200,7 +1244,7 @@ function enterPopulation(nextMode) {
     holdOperatorMode();
     if (populationMode === "birth-center") {
       renderBirthCenterTopSummary();
-      $("#chain-summary").textContent = `${pendingBirthSnapshot.length} active birth${pendingBirthSnapshot.length === 1 ? "" : "s"}.`;
+      $("#chain-summary").textContent = birthCenterSummaryText();
       startPendingPolling();
       void loadBirthCenter();
     } else if (populationMode === "stillborn") {
