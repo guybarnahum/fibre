@@ -24,6 +24,7 @@ const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
 const THREAD_PENDING_BIRTHS_ROUTE = "/api/threads/births/pending";
+const THREAD_BIRTHPLACES_ROUTE = "/api/threads/births/places";
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
 const INFRA_HEALTH_ROUTE = "/internal/infra-health";
 
@@ -304,9 +305,9 @@ async function proxyThreadBirth(request, env) {
   return json(upstream.status, payload);
 }
 
-async function proxyPendingBirths(env) {
+async function proxyBirthCenterGet(env, pathname) {
   const upstream = await serviceBinding(env, "BIRTH_CENTER").fetch(new Request(
-    "https://birth-center.internal/internal/births/pending",
+    `https://birth-center.internal${pathname}`,
     {
       method:"GET",
       headers:{
@@ -360,8 +361,9 @@ export default {
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
     const pendingBirths = url.pathname === THREAD_PENDING_BIRTHS_ROUTE;
+    const birthplaces = url.pathname === THREAD_BIRTHPLACES_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || pendingBirths || infraMonitor);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || pendingBirths || birthplaces || infraMonitor);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor);
     if (adminGet || adminPost) {
@@ -374,7 +376,8 @@ export default {
           return json(200, await readAdminInfraMonitor({ env, environment, force }));
         }
         if (threadBirth) return proxyThreadBirth(request, env);
-        if (pendingBirths) return proxyPendingBirths(env);
+        if (pendingBirths) return proxyBirthCenterGet(env, "/internal/births/pending");
+        if (birthplaces) return proxyBirthCenterGet(env, "/internal/births/places");
         if (threadPopulation) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const population = await readAdminThreadPopulation({
@@ -441,6 +444,7 @@ export default {
       } catch (error) {
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
         if (threadBirth) return json(error instanceof TypeError ? 400 : 503, { error:"thread_birth_unavailable", detail:error.message });
+        if (pendingBirths || birthplaces) return json(503, { error:"thread_birth_data_unavailable", detail:error.message });
         if (threadPopulation) return json(503, { error:"thread_population_unavailable", detail:error.message });
         if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
         if (fidReissueMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_reissue_unavailable", detail:error.message });

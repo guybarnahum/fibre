@@ -115,81 +115,142 @@
 .thread-birth-field > span { font-size:10px; font-weight:700; }
 .thread-birth-field small { color:var(--muted); font-weight:500; }
 .thread-birth-field input { width:100%; }
-.thread-birth-map-shell {
+.thread-birth-place-controls {
   display:grid;
-  gap:6px;
-  padding:9px;
-  border:1px solid var(--border);
-  border-radius:10px;
-  background:var(--surface-subtle);
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:end;
 }
-.thread-birth-map-head,
-.thread-birth-pending-head {
+.thread-birth-random-location {
+  min-height:34px;
+  padding:7px 10px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--surface-subtle);
+  color:var(--muted);
+  font-size:9px;
+  font-weight:650;
+}
+.thread-birth-random-location:hover,
+.thread-birth-random-location.selected {
+  border-color:var(--border-strong);
+  background:var(--surface);
+  color:var(--text);
+}
+.thread-birth-search-results {
+  display:grid;
+  max-height:190px;
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--surface);
+  box-shadow:0 10px 28px rgba(0,0,0,.08);
+}
+.thread-birth-search-results[hidden] { display:none; }
+.thread-birth-search-result {
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:10px;
-}
-.thread-birth-map-head > span,
-.thread-birth-pending-head strong { font-size:10px; font-weight:700; }
-.thread-birth-random-location {
+  gap:12px;
   min-height:0;
-  padding:4px 7px;
+  padding:8px 10px;
   border:0;
-  border-radius:999px;
+  border-top:1px solid var(--border);
+  border-radius:0;
   background:transparent;
-  color:var(--muted);
-  font-size:9px;
+  color:inherit;
+  text-align:left;
 }
-.thread-birth-random-location:hover,
-.thread-birth-random-location.selected { background:var(--surface); color:var(--text); }
+.thread-birth-search-result:first-child { border-top:0; }
+.thread-birth-search-result:hover { background:var(--surface-subtle); }
+.thread-birth-search-result > span { display:grid; gap:2px; }
+.thread-birth-search-result strong { font-size:10px; }
+.thread-birth-search-result small { color:var(--muted); font-size:8.5px; }
+.thread-birth-map-shell {
+  display:grid;
+  gap:7px;
+}
 .thread-birth-map {
   position:relative;
   aspect-ratio:2/1;
   overflow:hidden;
   border:1px solid var(--border);
-  border-radius:9px;
-  background:
-    radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--accent) 5%,transparent),transparent 55%),
-    var(--surface);
+  border-radius:11px;
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--surface-subtle) 60%,var(--surface)),
+    var(--surface));
+  cursor:crosshair;
 }
-.thread-birth-map-land { position:absolute; inset:0; width:100%; height:100%; }
-.thread-birth-map-land path {
-  fill:color-mix(in srgb,var(--text) 10%,var(--surface-subtle));
-  stroke:color-mix(in srgb,var(--text) 16%,transparent);
-  stroke-width:1.2;
+.thread-birth-map:focus-visible {
+  outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent);
+  outline-offset:2px;
+}
+.thread-birth-map-land { display:block; width:100%; height:100%; }
+#thread-birth-world-path {
+  fill:color-mix(in srgb,var(--text) 7%,var(--surface));
+  stroke:color-mix(in srgb,var(--text) 23%,transparent);
+  stroke-width:.65;
   vector-effect:non-scaling-stroke;
 }
-.thread-birth-map-pins { position:absolute; inset:0; }
-.thread-birth-map-pin {
-  position:absolute;
-  width:9px;
-  height:9px;
-  min-width:0;
-  min-height:0;
+#thread-birth-map-marker {
+  fill:var(--accent);
+  stroke:var(--surface);
+  stroke-width:4;
+  vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.24));
+}
+.thread-birth-map-caption {
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  min-height:18px;
+}
+.thread-birth-map-caption strong { font-size:10px; }
+.thread-birth-map-caption span { color:var(--muted); font-size:8.5px; text-align:right; }
+.thread-birth-count-field {
+  display:grid;
+  gap:5px;
   padding:0;
-  transform:translate(-50%,-50%);
-  border:2px solid var(--surface);
-  border-radius:999px;
-  background:var(--muted);
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--text) 18%,transparent);
+  margin:0;
+  border:0;
 }
-.thread-birth-map-pin:hover,
-.thread-birth-map-pin:focus-visible {
-  z-index:2;
-  width:13px;
-  height:13px;
-  background:var(--text);
-  outline:none;
+.thread-birth-count-field[hidden] { display:none; }
+.thread-birth-count-field legend { margin-bottom:5px; font-size:10px; font-weight:700; }
+.thread-birth-count-field small { color:var(--muted); font-size:8.5px; }
+.thread-birth-count-toggle {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:4px;
+  padding:3px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface-subtle);
 }
-.thread-birth-map-pin.selected {
-  z-index:3;
-  width:14px;
-  height:14px;
-  background:var(--accent);
-  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 24%,transparent);
+.thread-birth-count-toggle input {
+  position:absolute;
+  inline-size:1px;
+  block-size:1px;
+  opacity:0;
+  pointer-events:none;
 }
-.thread-birth-map-selection { color:var(--muted); font-size:9px; }
+.thread-birth-count-toggle label {
+  padding:7px 8px;
+  border-radius:7px;
+  color:var(--muted);
+  text-align:center;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.thread-birth-count-toggle input:checked + label {
+  background:var(--surface);
+  color:var(--text);
+  box-shadow:0 1px 5px rgba(0,0,0,.12);
+}
+.thread-birth-count-toggle input:focus-visible + label {
+  outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent);
+}
 .thread-birth-sex-field { display:grid; gap:5px; padding:0; margin:0; border:0; }
 .thread-birth-sex-field legend { margin-bottom:5px; font-size:10px; font-weight:700; }
 .thread-birth-sex-toggle {
@@ -261,6 +322,7 @@
 .thread-birth-pending-row strong { color:var(--text); font-size:10px; }
 .thread-birth-pending-row span,
 .thread-birth-pending-row small { color:var(--muted); overflow-wrap:anywhere; }
+.thread-birth-pending-row .status { flex:0 0 auto; }
 .thread-birth-pending-empty { padding:4px 1px; }
 .thread-birth-result {
   min-height:18px;
@@ -537,6 +599,9 @@
 @keyframes thread-action-progress { from { transform:translateX(-10%); } to { transform:translateX(190%); } }
 
 @media (max-width:680px) {
+  .thread-birth-place-controls { grid-template-columns:1fr; }
+  .thread-birth-map-caption { align-items:flex-start; flex-direction:column; gap:2px; }
+  .thread-birth-map-caption span { text-align:left; }
   .thread-health-tag { white-space:normal; }
   .thread-population-table { min-width:860px; }
   .thread-action-choice-group { grid-template-columns:1fr; }
