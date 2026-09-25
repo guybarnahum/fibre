@@ -10,6 +10,8 @@ export class GenesisPassBAdmissionError extends TypeError {
   constructor(gate, message, details = {}) {
     super(message);
     this.name = "GenesisPassBAdmissionError";
+    this.code = "GENESIS_PASS_B_ADMISSION_ERROR";
+    this.retryable = false;
     this.gate = gate;
     this.details = structuredClone(details);
   }
