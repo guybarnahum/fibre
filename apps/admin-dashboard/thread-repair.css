@@ -425,6 +425,7 @@
 }
 
 .thread-population-map-shell {
+  position:relative;
   display:grid;
   gap:7px;
   padding:10px 12px 12px;
@@ -463,7 +464,7 @@
   pointer-events:none;
 }
 .thread-map-popover {
-  position:fixed;
+  position:absolute;
   z-index:1300;
   display:grid;
   gap:8px;
