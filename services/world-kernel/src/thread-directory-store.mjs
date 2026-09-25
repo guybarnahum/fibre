@@ -65,6 +65,15 @@ function registryEntry(row) {
     lastError:parse(`Thread ${row.thread_id} reconciliation error`, row.reconciliation_error_json),
     updatedAt:clean(row.reconciliation_updated_at),
   });
+  const runtime = row.runtime_session_status === "active" && row.runtime_lease_status === "active"
+    ? Object.freeze({
+      state:"active",
+      sessionId:clean(row.runtime_session_id),
+      leaseId:clean(row.runtime_lease_id),
+      startedAt:clean(row.runtime_started_at),
+      expiresAt:clean(row.runtime_expires_at),
+    })
+    : null;
   return Object.freeze({
     threadId: row.thread_id,
     fibreIdentityNumber: clean(row.fibre_identity_number),
@@ -82,6 +91,7 @@ function registryEntry(row) {
     version: Number(row.version),
     stateHash: clean(row.state_hash),
     updatedAt: clean(row.updated_at),
+    runtime,
     reconciliation,
   });
 }
@@ -98,7 +108,7 @@ export class ThreadDirectoryStore {
     this.#tables = new Set(this.#database.prepare(`
       SELECT name FROM sqlite_master
       WHERE type='table' AND name IN (
-        'threads','fibre_civil_registrations','genesis_manifests','genesis_world_specs','genesis_raised_language_corrections','thread_visual_publication_work'
+        'threads','fibre_civil_registrations','genesis_manifests','genesis_world_specs','genesis_raised_language_corrections','thread_visual_publication_work','thaw_leases','runtime_sessions'
       )
     `).all().map((row) => row.name));
   }
@@ -111,6 +121,7 @@ export class ThreadDirectoryStore {
     const hasCivilRegistry = this.#tables.has("fibre_civil_registrations");
     const hasGenesis = this.#tables.has("genesis_manifests") && this.#tables.has("genesis_world_specs");
     const hasRaisedCorrections = this.#tables.has("genesis_raised_language_corrections");
+    const hasRuntime = this.#tables.has("thaw_leases") && this.#tables.has("runtime_sessions");
     const row = this.#database.prepare(`
       SELECT
         t.thread_id,t.version,t.status,t.state_json,t.state_hash,t.updated_at,
@@ -120,11 +131,18 @@ export class ThreadDirectoryStore {
         ${hasGenesis && hasRaisedCorrections ? "(SELECT languages_json FROM genesis_raised_language_corrections c WHERE c.thread_id=t.thread_id ORDER BY c.recorded_at DESC,c.correction_id DESC LIMIT 1)" : "NULL"} AS raised_languages_json,
         ${this.#tables.has("thread_visual_publication_work") ? "v.state" : "NULL"} AS reconciliation_state,
         ${this.#tables.has("thread_visual_publication_work") ? "v.last_error_json" : "NULL"} AS reconciliation_error_json,
-        ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at
+        ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at,
+        ${hasRuntime ? "s.status" : "NULL"} AS runtime_session_status,
+        ${hasRuntime ? "s.session_id" : "NULL"} AS runtime_session_id,
+        ${hasRuntime ? "s.started_at" : "NULL"} AS runtime_started_at,
+        ${hasRuntime ? "l.status" : "NULL"} AS runtime_lease_status,
+        ${hasRuntime ? "l.lease_id" : "NULL"} AS runtime_lease_id,
+        ${hasRuntime ? "l.expires_at" : "NULL"} AS runtime_expires_at
       FROM threads t
       ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
       ${hasGenesis ? "LEFT JOIN genesis_manifests m ON m.thread_id=t.thread_id AND m.publication_status='published' LEFT JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id" : ""}
       ${this.#tables.has("thread_visual_publication_work") ? "LEFT JOIN thread_visual_publication_work v ON v.thread_id=t.thread_id" : ""}
+      ${hasRuntime ? "LEFT JOIN thaw_leases l ON l.lease_id=(SELECT x.lease_id FROM thaw_leases x WHERE x.thread_id=t.thread_id AND x.status='active' ORDER BY x.acquired_at DESC LIMIT 1) LEFT JOIN runtime_sessions s ON s.lease_id=l.lease_id AND s.status='active'" : ""}
       WHERE t.thread_id=?
       LIMIT 1
     `).get(threadId.trim());
@@ -159,6 +177,7 @@ export class ThreadDirectoryStore {
     const hasCivilRegistry = this.#tables.has("fibre_civil_registrations");
     const hasGenesis = this.#tables.has("genesis_manifests") && this.#tables.has("genesis_world_specs");
     const hasRaisedCorrections = this.#tables.has("genesis_raised_language_corrections");
+    const hasRuntime = this.#tables.has("thaw_leases") && this.#tables.has("runtime_sessions");
     if (fin !== null && !hasCivilRegistry) return [];
 
     const sql = `
@@ -170,11 +189,18 @@ export class ThreadDirectoryStore {
         ${hasGenesis && hasRaisedCorrections ? "(SELECT languages_json FROM genesis_raised_language_corrections c WHERE c.thread_id=t.thread_id ORDER BY c.recorded_at DESC,c.correction_id DESC LIMIT 1)" : "NULL"} AS raised_languages_json,
         ${this.#tables.has("thread_visual_publication_work") ? "v.state" : "NULL"} AS reconciliation_state,
         ${this.#tables.has("thread_visual_publication_work") ? "v.last_error_json" : "NULL"} AS reconciliation_error_json,
-        ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at
+        ${this.#tables.has("thread_visual_publication_work") ? "v.updated_at" : "NULL"} AS reconciliation_updated_at,
+        ${hasRuntime ? "s.status" : "NULL"} AS runtime_session_status,
+        ${hasRuntime ? "s.session_id" : "NULL"} AS runtime_session_id,
+        ${hasRuntime ? "s.started_at" : "NULL"} AS runtime_started_at,
+        ${hasRuntime ? "l.status" : "NULL"} AS runtime_lease_status,
+        ${hasRuntime ? "l.lease_id" : "NULL"} AS runtime_lease_id,
+        ${hasRuntime ? "l.expires_at" : "NULL"} AS runtime_expires_at
       FROM threads t
       ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
       ${hasGenesis ? "LEFT JOIN genesis_manifests m ON m.thread_id=t.thread_id AND m.publication_status='published' LEFT JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id" : ""}
       ${this.#tables.has("thread_visual_publication_work") ? "LEFT JOIN thread_visual_publication_work v ON v.thread_id=t.thread_id" : ""}
+      ${hasRuntime ? "LEFT JOIN thaw_leases l ON l.lease_id=(SELECT x.lease_id FROM thaw_leases x WHERE x.thread_id=t.thread_id AND x.status='active' ORDER BY x.acquired_at DESC LIMIT 1) LEFT JOIN runtime_sessions s ON s.lease_id=l.lease_id AND s.status='active'" : ""}
       ${fin === null ? "" : "WHERE r.fibre_identity_number=?"}
       ORDER BY t.thread_id ASC
       LIMIT ?
