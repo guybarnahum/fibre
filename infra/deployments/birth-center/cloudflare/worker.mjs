@@ -47,11 +47,21 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     return this.runtime;
   }
 
-  async ensureSchedulerForStatefulRequest(cloud) {
+  ensureSchedulerForStatefulRequest(cloud) {
     if (this.schedulerBootstrapped) return;
-    await cloud.runtime.ensureScheduled();
-    await cloud.ensureBirthStatusScheduled();
     this.schedulerBootstrapped = true;
+    this.ctx.waitUntil((async () => {
+      try {
+        await cloud.runtime.ensureScheduled();
+        await cloud.ensureBirthStatusScheduled();
+      } catch (error) {
+        console.error(JSON.stringify({
+          event:"birth-center-scheduler-bootstrap-failed",
+          message:error instanceof Error ? error.message : String(error),
+        }));
+        this.schedulerBootstrapped = false;
+      }
+    })());
   }
 
   async fetch(request) {
@@ -70,20 +80,30 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       }, { status:health.level === "normal" ? 200 : 503 });
     }
     const cloud = this.runtimeForRequest();
-    await this.ensureSchedulerForStatefulRequest(cloud);
+    this.ensureSchedulerForStatefulRequest(cloud);
     if (cloud.modernBirthApi !== null) {
       const modernBirthResponse = await cloud.modernBirthApi.fetch(request, {
         defer:(promise) => this.ctx.waitUntil(promise),
       });
       if (modernBirthResponse !== null) {
-        await cloud.ensureBirthStatusScheduled();
+        this.ctx.waitUntil(cloud.ensureBirthStatusScheduled().catch((error) => {
+          console.error(JSON.stringify({
+            event:"birth-center-status-schedule-failed",
+            message:error instanceof Error ? error.message : String(error),
+          }));
+        }));
         return modernBirthResponse;
       }
     }
     if (cloud.developmentApi !== null) {
       const developmentResponse = await cloud.developmentApi.fetch(request);
       if (developmentResponse !== null) {
-        await cloud.ensureBirthStatusScheduled();
+        this.ctx.waitUntil(cloud.ensureBirthStatusScheduled().catch((error) => {
+          console.error(JSON.stringify({
+            event:"birth-center-status-schedule-failed",
+            message:error instanceof Error ? error.message : String(error),
+          }));
+        }));
         return developmentResponse;
       }
     }
