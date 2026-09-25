@@ -61,22 +61,42 @@ export function catalogPlaceForLocation(catalog, location) {
   return cityMatches.length === 1 ? cityMatches[0] : null;
 }
 
+function mappableLocation(thread) {
+  const current = thread?.currentLocation;
+  if (current && Number.isFinite(current.lat) && Number.isFinite(current.long)) {
+    return Object.freeze({ ...current, mapMode:"current" });
+  }
+  const birth = thread?.identity?.birthLocation;
+  if (birth && Number.isFinite(birth.lat) && Number.isFinite(birth.long)) {
+    return Object.freeze({
+      current:false,
+      awaitingLivedNow:true,
+      mapMode:"awaiting_lived_now",
+      displayName:birth.displayName ?? thread?.identity?.birthPlace ?? birth.city ?? "Birthplace",
+      locality:birth.city ?? birth.displayName ?? "Birthplace",
+      country:birth.country ?? "",
+      lat:birth.lat,
+      long:birth.long,
+      authority:"birthplace_placeholder",
+    });
+  }
+  return null;
+}
+
 export function groupThreadsByCurrentLocation(threads) {
   const groups = new Map();
   let unmapped = 0;
   let authoritative = 0;
+  let awaitingLivedNow = 0;
   for (const thread of Array.isArray(threads) ? threads : []) {
-    const location = thread?.currentLocation;
-    if (
-      !location
-      || !Number.isFinite(location.lat)
-      || !Number.isFinite(location.long)
-    ) {
+    const location = mappableLocation(thread);
+    if (location === null) {
       unmapped += 1;
       continue;
     }
-    if (location.current === true) authoritative += 1;
-    const locality = location.locality ?? location.displayName ?? "Current location";
+    if (location.mapMode === "current") authoritative += 1;
+    else awaitingLivedNow += 1;
+    const locality = location.locality ?? location.displayName ?? "Location";
     const country = location.country ?? "";
     const key = `${location.lat.toFixed(4)}:${location.long.toFixed(4)}:${normalized(locality)}:${normalized(country)}`;
     const place = Object.freeze({
@@ -87,14 +107,23 @@ export function groupThreadsByCurrentLocation(threads) {
       lat:location.lat,
       long:location.long,
     });
-    const current = groups.get(key) ?? { place, threadIds:[] };
+    const current = groups.get(key) ?? {
+      place,
+      threadIds:[],
+      currentCount:0,
+      awaitingLivedNowCount:0,
+    };
     current.threadIds.push(thread.threadId);
+    if (location.mapMode === "current") current.currentCount += 1;
+    else current.awaitingLivedNowCount += 1;
     groups.set(key, current);
   }
   const locations = [...groups.values()]
-    .map(({ place, threadIds }) => Object.freeze({
+    .map(({ place, threadIds, currentCount, awaitingLivedNowCount }) => Object.freeze({
       place,
       count:threadIds.length,
+      currentCount,
+      awaitingLivedNowCount,
       threadIds:Object.freeze([...threadIds]),
     }))
     .sort((left, right) => right.count - left.count || left.place.place.localeCompare(right.place.place));
@@ -102,6 +131,7 @@ export function groupThreadsByCurrentLocation(threads) {
     locations:Object.freeze(locations),
     mapped:locations.reduce((sum, location) => sum + location.count, 0),
     authoritative,
+    awaitingLivedNow,
     unmapped,
   });
 }
@@ -115,6 +145,11 @@ export function renderWorldCountMarkers(group, locations, { className = "thread-
     marker.classList.add(className);
     marker.setAttribute("transform", `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`);
 
+    if (location.awaitingLivedNowCount > 0 && location.currentCount === 0) {
+      marker.classList.add("awaiting-lived-now");
+    } else if (location.awaitingLivedNowCount > 0) {
+      marker.classList.add("mixed-presence");
+    }
     const circle = document.createElementNS(SVG_NS, "circle");
     circle.setAttribute("r", location.count > 1 ? "13" : "6");
     marker.append(circle);
@@ -137,7 +172,10 @@ export function renderWorldCountMarkers(group, locations, { className = "thread-
 
     const title = document.createElementNS(SVG_NS, "title");
     const placeLabel = [location.place.city, location.place.country].filter(Boolean).join(", ");
-    title.textContent = `${placeLabel} · ${location.count} Thread${location.count === 1 ? "" : "s"}`;
+    const presence = location.awaitingLivedNowCount > 0
+      ? ` · ${location.currentCount ?? 0} current · ${location.awaitingLivedNowCount} awaiting LivedNow`
+      : "";
+    title.textContent = `${placeLabel} · ${location.count} Thread${location.count === 1 ? "" : "s"}${presence}`;
     marker.append(title);
     group.append(marker);
     rendered.push(Object.freeze({ marker, location }));
