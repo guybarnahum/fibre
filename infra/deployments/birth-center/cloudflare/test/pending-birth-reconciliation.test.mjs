@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { pendingBirths, reconcileStaleBirths } from "../runtime.mjs";
+import { nextBirthStatusCheckAt, pendingBirths, reconcileStaleBirths } from "../runtime.mjs";
 
 const NOW = Date.parse("2026-09-25T15:00:00.000Z");
 const TOKEN = "test-token-1234567890";
@@ -40,6 +40,32 @@ function developmentFor(request) {
     updatedAt:request.updatedAt,
   };
 }
+
+
+test("stale births wake immediately once, then retry on the normal interval", () => {
+  const request = staleModern();
+  const runtime = {
+    modernBirthRequestStore:{
+      recent:() => [request],
+      isActive:(status) => status === "developing",
+    },
+    developmentRequestStore:{
+      recent:() => [developmentFor(request)],
+      getDisposition:() => null,
+    },
+  };
+
+  assert.equal(
+    nextBirthStatusCheckAt(runtime, () => NOW, { reconcileStaleNow:true }),
+    NOW,
+    "stuck births did not request immediate reconciliation",
+  );
+  assert.equal(
+    nextBirthStatusCheckAt(runtime, () => NOW),
+    NOW + (5 * 60 * 1000),
+    "stuck birth retry became a busy loop",
+  );
+});
 
 test("pending births is local observation", () => {
   const request = staleModern();
