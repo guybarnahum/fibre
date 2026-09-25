@@ -1,4 +1,7 @@
-import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
+import {
+  resolveLocalityGeography,
+  resolveMentionedLocalityGeography,
+} from "#core/src/locality-geography.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 
 function finiteCoordinates(value) {
@@ -18,7 +21,7 @@ function localityGeography(place) {
     const resolved = resolveLocalityGeography(candidate);
     if (resolved !== null) return resolved;
   }
-  return null;
+  return resolveMentionedLocalityGeography(place?.displayName);
 }
 
 function fallbackGeography(entry) {
