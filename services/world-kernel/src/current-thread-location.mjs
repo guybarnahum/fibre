@@ -1,4 +1,4 @@
-import { resolveBirthplaceGeography } from "#core/src/birthplace-geography.mjs";
+import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 
 function finiteCoordinates(value) {
@@ -15,7 +15,7 @@ function localityGeography(place, fallback) {
     place?.locality ?? null,
     place?.displayName ?? null,
   ]) {
-    const resolved = resolveBirthplaceGeography(candidate);
+    const resolved = resolveLocalityGeography(candidate);
     if (resolved !== null) return resolved;
   }
   return fallback;
@@ -23,7 +23,7 @@ function localityGeography(place, fallback) {
 
 function fallbackGeography(entry) {
   if (finiteCoordinates(entry?.birthLocation)) return entry.birthLocation;
-  return resolveBirthplaceGeography(entry?.birthPlace);
+  return resolveLocalityGeography(entry?.birthPlace);
 }
 
 function resolvedPlace(reference, { worldPlaces, placeEpisodes, fallback }) {
