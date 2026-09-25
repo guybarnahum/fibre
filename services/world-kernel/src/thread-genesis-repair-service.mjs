@@ -653,7 +653,7 @@ export function createThreadGenesisRepairService({
 
     const actions = [];
     const geography = before.findings.find((entry) => entry.action === "repair_birth_geography") ?? null;
-    if (!blocked && geography !== null) {
+    if (geography !== null) {
       const current = worldReader.getThread(threadId);
       const result = identityUpdater.update(current, {
         birthPlace:geography.recovered,
