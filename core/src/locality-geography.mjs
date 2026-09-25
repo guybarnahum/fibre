@@ -103,6 +103,9 @@ const LOCALITY_COORDINATES = Object.freeze({
   "United States/Baltimore, Maryland":Object.freeze({ lat:39.29038, long:-76.61219 }),
   "United States/Atlanta, Georgia":Object.freeze({ lat:33.749, long:-84.38798 }),
   "United States/Boston, Massachusetts":Object.freeze({ lat:42.35843, long:-71.05977 }),
+  "United States/Hilo, Hawaii":Object.freeze({ lat:19.70737, long:-155.08158 }),
+  "United States/San Francisco, California":Object.freeze({ lat:37.77493, long:-122.41942 }),
+  "Norway/Oslo":Object.freeze({ lat:59.91387, long:10.75225 }),
   "Chile/Valparaíso":Object.freeze({ lat:-33.04724, long:-71.61269 }),
 });
 
@@ -150,6 +153,15 @@ for (const [alias, place] of [
   ["Baltimore, Maryland", "United States/Baltimore, Maryland"],
   ["Atlanta, Georgia", "United States/Atlanta, Georgia"],
   ["Boston, Massachusetts", "United States/Boston, Massachusetts"],
+  ["Hilo Hawaii", "United States/Hilo, Hawaii"],
+  ["Hilo, Hawaii", "United States/Hilo, Hawaii"],
+  ["Hilo Hawaii, USA", "United States/Hilo, Hawaii"],
+  ["USA/Hilo Hawaii", "United States/Hilo, Hawaii"],
+  ["Oslo, Norway", "Norway/Oslo"],
+  ["San Francisco, California", "United States/San Francisco, California"],
+  ["San Francisco Califronia,", "United States/San Francisco, California"],
+  ["San Francisco Califronia, USA", "United States/San Francisco, California"],
+  ["USA/San Francisco Califronia,", "United States/San Francisco, California"],
 ]) {
   const resolved = FIBRE_LOCALITY_GEOGRAPHY.find((candidate) => candidate.place === place);
   if (resolved) ALIASES.set(normalized(alias), Object.freeze({ ...resolved, displayName:alias }));
