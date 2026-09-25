@@ -65,6 +65,23 @@ function birthTiming(request, nowMs) {
   });
 }
 
+function nextBirthStatusCheckAt(births, nowMs) {
+  const now = nowMs();
+  let next = null;
+  for (const birth of births) {
+    let candidate = null;
+    if (birth.classification === "active") {
+      candidate = birth.idleMs === null
+        ? now + STALE_ACTIVE_BIRTH_MS
+        : now + Math.max(100, STALE_ACTIVE_BIRTH_MS - birth.idleMs);
+    } else if (birth.classification === "stale_world_check_unavailable") {
+      candidate = now + DEFAULT_RETRY_MS;
+    }
+    if (candidate !== null && (next === null || candidate < next)) next = candidate;
+  }
+  return next;
+}
+
 async function worldThreadPresence({ worldBinding, privateToken, threadId }) {
   try {
     const response = await worldBinding.fetch(new Request(
@@ -244,6 +261,21 @@ export async function pendingBirths(runtime, {
   return queued.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 }
 
+async function ensureBirthStatusScheduled(runtime, {
+  worldBinding,
+  privateToken,
+  nowMs,
+} = {}) {
+  const births = await pendingBirths(runtime, { worldBinding, privateToken, nowMs });
+  const next = nextBirthStatusCheckAt(births, nowMs);
+  if (next === null) return Object.freeze({ births, scheduledAt:null });
+  const current = await runtime.infraDriver.scheduler.get(BIRTH_SCOPE_ID);
+  if (current === null || next < current) {
+    await runtime.infraDriver.scheduler.schedule(BIRTH_SCOPE_ID, next);
+  }
+  return Object.freeze({ births, scheduledAt:next });
+}
+
 function createDevelopmentComponents({ runtime, privateToken, worldBinding, reasoningAdapters, activityRecorder, now, nowMs, randomIntFn }) {
   if (reasoningAdapters === null || reasoningAdapters === undefined) {
     return Object.freeze({
@@ -368,6 +400,11 @@ export function createBirthCenterCloudflareRuntime({
     modernBirthService: development.modernBirthService,
     modernBirthApi: development.modernBirthApi,
     birthApi,
+    ensureBirthStatusScheduled:() => ensureBirthStatusScheduled(runtime, {
+      worldBinding,
+      privateToken,
+      nowMs,
+    }),
     close() { runtime.close(); },
   });
 }
