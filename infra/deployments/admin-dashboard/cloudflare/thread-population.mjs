@@ -179,6 +179,9 @@ function admittedThread(entry, lastActivityAt) {
       stateHash:clean(entry.stateHash),
       updatedAt:clean(entry.updatedAt),
     }),
+    currentLocation:entry.currentLocation === null || entry.currentLocation === undefined
+      ? null
+      : structuredClone(entry.currentLocation),
     portraitUrl:null,
     findings,
     reconciliation:entry.reconciliation === null || entry.reconciliation === undefined
@@ -194,6 +197,7 @@ function activityOnly(row) {
     lastActivityAt:row.last_activity_at ?? null,
     health:"unrecoverable",
     identity:null,
+    currentLocation:null,
     portraitUrl:null,
     findings:Object.freeze([]),
     reconciliation:null,
