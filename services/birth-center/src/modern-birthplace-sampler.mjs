@@ -1,4 +1,4 @@
-import { birthplaceCoordinates } from "#core/src/birthplace-geography.mjs";
+import { localityCoordinates } from "#core/src/locality-geography.mjs";
 import { sha256 } from "./genesis-development-contracts.mjs";
 
 const LONG_TAIL_SHARE = 0.34;
@@ -82,7 +82,7 @@ export const MODERN_BIRTHPLACE_LONG_TAIL_SHARE = LONG_TAIL_SHARE;
 export const MODERN_BIRTHPLACES = Object.freeze(REGIONS.flatMap((region) => (
   [["anchor", region.anchors], ["long_tail", region.longTail]].flatMap(([tier, localities]) =>
     localities.map((locality) => {
-      const coordinates = birthplaceCoordinates(locality.place);
+      const coordinates = localityCoordinates(locality.place);
       if (!coordinates) throw new Error(`missing coordinates for modern birthplace ${locality.place}`);
       const slash = locality.place.indexOf("/");
       return Object.freeze({
