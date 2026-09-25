@@ -164,7 +164,7 @@ for (const [alias, place] of [
   ["USA/San Francisco Califronia,", "United States/San Francisco, California"],
 ]) {
   const resolved = FIBRE_LOCALITY_GEOGRAPHY.find((candidate) => candidate.place === place);
-  if (resolved) ALIASES.set(normalized(alias), Object.freeze({ ...resolved, displayName:alias }));
+  if (resolved) ALIASES.set(normalized(alias), resolved);
 }
 
 export function resolveLocalityGeography(value) {
