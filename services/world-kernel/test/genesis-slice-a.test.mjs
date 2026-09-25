@@ -180,6 +180,11 @@ test("Directory keeps raised languages distinct from spoken languages", () =>
     assert.equal(entry.birthLocation.source, "legacy_identity_projection", "legacy birthplace was not made mappable");
     assert.equal(entry.birthLocation.city, "Los Angeles, California");
     assert.equal(entry.birthLocation.lat, 34.05223);
+    assert.deepEqual(
+      directory.presentThreadIds([thread.threadId, "thr_missing", thread.threadId]),
+      [thread.threadId],
+      "bulk presence did not reflect authoritative World membership",
+    );
 
     directory.close();
     genesis.close();
