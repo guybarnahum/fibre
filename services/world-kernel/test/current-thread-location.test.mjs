@@ -66,15 +66,11 @@ test("shared current venue uses current situation while retaining World-locality
   assert.equal(location.authority, "live_world_place");
 });
 
-test("legacy Thread without enacted LivedNow remains geographically visible but is not mislabeled current", () => {
+test("missing LivedNow never plots birthplace as current presence", () => {
   const location = projectCurrentThreadLocation({
     entry,
     currentSituation:null,
   });
 
-  assert.equal(location.current, false);
-  assert.equal(location.authority, "lived_now_missing");
-  assert.equal(location.locality, "Tbilisi");
-  assert.equal(location.lat, 41.69143);
-  assert.equal(location.long, 44.83412);
+  assert.equal(location, null, "Threads-now map must not substitute birthplace for current World presence");
 });
