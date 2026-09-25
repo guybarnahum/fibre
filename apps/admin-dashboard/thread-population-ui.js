@@ -5,7 +5,7 @@ import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
 import {
   SVG_NS,
   catalogPlaceForLocation,
-  groupThreadsByBirthplace,
+  groupThreadsByCurrentLocation,
   renderWorldCountMarkers,
   renderWorldTimeZoneLines,
   worldMapPoint,
@@ -817,6 +817,8 @@ function renderBirthPipelineMarkers() {
 function renderBirthMarker(place) {
   if (place === null) {
     birthMapMarker.hidden = true;
+    birthMapMarker.removeAttribute("cx");
+    birthMapMarker.removeAttribute("cy");
     return;
   }
   const point = worldMapPoint(place.lat, place.long);
@@ -908,7 +910,6 @@ async function loadBirthplaces() {
   }
   birthplaces = payload.places;
   renderBirthPipelineMarkers();
-  renderThreadPopulationMap();
   return birthplaces;
 }
 
@@ -954,7 +955,7 @@ function showThreadMapPopover(location, marker) {
   const heading = document.createElement("div");
   heading.className = "thread-map-popover-head";
   const title = document.createElement("strong");
-  title.textContent = `${location.place.city}, ${location.place.country}`;
+  title.textContent = [location.place.city, location.place.country].filter(Boolean).join(", ");
   const count = document.createElement("span");
   count.textContent = `${location.count} Thread${location.count === 1 ? "" : "s"}`;
   heading.append(title, count);
@@ -998,12 +999,7 @@ function renderThreadPopulationMap() {
     renderWorldTimeZoneLines(threadPopulationTimezones);
     threadPopulationMapInitialized = true;
   }
-  if (!Array.isArray(birthplaces)) {
-    threadPopulationMapMarkers.replaceChildren();
-    threadPopulationMapSummary.textContent = "Loading birthplace coordinates…";
-    return;
-  }
-  const grouped = groupThreadsByBirthplace(population, birthplaces);
+  const grouped = groupThreadsByCurrentLocation(population);
   hideThreadMapPopover();
   const rendered = renderWorldCountMarkers(threadPopulationMapMarkers, grouped.locations);
   for (const { marker, location } of rendered) {
@@ -1016,16 +1012,11 @@ function renderThreadPopulationMap() {
     return;
   }
   const places = grouped.locations.length;
+  const awaitingLivedNow = grouped.mapped - grouped.authoritative;
   threadPopulationMapSummary.textContent =
-    `${places} mapped birthplace${places === 1 ? "" : "s"} · ${grouped.mapped} Thread${grouped.mapped === 1 ? "" : "s"}`
-    + (grouped.unmapped > 0 ? ` · ${grouped.unmapped} without mapped coordinates` : "");
-}
-
-function setThreadPopulationMapUnavailable(error) {
-  hideThreadMapPopover();
-  threadPopulationMapMarkers.replaceChildren();
-  threadPopulationMapSummary.textContent =
-    `Birthplace map unavailable: ${error instanceof Error ? error.message : String(error)}`;
+    `${places} current area${places === 1 ? "" : "s"} · ${grouped.mapped} Thread${grouped.mapped === 1 ? "" : "s"}`
+    + (awaitingLivedNow > 0 ? ` · ${awaitingLivedNow} awaiting enacted LivedNow` : "")
+    + (grouped.unmapped > 0 ? ` · ${grouped.unmapped} without geographic projection` : "");
 }
 
 function selectedBirthSex() {
@@ -1293,7 +1284,6 @@ async function loadPopulation() {
     renderPopulation();
     renderStillborn();
     renderThreadPopulationMap();
-    void loadBirthplaces().then(renderThreadPopulationMap).catch(setThreadPopulationMapUnavailable);
     $("#environment-pill").textContent = payload.environment ?? "—";
     if (populationMode === "stillborn") {
       renderStillbornTopSummary(payload.summary ?? {});
