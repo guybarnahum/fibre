@@ -44,8 +44,8 @@ export function createThreadDirectoryService({ directoryStore }) {
       return directoryStore.getEntry(threadId);
     },
     search({ query = null, fin = null, limit = 50 } = {}) {
-      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 200) {
-        throw new TypeError("Thread directory search limit must be between 1 and 200");
+      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 5000) {
+        throw new TypeError("Thread directory search limit must be between 1 and 5000");
       }
       const normalizedFin = clean(fin);
       const entries = directoryStore.listEntries({
