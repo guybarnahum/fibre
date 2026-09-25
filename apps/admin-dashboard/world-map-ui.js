@@ -63,13 +63,14 @@ export function catalogPlaceForLocation(catalog, location) {
 
 export function threadMapState(thread) {
   const lifecycle = thread?.identity?.lifecycleStatus ?? "dormant";
+  const runtimeActive = thread?.runtime?.state === "active";
   const current = thread?.currentLocation;
   const situated = current && Number.isFinite(current.lat) && Number.isFinite(current.long);
 
   if (lifecycle === "retired") {
     return Object.freeze({ kind:"retired", lifecycle, situated:false, active:false });
   }
-  if (lifecycle === "active") {
+  if (runtimeActive) {
     return Object.freeze({
       kind:situated ? "active" : "active_unsituated",
       lifecycle,
