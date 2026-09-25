@@ -100,6 +100,8 @@ test("operator birth respects an explicit place and sex", async () => {
   assert.deepEqual(developed().subjectIdentity.place, {
     country:"Israel",
     city:"Jerusalem",
+    lat:31.76904,
+    long:35.21633,
   });
   assert.equal(developed().subjectIdentity.sex, "female");
 });
