@@ -1072,6 +1072,7 @@ function renderThreadPopulationMap() {
   }
   if (population.length === 0) {
     threadPopulationMapSummary.textContent = "No admitted Threads.";
+    renderBirthGeographyRepairControl();
     return;
   }
   const places = grouped.locations.length;
