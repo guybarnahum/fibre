@@ -9,10 +9,6 @@ function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
 }
 
-function shortId(value) {
-  return value.length > 24 ? `${value.slice(0, 12)}…${value.slice(-8)}` : value;
-}
-
 export function actionFields(action) {
   return Array.isArray(action?.input?.fields) ? action.input.fields : [];
 }
@@ -156,7 +152,7 @@ export function openThreadActionDialog({
 
   dialog.querySelector("[data-thread-action-eyebrow]").textContent = eyebrow;
   dialog.querySelector("[data-thread-action-title]").textContent = label;
-  dialog.querySelector("[data-thread-action-context]").textContent = [threadName, shortId(threadId)].filter(Boolean).join(" · ");
+  dialog.querySelector("[data-thread-action-context]").textContent = [threadName, threadId].filter(Boolean).join(" · ");
   dialog.querySelector("[data-thread-action-description]").textContent = description;
   renderFields(dialog.querySelector("[data-thread-action-fields]"), fields);
   status.hidden = true;
