@@ -65,19 +65,31 @@ function birthTiming(request, nowMs) {
   });
 }
 
-function nextBirthStatusCheckAt(births, nowMs) {
+function nextBirthStatusCheckAt(runtime, nowMs) {
   const now = nowMs();
   let next = null;
-  for (const birth of births) {
-    let candidate = null;
-    if (birth.classification === "active") {
-      candidate = birth.idleMs === null
-        ? now + STALE_ACTIVE_BIRTH_MS
-        : now + Math.max(100, STALE_ACTIVE_BIRTH_MS - birth.idleMs);
-    } else if (birth.classification === "stale_world_check_unavailable") {
-      candidate = now + DEFAULT_RETRY_MS;
+  const consider = (request) => {
+    const timing = birthTiming(request, nowMs);
+    const candidate = timing.stale
+      ? now + STALE_ACTIVE_BIRTH_MS
+      : now + Math.max(100, STALE_ACTIVE_BIRTH_MS - (timing.idleMs ?? 0));
+    if (next === null || candidate < next) next = candidate;
+  };
+
+  const modern = runtime.modernBirthRequestStore.recent({ limit:64 });
+  const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
+  for (const request of modern) {
+    if (request.status === "published") continue;
+    if (runtime.modernBirthRequestStore.isActive(request.status) || request.status === "failed") {
+      consider(request);
     }
-    if (candidate !== null && (next === null || candidate < next)) next = candidate;
+  }
+  for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
+    const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
+    if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
+    const modernRequest = modernByRequest.get(request.requestId);
+    if (modernRequest?.status === "published" || runtime.modernBirthRequestStore.isActive(modernRequest?.status)) continue;
+    consider(request);
   }
   return next;
 }
@@ -96,7 +108,14 @@ async function worldThreadPresence({ worldBinding, privateToken, threadId }) {
   }
 }
 
-function birthOperationalState(request, timing, worldPresence = null) {
+function birthOperationalState(request, timing, { terminalFailure = false } = {}) {
+  if (terminalFailure) {
+    return Object.freeze({
+      stale:true,
+      classification:"failed_waiting_reconciliation",
+      staleReason:"Birth failed before admission and is waiting for World reconciliation.",
+    });
+  }
   if (!timing.stale) {
     return Object.freeze({ stale:false, classification:"active", staleReason:null });
   }
@@ -107,24 +126,10 @@ function birthOperationalState(request, timing, worldPresence = null) {
       staleReason:"No Thread identity has been reserved after five minutes without progress.",
     });
   }
-  if (worldPresence === "absent") {
-    return Object.freeze({
-      stale:true,
-      classification:"stale_not_in_world",
-      staleReason:"Birth has stopped progressing and its Thread is not admitted in World.",
-    });
-  }
-  if (worldPresence === "unavailable") {
-    return Object.freeze({
-      stale:true,
-      classification:"stale_world_check_unavailable",
-      staleReason:"Birth has stopped progressing; World confirmation is currently unavailable.",
-    });
-  }
   return Object.freeze({
     stale:true,
-    classification:"stale",
-    staleReason:"Birth has stopped progressing.",
+    classification:"stale_unresolved",
+    staleReason:"Birth has stopped progressing and is waiting for World reconciliation.",
   });
 }
 
@@ -136,9 +141,9 @@ function pendingProjection(request, {
   locationSource,
   sex,
   timing,
-  worldPresence = null,
+  terminalFailure = false,
 }) {
-  const operational = birthOperationalState(request, timing, worldPresence);
+  const operational = birthOperationalState(request, timing, { terminalFailure });
   return Object.freeze({
     source,
     requestId:request.requestId,
@@ -163,84 +168,45 @@ function pendingProjection(request, {
   });
 }
 
-export async function pendingBirths(runtime, {
-  worldBinding = null,
-  privateToken = null,
-  nowMs = Date.now,
-} = {}) {
+export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
   const queued = [];
   const known = new Set();
+  const development = runtime.developmentRequestStore.recent({ limit:32 });
+  const developmentByRequest = new Map(development.map((request) => [request.requestId, request]));
 
   for (const request of runtime.modernBirthRequestStore.recent({ limit:64 })) {
     known.add(request.requestId);
     if (request.status === "published") continue;
-    if (request.genesisId !== null) {
-      const provisional = runtime.provisionalBirthStore.get(request.genesisId);
-      if (provisional?.status === "published") {
-        runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
-        continue;
-      }
-    }
-
-    const timing = birthTiming(request, nowMs);
-    let worldPresence = null;
-    if (
-      timing.stale
-      && request.threadId
-      && worldBinding !== null
-      && typeof privateToken === "string"
-    ) {
-      worldPresence = await worldThreadPresence({ worldBinding, privateToken, threadId:request.threadId });
-      if (worldPresence === "present") {
-        runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
-        continue;
-      }
-    }
-
-    if (!runtime.modernBirthRequestStore.isActive(request.status)) continue;
-    queued.push(pendingProjection(request, {
-      source:"modern",
-      status:request.status,
-      stage:operatorBirthStage(request.status),
-      location:request.location ?? request.requestedLocation,
-      locationSource:request.locationSource,
-      sex:request.sex ?? request.requestedSex,
-      timing,
-      worldPresence,
-    }));
-  }
-
-  for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
-    if (known.has(request.requestId)) continue;
-    const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
-    if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
-
-    const provisional = runtime.provisionalBirthStore.get(request.genesisId);
-    if (request.status === "submitted" && provisional?.status === "published") {
-      runtime.developmentRequestStore.settleBorn(request.requestId);
+    if (request.genesisId !== null && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
       continue;
     }
 
-    const timing = birthTiming(request, nowMs);
-    let worldPresence = null;
-    if (
-      timing.stale
-      && request.threadId
-      && worldBinding !== null
-      && typeof privateToken === "string"
-    ) {
-      worldPresence = await worldThreadPresence({ worldBinding, privateToken, threadId:request.threadId });
-      if (worldPresence === "present") {
-        runtime.developmentRequestStore.settleBorn(request.requestId);
-        continue;
-      }
-      if (
-        worldPresence === "absent"
-        && disposition?.failureCode === "GENESIS_PASS_A_VALIDATION_ERROR"
-      ) {
-        runtime.developmentRequestStore.settleStillborn(request.requestId);
-        continue;
-      }
+    const active = runtime.modernBirthRequestStore.isActive(request.status);
+    if (!active && request.status !== "failed") continue;
+    const developmentRequest = developmentByRequest.get(request.requestId) ?? null;
+    const disposition = developmentRequest === null
+      ? null
+      : runtime.developmentRequestStore.getDisposition(request.requestId);
+    if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
+
+    queued.push(pendingProjection(request, {
+      source:"modern",
+      status:request.status,
+      stage:request.status === "failed" ? "failed" : operatorBirthStage(request.status),
+      location:request.location ?? request.requestedLocation,
+      locationSource:request.locationSource,
+      sex:request.sex ?? request.requestedSex,
+      timing:birthTiming(request, nowMs),
+      terminalFailure:request.status === "failed",
+    }));
+  }
+
+  for (const request of development) {
+    if (known.has(request.requestId)) continue;
+    const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
+    if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
+    if (request.status === "submitted" && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
+      continue;
     }
 
     const identity = request.plan?.subjectIdentity ?? null;
@@ -253,27 +219,96 @@ export async function pendingBirths(runtime, {
       location:place?.country && place?.city ? `${place.country}/${place.city}` : identity?.birthCity ?? null,
       locationSource:null,
       sex:identity?.sex ?? null,
-      timing,
-      worldPresence,
+      timing:birthTiming(request, nowMs),
+      terminalFailure:disposition?.failureCode !== null && disposition?.failureCode !== undefined,
     }));
   }
 
   return queued.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 }
 
-async function ensureBirthStatusScheduled(runtime, {
+export async function reconcileStaleBirths(runtime, {
   worldBinding,
   privateToken,
-  nowMs,
+  nowMs = Date.now,
 } = {}) {
-  const births = await pendingBirths(runtime, { worldBinding, privateToken, nowMs });
-  const next = nextBirthStatusCheckAt(births, nowMs);
-  if (next === null) return Object.freeze({ births, scheduledAt:null });
+  const presence = new Map();
+  const presenceFor = async (threadId) => {
+    if (!presence.has(threadId)) {
+      presence.set(threadId, await worldThreadPresence({ worldBinding, privateToken, threadId }));
+    }
+    return presence.get(threadId);
+  };
+  const result = { checked:0, born:0, stillborn:0, unavailable:0 };
+  const modern = runtime.modernBirthRequestStore.recent({ limit:64 });
+  const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
+
+  for (const request of modern) {
+    if (request.status === "published") continue;
+    if (request.genesisId !== null && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
+      runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+      result.born += 1;
+      continue;
+    }
+    const timing = birthTiming(request, nowMs);
+    if ((!timing.stale && request.status !== "failed") || !request.threadId) continue;
+    result.checked += 1;
+    const worldPresence = await presenceFor(request.threadId);
+    if (worldPresence === "present") {
+      runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+      result.born += 1;
+    } else if (worldPresence === "unavailable") {
+      result.unavailable += 1;
+    }
+  }
+
+  for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
+    const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
+    if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
+
+    const modernRequest = modernByRequest.get(request.requestId) ?? null;
+    if (request.status === "submitted" && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published") {
+      runtime.developmentRequestStore.settleBorn(request.requestId);
+      if (modernRequest !== null && modernRequest.status !== "published") {
+        runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+      }
+      result.born += 1;
+      continue;
+    }
+
+    const timing = birthTiming(request, nowMs);
+    const terminalFailure = disposition?.failureCode !== null && disposition?.failureCode !== undefined;
+    if ((!timing.stale && !terminalFailure) || !request.threadId) continue;
+    result.checked += 1;
+    const worldPresence = await presenceFor(request.threadId);
+    if (worldPresence === "present") {
+      runtime.developmentRequestStore.settleBorn(request.requestId);
+      if (modernRequest !== null && modernRequest.status !== "published") {
+        runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+      }
+      result.born += 1;
+    } else if (
+      worldPresence === "absent"
+      && disposition?.failureCode === "GENESIS_PASS_A_VALIDATION_ERROR"
+    ) {
+      runtime.developmentRequestStore.settleStillborn(request.requestId);
+      result.stillborn += 1;
+    } else if (worldPresence === "unavailable") {
+      result.unavailable += 1;
+    }
+  }
+
+  return Object.freeze(result);
+}
+
+async function ensureBirthStatusScheduled(runtime, { nowMs } = {}) {
+  const next = nextBirthStatusCheckAt(runtime, nowMs);
+  if (next === null) return Object.freeze({ scheduledAt:null });
   const current = await runtime.infraDriver.scheduler.get(BIRTH_SCOPE_ID);
   if (current === null || next < current) {
     await runtime.infraDriver.scheduler.schedule(BIRTH_SCOPE_ID, next);
   }
-  return Object.freeze({ births, scheduledAt:next });
+  return Object.freeze({ scheduledAt:next });
 }
 
 function createDevelopmentComponents({ runtime, privateToken, worldBinding, reasoningAdapters, activityRecorder, now, nowMs, randomIntFn }) {
