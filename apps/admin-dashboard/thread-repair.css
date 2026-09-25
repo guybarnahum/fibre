@@ -490,6 +490,8 @@
   font-weight:800;
   pointer-events:none;
 }
+.thread-world-count-marker.awaiting-lived-now .thread-world-count { fill:var(--accent); }
+.thread-world-count-marker.active-unsituated .thread-world-count { fill:#b42318; }
 .thread-world-count-marker .thread-world-city-label {
   fill:var(--text);
   stroke:var(--surface);
