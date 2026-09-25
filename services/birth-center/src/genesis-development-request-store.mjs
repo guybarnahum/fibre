@@ -58,17 +58,54 @@ function migrate(session) {
       ALTER TABLE genesis_development_dispositions
       ADD COLUMN failure_retryable INTEGER
         CHECK (failure_retryable IS NULL OR failure_retryable IN (0,1));
-
-      UPDATE genesis_development_dispositions
-      SET failure_retryable=0
-      WHERE outcome IS NULL
-        AND (
-          failure_code='GENESIS_PASS_A_VALIDATION_ERROR'
-          OR failure_message LIKE 'Pass-B model output episodeRef % is not visible history'
-          OR failure_message LIKE '%observableAction narrates an explicit scene setting incompatible with authoritative placeRef%'
-        );
     `);
   }
+
+  session.exec(`
+    UPDATE genesis_development_dispositions
+    SET failure_retryable=0
+    WHERE outcome IS NULL
+      AND failure_retryable IS NULL
+      AND (
+        failure_code='GENESIS_PASS_A_VALIDATION_ERROR'
+        OR failure_message LIKE 'Pass-B model output episodeRef % is not visible history'
+        OR failure_message LIKE '%observableAction narrates an explicit scene setting incompatible with authoritative placeRef%'
+      );
+
+    INSERT INTO genesis_development_dispositions(
+      request_id,outcome,failure_code,failure_message,failure_retryable,settled_at,updated_at
+    )
+    SELECT
+      request_id,
+      NULL,
+      CASE thread_id
+        WHEN 'thr_bceb56abf94f52e4caeb9f2830b5c2288cf5d2c8' THEN 'GENESIS_PASS_A_VALIDATION_ERROR'
+        WHEN 'thr_3609c3953fa371755ddea576e70964a9922e3c27' THEN 'GENESIS_PASS_A_VALIDATION_ERROR'
+        WHEN 'thr_654122d83fd271e3352d0cdba679f06e548d7d2c' THEN 'GENESIS_PASS_B_ADMISSION_ERROR'
+        WHEN 'thr_72bde089b036d01d489382cec37c8f99fa240b36' THEN 'GENESIS_EPISODE_PLACE_CONFLICT'
+      END,
+      CASE thread_id
+        WHEN 'thr_bceb56abf94f52e4caeb9f2830b5c2288cf5d2c8' THEN 'replacement Pass-A exhausted generated versions'
+        WHEN 'thr_3609c3953fa371755ddea576e70964a9922e3c27' THEN 'replacement Pass-A exhausted generated versions'
+        WHEN 'thr_654122d83fd271e3352d0cdba679f06e548d7d2c' THEN 'Pass-B model output referenced history outside its visible history'
+        WHEN 'thr_72bde089b036d01d489382cec37c8f99fa240b36' THEN 'Genesis episode place narration conflicted with authoritative placeRef'
+      END,
+      0,
+      NULL,
+      updated_at
+    FROM genesis_development_requests
+    WHERE thread_id IN (
+      'thr_bceb56abf94f52e4caeb9f2830b5c2288cf5d2c8',
+      'thr_3609c3953fa371755ddea576e70964a9922e3c27',
+      'thr_654122d83fd271e3352d0cdba679f06e548d7d2c',
+      'thr_72bde089b036d01d489382cec37c8f99fa240b36'
+    )
+    ON CONFLICT(request_id) DO UPDATE SET
+      failure_code=COALESCE(genesis_development_dispositions.failure_code,excluded.failure_code),
+      failure_message=COALESCE(genesis_development_dispositions.failure_message,excluded.failure_message),
+      failure_retryable=COALESCE(genesis_development_dispositions.failure_retryable,excluded.failure_retryable),
+      updated_at=excluded.updated_at;
+  `);
 }
 
 function normalize(row) {
