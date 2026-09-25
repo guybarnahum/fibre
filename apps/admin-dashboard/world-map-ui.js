@@ -63,7 +63,10 @@ export function catalogPlaceForLocation(catalog, location) {
 
 export function threadMapState(thread) {
   const lifecycle = thread?.identity?.lifecycleStatus ?? "dormant";
-  const runtimeActive = thread?.runtime?.state === "active";
+  const runtimeExpiresAt = Date.parse(thread?.runtime?.expiresAt ?? "");
+  const runtimeActive = thread?.runtime?.state === "active"
+    && Number.isFinite(runtimeExpiresAt)
+    && runtimeExpiresAt > Date.now();
   const current = thread?.currentLocation;
   const situated = current && Number.isFinite(current.lat) && Number.isFinite(current.long);
 
