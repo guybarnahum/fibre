@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { readAdminThreadPopulation } from "./thread-population.mjs";
+import { readAdminThreadPopulation, threadNeedsCurrentLocation } from "./thread-population.mjs";
 
 test("World Registry defines admitted population while Activity remains observational", async () => {
   const activityLog = {
@@ -111,4 +111,83 @@ test("World Registry defines admitted population while Activity remains observat
     migrationsAvailable:0,
     stillborn:1,
   });
+});
+
+
+test("Threads inspection reconciles stale LivedNow once, then rereads World Registry", async () => {
+  const activityLog = {
+    prepare() {
+      return {
+        bind() {
+          return {
+            async all() { return { results:[] }; },
+          };
+        },
+      };
+    },
+  };
+  const stale = {
+    threadId:"thr_live_map",
+    fibreIdentityNumber:"FIN-LIVE",
+    displayName:"Live",
+    sex:"female",
+    status:"active",
+    originOrientation:"original",
+    birthDate:"2004-03-18",
+    birthPlace:"Tbilisi, Georgia",
+    culture:[],
+    languages:["Georgian"],
+    raisedAs:{ languages:["Georgian"] },
+    currentLocation:null,
+    version:1,
+    stateHash:"sha256:before",
+    updatedAt:"2026-09-25T17:00:00.000Z",
+  };
+  const fresh = {
+    ...stale,
+    currentLocation:{
+      kind:"place",
+      current:true,
+      establishedAt:"2026-09-25T18:28:00.000Z",
+      placeRef:"wpl_library",
+      displayName:"Neighborhood library",
+      locality:"Tbilisi",
+      country:"Georgia",
+      lat:41.69143,
+      long:44.83412,
+      authority:"live_world_place",
+    },
+    stateHash:"sha256:after",
+  };
+  let reads = 0;
+  let ensured = null;
+
+  const population = await readAdminThreadPopulation({
+    activityLog,
+    environment:"staging",
+    nowMs:() => Date.parse("2026-09-25T18:30:00.000Z"),
+    readRegistry:async () => (++reads === 1 ? [stale] : [fresh]),
+    ensureCurrentLocations:async (threadIds) => { ensured = [...threadIds]; },
+  });
+
+  assert.deepEqual(ensured, ["thr_live_map"], "stale Thread was not reconciled through LivedNow");
+  assert.equal(reads, 2, "World Registry was not reread after LivedNow reconciliation");
+  assert.equal(population.threads[0].currentLocation.current, true);
+  assert.equal(population.threads[0].currentLocation.establishedAt, "2026-09-25T18:28:00.000Z");
+});
+
+test("current Thread location freshness is bounded and retired Threads are not reconciled", () => {
+  const now = Date.parse("2026-09-25T18:30:00.000Z");
+  assert.equal(threadNeedsCurrentLocation({
+    status:"active",
+    currentLocation:{ current:true, establishedAt:"2026-09-25T18:29:00.000Z" },
+  }, { nowMs:now }), false);
+  assert.equal(threadNeedsCurrentLocation({
+    status:"active",
+    currentLocation:{ current:true, establishedAt:"2026-09-25T18:20:00.000Z" },
+  }, { nowMs:now }), true);
+  assert.equal(threadNeedsCurrentLocation({
+    status:"retired",
+    currentLocation:null,
+  }, { nowMs:now }), false);
 });
