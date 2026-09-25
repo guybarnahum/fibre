@@ -3,6 +3,8 @@ import { createBirthCenterWriteApi } from "#services/birth-center/src/birth-writ
 import { createGenesisDevelopmentApi } from "#services/birth-center/src/genesis-development-api.mjs";
 import { createGenesisDevelopmentInspectionService } from "#services/birth-center/src/genesis-development-inspection.mjs";
 import { createGenesisDevelopmentService } from "#services/birth-center/src/genesis-development-service.mjs";
+import { createModernBirthInitiationService } from "#services/birth-center/src/modern-birth-initiation.mjs";
+import { createModernBirthInitiationApi } from "#services/birth-center/src/modern-birth-api.mjs";
 import { createBirthCenterRuntime } from "#services/birth-center/src/runtime.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createWorldKernelBirthPublisher } from "../world-kernel-boundary.mjs";
@@ -43,6 +45,8 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
       developmentService: null,
       developmentInspectionService: null,
       developmentApi: null,
+      modernBirthService: null,
+      modernBirthApi: null,
     });
   }
   const creativeAdapter = reasoningAdapters.creativeAdapter;
@@ -67,7 +71,25 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
       }));
     },
   });
-  return Object.freeze({ creativeAdapter, repairAdapter, developmentService, developmentInspectionService, developmentApi });
+  const modernBirthService = createModernBirthInitiationService({
+    developmentService,
+    creativeAdapter,
+    birthRuntime:runtime,
+    activityRecorder,
+  });
+  const modernBirthApi = createModernBirthInitiationApi({
+    service:modernBirthService,
+    privateToken,
+  });
+  return Object.freeze({
+    creativeAdapter,
+    repairAdapter,
+    developmentService,
+    developmentInspectionService,
+    developmentApi,
+    modernBirthService,
+    modernBirthApi,
+  });
 }
 
 export function createBirthCenterCloudflareRuntime({
@@ -130,6 +152,8 @@ export function createBirthCenterCloudflareRuntime({
     developmentService: development.developmentService,
     developmentInspectionService: development.developmentInspectionService,
     developmentApi: development.developmentApi,
+    modernBirthService: development.modernBirthService,
+    modernBirthApi: development.modernBirthApi,
     birthApi,
     close() { runtime.close(); },
   });

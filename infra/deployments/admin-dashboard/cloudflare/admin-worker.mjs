@@ -22,6 +22,7 @@ const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
+const THREAD_BIRTH_ROUTE = "/api/threads/birth";
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
 const INFRA_HEALTH_ROUTE = "/internal/infra-health";
 
@@ -262,6 +263,46 @@ export async function proxyFidReissue(request, env, threadId) {
   return json(upstream.status, payload.result);
 }
 
+async function proxyThreadBirth(request, env) {
+  let input;
+  try { input = await request.json(); }
+  catch { return json(400, { error:"invalid_thread_birth", detail:"Thread birth request must be JSON" }); }
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return json(400, { error:"invalid_thread_birth", detail:"Thread birth request must be an object" });
+  }
+  const allowed = new Set(["location","sex","requestId","requestedAt"]);
+  for (const key of Object.keys(input)) {
+    if (!allowed.has(key)) return json(400, { error:"invalid_thread_birth", detail:`Thread birth request.${key} is not allowed` });
+  }
+  const requestId = typeof input.requestId === "string" && input.requestId.trim() !== ""
+    ? input.requestId.trim()
+    : `admin_birth_${crypto.randomUUID().replaceAll("-", "")}`;
+  const requestedAt = typeof input.requestedAt === "string" && input.requestedAt.trim() !== ""
+    ? input.requestedAt.trim()
+    : new Date().toISOString();
+  const location = input.location === null || input.location === undefined || input.location === ""
+    ? null
+    : input.location;
+  const sex = input.sex === null || input.sex === undefined || input.sex === ""
+    ? null
+    : input.sex;
+  const upstream = await serviceBinding(env, "BIRTH_CENTER").fetch(new Request(
+    "https://birth-center.internal/internal/births/initiate",
+    {
+      method:"POST",
+      headers:{
+        Accept:"application/json",
+        "Content-Type":"application/json",
+        "x-fibre-private-token":privateToken(env),
+      },
+      body:JSON.stringify({ requestId, requestedAt, location, sex }),
+    },
+  ));
+  const payload = await upstream.json().catch(() => null);
+  if (payload === null) return json(502, { error:"thread_birth_invalid_response" });
+  return json(upstream.status, payload);
+}
+
 async function threadRegistry(env, limit) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     `https://world.internal/internal/thread-directory/search?limit=${encodeURIComponent(String(limit))}`,
@@ -293,10 +334,11 @@ export default {
     const fidReissueMatch = THREAD_FID_REISSUE_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
+    const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || infraMonitor);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || infraMonitor);
+    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor);
     if (adminGet || adminPost) {
       const gate = await adminPrincipal(request, env);
       if (gate.response) return gate.response;
@@ -306,6 +348,7 @@ export default {
           const force = request.method === "POST" || url.searchParams.get("force") === "1";
           return json(200, await readAdminInfraMonitor({ env, environment, force }));
         }
+        if (threadBirth) return proxyThreadBirth(request, env);
         if (threadPopulation) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const population = await readAdminThreadPopulation({
@@ -371,6 +414,7 @@ export default {
         return proxyAsset(request, env, id("objectRef", decodeURIComponent(assetMatch[1])));
       } catch (error) {
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
+        if (threadBirth) return json(error instanceof TypeError ? 400 : 503, { error:"thread_birth_unavailable", detail:error.message });
         if (threadPopulation) return json(503, { error:"thread_population_unavailable", detail:error.message });
         if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
         if (fidReissueMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_reissue_unavailable", detail:error.message });

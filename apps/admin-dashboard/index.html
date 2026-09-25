@@ -92,6 +92,10 @@
         </div>
 
         <div id="threads-view" class="activity-view" hidden>
+          <div class="thread-population-toolbar">
+            <div><strong>Thread population</strong><span>Admitted and recoverable persons in World.</span></div>
+            <button id="thread-birth-button" class="primary" type="button">Birth Thread</button>
+          </div>
           <div class="thread-population-metrics" aria-label="Thread population summary">
             <article><span>Threads</span><strong id="thread-stat-total">—</strong></article>
             <article><span>Stillborn</span><strong id="thread-stat-activity-only">—</strong></article>
@@ -152,6 +156,35 @@
       </section>
     </main>
   </div>
+
+  <dialog id="thread-birth-dialog" class="thread-birth-dialog">
+    <form id="thread-birth-form" method="dialog">
+      <div class="dialog-head">
+        <div><p class="eyebrow">Genesis</p><h2>Birth a Thread</h2></div>
+        <button id="thread-birth-close" class="icon-button" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="dialog-body thread-birth-body">
+        <p class="thread-birth-note">Location and sex are optional. Without a location Fibre samples globally from 40 major-city anchors with a meaningful long tail of smaller places. Without sex Fibre derives it from the new Thread identity.</p>
+        <label class="thread-birth-field">
+          <span>Location <small>optional</small></span>
+          <input id="thread-birth-location" name="location" autocomplete="off" placeholder="Country/City · e.g. Israel/Jerusalem">
+        </label>
+        <label class="thread-birth-field">
+          <span>Sex</span>
+          <select id="thread-birth-sex" name="sex">
+            <option value="">Random</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+          </select>
+        </label>
+        <div id="thread-birth-result" class="thread-birth-result" role="status" aria-live="polite"></div>
+      </div>
+      <div class="thread-birth-actions">
+        <button id="thread-birth-cancel" class="secondary" type="button">Cancel</button>
+        <button id="thread-birth-submit" class="primary" type="submit">Birth Thread</button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="record-dialog">
     <div class="dialog-head"><div><p id="dialog-eyebrow" class="eyebrow">Activity record</p><h2 id="dialog-title">Details</h2></div><button id="dialog-close" class="icon-button" aria-label="Close">×</button></div>

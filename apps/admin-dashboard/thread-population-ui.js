@@ -9,7 +9,14 @@ const empty = $("#thread-population-empty");
 const stillbornView = $("#stillborn-view");
 const stillbornRows = $("#stillborn-rows");
 const stillbornEmpty = $("#stillborn-empty");
+const birthDialog = $("#thread-birth-dialog");
+const birthForm = $("#thread-birth-form");
+const birthLocation = $("#thread-birth-location");
+const birthSex = $("#thread-birth-sex");
+const birthResult = $("#thread-birth-result");
+const birthSubmit = $("#thread-birth-submit");
 let active = false;
+let birthAttempt = null;
 let populationMode = "threads";
 let loading = false;
 let priorAutoRefresh = true;
@@ -650,6 +657,76 @@ function renderSummary(summary) {
   renderThreadsTopSummary(summary);
 }
 
+function closeBirthDialog() {
+  if (birthDialog?.open) birthDialog.close();
+}
+
+function openBirthDialog() {
+  if (!birthDialog) return;
+  birthAttempt = Object.freeze({
+    requestId:`admin_birth_${crypto.randomUUID().replaceAll("-", "")}`,
+    requestedAt:new Date().toISOString(),
+  });
+  birthForm.reset();
+  birthResult.replaceChildren();
+  birthResult.classList.remove("failed");
+  birthSubmit.disabled = false;
+  birthSubmit.textContent = "Birth Thread";
+  birthDialog.showModal();
+  window.setTimeout(() => birthLocation.focus(), 0);
+}
+
+function birthResultNode(birth) {
+  const box = document.createElement("div");
+  box.className = "thread-birth-success";
+  const title = document.createElement("strong");
+  title.textContent = "Birth initiated";
+  const summary = document.createElement("span");
+  summary.textContent = `${birth.location} · ${human(birth.sex)} · ${human(birth.development?.status ?? "accepted")}`;
+  const link = document.createElement("a");
+  link.className = "mono";
+  link.href = `/thread/${encodeURIComponent(birth.threadId)}`;
+  link.textContent = birth.threadId;
+  box.append(title, summary, link);
+  return box;
+}
+
+async function submitBirth(event) {
+  event.preventDefault();
+  if (birthSubmit.disabled || birthAttempt === null) return;
+  birthSubmit.disabled = true;
+  birthSubmit.textContent = "Birthing…";
+  birthResult.classList.remove("failed");
+  birthResult.textContent = "Authoring a life context and generating Genesis history. This can take a little while.";
+  try {
+    const location = birthLocation.value.trim();
+    const sex = birthSex.value;
+    const response = await fetch("/api/threads/birth", {
+      method:"POST",
+      headers:{ Accept:"application/json", "content-type":"application/json" },
+      body:JSON.stringify({
+        ...birthAttempt,
+        location:location === "" ? null : location,
+        sex:sex === "" ? null : sex,
+      }),
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.ok !== true || !payload.birth) {
+      throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+    }
+    birthResult.replaceChildren(birthResultNode(payload.birth));
+    birthSubmit.textContent = "Born";
+    if (active && populationMode === "threads") void loadPopulation();
+  } catch (error) {
+    birthResult.textContent = `Birth failed: ${error instanceof Error ? error.message : String(error)}`;
+    birthResult.classList.add("failed");
+    birthSubmit.disabled = false;
+    birthSubmit.textContent = "Try again";
+    return;
+  }
+  birthResult.classList.remove("failed");
+}
+
 function holdThreadsMode() {
   if (!active) return;
   $("#causal-view").hidden = true;
@@ -773,6 +850,14 @@ function exitThreads(nextMode) {
     $("#refresh-button").click();
   }
 }
+
+$("#thread-birth-button").addEventListener("click", openBirthDialog);
+$("#thread-birth-close").addEventListener("click", closeBirthDialog);
+$("#thread-birth-cancel").addEventListener("click", closeBirthDialog);
+birthForm.addEventListener("submit", submitBirth);
+birthDialog.addEventListener("click", (event) => {
+  if (event.target === birthDialog) closeBirthDialog();
+});
 
 $("#view-threads").addEventListener("click", enterThreads);
 $("#view-stillborn").addEventListener("click", enterStillborn);

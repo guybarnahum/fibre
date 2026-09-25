@@ -70,6 +70,10 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     }
     const cloud = this.runtimeForRequest();
     await this.ensureSchedulerForStatefulRequest(cloud);
+    if (cloud.modernBirthApi !== null) {
+      const modernBirthResponse = await cloud.modernBirthApi.fetch(request);
+      if (modernBirthResponse !== null) return modernBirthResponse;
+    }
     if (cloud.developmentApi !== null) {
       const developmentResponse = await cloud.developmentApi.fetch(request);
       if (developmentResponse !== null) return developmentResponse;
