@@ -54,6 +54,13 @@ test("World Registry defines admitted population while Activity remains observat
         long:-71.61269,
         authority:"live_world_place",
       },
+      runtime:{
+        state:"active",
+        sessionId:"run_active",
+        leaseId:"lease_active",
+        startedAt:"2026-09-25T20:00:00.000Z",
+        expiresAt:"2099-01-01T00:00:00.000Z",
+      },
       version:9,
       stateHash:"sha256:a",
       updatedAt:"2026-09-17T13:00:00Z",
@@ -96,6 +103,7 @@ test("World Registry defines admitted population while Activity remains observat
   assert.equal(population.threads[0].identity.birthLocation.city, "Valparaíso", "Admin population lost canonical mappable birthplace");
   assert.equal(population.threads[0].currentLocation.locality, "Valparaíso", "Admin population lost current World location");
   assert.equal(population.threads[0].currentLocation.current, true, "Admin population mislabeled enacted World location");
+  assert.equal(population.threads[0].runtime.state, "active", "Admin population lost live thaw state");
   const raisedLanguageAction = population.threads[0].findings.find((finding) => finding.code === "RAISED_LANGUAGES").identityAction;
   assert.equal(raisedLanguageAction.id, "change_raised_languages", "Admin must edit Raised languages, not Spoken languages");
   assert.equal(raisedLanguageAction.command, "raised_languages", "Raised-language actions must route to the Genesis correction command");
