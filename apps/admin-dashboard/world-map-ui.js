@@ -61,18 +61,35 @@ export function catalogPlaceForLocation(catalog, location) {
   return cityMatches.length === 1 ? cityMatches[0] : null;
 }
 
-export function groupThreadsByBirthplace(threads, catalog) {
+export function groupThreadsByCurrentLocation(threads) {
   const groups = new Map();
   let unmapped = 0;
+  let authoritative = 0;
   for (const thread of Array.isArray(threads) ? threads : []) {
-    const place = catalogPlaceForLocation(catalog, thread?.identity?.birthPlace);
-    if (place === null) {
+    const location = thread?.currentLocation;
+    if (
+      !location
+      || !Number.isFinite(location.lat)
+      || !Number.isFinite(location.long)
+    ) {
       unmapped += 1;
       continue;
     }
-    const current = groups.get(place.place) ?? { place, threadIds:[] };
+    if (location.current === true) authoritative += 1;
+    const locality = location.locality ?? location.displayName ?? "Current location";
+    const country = location.country ?? "";
+    const key = `${location.lat.toFixed(4)}:${location.long.toFixed(4)}:${normalized(locality)}:${normalized(country)}`;
+    const place = Object.freeze({
+      place:key,
+      country,
+      city:locality,
+      displayName:location.displayName ?? locality,
+      lat:location.lat,
+      long:location.long,
+    });
+    const current = groups.get(key) ?? { place, threadIds:[] };
     current.threadIds.push(thread.threadId);
-    groups.set(place.place, current);
+    groups.set(key, current);
   }
   const locations = [...groups.values()]
     .map(({ place, threadIds }) => Object.freeze({
@@ -84,6 +101,7 @@ export function groupThreadsByBirthplace(threads, catalog) {
   return Object.freeze({
     locations:Object.freeze(locations),
     mapped:locations.reduce((sum, location) => sum + location.count, 0),
+    authoritative,
     unmapped,
   });
 }
@@ -118,7 +136,8 @@ export function renderWorldCountMarkers(group, locations, { className = "thread-
     marker.append(city);
 
     const title = document.createElementNS(SVG_NS, "title");
-    title.textContent = `${location.place.city}, ${location.place.country} · ${location.count} Thread${location.count === 1 ? "" : "s"}`;
+    const placeLabel = [location.place.city, location.place.country].filter(Boolean).join(", ");
+    title.textContent = `${placeLabel} · ${location.count} Thread${location.count === 1 ? "" : "s"}`;
     marker.append(title);
     group.append(marker);
     rendered.push(Object.freeze({ marker, location }));
