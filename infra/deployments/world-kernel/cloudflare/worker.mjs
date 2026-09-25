@@ -20,6 +20,7 @@ const THREAD_IDENTITY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]
 const THREAD_OBSERVATORY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/observatory$/u;
 const THREAD_REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
 const THREAD_DIRECTORY_ROUTE = "/internal/thread-directory/search";
+const THREAD_DIRECTORY_PRESENCE_ROUTE = "/internal/thread-directory/presence";
 const THREAD_REPAIR_CONTRACT = "fibre-thread-repair-v0.7";
 
 function constantTimeEqual(left, right) {
@@ -284,6 +285,28 @@ export class FibreWorldDurableObject extends DurableObject {
         });
       } catch (error) {
         if (error instanceof TypeError) return Response.json({ error:{ code:"INVALID_REQUEST", detail:error.message } }, { status:400 });
+        throw error;
+      }
+    }
+    if (url.pathname === THREAD_DIRECTORY_PRESENCE_ROUTE) {
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
+      if (request.method !== "POST") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
+      if (!privateOperatorAuthorized(request, this.env)) {
+        return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
+      }
+      try {
+        const body = await request.json();
+        if (!body || typeof body !== "object" || Array.isArray(body) || !Array.isArray(body.threadIds)) {
+          throw new TypeError("Thread presence request requires threadIds");
+        }
+        return Response.json({
+          contract:"fibre-world-thread-presence-v0.1",
+          ...this.directoryForRequest().presence(body.threadIds),
+        });
+      } catch (error) {
+        if (error instanceof TypeError || error instanceof SyntaxError) {
+          return Response.json({ error:{ code:"INVALID_REQUEST", detail:error.message } }, { status:400 });
+        }
         throw error;
       }
     }
