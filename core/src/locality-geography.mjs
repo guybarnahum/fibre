@@ -171,6 +171,32 @@ export function resolveLocalityGeography(value) {
   return ALIASES.get(normalized(value)) ?? null;
 }
 
+const UNIQUE_CITY_MENTIONS = Object.freeze(
+  [...byCity.entries()]
+    .filter(([, matches]) => matches.length === 1)
+    .map(([city, [place]]) => Object.freeze({
+      place,
+      pattern:new RegExp(
+        `(^|[^\\p{L}\\p{N}])${city.replace(/[.*+?^${}()|[\\]\\\\]/gu, "\\export function resolveLocalityGeography(value) {
+  return ALIASES.get(normalized(value)) ?? null;
+}
+
+export function localityCoordinates(place) {")}([^\\p{L}\\p{N}]|$)`,
+        "iu",
+      ),
+    }))
+    .sort((left, right) => right.place.city.length - left.place.city.length),
+);
+
+export function resolveMentionedLocalityGeography(value) {
+  if (typeof value !== "string" || value.trim() === "") return null;
+  const matches = UNIQUE_CITY_MENTIONS
+    .filter(({ pattern }) => pattern.test(value))
+    .map(({ place }) => place);
+  const unique = [...new Map(matches.map((place) => [place.place, place])).values()];
+  return unique.length === 1 ? unique[0] : null;
+}
+
 export function localityCoordinates(place) {
   const resolved = resolveLocalityGeography(place);
   return resolved === null ? null : Object.freeze({ lat:resolved.lat, long:resolved.long });
