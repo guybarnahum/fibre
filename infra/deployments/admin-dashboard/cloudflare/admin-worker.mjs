@@ -339,33 +339,6 @@ async function threadRegistry(env, limit) {
   return payload.threads;
 }
 
-async function ensureThreadLivedNow(env, threadIds) {
-  const binding = serviceBinding(env, "WORLD_KERNEL");
-  const token = privateToken(env);
-  const batchSize = 4;
-  for (let offset = 0; offset < threadIds.length; offset += batchSize) {
-    const batch = threadIds.slice(offset, offset + batchSize);
-    await Promise.all(batch.map(async (threadId) => {
-      try {
-        await binding.fetch(new Request(
-          "https://world.internal/internal/lived-now/ensure",
-          {
-            method:"POST",
-            headers:{
-              Accept:"application/json",
-              "Content-Type":"application/json",
-              "x-fibre-private-token":token,
-            },
-            body:JSON.stringify({ threadId }),
-          },
-        ));
-      } catch {
-        // Population remains inspectable with stale/missing-current evidence.
-      }
-    }));
-  }
-}
-
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -411,7 +384,6 @@ export default {
             activityLog:env.ACTIVITY_LOG,
             environment,
             readRegistry:(limit) => threadRegistry(env, limit),
-            ensureCurrentLocations:(threadIds) => ensureThreadLivedNow(env, threadIds),
           });
           return json(200, {
             contract:"fibre-admin-thread-population-v0.3",
