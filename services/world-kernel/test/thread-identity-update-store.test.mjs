@@ -99,6 +99,38 @@ test("explicit Admin identity decisions are one replayable World event", () => {
 });
 
 
+test("birth geography repair is one replayable World identity event", () => {
+  withWorld(({ world, identity }) => {
+    const source = structuredClone(fixture);
+    source.identity.birthCity = "Hilo Hawaii, USA";
+    delete source.identity.birthPlace;
+    const seeded = world.seedThread(source).thread;
+    const birthPlace = {
+      displayName:"Hilo, Hawaii, United States",
+      country:"United States",
+      city:"Hilo, Hawaii",
+      lat:19.70737,
+      long:-155.08158,
+    };
+
+    const result = identity.update(seeded, {
+      birthPlace,
+      operationKey:"admin_birth_geography_hilo_1",
+      changedAt:"2026-09-25T23:00:00.000Z",
+    });
+
+    assert.equal(result.thread.identity.birthCity, birthPlace.displayName);
+    assert.deepEqual(result.thread.identity.birthPlace, birthPlace);
+    assert.deepEqual(world.replayThread(seeded.threadId), world.getThread(seeded.threadId),
+      "birth geography repair did not survive World replay");
+    const event = world.listEvents(seeded.threadId).at(-1);
+    assert.deepEqual(event.payload.changes, {
+      birthCity:birthPlace.displayName,
+      birthPlace,
+    });
+  });
+});
+
 test("renaming keeps neutral self identity coherent without overwriting developed self-understanding", () => {
   withWorld(({ world, identity }) => {
     const source = structuredClone(fixture);
