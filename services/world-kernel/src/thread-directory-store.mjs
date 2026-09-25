@@ -1,4 +1,4 @@
-import { resolveBirthplaceGeography } from "#core/src/birthplace-geography.mjs";
+import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
 import { IntegrityError } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
@@ -37,7 +37,7 @@ function birthLocation(identity) {
       source:"thread_identity",
     });
   }
-  const legacy = resolveBirthplaceGeography(identity?.birthCity);
+  const legacy = resolveLocalityGeography(identity?.birthCity);
   if (legacy === null) return null;
   return Object.freeze({
     displayName:clean(identity?.birthCity) ?? legacy.displayName,
