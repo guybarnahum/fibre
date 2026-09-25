@@ -3,6 +3,7 @@ import { DurableObject } from "cloudflare:workers";
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
+import { CurrentWorldLocationStore } from "#services/world-kernel/src/current-world-location-store.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
@@ -191,6 +192,7 @@ export class FibreWorldDurableObject extends DurableObject {
     this.health = this.infraDriver.health;
     this.threadDirectoryStore = null;
     this.threadDirectory = null;
+    this.currentWorldLocationStore = null;
     this.threadHealthProjectionStore = null;
     this.threadHealthProjection = null;
   }
@@ -213,37 +215,35 @@ export class FibreWorldDurableObject extends DurableObject {
     return this.threadDirectory;
   }
 
+  currentWorldLocationsForRequest() {
+    if (this.currentWorldLocationStore === null) {
+      this.currentWorldLocationStore = new CurrentWorldLocationStore(this.worldStorage);
+    }
+    return this.currentWorldLocationStore;
+  }
+
   directoryPopulationForRequest(search) {
     const result = this.directoryForRequest().search(search);
-    const runtime = this.runtimeForRequest();
-    const livedNow = openLivedNowInspectionStore(runtime.worldStorage);
-    const situatedLife = openSituatedLifeInspectionStore(runtime.worldStorage);
-    try {
-      return Object.freeze({
-        ...result,
-        threads:Object.freeze(result.threads.map((entry) => Object.freeze({
+    const evidence = optionalLivedRead(
+      () => this.currentWorldLocationsForRequest().list(),
+      [],
+    );
+    const byThread = new Map(evidence.map((entry) => [entry.threadId, entry]));
+    return Object.freeze({
+      ...result,
+      threads:Object.freeze(result.threads.map((entry) => {
+        const current = byThread.get(entry.threadId) ?? null;
+        return Object.freeze({
           ...entry,
           currentLocation:projectCurrentThreadLocation({
             entry,
-            currentSituation:optionalLivedRead(
-              () => livedNow.getCurrentSituation(entry.threadId),
-              null,
-            ),
-            worldPlaces:optionalLivedRead(
-              () => livedNow.listWorldPlaces(entry.threadId),
-              [],
-            ),
-            placeEpisodes:optionalLivedRead(
-              () => situatedLife.listCurrentPlaceEpisodes(entry.threadId),
-              [],
-            ),
+            currentSituation:current?.currentSituation ?? null,
+            worldPlaces:current?.worldPlaces ?? [],
+            placeEpisodes:current?.placeEpisodes ?? [],
           }),
-        }))),
-      });
-    } finally {
-      situatedLife.close();
-      livedNow.close();
-    }
+        });
+      })),
+    });
   }
 
   healthProjectionForRequest() {
