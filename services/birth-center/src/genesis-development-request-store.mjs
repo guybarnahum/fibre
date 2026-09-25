@@ -1,7 +1,7 @@
 import { openBirthStateDatabase } from "./birth-state-storage.mjs";
 import { canonicalDigest, canonicalJson } from "./state-codec.mjs";
 
-export const GENESIS_DEVELOPMENT_REQUEST_STORE_VERSION = "fibre-genesis-development-request-store-v1";
+export const GENESIS_DEVELOPMENT_REQUEST_STORE_VERSION = "fibre-genesis-development-request-store-v2";
 
 export class GenesisDevelopmentRequestConflictError extends Error {}
 
@@ -44,9 +44,36 @@ function migrate(session) {
       outcome TEXT CHECK (outcome IS NULL OR outcome IN ('born','stillborn')),
       failure_code TEXT,
       failure_message TEXT,
+      failure_retryable INTEGER CHECK (failure_retryable IS NULL OR failure_retryable IN (0,1)),
       settled_at TEXT,
       updated_at TEXT NOT NULL
     ) STRICT;
+  `);
+
+  const columns = new Set(
+    session.prepare("PRAGMA table_info(genesis_development_dispositions)").all().map((row) => row.name),
+  );
+  if (!columns.has("failure_retryable")) {
+    session.exec(`
+      ALTER TABLE genesis_development_dispositions
+      ADD COLUMN failure_retryable INTEGER
+        CHECK (failure_retryable IS NULL OR failure_retryable IN (0,1));
+    `);
+  }
+
+  // These pre-v2 failures are already durable structural Genesis evidence.
+  // Backfill only cases whose historical message/code unambiguously records
+  // non-retryable candidate invalidity; leave ambiguous old failures unresolved.
+  session.exec(`
+    UPDATE genesis_development_dispositions
+    SET failure_retryable=0
+    WHERE failure_retryable IS NULL
+      AND outcome IS NULL
+      AND (
+        failure_code='GENESIS_PASS_A_VALIDATION_ERROR'
+        OR failure_message LIKE 'Pass-B model output episodeRef % is not visible history'
+        OR failure_message LIKE '%observableAction narrates an explicit scene setting incompatible with authoritative placeRef%'
+      );
   `);
 }
 
@@ -135,22 +162,23 @@ export function createGenesisDevelopmentRequestStore(storage, {
     WHERE request_id=? AND status IN ('ready','submitted')
   `);
   const selectDisposition = session.prepare(`
-    SELECT request_id,outcome,failure_code,failure_message,settled_at,updated_at
+    SELECT request_id,outcome,failure_code,failure_message,failure_retryable,settled_at,updated_at
     FROM genesis_development_dispositions WHERE request_id=?
   `);
   const upsertFailure = session.prepare(`
     INSERT INTO genesis_development_dispositions(
-      request_id,outcome,failure_code,failure_message,settled_at,updated_at
-    ) VALUES (?,NULL,?,?,NULL,?)
+      request_id,outcome,failure_code,failure_message,failure_retryable,settled_at,updated_at
+    ) VALUES (?,NULL,?,?,?,NULL,?)
     ON CONFLICT(request_id) DO UPDATE SET
       failure_code=excluded.failure_code,
       failure_message=excluded.failure_message,
+      failure_retryable=excluded.failure_retryable,
       updated_at=excluded.updated_at
   `);
   const upsertOutcome = session.prepare(`
     INSERT INTO genesis_development_dispositions(
-      request_id,outcome,failure_code,failure_message,settled_at,updated_at
-    ) VALUES (?,?,NULL,NULL,?,?)
+      request_id,outcome,failure_code,failure_message,failure_retryable,settled_at,updated_at
+    ) VALUES (?,?,NULL,NULL,NULL,?,?)
     ON CONFLICT(request_id) DO UPDATE SET
       outcome=excluded.outcome,
       settled_at=excluded.settled_at,
@@ -273,6 +301,7 @@ export function createGenesisDevelopmentRequestStore(storage, {
       outcome:row.outcome,
       failureCode:row.failure_code,
       failureMessage:row.failure_message,
+      failureRetryable:row.failure_retryable === null ? null : row.failure_retryable === 1,
       settledAt:row.settled_at,
       updatedAt:row.updated_at,
     });
@@ -283,7 +312,8 @@ export function createGenesisDevelopmentRequestStore(storage, {
     if (get(id) === null) throw new Error(`Genesis development request ${id} does not exist`);
     const code = typeof error?.code === "string" && error.code.trim() !== "" ? error.code.trim() : null;
     const message = error instanceof Error ? error.message : String(error);
-    upsertFailure.run(id, code, message, now());
+    const retryable = error?.retryable === true;
+    upsertFailure.run(id, code, message, retryable ? 1 : 0, now());
     return getDisposition(id);
   }
 
