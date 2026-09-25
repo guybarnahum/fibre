@@ -71,17 +71,11 @@ test("non-TTY reporter hides passing names but keeps failures and final counts",
   assert.equal(chunks[1], "✗ 2 tests · 1 passed · 1 failed\n");
 });
 
-test("test-suite command uses compact reporter for TTY or CI and respects explicit reporters", () => {
-  const tty = testSuiteCommand(["active"], { isTTY: true, isCI: false });
-  assert.ok(tty.command.some((arg) => arg.includes("--test-reporter=") && arg.includes("fibre-tty-reporter.mjs")));
+test("test-suite command always uses Fibre's compact reporter unless explicitly overridden", () => {
+  const normal = testSuiteCommand(["active"]);
+  assert.ok(normal.command.some((arg) => arg.includes("--test-reporter=") && arg.includes("fibre-spec-reporter.mjs")));
 
-  const ci = testSuiteCommand(["active"], { isTTY: false, isCI: true });
-  assert.ok(ci.command.some((arg) => arg.includes("--test-reporter=") && arg.includes("fibre-tty-reporter.mjs")));
-
-  const nonTty = testSuiteCommand(["active"], { isTTY: false, isCI: false });
-  assert.equal(nonTty.command.some((arg) => arg.startsWith("--test-reporter=")), false);
-
-  const explicit = testSuiteCommand(["active", "--test-reporter=dot"], { isTTY: false, isCI: true });
+  const explicit = testSuiteCommand(["active", "--test-reporter=dot"]);
   assert.equal(explicit.command.filter((arg) => arg.startsWith("--test-reporter=")).length, 1);
   assert.ok(explicit.command.includes("--test-reporter=dot"));
 });
