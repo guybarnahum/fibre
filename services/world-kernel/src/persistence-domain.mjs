@@ -238,7 +238,7 @@ function applyThreadIdentityUpdate(thread, event) {
   assertNonEmpty(`identity event ${event.eventId} operationKey`, event.payload.operationKey);
   const keys = Object.keys(event.payload.changes).sort();
   const previousKeys = Object.keys(event.payload.previous).sort();
-  if (keys.length === 0 || keys.some((key) => !["name","sex","birthDate","languages"].includes(key))) {
+  if (keys.length === 0 || keys.some((key) => !["name","sex","birthDate","birthCity","birthPlace","languages"].includes(key))) {
     throw new IntegrityError(`identity event ${event.eventId} has unsupported changes`);
   }
   if (canonicalJson(keys) !== canonicalJson(previousKeys)) {
@@ -277,6 +277,31 @@ function applyThreadIdentityUpdate(thread, event) {
       throw new IntegrityError(`identity event ${event.eventId} previous birth date does not match replay`);
     }
     identity.birthDate = birthDate;
+  }
+  const changesBirthGeography = keys.includes("birthCity") || keys.includes("birthPlace");
+  if (changesBirthGeography) {
+    if (!keys.includes("birthCity") || !keys.includes("birthPlace")) {
+      throw new IntegrityError(`identity event ${event.eventId} must change birthCity and birthPlace together`);
+    }
+    const birthCity = event.payload.changes.birthCity;
+    const birthPlace = event.payload.changes.birthPlace;
+    assertNonEmpty(`identity event ${event.eventId} birthCity`, birthCity);
+    assertPlainObject(`identity event ${event.eventId} birthPlace`, birthPlace);
+    assertExactKeys(`identity event ${event.eventId} birthPlace`, birthPlace, ["displayName","country","city","lat","long"]);
+    assertNonEmpty(`identity event ${event.eventId} birthPlace.displayName`, birthPlace.displayName);
+    assertNonEmpty(`identity event ${event.eventId} birthPlace.country`, birthPlace.country);
+    assertNonEmpty(`identity event ${event.eventId} birthPlace.city`, birthPlace.city);
+    assertFiniteNumber(`identity event ${event.eventId} birthPlace.lat`, birthPlace.lat, { minimum:-90 });
+    assertFiniteNumber(`identity event ${event.eventId} birthPlace.long`, birthPlace.long, { minimum:-180 });
+    if (birthPlace.lat > 90 || birthPlace.long > 180 || birthPlace.displayName !== birthCity) {
+      throw new IntegrityError(`identity event ${event.eventId} has invalid birth geography`);
+    }
+    if ((event.payload.previous.birthCity ?? null) !== (thread.identity.birthCity ?? null)
+      || canonicalJson(event.payload.previous.birthPlace ?? null) !== canonicalJson(thread.identity.birthPlace ?? null)) {
+      throw new IntegrityError(`identity event ${event.eventId} previous birth geography does not match replay`);
+    }
+    identity.birthCity = birthCity;
+    identity.birthPlace = { ...birthPlace };
   }
   if (keys.includes("languages")) {
     const languages = event.payload.changes.languages;
