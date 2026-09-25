@@ -311,7 +311,7 @@ async function ensureBirthStatusScheduled(runtime, { nowMs } = {}) {
   return Object.freeze({ scheduledAt:next });
 }
 
-function createDevelopmentComponents({ runtime, privateToken, worldBinding, reasoningAdapters, activityRecorder, now, nowMs, randomIntFn }) {
+function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters, activityRecorder, now, nowMs, randomIntFn }) {
   if (reasoningAdapters === null || reasoningAdapters === undefined) {
     return Object.freeze({
       creativeAdapter: null,
@@ -354,7 +354,7 @@ function createDevelopmentComponents({ runtime, privateToken, worldBinding, reas
   });
   const modernBirthApi = createModernBirthInitiationApi({
     service:modernBirthService,
-    pendingBirths:() => pendingBirths(runtime, { worldBinding, privateToken, nowMs }),
+    pendingBirths:() => pendingBirths(runtime, { nowMs }),
     birthplaces:MODERN_BIRTHPLACES,
     requestStore:runtime.modernBirthRequestStore,
     privateToken,
@@ -413,7 +413,6 @@ export function createBirthCenterCloudflareRuntime({
   const development = createDevelopmentComponents({
     runtime,
     privateToken,
-    worldBinding,
     reasoningAdapters,
     activityRecorder,
     now,
@@ -435,11 +434,12 @@ export function createBirthCenterCloudflareRuntime({
     modernBirthService: development.modernBirthService,
     modernBirthApi: development.modernBirthApi,
     birthApi,
-    ensureBirthStatusScheduled:() => ensureBirthStatusScheduled(runtime, {
+    reconcileStaleBirths:() => reconcileStaleBirths(runtime, {
       worldBinding,
       privateToken,
       nowMs,
     }),
+    ensureBirthStatusScheduled:() => ensureBirthStatusScheduled(runtime, { nowMs }),
     close() { runtime.close(); },
   });
 }
