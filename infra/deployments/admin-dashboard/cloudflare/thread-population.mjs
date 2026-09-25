@@ -104,6 +104,28 @@ function registryFindings(entry) {
       }),
     }));
   }
+  if (entry.birthLocation?.source === "identity_geography_recovered") {
+    const birthPlace = Object.freeze({
+      displayName:entry.birthLocation.displayName,
+      country:entry.birthLocation.country,
+      city:entry.birthLocation.city,
+      lat:entry.birthLocation.lat,
+      long:entry.birthLocation.long,
+    });
+    findings.push(Object.freeze({
+      code:"BIRTH_GEOGRAPHY_RECOVERABLE",
+      state:"repairable",
+      reason:`Stored birth geography is malformed; World can restore it unambiguously as ${birthPlace.displayName}`,
+      identityAction:Object.freeze({
+        id:"repair_birth_geography",
+        label:"Repair birth place",
+        command:"identity",
+        fixed:Object.freeze({ birthPlace }),
+        input:Object.freeze({ fields:Object.freeze([]) }),
+      }),
+    }));
+  }
+
   const spokenLanguages = Array.isArray(entry.languages)
     ? entry.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
     : [];
