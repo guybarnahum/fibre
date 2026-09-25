@@ -140,3 +140,17 @@ test("Genesis birth disposition survives restart without rewriting the developme
   assert.equal(recovered.failureCode, "GENESIS_PASS_A_VALIDATION_ERROR", "historical failure evidence was lost");
   restarted.close();
 });
+
+
+test("unsettled Genesis development request can settle born directly", (t) => {
+  const state = tempBirthState(t);
+  const store = createGenesisDevelopmentRequestStore(state.storage(), {
+    now:() => "2026-09-25T20:20:00Z",
+  });
+  store.reserve({ requestId:plan().requestId, requestDigest:plan().requestDigest, plan:plan() });
+
+  const born = store.settleBorn(plan().requestId);
+
+  assert.equal(born.outcome, "born", "first birth settlement did not become born");
+  store.close();
+});
