@@ -57,6 +57,8 @@ let stillborn = [];
 let sortState = { key:"lastActivity", direction:"desc" };
 const populationPortraitCache = new Map();
 let populationPortraitPreview = null;
+let threadMapPopover = null;
+let threadMapPopoverCloseTimer = null;
 const populationPortraitObserver = typeof IntersectionObserver === "function"
   ? new IntersectionObserver((entries) => {
       for (const entry of entries) {
@@ -746,13 +748,15 @@ function nearestBirthplace(point) {
 function setButtonWaiting(button, label) {
   const icon = faIcon("rotate");
   icon.classList.add("fa-spin");
-  const text = document.createElement("span");
-  text.textContent = label;
-  button.replaceChildren(icon, text);
+  button.replaceChildren(icon);
+  button.setAttribute("aria-label", label);
+  button.title = label;
 }
 
 function setButtonLabel(button, label) {
   button.textContent = label;
+  button.removeAttribute("aria-label");
+  button.removeAttribute("title");
 }
 
 function birthStage(birth) {
@@ -907,6 +911,83 @@ async function loadBirthplaces() {
   return birthplaces;
 }
 
+function clearThreadMapPopoverClose() {
+  if (threadMapPopoverCloseTimer !== null) window.clearTimeout(threadMapPopoverCloseTimer);
+  threadMapPopoverCloseTimer = null;
+}
+
+function hideThreadMapPopover() {
+  clearThreadMapPopoverClose();
+  if (threadMapPopover) threadMapPopover.hidden = true;
+}
+
+function scheduleThreadMapPopoverClose() {
+  clearThreadMapPopoverClose();
+  threadMapPopoverCloseTimer = window.setTimeout(hideThreadMapPopover, 2000);
+}
+
+function ensureThreadMapPopover() {
+  if (threadMapPopover) return threadMapPopover;
+  threadMapPopover = document.createElement("div");
+  threadMapPopover.className = "thread-map-popover";
+  threadMapPopover.hidden = true;
+  threadMapPopover.addEventListener("pointerenter", clearThreadMapPopoverClose);
+  threadMapPopover.addEventListener("pointerleave", scheduleThreadMapPopoverClose);
+  document.body.append(threadMapPopover);
+  return threadMapPopover;
+}
+
+async function hydrateThreadMapFace(link, thread) {
+  const url = await resolvePopulationPortrait(thread.threadId);
+  if (!url || !link.isConnected || link.dataset.threadId !== thread.threadId) return;
+  const image = document.createElement("img");
+  image.src = url;
+  image.alt = `${thread.identity?.name ?? "Thread"} portrait`;
+  image.loading = "lazy";
+  link.replaceChildren(image);
+}
+
+function showThreadMapPopover(location, marker) {
+  clearThreadMapPopoverClose();
+  const popover = ensureThreadMapPopover();
+  const heading = document.createElement("div");
+  heading.className = "thread-map-popover-head";
+  const title = document.createElement("strong");
+  title.textContent = `${location.place.city}, ${location.place.country}`;
+  const count = document.createElement("span");
+  count.textContent = `${location.count} Thread${location.count === 1 ? "" : "s"}`;
+  heading.append(title, count);
+
+  const faces = document.createElement("div");
+  faces.className = "thread-map-faces";
+  for (const threadId of location.threadIds) {
+    const thread = population.find((candidate) => candidate.threadId === threadId);
+    if (!thread) continue;
+    const link = document.createElement("a");
+    link.className = "thread-map-face";
+    link.href = `/thread/${encodeURIComponent(threadId)}`;
+    link.dataset.threadId = threadId;
+    link.title = thread.identity?.name
+      ? `Open ${thread.identity.name} in Thread Observatory`
+      : `Open ${threadId} in Thread Observatory`;
+    link.textContent = initials(thread.identity?.name);
+    faces.append(link);
+    void hydrateThreadMapFace(link, thread);
+  }
+
+  popover.replaceChildren(heading, faces);
+  popover.hidden = false;
+  const markerRect = marker.getBoundingClientRect();
+  const rect = popover.getBoundingClientRect();
+  const gap = 8;
+  let left = markerRect.left + markerRect.width / 2 - rect.width / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - rect.width - 8));
+  let top = markerRect.bottom + gap;
+  if (top + rect.height > window.innerHeight - 8) top = Math.max(8, markerRect.top - rect.height - gap);
+  popover.style.left = `${Math.round(left)}px`;
+  popover.style.top = `${Math.round(top)}px`;
+}
+
 function renderThreadPopulationMap() {
   if (!threadPopulationMapInitialized) {
     threadPopulationWorldPath.setAttribute("d", WORLD_MAP_PATH);
@@ -919,7 +1000,13 @@ function renderThreadPopulationMap() {
     return;
   }
   const grouped = groupThreadsByBirthplace(population, birthplaces);
-  renderWorldCountMarkers(threadPopulationMapMarkers, grouped.locations);
+  hideThreadMapPopover();
+  const rendered = renderWorldCountMarkers(threadPopulationMapMarkers, grouped.locations);
+  for (const { marker, location } of rendered) {
+    marker.classList.add("interactive");
+    marker.addEventListener("pointerenter", () => showThreadMapPopover(location, marker));
+    marker.addEventListener("pointerleave", scheduleThreadMapPopoverClose);
+  }
   if (population.length === 0) {
     threadPopulationMapSummary.textContent = "No admitted Threads.";
     return;
@@ -931,6 +1018,7 @@ function renderThreadPopulationMap() {
 }
 
 function setThreadPopulationMapUnavailable(error) {
+  hideThreadMapPopover();
   threadPopulationMapMarkers.replaceChildren();
   threadPopulationMapSummary.textContent =
     `Birthplace map unavailable: ${error instanceof Error ? error.message : String(error)}`;
