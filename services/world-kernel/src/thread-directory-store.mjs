@@ -142,7 +142,7 @@ export class ThreadDirectoryStore {
       ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
       ${hasGenesis ? "LEFT JOIN genesis_manifests m ON m.thread_id=t.thread_id AND m.publication_status='published' LEFT JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id" : ""}
       ${this.#tables.has("thread_visual_publication_work") ? "LEFT JOIN thread_visual_publication_work v ON v.thread_id=t.thread_id" : ""}
-      ${hasRuntime ? "LEFT JOIN thaw_leases l ON l.lease_id=(SELECT x.lease_id FROM thaw_leases x WHERE x.thread_id=t.thread_id AND x.status='active' ORDER BY x.acquired_at DESC LIMIT 1) LEFT JOIN runtime_sessions s ON s.lease_id=l.lease_id AND s.status='active'" : ""}
+      ${hasRuntime ? "LEFT JOIN thaw_leases l ON l.thread_id=t.thread_id AND l.status='active' LEFT JOIN runtime_sessions s ON s.lease_id=l.lease_id AND s.status='active'" : ""}
       WHERE t.thread_id=?
       LIMIT 1
     `).get(threadId.trim());
@@ -200,7 +200,7 @@ export class ThreadDirectoryStore {
       ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
       ${hasGenesis ? "LEFT JOIN genesis_manifests m ON m.thread_id=t.thread_id AND m.publication_status='published' LEFT JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id" : ""}
       ${this.#tables.has("thread_visual_publication_work") ? "LEFT JOIN thread_visual_publication_work v ON v.thread_id=t.thread_id" : ""}
-      ${hasRuntime ? "LEFT JOIN thaw_leases l ON l.lease_id=(SELECT x.lease_id FROM thaw_leases x WHERE x.thread_id=t.thread_id AND x.status='active' ORDER BY x.acquired_at DESC LIMIT 1) LEFT JOIN runtime_sessions s ON s.lease_id=l.lease_id AND s.status='active'" : ""}
+      ${hasRuntime ? "LEFT JOIN thaw_leases l ON l.thread_id=t.thread_id AND l.status='active' LEFT JOIN runtime_sessions s ON s.lease_id=l.lease_id AND s.status='active'" : ""}
       ${fin === null ? "" : "WHERE r.fibre_identity_number=?"}
       ORDER BY t.thread_id ASC
       LIMIT ?
