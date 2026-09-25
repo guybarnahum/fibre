@@ -31,7 +31,6 @@ let selectedBirthplace = null;
 let pendingBirthSnapshot = [];
 let pendingBirthTimer = null;
 let active = false;
-let birthAttempt = null;
 let populationMode = "threads";
 let loading = false;
 let priorAutoRefresh = true;
@@ -1131,6 +1130,7 @@ birthForm.addEventListener("submit", submitBirth);
 birthDialog.addEventListener("click", (event) => {
   if (event.target === birthDialog) closeBirthDialog();
 });
+birthDialog.addEventListener("close", stopPendingPolling);
 
 $("#view-threads").addEventListener("click", enterThreads);
 $("#view-stillborn").addEventListener("click", enterStillborn);
