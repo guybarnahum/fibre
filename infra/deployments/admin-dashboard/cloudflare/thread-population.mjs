@@ -186,6 +186,9 @@ function admittedThread(entry, lastActivityAt) {
     currentLocation:entry.currentLocation === null || entry.currentLocation === undefined
       ? null
       : structuredClone(entry.currentLocation),
+    runtime:entry.runtime === null || entry.runtime === undefined
+      ? null
+      : structuredClone(entry.runtime),
     portraitUrl:null,
     findings,
     reconciliation:entry.reconciliation === null || entry.reconciliation === undefined
@@ -202,6 +205,7 @@ function activityOnly(row) {
     health:"unrecoverable",
     identity:null,
     currentLocation:null,
+    runtime:null,
     portraitUrl:null,
     findings:Object.freeze([]),
     reconciliation:null,
