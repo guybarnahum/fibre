@@ -31,6 +31,14 @@ test("World Registry defines admitted population while Activity remains observat
       originOrientation:"original",
       birthDate:"2004-03-18",
       birthPlace:"Valparaíso, Chile",
+      birthLocation:{
+        displayName:"Valparaíso, Chile",
+        country:"Chile",
+        city:"Valparaíso",
+        lat:-33.04724,
+        long:-71.61269,
+        source:"thread_identity",
+      },
       culture:["Valparaíso formative context"],
       languages:["Spanish", "English"],
       raisedAs:{ culturalContext:"Chilean coastal household", languages:["Spanish"] },
@@ -85,6 +93,7 @@ test("World Registry defines admitted population while Activity remains observat
   assert.deepEqual(population.threads[0].identity.culture, ["Valparaíso formative context"]);
   assert.deepEqual(population.threads[0].identity.raisedAs, { culturalContext:"Chilean coastal household", languages:["Spanish"] });
   assert.deepEqual(population.threads[0].identity.languages, ["Spanish", "English"], "Spoken languages must remain current Thread state");
+  assert.equal(population.threads[0].identity.birthLocation.city, "Valparaíso", "Admin population lost canonical mappable birthplace");
   assert.equal(population.threads[0].currentLocation.locality, "Valparaíso", "Admin population lost current World location");
   assert.equal(population.threads[0].currentLocation.current, true, "Admin population mislabeled enacted World location");
   const raisedLanguageAction = population.threads[0].findings.find((finding) => finding.code === "RAISED_LANGUAGES").identityAction;
