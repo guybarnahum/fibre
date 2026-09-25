@@ -1,6 +1,7 @@
 import { logD1Cost } from "../../cloudflare-d1-cost.mjs";
 
-const MAX_THREADS = 200;
+const MAX_ADMITTED_THREADS = 5000;
+const MAX_ACTIVITY_THREADS = 200;
 const PLACEHOLDER_NAMES = new Set(["fibre thread", "fiber thread"]);
 
 function clean(value) {
@@ -216,7 +217,7 @@ async function readActivityHeads(activityLog, environment) {
       WHERE environment = ?
       ORDER BY last_activity_at DESC, thread_id ASC
       LIMIT ?
-    `).bind(environment, MAX_THREADS + 1).all();
+    `).bind(environment, MAX_ACTIVITY_THREADS + 1).all();
     return Object.freeze({ result, operation:"admin.thread_population.activity" });
   } catch (error) {
     if (!missingActivityHeads(error)) throw error;
@@ -227,7 +228,7 @@ async function readActivityHeads(activityLog, environment) {
       GROUP BY thread_id
       ORDER BY last_activity_at DESC, thread_id ASC
       LIMIT ?
-    `).bind(environment, MAX_THREADS + 1).all();
+    `).bind(environment, MAX_ACTIVITY_THREADS + 1).all();
     return Object.freeze({ result, operation:"admin.thread_population.activity_fallback" });
   }
 }
@@ -237,7 +238,7 @@ export async function readAdminThreadPopulation({ activityLog, environment, read
   if (typeof readRegistry !== "function") throw new TypeError("Thread population requires readRegistry()");
 
   const [registryEntries, activity] = await Promise.all([
-    readRegistry(MAX_THREADS),
+    readRegistry(MAX_ADMITTED_THREADS),
     readActivityHeads(activityLog, environment),
   ]);
   const activityResult = activity.result;
@@ -253,18 +254,18 @@ export async function readAdminThreadPopulation({ activityLog, environment, read
   const activityByThread = new Map(activityRows.map((row) => [row.thread_id, row.last_activity_at ?? null]));
   const admittedIds = new Set(registryEntries.map((entry) => entry.threadId));
   const threads = registryEntries.map((entry) => admittedThread(entry, activityByThread.get(entry.threadId)));
-  for (const row of activityRows.slice(0, MAX_THREADS)) {
+  for (const row of activityRows.slice(0, MAX_ACTIVITY_THREADS)) {
     if (!admittedIds.has(row.thread_id)) threads.push(activityOnly(row));
   }
 
   const stillborn = threads.filter((thread) => thread.health === "unrecoverable");
   const admittedPopulation = threads.filter((thread) => thread.health !== "unrecoverable");
-  const truncated = registryEntries.length >= MAX_THREADS || activityRows.length > MAX_THREADS;
+  const truncated = registryEntries.length >= MAX_ADMITTED_THREADS || activityRows.length > MAX_ACTIVITY_THREADS;
   return Object.freeze({
     threads:Object.freeze(admittedPopulation),
     stillborn:Object.freeze(stillborn),
     summary:summarize(threads),
     truncated,
-    limit:MAX_THREADS,
+    limit:MAX_ADMITTED_THREADS,
   });
 }
