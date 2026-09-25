@@ -43,6 +43,14 @@ export function createThreadDirectoryService({ directoryStore }) {
       if (typeof directoryStore.getEntry !== "function") throw new TypeError("Thread directory store must expose getEntry()");
       return directoryStore.getEntry(threadId);
     },
+    presence(threadIds) {
+      if (typeof directoryStore.presentThreadIds !== "function") {
+        throw new TypeError("Thread directory store must expose presentThreadIds()");
+      }
+      return Object.freeze({
+        presentThreadIds:Object.freeze(directoryStore.presentThreadIds(threadIds)),
+      });
+    },
     search({ query = null, fin = null, limit = 50 } = {}) {
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 5000) {
         throw new TypeError("Thread directory search limit must be between 1 and 5000");
