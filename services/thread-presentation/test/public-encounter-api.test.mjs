@@ -148,3 +148,26 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
     "public meeting entry must not expose the governing plan");
 });
 
+
+
+test("meeting entry preserves visitor unavailability instead of calling it a LivedNow failure", async () => {
+  const api = createPublicEncounterApi({
+    viewerOrigin:"https://insidefibre.com",
+    ensurePublicPresent:async () => {
+      const error = new Error("inside_fibre_unavailable");
+      error.status = 409;
+      error.body = { error:"inside_fibre_unavailable" };
+      throw error;
+    },
+    readPublicPresent:async () => null,
+    encounter:async () => { throw new Error("encounter must not run"); },
+  });
+
+  const response = await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/meet`,
+    { method:"POST", headers:{ Origin:"https://insidefibre.com" } },
+  ));
+  assert.equal(response.status, 409);
+  assert.deepEqual(await response.json(), { error:"inside_fibre_unavailable" },
+    "pre-window visitor unavailability was mislabeled as a LivedNow failure");
+});

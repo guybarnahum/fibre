@@ -81,11 +81,16 @@ export function createPublicEncounterApi({
           }, request, viewerOrigin);
         } catch (error) {
           if (error?.status === 409) {
+            const worldError = typeof error?.body?.error === "string" && ID_PATTERN.test(error.body.error)
+              ? error.body.error
+              : null;
             const detail = typeof error?.body?.detail === "string" && error.body.detail.trim() !== ""
               ? error.body.detail
               : null;
             return json({
-              error: "lived_now_unavailable",
+              error:worldError === "inside_fibre_unavailable"
+                ? "inside_fibre_unavailable"
+                : "lived_now_unavailable",
               ...(detail === null ? {} : { detail }),
             }, request, viewerOrigin, 409);
           }
