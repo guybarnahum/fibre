@@ -16,7 +16,9 @@ function tableNames(database) {
       'fibre_civil_registrations',
       'embodiment_current_heads',
       'thread_visual_publication_work',
-      'genesis_birth_publications'
+      'genesis_birth_publications',
+      'genesis_raised_language_corrections',
+      'symbolic_genomes'
     )
   `).all().map((row) => row.name));
 }

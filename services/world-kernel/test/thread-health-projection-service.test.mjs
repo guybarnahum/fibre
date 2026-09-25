@@ -1,10 +1,21 @@
 import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import {
   createThreadHealthProjectionService,
   THREAD_HEALTH_PROJECTION_VERSION,
 } from "../src/thread-health-projection-service.mjs";
+import { ThreadHealthProjectionStore } from "../src/thread-health-projection-store.mjs";
+import { openWorldStore } from "../src/persistence.mjs";
+import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
+
+const fixture = JSON.parse(
+  readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+);
 
 test("Thread health reuses unchanged authority and invalidates only on diagnosis inputs", async () => {
   const threadId = "thr_health_projection_001";
@@ -97,4 +108,69 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
   worldVersion = 8;
   assert.equal((await service.inspect(threadId)).cacheHit, false);
   assert.equal(deepDiagnoses, 5, "World authority changes must invalidate cached health");
+});
+
+
+test("Thread health witness includes symbolic genome and corrected Raised-language authority", () => {
+  const directory = mkdtempSync(join(tmpdir(), "fibre-thread-health-witness-"));
+  const databasePath = join(directory, "world.sqlite");
+  const storage = localWorldStateStorage(databasePath);
+  const world = openWorldStore(storage);
+  const thread = world.seedThread(structuredClone(fixture)).thread;
+  world.close();
+
+  const raw = new DatabaseSync(databasePath);
+  raw.exec(`
+    CREATE TABLE symbolic_genomes (
+      genome_id TEXT PRIMARY KEY,
+      owner_kind TEXT NOT NULL,
+      owner_id TEXT NOT NULL,
+      genome_digest TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    ) STRICT;
+    CREATE TABLE genesis_raised_language_corrections (
+      correction_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      languages_json TEXT NOT NULL CHECK (json_valid(languages_json)),
+      recorded_at TEXT NOT NULL
+    ) STRICT;
+  `);
+  raw.prepare(`
+    INSERT INTO symbolic_genomes(genome_id,owner_kind,owner_id,genome_digest,created_at)
+    VALUES (?,?,?,?,?)
+  `).run("genome_health_1", "thread", thread.threadId, "sha256:genome-a", "2026-09-18T00:00:00Z");
+  raw.prepare(`
+    INSERT INTO genesis_raised_language_corrections(correction_id,thread_id,languages_json,recorded_at)
+    VALUES (?,?,?,?)
+  `).run("grc_health_1", thread.threadId, JSON.stringify(["Georgian","English"]), "2026-09-18T00:00:00Z");
+  raw.close();
+
+  const health = new ThreadHealthProjectionStore(storage);
+  try {
+    const first = health.worldWitness(thread.threadId).diagnosis;
+    assert.deepEqual(first.symbolicGenomes, [{
+      genomeId:"genome_health_1",
+      genomeDigest:"sha256:genome-a",
+    }], "health witness omitted symbolic genome authority");
+    assert.deepEqual(first.raisedLanguages, ["Georgian","English"],
+      "health witness omitted corrected Raised languages");
+
+    const update = new DatabaseSync(databasePath);
+    update.prepare("UPDATE symbolic_genomes SET genome_digest=? WHERE genome_id=?")
+      .run("sha256:genome-b", "genome_health_1");
+    update.prepare(`
+      INSERT INTO genesis_raised_language_corrections(correction_id,thread_id,languages_json,recorded_at)
+      VALUES (?,?,?,?)
+    `).run("grc_health_2", thread.threadId, JSON.stringify(["Georgian"]), "2026-09-19T00:00:00Z");
+    update.close();
+
+    const second = health.worldWitness(thread.threadId).diagnosis;
+    assert.equal(second.symbolicGenomes[0].genomeDigest, "sha256:genome-b",
+      "genome authority change did not reach health witness");
+    assert.deepEqual(second.raisedLanguages, ["Georgian"],
+      "Raised-language authority change did not reach health witness");
+  } finally {
+    health.close();
+    rmSync(directory, { recursive:true, force:true });
+  }
 });
