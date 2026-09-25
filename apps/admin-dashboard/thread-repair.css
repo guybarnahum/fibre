@@ -102,9 +102,26 @@
 .thread-population-toolbar strong { font-size:11px; }
 .thread-population-toolbar span { color:var(--muted); font-size:9px; }
 
-.thread-birth-dialog { width:min(680px,calc(100vw - 28px)); }
-.thread-birth-dialog form { display:grid; }
-.thread-birth-body { display:grid; gap:13px; }
+.thread-birth-center-view { background:var(--surface); }
+.birth-center-intro {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:24px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface-subtle);
+}
+.birth-center-intro h3 { margin:0; font-size:13px; }
+.birth-center-intro p:last-child {
+  max-width:720px;
+  margin:0;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.5;
+}
+.thread-birth-form { display:grid; }
+.thread-birth-body { display:grid; gap:13px; padding:14px 16px 4px; }
 .thread-birth-note {
   margin:0;
   color:var(--muted);
@@ -186,6 +203,16 @@
   outline-offset:2px;
 }
 .thread-birth-map-land { display:block; width:100%; height:100%; }
+.thread-birth-timezones line {
+  stroke:color-mix(in srgb,var(--text) 11%,transparent);
+  stroke-width:.55;
+  stroke-dasharray:2 5;
+  vector-effect:non-scaling-stroke;
+}
+.thread-birth-timezones line.major {
+  stroke:color-mix(in srgb,var(--text) 20%,transparent);
+  stroke-width:.8;
+}
 #thread-birth-world-path {
   fill:color-mix(in srgb,var(--text) 7%,var(--surface));
   stroke:color-mix(in srgb,var(--text) 23%,transparent);
@@ -193,11 +220,28 @@
   vector-effect:non-scaling-stroke;
 }
 #thread-birth-map-marker {
-  fill:var(--accent);
-  stroke:var(--surface);
-  stroke-width:4;
+  fill:none;
+  stroke:var(--accent);
+  stroke-width:3;
   vector-effect:non-scaling-stroke;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.24));
+}
+.thread-birth-stage-marker {
+  stroke:var(--surface);
+  stroke-width:2.5;
+  vector-effect:non-scaling-stroke;
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:thread-birth-pulse 1.45s ease-in-out infinite;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.2));
+}
+.thread-birth-stage-marker.stage-genesis { fill:#7c3aed; }
+.thread-birth-stage-marker.stage-developing { fill:#2563eb; }
+.thread-birth-stage-marker.stage-emerging { fill:#d97706; }
+.thread-birth-stage-marker.stage-in-world { fill:#059669; }
+@keyframes thread-birth-pulse {
+  0%,100% { opacity:.72; transform:scale(.84); }
+  50% { opacity:1; transform:scale(1.16); }
 }
 .thread-birth-map-caption {
   display:flex;
@@ -208,6 +252,31 @@
 }
 .thread-birth-map-caption strong { font-size:10px; }
 .thread-birth-map-caption span { color:var(--muted); font-size:8.5px; text-align:right; }
+.thread-birth-stage-legend {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  color:var(--muted);
+  font-size:8.5px;
+}
+.thread-birth-stage-legend span { display:inline-flex; align-items:center; gap:5px; }
+.thread-birth-stage-legend span::before {
+  content:"";
+  width:7px;
+  height:7px;
+  flex:0 0 7px;
+  border-radius:50%;
+}
+.thread-birth-stage-legend .stage-genesis::before { background:#7c3aed; }
+.thread-birth-stage-legend .stage-developing::before { background:#2563eb; }
+.thread-birth-stage-legend .stage-emerging::before { background:#d97706; }
+.thread-birth-stage-legend .stage-in-world::before { background:#059669; }
+.thread-birth-options-row {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:12px;
+  align-items:start;
+}
 .thread-birth-count-field {
   display:grid;
   gap:5px;
@@ -215,7 +284,6 @@
   margin:0;
   border:0;
 }
-.thread-birth-count-field[hidden] { display:none; }
 .thread-birth-count-field legend { margin-bottom:5px; font-size:10px; font-weight:700; }
 .thread-birth-count-field small { color:var(--muted); font-size:8.5px; }
 .thread-birth-count-toggle {
@@ -304,6 +372,7 @@
   padding-top:3px;
   border-top:1px solid var(--border);
 }
+.thread-birth-pending-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .thread-birth-pending-head > div { display:flex; align-items:baseline; gap:6px; }
 .thread-birth-pending-head span { color:var(--muted); font-size:9px; }
 .thread-birth-pending-head button { min-height:0; padding:4px 7px; font-size:9px; }
@@ -439,6 +508,7 @@
 }
 .thread-id-copy:hover { color:var(--text); background:transparent; }
 .thread-id-copy .fa-action-icon { width:8px; height:8px; flex-basis:8px; }
+.thread-id-copy .fa-action-label { min-width:0; overflow-wrap:anywhere; word-break:break-all; text-align:left; }
 .thread-id-copy.copied { color:#067647; }
 .thread-id-copy.copy-failed { color:#b42318; }
 .thread-population-actions { min-width:148px; }
@@ -485,7 +555,14 @@
   font-size:10px;
   line-height:1.5;
 }
-.stillborn-table td { font-size:10px; }
+.stillborn-table { min-width:920px; table-layout:fixed; }
+.stillborn-table th:nth-child(1), .stillborn-table td:nth-child(1) { width:30%; }
+.stillborn-table th:nth-child(2), .stillborn-table td:nth-child(2) { width:13%; }
+.stillborn-table th:nth-child(3), .stillborn-table td:nth-child(3) { width:12%; }
+.stillborn-table th:nth-child(4), .stillborn-table td:nth-child(4) { width:33%; }
+.stillborn-table th:nth-child(5), .stillborn-table td:nth-child(5) { width:12%; }
+.stillborn-table td { font-size:10px; vertical-align:top; }
+.stillborn-thread-identifier .thread-id-copy { width:100%; white-space:normal; }
 .stillborn-table .stillborn-reason {
   min-width:320px;
   white-space:normal;
@@ -597,9 +674,13 @@
 .thread-action-footer { display:flex; justify-content:flex-end; gap:8px; padding-top:2px; }
 .thread-action-footer button { min-width:84px; }
 @keyframes thread-action-progress { from { transform:translateX(-10%); } to { transform:translateX(190%); } }
+.fa-spin { animation:fa-spin .8s linear infinite; }
+@keyframes fa-spin { to { transform:rotate(360deg); } }
 
 @media (max-width:680px) {
-  .thread-birth-place-controls { grid-template-columns:1fr; }
+  .birth-center-intro { flex-direction:column; gap:5px; }
+  .thread-birth-place-controls,
+  .thread-birth-options-row { grid-template-columns:1fr; }
   .thread-birth-map-caption { align-items:flex-start; flex-direction:column; gap:2px; }
   .thread-birth-map-caption span { text-align:left; }
   .thread-health-tag { white-space:normal; }
