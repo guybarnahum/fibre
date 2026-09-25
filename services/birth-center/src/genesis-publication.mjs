@@ -1,4 +1,4 @@
-import { resolveBirthplaceGeography } from "#core/src/birthplace-geography.mjs";
+import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
 import {
   buildFibreCivilRegistration,
   mintFibreIdentityNumber,
@@ -99,7 +99,7 @@ function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt })
           lat:authoredPlace.lat,
           long:authoredPlace.long,
         })
-      : resolveBirthplaceGeography(subjectIdentity.birthCity);
+      : resolveLocalityGeography(subjectIdentity.birthCity);
   if (geography === null) throw new TypeError(`modern Genesis birth place ${subjectIdentity.birthCity} is not mappable`);
   return Object.freeze({
     name: name.trim(),
