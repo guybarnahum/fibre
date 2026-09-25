@@ -40,7 +40,7 @@ function placeIdentity(value) {
     return Object.freeze({ country:normalized(country), city:normalized(city) });
   }
   const comma = text.lastIndexOf(",");
-  if (comma < 0) return null;
+  if (comma < 0) return Object.freeze({ country:null, city:normalized(text) });
   const city = text.slice(0, comma).trim();
   const country = text.slice(comma + 1).trim();
   if (city === "" || country === "") return null;
@@ -51,10 +51,14 @@ export function catalogPlaceForLocation(catalog, location) {
   if (!Array.isArray(catalog)) return null;
   const identity = placeIdentity(location);
   if (identity === null) return null;
-  return catalog.find((place) => (
-    normalized(place?.country) === identity.country
-    && normalized(place?.city) === identity.city
-  )) ?? null;
+  if (identity.country !== null) {
+    return catalog.find((place) => (
+      normalized(place?.country) === identity.country
+      && normalized(place?.city) === identity.city
+    )) ?? null;
+  }
+  const cityMatches = catalog.filter((place) => normalized(place?.city) === identity.city);
+  return cityMatches.length === 1 ? cityMatches[0] : null;
 }
 
 export function groupThreadsByBirthplace(threads, catalog) {
@@ -86,6 +90,7 @@ export function groupThreadsByBirthplace(threads, catalog) {
 
 export function renderWorldCountMarkers(group, locations, { className = "thread-world-count-marker" } = {}) {
   group.replaceChildren();
+  const rendered = [];
   for (const location of locations) {
     const point = worldMapPoint(location.place.lat, location.place.long);
     const marker = document.createElementNS(SVG_NS, "g");
@@ -98,15 +103,25 @@ export function renderWorldCountMarkers(group, locations, { className = "thread-
 
     if (location.count > 1) {
       const count = document.createElementNS(SVG_NS, "text");
+      count.classList.add("thread-world-count");
       count.setAttribute("text-anchor", "middle");
       count.setAttribute("dominant-baseline", "central");
       count.textContent = location.count > 99 ? "99+" : String(location.count);
       marker.append(count);
     }
 
+    const city = document.createElementNS(SVG_NS, "text");
+    city.classList.add("thread-world-city-label");
+    city.setAttribute("x", location.count > 1 ? "18" : "11");
+    city.setAttribute("y", "4");
+    city.textContent = location.place.city;
+    marker.append(city);
+
     const title = document.createElementNS(SVG_NS, "title");
     title.textContent = `${location.place.city}, ${location.place.country} · ${location.count} Thread${location.count === 1 ? "" : "s"}`;
     marker.append(title);
     group.append(marker);
+    rendered.push(Object.freeze({ marker, location }));
   }
+  return Object.freeze(rendered);
 }
