@@ -76,6 +76,7 @@ export class GenesisPassAValidationError extends Error {
     super(message);
     this.name = "GenesisPassAValidationError";
     this.code = "GENESIS_PASS_A_VALIDATION_ERROR";
+    this.retryable = false;
     this.gate = gate;
     this.record = record === null ? null : structuredClone(record);
   }
