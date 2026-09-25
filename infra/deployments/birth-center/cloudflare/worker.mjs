@@ -33,6 +33,8 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     super(ctx, env);
     this.runtime = null;
     this.schedulerBootstrapped = false;
+    this.staleReconciliation = null;
+    this.nextStaleReconcileAt = 0;
     this.health = createCloudflareInfraDriver({ stateScopes:{ [BIRTH_SCOPE_ID]:ctx.storage } }).health;
   }
 
@@ -64,6 +66,18 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     })());
   }
 
+  startStaleReconciliation(cloud, { force = false } = {}) {
+    const now = Date.now();
+    if (this.staleReconciliation !== null) return this.staleReconciliation;
+    if (!force && now < this.nextStaleReconcileAt) return null;
+    this.nextStaleReconcileAt = now + (5 * 60 * 1000);
+    const work = cloud.reconcileStaleBirths().finally(() => {
+      this.staleReconciliation = null;
+    });
+    this.staleReconciliation = work;
+    return work;
+  }
+
   async fetch(request) {
     const url = new URL(request.url);
     if (request.method === "GET"
@@ -93,6 +107,16 @@ export class FibreBirthCenterDurableObject extends DurableObject {
               message:error instanceof Error ? error.message : String(error),
             }));
           }));
+        } else if (url.pathname === "/internal/births/pending") {
+          const reconciliation = this.startStaleReconciliation(cloud);
+          if (reconciliation !== null) {
+            this.ctx.waitUntil(reconciliation.catch((error) => {
+              console.error(JSON.stringify({
+                event:"birth-center-stale-reconciliation-failed",
+                message:error instanceof Error ? error.message : String(error),
+              }));
+            }));
+          }
         }
         return modernBirthResponse;
       }
@@ -123,7 +147,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       publication = await cloud.runtime.handleWake();
     } finally {
       try {
-        await cloud.reconcileStaleBirths();
+        await (this.startStaleReconciliation(cloud, { force:true }) ?? Promise.resolve());
       } finally {
         await cloud.ensureBirthStatusScheduled();
       }
