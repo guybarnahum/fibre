@@ -1,4 +1,4 @@
-import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
+import { resolveLocalityGeography, resolveMentionedLocalityGeography } from "#core/src/locality-geography.mjs";
 import { IntegrityError } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
@@ -37,22 +37,31 @@ function birthLocation(identity) {
       source:"thread_identity",
     });
   }
-  const structured = place && typeof place === "object"
-    ? resolveLocalityGeography(
-      clean(place.country) && clean(place.city)
-        ? `${clean(place.country)}/${clean(place.city)}`
-        : clean(place.displayName),
-    )
+  const structuredText = place && typeof place === "object"
+    ? clean(place.country) && clean(place.city)
+      ? `${clean(place.country)}/${clean(place.city)}`
+      : clean(place.displayName)
     : null;
-  const inferred = structured ?? resolveLocalityGeography(identity?.birthCity);
+  const exactStructured = structuredText === null ? null : resolveLocalityGeography(structuredText);
+  const exactBirthCity = resolveLocalityGeography(identity?.birthCity);
+  const mentioned = resolveMentionedLocalityGeography([
+    structuredText,
+    clean(place?.displayName),
+    clean(identity?.birthCity),
+  ].filter(Boolean).join(" · "));
+  const inferred = exactStructured ?? exactBirthCity ?? mentioned;
   if (inferred === null) return null;
   return Object.freeze({
-    displayName:clean(place?.displayName) ?? clean(identity?.birthCity) ?? inferred.displayName,
+    displayName:inferred.displayName,
     country:inferred.country,
     city:inferred.city,
     lat:inferred.lat,
     long:inferred.long,
-    source:structured === null ? "legacy_identity_projection" : "identity_geography_projection",
+    source:exactStructured !== null
+      ? "identity_geography_projection"
+      : exactBirthCity !== null
+        ? "legacy_identity_projection"
+        : "identity_geography_recovered",
   });
 }
 
