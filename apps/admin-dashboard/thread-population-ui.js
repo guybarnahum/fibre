@@ -15,6 +15,7 @@ const $ = (selector) => document.querySelector(selector);
 const view = $("#threads-view");
 const rows = $("#thread-population-rows");
 const empty = $("#thread-population-empty");
+const threadPopulationMapShell = $(".thread-population-map-shell");
 const threadPopulationWorldPath = $("#thread-population-world-path");
 const threadPopulationTimezones = $("#thread-population-timezones");
 const threadPopulationMapMarkers = $("#thread-population-map-markers");
@@ -933,7 +934,7 @@ function ensureThreadMapPopover() {
   threadMapPopover.hidden = true;
   threadMapPopover.addEventListener("pointerenter", clearThreadMapPopoverClose);
   threadMapPopover.addEventListener("pointerleave", scheduleThreadMapPopoverClose);
-  document.body.append(threadMapPopover);
+  threadPopulationMapShell.append(threadMapPopover);
   return threadMapPopover;
 }
 
@@ -978,12 +979,15 @@ function showThreadMapPopover(location, marker) {
   popover.replaceChildren(heading, faces);
   popover.hidden = false;
   const markerRect = marker.getBoundingClientRect();
+  const shellRect = threadPopulationMapShell.getBoundingClientRect();
   const rect = popover.getBoundingClientRect();
   const gap = 8;
-  let left = markerRect.left + markerRect.width / 2 - rect.width / 2;
-  left = Math.max(8, Math.min(left, window.innerWidth - rect.width - 8));
-  let top = markerRect.bottom + gap;
-  if (top + rect.height > window.innerHeight - 8) top = Math.max(8, markerRect.top - rect.height - gap);
+  let left = markerRect.left - shellRect.left + markerRect.width / 2 - rect.width / 2;
+  left = Math.max(8, Math.min(left, threadPopulationMapShell.clientWidth - rect.width - 8));
+  let top = markerRect.bottom - shellRect.top + gap;
+  if (markerRect.bottom + gap + rect.height > window.innerHeight - 8) {
+    top = markerRect.top - shellRect.top - rect.height - gap;
+  }
   popover.style.left = `${Math.round(left)}px`;
   popover.style.top = `${Math.round(top)}px`;
 }
