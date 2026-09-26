@@ -162,9 +162,9 @@ Define paired loci, allele transmission, recombination and pure genome expressio
 
 Generate plausible paired founder genomes from maternal/paternal ancestry using the compact physical-population basis. Population Lab now uses these founder genomes, the shared recombination primitive and genome-only phenotype expression; the previous direct ancestry-to-phenotype path has been removed.
 
-### Unified Birth Inheritance — next
+### Unified Birth Inheritance — implemented experimentally
 
-Resolve two real/founder parental genomes for every birth and use one recombination path.
+The shared core now resolves each biological parent independently: an available parent genome remains authoritative; only a missing parent is represented by a transient founder genome sampled from that parent's ancestry. Zero-, one- and two-Thread-parent births then converge on the same deterministic recombination primitive. When both parent genomes exist, ancestry inputs cannot alter the child's physical genome.
 
 ### Population Validation — deferred
 
