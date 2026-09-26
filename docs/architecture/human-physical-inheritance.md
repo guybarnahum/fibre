@@ -87,7 +87,7 @@ Expand the shared engine from contract to useful physical inheritance. Candidate
 
 Traits are not independent dice. Use a small, inspectable correlation model. Ancestry shifts distributions rather than dictating traits; mixed inheritance and individual variation remain substantial.
 
-Correlated Phenotype Inheritance specifically tests whether Fibre can eliminate the current LLM attractor toward `medium/average` morphology. The first experimental sampler now does this with shared deterministic correlated variation and concrete semantic traits; Population Lab no longer gives the LLM inherited-morphology authority. Ancestry-conditioned distribution shifts remain experimental and must not be introduced as arbitrary label hashing or uncalibrated racial templates.
+Correlated Phenotype Inheritance specifically tests whether Fibre can eliminate the current LLM attractor toward `medium/average` morphology. The first experimental sampler now does this with shared deterministic correlated variation and concrete semantic traits; Population Lab no longer gives the LLM inherited-morphology authority. Ancestry-conditioned distribution shifts remain experimental. Population labels have no physical authority and must never be hashed into phenotype. The first evidence-constrained basis uses ancestral source geography only for a weak pigmentation adaptation prior; hair and craniofacial ancestry priors remain neutral until Fibre has an inspectable calibrated basis for them. New basis axes must represent supported physical evidence, compose continuously across parental ancestry, and preserve larger individual variation rather than becoming racial or ethnic templates.
 
 ## Inherited Phenotype and Lived Physical State
 
