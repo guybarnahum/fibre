@@ -34,15 +34,16 @@ A physical genome is small private inherited state, not literal DNA. It keeps pa
 
 The conceptual appearance systems are:
 
-- pigmentation and eye color;
-- hair form and density;
-- face proportions;
-- eye and brow region;
+- skin, eye and hair pigmentation, plus freckling tendency;
+- hair form, density, hairline/loss tendency and facial-hair growth tendency;
+- face breadth/length and midface/cheekbone prominence;
+- eye spacing/shape, brow prominence and forehead proportion;
 - nose shape;
 - mouth and soft tissue;
 - jaw and chin;
-- skeletal frame and height tendency;
-- inherited adiposity tendency.
+- skeletal frame, height tendency and limb-to-torso body proportion;
+- inherited adiposity and muscularity tendencies;
+- coarse shoulder-to-hip structural proportion.
 
 A system may contain a few correlated loci where needed. The representation stays fixed-size, deterministic and cheap.
 
@@ -112,7 +113,7 @@ Founder genomes are transient values. They do not need Thread identity, lifecycl
 
 ## Inherited phenotype
 
-The renderer never receives ancestry as permission to invent appearance. The physical genome is expressed into concrete inherited traits such as pigmentation, hair texture/density, facial proportions, eye spacing, eye color, brow morphology, nose breadth/projection, lips, jaw/chin, frame, height tendency and inherited adiposity tendency.
+The renderer never receives ancestry as permission to invent appearance. The physical genome is expressed into concrete inherited traits such as pigmentation, hair texture/density, facial proportions, eye spacing/shape and color, hair color, freckling tendency, hairline/facial-hair tendency, brow and forehead morphology, midface/cheekbone prominence, nose breadth/projection, lips, jaw/chin, frame, height and body proportions, inherited adiposity/muscularity tendencies, and shoulder-to-hip structural proportion.
 
 Numeric latent coordinates are replaceable sampling machinery. Meaning-bearing Thread identity remains semantic/natural-language-first.
 
@@ -120,7 +121,7 @@ Numeric latent coordinates are replaceable sampling machinery. Meaning-bearing T
 
 Time-varying state remains downstream of inherited phenotype: body composition, muscular development, hairstyle/grooming, facial hair, skin condition, acquired scars, injury, clothing, expression and aging.
 
-Inherited frame is not current weight. Inherited adiposity tendency can influence how readily a body carries fat, but current body composition remains lived physical state shaped by development and circumstances. Inherited hair properties are not today's haircut.
+Inherited frame is not current weight. Inherited adiposity and muscularity tendencies influence physical propensity, but current body composition and muscle mass remain lived physical state shaped by development and circumstances. Hair pigmentation/form/density and hairline/facial-hair tendencies are inherited; today's haircut, beard, grooming and age-local hair loss are lived state. Freckling tendency is inherited; the currently visible pattern may also depend on lived exposure and age.
 
 ## Population Lab
 
