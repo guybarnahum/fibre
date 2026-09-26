@@ -23,11 +23,17 @@ test("unexpressed inherited material can pass to a grandchild",()=>{
   const hidden={value:-.9,dominance:-.9};
   const mother=parent(),father=parent(.1);
   mother.loci.pigmentation=[{value:.8,dominance:.9},hidden];
-  const child=recombinePhysicalGenomes({maternalGenome:mother,paternalGenome:father,seed:"carry-hidden"});
-  const carrierSeed=Array.from({length:64},(_,i)=>`carrier-${i}`).find(seed=>{
+  const childSeed=Array.from({length:64},(_,i)=>`child-${i}`).find(seed=>{
+    const candidate=recombinePhysicalGenomes({maternalGenome:mother,paternalGenome:father,seed});
+    return candidate.loci.pigmentation.some(x=>x.value===hidden.value&&x.dominance===hidden.dominance);
+  });
+  assert.ok(childSeed,"hidden allele should reach child");
+
+  const child=recombinePhysicalGenomes({maternalGenome:mother,paternalGenome:father,seed:childSeed});
+  const grandchildSeed=Array.from({length:64},(_,i)=>`grandchild-${i}`).find(seed=>{
     const grandchild=recombinePhysicalGenomes({maternalGenome:child,paternalGenome:father,seed});
     return grandchild.loci.pigmentation.some(x=>x.value===hidden.value&&x.dominance===hidden.dominance);
   });
-  assert.ok(carrierSeed,"hidden allele should remain heritable");
+  assert.ok(grandchildSeed,"hidden allele should reach grandchild");
   assert.ok(Number.isFinite(expressPhysicalGenome(child).pigmentation),"genome must express phenotype");
 });
