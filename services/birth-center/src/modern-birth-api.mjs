@@ -38,7 +38,9 @@ function exactInput(value) {
   const location = value.location === null || value.location === undefined || value.location === ""
     ? null
     : value.location;
-  if (location !== null && typeof location !== "string") throw new TypeError("Thread birth request.location must be a string or null");
+  if (location !== null && (!location || typeof location !== "object" || Array.isArray(location))) {
+    throw new TypeError("Thread birth request.location must be canonical geography or null");
+  }
   const sex = value.sex === null || value.sex === undefined || value.sex === ""
     ? null
     : value.sex;
@@ -48,7 +50,7 @@ function exactInput(value) {
   return Object.freeze({
     requestId:value.requestId.trim(),
     requestedAt:value.requestedAt.trim(),
-    location:location === null ? null : location.trim(),
+    location,
     sex,
   });
 }
