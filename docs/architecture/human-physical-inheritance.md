@@ -185,3 +185,12 @@ This capability makes lineage physically causal across generations. It deliberat
 Rejected: birthplace-to-appearance rules, ancestry labels as renderer instructions, racial phenotype switches, cohort quotas, ancestry-to-personality inference, direct parent averaging, discarding unexpressed inherited material, and a Lab-only implementation.
 
 The compact population basis and expression model remain experimental and replaceable. The durable contract is two parental genomes -> recombination -> child genome -> phenotype.
+
+
+## Production adoption boundary
+
+Modern Genesis now uses the same physical-inheritance core validated in Population Lab. World authoring supplies separate maternal and paternal physical-ancestry provenance for otherwise-missing biological parents. Birth material resolves those transient founders through `resolveBirthPhysicalInheritance()`; the resulting child physical genome is carried through Genesis and persisted privately as `thread.genome.physical`.
+
+Canonical visual identity derives its concrete inherited phenotype from that physical genome and authoritative sex. Ancestry/population labels are not passed to the renderer. The genome remains the durable inherited authority; the phenotype and portrait are projections.
+
+This first production adoption deliberately does not claim live-parent inheritance yet. The next adoption step is to resolve biological parent Threads' persisted `genome.physical` values and feed those actual genomes into the same birth resolver, using founder ancestry only for a genuinely missing parent. No alternate lineage genetics path should be introduced.
