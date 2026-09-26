@@ -172,9 +172,9 @@ The shared core now resolves each biological parent independently: an available 
 
 Population Lab now exercises the exact Unified Birth Inheritance path used by the shared core. The first 150-person London/Stockholm/Lagos validation exposed midpoint compression in several facial-geometry traits even while pigmentation, eye/hair and some morphology showed population structure. The experimental phenotype projection now preserves more of those inherited geometric differences with a narrower neutral band; this remains a validation hypothesis, not an accepted calibration. Validation measures founder cohorts, within-population individuality, mixed ancestry, sibling/family resemblance, multigenerational masked transmission and renderer fidelity before any production Genesis adoption.
 
-### Fibre Adoption — deferred approval gate
+### Fibre Adoption — active
 
-Persist physical genome as private inherited Thread state, connect live parent lineage, replace Genesis appearance selection, feed canonical visual identity from expressed phenotype, and define conservative repair for existing society.
+Modern Genesis persists the physical genome as private inherited Thread state, canonical visual identity is projected from its expressed phenotype, and the legacy appearance-selection path has been removed. A modern birth may now name maternal and/or paternal biological Thread parents: Fibre resolves each parent directly from authoritative World state, consumes that Thread's persisted `genome.physical`, uses a transient ancestry founder only for a missing side, and records the contributing Thread as a private `biological_parent` / `parent_genome_source` life relation. Conservative treatment of existing society remains deferred; existing Threads are not retroactively assigned invented physical genomes or parents.
 
 ## Runtime and ambition guard
 
@@ -193,4 +193,4 @@ Modern Genesis now uses the same physical-inheritance core validated in Populati
 
 Canonical visual identity derives its concrete inherited phenotype from that physical genome and authoritative sex. Ancestry/population labels are not passed to the renderer. The genome remains the durable inherited authority; the phenotype and portrait are projections.
 
-This first production adoption deliberately does not claim live-parent inheritance yet. The next adoption step is to resolve biological parent Threads' persisted `genome.physical` values and feed those actual genomes into the same birth resolver, using founder ancestry only for a genuinely missing parent. No alternate lineage genetics path should be introduced.
+Live-parent physical inheritance is now wired through modern Genesis. Parent Thread IDs are resolved against authoritative World Observatory state before the birth request is composed; a referenced parent without a persisted physical genome is rejected rather than silently replaced by ancestry. The child then follows the same shared recombination path as Population Lab and founder-only births. The next proof is staging evidence from actual born Threads: two-parent inheritance, one-parent-plus-founder inheritance, sibling variation from the same parents, and durable lineage inspection. Existing society repair remains deliberately conservative and deferred.
