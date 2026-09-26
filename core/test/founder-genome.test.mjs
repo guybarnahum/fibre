@@ -32,5 +32,6 @@ test("population basis shifts founders without determining individuals",()=>{
   const a=cohort("afr_west"),b=cohort("eur_north");
   const mean=(xs,key)=>xs.reduce((n,x)=>n+x[key],0)/xs.length;
   assert.notEqual(mean(a,"pigmentation"),mean(b,"pigmentation"),"population basis should shift founders");
+  assert.ok(Math.abs(mean(a,"noseBreadth")-mean(b,"noseBreadth"))>.2,"population basis should shift morphology");
   assert.ok(new Set(a.map(x=>x.faceBreadth.toFixed(2))).size>8,"individuals should vary");
 });
