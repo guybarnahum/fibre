@@ -1,6 +1,6 @@
 {
-  "fixtureVersion": "pr39-modern-birth-material-v1",
-  "purpose": "World-local material for composing a fresh modern Genesis subject at birth. These are naming elements and birth places, not pre-authored Fibre people or reusable Thread identities.",
+  "fixtureVersion": "pr39-modern-birth-material-v2",
+  "purpose": "World-local material for composing fresh modern Genesis subjects. Naming, family origin, and separate maternal/paternal physical-ancestry provenance are inputs; no pre-authored Fibre person or reusable Thread identity is stored here.",
   "slots": [
     {
       "slot": 1,
@@ -31,7 +31,22 @@
         "Tsiklauri"
       ],
       "familyOriginContext": "The default fixture household has longstanding family roots in Georgia and the South Caucasus, with relatives in Tbilisi and elsewhere in Georgia; no recent long-distance migration is part of this household history.",
-      "appearanceContext": "A broad South Caucasus family appearance range with substantial variation in light-to-medium and olive complexions, dark to medium hair colors and textures, eye color, facial proportions and other ordinary within-family variation; no single facial type is implied."
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "South Caucasus family",
+            "share": 1,
+            "referencePopulation": "west_asia"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "South Caucasus family",
+            "share": 1,
+            "referencePopulation": "west_asia"
+          }
+        ]
+      }
     },
     {
       "slot": 2,
@@ -62,7 +77,22 @@
         "Liu"
       ],
       "familyOriginContext": "The default fixture household has longstanding Taiwanese family roots in southern Taiwan, with relatives and family history centered in Taiwan rather than a recent long-distance migration story.",
-      "appearanceContext": "A broad East Asian family appearance range with substantial variation in complexion, hair texture, eye and facial proportions and other ordinary within-family variation; no single facial type is implied."
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "Taiwanese family",
+            "share": 1,
+            "referencePopulation": "east_asia"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "Taiwanese family",
+            "share": 1,
+            "referencePopulation": "east_asia"
+          }
+        ]
+      }
     },
     {
       "slot": 3,
@@ -93,7 +123,42 @@
         "Almeida"
       ],
       "familyOriginContext": "The default fixture household has multigenerational roots in northeastern Brazil, with a mixed Brazilian family history that may include African, European and Indigenous ancestry across generations without assigning a single ancestry identity to the subject.",
-      "appearanceContext": "A broad mixed northeastern Brazilian family appearance range spanning substantial variation in complexion, hair texture, facial proportions and other ancestry-linked physical traits; no single phenotype or ancestry share is implied."
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "Northeastern Brazilian mixed family",
+            "share": 0.5,
+            "referencePopulation": "afr_west"
+          },
+          {
+            "population": "Northeastern Brazilian mixed family",
+            "share": 0.35,
+            "referencePopulation": "eur_south"
+          },
+          {
+            "population": "Northeastern Brazilian mixed family",
+            "share": 0.15,
+            "referencePopulation": "indigenous_america"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "Northeastern Brazilian mixed family",
+            "share": 0.45,
+            "referencePopulation": "eur_south"
+          },
+          {
+            "population": "Northeastern Brazilian mixed family",
+            "share": 0.35,
+            "referencePopulation": "afr_west"
+          },
+          {
+            "population": "Northeastern Brazilian mixed family",
+            "share": 0.2,
+            "referencePopulation": "indigenous_america"
+          }
+        ]
+      }
     },
     {
       "slot": 4,
@@ -124,7 +189,22 @@
         "Berrada"
       ],
       "familyOriginContext": "The default fixture household has longstanding Moroccan and Maghrebi family roots centered in Fès and nearby regions, with extended-family ties in Morocco and no required recent long-distance migration story.",
-      "appearanceContext": "A broad North African and Maghrebi family appearance range with substantial variation in complexion, hair texture and color, eye color, facial proportions and other ordinary within-family variation; no single facial type is implied."
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "Moroccan Maghrebi family",
+            "share": 1,
+            "referencePopulation": "west_asia"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "Moroccan Maghrebi family",
+            "share": 1,
+            "referencePopulation": "west_asia"
+          }
+        ]
+      }
     },
     {
       "slot": 5,
@@ -155,7 +235,22 @@
         "Foster"
       ],
       "familyOriginContext": "The default fixture household has multigenerational Australian family roots in Tasmania with predominantly British and Irish ancestry in this fixture household; relatives and family stories connect the household to Tasmania and other parts of Australia.",
-      "appearanceContext": "A broad northwestern European-descended family appearance range with substantial variation in complexion, hair and eye color, facial proportions and other ordinary within-family variation; no single facial type is implied."
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "British-Irish Australian family",
+            "share": 1,
+            "referencePopulation": "eur_north"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "British-Irish Australian family",
+            "share": 1,
+            "referencePopulation": "eur_north"
+          }
+        ]
+      }
     }
   ]
 }
