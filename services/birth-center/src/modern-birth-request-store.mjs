@@ -25,7 +25,7 @@ function normalize(row) {
   return Object.freeze({
     requestId:row.request_id,
     requestedAt:row.requested_at,
-    requestedLocation:row.requested_location,
+    requestedLocation:row.requested_location === null ? null : JSON.parse(row.requested_location),
     requestedSex:row.requested_sex,
     location:row.selected_location,
     locationSource:row.location_source,
@@ -102,14 +102,16 @@ export function createModernBirthRequestStore(storage, { now = () => new Date().
     const id = nonEmpty("modern birth requestId", requestId);
     const at = nonEmpty("modern birth requestedAt", requestedAt);
     if (!Number.isFinite(Date.parse(at))) throw new TypeError("modern birth requestedAt must be an ISO timestamp");
-    const requestedLocation = nullableText("modern birth location", location);
+    const requestedLocation = location === null || location === undefined
+      ? null
+      : JSON.stringify(location);
     const requestedSex = normalizeSex(sex);
     return database.transaction(() => {
       const existing = get(id);
       if (existing !== null) {
         if (
           existing.requestedAt !== at
-          || existing.requestedLocation !== requestedLocation
+          || JSON.stringify(existing.requestedLocation) !== requestedLocation
           || existing.requestedSex !== requestedSex
         ) throw new Error(`modern birth request ${id} already exists with different input`);
         return existing;
