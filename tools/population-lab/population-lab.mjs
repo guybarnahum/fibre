@@ -1,6 +1,6 @@
 import {createHash} from"node:crypto";import{sampleFamilyAncestry,sampleFounderPhysicalGenome,recombinePhysicalGenomes,phenotypeFromPhysicalGenome}from"../../core/src/human-phenotype/index.mjs";import{mkdir,writeFile}from"node:fs/promises";import{resolve}from"node:path";
 const MODEL="gpt-5.1-2025-11-13";
-const T=["pigmentation","eyeColor","hairTexture","hairDensity","faceWidth","faceLength","jawWidth","chinProjection","eyeSpacing","browProminence","noseWidth","noseProjection","lipFullness","frame","heightTendency","adiposityTendency"];
+const T=["pigmentation","eyeColor","hairColor","frecklingTendency","hairTexture","hairDensity","hairlineLossTendency","facialHairTendency","faceWidth","faceLength","midfaceProminence","jawWidth","chinProjection","eyeSpacing","eyeShape","foreheadProportion","browProminence","noseWidth","noseProjection","lipFullness","frame","heightTendency","bodyProportion","adiposityTendency","muscularityTendency","shoulderHipProportion"];
 const arg=(n,d=null)=>process.argv.find(x=>x.startsWith("--"+n+"="))?.slice(n.length+3)??d;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const key=s=>String(s??"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
