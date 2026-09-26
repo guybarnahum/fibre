@@ -25,10 +25,10 @@ test("masked inherited material can reappear in a grandchild",()=>{
   const weak={value:.2,dominance:-.8};
   const grandmother=parent(),grandfather=parent(.1);
   grandmother.loci.pigmentation=[visible,hidden];
+  grandfather.loci.pigmentation=[visible,visible];
 
   const child=recombinePhysicalGenomes({maternalGenome:grandmother,paternalGenome:grandfather,seed:"child-0"});
   assert.deepEqual(child.loci.pigmentation[0],hidden,"hidden allele must pass");
-  child.loci.pigmentation[1]=visible;
   assert.equal(expressPhysicalGenome(child).pigmentation,visible.value,"hidden allele must stay masked");
 
   const otherParent=parent(.2);
