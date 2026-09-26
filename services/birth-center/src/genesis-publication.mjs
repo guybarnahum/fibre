@@ -152,7 +152,7 @@ export function buildNeutralGenesisThreadSeed({
     version: 1,
     status: "frozen",
     identity,
-    genome: { textualTraits: {}, runtimeBaselines: structuredClone(runtimeBaselines) },
+    genome: { textualTraits: {}, runtimeBaselines: structuredClone(runtimeBaselines), ...(subjectIdentity.physicalGenome ? { physical:structuredClone(subjectIdentity.physicalGenome) } : {}) },
     currentState: {
       needs: [],
       feelings: [],
@@ -338,6 +338,7 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
       birthCity: slotPlan.subjectIdentity?.birthCity ?? null,
       heritage: slotPlan.subjectIdentity?.heritage ?? null,
       appearanceContext: slotPlan.subjectIdentity?.appearanceContext ?? null,
+      physicalGenome: slotPlan.subjectIdentity?.physicalGenome ?? null,
     }),
   ).thread;
   validateThreadSnapshot(thread);
