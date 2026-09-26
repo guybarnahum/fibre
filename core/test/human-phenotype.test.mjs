@@ -15,7 +15,7 @@ test("phenotype is pure expression of the inherited genome",()=>{
   const a=phenotypeFromPhysicalGenome(genome);
   const b=phenotypeFromPhysicalGenome(genome);
   assert.deepEqual(a,b,"phenotype must follow genome");
-  assert.equal(a.version,"human-phenotype-v0.9","phenotype version must match");
+  assert.equal(a.version,"human-phenotype-v0.10","phenotype version must match");
   assert.ok(a.traits.faceWidth&&a.traits.noseProjection&&a.traits.hairTexture&&a.traits.eyeColor&&a.traits.hairColor&&a.traits.eyeShape&&a.traits.midfaceProminence&&a.traits.bodyProportion&&a.traits.adiposityTendency&&a.traits.muscularityTendency,"traits must be concrete");
 });
 
@@ -24,4 +24,16 @@ test("different inherited genomes can express different people",()=>{
   const people=Array.from({length:24},(_,i)=>founder(`person-${i}`));
   const signatures=new Set(people.map(x=>JSON.stringify(x.traits)));
   assert.ok(signatures.size>1,"people should differ");
+});
+
+
+test("sex conditions androgenic expression without changing inherited genome",()=>{
+  const genome=sampleFounderPhysicalGenome({ancestry,seed:"androgenic-carrier"});
+  const before=JSON.stringify(genome);
+  const female=phenotypeFromPhysicalGenome(genome,{sex:"female"});
+  const male=phenotypeFromPhysicalGenome(genome,{sex:"male"});
+  assert.equal(female.traits.facialHairTendency,"minimal","female facial hair must stay minimal");
+  assert.equal(female.traits.hairlineLossTendency,"low","female hairline loss must stay low");
+  assert.ok(["light","moderate","dense"].includes(male.traits.facialHairTendency),"male facial hair must express inherited tendency");
+  assert.equal(JSON.stringify(genome),before,"sex must not change inherited genome");
 });
