@@ -1,6 +1,6 @@
-import {createHash} from"node:crypto";import{sampleFamilyAncestry,sampleInheritedPhenotype}from"../../core/src/human-phenotype/index.mjs";import{mkdir,writeFile}from"node:fs/promises";import{resolve}from"node:path";
+import {createHash} from"node:crypto";import{sampleFamilyAncestry,sampleFounderPhysicalGenome,recombinePhysicalGenomes,phenotypeFromPhysicalGenome}from"../../core/src/human-phenotype/index.mjs";import{mkdir,writeFile}from"node:fs/promises";import{resolve}from"node:path";
 const MODEL="gpt-5.1-2025-11-13";
-const T=["pigmentation","hairTexture","hairDensity","faceWidth","faceLength","jawWidth","chinProjection","eyeSpacing","browProminence","noseWidth","noseProjection","lipFullness","earProminence","frame","heightTendency"];
+const T=["pigmentation","hairTexture","hairDensity","faceWidth","faceLength","jawWidth","chinProjection","eyeSpacing","browProminence","noseWidth","noseProjection","lipFullness","frame","heightTendency"];
 const arg=(n,d=null)=>process.argv.find(x=>x.startsWith("--"+n+"="))?.slice(n.length+3)??d;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const key=s=>String(s??"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
@@ -10,7 +10,7 @@ const uniqueNames=ps=>new Set(ps.map(p=>key(p.name))).size;
 function line(text,done=false){process.stdout.write("\r\x1b[2K"+text+(done?"\n":""))}
 function progress(done,total,start,label="generated"){line(`[${String(done).padStart(String(total).length)}/${total}] ${label} · ${elapsed(start)} · names ${uniqueNames(progress.people)}/${progress.people.length} unique`)}
 progress.people=[];
-const ancestrySchema={type:"array",minItems:1,maxItems:4,items:{type:"object",additionalProperties:false,required:["population","share","sourceLatitude","referencePopulation"],properties:{population:{type:"string"},share:{type:"number",exclusiveMinimum:0},sourceLatitude:{type:["number","null"],minimum:-90,maximum:90},referencePopulation:{type:["string","null"],enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania",null]}}}};
+const ancestrySchema={type:"array",minItems:1,maxItems:4,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{population:{type:"string"},share:{type:"number",exclusiveMinimum:0},referencePopulation:{type:["string","null"],enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania",null]}}}};
 const familyContextSchema={type:"object",additionalProperties:false,required:["originHistory","namingContext","householdLanguageContext"],properties:{originHistory:{type:"string"},namingContext:{type:"string"},householdLanguageContext:{type:"string"}}};
 const populationSchema={type:"object",additionalProperties:false,required:["profiles"],properties:{profiles:{type:"array",minItems:4,maxItems:16,items:{type:"object",additionalProperties:false,required:["id","share","maternalAncestry","paternalAncestry","familyContext"],properties:{id:{type:"string"},share:{type:"number",exclusiveMinimum:0},maternalAncestry:ancestrySchema,paternalAncestry:ancestrySchema,familyContext:familyContextSchema}}}}};
 async function populationContext(place,year,model){const r=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({model,reasoning:{effort:"low"},input:[{role:"system",content:[{type:"input_text",text:"Population Lab experimental prior. Describe a compact plausible distribution of ordinary family histories for people born in the requested place and era. This is an experimental sampling prior, not demographic truth. Each profile is one coherent family-history pattern with separate maternal and paternal ancestry plus non-physical family context for naming and household languages. Ancestry is physical-inheritance provenance only; it must not directly choose names, languages, culture, personality, class, religion, intelligence, behavior or appearance. For each ancestry component, sourceLatitude is the approximate latitude of its ancestral geographic source (not the person's birthplace). referencePopulation is a coarse physical-population anchor only: afr_west, afr_east, eur_north, eur_south, west_asia, south_asia, east_asia, southeast_asia, indigenous_america, or oceania. Choose the closest anchor for physical inheritance; use null if none is defensible. The anchor affects only physical inheritance, never name, language, culture, personality or behavior. Family context carries origin history, naming context and household-language context. Shares are relative weights, never quotas. Common local family histories should carry most probability mass; migration, diaspora and mixed-parent histories should appear only at plausible frequency. Do not curate for representation or coverage."}]},{role:"user",content:[{type:"input_text",text:`Create the experimental local family-history prior for ${place} around ${year}.`}]}],text:{format:{type:"json_schema",name:"population_context",strict:true,schema:populationSchema}},max_output_tokens:3500})});if(!r.ok)throw Error("population context "+r.status+": "+await r.text());const j=await r.json(),t=j.output?.flatMap(x=>x.content??[]).find(x=>x.type==="output_text")?.text;if(!t)throw Error("model returned no population context");return JSON.parse(t)}
@@ -23,11 +23,15 @@ const r=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers
 for(let i=0;i<people.length;i++){
   const p=people[i], family=families[i];
   p.familyAncestry=family;
-  p.inheritance=sampleInheritedPhenotype({
-    maternalAncestry:family.maternal.ancestry,
-    paternalAncestry:family.paternal.ancestry,
-    seed:`${seed}:inheritance:${i}`
-  });
+  const maternalGenome=sampleFounderPhysicalGenome({ancestry:family.maternal.ancestry,seed:`${seed}:maternal-founder:${i}`});
+  const paternalGenome=sampleFounderPhysicalGenome({ancestry:family.paternal.ancestry,seed:`${seed}:paternal-founder:${i}`});
+  const genome=recombinePhysicalGenomes({maternalGenome,paternalGenome,seed:`${seed}:conception:${i}`});
+  p.inheritance={
+    maternalGenome,
+    paternalGenome,
+    genome,
+    phenotype:phenotypeFromPhysicalGenome(genome)
+  };
 }
 const blocked=new Set(existingNames.map(key)),seen=new Set();for(const p of people){const n=key(p.name);if(blocked.has(n)||seen.has(n))throw Error(`model returned duplicate full name: ${p.name}`);seen.add(n)}return people}
 function score(ps){
@@ -43,11 +47,9 @@ function score(ps){
   for(const[d,x]of Object.entries(domains))if(ps.length>=20&&x.unique===1)warnings.push(d+" collapsed to one inherited value");
   const groups={};
   for(const p of ps)(groups[p.familyAncestry.profileId]??=[]).push(p);
-  const byFamilyProfile=Object.fromEntries(Object.entries(groups).map(([profileId,people])=>{
-    const priorKeys=Object.keys(people[0].inheritance.phenotype.experimentalPopulationPrior??{});
-    const priorMean=Object.fromEntries(priorKeys.map(k=>[k,people.reduce((n,p)=>n+p.inheritance.phenotype.experimentalPopulationPrior[k],0)/people.length]));
-    return[profileId,{count:people.length,priorMean,domains:summarize(people)}];
-  }));
+  const byFamilyProfile=Object.fromEntries(Object.entries(groups).map(([profileId,people])=>[
+    profileId,{count:people.length,domains:summarize(people)}
+  ]));
   return{collisions,phenotypeCollisions,givenConcentration:top(maps.given),familyConcentration:top(maps.family),domains,byFamilyProfile,warnings}
 }
 async function image(p,dir,i,model){const prompt=`Edge-to-edge realistic neutral documentary head-and-shoulders portrait photograph of one fictional adult age 25. Sex: ${p.sex}. Inherited phenotype: ${T.map(d=>d+": "+p.inheritance.phenotype.traits[d]).join("; ")}. Age-25 physical state: ${p.age25}. Preserve uncommon morphology and body/build cues. Do not beautify, homogenize, slim, symmetrize, glamourize, or substitute a generic attractive face. Ordinary skin texture, neutral expression, simple dark top, plain photographic background. NO text, letters, numbers, captions, labels, watermark, logo, border, frame, card, document layout, graphic overlay, or margin.`;const r=await fetch("https://api.openai.com/v1/images/generations",{method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({model,prompt,size:"1024x1024",quality:"low",n:1})});if(!r.ok)throw Error("image "+r.status+": "+await r.text());const j=await r.json(),b=j.data?.[0]?.b64_json;if(!b)throw Error("image provider returned no bytes");const name=`person-${String(i+1).padStart(3,"0")}.png`;await writeFile(resolve(dir,name),Buffer.from(b,"base64"));return{name,prompt}}
