@@ -93,7 +93,6 @@ function normalizeSubjectIdentity(candidate) {
     "heritage",
     "languages",
     "raisedLanguages",
-    "appearanceContext",
     "physicalGenome",
   ]);
   for (const key of Object.keys(identity)) {
@@ -134,9 +133,6 @@ function normalizeSubjectIdentity(candidate) {
       identity.raisedLanguages,
       { minimum: 1 },
     ));
-  }
-  if (Object.hasOwn(identity, "appearanceContext")) {
-    normalized.appearanceContext = nonEmpty("Genesis development request subjectIdentity.appearanceContext", identity.appearanceContext);
   }
   if (Object.hasOwn(identity, "physicalGenome")) {
     normalized.physicalGenome = structuredClone(identity.physicalGenome);
