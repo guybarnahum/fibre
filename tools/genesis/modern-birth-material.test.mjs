@@ -11,18 +11,6 @@ import {
 const fixture = JSON.parse(readFileSync(new URL("../../fixtures/genesis/pr39/modern-birth-material-v1.json", import.meta.url), "utf8"));
 const material = (slot) => fixture.slots.find((item) => item.slot === slot);
 
-const APPEARANCE_LOCI = Object.freeze({
-  skin:Object.freeze(["medium-brown skin", "deep warm-brown skin", "rich deep-brown skin", "medium neutral-brown skin"]),
-  hair:Object.freeze(["dense tightly coiled near-black hair", "short tight dark curls", "dense dark-brown coils", "near-black springy curls"]),
-  eyes:Object.freeze(["deep-brown almond-shaped eyes", "dark-brown round-almond eyes", "medium-brown slightly hooded eyes", "deep-brown gently rounded eyes"]),
-  face:Object.freeze(["slightly long oval face", "balanced oval face", "broader midface with tapered jaw", "softly angular oval face"]),
-  brows:Object.freeze(["dense gently arched brows", "straight full brows", "moderately thick low arches", "softly arched full brows"]),
-  nose:Object.freeze(["medium bridge with broader rounded base", "straight medium-width bridge with rounded tip", "gently curved bridge with moderate base", "shorter bridge with broad rounded tip"]),
-  mouth:Object.freeze(["full balanced lips", "medium-full lips with fuller lower lip", "wide mouth with full lower lip", "defined cupid's bow with full lips"]),
-  jaw:Object.freeze(["moderately defined jaw with rounded chin", "soft jaw with compact rounded chin", "gently tapered jaw with rounded chin", "moderate jaw with broader chin"]),
-  build:Object.freeze(["lean-to-average frame", "compact average frame", "slender frame", "average-to-broad frame"]),
-});
-
 function birthMaterial(slot = 1) {
   return {
     ...material(slot),
