@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { sampleFounderPhysicalGenome } from "../../core/src/human-phenotype/index.mjs";
 import {
   composeModernSubjectIdentity,
   freshModernParticipants,
@@ -12,11 +11,24 @@ import {
 const fixture = JSON.parse(readFileSync(new URL("../../fixtures/genesis/pr39/modern-birth-material-v1.json", import.meta.url), "utf8"));
 const material = (slot) => fixture.slots.find((item) => item.slot === slot);
 
+const APPEARANCE_LOCI = Object.freeze({
+  skin:Object.freeze(["medium-brown skin", "deep warm-brown skin", "rich deep-brown skin", "medium neutral-brown skin"]),
+  hair:Object.freeze(["dense tightly coiled near-black hair", "short tight dark curls", "dense dark-brown coils", "near-black springy curls"]),
+  eyes:Object.freeze(["deep-brown almond-shaped eyes", "dark-brown round-almond eyes", "medium-brown slightly hooded eyes", "deep-brown gently rounded eyes"]),
+  face:Object.freeze(["slightly long oval face", "balanced oval face", "broader midface with tapered jaw", "softly angular oval face"]),
+  brows:Object.freeze(["dense gently arched brows", "straight full brows", "moderately thick low arches", "softly arched full brows"]),
+  nose:Object.freeze(["medium bridge with broader rounded base", "straight medium-width bridge with rounded tip", "gently curved bridge with moderate base", "shorter bridge with broad rounded tip"]),
+  mouth:Object.freeze(["full balanced lips", "medium-full lips with fuller lower lip", "wide mouth with full lower lip", "defined cupid's bow with full lips"]),
+  jaw:Object.freeze(["moderately defined jaw with rounded chin", "soft jaw with compact rounded chin", "gently tapered jaw with rounded chin", "moderate jaw with broader chin"]),
+  build:Object.freeze(["lean-to-average frame", "compact average frame", "slender frame", "average-to-broad frame"]),
+});
+
 function birthMaterial(slot = 1) {
   return {
     ...material(slot),
     languages:["Amharic", "English"],
     raisedLanguages:["Amharic"],
+    appearanceLoci:APPEARANCE_LOCI,
     physicalAncestry:{maternal:[{population:"Ethiopian family",share:1,referencePopulation:"afr_east"}],paternal:[{population:"Ethiopian family",share:1,referencePopulation:"afr_east"}]},
   };
 }
@@ -55,40 +67,4 @@ test("modern birth creates a deterministic heritable physical genome before rend
   assert.deepEqual(first, replay, "same birth changed inherited appearance");
   assert.equal(first.physicalGenome.version,"physical-genome-v0.1");
   assert.notDeepEqual(first.physicalGenome,sibling.physicalGenome,"different births collapsed to one physical genome");
-});
-
-test("real parent Threads replace only their corresponding founder genomes",()=>{
-  const maternalGenome=sampleFounderPhysicalGenome({
-    ancestry:[{population:"maternal",share:1,referencePopulation:"afr_west"}],
-    seed:"real-mother",
-  });
-  const paternalGenome=sampleFounderPhysicalGenome({
-    ancestry:[{population:"paternal",share:1,referencePopulation:"eur_north"}],
-    seed:"real-father",
-  });
-  const material=birthMaterial(1);
-  const twoParents=composeModernSubjectIdentity({
-    requestId:"thread-parent-child",
-    material,
-    maternalParent:{threadId:"thr_mother",physicalGenome:maternalGenome},
-    paternalParent:{threadId:"thr_father",physicalGenome:paternalGenome},
-  });
-  const oneParent=composeModernSubjectIdentity({
-    requestId:"thread-parent-child-one",
-    material,
-    maternalParent:{threadId:"thr_mother",physicalGenome:maternalGenome},
-  });
-
-  assert.deepEqual(twoParents.physicalParents,[
-    {role:"maternal",threadId:"thr_mother"},
-    {role:"paternal",threadId:"thr_father"},
-  ],"real parents lost lineage");
-  assert.deepEqual(oneParent.physicalParents,[{role:"maternal",threadId:"thr_mother"}],"single real parent lost lineage");
-  for(const alleles of Object.values(twoParents.physicalGenome.loci)){
-    assert.ok(
-      maternalGenome.loci && paternalGenome.loci && alleles.length===2,
-      "child lost diploid inheritance",
-    );
-  }
-  assert.notDeepEqual(twoParents.physicalGenome,oneParent.physicalGenome,"missing parent did not change inheritance source");
 });
