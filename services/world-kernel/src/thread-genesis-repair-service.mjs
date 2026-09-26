@@ -1,4 +1,4 @@
-import { resolveLocalityGeography, resolveMentionedLocalityGeography } from "#core/src/locality-geography.mjs";
+import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 
 const OPERATION_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
 const PLACEHOLDER_NAMES = new Set(["fibre thread", "fiber thread"]);
@@ -18,36 +18,30 @@ function unfinishedName(value) {
 }
 
 function recoveredBirthGeography(identity) {
-  const birthCity = text(identity?.birthCity);
-  if (birthCity === null) return null;
-
   const place = identity?.birthPlace;
-  const complete = place
-    && typeof place === "object"
-    && !Array.isArray(place)
-    && text(place.displayName) !== null
-    && text(place.country) !== null
-    && text(place.city) !== null
-    && Number.isFinite(place.lat)
-    && Number.isFinite(place.long)
-    && place.lat >= -90 && place.lat <= 90
-    && place.long >= -180 && place.long <= 180
-    && text(place.displayName) === birthCity;
-  if (complete) return null;
-
+  const birthCity = text(identity?.birthCity);
   const structured = place && typeof place === "object" && !Array.isArray(place)
     ? text(place.country) && text(place.city)
       ? `${text(place.country)}/${text(place.city)}`
       : text(place.displayName)
     : null;
-  const recovered = (structured === null ? null : resolveLocalityGeography(structured))
-    ?? resolveLocalityGeography(birthCity)
-    ?? resolveMentionedLocalityGeography([
-      structured,
-      text(place?.displayName),
-      birthCity,
-    ].filter(Boolean).join(" · "));
+  const recovered = resolveLocalityGeographyEvidence([
+    structured,
+    text(place?.displayName),
+    birthCity,
+  ]);
   if (recovered === null) return null;
+
+  const canonical = place
+    && typeof place === "object"
+    && !Array.isArray(place)
+    && birthCity === recovered.displayName
+    && text(place.displayName) === recovered.displayName
+    && text(place.country) === recovered.country
+    && text(place.city) === recovered.city
+    && place.lat === recovered.lat
+    && place.long === recovered.long;
+  if (canonical) return null;
 
   return Object.freeze({
     displayName:recovered.displayName,
