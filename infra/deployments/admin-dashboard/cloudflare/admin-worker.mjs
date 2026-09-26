@@ -25,6 +25,7 @@ const THREAD_POPULATION_ROUTE = "/api/threads/population";
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
 const THREAD_PENDING_BIRTHS_ROUTE = "/api/threads/births/pending";
 const THREAD_BIRTHPLACES_ROUTE = "/api/threads/births/places";
+const THREAD_BIRTH_PLACE_SEARCH_ROUTE = "/api/threads/births/place-search";
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
 const INFRA_HEALTH_ROUTE = "/internal/infra-health";
 
@@ -265,6 +266,72 @@ export async function proxyFidReissue(request, env, threadId) {
   return json(upstream.status, payload.result);
 }
 
+function mapboxToken(env) {
+  const value = typeof env?.MAPBOX_ACCESS_TOKEN === "string" ? env.MAPBOX_ACCESS_TOKEN.trim() : "";
+  if (value === "") throw new Error("Mapbox place search is not configured");
+  return value;
+}
+
+function canonicalMapboxPlace(feature) {
+  const properties = feature?.properties ?? {};
+  if (properties.feature_type !== "place") return null;
+  const countryContext = properties.context?.country ?? null;
+  const country = countryContext?.name_preferred ?? countryContext?.name ?? null;
+  const city = properties.name_preferred ?? properties.name ?? null;
+  const lat = Number(properties.coordinates?.latitude ?? feature?.geometry?.coordinates?.[1]);
+  const long = Number(properties.coordinates?.longitude ?? feature?.geometry?.coordinates?.[0]);
+  if (!country || !city || !Number.isFinite(lat) || !Number.isFinite(long)) return null;
+  return Object.freeze({
+    country,
+    city,
+    displayName:properties.full_address ?? `${city}, ${country}`,
+    lat,
+    long,
+  });
+}
+
+async function searchBirthPlaces(request, env) {
+  const input = new URL(request.url).searchParams;
+  const q = input.get("q")?.trim() ?? "";
+  const lat = input.get("lat");
+  const long = input.get("long");
+  const reverse = lat !== null || long !== null;
+  if ((q !== "" && reverse) || (q === "" && !reverse)) {
+    return json(400, { error:"invalid_place_search", detail:"Provide either q or lat/long." });
+  }
+
+  const url = reverse
+    ? new URL("https://api.mapbox.com/search/geocode/v6/reverse")
+    : new URL("https://api.mapbox.com/search/geocode/v6/forward");
+  url.searchParams.set("access_token", mapboxToken(env));
+  url.searchParams.set("permanent", "true");
+  url.searchParams.set("types", "place");
+  url.searchParams.set("limit", reverse ? "1" : "8");
+  url.searchParams.set("language", "en");
+  if (reverse) {
+    const latitude = Number(lat);
+    const longitude = Number(long);
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+      return json(400, { error:"invalid_place_search", detail:"lat/long are invalid." });
+    }
+    url.searchParams.set("latitude", String(latitude));
+    url.searchParams.set("longitude", String(longitude));
+  } else {
+    if (q.length < 2 || q.length > 256) return json(200, { ok:true, places:[] });
+    url.searchParams.set("q", q);
+  }
+
+  const response = await fetch(url, { headers:{ Accept:"application/json" } });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(payload?.features)) {
+    return json(502, { error:"place_search_unavailable", detail:"Mapbox place search failed." });
+  }
+  return json(200, {
+    ok:true,
+    places:payload.features.map(canonicalMapboxPlace).filter(Boolean),
+  });
+}
+
 async function proxyThreadBirth(request, env) {
   let input;
   try { input = await request.json(); }
@@ -285,6 +352,9 @@ async function proxyThreadBirth(request, env) {
   const location = input.location === null || input.location === undefined || input.location === ""
     ? null
     : input.location;
+  if (location !== null && (!location || typeof location !== "object" || Array.isArray(location))) {
+    return json(400, { error:"invalid_thread_birth", detail:"Thread birth request.location must be canonical geography or null" });
+  }
   const sex = input.sex === null || input.sex === undefined || input.sex === ""
     ? null
     : input.sex;
@@ -362,8 +432,9 @@ export default {
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
     const pendingBirths = url.pathname === THREAD_PENDING_BIRTHS_ROUTE;
     const birthplaces = url.pathname === THREAD_BIRTHPLACES_ROUTE;
+    const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || pendingBirths || birthplaces || infraMonitor);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor);
     if (adminGet || adminPost) {
@@ -378,6 +449,7 @@ export default {
         if (threadBirth) return proxyThreadBirth(request, env);
         if (pendingBirths) return proxyBirthCenterGet(env, "/internal/births/pending");
         if (birthplaces) return proxyBirthCenterGet(env, "/internal/births/places");
+        if (birthPlaceSearch) return searchBirthPlaces(request, env);
         if (threadPopulation) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const population = await readAdminThreadPopulation({
