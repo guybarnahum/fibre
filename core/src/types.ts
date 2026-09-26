@@ -48,6 +48,8 @@ export interface ThreadSnapshot {
   genome: {
     textualTraits: Record<string, string>;
     runtimeBaselines: Record<string, string | number | boolean>;
+    /** Private diploid-like physical inheritance state; phenotype is derived from this. */
+    physical?: unknown;
   };
   currentState: {
     needs: string[];
