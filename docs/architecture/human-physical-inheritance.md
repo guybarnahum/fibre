@@ -47,7 +47,7 @@ The conceptual appearance systems are:
 
 A system may contain a few correlated loci where needed. The representation stays fixed-size, deterministic and cheap.
 
-Each locus carries two alleles, one inherited from each biological parent. Expression may be blended, additive, dominant/recessive, or another explicit small rule appropriate to that locus. **Unexpressed alleles remain in the genome and remain heritable.**
+Each locus carries two alleles, one inherited from each biological parent. The current compact expression rule blends similar-strength alleles; when their dominance differs materially, the stronger allele masks the weaker one. **A masked allele remains in the genome and remains heritable**, so it can reappear in a descendant. This rule is deliberately small and experimental rather than a claim to model molecular genetics.
 
 This is intentionally genotype-like rather than a DNA simulation. Fibre does not model chromosomes, nucleotide sequences, meiosis, disease genetics or molecular biology merely to render believable inherited people.
 
@@ -139,7 +139,7 @@ family history
 
 The Lab owns experiments, analytics and rendering trials. It does not own a second genetics implementation.
 
-Useful measurements are population-conditioned distributions, within-population variation, sibling variation, mixed-parent inheritance, hidden-allele transmission, phenotype collisions and renderer fidelity. There is no single diversity score and no demographic quota assertion.
+Useful measurements are population-conditioned distributions, within-population variation, sibling variation, mixed-parent inheritance, hidden-allele transmission, phenotype collisions and renderer fidelity. Population validation must also detect European/default-face collapse: changing pigmentation alone is not adequate. Founder cohorts should produce coherent, believable population-associated combinations of facial morphology, pigmentation, hair, eyes and body structure without using a race label as a phenotype input. There is no single diversity score and no demographic quota assertion.
 
 ## Validation
 
@@ -147,7 +147,7 @@ Before production Genesis adoption:
 
 1. founder cohorts for London, Stockholm and Lagos test population structure plus within-population individuality;
 2. synthetic family experiments test siblings and mixed parentage;
-3. a three-generation experiment proves an unexpressed inherited value can pass through a parent and affect a descendant;
+3. a three-generation experiment proves a genuinely masked inherited value can pass through a parent and reappear in a descendant;
 4. small rendered cohorts test whether the image provider depicts the concrete inherited phenotype.
 
 Tests prove semantic mechanics, not exact random numbers or desired demographic percentages.
@@ -156,7 +156,7 @@ Tests prove semantic mechanics, not exact random numbers or desired demographic 
 
 ### Physical Genome Core — implemented experimentally
 
-Define paired loci, allele transmission, recombination and pure genome expression in the shared core. This establishes durable hidden inherited material and multigenerational continuity.
+Define paired loci, allele transmission, recombination and pure genome expression in the shared core. The current experimental rule supports genuine masking while retaining both alleles, and the three-generation semantic proof demonstrates a masked allele passing through a parent and reappearing in a descendant.
 
 ### Founder Genome Generation — implemented experimentally
 
