@@ -327,17 +327,11 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
     bornAt: slotPlan.bornAt,
     runtimeBaselines:slotPlan.genome.runtimeBaselines,
   });
-  const parentIds = (slotPlan.genome.header.sourceEligibility?.sourceOwners ?? []).map((owner) => owner.ownerId);
   const thread = attachGenesisCanonicalVisualIdentity(
     { thread: seedThread },
     buildGenesisCanonicalVisualIdentity({
       threadId: candidate.threadId,
       sex: seedThread.identity.sex,
-      originMode: candidate.originMode,
-      parentIds,
-      birthCity: slotPlan.subjectIdentity?.birthCity ?? null,
-      heritage: slotPlan.subjectIdentity?.heritage ?? null,
-      appearanceContext: slotPlan.subjectIdentity?.appearanceContext ?? null,
       physicalGenome: slotPlan.subjectIdentity?.physicalGenome ?? null,
     }),
   ).thread;
