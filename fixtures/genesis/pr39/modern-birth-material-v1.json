@@ -34,14 +34,14 @@
       "physicalAncestry": {
         "maternal": [
           {
-            "population": "South Caucasus family",
+            "population": "South Caucasus family · west_asia",
             "share": 1,
             "referencePopulation": "west_asia"
           }
         ],
         "paternal": [
           {
-            "population": "South Caucasus family",
+            "population": "South Caucasus family · west_asia",
             "share": 1,
             "referencePopulation": "west_asia"
           }
@@ -80,14 +80,14 @@
       "physicalAncestry": {
         "maternal": [
           {
-            "population": "Taiwanese family",
+            "population": "Taiwanese family · east_asia",
             "share": 1,
             "referencePopulation": "east_asia"
           }
         ],
         "paternal": [
           {
-            "population": "Taiwanese family",
+            "population": "Taiwanese family · east_asia",
             "share": 1,
             "referencePopulation": "east_asia"
           }
@@ -126,34 +126,34 @@
       "physicalAncestry": {
         "maternal": [
           {
-            "population": "Northeastern Brazilian mixed family",
+            "population": "Northeastern Brazilian mixed family · afr_west",
             "share": 0.5,
             "referencePopulation": "afr_west"
           },
           {
-            "population": "Northeastern Brazilian mixed family",
+            "population": "Northeastern Brazilian mixed family · eur_south",
             "share": 0.35,
             "referencePopulation": "eur_south"
           },
           {
-            "population": "Northeastern Brazilian mixed family",
+            "population": "Northeastern Brazilian mixed family · indigenous_america",
             "share": 0.15,
             "referencePopulation": "indigenous_america"
           }
         ],
         "paternal": [
           {
-            "population": "Northeastern Brazilian mixed family",
+            "population": "Northeastern Brazilian mixed family · eur_south",
             "share": 0.45,
             "referencePopulation": "eur_south"
           },
           {
-            "population": "Northeastern Brazilian mixed family",
+            "population": "Northeastern Brazilian mixed family · afr_west",
             "share": 0.35,
             "referencePopulation": "afr_west"
           },
           {
-            "population": "Northeastern Brazilian mixed family",
+            "population": "Northeastern Brazilian mixed family · indigenous_america",
             "share": 0.2,
             "referencePopulation": "indigenous_america"
           }
@@ -192,14 +192,14 @@
       "physicalAncestry": {
         "maternal": [
           {
-            "population": "Moroccan Maghrebi family",
+            "population": "Moroccan Maghrebi family · west_asia",
             "share": 1,
             "referencePopulation": "west_asia"
           }
         ],
         "paternal": [
           {
-            "population": "Moroccan Maghrebi family",
+            "population": "Moroccan Maghrebi family · west_asia",
             "share": 1,
             "referencePopulation": "west_asia"
           }
@@ -238,14 +238,14 @@
       "physicalAncestry": {
         "maternal": [
           {
-            "population": "British-Irish Australian family",
+            "population": "British-Irish Australian family · eur_north",
             "share": 1,
             "referencePopulation": "eur_north"
           }
         ],
         "paternal": [
           {
-            "population": "British-Irish Australian family",
+            "population": "British-Irish Australian family · eur_north",
             "share": 1,
             "referencePopulation": "eur_north"
           }
