@@ -419,6 +419,18 @@ test("Fix restores unambiguous malformed birth geography from existing World ide
   assert.equal(result.after.health, "healthy");
 });
 
+
+test("birth geography recovery ignores punctuation noise without guessing locality", async () => {
+  const { service, threadId, thread } = fixture();
+  thread.identity.birthCity = "San Francisco Califronia,, USA";
+
+  const diagnosis = await service.diagnose(threadId);
+  const finding = diagnosis.findings.find((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE");
+
+  assert.equal(finding?.action, "repair_birth_geography", "punctuation hid recoverable birthplace");
+  assert.equal(finding.recovered.displayName, "San Francisco, California, United States");
+});
+
 test("safe birth geography repair is not blocked by unrelated operator input", async () => {
   const identityUpdater = {
     update(current, { birthPlace }) {
