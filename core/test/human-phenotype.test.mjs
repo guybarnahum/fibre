@@ -32,7 +32,7 @@ test("correlated phenotype resolves concrete inherited traits", () => {
   const samples = Array.from({length:24}, (_,i) =>
     sampleInheritedPhenotype({...parents, seed:`traits-${i}`}).phenotype
   );
-  assert.ok(samples.every(p => p.version === "human-phenotype-v0.4"), "phenotype version must identify correlated sampler");
+  assert.ok(samples.every(p => p.version === "human-phenotype-v0.5"), "phenotype version must identify correlated sampler");
   assert.ok(samples.every(p => p.traits.faceWidth && p.traits.noseProjection && p.traits.hairTexture), "inherited traits must be concrete");
   assert.ok(new Set(samples.map(p => p.traits.faceWidth)).size > 1, "face width must vary");
   assert.ok(new Set(samples.map(p => p.traits.noseProjection)).size > 1, "nose projection must vary");
