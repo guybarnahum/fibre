@@ -115,7 +115,9 @@ Founder genomes are transient values. They do not need Thread identity, lifecycl
 
 The renderer never receives ancestry as permission to invent appearance. The physical genome is expressed into concrete inherited traits such as pigmentation, hair texture/density, facial proportions, eye spacing/shape and color, hair color, freckling tendency, hairline/facial-hair tendency, brow and forehead morphology, midface/cheekbone prominence, nose breadth/projection, lips, jaw/chin, frame, height and body proportions, inherited adiposity/muscularity tendencies, and shoulder-to-hip structural proportion.
 
-Numeric latent coordinates are replaceable sampling machinery. Meaning-bearing Thread identity remains semantic/natural-language-first.
+Numeric latent coordinates are replaceable sampling machinery. The current experimental semantic projection deliberately uses a narrower neutral band for morphology dimensions that Population Lab showed were being compressed into `medium`/`average`; modest inherited geometric differences should survive expression rather than disappearing into a broad midpoint category. This changes only genome-to-phenotype expression, not ancestry priors or inheritance.
+
+Numeric latents remain subordinate to the concrete semantic phenotype. Meaning-bearing Thread identity remains semantic/natural-language-first.
 
 ## Lived physical state
 
@@ -168,7 +170,7 @@ The shared core now resolves each biological parent independently: an available 
 
 ### Population Validation — active
 
-Population Lab now exercises the exact Unified Birth Inheritance path used by the shared core. Validation measures founder cohorts, within-population individuality, mixed ancestry, sibling/family resemblance, multigenerational masked transmission and renderer fidelity before any production Genesis adoption.
+Population Lab now exercises the exact Unified Birth Inheritance path used by the shared core. The first 150-person London/Stockholm/Lagos validation exposed midpoint compression in several facial-geometry traits even while pigmentation, eye/hair and some morphology showed population structure. The experimental phenotype projection now preserves more of those inherited geometric differences with a narrower neutral band; this remains a validation hypothesis, not an accepted calibration. Validation measures founder cohorts, within-population individuality, mixed ancestry, sibling/family resemblance, multigenerational masked transmission and renderer fidelity before any production Genesis adoption.
 
 ### Fibre Adoption — deferred approval gate
 
