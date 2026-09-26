@@ -143,6 +143,8 @@ export function parseModernGenesisArgs(argv = []) {
   let world = null;
   let heritage = null;
   let forceNewWorld = false;
+  let maternalThreadId = null;
+  let paternalThreadId = null;
   let help = false;
   for (const argument of argv) {
     if (argument === "--female" || argument === "--male") {
@@ -165,6 +167,19 @@ export function parseModernGenesisArgs(argv = []) {
       help = true;
       continue;
     }
+    if (argument.startsWith("--maternal-thread=") || argument.startsWith("--paternal-thread=")) {
+      const maternal=argument.startsWith("--maternal-thread=");
+      const threadId=nonEmpty("parent Thread ID",argument.slice((maternal?"--maternal-thread=":"--paternal-thread=").length));
+      if(!threadId.startsWith("thr_"))throw new TypeError("parent Thread ID must begin thr_");
+      if(maternal){
+        if(maternalThreadId!==null)throw new TypeError("choose only one maternal Thread");
+        maternalThreadId=threadId;
+      }else{
+        if(paternalThreadId!==null)throw new TypeError("choose only one paternal Thread");
+        paternalThreadId=threadId;
+      }
+      continue;
+    }
     if (argument.startsWith("--heritage=")) {
       if (heritage !== null) throw new TypeError("choose only one Genesis heritage");
       heritage = normalizeModernHeritage(argument.slice("--heritage=".length));
@@ -181,7 +196,8 @@ export function parseModernGenesisArgs(argv = []) {
     throw new TypeError(`unsupported modern Genesis option ${argument}`);
   }
   if (heritage !== null && world === null) throw new TypeError("--heritage requires an explicit --place=Country/City");
-  return Object.freeze({ sex, world, heritage, forceNewWorld, help });
+  if (maternalThreadId !== null && maternalThreadId === paternalThreadId) throw new TypeError("maternal and paternal Thread must be different");
+  return Object.freeze({ sex, world, heritage, forceNewWorld, help, maternalThreadId, paternalThreadId });
 }
 
 function cachePath(repoRoot, selector, heritage) {
