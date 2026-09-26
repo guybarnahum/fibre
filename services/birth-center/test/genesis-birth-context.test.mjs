@@ -31,6 +31,7 @@ test("Genesis carries explicit sex place and heritage into life context and embo
     languages:["Georgian", "English"],
     raisedLanguages:["Georgian"],
     physicalGenome,
+    physicalParents:[{role:"maternal",threadId:"thr_physical_mother"}],
   };
   const plan = buildGenesisDevelopmentPlan({
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
@@ -77,4 +78,5 @@ test("Genesis carries explicit sex place and heritage into life context and embo
   assert.match(visualDescription, /Concrete inherited phenotype:/u);
   assert.doesNotMatch(visualDescription, /Georgian Jewish|Georgian family|west_asia/u, "family provenance must not become a portrait prompt");
   assert.deepEqual(seed.genome.physical,physicalGenome,"birth lost physical inheritance");
+  assert.ok(bundle.lifeRelations.some((relation)=>relation.relatedParty.partyId==="thr_physical_mother" && relation.relatedParty.kind==="thread" && relation.geneticContributionRole==="parent_genome_source"),"birth lost real biological parent lineage");
 });
