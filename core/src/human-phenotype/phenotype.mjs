@@ -3,7 +3,7 @@ import {inheritedAncestry, normalizeAncestry} from "./ancestry.mjs";
 
 function unit(seed, locus) {
   const hex = createHash("sha256").update(`${seed}\0${locus}`).digest("hex").slice(0, 13);
-  return Number.parseInt(hex, 16) / 0x1fffffffffffff;
+  return Number.parseInt(hex, 16) / 0xfffffffffffff;
 }
 
 export function sampleInheritedPhenotype({maternalAncestry, paternalAncestry, seed}) {
