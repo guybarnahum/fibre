@@ -1076,8 +1076,9 @@ function renderThreadPopulationMap() {
     return;
   }
   const places = grouped.locations.length;
+  const living = population.length - grouped.retired;
   threadPopulationMapSummary.textContent =
-    `${places} mapped area${places === 1 ? "" : "s"} · ${grouped.mapped} living Thread${grouped.mapped === 1 ? "" : "s"}`
+    `${living} living Thread${living === 1 ? "" : "s"} · ${grouped.mapped} mapped in ${places} area${places === 1 ? "" : "s"}`
     + (grouped.active > 0 ? ` · ${grouped.active} active` : "")
     + (grouped.frozenSituated > 0 ? ` · ${grouped.frozenSituated} frozen + situated` : "")
     + (grouped.transitioning > 0 ? ` · ${grouped.transitioning} transitioning` : "")
