@@ -20,3 +20,10 @@ test("physical inheritance is deterministic and preserves both parents", () => {
     {population:"population-c",share:0.5}
   ], "both parents must contribute");
 });
+
+test("inherited latent coordinates use the full unit interval",()=>{
+ const samples=Array.from({length:12},(_,i)=>sampleInheritedPhenotype({...parents,seed:`range-${i}`}).phenotype.latent);
+ const values=samples.flatMap(Object.values);
+ assert.ok(values.every(v=>v>=0&&v<=1),"latent coordinates must stay within unit interval");
+ assert.ok(values.some(v=>v>0.5),"latent coordinates must reach upper half");
+});
