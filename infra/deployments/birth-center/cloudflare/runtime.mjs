@@ -80,6 +80,7 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
   const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
   for (const request of modern) {
     if (request.status === "published") continue;
+    if (request.status === "failed" && !request.genesisId && !request.threadId) continue;
     if (runtime.modernBirthRequestStore.isActive(request.status) || request.status === "failed") {
       consider(request);
     }
@@ -202,6 +203,7 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
     const active = runtime.modernBirthRequestStore.isActive(request.status);
     if (!active && request.status !== "failed") continue;
     const developmentRequest = developmentByRequest.get(request.requestId) ?? null;
+    if (request.status === "failed" && developmentRequest === null && !request.genesisId && !request.threadId) continue;
     const disposition = developmentRequest === null
       ? null
       : runtime.developmentRequestStore.getDisposition(request.requestId);
