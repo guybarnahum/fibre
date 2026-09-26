@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+import { sampleFounderPhysicalGenome } from "../../core/src/human-phenotype/index.mjs";
 import {
   composeModernSubjectIdentity,
   freshModernParticipants,
@@ -54,4 +55,40 @@ test("modern birth creates a deterministic heritable physical genome before rend
   assert.deepEqual(first, replay, "same birth changed inherited appearance");
   assert.equal(first.physicalGenome.version,"physical-genome-v0.1");
   assert.notDeepEqual(first.physicalGenome,sibling.physicalGenome,"different births collapsed to one physical genome");
+});
+
+test("real parent Threads replace only their corresponding founder genomes",()=>{
+  const maternalGenome=sampleFounderPhysicalGenome({
+    ancestry:[{population:"maternal",share:1,referencePopulation:"afr_west"}],
+    seed:"real-mother",
+  });
+  const paternalGenome=sampleFounderPhysicalGenome({
+    ancestry:[{population:"paternal",share:1,referencePopulation:"eur_north"}],
+    seed:"real-father",
+  });
+  const material=birthMaterial(1);
+  const twoParents=composeModernSubjectIdentity({
+    requestId:"thread-parent-child",
+    material,
+    maternalParent:{threadId:"thr_mother",physicalGenome:maternalGenome},
+    paternalParent:{threadId:"thr_father",physicalGenome:paternalGenome},
+  });
+  const oneParent=composeModernSubjectIdentity({
+    requestId:"thread-parent-child-one",
+    material,
+    maternalParent:{threadId:"thr_mother",physicalGenome:maternalGenome},
+  });
+
+  assert.deepEqual(twoParents.physicalParents,[
+    {role:"maternal",threadId:"thr_mother"},
+    {role:"paternal",threadId:"thr_father"},
+  ],"real parents lost lineage");
+  assert.deepEqual(oneParent.physicalParents,[{role:"maternal",threadId:"thr_mother"}],"single real parent lost lineage");
+  for(const alleles of Object.values(twoParents.physicalGenome.loci)){
+    assert.ok(
+      maternalGenome.loci && paternalGenome.loci && alleles.length===2,
+      "child lost diploid inheritance",
+    );
+  }
+  assert.notDeepEqual(twoParents.physicalGenome,oneParent.physicalGenome,"missing parent did not change inheritance source");
 });
