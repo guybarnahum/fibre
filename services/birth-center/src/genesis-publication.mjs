@@ -246,6 +246,32 @@ export function materializeGenesisMemoryRecords(candidate, publicationAt) {
   return Object.freeze(records);
 }
 
+function buildPhysicalParentRelations({ candidate, slotPlan, thread, publicationAt }) {
+  const parents=slotPlan.subjectIdentity?.physicalParents ?? [];
+  if(parents.length===0)return [];
+  const seedEventId=normalizeSeedSnapshot(thread).provenance.lastEventId;
+  return parents.map((parent)=>normalizeLifeRelation({
+    relationId:lifeRelationId({
+      threadId:candidate.threadId,
+      relatedPartyId:parent.threadId,
+      relationKind:"biological_parent",
+      geneticContributionRole:"parent_genome_source",
+    }),
+    revision:1,
+    threadId:candidate.threadId,
+    relatedParty:{partyId:parent.threadId,kind:"thread",displayName:parent.threadId},
+    relationKind:"biological_parent",
+    geneticContributionRole:"parent_genome_source",
+    sourceReferences:[seedEventId],
+    validFrom:slotPlan.bornAt,
+    validTo:null,
+    visibility:"private",
+    status:"current",
+    provenance:"genesis_created",
+    recordedAt:publicationAt,
+  }));
+}
+
 function buildSyntheticLineageRelations({ candidate, slotPlan, thread, publicationAt }) {
   if (candidate.originMode !== "synthetic_lineage") return [];
   const owners = slotPlan.genome.header.sourceEligibility?.sourceOwners ?? [];
@@ -339,13 +365,16 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
   assertModernGenesisThreadIdentity(thread);
   const memories = materializeGenesisMemoryRecords(candidate, publicationAt);
   const manifest = buildManifest({ candidate, slotPlan, thread, memories, cognition, publicationAt });
-  const lifeRelations = buildSyntheticLineageRelations({ candidate, slotPlan, thread, publicationAt });
+  const lifeRelations = Object.freeze([
+    ...buildSyntheticLineageRelations({ candidate, slotPlan, thread, publicationAt }),
+    ...buildPhysicalParentRelations({ candidate, slotPlan, thread, publicationAt }),
+  ]);
   return Object.freeze({
     manifest,
     thread,
     episodes: structuredClone(candidate.episodes),
     memories,
-    lifeRelations: Object.freeze(lifeRelations),
+    lifeRelations,
     initialRoster: structuredClone(slotPlan.roster.participants),
     lifeContinuity: structuredClone(candidate.lifeContinuity),
     historicalEnvelopePlan: structuredClone(slotPlan.envelopePlan),
