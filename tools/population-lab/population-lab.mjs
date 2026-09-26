@@ -1,4 +1,4 @@
-import {createHash} from"node:crypto";import{sampleFamilyAncestry,sampleFounderPhysicalGenome,recombinePhysicalGenomes,phenotypeFromPhysicalGenome}from"../../core/src/human-phenotype/index.mjs";import{mkdir,writeFile}from"node:fs/promises";import{resolve}from"node:path";
+import {createHash} from"node:crypto";import{sampleFamilyAncestry,resolveBirthPhysicalInheritance,phenotypeFromPhysicalGenome}from"../../core/src/human-phenotype/index.mjs";import{mkdir,writeFile}from"node:fs/promises";import{resolve}from"node:path";
 const MODEL="gpt-5.1-2025-11-13";
 const T=["pigmentation","eyeColor","hairColor","frecklingTendency","hairTexture","hairDensity","hairlineLossTendency","facialHairTendency","faceWidth","faceLength","midfaceProminence","jawWidth","chinProjection","eyeSpacing","eyeShape","foreheadProportion","browProminence","noseWidth","noseProjection","lipFullness","frame","heightTendency","bodyProportion","adiposityTendency","muscularityTendency","shoulderHipProportion"];
 const arg=(n,d=null)=>process.argv.find(x=>x.startsWith("--"+n+"="))?.slice(n.length+3)??d;
@@ -36,14 +36,16 @@ const r=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers
 for(let i=0;i<people.length;i++){
   const p=people[i], family=families[i];
   p.familyAncestry=family;
-  const maternalGenome=sampleFounderPhysicalGenome({ancestry:family.maternal.ancestry,seed:`${seed}:maternal-founder:${i}`});
-  const paternalGenome=sampleFounderPhysicalGenome({ancestry:family.paternal.ancestry,seed:`${seed}:paternal-founder:${i}`});
-  const genome=recombinePhysicalGenomes({maternalGenome,paternalGenome,seed:`${seed}:conception:${i}`});
+  const inheritance=resolveBirthPhysicalInheritance({
+    maternalAncestry:family.maternal.ancestry,
+    paternalAncestry:family.paternal.ancestry,
+    seed:`${seed}:conception:${i}`
+  });
   p.inheritance={
-    maternalGenome,
-    paternalGenome,
-    genome,
-    phenotype:phenotypeFromPhysicalGenome(genome)
+    maternalGenome:inheritance.parents.maternal.genome,
+    paternalGenome:inheritance.parents.paternal.genome,
+    genome:inheritance.genome,
+    phenotype:phenotypeFromPhysicalGenome(inheritance.genome)
   };
 }
 const blocked=new Set(existingNames.map(key)),seen=new Set();for(const p of people){const n=key(p.name);if(blocked.has(n)||seen.has(n))throw Error(`model returned duplicate full name: ${p.name}`);seen.add(n)}return people}
