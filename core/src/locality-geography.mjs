@@ -190,8 +190,9 @@ const UNIQUE_CITY_MENTIONS = Object.freeze(
 
 export function resolveMentionedLocalityGeography(value) {
   if (typeof value !== "string" || value.trim() === "") return null;
+  const normalizedValue = normalized(value);
   const matches = UNIQUE_CITY_MENTIONS
-    .filter(({ pattern }) => pattern.test(value))
+    .filter(({ pattern }) => pattern.test(normalizedValue))
     .map(({ place }) => place);
   const unique = [...new Map(matches.map((place) => [place.place, place])).values()];
   return unique.length === 1 ? unique[0] : null;
