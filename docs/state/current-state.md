@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-09-24
+last-reviewed: 2026-09-26
 canonical: true
 ---
 
@@ -24,6 +24,12 @@ Models provide temporary cognition. Fibre owns continuity, authoritative state, 
 - Visual identity uses one canonical root/reference chain across age and scene.
 - Modern Genesis keeps **Raised languages** as immutable Genesis upbringing evidence distinct from the Thread's eventual/current **Spoken languages**; school-acquired languages may enter Spoken without being rewritten as upbringing.
 - Once an admitted canonical visual root reaches Thread Presentation, the existing FIA lifecycle is automatically reconciled: no active FIN Card triggers initial issuance, while a card whose admitted photo belongs to an older canonical root is replaced through the same FID authority.
+
+## Experimental human physical inheritance
+
+The shared **Population & Family Ancestry** boundary is now implemented and validated in Population Lab. Place + era produces an inspectable experimental distribution of coherent family histories; each sampled family keeps maternal and paternal physical ancestry separate from non-physical family context used for names, household languages and cultural history. The shared physical-inheritance component is deterministic and provider-independent.
+
+This is experimental machinery, not demographic truth and not yet production Genesis authority. Population calibration, production adoption, live-parent inheritance, genome/lineage persistence choices and existing-Thread repair remain deferred behind the explicit adoption gate in [Human physical inheritance and population realism](../architecture/human-physical-inheritance.md).
 
 ## Current milestone posture
 
