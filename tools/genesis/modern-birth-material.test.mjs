@@ -29,6 +29,7 @@ function birthMaterial(slot = 1) {
     languages:["Amharic", "English"],
     raisedLanguages:["Amharic"],
     appearanceLoci:APPEARANCE_LOCI,
+    physicalAncestry:{maternal:[{population:"Ethiopian family",share:1,referencePopulation:"afr_east"}],paternal:[{population:"Ethiopian family",share:1,referencePopulation:"afr_east"}]},
   };
 }
 
@@ -56,7 +57,7 @@ test("modern births compose a new person instead of replaying prior birth materi
 });
 
 
-test("modern birth selects one concrete family-compatible phenotype before rendering", () => {
+test("modern birth creates a deterministic heritable physical genome before rendering", () => {
   const appearanceMaterial = birthMaterial(1);
 
   const first = composeModernSubjectIdentity({ requestId:"visual-birth-001", material:appearanceMaterial });
@@ -64,7 +65,6 @@ test("modern birth selects one concrete family-compatible phenotype before rende
   const sibling = composeModernSubjectIdentity({ requestId:"visual-birth-002", material:appearanceMaterial });
 
   assert.deepEqual(first, replay, "same birth changed inherited appearance");
-  assert.match(first.appearanceContext, /^Concrete inherited phenotype selected for this individual:/u);
-  assert.doesNotMatch(first.appearanceContext, /family appearance|envelope|range/iu);
-  assert.notEqual(first.appearanceContext, sibling.appearanceContext, "different births collapsed to one inherited phenotype");
+  assert.equal(first.physicalGenome.version,"physical-genome-v0.1");
+  assert.notDeepEqual(first.physicalGenome,sibling.physicalGenome,"different births collapsed to one physical genome");
 });
