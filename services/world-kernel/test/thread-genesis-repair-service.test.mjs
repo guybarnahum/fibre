@@ -381,7 +381,14 @@ test("Fix restores unambiguous malformed birth geography from existing World ide
     },
   };
   const { service, state, threadId, thread } = fixture({ identityUpdater });
-  thread.identity.birthCity = "Hilo Hawaii, USA";
+  thread.identity.birthCity = "Hilo, Hawaii, United SAtates";
+  thread.identity.birthPlace = {
+    displayName:"Hilo, Hawaii, United SAtates",
+    country:"United SAtates",
+    city:"Hilo, Hawaii",
+    lat:19.70737,
+    long:-155.08158,
+  };
   state.presentation = {
     presentation:{
       subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
