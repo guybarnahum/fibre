@@ -65,6 +65,19 @@ test("World authoring omits unsupported reasoning-model sampling parameters", as
   assert.deepEqual(sent.reasoning, { effort:"low" });
 });
 
+test("modern Genesis accepts distinct biological parent Threads",()=>{
+  const options=parseModernGenesisArgs([
+    "--maternal-thread=thr_mother",
+    "--paternal-thread=thr_father",
+  ]);
+  assert.equal(options.maternalThreadId,"thr_mother");
+  assert.equal(options.paternalThreadId,"thr_father");
+  assert.throws(
+    ()=>parseModernGenesisArgs(["--maternal-thread=thr_parent","--paternal-thread=thr_parent"]),
+    /must be different/u,
+  );
+});
+
 test("modern Genesis keys create and reuse a place plus heritage World", async (t) => {
   const options = parseModernGenesisArgs([
     "--sex=female",
