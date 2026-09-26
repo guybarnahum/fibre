@@ -1,6 +1,7 @@
 import { sha256 } from "./genesis-development-contracts.mjs";
 import { normalizeGenesisSex } from "./genesis-sex.mjs";
 import { GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY } from "fibre/world-kernel/genesis-authority-contracts";
+import { phenotypeFromPhysicalGenome } from "#core/src/human-phenotype/index.mjs";
 
 const LOCI = Object.freeze({
   face: Object.freeze([
@@ -195,6 +196,12 @@ export function visualPhenotypeLociForBirth({ threadId, originMode, parentIds = 
   throw new TypeError(`unsupported Genesis visual phenotype origin mode ${String(originMode)}`);
 }
 
+
+function physicalPhenotypeDescription({physicalGenome,sex}) {
+  const phenotype=phenotypeFromPhysicalGenome(physicalGenome,{sex});
+  return "Concrete inherited phenotype selected for this individual: "+Object.entries(phenotype.traits).map(([name,value])=>`${name}: ${value}`).join("; ")+".";
+}
+
 function canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContext = null }) {
   const normalizedAppearance = optionalText("appearanceContext", appearanceContext);
   if (
@@ -234,9 +241,11 @@ export function buildGenesisCanonicalVisualIdentity({
   birthCity: _birthCity = null,
   heritage: _heritage = null,
   appearanceContext = null,
+  physicalGenome = null,
 } = {}) {
-  const loci = visualPhenotypeLociForBirth({ threadId, originMode, parentIds, appearanceContext });
-  return canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContext });
+  const inheritedAppearance = physicalGenome === null ? appearanceContext : physicalPhenotypeDescription({physicalGenome,sex});
+  const loci = visualPhenotypeLociForBirth({ threadId, originMode, parentIds, appearanceContext:inheritedAppearance });
+  return canonicalVisualIdentityFromLoci({ threadId, sex, loci, appearanceContext:inheritedAppearance });
 }
 
 export function buildDeNovoCanonicalVisualIdentity({
