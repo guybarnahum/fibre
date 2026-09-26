@@ -33,8 +33,8 @@ const blocked=new Set(existingNames.map(key)),seen=new Set();for(const p of peop
 function score(ps){
   const maps=Object.fromEntries(["full","given","family","signature"].map(x=>[x,new Map()]));
   for(const p of ps){const n=key(p.name),z=n.split(" "),traits=p.inheritance.phenotype.traits;for(const[k,v]of[["full",n],["given",z[0]],["family",z.at(-1)],["signature",T.map(d=>traits[d]).join("|")]])maps[k].set(v,(maps[k].get(v)||0)+1)}
-  const top=m=>Math.max(0,...m.values())/ps.length;
-  const summarize=people=>Object.fromEntries(T.map(d=>{const m=new Map();for(const p of people){const k=p.inheritance.phenotype.traits[d];m.set(k,(m.get(k)||0)+1)}return[d,{counts:Object.fromEntries([...m].sort()),unique:m.size,topShare:top(m)}]}));
+  const top=(m,n=ps.length)=>Math.max(0,...m.values())/n;
+  const summarize=people=>Object.fromEntries(T.map(d=>{const m=new Map();for(const p of people){const k=p.inheritance.phenotype.traits[d];m.set(k,(m.get(k)||0)+1)}return[d,{counts:Object.fromEntries([...m].sort()),unique:m.size,topShare:top(m,people.length)}]}));
   const domains=summarize(ps),collisions=[...maps.full].filter(x=>x[1]>1),phenotypeCollisions=[...maps.signature].filter(x=>x[1]>1),warnings=[];
   if(collisions.length)warnings.push(collisions.length+" full-name collision(s)");
   if(phenotypeCollisions.length)warnings.push(phenotypeCollisions.length+" inherited-phenotype collision(s)");
