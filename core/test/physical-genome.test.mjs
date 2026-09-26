@@ -22,7 +22,7 @@ test("a child inherits one allele from each parent and siblings can differ",()=>
 test("masked inherited material can reappear in a grandchild",()=>{
   const hidden={value:-.9,dominance:-.9};
   const visible={value:.8,dominance:.9};
-  const weak={value:.2,dominance:-1};
+  const weak={value:.2,dominance:-.4};
   const grandmother=parent(),grandfather=parent(.1);
   grandmother.loci.pigmentation=[visible,hidden];
   grandfather.loci.pigmentation=[visible,visible];
