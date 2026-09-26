@@ -49,9 +49,9 @@ function serviceBase(record, serviceId) {
   return required(`${serviceId} baseUrl`, matches[0].baseUrl).replace(/\/$/u, "");
 }
 
-function modernRequest({ requestId, requestedAt, cohort, selection, sexSelection, maternalParent = null, paternalParent = null }) {
+function modernRequest({ requestId, requestedAt, cohort, selection, sexSelection }) {
   const genome = fixture(selection.genomePath);
-  const composedIdentity = composeModernSubjectIdentity({ requestId, material: selection.material, maternalParent, paternalParent });
+  const composedIdentity = composeModernSubjectIdentity({ requestId, material: selection.material });
   const subjectIdentity = Object.freeze({
     ...composedIdentity,
     ...(sexSelection === null ? {} : { sex: sexSelection }),
@@ -119,17 +119,6 @@ async function inspectDevelopmentIfExists({ baseUrl, privateToken, requestId, ti
   return json(response, "Genesis development inspection");
 }
 
-async function resolvePhysicalParent({ baseUrl, privateToken, threadId, timeoutMs }) {
-  if(threadId===null)return null;
-  const payload=await json(await fetch(
-    `${baseUrl}/internal/threads/${encodeURIComponent(threadId)}/observatory`,
-    {headers:{"x-fibre-private-token":privateToken},signal:AbortSignal.timeout(timeoutMs)},
-  ), `parent Thread ${threadId}`);
-  const physicalGenome=payload?.observatory?.thread?.genome?.physical;
-  if(!physicalGenome)throw new Error(`parent Thread ${threadId} has no physical genome`);
-  return Object.freeze({threadId,physicalGenome});
-}
-
 async function inspectWorld({ baseUrl, privateToken, plan, timeoutMs }) {
   return json(await fetch(
     `${baseUrl}/internal/genesis/${encodeURIComponent(plan.genesisId)}/threads/${encodeURIComponent(plan.threadId)}/inspection`,
@@ -192,9 +181,8 @@ function usage() {
     "  npm run genesis:modern:staging -- --sex=female --place=Israel/Jerusalem --heritage=\"Yemeni Jewish\"",
     "  npm run genesis:modern:staging -- --sex=male --place=Germany/Berlin --heritage=Turkish",
     "  npm run genesis:modern:staging -- --new-world --sex=female --place=Brazil/Recife",
-    "  npm run genesis:modern:staging -- --maternal-thread=thr_... --paternal-thread=thr_... --place=United\ Kingdom/London",
     "",
-    "Keys: --sex=female|male, --place=Country/City, --heritage=Family Heritage, --maternal-thread=thr_..., --paternal-thread=thr_....",
+    "Keys: --sex=female|male, --place=Country/City, --heritage=Family Heritage.",
     "Legacy shorthand --female/--male and --Country/City remains accepted.",
     "Sex is optional; without it Fibre derives sex from the Thread identity.",
     "Place is optional; without it Fibre deterministically samples a globally distributed birthplace with a meaningful small-place long tail.",
@@ -251,18 +239,12 @@ async function main() {
     requestId,
     baseSlotOrdinal,
   });
-  const [maternalParent,paternalParent]=await Promise.all([
-    resolvePhysicalParent({baseUrl:worldKernel,privateToken,threadId:options.maternalThreadId,timeoutMs}),
-    resolvePhysicalParent({baseUrl:worldKernel,privateToken,threadId:options.paternalThreadId,timeoutMs}),
-  ]);
   const body = modernRequest({
     requestId,
     requestedAt,
     cohort,
     selection,
     sexSelection: options.sex,
-    maternalParent,
-    paternalParent,
   });
   const plan = buildGenesisDevelopmentPlan(body);
   if (existing !== null && existing.inspection.requestDigest !== plan.requestDigest) {
@@ -283,7 +265,6 @@ async function main() {
     genesisId: plan.genesisId,
     threadId: plan.threadId,
     identityMode: "fresh_birth_composition",
-    physicalParents:body.subjectIdentity.physicalParents ?? [],
   })}\n`);
 
   const birth = (await submit({ baseUrl: birthCenter, privateToken, body, timeoutMs })).development;
