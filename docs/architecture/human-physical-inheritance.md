@@ -46,7 +46,7 @@ Given identical authoritative inputs and seed, Population Lab and Fibre must rec
 
 Population Lab owns experiments, cohort generation, analytics, HTML/contact sheets and renderer experiments. Fibre owns birth, genome/lineage provenance, identity, embodiment authority and canonical visual identity.
 
-## Slice 1 — shared contract
+## Physical Inheritance Contract
 
 Create the smallest pure module that establishes the durable boundary.
 
@@ -64,7 +64,7 @@ The result preserves parental ancestry inputs, a derived inherited mixture suita
 
 No LLM participates in physical sampling.
 
-### Slice 1 acceptance
+### Physical Inheritance Contract acceptance
 
 - same parents + same seed produce the same inherited result;
 - a changed seed can produce a different individual while preserving parental ancestry constraints;
@@ -73,7 +73,7 @@ No LLM participates in physical sampling.
 - no birthplace, nationality, culture or racial category is accepted as a direct phenotype selector;
 - the module has no provider/runtime dependency.
 
-## Slice 2 — local population and family sampling
+## Population and Family Ancestry
 
 Add the experimental layer that turns place + era into a plausible local population context and parental family histories.
 
@@ -81,7 +81,7 @@ Population membership is probabilistic, never a quota. Common local histories ma
 
 The local-population model remains upstream of physical inheritance. It chooses plausible family ancestry; it does not render faces.
 
-## Slice 3 — correlated phenotype sampler
+## Correlated Phenotype Inheritance
 
 Expand the shared engine from contract to useful physical inheritance. Candidate stable dimensions include pigmentation, hair morphology/density/hairline, facial proportions, cheeks, eyes, brows, nose geometry, mouth/lips, jaw/chin, ears, skeletal frame and height tendency.
 
@@ -89,19 +89,19 @@ Traits are not independent dice. Use a small, inspectable correlation model. Anc
 
 This slice specifically tests whether Fibre can eliminate the current LLM attractor toward `medium/average` morphology.
 
-## Slice 4 — inherited phenotype vs physical state
+## Inherited Phenotype and Lived Physical State
 
 Keep time-varying state outside inherited phenotype: body composition/weight, muscular development, hairstyle/grooming, facial hair, skin condition, scars acquired through life, clothing, expression, injury and aging.
 
 This preserves the existing canonical-visual-identity distinction between stable identity and lived appearance.
 
-## Slice 5 — Population Lab consumes the shared engine
+## Population Lab Integration
 
 Population Lab stops asking the LLM to choose inherited morphology. It uses the shared component, then lets replaceable cognition describe already-sampled material and create culturally/familially coherent non-physical material without changing physical authority.
 
 Each report card exposes the causal chain and copyable evidence: family origins, parental/inherited ancestry, inherited phenotype, age-25 physical state, renderer brief and complete person record.
 
-## Slice 6 — measurement
+## Population Realism Measurement
 
 Measure the engine directly: trait distributions, phenotype collisions, correlations, ancestry-conditioned distributions, mixed-ancestry behavior, outlier frequency and pathological defaulting. Keep name collision/concentration and family-origin concentration separate.
 
@@ -109,7 +109,7 @@ There is no single diversity score and no brittle quota assertion.
 
 High-value tests prove deterministic mechanics and authority boundaries, not desired demographic percentages.
 
-## Slice 7 — experimental gate
+## Population Realism Validation
 
 Before Fibre adoption, run at least 100 text/genetics samples each for London, Stockholm and Lagos.
 
@@ -145,4 +145,4 @@ Currently **deferred**: production Genesis adoption, live-parent physical inheri
 
 Rejected: birthplace-to-appearance rules, racial phenotype switches, cohort diversity quotas, personality/ability inference from ancestry, and a second Lab-only inheritance implementation.
 
-Slice 1 is intentionally foundational. Its outputs are not yet evidence that Fibre has realistic human population genetics; they establish the replaceable causal boundary on which that experiment can be run.
+The Physical Inheritance Contract is intentionally foundational. Its outputs are not yet evidence that Fibre has realistic human population genetics; they establish the replaceable causal boundary on which that experiment can be run.
