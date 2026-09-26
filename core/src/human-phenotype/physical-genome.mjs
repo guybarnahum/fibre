@@ -2,7 +2,7 @@ import {createHash} from "node:crypto";
 
 const LOCI = Object.freeze([
   "pigmentation","eyePigmentation","hairPigmentation","frecklingTendency","hairForm","hairDensity","hairlineLossTendency","facialHairTendency","faceBreadth","faceLength","midfaceProminence","eyeSpacing","eyeShape","foreheadProportion",
-  "eyeSpacing","brow","noseBreadth","noseProjection","softTissue",
+  "brow","noseBreadth","noseProjection","softTissue",
   "jawBreadth","chinProjection","frame","height","bodyProportion","adiposityTendency","muscularityTendency","shoulderHipProportion"
 ]);
 
@@ -47,8 +47,12 @@ export function expressPhysicalGenome(genome) {
   for(const name of LOCI) {
     const [a,b]=genome?.loci?.[name]??[];
     if(!a||!b) throw Error(`${name} missing from physical genome`);
-    const wa=1+a.dominance,wb=1+b.dominance;
-    expressed[name]=clamp((a.value*wa+b.value*wb)/(wa+wb));
+    const dominanceGap=a.dominance-b.dominance;
+    if(Math.abs(dominanceGap)>=.5) expressed[name]=clamp(dominanceGap>0?a.value:b.value);
+    else {
+      const wa=Math.max(.05,1+a.dominance),wb=Math.max(.05,1+b.dominance);
+      expressed[name]=clamp((a.value*wa+b.value*wb)/(wa+wb));
+    }
   }
   return expressed;
 }
