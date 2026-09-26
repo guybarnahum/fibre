@@ -28,8 +28,6 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     "culturalContext",
     "heritageContext",
     "familyOriginContext",
-    "appearanceContext",
-    "appearanceLoci",
     "physicalAncestry",
     "availableInstitutions",
     "intellectualEnvironment",
@@ -80,27 +78,6 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
           referencePopulation:{type:"string",enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}
         }}
       }]))
-    },
-    appearanceContext: {
-      type: "string",
-      minLength: 1,
-      description:"A broad physical-family appearance prior causally compatible with familyOriginContext. Describe enough inherited morphology range to ground a plausible person: complexion/skin variation, hair texture/color, eye/eyelid range, face proportions, brow range, nose bridge/base/tip range, mouth/lip range, jaw/chin range, and build where relevant. Preserve substantial within-family variation and do not invent ancestry that familyOriginContext does not support.",
-    },
-    appearanceLoci: {
-      type: "object",
-      additionalProperties: false,
-      required: ["skin", "hair", "eyes", "face", "brows", "nose", "mouth", "jaw", "build"],
-      properties: Object.fromEntries(["skin", "hair", "eyes", "face", "brows", "nose", "mouth", "jaw", "build"].map((domain) => [
-        domain,
-        {
-          type: "array",
-          minItems: 4,
-          maxItems: 6,
-          uniqueItems: true,
-          description:"Concrete, atomic physical variants for this domain. Every option must be individually compatible with the authored family appearance envelope; use morphology only and no demographic labels.",
-          items: { type: "string", minLength: 1 },
-        },
-      ])),
     },
     availableInstitutions: { type: "array", minItems: 3, uniqueItems: true, items: { type: "string", minLength: 1 } },
     intellectualEnvironment: { type: "string", minLength: 1 },
@@ -255,33 +232,6 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
-function appearancePrior({ selector, heritage, value }) {
-  let text = nonEmpty("authored world appearanceContext", value);
-  for (const label of [heritage?.display, selector.city, selector.country]) {
-    if (typeof label !== "string" || label.trim() === "") continue;
-    text = text.replace(new RegExp(escapeRegExp(label.trim()), "giu"), "the family");
-  }
-  return text.replace(/\s+/gu, " ").trim();
-}
-
-function appearanceLoci({ selector, heritage, value }) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new TypeError("authored world appearanceLoci must be an object");
-  }
-  const domains = ["skin", "hair", "eyes", "face", "brows", "nose", "mouth", "jaw", "build"];
-  return Object.freeze(Object.fromEntries(domains.map((domain) => {
-    const options = value[domain];
-    if (!Array.isArray(options) || options.length < 4) {
-      throw new TypeError(`authored world appearanceLoci.${domain} must contain at least four variants`);
-    }
-    return [domain, Object.freeze(options.map((option) => appearancePrior({
-      selector,
-      heritage,
-      value:nonEmpty(`authored world appearanceLoci.${domain}`, option),
-    })))];
-  })));
-}
-
 function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEndsAt, createdAt }) {
   const timeZone = assertTimeZone(nonEmpty("authored world timeZone", authored.timeZone));
   const languages = subjectLanguages(authored.languages);
@@ -341,8 +291,6 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
     heritage: heritageLabel,
     familyOriginContext,
     physicalAncestry: structuredClone(authored.physicalAncestry),
-    appearanceContext: appearancePrior({ selector, heritage, value: authored.appearanceContext }),
-    appearanceLoci: appearanceLoci({ selector, heritage, value: authored.appearanceLoci }),
     languages,
     raisedLanguages,
     nameOrder: authored.nameOrder,
@@ -409,8 +357,6 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "familyOriginContext is causal World material. It may shape ordinary life through language at home, relatives, family stories, visits, community ties, being visibly unusual or ordinary in the local environment, peer perception, belonging, or identity questions when appropriate. Do not make every episode about ancestry or visible difference, and do not assume discrimination, trauma, personality, ability, values, or social outcomes.",
       "Do not infer the future subject's religion, religious observance, politics, personality, class identity, profession, competence, trauma or values from ancestry, appearance, place, or heritage. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
       "Return physicalAncestry with separate maternal and paternal ancestry mixtures causally supported by familyOriginContext. Use the broad referencePopulation only as a physical founder prior; population is a concise human-readable family-origin label. Shares on each parent should sum to 1. Do not use these fields for culture, personality, ability, class, religion, behavior or values.",
-      "Return appearanceContext as a broad family-appearance prior causally supported by familyOriginContext. It must be physically informative enough to ground a coherent individual without demographic labels: include plausible ranges for complexion/skin variation, hair texture/color, eye and eyelid morphology, overall face proportions, brows, nose bridge/base/tip, mouth/lip geometry, jaw/chin geometry, and build where relevant. Describe ranges, not one stereotyped face. If the appearance range would be uncommon in the selected place, familyOriginContext must contain the corresponding migration, mixed-ancestry, adoption, or diaspora history rather than leaving the appearance unexplained. Do not repeat the heritage label, country, city, religion, nationality or community name in appearanceContext. Preserve substantial within-family variation and never connect appearance to personality or worth.",
-      "Return appearanceLoci as concrete reusable birth material inside that envelope. For each domain—skin, hair, eyes, face, brows, nose, mouth, jaw and build—supply four to six atomic concrete variants. Every individual option must be physically compatible with appearanceContext; options are not demographic stereotypes and must contain no country, city, heritage, religion, nationality or community labels. These variants exist so Genesis, not the image renderer, can deterministically choose one concrete inherited phenotype for a new Thread.",
       "Names are reusable local/heritage naming material only, never pre-authored people. Supply at least six distinct female given names, six distinct male given names and six family names.",
       "Use an IANA time-zone identifier. Keep civic descriptions concrete enough to ground ordinary episodes, but avoid unsupported hyper-specific claims.",
     ].join("\n"),
