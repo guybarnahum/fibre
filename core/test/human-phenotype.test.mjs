@@ -27,3 +27,14 @@ test("inherited latent coordinates use the full unit interval",()=>{
  assert.ok(values.every(v=>v>=0&&v<=1),"latent coordinates must stay within unit interval");
  assert.ok(values.some(v=>v>0.5),"latent coordinates must reach upper half");
 });
+
+test("correlated phenotype resolves concrete inherited traits", () => {
+  const samples = Array.from({length:24}, (_,i) =>
+    sampleInheritedPhenotype({...parents, seed:`traits-${i}`}).phenotype
+  );
+  assert.ok(samples.every(p => p.version === "human-phenotype-v0.2"), "phenotype version must identify correlated sampler");
+  assert.ok(samples.every(p => p.traits.faceWidth && p.traits.noseProjection && p.traits.hairTexture), "inherited traits must be concrete");
+  assert.ok(new Set(samples.map(p => p.traits.faceWidth)).size > 1, "face width must vary");
+  assert.ok(new Set(samples.map(p => p.traits.noseProjection)).size > 1, "nose projection must vary");
+  assert.ok(new Set(samples.map(p => p.traits.hairTexture)).size > 1, "hair texture must vary");
+});
