@@ -2,11 +2,17 @@ import {expressPhysicalGenome} from "./physical-genome.mjs";
 
 const clamp01=value=>Math.max(0,Math.min(1,(Number(value)+1)/2));
 const band=(value,labels)=>labels[Math.min(labels.length-1,Math.floor(clamp01(value)*labels.length))];
+const morphologyBand=(value,labels)=>{
+  const x=Number(value);
+  if(x<-.18)return labels[0];
+  if(x>.18)return labels[2];
+  return labels[1];
+};
 
 export function phenotypeFromPhysicalGenome(genome){
   const x=expressPhysicalGenome(genome);
   return {
-    version:"human-phenotype-v0.8",
+    version:"human-phenotype-v0.9",
     traits:{
       pigmentation:band(x.pigmentation,["very light","light","medium","deep","very deep"]),
       eyeColor:band(x.eyePigmentation,["blue/gray","green","hazel","brown","dark brown"]),
@@ -17,14 +23,14 @@ export function phenotypeFromPhysicalGenome(genome){
       hairlineLossTendency:band(x.hairlineLossTendency,["low","moderate","high"]),
       facialHairTendency:band(x.facialHairTendency,["light","moderate","dense"]),
       faceWidth:band(x.faceBreadth,["narrow","medium","broad"]),
-      faceLength:band(x.faceLength,["short","medium","long"]),
-      midfaceProminence:band(x.midfaceProminence,["soft","medium","prominent"]),
-      jawWidth:band(x.jawBreadth,["narrow","medium","broad"]),
-      chinProjection:band(x.chinProjection,["soft","medium","prominent"]),
-      eyeSpacing:band(x.eyeSpacing,["close","average","wide"]),
-      eyeShape:band(x.eyeShape,["narrow","intermediate","open"]),
-      foreheadProportion:band(x.foreheadProportion,["low","medium","high"]),
-      browProminence:band(x.brow,["light","medium","strong"]),
+      faceLength:morphologyBand(x.faceLength,["short","medium","long"]),
+      midfaceProminence:morphologyBand(x.midfaceProminence,["soft","medium","prominent"]),
+      jawWidth:morphologyBand(x.jawBreadth,["narrow","medium","broad"]),
+      chinProjection:morphologyBand(x.chinProjection,["soft","medium","prominent"]),
+      eyeSpacing:morphologyBand(x.eyeSpacing,["close","average","wide"]),
+      eyeShape:morphologyBand(x.eyeShape,["narrow","intermediate","open"]),
+      foreheadProportion:morphologyBand(x.foreheadProportion,["low","medium","high"]),
+      browProminence:morphologyBand(x.brow,["light","medium","strong"]),
       noseWidth:band(x.noseBreadth,["narrow","medium","broad"]),
       noseProjection:band(x.noseProjection,["low","medium","high"]),
       lipFullness:band(x.softTissue,["thin","medium","full"]),
