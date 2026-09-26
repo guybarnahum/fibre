@@ -196,6 +196,20 @@ export function resolveMentionedLocalityGeography(value) {
   const unique = [...new Map(matches.map((place) => [place.place, place])).values()];
   return unique.length === 1 ? unique[0] : null;
 }
+
+export function resolveLocalityGeographyEvidence(values) {
+  const matches = [];
+  for (const value of Array.isArray(values) ? values : [values]) {
+    if (typeof value !== "string" || value.trim() === "") continue;
+    const exact = resolveLocalityGeography(value);
+    if (exact !== null) matches.push(exact);
+    const mentioned = resolveMentionedLocalityGeography(value);
+    if (mentioned !== null) matches.push(mentioned);
+  }
+  const unique = [...new Map(matches.map((place) => [place.place, place])).values()];
+  return unique.length === 1 ? unique[0] : null;
+}
+
 export function localityCoordinates(place) {
   const resolved = resolveLocalityGeography(place);
   return resolved === null ? null : Object.freeze({ lat:resolved.lat, long:resolved.long });
