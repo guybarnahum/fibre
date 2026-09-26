@@ -45,6 +45,7 @@ const birthSubmit = $("#thread-birth-submit");
 
 let birthplaces = null;
 let selectedBirthplace = null;
+let birthSearchSequence = 0;
 let pendingBirthSnapshot = [];
 let pendingBirthTimer = null;
 let birthCenterInitialized = false;
@@ -836,10 +837,10 @@ function syncBirthMode() {
   birthRandomLocation.classList.toggle("selected", random);
   birthMapSelection.textContent = random
     ? "Random Location"
-    : selectedBirthplace?.place === value
-      ? selectedBirthplace.place.replace("/", " · ")
+    : selectedBirthplace?.displayName === value
+      ? selectedBirthplace.displayName
       : value;
-  renderBirthMarker(random ? null : selectedBirthplace?.place === value ? selectedBirthplace : null);
+  renderBirthMarker(random ? null : selectedBirthplace?.displayName === value ? selectedBirthplace : null);
   renderBirthPipelineMarkers();
   const count = selectedBirthCount();
   birthSubmit.textContent = count === 1 ? "Birth Thread" : `Birth ${count} Threads`;
@@ -851,38 +852,29 @@ function setBirthLocation(value, place = null) {
   syncBirthMode();
 }
 
-function birthSearchMatches(query) {
-  const normalized = query.trim().toLocaleLowerCase("en-US");
-  if (normalized === "" || !Array.isArray(birthplaces)) return [];
-  const score = (place) => {
-    const city = place.city.toLocaleLowerCase("en-US");
-    const country = place.country.toLocaleLowerCase("en-US");
-    const full = place.place.toLocaleLowerCase("en-US");
-    if (city === normalized || full === normalized) return 0;
-    if (city.startsWith(normalized)) return 1;
-    if (country.startsWith(normalized)) return 2;
-    if (full.includes(normalized)) return 3;
-    return 99;
-  };
-  return birthplaces
-    .map((place) => ({ place, score:score(place) }))
-    .filter((entry) => entry.score < 99)
-    .sort((left, right) => left.score - right.score || right.place.populationK - left.place.populationK)
-    .slice(0,8)
-    .map((entry) => entry.place);
-}
-
-function renderBirthSearch() {
-  const query = birthLocation.value;
-  selectedBirthplace = birthplaces?.find((place) => place.place === query.trim()) ?? null;
+async function renderBirthSearch() {
+  const query = birthLocation.value.trim();
+  selectedBirthplace = null;
   syncBirthMode();
-  const matches = birthSearchMatches(query);
   birthSearchResults.replaceChildren();
-  if (matches.length === 0) {
+  if (query.length < 2) {
     birthSearchResults.hidden = true;
     return;
   }
-  for (const place of matches) {
+
+  const sequence = ++birthSearchSequence;
+  const response = await fetch(`/api/threads/births/place-search?q=${encodeURIComponent(query)}`, {
+    headers:{ Accept:"application/json" },
+    cache:"no-store",
+  }).catch(() => null);
+  if (sequence !== birthSearchSequence || response === null) return;
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.ok !== true || !Array.isArray(payload.places)) {
+    birthSearchResults.hidden = true;
+    return;
+  }
+
+  for (const place of payload.places) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "thread-birth-search-result";
@@ -890,15 +882,13 @@ function renderBirthSearch() {
     const name = document.createElement("strong");
     name.textContent = place.city;
     const meta = document.createElement("small");
-    meta.textContent = `${place.country} · ${place.tier === "anchor" ? "major-city anchor" : "smaller-place long tail"}`;
+    meta.textContent = place.country;
     copy.append(name, meta);
-    const region = document.createElement("small");
-    region.textContent = human(place.region);
-    button.append(copy, region);
-    button.addEventListener("click", () => setBirthLocation(place.place, place));
+    button.append(copy);
+    button.addEventListener("click", () => setBirthLocation(place.displayName, place));
     birthSearchResults.append(button);
   }
-  birthSearchResults.hidden = false;
+  birthSearchResults.hidden = payload.places.length === 0;
 }
 
 async function loadBirthplaces() {
@@ -1238,9 +1228,16 @@ function stopPendingPolling() {
   pendingBirthTimer = null;
 }
 
-function chooseFromMap(event) {
-  const place = nearestBirthplace(mapCoordinates(event));
-  if (place !== null) setBirthLocation(place.place, place);
+async function chooseFromMap(event) {
+  const coordinates = mapCoordinates(event);
+  const response = await fetch(
+    `/api/threads/births/place-search?lat=${encodeURIComponent(coordinates.lat)}&long=${encodeURIComponent(coordinates.long)}`,
+    { headers:{ Accept:"application/json" }, cache:"no-store" },
+  ).catch(() => null);
+  if (response === null) return;
+  const payload = await response.json().catch(() => null);
+  const place = payload?.ok === true && Array.isArray(payload.places) ? payload.places[0] ?? null : null;
+  if (place !== null) setBirthLocation(place.displayName, place);
 }
 
 async function loadBirthCenter() {
@@ -1281,12 +1278,12 @@ async function submitBirth(event) {
   event.preventDefault();
   if (birthSubmit.disabled) return;
   const locationInput = birthLocation.value.trim();
-  if (locationInput !== "" && selectedBirthplace?.place !== locationInput) {
+  if (locationInput !== "" && selectedBirthplace?.displayName !== locationInput) {
     birthResult.classList.add("failed");
-    birthResult.textContent = "Choose a birthplace from the search results, or use Random Location.";
+    birthResult.textContent = "Choose a normalized birthplace from the search results, or use Random Location.";
     return;
   }
-  const location = selectedBirthplace?.place ?? "";
+  const location = selectedBirthplace ?? null;
   const count = selectedBirthCount();
   const sex = selectedBirthSex();
   const requestedAt = new Date().toISOString();
