@@ -60,7 +60,7 @@ sampleInheritedPhenotype({
 })
 ```
 
-The result preserves parental ancestry inputs, a derived inherited mixture suitable for inspection, and a structured inherited physical phenotype. The first slice proves deterministic inheritance and the authority boundary; it does not claim scientifically calibrated population genetics.
+The result preserves parental ancestry inputs, a derived inherited mixture suitable for inspection, and a structured inherited physical phenotype. The Physical Inheritance Contract proves deterministic inheritance and the authority boundary; it does not claim scientifically calibrated population genetics.
 
 No LLM participates in physical sampling.
 
@@ -75,9 +75,9 @@ No LLM participates in physical sampling.
 
 ## Population and Family Ancestry
 
-Add the experimental layer that turns place + era into a plausible local population context and parental family histories.
+Add the experimental layer that turns place + era into a plausible local population context and coherent family-history patterns containing distinct maternal and paternal ancestry.
 
-Population membership is probabilistic, never a quota. Common local histories may repeat naturally. Migration, diaspora, adoption and mixed families remain possible at plausible frequencies. A cohort must not be curated as a representative cast.
+Population membership is probabilistic, never a quota. Common local histories may repeat naturally. Migration, diaspora, adoption and mixed-parent families remain possible at plausible frequencies. A cohort must not be curated as a representative cast.\n\nFamily history has two separate downstream branches: ancestry is provenance for physical inheritance; non-physical family context may ground names, household languages and cultural history. Physical ancestry must never be used as a shortcut for naming, language or culture.
 
 The local-population model remains upstream of physical inheritance. It chooses plausible family ancestry; it does not render faces.
 
@@ -87,7 +87,7 @@ Expand the shared engine from contract to useful physical inheritance. Candidate
 
 Traits are not independent dice. Use a small, inspectable correlation model. Ancestry shifts distributions rather than dictating traits; mixed inheritance and individual variation remain substantial.
 
-This slice specifically tests whether Fibre can eliminate the current LLM attractor toward `medium/average` morphology.
+Correlated Phenotype Inheritance specifically tests whether Fibre can eliminate the current LLM attractor toward `medium/average` morphology.
 
 ## Inherited Phenotype and Lived Physical State
 
