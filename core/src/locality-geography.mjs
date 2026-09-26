@@ -111,7 +111,7 @@ const LOCALITY_COORDINATES = Object.freeze({
 
 function normalized(value) {
   return typeof value === "string"
-    ? value.trim().toLocaleLowerCase("en-US").replace(/\s+/gu, " ")
+    ? value.trim().toLocaleLowerCase("en-US").replace(/,+/gu, " ").replace(/\s+/gu, " ")
     : "";
 }
 
