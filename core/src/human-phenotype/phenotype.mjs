@@ -9,10 +9,12 @@ const morphologyBand=(value,labels)=>{
   return labels[1];
 };
 
-export function phenotypeFromPhysicalGenome(genome){
+export function phenotypeFromPhysicalGenome(genome,{sex}={}){
   const x=expressPhysicalGenome(genome);
+  const facialHairTendency=sex==="female"?"minimal":band(x.facialHairTendency,["light","moderate","dense"]);
+  const hairlineLossTendency=sex==="female"?"low":band(x.hairlineLossTendency,["low","moderate","high"]);
   return {
-    version:"human-phenotype-v0.9",
+    version:"human-phenotype-v0.10",
     traits:{
       pigmentation:band(x.pigmentation,["very light","light","medium","deep","very deep"]),
       eyeColor:band(x.eyePigmentation,["blue/gray","green","hazel","brown","dark brown"]),
@@ -20,8 +22,8 @@ export function phenotypeFromPhysicalGenome(genome){
       frecklingTendency:band(x.frecklingTendency,["low","moderate","high"]),
       hairTexture:band(x.hairForm,["straight","wavy","curly","coily"]),
       hairDensity:band(x.hairDensity,["sparse","medium","dense"]),
-      hairlineLossTendency:band(x.hairlineLossTendency,["low","moderate","high"]),
-      facialHairTendency:band(x.facialHairTendency,["light","moderate","dense"]),
+      hairlineLossTendency,
+      facialHairTendency,
       faceWidth:band(x.faceBreadth,["narrow","medium","broad"]),
       faceLength:morphologyBand(x.faceLength,["short","medium","long"]),
       midfaceProminence:morphologyBand(x.midfaceProminence,["soft","medium","prominent"]),
