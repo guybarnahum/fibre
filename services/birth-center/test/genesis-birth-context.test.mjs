@@ -1,3 +1,4 @@
+import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -18,7 +19,8 @@ test("Genesis carries explicit sex place and heritage into life context and embo
   const slot = cohort.slots[0];
   const worldSpec = fixture(slot.worldSpecPath);
   const genome = fixture(slot.genomePath);
-  const appearanceContext = "Concrete inherited phenotype selected for this individual: medium olive-brown skin; dense near-black wavy hair; deep-brown almond-shaped eyes; balanced oval face; dense gently arched brows; medium-width straight nasal bridge with rounded tip; medium-full balanced lips; softly defined jaw with rounded chin; lean-to-average frame.";
+  const family=[{population:"Georgian family",share:1,referencePopulation:"west_asia"}];
+  const physicalGenome=resolveBirthPhysicalInheritance({maternalAncestry:family,paternalAncestry:family,seed:"birth-context"}).genome;
   const subjectIdentity = {
     femaleName: "Mariam Beridze",
     maleName: "Giorgi Beridze",
@@ -28,7 +30,7 @@ test("Genesis carries explicit sex place and heritage into life context and embo
     heritage: "Georgian Jewish",
     languages:["Georgian", "English"],
     raisedLanguages:["Georgian"],
-    appearanceContext,
+    physicalGenome,
   };
   const plan = buildGenesisDevelopmentPlan({
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
@@ -68,13 +70,11 @@ test("Genesis carries explicit sex place and heritage into life context and embo
   const visual = buildGenesisCanonicalVisualIdentity({
     threadId: plan.threadId,
     sex: seed.identity.sex,
-    originMode: "de_novo",
-    birthCity: plan.subjectIdentity.birthCity,
-    heritage: plan.subjectIdentity.heritage,
-    appearanceContext: plan.subjectIdentity.appearanceContext,
+    physicalGenome:plan.subjectIdentity.physicalGenome,
   });
   const visualDescription = visual.specification.subject.description;
   assert.match(visualDescription, /adult female person/u);
-  assert.match(visualDescription, /Concrete inherited phenotype selected for this individual/u);
-  assert.doesNotMatch(visualDescription, /Georgian Jewish/u, "heritage label must not become a portrait prompt");
+  assert.match(visualDescription, /Concrete inherited phenotype:/u);
+  assert.doesNotMatch(visualDescription, /Georgian Jewish|Georgian family|west_asia/u, "family provenance must not become a portrait prompt");
+  assert.deepEqual(seed.genome.physical,physicalGenome,"birth lost physical inheritance");
 });
