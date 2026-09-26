@@ -95,7 +95,7 @@ Ancestry provenance remains semantic and inspectable. A separate small physical-
 
 Founder sampling must preserve substantial within-population variation. Two founders with the same ancestry should usually have different genomes.
 
-The current reference-population coefficients are experimental visual priors, not claims of measured allele frequencies. They require Population Lab calibration before production Genesis adoption.
+The current reference-population coefficients are experimental visual priors, not claims of measured allele frequencies. They remain replaceable and require continued Population Lab calibration; production Genesis now uses the shared inheritance mechanism without treating those coefficients as demographic truth.
 
 ## Unified birth inheritance
 
@@ -145,7 +145,7 @@ Useful measurements are population-conditioned distributions, within-population 
 
 ## Validation
 
-Before production Genesis adoption:
+The production-adoption gate is now closed. Continued Population Lab work remains the calibration bench for:
 
 1. founder cohorts for London, Stockholm and Lagos test population structure plus within-population individuality;
 2. synthetic family experiments test siblings and mixed parentage;
@@ -168,13 +168,13 @@ Generate plausible paired founder genomes from maternal/paternal ancestry using 
 
 The shared core now resolves each biological parent independently: an available parent genome remains authoritative; only a missing parent is represented by a transient founder genome sampled from that parent's ancestry. Zero-, one- and two-Thread-parent births then converge on the same deterministic recombination primitive. When both parent genomes exist, ancestry inputs cannot alter the child's physical genome.
 
-### Population Validation — active
+### Population Validation — validated foundation; calibration continues
 
 Population Lab now exercises the exact Unified Birth Inheritance path used by the shared core. The first 150-person London/Stockholm/Lagos validation exposed midpoint compression in several facial-geometry traits even while pigmentation, eye/hair and some morphology showed population structure. The experimental phenotype projection now preserves more of those inherited geometric differences with a narrower neutral band; this remains a validation hypothesis, not an accepted calibration. Validation measures founder cohorts, within-population individuality, mixed ancestry, sibling/family resemblance, multigenerational masked transmission and renderer fidelity before any production Genesis adoption.
 
-### Fibre Adoption — active
+### Fibre Adoption — closed
 
-Modern Genesis persists the physical genome as private inherited Thread state, canonical visual identity is projected from its expressed phenotype, and the legacy appearance-selection path has been removed. Current Genesis enters a Thread as a young adult with an authored prior life, so its missing biological parents remain transient founder genomes sampled from separate maternal and paternal ancestry provenance. Conservative treatment of existing society remains deferred; existing Threads are not retroactively assigned invented physical genomes or parents.
+Modern Genesis persists the physical genome as private inherited Thread state, canonical visual identity is projected from its expressed phenotype, and the legacy appearance-selection path has been removed. Current Genesis enters a Thread as a young adult with an authored prior life, so its missing biological parents remain transient founder genomes sampled from separate maternal and paternal ancestry provenance. Permanent Genesis publication/replay/failure fixtures now enter through the same physical-genome requirement rather than bypassing it. The repository validation gate passed on 2026-09-26 after this adoption. Conservative treatment of the existing society remains deliberate: existing Threads are not retroactively assigned invented physical genomes or parents.
 
 ## Runtime and ambition guard
 
