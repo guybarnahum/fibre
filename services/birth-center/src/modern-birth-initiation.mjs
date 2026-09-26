@@ -123,9 +123,35 @@ function normalizeLocation(raw) {
   });
 }
 
+function canonicalOperatorLocation(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new TypeError("operator location must be canonical geography");
+  }
+  const allowed = new Set(["country","city","displayName","lat","long"]);
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key)) throw new TypeError(`operator location.${key} is not allowed`);
+  }
+  const country = nonEmpty("operator location.country", value.country);
+  const city = nonEmpty("operator location.city", value.city);
+  const displayName = nonEmpty("operator location.displayName", value.displayName);
+  const lat = Number(value.lat);
+  const long = Number(value.long);
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90) throw new TypeError("operator location.lat is invalid");
+  if (!Number.isFinite(long) || long < -180 || long > 180) throw new TypeError("operator location.long is invalid");
+  return Object.freeze({
+    country,
+    city,
+    displayName,
+    display:`${country}/${city}`,
+    birthCity:`${city}, ${country}`,
+    lat,
+    long,
+  });
+}
+
 function selectedLocation(requestId, location) {
-  if (location !== null && location !== undefined && String(location).trim() !== "") {
-    return Object.freeze({ selector:normalizeLocation(location), source:"operator" });
+  if (location !== null && location !== undefined) {
+    return Object.freeze({ selector:canonicalOperatorLocation(location), source:"operator" });
   }
   const sampled = sampleModernBirthplace(requestId);
   return Object.freeze({ selector:normalizeLocation(sampled.place), source:sampled.kind, region:sampled.region });
