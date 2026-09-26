@@ -152,15 +152,15 @@ Tests prove semantic mechanics, not exact random numbers or desired demographic 
 
 ## Capability sequence
 
-### Physical Genome Core — in progress
+### Physical Genome Core — implemented experimentally
 
 Define paired loci, allele transmission, recombination and pure genome expression in the shared core. This establishes durable hidden inherited material and multigenerational continuity.
 
-### Founder Genome Generation — next
+### Founder Genome Generation — implemented experimentally
 
-Generate plausible paired founder genomes from maternal/paternal ancestry using the compact physical-population basis.
+Generate plausible paired founder genomes from maternal/paternal ancestry using the compact physical-population basis. Population Lab now uses these founder genomes, the shared recombination primitive and genome-only phenotype expression; the previous direct ancestry-to-phenotype path has been removed.
 
-### Unified Birth Inheritance — deferred
+### Unified Birth Inheritance — next
 
 Resolve two real/founder parental genomes for every birth and use one recombination path.
 
