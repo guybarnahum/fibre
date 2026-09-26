@@ -39,6 +39,14 @@ function reconciliationRetryMs(env) {
   return value;
 }
 
+function requestedLocationDisplay(location) {
+  if (typeof location === "string") return location;
+  if (location && typeof location === "object" && location.country && location.city) {
+    return `${location.country}/${location.city}`;
+  }
+  return null;
+}
+
 function operatorBirthStage(status) {
   return ({
     queued:"genesis",
@@ -213,7 +221,7 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
       source:"modern",
       status:request.status,
       stage:request.status === "failed" ? "failed" : operatorBirthStage(request.status),
-      location:request.location ?? request.requestedLocation,
+      location:request.location ?? requestedLocationDisplay(request.requestedLocation),
       locationSource:request.locationSource,
       sex:request.sex ?? request.requestedSex,
       timing:birthTiming(request, nowMs),
