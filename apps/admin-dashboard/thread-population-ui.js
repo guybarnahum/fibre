@@ -731,25 +731,6 @@ function mapCoordinates(event) {
   };
 }
 
-function geoDistance(left, right) {
-  const toRad = (value) => value * Math.PI / 180;
-  const lat1 = toRad(left.lat);
-  const lat2 = toRad(right.lat);
-  const deltaLat = lat2 - lat1;
-  const deltaLong = toRad(right.long - left.long);
-  const a = Math.sin(deltaLat / 2) ** 2
-    + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLong / 2) ** 2;
-  return 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function nearestBirthplace(point) {
-  if (!Array.isArray(birthplaces) || birthplaces.length === 0) return null;
-  return birthplaces.reduce((best, candidate) => {
-    const distance = geoDistance(point, candidate);
-    return best === null || distance < best.distance ? { candidate, distance } : best;
-  }, null)?.candidate ?? null;
-}
-
 function setButtonWaiting(button, label) {
   const icon = faIcon("rotate");
   icon.classList.add("fa-spin");
@@ -779,6 +760,20 @@ function birthStage(birth) {
 }
 
 function birthplaceForBirth(birth) {
+  const canonical = birth?.requestedLocation;
+  if (
+    canonical && typeof canonical === "object"
+    && Number.isFinite(Number(canonical.lat))
+    && Number.isFinite(Number(canonical.long))
+  ) {
+    return {
+      place:`${canonical.country}/${canonical.city}`,
+      country:canonical.country,
+      city:canonical.city,
+      lat:Number(canonical.lat),
+      long:Number(canonical.long),
+    };
+  }
   return catalogPlaceForLocation(birthplaces, birth?.location);
 }
 
