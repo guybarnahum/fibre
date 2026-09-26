@@ -38,7 +38,7 @@ The existing `apps/thread-editor` remains a separate loopback-only M1 inspection
 
 ## Operator-initiated Thread birth
 
-Birth Center is a first-class Admin view for initiating and observing modern Genesis births. Admin sends only bounded operator intent: optional `location` as `Country/City`, optional `sex` as `female` or `male`, and a cohort size of 1, 3, 5, or 11. Birth Center owns composition of every Genesis development request and the normal birth pipeline remains authoritative.
+Birth Center is a first-class Admin view for initiating and observing modern Genesis births. Admin sends only bounded operator intent: optional canonical `location` geography selected from place search, optional `sex` as `female` or `male`, and a cohort size of 1, 3, 5, or 11. Birth Center owns composition of every Genesis development request and the normal birth pipeline remains authoritative.
 
 Operator-entered birthplace text is transient search input. Admin resolves it through Mapbox Geocoding using permanent-result semantics, presents canonical place results, and submits only the selected canonical country, city, display name, latitude and longitude. Fibre does not retain the raw operator query or Mapbox IDs. The curated Birth Center birthplace catalog remains only the authority for Random Birth sampling; it does not constrain explicit operator-selected geography.
 
