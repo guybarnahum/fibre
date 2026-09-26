@@ -5,7 +5,7 @@ import { dirname, resolve } from "node:path";
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v7";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v8";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
@@ -30,6 +30,7 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     "familyOriginContext",
     "appearanceContext",
     "appearanceLoci",
+    "physicalAncestry",
     "availableInstitutions",
     "intellectualEnvironment",
   ],
@@ -68,6 +69,17 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
       type: "string",
       minLength: 1,
       description:"A concise causal account of this household's family origins and migration/mixed-ancestry history insofar as it matters to languages, family/community ties, appearance, and lived experience. This is subject-family context, not a demographic description of the city.",
+    },
+    physicalAncestry: {
+      type:"object", additionalProperties:false, required:["maternal","paternal"],
+      properties:Object.fromEntries(["maternal","paternal"].map(side=>[side,{
+        type:"array", minItems:1, maxItems:3,
+        description:"Physical ancestry provenance for the missing biological parent. Shares sum approximately to 1. Population is a human-readable family-origin label; referencePopulation selects only the experimental physical founder prior.",
+        items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{
+          population:{type:"string",minLength:1}, share:{type:"number",minimum:0.01,maximum:1},
+          referencePopulation:{type:"string",enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}
+        }}
+      }]))
     },
     appearanceContext: {
       type: "string",
@@ -328,6 +340,7 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
     place: Object.freeze({ country: selector.country, city: selector.city }),
     heritage: heritageLabel,
     familyOriginContext,
+    physicalAncestry: structuredClone(authored.physicalAncestry),
     appearanceContext: appearancePrior({ selector, heritage, value: authored.appearanceContext }),
     appearanceLoci: appearanceLoci({ selector, heritage, value: authored.appearanceLoci }),
     languages,
@@ -395,6 +408,7 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "When heritage is supplied, make familyOriginContext, naming material, the household language path, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
       "familyOriginContext is causal World material. It may shape ordinary life through language at home, relatives, family stories, visits, community ties, being visibly unusual or ordinary in the local environment, peer perception, belonging, or identity questions when appropriate. Do not make every episode about ancestry or visible difference, and do not assume discrimination, trauma, personality, ability, values, or social outcomes.",
       "Do not infer the future subject's religion, religious observance, politics, personality, class identity, profession, competence, trauma or values from ancestry, appearance, place, or heritage. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
+      "Return physicalAncestry with separate maternal and paternal ancestry mixtures causally supported by familyOriginContext. Use the broad referencePopulation only as a physical founder prior; population is a concise human-readable family-origin label. Shares on each parent should sum to 1. Do not use these fields for culture, personality, ability, class, religion, behavior or values.",
       "Return appearanceContext as a broad family-appearance prior causally supported by familyOriginContext. It must be physically informative enough to ground a coherent individual without demographic labels: include plausible ranges for complexion/skin variation, hair texture/color, eye and eyelid morphology, overall face proportions, brows, nose bridge/base/tip, mouth/lip geometry, jaw/chin geometry, and build where relevant. Describe ranges, not one stereotyped face. If the appearance range would be uncommon in the selected place, familyOriginContext must contain the corresponding migration, mixed-ancestry, adoption, or diaspora history rather than leaving the appearance unexplained. Do not repeat the heritage label, country, city, religion, nationality or community name in appearanceContext. Preserve substantial within-family variation and never connect appearance to personality or worth.",
       "Return appearanceLoci as concrete reusable birth material inside that envelope. For each domain—skin, hair, eyes, face, brows, nose, mouth, jaw and build—supply four to six atomic concrete variants. Every individual option must be physically compatible with appearanceContext; options are not demographic stereotypes and must contain no country, city, heritage, religion, nationality or community labels. These variants exist so Genesis, not the image renderer, can deterministically choose one concrete inherited phenotype for a new Thread.",
       "Names are reusable local/heritage naming material only, never pre-authored people. Supply at least six distinct female given names, six distinct male given names and six family names.",
