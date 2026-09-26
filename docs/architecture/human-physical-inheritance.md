@@ -166,9 +166,9 @@ Generate plausible paired founder genomes from maternal/paternal ancestry using 
 
 The shared core now resolves each biological parent independently: an available parent genome remains authoritative; only a missing parent is represented by a transient founder genome sampled from that parent's ancestry. Zero-, one- and two-Thread-parent births then converge on the same deterministic recombination primitive. When both parent genomes exist, ancestry inputs cannot alter the child's physical genome.
 
-### Population Validation — deferred
+### Population Validation — active
 
-Measure founders, siblings, mixed ancestry, multigenerational recessive transmission and renderer fidelity in Population Lab.
+Population Lab now exercises the exact Unified Birth Inheritance path used by the shared core. Validation measures founder cohorts, within-population individuality, mixed ancestry, sibling/family resemblance, multigenerational masked transmission and renderer fidelity before any production Genesis adoption.
 
 ### Fibre Adoption — deferred approval gate
 
