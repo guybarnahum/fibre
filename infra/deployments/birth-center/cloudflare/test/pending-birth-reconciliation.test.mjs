@@ -67,6 +67,29 @@ test("stale births wake immediately once, then retry on the normal interval", ()
   );
 });
 
+
+test("pre-Genesis request rejection is complete, not pending reconciliation", () => {
+  const request = staleModern({
+    status:"failed",
+    error:"location must be Country/City",
+    genesisId:null,
+    threadId:null,
+  });
+  const runtime = {
+    modernBirthRequestStore:{
+      recent:() => [request],
+      isActive:() => false,
+    },
+    developmentRequestStore:{
+      recent:() => [],
+      getDisposition:() => null,
+    },
+  };
+
+  assert.deepEqual(pendingBirths(runtime, { nowMs:() => NOW }), [], "rejected request remained pending");
+  assert.equal(nextBirthStatusCheckAt(runtime, () => NOW), null, "rejected request scheduled reconciliation");
+});
+
 test("pending births is local observation", () => {
   const request = staleModern();
   const runtime = {
