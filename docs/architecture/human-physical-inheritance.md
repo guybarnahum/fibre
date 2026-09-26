@@ -1,148 +1,183 @@
 ---
-id: human-physical-inheritance-plan
+id: human-physical-inheritance
 status: accepted
-last-reviewed: 2026-09-25
+last-reviewed: 2026-09-26
 canonical: true
 ---
 
-# Human physical inheritance and population realism
+# Human physical inheritance
 
 ## Purpose
 
-Fibre should celebrate believable human physical diversity without turning birthplace, nationality, race, ethnicity, culture or ancestry into a stereotype. Physical inheritance is causal: local population history influences family ancestry; parents contribute inherited variation; ancestry shifts phenotype probabilities; and individual recombination produces one particular person.
+Fibre gives a Thread a body through inheritance, not through a portrait prompt. The same small, pure component under `core/src/human-phenotype/` is used by Fibre and Population Lab.
 
-The Population Lab is the experimental bench for the exact shared inheritance component Fibre may later use. The Lab must not maintain a second implementation.
+The durable causal chain is:
 
 ```text
-place + era
-  -> local population context
-  -> parental ancestry / family origins
-  -> shared physical-inheritance component
-  -> one inherited phenotype
-       -> Population Lab measurement/rendering
-       -> later Fibre Genesis authority
+ancestry / family history
+  -> founder genomes only for missing biological parents
+  -> two parental physical genomes
+  -> recombination
+  -> child's physical genome
+  -> inherited phenotype
+  -> lived physical state
+  -> portrait
 ```
 
-Birthplace does not directly choose appearance. Race is not a biological switch. Broad racial/ethnic language may be useful to humans when discussing populations, but the engine preserves composable ancestry/population-history evidence and concrete inherited traits rather than assigning a racial phenotype label.
+Population ancestry is bootstrap evidence for missing parents. Once real parent Threads exist, their physical genomes are the physical inheritance authority. An ancestry label never directly chooses a face.
 
-Physical ancestry has no authority over personality, intelligence, ability, dignity, values, religion, politics, class, interests or behavior.
+Physical ancestry and physical genome have no authority over personality, intelligence, ability, dignity, values, religion, politics, class, interests or behavior.
 
-## Shared component boundary
+## Compact physical genome
 
-The shared component belongs in `core/src/human-phenotype/`. It is pure, deterministic and provider-independent.
+A physical genome is small private inherited state, not literal DNA. It keeps paired inherited values at each locus so a value that is not expressed in one Thread can still be passed to a child.
 
-It may own:
+The conceptual appearance systems are:
 
-- ancestry-mixture representation;
-- parental contribution and recombination;
-- seeded inherited variation;
-- ancestry-conditioned physical priors;
-- correlated morphology sampling;
-- structured inherited phenotype.
+- pigmentation;
+- hair form and density;
+- face proportions;
+- eye and brow region;
+- nose shape;
+- mouth and soft tissue;
+- jaw and chin;
+- skeletal frame and height tendency.
 
-It must not know about Threads, Genesis lifecycle, World storage, prompts, portraits, FIN, D1, Cloudflare or Population Lab UI.
+A system may contain a few correlated loci where needed. The representation stays fixed-size, deterministic and cheap.
 
-Given identical authoritative inputs and seed, Population Lab and Fibre must receive the same inherited result.
+Each locus carries two alleles, one inherited from each biological parent. Expression may be blended, additive, dominant/recessive, or another explicit small rule appropriate to that locus. **Unexpressed alleles remain in the genome and remain heritable.**
 
-Population Lab owns experiments, cohort generation, analytics, HTML/contact sheets and renderer experiments. Fibre owns birth, genome/lineage provenance, identity, embodiment authority and canonical visual identity.
+This is intentionally genotype-like rather than a DNA simulation. Fibre does not model chromosomes, nucleotide sequences, meiosis, disease genetics or molecular biology merely to render believable inherited people.
 
-## Physical Inheritance Contract
+## Physical Genome Core
 
-Create the smallest pure module that establishes the durable boundary.
+The shared core owns:
 
-Conceptually:
+- the compact paired-locus genome representation;
+- deterministic allele transmission;
+- deterministic recombination;
+- expression of a genome into correlated physical latent factors;
+- expression of those factors into concrete semantic inherited phenotype.
 
-```js
-sampleInheritedPhenotype({
-  maternalAncestry,
-  paternalAncestry,
-  seed
-})
+It knows nothing about Threads, World storage, Genesis lifecycle, Population Lab UI, prompts, image providers, FIN, D1 or Cloudflare.
+
+Same authoritative inputs and seed produce the same result.
+
+### Parent recombination rule
+
+Every child receives one transmissible allele at each locus from each parent. Selection is deterministic from the conception seed but varies between siblings.
+
+```text
+parent A [a1,a2] -- choose one --\
+                                  -> child [a?,b?]
+parent B [b1,b2] -- choose one --/
 ```
 
-The result preserves parental ancestry inputs, a derived inherited mixture suitable for inspection, and a structured inherited physical phenotype. The Physical Inheritance Contract proves deterministic inheritance and the authority boundary; it does not claim scientifically calibrated population genetics.
+The child's paired values are stored, not only their expressed phenotype. Recessive or otherwise unexpressed material can therefore reappear in later generations.
 
-No LLM participates in physical sampling.
+Correlated appearance systems may share a small number of latent factors, but Fibre does not average the parents into one face. Siblings should resemble the same family while remaining distinct.
 
-### Physical Inheritance Contract acceptance
+After two real parent genomes are available, ancestry/population priors are not consulted during recombination.
 
-- same parents + same seed produce the same inherited result;
-- a changed seed can produce a different individual while preserving parental ancestry constraints;
-- both parents contribute to mixed ancestry;
-- ancestry remains separate from phenotype;
-- no birthplace, nationality, culture or racial category is accepted as a direct phenotype selector;
-- the module has no provider/runtime dependency.
+## Founder Genome Generation
 
-## Population and Family Ancestry
+When a biological parent is not represented by a Thread, Fibre creates the minimum missing genetic material: a transient founder genome.
 
-Add the experimental layer that turns place + era into a plausible local population context and coherent family-history patterns containing distinct maternal and paternal ancestry.
+```text
+parental ancestry history
+  -> compact population-genetic physical basis
+  -> one plausible founder genome
+```
 
-Population membership is probabilistic, never a quota. Common local histories may repeat naturally. Migration, diaspora, adoption and mixed-parent families remain possible at plausible frequencies. A cohort must not be curated as a representative cast.\n\nFamily history has two separate downstream branches: ancestry is provenance for physical inheritance; non-physical family context may ground names, household languages and cultural history. Physical ancestry must never be used as a shortcut for naming, language or culture.
+Ancestry provenance remains semantic and inspectable. A separate small physical-population basis shifts overlapping distributions over the same physical loci. It is not an ethnicity-to-face table and must not become a giant taxonomy.
 
-The local-population model remains upstream of physical inheritance. It chooses plausible family ancestry; it does not render faces.
+Founder sampling must preserve substantial within-population variation. Two founders with the same ancestry should usually have different genomes.
 
-## Correlated Phenotype Inheritance
+The current reference-population coefficients are experimental visual priors, not claims of measured allele frequencies. They require Population Lab calibration before production Genesis adoption.
 
-Expand the shared engine from contract to useful physical inheritance. Candidate stable dimensions include pigmentation, hair morphology/density/hairline, facial proportions, cheeks, eyes, brows, nose geometry, mouth/lips, jaw/chin, ears, skeletal frame and height tendency.
+## Unified birth inheritance
 
-Traits are not independent dice. Use a small, inspectable correlation model. Ancestry shifts distributions rather than dictating traits; mixed inheritance and individual variation remain substantial.
+All births converge on the same recombination primitive:
 
-Correlated Phenotype Inheritance specifically tests whether Fibre can eliminate the current LLM attractor toward `medium/average` morphology. The first experimental sampler now does this with shared deterministic correlated variation and concrete semantic traits; Population Lab no longer gives the LLM inherited-morphology authority. Ancestry-conditioned distribution shifts remain experimental. Population labels have no physical authority and must never be hashed into phenotype. The first evidence-constrained basis uses ancestral source geography only for a weak pigmentation adaptation prior; hair and craniofacial ancestry priors remain neutral until Fibre has an inspectable calibrated basis for them. New basis axes must represent supported physical evidence, compose continuously across parental ancestry, and preserve larger individual variation rather than becoming racial or ethnic templates.
+| Birth situation | Parent A | Parent B |
+| --- | --- | --- |
+| two Thread parents | Thread physical genome | Thread physical genome |
+| one Thread parent | Thread physical genome | founder genome from missing-parent ancestry |
+| no Thread parents | founder genome from maternal ancestry | founder genome from paternal ancestry |
 
-## Inherited Phenotype and Lived Physical State
+If family history initially describes ancestry without parental structure, the family-history layer first creates plausible maternal and paternal ancestry histories. It must not smear every ancestry component equally across two imaginary parents merely for convenience.
 
-Keep time-varying state outside inherited phenotype: body composition/weight, muscular development, hairstyle/grooming, facial hair, skin condition, scars acquired through life, clothing, expression, injury and aging.
+Founder genomes are transient values. They do not need Thread identity, lifecycle or storage records.
 
-This preserves the existing canonical-visual-identity distinction between stable identity and lived appearance.
+## Inherited phenotype
 
-## Population Lab Integration
+The renderer never receives ancestry as permission to invent appearance. The physical genome is expressed into concrete inherited traits such as pigmentation, hair texture/density, facial proportions, eye spacing, brow morphology, nose breadth/projection, lips, jaw/chin, frame and height tendency.
 
-Population Lab stops asking the LLM to choose inherited morphology. It uses the shared component, then lets replaceable cognition describe already-sampled material and create culturally/familially coherent non-physical material without changing physical authority.
+Numeric latent coordinates are replaceable sampling machinery. Meaning-bearing Thread identity remains semantic/natural-language-first.
 
-Each report card exposes the causal chain and copyable evidence: family origins, parental/inherited ancestry, inherited phenotype, age-25 physical state, renderer brief and complete person record.
+## Lived physical state
 
-## Population Realism Measurement
+Time-varying state remains downstream of inherited phenotype: body composition, muscular development, hairstyle/grooming, facial hair, skin condition, acquired scars, injury, clothing, expression and aging.
 
-Measure the engine directly: trait distributions, phenotype collisions, correlations, ancestry-conditioned distributions, mixed-ancestry behavior, outlier frequency and pathological defaulting. Keep name collision/concentration and family-origin concentration separate.
+Inherited frame is not current weight. Inherited hair properties are not today's haircut.
 
-There is no single diversity score and no brittle quota assertion.
+## Population Lab
 
-High-value tests prove deterministic mechanics and authority boundaries, not desired demographic percentages.
+Population Lab uses the exact shared core. It may inspect:
 
-## Population Realism Validation
+```text
+family history
+-> parental ancestry
+-> founder genomes (when applicable)
+-> child physical genome
+-> inherited phenotype
+-> lived age-local state
+-> portrait
+```
 
-Before Fibre adoption, run at least 100 text/genetics samples each for London, Stockholm and Lagos.
+The Lab owns experiments, analytics and rendering trials. It does not own a second genetics implementation.
 
-The experiment asks different questions:
+Useful measurements are population-conditioned distributions, within-population variation, sibling variation, mixed-parent inheritance, hidden-allele transmission, phenotype collisions and renderer fidelity. There is no single diversity score and no demographic quota assertion.
 
-- London: heterogeneous ancestry should emerge naturally without a curated multicultural cast.
-- Stockholm: common local family ancestry should recur while minority and mixed families remain possible.
-- Lagos: predominantly West-African ancestry must still yield substantial individual physical variation rather than a generic racial template.
+## Validation
 
-After text/genetics inspection, render a small cohort from each place to test whether the image provider preserves the inherited differences.
+Before production Genesis adoption:
 
-The experiment is evidence, not a demographic truth source. Population priors require separate calibration before production claims about real-world frequencies.
+1. founder cohorts for London, Stockholm and Lagos test population structure plus within-population individuality;
+2. synthetic family experiments test siblings and mixed parentage;
+3. a three-generation experiment proves an unexpressed inherited value can pass through a parent and affect a descendant;
+4. small rendered cohorts test whether the image provider depicts the concrete inherited phenotype.
 
-## Fibre adoption — separate approval gate
+Tests prove semantic mechanics, not exact random numbers or desired demographic percentages.
 
-Population Lab work does not change a living Thread.
+## Capability sequence
 
-After experimental approval:
+### Physical Genome Core — in progress
 
-1. **Genesis integration** — replace the narrow LLM-authored appearance-option mechanism with the shared inheritance component.
-2. **Genome/lineage integration** — bind inherited physical provenance to the existing symbolic-genome/lineage architecture without conflating physical loci with personality loci.
-3. **Canonical visual identity** — canonical text consumes the concrete inherited phenotype; the renderer depicts rather than chooses the person.
-4. **Existing society repair** — repair only demonstrably defective admitted phenotype/root material when authoritative family/inheritance evidence supports the correction. Never infer a replacement identity from birthplace, name or portrait alone.
-5. **Population-realism validation** — retain structural invariants and human-inspectable experiments rather than demographic quotas.
+Define paired loci, allele transmission, recombination and pure genome expression in the shared core. This establishes durable hidden inherited material and multigenerational continuity.
 
-## Capability status and ambition guard
+### Founder Genome Generation — next
 
-This plan enables physical inheritance to become a causal contributor to Thread embodiment and non-interchangeability.
+Generate plausible paired founder genomes from maternal/paternal ancestry using the compact physical-population basis.
 
-Currently **experimental**: ancestry-conditioned priors, correlated phenotype distributions and population calibration.
+### Unified Birth Inheritance — deferred
 
-Currently **deferred**: production Genesis adoption, live-parent physical inheritance, genome persistence choices, existing-Thread repair and production demographic calibration. Their extension path is the shared component contract plus existing lineage, symbolic-genome and Embodiment authorities.
+Resolve two real/founder parental genomes for every birth and use one recombination path.
 
-Rejected: birthplace-to-appearance rules, racial phenotype switches, cohort diversity quotas, personality/ability inference from ancestry, and a second Lab-only inheritance implementation.
+### Population Validation — deferred
 
-The Physical Inheritance Contract is intentionally foundational. Its outputs are not yet evidence that Fibre has realistic human population genetics; they establish the replaceable causal boundary on which that experiment can be run.
+Measure founders, siblings, mixed ancestry, multigenerational recessive transmission and renderer fidelity in Population Lab.
+
+### Fibre Adoption — deferred approval gate
+
+Persist physical genome as private inherited Thread state, connect live parent lineage, replace Genesis appearance selection, feed canonical visual identity from expressed phenotype, and define conservative repair for existing society.
+
+## Runtime and ambition guard
+
+Physical inheritance is O(1) per birth: fixed-size genome, bounded arithmetic, no population scan, no optimization, no simulation loop and no model call below family-history/ancestry authoring.
+
+This capability makes lineage physically causal across generations. It deliberately does not add chromosomes, disease genetics, fertility, molecular genetics, security machinery or generic genetics infrastructure.
+
+Rejected: birthplace-to-appearance rules, ancestry labels as renderer instructions, racial phenotype switches, cohort quotas, ancestry-to-personality inference, direct parent averaging, discarding unexpressed inherited material, and a Lab-only implementation.
+
+The compact population basis and expression model remain experimental and replaceable. The durable contract is two parental genomes -> recombination -> child genome -> phenotype.
