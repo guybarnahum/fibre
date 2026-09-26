@@ -77,7 +77,7 @@ function score(ps){
     const counts=new Map();for(const p of people){const v=p.inheritance.phenotype.traits[domain];counts.set(v,(counts.get(v)||0)+1)}
     return Object.fromEntries([...counts].map(([v,n])=>[v,n/people.length]));
   };
-  const tv=(a,b)=>new Set([...Object.keys(a),...Object.keys(b)]).values().reduce((n,k)=>n+Math.abs((a[k]||0)-(b[k]||0)),0)/2;
+  const tv=(a,b)=>[...new Set([...Object.keys(a),...Object.keys(b)])].reduce((n,k)=>n+Math.abs((a[k]||0)-(b[k]||0)),0)/2;
   const placeEntries=Object.entries(places),populationSeparation={};
   if(placeEntries.length>1)for(const domain of T){
     let max=0;
