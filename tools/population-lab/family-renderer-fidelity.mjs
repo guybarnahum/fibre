@@ -2,7 +2,7 @@ import {execFileSync} from "node:child_process";
 import {createHash} from "node:crypto";
 import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
-import {expressPhysicalGenome} from "../../core/src/human-phenotype/index.mjs";
+import {expressPhysicalGenome,phenotypeFromPhysicalGenome} from "../../core/src/human-phenotype/index.mjs";
 
 const arg=(name,fallback)=>process.argv.find(x=>x.startsWith("--"+name+"="))?.slice(name.length+3)??fallback;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -52,8 +52,8 @@ async function resilientFetch(url,options){
   throw last;
 }
 
-function subject({id,role,sex,genome,phenotype}){
-  return {id,role,sex,genome,phenotype,expressedLatents:expressPhysicalGenome(genome)};
+function subject({id,role,sex,genome}){
+  return {id,role,sex,genome,phenotype:phenotypeFromPhysicalGenome(genome,{sex}).traits,expressedLatents:expressPhysicalGenome(genome)};
 }
 
 function subjects(experiment,siblingCount,grandchildCount){
@@ -75,7 +75,7 @@ function subjects(experiment,siblingCount,grandchildCount){
 
 async function render(subject,dir,index,model,projection){
   const continuous=projection==="rich"
-    ? ` Continuous inherited coordinates refine the semantic phenotype rather than replacing it. Preserve differences inside the same semantic category: ${latentText(subject.genome)}.`
+    ? ` Continuous inherited coordinates refine the semantic phenotype rather than replacing it. Preserve differences inside the same semantic category: ${latentText(subject.genome)}. Facial-hair and hairline-loss coordinates are inherited carrier tendencies; visible expression is governed by the sex-conditioned semantic phenotype above.`
     : "";
   const prompt=`Edge-to-edge realistic neutral documentary head-and-shoulders portrait photograph of one fictional adult age 25. Sex: ${subject.sex}. Inherited phenotype: ${phenotype(subject.phenotype)}.${continuous} Render exactly this concrete phenotype. Preserve facial geometry, pigmentation, hair, eyes, build cues and ordinary asymmetry. Do not exaggerate continuous coordinates into caricature; nearby values should produce subtle nearby physical differences. Do not beautify, homogenize, slim, symmetrize, glamourize, or substitute a generic attractive face. Do not infer or add ancestry, race, ethnicity, nationality, culture, personality, class, religion, or behavior. Neutral expression, ordinary skin texture, simple dark top, plain photographic background. NO text, letters, numbers, captions, labels, watermark, logo, border, frame, card, document layout, graphic overlay, or margin.`;
   const response=await resilientFetch("https://api.openai.com/v1/images/generations",{
@@ -112,7 +112,7 @@ async function main(){
     rendered.push(await render(selected[i],dir,i,model,projection));
   }
   process.stdout.write("\n");
-  const result={meta:{version:"family-renderer-fidelity-v0.2",model,siblings,grandchildren,rendererInputs:projection==="rich"?"semantic-phenotype-plus-continuous-expression":"semantic-phenotype"},sourceDiagnostics:source.diagnostics,people:rendered};
+  const result={meta:{version:"family-renderer-fidelity-v0.3",model,siblings,grandchildren,rendererInputs:projection==="rich"?"semantic-phenotype-plus-continuous-expression":"semantic-phenotype"},sourceDiagnostics:source.diagnostics,people:rendered};
   await writeFile(resolve(dir,"population.json"),JSON.stringify(result,null,2));
   await writeFile(resolve(dir,"index.html"),html(rendered,model,projection));
   console.log(`Done · ${resolve(dir,"index.html")}`);
