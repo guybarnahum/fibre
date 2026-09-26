@@ -35,3 +35,15 @@ The automatic diagnostics intentionally cover objective collapse signals rather 
 The contact sheet remains an essential test. A population can satisfy simple statistics and still visibly collapse toward one face, one beauty prior, or one photographic convention. Each person has a Copy action for the complete generated record; visual runs also expose and copy the exact render prompt. Analytics can be copied as JSON.
 
 Warnings are diagnostic. They are not a claim that a population is correct merely because no threshold fired.
+
+
+## Family inheritance experiment
+
+Use the shared physical-genome machinery without model calls to inspect actual family transmission:
+
+```sh
+npm run population:family > .fibre/family-inheritance.json
+cat .fibre/family-inheritance.json | pbcopy
+```
+
+The experiment creates same-parent sibling groups, a mixed-ancestry family, and a second generation. It records both genomes and expressed phenotypes so family resemblance, sibling variation, mixed inheritance, and multigenerational transmission can be inspected without introducing a second genetics implementation.
