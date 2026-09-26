@@ -181,9 +181,13 @@ function admittedThread(entry, lastActivityAt) {
     threadId:entry.threadId,
     admitted:true,
     lastActivityAt:lastActivityAt ?? null,
-    health:unresolved.length === 0 ? "healthy" : unresolved.some((finding) => finding.state === "operator_decision_required")
-      ? "operator_decision_required"
-      : "attention",
+    health:unresolved.length === 0
+      ? "healthy"
+      : unresolved.some((finding) => finding.state === "operator_decision_required")
+        ? "operator_decision_required"
+        : unresolved.some((finding) => finding.state === "repairable")
+          ? "repairable"
+          : "attention",
     identity:Object.freeze({
       name:unfinishedName(entry.displayName) ? null : clean(entry.displayName),
       storedName:clean(entry.displayName),
