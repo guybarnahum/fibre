@@ -19,21 +19,21 @@ test("a child inherits one allele from each parent and siblings can differ",()=>
   }
 });
 
-test("unexpressed inherited material can pass to a grandchild",()=>{
+test("masked inherited material can reappear in a grandchild",()=>{
   const hidden={value:-.9,dominance:-.9};
-  const mother=parent(),father=parent(.1);
-  mother.loci.pigmentation=[{value:.8,dominance:.9},hidden];
-  const childSeed=Array.from({length:64},(_,i)=>`child-${i}`).find(seed=>{
-    const candidate=recombinePhysicalGenomes({maternalGenome:mother,paternalGenome:father,seed});
-    return candidate.loci.pigmentation.some(x=>x.value===hidden.value&&x.dominance===hidden.dominance);
-  });
-  assert.ok(childSeed,"hidden allele should reach child");
+  const visible={value:.8,dominance:.9};
+  const weak={value:.2,dominance:-.8};
+  const grandmother=parent(),grandfather=parent(.1);
+  grandmother.loci.pigmentation=[visible,hidden];
 
-  const child=recombinePhysicalGenomes({maternalGenome:mother,paternalGenome:father,seed:childSeed});
-  const grandchildSeed=Array.from({length:64},(_,i)=>`grandchild-${i}`).find(seed=>{
-    const grandchild=recombinePhysicalGenomes({maternalGenome:child,paternalGenome:father,seed});
-    return grandchild.loci.pigmentation.some(x=>x.value===hidden.value&&x.dominance===hidden.dominance);
-  });
-  assert.ok(grandchildSeed,"hidden allele should reach grandchild");
-  assert.ok(Number.isFinite(expressPhysicalGenome(child).pigmentation),"genome must express phenotype");
+  const child=recombinePhysicalGenomes({maternalGenome:grandmother,paternalGenome:grandfather,seed:"child-0"});
+  assert.deepEqual(child.loci.pigmentation[0],hidden,"hidden allele must pass");
+  child.loci.pigmentation[1]=visible;
+  assert.equal(expressPhysicalGenome(child).pigmentation,visible.value,"hidden allele must stay masked");
+
+  const otherParent=parent(.2);
+  otherParent.loci.pigmentation=[weak,weak];
+  const grandchild=recombinePhysicalGenomes({maternalGenome:child,paternalGenome:otherParent,seed:"grandchild-1"});
+  assert.deepEqual(grandchild.loci.pigmentation[0],hidden,"hidden allele must reach grandchild");
+  assert.equal(expressPhysicalGenome(grandchild).pigmentation,hidden.value,"inherited allele must reappear");
 });
