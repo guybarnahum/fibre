@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { createActivityRecorder } from "#infra/telemetry";
+import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
 import { createLocalInfraDriver } from "#infra/providers/local";
 import { createLocalActivityTelemetryPort } from "#infra/providers/local/telemetry";
 import { createGenesisBirthPublicationService } from "#services/world-kernel/src/genesis-birth-publication-service.mjs";
@@ -26,7 +27,9 @@ function developmentRequest(requestId) {
   const slot = cohort.slots[0];
   const worldSpec = readJson(slot.worldSpecPath);
   const genome = readJson(slot.genomePath);
-  const subjectIdentity = identities.slots.find(({ slot: ordinal }) => ordinal === slot.slot);
+  const baseIdentity = identities.slots.find(({ slot: ordinal }) => ordinal === slot.slot);
+  const ancestry=[{population:"South Caucasus family",share:1,referencePopulation:"west_asia"}];
+  const subjectIdentity={...baseIdentity,physicalGenome:resolveBirthPhysicalInheritance({maternalAncestry:ancestry,paternalAncestry:ancestry,seed:`world-failure-fixture:${requestId}`}).genome};
   return {
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
     requestId,
