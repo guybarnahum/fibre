@@ -20,3 +20,13 @@ test("population profiles preserve mixed ancestry",()=>{
  assert.deepEqual(family.maternal.ancestry,[{population:"a",share:.75},{population:"b",share:.25}],"mixed ancestry must survive");
  assert.deepEqual(family.paternal.ancestry,family.maternal.ancestry,"same profile must replay");
 });
+
+test("partner similarity remains a preference, not lineage cloning",()=>{
+ const varied=[
+  {id:"a",share:1,ancestry:[{population:"a",share:1}]},
+  {id:"b",share:1,ancestry:[{population:"b",share:1}]},
+  {id:"c",share:1,ancestry:[{population:"c",share:1}]}
+ ];
+ const families=Array.from({length:24},(_,i)=>sampleFamilyAncestry({profiles:varied,seed:`family-${i}`}));
+ assert.ok(families.some(f=>f.maternal.profileId!==f.paternal.profileId),"parental lineages must be able to differ");
+});
