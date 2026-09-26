@@ -15,8 +15,8 @@ test("phenotype is pure expression of the inherited genome",()=>{
   const a=phenotypeFromPhysicalGenome(genome);
   const b=phenotypeFromPhysicalGenome(genome);
   assert.deepEqual(a,b,"phenotype must follow genome");
-  assert.equal(a.version,"human-phenotype-v0.6","phenotype version must match");
-  assert.ok(a.traits.faceWidth&&a.traits.noseProjection&&a.traits.hairTexture,"traits must be concrete");
+  assert.equal(a.version,"human-phenotype-v0.7","phenotype version must match");
+  assert.ok(a.traits.faceWidth&&a.traits.noseProjection&&a.traits.hairTexture&&a.traits.eyeColor&&a.traits.adiposityTendency,"traits must be concrete");
 });
 
 test("different inherited genomes can express different people",()=>{
