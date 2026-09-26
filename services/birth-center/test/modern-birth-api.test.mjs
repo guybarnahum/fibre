@@ -58,7 +58,7 @@ test("modern birth API exposes durable pending births without changing initiatio
     body:JSON.stringify({
       requestId:"admin_birth_2",
       requestedAt:"2026-09-25T05:10:00.000Z",
-      location:"Israel/Jerusalem",
+      location:{ country:"United Kingdom", city:"London", displayName:"London, England, United Kingdom", lat:51.5072, long:-0.1276 },
       sex:"female",
     }),
   }));
