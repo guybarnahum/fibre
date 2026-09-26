@@ -10,41 +10,19 @@ const clamp = value => Math.max(0, Math.min(1, value));
 const centered = (seed, locus) => unit(seed, locus) * 2 - 1;
 const band = (value, labels) => labels[Math.min(labels.length - 1, Math.floor(clamp(value) * labels.length))];
 
-function populationPrior(population) {
-  // Population labels are evidence keys, not phenotype categories. This compact
-  // experimental prior is deterministic and inspectable; calibration may later
-  // replace it without changing inheritance or rendering contracts.
-  const coordinate = locus => centered(`population:${String(population).trim().toLowerCase()}`, locus);
-  return {
-    pigmentation: coordinate("pigmentation"),
-    hair: coordinate("hair"),
-    breadth: coordinate("breadth"),
-    projection: coordinate("projection"),
-    soft: coordinate("soft-tissue"),
-    frame: coordinate("frame")
-  };
+function ancestryBasis(ancestry) {
+  // Evidence-constrained basis v1: ancestral latitude weakly conditions
+  // pigmentation only. Missing geography is neutral. Other morphology remains
+  // ancestry-neutral until a calibrated physical basis exists.
+  let weight=0,latitude=0;
+  for(const item of ancestry) if(item.sourceLatitude!=null){latitude+=Math.abs(item.sourceLatitude)*item.share;weight+=item.share}
+  const meanLatitude=weight?latitude/weight:null;
+  return {pigmentationAdaptation:meanLatitude==null?0:clamp((45-meanLatitude)/45)*2-1};
 }
 
-function ancestryPrior(ancestry) {
-  const total = {pigmentation:0,hair:0,breadth:0,projection:0,soft:0,frame:0};
-  for (const {population, share} of ancestry) {
-    const prior = populationPrior(population);
-    for (const key of Object.keys(total)) total[key] += prior[key] * share;
-  }
-  return total;
-}
-
-function parentalPrior(maternal, paternal, seed) {
-  const m = ancestryPrior(maternal);
-  const p = ancestryPrior(paternal);
-  const result = {};
-  for (const key of Object.keys(m)) {
-    // Locus-level recombination lets mixed-parent children inherit different
-    // parental emphases instead of collapsing every feature to a 50/50 average.
-    const maternalWeight = 0.25 + unit(seed, `parental-${key}`) * 0.5;
-    result[key] = m[key] * maternalWeight + p[key] * (1 - maternalWeight);
-  }
-  return result;
+function parentalPrior(maternal,paternal,seed) {
+  const m=ancestryBasis(maternal),p=ancestryBasis(paternal),maternalWeight=0.25+unit(seed,"parental-pigmentation")*0.5;
+  return {pigmentation:m.pigmentationAdaptation*maternalWeight+p.pigmentationAdaptation*(1-maternalWeight),hair:0,breadth:0,projection:0,soft:0,frame:0};
 }
 
 function correlatedLatent(seed, prior) {
@@ -109,7 +87,7 @@ export function sampleInheritedPhenotype({maternalAncestry, paternalAncestry, se
   return {
     ancestry: {maternal, paternal, inherited: ancestry},
     phenotype: {
-      version: "human-phenotype-v0.3",
+      version: "human-phenotype-v0.4",
       traits: semanticPhenotype(latent),
       latent,
       experimentalPopulationPrior: prior
