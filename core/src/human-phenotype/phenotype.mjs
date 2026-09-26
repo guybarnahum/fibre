@@ -12,9 +12,9 @@ export function sampleInheritedPhenotype({maternalAncestry, paternalAncestry, se
   const paternal = normalizeAncestry(paternalAncestry, "paternalAncestry");
   const ancestry = inheritedAncestry(maternal, paternal);
 
-  // Slice 1 intentionally proves the inheritance boundary, not calibrated morphology.
-  // These latent inherited coordinates are ancestry-neutral until Slice 3 supplies
-  // reviewed population-conditioned priors and correlations.
+  // The Physical Inheritance Contract proves the inheritance boundary, not calibrated morphology.
+  // These latent coordinates remain ancestry-neutral until Correlated Phenotype Inheritance
+  // supplies reviewed population-conditioned priors and correlations.
   const latent = {
     craniofacial: unit(seed, "craniofacial"),
     pigmentation: unit(seed, "pigmentation"),
