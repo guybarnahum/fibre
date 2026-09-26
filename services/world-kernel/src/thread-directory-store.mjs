@@ -1,4 +1,4 @@
-import { resolveLocalityGeography, resolveMentionedLocalityGeography } from "#core/src/locality-geography.mjs";
+import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 import { IntegrityError } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
@@ -22,14 +22,46 @@ function parse(name, value) {
 
 function birthLocation(identity) {
   const place = identity?.birthPlace;
+  const structured = place && typeof place === "object" && !Array.isArray(place)
+    ? clean(place.country) && clean(place.city)
+      ? `${clean(place.country)}/${clean(place.city)}`
+      : clean(place.displayName)
+    : null;
+  const recovered = resolveLocalityGeographyEvidence([
+    structured,
+    clean(place?.displayName),
+    clean(identity?.birthCity),
+  ]);
+
+  if (recovered !== null) {
+    const canonical = place
+      && typeof place === "object"
+      && !Array.isArray(place)
+      && clean(identity?.birthCity) === recovered.displayName
+      && clean(place.displayName) === recovered.displayName
+      && clean(place.country) === recovered.country
+      && clean(place.city) === recovered.city
+      && place.lat === recovered.lat
+      && place.long === recovered.long;
+    return Object.freeze({
+      displayName:recovered.displayName,
+      country:recovered.country,
+      city:recovered.city,
+      lat:recovered.lat,
+      long:recovered.long,
+      source:canonical ? "thread_identity" : "identity_geography_recovered",
+    });
+  }
+
   if (
     place
     && typeof place === "object"
+    && !Array.isArray(place)
     && Number.isFinite(place.lat)
     && Number.isFinite(place.long)
   ) {
     return Object.freeze({
-      displayName:clean(place.displayName) ?? clean(identity.birthCity),
+      displayName:clean(place.displayName) ?? clean(identity?.birthCity),
       country:clean(place.country),
       city:clean(place.city),
       lat:place.lat,
@@ -37,32 +69,7 @@ function birthLocation(identity) {
       source:"thread_identity",
     });
   }
-  const structuredText = place && typeof place === "object"
-    ? clean(place.country) && clean(place.city)
-      ? `${clean(place.country)}/${clean(place.city)}`
-      : clean(place.displayName)
-    : null;
-  const exactStructured = structuredText === null ? null : resolveLocalityGeography(structuredText);
-  const exactBirthCity = resolveLocalityGeography(identity?.birthCity);
-  const mentioned = resolveMentionedLocalityGeography([
-    structuredText,
-    clean(place?.displayName),
-    clean(identity?.birthCity),
-  ].filter(Boolean).join(" · "));
-  const inferred = exactStructured ?? exactBirthCity ?? mentioned;
-  if (inferred === null) return null;
-  return Object.freeze({
-    displayName:inferred.displayName,
-    country:inferred.country,
-    city:inferred.city,
-    lat:inferred.lat,
-    long:inferred.long,
-    source:exactStructured !== null
-      ? "identity_geography_projection"
-      : exactBirthCity !== null
-        ? "legacy_identity_projection"
-        : "identity_geography_recovered",
-  });
+  return null;
 }
 
 function registryEntry(row) {
