@@ -90,24 +90,31 @@ test("operator birth respects an explicit place and sex", async () => {
   const birth = await service.initiate({
     requestId:"admin_birth_explicit_001",
     requestedAt:"2026-09-25T04:00:00.000Z",
-    location:"Israel/Jerusalem",
+    location:{
+      country:"United Kingdom",
+      city:"London",
+      displayName:"London, England, United Kingdom",
+      lat:51.5072,
+      long:-0.1276,
+    },
     sex:"female",
   });
 
-  assert.equal(birth.location, "Israel/Jerusalem");
+  assert.equal(birth.location, "United Kingdom/London");
   assert.equal(birth.locationSource, "operator");
   assert.equal(birth.sex, "female");
   assert.deepEqual(developed().subjectIdentity.place, {
-    country:"Israel",
-    city:"Jerusalem",
-    lat:31.76904,
-    long:35.21633,
+    country:"United Kingdom",
+    city:"London",
+    lat:51.5072,
+    long:-0.1276,
   });
+  assert.equal(developed().subjectIdentity.birthCity, "London, United Kingdom");
   assert.equal(developed().subjectIdentity.sex, "female");
 });
 
 
-test("modern birthplace catalog is the sampler's shared geographic authority", () => {
+test("modern birthplace catalog remains the random sampler authority", () => {
   assert.equal(MODERN_BIRTHPLACES.length, 100);
   const tbilisi = MODERN_BIRTHPLACES.find((place) => place.place === "Georgia/Tbilisi");
   assert.deepEqual(
