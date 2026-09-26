@@ -28,7 +28,6 @@ function birthMaterial(slot = 1) {
     ...material(slot),
     languages:["Amharic", "English"],
     raisedLanguages:["Amharic"],
-    appearanceLoci:APPEARANCE_LOCI,
     physicalAncestry:{maternal:[{population:"Ethiopian family",share:1,referencePopulation:"afr_east"}],paternal:[{population:"Ethiopian family",share:1,referencePopulation:"afr_east"}]},
   };
 }
