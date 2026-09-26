@@ -32,34 +32,38 @@ test("correlated phenotype resolves concrete inherited traits", () => {
   const samples = Array.from({length:24}, (_,i) =>
     sampleInheritedPhenotype({...parents, seed:`traits-${i}`}).phenotype
   );
-  assert.ok(samples.every(p => p.version === "human-phenotype-v0.3"), "phenotype version must identify correlated sampler");
+  assert.ok(samples.every(p => p.version === "human-phenotype-v0.4"), "phenotype version must identify correlated sampler");
   assert.ok(samples.every(p => p.traits.faceWidth && p.traits.noseProjection && p.traits.hairTexture), "inherited traits must be concrete");
   assert.ok(new Set(samples.map(p => p.traits.faceWidth)).size > 1, "face width must vary");
   assert.ok(new Set(samples.map(p => p.traits.noseProjection)).size > 1, "nose projection must vary");
   assert.ok(new Set(samples.map(p => p.traits.hairTexture)).size > 1, "hair texture must vary");
 });
 
-test("ancestry conditions distributions without determining an individual", () => {
-  const cohort = (population) => Array.from({length:64}, (_,i) =>
+test("ancestral geography weakly conditions pigmentation without determining an individual", () => {
+  const cohort = sourceLatitude => Array.from({length:64}, (_,i) =>
     sampleInheritedPhenotype({
-      maternalAncestry:[{population,share:1}],
-      paternalAncestry:[{population,share:1}],
+      maternalAncestry:[{population:"same-provenance",share:1,sourceLatitude}],
+      paternalAncestry:[{population:"same-provenance",share:1,sourceLatitude}],
       seed:`cohort-${i}`
     }).phenotype
   );
-  const a=cohort("population-a"), b=cohort("population-b");
-  const mean=(xs,key)=>xs.reduce((n,x)=>n+x.latent[key],0)/xs.length;
-  assert.notEqual(mean(a,"pigmentation"),mean(b,"pigmentation"),"ancestry must shift inherited distributions");
-  assert.ok(new Set(a.map(x=>x.traits.pigmentation)).size>1,"one ancestry must still produce individual variation");
-  assert.ok(new Set(b.map(x=>x.traits.hairTexture)).size>1,"population prior must not dictate hair");
+  const equatorial=cohort(2),highLatitude=cohort(60);
+  const mean=xs=>xs.reduce((n,x)=>n+x.latent.pigmentation,0)/xs.length;
+  assert.notEqual(mean(equatorial),mean(highLatitude),"ancestral geography must shift pigmentation distribution");
+  assert.ok(new Set(equatorial.map(x=>x.traits.pigmentation)).size>1,"ancestry must not dictate pigmentation");
 });
 
-test("mixed parents recombine rather than collapse to one midpoint", () => {
+test("population labels alone have no physical authority", () => {
+  const a=sampleInheritedPhenotype({maternalAncestry:[{population:"label-a",share:1}],paternalAncestry:[{population:"label-a",share:1}],seed:"same"});
+  const b=sampleInheritedPhenotype({maternalAncestry:[{population:"label-b",share:1}],paternalAncestry:[{population:"label-b",share:1}],seed:"same"});
+  assert.deepEqual(a.phenotype,b.phenotype,"population labels must not select appearance");
+});
+
+test("mixed parents recombine supported physical priors rather than collapse to one midpoint", () => {
   const mixed=Array.from({length:32},(_,i)=>sampleInheritedPhenotype({
-    maternalAncestry:[{population:"population-a",share:1}],
-    paternalAncestry:[{population:"population-b",share:1}],
+    maternalAncestry:[{population:"maternal",share:1,sourceLatitude:5}],
+    paternalAncestry:[{population:"paternal",share:1,sourceLatitude:60}],
     seed:`mixed-${i}`
-  }).phenotype.experimentalPopulationPrior);
-  assert.ok(new Set(mixed.map(x=>x.pigmentation.toFixed(4))).size>1,"mixed inheritance must recombine by child");
-  assert.ok(new Set(mixed.map(x=>x.breadth.toFixed(4))).size>1,"mixed facial prior must recombine by child");
+  }).phenotype.experimentalPopulationPrior.pigmentation);
+  assert.ok(new Set(mixed.map(x=>x.toFixed(4))).size>1,"mixed inheritance must recombine by child");
 });
