@@ -1,9 +1,9 @@
 import {createHash} from "node:crypto";
 
 const LOCI = Object.freeze([
-  "pigmentation","eyePigmentation","hairForm","hairDensity","faceBreadth","faceLength",
+  "pigmentation","eyePigmentation","hairPigmentation","frecklingTendency","hairForm","hairDensity","hairlineLossTendency","facialHairTendency","faceBreadth","faceLength","midfaceProminence","eyeSpacing","eyeShape","foreheadProportion",
   "eyeSpacing","brow","noseBreadth","noseProjection","softTissue",
-  "jawBreadth","chinProjection","frame","height","adiposityTendency"
+  "jawBreadth","chinProjection","frame","height","bodyProportion","adiposityTendency","muscularityTendency","shoulderHipProportion"
 ]);
 
 function unit(seed, locus) {
