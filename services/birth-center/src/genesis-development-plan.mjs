@@ -93,8 +93,8 @@ function normalizeSubjectIdentity(candidate) {
     "heritage",
     "languages",
     "raisedLanguages",
+    "appearanceContext",
     "physicalGenome",
-    "physicalParents",
   ]);
   for (const key of Object.keys(identity)) {
     if (!allowed.has(key)) throw new TypeError(`Genesis development request subjectIdentity.${key} is not allowed`);
@@ -135,20 +135,11 @@ function normalizeSubjectIdentity(candidate) {
       { minimum: 1 },
     ));
   }
+  if (Object.hasOwn(identity, "appearanceContext")) {
+    normalized.appearanceContext = nonEmpty("Genesis development request subjectIdentity.appearanceContext", identity.appearanceContext);
+  }
   if (Object.hasOwn(identity, "physicalGenome")) {
     normalized.physicalGenome = structuredClone(identity.physicalGenome);
-  }
-  if (Object.hasOwn(identity, "physicalParents")) {
-    if (!Array.isArray(identity.physicalParents) || identity.physicalParents.length < 1 || identity.physicalParents.length > 2) throw new TypeError("Genesis development request subjectIdentity.physicalParents must contain one or two parents");
-    const roles=new Set();
-    normalized.physicalParents=Object.freeze(identity.physicalParents.map((parent,index)=>{
-      plain(`Genesis development request subjectIdentity.physicalParents[${index}]`,parent);
-      exactKeys(`Genesis development request subjectIdentity.physicalParents[${index}]`,parent,["role","threadId"]);
-      if (parent.role!=="maternal"&&parent.role!=="paternal") throw new TypeError("Genesis physical parent role must be maternal or paternal");
-      if (roles.has(parent.role)) throw new TypeError("Genesis physical parents must have distinct roles");
-      roles.add(parent.role);
-      return Object.freeze({role:parent.role,threadId:nonEmpty("Genesis physical parent threadId",parent.threadId)});
-    }));
   }
   return Object.freeze(normalized);
 }
