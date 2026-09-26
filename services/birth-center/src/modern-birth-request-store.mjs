@@ -20,12 +20,22 @@ function normalizeSex(value) {
   return value;
 }
 
+function storedLocation(value) {
+  if (value === null) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? Object.freeze(parsed) : null;
+  } catch {
+    return null;
+  }
+}
+
 function normalize(row) {
   if (row === undefined) return null;
   return Object.freeze({
     requestId:row.request_id,
     requestedAt:row.requested_at,
-    requestedLocation:row.requested_location === null ? null : JSON.parse(row.requested_location),
+    requestedLocation:storedLocation(row.requested_location),
     requestedSex:row.requested_sex,
     location:row.selected_location,
     locationSource:row.location_source,
