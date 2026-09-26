@@ -51,6 +51,8 @@ canonical: true
 
 **Genome** — Inherited operational hyperparameters and natural-language dispositions established at birth. Canonical heritable personality meaning is natural language; derived numeric runtime controls are machinery rather than a second genome.
 
+**Physical Genome** — A Thread's private compact diploid-like inherited state for physical traits. Each locus retains two allele-like inherited values, including material that may be unexpressed yet remain heritable. It is genotype-like machinery, not a literal DNA simulation, and is distinct from the symbolic **Genome** above. For missing biological parents, ancestry provenance may bootstrap transient founder genomes once; the child's Physical Genome then becomes the durable inherited physical authority. Phenotype and visual identity are derived projections. Physical ancestry and the Physical Genome have no authority over personality, intelligence, ability, dignity, values, religion, politics, class, interests, or behavior.
+
 **Phenotype** — The developed person produced by genotype, upbringing, and experience.
 
 **Mechanical condition** — A numeric, versioned, replayable value computed by Fibre from durable world state/history. It may causally affect when or how cognition runs but is not semantic self-knowledge, a need, emotion, value, meaning, or character claim.
