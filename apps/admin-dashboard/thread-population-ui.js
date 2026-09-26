@@ -1280,7 +1280,13 @@ function renderBirthBatchProgress({ total, accepted, failed }) {
 async function submitBirth(event) {
   event.preventDefault();
   if (birthSubmit.disabled) return;
-  const location = birthLocation.value.trim();
+  const locationInput = birthLocation.value.trim();
+  if (locationInput !== "" && selectedBirthplace?.place !== locationInput) {
+    birthResult.classList.add("failed");
+    birthResult.textContent = "Choose a birthplace from the search results, or use Random Location.";
+    return;
+  }
+  const location = selectedBirthplace?.place ?? "";
   const count = selectedBirthCount();
   const sex = selectedBirthSex();
   const requestedAt = new Date().toISOString();
