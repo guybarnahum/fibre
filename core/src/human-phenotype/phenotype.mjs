@@ -10,19 +10,40 @@ const clamp = value => Math.max(0, Math.min(1, value));
 const centered = (seed, locus) => unit(seed, locus) * 2 - 1;
 const band = (value, labels) => labels[Math.min(labels.length - 1, Math.floor(clamp(value) * labels.length))];
 
+const REFERENCE_POPULATIONS = {
+  afr_west:{pigmentation:.72,hair:.72,breadth:.18,projection:.02,soft:.28,frame:.04},
+  afr_east:{pigmentation:.62,hair:.58,breadth:.02,projection:.12,soft:.20,frame:.02},
+  eur_north:{pigmentation:-.70,hair:-.34,breadth:-.08,projection:.10,soft:-.08,frame:.08},
+  eur_south:{pigmentation:-.42,hair:-.10,breadth:-.04,projection:.16,soft:.02,frame:.02},
+  west_asia:{pigmentation:-.20,hair:-.06,breadth:-.02,projection:.22,soft:.04,frame:.02},
+  south_asia:{pigmentation:.08,hair:-.12,breadth:-.02,projection:.10,soft:.08,frame:0},
+  east_asia:{pigmentation:-.28,hair:-.62,breadth:.14,projection:-.24,soft:-.08,frame:-.02},
+  southeast_asia:{pigmentation:-.02,hair:-.48,breadth:.12,projection:-.18,soft:.02,frame:-.04},
+  indigenous_america:{pigmentation:-.02,hair:-.50,breadth:.12,projection:-.14,soft:.02,frame:-.02},
+  oceania:{pigmentation:.46,hair:.28,breadth:.14,projection:.04,soft:.12,frame:.04}
+};
+const AXES=["pigmentation","hair","breadth","projection","soft","frame"];
+
 function ancestryBasis(ancestry) {
-  // Evidence-constrained basis v1: ancestral latitude weakly conditions
-  // pigmentation only. Missing geography is neutral. Other morphology remains
-  // ancestry-neutral until a calibrated physical basis exists.
-  let weight=0,latitude=0;
-  for(const item of ancestry) if(item.sourceLatitude!=null){latitude+=Math.abs(item.sourceLatitude)*item.share;weight+=item.share}
-  const meanLatitude=weight?latitude/weight:null;
-  return {pigmentationAdaptation:meanLatitude==null?0:clamp((45-meanLatitude)/45)*2-1};
+  const total=Object.fromEntries(AXES.map(x=>[x,0]));
+  let weight=0;
+  for(const item of ancestry){
+    const ref=item.referencePopulation&&REFERENCE_POPULATIONS[item.referencePopulation];
+    if(!ref)continue;
+    weight+=item.share;
+    for(const axis of AXES)total[axis]+=ref[axis]*item.share;
+  }
+  if(weight)for(const axis of AXES)total[axis]/=weight;
+  return total;
 }
 
 function parentalPrior(maternal,paternal,seed) {
-  const m=ancestryBasis(maternal),p=ancestryBasis(paternal),maternalWeight=0.25+unit(seed,"parental-pigmentation")*0.5;
-  return {pigmentation:m.pigmentationAdaptation*maternalWeight+p.pigmentationAdaptation*(1-maternalWeight),hair:0,breadth:0,projection:0,soft:0,frame:0};
+  const m=ancestryBasis(maternal),p=ancestryBasis(paternal),result={};
+  for(const axis of AXES){
+    const maternalWeight=.25+unit(seed,`parental-${axis}`)*.5;
+    result[axis]=m[axis]*maternalWeight+p[axis]*(1-maternalWeight);
+  }
+  return result;
 }
 
 function correlatedLatent(seed, prior) {
@@ -87,7 +108,7 @@ export function sampleInheritedPhenotype({maternalAncestry, paternalAncestry, se
   return {
     ancestry: {maternal, paternal, inherited: ancestry},
     phenotype: {
-      version: "human-phenotype-v0.4",
+      version: "human-phenotype-v0.5",
       traits: semanticPhenotype(latent),
       latent,
       experimentalPopulationPrior: prior
