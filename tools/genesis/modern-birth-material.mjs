@@ -30,7 +30,7 @@ function fullName(given, family, order) {
   throw new TypeError(`unsupported modern birth name order ${String(order)}`);
 }
 
-export function composeModernSubjectIdentity({ requestId, material }) {
+export function composeModernSubjectIdentity({ requestId, material, maternalParent = null, paternalParent = null }) {
   if (!material || typeof material !== "object") throw new TypeError("modern birth material is required");
   if (!Array.isArray(material.languages) || material.languages.length === 0) throw new TypeError("modern birth requires eventual spoken languages");
   if (!Array.isArray(material.raisedLanguages) || material.raisedLanguages.length === 0) throw new TypeError("modern birth requires raised languages");
@@ -40,10 +40,16 @@ export function composeModernSubjectIdentity({ requestId, material }) {
   const femaleGiven = valueAt(material.femaleGivenNames, ordinal);
   const maleGiven = valueAt(material.maleGivenNames, ordinal, 2);
   const physicalInheritance = resolveBirthPhysicalInheritance({
+    maternalGenome:maternalParent?.physicalGenome ?? null,
+    paternalGenome:paternalParent?.physicalGenome ?? null,
     maternalAncestry:material.physicalAncestry.maternal,
     paternalAncestry:material.physicalAncestry.paternal,
     seed:`modern-birth:${requestId}`,
   });
+  const physicalParents = Object.freeze([
+    ...(maternalParent === null ? [] : [{ role:"maternal", threadId:maternalParent.threadId }]),
+    ...(paternalParent === null ? [] : [{ role:"paternal", threadId:paternalParent.threadId }]),
+  ]);
   return Object.freeze({
     femaleName: fullName(femaleGiven, family, material.nameOrder),
     maleName: fullName(maleGiven, family, material.nameOrder),
@@ -51,6 +57,7 @@ export function composeModernSubjectIdentity({ requestId, material }) {
     languages: Object.freeze([...material.languages]),
     raisedLanguages: Object.freeze([...material.raisedLanguages]),
     physicalGenome:physicalInheritance.genome,
+    ...(physicalParents.length === 0 ? {} : { physicalParents }),
   });
 }
 
