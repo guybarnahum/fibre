@@ -94,6 +94,7 @@ function normalizeSubjectIdentity(candidate) {
     "languages",
     "raisedLanguages",
     "appearanceContext",
+    "physicalGenome",
   ]);
   for (const key of Object.keys(identity)) {
     if (!allowed.has(key)) throw new TypeError(`Genesis development request subjectIdentity.${key} is not allowed`);
@@ -136,6 +137,9 @@ function normalizeSubjectIdentity(candidate) {
   }
   if (Object.hasOwn(identity, "appearanceContext")) {
     normalized.appearanceContext = nonEmpty("Genesis development request subjectIdentity.appearanceContext", identity.appearanceContext);
+  }
+  if (Object.hasOwn(identity, "physicalGenome")) {
+    normalized.physicalGenome = structuredClone(identity.physicalGenome);
   }
   return Object.freeze(normalized);
 }
