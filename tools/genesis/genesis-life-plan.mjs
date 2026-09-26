@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,6 +16,7 @@ const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const PR39_DEVELOPMENT_COHORT_PATH = "fixtures/genesis/pr39/development-cohort-v1.json";
 export const PR39_PARENT_GENOME_INDEX_PATH = "fixtures/genesis/pr39/genomes/parent-genome-index.json";
 export const PR39_SUBJECT_IDENTITIES_PATH = "fixtures/genesis/pr39/subject-identities-v1.json";
+export const PR39_MODERN_BIRTH_MATERIAL_PATH = "fixtures/genesis/pr39/modern-birth-material-v1.json";
 
 function absolute(path) { return resolve(ROOT, path); }
 function readJson(path) { return JSON.parse(readFileSync(absolute(path), "utf8")); }
@@ -26,6 +28,15 @@ function loadWorld(slot) {
   const worldSpec = normalizeGenesisWorldSpec(readJson(slot.worldSpecPath));
   if (digest(worldSpec) !== slot.worldSpecDigest) fail(`PR39 slot ${slot.slot} WorldSpec digest drift`);
   return worldSpec;
+}
+
+function loadPhysicalAncestry() {
+  const fixture=readJson(PR39_MODERN_BIRTH_MATERIAL_PATH);
+  const bySlot=new Map();
+  for(const item of fixture.slots ?? []){
+    if(item.physicalAncestry?.maternal && item.physicalAncestry?.paternal) bySlot.set(item.slot,item.physicalAncestry);
+  }
+  return bySlot;
 }
 
 function loadSubjectIdentities() {
@@ -87,12 +98,20 @@ export function buildGenesisDevelopmentPlans({ fixturePath = PR39_DEVELOPMENT_CO
     fail("PR39 development fixture must contain fourteen historical windows");
   }
   const subjectIdentities = loadSubjectIdentities();
+  const physicalAncestryBySlot = loadPhysicalAncestry();
 
   const windows = fixture.historicalPlan.windows.map((item) => structuredClone(item));
   const slots = fixture.slots.map((slot) => {
     const worldSpec = loadWorld(slot);
-    const subjectIdentity = subjectIdentities.get(slot.slot);
-    if (!subjectIdentity) fail(`PR39 slot ${slot.slot} lacks modern subject identity material`);
+    const identity = subjectIdentities.get(slot.slot);
+    if (!identity) fail(`PR39 slot ${slot.slot} lacks modern subject identity material`);
+    const physicalAncestry=physicalAncestryBySlot.get(slot.slot);
+    if(!physicalAncestry) fail(`PR39 slot ${slot.slot} lacks physical ancestry material`);
+    const subjectIdentity={...identity,physicalGenome:resolveBirthPhysicalInheritance({
+      maternalAncestry:physicalAncestry.maternal,
+      paternalAncestry:physicalAncestry.paternal,
+      seed:`pr39-development:slot:${pad(slot.slot)}`,
+    }).genome};
     const genome = loadGenome(slot);
     const parentGenomes = loadParentGenomes(genome);
     const offersByWindow = new Map();
