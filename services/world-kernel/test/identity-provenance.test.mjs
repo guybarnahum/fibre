@@ -216,6 +216,37 @@ test("historical null claim discipline remains readable without weakening curren
   identity.close();
 }));
 
+test("unsupported historical claim-discipline representations fail closed with migration evidence", () => withDatabase((databasePath) => {
+  seed(databasePath);
+  const identity = openIdentityStore(localWorldStateStorage(databasePath));
+  const current = currentClaim(identity, "unsupported-historical-discipline");
+  const historical = structuredClone(current);
+  delete historical.claimPredicate;
+  historical.admission = {
+    policy:{ id:"identity_atomic_material_proposition", version:"1" },
+    claimDiscipline:"identity_atomic_material_proposition:1",
+    admittedBy:historical.admission.admittedBy,
+    evidenceClassification:historical.admission.evidenceClassification,
+    sourceMode:historical.admission.sourceMode,
+  };
+
+  assert.throws(
+    () => rehydrateIdentityAssertion(historical, {
+      allowAcceptedCausal:true,
+      allowEndogenous:true,
+      registryVersion:IDENTITY_DOMAIN_REGISTRY_VERSION,
+    }),
+    /unsupported string representation "identity_atomic_material_proposition:1"/u,
+    "historical incompatibility did not expose its stored representation",
+  );
+  assert.throws(
+    () => normalizeIdentityAssertion(historical, { registryVersion:IDENTITY_DOMAIN_REGISTRY_VERSION }),
+    /plain object/u,
+    "historical diagnostic compatibility weakened current admission",
+  );
+  identity.close();
+}));
+
 test("natural-language identity may use ordinary conjunctions without being treated as a schema error", () => withDatabase((databasePath) => {
   seed(databasePath);
   const identity = openIdentityStore(localWorldStateStorage(databasePath));
