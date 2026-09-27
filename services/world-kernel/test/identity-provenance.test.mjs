@@ -7,7 +7,7 @@ import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
 import { openWorldStore } from "../src/persistence.mjs";
-import { IdentityConflictError, identityAssertionId, identityClaimId } from "../src/identity-provenance-domain.mjs";
+import { IdentityConflictError, identityAssertionId, identityClaimId, normalizeIdentityAssertion, rehydrateIdentityAssertion } from "../src/identity-provenance-domain.mjs";
 import { IDENTITY_DOMAIN_REGISTRY_VERSION, identityDomainDefinition } from "../src/identity-domain-registry.mjs";
 import { IDENTITY_ATOMIC_CLAIM_POLICY } from "../src/identity-claim-discipline.mjs";
 import { memoryPhotoPromptDigest, memoryPhotoRequirementSatisfied, memoryVisualCompanionId } from "../src/memory-visual-companion.mjs";
@@ -155,6 +155,35 @@ test("current claims require structured predicates and the current discipline wi
     ...wrong,
     admission: { ...wrong.admission, claimDiscipline: { id: "identity_atomic_material_proposition", version: "999" } },
   }), /claim discipline/i);
+  identity.close();
+}));
+
+test("pre-witness registry assertions remain readable but cannot be newly admitted", () => withDatabase((databasePath) => {
+  seed(databasePath);
+  const identity = openIdentityStore(localWorldStateStorage(databasePath));
+  const current = currentClaim(identity, "pre-witness-history");
+  const historical = structuredClone(current);
+  delete historical.claimPredicate;
+  historical.admission = {
+    policy:{ id:"identity_atomic_material_proposition", version:"1" },
+    admittedBy:historical.admission.admittedBy,
+    evidenceClassification:historical.admission.evidenceClassification,
+    sourceMode:historical.admission.sourceMode,
+  };
+
+  const rehydrated = rehydrateIdentityAssertion(historical, {
+    allowAcceptedCausal:true,
+    allowEndogenous:true,
+    registryVersion:IDENTITY_DOMAIN_REGISTRY_VERSION,
+  });
+  assert.equal(rehydrated.claimPredicate, undefined);
+  assert.equal(rehydrated.admission.claimDiscipline, undefined);
+  assert.deepEqual(rehydrated.admission.policy, historical.admission.policy);
+  assert.throws(
+    () => normalizeIdentityAssertion(historical, { registryVersion:IDENTITY_DOMAIN_REGISTRY_VERSION }),
+    /claimDiscipline|plain object/u,
+    "historical compatibility leaked into current admission",
+  );
   identity.close();
 }));
 
