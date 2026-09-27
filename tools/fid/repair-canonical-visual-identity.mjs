@@ -10,6 +10,7 @@ import { THREAD_REPAIR_CONTRACT } from "../../services/world-kernel/src/thread-g
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
 const POLL_MS = 2_000;
+const POLL_PROGRESS_MS = 10_000;
 
 function progress(stage, detail = {}) {
   process.stderr.write(`${JSON.stringify({
@@ -73,12 +74,22 @@ async function payload(response, label, accepted = [200]) {
   return body;
 }
 
-async function poll(label, probe, ready, timeoutMs = DEFAULT_TIMEOUT_MS) {
-  const deadline = Date.now() + timeoutMs;
+async function poll(label, probe, ready, timeoutMs = DEFAULT_TIMEOUT_MS, heartbeat = null) {
+  const startedAt = Date.now();
+  const deadline = startedAt + timeoutMs;
+  let nextProgressAt = startedAt + POLL_PROGRESS_MS;
   let latest = null;
   while (Date.now() < deadline) {
     latest = await probe();
     if (ready(latest)) return latest;
+    const currentTime = Date.now();
+    if (heartbeat !== null && currentTime >= nextProgressAt) {
+      progress(heartbeat.stage, {
+        elapsedSeconds:Math.floor((currentTime - startedAt) / 1_000),
+        ...heartbeat.detail(latest),
+      });
+      nextProgressAt = currentTime + POLL_PROGRESS_MS;
+    }
     await delay(POLL_MS);
   }
   throw new Error(`${label} did not converge within ${timeoutMs}ms; latest=${JSON.stringify(latest)}`);
@@ -266,6 +277,14 @@ async function main() {
         ));
         return projected&&card?.credentialId&&photos.length===1;
       },
+      DEFAULT_TIMEOUT_MS,
+      {
+        stage:"await_reused_projection",
+        detail:(body)=>({
+          projected:body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0]===canonicalReferenceObjectRef,
+          fidCredentialId:body?.snapshot?.presentation?.identityCard?.credentialId ?? null,
+        }),
+      },
     );
     const credential=converged.snapshot.presentation.identityCard;
     process.stdout.write(`${JSON.stringify({
@@ -295,6 +314,14 @@ async function main() {
         && portrait.asset?.referenceObjectRef
         && portrait.asset.referenceObjectRef !== before.asset?.referenceObjectRef;
     },
+    DEFAULT_TIMEOUT_MS,
+    {
+      stage:"await_canonical_root",
+      detail:(body)=>{
+        const portrait=canonicalPortrait(body);
+        return { revision:portrait.revision, status:portrait.status };
+      },
+    },
   );
   const corrected = canonicalPortrait(admitted);
   const canonicalReferenceObjectRef = corrected.asset.referenceObjectRef;
@@ -308,6 +335,13 @@ async function main() {
     legacyMigration ? "migrated visual identity projection" : renewCurrent ? "renewed visual identity projection" : "corrected visual identity projection",
     () => presentation({ threadPresentation, threadId }),
     (body) => body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0] === canonicalReferenceObjectRef,
+    DEFAULT_TIMEOUT_MS,
+    {
+      stage:"await_presentation_projection",
+      detail:(body)=>({
+        projected:body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0]===canonicalReferenceObjectRef,
+      }),
+    },
   );
   progress("presentation_projected", { correctedCanonicalReferenceObjectRef:canonicalReferenceObjectRef });
 
@@ -326,6 +360,19 @@ async function main() {
       return card?.credentialId
         && (previousFidCredentialId === null || card.credentialId !== previousFidCredentialId)
         && photos.length === 1;
+    },
+    DEFAULT_TIMEOUT_MS,
+    {
+      stage:"await_fin_card",
+      detail:(body)=>({
+        fidCredentialId:body?.snapshot?.presentation?.identityCard?.credentialId ?? null,
+        officialIdPhotoReady:(body?.snapshot?.media?.assets ?? []).some((asset)=>(
+          asset?.role==="official_id_photo"
+          && asset?.status==="ready"
+          && Array.isArray(asset?.sourceReferences)
+          && asset.sourceReferences.includes(canonicalReferenceObjectRef)
+        )),
+      }),
     },
   );
   const credential = correctedPresentation.snapshot.presentation.identityCard;
