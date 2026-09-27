@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {sampleFounderPhysicalGenome,expressPhysicalGenome} from "../src/human-phenotype/index.mjs";
+import {
+  sampleFounderPhysicalGenome,
+  expressPhysicalGenome,
+  physicalGenomeLoci,
+  referencePopulationIds,
+  referencePopulationPrior,
+} from "../src/human-phenotype/index.mjs";
 
 const ancestry=[
   {population:"family-origin-a",share:.75,referencePopulation:"eur_south"},
@@ -34,4 +40,25 @@ test("population basis shifts founders without determining individuals",()=>{
   assert.notEqual(mean(a,"pigmentation"),mean(b,"pigmentation"),"population basis should shift founders");
   assert.ok(Math.abs(mean(a,"noseBreadth")-mean(b,"noseBreadth"))>.2,"population basis should shift morphology");
   assert.ok(new Set(a.map(x=>x.faceBreadth.toFixed(2))).size>8,"individuals should vary");
+});
+
+
+test("every reference population resolves every physical locus",()=>{
+  for(const id of referencePopulationIds){
+    const prior=referencePopulationPrior(id);
+    for(const locus of physicalGenomeLoci){
+      assert.ok(Number.isFinite(prior[locus]),`${id} missing ${locus}`);
+    }
+  }
+});
+
+test("unknown founder populations fail instead of becoming neutral",()=>{
+  assert.throws(
+    ()=>sampleFounderPhysicalGenome({
+      ancestry:[{population:"unknown family",share:1,referencePopulation:"unknown_region"}],
+      seed:"unknown-founder",
+    }),
+    /unknown physical reference population/u,
+    "unknown population must fail",
+  );
 });
