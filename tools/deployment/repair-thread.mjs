@@ -64,8 +64,14 @@ async function requestJson(url, token, { repairKey = null } = {}) {
     },
     ...(repairing ? { body:JSON.stringify({ repairKey }) } : {}),
   });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(`Thread ${repairing ? "repair" : "diagnosis"} failed: HTTP ${response.status} ${JSON.stringify(payload)}`);
+  const raw = await response.text();
+  let payload = null;
+  try { payload = raw === "" ? null : JSON.parse(raw); } catch {}
+  if (!response.ok) {
+    const detail = payload === null ? (raw === "" ? "<empty response body>" : raw.slice(0, 2_000)) : JSON.stringify(payload);
+    throw new Error(`Thread ${repairing ? "repair" : "diagnosis"} failed: HTTP ${response.status} ${detail}`);
+  }
+  if (payload === null) throw new Error(`Thread ${repairing ? "repair" : "diagnosis"} returned non-JSON: ${raw.slice(0, 2_000)}`);
   return payload;
 }
 
