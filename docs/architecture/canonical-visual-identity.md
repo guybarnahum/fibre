@@ -68,7 +68,7 @@ rich canonical identity text
 
 No external image identity is required.
 
-For a de-novo modern-Genesis birth without admitted biological parent Threads, family-history authoring supplies separate maternal and paternal physical-ancestry provenance. Fibre samples two transient founder physical genomes, recombines them into the child's private physical genome, and expresses that genome into one concrete inherited phenotype **before** canonical identity is created.
+For a de-novo Genesis birth without admitted biological parent Threads, family-history authoring supplies separate maternal and paternal physical-ancestry provenance. Fibre samples two transient founder physical genomes, recombines them into the child's private physical genome, and expresses that genome into one concrete inherited phenotype **before** canonical identity is created.
 
 The ancestry provenance is bootstrap evidence for missing parents only. It must not cross the canonical rendering boundary as a face-selection instruction. The canonical specification describes one concrete person; the image renderer depicts that person and has no authority to choose skin, hair, eyes, facial morphology, nose, mouth, jaw or build from a demographic range. Continuous inherited coordinates accompany the semantic phenotype so individuality inside broad labels is not discarded.
 
@@ -327,7 +327,7 @@ Fibre distinguishes **physical-authority migration** from **root re-rendering**.
 
 Use **appearance migration** when the Thread has no physical genome or carries an older appearance-model version. The operator supplies or reuses trustworthy maternal/paternal physical ancestry evidence. Fibre never infers ancestry from portrait pixels, name, birthplace, nationality, culture or language.
 
-The migration uses the same shared founder/inheritance machinery as modern Genesis:
+The migration uses the same shared founder/inheritance machinery as Genesis:
 
 ```text
 parent genomes when known
