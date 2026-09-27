@@ -1,4 +1,5 @@
 import {
+  PHYSICAL_GENOME_VERSION,
   normalizeAncestry,
   resolveBirthPhysicalInheritance,
   phenotypeFromPhysicalGenome,
@@ -61,7 +62,7 @@ export class ThreadPhysicalGenomeMigrationStore{
 
     const migrationEventId=eventId(thread.threadId,key);
     const existing=this.#database.prepare(
-      "SELECT event_type,payload_json FROM thread_events WHERE event_id=?",
+      "SELECT event_type,payload_json,payload_schema_version FROM thread_events WHERE event_id=?",
     ).get(migrationEventId);
     if(existing!==undefined){
       if(existing.event_type!=="THREAD_PHYSICAL_GENOME_MIGRATED"){
@@ -87,8 +88,9 @@ export class ThreadPhysicalGenomeMigrationStore{
       });
     }
 
-    if(thread.genome.physical!==undefined){
-      throw new TypeError("physical genome is already authoritative for this Thread");
+    const previousPhysicalGenomeVersion=thread.genome.physical?.version??null;
+    if(previousPhysicalGenomeVersion===PHYSICAL_GENOME_VERSION){
+      throw new TypeError("physical genome already uses the current appearance model");
     }
 
     const next=structuredClone(thread);
@@ -99,11 +101,11 @@ export class ThreadPhysicalGenomeMigrationStore{
 
     const stateJson=canonicalJson(next);
     const stateHash=threadStateHash(next);
-    const payload={operationKey:key,physicalAncestry:ancestry,physicalGenome:genome};
+    const payload={operationKey:key,physicalAncestry:ancestry,physicalGenome:genome,previousPhysicalGenomeVersion};
     const actor={entityId:"fibre.admin.operator",kind:"operator",displayName:"Fibre Admin"};
     const provenance={
-      source:"operator_confirmed_legacy_physical_ancestry",
-      migrationId:"legacy_physical_embodiment_v1",
+      source:"operator_confirmed_physical_ancestry",
+      migrationId:"physical_embodiment_v2",
       notThreadLifeEvent:true,
     };
 
@@ -123,7 +125,7 @@ export class ThreadPhysicalGenomeMigrationStore{
           event_id,thread_id,sequence,expected_version,resulting_version,event_type,
           command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
           authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-        ) VALUES (?,?,?,?,?,'THREAD_PHYSICAL_GENOME_MIGRATED',NULL,NULL,?,?,?,?,NULL,?,?,1,?)
+        ) VALUES (?,?,?,?,?,'THREAD_PHYSICAL_GENOME_MIGRATED',NULL,NULL,?,?,?,?,NULL,?,?,2,?)
       `).run(
         migrationEventId,
         thread.threadId,
