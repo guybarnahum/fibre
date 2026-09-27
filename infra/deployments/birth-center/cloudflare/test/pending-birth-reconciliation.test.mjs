@@ -45,7 +45,7 @@ function developmentFor(request) {
 test("stale births wake immediately once, then retry on the normal interval", () => {
   const request = staleModern();
   const runtime = {
-    modernBirthRequestStore:{
+    birthRequestStore:{
       recent:() => [request],
       isActive:(status) => status === "developing",
     },
@@ -76,7 +76,7 @@ test("pre-Genesis request rejection is complete, not pending reconciliation", ()
     threadId:null,
   });
   const runtime = {
-    modernBirthRequestStore:{
+    birthRequestStore:{
       recent:() => [request],
       isActive:() => false,
     },
@@ -93,7 +93,7 @@ test("pre-Genesis request rejection is complete, not pending reconciliation", ()
 test("pending births is local observation", () => {
   const request = staleModern();
   const runtime = {
-    modernBirthRequestStore:{
+    birthRequestStore:{
       recent:() => [request],
       isActive:(status) => status === "developing",
       progress:() => { throw new Error("pending read mutated birth state"); },
@@ -118,7 +118,7 @@ test("one World check settles duplicate stale birth records as born", async () =
   let published = 0;
   let born = 0;
   const runtime = {
-    modernBirthRequestStore:{
+    birthRequestStore:{
       recent:() => [request],
       isActive:(status) => status === "developing",
       progress:(_requestId, patch) => { if (patch.status === "published") published += 1; },
@@ -155,7 +155,7 @@ test("terminal pre-admission failure becomes stillborn only after confirmed Worl
   });
   let stillborn = 0;
   const runtime = {
-    modernBirthRequestStore:{
+    birthRequestStore:{
       recent:() => [request],
       isActive:() => false,
       progress:() => {},
@@ -194,7 +194,7 @@ test("distinct stale births share one bounded World presence query", async () =>
   let worldChecks = 0;
   let published = 0;
   const runtime = {
-    modernBirthRequestStore:{
+    birthRequestStore:{
       recent:() => [first, second],
       isActive:(status) => status === "developing",
       progress:(_requestId, patch) => { if (patch.status === "published") published += 1; },
@@ -231,7 +231,7 @@ test("retryable pre-admission failure remains recoverable when World is absent",
   const request = staleModern({ status:"failed", error:"provider unavailable" });
   let stillborn = 0;
   const runtime = {
-    modernBirthRequestStore:{
+    birthRequestStore:{
       recent:() => [request],
       isActive:() => false,
       progress:() => {},
