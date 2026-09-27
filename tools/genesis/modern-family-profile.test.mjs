@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {sampleModernFamilyProfile,validateModernFamilyProfiles} from "./modern-family-profile.mjs";
+import {normalizeModernFamilyProfiles,sampleModernFamilyProfile,validateModernFamilyProfiles} from "./modern-family-profile.mjs";
 
 const names=prefix=>Array.from({length:12},(_,index)=>`${prefix}${index+1}`);
 const ancestry=population=>({maternal:[{population,share:1,referencePopulation:"eur_north"}],paternal:[{population,share:1,referencePopulation:"eur_north"}]});
@@ -13,6 +13,22 @@ const profile=(id,share)=>({
 test("family profiles reject packed language inventories",()=>{
   const broken={...profile("local",1),languages:["Hindi","Bhojpuri","Awadhi」「Marathi」「English"]};
   assert.throws(()=>validateModernFamilyProfiles([broken]),/one bare language name per item/u);
+});
+
+test("family profile authoring redundancy is canonicalized locally",()=>{
+  const original=profile("mixed",1);
+  original.femaleGivenNames=[...names("mf"),"mf1"];
+  original.maleGivenNames=[...names("mm"),"mm1"];
+  original.familyNames=[...names("ms"),"ms1"];
+  original.languages=["English","english"];
+  original.raisedLanguages=["English","ENGLISH"];
+  const [normalized]=normalizeModernFamilyProfiles([original]);
+  assert.equal(normalized.femaleGivenNames.length,12);
+  assert.equal(normalized.maleGivenNames.length,12);
+  assert.equal(normalized.familyNames.length,12);
+  assert.deepEqual(normalized.languages,["English"]);
+  assert.deepEqual(normalized.raisedLanguages,["English"]);
+  assert.doesNotThrow(()=>validateModernFamilyProfiles([normalized]));
 });
 
 test("production family sampler follows authored weights at population scale",()=>{
