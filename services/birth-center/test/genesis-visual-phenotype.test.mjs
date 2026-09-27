@@ -21,6 +21,8 @@ test("Genesis embodiment is derived from inherited physical genome",()=>{
   assert.equal(first.policyRef,GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY);
   assert.match(first.specification.subject.description,/faceWidth:/u);
   assert.match(first.specification.subject.description,/noseWidth:/u);
+  assert.match(first.specification.subject.description,/Continuous inherited expression/u);
+  assert.match(first.specification.subject.description,/faceBreadth: [-0-9.]+ \(-1 narrower, \+1 broader\)/u);
   assert.throws(()=>buildGenesisCanonicalVisualIdentity({threadId:"thr_missing",sex:"male"}),/requires the inherited physical genome/u);
 });
 
