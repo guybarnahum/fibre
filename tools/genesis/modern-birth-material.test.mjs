@@ -68,3 +68,12 @@ test("modern birth creates a deterministic heritable physical genome before rend
   assert.equal(first.physicalGenome.version,"physical-genome-v0.1");
   assert.notDeepEqual(first.physicalGenome,sibling.physicalGenome,"different births collapsed to one physical genome");
 });
+
+
+test("modern names are deterministic without six-person family-name cycles", () => {
+  const naming={...birthMaterial(1),femaleGivenNames:Array.from({length:24},(_,i)=>`F${i}`),maleGivenNames:Array.from({length:24},(_,i)=>`M${i}`),familyNames:Array.from({length:24},(_,i)=>`L${i}`)};
+  const names=Array.from({length:12},(_,i)=>composeModernSubjectIdentity({requestId:`naming-realism-${i+1}`,material:naming}).femaleName);
+  assert.equal(new Set(names).size,names.length,"small birth cohort repeated a full name");
+  assert.ok(new Set(names.map(name=>name.split(" ").at(-1))).size>2,"family names still advance in six-person blocks");
+  assert.equal(composeModernSubjectIdentity({requestId:"naming-realism-3",material:naming}).femaleName,names[2],"same birth changed name");
+});
