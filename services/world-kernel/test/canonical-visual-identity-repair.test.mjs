@@ -111,7 +111,10 @@ test("canonical renewal preserves the exact visual identity specification", () =
   assert.equal(renewed.supersedesRevision, current.revision, "renewal broke Embodiment lineage");
   assert.equal(renewed.status, "pending_generation", "renewal did not request a fresh root");
   assert.equal(renewed.asset, null, "renewal reused the old root bytes");
-  assert.equal(renewed.respecification.priorSpecificationDigest, current.specificationDigest);
+  assert.equal(renewed.respecification, null, "renewal masqueraded as a respecification");
+  assert.equal(renewed.renewal.priorSpecificationDigest, current.specificationDigest);
+  assert.equal(renewed.renewal.priorReferenceObjectRef, current.asset.referenceObjectRef);
+  assert.deepEqual(renewed.renewal.evidenceReferences, ["evt_visual_identity_origin_001"]);
   assert.equal(current.asset.referenceObjectRef, "visual_identity_reference_old", "renewal mutated prior root history");
 });
 
@@ -139,11 +142,103 @@ test("operator renewal preserves identity while reopening canonical generation",
 
   assert.equal(result.previous.specificationDigest, result.embodiment.specificationDigest, "renewal changed visual identity authority");
   assert.equal(result.embodiment.status, "pending_generation", "renewal did not reopen generation");
+  assert.equal(result.embodiment.respecification, null, "renewal changed canonical specification authority");
   assert.deepEqual(
-    result.embodiment.respecification.evidenceReferences,
+    result.embodiment.renewal.evidenceReferences,
     ["evt_visual_identity_origin_001"],
     "renewal lost durable visual identity provenance",
   );
+});
+
+test("operator renewal is accepted by real Embodiment authority", () => {
+  const fixture = JSON.parse(
+    readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
+  );
+  const dir = mkdtempSync(join(tmpdir(), "fibre-canonical-renewal-"));
+  try {
+    const storage = localWorldStateStorage(join(dir, "world.sqlite"));
+    const world = openWorldStore(storage);
+    const seeded = world.seedThread(structuredClone(fixture)).thread;
+    world.close();
+
+    const threadId = seeded.threadId;
+    const eventRef = seeded.provenance.lastEventId;
+    const spec = {
+      subject:{
+        partyId:threadId,
+        description:"adult female person; stable individual facial proportions, dark eyes, natural dark hair, ordinary skin texture, and subtle facial asymmetry",
+      },
+      method:"canonical synthetic portrait specification",
+      description:"Preserve the listed stable individual identity cues across age transformations in a neutral realistic portrait.",
+      model:"replaceable-renderer",
+    };
+    const id = embodimentId({ threadId, kind:"portrait", lineage:"canonical" });
+    const store = openEmbodimentStore(storage);
+    store.record({
+      embodimentId:id,
+      revision:1,
+      threadId,
+      kind:"portrait",
+      representationKind:"synthetic_generation",
+      truthStatus:"synthetic_representation_not_historical_evidence",
+      rightsBasis:"thread_self_owned",
+      permissionReferences:[],
+      sourceReferences:[eventRef],
+      specification:spec,
+      specificationDigest:embodimentSpecificationDigest(spec),
+      respecification:null,
+      status:"pending_generation",
+      unavailableReason:null,
+      asset:null,
+      visibility:"public",
+      recordedAt:"2026-08-02T17:01:00Z",
+    });
+    store.record({
+      embodimentId:id,
+      revision:2,
+      supersedesRevision:1,
+      threadId,
+      kind:"portrait",
+      representationKind:"synthetic_generation",
+      truthStatus:"synthetic_representation_not_historical_evidence",
+      rightsBasis:"thread_self_owned",
+      permissionReferences:[],
+      sourceReferences:[eventRef],
+      specification:spec,
+      specificationDigest:embodimentSpecificationDigest(spec),
+      respecification:null,
+      status:"available",
+      unavailableReason:null,
+      asset:{
+        assetRef:"asset://visual_identity_reference_mina_old",
+        referenceObjectRef:"visual_identity_reference_mina_old",
+        sha256:`sha256:${"b".repeat(64)}`,
+        mediaType:"image/png",
+        width:1024,
+        height:1024,
+        durationMs:null,
+      },
+      visibility:"public",
+      recordedAt:"2026-08-02T17:02:00Z",
+    });
+
+    const service = createCanonicalVisualIdentityRepairService({
+      embodimentStore:store,
+      now:() => "2026-08-02T17:03:00Z",
+    });
+    const result = service.renew({
+      threadId,
+      operationKey:"renew_visual_mina_001",
+      reason:"Renew the admitted canonical root under the current renderer without changing the Thread's visual identity.",
+    });
+
+    assert.equal(result.embodiment.status, "pending_generation", "renewal did not reach Embodiment authority");
+    assert.equal(result.embodiment.specificationDigest, result.previous.specificationDigest, "renewal changed canonical identity");
+    assert.equal(result.embodiment.renewal.priorReferenceObjectRef, "visual_identity_reference_mina_old", "renewal lost the prior root witness");
+    store.close();
+  } finally {
+    rmSync(dir, { recursive:true, force:true });
+  }
 });
 
 test("operator repair service records one corrected canonical lineage head", () => {
