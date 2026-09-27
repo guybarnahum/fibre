@@ -106,6 +106,27 @@ function normalizeRespecification(value, revision) {
   };
 }
 
+function normalizeRenewal(value, revision) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (revision === 1) throw new TypeError("embodiment revision 1 cannot carry renewal");
+  assertPlainObject("embodiment.renewal", value);
+  assertExactKeys("embodiment.renewal", value, [
+    "reason", "priorSpecificationDigest", "priorReferenceObjectRef", "evidenceReferences",
+  ]);
+  assertBoundedDescription("embodiment.renewal.reason", value.reason, { minimum: 16, maximum: 1000 });
+  if (!/^sha256:[0-9a-f]{64}$/.test(value.priorSpecificationDigest)) {
+    throw new TypeError("embodiment.renewal.priorSpecificationDigest is invalid");
+  }
+  assertId("embodiment.renewal.priorReferenceObjectRef", value.priorReferenceObjectRef);
+  return {
+    reason: value.reason,
+    priorSpecificationDigest: value.priorSpecificationDigest,
+    priorReferenceObjectRef: value.priorReferenceObjectRef,
+    evidenceReferences: normalizeRefs("embodiment.renewal.evidenceReferences", value.evidenceReferences),
+  };
+}
+
 function normalizeAsset(value, kind, status) {
   if (value === null) {
     if (status === "available") throw new TypeError("available embodiment requires an asset");
@@ -165,7 +186,7 @@ export function normalizeEmbodimentRepresentation(value) {
   assertPlainObject("embodiment", value);
   assertExactKeys("embodiment", value, [
     "embodimentId", "revision", "threadId", "kind", "representationKind", "truthStatus", "rightsBasis",
-    "permissionReferences", "sourceReferences", "specification", "specificationDigest", "respecification",
+    "permissionReferences", "sourceReferences", "specification", "specificationDigest", "respecification", "renewal",
     "status", "unavailableReason", "asset", "visibility", "recordedAt", "supersedesRevision",
   ]);
   assertId("embodiment.embodimentId", value.embodimentId);
@@ -205,6 +226,7 @@ export function normalizeEmbodimentRepresentation(value) {
     throw new TypeError("embodiment.specificationDigest does not match canonical specification");
   }
   const respecification = normalizeRespecification(value.respecification, value.revision);
+  const renewal = normalizeRenewal(value.renewal, value.revision);
 
   if (value.status === "unavailable_with_reason") {
     assertNonEmpty("embodiment.unavailableReason", value.unavailableReason);
@@ -237,6 +259,7 @@ export function normalizeEmbodimentRepresentation(value) {
     specification,
     specificationDigest,
     respecification,
+    ...(renewal === undefined ? {} : { renewal }),
     status: value.status,
     unavailableReason: value.unavailableReason,
     asset,
