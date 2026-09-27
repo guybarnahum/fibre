@@ -293,9 +293,33 @@ For explicit validation, a deliberately crafted Asset Generation job may set `co
 
 The canonical reference is expected to be generated once per visual identity lineage, not periodically regenerated as the Thread ages.
 
-A superseding root is exceptional and must be explicit. Valid reasons may include wrong-subject binding, corrupt/invalid root, materially incorrect admitted specification, or an authorized canonical correction. The prior root and proof remain durable.
+A superseding root is exceptional and must be explicit. Valid reasons may include wrong-subject binding, corrupt/invalid root, materially incorrect admitted specification, an authorized canonical correction, or a bounded platform visual-renewal migration that preserves the exact canonical specification while replacing a legacy generated root. The prior root and proof remain durable.
 
 Ordinary age, fashion, hairstyle, expression or aesthetic preference do not justify a root replacement.
+
+## Existing Thread visual renewal
+
+A legacy Thread may have a valid canonical visual specification but a poor operational root produced by an older rendering stack. Fibre may renew that root **without changing the person**.
+
+Renewal has one strict semantic invariant:
+
+```text
+before specificationDigest == after specificationDigest
+```
+
+The current specification is copied exactly into a superseding Embodiment revision. Fibre clears the old root from the new lineage head, requests generation under the current renderer/profile, admits a new immutable root, projects it through Thread Presentation, and lets the existing FID lifecycle replace derived official media. The prior root and prior FIN credential remain historical.
+
+This is a software/presentation migration, not a life event, genetics migration or authority rewrite. Renewal must not infer ancestry from a face, name or birthplace; it must not invent parents or a physical genome; and it must not silently enrich a thin or wrong canonical specification. If the specification itself is inadequate, use the separate operator correction path below.
+
+Run one renewal from the repo root after the matching code is deployed to staging:
+
+```bash
+npm run fid:visual:renew -- \
+  --thread-id=thr_... \
+  --reason="Renew legacy canonical root under the current Fibre renderer; canonical visual specification unchanged."
+```
+
+The command verifies staging deployment evidence, asserts that the renewal response preserves the specification digest, waits for the new root, then waits for Presentation and FIN media to converge. This is intentionally one Thread at a time until live evidence shows the workflow is trustworthy enough for a bounded cohort.
 
 ## Operator runbook: correcting appearance
 
