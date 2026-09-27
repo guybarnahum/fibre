@@ -32,6 +32,7 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     "appearanceContext",
     "appearanceLoci",
     "physicalAncestry",
+    "familyProfiles",
     "availableInstitutions",
     "intellectualEnvironment",
   ],
@@ -81,6 +82,19 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
           referencePopulation:{type:"string",enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}
         }}
       }]))
+    },
+    familyProfiles: {
+      type:"array", minItems:3, maxItems:8,
+      description:"A bounded weighted distribution of plausible household family-origin profiles for this place/era. This is cached population context; one profile is deterministically sampled for each birth.",
+      items:{type:"object",additionalProperties:false,required:["id","share","familyOriginContext","physicalAncestry"],properties:{
+        id:{type:"string",minLength:1}, share:{type:"number",minimum:0.01,maximum:1},
+        familyOriginContext:{type:"string",minLength:1},
+        physicalAncestry:{type:"object",additionalProperties:false,required:["maternal","paternal"],properties:Object.fromEntries(["maternal","paternal"].map(side=>[side,{
+          type:"array",minItems:1,maxItems:3,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{
+            population:{type:"string",minLength:1},share:{type:"number",minimum:0.01,maximum:1},referencePopulation:{type:"string",enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}
+          }}
+        }]))}
+      }}
     },
     appearanceContext: {
       type: "string",
@@ -295,7 +309,7 @@ function chooseFamilyProfile(authored, requestId) {
   const sampled = sampleFamilyAncestry({profiles:normalized, seed:`modern-genesis:${requestId}`});
   const profile = normalized.find(candidate => candidate.id === sampled.profileId);
   if (!profile) throw new Error("sampled Genesis family profile is unavailable");
-  return Object.freeze({...profile, physicalAncestry:Object.freeze({maternal:sampled.maternal.ancestry,paternal:sampled.paternal.ancestry})});
+  return Object.freeze({...authored, ...profile, physicalAncestry:Object.freeze({maternal:sampled.maternal.ancestry,paternal:sampled.paternal.ancestry})});
 }
 
 function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, chronologyEndsAt, createdAt }) {
@@ -422,6 +436,7 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "Neither field is a city or country language inventory. Choose one coherent household path; unrelated minority languages must not be combined merely because their communities exist nearby.",
       "Use at most three eventual personal languages. Heritage/ancestry languages belong in raisedLanguages only when this household plausibly uses them; school languages may become usable later without becoming upbringing languages. Put broader regional multilingualism in culturalContext.",
       "Author familyOriginContext before appearanceContext. familyOriginContext is a concise causal household history: local family roots, mixed ancestry, migration, diaspora, adoption, or other family-origin facts only when plausibly warranted.",
+      "Also return familyProfiles: three to eight weighted plausible family-origin profiles for this place and era. Together they are a small local distribution, not a diversity checklist. Weight ordinary locally common family histories more heavily while preserving plausible minority, diaspora and mixed-family paths. Each profile carries its own familyOriginContext and separate maternal/paternal physicalAncestry. Fibre will deterministically sample one profile per birth without another model call.",
       "When no heritage is supplied, choose a plausible family-origin path for this place weighted toward ordinary local household histories rather than uniform global diversity. Less common diaspora or mixed-origin households are valid, but if chosen the familyOriginContext must explicitly explain the migration or family connection that makes them part of this place.",
       "When heritage is supplied, make familyOriginContext, naming material, the household language path, family/community practices, food, celebrations, migration/diaspora context and community affordances compatible with that heritage and place.",
       "familyOriginContext is causal World material. It may shape ordinary life through language at home, relatives, family stories, visits, community ties, being visibly unusual or ordinary in the local environment, peer perception, belonging, or identity questions when appropriate. Do not make every episode about ancestry or visible difference, and do not assume discrimination, trauma, personality, ability, values, or social outcomes.",
