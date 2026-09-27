@@ -11,6 +11,7 @@ import { ThreadDirectoryStore } from "#services/world-kernel/src/thread-director
 import { createThreadDirectoryService } from "#services/world-kernel/src/thread-directory-service.mjs";
 import { ThreadHealthProjectionStore } from "#services/world-kernel/src/thread-health-projection-store.mjs";
 import { createThreadHealthProjectionService } from "#services/world-kernel/src/thread-health-projection-service.mjs";
+import { THREAD_REPAIR_CONTRACT } from "#services/world-kernel/src/thread-genesis-repair-api.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { createWorldCloudflareRuntime } from "./runtime.mjs";
 
@@ -21,7 +22,6 @@ const THREAD_OBSERVATORY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._
 const THREAD_REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
 const THREAD_DIRECTORY_ROUTE = "/internal/thread-directory/search";
 const THREAD_DIRECTORY_PRESENCE_ROUTE = "/internal/thread-directory/presence";
-const THREAD_REPAIR_CONTRACT = "fibre-thread-repair-v0.7";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -340,13 +340,26 @@ export class FibreWorldDurableObject extends DurableObject {
       if (!privateOperatorAuthorized(request, this.env)) {
         return repairJson(403, { error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, false);
       }
+      const runtime = this.runtimeForRequest();
       const threadId = decodeURIComponent(repairMatch[1]);
-      const health = await this.healthProjectionForRequest().inspect(threadId);
-      return repairJson(health.diagnosis.exists ? 200 : 404, {
-        contract:THREAD_REPAIR_CONTRACT,
-        diagnosis:health.diagnosis,
-        reconciliation:health.reconciliation,
-      }, health.cacheHit);
+      try {
+        const health = await this.healthProjectionForRequest().inspect(threadId);
+        return repairJson(health.diagnosis.exists ? 200 : 404, {
+          contract:THREAD_REPAIR_CONTRACT,
+          diagnosis:health.diagnosis,
+          reconciliation:health.reconciliation,
+        }, health.cacheHit);
+      } catch (error) {
+        console.error(JSON.stringify({
+          event:"thread-health-projection-fallback",
+          threadId,
+          errorName:error?.constructor?.name ?? "Error",
+          message:String(error?.message ?? error).slice(0,512),
+        }));
+        const response = await runtime.repairApi.fetch(request);
+        if (response !== null) return response;
+        throw error;
+      }
     }
     const runtime = this.runtimeForRequest();
     if (url.pathname === "/internal/reconciliation/stop" || url.pathname === "/internal/reconciliation/wake") {
