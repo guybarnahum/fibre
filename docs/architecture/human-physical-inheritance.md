@@ -186,7 +186,7 @@ A cached place/era authoring result now carries a bounded weighted distribution 
 
 Naming and personal language paths now belong to the sampled family profile rather than the place-level World. Each cached profile carries its own naming order plus bounded female, male and family-name material; a birth deterministically selects from that material without another model call. The former six-birth family-name stepping is gone, so nearby births do not mechanically move through tiny surname blocks. The family profile, not physical ancestry alone and not birthplace directly, is the causal naming authority. Names remain consequences of family/lived context, never ancestry inference from a person.
 
-### Population Calibration — empirical calibration accepted; repository gate pending
+### Population Calibration — closed
 
 The first production-path calibration run sampled 72 births across London, Lagos and Mumbai (2004 cohort). It found no full-name or whole-phenotype collisions and showed substantial continuous inherited variation. The apparent concentration in coarse labels such as `medium` face width, frame, height and nose projection was primarily a projection problem: continuous inherited coordinates varied substantially inside those semantic buckets. Cross-population separation is therefore descriptive, not an acceptance requirement; Fibre must not force every population to differ on every trait merely to satisfy a diversity metric.
 
@@ -196,11 +196,15 @@ The final text-only causality rerun showed that family profiles now resolve to c
 
 Family-profile authoring requires larger naming pools and atomic language values; harmless duplicate candidates are normalized locally before semantic admission. The Lab separately reports semantic projection compression and runs a 10,000-birth model-free probe of the production family sampler so small-cohort sampling noise is not mistaken for weighting drift. The separate deterministic family experiment remains the evidence boundary for same-parent sibling resemblance, mixed parentage and multigenerational transmission; a shared family-origin profile is not a biological family. Calibration changes require a specific observed failure rather than demographic quota matching.
 
-No further Population Lab image run is required for this change because the physical-inheritance and rendering path is unchanged. The remaining closure step is the repository validation gate.
+Population Calibration is now closed after the repository validation gate passed. No further Population Lab image run is required unless a later observed failure specifically reopens calibration.
 
-### Existing Thread Visual Renewal — deferred until calibration is accepted
+### Existing Thread Visual Renewal — active
 
-Existing Threads visibly fall short of the new embodiment standard and need renewed canonical visuals. This must be an explicit migration/renewal capability, not face/name-based ancestry inference and not silent invention of biological parents. Before implementation, define how an existing Thread's already-authoritative identity, life history and canonical visual semantics can seed a provenance-preserving physical embodiment authority without rewriting historical identity. Then regenerate and supersede canonical visual roots through the existing presentation/FID lifecycle.
+Existing Threads visibly fall short of the new embodiment standard and need renewed canonical visuals. The first renewal path is deliberately conservative: an existing Thread keeps its exact authoritative canonical visual specification and specification digest; Fibre appends a new Embodiment revision, regenerates a fresh canonical root under the current renderer/profile, and lets the existing Presentation/FID lifecycle converge from that new root. The prior root and credential remain historical.
+
+This is a present-time projection migration, not a life event and not a retroactive genetics claim. Renewal does **not** infer ancestry from name, birthplace or face, does not invent biological parents, and does not manufacture a physical genome for legacy Threads. If an existing canonical specification is itself materially wrong or too generic, renewal must not silently improve it; that Thread requires the separate explicit canonical visual correction workflow grounded in already-authoritative evidence.
+
+The extension path remains open for a future legacy-embodiment migration only if Fibre gains truthful authoritative evidence strong enough to support richer physical state. Until then, the old canonical semantic specification remains the embodiment authority for that Thread and the renewed root is a new operational likeness projection of the same authority.
 
 ### Population Realism Acceptance — deferred
 
