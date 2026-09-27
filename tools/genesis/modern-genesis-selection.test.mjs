@@ -123,7 +123,6 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.deepEqual(created.worldSpec.languages, ["Hebrew", "English"], "World language context lost later acquisition");
   assert.deepEqual(created.material.languages, ["Hebrew", "English"], "eventual spoken languages were lost");
   assert.deepEqual(created.material.raisedLanguages, ["Hebrew"], "raised languages absorbed a school-acquired language");
-  assert.doesNotMatch(created.material.appearanceContext, /Yemeni Jewish|Jerusalem|Israel/iu, "portrait appearance prior must not carry place/heritage labels");
 
   const reused = await resolveModernWorldSelection({
     selector,
@@ -136,12 +135,11 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   });
   assert.equal(reused.mode, "cached");
   assert.equal(reused.worldSpec.worldSpecId, created.worldSpec.worldSpecId);
-  assert.equal(reused.material.appearanceContext, created.material.appearanceContext);
   assert.equal(authoredCalls, 1);
 });
 
 
-test("uncommon local appearance remains valid when family origin makes it causal", async (t) => {
+test("uncommon local physical ancestry remains valid when family origin makes it causal", async (t) => {
   const root = mkdtempSync(join(tmpdir(), "fibre-tbilisi-family-origin-"));
   t.after(() => rmSync(root, { recursive:true, force:true }));
   const selector = normalizeModernWorldSelector("Georgia/Tbilisi");
@@ -185,8 +183,8 @@ test("uncommon local appearance remains valid when family origin makes it causal
   assert.match(created.material.familyOriginContext, /Ghana/u);
   assert.match(created.worldSpec.culturalContext, /Ghana/u, "family origin must be available to life generation");
   assert.match(created.worldSpec.householdShape, /Ghana/u, "household story must carry the same causal origin");
-  assert.match(created.material.appearanceContext, /West African|South Caucasus/u);
-  assert.doesNotMatch(created.material.appearanceContext, /Tbilisi|Georgia/iu, "appearance prior must remain physical rather than geographic");
+  assert.equal(created.material.physicalAncestry.maternal[0].referencePopulation, "west_asia");
+  assert.equal(created.material.physicalAncestry.paternal[0].referencePopulation, "afr_west");
 });
 
 test("automatic long-tail birth authors one World, reuses it, and leaves genome selection independent", async (t) => {
