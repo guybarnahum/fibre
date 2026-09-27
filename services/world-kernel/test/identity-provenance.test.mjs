@@ -187,6 +187,35 @@ test("pre-witness registry assertions remain readable but cannot be newly admitt
   identity.close();
 }));
 
+test("historical null claim discipline remains readable without weakening current admission", () => withDatabase((databasePath) => {
+  seed(databasePath);
+  const identity = openIdentityStore(localWorldStateStorage(databasePath));
+  const current = currentClaim(identity, "pre-witness-null-history");
+  const historical = structuredClone(current);
+  delete historical.claimPredicate;
+  historical.admission = {
+    policy:{ id:"identity_atomic_material_proposition", version:"1" },
+    claimDiscipline:null,
+    admittedBy:historical.admission.admittedBy,
+    evidenceClassification:historical.admission.evidenceClassification,
+    sourceMode:historical.admission.sourceMode,
+  };
+
+  const rehydrated = rehydrateIdentityAssertion(historical, {
+    allowAcceptedCausal:true,
+    allowEndogenous:true,
+    registryVersion:IDENTITY_DOMAIN_REGISTRY_VERSION,
+  });
+  assert.equal(rehydrated.claimPredicate, undefined);
+  assert.equal(rehydrated.admission.claimDiscipline, null, "historical null witness was rewritten");
+  assert.throws(
+    () => normalizeIdentityAssertion(historical, { registryVersion:IDENTITY_DOMAIN_REGISTRY_VERSION }),
+    /claimDiscipline|plain object/u,
+    "historical null compatibility leaked into current admission",
+  );
+  identity.close();
+}));
+
 test("natural-language identity may use ordinary conjunctions without being treated as a schema error", () => withDatabase((databasePath) => {
   seed(databasePath);
   const identity = openIdentityStore(localWorldStateStorage(databasePath));
