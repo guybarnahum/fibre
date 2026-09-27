@@ -62,3 +62,20 @@ test("unknown founder populations fail instead of becoming neutral",()=>{
     "unknown population must fail",
   );
 });
+
+
+test("East Asian child priors change only evidence-backed anatomy",()=>{
+  const east=referencePopulationPrior("east_asia");
+  const han=referencePopulationPrior("east_asia.han_chinese");
+  const northHan=referencePopulationPrior("east_asia.han_chinese.northern");
+  const korean=referencePopulationPrior("east_asia.korean");
+  const japanese=referencePopulationPrior("east_asia.japanese");
+
+  assert.ok(han.eyeSpacing>east.eyeSpacing,"Han ocular spacing calibration missing");
+  assert.ok(han.eyeShape<east.eyeShape,"Han fissure calibration missing");
+  assert.ok(korean.zygomaticProjection>han.zygomaticProjection,"Korean malar calibration missing");
+  assert.ok(korean.noseProjection>han.noseProjection,"Korean nasal-tip calibration missing");
+  assert.ok(han.jawBreadth>korean.jawBreadth,"Chinese/Korean masseteric calibration missing");
+  assert.ok(japanese.noseBreadth>korean.noseBreadth,"Japanese nasal breadth calibration missing");
+  assert.deepEqual(northHan,han,"uncalibrated Han region must shrink to Han prior");
+});
