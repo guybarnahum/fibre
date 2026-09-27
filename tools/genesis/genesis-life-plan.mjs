@@ -16,7 +16,7 @@ const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 export const PR39_DEVELOPMENT_COHORT_PATH = "fixtures/genesis/pr39/development-cohort-v1.json";
 export const PR39_PARENT_GENOME_INDEX_PATH = "fixtures/genesis/pr39/genomes/parent-genome-index.json";
 export const PR39_SUBJECT_IDENTITIES_PATH = "fixtures/genesis/pr39/subject-identities-v1.json";
-export const PR39_MODERN_BIRTH_MATERIAL_PATH = "fixtures/genesis/pr39/modern-birth-material-v1.json";
+export const PR39_MODERN_BIRTH_MATERIAL_PATH = "fixtures/genesis/pr39/birth-material-v1.json";
 
 function absolute(path) { return resolve(ROOT, path); }
 function readJson(path) { return JSON.parse(readFileSync(absolute(path), "utf8")); }
