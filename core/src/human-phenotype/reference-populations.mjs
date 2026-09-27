@@ -2,11 +2,12 @@ import {physicalGenomeLoci} from "./physical-genome.mjs";
 
 /*
  * Root priors are deliberately complete: every physical locus is named even
- * when its provisional mean is currently 0. Slice 2 replaces provisional
- * values with calibrated distributions; there is no missing-locus fallback.
+ * when its current mean is 0; there is no missing-locus fallback.
  *
- * Child populations inherit only from their named geographic parent until
- * their own calibration supplies overrides.
+ * East-Asian facial morphology has the evidence-backed Slice 2 calibration
+ * below. Other roots, non-facial coordinates, and deliberately uncalibrated
+ * child populations remain provisional. Children inherit only from their
+ * named geographic parent until calibration supplies justified overrides.
  */
 const DEFINITIONS=Object.freeze({
   afr_west:{parent:null,values:{pigmentation:.72,eyePigmentation:.72,hairPigmentation:.66,frecklingTendency:0,hairForm:.72,hairDensity:.18,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:.3,faceLength:-.06,midfaceProminence:.14,zygomaticProjection:.08,eyeSpacing:-.1,eyeShape:.12,epicanthicFold:-.55,upperEyelidExposure:.1,orbitalDepth:.04,foreheadProportion:0,brow:.02,noseBreadth:.42,noseProjection:-.04,nasalBridgeHeight:-.18,softTissue:.4,jawBreadth:.14,chinProjection:-.04,frame:.04,height:.02,bodyProportion:.06,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
