@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { createBirthInitiationApi } from "../src/birth-api.mjs";
 
-const TOKEN = "private-token-for-modern-birth-test";
+const TOKEN = "private-token-for-birth-test";
 
 test("birth API exposes durable pending births without changing initiation", async () => {
   const pending = [{
