@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
 const POLL_MS = 2_000;
+const EXPECTED_REPAIR_CONTRACT = "fibre-thread-repair-v0.9";
 
 function progress(stage, detail = {}) {
   process.stderr.write(`${JSON.stringify({
@@ -86,6 +87,20 @@ async function observatory({ worldKernel, privateToken, threadId }) {
     { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken } },
   );
   return payload(response, "World observatory");
+}
+
+async function repairDiagnosis({ worldKernel, privateToken, threadId }) {
+  const response = await fetch(
+    `${worldKernel}/internal/threads/${encodeURIComponent(threadId)}/repair`,
+    { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken } },
+  );
+  const body=await payload(response,"World repair diagnosis");
+  if(body.contract!==EXPECTED_REPAIR_CONTRACT){
+    throw new Error(
+      `staging World Kernel repair contract is ${body.contract??"unknown"}; expected ${EXPECTED_REPAIR_CONTRACT}. Deploy world-kernel from the current checkout before changing canonical visual identity.`,
+    );
+  }
+  return body;
 }
 
 async function presentation({ threadPresentation, threadId }) {
@@ -177,6 +192,8 @@ async function main() {
   const deployed = deployment();
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
+  progress("verify_repair_contract", { expectedContract:EXPECTED_REPAIR_CONTRACT });
+  await repairDiagnosis({ worldKernel, privateToken, threadId });
   const beforeObservatory=await observatory({ worldKernel, privateToken, threadId });
   const before=canonicalPortrait(beforeObservatory);
   const physicalAncestry=legacyMigration
