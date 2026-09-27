@@ -4,9 +4,9 @@ import { dirname, resolve } from "node:path";
 
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
-import { sampleModernFamilyProfile } from "./modern-family-profile.mjs";
+import { MODERN_FAMILY_PROFILES_SCHEMA, sampleModernFamilyProfile } from "./modern-family-profile.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v10";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v11";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
@@ -39,25 +39,7 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     schoolingOrCommunityContext: { type: "string", minLength: 1 },
     culturalContext: { type: "string", minLength: 1 },
     heritageContext: { type: "string", minLength: 1 },
-    familyProfiles: {
-      type:"array", minItems:3, maxItems:8,
-      description:"A bounded weighted distribution of plausible household family-origin profiles for this place/era. This is cached population context; one profile is deterministically sampled for each birth.",
-      items:{type:"object",additionalProperties:false,required:["id","share","familyOriginContext","languages","raisedLanguages","nameOrder","femaleGivenNames","maleGivenNames","familyNames","physicalAncestry"],properties:{
-        id:{type:"string",minLength:1}, share:{type:"number",minimum:0.01,maximum:1},
-        familyOriginContext:{type:"string",minLength:1},
-        languages:{type:"array",minItems:1,maxItems:3,uniqueItems:true,items:{type:"string",minLength:1}},
-        raisedLanguages:{type:"array",minItems:1,maxItems:3,uniqueItems:true,items:{type:"string",minLength:1}},
-        nameOrder:{type:"string",enum:["given_family","family_given"]},
-        femaleGivenNames:{type:"array",minItems:12,uniqueItems:true,items:{type:"string",minLength:1}},
-        maleGivenNames:{type:"array",minItems:12,uniqueItems:true,items:{type:"string",minLength:1}},
-        familyNames:{type:"array",minItems:12,uniqueItems:true,items:{type:"string",minLength:1}},
-        physicalAncestry:{type:"object",additionalProperties:false,required:["maternal","paternal"],properties:Object.fromEntries(["maternal","paternal"].map(side=>[side,{
-          type:"array",minItems:1,maxItems:3,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{
-            population:{type:"string",minLength:1},share:{type:"number",minimum:0.01,maximum:1},referencePopulation:{type:"string",enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}
-          }}
-        }]))}
-      }}
-    },
+    familyProfiles: MODERN_FAMILY_PROFILES_SCHEMA,
     appearanceContext: {
       type: "string",
       minLength: 1,
@@ -380,10 +362,10 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "Keep two causal layers distinct: place defines the surrounding civic/physical world; heritage defines inherited household/community cultural context inside that place.",
       "Each family profile owns its personal language path. raisedLanguages is the language or languages actually used in that household or early upbringing; languages is the set the subject plausibly uses by the end of the Genesis chronology.",
       "Within every family profile, every raised language must also appear in languages. A school-acquired language may appear in languages without appearing in raisedLanguages. Neither field is a city or country language inventory.",
-      "Use at most three eventual personal languages per family profile. Heritage/ancestry languages belong in raisedLanguages only when that household plausibly uses them; school languages may become usable later without becoming upbringing languages. Put broader regional multilingualism in culturalContext.",
+      "Use at most three eventual personal languages per family profile. Every language value must be one bare language name, never a list, explanation, slash-combination or several languages packed into one string. Heritage/ancestry languages belong in raisedLanguages only when that household plausibly uses them; school languages may become usable later without becoming upbringing languages. Put broader regional multilingualism in culturalContext.",
       "Within each family profile, familyOriginContext is a concise causal household history: local family roots, mixed ancestry, migration, diaspora, adoption, or other family-origin facts only when plausibly warranted.",
       "Also return familyProfiles: three to eight weighted plausible family-origin profiles for this place and era. Together they are a small local distribution, not a diversity checklist. Weight ordinary locally common family histories more heavily while preserving plausible minority, diaspora and mixed-family paths. Each profile carries its own familyOriginContext, household/raised and eventual language path, naming order, naming material, and separate maternal/paternal physicalAncestry. Fibre will deterministically sample one profile per birth without another model call.",
-      "Naming belongs to the sampled family, not directly to birthplace or physical ancestry. Give every family profile at least twelve distinct female given names, twelve male given names and twelve family names that are plausible for that family history and era. Preserve ordinary common names; do not optimize for exotic variety. Mixed families may draw from either side when causally plausible. Names are candidates, not pre-authored people.",
+      "Naming belongs to the sampled family, not directly to birthplace or physical ancestry. Give every family profile at least twenty-four distinct female given names, twenty-four male given names and twenty-four family names that are plausible for that family history and era. Preserve ordinary common names; do not optimize for exotic variety. Mixed families may draw from either side when causally plausible. Names are candidates, not pre-authored people.",
       "Each family profile is one coherent household-origin path, not a demographic umbrella. If materially different naming traditions would be mixed only because they coexist in the city or a broad ancestry category, keep them in separate profiles instead.",
       "When no heritage is supplied, the family-profile distribution should be weighted toward ordinary local household histories rather than uniform global diversity. Less common diaspora or mixed-origin profiles are valid, but their familyOriginContext must explicitly explain the migration or family connection that makes them part of this place.",
       "When heritage is supplied, condition the family-profile distribution on that heritage: familyOriginContext, naming material, household language path and family/community context must remain compatible with both heritage and place.",
