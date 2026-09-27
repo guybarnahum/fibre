@@ -3,9 +3,9 @@ import { createBirthCenterWriteApi } from "#services/birth-center/src/birth-writ
 import { createGenesisDevelopmentApi } from "#services/birth-center/src/genesis-development-api.mjs";
 import { createGenesisDevelopmentInspectionService } from "#services/birth-center/src/genesis-development-inspection.mjs";
 import { createGenesisDevelopmentService } from "#services/birth-center/src/genesis-development-service.mjs";
-import { createModernBirthInitiationService } from "#services/birth-center/src/modern-birth-initiation.mjs";
-import { createModernBirthInitiationApi } from "#services/birth-center/src/modern-birth-api.mjs";
-import { MODERN_BIRTHPLACES } from "#services/birth-center/src/modern-birthplace-sampler.mjs";
+import { createBirthInitiationService } from "#services/birth-center/src/birth-initiation.mjs";
+import { createBirthInitiationApi } from "#services/birth-center/src/birth-api.mjs";
+import { BIRTHPLACES } from "#services/birth-center/src/birthplace-sampler.mjs";
 import { createBirthCenterRuntime } from "#services/birth-center/src/runtime.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createWorldKernelBirthPublisher } from "../world-kernel-boundary.mjs";
@@ -84,12 +84,12 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
     if (next === null || candidate < next) next = candidate;
   };
 
-  const modern = runtime.modernBirthRequestStore.recent({ limit:64 });
+  const modern = runtime.birthRequestStore.recent({ limit:64 });
   const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
   for (const request of modern) {
     if (request.status === "published") continue;
     if (request.status === "failed" && !request.genesisId && !request.threadId) continue;
-    if (runtime.modernBirthRequestStore.isActive(request.status) || request.status === "failed") {
+    if (runtime.birthRequestStore.isActive(request.status) || request.status === "failed") {
       consider(request);
     }
   }
@@ -97,7 +97,7 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
     const modernRequest = modernByRequest.get(request.requestId);
-    if (modernRequest?.status === "published" || runtime.modernBirthRequestStore.isActive(modernRequest?.status)) continue;
+    if (modernRequest?.status === "published" || runtime.birthRequestStore.isActive(modernRequest?.status)) continue;
     consider(request);
   }
   return next;
@@ -204,11 +204,11 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
   const development = runtime.developmentRequestStore.recent({ limit:32 });
   const developmentByRequest = new Map(development.map((request) => [request.requestId, request]));
 
-  for (const request of runtime.modernBirthRequestStore.recent({ limit:64 })) {
+  for (const request of runtime.birthRequestStore.recent({ limit:64 })) {
     known.add(request.requestId);
     if (request.status === "published") continue;
 
-    const active = runtime.modernBirthRequestStore.isActive(request.status);
+    const active = runtime.birthRequestStore.isActive(request.status);
     if (!active && request.status !== "failed") continue;
     const developmentRequest = developmentByRequest.get(request.requestId) ?? null;
     if (request.status === "failed" && developmentRequest === null && !request.genesisId && !request.threadId) continue;
@@ -260,7 +260,7 @@ export async function reconcileStaleBirths(runtime, {
   const bornRequests = new Set();
   const stillbornRequests = new Set();
   const publishedModern = new Set();
-  const modern = runtime.modernBirthRequestStore.recent({ limit:64 });
+  const modern = runtime.birthRequestStore.recent({ limit:64 });
   const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
   const modernCandidates = [];
   const developmentCandidates = [];
@@ -272,7 +272,7 @@ export async function reconcileStaleBirths(runtime, {
       request.genesisId !== null
       && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published"
     ) {
-      runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+      runtime.birthRequestStore.progress(request.requestId, { status:"published" });
       publishedModern.add(request.requestId);
       bornRequests.add(request.requestId);
       continue;
@@ -298,7 +298,7 @@ export async function reconcileStaleBirths(runtime, {
         && modernRequest.status !== "published"
         && !publishedModern.has(request.requestId)
       ) {
-        runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+        runtime.birthRequestStore.progress(request.requestId, { status:"published" });
         publishedModern.add(request.requestId);
       }
       bornRequests.add(request.requestId);
@@ -329,7 +329,7 @@ export async function reconcileStaleBirths(runtime, {
 
   for (const request of modernCandidates) {
     if (!present.has(request.threadId)) continue;
-    runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+    runtime.birthRequestStore.progress(request.requestId, { status:"published" });
     publishedModern.add(request.requestId);
     bornRequests.add(request.requestId);
   }
@@ -342,7 +342,7 @@ export async function reconcileStaleBirths(runtime, {
         && modernRequest.status !== "published"
         && !publishedModern.has(request.requestId)
       ) {
-        runtime.modernBirthRequestStore.progress(request.requestId, { status:"published" });
+        runtime.birthRequestStore.progress(request.requestId, { status:"published" });
         publishedModern.add(request.requestId);
       }
       bornRequests.add(request.requestId);
@@ -383,8 +383,8 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
       developmentService: null,
       developmentInspectionService: null,
       developmentApi: null,
-      modernBirthService: null,
-      modernBirthApi: null,
+      birthService: null,
+      birthApi: null,
     });
   }
   const creativeAdapter = reasoningAdapters.creativeAdapter;
@@ -409,18 +409,18 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
       }));
     },
   });
-  const modernBirthService = createModernBirthInitiationService({
+  const birthService = createBirthInitiationService({
     developmentService,
     creativeAdapter,
     birthRuntime:runtime,
     activityRecorder,
-    onProgress:(progress) => runtime.modernBirthRequestStore.progress(progress.requestId, progress),
+    onProgress:(progress) => runtime.birthRequestStore.progress(progress.requestId, progress),
   });
-  const modernBirthApi = createModernBirthInitiationApi({
-    service:modernBirthService,
+  const birthApi = createBirthInitiationApi({
+    service:birthService,
     pendingBirths:() => pendingBirths(runtime, { nowMs }),
-    birthplaces:MODERN_BIRTHPLACES,
-    requestStore:runtime.modernBirthRequestStore,
+    birthplaces:BIRTHPLACES,
+    requestStore:runtime.birthRequestStore,
     privateToken,
   });
   return Object.freeze({
@@ -429,8 +429,8 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
     developmentService,
     developmentInspectionService,
     developmentApi,
-    modernBirthService,
-    modernBirthApi,
+    birthService,
+    birthApi,
   });
 }
 
@@ -495,8 +495,8 @@ export function createBirthCenterCloudflareRuntime({
     developmentService: development.developmentService,
     developmentInspectionService: development.developmentInspectionService,
     developmentApi: development.developmentApi,
-    modernBirthService: development.modernBirthService,
-    modernBirthApi: development.modernBirthApi,
+    birthService: development.birthService,
+    birthApi: development.birthApi,
     birthApi,
     reconcileStaleBirths:() => reconcileStaleBirths(runtime, {
       worldBinding,
