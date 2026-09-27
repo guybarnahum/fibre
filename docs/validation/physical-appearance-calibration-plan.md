@@ -30,7 +30,7 @@ The current `physical-genome-v0.2` work on `main` is provisional and must not be
 
 ## Slice 1 — Correct the physical-genome contract
 
-**Status: active.**
+**Status: implemented on `main`; pending focused validation.**
 
 Establish the model boundary before doing more calibration:
 
