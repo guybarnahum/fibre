@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-export const WORLD_STORE_SCHEMA_VERSION = 8;
+export const WORLD_STORE_SCHEMA_VERSION = 9;
 export const MAX_COMMAND_PAYLOAD_BYTES = 64 * 1024;
 
 export const THREAD_STATUSES = new Set([
@@ -22,12 +22,14 @@ export const EVENT_TYPES = new Set([
   "AUTOBIOGRAPHICAL_MEMORY_RECORDED",
   "GENESIS_SEX_MIGRATED",
   "THREAD_IDENTITY_UPDATED",
+  "THREAD_PHYSICAL_GENOME_MIGRATED",
 ]);
 export const UNCOMMANDED_EVENT_TYPES = new Set([
   "THREAD_SEEDED",
   "THREAD_LIFE_EPISODE_RECORDED",
   "GENESIS_SEX_MIGRATED",
   "THREAD_IDENTITY_UPDATED",
+  "THREAD_PHYSICAL_GENOME_MIGRATED",
 ]);
 export const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
