@@ -26,7 +26,7 @@ function family({id,maternalAncestry,paternalAncestry,siblings=4}){
 
 function inheritedFrom(parentGenome,childGenome,locus,copy){
   const inherited=childGenome.loci[locus][copy];
-  return parentGenome.loci[locus].findIndex(a=>a.value===inherited.value&&a.dominance===inherited.dominance);
+  return parentGenome.loci[locus].findIndex(a=>a.value===inherited.value);
 }
 
 function lineage(){
