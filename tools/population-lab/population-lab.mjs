@@ -6,6 +6,7 @@ import {physicalPhenotypeRenderingProjection} from "../../core/src/human-phenoty
 import {composeModernSubjectIdentity,selectModernNameParts} from "../genesis/modern-birth-material.mjs";
 import {
   MODERN_FAMILY_PROFILES_SCHEMA,
+  normalizeModernFamilyProfiles,
   sampleModernFamilyProfile,
   validateModernFamilyProfiles,
 } from "../genesis/modern-family-profile.mjs";
@@ -72,16 +73,20 @@ async function populationContext(place,year,model){
     if(!text)throw Error(`model returned no population context (${json.status??"unknown"})`);
     try{return JSON.parse(text)}catch{return{parseError:true,status:json.status,reason:json.incomplete_details?.reason??null,text}}
   };
+  const admit=output=>{
+    const profiles=normalizeModernFamilyProfiles(output.profiles);
+    validateModernFamilyProfiles(profiles);
+    return {...output,profiles};
+  };
   const first=await request("");
   let firstError=null;
   if(!first.parseError){
-    try{validateModernFamilyProfiles(first.profiles);return first}catch(error){firstError=error}
+    try{return admit(first)}catch(error){firstError=error}
   }
   const problem=firstError?.message??`malformed JSON${first.reason?": "+first.reason:""}`;
   const retry=await request(`The previous response failed admission: ${problem}. Regenerate the full response. Keep familyOriginContext concise, use one bare language name per item, and satisfy the requested schema exactly.`);
   if(retry.parseError)throw Error(`population context JSON malformed after retry (${retry.status??"unknown"}${retry.reason?": "+retry.reason:""}; chars ${retry.text.length})`);
-  validateModernFamilyProfiles(retry.profiles);
-  return retry;
+  return admit(retry);
 }
 
 const sexFor=requestId=>Number.parseInt(createHash("sha256").update(requestId+"\0sex").digest("hex").slice(0,12),16)%2===0?"female":"male";
