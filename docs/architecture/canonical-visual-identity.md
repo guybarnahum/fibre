@@ -309,7 +309,7 @@ before specificationDigest == after specificationDigest
 
 The current specification is copied exactly into a superseding Embodiment revision. The revision carries a dedicated renewal witness bound to the immediate prior specification digest and prior canonical root; it is **not** a respecification because the person/specification did not change. Fibre clears the old root from the new lineage head, requests generation under the current renderer/profile, admits a new immutable root, projects it through Thread Presentation, and lets the existing FID lifecycle replace derived official media. The prior root and prior FIN credential remain historical.
 
-This is a software/presentation migration, not a life event, genetics migration or authority rewrite. Renewal must not infer ancestry from a face, name or birthplace; it must not invent parents or a physical genome; and it must not silently enrich a thin or wrong canonical specification. If the specification itself is inadequate, use the separate operator correction path below.
+This is a software/presentation migration, not a life event or authority rewrite. Renewal must not infer ancestry from a face, name or birthplace; it must not invent parents or a physical genome; and it must not silently enrich a thin or wrong canonical specification.
 
 Run one renewal from the repo root after the matching code is deployed to staging:
 
@@ -319,7 +319,53 @@ npm run fid:visual:renew -- \
   --reason="Renew legacy canonical root under the current Fibre renderer; canonical visual specification unchanged."
 ```
 
-The command verifies staging deployment evidence, asserts that the renewal response preserves the specification digest, waits for the new root, then waits for Presentation and FIN media to converge. This is intentionally one Thread at a time until live evidence shows the workflow is trustworthy enough for a bounded cohort.
+The command verifies staging deployment evidence, asserts that the renewal response preserves the specification digest, waits for the new root, then waits for Presentation and FIN media to converge.
+
+### Legacy physical embodiment migration
+
+If a pre-physical-genome Thread's **specification itself** is materially wrong, unchanged-spec renewal is the wrong operation. Fibre may instead perform an explicit legacy physical embodiment migration when an operator supplies truthful physical-ancestry evidence.
+
+The migration boundary is strict:
+
+- Fibre never infers physical ancestry from portrait pixels, name, birthplace, nationality, culture or language.
+- The operator supplies separate maternal and paternal ancestry mixtures.
+- Fibre uses the normal founder + recombination path to create one durable private physical genome. It does not invent admitted biological parent Threads.
+- The World records the migration as a replayable authority event, not a life event.
+- The replacement canonical specification is derived from that physical genome using the same production projection as modern Genesis.
+- Embodiment correction then supersedes the materially wrong legacy specification/root; the prior lineage remains historical.
+- Once `thread.genome.physical` exists, this migration cannot be used again merely to restyle the person.
+
+The ancestry file contains only physical founder provenance, for example:
+
+```json
+{
+  "maternal": [
+    {
+      "population": "operator-confirmed family physical ancestry",
+      "share": 1,
+      "referencePopulation": "east_asia"
+    }
+  ],
+  "paternal": [
+    {
+      "population": "operator-confirmed family physical ancestry",
+      "share": 1,
+      "referencePopulation": "east_asia"
+    }
+  ]
+}
+```
+
+Run one migration only after reviewing the Thread and explicitly confirming that ancestry evidence:
+
+```bash
+npm run fid:visual:migrate-legacy -- \
+  --thread-id=thr_... \
+  --legacy-physical-ancestry-file=/path/to/physical-ancestry.json \
+  --reason="Migrate the materially inaccurate legacy visual authority to Fibre's current physical-inheritance model from operator-confirmed physical ancestry."
+```
+
+The CLI waits for the corrected canonical root, Presentation projection and FID replacement to converge. Repeating the same completed migration is idempotent.
 
 ## Operator runbook: correcting appearance
 
