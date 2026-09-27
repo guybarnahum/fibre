@@ -95,7 +95,7 @@ function createBaseSchema(database) {
       sequence INTEGER NOT NULL CHECK (sequence >= 1),
       expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
       resulting_version INTEGER NOT NULL CHECK (resulting_version >= 1),
-      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED')),
+      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED','THREAD_PHYSICAL_GENOME_MIGRATED')),
       command_id TEXT,
       command_digest TEXT,
       payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
@@ -110,7 +110,7 @@ function createBaseSchema(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
       UNIQUE (thread_id, sequence),
       CHECK (
-        (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED') AND command_id IS NULL AND command_digest IS NULL)
+        (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED','THREAD_PHYSICAL_GENOME_MIGRATED') AND command_id IS NULL AND command_digest IS NULL)
         OR
         (event_type IN ('SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED') AND command_id IS NOT NULL AND command_digest IS NOT NULL)
       )
@@ -278,7 +278,7 @@ function rebuildCurrentHeadProjections(database) {
 
 function needsEventSchemaUpgrade(database) {
   const row = database.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'").get();
-  return row !== undefined && !row.sql.includes("THREAD_IDENTITY_UPDATED");
+  return row !== undefined && (!row.sql.includes("THREAD_IDENTITY_UPDATED") || !row.sql.includes("THREAD_PHYSICAL_GENOME_MIGRATED"));
 }
 
 function rebuildEventTables(database) {
@@ -293,7 +293,7 @@ function rebuildEventTables(database) {
       sequence INTEGER NOT NULL CHECK (sequence >= 1),
       expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
       resulting_version INTEGER NOT NULL CHECK (resulting_version >= 1),
-      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED')),
+      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED','THREAD_PHYSICAL_GENOME_MIGRATED')),
       command_id TEXT,
       command_digest TEXT,
       payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
@@ -308,7 +308,7 @@ function rebuildEventTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
       UNIQUE (thread_id, sequence),
       CHECK (
-        (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED') AND command_id IS NULL AND command_digest IS NULL)
+        (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED','THREAD_PHYSICAL_GENOME_MIGRATED') AND command_id IS NULL AND command_digest IS NULL)
         OR
         (event_type IN ('SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED') AND command_id IS NOT NULL AND command_digest IS NOT NULL)
       )
