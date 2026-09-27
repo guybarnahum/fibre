@@ -12,12 +12,17 @@ const LATENT_MEANING=Object.freeze({
   faceBreadth:"-1 narrower, +1 broader",
   faceLength:"-1 shorter, +1 longer",
   midfaceProminence:"-1 softer, +1 more prominent",
+  zygomaticProjection:"-1 softer cheekbones, +1 more projecting cheekbones",
   eyeSpacing:"-1 closer, +1 wider",
-  eyeShape:"-1 narrower, +1 more open",
+  eyeShape:"-1 narrower palpebral opening, +1 more open palpebral opening",
+  epicanthicFold:"-1 absent, +1 more pronounced",
+  upperEyelidExposure:"-1 lower visible upper-lid exposure, +1 higher",
+  orbitalDepth:"-1 shallower-set eyes, +1 deeper-set eyes",
   foreheadProportion:"-1 lower, +1 higher",
   brow:"-1 softer, +1 stronger",
   noseBreadth:"-1 narrower, +1 broader",
   noseProjection:"-1 lower, +1 higher",
+  nasalBridgeHeight:"-1 lower bridge, +1 higher bridge",
   softTissue:"-1 thinner, +1 fuller",
   jawBreadth:"-1 narrower, +1 broader",
   chinProjection:"-1 softer, +1 stronger",
@@ -29,15 +34,26 @@ const LATENT_MEANING=Object.freeze({
   shoulderHipProportion:"-1 hip-weighted, +1 shoulder-weighted"
 });
 
+const TRAIT_LABELS=Object.freeze({
+  zygomaticProjection:"zygomatic / cheekbone projection",
+  eyeShape:"palpebral eye opening",
+  epicanthicFold:"epicanthic fold",
+  upperEyelidExposure:"upper eyelid exposure",
+  orbitalDepth:"orbital depth",
+  nasalBridgeHeight:"nasal bridge height",
+});
+
 export function physicalPhenotypeRenderingProjection(genome,{sex}={}){
   const phenotype=phenotypeFromPhysicalGenome(genome,{sex});
-  const semantic=Object.entries(phenotype.traits).map(([name,value])=>`${name}: ${value}`).join("; ");
+  const semantic=Object.entries(phenotype.traits)
+    .map(([name,value])=>`${TRAIT_LABELS[name]??name}: ${value}`)
+    .join("; ");
   const continuous=Object.entries(phenotype.latent)
-    .map(([name,value])=>`${name}: ${Number(value).toFixed(2)} (${LATENT_MEANING[name]})`)
+    .map(([name,value])=>`${TRAIT_LABELS[name]??name}: ${Number(value).toFixed(2)} (${LATENT_MEANING[name]})`)
     .join("; ");
   return Object.freeze({
-    version:"physical-rendering-projection-v0.1",
+    version:"physical-rendering-projection-v0.2",
     phenotype,
-    description:`Concrete inherited phenotype: ${semantic}. Continuous inherited expression refines those categories and preserves individual differences inside them: ${continuous}. Facial-hair and hairline-loss coordinates are inherited carrier tendencies; visible expression follows the sex-conditioned phenotype above.`
+    description:`Concrete inherited facial and body anatomy: ${semantic}. Continuous inherited expression refines those categories and preserves individual differences inside them: ${continuous}. Facial-hair and hairline-loss coordinates are inherited carrier tendencies; visible expression follows the sex-conditioned phenotype above.`
   });
 }
