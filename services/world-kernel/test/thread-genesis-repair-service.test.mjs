@@ -411,9 +411,9 @@ test("legacy embodiment migration installs physical authority before correcting 
   const {service,threadId,thread}=fixture({physicalGenomeMigrator,visualIdentityRepairService});
 
   const before=await service.diagnose(threadId);
-  const missing=before.findings.find(entry=>entry.code==="PHYSICAL_GENOME_MISSING");
-  assert.equal(missing.state,"migration_required");
-  assert.equal(missing.migration.id,"legacy_physical_embodiment_v1");
+  const legacy=before.findings.find(entry=>entry.code==="LEGACY_PHYSICAL_EMBODIMENT");
+  assert.equal(legacy.state,"healthy");
+  assert.equal(legacy.migration.id,"legacy_physical_embodiment_v1");
 
   const result=await service.migrate(threadId,{
     migrationId:"legacy_physical_embodiment_v1",
