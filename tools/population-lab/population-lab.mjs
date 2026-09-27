@@ -26,6 +26,7 @@ const namesSchema={type:"array",minItems:12,items:{type:"string",minLength:1}};
 const physicalAncestrySchema={type:"object",additionalProperties:false,required:["maternal","paternal"],properties:{maternal:ancestrySchema,paternal:ancestrySchema}};
 const populationSchema={type:"object",additionalProperties:false,required:["profiles"],properties:{profiles:{type:"array",minItems:3,maxItems:8,items:{type:"object",additionalProperties:false,required:["id","share","familyOriginContext","languages","raisedLanguages","nameOrder","femaleGivenNames","maleGivenNames","familyNames","physicalAncestry"],properties:{id:{type:"string",minLength:1},share:{type:"number",exclusiveMinimum:0},familyOriginContext:{type:"string",minLength:1},languages:languageSchema,raisedLanguages:languageSchema,nameOrder:{type:"string",enum:["given_family","family_given"]},femaleGivenNames:namesSchema,maleGivenNames:namesSchema,familyNames:namesSchema,physicalAncestry:physicalAncestrySchema}}}}};
 function admitPopulationContext(context){
+  if(new Set(context.profiles.map(profile=>profile.id)).size!==context.profiles.length)throw Error("population context has duplicate family profile ids");
   for(const profile of context.profiles){
     for(const field of["languages","raisedLanguages","femaleGivenNames","maleGivenNames","familyNames"]){
       const values=profile[field].map(value=>key(value));
