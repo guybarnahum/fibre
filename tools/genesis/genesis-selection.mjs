@@ -6,6 +6,7 @@ import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs"
 import { sampleBirthplace } from "./birthplace-sampler.mjs";
 import { FAMILY_PROFILES_SCHEMA, normalizeFamilyProfiles, sampleFamilyProfile, validateFamilyProfiles } from "./family-profile.mjs";
 
+// Historical cache namespace: changing it intentionally invalidates/re-authors cached worlds.
 export const GENESIS_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v13";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
