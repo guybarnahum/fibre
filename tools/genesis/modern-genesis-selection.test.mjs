@@ -159,6 +159,10 @@ test("uncommon local appearance remains valid when family origin makes it causal
     familyProfiles:[{
       id:"georgian-ghanaian", share:1,
       familyOriginContext:"One caregiver is Georgian; the other was born in Ghana, came to Tbilisi as a university student in the 1990s, remained after graduation, and built a mixed Georgian-Ghanaian family whose relatives and family stories connect both places.",
+      languages:["Georgian","English"], raisedLanguages:["Georgian"], nameOrder:"given_family",
+      femaleGivenNames:["Nino","Mariam","Salome","Ana","Tamar","Elene","Nana","Ketevan","Lika","Sopho","Eka","Maka"],
+      maleGivenNames:["Giorgi","Irakli","Levan","Sandro","Dato","Nikoloz","Luka","Tornike","Zurab","Beka","Giga","Vano"],
+      familyNames:["Beridze","Kapanadze","Mensah","Gelashvili","Lomidze","Tsiklauri","Owusu","Asare","Boateng","Gyamfi","Ababio","Kwarteng"],
       physicalAncestry:{
         maternal:[{population:"Georgian family",share:1,referencePopulation:"west_asia"}],
         paternal:[{population:"Ghanaian family",share:1,referencePopulation:"afr_west"}],
@@ -257,9 +261,9 @@ test("cached place context samples distinct family histories per birth without r
   const selector=normalizeModernWorldSelector("United Kingdom/London");
   const ancestry=(population,referencePopulation)=>({maternal:[{population,share:1,referencePopulation}],paternal:[{population,share:1,referencePopulation}]});
   const authored={...authoredJerusalem,timeZone:"Europe/London",familyProfiles:[
-    {id:"local-british",share:6,familyOriginContext:"A locally rooted British family with multigenerational ties to London.",physicalAncestry:ancestry("British family","eur_north")},
-    {id:"south-asian-british",share:2,familyOriginContext:"A British family with South Asian grandparents and longstanding London family ties.",physicalAncestry:ancestry("South Asian British family","south_asia")},
-    {id:"west-african-british",share:1,familyOriginContext:"A British family with West African grandparents and longstanding London family ties.",physicalAncestry:ancestry("West African British family","afr_west")},
+    {id:"local-british",share:6,familyOriginContext:"A locally rooted British family with multigenerational ties to London.",languages:["English"],raisedLanguages:["English"],nameOrder:"given_family",femaleGivenNames:Array.from({length:12},(_,i)=>"LBF"+i),maleGivenNames:Array.from({length:12},(_,i)=>"LBM"+i),familyNames:Array.from({length:12},(_,i)=>"LBL"+i),physicalAncestry:ancestry("British family","eur_north")},
+    {id:"south-asian-british",share:2,familyOriginContext:"A British family with South Asian grandparents and longstanding London family ties.",languages:["English"],raisedLanguages:["English"],nameOrder:"given_family",femaleGivenNames:Array.from({length:12},(_,i)=>"SAF"+i),maleGivenNames:Array.from({length:12},(_,i)=>"SAM"+i),familyNames:Array.from({length:12},(_,i)=>"SAL"+i),physicalAncestry:ancestry("South Asian British family","south_asia")},
+    {id:"west-african-british",share:1,familyOriginContext:"A British family with West African grandparents and longstanding London family ties.",languages:["English"],raisedLanguages:["English"],nameOrder:"given_family",femaleGivenNames:Array.from({length:12},(_,i)=>"WAF"+i),maleGivenNames:Array.from({length:12},(_,i)=>"WAM"+i),familyNames:Array.from({length:12},(_,i)=>"WAL"+i),physicalAncestry:ancestry("West African British family","afr_west")},
   ]};
   let calls=0;
   const first=await resolveModernWorldSelection({selector,cohort,repoRoot:root,requestId:"family-distribution-0",baseSlotOrdinal:1,authorWorld:async()=>{calls+=1;return authored;}});
