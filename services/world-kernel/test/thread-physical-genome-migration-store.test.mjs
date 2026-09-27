@@ -43,7 +43,7 @@ test("legacy physical embodiment becomes one durable inherited genome without re
 
     const first=migration.migrate(seeded,request);
     assert.equal(first.migrated,true);
-    assert.equal(first.thread.genome.physical.version,"physical-genome-v0.1");
+    assert.equal(first.thread.genome.physical.version,"physical-genome-v0.2");
     assert.deepEqual(first.thread.identity,seeded.identity,"embodiment migration rewrote Thread identity");
     assert.deepEqual(world.replayThread(seeded.threadId),world.getThread(seeded.threadId),
       "physical embodiment migration did not survive World replay");
@@ -51,7 +51,7 @@ test("legacy physical embodiment becomes one durable inherited genome without re
     const event=world.listEvents(seeded.threadId).at(-1);
     assert.equal(event.eventType,"THREAD_PHYSICAL_GENOME_MIGRATED");
     assert.deepEqual(event.payload.physicalAncestry,physicalAncestry);
-    assert.equal(event.provenance.source,"operator_confirmed_legacy_physical_ancestry");
+    assert.equal(event.provenance.source,"operator_confirmed_physical_ancestry");
     assert.equal(event.provenance.notThreadLifeEvent,true);
 
     const retry=migration.migrate(world.getThread(seeded.threadId),request);
@@ -64,7 +64,7 @@ test("legacy physical embodiment becomes one durable inherited genome without re
         ...request,
         operationKey:"legacy_physical_mina_002",
       }),
-      /physical genome is already authoritative/u,
+      /physical genome already uses the current appearance model/u,
     );
   });
 });
