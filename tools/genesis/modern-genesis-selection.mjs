@@ -6,7 +6,7 @@ import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs"
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 import { MODERN_FAMILY_PROFILES_SCHEMA, sampleModernFamilyProfile, validateModernFamilyProfiles } from "./modern-family-profile.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v11";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v12";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
@@ -314,7 +314,7 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
     "When heritage is supplied, condition the family-profile distribution on that heritage: familyOriginContext, naming material, household language path and family/community context must remain compatible with both heritage and place.",
     "A sampled familyOriginContext is causal World material. It may shape ordinary life through language at home, relatives, family stories, visits, community ties, being visibly unusual or ordinary in the local environment, peer perception, belonging, or identity questions when appropriate. Do not make every episode about ancestry or visible difference, and do not assume discrimination, trauma, personality, ability, values, or social outcomes.",
     "Do not infer the future subject's religion, religious observance, politics, personality, class identity, profession, competence, trauma or values from ancestry, appearance, place, or heritage. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
-    "Inside every family profile, physicalAncestry has separate maternal and paternal ancestry mixtures causally supported by that profile's familyOriginContext. Use referencePopulation only as a physical founder prior; population is a concise human-readable family-origin label. Shares on each parent should sum to 1. Do not use these fields for culture, personality, ability, class, religion, behavior or values.",
+    "Inside every family profile, physicalAncestry has separate maternal and paternal ancestry mixtures causally supported by that profile's familyOriginContext. Use referencePopulation only as a physical founder prior; population is a concise human-readable family-origin label. The codes are literal geographic regions: afr_west = West Africa; afr_east = East Africa; eur_north = Northern Europe; eur_south = Southern Europe; west_asia = West Asia; south_asia = South Asia; east_asia = East Asia; southeast_asia = Southeast Asia; indigenous_america = Indigenous Americas; oceania = Oceania. Do not confuse compass words in a population description with the code name: for example, southwestern or southeastern parts of an African country are still African, not eur_south. Shares on each parent should sum to 1. Do not use these fields for culture, personality, ability, class, religion, behavior or values.",
     "Use an IANA time-zone identifier. Keep civic descriptions concrete enough to ground ordinary episodes, but avoid unsupported hyper-specific claims.",
   ].join("\n");
   const invoke=async (suffix,extra="") => {
