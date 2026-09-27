@@ -1,6 +1,6 @@
 const TOKEN_ENCODER = new TextEncoder();
 const REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
-const CONTRACT = "fibre-thread-repair-v0.9";
+export const THREAD_REPAIR_CONTRACT = "fibre-thread-repair-v0.9";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -148,7 +148,7 @@ export function createThreadGenesisRepairApi({
         if (request.method === "GET") {
           const diagnosis = await repairService.diagnose(threadId);
           return json(diagnosis.exists ? 200 : 404, {
-            contract:CONTRACT,
+            contract:THREAD_REPAIR_CONTRACT,
             diagnosis,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
@@ -161,7 +161,7 @@ export function createThreadGenesisRepairApi({
           reconciliationWorkset.requeue(threadId);
           await onRecover?.({ threadId, before });
           return json(200, {
-            contract:CONTRACT,
+            contract:THREAD_REPAIR_CONTRACT,
             recovery:{ threadId, before, after:reconciliationWorkset.get(threadId) },
           });
         }
@@ -171,7 +171,7 @@ export function createThreadGenesisRepairApi({
             ? await onIdentityUpdate?.({ threadId, result }) ?? null
             : null;
           return json(result.exists ? 200 : 404, {
-            contract:CONTRACT,
+            contract:THREAD_REPAIR_CONTRACT,
             identityUpdate:result,
             identityProjection,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
@@ -180,7 +180,7 @@ export function createThreadGenesisRepairApi({
         if (command.action === "raised_languages") {
           const result = await repairService.updateRaisedLanguages(threadId, command);
           return json(result.before.exists ? 200 : 404, {
-            contract:CONTRACT,
+            contract:THREAD_REPAIR_CONTRACT,
             raisedLanguagesUpdate:result,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
@@ -190,7 +190,7 @@ export function createThreadGenesisRepairApi({
           const requeued = reconciliationWorkset?.requeue(threadId) ?? false;
           await onVisualIdentityCorrection?.({ threadId, result, requeued });
           return json(200, {
-            contract:CONTRACT,
+            contract:THREAD_REPAIR_CONTRACT,
             visualIdentityCorrection:result,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
@@ -200,7 +200,7 @@ export function createThreadGenesisRepairApi({
           const requeued = reconciliationWorkset?.requeue(threadId) ?? false;
           await onVisualIdentityCorrection?.({ threadId, result, requeued });
           return json(200, {
-            contract:CONTRACT,
+            contract:THREAD_REPAIR_CONTRACT,
             visualIdentityRenewal:result,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
@@ -212,7 +212,7 @@ export function createThreadGenesisRepairApi({
             await onVisualIdentityCorrection?.({ threadId, result:result.visualIdentityCorrection, requeued });
           }
           return json(result.before.exists ? 200 : 404, {
-            contract:CONTRACT,
+            contract:THREAD_REPAIR_CONTRACT,
             migration:result,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
@@ -220,7 +220,7 @@ export function createThreadGenesisRepairApi({
         const result = await repairService.repair(threadId, { repairKey:command.repairKey });
         await onRepair?.({ threadId, result });
         return json(result.before.exists ? 200 : 404, {
-          contract:CONTRACT,
+          contract:THREAD_REPAIR_CONTRACT,
           result,
           reconciliation:reconciliationWorkset?.get(threadId) ?? null,
         });
