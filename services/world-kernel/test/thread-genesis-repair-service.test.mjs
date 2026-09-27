@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
+import { canonicalVisualSpecificationFromPhysicalGenome } from "../src/canonical-visual-identity-from-physical-genome.mjs";
+import { embodimentSpecificationDigest } from "../src/embodiment-domain.mjs";
 import { createThreadGenesisRepairService } from "../src/thread-genesis-repair-service.mjs";
 
 const SEX_EVIDENCE = Object.freeze({
@@ -104,7 +106,7 @@ function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null,
     identityUpdater,
     activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
   });
-  return { service, state, threadId, thread };
+  return { service, state, threadId, thread, embodiment };
 }
 
 test("R1 diagnoses missing Presentation and unpublished canonical visual without inventing identity", async () => {
@@ -431,6 +433,63 @@ test("legacy embodiment migration installs physical authority before correcting 
   assert.deepEqual(repairInput.evidenceReferences,["evt_physical_genome_migrated_1"],
     "visual correction was not grounded in the migration event");
   assert.equal(result.after.findings.find(entry=>entry.code==="PHYSICAL_GENOME").state,"healthy");
+});
+
+test("legacy embodiment migration retry resumes its matching pending canonical supersession", async () => {
+  const ancestry=[{population:"operator-confirmed Sichuan Chinese family",share:1,referencePopulation:"east_asia"}];
+  const physicalGenome=resolveBirthPhysicalInheritance({
+    maternalAncestry:ancestry,
+    paternalAncestry:ancestry,
+    seed:"legacy-physical-retry-test",
+  }).genome;
+  let repairCalls=0;
+  const physicalGenomeMigrator={
+    migrate(thread,{physicalAncestry,operationKey}){
+      assert.equal(operationKey,"legacy_physical_retry_1");
+      assert.deepEqual(physicalAncestry,{maternal:ancestry,paternal:ancestry});
+      assert.deepEqual(thread.genome.physical,physicalGenome);
+      return{
+        migrated:false,
+        reused:true,
+        eventId:"evt_physical_genome_migrated_retry_1",
+        physicalAncestry,
+        physicalGenome,
+        thread,
+      };
+    },
+  };
+  const visualIdentityRepairService={
+    repair(){
+      repairCalls+=1;
+      throw new Error("matching pending supersession must be resumed, not appended again");
+    },
+  };
+  const {service,threadId,thread,embodiment}=fixture({physicalGenomeMigrator,visualIdentityRepairService});
+  thread.genome.physical=physicalGenome;
+  const specification=canonicalVisualSpecificationFromPhysicalGenome({
+    threadId,
+    sex:thread.identity.sex,
+    physicalGenome,
+  });
+  embodiment.status="pending_generation";
+  embodiment.asset=null;
+  embodiment.specification=specification;
+  embodiment.specificationDigest=embodimentSpecificationDigest(specification);
+
+  const result=await service.migrate(threadId,{
+    migrationId:"legacy_physical_embodiment_v1",
+    migrationKey:"legacy_physical_retry_1",
+    input:{
+      physicalAncestry:{maternal:ancestry,paternal:ancestry},
+      reason:"Resume the interrupted legacy physical embodiment migration without creating another canonical supersession.",
+    },
+  });
+
+  assert.equal(result.migrated,false,"retry rewrote physical authority");
+  assert.equal(result.result.reused,true,"retry did not reuse the physical migration event");
+  assert.equal(result.visualIdentityCorrection.reused,true,"retry appended another canonical supersession");
+  assert.equal(result.visualIdentityCorrection.embodiment.status,"pending_generation","retry lost pending visual work");
+  assert.equal(repairCalls,0,"retry created a second canonical supersession");
 });
 
 test("Fix restores unambiguous malformed birth geography from existing World identity", async () => {
