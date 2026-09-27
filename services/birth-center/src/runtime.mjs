@@ -5,7 +5,7 @@ import {
   createStateModelInvocationJournal,
 } from "./model-runtime/durable-invocation-journal.mjs";
 import { createGenesisDevelopmentRequestStore } from "./genesis-development-request-store.mjs";
-import { createModernBirthRequestStore } from "./modern-birth-request-store.mjs";
+import { createBirthRequestStore } from "./birth-request-store.mjs";
 import { createProvisionalBirthStore } from "./provisional-birth-store.mjs";
 import { createBirthReconciliationRuntime } from "./birth-reconciliation-process.mjs";
 
@@ -49,13 +49,13 @@ export function createBirthCenterRuntime({
   const invocationJournal = createStateModelInvocationJournal(storage, { now });
   let provisionalBirthStore = null;
   let developmentRequestStore = null;
-  let modernBirthRequestStore = null;
+  let birthRequestStore = null;
   try {
     provisionalBirthStore = createProvisionalBirthStore(storage, { now });
     developmentRequestStore = createGenesisDevelopmentRequestStore(storage, { now });
-    modernBirthRequestStore = createModernBirthRequestStore(storage, { now });
+    birthRequestStore = createBirthRequestStore(storage, { now });
   } catch (error) {
-    try { modernBirthRequestStore?.close(); } catch {}
+    try { birthRequestStore?.close(); } catch {}
     try { developmentRequestStore?.close(); } catch {}
     try { provisionalBirthStore?.close(); } catch {}
     invocationJournal.close();
@@ -87,7 +87,7 @@ export function createBirthCenterRuntime({
     invocationJournal,
     provisionalBirthStore,
     developmentRequestStore,
-    modernBirthRequestStore,
+    birthRequestStore,
     reconciliationRuntime,
     worldPublicationConfigured: worldPublisher !== null,
 
@@ -132,7 +132,7 @@ export function createBirthCenterRuntime({
     close() {
       if (closed) return;
       closed = true;
-      modernBirthRequestStore.close();
+      birthRequestStore.close();
       developmentRequestStore.close();
       provisionalBirthStore.close();
       invocationJournal.close();
