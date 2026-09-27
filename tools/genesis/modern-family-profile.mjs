@@ -1,11 +1,7 @@
-import { sampleFamilyAncestry } from "../../core/src/human-phenotype/index.mjs";
-
-const REFERENCE_POPULATIONS=Object.freeze([
-  "afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"
-]);
+import { referencePopulationIds, sampleFamilyAncestry } from "../../core/src/human-phenotype/index.mjs";
 
 const ancestrySchema={type:"array",minItems:1,maxItems:3,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{
-  population:{type:"string",minLength:1},share:{type:"number",minimum:0.01,maximum:1},referencePopulation:{type:"string",enum:REFERENCE_POPULATIONS,description:"Physical founder region code: afr_west=West Africa; afr_east=East Africa; eur_north=Northern Europe; eur_south=Southern Europe; west_asia=West Asia; south_asia=South Asia; east_asia=East Asia; southeast_asia=Southeast Asia; indigenous_america=Indigenous Americas; oceania=Oceania."}
+  population:{type:"string",minLength:1},share:{type:"number",minimum:0.01,maximum:1},referencePopulation:{type:"string",enum:referencePopulationIds,description:"Physical founder population code from Fibre's shared calibrated hierarchy."}
 }}};
 const languagesSchema={type:"array",minItems:1,maxItems:3,items:{type:"string",minLength:1}};
 const namesSchema={type:"array",minItems:24,items:{type:"string",minLength:1}};
