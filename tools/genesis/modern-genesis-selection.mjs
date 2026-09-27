@@ -38,7 +38,7 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     culturalContext: { type: "string", minLength: 1 },
     heritageContext: { type: "string", minLength: 1 },
     familyProfiles: MODERN_FAMILY_PROFILES_SCHEMA,
-    availableInstitutions: { type: "array", minItems: 3, uniqueItems: true, items: { type: "string", minLength: 1 } },
+    availableInstitutions: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
     intellectualEnvironment: { type: "string", minLength: 1 },
   },
 });
