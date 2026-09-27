@@ -195,9 +195,6 @@ async function main() {
   const physicalAncestry=legacyMigration
     ? JSON.parse(readFileSync(resolve(process.cwd(),ancestryFile),"utf8"))
     : null;
-  if(legacyMigration&&beforeObservatory?.observatory?.thread?.genome?.physical!==undefined){
-    throw new Error("legacy physical embodiment migration requires a Thread without an authoritative physical genome");
-  }
   const specification = renewCurrent
     ? before.specification
     : legacyMigration
