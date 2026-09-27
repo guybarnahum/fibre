@@ -6,19 +6,13 @@ import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs"
 import { sampleFamilyAncestry } from "#core/src/human-phenotype/index.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v9";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v10";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
   additionalProperties: false,
   required: [
     "timeZone",
-    "languages",
-    "raisedLanguages",
-    "nameOrder",
-    "femaleGivenNames",
-    "maleGivenNames",
-    "familyNames",
     "homeDescription",
     "schoolDescription",
     "transitDescription",
@@ -28,10 +22,8 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     "schoolingOrCommunityContext",
     "culturalContext",
     "heritageContext",
-    "familyOriginContext",
     "appearanceContext",
     "appearanceLoci",
-    "physicalAncestry",
     "familyProfiles",
     "availableInstitutions",
     "intellectualEnvironment",
@@ -304,7 +296,8 @@ function appearanceLoci({ selector, heritage, value }) {
 }
 
 function chooseFamilyProfile(authored, requestId) {
-  const profiles = Array.isArray(authored.familyProfiles) && authored.familyProfiles.length ? authored.familyProfiles : [authored];
+  if (!Array.isArray(authored.familyProfiles) || authored.familyProfiles.length === 0) throw new TypeError("authored Genesis world requires family profiles");
+  const profiles = authored.familyProfiles;
   const normalized = profiles.map((profile, index) => ({
     ...profile,
     id:profile.id ?? `family-${index + 1}`,
@@ -451,7 +444,6 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
       "Return physicalAncestry with separate maternal and paternal ancestry mixtures causally supported by familyOriginContext. Use the broad referencePopulation only as a physical founder prior; population is a concise human-readable family-origin label. Shares on each parent should sum to 1. Do not use these fields for culture, personality, ability, class, religion, behavior or values.",
       "Return appearanceContext as a broad family-appearance prior causally supported by familyOriginContext. It must be physically informative enough to ground a coherent individual without demographic labels: include plausible ranges for complexion/skin variation, hair texture/color, eye and eyelid morphology, overall face proportions, brows, nose bridge/base/tip, mouth/lip geometry, jaw/chin geometry, and build where relevant. Describe ranges, not one stereotyped face. If the appearance range would be uncommon in the selected place, familyOriginContext must contain the corresponding migration, mixed-ancestry, adoption, or diaspora history rather than leaving the appearance unexplained. Do not repeat the heritage label, country, city, religion, nationality or community name in appearanceContext. Preserve substantial within-family variation and never connect appearance to personality or worth.",
       "Return appearanceLoci as concrete reusable birth material inside that envelope. For each domain—skin, hair, eyes, face, brows, nose, mouth, jaw and build—supply four to six atomic concrete variants. Every individual option must be physically compatible with appearanceContext; options are not demographic stereotypes and must contain no country, city, heritage, religion, nationality or community labels. These variants exist so Genesis, not the image renderer, can deterministically choose one concrete inherited phenotype for a new Thread.",
-      "Names are reusable local/heritage naming material only, never pre-authored people. Supply at least six distinct female given names, six distinct male given names and six family names.",
       "Use an IANA time-zone identifier. Keep civic descriptions concrete enough to ground ordinary episodes, but avoid unsupported hyper-specific claims.",
     ].join("\n"),
     input: {
