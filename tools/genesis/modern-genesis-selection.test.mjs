@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { composeModernSubjectIdentity } from "./modern-birth-material.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 import {
   createWorldAuthoringFetch,
@@ -277,6 +278,10 @@ test("cached place context samples distinct family histories per birth without r
   assert.notEqual(second.material.familyProfileId,first.material.familyProfileId,"births collapsed onto one family profile");
   assert.notEqual(second.material.familyOriginContext,first.material.familyOriginContext,"sampled family history did not change lived context");
   assert.notDeepEqual(second.material.physicalAncestry,first.material.physicalAncestry,"sampled family history did not change physical ancestry");
+  assert.notDeepEqual(second.material.familyNames,first.material.familyNames,"sampled family history did not change naming context");
+  const firstIdentity=composeModernSubjectIdentity({requestId:"same-name-seed",material:first.material});
+  const secondIdentity=composeModernSubjectIdentity({requestId:"same-name-seed",material:second.material});
+  assert.notEqual(firstIdentity.femaleName,secondIdentity.femaleName,"family history did not causally change the name");
   assert.ok(second.worldSpec.householdShape.includes(second.material.familyOriginContext),"sampled family history must shape the Genesis household");
 });
 
@@ -297,7 +302,9 @@ test("authored World rejects demographic language inventories for one subject", 
       now:() => "2026-09-18T19:00:00Z",
       authorWorld:async () => ({
         ...authoredJerusalem,
-        languages:["Hebrew", "Arabic", "English", "Russian", "Amharic"],
+        familyProfiles:authoredJerusalem.familyProfiles.map((profile,index)=>index===0
+          ? {...profile,languages:["Hebrew","Arabic","English","Russian","Amharic"]}
+          : profile),
       }),
     }),
     /1 to 3 personally plausible languages/u,
