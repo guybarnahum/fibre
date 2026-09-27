@@ -448,11 +448,11 @@ export function createThreadGenesisRepairService({
     const findings = [...completeness.findings];
 
     if (physicalGenomeMigrator !== null && thread.genome?.physical === undefined) {
-      findings.push(finding("PHYSICAL_GENOME_MISSING", "migration_required", null, {
-        reason:"This legacy Thread predates Fibre physical inheritance; visual renewal cannot repair its embodiment until operator-confirmed physical ancestry is migrated into a durable physical genome.",
+      findings.push(finding("LEGACY_PHYSICAL_EMBODIMENT", "healthy", null, {
+        reason:"This Thread predates Fibre physical inheritance. Its existing canonical specification remains authoritative unless an operator determines that specification is materially wrong and supplies explicit physical-ancestry evidence for migration.",
         migration:Object.freeze({
           id:"legacy_physical_embodiment_v1",
-          label:"Legacy physical embodiment",
+          label:"Migrate legacy physical embodiment",
           input:Object.freeze({
             fields:Object.freeze([
               Object.freeze({name:"physicalAncestry",label:"Maternal/paternal physical ancestry",kind:"json",required:true}),
