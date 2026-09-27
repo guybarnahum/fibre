@@ -115,7 +115,7 @@ function normalizeAuthorship(assertion) {
   return normalized;
 }
 
-function normalizeAdmission(admission) {
+function normalizeAdmission(admission, { historical = false } = {}) {
   assertPlainObject("identity assertion.admission", admission);
   assertExactKeys("identity assertion.admission", admission, [
     "policy",
@@ -138,7 +138,9 @@ function normalizeAdmission(admission) {
     evidenceClassification: admission.evidenceClassification,
     sourceMode: admission.sourceMode,
   };
-  if (admission.claimDiscipline !== undefined) {
+  if (admission.claimDiscipline === null && historical) {
+    normalized.claimDiscipline = null;
+  } else if (admission.claimDiscipline !== undefined) {
     normalized.claimDiscipline = normalizePolicy(
       "identity assertion.admission.claimDiscipline",
       admission.claimDiscipline,
@@ -257,7 +259,7 @@ function normalizeIdentityAssertionInternal(
     throw new TypeError("identity assertion.provenanceClass is invalid");
   }
   const authorship = normalizeAuthorship(candidate);
-  const admission = normalizeAdmission(candidate.admission);
+  const admission = normalizeAdmission(candidate.admission, { historical:admissionMode === "historical" });
   let claimPredicate;
   if (candidate.claimPredicate !== undefined) {
     claimPredicate = normalizeClaimPredicate(candidate.claimPredicate);
