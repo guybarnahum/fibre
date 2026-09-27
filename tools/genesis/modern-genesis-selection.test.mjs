@@ -104,10 +104,10 @@ test("modern Genesis keys create and reuse a place plus heritage World", async (
   assert.equal(created.material.heritage, "Yemeni Jewish");
   assert.equal(created.timeZone, "Asia/Jerusalem");
   assert.match(created.worldSpec.worldSpecId, /^world_modern_israel_jerusalem_yemeni-jewish_/u);
-  assert.match(created.worldSpec.culturalContext, /Yemeni Jewish/u);
-  assert.match(created.worldSpec.culturalContext, /family roots|migration/iu, "family origin must become causal World context");
-  assert.match(created.worldSpec.householdShape, /Family origin context:/u);
-  assert.match(created.material.familyOriginContext, /Yemeni Jewish family roots/u);
+  assert.match(created.worldSpec.culturalContext, /Yemeni Jewish/u, "explicit operator heritage was lost");
+  assert.doesNotMatch(created.worldSpec.culturalContext, /migration to Israel in earlier generations/iu, "family-profile prose leaked into lived World context");
+  assert.doesNotMatch(created.worldSpec.householdShape, /Family origin context:/u, "family-profile prose leaked into household biography");
+  assert.match(created.material.familyOriginContext, /Yemeni Jewish family roots/u, "family-profile provenance was lost");
   assert.deepEqual(created.worldSpec.languages, ["Hebrew", "English"], "World language context lost later acquisition");
   assert.deepEqual(created.material.languages, ["Hebrew", "English"], "eventual spoken languages were lost");
   assert.deepEqual(created.material.raisedLanguages, ["Hebrew"], "raised languages absorbed a school-acquired language");
@@ -167,9 +167,9 @@ test("uncommon local physical ancestry remains valid when family origin makes it
     authorWorld:async () => authored,
   });
 
-  assert.match(created.material.familyOriginContext, /Ghana/u);
-  assert.match(created.worldSpec.culturalContext, /Ghana/u, "family origin must be available to life generation");
-  assert.match(created.worldSpec.householdShape, /Ghana/u, "household story must carry the same causal origin");
+  assert.match(created.material.familyOriginContext, /Ghana/u, "family-profile provenance was lost");
+  assert.doesNotMatch(created.worldSpec.culturalContext, /Ghana/u, "free-form family provenance leaked into lived World context");
+  assert.doesNotMatch(created.worldSpec.householdShape, /Ghana/u, "free-form family provenance leaked into household biography");
   assert.equal(created.material.physicalAncestry.maternal[0].referencePopulation, "west_asia");
   assert.equal(created.material.physicalAncestry.paternal[0].referencePopulation, "afr_west");
 });
@@ -260,13 +260,14 @@ test("cached place context samples distinct family histories per birth without r
   assert.ok(second,"population context must allow more than one family history");
   assert.equal(calls,1,"family sampling must not re-author the place");
   assert.notEqual(second.material.familyProfileId,first.material.familyProfileId,"births collapsed onto one family profile");
-  assert.notEqual(second.material.familyOriginContext,first.material.familyOriginContext,"sampled family history did not change lived context");
+  assert.notEqual(second.material.familyOriginContext,first.material.familyOriginContext,"sampled family provenance did not change");
   assert.notDeepEqual(second.material.physicalAncestry,first.material.physicalAncestry,"sampled family history did not change physical ancestry");
   assert.notDeepEqual(second.material.familyNames,first.material.familyNames,"sampled family history did not change naming context");
   const firstIdentity=composeModernSubjectIdentity({requestId:"same-name-seed",material:first.material});
   const secondIdentity=composeModernSubjectIdentity({requestId:"same-name-seed",material:second.material});
   assert.notEqual(firstIdentity.femaleName,secondIdentity.femaleName,"family history did not causally change the name");
-  assert.ok(second.worldSpec.householdShape.includes(second.material.familyOriginContext),"sampled family history must shape the Genesis household");
+  assert.equal(first.worldSpec.householdShape,second.worldSpec.householdShape,"family-profile prose should not pre-author different household biographies");
+  assert.ok(!second.worldSpec.householdShape.includes(second.material.familyOriginContext),"family-profile prose leaked into the Genesis household");
 });
 
 test("authored World rejects demographic language inventories for one subject", async (t) => {
