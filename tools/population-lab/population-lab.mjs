@@ -1,4 +1,4 @@
-import {createHash} from"node:crypto";import{sampleFamilyAncestry,resolveBirthPhysicalInheritance,phenotypeFromPhysicalGenome}from"../../core/src/human-phenotype/index.mjs";import{mkdir,writeFile}from"node:fs/promises";import{resolve}from"node:path";
+import {createHash} from"node:crypto";import{phenotypeFromPhysicalGenome}from"../../core/src/human-phenotype/index.mjs";import{composeModernSubjectIdentity,selectModernNameParts}from"../genesis/modern-birth-material.mjs";import{sampleModernFamilyProfile}from"../genesis/modern-family-profile.mjs";import{mkdir,writeFile}from"node:fs/promises";import{resolve}from"node:path";
 const MODEL="gpt-5.1-2025-11-13";
 const MORPH=["faceWidth","faceLength","midfaceProminence","jawWidth","chinProjection","eyeSpacing","eyeShape","foreheadProportion","browProminence","noseWidth","noseProjection","lipFullness"];
 const T=["pigmentation","eyeColor","hairColor","frecklingTendency","hairTexture","hairDensity","hairlineLossTendency","facialHairTendency","faceWidth","faceLength","midfaceProminence","jawWidth","chinProjection","eyeSpacing","eyeShape","foreheadProportion","browProminence","noseWidth","noseProjection","lipFullness","frame","heightTendency","bodyProportion","adiposityTendency","muscularityTendency","shoulderHipProportion"];
@@ -20,12 +20,14 @@ const uniqueNames=ps=>new Set(ps.map(p=>key(p.name))).size;
 function line(text,done=false){process.stdout.write("\r\x1b[2K"+text+(done?"\n":""))}
 function progress(done,total,start,label="generated"){line(`[${String(done).padStart(String(total).length)}/${total}] ${label} · ${elapsed(start)} · names ${uniqueNames(progress.people)}/${progress.people.length} unique`)}
 progress.people=[];
-const ancestrySchema={type:"array",minItems:1,maxItems:4,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{population:{type:"string"},share:{type:"number",exclusiveMinimum:0},referencePopulation:{type:["string","null"],enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania",null]}}}};
-const familyContextSchema={type:"object",additionalProperties:false,required:["originHistory","namingContext","householdLanguageContext"],properties:{originHistory:{type:"string"},namingContext:{type:"string"},householdLanguageContext:{type:"string"}}};
-const populationSchema={type:"object",additionalProperties:false,required:["profiles"],properties:{profiles:{type:"array",minItems:4,maxItems:16,items:{type:"object",additionalProperties:false,required:["id","share","maternalAncestry","paternalAncestry","familyContext"],properties:{id:{type:"string"},share:{type:"number",exclusiveMinimum:0},maternalAncestry:ancestrySchema,paternalAncestry:ancestrySchema,familyContext:familyContextSchema}}}}};
+const ancestrySchema={type:"array",minItems:1,maxItems:3,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{population:{type:"string",minLength:1},share:{type:"number",exclusiveMinimum:0},referencePopulation:{type:"string",enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}}};
+const languageSchema={type:"array",minItems:1,maxItems:3,uniqueItems:true,items:{type:"string",minLength:1}};
+const namesSchema={type:"array",minItems:12,uniqueItems:true,items:{type:"string",minLength:1}};
+const physicalAncestrySchema={type:"object",additionalProperties:false,required:["maternal","paternal"],properties:{maternal:ancestrySchema,paternal:ancestrySchema}};
+const populationSchema={type:"object",additionalProperties:false,required:["profiles"],properties:{profiles:{type:"array",minItems:3,maxItems:8,items:{type:"object",additionalProperties:false,required:["id","share","familyOriginContext","languages","raisedLanguages","nameOrder","femaleGivenNames","maleGivenNames","familyNames","physicalAncestry"],properties:{id:{type:"string",minLength:1},share:{type:"number",exclusiveMinimum:0},familyOriginContext:{type:"string",minLength:1},languages:languageSchema,raisedLanguages:languageSchema,nameOrder:{type:"string",enum:["given_family","family_given"]},femaleGivenNames:namesSchema,maleGivenNames:namesSchema,familyNames:namesSchema,physicalAncestry:physicalAncestrySchema}}}}};
 async function populationContext(place,year,model){
   const request=async extra=>{
-    const r=await resilientFetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({model,reasoning:{effort:"low"},input:[{role:"system",content:[{type:"input_text",text:"Population Lab experimental prior. Describe a compact plausible distribution of ordinary family histories for people born in the requested place and era. This is an experimental sampling prior, not demographic truth. Each profile is one coherent family-history pattern with separate maternal and paternal ancestry plus non-physical family context for naming and household languages. Ancestry is physical-inheritance provenance only; it must not directly choose names, languages, culture, personality, class, religion, intelligence, behavior or appearance. referencePopulation is a coarse physical-population anchor only: afr_west, afr_east, eur_north, eur_south, west_asia, south_asia, east_asia, southeast_asia, indigenous_america, or oceania. Choose the closest anchor for physical inheritance; use null if none is defensible. The anchor affects only physical inheritance, never name, language, culture, personality or behavior. Family context carries origin history, naming context and household-language context. Shares are relative weights, never quotas. Common local family histories should carry most probability mass; migration, diaspora and mixed-parent histories should appear only at plausible frequency. Do not curate for representation or coverage."+extra}]},{role:"user",content:[{type:"input_text",text:`Create the experimental local family-history prior for ${place} around ${year}.`}]}],text:{format:{type:"json_schema",name:"population_context",strict:true,schema:populationSchema}},max_output_tokens:3000})});
+    const r=await resilientFetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({model,reasoning:{effort:"low"},input:[{role:"system",content:[{type:"input_text",text:"Population Lab calibration for Fibre. Author the same bounded family-profile material used by modern Genesis: three to eight weighted coherent household-origin profiles for people born in the requested place and era. This is an experimental prior, not demographic truth and not a quota system. Each profile owns familyOriginContext, raised/eventual personal languages, naming order, at least twelve female given names, twelve male given names, twelve family names, and separate maternal/paternal physicalAncestry. Naming belongs to family history, never directly to birthplace or physical ancestry. Keep one coherent household-origin path per profile; do not combine unrelated naming traditions merely because they coexist locally. Common local family histories should carry most probability mass; migration, diaspora and mixed-family histories should appear only at plausible frequency. referencePopulation is only a coarse physical founder prior: afr_west, afr_east, eur_north, eur_south, west_asia, south_asia, east_asia, southeast_asia, indigenous_america, or oceania. Physical ancestry must never imply personality, intelligence, ability, class, religion, values or behavior. Shares are relative weights, never quotas. Do not curate for representation or coverage."+extra}]},{role:"user",content:[{type:"input_text",text:`Create the experimental local family-history prior for ${place} around ${year}.`}]}],text:{format:{type:"json_schema",name:"population_context",strict:true,schema:populationSchema}},max_output_tokens:3000})});
     if(!r.ok)throw Error("population context "+r.status+": "+await r.text());
     const j=await r.json(),t=j.output?.flatMap(x=>x.content??[]).find(x=>x.type==="output_text")?.text;
     if(!t)throw Error(`model returned no population context (${j.status??"unknown"})`);
@@ -33,33 +35,49 @@ async function populationContext(place,year,model){
   };
   const first=await request("");
   if(!first.parseError)return first;
-  const retry=await request(" Return concise field values. Keep originHistory, namingContext, and householdLanguageContext each under 180 characters. Do not add prose outside the schema.");
+  const retry=await request(" Return concise field values and exactly the requested schema. Keep each familyOriginContext under 220 characters. Do not add prose outside the schema.");
   if(!retry.parseError)return retry;
   throw Error(`population context JSON malformed after retry (${retry.status??"unknown"}${retry.reason?": "+retry.reason:""}; chars ${retry.text.length})`);
 }
-const schema={type:"object",additionalProperties:false,required:["people"],properties:{people:{type:"array",items:{type:"object",additionalProperties:false,required:["name","sex","birthplace","familyOrigin","raisedLanguages","spokenLanguages","age25"],properties:{name:{type:"string"},sex:{type:"string",enum:["female","male"]},birthplace:{type:"string"},familyOrigin:{type:"string"},raisedLanguages:{type:"array",items:{type:"string"}},spokenLanguages:{type:"array",items:{type:"string"}},age25:{type:"string"}}}}}};
-async function generate(place,count,seed,model,existingNames=[],context){
-const families=Array.from({length:count},(_,i)=>sampleFamilyAncestry({profiles:context.profiles,seed:`${seed}:family:${i}`}));
-const byId=new Map(context.profiles.map(p=>[p.id,p]));
-const familyBrief=families.map((f,i)=>({person:i+1,familyContext:byId.get(f.profileId)?.familyContext}));
-const r=await resilientFetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({model,reasoning:{effort:"low"},input:[{role:"system",content:[{type:"input_text",text:"Population realism lab for Fibre. Generate independent plausible people, never demographic avatars. Birthplace shapes a realistic local population prior but does not directly determine appearance. Sample each requested person independently from that prior. Do not curate the cohort for diversity, representation, contrast, or coverage. Ordinary locally common family histories should therefore recur naturally; migration, mixed ancestry, adoption and diaspora may occur only at their plausible local frequency. Choose each person's household/family-origin path first. Names and household languages must be causally coherent with that family path. Physical inheritance is sampled separately by Fibre and is not your authority. age25 contains only time-local body composition, hairstyle/grooming, skin condition, acquired scars, clothing and other lived physical state; do not invent inherited facial morphology there. Avoid repeated names and templated prose."}]},{role:"user",content:[{type:"input_text",text:`Generate ${count} independently sampled people born in ${place}. Experiment seed ${seed}. Their family-history context has already been sampled. Use only that non-physical family context to make familyOrigin, name and household languages coherent. Do not derive names, languages or culture from physical ancestry. Do not infer personality, religion, class or behavior. Sampled family context: ${JSON.stringify(familyBrief)}. Existing full names that must not be reused: ${existingNames.length?existingNames.join("; "):"(none)"}.`}]}],text:{format:{type:"json_schema",name:"population_lab",strict:true,schema}},max_output_tokens:6000})});if(!r.ok)throw Error("OpenAI "+r.status+": "+await r.text());const j=await r.json(),t=j.output?.flatMap(x=>x.content??[]).find(x=>x.type==="output_text")?.text;if(!t)throw Error(`model returned no structured population (${j.status??"unknown"}${j.incomplete_details?.reason?": "+j.incomplete_details.reason:""})`);let parsed;try{parsed=JSON.parse(t)}catch{throw Error(`model returned incomplete population JSON (${j.status??"unknown"}${j.incomplete_details?.reason?": "+j.incomplete_details.reason:""})`)}const people=parsed.people;if(people.length!==count)throw Error(`model returned ${people.length} people; requested ${count}`);
-for(let i=0;i<people.length;i++){
-  const p=people[i], family=families[i];
-  p.populationPlace=place;
-  p.familyAncestry=family;
-  const inheritance=resolveBirthPhysicalInheritance({
-    maternalAncestry:family.maternal.ancestry,
-    paternalAncestry:family.paternal.ancestry,
-    seed:`${seed}:conception:${i}`
-  });
-  p.inheritance={
-    maternalGenome:inheritance.parents.maternal.genome,
-    paternalGenome:inheritance.parents.paternal.genome,
-    genome:inheritance.genome,
-    phenotype:phenotypeFromPhysicalGenome(inheritance.genome)
+const schema={type:"object",additionalProperties:false,required:["people"],properties:{people:{type:"array",items:{type:"object",additionalProperties:false,required:["age25"],properties:{age25:{type:"string",minLength:1}}}}}};
+const sexFor=requestId=>Number.parseInt(createHash("sha256").update(requestId+"\0sex").digest("hex").slice(0,12),16)%2===0?"female":"male";
+async function generate(place,count,seed,model,context){
+const births=Array.from({length:count},(_,i)=>{
+  const requestId=`population-lab:${seed}:${i}`;
+  const family=sampleModernFamilyProfile({profiles:context.profiles,requestId});
+  const material={...family,birthCity:place};
+  const sex=sexFor(requestId);
+  const identity=composeModernSubjectIdentity({requestId,material});
+  const names=selectModernNameParts({requestId,material});
+  return{requestId,family,material,sex,identity,names};
+});
+const brief=births.map((birth,i)=>({person:i+1,sex:birth.sex,familyOriginContext:birth.family.familyOriginContext,raisedLanguages:birth.identity.raisedLanguages,spokenLanguages:birth.identity.languages}));
+const r=await resilientFetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},body:JSON.stringify({model,reasoning:{effort:"low"},input:[{role:"system",content:[{type:"input_text",text:"Population calibration for Fibre. The production family profile, name, languages, sex and inherited physical genome are already fixed. Return only a concise plausible age-25 lived physical state for each person: body composition, hairstyle/grooming, skin condition, acquired scars, clothing and other time-local physical state. Do not invent or alter inherited facial morphology, ancestry, name, language, personality, religion, class, intelligence, ability or behavior. Do not optimize the cohort for diversity or contrast."}]},{role:"user",content:[{type:"input_text",text:`Create age-25 lived physical state for these ${count} fictional people born in ${place}. Keep output order unchanged. Inputs: ${JSON.stringify(brief)}`}]}],text:{format:{type:"json_schema",name:"population_lab_age25",strict:true,schema}},max_output_tokens:Math.max(1200,count*120)})});
+if(!r.ok)throw Error("OpenAI "+r.status+": "+await r.text());
+const j=await r.json(),t=j.output?.flatMap(x=>x.content??[]).find(x=>x.type==="output_text")?.text;
+if(!t)throw Error(`model returned no age-25 population material (${j.status??"unknown"}${j.incomplete_details?.reason?": "+j.incomplete_details.reason:""})`);
+let parsed;try{parsed=JSON.parse(t)}catch{throw Error(`model returned incomplete age-25 population JSON (${j.status??"unknown"}${j.incomplete_details?.reason?": "+j.incomplete_details.reason:""})`)}
+if(parsed.people.length!==count)throw Error(`model returned ${parsed.people.length} age-25 records; requested ${count}`);
+return births.map((birth,i)=>{
+  const phenotype=phenotypeFromPhysicalGenome(birth.identity.physicalGenome,{sex:birth.sex});
+  return{
+    name:birth.sex==="female"?birth.identity.femaleName:birth.identity.maleName,
+    givenName:birth.sex==="female"?birth.names.femaleGivenName:birth.names.maleGivenName,
+    familyName:birth.names.familyName,
+    nameOrder:birth.family.nameOrder,
+    sex:birth.sex,
+    birthplace:place,
+    populationPlace:place,
+    familyProfileId:birth.family.id,
+    familyProfileShare:birth.family.share,
+    familyOrigin:birth.family.familyOriginContext,
+    raisedLanguages:[...birth.identity.raisedLanguages],
+    spokenLanguages:[...birth.identity.languages],
+    age25:parsed.people[i].age25,
+    inheritance:{genome:birth.identity.physicalGenome,phenotype},
   };
+});
 }
-const blocked=new Set(existingNames.map(key)),seen=new Set();for(const p of people){const n=key(p.name);if(blocked.has(n)||seen.has(n))throw Error(`model returned duplicate full name: ${p.name}`);seen.add(n)}return people}
 function score(ps){
   const maps=Object.fromEntries(["full","given","family","signature"].map(x=>[x,new Map()]));
   for(const p of ps){const n=key(p.name),z=n.split(" "),traits=p.inheritance.phenotype.traits;for(const[k,v]of[["full",n],["given",z[0]],["family",z.at(-1)],["signature",T.map(d=>traits[d]).join("|")]])maps[k].set(v,(maps[k].get(v)||0)+1)}
