@@ -1,4 +1,4 @@
-import { phenotypeFromPhysicalGenome } from "#core/src/human-phenotype/index.mjs";
+import { physicalPhenotypeRenderingProjection } from "#core/src/human-phenotype/index.mjs";
 import { GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY } from "fibre/world-kernel/genesis-authority-contracts";
 import { normalizeGenesisSex } from "./genesis-sex.mjs";
 
@@ -11,8 +11,7 @@ function nonEmpty(name,value){
 
 function physicalPhenotypeDescription({physicalGenome,sex}){
   if(!physicalGenome)throw new TypeError("Genesis canonical visual identity requires the inherited physical genome");
-  const phenotype=phenotypeFromPhysicalGenome(physicalGenome,{sex});
-  return "Concrete inherited phenotype: "+Object.entries(phenotype.traits).map(([name,value])=>`${name}: ${value}`).join("; ")+".";
+  return physicalPhenotypeRenderingProjection(physicalGenome,{sex}).description;
 }
 
 export function buildGenesisCanonicalVisualIdentity({
