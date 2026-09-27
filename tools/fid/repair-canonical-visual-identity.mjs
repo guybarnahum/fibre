@@ -231,8 +231,26 @@ async function main() {
     throw new Error("canonical renewal changed the authoritative visual specification");
   }
   if (legacyMigration && result?.reused === true && result.embodiment.status === "available") {
-    const currentPresentation=await presentation({ threadPresentation, threadId });
-    const credential=currentPresentation?.snapshot?.presentation?.identityCard ?? null;
+    const canonicalReferenceObjectRef=result.embodiment.asset?.referenceObjectRef ?? null;
+    if(typeof canonicalReferenceObjectRef!=="string"||canonicalReferenceObjectRef===""){
+      throw new Error("reused legacy embodiment migration lacks an admitted canonical root");
+    }
+    const converged=await poll(
+      "reused legacy physical embodiment projection",
+      () => presentation({ threadPresentation, threadId }),
+      (body) => {
+        const card=body?.snapshot?.presentation?.identityCard ?? null;
+        const projected=body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0]===canonicalReferenceObjectRef;
+        const photos=(body?.snapshot?.media?.assets??[]).filter((asset)=>(
+          asset?.role==="official_id_photo"
+          && asset?.status==="ready"
+          && Array.isArray(asset?.sourceReferences)
+          && asset.sourceReferences.includes(canonicalReferenceObjectRef)
+        ));
+        return projected&&card?.credentialId&&photos.length===1;
+      },
+    );
+    const credential=converged.snapshot.presentation.identityCard;
     process.stdout.write(`${JSON.stringify({
       event:"legacy-physical-embodiment-migration-complete",
       mode,
@@ -241,10 +259,10 @@ async function main() {
       operationKey,
       specificationDigest:result.embodiment.specificationDigest,
       previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
-      canonicalReferenceObjectRef:result.embodiment.asset?.referenceObjectRef ?? null,
+      canonicalReferenceObjectRef,
       embodimentRevision:result.embodiment.revision,
-      fidCredentialId:credential?.credentialId ?? null,
-      fidRevision:credential?.revision ?? null,
+      fidCredentialId:credential.credentialId,
+      fidRevision:credential.revision,
     },null,2)}\n`);
     return;
   }
