@@ -52,7 +52,7 @@ const authoredJerusalem = Object.freeze({
     build:["lean-to-average frame", "compact average frame", "slender frame", "average-to-broad frame"],
   },
   availableInstitutions:["school", "public_library", "public_transit", "neighborhood_health_service"],
-  intellectualEnvironment:"School, books, news, internet access, public cultural institutions and ordinary conversation provide varied sources of ideas and disagreement.",,
+  intellectualEnvironment:"School, books, news, internet access, public cultural institutions and ordinary conversation provide varied sources of ideas and disagreement.",
   familyProfiles:[
     {id:"yemeni-local",share:7,familyOriginContext:"The household has longstanding Yemeni Jewish family roots with migration to Israel in earlier generations; close relatives and family stories maintain that ancestry while the subject is born and raised in Jerusalem.",physicalAncestry:{maternal:[{population:"Yemeni Jewish family",share:1,referencePopulation:"west_asia"}],paternal:[{population:"Yemeni Jewish family",share:1,referencePopulation:"west_asia"}]}},
     {id:"yemeni-mixed",share:2,familyOriginContext:"The household joins Yemeni Jewish and other West Asian Jewish family lines established in Israel across earlier generations.",physicalAncestry:{maternal:[{population:"Yemeni Jewish family",share:1,referencePopulation:"west_asia"}],paternal:[{population:"West Asian Jewish family",share:1,referencePopulation:"west_asia"}]}},
