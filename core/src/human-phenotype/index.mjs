@@ -5,3 +5,5 @@ export {PHYSICAL_GENOME_VERSION,createPhysicalGenome,recombinePhysicalGenomes,ex
 export {sampleFounderPhysicalGenome} from "./founder-genome.mjs";
 export {resolveBirthPhysicalInheritance} from "./birth-inheritance.mjs";
 export {physicalPhenotypeRenderingProjection} from "./rendering-projection.mjs";
+
+export {referencePopulationIds,referencePopulationPrior} from "./reference-populations.mjs";
