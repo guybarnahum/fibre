@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
 import { createThreadGenesisRepairService } from "../src/thread-genesis-repair-service.mjs";
 
 const SEX_EVIDENCE = Object.freeze({
@@ -14,7 +15,7 @@ const NO_IDENTITY_UPDATE = Object.freeze({
   update() { throw new Error("identity update should not run in this test"); },
 });
 
-function fixture({ symbolicGenomeMigrator = null, identityUpdater = NO_IDENTITY_UPDATE } = {}) {
+function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null, visualIdentityRepairService = null, identityUpdater = NO_IDENTITY_UPDATE } = {}) {
   const threadId = "thr_repair_1";
   const objectRef = "visual_identity_reference_1";
   const officialMediaId = "media_identity_1";
@@ -22,6 +23,7 @@ function fixture({ symbolicGenomeMigrator = null, identityUpdater = NO_IDENTITY_
   const thread = {
     threadId,
     status:"active",
+    genome:{ textualTraits:{}, runtimeBaselines:{} },
     identity:{
       name:"Repair Thread",
       sex:"female",
@@ -88,6 +90,8 @@ function fixture({ symbolicGenomeMigrator = null, identityUpdater = NO_IDENTITY_
     genesisSexEvidence:{ resolve() { return null; } },
     genesisSexMigrator:{ migrate() { throw new Error("sex migration should not run for a complete Thread"); } },
     symbolicGenomeMigrator,
+    physicalGenomeMigrator,
+    visualIdentityRepairService,
     genesisAuthority:{
       getRaisedLanguagesForThread() { return { languages:[...state.raisedLanguages] }; },
       correctRaisedLanguages(id, { languages }) {
@@ -364,6 +368,69 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
   assert.equal(migration.migrated, true);
   assert.equal(migration.after.findings.find((entry) => entry.code === "SEX").state, "healthy");
   assert.equal(migration.after.health, "healthy");
+});
+
+test("legacy embodiment migration installs physical authority before correcting the canonical person", async () => {
+  const ancestry=[{population:"operator-confirmed Sichuan Chinese family",share:1,referencePopulation:"east_asia"}];
+  let repairInput=null;
+  const physicalGenomeMigrator={
+    migrate(thread,{physicalAncestry,operationKey}){
+      assert.equal(operationKey,"legacy_physical_repair_1");
+      assert.deepEqual(physicalAncestry,{maternal:ancestry,paternal:ancestry});
+      const physicalGenome=resolveBirthPhysicalInheritance({
+        maternalAncestry:ancestry,
+        paternalAncestry:ancestry,
+        seed:"legacy-physical-service-test",
+      }).genome;
+      thread.genome.physical=physicalGenome;
+      return{
+        migrated:true,
+        reused:false,
+        eventId:"evt_physical_genome_migrated_1",
+        physicalAncestry,
+        physicalGenome,
+        thread,
+      };
+    },
+  };
+  const visualIdentityRepairService={
+    repair(input){
+      repairInput=structuredClone(input);
+      return{
+        threadId:input.threadId,
+        operationKey:input.operationKey,
+        embodiment:{
+          revision:3,
+          status:"pending_generation",
+          specification:input.correctedSpecification,
+          specificationDigest:"sha256:"+("d".repeat(64)),
+        },
+      };
+    },
+  };
+  const {service,threadId,thread}=fixture({physicalGenomeMigrator,visualIdentityRepairService});
+
+  const before=await service.diagnose(threadId);
+  const missing=before.findings.find(entry=>entry.code==="PHYSICAL_GENOME_MISSING");
+  assert.equal(missing.state,"migration_required");
+  assert.equal(missing.migration.id,"legacy_physical_embodiment_v1");
+
+  const result=await service.migrate(threadId,{
+    migrationId:"legacy_physical_embodiment_v1",
+    migrationKey:"legacy_physical_repair_1",
+    input:{
+      physicalAncestry:{maternal:ancestry,paternal:ancestry},
+      reason:"Replace the materially incorrect legacy visual authority from operator-confirmed physical ancestry.",
+    },
+  });
+
+  assert.equal(result.migrated,true);
+  assert.equal(thread.genome.physical.version,"physical-genome-v0.1","migration did not establish physical authority");
+  assert.equal(repairInput.correctedSpecification.method,
+    "canonical synthetic portrait specification derived from the Thread's inherited physical genome");
+  assert.deepEqual(repairInput.evidenceReferences,["evt_physical_genome_migrated_1"],
+    "visual correction was not grounded in the migration event");
+  assert.equal(result.after.findings.find(entry=>entry.code==="PHYSICAL_GENOME").state,"healthy");
 });
 
 test("Fix restores unambiguous malformed birth geography from existing World identity", async () => {
