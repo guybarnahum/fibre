@@ -65,7 +65,7 @@ Two de-novo Threads from genuinely different worlds should be capable of becomin
 
 ### Birthplace distribution
 
-Automatic modern Genesis chooses birthplace **before** World authoring. The choice is deterministic for a birth request, independent from genome selection, and shaped approximately by where people live globally rather than by the small set of development fixtures.
+Automatic Genesis chooses birthplace **before** World authoring. The choice is deterministic for a birth request, independent from genome selection, and shaped approximately by where people live globally rather than by the small set of development fixtures.
 
 The current sampler deliberately combines:
 
