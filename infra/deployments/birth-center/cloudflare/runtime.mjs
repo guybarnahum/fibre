@@ -84,9 +84,9 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
     if (next === null || candidate < next) next = candidate;
   };
 
-  const modern = runtime.birthRequestStore.recent({ limit:64 });
-  const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
-  for (const request of modern) {
+  const births = runtime.birthRequestStore.recent({ limit:64 });
+  const birthByRequest = new Map(births.map((request) => [request.requestId, request]));
+  for (const request of births) {
     if (request.status === "published") continue;
     if (request.status === "failed" && !request.genesisId && !request.threadId) continue;
     if (runtime.birthRequestStore.isActive(request.status) || request.status === "failed") {
@@ -96,8 +96,8 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
   for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
-    const modernRequest = modernByRequest.get(request.requestId);
-    if (modernRequest?.status === "published" || runtime.birthRequestStore.isActive(modernRequest?.status)) continue;
+    const birthRequest = birthByRequest.get(request.requestId);
+    if (birthRequest?.status === "published" || runtime.birthRequestStore.isActive(birthRequest?.status)) continue;
     consider(request);
   }
   return next;
@@ -218,7 +218,7 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
 
     queued.push(pendingProjection(request, {
-      source:"modern",
+      source:"birth",
       status:request.status,
       stage:request.status === "failed" ? "failed" : operatorBirthStage(request.status),
       location:request.location ?? requestedLocationDisplay(request.requestedLocation),
@@ -259,27 +259,27 @@ export async function reconcileStaleBirths(runtime, {
 } = {}) {
   const bornRequests = new Set();
   const stillbornRequests = new Set();
-  const publishedModern = new Set();
-  const modern = runtime.birthRequestStore.recent({ limit:64 });
-  const modernByRequest = new Map(modern.map((request) => [request.requestId, request]));
-  const modernCandidates = [];
+  const publishedBirthRequests = new Set();
+  const births = runtime.birthRequestStore.recent({ limit:64 });
+  const birthByRequest = new Map(births.map((request) => [request.requestId, request]));
+  const birthCandidates = [];
   const developmentCandidates = [];
   const threadIds = new Set();
 
-  for (const request of modern) {
+  for (const request of births) {
     if (request.status === "published") continue;
     if (
       request.genesisId !== null
       && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published"
     ) {
       runtime.birthRequestStore.progress(request.requestId, { status:"published" });
-      publishedModern.add(request.requestId);
+      publishedBirthRequests.add(request.requestId);
       bornRequests.add(request.requestId);
       continue;
     }
     const timing = birthTiming(request, nowMs);
     if ((!timing.stale && request.status !== "failed") || !request.threadId) continue;
-    modernCandidates.push(request);
+    birthCandidates.push(request);
     threadIds.add(request.threadId);
   }
 
@@ -287,19 +287,19 @@ export async function reconcileStaleBirths(runtime, {
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
 
-    const modernRequest = modernByRequest.get(request.requestId) ?? null;
+    const birthRequest = birthByRequest.get(request.requestId) ?? null;
     if (
       request.status === "submitted"
       && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published"
     ) {
       runtime.developmentRequestStore.settleBorn(request.requestId);
       if (
-        modernRequest !== null
-        && modernRequest.status !== "published"
-        && !publishedModern.has(request.requestId)
+        birthRequest !== null
+        && birthRequest.status !== "published"
+        && !publishedBirthRequests.has(request.requestId)
       ) {
         runtime.birthRequestStore.progress(request.requestId, { status:"published" });
-        publishedModern.add(request.requestId);
+        publishedBirthRequests.add(request.requestId);
       }
       bornRequests.add(request.requestId);
       continue;
@@ -308,7 +308,7 @@ export async function reconcileStaleBirths(runtime, {
     const timing = birthTiming(request, nowMs);
     const terminalFailure = disposition?.failureRetryable === false;
     if ((!timing.stale && !terminalFailure) || !request.threadId) continue;
-    developmentCandidates.push(Object.freeze({ request, disposition, modernRequest }));
+    developmentCandidates.push(Object.freeze({ request, disposition, birthRequest }));
     threadIds.add(request.threadId);
   }
 
@@ -327,23 +327,23 @@ export async function reconcileStaleBirths(runtime, {
     });
   }
 
-  for (const request of modernCandidates) {
+  for (const request of birthCandidates) {
     if (!present.has(request.threadId)) continue;
     runtime.birthRequestStore.progress(request.requestId, { status:"published" });
-    publishedModern.add(request.requestId);
+    publishedBirthRequests.add(request.requestId);
     bornRequests.add(request.requestId);
   }
 
-  for (const { request, disposition, modernRequest } of developmentCandidates) {
+  for (const { request, disposition, birthRequest } of developmentCandidates) {
     if (present.has(request.threadId)) {
       runtime.developmentRequestStore.settleBorn(request.requestId);
       if (
-        modernRequest !== null
-        && modernRequest.status !== "published"
-        && !publishedModern.has(request.requestId)
+        birthRequest !== null
+        && birthRequest.status !== "published"
+        && !publishedBirthRequests.has(request.requestId)
       ) {
         runtime.birthRequestStore.progress(request.requestId, { status:"published" });
-        publishedModern.add(request.requestId);
+        publishedBirthRequests.add(request.requestId);
       }
       bornRequests.add(request.requestId);
       continue;
