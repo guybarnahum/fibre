@@ -28,7 +28,7 @@ function validateLanguages(values,label){
   if(!Array.isArray(values)||values.length<1||values.length>3)throw new TypeError(`${label} must contain 1 to 3 languages`);
   const clean=values.map(value=>String(value??"").trim());
   if(clean.some(value=>!value))throw new TypeError(`${label} contains an empty language`);
-  if(clean.some(value=>value.length>48||/[;,\\/|\n]|」「/u.test(value)||/\s(?:and|or)\s/iu.test(value)))throw new TypeError(`${label} must contain one bare language name per item`);
+  if(clean.some(value=>value.length>48||/[;,|\\n]|」「/u.test(value)||value.includes("/")||/\\s(?:and|or)\\s/iu.test(value)))throw new TypeError(`${label} must contain one bare language name per item`);
   if(new Set(clean.map(fold)).size!==clean.length)throw new TypeError(`${label} contains duplicate languages`);
   return clean;
 }
