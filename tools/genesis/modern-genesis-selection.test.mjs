@@ -40,18 +40,6 @@ const authoredJerusalem = Object.freeze({
   culturalContext:"Jerusalem provides the surrounding civic setting, including Hebrew, Arabic and English across ordinary educational, commercial and public contexts.",
   heritageContext:"The household maintains Yemeni Jewish family heritage through some intergenerational language traces, foods, music, family stories, celebrations and community ties without assigning the subject personal belief or observance.",
   familyOriginContext:"The household has longstanding Yemeni Jewish family roots with migration to Israel in earlier generations; close relatives and family stories maintain that ancestry while the subject is born and raised in Jerusalem.",
-  appearanceContext:"Yemeni Jewish family backgrounds can include a broad range of West Asian and southern Arabian-associated complexions, dark hair textures and eye colors, with substantial individual and family variation; no single facial type is implied.",
-  appearanceLoci:{
-    skin:["medium warm-brown skin", "light-medium olive-brown skin", "medium neutral-brown skin", "deep warm-brown skin"],
-    hair:["dense near-black tightly curled hair", "dark-brown loose curls", "near-black wavy hair", "dark-brown coarse curls"],
-    eyes:["deep-brown almond-shaped eyes", "dark-brown round-almond eyes", "medium-brown almond-shaped eyes", "deep-brown slightly hooded eyes"],
-    face:["slightly long oval face", "balanced oval face", "broader midface with tapered jaw", "softly angular oval face"],
-    brows:["dense gently arched brows", "straight medium-width brows", "full low-arched brows", "moderately thick softly arched brows"],
-    nose:["medium bridge with rounded tip and moderate base", "straight medium-width bridge with softly rounded tip", "slightly convex bridge with moderate base", "shorter bridge with rounded tip and moderate width"],
-    mouth:["full balanced lips", "medium-full lips with fuller lower lip", "wide mouth with full lower lip", "defined cupid's bow with medium-full lips"],
-    jaw:["moderately defined jaw with rounded chin", "soft jaw with compact rounded chin", "gently tapered jaw with rounded chin", "moderate jaw with broader rounded chin"],
-    build:["lean-to-average frame", "compact average frame", "slender frame", "average-to-broad frame"],
-  },
   availableInstitutions:["school", "public_library", "public_transit", "neighborhood_health_service"],
   intellectualEnvironment:"School, books, news, internet access, public cultural institutions and ordinary conversation provide varied sources of ideas and disagreement.",
   familyProfiles:[
@@ -154,7 +142,6 @@ test("uncommon local physical ancestry remains valid when family origin makes it
     culturalContext:"The household lives ordinary urban life in Tbilisi.",
     heritageContext:"No operator-supplied heritage label.",
     familyOriginContext:"One caregiver is Georgian; the other was born in Ghana, came to Tbilisi as a university student in the 1990s, remained after graduation, and built a mixed Georgian-Ghanaian family whose relatives and family stories connect both places.",
-    appearanceContext:"A mixed family appearance range combining substantial West African and South Caucasus ancestry, including darker skin and tightly curled to wavy dark hair alongside broad variation in facial features and complexion; no single phenotype is implied.",
     familyProfiles:[{
       id:"georgian-ghanaian", share:1,
       familyOriginContext:"One caregiver is Georgian; the other was born in Ghana, came to Tbilisi as a university student in the 1990s, remained after graduation, and built a mixed Georgian-Ghanaian family whose relatives and family stories connect both places.",
@@ -216,7 +203,6 @@ test("automatic long-tail birth authors one World, reuses it, and leaves genome 
     culturalContext:`Ordinary civic, school, family and neighborhood life in ${selector.birthCity}.`,
     heritageContext:"No operator-supplied heritage label.",
     familyOriginContext:`The household has longstanding family roots in ${selector.country}, with relatives connected to ${selector.city} and elsewhere in the country.`,
-    appearanceContext:"A broad family appearance range with ordinary inherited variation and no single implied phenotype.",
   };
 
   let authoredCalls = 0;
