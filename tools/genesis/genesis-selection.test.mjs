@@ -8,7 +8,7 @@ import { composeBirthSubjectIdentity } from "./birth-material.mjs";
 import { sampleBirthplace } from "./birthplace-sampler.mjs";
 import {
   createWorldAuthoringFetch,
-  normalizeModernHeritage,
+  normalizeHeritage,
   normalizeGenesisWorldSelector,
   parseGenesisArgs,
   resolveGenesisWorldSelection,
@@ -80,10 +80,10 @@ test("Genesis keys create and reuse a place plus heritage World", async (t) => {
   assert.equal(options.world.display, "Israel/Jerusalem");
   assert.equal(options.heritage.display, "Yemeni Jewish");
 
-  const root = mkdtempSync(join(tmpdir(), "fibre-modern-world-"));
+  const root = mkdtempSync(join(tmpdir(), "fibre-genesis-world-"));
   t.after(() => rmSync(root, { recursive:true, force:true }));
   const selector = normalizeGenesisWorldSelector("Israel/Jerusalem");
-  const heritage = normalizeModernHeritage("Yemeni Jewish");
+  const heritage = normalizeHeritage("Yemeni Jewish");
   let authoredCalls = 0;
   const created = await resolveGenesisWorldSelection({
     selector,
@@ -277,7 +277,7 @@ test("authored World rejects demographic language inventories for one subject", 
   await assert.rejects(
     () => resolveGenesisWorldSelection({
       selector:normalizeGenesisWorldSelector("Israel/Jerusalem"),
-      heritage:normalizeModernHeritage("Russian Jewish"),
+      heritage:normalizeHeritage("Russian Jewish"),
       cohort,
       materialFixture,
       fixture,
