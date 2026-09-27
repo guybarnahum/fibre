@@ -415,10 +415,10 @@ test("legacy embodiment migration installs physical authority before correcting 
   const before=await service.diagnose(threadId);
   const legacy=before.findings.find(entry=>entry.code==="LEGACY_PHYSICAL_EMBODIMENT");
   assert.equal(legacy.state,"healthy");
-  assert.equal(legacy.migration.id,"legacy_physical_embodiment_v1");
+  assert.equal(legacy.migration.id,"physical_embodiment_v2");
 
   const result=await service.migrate(threadId,{
-    migrationId:"legacy_physical_embodiment_v1",
+    migrationId:"physical_embodiment_v2",
     migrationKey:"legacy_physical_repair_1",
     input:{
       physicalAncestry:{maternal:ancestry,paternal:ancestry},
@@ -427,7 +427,7 @@ test("legacy embodiment migration installs physical authority before correcting 
   });
 
   assert.equal(result.migrated,true);
-  assert.equal(thread.genome.physical.version,"physical-genome-v0.1","migration did not establish physical authority");
+  assert.equal(thread.genome.physical.version,"physical-genome-v0.2","migration did not establish physical authority");
   assert.equal(repairInput.correctedSpecification.method,
     "canonical synthetic portrait specification derived from the Thread's inherited physical genome");
   assert.deepEqual(repairInput.evidenceReferences,["evt_physical_genome_migrated_1"],
@@ -477,7 +477,7 @@ test("legacy embodiment migration retry resumes its matching pending canonical s
   embodiment.specificationDigest=embodimentSpecificationDigest(specification);
 
   const result=await service.migrate(threadId,{
-    migrationId:"legacy_physical_embodiment_v1",
+    migrationId:"physical_embodiment_v2",
     migrationKey:"legacy_physical_retry_1",
     input:{
       physicalAncestry:{maternal:ancestry,paternal:ancestry},
