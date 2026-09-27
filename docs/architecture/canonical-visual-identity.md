@@ -321,59 +321,37 @@ npm run fid:visual:renew -- \
 
 The command verifies staging deployment evidence, asserts that the renewal response preserves the specification digest, waits for the new root, then waits for Presentation and FIN media to converge.
 
-### Legacy physical embodiment migration
+### Appearance migration and re-rendering
 
-If a pre-physical-genome Thread's **specification itself** is materially wrong, unchanged-spec renewal is the wrong operation. Fibre may instead perform an explicit legacy physical embodiment migration when an operator supplies truthful physical-ancestry evidence.
+Fibre distinguishes **physical-authority migration** from **root re-rendering**.
 
-The migration boundary is strict:
+Use **appearance migration** when the Thread has no physical genome or carries an older appearance-model version. The operator supplies or reuses trustworthy maternal/paternal physical ancestry evidence. Fibre never infers ancestry from portrait pixels, name, birthplace, nationality, culture or language.
 
-- Fibre never infers physical ancestry from portrait pixels, name, birthplace, nationality, culture or language.
-- The operator supplies separate maternal and paternal ancestry mixtures.
-- Fibre uses the normal founder + recombination path to create one durable private physical genome. It does not invent admitted biological parent Threads.
-- The World records the migration as a replayable authority event, not a life event.
-- The replacement canonical specification is derived from that physical genome using the same production projection as modern Genesis.
-- Embodiment correction then supersedes the materially wrong legacy specification/root; the prior lineage remains historical.
-- Once `thread.genome.physical` exists, this migration cannot be used again merely to restyle the person.
+The migration uses the same shared founder/inheritance machinery as modern Genesis:
 
-The ancestry file contains only physical founder provenance, for example:
-
-```json
-{
-  "maternal": [
-    {
-      "population": "operator-confirmed family physical ancestry",
-      "share": 1,
-      "referencePopulation": "east_asia"
-    }
-  ],
-  "paternal": [
-    {
-      "population": "operator-confirmed family physical ancestry",
-      "share": 1,
-      "referencePopulation": "east_asia"
-    }
-  ]
-}
+```text
+parent genomes when known
+    or explicit founder-population priors when missing
+        -> current physical genome
+        -> shared physical phenotype projection
+        -> canonical visual specification
+        -> new Embodiment root
+        -> Presentation
+        -> FID
 ```
 
-Run one migration only after reviewing the Thread and explicitly confirming that ancestry evidence:
+A current physical genome cannot be replaced merely to obtain a preferred style or face. A versioned appearance-model upgrade is valid only when Fibre has explicitly superseded the older physical model. The old genome/specification/root and downstream credentials remain historical evidence.
 
-```bash
-npm run fid:visual:migrate-legacy -- \
-  --thread-id=thr_... \
-  --legacy-physical-ancestry-file=/path/to/physical-ancestry.json \
-  --reason="Migrate the materially inaccurate legacy visual authority to Fibre's current physical-inheritance model from operator-confirmed physical ancestry."
-```
+Use **re-render appearance** when the current physical genome and canonical specification are sound but the generated canonical root is poor. Re-rendering preserves the exact specification digest and creates only a new operational root plus normal downstream Presentation/FID convergence.
 
-If the command is interrupted after World accepts part of the migration, rerun the **exact same command**. The migration key is deterministic from the Thread, ancestry input and reason; World reuses the admitted physical-genome migration and any matching pending/current canonical supersession instead of creating another authority change.
+The 2026-09-27 Li Jing staging run proved the migration and replay machinery but **did not validate appearance quality**. The physical migration completed, exact replay was idempotent, and unchanged-spec renewal worked; however both generated portraits were visually inconsistent with the operator-confirmed East Asian ancestry. This observed failure reopened physical/population calibration and is now the primary regression case.
 
-The CLI waits for the corrected canonical root, Presentation projection and FID replacement to converge. During long waits it emits compact 10-second heartbeats with the current stage/state so normal asset generation does not look hung. Repeating the same completed migration is idempotent.
+The active model/calibration/migration sequence is [Physical appearance model calibration and migration plan](../validation/physical-appearance-calibration-plan.md). The provisional `physical-genome-v0.2` work must not be treated as accepted or deployed appearance quality until Slices 1-5 pass.
 
-Staging proof on 2026-09-27 used exact deployed SHA `4f3a9cedbddda9713088f5459a04399658b8bc6e`. A real legacy Thread moved from no physical genome and canonical Embodiment revision 2 to a durable physical genome, genome-derived specification, admitted revision 4 canonical root, projected official photo and FID revision 2 superseding the previous credential. An immediate exact replay returned `reused:true` with the same operation key, revision, root and FID.
 
 ## Operator runbook: correcting appearance
 
-A canonical appearance correction is an **authority correction**, not a presentation tweak. Use it only when the admitted canonical specification/root is materially wrong for this Thread: for example, renderer-selected morphology escaped the Thread's grounded family/inheritance evidence, the wrong subject was bound, or the admitted specification itself is incorrect.
+A manual canonical appearance correction is an **exceptional authority correction**, not the normal path for inherited physical appearance. Use appearance-model migration for missing/outdated physical authority and re-rendering for a poor root. Manual correction remains only for genuinely exceptional cases such as wrong-subject binding or an independently established specification error that cannot be resolved from physical authority.
 
 Do not use this path for aging, hairstyle, grooming, clothing, expression, temporary injury, weight variation, or aesthetic preference. Those belong to time-local appearance or derived presentation state.
 
@@ -444,7 +422,7 @@ After completion, verify in Thread Observatory:
 
 The generic **Fix** action in Thread Admin is deliberately not an appearance editor. **Fix** repairs derived state from existing authority; it must not author a new canonical person.
 
-If Admin exposes this workflow, it should be a separate explicit operator action such as **Correct appearance**, with the same authority semantics as the CLI: review the current canonical specification/evidence, submit one complete corrected specification with a reason, then let normal visual/FID reconciliation converge. It must not be hidden inside ordinary Fix or implemented as direct image replacement.
+Admin should expose a dedicated **Appearance** surface rather than hiding visual authority inside generic Fix. An outdated/missing physical model offers **Migrate appearance / Upgrade appearance model** with explicit maternal/paternal physical-origin evidence; a current model offers **Re-render appearance** without changing genome/specification. Manual **Correct appearance** remains an exceptional operator action, not the ordinary inherited-appearance workflow.
 
 ## Required end-to-end proof
 
