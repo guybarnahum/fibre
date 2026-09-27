@@ -29,6 +29,33 @@ const MULTI_AND_CHAIN_PATTERN = /\band\b[^\r\n.!?;—–]*\band\b/i;
 const PREDICATE_PATTERN = /^[a-z0-9][a-z0-9_]{0,63}$/;
 const PREDICATE_COMPONENT_BUNDLE_PATTERN = /(?:\r|\n|;|\u2014|\u2013|\s+and\s+)/i;
 
+// Registry-v2 rows written during the brief pre-witness transition encoded the
+// atomic policy in admission.policy and had no claimPredicate or claimDiscipline.
+// Keep that exact historical dialect readable without admitting it for new writes.
+const PRE_WITNESS_MULTI_SENTENCE_PATTERN = /[.!?]\s+[A-Z0-9]/;
+const PRE_WITNESS_EXPLICIT_BUNDLE_PATTERN = /\b(?:separately|in addition|additionally|another fact|also has|and also|secondly|thirdly)\b/i;
+
+function assertPreWitnessAtomicV1(assertion) {
+  if (assertion.claimPredicate !== undefined) {
+    throw new TypeError("pre-witness identity assertion cannot carry claimPredicate");
+  }
+  const policy = normalizePolicy("identity assertion.admission.policy", assertion.admission.policy);
+  if (policyKey(policy) !== policyKey(IDENTITY_ATOMIC_CLAIM_POLICY_V1)) {
+    throw new TypeError("historical identity assertion without claimDiscipline lacks the pre-witness atomic admission policy");
+  }
+  assertNonEmpty("identity assertion.meaning", assertion.meaning);
+  if (LIST_OR_PARAGRAPH_PATTERN.test(assertion.meaning)) {
+    throw new TypeError("identity assertion.meaning must be one material proposition, not a paragraph/list bundle");
+  }
+  if (PRE_WITNESS_MULTI_SENTENCE_PATTERN.test(assertion.meaning)) {
+    throw new TypeError("identity assertion.meaning must be one material proposition; split independently falsifiable sentences into separate assertions");
+  }
+  if (PRE_WITNESS_EXPLICIT_BUNDLE_PATTERN.test(assertion.meaning)) {
+    throw new TypeError("identity assertion.meaning appears to bundle independently addressable propositions; split the claim");
+  }
+  return assertion;
+}
+
 function policyKey(policy) {
   return `${policy.id}:${policy.version}`;
 }
@@ -120,6 +147,9 @@ const HISTORICAL_DISCIPLINE_VALIDATORS = Object.freeze({
 export function assertRecordedClaimDiscipline(assertion) {
   assertPlainObject("identity assertion", assertion);
   assertPlainObject("identity assertion.admission", assertion.admission);
+  if (assertion.admission.claimDiscipline === undefined) {
+    return assertPreWitnessAtomicV1(assertion);
+  }
   const witness = normalizePolicy(
     "identity assertion.admission.claimDiscipline",
     assertion.admission.claimDiscipline,
