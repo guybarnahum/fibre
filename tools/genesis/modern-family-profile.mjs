@@ -23,13 +23,39 @@ export const MODERN_FAMILY_PROFILES_SCHEMA=Object.freeze({
 });
 
 const fold=value=>String(value??"").trim().toLocaleLowerCase("en-US");
+const uniqueClean=values=>{
+  const seen=new Set();
+  const out=[];
+  for(const value of Array.isArray(values)?values:[]){
+    const clean=String(value??"").trim();
+    const k=fold(clean);
+    if(!clean||seen.has(k))continue;
+    seen.add(k);
+    out.push(clean);
+  }
+  return out;
+};
+
+export function normalizeModernFamilyProfiles(profiles){
+  if(!Array.isArray(profiles))return profiles;
+  return profiles.map(profile=>({
+    ...profile,
+    id:String(profile?.id??"").trim(),
+    familyOriginContext:String(profile?.familyOriginContext??"").trim(),
+    languages:uniqueClean(profile?.languages),
+    raisedLanguages:uniqueClean(profile?.raisedLanguages),
+    femaleGivenNames:uniqueClean(profile?.femaleGivenNames),
+    maleGivenNames:uniqueClean(profile?.maleGivenNames),
+    familyNames:uniqueClean(profile?.familyNames),
+  }));
+}
+
 
 function validateLanguages(values,label){
   if(!Array.isArray(values)||values.length<1||values.length>3)throw new TypeError(`${label} must contain 1 to 3 languages`);
   const clean=values.map(value=>String(value??"").trim());
   if(clean.some(value=>!value))throw new TypeError(`${label} contains an empty language`);
   if(clean.some(value=>value.length>48||/[;,|\n]|」「/u.test(value)||value.includes("/")||/\s(?:and|or)\s/iu.test(value)))throw new TypeError(`${label} must contain one bare language name per item`);
-  if(new Set(clean.map(fold)).size!==clean.length)throw new TypeError(`${label} contains duplicate languages`);
   return clean;
 }
 
@@ -37,7 +63,6 @@ function validateNames(values,label){
   if(!Array.isArray(values)||values.length<12)throw new TypeError(`${label} must contain at least 12 names`);
   const clean=values.map(value=>String(value??"").trim());
   if(clean.some(value=>!value))throw new TypeError(`${label} contains an empty name`);
-  if(new Set(clean.map(fold)).size!==clean.length)throw new TypeError(`${label} contains duplicate names`);
 }
 
 export function validateModernFamilyProfiles(profiles){
@@ -63,6 +88,7 @@ export function validateModernFamilyProfiles(profiles){
 }
 
 export function sampleModernFamilyProfile({ profiles, requestId }) {
+  profiles=normalizeModernFamilyProfiles(profiles);
   validateModernFamilyProfiles(profiles);
   if (typeof requestId !== "string" || requestId.trim() === "") throw new TypeError("modern Genesis family sampling requires requestId");
 
