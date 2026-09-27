@@ -16,6 +16,15 @@ function assertRepairableCanonicalPortrait(embodiment) {
   }
 }
 
+function assertRepairRecordedAt(current, recordedAt) {
+  if (typeof recordedAt !== "string" || !Number.isFinite(Date.parse(recordedAt))) {
+    throw new TypeError("visual identity repair recordedAt must be an ISO timestamp");
+  }
+  if (Date.parse(recordedAt) < Date.parse(current.recordedAt)) {
+    throw new TypeError("visual identity repair cannot predate the current embodiment");
+  }
+}
+
 export function repairCanonicalVisualIdentity({
   currentEmbodiment: candidate,
   correctedSpecification,
@@ -26,14 +35,12 @@ export function repairCanonicalVisualIdentity({
   const current = normalizeEmbodimentRepresentation(candidate);
   assertRepairableCanonicalPortrait(current);
 
-  if (typeof recordedAt !== "string" || !Number.isFinite(Date.parse(recordedAt))) {
-    throw new TypeError("visual identity repair recordedAt must be an ISO timestamp");
-  }
-  if (Date.parse(recordedAt) < Date.parse(current.recordedAt)) {
-    throw new TypeError("visual identity repair cannot predate the current embodiment");
-  }
+  assertRepairRecordedAt(current, recordedAt);
 
   const specificationDigest = embodimentSpecificationDigest(correctedSpecification);
+  if (specificationDigest === current.specificationDigest) {
+    throw new TypeError("visual identity correction requires a changed canonical specification; use renewal to regenerate the same specification");
+  }
   return normalizeEmbodimentRepresentation({
     ...current,
     revision: current.revision + 1,
@@ -61,11 +68,27 @@ export function renewCanonicalVisualIdentity({
 } = {}) {
   const current = normalizeEmbodimentRepresentation(candidate);
   assertRepairableCanonicalPortrait(current);
-  return repairCanonicalVisualIdentity({
-    currentEmbodiment: current,
-    correctedSpecification: current.specification,
-    reason,
-    evidenceReferences,
+  assertRepairRecordedAt(current, recordedAt);
+  if (typeof reason !== "string" || reason.trim().length < 16) {
+    throw new TypeError("visual identity renewal requires a meaningful reason");
+  }
+  if (!Array.isArray(evidenceReferences) || evidenceReferences.length === 0) {
+    throw new TypeError("visual identity renewal requires durable evidence references");
+  }
+  return normalizeEmbodimentRepresentation({
+    ...current,
+    revision: current.revision + 1,
+    supersedesRevision: current.revision,
+    respecification: null,
+    renewal: {
+      reason: reason.trim(),
+      priorSpecificationDigest: current.specificationDigest,
+      priorReferenceObjectRef: current.asset.referenceObjectRef,
+      evidenceReferences,
+    },
+    status: "pending_generation",
+    unavailableReason: null,
+    asset: null,
     recordedAt,
   });
 }
