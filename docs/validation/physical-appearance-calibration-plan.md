@@ -30,7 +30,7 @@ The current `physical-genome-v0.2` work on `main` is provisional and must not be
 
 ## Slice 1 — Correct the physical-genome contract
 
-**Status: implemented on `main`; pending focused validation.**
+**Status: validated 2026-09-27.** Focused validation passed 39/39; family experiment showed 5/4/4 distinct sibling phenotype signatures, 6 distinct grandchild signatures, and valid first-/second-generation allele inheritance.
 
 Establish the model boundary before doing more calibration:
 
@@ -61,6 +61,8 @@ Acceptance:
 - child alleles remain traceable to the corresponding parent.
 
 ## Slice 2 — Calibrate the East Asian hierarchy
+
+**Status: active.**
 
 Replace hand-tuned appearance constants with measured 3D morphology distributions.
 
