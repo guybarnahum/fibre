@@ -47,7 +47,7 @@ The conceptual appearance systems are:
 
 A system may contain a few correlated loci where needed. The representation stays fixed-size, deterministic and cheap.
 
-Each locus carries two alleles, one inherited from each biological parent. The current compact expression rule blends similar-strength alleles; when their dominance differs materially, the stronger allele masks the weaker one. **A masked allele remains in the genome and remains heritable**, so it can reappear in a descendant. This rule is deliberately small and experimental rather than a claim to model molecular genetics.
+Each locus carries two quantitative alleles, one inherited from each biological parent. The current compact expression rule is deliberately additive: the expressed coordinate is the midpoint of the two inherited values. Fibre does not invent a random dominance coefficient for an abstract morphology coordinate. Both alleles remain in the genome and remain independently transmissible to descendants. This rule is small, calibratable and explicitly an abstraction rather than a claim to model molecular genetics.
 
 This is intentionally genotype-like rather than a DNA simulation. Fibre does not model chromosomes, nucleotide sequences, meiosis, disease genetics or molecular biology merely to render believable inherited people.
 
@@ -75,7 +75,7 @@ parent A [a1,a2] -- choose one --\
 parent B [b1,b2] -- choose one --/
 ```
 
-The child's paired values are stored, not only their expressed phenotype. Recessive or otherwise unexpressed material can therefore reappear in later generations.
+The child's paired values are stored, not only their expressed midpoint. Recombination can therefore pass different parental alleles into later generations even though current expression is additive.
 
 Correlated appearance systems may share a small number of latent factors, but Fibre does not average the parents into one face. Siblings should resemble the same family while remaining distinct.
 
@@ -91,7 +91,7 @@ parental ancestry history
   -> one plausible founder genome
 ```
 
-Ancestry provenance remains semantic and inspectable. A separate small physical-population basis shifts overlapping distributions over the same physical loci. It is not an ethnicity-to-face table and must not become a giant taxonomy.
+Ancestry provenance remains semantic and inspectable. A small **hierarchical physical-population prior** shifts overlapping distributions over the same physical loci. Root priors explicitly define every locus; child populations inherit from a named geographic parent until evidence supports calibrated child-specific overrides. Unknown populations and incomplete effective priors fail rather than silently collapsing to a neutral face. The hierarchy is calibration structure, not a demographic verdict or a renderer label.
 
 Founder sampling must preserve substantial within-population variation. Two founders with the same ancestry should usually have different genomes.
 
