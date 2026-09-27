@@ -1,0 +1,256 @@
+{
+  "fixtureVersion": "pr39-modern-birth-material-v2",
+  "purpose": "World-local material for composing fresh Genesis subjects. Naming, family origin, and separate maternal/paternal physical-ancestry provenance are inputs; no pre-authored Fibre person or reusable Thread identity is stored here.",
+  "slots": [
+    {
+      "slot": 1,
+      "birthCity": "Tbilisi, Georgia",
+      "nameOrder": "given_family",
+      "femaleGivenNames": [
+        "Ketevan",
+        "Mariam",
+        "Salome",
+        "Ana",
+        "Tamar",
+        "Elene"
+      ],
+      "maleGivenNames": [
+        "Irakli",
+        "Giorgi",
+        "Nikoloz",
+        "Sandro",
+        "Levan",
+        "Dato"
+      ],
+      "familyNames": [
+        "Beridze",
+        "Kapanadze",
+        "Maisuradze",
+        "Gelashvili",
+        "Lomidze",
+        "Tsiklauri"
+      ],
+      "familyOriginContext": "The default fixture household has longstanding family roots in Georgia and the South Caucasus, with relatives in Tbilisi and elsewhere in Georgia; no recent long-distance migration is part of this household history.",
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "South Caucasus family · west_asia",
+            "share": 1,
+            "referencePopulation": "west_asia"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "South Caucasus family · west_asia",
+            "share": 1,
+            "referencePopulation": "west_asia"
+          }
+        ]
+      }
+    },
+    {
+      "slot": 2,
+      "birthCity": "Kaohsiung, Taiwan",
+      "nameOrder": "family_given",
+      "femaleGivenNames": [
+        "Yi-Ting",
+        "Yu-Ting",
+        "Hsin-Yi",
+        "Chia-Hui",
+        "Pei-Wen",
+        "Shu-Fen"
+      ],
+      "maleGivenNames": [
+        "Hao-Ran",
+        "Chih-Hao",
+        "Jun-Hao",
+        "Yu-Cheng",
+        "Po-Han",
+        "Chia-Wei"
+      ],
+      "familyNames": [
+        "Chen",
+        "Lin",
+        "Huang",
+        "Wu",
+        "Tsai",
+        "Liu"
+      ],
+      "familyOriginContext": "The default fixture household has longstanding Taiwanese family roots in southern Taiwan, with relatives and family history centered in Taiwan rather than a recent long-distance migration story.",
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "Taiwanese family · east_asia",
+            "share": 1,
+            "referencePopulation": "east_asia"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "Taiwanese family · east_asia",
+            "share": 1,
+            "referencePopulation": "east_asia"
+          }
+        ]
+      }
+    },
+    {
+      "slot": 3,
+      "birthCity": "Recife, Brazil",
+      "nameOrder": "given_family",
+      "femaleGivenNames": [
+        "Juliana",
+        "Beatriz",
+        "Luana",
+        "Camila",
+        "Isabela",
+        "Larissa"
+      ],
+      "maleGivenNames": [
+        "Thiago",
+        "Rafael",
+        "João",
+        "Lucas",
+        "Pedro",
+        "Matheus"
+      ],
+      "familyNames": [
+        "Silva",
+        "Santos",
+        "Oliveira",
+        "Costa",
+        "Souza",
+        "Almeida"
+      ],
+      "familyOriginContext": "The default fixture household has multigenerational roots in northeastern Brazil, with a mixed Brazilian family history that may include African, European and Indigenous ancestry across generations without assigning a single ancestry identity to the subject.",
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "Northeastern Brazilian mixed family · afr_west",
+            "share": 0.5,
+            "referencePopulation": "afr_west"
+          },
+          {
+            "population": "Northeastern Brazilian mixed family · eur_south",
+            "share": 0.35,
+            "referencePopulation": "eur_south"
+          },
+          {
+            "population": "Northeastern Brazilian mixed family · indigenous_america",
+            "share": 0.15,
+            "referencePopulation": "indigenous_america"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "Northeastern Brazilian mixed family · eur_south",
+            "share": 0.45,
+            "referencePopulation": "eur_south"
+          },
+          {
+            "population": "Northeastern Brazilian mixed family · afr_west",
+            "share": 0.35,
+            "referencePopulation": "afr_west"
+          },
+          {
+            "population": "Northeastern Brazilian mixed family · indigenous_america",
+            "share": 0.2,
+            "referencePopulation": "indigenous_america"
+          }
+        ]
+      }
+    },
+    {
+      "slot": 4,
+      "birthCity": "Fes, Morocco",
+      "nameOrder": "given_family",
+      "femaleGivenNames": [
+        "Kenza",
+        "Lina",
+        "Yasmine",
+        "Sara",
+        "Meryem",
+        "Imane"
+      ],
+      "maleGivenNames": [
+        "Anas",
+        "Omar",
+        "Hamza",
+        "Adam",
+        "Mehdi",
+        "Amine"
+      ],
+      "familyNames": [
+        "El Idrissi",
+        "Benjelloun",
+        "Alaoui",
+        "Bennani",
+        "Tazi",
+        "Berrada"
+      ],
+      "familyOriginContext": "The default fixture household has longstanding Moroccan and Maghrebi family roots centered in Fès and nearby regions, with extended-family ties in Morocco and no required recent long-distance migration story.",
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "Moroccan Maghrebi family · west_asia",
+            "share": 1,
+            "referencePopulation": "west_asia"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "Moroccan Maghrebi family · west_asia",
+            "share": 1,
+            "referencePopulation": "west_asia"
+          }
+        ]
+      }
+    },
+    {
+      "slot": 5,
+      "birthCity": "Hobart, Australia",
+      "nameOrder": "given_family",
+      "femaleGivenNames": [
+        "Amelia",
+        "Charlotte",
+        "Sophie",
+        "Grace",
+        "Matilda",
+        "Zoe"
+      ],
+      "maleGivenNames": [
+        "Ethan",
+        "Oliver",
+        "Henry",
+        "Liam",
+        "William",
+        "Noah"
+      ],
+      "familyNames": [
+        "Carter",
+        "Bennett",
+        "Wilson",
+        "Harris",
+        "Campbell",
+        "Foster"
+      ],
+      "familyOriginContext": "The default fixture household has multigenerational Australian family roots in Tasmania with predominantly British and Irish ancestry in this fixture household; relatives and family stories connect the household to Tasmania and other parts of Australia.",
+      "physicalAncestry": {
+        "maternal": [
+          {
+            "population": "British-Irish Australian family · eur_north",
+            "share": 1,
+            "referencePopulation": "eur_north"
+          }
+        ],
+        "paternal": [
+          {
+            "population": "British-Irish Australian family · eur_north",
+            "share": 1,
+            "referencePopulation": "eur_north"
+          }
+        ]
+      }
+    }
+  ]
+}
