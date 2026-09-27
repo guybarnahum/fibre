@@ -269,6 +269,7 @@ function legacyProjectionObservation(seedAssertion, projectedAssertion, recorded
     behavioralStatus: "context_only",
     admission: {
       policy: { id: "legacy_projection_drift_migration", version: "2" },
+      claimDiscipline: { ...seedAssertion.admission.claimDiscipline },
       admittedBy: {
         entityId: "fibre.world-kernel",
         kind: "institution",
