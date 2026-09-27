@@ -340,7 +340,6 @@ export class FibreWorldDurableObject extends DurableObject {
       if (!privateOperatorAuthorized(request, this.env)) {
         return repairJson(403, { error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, false);
       }
-      const runtime = this.runtimeForRequest();
       const threadId = decodeURIComponent(repairMatch[1]);
       try {
         const health = await this.healthProjectionForRequest().inspect(threadId);
@@ -356,9 +355,25 @@ export class FibreWorldDurableObject extends DurableObject {
           errorName:error?.constructor?.name ?? "Error",
           message:String(error?.message ?? error).slice(0,512),
         }));
-        const response = await runtime.repairApi.fetch(request);
-        if (response !== null) return response;
-        throw error;
+        try {
+          const response = await this.runtimeForRequest().repairApi.fetch(request);
+          if (response !== null) return response;
+          throw new Error("Thread repair fallback did not recognize the repair route");
+        } catch (fallbackError) {
+          console.error(JSON.stringify({
+            event:"thread-repair-diagnosis-failed",
+            threadId,
+            errorName:fallbackError?.constructor?.name ?? "Error",
+            message:String(fallbackError?.message ?? fallbackError).slice(0,512),
+          }));
+          return repairJson(503, {
+            error:{
+              code:"THREAD_REPAIR_DIAGNOSIS_FAILED",
+              detail:fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+              retryable:true,
+            },
+          }, false);
+        }
       }
     }
     const runtime = this.runtimeForRequest();
