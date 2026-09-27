@@ -15,6 +15,7 @@ import { genesisSexForThread, normalizeGenesisSex } from "./genesis-sex.mjs";
 import { sampleBirthplace } from "./birthplace-sampler.mjs";
 
 const GENOMES = Object.freeze([genome1, genome2, genome3, genome4, genome5]);
+// Historical deterministic namespace: renaming this string would reseed authored births.
 const AUTHORING_VERSION = "fibre-modern-birth-authoring-v1";
 
 const WORLD_SCHEMA = Object.freeze({
