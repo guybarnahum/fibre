@@ -87,7 +87,7 @@ export function selectDefaultBirthplace(requestId) {
   return normalizeGenesisWorldSelector(sampleBirthplace(nonEmpty("Genesis requestId", requestId)).place);
 }
 
-export function normalizeModernHeritage(raw) {
+export function normalizeHeritage(raw) {
   const display = nonEmpty("heritage", raw).replace(/\s+/gu, " ");
   return Object.freeze({ display, key: fold(display), slug: fold(display) });
 }
@@ -126,7 +126,7 @@ export function parseGenesisArgs(argv = []) {
     }
     if (argument.startsWith("--heritage=")) {
       if (heritage !== null) throw new TypeError("choose only one Genesis heritage");
-      heritage = normalizeModernHeritage(argument.slice("--heritage=".length));
+      heritage = normalizeHeritage(argument.slice("--heritage=".length));
       continue;
     }
     const explicitPlace = argument.startsWith("--place=") ? argument.slice("--place=".length) : null;
