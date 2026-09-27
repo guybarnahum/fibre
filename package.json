@@ -87,7 +87,7 @@
     "birth-center": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning infra/deployments/birth-center/local/server.mjs",
     "genesis:e2e": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-development-e2e.mjs",
     "genesis:e2e:staging": "node tools/deployment/run-with-progress.mjs genesis:e2e:staging node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/genesis-development-e2e-staging.mjs",
-    "genesis:modern:staging": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/generate-modern-thread.mjs",
+    "genesis:birth:staging": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/genesis/generate-thread.mjs",
     "population:lab": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/population-lab/population-lab.mjs",
     "population:family": "node --disable-warning=ExperimentalWarning tools/population-lab/family-inheritance-experiment.mjs",
     "population:family:visual": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/population-lab/family-renderer-fidelity.mjs",
