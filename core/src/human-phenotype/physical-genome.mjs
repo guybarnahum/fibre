@@ -17,9 +17,9 @@ function unit(seed, locus) {
 
 const clamp=value=>Math.max(-1,Math.min(1,Number(value)));
 
-function allele(value, dominance=0) {
+function allele(value) {
   if(!Number.isFinite(Number(value))) throw Error("physical allele value is required");
-  return {value:clamp(value),dominance:clamp(dominance)};
+  return {value:clamp(value)};
 }
 
 export function createPhysicalGenome(loci) {
@@ -27,7 +27,7 @@ export function createPhysicalGenome(loci) {
   for(const name of LOCI) {
     const pair=loci?.[name];
     if(!Array.isArray(pair)||pair.length!==2) throw Error(`${name} requires two inherited alleles`);
-    genome.loci[name]=pair.map(x=>allele(x.value,x.dominance));
+    genome.loci[name]=pair.map(x=>allele(x.value));
   }
   return genome;
 }
@@ -51,12 +51,7 @@ export function expressPhysicalGenome(genome) {
   for(const name of LOCI) {
     const [a,b]=genome?.loci?.[name]??[];
     if(!a||!b) throw Error(`${name} missing from physical genome`);
-    const dominanceGap=a.dominance-b.dominance;
-    if(Math.abs(dominanceGap)>=.5) expressed[name]=clamp(dominanceGap>0?a.value:b.value);
-    else {
-      const wa=Math.max(.05,1+a.dominance),wb=Math.max(.05,1+b.dominance);
-      expressed[name]=clamp((a.value*wa+b.value*wb)/(wa+wb));
-    }
+    expressed[name]=clamp((Number(a.value)+Number(b.value))/2);
   }
   return expressed;
 }
