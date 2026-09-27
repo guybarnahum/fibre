@@ -3,14 +3,14 @@ import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
 
 import {physicalPhenotypeRenderingProjection} from "../../core/src/human-phenotype/index.mjs";
-import {composeModernSubjectIdentity,selectModernNameParts} from "../genesis/modern-birth-material.mjs";
+import {composeBirthSubjectIdentity,selectBirthNameParts} from "../genesis/birth-material.mjs";
 import {populationPortraitPrompt} from "./portrait-prompt.mjs";
 import {
-  MODERN_FAMILY_PROFILES_SCHEMA,
-  normalizeModernFamilyProfiles,
-  sampleModernFamilyProfile,
-  validateModernFamilyProfiles,
-} from "../genesis/modern-family-profile.mjs";
+  FAMILY_PROFILES_SCHEMA,
+  normalizeFamilyProfiles,
+  sampleFamilyProfile,
+  validateFamilyProfiles,
+} from "../genesis/family-profile.mjs";
 
 const MODEL="gpt-5.1-2025-11-13";
 const MORPH=["faceWidth","faceLength","midfaceProminence","zygomaticProjection","jawWidth","chinProjection","eyeSpacing","eyeShape","epicanthicFold","upperEyelidExposure","orbitalDepth","foreheadProportion","browProminence","noseWidth","noseProjection","nasalBridgeHeight","lipFullness"];
@@ -42,7 +42,7 @@ async function resilientFetch(url,options){
   throw last;
 }
 
-const populationSchema={type:"object",additionalProperties:false,required:["profiles"],properties:{profiles:MODERN_FAMILY_PROFILES_SCHEMA}};
+const populationSchema={type:"object",additionalProperties:false,required:["profiles"],properties:{profiles:FAMILY_PROFILES_SCHEMA}};
 
 async function populationContext(place,year,model){
   const request=async extra=>{
@@ -53,7 +53,7 @@ async function populationContext(place,year,model){
         model,reasoning:{effort:"low"},
         input:[
           {role:"system",content:[{type:"input_text",text:[
-            "Population Lab calibration for Fibre. Author the same bounded family-profile material used by modern Genesis: three to eight weighted coherent household-origin profiles for people born in the requested place and era.",
+            "Population Lab calibration for Fibre. Author the same bounded family-profile material used by Genesis: three to eight weighted coherent household-origin profiles for people born in the requested place and era.",
             "This is an experimental prior, not demographic truth, not a census model and not a diversity quota. Weight ordinary locally common family-origin paths more heavily; include migration, diaspora and mixed-family paths only when plausible.",
             "A profile is one concrete hypothetical family path, not a demographic umbrella and not a whole-person stereotype. Write it as though it describes one actual family: choose one specific roots/migration/kin path rather than alternatives such as Pakistani or Bangladeshi, Nigerian or Ghanaian, or Tamil/Kannada/Telugu/Kerala bundled together. A mixed family is valid only when the profile explicitly gives the concrete maternal and paternal paths that are mixed. familyOriginContext may describe roots, migration, relatives and household language context, but not class, occupation, migration job/reason, politics, diet, hobbies, personality, values or lifestyle. Keep religion and observance out of familyOriginContext; naming material may reflect a family naming tradition without asserting the subject's belief.",
             "Each profile owns familyOriginContext, one to three raised/eventual personal languages, naming order, at least twenty-four female given names, twenty-four male given names, twenty-four family names, and separate maternal/paternal physicalAncestry. Never merge mutually exclusive roots merely to broaden city coverage; if two roots imply different naming, language or physical ancestry, use separate profiles unless the hypothetical family is explicitly mixed across those exact parental lines.",
@@ -76,8 +76,8 @@ async function populationContext(place,year,model){
     try{return JSON.parse(text)}catch{return{parseError:true,status:json.status,reason:json.incomplete_details?.reason??null,text}}
   };
   const admit=output=>{
-    const profiles=normalizeModernFamilyProfiles(output.profiles);
-    validateModernFamilyProfiles(profiles);
+    const profiles=normalizeFamilyProfiles(output.profiles);
+    validateFamilyProfiles(profiles);
     return {...output,profiles};
   };
   const first=await request("");
@@ -96,11 +96,11 @@ const sexFor=requestId=>Number.parseInt(createHash("sha256").update(requestId+"\
 function generate(place,count,seed,context){
   return Array.from({length:count},(_,index)=>{
     const requestId=`population-lab:${seed}:${place}:${index}`;
-    const family=sampleModernFamilyProfile({profiles:context.profiles,requestId});
+    const family=sampleFamilyProfile({profiles:context.profiles,requestId});
     const material={...family,birthCity:place};
     const sex=sexFor(requestId);
-    const identity=composeModernSubjectIdentity({requestId,material});
-    const names=selectModernNameParts({requestId,material});
+    const identity=composeBirthSubjectIdentity({requestId,material});
+    const names=selectBirthNameParts({requestId,material});
     const projection=physicalPhenotypeRenderingProjection(identity.physicalGenome,{sex});
     return{
       name:sex==="female"?identity.femaleName:identity.maleName,
@@ -180,7 +180,7 @@ function score(people,contexts){
     const counts=new Map(context.profiles.map(profile=>[profile.id,0]));
     const n=10_000;
     for(let index=0;index<n;index++){
-      const profile=sampleModernFamilyProfile({profiles:context.profiles,requestId:`population-probe:${context.place}:${index}`});
+      const profile=sampleFamilyProfile({profiles:context.profiles,requestId:`population-probe:${context.place}:${index}`});
       counts.set(profile.id,counts.get(profile.id)+1);
     }
     const profiles=context.profiles.map(profile=>{
