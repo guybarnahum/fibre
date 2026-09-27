@@ -367,7 +367,9 @@ npm run fid:visual:migrate-legacy -- \
 
 If the command is interrupted after World accepts part of the migration, rerun the **exact same command**. The migration key is deterministic from the Thread, ancestry input and reason; World reuses the admitted physical-genome migration and any matching pending/current canonical supersession instead of creating another authority change.
 
-The CLI waits for the corrected canonical root, Presentation projection and FID replacement to converge. Repeating the same completed migration is idempotent.
+The CLI waits for the corrected canonical root, Presentation projection and FID replacement to converge. During long waits it emits compact 10-second heartbeats with the current stage/state so normal asset generation does not look hung. Repeating the same completed migration is idempotent.
+
+Staging proof on 2026-09-27 used exact deployed SHA `4f3a9cedbddda9713088f5459a04399658b8bc6e`. A real legacy Thread moved from no physical genome and canonical Embodiment revision 2 to a durable physical genome, genome-derived specification, admitted revision 4 canonical root, projected official photo and FID revision 2 superseding the previous credential. An immediate exact replay returned `reused:true` with the same operation key, revision, root and FID.
 
 ## Operator runbook: correcting appearance
 
