@@ -3,6 +3,7 @@ import {createHash} from "node:crypto";
 import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
 import {physicalPhenotypeRenderingProjection} from "../../core/src/human-phenotype/index.mjs";
+import {populationPortraitPrompt} from "./portrait-prompt.mjs";
 
 const arg=(name,fallback)=>process.argv.find(x=>x.startsWith("--"+name+"="))?.slice(name.length+3)??fallback;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -50,7 +51,7 @@ function subjects(experiment,siblingCount,grandchildCount){
 }
 
 async function render(subject,dir,index,model){
-  const prompt=`Edge-to-edge realistic neutral documentary head-and-shoulders portrait photograph of one fictional adult age 25. Sex: ${subject.sex}. ${subject.renderDescription} Render exactly this concrete inherited phenotype. Preserve facial geometry, pigmentation, hair, eyes, build cues and ordinary asymmetry. Do not exaggerate continuous coordinates into caricature; nearby values should produce subtle nearby physical differences. Do not beautify, homogenize, slim, symmetrize, glamourize, or substitute a generic attractive face. Do not infer or add ancestry, race, ethnicity, nationality, culture, personality, class, religion or behavior. Neutral expression, ordinary skin texture, simple dark top, plain photographic background.`;
+  const prompt=populationPortraitPrompt({sex:subject.sex,renderDescription:subject.renderDescription});
   const response=await resilientFetch("https://api.openai.com/v1/images/generations",{
     method:"POST",
     headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},
