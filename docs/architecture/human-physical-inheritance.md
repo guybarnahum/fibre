@@ -182,13 +182,13 @@ Modern Genesis persists the physical genome as private inherited Thread state, c
 
 A cached place/era authoring result now carries a bounded weighted distribution of plausible family-origin profiles rather than forcing every birth through one household ancestry. Each birth deterministically samples one profile from that cached distribution using the shared population-family sampler. The selected profile changes both maternal/paternal physical ancestry and the causal family-origin context used by Genesis, while the expensive World authoring call remains once per cached place/heritage context. This is deliberately not a demographic quota system and does not use a race switch.
 
-### Naming Realism — implemented, pending focused validation
+### Naming Realism — focused validated
 
 Naming and personal language paths now belong to the sampled family profile rather than the place-level World. Each cached profile carries its own naming order plus bounded female, male and family-name material; a birth deterministically selects from that material without another model call. The former six-birth family-name stepping is gone, so nearby births do not mechanically move through tiny surname blocks. The family profile, not physical ancestry alone and not birthplace directly, is the causal naming authority. Names remain consequences of family/lived context, never ancestry inference from a person.
 
-### Population Calibration — deferred until family and naming sampling are wired
+### Population Calibration — implemented, pending empirical runs
 
-Exercise the exact production path in Population Lab across repeated births in the same locality, multiple localities, mixed families, siblings and multigenerational families. Measure family-profile coverage, within-family resemblance, between-family individuality, phenotype collapse, name collisions and renderer fidelity. Adjust experimental physical priors only when a specific measured failure warrants it.
+Population Lab now reuses the exact modern-Genesis family-profile sampler, deterministic naming selection and physical-inheritance path. The model still authors the experimental place/era family-profile prior and age-local lived physical state, but it no longer invents individual names, household languages or physical inheritance after a family is sampled. Text cohorts report family-profile coverage, local profile diversity, full-name collisions, name concentration, inherited-phenotype collisions, per-domain collapse and cross-place morphology separation. The separate deterministic family experiment remains the evidence boundary for same-parent sibling resemblance, mixed parentage and multigenerational transmission; a shared family-origin profile is not treated as a biological family. Small rendered cohorts remain necessary for renderer-fidelity inspection. Calibration changes require a specific observed failure rather than demographic quota matching.
 
 ### Existing Thread Visual Renewal — deferred until calibration is accepted
 
