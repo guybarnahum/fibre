@@ -1,0 +1,158 @@
+import {
+  normalizeAncestry,
+  resolveBirthPhysicalInheritance,
+  phenotypeFromPhysicalGenome,
+} from "#core/src/human-phenotype/index.mjs";
+import {
+  boundedThreadScopedId,
+  canonicalJson,
+  sha256,
+  threadStateHash,
+} from "./persistence-common.mjs";
+import { validateThreadSnapshot } from "./persistence-domain.mjs";
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
+
+const OPERATION_KEY=/^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
+
+function normalizeOperationKey(value){
+  if(typeof value!=="string"||!OPERATION_KEY.test(value))throw new TypeError("physical genome migration operationKey must be a Fibre identifier up to 221 characters");
+  return value;
+}
+
+function normalizePhysicalAncestry(value){
+  if(!value||typeof value!=="object"||Array.isArray(value))throw new TypeError("physicalAncestry must be an object");
+  const maternal=normalizeAncestry(value.maternal);
+  const paternal=normalizeAncestry(value.paternal);
+  return Object.freeze({maternal,paternal});
+}
+
+function eventId(threadId,operationKey){
+  return boundedThreadScopedId({
+    prefix:"evt",
+    threadId,
+    suffix:`physical_genome_${sha256(operationKey).slice(0,24)}`,
+  });
+}
+
+function resultGenome(threadId,physicalAncestry){
+  const ancestryDigest=sha256(canonicalJson(physicalAncestry));
+  return resolveBirthPhysicalInheritance({
+    maternalAncestry:physicalAncestry.maternal,
+    paternalAncestry:physicalAncestry.paternal,
+    seed:`legacy-physical-embodiment:${threadId}:${ancestryDigest}`,
+  }).genome;
+}
+
+export class ThreadPhysicalGenomeMigrationStore{
+  #database;
+
+  constructor(storage){
+    this.#database=openWorldStateDatabase(storage,{storeName:"ThreadPhysicalGenomeMigrationStore"});
+  }
+
+  close(){this.#database.close();}
+
+  migrate(thread,{physicalAncestry,operationKey,changedAt=new Date().toISOString()}={}){
+    validateThreadSnapshot(thread);
+    const key=normalizeOperationKey(operationKey);
+    const ancestry=normalizePhysicalAncestry(physicalAncestry);
+    const genome=resultGenome(thread.threadId,ancestry);
+    phenotypeFromPhysicalGenome(genome,{sex:thread.identity?.sex});
+
+    const migrationEventId=eventId(thread.threadId,key);
+    const existing=this.#database.prepare(
+      "SELECT event_type,payload_json FROM thread_events WHERE event_id=?",
+    ).get(migrationEventId);
+    if(existing!==undefined){
+      if(existing.event_type!=="THREAD_PHYSICAL_GENOME_MIGRATED"){
+        throw new Error(`physical genome operationKey ${key} resolved to an incompatible World event`);
+      }
+      const payload=JSON.parse(existing.payload_json);
+      if(
+        payload?.operationKey!==key
+        || canonicalJson(payload?.physicalAncestry??null)!==canonicalJson(ancestry)
+        || canonicalJson(payload?.physicalGenome??null)!==canonicalJson(genome)
+      ){
+        throw new TypeError(`physical genome operationKey ${key} was already used with different migration input`);
+      }
+      const currentRow=this.#database.prepare("SELECT state_json FROM threads WHERE thread_id=?").get(thread.threadId);
+      if(currentRow===undefined)throw new Error(`Thread ${thread.threadId} was not found`);
+      return Object.freeze({
+        migrated:false,
+        reused:true,
+        eventId:migrationEventId,
+        physicalAncestry:ancestry,
+        physicalGenome:genome,
+        thread:JSON.parse(currentRow.state_json),
+      });
+    }
+
+    if(thread.genome.physical!==undefined){
+      throw new TypeError("physical genome is already authoritative for this Thread");
+    }
+
+    const next=structuredClone(thread);
+    next.version+=1;
+    next.genome={...next.genome,physical:structuredClone(genome)};
+    next.provenance={...next.provenance,lastEventId:migrationEventId};
+    validateThreadSnapshot(next);
+
+    const stateJson=canonicalJson(next);
+    const stateHash=threadStateHash(next);
+    const payload={operationKey:key,physicalAncestry:ancestry,physicalGenome:genome};
+    const actor={entityId:"fibre.admin.operator",kind:"operator",displayName:"Fibre Admin"};
+    const provenance={
+      source:"operator_confirmed_legacy_physical_ancestry",
+      migrationId:"legacy_physical_embodiment_v1",
+      notThreadLifeEvent:true,
+    };
+
+    this.#database.transaction(()=>{
+      const currentRow=this.#database.prepare(
+        "SELECT version,last_event_id FROM threads WHERE thread_id=?",
+      ).get(thread.threadId);
+      if(currentRow===undefined)throw new Error(`Thread ${thread.threadId} was not found`);
+      if(Number(currentRow.version)!==thread.version||currentRow.last_event_id!==thread.provenance.lastEventId){
+        throw new Error(`Thread ${thread.threadId} changed before physical genome migration`);
+      }
+      const sequence=Number(this.#database.prepare(
+        "SELECT COALESCE(MAX(sequence),0) AS n FROM thread_events WHERE thread_id=?",
+      ).get(thread.threadId).n)+1;
+      this.#database.prepare(`
+        INSERT INTO thread_events (
+          event_id,thread_id,sequence,expected_version,resulting_version,event_type,
+          command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
+          authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
+        ) VALUES (?,?,?,?,?,'THREAD_PHYSICAL_GENOME_MIGRATED',NULL,NULL,?,?,?,?,NULL,?,?,1,?)
+      `).run(
+        migrationEventId,
+        thread.threadId,
+        sequence,
+        thread.version,
+        next.version,
+        canonicalJson(payload),
+        canonicalJson(actor),
+        changedAt,
+        stateHash,
+        thread.provenance.lastEventId,
+        migrationEventId,
+        canonicalJson(provenance),
+      );
+      const updated=this.#database.prepare(`
+        UPDATE threads
+        SET version=?,state_json=?,state_hash=?,last_event_id=?,updated_at=?
+        WHERE thread_id=? AND version=?
+      `).run(next.version,stateJson,stateHash,migrationEventId,changedAt,thread.threadId,thread.version);
+      if(Number(updated.changes)!==1)throw new Error(`Thread ${thread.threadId} changed during physical genome migration`);
+    });
+
+    return Object.freeze({
+      migrated:true,
+      reused:false,
+      eventId:migrationEventId,
+      physicalAncestry:ancestry,
+      physicalGenome:genome,
+      thread:next,
+    });
+  }
+}
