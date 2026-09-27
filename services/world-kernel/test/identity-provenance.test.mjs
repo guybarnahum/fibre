@@ -7,6 +7,7 @@ import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
 import { openWorldStore } from "../src/persistence.mjs";
+import { backfillLegacyThreadIdentity } from "../src/identity-schema.mjs";
 import { IdentityConflictError, identityAssertionId, identityClaimId, normalizeIdentityAssertion, rehydrateIdentityAssertion } from "../src/identity-provenance-domain.mjs";
 import { IDENTITY_DOMAIN_REGISTRY_VERSION, identityDomainDefinition } from "../src/identity-domain-registry.mjs";
 import { IDENTITY_ATOMIC_CLAIM_POLICY } from "../src/identity-claim-discipline.mjs";
@@ -156,6 +157,27 @@ test("current claims require structured predicates and the current discipline wi
     admission: { ...wrong.admission, claimDiscipline: { id: "identity_atomic_material_proposition", version: "999" } },
   }), /claim discipline/i);
   identity.close();
+}));
+
+test("legacy projection drift migration preserves the claim-discipline witness", () => withDatabase((databasePath) => {
+  seed(databasePath);
+  const database = new DatabaseSync(databasePath, { enableForeignKeyConstraints: true });
+  const row = database.prepare("SELECT state_json FROM threads WHERE thread_id=?").get(fixture.threadId);
+  const current = JSON.parse(row.state_json);
+  current.identity.name = "Mina Park Lee";
+  database.exec("DROP TRIGGER identity_assertions_no_delete");
+  database.prepare("DELETE FROM identity_assertion_records WHERE thread_id=?").run(fixture.threadId);
+  database.prepare("UPDATE threads SET state_json=?,updated_at=? WHERE thread_id=?")
+    .run(JSON.stringify(current), "2026-08-12T23:55:00Z", fixture.threadId);
+
+  const migrated = backfillLegacyThreadIdentity(database);
+  assert.equal(migrated.corrections, 1);
+  const correction = database.prepare(
+    "SELECT assertion_json FROM identity_assertion_records WHERE thread_id=? AND revision=2",
+  ).get(fixture.threadId);
+  const assertion = JSON.parse(correction.assertion_json);
+  assert.deepEqual(assertion.admission.claimDiscipline, IDENTITY_ATOMIC_CLAIM_POLICY);
+  database.close();
 }));
 
 test("pre-witness registry assertions remain readable but cannot be newly admitted", () => withDatabase((databasePath) => {
