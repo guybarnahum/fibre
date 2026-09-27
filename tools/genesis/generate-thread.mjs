@@ -49,7 +49,7 @@ function serviceBase(record, serviceId) {
   return required(`${serviceId} baseUrl`, matches[0].baseUrl).replace(/\/$/u, "");
 }
 
-function modernRequest({ requestId, requestedAt, cohort, selection, sexSelection }) {
+function birthRequest({ requestId, requestedAt, cohort, selection, sexSelection }) {
   const genome = fixture(selection.genomePath);
   const composedIdentity = composeBirthSubjectIdentity({ requestId, material: selection.material });
   const subjectIdentity = Object.freeze({
@@ -239,7 +239,7 @@ async function main() {
     requestId,
     baseSlotOrdinal,
   });
-  const body = modernRequest({
+  const body = birthRequest({
     requestId,
     requestedAt,
     cohort,
