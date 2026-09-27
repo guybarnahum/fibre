@@ -1,5 +1,7 @@
-import { canonicalVisualSpecificationFromPhysicalGenome } from "#services/world-kernel/src/canonical-visual-identity-from-physical-genome.mjs";
-import { GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY } from "fibre/world-kernel/genesis-authority-contracts";
+import {
+  GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY,
+  canonicalVisualSpecificationFromPhysicalGenome,
+} from "fibre/world-kernel/genesis-authority-contracts";
 
 export function buildGenesisCanonicalVisualIdentity({
   threadId,
