@@ -1,6 +1,6 @@
 const TOKEN_ENCODER = new TextEncoder();
 const REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
-const CONTRACT = "fibre-thread-repair-v0.7";
+const CONTRACT = "fibre-thread-repair-v0.8";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -56,6 +56,18 @@ async function repairBody(request) {
         evidenceReferences:Object.freeze(evidenceReferences.map((entry) => entry.trim())),
       });
     }
+    if (value.action === "canonical_visual_identity_renewal") {
+      if (typeof value.operationKey !== "string" || value.operationKey.trim() === "") throw new TypeError();
+      if (typeof value.reason !== "string" || value.reason.trim() === "") throw new TypeError();
+      const evidenceReferences = value.evidenceReferences ?? [];
+      if (!Array.isArray(evidenceReferences) || !evidenceReferences.every((entry) => typeof entry === "string" && entry.trim() !== "")) throw new TypeError();
+      return Object.freeze({
+        action:"canonical_visual_identity_renewal",
+        operationKey:value.operationKey.trim(),
+        reason:value.reason.trim(),
+        evidenceReferences:Object.freeze(evidenceReferences.map((entry) => entry.trim())),
+      });
+    }
     if (value.action === "migrate") {
       if (typeof value.migrationId !== "string" || value.migrationId.trim() === "") throw new TypeError();
       if (typeof value.migrationKey !== "string" || value.migrationKey.trim() === "") throw new TypeError();
@@ -95,8 +107,10 @@ export function createThreadGenesisRepairApi({
   if (!identityService || typeof identityService.update !== "function") {
     throw new TypeError("Thread repair API requires identityService.update()");
   }
-  if (!visualIdentityRepairService || typeof visualIdentityRepairService.repair !== "function") {
-    throw new TypeError("Thread repair API requires visualIdentityRepairService.repair()");
+  if (!visualIdentityRepairService
+    || typeof visualIdentityRepairService.repair !== "function"
+    || typeof visualIdentityRepairService.renew !== "function") {
+    throw new TypeError("Thread repair API requires visualIdentityRepairService.repair() and renew()");
   }
   if (typeof privateToken !== "string" || privateToken.length < 16) {
     throw new TypeError("Thread repair privateToken must be at least 16 characters");
@@ -178,6 +192,16 @@ export function createThreadGenesisRepairApi({
           return json(200, {
             contract:CONTRACT,
             visualIdentityCorrection:result,
+            reconciliation:reconciliationWorkset?.get(threadId) ?? null,
+          });
+        }
+        if (command.action === "canonical_visual_identity_renewal") {
+          const result = visualIdentityRepairService.renew({ threadId, ...command });
+          const requeued = reconciliationWorkset?.requeue(threadId) ?? false;
+          await onVisualIdentityCorrection?.({ threadId, result, requeued });
+          return json(200, {
+            contract:CONTRACT,
+            visualIdentityRenewal:result,
             reconciliation:reconciliationWorkset?.get(threadId) ?? null,
           });
         }
