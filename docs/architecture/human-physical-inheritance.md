@@ -176,6 +176,28 @@ Population Lab now exercises the exact Unified Birth Inheritance path used by th
 
 Modern Genesis persists the physical genome as private inherited Thread state, canonical visual identity is projected from its expressed phenotype, and the legacy appearance-selection path has been removed. Current Genesis enters a Thread as a young adult with an authored prior life, so its missing biological parents remain transient founder genomes sampled from separate maternal and paternal ancestry provenance. Permanent Genesis publication/replay/failure fixtures now enter through the same physical-genome requirement rather than bypassing it. The repository validation gate passed on 2026-09-26 after this adoption. Conservative treatment of the existing society remains deliberate: existing Threads are not retroactively assigned invented physical genomes or parents.
 
+## Remaining Population Realism capabilities
+
+### Population & Family Sampling — implemented, pending focused validation
+
+A cached place/era authoring result now carries a bounded weighted distribution of plausible family-origin profiles rather than forcing every birth through one household ancestry. Each birth deterministically samples one profile from that cached distribution using the shared population-family sampler. The selected profile changes both maternal/paternal physical ancestry and the causal family-origin context used by Genesis, while the expensive World authoring call remains once per cached place/heritage context. This is deliberately not a demographic quota system and does not use a race switch.
+
+### Naming Realism — next
+
+Move naming and household language/cultural material into the sampled family profile and replace the tiny reusable name cycles with enough family-conditioned variation to avoid duplicate-person collapse. Names remain consequences of family/lived context, never ancestry inference from a person.
+
+### Population Calibration — deferred until family and naming sampling are wired
+
+Exercise the exact production path in Population Lab across repeated births in the same locality, multiple localities, mixed families, siblings and multigenerational families. Measure family-profile coverage, within-family resemblance, between-family individuality, phenotype collapse, name collisions and renderer fidelity. Adjust experimental physical priors only when a specific measured failure warrants it.
+
+### Existing Thread Visual Renewal — deferred until calibration is accepted
+
+Existing Threads visibly fall short of the new embodiment standard and need renewed canonical visuals. This must be an explicit migration/renewal capability, not face/name-based ancestry inference and not silent invention of biological parents. Before implementation, define how an existing Thread's already-authoritative identity, life history and canonical visual semantics can seed a provenance-preserving physical embodiment authority without rewriting historical identity. Then regenerate and supersede canonical visual roots through the existing presentation/FID lifecycle.
+
+### Population Realism Acceptance — deferred
+
+Run bounded production-style cohorts after the preceding capabilities, inspect the resulting people and family variation, and close Population Realism only when repeated births no longer collapse onto one local family, names remain believable and individual, physical variation remains coherent without caricature, and renewed existing Threads meet the same visual standard.
+
 ## Runtime and ambition guard
 
 Physical inheritance is O(1) per birth: fixed-size genome, bounded arithmetic, no population scan, no optimization, no simulation loop and no model call below family-history/ancestry authoring.
