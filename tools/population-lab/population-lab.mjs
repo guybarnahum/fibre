@@ -12,14 +12,15 @@ import {
 } from "../genesis/modern-family-profile.mjs";
 
 const MODEL="gpt-5.1-2025-11-13";
-const MORPH=["faceWidth","faceLength","midfaceProminence","jawWidth","chinProjection","eyeSpacing","eyeShape","foreheadProportion","browProminence","noseWidth","noseProjection","lipFullness"];
-const T=["pigmentation","eyeColor","hairColor","frecklingTendency","hairTexture","hairDensity","hairlineLossTendency","facialHairTendency","faceWidth","faceLength","midfaceProminence","jawWidth","chinProjection","eyeSpacing","eyeShape","foreheadProportion","browProminence","noseWidth","noseProjection","lipFullness","frame","heightTendency","bodyProportion","adiposityTendency","muscularityTendency","shoulderHipProportion"];
+const MORPH=["faceWidth","faceLength","midfaceProminence","zygomaticProjection","jawWidth","chinProjection","eyeSpacing","eyeShape","epicanthicFold","upperEyelidExposure","orbitalDepth","foreheadProportion","browProminence","noseWidth","noseProjection","nasalBridgeHeight","lipFullness"];
+const T=["pigmentation","eyeColor","hairColor","frecklingTendency","hairTexture","hairDensity","hairlineLossTendency","facialHairTendency","faceWidth","faceLength","midfaceProminence","zygomaticProjection","jawWidth","chinProjection","eyeSpacing","eyeShape","epicanthicFold","upperEyelidExposure","orbitalDepth","foreheadProportion","browProminence","noseWidth","noseProjection","nasalBridgeHeight","lipFullness","frame","heightTendency","bodyProportion","adiposityTendency","muscularityTendency","shoulderHipProportion"];
 const LATENT=Object.freeze({
   pigmentation:"pigmentation",eyeColor:"eyePigmentation",hairColor:"hairPigmentation",frecklingTendency:"frecklingTendency",
   hairTexture:"hairForm",hairDensity:"hairDensity",hairlineLossTendency:"hairlineLossTendency",facialHairTendency:"facialHairTendency",
-  faceWidth:"faceBreadth",faceLength:"faceLength",midfaceProminence:"midfaceProminence",jawWidth:"jawBreadth",chinProjection:"chinProjection",
-  eyeSpacing:"eyeSpacing",eyeShape:"eyeShape",foreheadProportion:"foreheadProportion",browProminence:"brow",noseWidth:"noseBreadth",
-  noseProjection:"noseProjection",lipFullness:"softTissue",frame:"frame",heightTendency:"height",bodyProportion:"bodyProportion",
+  faceWidth:"faceBreadth",faceLength:"faceLength",midfaceProminence:"midfaceProminence",zygomaticProjection:"zygomaticProjection",jawWidth:"jawBreadth",chinProjection:"chinProjection",
+  eyeSpacing:"eyeSpacing",eyeShape:"eyeShape",epicanthicFold:"epicanthicFold",upperEyelidExposure:"upperEyelidExposure",orbitalDepth:"orbitalDepth",
+  foreheadProportion:"foreheadProportion",browProminence:"brow",noseWidth:"noseBreadth",noseProjection:"noseProjection",nasalBridgeHeight:"nasalBridgeHeight",
+  lipFullness:"softTissue",frame:"frame",heightTendency:"height",bodyProportion:"bodyProportion",
   adiposityTendency:"adiposityTendency",muscularityTendency:"muscularityTendency",shoulderHipProportion:"shoulderHipProportion"
 });
 
@@ -114,6 +115,7 @@ function generate(place,count,seed,context){
       raisedLanguages:[...identity.raisedLanguages],
       spokenLanguages:[...identity.languages],
       renderDescription:projection.description,
+      projectionVersion:projection.version,
       inheritance:{genome:identity.physicalGenome,phenotype:projection.phenotype},
     };
   });
@@ -276,7 +278,7 @@ async function main(){
   if(images)line(`[${people.length}/${count}] portraits · ${elapsed(start)}`,true);
   console.log("Analyzing population…");
   const stats=score(people,contexts);
-  const meta={count:people.length,places,year,model,imageModel,seed,images,productionFamilyPath:true,renderingProjection:"physical-rendering-projection-v0.1"};
+  const meta={count:people.length,places,year,model,imageModel,seed,images,productionFamilyPath:true,renderingProjection:people[0]?.projectionVersion??null};
   console.log("Writing HTML…");
   await writeFile(resolve(dir,"population.json"),JSON.stringify({meta,populationContexts:contexts,stats,people},null,2));
   await writeFile(resolve(dir,"index.html"),report(people,stats,meta));
