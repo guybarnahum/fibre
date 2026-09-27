@@ -95,11 +95,11 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     }
     const cloud = this.runtimeForRequest();
     this.ensureSchedulerForStatefulRequest(cloud);
-    if (cloud.modernBirthApi !== null) {
-      const modernBirthResponse = await cloud.modernBirthApi.fetch(request, {
+    if (cloud.birthApi !== null) {
+      const birthResponse = await cloud.birthApi.fetch(request, {
         defer:(promise) => this.ctx.waitUntil(promise),
       });
-      if (modernBirthResponse !== null) {
+      if (birthResponse !== null) {
         if (request.method === "POST") {
           this.ctx.waitUntil(cloud.ensureBirthStatusScheduled().catch((error) => {
             console.error(JSON.stringify({
@@ -118,7 +118,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
             }));
           }
         }
-        return modernBirthResponse;
+        return birthResponse;
       }
     }
     if (cloud.developmentApi !== null) {
