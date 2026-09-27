@@ -15,6 +15,7 @@ import { openEmbodimentStore } from "../src/embodiment-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import {
   createCanonicalVisualIdentityRepairService,
+  renewCanonicalVisualIdentity,
   repairCanonicalVisualIdentity,
 } from "../src/canonical-visual-identity-repair.mjs";
 
@@ -94,6 +95,56 @@ test("canonical correction preserves lineage and reopens root generation", () =>
   assert.equal(current.asset.referenceObjectRef, "visual_identity_reference_old");
 });
 
+
+test("canonical renewal preserves the exact visual identity specification", () => {
+  const current = currentEmbodiment();
+  const renewed = renewCanonicalVisualIdentity({
+    currentEmbodiment:current,
+    reason:"Renew the canonical reference under the current Fibre rendering profile without changing the Thread's visual identity.",
+    evidenceReferences:["evt_visual_identity_origin_001"],
+    recordedAt:"2026-09-24T05:00:00.000Z",
+  });
+
+  assert.equal(renewed.specificationDigest, current.specificationDigest, "renewal changed canonical identity");
+  assert.deepEqual(renewed.specification, current.specification, "renewal rewrote canonical semantics");
+  assert.equal(renewed.revision, current.revision + 1, "renewal did not append one revision");
+  assert.equal(renewed.supersedesRevision, current.revision, "renewal broke Embodiment lineage");
+  assert.equal(renewed.status, "pending_generation", "renewal did not request a fresh root");
+  assert.equal(renewed.asset, null, "renewal reused the old root bytes");
+  assert.equal(renewed.respecification.priorSpecificationDigest, current.specificationDigest);
+  assert.equal(current.asset.referenceObjectRef, "visual_identity_reference_old", "renewal mutated prior root history");
+});
+
+
+test("operator renewal preserves identity while reopening canonical generation", () => {
+  let current = currentEmbodiment();
+  const service = createCanonicalVisualIdentityRepairService({
+    embodimentStore:{
+      listCurrent(threadId) {
+        return threadId === THREAD_ID ? [structuredClone(current)] : [];
+      },
+      record(candidate) {
+        current = structuredClone(candidate);
+        return structuredClone(current);
+      },
+    },
+    now:() => "2026-09-24T05:10:00.000Z",
+  });
+
+  const result = service.renew({
+    threadId:THREAD_ID,
+    operationKey:"renew_visual_001",
+    reason:"Renew a legacy canonical root using the current renderer without changing authoritative visual identity.",
+  });
+
+  assert.equal(result.previous.specificationDigest, result.embodiment.specificationDigest, "renewal changed visual identity authority");
+  assert.equal(result.embodiment.status, "pending_generation", "renewal did not reopen generation");
+  assert.deepEqual(
+    result.embodiment.respecification.evidenceReferences,
+    ["evt_visual_identity_origin_001"],
+    "renewal lost durable visual identity provenance",
+  );
+});
 
 test("operator repair service records one corrected canonical lineage head", () => {
   let current = currentEmbodiment();
