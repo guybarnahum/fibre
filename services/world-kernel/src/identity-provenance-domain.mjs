@@ -138,6 +138,17 @@ function normalizeAdmission(admission, { historical = false } = {}) {
     evidenceClassification: admission.evidenceClassification,
     sourceMode: admission.sourceMode,
   };
+  if (
+    historical
+    && admission.claimDiscipline !== undefined
+    && admission.claimDiscipline !== null
+    && (typeof admission.claimDiscipline !== "object" || Array.isArray(admission.claimDiscipline))
+  ) {
+    const rendered = JSON.stringify(admission.claimDiscipline);
+    throw new TypeError(
+      `historical identity assertion.admission.claimDiscipline has unsupported ${Array.isArray(admission.claimDiscipline) ? "array" : typeof admission.claimDiscipline} representation ${String(rendered ?? admission.claimDiscipline).slice(0, 160)}`,
+    );
+  }
   if (admission.claimDiscipline === null && historical) {
     normalized.claimDiscipline = null;
   } else if (admission.claimDiscipline !== undefined) {
