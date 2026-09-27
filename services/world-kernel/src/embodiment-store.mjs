@@ -1,9 +1,6 @@
 import { canonicalJson } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
-import {
-  embodimentSubjectDigest,
-  normalizeEmbodimentRepresentation,
-} from "./embodiment-domain.mjs";
+import { normalizeEmbodimentRepresentation } from "./embodiment-domain.mjs";
 import { normalizeEmbodimentRightsAuthority } from "./embodiment-rights-domain.mjs";
 import {
   EmbodimentConflictError,
@@ -83,6 +80,7 @@ export class EmbodimentStore {
   #validateTransition(record, history) {
     if (history.length === 0) {
       if (record.respecification !== null) throw new EmbodimentConflictError("first embodiment revision cannot be a respecification");
+      if ((record.renewal ?? null) !== null) throw new EmbodimentConflictError("first embodiment revision cannot be a renewal");
       return;
     }
     const first = history[0];
@@ -91,9 +89,11 @@ export class EmbodimentStore {
       throw new EmbodimentConflictError("embodiment lineage cannot change who it depicts");
     }
 
-    const subjectChanged = embodimentSubjectDigest(record.specification) !== embodimentSubjectDigest(prior.specification);
-    if (subjectChanged) {
-      if (record.respecification === null) throw new EmbodimentConflictError("depicted subject change requires witnessed respecification");
+    const specificationChanged = record.specificationDigest !== prior.specificationDigest;
+    const renewal = record.renewal ?? null;
+    if (specificationChanged) {
+      if (record.respecification === null) throw new EmbodimentConflictError("specification change requires witnessed respecification");
+      if (renewal !== null) throw new EmbodimentConflictError("embodiment revision cannot be both a respecification and a renewal");
       if (record.respecification.priorSpecificationDigest !== prior.specificationDigest) {
         throw new EmbodimentConflictError("respecification must bind the immediate prior specification digest");
       }
@@ -102,8 +102,26 @@ export class EmbodimentStore {
           throw new EmbodimentConflictError(`embodiment respecification reference ${reference} is not durable Thread evidence`);
         }
       }
-    } else if (record.respecification !== null) {
-      throw new EmbodimentConflictError("respecification is only valid when the depicted subject changes");
+    } else {
+      if (record.respecification !== null) {
+        throw new EmbodimentConflictError("respecification requires a changed canonical specification");
+      }
+      if (renewal !== null) {
+        if (renewal.priorSpecificationDigest !== prior.specificationDigest) {
+          throw new EmbodimentConflictError("renewal must bind the immediate prior specification digest");
+        }
+        if (prior.status !== "available" || prior.asset?.referenceObjectRef !== renewal.priorReferenceObjectRef) {
+          throw new EmbodimentConflictError("renewal must bind the immediate prior canonical root");
+        }
+        if (record.status !== "pending_generation" || record.asset !== null) {
+          throw new EmbodimentConflictError("renewal must reopen canonical generation without carrying an asset");
+        }
+        for (const reference of renewal.evidenceReferences) {
+          if (!this.#evidenceExists(record.threadId, reference)) {
+            throw new EmbodimentConflictError(`embodiment renewal reference ${reference} is not durable Thread evidence`);
+          }
+        }
+      }
     }
 
     if (rightsGrounded(record)) {
