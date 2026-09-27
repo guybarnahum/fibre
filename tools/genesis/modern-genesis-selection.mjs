@@ -3,9 +3,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
+import { sampleFamilyAncestry } from "#core/src/human-phenotype/index.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
 
-export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v8";
+export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v9";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
 const WORLD_AUTHORING_SCHEMA = Object.freeze({
   type: "object",
@@ -282,19 +283,35 @@ function appearanceLoci({ selector, heritage, value }) {
   })));
 }
 
-function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEndsAt, createdAt }) {
+function chooseFamilyProfile(authored, requestId) {
+  const profiles = Array.isArray(authored.familyProfiles) && authored.familyProfiles.length ? authored.familyProfiles : [authored];
+  const normalized = profiles.map((profile, index) => ({
+    ...profile,
+    id:profile.id ?? `family-${index + 1}`,
+    share:profile.share ?? 1,
+    maternalAncestry:profile.physicalAncestry?.maternal,
+    paternalAncestry:profile.physicalAncestry?.paternal,
+  }));
+  const sampled = sampleFamilyAncestry({profiles:normalized, seed:`modern-genesis:${requestId}`});
+  const profile = normalized.find(candidate => candidate.id === sampled.profileId);
+  if (!profile) throw new Error("sampled Genesis family profile is unavailable");
+  return Object.freeze({...profile, physicalAncestry:Object.freeze({maternal:sampled.maternal.ancestry,paternal:sampled.paternal.ancestry})});
+}
+
+function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, chronologyEndsAt, createdAt }) {
+  const family = chooseFamilyProfile(authored, requestId);
   const timeZone = assertTimeZone(nonEmpty("authored world timeZone", authored.timeZone));
-  const languages = subjectLanguages(authored.languages);
-  const raisedLanguages = subjectLanguages(authored.raisedLanguages);
+  const languages = subjectLanguages(family.languages);
+  const raisedLanguages = subjectLanguages(family.raisedLanguages);
   const spokenKeys = new Set(languages.map((language) => language.toLocaleLowerCase("en-US")));
   if (raisedLanguages.some((language) => !spokenKeys.has(language.toLocaleLowerCase("en-US")))) {
     throw new TypeError("authored raised languages must be included in the subject's eventual spoken languages");
   }
-  const sourceDigest = digest({ selector, heritage, authored }).slice(0, 12);
+  const sourceDigest = digest({ selector, heritage, authored, familyProfileId:family.id }).slice(0, 12);
   const worldSpecId = `world_modern_${selector.slug}_${heritage?.slug ?? "default"}_${sourceDigest}`;
   const place = (kind) => `place_${selector.slug}_${sourceDigest}_${kind}`;
   const heritageLabel = heritage?.display ?? null;
-  const familyOriginContext = nonEmpty("authored world familyOriginContext", authored.familyOriginContext);
+  const familyOriginContext = nonEmpty("authored world familyOriginContext", family.familyOriginContext);
   const householdShapeBase = heritageLabel === null
     ? "Two caregivers, the subject and one sibling share a household; other relatives may participate in ordinary visits and family logistics without being assumed to live there."
     : `Two caregivers, the subject and one sibling share a household in ${selector.city}. The household carries ${heritageLabel} heritage; other relatives or community ties may participate in ordinary visits, language, food, celebrations and family logistics without prescribing the subject's beliefs or personality.`;
@@ -339,16 +356,17 @@ function buildAuthoredWorld({ selector, heritage, authored, bornAt, chronologyEn
     birthCity: selector.birthCity,
     place: Object.freeze({ country: selector.country, city: selector.city }),
     heritage: heritageLabel,
+    familyProfileId: family.id,
     familyOriginContext,
-    physicalAncestry: structuredClone(authored.physicalAncestry),
-    appearanceContext: appearancePrior({ selector, heritage, value: authored.appearanceContext }),
-    appearanceLoci: appearanceLoci({ selector, heritage, value: authored.appearanceLoci }),
+    physicalAncestry: structuredClone(family.physicalAncestry),
+    appearanceContext: appearancePrior({ selector, heritage, value: family.appearanceContext }),
+    appearanceLoci: appearanceLoci({ selector, heritage, value: family.appearanceLoci }),
     languages,
     raisedLanguages,
-    nameOrder: authored.nameOrder,
-    femaleGivenNames: Object.freeze([...authored.femaleGivenNames]),
-    maleGivenNames: Object.freeze([...authored.maleGivenNames]),
-    familyNames: Object.freeze([...authored.familyNames]),
+    nameOrder: family.nameOrder,
+    femaleGivenNames: Object.freeze([...family.femaleGivenNames]),
+    maleGivenNames: Object.freeze([...family.maleGivenNames]),
+    familyNames: Object.freeze([...family.familyNames]),
   });
   const householdSuffix = heritageLabel === null ? "" : ` in a household with ${heritageLabel} heritage`;
   const participants = Object.freeze([
@@ -441,12 +459,9 @@ export async function resolveModernWorldSelection({
   if (!forceNewWorld) {
     const cached = readCache(repoRoot, selector, heritage);
     if (cached) {
+      const built = buildAuthoredWorld({selector, heritage, authored:cached.authored, requestId, bornAt:cohort.entry.bornAt, chronologyEndsAt:cohort.entry.chronologyEndsAt, createdAt:cached.createdAt});
       const slot = cohort.slots[baseSlotOrdinal - 1];
-      return Object.freeze({
-        ...cached,
-        slotOrdinal: baseSlotOrdinal,
-        genomePath: slot.genomePath,
-      });
+      return Object.freeze({...cached, ...built, slotOrdinal:baseSlotOrdinal, genomePath:slot.genomePath});
     }
   }
 
@@ -456,6 +471,7 @@ export async function resolveModernWorldSelection({
     selector,
     heritage,
     authored,
+    requestId,
     bornAt: cohort.entry.bornAt,
     chronologyEndsAt: cohort.entry.chronologyEndsAt,
     createdAt,
@@ -466,6 +482,7 @@ export async function resolveModernWorldSelection({
     selector,
     heritage,
     createdAt,
+    authored,
     worldSpec: built.worldSpec,
     material: built.material,
     timeZone: built.timeZone,
