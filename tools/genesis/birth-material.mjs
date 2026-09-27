@@ -49,6 +49,7 @@ export function composeBirthSubjectIdentity({ requestId, material }) {
   const physicalInheritance = resolveBirthPhysicalInheritance({
     maternalAncestry:material.physicalAncestry.maternal,
     paternalAncestry:material.physicalAncestry.paternal,
+    // Historical deterministic namespace: keep stable unless birth material is intentionally reseeded.
     seed:`modern-birth:${requestId}`,
   });
   return Object.freeze({
