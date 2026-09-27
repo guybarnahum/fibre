@@ -76,15 +76,15 @@ export function buildGenesisPublicationCognition({
 function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt }) {
   if (!subjectIdentity || typeof subjectIdentity !== "object") throw new TypeError("Genesis birth requires subject identity material");
   if (!worldSpec || typeof worldSpec !== "object") throw new TypeError("Genesis birth requires WorldSpec identity context");
-  if (!Array.isArray(worldSpec.languages) || worldSpec.languages.length === 0) throw new TypeError("modern Genesis birth requires World language context");
-  if (typeof worldSpec.culturalContext !== "string" || worldSpec.culturalContext.trim() === "") throw new TypeError("modern Genesis birth requires WorldSpec cultural context");
-  if (typeof subjectIdentity.birthCity !== "string" || subjectIdentity.birthCity.trim() === "") throw new TypeError("modern Genesis birth requires an explicit birth city");
+  if (!Array.isArray(worldSpec.languages) || worldSpec.languages.length === 0) throw new TypeError("Genesis birth requires World language context");
+  if (typeof worldSpec.culturalContext !== "string" || worldSpec.culturalContext.trim() === "") throw new TypeError("Genesis birth requires WorldSpec cultural context");
+  if (typeof subjectIdentity.birthCity !== "string" || subjectIdentity.birthCity.trim() === "") throw new TypeError("Genesis birth requires an explicit birth city");
   const sex = subjectIdentity.sex ?? genesisSexForThread({ threadId });
-  if (sex !== "female" && sex !== "male") throw new TypeError("modern Genesis birth requires female or male sex");
+  if (sex !== "female" && sex !== "male") throw new TypeError("Genesis birth requires female or male sex");
   const name = sex === "female" ? subjectIdentity.femaleName : subjectIdentity.maleName;
-  if (typeof name !== "string" || name.trim() === "" || name === "Fibre Thread") throw new TypeError("modern Genesis birth requires a proper sex-compatible name");
+  if (typeof name !== "string" || name.trim() === "" || name === "Fibre Thread") throw new TypeError("Genesis birth requires a proper sex-compatible name");
   const birthInstant = new Date(bornAt);
-  if (!Number.isFinite(birthInstant.getTime())) throw new TypeError("modern Genesis birth requires a valid bornAt timestamp");
+  if (!Number.isFinite(birthInstant.getTime())) throw new TypeError("Genesis birth requires a valid bornAt timestamp");
   const languages = Array.isArray(subjectIdentity.languages) && subjectIdentity.languages.length > 0
     ? subjectIdentity.languages
     : worldSpec.languages;
@@ -100,7 +100,7 @@ function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt })
           long:authoredPlace.long,
         })
       : resolveLocalityGeography(subjectIdentity.birthCity);
-  if (geography === null) throw new TypeError(`modern Genesis birth place ${subjectIdentity.birthCity} is not mappable`);
+  if (geography === null) throw new TypeError(`Genesis birth place ${subjectIdentity.birthCity} is not mappable`);
   return Object.freeze({
     name: name.trim(),
     sex,
@@ -122,19 +122,19 @@ function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt })
 
 export function assertModernGenesisThreadIdentity(thread) {
   const identity = thread?.identity;
-  if (!identity || identity.name === "Fibre Thread" || typeof identity.name !== "string" || identity.name.trim() === "") fail("modern Genesis Thread lacks a proper name");
-  if (identity.sex !== "female" && identity.sex !== "male") fail("modern Genesis Thread lacks authoritative sex");
-  if (typeof identity.birthDate !== "string" || identity.birthDate.trim() === "") fail("modern Genesis Thread lacks birth date");
-  if (!Array.isArray(identity.languages) || identity.languages.length === 0) fail("modern Genesis Thread lacks language context");
-  if (typeof identity.birthCity !== "string" || identity.birthCity.trim() === "") fail("modern Genesis Thread lacks birth place");
+  if (!identity || identity.name === "Fibre Thread" || typeof identity.name !== "string" || identity.name.trim() === "") fail("Genesis Thread lacks a proper name");
+  if (identity.sex !== "female" && identity.sex !== "male") fail("Genesis Thread lacks authoritative sex");
+  if (typeof identity.birthDate !== "string" || identity.birthDate.trim() === "") fail("Genesis Thread lacks birth date");
+  if (!Array.isArray(identity.languages) || identity.languages.length === 0) fail("Genesis Thread lacks language context");
+  if (typeof identity.birthCity !== "string" || identity.birthCity.trim() === "") fail("Genesis Thread lacks birth place");
   if (
     !identity.birthPlace
     || identity.birthPlace.displayName !== identity.birthCity
     || !Number.isFinite(identity.birthPlace.lat)
     || !Number.isFinite(identity.birthPlace.long)
-  ) fail("modern Genesis Thread lacks mappable birth place");
-  if (!Array.isArray(identity.culture) || identity.culture.length === 0) fail("modern Genesis Thread lacks cultural context");
-  if (typeof identity.selfDescription !== "string" || identity.selfDescription === "I am a Fibre Thread.") fail("modern Genesis Thread retains generic self-description");
+  ) fail("Genesis Thread lacks mappable birth place");
+  if (!Array.isArray(identity.culture) || identity.culture.length === 0) fail("Genesis Thread lacks cultural context");
+  if (typeof identity.selfDescription !== "string" || identity.selfDescription === "I am a Fibre Thread.") fail("Genesis Thread retains generic self-description");
   return true;
 }
 
