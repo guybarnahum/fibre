@@ -30,7 +30,7 @@ test("Genesis birth produces a specific person grounded in a specific world", ()
   const requestedAt = "2026-09-14T22:41:35Z";
   const plan = buildGenesisDevelopmentPlan({
     requestVersion: GENESIS_DEVELOPMENT_REQUEST_VERSION,
-    requestId: "modern-birth-reference-001",
+    requestId: "birth-reference-001",
     requestedAt,
     worldSpec,
     subjectIdentity,
