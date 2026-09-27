@@ -1,4 +1,4 @@
-import { PHYSICAL_GENOME_VERSION } from "#core/src/human-phenotype/index.mjs";
+import { PHYSICAL_GENOME_VERSION, referencePopulationIds } from "#core/src/human-phenotype/index.mjs";
 import { canonicalVisualSpecificationFromPhysicalGenome } from "./canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "./embodiment-domain.mjs";
 import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
@@ -464,9 +464,9 @@ export function createThreadGenesisRepairService({
             input:Object.freeze({
               fields:Object.freeze([
                 Object.freeze({name:"maternalOrigin",label:"Maternal physical origin",kind:"text",required:true}),
-                Object.freeze({name:"maternalReferencePopulation",label:"Maternal physical reference",kind:"select",required:true,options:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}),
+                Object.freeze({name:"maternalReferencePopulation",label:"Maternal physical reference",kind:"select",required:true,options:[...referencePopulationIds]}),
                 Object.freeze({name:"paternalOrigin",label:"Paternal physical origin",kind:"text",required:true}),
-                Object.freeze({name:"paternalReferencePopulation",label:"Paternal physical reference",kind:"select",required:true,options:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}),
+                Object.freeze({name:"paternalReferencePopulation",label:"Paternal physical reference",kind:"select",required:true,options:[...referencePopulationIds]}),
                 Object.freeze({name:"reason",label:"Migration reason",kind:"text",required:true}),
               ]),
             }),
