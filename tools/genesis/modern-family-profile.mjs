@@ -7,8 +7,8 @@ const REFERENCE_POPULATIONS=Object.freeze([
 const ancestrySchema={type:"array",minItems:1,maxItems:3,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{
   population:{type:"string",minLength:1},share:{type:"number",minimum:0.01,maximum:1},referencePopulation:{type:"string",enum:REFERENCE_POPULATIONS}
 }}};
-const languagesSchema={type:"array",minItems:1,maxItems:3,uniqueItems:true,items:{type:"string",minLength:1}};
-const namesSchema={type:"array",minItems:24,uniqueItems:true,items:{type:"string",minLength:1}};
+const languagesSchema={type:"array",minItems:1,maxItems:3,items:{type:"string",minLength:1}};
+const namesSchema={type:"array",minItems:24,items:{type:"string",minLength:1}};
 
 export const MODERN_FAMILY_PROFILES_SCHEMA=Object.freeze({
   type:"array",minItems:3,maxItems:8,
