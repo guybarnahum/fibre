@@ -1,7 +1,7 @@
 ---
 id: architecture-canonical-visual-identity
 status: accepted
-last-reviewed: 2026-09-24
+last-reviewed: 2026-09-27
 canonical: true
 ---
 
@@ -9,7 +9,7 @@ canonical: true
 
 ## Purpose
 
-This document defines the executable Fibre lifecycle for visual identity. It implements the invariant in [`ADR-0021`](../decisions/ADR-0021-canonical-visual-identity-reference.md): one canonical visual identity root anchors every later depiction of the same Thread.
+This document defines the executable Fibre lifecycle for visual identity. It implements the durable root/reference invariant in [`ADR-0021`](../decisions/ADR-0021-canonical-visual-identity-reference.md): one canonical visual identity root anchors every later depiction of the same Thread. The inherited-embodiment mechanism in the accepted [Human physical inheritance](human-physical-inheritance.md) architecture supersedes ADR-0021's earlier textual-locus recombination sketch without changing that root/reference lifecycle.
 
 The authority ordering is:
 
@@ -41,7 +41,7 @@ The resulting bytes are not automatically identity. They become canonical only a
 The canonical reference remains stable as the Thread ages.
 
 
-A broad family appearance prior may help World authoring produce family-compatible phenotype material **before any image exists**, but the prior itself is not renderer authority. Genesis selects one concrete inherited phenotype from that material and the canonical specification carries only the selected person's concrete traits plus individual identity cues. Once Fibre has admitted the canonical reference image, even that rich canonical phenotype prose stops at the boundary: the reference image becomes the operational likeness authority for downstream image generation. Derived prompts should describe only the requested age, time-local appearance, scene and rendering purpose; they should not replay ancestry, family, demographic or canonical phenotype text.
+Before any image exists, the Thread's inherited physical genome is the embodiment authority. Genesis expresses that genome into one concrete sex-conditioned phenotype and a continuous inherited rendering projection; ancestry and family-origin labels do not cross into the renderer as instructions. The canonical specification carries the selected person's inherited traits and continuous individual variation, not a demographic range for the provider to resolve. Once Fibre has admitted the canonical reference image, that reference becomes the operational likeness authority for downstream image generation. Derived prompts should describe only the requested age, time-local appearance, scene and rendering purpose; they should not replay ancestry, family, demographic or canonical phenotype text.
 
 ### Derived depictions
 
@@ -68,30 +68,29 @@ rich canonical identity text
 
 No external image identity is required.
 
-For a de-novo birth with grounded family-origin appearance evidence, World authoring supplies a bounded set of family-compatible textual appearance loci. Genesis deterministically selects one concrete inherited phenotype from those loci **before** canonical identity is created, then adds Thread-specific proportions, asymmetries, hairline details and stable marks that do not override the inherited selection.
+For a de-novo modern-Genesis birth without admitted biological parent Threads, family-history authoring supplies separate maternal and paternal physical-ancestry provenance. Fibre samples two transient founder physical genomes, recombines them into the child's private physical genome, and expresses that genome into one concrete inherited phenotype **before** canonical identity is created.
 
-The family envelope is upstream plausibility evidence only. It must not cross the canonical rendering boundary. The canonical specification describes one concrete person; the image renderer depicts that person and has no authority to choose skin, hair, eyes, facial morphology, nose, mouth, jaw or build from a range.
+The ancestry provenance is bootstrap evidence for missing parents only. It must not cross the canonical rendering boundary as a face-selection instruction. The canonical specification describes one concrete person; the image renderer depicts that person and has no authority to choose skin, hair, eyes, facial morphology, nose, mouth, jaw or build from a demographic range. Continuous inherited coordinates accompany the semantic phenotype so individuality inside broad labels is not discarded.
 
-This is intentionally a small proof rather than a population-genetics simulator. The extension path remains open for richer inherited textual phenotype recombination and mutation witnesses; the canonical text and reference-root authority boundary do not change.
+This remains a compact genotype-like model rather than molecular genetics. The physical-genome representation and founder priors are replaceable; the durable boundary is two parental physical genomes -> recombination -> child physical genome -> inherited phenotype -> canonical root.
 
 ### Thread-parent / inherited lineage
 
-Visual heredity should use natural-language atomic visual phenotype loci rather than pixel blending or numeric face vectors.
+When a chronologically truthful newborn/reproduction lifecycle supplies actual biological parent Threads, each parent's private physical genome becomes the inheritance authority.
 
 ```text
-parent A phenotype text loci
-parent B phenotype text loci
-        -> deterministic locus selection/recombination
-        -> explicit mutation witnesses where applicable
-        -> child canonical identity text
+parent A physical genome
+parent B physical genome
+        -> deterministic allele transmission/recombination
+        -> child physical genome
+        -> sex-conditioned inherited phenotype
+        -> canonical identity text
         -> text-only child canonical reference image
 ```
 
-This is intentionally parallel to Fibre's symbolic textual genome model. Semicolon-separated atomic text is an appropriate implementation representation when it preserves exact locus provenance and deterministic selection.
+The child's root generation does not use the parents' images as visual references. Family resemblance comes from inherited physical state, while recombination preserves sibling variation and hidden inherited material. The child remains a distinct visual identity.
 
-The child's root generation does not use the parents' images as visual references. Family resemblance comes from inherited semantic phenotype material. The child remains a distinct visual identity.
-
-The visual phenotype inheritance layer may use/reuse the symbolic genome's recombination machinery, but the semantic domains remain distinct: visual phenotype loci describe appearance; personality/disposition loci describe inherited symbolic tendencies. Appearance must not imply character.
+Physical inheritance is separate from Fibre's symbolic/personality genome. Appearance must not imply character, competence, values, class, religion or behavior.
 
 ### Echo
 
