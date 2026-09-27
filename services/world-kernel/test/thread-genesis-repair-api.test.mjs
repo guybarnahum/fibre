@@ -27,11 +27,25 @@ function api(options = {}) {
         return {
           threadId,
           operationKey,
-          previous:{ revision:2, referenceObjectRef:"visual_identity_reference_old" },
+          previous:{ revision:2, specificationDigest:"sha256:old", referenceObjectRef:"visual_identity_reference_old" },
           embodiment:{
             revision:3,
             status:"pending_generation",
+            specificationDigest:"sha256:new",
             specification:correctedSpecification,
+            respecification:{ reason, evidenceReferences:["visual_identity_reference_old", ...evidenceReferences] },
+          },
+        };
+      },
+      renew({ threadId, operationKey, reason, evidenceReferences }) {
+        return {
+          threadId,
+          operationKey,
+          previous:{ revision:2, specificationDigest:"sha256:same", referenceObjectRef:"visual_identity_reference_old" },
+          embodiment:{
+            revision:3,
+            status:"pending_generation",
+            specificationDigest:"sha256:same",
             respecification:{ reason, evidenceReferences:["visual_identity_reference_old", ...evidenceReferences] },
           },
         };
@@ -177,6 +191,41 @@ test("canonical visual correction replaces authority then reopens reconciliation
   assert.equal(body.visualIdentityCorrection.embodiment.status, "pending_generation", "canonical root was not reopened");
   assert.equal(body.reconciliation.state, "pending", "corrected identity did not re-enter reconciliation");
   assert.equal(wakes, 1, "corrected identity did not schedule reconciliation");
+});
+
+test("canonical visual renewal reopens generation without changing identity semantics", async () => {
+  let state = {
+    threadId:"thr_1",
+    state:"complete",
+    lastError:null,
+    updatedAt:"2026-09-24T04:00:00.000Z",
+  };
+  const workset = {
+    get() { return state; },
+    requeue() {
+      state = { ...state, state:"pending", updatedAt:"2026-09-24T05:10:00.000Z" };
+      return true;
+    },
+  };
+  const response = await api({ reconciliationWorkset:workset }).fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
+    method:"POST",
+    headers:{ "content-type":"application/json" },
+    body:JSON.stringify({
+      action:"canonical_visual_identity_renewal",
+      operationKey:"renew_visual_1",
+      reason:"Renew the legacy canonical root under the current renderer while preserving visual identity.",
+    }),
+  }));
+  const body = await response.json();
+
+  assert.equal(response.status, 200, "visual renewal failed");
+  assert.equal(
+    body.visualIdentityRenewal.previous.specificationDigest,
+    body.visualIdentityRenewal.embodiment.specificationDigest,
+    "visual renewal changed canonical identity",
+  );
+  assert.equal(body.visualIdentityRenewal.embodiment.status, "pending_generation", "visual renewal did not reopen generation");
+  assert.equal(body.reconciliation.state, "pending", "visual renewal did not re-enter reconciliation");
 });
 
 test("Raised languages use Genesis correction rather than identity mutation", async () => {
