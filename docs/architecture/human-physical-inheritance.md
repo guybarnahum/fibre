@@ -206,6 +206,8 @@ This is a present-time projection migration, not a life event and not a retroact
 
 The extension path remains open for a future legacy-embodiment migration only if Fibre gains truthful authoritative evidence strong enough to support richer physical state. Until then, the old canonical semantic specification remains the embodiment authority for that Thread and the renewed root is a new operational likeness projection of the same authority.
 
+Capability status: unchanged-spec root renewal is enabled; automatic legacy-spec rewriting, retroactive physical-genome creation and bulk renewal are deferred. The one-Thread staging CLI is a temporary validation surface, not a permanent operator constraint; once live renewal proves trustworthy it can be surfaced as a bounded Admin action. No permanent architecture path is closed. The causal consumer is immediate: the renewed root replaces the operational likeness anchor used by Thread Presentation, official identity photos, FIN Cards and later reference-conditioned depictions while leaving the Thread's historical identity untouched.
+
 ### Population Realism Acceptance — deferred
 
 Run bounded production-style cohorts after the preceding capabilities, inspect the resulting people and family variation, and close Population Realism only when repeated births no longer collapse onto one local family, names remain believable and individual, physical variation remains coherent without caricature, and renewed existing Threads meet the same visual standard.
