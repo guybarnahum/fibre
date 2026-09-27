@@ -174,7 +174,7 @@ Population Lab now exercises the exact Unified Birth Inheritance path used by th
 
 ### Fibre Adoption — closed
 
-Modern Genesis persists the physical genome as private inherited Thread state, canonical visual identity is projected from its expressed phenotype, and the legacy appearance-selection path has been removed. Current Genesis enters a Thread as a young adult with an authored prior life, so its missing biological parents remain transient founder genomes sampled from separate maternal and paternal ancestry provenance. Permanent Genesis publication/replay/failure fixtures now enter through the same physical-genome requirement rather than bypassing it. The repository validation gate passed on 2026-09-26 after this adoption. Conservative treatment of the existing society remains deliberate: existing Threads are not retroactively assigned invented physical genomes or parents.
+Genesis persists the physical genome as private inherited Thread state, canonical visual identity is projected from its expressed phenotype, and the legacy appearance-selection path has been removed. Current Genesis enters a Thread as a young adult with an authored prior life, so its missing biological parents remain transient founder genomes sampled from separate maternal and paternal ancestry provenance. Permanent Genesis publication/replay/failure fixtures now enter through the same physical-genome requirement rather than bypassing it. The repository validation gate passed on 2026-09-26 after this adoption. Conservative treatment of the existing society remains deliberate: existing Threads are not retroactively assigned invented physical genomes or parents.
 
 ## Remaining Population Realism capabilities
 
@@ -236,7 +236,7 @@ The compact population basis and expression model remain experimental and replac
 
 ## Production adoption boundary
 
-Modern Genesis now uses the same physical-inheritance core validated in Population Lab. World authoring supplies separate maternal and paternal physical-ancestry provenance for otherwise-missing biological parents. Birth material resolves those transient founders through `resolveBirthPhysicalInheritance()`; the resulting child physical genome is carried through Genesis and persisted privately as `thread.genome.physical`.
+Genesis now uses the same physical-inheritance core validated in Population Lab. World authoring supplies separate maternal and paternal physical-ancestry provenance for otherwise-missing biological parents. Birth material resolves those transient founders through `resolveBirthPhysicalInheritance()`; the resulting child physical genome is carried through Genesis and persisted privately as `thread.genome.physical`.
 
 Canonical visual identity derives its concrete inherited phenotype from that physical genome and authoritative sex. Ancestry/population labels are not passed to the renderer. The genome remains the durable inherited authority; the phenotype and portrait are projections.
 
