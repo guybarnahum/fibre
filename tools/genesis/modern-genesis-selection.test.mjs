@@ -307,7 +307,7 @@ test("authored World rejects demographic language inventories for one subject", 
           : profile),
       }),
     }),
-    /1 to 3 personally plausible languages/u,
+    /1 to 3 languages/u,
   );
 });
 
