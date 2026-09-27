@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
-import { MODERN_FAMILY_PROFILES_SCHEMA, sampleModernFamilyProfile, validateModernFamilyProfiles } from "./modern-family-profile.mjs";
+import { MODERN_FAMILY_PROFILES_SCHEMA, normalizeModernFamilyProfiles, sampleModernFamilyProfile, validateModernFamilyProfiles } from "./modern-family-profile.mjs";
 
 export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v12";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
@@ -326,14 +326,17 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
     });
     return result.output;
   };
+  const admit=output=>{
+    const familyProfiles=normalizeModernFamilyProfiles(output.familyProfiles);
+    validateModernFamilyProfiles(familyProfiles);
+    return {...output,familyProfiles};
+  };
   const first=await invoke("author");
   try{
-    validateModernFamilyProfiles(first.familyProfiles);
-    return first;
+    return admit(first);
   }catch(error){
     const retry=await invoke("repair",`The previous family-profile material failed semantic admission: ${error.message}. Regenerate the full response and satisfy the family-profile and atomic-language constraints exactly.`);
-    validateModernFamilyProfiles(retry.familyProfiles);
-    return retry;
+    return admit(retry);
   }
 }
 
