@@ -3,8 +3,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
-import { sampleFamilyAncestry } from "#core/src/human-phenotype/index.mjs";
 import { sampleModernBirthplace } from "./modern-birthplace-sampler.mjs";
+import { sampleModernFamilyProfile } from "./modern-family-profile.mjs";
 
 export const MODERN_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v10";
 const DEFAULT_WORLD_MODEL = "gpt-5.1-2025-11-13";
@@ -259,24 +259,8 @@ function appearanceLoci({ selector, heritage, value }) {
   })));
 }
 
-function chooseFamilyProfile(authored, requestId) {
-  if (!Array.isArray(authored.familyProfiles) || authored.familyProfiles.length === 0) throw new TypeError("authored Genesis world requires family profiles");
-  const profiles = authored.familyProfiles;
-  const normalized = profiles.map((profile, index) => ({
-    ...profile,
-    id:profile.id ?? `family-${index + 1}`,
-    share:profile.share ?? 1,
-    maternalAncestry:profile.physicalAncestry?.maternal,
-    paternalAncestry:profile.physicalAncestry?.paternal,
-  }));
-  const sampled = sampleFamilyAncestry({profiles:normalized, seed:`modern-genesis:${requestId}`});
-  const profile = normalized.find(candidate => candidate.id === sampled.profileId);
-  if (!profile) throw new Error("sampled Genesis family profile is unavailable");
-  return Object.freeze({...authored, ...profile, physicalAncestry:Object.freeze({maternal:sampled.maternal.ancestry,paternal:sampled.paternal.ancestry})});
-}
-
 function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, chronologyEndsAt, createdAt }) {
-  const family = chooseFamilyProfile(authored, requestId);
+  const family = sampleModernFamilyProfile({ profiles:authored.familyProfiles, requestId });
   const timeZone = assertTimeZone(nonEmpty("authored world timeZone", authored.timeZone));
   const languages = subjectLanguages(family.languages);
   const raisedLanguages = subjectLanguages(family.raisedLanguages);
