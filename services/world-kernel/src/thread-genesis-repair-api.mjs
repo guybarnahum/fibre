@@ -1,6 +1,6 @@
 const TOKEN_ENCODER = new TextEncoder();
 const REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
-const CONTRACT = "fibre-thread-repair-v0.8";
+const CONTRACT = "fibre-thread-repair-v0.9";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
