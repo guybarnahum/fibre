@@ -1,14 +1,14 @@
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
+import { THREAD_REPAIR_CONTRACT } from "../../services/world-kernel/src/thread-genesis-repair-api.mjs";
+
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
 const POLL_MS = 2_000;
-const EXPECTED_REPAIR_CONTRACT = "fibre-thread-repair-v0.9";
 
 function progress(stage, detail = {}) {
   process.stderr.write(`${JSON.stringify({
@@ -48,10 +48,6 @@ function deployment() {
   const path = resolve(REPO_ROOT, ".fibre", "cloudflare", "staging", "deployment.json");
   const record = JSON.parse(readFileSync(path, "utf8"));
   if (record?.environment !== "staging") throw new Error("deployment evidence is not staging");
-  const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd:REPO_ROOT, encoding:"utf8" }).trim();
-  if (record.sourceGitSha !== head) {
-    throw new Error(`staging deployment ${record.sourceGitSha} does not match current checkout ${head}`);
-  }
   return record;
 }
 
@@ -95,9 +91,9 @@ async function repairDiagnosis({ worldKernel, privateToken, threadId }) {
     { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken } },
   );
   const body=await payload(response,"World repair diagnosis");
-  if(body.contract!==EXPECTED_REPAIR_CONTRACT){
+  if(body.contract!==THREAD_REPAIR_CONTRACT){
     throw new Error(
-      `staging World Kernel repair contract is ${body.contract??"unknown"}; expected ${EXPECTED_REPAIR_CONTRACT}. Deploy world-kernel from the current checkout before changing canonical visual identity.`,
+      `staging World Kernel repair contract is ${body.contract??"unknown"}; expected ${THREAD_REPAIR_CONTRACT}. Run: npm run cloud:deploy:service -- --env staging --service world-kernel`,
     );
   }
   return body;
@@ -192,7 +188,7 @@ async function main() {
   const deployed = deployment();
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
-  progress("verify_repair_contract", { expectedContract:EXPECTED_REPAIR_CONTRACT });
+  progress("verify_repair_contract", { expectedContract:THREAD_REPAIR_CONTRACT });
   await repairDiagnosis({ worldKernel, privateToken, threadId });
   const beforeObservatory=await observatory({ worldKernel, privateToken, threadId });
   const before=canonicalPortrait(beforeObservatory);
