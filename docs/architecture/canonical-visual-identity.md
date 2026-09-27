@@ -307,7 +307,7 @@ Renewal has one strict semantic invariant:
 before specificationDigest == after specificationDigest
 ```
 
-The current specification is copied exactly into a superseding Embodiment revision. Fibre clears the old root from the new lineage head, requests generation under the current renderer/profile, admits a new immutable root, projects it through Thread Presentation, and lets the existing FID lifecycle replace derived official media. The prior root and prior FIN credential remain historical.
+The current specification is copied exactly into a superseding Embodiment revision. The revision carries a dedicated renewal witness bound to the immediate prior specification digest and prior canonical root; it is **not** a respecification because the person/specification did not change. Fibre clears the old root from the new lineage head, requests generation under the current renderer/profile, admits a new immutable root, projects it through Thread Presentation, and lets the existing FID lifecycle replace derived official media. The prior root and prior FIN credential remain historical.
 
 This is a software/presentation migration, not a life event, genetics migration or authority rewrite. Renewal must not infer ancestry from a face, name or birthplace; it must not invent parents or a physical genome; and it must not silently enrich a thin or wrong canonical specification. If the specification itself is inadequate, use the separate operator correction path below.
 
