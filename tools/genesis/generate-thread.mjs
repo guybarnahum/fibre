@@ -146,7 +146,7 @@ async function poll(operation, ready, { timeoutMs, intervalMs = 2_000 }) {
     if (ready(latest)) return latest;
     await delay(intervalMs);
   }
-  throw new Error(`modern Thread convergence timed out; latest=${JSON.stringify(latest)}`);
+  throw new Error(`Thread birth convergence timed out; latest=${JSON.stringify(latest)}`);
 }
 
 function assertGenesisReference({ body, plan, world, presentation }) {
@@ -154,15 +154,15 @@ function assertGenesisReference({ body, plan, world, presentation }) {
   if (!identity) throw new Error("World inspection lacks authoritative Thread identity");
   const expectedSex = body.subjectIdentity.sex ?? genesisSexForThread({ threadId: plan.threadId });
   const expectedName = expectedSex === "female" ? body.subjectIdentity.femaleName : body.subjectIdentity.maleName;
-  if (identity.name !== expectedName || identity.name === "Fibre Thread") throw new Error("modern Thread proper name did not persist");
-  if (identity.sex !== expectedSex) throw new Error("modern Thread sex did not persist");
-  if (identity.birthDate !== body.bornAt.slice(0, 10)) throw new Error("modern Thread birth date did not persist");
-  if (identity.birthCity !== body.subjectIdentity.birthCity) throw new Error("modern Thread birth city did not persist");
-  if (JSON.stringify(identity.languages) !== JSON.stringify(body.subjectIdentity.languages)) throw new Error("modern Thread spoken languages did not persist");
-  if (!Array.isArray(identity.culture) || identity.culture[0] !== `${body.subjectIdentity.birthCity} formative context`) throw new Error("modern Thread cultural context did not persist");
+  if (identity.name !== expectedName || identity.name === "Fibre Thread") throw new Error("Thread proper name did not persist");
+  if (identity.sex !== expectedSex) throw new Error("Thread sex did not persist");
+  if (identity.birthDate !== body.bornAt.slice(0, 10)) throw new Error("Thread birth date did not persist");
+  if (identity.birthCity !== body.subjectIdentity.birthCity) throw new Error("Thread birth city did not persist");
+  if (JSON.stringify(identity.languages) !== JSON.stringify(body.subjectIdentity.languages)) throw new Error("Thread spoken languages did not persist");
+  if (!Array.isArray(identity.culture) || identity.culture[0] !== `${body.subjectIdentity.birthCity} formative context`) throw new Error("Thread cultural context did not persist");
 
   const publicPresentation = presentation?.snapshot?.presentation;
-  if (publicPresentation?.subject?.displayName !== expectedName) throw new Error("public Presentation does not expose modern Thread name");
+  if (publicPresentation?.subject?.displayName !== expectedName) throw new Error("public Presentation does not expose Thread name");
   if (publicPresentation.subject.birthDate !== body.bornAt.slice(0, 10)) throw new Error("public Presentation does not expose birth date");
   if (JSON.stringify(publicPresentation.subject.languages) !== JSON.stringify(body.subjectIdentity.languages)) throw new Error("public Presentation does not expose spoken languages");
   if (!(publicPresentation.places ?? []).some(({ displayName }) => displayName === body.subjectIdentity.birthCity)) {
@@ -178,9 +178,9 @@ function usage() {
   return [
     "Genesis staging birth",
     "",
-    "  npm run genesis:modern:staging -- --sex=female --place=Israel/Jerusalem --heritage=\"Yemeni Jewish\"",
-    "  npm run genesis:modern:staging -- --sex=male --place=Germany/Berlin --heritage=Turkish",
-    "  npm run genesis:modern:staging -- --new-world --sex=female --place=Brazil/Recife",
+    "  npm run genesis:birth:staging -- --sex=female --place=Israel/Jerusalem --heritage=\"Yemeni Jewish\"",
+    "  npm run genesis:birth:staging -- --sex=male --place=Germany/Berlin --heritage=Turkish",
+    "  npm run genesis:birth:staging -- --new-world --sex=female --place=Brazil/Recife",
     "",
     "Keys: --sex=female|male, --place=Country/City, --heritage=Family Heritage.",
     "Legacy shorthand --female/--male and --Country/City remains accepted.",
@@ -215,7 +215,7 @@ async function main() {
   const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
 
   const explicitRequestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || null;
-  const requestId = explicitRequestId ?? `genesis-modern-${Date.now().toString(36)}`;
+  const requestId = explicitRequestId ?? `genesis-birth-${Date.now().toString(36)}`;
   const existing = explicitRequestId === null
     ? null
     : await inspectDevelopmentIfExists({ baseUrl: birthCenter, privateToken, requestId, timeoutMs });
@@ -252,7 +252,7 @@ async function main() {
   }
 
   process.stdout.write(`${JSON.stringify({
-    event: "modern-thread-birth-start",
+    event: "thread-birth-start",
     requestId,
     requestMode: existing === null ? "new" : "resume",
     sexSelection: options.sex ?? "derived",
@@ -288,7 +288,7 @@ async function main() {
   const validated = assertGenesisReference({ body, plan, world, presentation });
 
   process.stdout.write(`${JSON.stringify({
-    event: "modern-thread-birth-complete",
+    event: "thread-birth-complete",
     requestId,
     requestMode: existing === null ? "new" : "resume",
     sexSelection: options.sex ?? "derived",
@@ -313,7 +313,7 @@ async function main() {
 
 main().catch((error) => {
   process.stderr.write(`${JSON.stringify({
-    event: "modern-thread-birth-failed",
+    event: "thread-birth-failed",
     errorName: error?.constructor?.name ?? "Error",
     message: error?.message ?? String(error),
   })}\n`);
