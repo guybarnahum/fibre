@@ -95,6 +95,7 @@ export function sampleFamilyProfile({ profiles, requestId }) {
     maternalAncestry:profile?.physicalAncestry?.maternal,
     paternalAncestry:profile?.physicalAncestry?.paternal,
   }));
+  // Historical deterministic namespace: keep stable unless family sampling is intentionally reseeded.
   const sampled = sampleFamilyAncestry({ profiles:normalized, seed:`modern-genesis:${requestId}` });
   const profile = normalized.find((candidate) => candidate.id === sampled.profileId);
   if (!profile) throw new Error("sampled Genesis family profile is unavailable");
