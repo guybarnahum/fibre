@@ -235,7 +235,7 @@ Birth must not depend on an image provider being available. A Thread can be born
 
 Once the canonical visual root is admitted and projected, Thread Presentation automatically asks the existing FID lifecycle to **ensure** the credential against that exact canonical root. If no active FID exists, FIA performs initial issuance. If the active credential's admitted photo belongs to an older canonical root, FIA performs a replacement and preserves credential lineage. Presentation does not cut cards itself.
 
-Modern Genesis also keeps language authority separated: eventual/spoken languages remain available to life generation and Thread identity, while the languages actually used in early upbringing are recorded separately as Genesis `raisedLanguages` evidence. A later school-acquired language must not appear as a raised language merely because the Thread speaks it by young-adult entry.
+Genesis also keeps language authority separated: eventual/spoken languages remain available to life generation and Thread identity, while the languages actually used in early upbringing are recorded separately as Genesis `raisedLanguages` evidence. A later school-acquired language must not appear as a raised language merely because the Thread speaks it by young-adult entry.
 
 ## Canonical visual identity before derived portraits
 
