@@ -156,6 +156,14 @@ test("uncommon local appearance remains valid when family origin makes it causal
     heritageContext:"No operator-supplied heritage label.",
     familyOriginContext:"One caregiver is Georgian; the other was born in Ghana, came to Tbilisi as a university student in the 1990s, remained after graduation, and built a mixed Georgian-Ghanaian family whose relatives and family stories connect both places.",
     appearanceContext:"A mixed family appearance range combining substantial West African and South Caucasus ancestry, including darker skin and tightly curled to wavy dark hair alongside broad variation in facial features and complexion; no single phenotype is implied.",
+    familyProfiles:[{
+      id:"georgian-ghanaian", share:1,
+      familyOriginContext:"One caregiver is Georgian; the other was born in Ghana, came to Tbilisi as a university student in the 1990s, remained after graduation, and built a mixed Georgian-Ghanaian family whose relatives and family stories connect both places.",
+      physicalAncestry:{
+        maternal:[{population:"Georgian family",share:1,referencePopulation:"west_asia"}],
+        paternal:[{population:"Ghanaian family",share:1,referencePopulation:"afr_west"}],
+      },
+    }],
   };
   const created = await resolveModernWorldSelection({
     selector,
