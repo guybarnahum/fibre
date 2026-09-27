@@ -70,20 +70,18 @@ async function populationContext(place,year,model){
     const json=await response.json();
     const text=json.output?.flatMap(item=>item.content??[]).find(item=>item.type==="output_text")?.text;
     if(!text)throw Error(`model returned no population context (${json.status??"unknown"})`);
-    try{
-      const parsed=JSON.parse(text);
-      validateModernFamilyProfiles(parsed.profiles);
-      return parsed;
-    }catch(error){
-      if(error instanceof SyntaxError)return{parseError:true,status:json.status,reason:json.incomplete_details?.reason??null,text};
-      throw error;
-    }
+    try{return JSON.parse(text)}catch{return{parseError:true,status:json.status,reason:json.incomplete_details?.reason??null,text}}
   };
   const first=await request("");
-  if(!first.parseError)return first;
-  const retry=await request("Return concise field values and exactly the requested schema. Keep each familyOriginContext under 220 characters. Do not add prose outside the schema.");
-  if(!retry.parseError)return retry;
-  throw Error(`population context JSON malformed after retry (${retry.status??"unknown"}${retry.reason?": "+retry.reason:""}; chars ${retry.text.length})`);
+  let firstError=null;
+  if(!first.parseError){
+    try{validateModernFamilyProfiles(first.profiles);return first}catch(error){firstError=error}
+  }
+  const problem=firstError?.message??`malformed JSON${first.reason?": "+first.reason:""}`;
+  const retry=await request(`The previous response failed admission: ${problem}. Regenerate the full response. Keep familyOriginContext concise, use one bare language name per item, and satisfy the requested schema exactly.`);
+  if(retry.parseError)throw Error(`population context JSON malformed after retry (${retry.status??"unknown"}${retry.reason?": "+retry.reason:""}; chars ${retry.text.length})`);
+  validateModernFamilyProfiles(retry.profiles);
+  return retry;
 }
 
 const sexFor=requestId=>Number.parseInt(createHash("sha256").update(requestId+"\0sex").digest("hex").slice(0,12),16)%2===0?"female":"male";
