@@ -23,16 +23,21 @@ function required(name, value) {
 }
 
 function options(argv) {
-  const parsed = { threadId:null, specFile:null, reason:null };
+  const parsed = { threadId:null, specFile:null, renewCurrent:false, reason:null };
   for (const arg of argv) {
     if (arg.startsWith("--thread-id=")) parsed.threadId = arg.slice("--thread-id=".length);
     else if (arg.startsWith("--spec-file=")) parsed.specFile = arg.slice("--spec-file=".length);
+    else if (arg === "--renew-current") parsed.renewCurrent = true;
     else if (arg.startsWith("--reason=")) parsed.reason = arg.slice("--reason=".length);
     else throw new TypeError(`unsupported visual repair option ${arg}`);
   }
+  if (parsed.renewCurrent === (parsed.specFile !== null)) {
+    throw new TypeError("choose exactly one of --spec-file=<path> or --renew-current");
+  }
   return {
     threadId:required("--thread-id", parsed.threadId),
-    specFile:required("--spec-file", parsed.specFile),
+    specFile:parsed.specFile,
+    renewCurrent:parsed.renewCurrent,
     reason:required("--reason", parsed.reason),
   };
 }
@@ -100,13 +105,14 @@ function canonicalPortrait(observatoryBody) {
   return portraits[0];
 }
 
-async function repairCanonical({
+async function submitCanonical({
   worldKernel,
   privateToken,
   threadId,
   operationKey,
   specification,
   reason,
+  renewCurrent,
 }) {
   const response = await fetch(
     `${worldKernel}/internal/threads/${encodeURIComponent(threadId)}/repair`,
@@ -116,54 +122,68 @@ async function repairCanonical({
         "content-type":"application/json",
         "x-fibre-private-token":privateToken,
       },
-      body:JSON.stringify({
-        action:"canonical_visual_identity",
-        operationKey,
-        correctedSpecification:specification,
-        reason,
-      }),
+      body:JSON.stringify(renewCurrent
+        ? {
+            action:"canonical_visual_identity_renewal",
+            operationKey,
+            reason,
+          }
+        : {
+            action:"canonical_visual_identity",
+            operationKey,
+            correctedSpecification:specification,
+            reason,
+          }),
     },
   );
-  return payload(response, "canonical visual identity repair");
+  return payload(response, renewCurrent ? "canonical visual identity renewal" : "canonical visual identity repair");
 }
 
 async function main() {
-  const { threadId, specFile, reason } = options(process.argv.slice(2));
+  const { threadId, specFile, renewCurrent, reason } = options(process.argv.slice(2));
   const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
-  const specification = JSON.parse(readFileSync(resolve(process.cwd(), specFile), "utf8"));
-  const operationKey = `visual_identity_repair_${createHash("sha256")
-    .update(JSON.stringify({ threadId, specification }))
-    .digest("hex")
-    .slice(0, 24)}`;
 
-  progress("inspect_current_identity", { threadId });
+  progress("inspect_current_identity", { threadId, mode:renewCurrent ? "renewal" : "correction" });
   const deployed = deployment();
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   const before = canonicalPortrait(await observatory({ worldKernel, privateToken, threadId }));
+  const specification = renewCurrent
+    ? before.specification
+    : JSON.parse(readFileSync(resolve(process.cwd(), specFile), "utf8"));
+  const operationKey = `visual_identity_${renewCurrent ? "renew" : "repair"}_${createHash("sha256")
+    .update(JSON.stringify({ threadId, specification, reason }))
+    .digest("hex")
+    .slice(0, 24)}`;
   const beforePresentation = await presentation({ threadPresentation, threadId });
   const previousFidCard = beforePresentation?.snapshot?.presentation?.identityCard ?? null;
   const previousFidCredentialId = previousFidCard?.credentialId ?? null;
   const previousFidCredentialVersion = previousFidCard?.credentialVersion ?? null;
 
-  progress("submit_canonical_correction", {
+  progress(renewCurrent ? "submit_canonical_renewal" : "submit_canonical_correction", {
     previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
+    previousSpecificationDigest:before.specificationDigest ?? null,
     previousFidCredentialId,
   });
-  const repaired = await repairCanonical({
+  const changed = await submitCanonical({
     worldKernel,
     privateToken,
     threadId,
     operationKey,
     specification,
     reason,
+    renewCurrent,
   });
-  const pendingRevision = repaired?.visualIdentityCorrection?.embodiment?.revision;
-  if (!Number.isSafeInteger(pendingRevision)) throw new Error("visual repair did not return a corrected Embodiment revision");
+  const result = renewCurrent ? changed?.visualIdentityRenewal : changed?.visualIdentityCorrection;
+  const pendingRevision = result?.embodiment?.revision;
+  if (!Number.isSafeInteger(pendingRevision)) throw new Error("visual identity change did not return a pending Embodiment revision");
+  if (renewCurrent && result.embodiment.specificationDigest !== before.specificationDigest) {
+    throw new Error("canonical renewal changed the authoritative visual specification");
+  }
 
   progress("await_canonical_root", { pendingRevision });
   const admitted = await poll(
-    "corrected canonical root admission",
+    renewCurrent ? "renewed canonical root admission" : "corrected canonical root admission",
     () => observatory({ worldKernel, privateToken, threadId }),
     (body) => {
       const portrait = canonicalPortrait(body);
@@ -182,7 +202,7 @@ async function main() {
 
   progress("await_presentation_projection");
   await poll(
-    "corrected visual identity projection",
+    renewCurrent ? "renewed visual identity projection" : "corrected visual identity projection",
     () => presentation({ threadPresentation, threadId }),
     (body) => body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0] === canonicalReferenceObjectRef,
   );
@@ -190,7 +210,7 @@ async function main() {
 
   progress("await_fin_card", { previousFidCredentialId });
   const correctedPresentation = await poll(
-    "automatic FID projection from corrected canonical root",
+    renewCurrent ? "automatic FID projection from renewed canonical root" : "automatic FID projection from corrected canonical root",
     () => presentation({ threadPresentation, threadId }),
     (body) => {
       const card = body?.snapshot?.presentation?.identityCard ?? null;
@@ -213,12 +233,14 @@ async function main() {
   });
 
   process.stdout.write(`${JSON.stringify({
-    event:"canonical-visual-identity-repair-complete",
+    event:renewCurrent ? "canonical-visual-identity-renewal-complete" : "canonical-visual-identity-repair-complete",
+    mode:renewCurrent ? "renewal" : "correction",
     threadId,
     operationKey,
+    specificationDigest:corrected.specificationDigest,
     previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
-    correctedCanonicalReferenceObjectRef:canonicalReferenceObjectRef,
-    correctedEmbodimentRevision:corrected.revision,
+    canonicalReferenceObjectRef,
+    embodimentRevision:corrected.revision,
     previousFidCredentialId,
     previousFidCredentialVersion,
     fidCredentialId:credential.credentialId,
