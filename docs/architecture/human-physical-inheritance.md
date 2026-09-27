@@ -1,7 +1,7 @@
 ---
 id: human-physical-inheritance
 status: accepted
-last-reviewed: 2026-09-26
+last-reviewed: 2026-09-27
 canonical: true
 ---
 
