@@ -171,6 +171,7 @@ export function bindVerifiedCanonicalVisualIdentityProof({
     revision: embodiment.revision + 1,
     supersedesRevision: embodiment.revision,
     respecification: null,
+    ...(Object.hasOwn(embodiment, "renewal") ? { renewal:null } : {}),
     status: "available",
     unavailableReason: null,
     asset: {
