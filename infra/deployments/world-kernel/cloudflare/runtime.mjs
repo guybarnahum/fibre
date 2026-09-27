@@ -18,6 +18,7 @@ import { createThreadGenesisRepairApi } from "#services/world-kernel/src/thread-
 import { createThreadGenesisRepairService } from "#services/world-kernel/src/thread-genesis-repair-service.mjs";
 import { createThreadIdentityCommandService } from "#services/world-kernel/src/thread-identity-command-service.mjs";
 import { ThreadIdentityUpdateStore } from "#services/world-kernel/src/thread-identity-update-store.mjs";
+import { ThreadPhysicalGenomeMigrationStore } from "#services/world-kernel/src/thread-physical-genome-migration-store.mjs";
 import { createThreadVisualPublicationProcess } from "#services/world-kernel/src/thread-visual-publication-process.mjs";
 import { createThreadVisualPublicationReconciler } from "#services/world-kernel/src/thread-visual-publication-reconciler.mjs";
 import { createThreadVisualPublicationRecoveryApi } from "#services/world-kernel/src/thread-visual-publication-recovery-api.mjs";
@@ -166,6 +167,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   let genesisBirthSexEvidence;
   let genesisSexMigrationStore;
   let threadIdentityUpdateStore;
+  let threadPhysicalGenomeMigrationStore;
 
   try {
     identityStore = openIdentityStore(worldStorage);
@@ -178,8 +180,9 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     genesisBirthSexEvidence = new GenesisBirthSexEvidence(worldStorage);
     genesisSexMigrationStore = new GenesisSexMigrationStore(worldStorage);
     threadIdentityUpdateStore = new ThreadIdentityUpdateStore(worldStorage);
+    threadPhysicalGenomeMigrationStore = new ThreadPhysicalGenomeMigrationStore(worldStorage);
   } catch (error) {
-    closeAll([threadIdentityUpdateStore, genesisSexMigrationStore, genesisBirthSexEvidence, visualPublicationWorkset, presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
+    closeAll([threadPhysicalGenomeMigrationStore, threadIdentityUpdateStore, genesisSexMigrationStore, genesisBirthSexEvidence, visualPublicationWorkset, presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
     throw error;
   }
 
@@ -237,6 +240,8 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     genesisSexEvidence:genesisBirthSexEvidence,
     genesisSexMigrator:genesisSexMigrationStore,
     symbolicGenomeMigrator:symbolicGenomeStore,
+    physicalGenomeMigrator:threadPhysicalGenomeMigrationStore,
+    visualIdentityRepairService,
     genesisAuthority:genesisStore,
     identityUpdater:threadIdentityUpdateStore,
     activityRecorder,
@@ -392,6 +397,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     genesisBirthSexEvidence,
     genesisSexMigrationStore,
     threadIdentityUpdateStore,
+    threadPhysicalGenomeMigrationStore,
     presentationDelivery,
     visualPublicationProcess,
     visualReconciler,
@@ -409,7 +415,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
       if (closed) return;
       closed = true;
       if (cancelSchedule) await reconciliationRuntime.stop();
-      closeAll([threadIdentityUpdateStore, genesisSexMigrationStore, genesisBirthSexEvidence, visualPublicationWorkset, presentationOutboxStore, civilRegistryStore, genesisStore, symbolicGenomeStore, embodimentStore, identityStore, worldStore]);
+      closeAll([threadPhysicalGenomeMigrationStore, threadIdentityUpdateStore, genesisSexMigrationStore, genesisBirthSexEvidence, visualPublicationWorkset, presentationOutboxStore, civilRegistryStore, genesisStore, symbolicGenomeStore, embodimentStore, identityStore, worldStore]);
     },
   });
 }
