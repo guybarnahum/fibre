@@ -201,15 +201,13 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
   const place = (kind) => `place_${selector.slug}_${sourceDigest}_${kind}`;
   const heritageLabel = heritage?.display ?? null;
   const familyOriginContext = nonEmpty("authored world familyOriginContext", family.familyOriginContext);
-  const householdShapeBase = heritageLabel === null
+  const householdShape = heritageLabel === null
     ? "Two caregivers, the subject and one sibling share a household; other relatives may participate in ordinary visits and family logistics without being assumed to live there."
     : `Two caregivers, the subject and one sibling share a household in ${selector.city}. The household carries ${heritageLabel} heritage; other relatives or community ties may participate in ordinary visits, language, food, celebrations and family logistics without prescribing the subject's beliefs or personality.`;
-  const householdShape = `${householdShapeBase} Family origin context: ${familyOriginContext}`;
   const culturalContext = [
     authored.culturalContext,
     ...(heritageLabel === null ? [] : [`Household heritage: ${heritageLabel}. ${authored.heritageContext}`]),
-    `Family origin context: ${familyOriginContext}`,
-    "Family origin may shape ordinary experiences of belonging, language, peer perception, family stories, travel, community ties, or identity questions when context makes those effects plausible. Do not force every episode to concern ancestry or visible difference, and do not infer personality, ability, values, trauma, or social outcome from ancestry or appearance.",
+    "The sampled family profile constrains names, household/upbringing languages and physical inheritance. Its free-form family-origin explanation is provenance only and must not be treated as biography, occupation, class, religion, personality, values or lifestyle.",
   ].join("\n");
   const worldSpec = Object.freeze({
     worldSpecId,
@@ -259,15 +257,12 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
   const participants = Object.freeze([
     Object.freeze({ participantId:"caregiver_1", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([
       `Lives with the subject in ${selector.city}${householdSuffix}.`,
-      `Household family-origin context: ${familyOriginContext}`,
     ]) }),
     Object.freeze({ participantId:"caregiver_2", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([
       `Lives with the subject in ${selector.city}${householdSuffix}.`,
-      `Household family-origin context: ${familyOriginContext}`,
     ]) }),
     Object.freeze({ participantId:"sibling_1", factualRoles:Object.freeze(["sibling"]), relationshipFacts:Object.freeze([
       `Lives with the subject${householdSuffix} and is two years older than the subject.`,
-      `Shares the household family-origin context: ${familyOriginContext}`,
     ]) }),
   ]);
   const placeAffordances = Object.freeze([
@@ -305,14 +300,14 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
     "Each family profile owns its personal language path. raisedLanguages is the language or languages actually used in that household or early upbringing; languages is the set the subject plausibly uses by the end of the Genesis chronology.",
     "Within every family profile, every raised language must also appear in languages. A school-acquired language may appear in languages without appearing in raisedLanguages. Neither field is a city or country language inventory.",
     "Use at most three eventual personal languages per family profile. Every language value must be one bare language name, never a list, explanation, slash-combination or several languages packed into one string. Heritage/ancestry languages belong in raisedLanguages only when that household plausibly uses them; school languages may become usable later without becoming upbringing languages. Put broader regional multilingualism in culturalContext.",
-    "Within each family profile, familyOriginContext is a concise causal household history: local family roots, mixed ancestry, migration, diaspora, adoption, or other family-origin facts only when plausibly warranted.",
+    "Within each family profile, familyOriginContext is a concise provenance explanation for why the profile's explicit names, languages and maternal/paternal physical ancestry fit together. It is inspectable authoring rationale, not a pre-authored biography.",
     "Also return familyProfiles: three to eight weighted plausible family-origin profiles for this place and era. Together they are a small local distribution, not a diversity checklist. Weight ordinary locally common family histories more heavily while preserving plausible minority, diaspora and mixed-family paths. Each profile carries its own familyOriginContext, household/raised and eventual language path, naming order, naming material, and separate maternal/paternal physicalAncestry. Fibre will deterministically sample one profile per birth without another model call.",
     "A family profile is one concrete hypothetical family path, not a demographic umbrella and not a whole-person stereotype. Write it as though it describes one actual family: choose one specific roots/migration/kin path rather than alternatives such as Pakistani or Bangladeshi, Nigerian or Ghanaian, or Tamil/Kannada/Telugu/Kerala bundled together. A mixed family is valid only when the profile explicitly gives the concrete maternal and paternal paths that are mixed. Do not assign a profile a class, occupation, migration job/reason, politics, diet, hobbies, personality, values or lifestyle. Keep religion and observance out of familyOriginContext; naming material may reflect a family naming tradition without asserting the subject's belief.",
     "Naming belongs to the sampled family, not directly to birthplace or physical ancestry. Give every family profile at least twenty-four distinct female given names, twenty-four male given names and twenty-four family names that are plausible for that family history and era. Preserve ordinary common names; do not optimize for exotic variety. Mixed families may draw from either side when causally plausible. Names are candidates, not pre-authored people.",
     "Each family profile is one coherent household-origin path. Never merge mutually exclusive population alternatives merely to cover more of the city. If two roots would produce different household languages, naming traditions or physical ancestry, they belong in separate profiles unless this one family is explicitly mixed across those exact parental lines. Coverage is less important than causal coherence.",
     "When no heritage is supplied, the family-profile distribution should be weighted toward ordinary local household histories rather than uniform global diversity. Less common diaspora or mixed-origin profiles are valid, but their familyOriginContext must explicitly explain the migration or family connection that makes them part of this place.",
     "When heritage is supplied, condition the family-profile distribution on that heritage: familyOriginContext, naming material, household language path and family/community context must remain compatible with both heritage and place.",
-    "A sampled familyOriginContext is causal World material. It may shape ordinary life through language at home, relatives, family stories, visits, community ties, being visibly unusual or ordinary in the local environment, peer perception, belonging, or identity questions when appropriate. Do not make every episode about ancestry or visible difference, and do not assume discrimination, trauma, personality, ability, values, or social outcomes.",
+    "Do not inject familyOriginContext itself into the subject's life story. The profile becomes causal only through its explicit selected outputs: naming material, raised/eventual languages and maternal/paternal physical ancestry. Rich relatives, family stories, migration consequences, religion, class and lifestyle belong to later authored life only when independently warranted.",
     "Do not infer the future subject's religion, religious observance, politics, personality, class identity, profession, competence, trauma or values from ancestry, appearance, place, or heritage. A heritage label may name a religious or ethnocultural tradition without making the subject personally observant or believing.",
     "Inside every family profile, physicalAncestry has separate maternal and paternal ancestry mixtures for this one hypothetical family, causally supported by familyOriginContext. Each population entry names one concrete lineage source, not an alternative list or a demographic blend. Multiple entries on one parent are allowed only when that parent is explicitly mixed across those exact sources. Never add ancestry merely to explain a religion, naming tradition, city diversity or uncertainty. Use referencePopulation only as a physical founder prior; population is a concise human-readable family-origin label. The codes are literal geographic regions: afr_west = West Africa; afr_east = East Africa; eur_north = Northern Europe; eur_south = Southern Europe; west_asia = West Asia; south_asia = South Asia; east_asia = East Asia; southeast_asia = Southeast Asia; indigenous_america = Indigenous Americas; oceania = Oceania. Do not confuse compass words in a population description with the code name: for example, southwestern or southeastern parts of an African country are still African, not eur_south. Shares on each parent should sum to 1. Do not use these fields for culture, personality, ability, class, religion, behavior or values.",
     "Use an IANA time-zone identifier. Keep civic descriptions concrete enough to ground ordinary episodes, but avoid unsupported hyper-specific claims.",
