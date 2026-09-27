@@ -1,4 +1,5 @@
 import { normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
+import { phenotypeFromPhysicalGenome } from "#core/src/human-phenotype/index.mjs";
 import {
   MAX_COMMAND_PAYLOAD_BYTES,
   EVENT_TYPES,
@@ -221,6 +222,40 @@ function applyGenesisSexMigration(thread, event) {
   return replayed;
 }
 
+function applyPhysicalGenomeMigration(thread,event){
+  if(thread===null)throw new IntegrityError(`physical genome migration event ${event.eventId} appears before a seed event`);
+  if(event.commandId!==null||event.commandDigest!==null)throw new IntegrityError(`physical genome migration event ${event.eventId} must not carry command metadata`);
+  if(event.threadId!==thread.threadId)throw new IntegrityError(`physical genome migration event ${event.eventId} belongs to another Thread`);
+  if(thread.version!==event.expectedVersion)throw new IntegrityError(`physical genome migration event ${event.eventId} expected version ${event.expectedVersion}, replay has ${thread.version}`);
+  if(thread.genome.physical!==undefined)throw new IntegrityError(`physical genome migration event ${event.eventId} attempts to replace existing physical genome`);
+  if(event.payloadSchemaVersion!==1)throw new IntegrityError(`physical genome migration event ${event.eventId} has unsupported payload schema version ${event.payloadSchemaVersion}`);
+  assertExactKeys(`physical genome migration event ${event.eventId} payload`,event.payload,["operationKey","physicalAncestry","physicalGenome"]);
+  assertNonEmpty(`physical genome migration event ${event.eventId} operationKey`,event.payload.operationKey);
+  assertPlainObject(`physical genome migration event ${event.eventId} ancestry`,event.payload.physicalAncestry);
+  assertExactKeys(`physical genome migration event ${event.eventId} ancestry`,event.payload.physicalAncestry,["maternal","paternal"]);
+  if(!Array.isArray(event.payload.physicalAncestry.maternal)||!Array.isArray(event.payload.physicalAncestry.paternal)){
+    throw new IntegrityError(`physical genome migration event ${event.eventId} has invalid ancestry evidence`);
+  }
+  try{phenotypeFromPhysicalGenome(event.payload.physicalGenome,{sex:thread.identity?.sex})}
+  catch(error){throw new IntegrityError(`physical genome migration event ${event.eventId} has invalid physical genome: ${error.message}`)}
+  if(
+    event.provenance.source!=="operator_confirmed_legacy_physical_ancestry"
+    || event.provenance.migrationId!=="legacy_physical_embodiment_v1"
+    || event.provenance.notThreadLifeEvent!==true
+  ){
+    throw new IntegrityError(`physical genome migration event ${event.eventId} lacks legacy embodiment migration provenance`);
+  }
+  const replayed={
+    ...thread,
+    version:thread.version+1,
+    genome:{...thread.genome,physical:structuredClone(event.payload.physicalGenome)},
+    provenance:{...thread.provenance,lastEventId:event.eventId},
+  };
+  validateStoredThread(event.threadId,replayed);
+  if(replayed.version!==event.resultingVersion)throw new IntegrityError(`physical genome migration event ${event.eventId} has an invalid resulting version`);
+  return replayed;
+}
+
 function applyThreadIdentityUpdate(thread, event) {
   if (thread === null) throw new IntegrityError(`identity event ${event.eventId} appears before a seed event`);
   if (event.commandId !== null || event.commandDigest !== null) throw new IntegrityError(`identity event ${event.eventId} must not carry command metadata`);
@@ -366,6 +401,9 @@ export function applyEventToThread(thread, event) {
   }
   if (event.eventType === "THREAD_IDENTITY_UPDATED") {
     return applyThreadIdentityUpdate(thread, event);
+  }
+  if (event.eventType === "THREAD_PHYSICAL_GENOME_MIGRATED") {
+    return applyPhysicalGenomeMigration(thread,event);
   }
   if (event.eventType === "SELF_MODEL_UPDATED") {
     if (thread === null) throw new IntegrityError(`event ${event.eventId} appears before a seed event`);
