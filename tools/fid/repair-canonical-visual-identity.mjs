@@ -23,21 +23,22 @@ function required(name, value) {
 }
 
 function options(argv) {
-  const parsed = { threadId:null, specFile:null, renewCurrent:false, reason:null };
+  const parsed = { threadId:null, specFile:null, renewCurrent:false, ancestryFile:null, reason:null };
   for (const arg of argv) {
     if (arg.startsWith("--thread-id=")) parsed.threadId = arg.slice("--thread-id=".length);
     else if (arg.startsWith("--spec-file=")) parsed.specFile = arg.slice("--spec-file=".length);
     else if (arg === "--renew-current") parsed.renewCurrent = true;
+    else if (arg.startsWith("--legacy-physical-ancestry-file=")) parsed.ancestryFile = arg.slice("--legacy-physical-ancestry-file=".length);
     else if (arg.startsWith("--reason=")) parsed.reason = arg.slice("--reason=".length);
     else throw new TypeError(`unsupported visual repair option ${arg}`);
   }
-  if (parsed.renewCurrent === (parsed.specFile !== null)) {
-    throw new TypeError("choose exactly one of --spec-file=<path> or --renew-current");
-  }
+  const modes=[parsed.renewCurrent,parsed.specFile!==null,parsed.ancestryFile!==null].filter(Boolean).length;
+  if(modes!==1)throw new TypeError("choose exactly one of --spec-file=<path>, --renew-current, or --legacy-physical-ancestry-file=<path>");
   return {
     threadId:required("--thread-id", parsed.threadId),
     specFile:parsed.specFile,
     renewCurrent:parsed.renewCurrent,
+    ancestryFile:parsed.ancestryFile,
     reason:required("--reason", parsed.reason),
   };
 }
@@ -139,20 +140,58 @@ async function submitCanonical({
   return payload(response, renewCurrent ? "canonical visual identity renewal" : "canonical visual identity repair");
 }
 
+async function submitLegacyPhysicalMigration({
+  worldKernel,
+  privateToken,
+  threadId,
+  migrationKey,
+  physicalAncestry,
+  reason,
+}) {
+  const response=await fetch(
+    `${worldKernel}/internal/threads/${encodeURIComponent(threadId)}/repair`,
+    {
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "x-fibre-private-token":privateToken,
+      },
+      body:JSON.stringify({
+        action:"migrate",
+        migrationId:"legacy_physical_embodiment_v1",
+        migrationKey,
+        input:{physicalAncestry,reason},
+      }),
+    },
+  );
+  return payload(response,"legacy physical embodiment migration");
+}
+
 async function main() {
-  const { threadId, specFile, renewCurrent, reason } = options(process.argv.slice(2));
+  const { threadId, specFile, renewCurrent, ancestryFile, reason } = options(process.argv.slice(2));
   const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
 
-  progress("inspect_current_identity", { threadId, mode:renewCurrent ? "renewal" : "correction" });
+  const legacyMigration=ancestryFile!==null;
+  const mode=legacyMigration?"legacy_physical_embodiment_migration":renewCurrent?"renewal":"correction";
+  progress("inspect_current_identity", { threadId, mode });
   const deployed = deployment();
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
-  const before = canonicalPortrait(await observatory({ worldKernel, privateToken, threadId }));
+  const beforeObservatory=await observatory({ worldKernel, privateToken, threadId });
+  const before=canonicalPortrait(beforeObservatory);
+  const physicalAncestry=legacyMigration
+    ? JSON.parse(readFileSync(resolve(process.cwd(),ancestryFile),"utf8"))
+    : null;
+  if(legacyMigration&&beforeObservatory?.observatory?.thread?.genome?.physical!==undefined){
+    throw new Error("legacy physical embodiment migration requires a Thread without an authoritative physical genome");
+  }
   const specification = renewCurrent
     ? before.specification
-    : JSON.parse(readFileSync(resolve(process.cwd(), specFile), "utf8"));
-  const operationKey = `visual_identity_${renewCurrent ? "renew" : "repair"}_${createHash("sha256")
-    .update(JSON.stringify({ threadId, specification, reason }))
+    : legacyMigration
+      ? null
+      : JSON.parse(readFileSync(resolve(process.cwd(), specFile), "utf8"));
+  const operationKey = `${legacyMigration?"legacy_physical_embodiment":`visual_identity_${renewCurrent ? "renew" : "repair"}`}_${createHash("sha256")
+    .update(JSON.stringify({ threadId, specification, physicalAncestry, reason }))
     .digest("hex")
     .slice(0, 24)}`;
   const beforePresentation = await presentation({ threadPresentation, threadId });
@@ -160,21 +199,32 @@ async function main() {
   const previousFidCredentialId = previousFidCard?.credentialId ?? null;
   const previousFidCredentialVersion = previousFidCard?.credentialVersion ?? null;
 
-  progress(renewCurrent ? "submit_canonical_renewal" : "submit_canonical_correction", {
+  progress(legacyMigration ? "submit_legacy_physical_embodiment_migration" : renewCurrent ? "submit_canonical_renewal" : "submit_canonical_correction", {
     previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
     previousSpecificationDigest:before.specificationDigest ?? null,
     previousFidCredentialId,
   });
-  const changed = await submitCanonical({
-    worldKernel,
-    privateToken,
-    threadId,
-    operationKey,
-    specification,
-    reason,
-    renewCurrent,
-  });
-  const result = renewCurrent ? changed?.visualIdentityRenewal : changed?.visualIdentityCorrection;
+  const changed = legacyMigration
+    ? await submitLegacyPhysicalMigration({
+        worldKernel,
+        privateToken,
+        threadId,
+        migrationKey:operationKey,
+        physicalAncestry,
+        reason,
+      })
+    : await submitCanonical({
+        worldKernel,
+        privateToken,
+        threadId,
+        operationKey,
+        specification,
+        reason,
+        renewCurrent,
+      });
+  const result = legacyMigration
+    ? changed?.migration?.visualIdentityCorrection
+    : renewCurrent ? changed?.visualIdentityRenewal : changed?.visualIdentityCorrection;
   const pendingRevision = result?.embodiment?.revision;
   if (!Number.isSafeInteger(pendingRevision)) throw new Error("visual identity change did not return a pending Embodiment revision");
   if (renewCurrent && result.embodiment.specificationDigest !== before.specificationDigest) {
@@ -183,7 +233,7 @@ async function main() {
 
   progress("await_canonical_root", { pendingRevision });
   const admitted = await poll(
-    renewCurrent ? "renewed canonical root admission" : "corrected canonical root admission",
+    legacyMigration ? "migrated canonical root admission" : renewCurrent ? "renewed canonical root admission" : "corrected canonical root admission",
     () => observatory({ worldKernel, privateToken, threadId }),
     (body) => {
       const portrait = canonicalPortrait(body);
@@ -202,7 +252,7 @@ async function main() {
 
   progress("await_presentation_projection");
   await poll(
-    renewCurrent ? "renewed visual identity projection" : "corrected visual identity projection",
+    legacyMigration ? "migrated visual identity projection" : renewCurrent ? "renewed visual identity projection" : "corrected visual identity projection",
     () => presentation({ threadPresentation, threadId }),
     (body) => body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0] === canonicalReferenceObjectRef,
   );
@@ -210,7 +260,7 @@ async function main() {
 
   progress("await_fin_card", { previousFidCredentialId });
   const correctedPresentation = await poll(
-    renewCurrent ? "automatic FID projection from renewed canonical root" : "automatic FID projection from corrected canonical root",
+    legacyMigration ? "automatic FID projection from migrated canonical root" : renewCurrent ? "automatic FID projection from renewed canonical root" : "automatic FID projection from corrected canonical root",
     () => presentation({ threadPresentation, threadId }),
     (body) => {
       const card = body?.snapshot?.presentation?.identityCard ?? null;
@@ -233,8 +283,8 @@ async function main() {
   });
 
   process.stdout.write(`${JSON.stringify({
-    event:renewCurrent ? "canonical-visual-identity-renewal-complete" : "canonical-visual-identity-repair-complete",
-    mode:renewCurrent ? "renewal" : "correction",
+    event:legacyMigration ? "legacy-physical-embodiment-migration-complete" : renewCurrent ? "canonical-visual-identity-renewal-complete" : "canonical-visual-identity-repair-complete",
+    mode,
     threadId,
     operationKey,
     specificationDigest:corrected.specificationDigest,
