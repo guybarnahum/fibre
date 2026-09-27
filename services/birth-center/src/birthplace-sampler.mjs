@@ -100,6 +100,7 @@ export const BIRTHPLACES = Object.freeze(REGIONS.flatMap((region) => (
 )));
 
 function unit(requestId, label) {
+  // Historical deterministic namespace: keep stable unless birthplace sampling is intentionally reseeded.
   const digest = sha256(`fibre-modern-birthplace:${label}:${requestId}`);
   return Number.parseInt(digest.slice(0, 12), 16) / 0xffffffffffff;
 }
