@@ -53,6 +53,24 @@ export function repairCanonicalVisualIdentity({
 }
 
 
+export function renewCanonicalVisualIdentity({
+  currentEmbodiment: candidate,
+  reason,
+  evidenceReferences,
+  recordedAt,
+} = {}) {
+  const current = normalizeEmbodimentRepresentation(candidate);
+  assertRepairableCanonicalPortrait(current);
+  return repairCanonicalVisualIdentity({
+    currentEmbodiment: current,
+    correctedSpecification: current.specification,
+    reason,
+    evidenceReferences,
+    recordedAt,
+  });
+}
+
+
 function currentCanonicalPortrait(embodimentStore, threadId) {
   const portraits = embodimentStore.listCurrent(threadId).filter((entry) => (
     entry.kind === "portrait"
@@ -76,45 +94,55 @@ export function createCanonicalVisualIdentityRepairService({
   }
   if (typeof now !== "function") throw new TypeError("canonical visual identity repair now must be a function");
 
-  return Object.freeze({
-    repair({
+  function apply({
+    threadId,
+    operationKey,
+    correctedSpecification,
+    reason,
+    evidenceReferences = [],
+    renewal = false,
+  } = {}) {
+    assertId("threadId", threadId);
+    assertId("operationKey", operationKey);
+    if (!Array.isArray(evidenceReferences)) {
+      throw new TypeError("visual identity repair evidenceReferences must be an array");
+    }
+
+    const current = currentCanonicalPortrait(embodimentStore, threadId);
+    const rootRef = current.asset?.referenceObjectRef ?? null;
+    if (typeof rootRef !== "string" || rootRef === "") {
+      throw new TypeError("visual identity repair requires the admitted canonical root");
+    }
+
+    const common = {
+      currentEmbodiment: current,
+      reason,
+      evidenceReferences: [...new Set([...current.sourceReferences, ...evidenceReferences])],
+      recordedAt: now(),
+    };
+    const repaired = renewal
+      ? renewCanonicalVisualIdentity(common)
+      : repairCanonicalVisualIdentity({ ...common, correctedSpecification });
+    const embodiment = embodimentStore.record(repaired);
+
+    return Object.freeze({
       threadId,
       operationKey,
-      correctedSpecification,
-      reason,
-      evidenceReferences = [],
-    } = {}) {
-      assertId("threadId", threadId);
-      assertId("operationKey", operationKey);
-      if (!Array.isArray(evidenceReferences)) {
-        throw new TypeError("visual identity repair evidenceReferences must be an array");
-      }
+      previous: Object.freeze({
+        revision: current.revision,
+        specificationDigest: current.specificationDigest,
+        referenceObjectRef: rootRef,
+      }),
+      embodiment,
+    });
+  }
 
-      const current = currentCanonicalPortrait(embodimentStore, threadId);
-      const rootRef = current.asset?.referenceObjectRef ?? null;
-      if (typeof rootRef !== "string" || rootRef === "") {
-        throw new TypeError("visual identity repair requires the admitted canonical root");
-      }
-
-      const repaired = repairCanonicalVisualIdentity({
-        currentEmbodiment: current,
-        correctedSpecification,
-        reason,
-        evidenceReferences: [...new Set([...current.sourceReferences, ...evidenceReferences])],
-        recordedAt: now(),
-      });
-      const embodiment = embodimentStore.record(repaired);
-
-      return Object.freeze({
-        threadId,
-        operationKey,
-        previous: Object.freeze({
-          revision: current.revision,
-          specificationDigest: current.specificationDigest,
-          referenceObjectRef: rootRef,
-        }),
-        embodiment,
-      });
+  return Object.freeze({
+    repair(input = {}) {
+      return apply(input);
+    },
+    renew(input = {}) {
+      return apply({ ...input, renewal:true });
     },
   });
 }
