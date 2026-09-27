@@ -588,7 +588,10 @@ export function createThreadGenesisRepairService({
         throw new TypeError("legacy physical embodiment migration requires authoritative Thread sex");
       }
       const currentPortrait = currentCanonicalPortrait(embodimentReader, threadId);
-      if (currentPortrait?.status !== "available" || typeof currentPortrait?.asset?.referenceObjectRef !== "string") {
+      if (
+        current.genome?.physical === undefined
+        && (currentPortrait?.status !== "available" || typeof currentPortrait?.asset?.referenceObjectRef !== "string")
+      ) {
         throw new TypeError("legacy physical embodiment migration requires the admitted canonical root");
       }
       const genomeResult = physicalGenomeMigrator.migrate(current, {
@@ -601,15 +604,26 @@ export function createThreadGenesisRepairService({
         physicalGenome:genomeResult.physicalGenome,
       });
       const specificationDigest = embodimentSpecificationDigest(specification);
-      const visualResult = currentPortrait?.specificationDigest === specificationDigest
-        ? Object.freeze({ threadId, operationKey:childOperation(root,"canonical_visual"), reused:true, embodiment:currentPortrait })
-        : visualIdentityRepairService.repair({
-            threadId,
-            operationKey:childOperation(root,"canonical_visual"),
-            correctedSpecification:specification,
-            reason:suppliedInput.reason.trim(),
-            evidenceReferences:[genomeResult.eventId],
-          });
+      let visualResult;
+      if (currentPortrait?.specificationDigest === specificationDigest) {
+        visualResult = Object.freeze({
+          threadId,
+          operationKey:childOperation(root,"canonical_visual"),
+          reused:true,
+          embodiment:currentPortrait,
+        });
+      } else {
+        if (currentPortrait?.status !== "available" || typeof currentPortrait?.asset?.referenceObjectRef !== "string") {
+          throw new TypeError("legacy physical embodiment migration can resume only from its matching canonical specification");
+        }
+        visualResult = visualIdentityRepairService.repair({
+          threadId,
+          operationKey:childOperation(root,"canonical_visual"),
+          correctedSpecification:specification,
+          reason:suppliedInput.reason.trim(),
+          evidenceReferences:[genomeResult.eventId],
+        });
+      }
 
       await record(activity, {
         threadId,
