@@ -17,6 +17,35 @@ function policyKey(policy) {
   return `${policy.id}:${policy.version}`;
 }
 
+function preWitnessAtomicAdmission(assertion) {
+  if (assertion.claimPredicate !== undefined) {
+    throw new TypeError("pre-witness identity assertion cannot carry claimPredicate");
+  }
+  assertPlainObject("identity assertion.admission.policy", assertion.admission.policy);
+  if (
+    assertion.admission.policy.id !== IDENTITY_ATOMIC_CLAIM_POLICY.id
+    || assertion.admission.policy.version !== IDENTITY_ATOMIC_CLAIM_POLICY.version
+  ) {
+    throw new TypeError("historical identity assertion without claimDiscipline lacks the pre-witness atomic admission policy");
+  }
+  const meaning=assertion.meaning;
+  assertNonEmpty("identity assertion.meaning", meaning);
+  if (meaning.includes("\n")) throw new TypeError("identity assertion.meaning must be one material proposition");
+  for (let index=0;index<meaning.length-2;index+=1) {
+    if (!".!?".includes(meaning[index]) || meaning[index+1]!==" ") continue;
+    const next=meaning[index+2];
+    if ((next>="A"&&next<="Z")||(next>="0"&&next<="9")) {
+      throw new TypeError("identity assertion.meaning must be one material proposition");
+    }
+  }
+  const lower=meaning.toLowerCase();
+  for (const marker of [" separately "," in addition "," additionally "," another fact "," also has "," and also "," secondly "," thirdly "]) {
+    if (lower.includes(marker)) throw new TypeError("identity assertion.meaning must not bundle independently addressable propositions");
+  }
+  return assertion;
+}
+
+
 function normalizePolicy(name, policy) {
   assertPlainObject(name, policy);
   assertExactKeys(name, policy, ["id", "version"]);
@@ -95,4 +124,9 @@ export function assertCurrentClaimDiscipline(assertion) {
   return assertion;
 }
 
-export const assertRecordedClaimDiscipline = assertCurrentClaimDiscipline;
+export function assertRecordedClaimDiscipline(assertion) {
+  assertPlainObject("identity assertion", assertion);
+  assertPlainObject("identity assertion.admission", assertion.admission);
+  if (assertion.admission.claimDiscipline === undefined) return preWitnessAtomicAdmission(assertion);
+  return assertCurrentClaimDiscipline(assertion);
+}
