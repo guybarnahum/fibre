@@ -67,3 +67,4 @@ export {
   attachGenesisCanonicalVisualIdentity,
   normalizeGenesisCanonicalVisualIdentity,
 } from "../src/genesis-canonical-visual-identity.mjs";
+export { canonicalVisualSpecificationFromPhysicalGenome } from "../src/canonical-visual-identity-from-physical-genome.mjs";
