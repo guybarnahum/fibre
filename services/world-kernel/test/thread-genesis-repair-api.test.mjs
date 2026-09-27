@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createThreadGenesisRepairApi } from "../src/thread-genesis-repair-api.mjs";
+import { THREAD_REPAIR_CONTRACT, createThreadGenesisRepairApi } from "../src/thread-genesis-repair-api.mjs";
 
 const privateToken = "repair-private-token-123";
 
@@ -107,8 +107,9 @@ function authorized(url, init = {}) {
   });
 }
 
-test("repair diagnosis exposes the Thread's semantic repair state", async () => {
+test("repair diagnosis exposes the current Thread repair contract and semantic state", async () => {
   const body = await (await api().fetch(authorized("https://world.internal/internal/threads/thr_1/repair"))).json();
+  assert.equal(body.contract, THREAD_REPAIR_CONTRACT, "operator tooling cannot identify current repair semantics");
   assert.equal(body.diagnosis.health, "repairable");
 });
 
