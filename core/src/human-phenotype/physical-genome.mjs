@@ -1,8 +1,12 @@
 import {createHash} from "node:crypto";
 
+export const PHYSICAL_GENOME_VERSION="physical-genome-v0.2";
+
 const LOCI = Object.freeze([
-  "pigmentation","eyePigmentation","hairPigmentation","frecklingTendency","hairForm","hairDensity","hairlineLossTendency","facialHairTendency","faceBreadth","faceLength","midfaceProminence","eyeSpacing","eyeShape","foreheadProportion",
-  "brow","noseBreadth","noseProjection","softTissue",
+  "pigmentation","eyePigmentation","hairPigmentation","frecklingTendency","hairForm","hairDensity","hairlineLossTendency","facialHairTendency",
+  "faceBreadth","faceLength","midfaceProminence","zygomaticProjection",
+  "eyeSpacing","eyeShape","epicanthicFold","upperEyelidExposure","orbitalDepth","foreheadProportion","brow",
+  "noseBreadth","noseProjection","nasalBridgeHeight","softTissue",
   "jawBreadth","chinProjection","frame","height","bodyProportion","adiposityTendency","muscularityTendency","shoulderHipProportion"
 ]);
 
@@ -19,7 +23,7 @@ function allele(value, dominance=0) {
 }
 
 export function createPhysicalGenome(loci) {
-  const genome={version:"physical-genome-v0.1",loci:{}};
+  const genome={version:PHYSICAL_GENOME_VERSION,loci:{}};
   for(const name of LOCI) {
     const pair=loci?.[name];
     if(!Array.isArray(pair)||pair.length!==2) throw Error(`${name} requires two inherited alleles`);
