@@ -114,6 +114,7 @@
     "fid:local:cut": "npm run fid:template:verify && node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/fid/cut-ocean-card-local.mjs",
     "fid:visual:repair": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/fid/repair-canonical-visual-identity.mjs",
     "fid:visual:renew": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/fid/repair-canonical-visual-identity.mjs --renew-current",
+    "fid:visual:migrate-legacy": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/fid/repair-canonical-visual-identity.mjs",
     "inside-fibre:staging": "node tools/deployment/run-with-progress.mjs inside-fibre:staging node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/inside-fibre-staging.mjs",
     "inside-fibre": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs"
   },
