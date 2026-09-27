@@ -584,6 +584,13 @@ export function createThreadGenesisRepairService({
       });
 
       const current = worldReader.getThread(threadId);
+      if (typeof current.identity?.sex !== "string" || current.identity.sex.trim() === "") {
+        throw new TypeError("legacy physical embodiment migration requires authoritative Thread sex");
+      }
+      const currentPortrait = currentCanonicalPortrait(embodimentReader, threadId);
+      if (currentPortrait?.status !== "available" || typeof currentPortrait?.asset?.referenceObjectRef !== "string") {
+        throw new TypeError("legacy physical embodiment migration requires the admitted canonical root");
+      }
       const genomeResult = physicalGenomeMigrator.migrate(current, {
         physicalAncestry:suppliedInput.physicalAncestry,
         operationKey:root,
@@ -593,7 +600,6 @@ export function createThreadGenesisRepairService({
         sex:genomeResult.thread.identity.sex,
         physicalGenome:genomeResult.physicalGenome,
       });
-      const currentPortrait = currentCanonicalPortrait(embodimentReader, threadId);
       const specificationDigest = embodimentSpecificationDigest(specification);
       const visualResult = currentPortrait?.specificationDigest === specificationDigest
         ? Object.freeze({ threadId, operationKey:childOperation(root,"canonical_visual"), reused:true, embodiment:currentPortrait })
