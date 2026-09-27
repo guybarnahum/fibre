@@ -226,9 +226,27 @@ async function main() {
     ? changed?.migration?.visualIdentityCorrection
     : renewCurrent ? changed?.visualIdentityRenewal : changed?.visualIdentityCorrection;
   const pendingRevision = result?.embodiment?.revision;
-  if (!Number.isSafeInteger(pendingRevision)) throw new Error("visual identity change did not return a pending Embodiment revision");
+  if (!Number.isSafeInteger(pendingRevision)) throw new Error("visual identity change did not return an Embodiment revision");
   if (renewCurrent && result.embodiment.specificationDigest !== before.specificationDigest) {
     throw new Error("canonical renewal changed the authoritative visual specification");
+  }
+  if (legacyMigration && result?.reused === true && result.embodiment.status === "available") {
+    const currentPresentation=await presentation({ threadPresentation, threadId });
+    const credential=currentPresentation?.snapshot?.presentation?.identityCard ?? null;
+    process.stdout.write(`${JSON.stringify({
+      event:"legacy-physical-embodiment-migration-complete",
+      mode,
+      reused:true,
+      threadId,
+      operationKey,
+      specificationDigest:result.embodiment.specificationDigest,
+      previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
+      canonicalReferenceObjectRef:result.embodiment.asset?.referenceObjectRef ?? null,
+      embodimentRevision:result.embodiment.revision,
+      fidCredentialId:credential?.credentialId ?? null,
+      fidRevision:credential?.revision ?? null,
+    },null,2)}\n`);
+    return;
   }
 
   progress("await_canonical_root", { pendingRevision });
