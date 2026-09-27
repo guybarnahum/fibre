@@ -46,21 +46,43 @@ test("sex conditions androgenic expression without changing inherited genome",()
 });
 
 
-test("east-asian founder ancestry survives as concrete facial anatomy, not a renderer label",()=>{
-  const east=[{population:"family-history",share:1,referencePopulation:"east_asia"}];
-  const north=[{population:"family-history",share:1,referencePopulation:"eur_north"}];
-  const eastGenome=sampleFounderPhysicalGenome({ancestry:east,seed:"facial-structure-control"});
-  const northGenome=sampleFounderPhysicalGenome({ancestry:north,seed:"facial-structure-control"});
-  const eastFace=phenotypeFromPhysicalGenome(eastGenome,{sex:"female"});
-  const northFace=phenotypeFromPhysicalGenome(northGenome,{sex:"female"});
+test("East Asian founder signal survives individual variation without renderer labels",()=>{
+  const cohortMean=(referencePopulation,key)=>Array.from({length:64},(_,index)=>{
+    const genome=sampleFounderPhysicalGenome({
+      ancestry:[{population:"family-history",share:1,referencePopulation}],
+      seed:`facial-structure-${index}`,
+    });
+    return phenotypeFromPhysicalGenome(genome,{sex:"female"}).latent[key];
+  }).reduce((sum,value)=>sum+value,0)/64;
 
-  assert.ok(eastFace.latent.epicanthicFold>northFace.latent.epicanthicFold,"eyelid structure lost founder signal");
-  assert.ok(eastFace.latent.zygomaticProjection>northFace.latent.zygomaticProjection,"cheek structure lost founder signal");
-  assert.ok(eastFace.latent.nasalBridgeHeight<northFace.latent.nasalBridgeHeight,"nasal structure lost founder signal");
+  assert.ok(
+    cohortMean("east_asia.han_chinese","epicanthicFold")
+      > cohortMean("eur_north","epicanthicFold")+.45,
+    "eyelid structure lost population signal",
+  );
+  assert.ok(
+    cohortMean("east_asia.han_chinese","zygomaticProjection")
+      > cohortMean("eur_north","zygomaticProjection")+.25,
+    "cheek structure lost population signal",
+  );
+  assert.ok(
+    cohortMean("east_asia.han_chinese","nasalBridgeHeight")
+      < cohortMean("eur_north","nasalBridgeHeight")-.35,
+    "nasal bridge structure lost population signal",
+  );
+  assert.ok(
+    cohortMean("east_asia.han_chinese","eyeShape")
+      < cohortMean("eur_north","eyeShape")-.20,
+    "eye opening structure lost population signal",
+  );
 
-  const projection=physicalPhenotypeRenderingProjection(eastGenome,{sex:"female"}).description;
+  const genome=sampleFounderPhysicalGenome({
+    ancestry:[{population:"family-history",share:1,referencePopulation:"east_asia.han_chinese"}],
+    seed:"renderer-anatomy-proof",
+  });
+  const projection=physicalPhenotypeRenderingProjection(genome,{sex:"female"}).description;
   assert.match(projection,/epicanthic fold:/u,"renderer lost eyelid anatomy");
   assert.match(projection,/zygomatic \/ cheekbone projection:/u,"renderer lost cheek anatomy");
   assert.match(projection,/nasal bridge height:/u,"renderer lost nasal anatomy");
-  assert.doesNotMatch(projection,/east_asia|family-history/u,"ancestry label leaked into renderer");
+  assert.doesNotMatch(projection,/east_asia|han_chinese|family-history/u,"ancestry label leaked into renderer");
 });
