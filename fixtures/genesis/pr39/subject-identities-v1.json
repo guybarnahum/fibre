@@ -1,6 +1,6 @@
 {
   "fixtureVersion": "pr39-subject-identities-v1",
-  "purpose": "Bounded birth identity material for modern Genesis development Threads. Names are selected deterministically from authoritative Genesis sex; place is explicit birth context. WorldSpec remains the authority for language and cultural context.",
+  "purpose": "Bounded birth identity material for Genesis development Threads. Names are selected deterministically from authoritative Genesis sex; place is explicit birth context. WorldSpec remains the authority for language and cultural context.",
   "slots": [
     {
       "slot": 1,
