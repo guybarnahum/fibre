@@ -7,7 +7,7 @@ import {
 } from "../src/human-phenotype/index.mjs";
 
 const genome=offset=>createPhysicalGenome(Object.fromEntries(physicalGenomeLoci.map((name,i)=>[
-  name,[{value:((i%5)-2)/3+offset,dominance:.2},{value:((i%7)-3)/4-offset,dominance:-.2}]
+  name,[{value:((i%5)-2)/3+offset},{value:((i%7)-3)/4-offset}]
 ])));
 
 const maternalAncestry=[{population:"maternal-history",share:1,referencePopulation:"afr_west"}];
@@ -46,7 +46,7 @@ test("parentless birth creates two founders then uses ordinary recombination",()
   assert.equal(a.parents.paternal.source,"founder","missing father must use founder genetics");
   assert.deepEqual(a,replay,"founder birth must replay");
   for(const locus of physicalGenomeLoci) {
-    assert.ok(a.parents.maternal.genome.loci[locus].some(x=>x.value===a.genome.loci[locus][0].value&&x.dominance===a.genome.loci[locus][0].dominance),"mother must contribute");
-    assert.ok(a.parents.paternal.genome.loci[locus].some(x=>x.value===a.genome.loci[locus][1].value&&x.dominance===a.genome.loci[locus][1].dominance),"father must contribute");
+    assert.ok(a.parents.maternal.genome.loci[locus].some(x=>x.value===a.genome.loci[locus][0].value),"mother must contribute");
+    assert.ok(a.parents.paternal.genome.loci[locus].some(x=>x.value===a.genome.loci[locus][1].value),"father must contribute");
   }
 });
