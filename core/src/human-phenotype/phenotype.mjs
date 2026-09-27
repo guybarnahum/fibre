@@ -14,7 +14,7 @@ export function phenotypeFromPhysicalGenome(genome,{sex}={}){
   const facialHairTendency=sex==="female"?"minimal":band(x.facialHairTendency,["light","moderate","dense"]);
   const hairlineLossTendency=sex==="female"?"low":band(x.hairlineLossTendency,["low","moderate","high"]);
   return {
-    version:"human-phenotype-v0.10",
+    version:"human-phenotype-v0.11",
     traits:{
       pigmentation:band(x.pigmentation,["very light","light","medium","deep","very deep"]),
       eyeColor:band(x.eyePigmentation,["blue/gray","green","hazel","brown","dark brown"]),
@@ -27,14 +27,19 @@ export function phenotypeFromPhysicalGenome(genome,{sex}={}){
       faceWidth:band(x.faceBreadth,["narrow","medium","broad"]),
       faceLength:morphologyBand(x.faceLength,["short","medium","long"]),
       midfaceProminence:morphologyBand(x.midfaceProminence,["soft","medium","prominent"]),
+      zygomaticProjection:morphologyBand(x.zygomaticProjection,["soft","medium","prominent"]),
       jawWidth:morphologyBand(x.jawBreadth,["narrow","medium","broad"]),
       chinProjection:morphologyBand(x.chinProjection,["soft","medium","prominent"]),
       eyeSpacing:morphologyBand(x.eyeSpacing,["close","average","wide"]),
       eyeShape:morphologyBand(x.eyeShape,["narrow","intermediate","open"]),
+      epicanthicFold:band(x.epicanthicFold,["absent","slight","present","pronounced"]),
+      upperEyelidExposure:morphologyBand(x.upperEyelidExposure,["low","medium","high"]),
+      orbitalDepth:morphologyBand(x.orbitalDepth,["shallow","medium","deep"]),
       foreheadProportion:morphologyBand(x.foreheadProportion,["low","medium","high"]),
       browProminence:morphologyBand(x.brow,["light","medium","strong"]),
       noseWidth:band(x.noseBreadth,["narrow","medium","broad"]),
       noseProjection:band(x.noseProjection,["low","medium","high"]),
+      nasalBridgeHeight:morphologyBand(x.nasalBridgeHeight,["low","medium","high"]),
       lipFullness:band(x.softTissue,["thin","medium","full"]),
       frame:band(x.frame,["slight","medium","broad"]),
       heightTendency:band(x.height,["shorter","middle","taller"]),
