@@ -207,6 +207,10 @@ export function createThreadGenesisRepairApi({
         }
         if (command.action === "migrate") {
           const result = await repairService.migrate(threadId, command);
+          if (result.visualIdentityCorrection?.embodiment?.status === "pending_generation") {
+            const requeued = reconciliationWorkset?.requeue(threadId) ?? false;
+            await onVisualIdentityCorrection?.({ threadId, result:result.visualIdentityCorrection, requeued });
+          }
           return json(result.before.exists ? 200 : 404, {
             contract:CONTRACT,
             migration:result,
