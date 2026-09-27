@@ -62,9 +62,9 @@ Acceptance:
 
 ## Slice 2 — Calibrate the East Asian hierarchy
 
-**Status: active.**
+**Status: implemented on `main`; pending focused validation.**
 
-Replace hand-tuned appearance constants with measured 3D morphology distributions.
+Replace hand-tuned appearance constants with measured 3D morphology distributions. The evidence mapping and deliberate parent fallbacks are recorded in [East Asian facial calibration](east-asian-facial-calibration.md).
 
 Initial calibration target:
 - `east_asia`;
