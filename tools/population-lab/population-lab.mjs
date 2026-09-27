@@ -20,7 +20,7 @@ const uniqueNames=ps=>new Set(ps.map(p=>key(p.name))).size;
 function line(text,done=false){process.stdout.write("\r\x1b[2K"+text+(done?"\n":""))}
 function progress(done,total,start,label="generated"){line(`[${String(done).padStart(String(total).length)}/${total}] ${label} · ${elapsed(start)} · names ${uniqueNames(progress.people)}/${progress.people.length} unique`)}
 progress.people=[];
-const ancestrySchema={type:"array",minItems:1,maxItems:3,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{population:{type:"string",minLength:1},share:{type:"number",exclusiveMinimum:0},referencePopulation:{type:"string",enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}}};
+const ancestrySchema={type:"array",minItems:1,maxItems:3,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{population:{type:"string",minLength:1},share:{type:"number",exclusiveMinimum:0},referencePopulation:{type:"string",enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}}}};
 const languageSchema={type:"array",minItems:1,maxItems:3,items:{type:"string",minLength:1}};
 const namesSchema={type:"array",minItems:12,items:{type:"string",minLength:1}};
 const physicalAncestrySchema={type:"object",additionalProperties:false,required:["maternal","paternal"],properties:{maternal:ancestrySchema,paternal:ancestrySchema}};
