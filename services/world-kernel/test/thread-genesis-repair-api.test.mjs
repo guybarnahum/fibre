@@ -46,7 +46,13 @@ function api(options = {}) {
             revision:3,
             status:"pending_generation",
             specificationDigest:"sha256:same",
-            respecification:{ reason, evidenceReferences:["visual_identity_reference_old", ...evidenceReferences] },
+            respecification:null,
+            renewal:{
+              reason,
+              priorSpecificationDigest:"sha256:same",
+              priorReferenceObjectRef:"visual_identity_reference_old",
+              evidenceReferences,
+            },
           },
         };
       },
