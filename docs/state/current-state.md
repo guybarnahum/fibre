@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-09-26
+last-reviewed: 2026-09-27
 canonical: true
 ---
 
@@ -27,7 +27,7 @@ Models provide temporary cognition. Fibre owns continuity, authoritative state, 
 
 ## Human physical inheritance
 
-The shared **Population & Family Ancestry** boundary is implemented and focused-validated. Place + era produces an inspectable experimental distribution of coherent family histories; modern Genesis deterministically samples one family profile per birth, and that same profile causally owns naming material and household/eventual language context while keeping maternal and paternal physical ancestry separate. The first 72-person London/Lagos/Mumbai production-path text calibration is complete: it exposed semantic projection compression rather than broad genetic collapse, invalid packed-language authoring, and an improper second per-person styling pass. Population Lab now uses the exact production family sampler, naming selector, physical-inheritance path and continuous visual projection; individual people are generated locally after the bounded place/era prior is authored. A small rendered cohort is the remaining empirical calibration step before Existing Thread Visual Renewal can begin.
+The shared **Population & Family Ancestry** boundary is implemented and focused-validated. Place + era produces an inspectable experimental distribution of family histories; modern Genesis deterministically samples one family profile per birth, and that same profile causally owns naming material and household/eventual language context while keeping maternal and paternal physical ancestry separate. The 72-person London/Lagos/Mumbai production-path text calibration and the subsequent Lagos plus cross-population rendered cohorts are complete. Those runs exposed semantic projection compression rather than broad genetic collapse, invalid packed-language authoring, an improper second per-person styling pass, one ambiguous founder-region contract, and finally over-broad family profiles that sometimes bundled unrelated origins or added unsupported ancestry. The renderer path now looks coherent and individual without increasing founder coefficients. Genesis and Population Lab authoring now require one concrete hypothetical family path; a cheap text-only rerun is the remaining Population Calibration check before Existing Thread Visual Renewal begins.
 
 The compact population coefficients remain experimental visual priors rather than demographic truth, but **Fibre Adoption is closed**: the repository validation gate passed on 2026-09-26. Modern Genesis authors separate maternal/paternal physical-ancestry provenance and creates transient founder parental genomes, recombines them through the shared core, persists the child's private physical genome, and derives canonical visual identity from its sex-conditioned semantic + continuous phenotype projection. The former parallel `appearanceContext` / `appearanceLoci` embodiment path has been removed, and permanent Genesis publication/replay/failure proofs obey the same inherited-physical-genome requirement. Live-Thread parent inheritance is intentionally deferred to a chronologically truthful newborn/reproduction boundary; existing Threads are not retroactively assigned invented physical genomes or parents. See [Human physical inheritance and population realism](../architecture/human-physical-inheritance.md) and [Canonical visual identity](../architecture/canonical-visual-identity.md).
 
