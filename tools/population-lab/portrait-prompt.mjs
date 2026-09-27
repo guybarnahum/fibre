@@ -1,0 +1,5 @@
+export function populationPortraitPrompt({sex,renderDescription}){
+  if(typeof sex!=="string"||sex.trim()==="")throw new TypeError("portrait sex is required");
+  if(typeof renderDescription!=="string"||renderDescription.trim()==="")throw new TypeError("portrait render description is required");
+  return `Edge-to-edge realistic neutral documentary head-and-shoulders portrait photograph of one fictional adult age 25. Sex: ${sex}. ${renderDescription} Render exactly this concrete inherited phenotype. Preserve facial geometry, pigmentation, hair, eyes, build cues and ordinary asymmetry. Do not exaggerate continuous coordinates into caricature; nearby values should produce subtle nearby physical differences. Do not beautify, homogenize, slim, symmetrize, glamourize, or substitute a generic attractive face. Do not infer or add ancestry, race, ethnicity, nationality, culture, personality, class, religion or behavior. Neutral expression, ordinary skin texture, simple dark top, plain photographic background.`;
+}
