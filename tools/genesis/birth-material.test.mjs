@@ -34,11 +34,11 @@ function birthMaterial(slot = 1) {
 }
 
 test("births compose a new person instead of replaying prior birth material", () => {
-  assert.equal(selectBirthSlot({ requestId:"genesis-modern-reference-001", slotCount:5 }), 1);
-  assert.equal(selectBirthSlot({ requestId:"genesis-modern-reference-002", slotCount:5 }), 2);
+  assert.equal(selectBirthSlot({ requestId:"genesis-birth-reference-001", slotCount:5 }), 1);
+  assert.equal(selectBirthSlot({ requestId:"genesis-birth-reference-002", slotCount:5 }), 2);
 
-  const first = composeBirthSubjectIdentity({ requestId:"genesis-modern-reference-001", material:birthMaterial(1) });
-  const laterSameWorld = composeBirthSubjectIdentity({ requestId:"genesis-modern-reference-006", material:birthMaterial(1) });
+  const first = composeBirthSubjectIdentity({ requestId:"genesis-birth-reference-001", material:birthMaterial(1) });
+  const laterSameWorld = composeBirthSubjectIdentity({ requestId:"genesis-birth-reference-006", material:birthMaterial(1) });
   assert.notEqual(first.femaleName, laterSameWorld.femaleName, "female birth identity was replayed");
   assert.notEqual(first.maleName, laterSameWorld.maleName, "male birth identity was replayed");
   assert.equal(first.birthCity, laterSameWorld.birthCity, "world context should remain reusable without reusing the person");
@@ -70,7 +70,7 @@ test("birth creates a deterministic heritable physical genome before rendering",
 });
 
 
-test("modern names are deterministic without six-person family-name cycles", () => {
+test("birth names are deterministic without six-person family-name cycles", () => {
   const naming={...birthMaterial(1),femaleGivenNames:Array.from({length:24},(_,i)=>`F${i}`),maleGivenNames:Array.from({length:24},(_,i)=>`M${i}`),familyNames:Array.from({length:24},(_,i)=>`L${i}`)};
   const names=Array.from({length:12},(_,i)=>composeBirthSubjectIdentity({requestId:`naming-realism-${i+1}`,material:naming}).femaleName);
   assert.equal(new Set(names).size,names.length,"small birth cohort repeated a full name");
