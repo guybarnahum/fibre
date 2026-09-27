@@ -237,6 +237,32 @@ test("automatic long-tail birth authors one World, reuses it, and leaves genome 
   assert.equal(authoredCalls, 1, "automatic locality was authored more than once");
 });
 
+
+test("cached place context samples distinct family histories per birth without re-authoring", async (t) => {
+  const root=mkdtempSync(join(tmpdir(),"fibre-family-distribution-"));
+  t.after(()=>rmSync(root,{recursive:true,force:true}));
+  const selector=normalizeModernWorldSelector("United Kingdom/London");
+  const ancestry=(population,referencePopulation)=>({maternal:[{population,share:1,referencePopulation}],paternal:[{population,share:1,referencePopulation}]});
+  const authored={...authoredJerusalem,timeZone:"Europe/London",familyProfiles:[
+    {id:"local-british",share:6,familyOriginContext:"A locally rooted British family with multigenerational ties to London.",physicalAncestry:ancestry("British family","eur_north")},
+    {id:"south-asian-british",share:2,familyOriginContext:"A British family with South Asian grandparents and longstanding London family ties.",physicalAncestry:ancestry("South Asian British family","south_asia")},
+    {id:"west-african-british",share:1,familyOriginContext:"A British family with West African grandparents and longstanding London family ties.",physicalAncestry:ancestry("West African British family","afr_west")},
+  ]};
+  let calls=0;
+  const first=await resolveModernWorldSelection({selector,cohort,repoRoot:root,requestId:"family-distribution-0",baseSlotOrdinal:1,authorWorld:async()=>{calls+=1;return authored;}});
+  let second=null;
+  for(let i=1;i<100;i+=1){
+    const candidate=await resolveModernWorldSelection({selector,cohort,repoRoot:root,requestId:`family-distribution-${i}`,baseSlotOrdinal:1,authorWorld:async()=>{throw Error("cached population context must be reused");}});
+    if(candidate.material.familyProfileId!==first.material.familyProfileId){second=candidate;break;}
+  }
+  assert.ok(second,"population context must allow more than one family history");
+  assert.equal(calls,1,"family sampling must not re-author the place");
+  assert.notEqual(second.material.familyProfileId,first.material.familyProfileId,"births collapsed onto one family profile");
+  assert.notEqual(second.material.familyOriginContext,first.material.familyOriginContext,"sampled family history did not change lived context");
+  assert.notDeepEqual(second.material.physicalAncestry,first.material.physicalAncestry,"sampled family history did not change physical ancestry");
+  assert.ok(second.worldSpec.householdShape.includes(second.material.familyOriginContext),"sampled family history must shape the Genesis household");
+});
+
 test("authored World rejects demographic language inventories for one subject", async (t) => {
   const root = mkdtempSync(join(tmpdir(), "fibre-language-inventory-"));
   t.after(() => rmSync(root, { recursive:true, force:true }));
