@@ -30,26 +30,6 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
   ],
   properties: {
     timeZone: { type: "string", minLength: 1 },
-    languages: {
-      type: "array",
-      minItems: 1,
-      maxItems: 3,
-      uniqueItems: true,
-      description:"Languages this one subject plausibly uses by the end of the Genesis chronology; these may include languages acquired through school or sustained later exposure.",
-      items: { type: "string", minLength: 1 },
-    },
-    raisedLanguages: {
-      type: "array",
-      minItems: 1,
-      maxItems: 3,
-      uniqueItems: true,
-      description:"Languages actually used in the subject's household or early upbringing. Do not include a school-acquired language merely because the subject later learns it.",
-      items: { type: "string", minLength: 1 },
-    },
-    nameOrder: { type: "string", enum: ["given_family", "family_given"] },
-    femaleGivenNames: { type: "array", minItems: 6, uniqueItems: true, items: { type: "string", minLength: 1 } },
-    maleGivenNames: { type: "array", minItems: 6, uniqueItems: true, items: { type: "string", minLength: 1 } },
-    familyNames: { type: "array", minItems: 6, uniqueItems: true, items: { type: "string", minLength: 1 } },
     homeDescription: { type: "string", minLength: 1 },
     schoolDescription: { type: "string", minLength: 1 },
     transitDescription: { type: "string", minLength: 1 },
@@ -59,22 +39,6 @@ const WORLD_AUTHORING_SCHEMA = Object.freeze({
     schoolingOrCommunityContext: { type: "string", minLength: 1 },
     culturalContext: { type: "string", minLength: 1 },
     heritageContext: { type: "string", minLength: 1 },
-    familyOriginContext: {
-      type: "string",
-      minLength: 1,
-      description:"A concise causal account of this household's family origins and migration/mixed-ancestry history insofar as it matters to languages, family/community ties, appearance, and lived experience. This is subject-family context, not a demographic description of the city.",
-    },
-    physicalAncestry: {
-      type:"object", additionalProperties:false, required:["maternal","paternal"],
-      properties:Object.fromEntries(["maternal","paternal"].map(side=>[side,{
-        type:"array", minItems:1, maxItems:3,
-        description:"Physical ancestry provenance for the missing biological parent. Shares sum approximately to 1. Population is a human-readable family-origin label; referencePopulation selects only the experimental physical founder prior.",
-        items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{
-          population:{type:"string",minLength:1}, share:{type:"number",minimum:0.01,maximum:1},
-          referencePopulation:{type:"string",enum:["afr_west","afr_east","eur_north","eur_south","west_asia","south_asia","east_asia","southeast_asia","indigenous_america","oceania"]}
-        }}
-      }]))
-    },
     familyProfiles: {
       type:"array", minItems:3, maxItems:8,
       description:"A bounded weighted distribution of plausible household family-origin profiles for this place/era. This is cached population context; one profile is deterministically sampled for each birth.",
