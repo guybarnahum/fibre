@@ -1,3 +1,5 @@
+import { canonicalVisualSpecificationFromPhysicalGenome } from "./canonical-visual-identity-from-physical-genome.mjs";
+import { embodimentSpecificationDigest } from "./embodiment-domain.mjs";
 import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 
 const OPERATION_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
@@ -394,6 +396,8 @@ export function createThreadGenesisRepairService({
   genesisSexEvidence,
   genesisSexMigrator,
   symbolicGenomeMigrator = null,
+  physicalGenomeMigrator = null,
+  visualIdentityRepairService = null,
   genesisAuthority,
   identityUpdater,
   activityRecorder = null,
@@ -412,6 +416,8 @@ export function createThreadGenesisRepairService({
     requireMethod("symbolicGenomeMigrator", symbolicGenomeMigrator, "inspectThreadGenomeMigration");
     requireMethod("symbolicGenomeMigrator", symbolicGenomeMigrator, "migrateThreadGenomeV1ToV2");
   }
+  if (physicalGenomeMigrator !== null) requireMethod("physicalGenomeMigrator", physicalGenomeMigrator, "migrate");
+  if (visualIdentityRepairService !== null) requireMethod("visualIdentityRepairService", visualIdentityRepairService, "repair");
   requireMethod("genesisAuthority", genesisAuthority, "getRaisedLanguagesForThread");
   requireMethod("genesisAuthority", genesisAuthority, "correctRaisedLanguages");
   requireMethod("identityUpdater", identityUpdater, "update");
@@ -440,6 +446,24 @@ export function createThreadGenesisRepairService({
     const raisedLanguages = genesisAuthority.getRaisedLanguagesForThread(threadId, { required:false })?.languages ?? [];
     const completeness = identityCompleteness(thread, registration, presentation, sexEvidence, raisedLanguages);
     const findings = [...completeness.findings];
+
+    if (physicalGenomeMigrator !== null && thread.genome?.physical === undefined) {
+      findings.push(finding("PHYSICAL_GENOME_MISSING", "migration_required", null, {
+        reason:"This legacy Thread predates Fibre physical inheritance; visual renewal cannot repair its embodiment until operator-confirmed physical ancestry is migrated into a durable physical genome.",
+        migration:Object.freeze({
+          id:"legacy_physical_embodiment_v1",
+          label:"Legacy physical embodiment",
+          input:Object.freeze({
+            fields:Object.freeze([
+              Object.freeze({name:"physicalAncestry",label:"Maternal/paternal physical ancestry",kind:"json",required:true}),
+              Object.freeze({name:"reason",label:"Migration reason",kind:"text",required:true}),
+            ]),
+          }),
+        }),
+      }));
+    } else if (thread.genome?.physical !== undefined) {
+      findings.push(finding("PHYSICAL_GENOME", "healthy"));
+    }
 
     const genomeMigration = symbolicGenomeMigrator?.inspectThreadGenomeMigration(threadId) ?? null;
     if (genomeMigration?.state === "legacy_v1_de_novo") {
@@ -536,6 +560,91 @@ export function createThreadGenesisRepairService({
   async function migrate(threadId, { migrationId, migrationKey, input = null } = {}) {
     const root = operationKey("migrationKey", migrationKey);
     const suppliedInput = migrationInput(input);
+    if (migrationId === "legacy_physical_embodiment_v1") {
+      if (physicalGenomeMigrator === null || visualIdentityRepairService === null) {
+        throw new TypeError("legacy physical embodiment migration is unavailable");
+      }
+      if (!suppliedInput?.physicalAncestry || typeof suppliedInput.reason !== "string" || suppliedInput.reason.trim().length < 16) {
+        throw new TypeError("legacy_physical_embodiment_v1 requires physicalAncestry and a meaningful reason");
+      }
+      const before = await diagnose(threadId);
+      if (!before.exists) return Object.freeze({ threadId, migrationId, migrationKey:root, before, after:before, migrated:false });
+      const available = before.findings.some((entry) => entry.migration?.id === migrationId);
+      if (!available && worldReader.getThread(threadId).genome?.physical === undefined) {
+        throw new TypeError(`migration ${migrationId} is not available for Thread ${threadId}`);
+      }
+
+      await record(activity, {
+        threadId,
+        operationId:root,
+        stage:"thread.migration.start",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ migrationId },
+      });
+
+      const current = worldReader.getThread(threadId);
+      const genomeResult = physicalGenomeMigrator.migrate(current, {
+        physicalAncestry:suppliedInput.physicalAncestry,
+        operationKey:root,
+      });
+      const specification = canonicalVisualSpecificationFromPhysicalGenome({
+        threadId,
+        sex:genomeResult.thread.identity.sex,
+        physicalGenome:genomeResult.physicalGenome,
+      });
+      const currentPortrait = currentCanonicalPortrait(embodimentReader, threadId);
+      const specificationDigest = embodimentSpecificationDigest(specification);
+      const visualResult = currentPortrait?.specificationDigest === specificationDigest
+        ? Object.freeze({ threadId, operationKey:childOperation(root,"canonical_visual"), reused:true, embodiment:currentPortrait })
+        : visualIdentityRepairService.repair({
+            threadId,
+            operationKey:childOperation(root,"canonical_visual"),
+            correctedSpecification:specification,
+            reason:suppliedInput.reason.trim(),
+            evidenceReferences:[genomeResult.eventId],
+          });
+
+      await record(activity, {
+        threadId,
+        operationId:childOperation(root, "physical_genome"),
+        parentOperationId:root,
+        stage:"thread.migration.physical_genome",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ migrationId, eventId:genomeResult.eventId, migrated:genomeResult.migrated === true },
+      });
+      await record(activity, {
+        threadId,
+        operationId:childOperation(root, "canonical_visual"),
+        parentOperationId:root,
+        stage:"thread.migration.canonical_visual",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ migrationId, specificationDigest, reused:visualResult.reused === true },
+      });
+
+      const after = await diagnose(threadId);
+      await record(activity, {
+        threadId,
+        operationId:childOperation(root, "complete"),
+        parentOperationId:root,
+        stage:"thread.migration.complete",
+        status:"succeeded",
+        attempt:1,
+        evidence:{ migrationId, health:after.health },
+      });
+      return Object.freeze({
+        threadId,
+        migrationId,
+        migrationKey:root,
+        before,
+        after,
+        migrated:genomeResult.migrated === true,
+        result:genomeResult,
+        visualIdentityCorrection:visualResult,
+      });
+    }
     if (migrationId === "symbolic_genome_v1_to_v2") {
       if (symbolicGenomeMigrator === null) throw new TypeError("symbolic genome migration is unavailable");
       if (suppliedInput !== null && Object.keys(suppliedInput).length !== 0) {
