@@ -19,9 +19,10 @@ export function selectModernBirthSlot({ requestId, slotCount, explicitSlot = nul
   return ((positiveOrdinal(requestId) - 1) % slotCount) + 1;
 }
 
-function valueAt(values, ordinal, offset = 0) {
+function valueAt(values, requestId, label) {
   if (!Array.isArray(values) || values.length === 0) throw new TypeError("modern birth naming material must be non-empty");
-  return values[(ordinal - 1 + offset) % values.length];
+  const digest = createHash("sha256").update(`${requestId}\0${label}`).digest("hex").slice(0, 12);
+  return values[Number.parseInt(digest, 16) % values.length];
 }
 
 function fullName(given, family, order) {
@@ -35,10 +36,9 @@ export function composeModernSubjectIdentity({ requestId, material }) {
   if (!Array.isArray(material.languages) || material.languages.length === 0) throw new TypeError("modern birth requires eventual spoken languages");
   if (!Array.isArray(material.raisedLanguages) || material.raisedLanguages.length === 0) throw new TypeError("modern birth requires raised languages");
   if (!material.physicalAncestry?.maternal || !material.physicalAncestry?.paternal) throw new TypeError("modern birth requires parental physical ancestry");
-  const ordinal = positiveOrdinal(requestId);
-  const family = valueAt(material.familyNames, Math.floor((ordinal - 1) / 6) + 1);
-  const femaleGiven = valueAt(material.femaleGivenNames, ordinal);
-  const maleGiven = valueAt(material.maleGivenNames, ordinal, 2);
+  const family = valueAt(material.familyNames, requestId, "family-name");
+  const femaleGiven = valueAt(material.femaleGivenNames, requestId, "female-given-name");
+  const maleGiven = valueAt(material.maleGivenNames, requestId, "male-given-name");
   const physicalInheritance = resolveBirthPhysicalInheritance({
     maternalAncestry:material.physicalAncestry.maternal,
     paternalAncestry:material.physicalAncestry.paternal,
