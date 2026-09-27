@@ -365,6 +365,8 @@ npm run fid:visual:migrate-legacy -- \
   --reason="Migrate the materially inaccurate legacy visual authority to Fibre's current physical-inheritance model from operator-confirmed physical ancestry."
 ```
 
+If the command is interrupted after World accepts part of the migration, rerun the **exact same command**. The migration key is deterministic from the Thread, ancestry input and reason; World reuses the admitted physical-genome migration and any matching pending/current canonical supersession instead of creating another authority change.
+
 The CLI waits for the corrected canonical root, Presentation projection and FID replacement to converge. Repeating the same completed migration is idempotent.
 
 ## Operator runbook: correcting appearance
