@@ -127,6 +127,6 @@ export function assertCurrentClaimDiscipline(assertion) {
 export function assertRecordedClaimDiscipline(assertion) {
   assertPlainObject("identity assertion", assertion);
   assertPlainObject("identity assertion.admission", assertion.admission);
-  if (assertion.admission.claimDiscipline === undefined) return preWitnessAtomicAdmission(assertion);
+  if (assertion.admission.claimDiscipline === undefined || assertion.admission.claimDiscipline === null) return preWitnessAtomicAdmission(assertion);
   return assertCurrentClaimDiscipline(assertion);
 }
