@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -48,6 +49,12 @@ function deployment() {
   const path = resolve(REPO_ROOT, ".fibre", "cloudflare", "staging", "deployment.json");
   const record = JSON.parse(readFileSync(path, "utf8"));
   if (record?.environment !== "staging") throw new Error("deployment evidence is not staging");
+  const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd:REPO_ROOT, encoding:"utf8" }).trim();
+  const status = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd:REPO_ROOT, encoding:"utf8" }).trim();
+  if (status !== "") throw new Error("visual identity migration requires a clean working tree");
+  if (record.sourceTreeClean !== true || record.sourceGitSha !== head) {
+    throw new Error(`staging deployment ${record.sourceGitSha ?? "unknown"} does not match current clean checkout ${head}`);
+  }
   return record;
 }
 
