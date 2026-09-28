@@ -208,7 +208,7 @@ For a current model:
 
 Do not hide appearance authority changes inside generic **Fix**.
 
-The implementation is intentionally bounded: Admin sends one migration or re-render command, performs one immediate refresh, then stops. There is no browser background polling, image reroll loop or duplicated appearance authority. **Refresh appearance** is explicit operator-driven inspection.
+The implementation is intentionally bounded: Admin sends one migration or re-render command and does not automatically poll or reroll. **Refresh appearance** is an explicit operator-driven watch: one immediate read followed by 20-second reads only while canonical generation/publication is pending; it stops as soon as the appearance is current or the view closes.
 
 ## Slice 9 — Staging proof
 
