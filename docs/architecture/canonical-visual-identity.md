@@ -353,6 +353,8 @@ For upgrades, the latest durable `THREAD_PHYSICAL_GENOME_MIGRATED` event is the 
 
 The canonical visual specification after Genesis belongs to the current Embodiment. The identity-level `canonicalVisualIdentity` material is historical Genesis seed/provenance and must not be treated as newer authority after a correction or appearance migration.
 
+A renderer-model migration is distinct from physical-authority migration. If the physical genome is already current but its canonical visual specification predates the geometry/surface layer split, Fibre derives the current layered specification from that exact existing genome and supersedes only the Embodiment specification/root. No physical-genome migration event is written and no ancestry input is requested.
+
 Use **re-render appearance** when the current physical genome and canonical specification are sound but the generated canonical root is poor. Re-rendering preserves the exact specification digest and creates only a new operational root plus normal downstream Presentation/FID convergence.
 
 The first 2026-09-27 Li Jing staging run proved the migration/replay machinery but exposed a real appearance-model failure: the v0.1 genome-derived portraits were visually inconsistent with the operator-confirmed East Asian ancestry. That failure reopened calibration.
