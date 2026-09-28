@@ -5,6 +5,7 @@ import {
   physicalGenomeLoci,
   resolveBirthPhysicalInheritance
 } from "../src/human-phenotype/index.mjs";
+import {resolveHumanPhysicalInheritance} from "../src/human-appearance/index.mjs";
 
 const genome=offset=>createPhysicalGenome(Object.fromEntries(physicalGenomeLoci.map((name,i)=>[
   name,[{value:((i%5)-2)/3+offset},{value:((i%7)-3)/4-offset}]
@@ -49,4 +50,21 @@ test("parentless birth creates two founders then uses ordinary recombination",()
     assert.ok(a.parents.maternal.genome.loci[locus].some(x=>x.value===a.genome.loci[locus][0].value),"mother must contribute");
     assert.ok(a.parents.paternal.genome.loci[locus].some(x=>x.value===a.genome.loci[locus][1].value),"father must contribute");
   }
+});
+
+
+test("Human Appearance does not let population lineage compete with a real parent genome",()=>{
+  const maternalGenome=genome(-.05),paternalGenome=genome(.08);
+  assert.throws(
+    ()=>resolveHumanPhysicalInheritance({
+      maternal:{
+        physicalGenome:maternalGenome,
+        physicalLineage:[{population:"irrelevant",share:1,referencePopulation:"east_asia"}],
+      },
+      paternal:{physicalGenome:paternalGenome},
+      conceptionSeed:"strict-parent-authority",
+    }),
+    /exactly one/,
+    "population context could compete with real parent genetics",
+  );
 });
