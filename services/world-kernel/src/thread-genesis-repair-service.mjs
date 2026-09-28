@@ -1,5 +1,12 @@
-import { PHYSICAL_GENOME_VERSION, referencePopulationIds } from "#core/src/human-appearance/index.mjs";
-import { canonicalVisualSpecificationFromPhysicalGenome } from "./canonical-visual-identity-from-physical-genome.mjs";
+import {
+  HUMAN_APPEARANCE_MODEL_VERSION,
+  PHYSICAL_GENOME_VERSION,
+  referencePopulationIds,
+} from "#core/src/human-appearance/index.mjs";
+import {
+  canonicalVisualAppearanceLayers,
+  canonicalVisualSpecificationFromPhysicalGenome,
+} from "./canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "./embodiment-domain.mjs";
 import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 import { birthplacePhysicalMigrationSuggestion } from "./thread-appearance-defaults.mjs";
@@ -111,6 +118,46 @@ function latestPhysicalEvidence(physicalGenomeMigrator,threadId){
   return typeof physicalGenomeMigrator?.latestEvidence==="function"
     ? physicalGenomeMigrator.latestEvidence(threadId)
     : null;
+}
+
+function currentVisualAppearanceLayerVersion(specification){
+  const description=specification?.subject?.description;
+  if(typeof description!=="string"||description.trim()==="")return null;
+  try{return canonicalVisualAppearanceLayers(description)?.version??null}
+  catch{return null}
+}
+
+function visualModelMigrationFinding({embodiment,physicalGenomeVersion}){
+  if(
+    physicalGenomeVersion!==PHYSICAL_GENOME_VERSION
+    || embodiment?.representationKind!=="synthetic_generation"
+    || embodiment?.specification===null
+    || embodiment?.specification===undefined
+    || currentVisualAppearanceLayerVersion(embodiment.specification)!==null
+  )return null;
+  return finding("CANONICAL_VISUAL_MODEL_OUTDATED","migration_required",null,{
+    authority:"embodiment",
+    specificationDigest:embodiment.specificationDigest??null,
+    currentAppearanceVersion:null,
+    targetAppearanceVersion:HUMAN_APPEARANCE_MODEL_VERSION,
+    reason:"The physical genome is current, but this canonical specification predates Fibre's geometry-first Human Appearance render layers.",
+    migration:Object.freeze({
+      id:"physical_embodiment_v2",
+      label:"Upgrade visual model",
+      evidence:null,
+      input:Object.freeze({
+        fields:Object.freeze([
+          Object.freeze({
+            name:"reason",
+            label:"Migration reason",
+            kind:"text",
+            required:true,
+            default:"Upgrade this Thread's canonical visual specification to the current geometry-first Human Appearance model without changing its physical genome.",
+          }),
+        ]),
+      }),
+    }),
+  });
 }
 
 function appearanceMigrationReason({physicalGenomeVersion,priorEvidence,suggestion}){
@@ -576,15 +623,17 @@ export function createThreadGenesisRepairService({
       findings.push(genesisVisualSeed
         ? finding("CANONICAL_EMBODIMENT_MISSING", "repairable", "reconcile_visual_publication")
         : finding("CANONICAL_EMBODIMENT_MISSING", "migration_required"));
+    } else if (canonicalSpec === null) {
+      findings.push(finding("CANONICAL_VISUAL_SPEC_MISSING", "integrity_error", null, {
+        reason:"current canonical Embodiment has no specification",
+      }));
     } else {
-      findings.push(canonicalSpec
-        ? finding("CANONICAL_VISUAL_SPEC", "healthy", null, {
-            authority:"embodiment",
-            specificationDigest:embodiment.specificationDigest??null,
-          })
-        : finding("CANONICAL_VISUAL_SPEC_MISSING", "integrity_error", null, {
-            reason:"current canonical Embodiment has no specification",
-          }));
+      const visualModelMigration=visualModelMigrationFinding({embodiment,physicalGenomeVersion});
+      findings.push(visualModelMigration??finding("CANONICAL_VISUAL_SPEC","healthy",null,{
+        authority:"embodiment",
+        specificationDigest:embodiment.specificationDigest??null,
+        appearanceVersion:currentVisualAppearanceLayerVersion(canonicalSpec),
+      }));
     }
     if (embodiment !== null) {
       if (embodiment.status === "available" && embodiment.asset?.referenceObjectRef) {
@@ -661,7 +710,84 @@ export function createThreadGenesisRepairService({
     const root = operationKey("migrationKey", migrationKey);
     const suppliedInput = migrationInput(input);
     if (migrationId === "physical_embodiment_v2") {
-      if (physicalGenomeMigrator === null || visualIdentityRepairService === null) {
+      if (visualIdentityRepairService === null) {
+        throw new TypeError("physical appearance migration is unavailable");
+      }
+      const before = await diagnose(threadId);
+      if (!before.exists) return Object.freeze({ threadId, migrationId, migrationKey:root, before, after:before, migrated:false });
+
+      const visualModelUpgrade=before.findings.find((entry)=>entry.code==="CANONICAL_VISUAL_MODEL_OUTDATED")??null;
+      if(visualModelUpgrade!==null){
+        if(typeof suppliedInput?.reason!=="string"||suppliedInput.reason.trim().length<16){
+          throw new TypeError("visual appearance model upgrade requires a meaningful reason");
+        }
+        const current=worldReader.getThread(threadId);
+        if(current.genome?.physical?.version!==PHYSICAL_GENOME_VERSION){
+          throw new TypeError("visual appearance model upgrade requires the current physical genome");
+        }
+        if(typeof current.identity?.sex!=="string"||current.identity.sex.trim()===""){
+          throw new TypeError("visual appearance model upgrade requires authoritative Thread sex");
+        }
+        const currentPortrait=currentCanonicalPortrait(embodimentReader,threadId);
+        if(currentPortrait?.status!=="available"||typeof currentPortrait?.asset?.referenceObjectRef!=="string"){
+          throw new TypeError("visual appearance model upgrade requires the admitted canonical root");
+        }
+        const specification=canonicalVisualSpecificationFromPhysicalGenome({
+          threadId,
+          sex:current.identity.sex,
+          physicalGenome:current.genome.physical,
+        });
+        const specificationDigest=embodimentSpecificationDigest(specification);
+
+        await record(activity,{
+          threadId,
+          operationId:root,
+          stage:"thread.migration.start",
+          status:"succeeded",
+          attempt:1,
+          evidence:{migrationId,scope:"canonical_visual_model"},
+        });
+        const visualResult=visualIdentityRepairService.repair({
+          threadId,
+          operationKey:childOperation(root,"canonical_visual"),
+          correctedSpecification:specification,
+          reason:suppliedInput.reason.trim(),
+          evidenceReferences:[],
+        });
+        await record(activity,{
+          threadId,
+          operationId:childOperation(root,"canonical_visual"),
+          parentOperationId:root,
+          stage:"thread.migration.canonical_visual",
+          status:"succeeded",
+          attempt:1,
+          evidence:{migrationId,specificationDigest,reused:visualResult.reused===true,physicalGenomeChanged:false},
+        });
+        const after=await diagnose(threadId);
+        await record(activity,{
+          threadId,
+          operationId:childOperation(root,"complete"),
+          parentOperationId:root,
+          stage:"thread.migration.complete",
+          status:"succeeded",
+          attempt:1,
+          evidence:{migrationId,health:after.health},
+        });
+        return Object.freeze({
+          threadId,
+          migrationId,
+          migrationKey:root,
+          before,
+          after,
+          migrated:false,
+          physicalMigrated:false,
+          visualMigrated:visualResult.reused!==true,
+          result:null,
+          visualIdentityCorrection:visualResult,
+        });
+      }
+
+      if (physicalGenomeMigrator === null) {
         throw new TypeError("physical appearance migration is unavailable");
       }
       const priorEvidence=latestPhysicalEvidence(physicalGenomeMigrator,threadId);
@@ -677,8 +803,6 @@ export function createThreadGenesisRepairService({
       if (!physicalAncestry || typeof suppliedInput?.reason !== "string" || suppliedInput.reason.trim().length < 16) {
         throw new TypeError("physical_embodiment_v2 requires durable or supplied maternal/paternal physical ancestry and a meaningful reason");
       }
-      const before = await diagnose(threadId);
-      if (!before.exists) return Object.freeze({ threadId, migrationId, migrationKey:root, before, after:before, migrated:false });
       const available = before.findings.some((entry) => entry.migration?.id === migrationId);
       if (!available && worldReader.getThread(threadId).genome?.physical?.version !== PHYSICAL_GENOME_VERSION) {
         throw new TypeError(`migration ${migrationId} is not available for Thread ${threadId}`);
