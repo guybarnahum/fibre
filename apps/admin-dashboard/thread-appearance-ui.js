@@ -60,7 +60,10 @@ export function threadAppearanceState(diagnosis){
       &&embodimentHealthy
       &&publication?.code==="CANONICAL_VISUAL_PUBLICATION"
       &&publication?.state==="healthy",
-    appearancePending:embodiment?.code==="CANONICAL_EMBODIMENT_PENDING"
+    appearanceBlocked:embodiment?.code==="CANONICAL_EMBODIMENT_PENDING"
+      &&embodiment?.embodimentStatus==="unavailable_with_reason",
+    appearancePending:(embodiment?.code==="CANONICAL_EMBODIMENT_PENDING"
+      &&embodiment?.embodimentStatus!=="unavailable_with_reason")
       ||publication?.code==="CANONICAL_VISUAL_NOT_PUBLISHED",
   });
 }
@@ -167,6 +170,19 @@ async function refreshUntilAppearanceReady(host,threadId,threadName){
         host.removeAttribute("aria-busy");
         await render(host,threadId,threadName,"Appearance is current.",health);
         announceThreadUpdated(threadId);
+        return;
+      }
+
+      if(state.appearanceBlocked||health.reconciliation?.state==="dead_letter"){
+        delete host.dataset.appearanceRefreshing;
+        host.removeAttribute("aria-busy");
+        await render(
+          host,
+          threadId,
+          threadName,
+          "Appearance generation stopped before publication. Check Thread health for the blocking reconciliation error.",
+          health,
+        );
         return;
       }
 
