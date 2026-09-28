@@ -3,11 +3,13 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
+import { sampleFounderPhysicalGenome } from "#core/src/human-appearance/index.mjs";
 import { PROVENANCED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
 import {
   GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY,
   attachGenesisCanonicalVisualIdentity,
 } from "#services/world-kernel/src/genesis-canonical-visual-identity.mjs";
+import { canonicalVisualSpecificationFromPhysicalGenome } from "#services/world-kernel/src/canonical-visual-identity-from-physical-genome.mjs";
 import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
 import { attachTestCivilRegistration } from "#services/world-kernel/test/support/civil-registration-fixture.mjs";
 import {
@@ -132,6 +134,10 @@ function birth() {
     createdBy: "fibre.genesis",
     lastEventId: `evt_seed_${THREAD_ID}`,
   };
+  const physicalGenome=sampleFounderPhysicalGenome({
+    ancestry:[{population:"test family",share:1,referencePopulation:"oceania.polynesia"}],
+    seed:"cloud-recovery-visual",
+  });
   const visualBundle = attachGenesisCanonicalVisualIdentity({
     manifest: {
       genesisId: `gen_${THREAD_ID}`,
@@ -159,15 +165,11 @@ function birth() {
     thread,
   }, {
     policyRef: GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY,
-    specification: {
-      subject: {
-        partyId: THREAD_ID,
-        description: "A person with stable ordinary facial landmarks, visible skin texture, dark eyes, wavy dark hair, and a small diagonal scar above the outer left eyebrow; preserve these identity cues across renderings.",
-      },
-      method: "canonical synthetic portrait specification",
-      description: "Head-and-shoulders, frontal, neutral expression, ordinary perspective and even daylight-balanced illumination.",
-      model: "replaceable-renderer",
-    },
+    specification: canonicalVisualSpecificationFromPhysicalGenome({
+      threadId:THREAD_ID,
+      sex:"female",
+      physicalGenome,
+    }),
   });
   return attachTestCivilRegistration(visualBundle);
 }
@@ -271,7 +273,7 @@ test("Cloudflare World restart resumes pending work once and preserves convergen
   const wake = await recovered.reconciliationRuntime.handleWake();
   assert.equal(wake.skipped, false);
   assert.equal(calls.genesisPresentation, 1);
-  assert.equal(calls.root, 1);
+  assert.equal(calls.root, 2);
   assert.equal(calls.visualPresentation, 1);
   assert.equal(wake.visualPublication.result.results[0].reconciliation.demandId, "demand_slice_c_cloud_001");
   const embodiments = recovered.embodimentStore.listCurrent(THREAD_ID);
@@ -288,7 +290,7 @@ test("Cloudflare World restart resumes pending work once and preserves convergen
   assert.equal(replayWake.reconciliationPending, false);
   assert.equal(replayWake.visualPublication.result.results.length, 0, "completed Threads must not reenter visual work");
   assert.equal(calls.genesisPresentation, 1, "delivered Genesis projection must stay quiescent");
-  assert.equal(calls.root, 1, "admitted canonical root must not be regenerated");
+  assert.equal(calls.root, 2, "admitted canonical identity must not regenerate either stage");
   assert.equal(calls.visualPresentation, 1, "completed visual publication must not be reinvoked");
   await replay.close({ cancelSchedule: true });
   storage.closeDatabase();
