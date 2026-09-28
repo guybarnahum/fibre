@@ -43,6 +43,8 @@ function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null,
     kind:"portrait",
     visibility:"public",
     status:"available",
+    specification:{ subject:{ description:"current embodied face" }, description:"current embodiment rule" },
+    specificationDigest:`sha256:${"c".repeat(64)}`,
     asset:{ referenceObjectRef:objectRef },
   };
   const publicIdentity = {
@@ -718,4 +720,23 @@ test("outdated appearance model reuses durable ancestry evidence", async () => {
   assert.equal(thread.genome.physical.version,"physical-genome-v0.2");
   assert.equal(result.after.findings.find(entry=>entry.code==="PHYSICAL_GENOME").state,"healthy");
   assert.equal(result.after.findings.some(entry=>entry.code==="PHYSICAL_APPEARANCE_MODEL_OUTDATED"),false);
+});
+
+
+test("canonical visual diagnosis follows current Embodiment, not stale Genesis seed", async () => {
+  const {service,threadId,thread,embodiment}=fixture();
+  thread.identity.canonicalVisualIdentity.specification={
+    subject:{description:"stale Genesis face"},
+    description:"stale Genesis rule",
+  };
+  embodiment.specification={
+    subject:{description:"current genome-derived face"},
+    description:"current Embodiment rule",
+  };
+
+  const diagnosis=await service.diagnose(threadId);
+  const visual=diagnosis.findings.find(entry=>entry.code==="CANONICAL_VISUAL_SPEC");
+  assert.equal(visual.state,"healthy");
+  assert.equal(visual.authority,"embodiment","diagnosis treated Genesis seed as current visual authority");
+  assert.equal(visual.specificationDigest,embodiment.specificationDigest);
 });
