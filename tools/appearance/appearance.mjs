@@ -135,10 +135,13 @@ async function repairDiagnosis({ worldKernel, privateToken, threadId }) {
   const body=await payload(response,"World repair diagnosis");
   if(body.contract!==THREAD_REPAIR_CONTRACT){
     throw new Error(
-      `staging World Kernel repair contract is ${body.contract??"unknown"}; expected ${THREAD_REPAIR_CONTRACT}. Run: npm run cloud:deploy:service -- --env staging --service world-kernel`,
+      `staging World Kernel repair contract is ${body.contract??"unknown"}; expected ${THREAD_REPAIR_CONTRACT}. Run: npm run cloud:deploy -- --env staging`,
     );
   }
-  return body;
+  if(!body.diagnosis||typeof body.diagnosis!=="object"){
+    throw new Error("World repair diagnosis response is missing diagnosis");
+  }
+  return body.diagnosis;
 }
 
 async function presentation({ threadPresentation, threadId }) {
