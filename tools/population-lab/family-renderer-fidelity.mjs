@@ -101,11 +101,11 @@ async function main(){
   process.stdout.write("\n");
   const result={
     meta:{
-      version:"family-renderer-fidelity-v0.4",
+      version:"family-renderer-fidelity-v0.5",
       model,
       siblings,
       grandchildren,
-      rendererInputs:"shared-physical-phenotype-rendering-projection",
+      rendererInputs:"shared-human-appearance-anatomy-plus-reference-state",
       projectionVersion,
     },
     sourceDiagnostics:source.diagnostics,
