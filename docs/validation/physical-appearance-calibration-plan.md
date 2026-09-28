@@ -14,7 +14,7 @@ The resulting portrait was not visually coherent with the operator-confirmed Eas
 
 That observed failure supersedes the earlier conclusion that population/appearance calibration was closed.
 
-The current `physical-genome-v0.2` work on `main` is provisional and must not be deployed as an accepted appearance model until the calibration tranche below passes.
+The calibration tranche below has now passed through Slice 5, and `physical-genome-v0.2` is the current calibrated physical model. Live staging migration has also proven v0.1 -> v0.2 authority upgrade and downstream convergence; final visual acceptance of the migrated Li Jing portrait is still pending direct inspection.
 
 ## Standing constraints
 
@@ -156,7 +156,7 @@ The numerical run is local-only and checks population-center drift, variance, pe
 
 A small fixed visual sample then renders a subset of the same seeded cohort and checks renderer fidelity to the generated anatomy. This is offline calibration evidence, never a runtime retry loop.
 
-**Do not deploy the new appearance model or re-render Li Jing again until Slices 1–5 pass.**
+Slices 1–5 have passed. The calibrated model may be used for explicit appearance-model migration; do not add extra rerenders unless the current v0.2 specification is sound and one generated root is independently poor.
 
 ## Slice 6 — Versioned appearance-model migration
 
@@ -175,7 +175,7 @@ Migration remains one replayable World authority change followed by normal canon
 
 ## Slice 7 — Coherent CLI
 
-**Status: implemented on `main`; pending repository validation and staging proof.**
+**Status: validated live in staging 2026-09-27.** `appearance:diagnose` correctly exposed Li Jing's v0.1 -> v0.2 upgrade and durable ancestry evidence, `appearance:migrate` reused that evidence, and final diagnosis reported v0.2 physical authority plus healthy Embodiment-owned visual authority.
 
 Expose Fibre concepts directly:
 
@@ -208,7 +208,9 @@ Do not hide appearance authority changes inside generic **Fix**.
 
 ## Slice 9 — Staging proof
 
-First regression case: Li Jing.
+**Status: partially proven live in staging 2026-09-27; final portrait inspection still pending.**
+
+First regression case: Li Jing. The live upgrade has already proven: old model diagnosed as migration-required; prior operator ancestry evidence reused unchanged; `physical-genome-v0.2` installed; a new anatomy-first specification admitted; canonical root changed from `visual_identity_reference_7939b8c5b13eb1a35f07020f6644422d` to `visual_identity_reference_6043f815374a1c610f92467e5edb29a1`; specification digest changed from `sha256:491ba6a34b6ec3775cd8e7d1c6d8aa4a0606423c72b5548d9ea43c8fd74f2915` to `sha256:eea9a38434971a13515bb4c1e2193fa3a9888c16e8cf8472c9a67c868baa8a2a`; Presentation converged; and FID revision 4 superseded revision 3. Final diagnosis is healthy with v0.2 and Embodiment as canonical visual authority.
 
 Acceptance:
 - old model diagnosed as migration-required;
