@@ -127,3 +127,25 @@ test("renderer receives anatomy, not inherited grooming/body-state tendencies",(
     "inherited tendencies leaked into renderer text",
   );
 });
+
+
+test("renderer layers keep structural geometry separate from surface phenotype",()=>{
+  const genome=sampleFounderPhysicalGenome({ancestry,seed:"render-layer-boundary"});
+  const projection=physicalPhenotypeRenderingProjection(genome,{sex:"female"});
+
+  assert.match(projection.geometryDescription,/faceWidth:/u,"geometry layer lost face structure");
+  assert.match(projection.geometryDescription,/eyeShape:/u,"geometry layer lost eye structure");
+  assert.match(projection.surfaceDescription,/pigmentation:/u,"surface layer lost pigmentation");
+  assert.match(projection.surfaceDescription,/hairTexture:/u,"surface layer lost hair texture");
+
+  assert.doesNotMatch(
+    projection.geometryDescription,
+    /pigmentation:|eyeColor:|hairColor:|hairTexture:/u,
+    "surface phenotype leaked into geometry anchor",
+  );
+  assert.doesNotMatch(
+    projection.surfaceDescription,
+    /faceWidth:|eyeShape:|noseWidth:|jawWidth:|chinProjection:/u,
+    "facial geometry leaked into surface pass",
+  );
+});
