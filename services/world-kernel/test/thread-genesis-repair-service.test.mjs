@@ -451,10 +451,70 @@ test("legacy embodiment migration admits explicit North-African physical ancestr
   assert.equal(result.migrated,true);
   assert.equal(thread.genome.physical.version,"physical-genome-v0.3","migration did not establish physical authority");
   assert.equal(repairInput.correctedSpecification.method,
-    "canonical synthetic portrait specification derived from the Thread's inherited physical genome");
+    "layered canonical synthetic portrait specification derived from the Thread's inherited physical genome");
   assert.deepEqual(repairInput.evidenceReferences,["evt_physical_genome_migrated_1"],
     "visual correction was not grounded in the migration event");
   assert.equal(result.after.findings.find(entry=>entry.code==="PHYSICAL_GENOME").state,"healthy");
+});
+
+test("current physical genome upgrades a legacy visual spec without rewriting genetics",async()=>{
+  const ancestry=[{population:"Polynesian family",share:1,referencePopulation:"oceania.polynesia"}];
+  const physicalGenome=resolveBirthPhysicalInheritance({
+    maternalAncestry:ancestry,
+    paternalAncestry:ancestry,
+    seed:"current-genome-visual-model-upgrade",
+  }).genome;
+  let physicalCalls=0;
+  let repairInput=null;
+  const physicalGenomeMigrator={
+    migrate(){physicalCalls+=1;throw new Error("visual-model upgrade must not rewrite physical authority");},
+  };
+  const visualIdentityRepairService={
+    repair(input){
+      repairInput=structuredClone(input);
+      embodiment.specification=input.correctedSpecification;
+      embodiment.specificationDigest=embodimentSpecificationDigest(input.correctedSpecification);
+      embodiment.status="pending_generation";
+      embodiment.asset=null;
+      return{
+        threadId:input.threadId,
+        operationKey:input.operationKey,
+        embodiment:structuredClone(embodiment),
+      };
+    },
+  };
+  const {service,threadId,thread,embodiment}=fixture({
+    physicalGenomeMigrator,
+    visualIdentityRepairService,
+  });
+  thread.genome.physical=structuredClone(physicalGenome);
+  embodiment.representationKind="synthetic_generation";
+
+  const before=await service.diagnose(threadId);
+  const visualUpgrade=before.findings.find(entry=>entry.code==="CANONICAL_VISUAL_MODEL_OUTDATED");
+  assert.equal(visualUpgrade.state,"migration_required");
+  assert.equal(visualUpgrade.migration.label,"Upgrade visual model");
+  assert.deepEqual(
+    visualUpgrade.migration.input.fields.map(field=>field.name),
+    ["reason"],
+    "renderer migration unexpectedly requested ancestry",
+  );
+
+  const originalGenome=structuredClone(thread.genome.physical);
+  const result=await service.migrate(threadId,{
+    migrationId:"physical_embodiment_v2",
+    migrationKey:"visual_model_upgrade_1",
+    input:{reason:"Upgrade the canonical render specification while preserving the exact current physical genome."},
+  });
+
+  assert.equal(physicalCalls,0,"visual-model upgrade invoked physical migration");
+  assert.deepEqual(thread.genome.physical,originalGenome,"visual-model upgrade changed physical genome");
+  assert.equal(result.physicalMigrated,false);
+  assert.equal(result.visualMigrated,true);
+  assert.equal(repairInput.correctedSpecification.method,
+    "layered canonical synthetic portrait specification derived from the Thread's inherited physical genome");
+  assert.deepEqual(repairInput.evidenceReferences,[],"visual-model upgrade invented a physical migration witness");
+  assert.equal(result.after.findings.some(entry=>entry.code==="CANONICAL_VISUAL_MODEL_OUTDATED"),false);
 });
 
 test("legacy embodiment migration retry resumes its matching pending canonical supersession", async () => {
