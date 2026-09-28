@@ -81,11 +81,18 @@ The provenance sidecar is deliberately not imported by founder sampling or rende
 
 A reference-population node is a **distribution calibration point**, not a categorical face.
 
-Example:
+A node normally inherits one parent, but a population with well-supported mixed population history may instead use a small **calibration basis**:
 
 ```js
 "oceania.polynesia": {
-  parent: "oceania",
+  basis: [
+    { referencePopulation: "east_asia", share: .79 },
+    { referencePopulation: "oceania", share: .21 }
+  ],
+  variation: {
+    familyFactorMultiplier: 1.12,
+    structuralResidualMultiplier: .90
+  },
   values: {
     faceBreadth: .38,
     faceLength: .10,
@@ -97,9 +104,13 @@ Example:
 Its effective prior is:
 
 ```text
-parent prior
-+ evidence-supported child overrides
+weighted calibration basis
++ direct evidence-supported locus overrides
 ```
+
+A calibration-basis weight may be informed by population-history/genomic evidence, but it is **not** a claim that visible phenotype is a linear ancestry mixture. Record the basis separately in `calibration-evidence.mjs` with its own confidence and sources. Direct anatomical claims still require their own per-locus evidence.
+
+Use a calibration basis only when a single existing parent is demonstrably a poor prior. Do not create arbitrary blends to make portraits look better.
 
 A more specific child may intentionally have no overrides:
 
@@ -357,6 +368,14 @@ Prefer meaningful population/lineage structure over political borders.
 
 Population centers must never become templates.
 
+The runtime uses a compact correlated founder-factor model. A population node may optionally tune only three multipliers:
+
+- `familyFactorMultiplier` — strength of coherent person/family morphology;
+- `structuralResidualMultiplier` — independent facial-locus noise;
+- `generalResidualMultiplier` — independent non-structural noise.
+
+Prefer changing the balance between coherent factors and residual noise over adding a population-specific covariance matrix. A variation override is a modeling choice, not an anatomical fact, so keep it small, document why it exists, and validate the resulting cohort.
+
 Any new calibration must preserve:
 
 - substantial within-population variation;
@@ -366,7 +385,7 @@ Any new calibration must preserve:
 - mixed-parent inheritance;
 - deterministic replay.
 
-If a population becomes visually uniform after calibration, the calibration is wrong even if its mean looks plausible.
+If a population becomes visually uniform after calibration, or diversity appears mainly as incoherent feature combinations, the calibration is wrong even if its mean looks plausible.
 
 ## Population Lab acceptance
 
