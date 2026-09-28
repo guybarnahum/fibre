@@ -6,12 +6,18 @@ import {physicalGenomeLoci} from "./physical-genome.mjs";
  *
  * East-Asian facial morphology has the evidence-backed Slice 2 calibration
  * below. Other roots, non-facial coordinates, and deliberately uncalibrated
- * child populations remain provisional. Children inherit only from their
- * named geographic parent until calibration supplies justified overrides.
+ * child populations remain provisional. A definition's parent is its
+ * calibration fallback, not a claim of ancestry or population equivalence.
+ * Children inherit that prior until calibration supplies justified overrides.
  */
 const DEFINITIONS=Object.freeze({
   afr_west:{parent:null,values:{pigmentation:.72,eyePigmentation:.72,hairPigmentation:.66,frecklingTendency:0,hairForm:.72,hairDensity:.18,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:.3,faceLength:-.06,midfaceProminence:.14,zygomaticProjection:.08,eyeSpacing:-.1,eyeShape:.12,epicanthicFold:-.55,upperEyelidExposure:.1,orbitalDepth:.04,foreheadProportion:0,brow:.02,noseBreadth:.42,noseProjection:-.04,nasalBridgeHeight:-.18,softTissue:.4,jawBreadth:.14,chinProjection:-.04,frame:.04,height:.02,bodyProportion:.06,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   afr_east:{parent:null,values:{pigmentation:.62,eyePigmentation:.68,hairPigmentation:.6,frecklingTendency:0,hairForm:.58,hairDensity:.14,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.02,faceLength:.18,midfaceProminence:.1,zygomaticProjection:.04,eyeSpacing:-.02,eyeShape:.08,epicanthicFold:-.52,upperEyelidExposure:.1,orbitalDepth:.05,foreheadProportion:.02,brow:.06,noseBreadth:.14,noseProjection:.12,nasalBridgeHeight:-.02,softTissue:.24,jawBreadth:.02,chinProjection:.08,frame:.02,height:.1,bodyProportion:.1,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
+  // Coarse African regions are explicit operator evidence codes even before
+  // their own facial calibration exists. They shrink to the nearest currently
+  // calibrated basis without implying population equivalence.
+  afr_north:{parent:"west_asia",values:{}},
+  afr_south:{parent:"afr_west",values:{}},
   eur_north:{parent:null,values:{pigmentation:-.7,eyePigmentation:-.48,hairPigmentation:-.34,frecklingTendency:0,hairForm:-.34,hairDensity:0,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.12,faceLength:.1,midfaceProminence:-.04,zygomaticProjection:-.08,eyeSpacing:.04,eyeShape:0,epicanthicFold:-.68,upperEyelidExposure:.22,orbitalDepth:.18,foreheadProportion:.04,brow:.05,noseBreadth:-.22,noseProjection:.18,nasalBridgeHeight:.38,softTissue:-.14,jawBreadth:-.04,chinProjection:.1,frame:.08,height:.12,bodyProportion:.02,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   eur_south:{parent:null,values:{pigmentation:-.42,eyePigmentation:.08,hairPigmentation:-.06,frecklingTendency:0,hairForm:-.1,hairDensity:.02,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.06,faceLength:.08,midfaceProminence:.02,zygomaticProjection:-.02,eyeSpacing:.02,eyeShape:.02,epicanthicFold:-.62,upperEyelidExposure:.18,orbitalDepth:.14,foreheadProportion:.02,brow:.08,noseBreadth:-.1,noseProjection:.22,nasalBridgeHeight:.3,softTissue:-.02,jawBreadth:0,chinProjection:.1,frame:.02,height:0,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   west_asia:{parent:null,values:{pigmentation:-.2,eyePigmentation:.34,hairPigmentation:.28,frecklingTendency:0,hairForm:-.06,hairDensity:.04,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.02,faceLength:.06,midfaceProminence:.04,zygomaticProjection:.02,eyeSpacing:.02,eyeShape:.02,epicanthicFold:-.58,upperEyelidExposure:.16,orbitalDepth:.12,foreheadProportion:.02,brow:.12,noseBreadth:-.04,noseProjection:.3,nasalBridgeHeight:.3,softTissue:.04,jawBreadth:0,chinProjection:.12,frame:.02,height:0,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
