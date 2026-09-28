@@ -42,6 +42,20 @@
   font-size:10px;
   min-height:28px;
 }
+.thread-pending-throb {
+  animation:thread-pending-throb 1.35s ease-in-out infinite;
+}
+.thread-pending-throb::before {
+  animation:thread-pending-dot 1.35s ease-in-out infinite;
+}
+@keyframes thread-pending-throb {
+  0%,100% { opacity:.72; }
+  50% { opacity:1; box-shadow:0 0 0 3px color-mix(in srgb,currentColor 10%,transparent); }
+}
+@keyframes thread-pending-dot {
+  0%,100% { transform:scale(.72); }
+  50% { transform:scale(1.3); }
+}
 .fa-action-icon {
   width:13px;
   height:13px;
