@@ -431,6 +431,13 @@ test("legacy embodiment migration installs physical authority before correcting 
   const legacy=before.findings.find(entry=>entry.code==="LEGACY_PHYSICAL_EMBODIMENT");
   assert.equal(legacy.state,"healthy");
   assert.equal(legacy.migration.id,"physical_embodiment_v2");
+  const maternalReference=legacy.migration.input.fields.find(
+    field=>field.name==="maternalReferencePopulation",
+  );
+  assert.ok(maternalReference.options.includes("afr_north"),
+    "North Africa is unavailable to appearance migration");
+  assert.ok(maternalReference.options.includes("afr_south"),
+    "Southern Africa is unavailable to appearance migration");
 
   const result=await service.migrate(threadId,{
     migrationId:"physical_embodiment_v2",
