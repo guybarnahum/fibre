@@ -237,13 +237,13 @@ export function createIdentityProjectionWriteApi({ presentationServer, privateTo
             ],
           },
         });
-        const expectedSequence = current.pointer.sequence ?? current.snapshot.cursor;
         const result = await presentationServer.publishSnapshot({
           channelId,
           objectRef:`snapshot_world_identity_${token}`,
           snapshotVersion:`world-identity-${token}`,
           bundle:next,
-          expectedSequence,
+          cursor:current.snapshot.cursor,
+          expectedSnapshotDigest:current.pointer.snapshotDigest,
           catalog:{
             publiclyVisible:true,
             projectionKind:"world_identity_reconciliation",
