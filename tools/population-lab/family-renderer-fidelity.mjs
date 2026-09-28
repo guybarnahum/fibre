@@ -126,6 +126,7 @@ async function main(){
     apiKey:token(),
     model,
     quality:"low",
+    inputFidelity:"high",
     fetchImpl:resilientFetch,
   });
   const rendered=[];
