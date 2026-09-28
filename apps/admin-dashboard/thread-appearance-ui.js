@@ -21,6 +21,7 @@ export function threadAppearanceState(diagnosis){
     "LEGACY_PHYSICAL_EMBODIMENT",
   ]);
   const visual=finding(diagnosis,[
+    "CANONICAL_VISUAL_MODEL_OUTDATED",
     "CANONICAL_VISUAL_SPEC",
     "CANONICAL_VISUAL_SPEC_MISSING",
     "GENESIS_VISUAL_SEED",
@@ -34,7 +35,8 @@ export function threadAppearanceState(diagnosis){
     "CANONICAL_VISUAL_PUBLICATION",
     "CANONICAL_VISUAL_NOT_PUBLISHED",
   ]);
-  const migration=physical?.migration?.id===PHYSICAL_MIGRATION_ID?physical.migration:null;
+  const migrationSource=visual?.migration?.id===PHYSICAL_MIGRATION_ID?visual:physical;
+  const migration=migrationSource?.migration?.id===PHYSICAL_MIGRATION_ID?migrationSource.migration:null;
   const evidence=migration?.evidence??physical?.evidence??null;
   const currentVersion=physical?.code==="PHYSICAL_GENOME"
     ? physical.version??null
@@ -52,6 +54,8 @@ export function threadAppearanceState(diagnosis){
     evidence,
     currentVersion,
     targetVersion,
+    currentAppearanceVersion:visual?.appearanceVersion??visual?.currentAppearanceVersion??null,
+    targetAppearanceVersion:visual?.targetAppearanceVersion??visual?.appearanceVersion??null,
     objectRef:embodiment?.objectRef??null,
     canMigrate:migration!==null,
     canRerender:current&&visualHealthy&&embodimentHealthy,
@@ -162,6 +166,9 @@ function renderEvidence(host,evidence){
 }
 
 function migrationDescription(state){
+  if(state.visual?.code==="CANONICAL_VISUAL_MODEL_OUTDATED"){
+    return "Upgrade only the canonical visual specification and generated root from the existing current physical genome. Physical inheritance stays unchanged.";
+  }
   if(state.evidence!==null){
     return "Upgrade inherited physical authority using the recorded parental physical-origin evidence above. The renderer receives the resulting anatomy, not ancestry labels.";
   }
@@ -246,7 +253,8 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
   facts.append(
     fact("Physical model",state.currentVersion??"None",{mono:true}),
     fact("Target model",state.targetVersion??"—",{mono:true}),
-    fact("Visual authority",state.visual?.authority??(state.visual?.code==="CANONICAL_VISUAL_SPEC"?"Embodiment":"—")),
+    fact("Render model",state.currentAppearanceVersion??(state.visual?.code==="CANONICAL_VISUAL_MODEL_OUTDATED"?"Legacy":"—"),{mono:true}),
+    fact("Visual authority",state.visual?.authority??(["CANONICAL_VISUAL_SPEC","CANONICAL_VISUAL_MODEL_OUTDATED"].includes(state.visual?.code)?"Embodiment":"—")),
     fact("Canonical root",state.objectRef??"Not available",{mono:true}),
   );
   host.append(facts);
@@ -285,7 +293,9 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
       });
     },{
       primary:true,
-      tooltip:label+" — install current inherited physical authority and generate a new canonical root.",
+      tooltip:state.visual?.code==="CANONICAL_VISUAL_MODEL_OUTDATED"
+        ? label+" — preserve the physical genome, upgrade the canonical render specification, and generate a new root."
+        : label+" — install current inherited physical authority and generate a new canonical root.",
     }));
   }else if(state.canRerender){
     const label="Re-render appearance";
