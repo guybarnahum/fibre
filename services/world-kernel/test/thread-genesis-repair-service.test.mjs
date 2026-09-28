@@ -729,6 +729,10 @@ test("outdated appearance model reuses durable ancestry evidence", async () => {
     ["reason"],
     "upgrade asked operator to re-enter durable ancestry",
   );
+  assert.ok(
+    outdated.migration.input.fields[0].default?.length>16,
+    "appearance upgrade did not prefill its routine reason",
+  );
 
   const result=await service.migrate(threadId,{
     migrationId:"physical_embodiment_v2",
@@ -792,7 +796,7 @@ test("appearance migration suggests birthplace defaults without treating them as
       maternalReferencePopulation:"afr_north",
       paternalOrigin:"Moroccan family",
       paternalReferencePopulation:"afr_north",
-      reason:"Install Fibre's current physical appearance model using operator-reviewed birthplace defaults for Morocco.",
+      reason:"Install physical-genome-v0.2 using Fibre's preselected parental physical-origin defaults for Morocco; review or override them if needed.",
     },
     "Moroccan migration defaults are not useful",
   );
