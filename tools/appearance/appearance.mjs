@@ -274,13 +274,10 @@ async function main() {
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   progress("verify_repair_contract", { expectedContract:THREAD_REPAIR_CONTRACT });
   const diagnosis=await repairDiagnosis({ worldKernel, privateToken, threadId });
+  const beforeObservatory=await observatory({ worldKernel, privateToken, threadId });
+  const physical=assertPhysicalDiagnosisMatchesWorld(diagnosis,beforeObservatory);
 
   if(diagnose){
-    const physical=(diagnosis.findings??[]).find((entry)=>(
-      entry.code==="PHYSICAL_GENOME"
-      || entry.code==="PHYSICAL_APPEARANCE_MODEL_OUTDATED"
-      || entry.code==="LEGACY_PHYSICAL_EMBODIMENT"
-    ))??null;
     const visual=(diagnosis.findings??[]).find((entry)=>(
       entry.code==="CANONICAL_VISUAL_SPEC"
       || entry.code==="CANONICAL_VISUAL_SPEC_MISSING"
@@ -295,6 +292,8 @@ async function main() {
       event:"appearance-diagnosis",
       threadId,
       health:diagnosis.health,
+      observedPhysicalGenomeVersion:observedPhysicalGenomeVersion(beforeObservatory),
+      targetPhysicalGenomeVersion:PHYSICAL_GENOME_VERSION,
       physical,
       visual,
       embodiment,
@@ -302,7 +301,6 @@ async function main() {
     return;
   }
 
-  const beforeObservatory=await observatory({ worldKernel, privateToken, threadId });
   const before=canonicalPortrait(beforeObservatory);
   const physicalAncestry=ancestryFile===null
     ? null
