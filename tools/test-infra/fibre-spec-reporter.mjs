@@ -73,9 +73,9 @@ export async function* fibreSpecReporter(
       const nesting = Number.isInteger(data.nesting) ? data.nesting : 0;
       const prefix = "  ".repeat(nesting);
       if (data.skip !== undefined && data.skip !== false) {
-        yield `${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # SKIP\n`;
+        yield `${CLEAR_PROGRESS}${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # SKIP\n`;
       } else if (data.todo !== undefined && data.todo !== false) {
-        yield `${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # TODO\n`;
+        yield `${CLEAR_PROGRESS}${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # TODO\n`;
       } else {
         yield `${CLEAR_PROGRESS}${prefix}${paint("✔", GREEN, color)} ${terminalName(data)}${duration(data)}`;
       }
