@@ -2,7 +2,7 @@ import {execFileSync} from "node:child_process";
 import {createHash} from "node:crypto";
 import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
-import {physicalPhenotypeRenderingProjection} from "../../core/src/human-phenotype/index.mjs";
+import {expressInheritedAppearance} from "../../core/src/human-appearance/index.mjs";
 import {populationPortraitPrompt} from "./portrait-prompt.mjs";
 
 const arg=(name,fallback)=>process.argv.find(x=>x.startsWith("--"+name+"="))?.slice(name.length+3)??fallback;
@@ -20,7 +20,7 @@ async function resilientFetch(url,options){
 }
 
 function subject({id,role,sex,genome}){
-  const projection=physicalPhenotypeRenderingProjection(genome,{sex});
+  const projection=expressInheritedAppearance({physicalGenome:genome,sex});
   return {
     id,
     role,
@@ -28,7 +28,7 @@ function subject({id,role,sex,genome}){
     genome,
     phenotype:projection.phenotype.traits,
     expressedLatents:projection.phenotype.latent,
-    renderDescription:projection.description,
+    renderDescription:projection.renderDescription,
     projectionVersion:projection.version,
   };
 }
