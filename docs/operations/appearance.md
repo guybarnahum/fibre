@@ -134,9 +134,9 @@ Thread Details exposes the same semantics under **Appearance**:
 - missing physical authority -> **Migrate appearance**;
 - current healthy model -> **Re-render appearance**.
 
-Recorded parental-origin evidence is shown and reused. If evidence is absent, World may prefill a bounded birthplace-derived suggestion for countries where one coarse physical reference is useful. The Admin dialog labels this as a suggestion and every field remains editable. Birthplace defaults are **not ancestry evidence**; they become operator-confirmed evidence only when the operator reviews and submits the migration.
+Recorded parental-origin evidence is shown and reused. If evidence is absent, Fibre should use the same place/era **Population Context** as Genesis, rank the plausible family profiles, and preselect one concrete maternal/paternal path. When several profiles are plausible Fibre still picks one editable default rather than handing demographic research to the operator. The proposal is assistance, not ancestry authority; it becomes admitted evidence only when the operator submits the migration.
 
-For example, a Morocco birthplace prefills both parental sides as `Moroccan family -> afr_north`. Fibre deliberately does not guess Arab vs Amazigh because those labels do not yet correspond to independently calibrated physical priors. For ancestry-diverse birthplaces such as the United States, Fibre leaves the ancestry fields blank.
+Current coarse birthplace defaults are temporary migration assistance while that shared Population Context path is completed. Do not add new country-specific fallback tables.
 
 Generic **Fix** never changes appearance authority.
 
