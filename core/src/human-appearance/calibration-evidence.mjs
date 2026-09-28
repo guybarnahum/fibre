@@ -81,6 +81,16 @@ export const humanAppearanceCalibrationBases=Object.freeze({
 // Confidence is per Fibre-locus mapping, not per population.
 // A source can support several overlapping nodes; a node can use several
 // partially overlapping sources. Do not collapse that into one population score.
+export const humanAppearanceVariationProfiles=Object.freeze({
+  "oceania.polynesia":Object.freeze({
+    confidence:"low",
+    sources:Object.freeze(["buck-2012-polynesia"]),
+    familyFactorMultiplier:1.12,
+    structuralResidualMultiplier:.90,
+    notes:"Buck et al. report considerable diversity within a coherent Polynesian craniofacial grouping. Fibre represents that with slightly stronger shared family factors and slightly less independent structural noise. The multiplier values are model calibration choices, not measured biological effect sizes.",
+  }),
+});
+
 export const humanAppearanceCalibrationEvidence=Object.freeze({
   "oceania.polynesia":Object.freeze({
     faceBreadth:claim(
