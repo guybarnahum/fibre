@@ -9,8 +9,25 @@ function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
 }
 
+const CHOICE_LABELS=Object.freeze({
+  afr_north:"North Africa",
+  afr_west:"West Africa",
+  afr_east:"East Africa",
+  afr_south:"Southern Africa",
+  eur_north:"Northern Europe",
+  eur_south:"Southern Europe",
+  west_asia:"West Asia",
+  south_asia:"South Asia",
+  east_asia:"East Asia",
+  southeast_asia:"Southeast Asia",
+  indigenous_america:"Indigenous Americas",
+  oceania:"Oceania",
+});
+
 function choiceLabel(value) {
-  return String(value ?? "").split(".").map((part) => human(part)).join(" › ");
+  const text=String(value??"");
+  if(CHOICE_LABELS[text])return CHOICE_LABELS[text];
+  return text.split(".").map((part)=>CHOICE_LABELS[part]??human(part)).join(" › ");
 }
 
 export function actionFields(action) {
