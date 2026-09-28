@@ -763,3 +763,55 @@ test("canonical visual diagnosis follows current Embodiment, not stale Genesis s
   assert.equal(visual.authority,"embodiment","diagnosis treated Genesis seed as current visual authority");
   assert.equal(visual.specificationDigest,embodiment.specificationDigest);
 });
+
+
+test("appearance migration suggests birthplace defaults without treating them as evidence", async () => {
+  const physicalGenomeMigrator={
+    latestEvidence(){return null;},
+    migrate(){throw new Error("migration should not run during diagnosis");},
+  };
+
+  const morocco=fixture({physicalGenomeMigrator});
+  morocco.thread.identity.birthPlace={
+    displayName:"Fes, Morocco",
+    country:"Morocco",
+    city:"Fes",
+    lat:34.03313,
+    long:-5.00028,
+  };
+  morocco.thread.identity.birthCity="Fes, Morocco";
+
+  const diagnosis=await morocco.service.diagnose(morocco.threadId);
+  const physical=diagnosis.findings.find(entry=>entry.code==="LEGACY_PHYSICAL_EMBODIMENT");
+  assert.equal(physical.migration.evidence,null,"birthplace suggestion became ancestry evidence");
+  assert.equal(physical.migration.suggestion.country,"Morocco");
+  assert.deepEqual(
+    Object.fromEntries(physical.migration.input.fields.map(field=>[field.name,field.default])),
+    {
+      maternalOrigin:"Moroccan family",
+      maternalReferencePopulation:"afr_north",
+      paternalOrigin:"Moroccan family",
+      paternalReferencePopulation:"afr_north",
+      reason:"Install Fibre's current physical appearance model using operator-reviewed birthplace defaults for Morocco.",
+    },
+    "Moroccan migration defaults are not useful",
+  );
+
+  const unitedStates=fixture({physicalGenomeMigrator});
+  unitedStates.thread.identity.birthPlace={
+    displayName:"Chicago, United States",
+    country:"United States",
+    city:"Chicago",
+    lat:41.85003,
+    long:-87.65005,
+  };
+  unitedStates.thread.identity.birthCity="Chicago, United States";
+  const diverse=await unitedStates.service.diagnose(unitedStates.threadId);
+  const diversePhysical=diverse.findings.find(entry=>entry.code==="LEGACY_PHYSICAL_EMBODIMENT");
+  assert.equal(diversePhysical.migration.suggestion,null,"diverse birthplace invented ancestry defaults");
+  assert.equal(
+    diversePhysical.migration.input.fields.find(field=>field.name==="maternalReferencePopulation").default,
+    undefined,
+    "diverse birthplace preselected a physical reference",
+  );
+});
