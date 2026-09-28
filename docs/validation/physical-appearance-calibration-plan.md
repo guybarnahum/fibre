@@ -85,7 +85,7 @@ Sparse child groups shrink toward the nearest calibrated ancestor rather than in
 
 ## Slice 3 — Founder sampling and inheritance
 
-**Status: implemented on `main`; pending focused validation.**
+**Status: validated 2026-09-27.** Focused founder/inheritance/phenotype validation and the family inheritance diagnostic passed.
 
 Use the calibrated hierarchy to produce deterministic founders:
 
@@ -100,6 +100,8 @@ Founder sampling combines population center, bounded correlated family variation
 The runtime implementation is intentionally tiny: one zero-mean factor value per anatomical system is shared across both allele copies of a founder, then each allele receives a smaller locus-specific residual. This preserves coherent parental/family structure for descendants while keeping population means stable and avoiding a runtime covariance matrix.
 
 ## Slice 4 — Rendering projection fidelity
+
+**Status: implemented on `main`; pending focused validation.**
 
 Ensure the physical genome carries enough concrete anatomy to constrain one person without demographic labels.
 
@@ -118,6 +120,19 @@ At minimum the projection must retain:
 - body/frame traits.
 
 The renderer receives anatomy, not instructions such as “make this person Chinese.”
+
+The shared projection now presents one ordered identity anatomy before any raw coordinates:
+
+```text
+face / midface / jaw
+eyes / eyelids / orbits
+nose / perioral structure
+pigmentation / hair
+body structure
+continuous coordinates as secondary precision
+```
+
+The grouped anatomy is derived directly from the expressed physical phenotype and is the primary rendering language. Continuous coordinates remain present to preserve individuality inside semantic bands, but the renderer is explicitly told to preserve the facial relationships together rather than independently averaging features toward a generic face.
 
 ## Slice 5 — Population Lab as calibration bench
 
