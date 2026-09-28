@@ -89,3 +89,41 @@ test("Admin Appearance requires explicit migration input when no durable ancestr
     "missing ancestry did not require explicit parental-origin input",
   );
 });
+
+
+test("Appearance refresh waits for canonical publication, not only root generation",()=>{
+  const physical={code:"PHYSICAL_GENOME",state:"healthy",version:"physical-genome-v0.2"};
+  const visual={code:"CANONICAL_VISUAL_SPEC",state:"healthy",authority:"embodiment"};
+
+  const generating=threadAppearanceState({
+    findings:[
+      physical,
+      visual,
+      {code:"CANONICAL_EMBODIMENT_PENDING",state:"repairable",embodimentStatus:"pending_generation"},
+    ],
+  });
+  assert.equal(generating.appearancePending,true,"generation did not remain pending");
+  assert.equal(generating.appearanceReady,false,"pending root was treated as current appearance");
+
+  const unpublished=threadAppearanceState({
+    findings:[
+      physical,
+      visual,
+      {code:"CANONICAL_EMBODIMENT",state:"healthy",objectRef:"visual_identity_reference_new"},
+      {code:"CANONICAL_VISUAL_NOT_PUBLISHED",state:"repairable",visualState:"stale"},
+    ],
+  });
+  assert.equal(unpublished.appearancePending,true,"unpublished root did not remain pending");
+  assert.equal(unpublished.appearanceReady,false,"unpublished root was treated as current appearance");
+
+  const ready=threadAppearanceState({
+    findings:[
+      physical,
+      visual,
+      {code:"CANONICAL_EMBODIMENT",state:"healthy",objectRef:"visual_identity_reference_new"},
+      {code:"CANONICAL_VISUAL_PUBLICATION",state:"healthy"},
+    ],
+  });
+  assert.equal(ready.appearancePending,false,"published appearance remained pending");
+  assert.equal(ready.appearanceReady,true,"published canonical appearance was not recognized");
+});
