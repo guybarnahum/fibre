@@ -40,6 +40,8 @@ export function createThreadPresentationServer({ infra }) {
       snapshotVersion,
       bundle,
       expectedSequence,
+      expectedSnapshotDigest,
+      cursor,
       catalog = {},
     }) {
       assertId("channelId", channelId);
@@ -47,13 +49,25 @@ export function createThreadPresentationServer({ infra }) {
       assertNonEmpty("snapshotVersion", snapshotVersion);
       const normalized = normalizeThreadPresentationBundle(bundle);
 
-      // A caller that supplies expectedSequence already has the authoritative
-      // stream position it intends to compare-and-set. Do not pay for a separate
-      // Durable Object getHead() round trip just to read the same value again;
-      // publishSnapshot() performs the actual atomic sequence check in the DO.
-      const sequence = expectedSequence === undefined
+      if (expectedSequence !== undefined && expectedSnapshotDigest !== undefined) {
+        throw new TypeError("snapshot publication must choose stream-sequence or snapshot-identity concurrency");
+      }
+      if (cursor !== undefined && (!Number.isSafeInteger(cursor) || cursor < 0)) {
+        throw new TypeError("snapshot cursor must be a non-negative safe integer");
+      }
+      if (expectedSnapshotDigest !== undefined) {
+        assertNonEmpty("expectedSnapshotDigest", expectedSnapshotDigest);
+        if (cursor === undefined) {
+          throw new TypeError("snapshot-identity publication requires the snapshot coverage cursor");
+        }
+      }
+
+      // Structural rewrites preserve the cursor of the snapshot they actually
+      // materialize and CAS against that snapshot's digest. Event-driven
+      // publications may continue to CAS against the stream head.
+      const sequence = cursor ?? (expectedSequence === undefined
         ? (await infra.streams.getHead(channelId)).sequence
-        : expectedSequence;
+        : expectedSequence);
 
       const snapshot = {
         snapshotVersion,
@@ -76,7 +90,10 @@ export function createThreadPresentationServer({ infra }) {
         snapshotVersion,
         snapshotDigest: digest,
         threadId: normalized.presentation.manifest.threadId,
-      }, { expectedSequence: sequence });
+        sequence,
+      }, expectedSnapshotDigest === undefined
+        ? { expectedSequence: sequence }
+        : { expectedSnapshotDigest });
       const priorCatalog = await infra.catalog.get(channelId);
       await infra.catalog.upsert(channelId, {
         ...(priorCatalog ?? {}),
