@@ -171,7 +171,8 @@ Slices 1–5 have passed. The calibrated model may be used for explicit appearan
 Now that the calibrated model passes:
 - no physical genome -> appearance migration available;
 - older physical-genome version -> appearance-model migration required;
-- current version -> migration unavailable; re-render only.
+- current physical version + current layered canonical spec -> physical migration unavailable; re-render only for a poor generated root;
+- current physical version + pre-layered canonical spec -> visual-model upgrade derives the layered spec from the unchanged genome, then regenerates the root.
 
 Reuse previously recorded operator ancestry evidence when trustworthy. The durable source is the latest `THREAD_PHYSICAL_GENOME_MIGRATED` event, not a copied identity field. Diagnosis exposes that evidence and an outdated-model upgrade requires only a reason when the ancestry can be reused. Ask for maternal/paternal physical origin only when durable evidence is absent.
 
