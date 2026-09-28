@@ -2,7 +2,7 @@ import {createHash} from "node:crypto";
 import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
 
-import {physicalPhenotypeRenderingProjection} from "../../core/src/human-phenotype/index.mjs";
+import {expressInheritedAppearance} from "../../core/src/human-appearance/index.mjs";
 import {composeBirthSubjectIdentity,selectBirthNameParts} from "../genesis/birth-material.mjs";
 import {populationPortraitPrompt} from "./portrait-prompt.mjs";
 import {
@@ -105,7 +105,7 @@ function generate(place,count,seed,context){
     const sex=sexFor(requestId);
     const identity=composeBirthSubjectIdentity({requestId,material});
     const names=selectBirthNameParts({requestId,material});
-    const projection=physicalPhenotypeRenderingProjection(identity.physicalGenome,{sex});
+    const projection=expressInheritedAppearance({physicalGenome:identity.physicalGenome,sex});
     return{
       name:sex==="female"?identity.femaleName:identity.maleName,
       givenName:sex==="female"?names.femaleGivenName:names.maleGivenName,
@@ -119,7 +119,7 @@ function generate(place,count,seed,context){
       familyOrigin:family.familyOriginContext,
       raisedLanguages:[...identity.raisedLanguages],
       spokenLanguages:[...identity.languages],
-      renderDescription:projection.description,
+      renderDescription:projection.renderDescription,
       projectionVersion:projection.version,
       inheritance:{genome:identity.physicalGenome,phenotype:projection.phenotype},
     };
