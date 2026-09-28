@@ -126,3 +126,37 @@ test("North and Southern Africa are explicit reference populations without inven
     "uncalibrated Southern Africa should shrink to its declared calibration basis",
   );
 });
+
+
+test("Middle East reference hierarchy preserves evidence without invented deltas",()=>{
+  for(const id of [
+    "middle_east",
+    "middle_east.egypt",
+    "middle_east.levant",
+    "middle_east.arabia",
+    "middle_east.mesopotamia",
+    "middle_east.iran",
+    "middle_east.anatolia",
+  ]){
+    assert.ok(referencePopulationIds.includes(id),`${id} reference population is missing`);
+  }
+  assert.deepEqual(
+    referencePopulationPrior("middle_east.egypt"),
+    referencePopulationPrior("afr_north"),
+    "Egypt should shrink to its North-African calibration basis",
+  );
+  for(const id of [
+    "middle_east",
+    "middle_east.levant",
+    "middle_east.arabia",
+    "middle_east.mesopotamia",
+    "middle_east.iran",
+    "middle_east.anatolia",
+  ]){
+    assert.deepEqual(
+      referencePopulationPrior(id),
+      referencePopulationPrior("west_asia"),
+      `${id} should shrink to the West-Asian calibration basis until calibrated`,
+    );
+  }
+});
