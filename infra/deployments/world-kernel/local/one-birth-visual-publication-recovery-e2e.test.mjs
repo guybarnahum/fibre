@@ -6,6 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { createMemoryInfraDriver } from "#infra/providers/local";
+import { sampleFounderPhysicalGenome } from "#core/src/human-appearance/index.mjs";
 import { createNodeServiceHandler } from "#infra/providers/local/service";
 import {
   createAssetGenerationCompletion,
@@ -17,7 +18,9 @@ import { threadPresentationChannelId } from "#services/thread-presentation/src/p
 import {
   bindVerifiedCanonicalVisualIdentityProof,
   planCanonicalVisualIdentityGeneration,
+  planCanonicalVisualIdentityGeometryGeneration,
 } from "#services/world-kernel/src/canonical-visual-identity-generation.mjs";
+import { canonicalVisualSpecificationFromPhysicalGenome } from "#services/world-kernel/src/canonical-visual-identity-from-physical-genome.mjs";
 import {
   embodimentId,
   embodimentSpecificationDigest,
@@ -139,33 +142,33 @@ function birth() {
 }
 
 function pendingEmbodiment(threadId) {
-  const specification = {
-    subject: {
-      partyId: threadId,
-      description: "A person with a softly angular oval face; medium warm-beige skin with ordinary visible texture; wide-set dark brown almond-shaped eyes; straight medium-width brows with a slightly higher left arch; a narrow straight nose with rounded tip; a defined cupid's bow and fuller lower lip; a tapered jaw and rounded chin; attached earlobes; thick dark-brown wavy hair with a subtly uneven natural hairline; and a small pale diagonal scar above the outer left eyebrow. These proportions, landmarks, asymmetries, and the scar remain stable identity cues across age transformations.",
-    },
-    method: "canonical synthetic portrait specification",
-    description: "Preserve ordinary asymmetry and skin detail instead of idealizing the face. Build is lean-to-average with relaxed shoulders and a long neck. The normalized reference composition is head-and-shoulders, mostly frontal, both ears and hairline visible, neutral mouth and relaxed eyes, no eyewear or jewelry obscuring landmarks, even daylight-balanced illumination, and ordinary perspective without wide-angle distortion.",
-    model: "replaceable-renderer",
-  };
-  return {
-    embodimentId: embodimentId({ threadId, kind: "portrait", lineage: "canonical" }),
-    revision: 1,
+  const physicalGenome=sampleFounderPhysicalGenome({
+    ancestry:[{population:"test family",share:1,referencePopulation:"oceania.polynesia"}],
+    seed:`one-birth-visual:${threadId}`,
+  });
+  const specification=canonicalVisualSpecificationFromPhysicalGenome({
     threadId,
-    kind: "portrait",
-    representationKind: "synthetic_generation",
-    truthStatus: "synthetic_representation_not_historical_evidence",
-    rightsBasis: "thread_self_owned",
-    permissionReferences: [],
-    sourceReferences: [],
+    sex:"female",
+    physicalGenome,
+  });
+  return {
+    embodimentId:embodimentId({threadId,kind:"portrait",lineage:"canonical"}),
+    revision:1,
+    threadId,
+    kind:"portrait",
+    representationKind:"synthetic_generation",
+    truthStatus:"synthetic_representation_not_historical_evidence",
+    rightsBasis:"thread_self_owned",
+    permissionReferences:[],
+    sourceReferences:[],
     specification,
-    specificationDigest: embodimentSpecificationDigest(specification),
-    respecification: null,
-    status: "pending_generation",
-    unavailableReason: null,
-    asset: null,
-    visibility: "public",
-    recordedAt: "2026-08-30T18:36:00Z",
+    specificationDigest:embodimentSpecificationDigest(specification),
+    respecification:null,
+    status:"pending_generation",
+    unavailableReason:null,
+    asset:null,
+    visibility:"public",
+    recordedAt:"2026-08-30T18:36:00Z",
   };
 }
 
@@ -218,21 +221,38 @@ function binaryResponse(bytes, mediaType = "image/png") {
   };
 }
 
-function createOpenAiFixtureFetch(providerBytes) {
-  const calls = [];
-  const fetchImpl = async (url, init = {}) => {
-    calls.push({ url, init });
-    assert.equal(url, "https://api.openai.com/v1/images/generations");
-    assert.equal(init.method, "POST");
-    const body = JSON.parse(init.body);
-    assert.equal(body.model, "gpt-image-2-2026-04-21");
-    assert.match(body.prompt, /single canonical visual-identity reference portrait/i);
-    return jsonResponse({
-      created: Date.parse("2026-08-30T18:37:00Z") / 1000,
-      data: [{ b64_json: Buffer.from(providerBytes).toString("base64") }],
-    }, 200, { "x-request-id": "openai_h_root_001" });
+function createOpenAiFixtureFetch({geometryBytes,rootBytes}) {
+  const calls=[];
+  const fetchImpl=async(url,init={})=>{
+    calls.push({url,init});
+    assert.equal(init.method,"POST");
+    if(url==="https://api.openai.com/v1/images/generations"){
+      const body=JSON.parse(init.body);
+      assert.equal(body.model,"gpt-image-2-2026-04-21");
+      assert.match(body.prompt,/geometry anchor/i);
+      return jsonResponse({
+        created:Date.parse("2026-08-30T18:37:00Z")/1000,
+        data:[{b64_json:Buffer.from(geometryBytes).toString("base64")}],
+      },200,{"x-request-id":"openai_h_geometry_001"});
+    }
+    if(url==="https://api.openai.com/v1/images/edits"){
+      assert.equal(init.body.get("model"),"gpt-image-2-2026-04-21");
+      assert.match(String(init.body.get("prompt")),/supplied geometry anchor/i);
+      const references=init.body.getAll("image[]");
+      assert.equal(references.length,1);
+      assert.deepEqual(
+        new Uint8Array(await references[0].arrayBuffer()),
+        geometryBytes,
+        "surface pass did not receive the generated geometry anchor",
+      );
+      return jsonResponse({
+        created:Date.parse("2026-08-30T18:37:30Z")/1000,
+        data:[{b64_json:Buffer.from(rootBytes).toString("base64")}],
+      },200,{"x-request-id":"openai_h_root_001"});
+    }
+    throw new Error(`unexpected OpenAI fixture URL ${url}`);
   };
-  return { calls, fetchImpl };
+  return {calls,fetchImpl};
 }
 
 function createBflFixtureFetch({ expectedReferenceBase64 }) {
@@ -326,36 +346,56 @@ test("one birth recovers through one canonical root and one public identity/phot
     assert.equal(pending.status, "pending_generation");
     assert.equal(pending.sourceReferences.length, 1, "World authority grounds synthetic identity to the durable origin event");
 
-    const rootJob = planCanonicalVisualIdentityGeneration({
-      embodiment: pending,
-      requestedAt: "2026-08-30T18:36:10Z",
+    const geometryJob=planCanonicalVisualIdentityGeometryGeneration({
+      embodiment:pending,
+      requestedAt:"2026-08-30T18:36:10Z",
     });
-    assert.deepEqual(rootJob.referenceObjectRefs, []);
-    const rootProviderBytes = encoder.encode("one-birth-canonical-root-provider-bytes");
-    const openai = createOpenAiFixtureFetch(rootProviderBytes);
-    const rootProvider = selectImageIntegration(ASSET_DEPLOYMENT.integrations[rootJob.providerProfile], {
-      environment: { OPENAI_API_KEY: "one-birth-openai-key" },
-      fetchImpl: openai.fetchImpl,
+    assert.deepEqual(geometryJob.referenceObjectRefs,[]);
+    const rootJob=planCanonicalVisualIdentityGeneration({
+      embodiment:pending,
+      requestedAt:"2026-08-30T18:36:10Z",
+      geometryAnchorObjectRef:geometryJob.outputObjectRef,
     });
-    const rootRuntime = createAssetGenerationRuntime({
-      infra: presentationInfra,
-      provider: rootProvider,
+    assert.deepEqual(rootJob.referenceObjectRefs,[geometryJob.outputObjectRef]);
+
+    const geometryProviderBytes=encoder.encode("one-birth-canonical-geometry-provider-bytes");
+    const rootProviderBytes=encoder.encode("one-birth-canonical-root-provider-bytes");
+    const openai=createOpenAiFixtureFetch({
+      geometryBytes:geometryProviderBytes,
+      rootBytes:rootProviderBytes,
     });
-    const rootGenerated = await rootRuntime.execute(rootJob);
-    assert.equal(openai.calls.length, 1);
-    const rootStored = await presentationInfra.objects.get(rootGenerated.receipt.objectRef);
+    const rootProvider=selectImageIntegration(ASSET_DEPLOYMENT.integrations[rootJob.providerProfile],{
+      environment:{OPENAI_API_KEY:"one-birth-openai-key"},
+      fetchImpl:openai.fetchImpl,
+    });
+    const rootRuntime=createAssetGenerationRuntime({
+      infra:presentationInfra,
+      provider:rootProvider,
+    });
+    const geometryGenerated=await rootRuntime.execute(geometryJob);
+    const rootGenerated=await rootRuntime.execute(rootJob);
+    assert.equal(openai.calls.length,2);
+    const rootStored=await presentationInfra.objects.get(rootGenerated.receipt.objectRef);
     assert.ok(rootStored);
-      const rootGenerationRecord = await storedGenerationRecord(
+    const geometryGenerationRecord=await storedGenerationRecord(
+      presentationInfra,
+      geometryGenerated.generationRecordObjectRef,
+    );
+    const rootGenerationRecord=await storedGenerationRecord(
       presentationInfra,
       rootGenerated.generationRecordObjectRef,
     );
-    const available = bindVerifiedCanonicalVisualIdentityProof({
-      embodiment: pending,
-      proof: {
-        receipt: rootGenerated.receipt,
-        generationRecord: rootGenerationRecord,
+    const available=bindVerifiedCanonicalVisualIdentityProof({
+      embodiment:pending,
+      geometryProof:{
+        receipt:geometryGenerated.receipt,
+        generationRecord:geometryGenerationRecord,
       },
-      recordedAt: rootGenerated.receipt.completedAt,
+      proof:{
+        receipt:rootGenerated.receipt,
+        generationRecord:rootGenerationRecord,
+      },
+      recordedAt:rootGenerated.receipt.completedAt,
     });
     world.embodimentStore.record(available);
     const rootObjectRef = available.asset.referenceObjectRef;
@@ -527,7 +567,7 @@ test("one birth recovers through one canonical root and one public identity/phot
         event.kind === "media.ready" && event.payload.mediaId === officialMediaId).length,
       1,
     );
-    assert.equal(openai.calls.length, 1, "recovery must not create a second canonical root generation");
+    assert.equal(openai.calls.length, 2, "recovery must not repeat either canonical identity generation stage");
     assert.equal(
       bfl.calls.filter((call) => call.init.method === "POST").length,
       1,
