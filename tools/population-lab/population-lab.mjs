@@ -18,6 +18,7 @@ import {
   sampleFamilyProfile,
   validateFamilyProfiles,
 } from "../../core/src/population-context/index.mjs";
+import {OPENAI_IMAGE_DEFAULT_MODEL} from "../../integrations/ai/image/openai.mjs";
 
 const MODEL="gpt-5.1-2025-11-13";
 const MORPH=["faceWidth","faceLength","midfaceProminence","zygomaticProjection","jawWidth","chinProjection","eyeSpacing","eyeShape","epicanthicFold","upperEyelidExposure","orbitalDepth","foreheadProportion","browProminence","noseWidth","noseProjection","nasalBridgeHeight","lipFullness"];
@@ -279,7 +280,7 @@ async function main(){
   const count=Number(arg("count","24")),year=Number(arg("year",String(new Date().getUTCFullYear())));
   if(!Number.isInteger(count)||count<1||count>200)throw Error("--count must be 1..200");
   if(!Number.isInteger(year)||year<1800||year>2200)throw Error("--year must be 1800..2200");
-  const model=arg("model",MODEL),imageModel=arg("image-model","gpt-image-1"),seed=arg("seed","population-v1"),images=process.argv.includes("--images");
+  const model=arg("model",MODEL),imageModel=arg("image-model",OPENAI_IMAGE_DEFAULT_MODEL),seed=arg("seed","population-v1"),images=process.argv.includes("--images");
   const physicalPopulations=arg("physical-populations")?.split(/[;,]/u).map(value=>value.trim()).filter(Boolean)??[];
   const physicalMode=physicalPopulations.length>0;
   const places=physicalMode
