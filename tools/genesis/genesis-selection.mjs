@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { sampleBirthplace } from "./birthplace-sampler.mjs";
-import { FAMILY_PROFILES_SCHEMA, normalizeFamilyProfiles, sampleFamilyProfile, validateFamilyProfiles } from "./family-profile.mjs";
+import { FAMILY_PROFILES_SCHEMA, normalizeFamilyProfiles, sampleFamilyProfile, validateFamilyProfiles } from "../../core/src/population-context/index.mjs";
 
 // Historical cache namespace: changing it intentionally invalidates/re-authors cached worlds.
 export const GENESIS_WORLD_CACHE_VERSION = "fibre-modern-world-cache-v13";
