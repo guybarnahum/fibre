@@ -172,6 +172,8 @@ export function generatePhysicalCalibrationCohort({
         spokenLanguages:[],
         referencePopulation,
         renderDescription:projection.renderDescription,
+        geometryDescription:projection.geometryDescription,
+        surfaceDescription:projection.surfaceDescription,
         projectionVersion:projection.projectionVersion,
         physicalState,
         inheritance:Object.freeze({genome:inheritance.physicalGenome,phenotype:projection.phenotype}),
