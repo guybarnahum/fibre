@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
+import { PHYSICAL_GENOME_VERSION } from "../../core/src/human-phenotype/index.mjs";
 import { THREAD_REPAIR_CONTRACT } from "../../services/world-kernel/src/thread-genesis-repair-api.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
