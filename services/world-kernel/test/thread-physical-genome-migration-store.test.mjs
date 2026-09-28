@@ -54,6 +54,12 @@ test("legacy physical embodiment becomes one durable inherited genome without re
     assert.equal(event.provenance.source,"operator_confirmed_physical_ancestry");
     assert.equal(event.provenance.notThreadLifeEvent,true);
 
+    const evidence=migration.latestEvidence(seeded.threadId);
+    assert.equal(evidence.eventId,first.eventId);
+    assert.deepEqual(evidence.physicalAncestry,physicalAncestry);
+    assert.equal(evidence.physicalGenomeVersion,"physical-genome-v0.2");
+    assert.equal(evidence.previousPhysicalGenomeVersion,null);
+
     const retry=migration.migrate(world.getThread(seeded.threadId),request);
     assert.equal(retry.reused,true);
     assert.equal(retry.eventId,first.eventId);
