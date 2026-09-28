@@ -81,36 +81,35 @@ The provenance sidecar is deliberately not imported by founder sampling or rende
 
 A reference-population node is a **distribution calibration point**, not a categorical face.
 
-A node normally inherits one parent, but a population with well-supported mixed population history may instead use a small **calibration basis**:
+Most nodes inherit a parent and override only evidence-backed axes. A population may instead be a complete root calibration when inheriting another morphology would itself introduce a false template.
+
+For example, Polynesia is now explicit rather than computed from ancestry proportions:
 
 ```js
 "oceania.polynesia": {
-  basis: [
-    { referencePopulation: "east_asia", share: .79 },
-    { referencePopulation: "oceania", share: .21 }
-  ],
+  parent: null,
   variation: {
     familyFactorMultiplier: 1.12,
     structuralResidualMultiplier: .90
   },
   values: {
+    // every physical locus is explicit
+    pigmentation: .10,
+    hairForm: -.48,
     faceBreadth: .38,
-    faceLength: .10,
-    chinProjection: .20
+    eyeShape: -.10,
+    epicanthicFold: -.12,
+    noseBreadth: .30,
+    jawBreadth: .24,
+    chinProjection: .20,
+    // ...
   }
 }
 ```
 
-Its effective prior is:
+Population-history or genomic ancestry evidence may help explain **why a hierarchy exists**, but must not be converted mechanically into weighted facial priors. The failed Polynesian 79/21 experiment showed why: ancestry proportions pulled the eye/nose complex toward an East-Asian template even though the resulting ancestry arithmetic was internally consistent.
 
-```text
-weighted calibration basis
-+ direct evidence-supported locus overrides
-```
-
-A calibration-basis weight may be informed by population-history/genomic evidence, but it is **not** a claim that visible phenotype is a linear ancestry mixture. Record the basis separately in `calibration-evidence.mjs` with its own confidence and sources. Direct anatomical claims still require their own per-locus evidence.
-
-Use a calibration basis only when a single existing parent is demonstrably a poor prior. Do not create arbitrary blends to make portraits look better.
+Use direct morphology evidence for Fibre loci. Where evidence is weak, prefer a neutral coordinate or inherited calibrated parent over synthetic ancestry arithmetic.
 
 A more specific child may intentionally have no overrides:
 
