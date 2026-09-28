@@ -21,6 +21,16 @@ const DEFINITIONS=Object.freeze({
   eur_north:{parent:null,values:{pigmentation:-.7,eyePigmentation:-.48,hairPigmentation:-.34,frecklingTendency:0,hairForm:-.34,hairDensity:0,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.12,faceLength:.1,midfaceProminence:-.04,zygomaticProjection:-.08,eyeSpacing:.04,eyeShape:0,epicanthicFold:-.68,upperEyelidExposure:.22,orbitalDepth:.18,foreheadProportion:.04,brow:.05,noseBreadth:-.22,noseProjection:.18,nasalBridgeHeight:.38,softTissue:-.14,jawBreadth:-.04,chinProjection:.1,frame:.08,height:.12,bodyProportion:.02,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   eur_south:{parent:null,values:{pigmentation:-.42,eyePigmentation:.08,hairPigmentation:-.06,frecklingTendency:0,hairForm:-.1,hairDensity:.02,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.06,faceLength:.08,midfaceProminence:.02,zygomaticProjection:-.02,eyeSpacing:.02,eyeShape:.02,epicanthicFold:-.62,upperEyelidExposure:.18,orbitalDepth:.14,foreheadProportion:.02,brow:.08,noseBreadth:-.1,noseProjection:.22,nasalBridgeHeight:.3,softTissue:-.02,jawBreadth:0,chinProjection:.1,frame:.02,height:0,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   west_asia:{parent:null,values:{pigmentation:-.2,eyePigmentation:.34,hairPigmentation:.28,frecklingTendency:0,hairForm:-.06,hairDensity:.04,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.02,faceLength:.06,midfaceProminence:.04,zygomaticProjection:.02,eyeSpacing:.02,eyeShape:.02,epicanthicFold:-.58,upperEyelidExposure:.16,orbitalDepth:.12,foreheadProportion:.02,brow:.12,noseBreadth:-.04,noseProjection:.3,nasalBridgeHeight:.3,softTissue:.04,jawBreadth:0,chinProjection:.12,frame:.02,height:0,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
+  // Middle-East codes preserve operator evidence at useful geographic
+  // granularity. Until calibrated independently, they inherit an existing
+  // regional basis; this is a calibration fallback, not population equivalence.
+  middle_east:{parent:"west_asia",values:{}},
+  "middle_east.egypt":{parent:"afr_north",values:{}},
+  "middle_east.levant":{parent:"middle_east",values:{}},
+  "middle_east.arabia":{parent:"middle_east",values:{}},
+  "middle_east.mesopotamia":{parent:"middle_east",values:{}},
+  "middle_east.iran":{parent:"middle_east",values:{}},
+  "middle_east.anatolia":{parent:"middle_east",values:{}},
   south_asia:{parent:null,values:{pigmentation:.08,eyePigmentation:.58,hairPigmentation:.48,frecklingTendency:0,hairForm:-.12,hairDensity:.06,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.04,faceLength:.04,midfaceProminence:.04,zygomaticProjection:.04,eyeSpacing:.02,eyeShape:.04,epicanthicFold:-.42,upperEyelidExposure:.12,orbitalDepth:.08,foreheadProportion:.02,brow:.08,noseBreadth:.06,noseProjection:.14,nasalBridgeHeight:.16,softTissue:.1,jawBreadth:0,chinProjection:.06,frame:0,height:0,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   // Shared East-Asian facial anchor. Facial morphology values are calibrated
   // from young-adult Chinese periocular/canon data plus 3D Korean/Chinese/white
