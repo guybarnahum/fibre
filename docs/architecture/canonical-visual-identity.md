@@ -348,9 +348,11 @@ The canonical visual specification after Genesis belongs to the current Embodime
 
 Use **re-render appearance** when the current physical genome and canonical specification are sound but the generated canonical root is poor. Re-rendering preserves the exact specification digest and creates only a new operational root plus normal downstream Presentation/FID convergence.
 
-The 2026-09-27 Li Jing staging run proved the migration and replay machinery but **did not validate appearance quality**. The physical migration completed, exact replay was idempotent, and unchanged-spec renewal worked; however both generated portraits were visually inconsistent with the operator-confirmed East Asian ancestry. This observed failure reopened physical/population calibration and is now the primary regression case.
+The first 2026-09-27 Li Jing staging run proved the migration/replay machinery but exposed a real appearance-model failure: the v0.1 genome-derived portraits were visually inconsistent with the operator-confirmed East Asian ancestry. That failure reopened calibration.
 
-The active model/calibration/migration sequence is [Physical appearance model calibration and migration plan](../validation/physical-appearance-calibration-plan.md). The provisional `physical-genome-v0.2` work must not be treated as accepted or deployed appearance quality until Slices 1-5 pass.
+Slices 1-5 subsequently validated the calibrated `physical-genome-v0.2` model in Population Lab, and a second live Li Jing staging run proved the versioned authority upgrade itself: durable operator ancestry evidence was reused unchanged, v0.1 upgraded to v0.2, a new anatomy-first canonical specification/root was admitted, Presentation converged, and FID revision 4 superseded revision 3. Final diagnosis reports v0.2 plus Embodiment-owned canonical visual authority. Direct inspection of that migrated portrait remains the final live visual-quality acceptance step.
+
+The active sequence is [Physical appearance model calibration and migration plan](../validation/physical-appearance-calibration-plan.md).
 
 
 ## Operator appearance commands
