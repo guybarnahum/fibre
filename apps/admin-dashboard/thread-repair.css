@@ -48,6 +48,12 @@
   flex:0 0 13px;
   display:block;
 }
+.fa-action-icon-spin {
+  animation:fa-action-spin .8s linear infinite;
+}
+@keyframes fa-action-spin {
+  to { transform:rotate(360deg); }
+}
 .fa-action-label { line-height:1; }
 .thread-repair-message,
 .thread-repair-note {
