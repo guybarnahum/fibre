@@ -3,6 +3,7 @@ import {
   InfraIdempotencyConflictError,
   InfraImmutableObjectConflictError,
   InfraSequenceConflictError,
+  InfraSnapshotConflictError,
   InfraWorkflowConflictError,
   assertInfraDriver,
 } from "../../infra-driver.mjs";
@@ -19,6 +20,7 @@ export {
   InfraIdempotencyConflictError,
   InfraImmutableObjectConflictError,
   InfraSequenceConflictError,
+  InfraSnapshotConflictError,
   InfraWorkflowConflictError,
 } from "../../infra-driver.mjs";
 
@@ -88,7 +90,7 @@ export function createMemoryInfraDriver() {
       assertInfraFiniteNumber("limit", limit, { integer: true, minimum: 1 });
       return channel(channelId).entries.filter((entry) => entry.sequence > sequence).slice(0, limit).map(clone);
     },
-    async publishSnapshot(channelId, snapshotPointer, { expectedSequence } = {}) {
+    async publishSnapshot(channelId, snapshotPointer, { expectedSequence, expectedSnapshotDigest } = {}) {
       assertInfraPlainObject("snapshotPointer", snapshotPointer);
       assertInfraJsonValue("snapshotPointer", snapshotPointer);
       const current = channel(channelId);
@@ -98,7 +100,19 @@ export function createMemoryInfraDriver() {
           throw new InfraSequenceConflictError(`snapshot expected sequence ${expectedSequence}, current ${current.entries.length}`);
         }
       }
-      current.snapshotPointer = { ...clone(snapshotPointer), sequence: current.entries.length };
+      if (expectedSnapshotDigest !== undefined) {
+        assertInfraNonEmpty("expectedSnapshotDigest", expectedSnapshotDigest);
+        const currentDigest = current.snapshotPointer?.snapshotDigest ?? null;
+        if (currentDigest !== expectedSnapshotDigest) {
+          throw new InfraSnapshotConflictError(`expected snapshot ${expectedSnapshotDigest}, current ${currentDigest ?? "none"}`);
+        }
+      }
+      const sequence = snapshotPointer.sequence ?? current.entries.length;
+      assertInfraFiniteNumber("snapshot sequence", sequence, { integer: true, minimum: 0 });
+      if (sequence > current.entries.length) {
+        throw new TypeError("snapshot sequence cannot exceed the stream head");
+      }
+      current.snapshotPointer = { ...clone(snapshotPointer), sequence };
       return clone(current.snapshotPointer);
     },
     async getSnapshotPointer(channelId) {
