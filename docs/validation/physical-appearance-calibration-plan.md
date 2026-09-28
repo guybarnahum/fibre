@@ -160,14 +160,16 @@ A small fixed visual sample then renders a subset of the same seeded cohort and 
 
 ## Slice 6 — Versioned appearance-model migration
 
-**Status: active.**
+**Status: implemented on `main`; pending focused validation.**
 
 Now that the calibrated model passes:
 - no physical genome -> appearance migration available;
 - older physical-genome version -> appearance-model migration required;
 - current version -> migration unavailable; re-render only.
 
-Reuse previously recorded operator ancestry evidence when trustworthy. Ask for maternal/paternal physical origin only when evidence is absent or insufficient.
+Reuse previously recorded operator ancestry evidence when trustworthy. The durable source is the latest `THREAD_PHYSICAL_GENOME_MIGRATED` event, not a copied identity field. Diagnosis exposes that evidence and an outdated-model upgrade requires only a reason when the ancestry can be reused. Ask for maternal/paternal physical origin only when durable evidence is absent.
+
+Current Embodiment specification is the canonical visual authority. `thread.identity.canonicalVisualIdentity` is retained only as Genesis creation provenance/seed material and must not override a superseding Embodiment in repair diagnosis or Admin Observatory.
 
 Migration remains one replayable World authority change followed by normal canonical Embodiment, Presentation and FID convergence.
 
