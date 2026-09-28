@@ -12,7 +12,7 @@ import {sampleFounderPhysicalGenome} from "../human-phenotype/founder-genome.mjs
 import {resolveBirthPhysicalInheritance} from "../human-phenotype/birth-inheritance.mjs";
 import {normalizeAncestry} from "../human-phenotype/ancestry.mjs";
 
-export const HUMAN_APPEARANCE_MODEL_VERSION="human-appearance-v0.3";
+export const HUMAN_APPEARANCE_MODEL_VERSION="human-appearance-v0.4";
 
 function parentSource(role,value){
   if(!value||typeof value!=="object"||Array.isArray(value)){
@@ -77,6 +77,8 @@ export function expressInheritedAppearance({physicalGenome,sex}={}){
     projectionVersion:projection.version,
     phenotype:projection.phenotype,
     anatomy:projection.anatomy,
+    geometryDescription:projection.geometryDescription,
+    surfaceDescription:projection.surfaceDescription,
     renderDescription:projection.description,
   });
 }
