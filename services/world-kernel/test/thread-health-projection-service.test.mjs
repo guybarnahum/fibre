@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { THREAD_REPAIR_CONTRACT } from "../src/thread-genesis-repair-api.mjs";
 import {
   createThreadHealthProjectionService,
   THREAD_HEALTH_PROJECTION_VERSION,
@@ -80,9 +81,14 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
     },
   });
 
-  assert.equal(THREAD_HEALTH_PROJECTION_VERSION, "thread-health-v0.3");
+  assert.equal(THREAD_HEALTH_PROJECTION_VERSION, "thread-health-v0.4");
   const refreshed = await service.inspect(threadId);
   assert.equal(refreshed.cacheHit, false, "older diagnostic semantics were reused");
+  assert.equal(
+    JSON.parse(cached.witness).diagnosisContract,
+    THREAD_REPAIR_CONTRACT,
+    "health witness did not bind repair semantics",
+  );
   assert.equal(refreshed.diagnosis.health, "healthy", "stale cached health survived semantic revision");
   assert.equal(deepDiagnoses, 1);
 
