@@ -1,9 +1,9 @@
 import {
   PHYSICAL_GENOME_VERSION,
-  normalizeAncestry,
-  resolveBirthPhysicalInheritance,
-  phenotypeFromPhysicalGenome,
-} from "#core/src/human-phenotype/index.mjs";
+  expressInheritedAppearance,
+  normalizePhysicalLineage,
+  resolveHumanPhysicalInheritance,
+} from "#core/src/human-appearance/index.mjs";
 import {
   boundedThreadScopedId,
   canonicalJson,
@@ -22,8 +22,8 @@ function normalizeOperationKey(value){
 
 function normalizePhysicalAncestry(value){
   if(!value||typeof value!=="object"||Array.isArray(value))throw new TypeError("physicalAncestry must be an object");
-  const maternal=normalizeAncestry(value.maternal);
-  const paternal=normalizeAncestry(value.paternal);
+  const maternal=normalizePhysicalLineage(value.maternal);
+  const paternal=normalizePhysicalLineage(value.paternal);
   return Object.freeze({maternal,paternal});
 }
 
@@ -37,11 +37,11 @@ function eventId(threadId,operationKey){
 
 function resultGenome(threadId,physicalAncestry){
   const ancestryDigest=sha256(canonicalJson(physicalAncestry));
-  return resolveBirthPhysicalInheritance({
-    maternalAncestry:physicalAncestry.maternal,
-    paternalAncestry:physicalAncestry.paternal,
-    seed:`legacy-physical-embodiment:${threadId}:${ancestryDigest}`,
-  }).genome;
+  return resolveHumanPhysicalInheritance({
+    maternal:{physicalLineage:physicalAncestry.maternal},
+    paternal:{physicalLineage:physicalAncestry.paternal},
+    conceptionSeed:`legacy-physical-embodiment:${threadId}:${ancestryDigest}`,
+  }).physicalGenome;
 }
 
 export class ThreadPhysicalGenomeMigrationStore{
@@ -78,7 +78,7 @@ export class ThreadPhysicalGenomeMigrationStore{
     const key=normalizeOperationKey(operationKey);
     const ancestry=normalizePhysicalAncestry(physicalAncestry);
     const genome=resultGenome(thread.threadId,ancestry);
-    phenotypeFromPhysicalGenome(genome,{sex:thread.identity?.sex});
+    expressInheritedAppearance({physicalGenome:genome,sex:thread.identity?.sex});
 
     const migrationEventId=eventId(thread.threadId,key);
     const existing=this.#database.prepare(
