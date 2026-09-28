@@ -53,6 +53,26 @@ export class ThreadPhysicalGenomeMigrationStore{
 
   close(){this.#database.close();}
 
+  latestEvidence(threadId){
+    const row=this.#database.prepare(`
+      SELECT event_id,payload_json,occurred_at
+      FROM thread_events
+      WHERE thread_id=? AND event_type='THREAD_PHYSICAL_GENOME_MIGRATED'
+      ORDER BY sequence DESC
+      LIMIT 1
+    `).get(threadId);
+    if(row===undefined)return null;
+    const payload=JSON.parse(row.payload_json);
+    if(payload?.physicalAncestry===undefined)return null;
+    return Object.freeze({
+      eventId:row.event_id,
+      recordedAt:row.occurred_at,
+      physicalAncestry:normalizePhysicalAncestry(payload.physicalAncestry),
+      physicalGenomeVersion:payload?.physicalGenome?.version??null,
+      previousPhysicalGenomeVersion:payload?.previousPhysicalGenomeVersion??null,
+    });
+  }
+
   migrate(thread,{physicalAncestry,operationKey,changedAt=new Date().toISOString()}={}){
     validateThreadSnapshot(thread);
     const key=normalizeOperationKey(operationKey);
