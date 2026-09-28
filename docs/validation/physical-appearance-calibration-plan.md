@@ -62,7 +62,7 @@ Acceptance:
 
 ## Slice 2 — Calibrate the East Asian hierarchy
 
-**Status: implemented on `main`; pending focused validation.**
+**Status: validated 2026-09-27.** Focused validation and the repository gate passed after the East-Asian hierarchy calibration.
 
 Replace hand-tuned appearance constants with measured 3D morphology distributions. The evidence mapping and deliberate parent fallbacks are recorded in [East Asian facial calibration](east-asian-facial-calibration.md).
 
@@ -85,6 +85,8 @@ Sparse child groups shrink toward the nearest calibrated ancestor rather than in
 
 ## Slice 3 — Founder sampling and inheritance
 
+**Status: implemented on `main`; pending focused validation.**
+
 Use the calibrated hierarchy to produce deterministic founders:
 
 ```text
@@ -94,6 +96,8 @@ two parental genomes     -> deterministic recombination -> child genome
 ```
 
 Founder sampling combines population center, bounded correlated family variation and bounded individual variation. Population means are distribution centers, not face templates.
+
+The runtime implementation is intentionally tiny: one zero-mean factor value per anatomical system is shared across both allele copies of a founder, then each allele receives a smaller locus-specific residual. This preserves coherent parental/family structure for descendants while keeping population means stable and avoiding a runtime covariance matrix.
 
 ## Slice 4 — Rendering projection fidelity
 
