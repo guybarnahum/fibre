@@ -356,7 +356,6 @@ function identityCompleteness(thread, registration, presentation, sexEvidence, r
       spokenLanguages:Object.freeze([...spokenLanguages]),
       raisedLanguages:Object.freeze([...raised]),
       lifecycleStatus:thread.status,
-      canonicalVisualSpecification:canonicalSpec === null ? "missing" : "present",
     }),
     findings:Object.freeze(findings),
   });
