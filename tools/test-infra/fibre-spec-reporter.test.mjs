@@ -12,7 +12,7 @@ async function collect(events, options = {}) {
   return chunks.join("");
 }
 
-test("spec reporter keeps test lines and collapses the Node footer to one summary line", async () => {
+test("spec reporter overwrites successful progress and keeps one summary line", async () => {
   const output = await collect([
     { type: "test:pass", data: { name: "R3 regulation reaches cognition", nesting: 0, details: { type: "test", duration_ms: 3.293125 } } },
     { type: "test:pass", data: { name: "R3 regulation differs by Thread", nesting: 0, details: { type: "test", duration_ms: 0.374 } } },
@@ -28,12 +28,12 @@ test("spec reporter keeps test lines and collapses the Node footer to one summar
     },
   ], { color: false });
 
-  assert.equal(output, [
-    "✔ R3 regulation reaches cognition (3.293125ms)",
-    "✔ R3 regulation differs by Thread (0.374ms)",
-    "tests 2, suites 0, pass 2, fail 0, cancelled 0, skipped 0, todo 0, duration_ms 68.9985",
-    "",
-  ].join("\n"));
+  assert.equal(
+    output,
+    "\r\u001b[2K✔ R3 regulation reaches cognition (3.293125ms)"
+      + "\r\u001b[2K✔ R3 regulation differs by Thread (0.374ms)"
+      + "\r\u001b[2Ktests 2, suites 0, pass 2, fail 0, cancelled 0, skipped 0, todo 0, duration_ms 68.9985\n",
+  );
 });
 
 test("spec summary colors nonzero pass, failure and skipped states", () => {
@@ -68,6 +68,6 @@ test("spec reporter preserves failure details", async () => {
     },
   ], { color: false });
 
-  assert.match(output, /^✖ R3 failed boundary \(1\.2ms\)\n  Error: boom/mu);
-  assert.match(output, /tests 1, suites 0, pass 0, fail 1, cancelled 0, skipped 0, todo 0, duration_ms 5\n$/u);
+  assert.match(output, /^\r\u001b\[2K✖ R3 failed boundary \(1\.2ms\)\n  Error: boom/mu);
+  assert.match(output, /\r\u001b\[2Ktests 1, suites 0, pass 0, fail 1, cancelled 0, skipped 0, todo 0, duration_ms 5\n$/u);
 });
