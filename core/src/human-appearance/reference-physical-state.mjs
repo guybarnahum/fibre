@@ -2,7 +2,7 @@ import {createHash} from "node:crypto";
 
 import {expressPhysicalGenome} from "../human-phenotype/physical-genome.mjs";
 
-export const REFERENCE_PHYSICAL_STATE_VERSION="reference-physical-state-v0.2";
+export const REFERENCE_PHYSICAL_STATE_VERSION="reference-physical-state-v0.3";
 
 function unit(seed,key){
   const hex=createHash("sha256").update(`${seed}\0${key}`).digest("hex").slice(0,13);
@@ -115,14 +115,19 @@ export function referencePhysicalState({
   const browOffset=(bell(stateSeed,"brow-asymmetry")*asymmetryMagnitude).toFixed(2);
   const mouthOffset=(bell(stateSeed,"mouth-asymmetry")*asymmetryMagnitude).toFixed(2);
 
-  const description=[
-    `Normalized reference physical state at age ${referenceAgeYears}; this is rendering normalization, not historical evidence.`,
+  const geometryDescription=[
+    `Normalized reference geometry state at age ${referenceAgeYears}; this is rendering normalization, not historical evidence.`,
     `Body composition: ${bodyComposition}; muscular development: ${muscularDevelopment}; facial fullness: ${facialSoftTissue}.`,
+    `Ordinary facial asymmetry: mild ${dominantSide}-side dominance; eye-opening offset ${eyeOffset}, brow-height offset ${browOffset}, mouth-corner offset ${mouthOffset} on a -1..+1 descriptive scale.`,
+    "Preserve these ordinary proportions and asymmetries; do not slim or symmetrize the person.",
+  ].join(" ");
+  const surfaceDescription=[
+    `Reference surface state at age ${referenceAgeYears}; this is rendering normalization, not historical evidence.`,
     `Skin: ${skinTexture}; ${skinVariation}; no cosmetic skin smoothing.`,
     `Reference grooming: facial hair: ${facialHairPresentation}; hairline: ${hairlinePresentation}; head hair: ${headHairPresentation}. If facial hair is clean-shaven or none, show no beard, moustache, or stubble.`,
-    `Ordinary facial asymmetry: mild ${dominantSide}-side dominance; eye-opening offset ${eyeOffset}, brow-height offset ${browOffset}, mouth-corner offset ${mouthOffset} on a -1..+1 descriptive scale.`,
-    "Preserve these ordinary imperfections. Do not slim, symmetrize, retouch, beautify, or fashion-model the person.",
+    "Preserve ordinary skin and grooming variation. Do not retouch, beautify, or fashion-model the person.",
   ].join(" ");
+  const description=`${geometryDescription} ${surfaceDescription}`;
 
   return Object.freeze({
     version:REFERENCE_PHYSICAL_STATE_VERSION,
@@ -141,6 +146,8 @@ export function referencePhysicalState({
       browHeightOffset:Number(browOffset),
       mouthCornerOffset:Number(mouthOffset),
     }),
+    geometryDescription,
+    surfaceDescription,
     description,
   });
 }
