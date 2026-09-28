@@ -24,13 +24,22 @@ test("Genesis embodiment is derived from inherited physical genome",()=>{
   assert.equal(first.policyRef,GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY);
   const projection=physicalPhenotypeRenderingProjection(genome,{sex:"female"});
   assert.ok(
-    first.specification.subject.description.includes(projection.description),
-    "Genesis embodiment lost physical rendering projection",
+    first.specification.subject.description.includes(projection.geometryDescription),
+    "Genesis embodiment lost inherited geometry",
+  );
+  assert.ok(
+    first.specification.subject.description.includes(projection.surfaceDescription),
+    "Genesis embodiment lost inherited surface phenotype",
   );
   assert.match(
     first.specification.subject.description,
-    /Normalized reference physical state at age 25/u,
-    "Genesis embodiment lost ordinary-human reference state",
+    /Normalized reference geometry state at age 25/u,
+    "Genesis embodiment lost reference geometry state",
+  );
+  assert.match(
+    first.specification.subject.description,
+    /Reference surface state at age 25/u,
+    "Genesis embodiment lost reference surface state",
   );
   assert.deepEqual(
     Object.keys(projection.anatomy),
