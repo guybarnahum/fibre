@@ -111,3 +111,19 @@ test("East Asian founder signal survives individual variation without renderer l
     "ancestry label leaked into renderer",
   );
 });
+
+
+test("renderer receives anatomy, not inherited grooming/body-state tendencies",()=>{
+  const genome=sampleFounderPhysicalGenome({ancestry,seed:"render-state-boundary"});
+  const projection=physicalPhenotypeRenderingProjection(genome,{sex:"male"});
+
+  assert.ok(!("facialHairTendency" in projection.anatomy.pigmentationHair),"facial-hair tendency leaked into visible anatomy");
+  assert.ok(!("hairlineLossTendency" in projection.anatomy.pigmentationHair),"hairline-loss tendency leaked into visible anatomy");
+  assert.ok(!("adiposityTendency" in projection.anatomy.body),"adiposity tendency leaked into visible body state");
+  assert.ok(!("muscularityTendency" in projection.anatomy.body),"muscularity tendency leaked into visible body state");
+  assert.doesNotMatch(
+    projection.description,
+    /facialHairTendency|hairlineLossTendency|adiposityTendency|muscularityTendency/u,
+    "inherited tendencies leaked into renderer text",
+  );
+});
