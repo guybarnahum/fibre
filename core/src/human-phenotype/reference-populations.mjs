@@ -45,7 +45,6 @@ const DEFINITIONS=Object.freeze({
   // and low-confidence; facial geometry keeps the evidence-backed calibration.
   "oceania.polynesia":{parent:"oceania",values:{
     pigmentation:.16,
-    hairPigmentation:.66,
     hairForm:-.08,
     faceBreadth:.38,
     faceLength:.10,
