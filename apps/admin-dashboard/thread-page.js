@@ -1,3 +1,4 @@
+import { threadAppearanceSection } from "./thread-appearance-ui.js";
 import { renderThreadHealth } from "./thread-repair-ui.js";
 import {
   fetchThreadObservatory,
@@ -118,7 +119,10 @@ export async function renderThreadPage(threadId) {
       journal:payload.journal,
       journalError:payload.journalError,
     });
-    observatory.querySelector(".thread-person-hero")?.after(healthSection(threadId));
+    observatory.querySelector(".thread-person-hero")?.after(
+      healthSection(threadId),
+      threadAppearanceSection(threadId,name),
+    );
     host.replaceChildren(observatory);
   } catch (error) {
     copy.querySelector("h1").textContent = "Thread unavailable";
