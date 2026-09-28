@@ -1,5 +1,5 @@
 import { normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
-import { PHYSICAL_GENOME_VERSION, phenotypeFromPhysicalGenome } from "#core/src/human-phenotype/index.mjs";
+import { PHYSICAL_GENOME_VERSION, phenotypeFromPhysicalGenome } from "#core/src/human-appearance/index.mjs";
 import {
   MAX_COMMAND_PAYLOAD_BYTES,
   EVENT_TYPES,
