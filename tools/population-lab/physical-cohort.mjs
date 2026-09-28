@@ -4,6 +4,7 @@ import {
   expressInheritedAppearance,
   expressPhysicalGenome,
   recombinePhysicalGenomes,
+  referencePhysicalState,
   referencePopulationPrior,
   resolveHumanPhysicalInheritance,
   sampleFounderPhysicalGenome,
@@ -150,6 +151,11 @@ export function generatePhysicalCalibrationCohort({
         conceptionSeed:requestId,
       });
       const projection=expressInheritedAppearance({physicalGenome:inheritance.physicalGenome,sex});
+      const physicalState=referencePhysicalState({
+        physicalGenome:inheritance.physicalGenome,
+        sex,
+        stateSeed:`physical-calibration:${requestId}`,
+      });
       const ordinal=String(index+1).padStart(2,"0");
       people.push(Object.freeze({
         name:`${referencePopulation} ${ordinal}`,
@@ -167,6 +173,7 @@ export function generatePhysicalCalibrationCohort({
         referencePopulation,
         renderDescription:projection.renderDescription,
         projectionVersion:projection.projectionVersion,
+        physicalState,
         inheritance:Object.freeze({genome:inheritance.physicalGenome,phenotype:projection.phenotype}),
       }));
     }
