@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { PROVENANCED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
+import { sampleFounderPhysicalGenome } from "#core/src/human-appearance/index.mjs";
 import {
   embodimentId,
   embodimentSpecificationDigest,
@@ -9,7 +10,9 @@ import {
 import {
   bindVerifiedCanonicalVisualIdentityProof,
   planCanonicalVisualIdentityGeneration,
+  planCanonicalVisualIdentityGeometryGeneration,
 } from "../src/canonical-visual-identity-generation.mjs";
+import { canonicalVisualSpecificationFromPhysicalGenome } from "../src/canonical-visual-identity-from-physical-genome.mjs";
 import { projectPublicEmbodimentVisualIdentity } from "../src/thread-presentation-embodiment-projection.mjs";
 import { CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS } from "../src/visual-identity-reference-domain.mjs";
 
@@ -49,6 +52,24 @@ function pendingEmbodiment({ rich = true } = {}) {
     asset: null,
     visibility: "public",
     recordedAt: "2026-08-30T05:05:00Z",
+  };
+}
+
+function pendingPhysicalEmbodiment() {
+  const base=pendingEmbodiment();
+  const physicalGenome=sampleFounderPhysicalGenome({
+    ancestry:[{population:"test family",share:1,referencePopulation:"oceania.polynesia"}],
+    seed:"canonical-geometry-test",
+  });
+  const specification=canonicalVisualSpecificationFromPhysicalGenome({
+    threadId:base.threadId,
+    sex:"female",
+    physicalGenome,
+  });
+  return {
+    ...base,
+    specification,
+    specificationDigest:embodimentSpecificationDigest(specification),
   };
 }
 
@@ -97,6 +118,56 @@ test("canonical visual identity root image is planned once from rich text with n
     requestedAt: "2026-08-30T05:05:10Z",
   });
   assert.deepEqual(replay, job);
+});
+
+test("layered Human Appearance admits only a surface-applied portrait from its verified geometry anchor", () => {
+  const pending=pendingPhysicalEmbodiment();
+  const requestedAt="2026-08-30T05:05:10Z";
+  const geometry=planCanonicalVisualIdentityGeometryGeneration({embodiment:pending,requestedAt});
+
+  assert.equal(geometry.role,"canonical_visual_identity_geometry_anchor");
+  assert.deepEqual(geometry.referenceObjectRefs,[]);
+  assert.throws(
+    ()=>planCanonicalVisualIdentityGeneration({embodiment:pending,requestedAt}),
+    /requires its geometry anchor/,
+    "layered canonical portrait skipped geometry anchor",
+  );
+
+  const final=planCanonicalVisualIdentityGeneration({
+    embodiment:pending,
+    requestedAt,
+    geometryAnchorObjectRef:geometry.outputObjectRef,
+  });
+  assert.equal(final.role,"canonical_visual_identity_reference");
+  assert.deepEqual(final.referenceObjectRefs,[geometry.outputObjectRef]);
+  assert.notEqual(final.outputObjectRef,geometry.outputObjectRef);
+
+  const geometryProof={
+    receipt:provenancedReceipt(geometry,{sha256:DIGEST_B,providerOutputDigest:DIGEST_B}),
+    generationRecord:{job:geometry},
+  };
+  const finalProof={
+    receipt:provenancedReceipt(final),
+    generationRecord:{job:final},
+  };
+  assert.throws(
+    ()=>bindVerifiedCanonicalVisualIdentityProof({
+      embodiment:pending,
+      proof:finalProof,
+      recordedAt:"2026-08-30T05:06:01Z",
+    }),
+    /geometry-anchor proof/,
+    "final portrait was admitted without geometry provenance",
+  );
+
+  const available=bindVerifiedCanonicalVisualIdentityProof({
+    embodiment:pending,
+    proof:finalProof,
+    geometryProof,
+    recordedAt:"2026-08-30T05:06:01Z",
+  });
+  assert.equal(available.asset.referenceObjectRef,final.outputObjectRef);
+  assert.notEqual(available.asset.referenceObjectRef,geometry.outputObjectRef);
 });
 
 test("canonical visual identity planning does not depend on Node Buffer globals", () => {
