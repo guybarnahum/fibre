@@ -346,16 +346,22 @@ function loci(identity) {
   return Array.isArray(firstGenome(identity)?.loci) ? firstGenome(identity).loci : [];
 }
 
-function phenotype(identity) {
-  return identity?.world?.thread?.identity?.canonicalVisualIdentity?.specification?.subject?.description
-    ?? identity?.world?.thread?.identity?.canonicalVisualIdentity?.subject?.description
+function currentVisualSpecification(identity) {
+  const embodiment=(identity?.world?.embodiments??[]).find((entry)=>(
+    entry?.kind==="portrait"&&entry?.visibility==="public"
+  ));
+  return embodiment?.specification
+    ?? identity?.world?.thread?.identity?.canonicalVisualIdentity?.specification
+    ?? identity?.world?.thread?.identity?.canonicalVisualIdentity
     ?? null;
 }
 
+function phenotype(identity) {
+  return currentVisualSpecification(identity)?.subject?.description ?? null;
+}
+
 function appearanceRule(identity) {
-  return identity?.world?.thread?.identity?.canonicalVisualIdentity?.specification?.description
-    ?? identity?.world?.thread?.identity?.canonicalVisualIdentity?.description
-    ?? null;
+  return currentVisualSpecification(identity)?.description ?? null;
 }
 
 function worldCanonicalAsset(identity) {
