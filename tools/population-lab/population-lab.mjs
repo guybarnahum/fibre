@@ -353,6 +353,7 @@ async function main(){
       apiKey:token(),
       model:imageModel,
       quality:"low",
+      inputFidelity:"high",
       fetchImpl:resilientFetch,
     });
     for(let index=0;index<people.length;index++){
