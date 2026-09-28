@@ -1,7 +1,7 @@
 ---
 id: appearance-operations
 status: accepted
-last-reviewed: 2026-09-27
+last-reviewed: 2026-09-28
 ---
 
 # Appearance operations
@@ -28,13 +28,13 @@ Diagnosis reports:
 Typical states are:
 
 ```text
-physical-genome-v0.1 -> physical-genome-v0.2
+physical-genome-v0.2 -> physical-genome-v0.3
   Upgrade appearance model
 
 no physical genome
   Migrate appearance
 
-physical-genome-v0.2 -> physical-genome-v0.2
+physical-genome-v0.3 -> physical-genome-v0.3
   current; migration unavailable
 ```
 
