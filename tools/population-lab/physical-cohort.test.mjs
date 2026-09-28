@@ -32,6 +32,7 @@ test("Population Lab physical cohort preserves calibrated structure and individu
     const result=diagnostics.populations[population];
     assert.equal(result.count,32,`${population} cohort size changed`);
     assert.ok(result.uniqueShare>=.95,`${population} individuality collapsed`);
+    assert.ok(result.medianSd>=.05,`${population} facial variation too narrow`);
     assert.ok(result.maxCenterError<=.08,`${population} drifted from calibrated center`);
     assert.ok(result.resemblance.siblingToUnrelatedRatio<.9,`${population} siblings lost resemblance`);
     assert.ok(result.resemblance.childToUnrelatedRatio<.9,`${population} children lost parent resemblance`);
