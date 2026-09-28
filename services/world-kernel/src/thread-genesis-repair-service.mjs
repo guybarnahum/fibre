@@ -534,16 +534,18 @@ export function createThreadGenesisRepairService({
             reason:"current canonical Embodiment has no specification",
           }));
     }
-    if (embodiment !== null && embodiment.status === "available" && embodiment.asset?.referenceObjectRef) {
-      findings.push(finding("CANONICAL_EMBODIMENT", "healthy", null, {
-        embodimentId: embodiment.embodimentId,
-        objectRef: embodiment.asset.referenceObjectRef,
-      }));
-    } else {
-      findings.push(finding("CANONICAL_EMBODIMENT_PENDING", "repairable", "reconcile_visual_publication", {
-        embodimentId: embodiment.embodimentId,
-        embodimentStatus: embodiment.status ?? null,
-      }));
+    if (embodiment !== null) {
+      if (embodiment.status === "available" && embodiment.asset?.referenceObjectRef) {
+        findings.push(finding("CANONICAL_EMBODIMENT", "healthy", null, {
+          embodimentId: embodiment.embodimentId,
+          objectRef: embodiment.asset.referenceObjectRef,
+        }));
+      } else {
+        findings.push(finding("CANONICAL_EMBODIMENT_PENDING", "repairable", "reconcile_visual_publication", {
+          embodimentId: embodiment.embodimentId,
+          embodimentStatus: embodiment.status ?? null,
+        }));
+      }
     }
 
     findings.push(presentation === null
