@@ -106,6 +106,12 @@ function finding(code, state, action = null, detail = {}) {
   return Object.freeze({ code, state, action, ...detail });
 }
 
+function latestPhysicalEvidence(physicalGenomeMigrator,threadId){
+  return typeof physicalGenomeMigrator?.latestEvidence==="function"
+    ? physicalGenomeMigrator.latestEvidence(threadId)
+    : null;
+}
+
 function overall(findings) {
   if (findings.some((entry) => entry.state === "unrecoverable")) return "unrecoverable";
   if (findings.some((entry) => entry.state === "integrity_error")) return "integrity_error";
@@ -450,23 +456,37 @@ export function createThreadGenesisRepairService({
 
     const physicalGenomeVersion=thread.genome?.physical?.version??null;
     if (physicalGenomeMigrator !== null && physicalGenomeVersion !== PHYSICAL_GENOME_VERSION) {
+      const priorEvidence=latestPhysicalEvidence(physicalGenomeMigrator,threadId);
+      const ancestryFields=priorEvidence===null
+        ? [
+            Object.freeze({name:"maternalOrigin",label:"Maternal physical origin",kind:"text",required:true}),
+            Object.freeze({name:"maternalReferencePopulation",label:"Maternal physical reference",kind:"select",required:true,options:[...referencePopulationIds]}),
+            Object.freeze({name:"paternalOrigin",label:"Paternal physical origin",kind:"text",required:true}),
+            Object.freeze({name:"paternalReferencePopulation",label:"Paternal physical reference",kind:"select",required:true,options:[...referencePopulationIds]}),
+          ]
+        : [];
       findings.push(finding(
         physicalGenomeVersion===null ? "LEGACY_PHYSICAL_EMBODIMENT" : "PHYSICAL_APPEARANCE_MODEL_OUTDATED",
         physicalGenomeVersion===null ? "healthy" : "migration_required",
         null,
         {
+          currentVersion:physicalGenomeVersion,
+          targetVersion:PHYSICAL_GENOME_VERSION,
           reason:physicalGenomeVersion===null
             ? "This Thread predates Fibre physical inheritance. Supply explicit maternal/paternal physical ancestry only when its canonical appearance needs migration."
             : `This Thread uses ${physicalGenomeVersion}; Fibre appearance authority now requires ${PHYSICAL_GENOME_VERSION}.`,
           migration:Object.freeze({
             id:"physical_embodiment_v2",
             label:physicalGenomeVersion===null ? "Migrate appearance" : "Upgrade appearance model",
+            evidence:priorEvidence===null ? null : Object.freeze({
+              eventId:priorEvidence.eventId,
+              physicalAncestry:priorEvidence.physicalAncestry,
+              physicalGenomeVersion:priorEvidence.physicalGenomeVersion,
+              recordedAt:priorEvidence.recordedAt,
+            }),
             input:Object.freeze({
               fields:Object.freeze([
-                Object.freeze({name:"maternalOrigin",label:"Maternal physical origin",kind:"text",required:true}),
-                Object.freeze({name:"maternalReferencePopulation",label:"Maternal physical reference",kind:"select",required:true,options:[...referencePopulationIds]}),
-                Object.freeze({name:"paternalOrigin",label:"Paternal physical origin",kind:"text",required:true}),
-                Object.freeze({name:"paternalReferencePopulation",label:"Paternal physical reference",kind:"select",required:true,options:[...referencePopulationIds]}),
+                ...ancestryFields,
                 Object.freeze({name:"reason",label:"Migration reason",kind:"text",required:true}),
               ]),
             }),
@@ -576,6 +596,7 @@ export function createThreadGenesisRepairService({
       if (physicalGenomeMigrator === null || visualIdentityRepairService === null) {
         throw new TypeError("physical appearance migration is unavailable");
       }
+      const priorEvidence=latestPhysicalEvidence(physicalGenomeMigrator,threadId);
       const physicalAncestry=suppliedInput?.physicalAncestry??(
         suppliedInput?.maternalOrigin&&suppliedInput?.maternalReferencePopulation
         &&suppliedInput?.paternalOrigin&&suppliedInput?.paternalReferencePopulation
@@ -583,10 +604,10 @@ export function createThreadGenesisRepairService({
               maternal:[{population:String(suppliedInput.maternalOrigin).trim(),share:1,referencePopulation:String(suppliedInput.maternalReferencePopulation).trim()}],
               paternal:[{population:String(suppliedInput.paternalOrigin).trim(),share:1,referencePopulation:String(suppliedInput.paternalReferencePopulation).trim()}],
             }
-          : null
+          : priorEvidence?.physicalAncestry??null
       );
       if (!physicalAncestry || typeof suppliedInput?.reason !== "string" || suppliedInput.reason.trim().length < 16) {
-        throw new TypeError("physical_embodiment_v2 requires maternal/paternal physical ancestry and a meaningful reason");
+        throw new TypeError("physical_embodiment_v2 requires durable or supplied maternal/paternal physical ancestry and a meaningful reason");
       }
       const before = await diagnose(threadId);
       if (!before.exists) return Object.freeze({ threadId, migrationId, migrationKey:root, before, after:before, migrated:false });
@@ -653,7 +674,12 @@ export function createThreadGenesisRepairService({
         stage:"thread.migration.physical_genome",
         status:"succeeded",
         attempt:1,
-        evidence:{ migrationId, eventId:genomeResult.eventId, migrated:genomeResult.migrated === true },
+        evidence:{
+          migrationId,
+          eventId:genomeResult.eventId,
+          migrated:genomeResult.migrated === true,
+          reusedAncestryEventId:priorEvidence?.eventId??null,
+        },
       });
       await record(activity, {
         threadId,
