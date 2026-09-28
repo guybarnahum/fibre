@@ -168,7 +168,7 @@ async function refreshUntilAppearanceReady(host,threadId,threadName){
       if(state.appearanceReady){
         delete host.dataset.appearanceRefreshing;
         host.removeAttribute("aria-busy");
-        await render(host,threadId,threadName,"Appearance is current.",health);
+        progress.lastElementChild.textContent="Appearance ready · refreshing Thread…";
         announceThreadUpdated(threadId);
         return;
       }
