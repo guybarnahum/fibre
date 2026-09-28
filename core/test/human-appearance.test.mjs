@@ -51,6 +51,17 @@ test("reference physical state is replayable but preserves ordinary human divers
   );
   assert.ok(skinStates.size>=3,"ordinary skin variation collapsed");
   assert.deepEqual([...sides].sort(),["left","right"],"ordinary facial asymmetry collapsed");
+
+  const maleCohort=Array.from({length:128},(_,index)=>referencePhysicalState({
+    physicalGenome:genome,
+    sex:"male",
+    stateSeed:`reference-man-${index}`,
+  }));
+  const facialHair=new Set(maleCohort.map(person=>person.facialHairPresentation));
+  const headHair=new Set(maleCohort.map(person=>person.headHairPresentation));
+  assert.ok(facialHair.has("clean-shaven"),"male reference cohort lost clean-shaven people");
+  assert.ok(facialHair.size>=3,"male facial-hair presentation collapsed");
+  assert.ok(headHair.size>=4,"reference hair presentation collapsed");
 });
 
 test("reference physical state never carries demographic rendering labels",()=>{
