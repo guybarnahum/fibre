@@ -27,6 +27,11 @@ test("Genesis embodiment is derived from inherited physical genome",()=>{
     first.specification.subject.description.includes(projection.description),
     "Genesis embodiment lost physical rendering projection",
   );
+  assert.match(
+    first.specification.subject.description,
+    /Normalized reference physical state at age 25/u,
+    "Genesis embodiment lost ordinary-human reference state",
+  );
   assert.deepEqual(
     Object.keys(projection.anatomy),
     ["face","eyes","noseMouth","pigmentationHair","body"],
