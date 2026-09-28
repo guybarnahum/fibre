@@ -1,4 +1,5 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
+import { threadAppearanceSection } from "./thread-appearance-ui.js";
 import { decorateActionButton, iconForIdentityAction } from "./fa-icons.js";
 
 const dialogBody = document.querySelector("#dialog-body");
@@ -435,7 +436,8 @@ function attach() {
   const actions = el("div", "thread-repair-actions");
   actions.append(actionButton("Check health", () => renderThreadHealth(host, threadId)));
   host.append(head, actions);
-  view.querySelector(".thread-person-hero")?.after(host);
+  const name=view.querySelector(".thread-person-hero h2")?.textContent?.trim()??null;
+  view.querySelector(".thread-person-hero")?.after(host,threadAppearanceSection(threadId,name));
 }
 
 if (dialogBody) {
