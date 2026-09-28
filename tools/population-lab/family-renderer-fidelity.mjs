@@ -6,7 +6,14 @@ import {
   expressInheritedAppearance,
   referencePhysicalState,
 } from "../../core/src/human-appearance/index.mjs";
-import {populationPortraitPrompt} from "./portrait-prompt.mjs";
+import {
+  populationGeometryAnchorPrompt,
+  populationSurfacePortraitPrompt,
+} from "./portrait-prompt.mjs";
+import {
+  OPENAI_IMAGE_DEFAULT_MODEL,
+  createOpenAIImageProvider,
+} from "../../integrations/ai/image/openai.mjs";
 
 const arg=(name,fallback)=>process.argv.find(x=>x.startsWith("--"+name+"="))?.slice(name.length+3)??fallback;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -37,6 +44,8 @@ function subject({id,role,sex,genome}){
     phenotype:projection.phenotype.traits,
     expressedLatents:projection.phenotype.latent,
     renderDescription:projection.renderDescription,
+    geometryDescription:projection.geometryDescription,
+    surfaceDescription:projection.surfaceDescription,
     projectionVersion:projection.projectionVersion,
     physicalState,
   };
@@ -59,23 +68,43 @@ function subjects(experiment,siblingCount,grandchildCount){
   return out;
 }
 
-async function render(subject,dir,index,model){
-  const prompt=populationPortraitPrompt({
+const digestBytes=bytes=>`sha256:${createHash("sha256").update(bytes).digest("hex")}`;
+
+async function render(subject,dir,index,provider){
+  const ordinal=String(index+1).padStart(3,"0");
+  const geometryPrompt=populationGeometryAnchorPrompt({
     sex:subject.sex,
-    renderDescription:subject.renderDescription,
-    physicalStateDescription:subject.physicalState.description,
+    geometryDescription:subject.geometryDescription,
+    physicalGeometryDescription:subject.physicalState.geometryDescription,
   });
-  const response=await resilientFetch("https://api.openai.com/v1/images/generations",{
-    method:"POST",
-    headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},
-    body:JSON.stringify({model,prompt,size:"1024x1024",quality:"low",n:1})
+  const geometry=await provider.generate({
+    assetKind:"image",
+    role:"population_lab_geometry_anchor",
+    brief:{description:geometryPrompt,constraints:[]},
+    referenceObjects:[],
   });
-  if(!response.ok)throw Error(`image ${response.status}: ${await response.text()}`);
-  const json=await response.json(),bytes=json.data?.[0]?.b64_json;
-  if(!bytes)throw Error("image provider returned no bytes");
-  const image=`person-${String(index+1).padStart(3,"0")}.png`;
-  await writeFile(resolve(dir,image),Buffer.from(bytes,"base64"));
-  return {...subject,image,renderPrompt:prompt};
+  const geometryAnchor=`person-${ordinal}-geometry.png`;
+  await writeFile(resolve(dir,geometryAnchor),geometry.result.bytes);
+
+  const renderPrompt=populationSurfacePortraitPrompt({
+    sex:subject.sex,
+    surfaceDescription:subject.surfaceDescription,
+    physicalSurfaceDescription:subject.physicalState.surfaceDescription,
+  });
+  const final=await provider.generate({
+    assetKind:"image",
+    role:"population_lab_surface_portrait",
+    brief:{description:renderPrompt,constraints:[]},
+    referenceObjects:[{
+      objectRef:`population_lab_geometry_${ordinal}`,
+      digest:digestBytes(geometry.result.bytes),
+      bytes:geometry.result.bytes,
+      metadata:{mediaType:geometry.result.mediaType,kind:"geometry_anchor"},
+    }],
+  });
+  const image=`person-${ordinal}.png`;
+  await writeFile(resolve(dir,image),final.result.bytes);
+  return {...subject,image,geometryAnchor,geometryPrompt,renderPrompt};
 }
 
 function html(subjects,model,projectionVersion){
@@ -84,7 +113,7 @@ function html(subjects,model,projectionVersion){
 }
 
 async function main(){
-  const model=arg("image-model","gpt-image-1"),siblings=Number(arg("siblings","4")),grandchildren=Number(arg("grandchildren","4"));
+  const model=arg("image-model",OPENAI_IMAGE_DEFAULT_MODEL),siblings=Number(arg("siblings","4")),grandchildren=Number(arg("grandchildren","4"));
   if(!Number.isInteger(siblings)||siblings<1||siblings>4)throw Error("--siblings must be 1..4");
   if(!Number.isInteger(grandchildren)||grandchildren<1||grandchildren>6)throw Error("--grandchildren must be 1..6");
   const raw=execFileSync(process.execPath,["--disable-warning=ExperimentalWarning","tools/population-lab/family-inheritance-experiment.mjs"],{encoding:"utf8"});
@@ -93,19 +122,25 @@ async function main(){
   const seed=`family-renderer-v3:${projectionVersion}:${siblings}:${grandchildren}`;
   const dir=resolve(arg("output",resolve(".fibre","population-lab",Date.now()+"-"+createHash("sha256").update(seed).digest("hex").slice(0,8))));
   await mkdir(dir,{recursive:true});
+  const provider=createOpenAIImageProvider({
+    apiKey:token(),
+    model,
+    quality:"low",
+    fetchImpl:resilientFetch,
+  });
   const rendered=[];
   for(let i=0;i<selected.length;i++){
-    process.stdout.write(`\r[${i+1}/${selected.length}] rendering ${selected[i].id}   `);
-    rendered.push(await render(selected[i],dir,i,model));
+    process.stdout.write(`\r[${i+1}/${selected.length}] geometry + surface ${selected[i].id}   `);
+    rendered.push(await render(selected[i],dir,i,provider));
   }
   process.stdout.write("\n");
   const result={
     meta:{
-      version:"family-renderer-fidelity-v0.5",
+      version:"family-renderer-fidelity-v0.6",
       model,
       siblings,
       grandchildren,
-      rendererInputs:"shared-human-appearance-anatomy-plus-reference-state",
+      rendererInputs:"geometry-anchor-plus-surface-edit",
       projectionVersion,
     },
     sourceDiagnostics:source.diagnostics,
