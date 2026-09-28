@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-birth-presentation-data-flow
 status: accepted
-last-reviewed: 2026-09-24
+last-reviewed: 2026-09-28
 canonical: true
 ---
 
@@ -121,10 +121,12 @@ Thread Presentation persists pre-embodiment authorized projection
         v
 Canonical visual identity lifecycle
         |
-        +--> rich authoritative visual-identity text
-        +--> one canonical root-reference generation/admission
+        +--> rich layered authoritative visual-identity text
+        +--> text-only geometry anchor (generation scaffolding)
+        +--> reference-conditioned surface application
+        +--> one final canonical root-reference admission
         +--> normalized synthetic reference age 25
-        +--> available public Embodiment carries canonical reference object
+        +--> available public Embodiment carries final canonical reference object
         |
         v
 Thread Presentation visual-identity rewrite
@@ -241,7 +243,7 @@ Genesis also keeps language authority separated: eventual/spoken languages remai
 
 Asset Generator must never invent canonical appearance from arbitrary Thread material such as name, culture, memories, generic biography prose, legacy `portraitRef`, or ordinary presentation imagery.
 
-The accepted appearance authority is the **canonical visual identity specification** in Embodiment. For native/de-novo/inherited Fibre identity, that specification is deliberately rich natural-language visual phenotype and is used to generate one canonical reference image with no prior image reference. The synthetic reference-age normalization is 25.
+The accepted appearance authority is the **canonical visual identity specification** in Embodiment. For native/de-novo/inherited Fibre identity, that specification carries separate structural-geometry and surface-appearance layers. Fibre first generates a text-only monochrome geometry anchor, then uses that anchor as the sole image reference while applying the authorized surface phenotype. The anchor is generation scaffolding only; the second-pass image is the one canonical reference eligible for Embodiment admission. The synthetic reference-age normalization is 25.
 
 For Thread-parent children, the child's canonical visual identity text may be created by provenance-bearing recombination of parental visual phenotype text loci plus explicit mutation witnesses. Parent pixels are not blended and parent images are not references for the child's root generation.
 
@@ -250,9 +252,11 @@ Echo/Homage is the explicit source-grounded exception. Authorized sponsor/homage
 The authority sequence is:
 
 ```text
-rich canonical visual identity text/origin provenance
-  -> canonical root image generation
-  -> immutable generation proof
+rich layered canonical visual identity text/origin provenance
+  -> text-only geometry-anchor generation
+  -> immutable geometry generation proof
+  -> surface application referencing that anchor
+  -> immutable final generation proof
   -> World/Embodiment admission
   -> canonical referenceObjectRef
   -> authorized visual-identity projection
@@ -272,7 +276,8 @@ The current media lifecycle is therefore:
 
 ```text
 canonical identity text
-  -> canonical root reference
+  -> geometry anchor
+  -> surface-applied canonical root reference
   -> Embodiment admission
   -> authorized visual-identity projection
   -> Thread Presentation rewrite
