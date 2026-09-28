@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   InfraIdempotencyConflictError,
   InfraSequenceConflictError,
+  InfraSnapshotConflictError,
 } from "../infra-driver.mjs";
 import {
   createCloudflareCatalogPort,
@@ -52,7 +53,7 @@ function fakePresentationNamespace() {
           .slice(0, limit)
           .map((entry) => ({ sequence: entry.sequence, value_json: entry.valueJson }));
       },
-      async publishSnapshot({ snapshotPointerJson, expectedSequence }) {
+      async publishSnapshot({ snapshotPointerJson, expectedSequence, expectedSnapshotDigest }) {
         if (expectedSequence !== null && expectedSequence !== current.sequence) {
           return {
             ok: false,
@@ -61,8 +62,23 @@ function fakePresentationNamespace() {
             currentSequence: current.sequence,
           };
         }
-        current.snapshot = { pointer: JSON.parse(snapshotPointerJson), sequence: current.sequence };
-        return { ok: true, snapshotPointerJson, sequence: current.sequence };
+        const pointer = JSON.parse(snapshotPointerJson);
+        const currentSnapshotDigest = current.snapshot?.pointer?.snapshotDigest ?? null;
+        if (expectedSnapshotDigest !== null && expectedSnapshotDigest !== currentSnapshotDigest) {
+          return {
+            ok: false,
+            error: "snapshot_conflict",
+            expectedSnapshotDigest,
+            currentSnapshotDigest,
+          };
+        }
+        const sequence = pointer.sequence ?? current.sequence;
+        current.snapshot = { pointer: { ...pointer, sequence }, sequence };
+        return {
+          ok: true,
+          snapshotPointerJson: JSON.stringify(current.snapshot.pointer),
+          sequence,
+        };
       },
       async getSnapshotPointer() {
         if (current.snapshot === null) return null;
@@ -147,23 +163,46 @@ test("Cloudflare stream port preserves ordering replay idempotency and expected-
   assert.deepEqual(await streams.getHead("channel_1"), { sequence: 1, snapshotPointer: null });
 });
 
-test("Cloudflare snapshot and realtime ports keep durable stream position separate from fanout", async () => {
+test("Cloudflare snapshots replace by snapshot identity without consuming unrelated stream advancement", async () => {
   const namespace = fakePresentationNamespace();
   const streams = createCloudflareStreamPort(namespace);
   const realtime = createCloudflareRealtimePort(namespace);
+  const firstDigest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  const secondDigest = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
   await streams.append("channel_2", { eventId: "event_1" }, { idempotencyKey: "event_1", expectedSequence: 0 });
-  const pointer = await streams.publishSnapshot("channel_2", {
+  const first = await streams.publishSnapshot("channel_2", {
     objectRef: "snapshot_object_1",
     snapshotVersion: "v1",
-    snapshotDigest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    snapshotDigest: firstDigest,
   }, { expectedSequence: 1 });
-  assert.equal(pointer.sequence, 1);
-  assert.equal((await streams.getSnapshotPointer("channel_2")).objectRef, "snapshot_object_1");
+  assert.equal(first.sequence, 1);
 
-  const published = await realtime.publish("channel_2", { sequence: 1, kind: "media.ready" });
+  await streams.append("channel_2", { eventId: "event_2" }, { idempotencyKey: "event_2", expectedSequence: 1 });
+  const replacement = await streams.publishSnapshot("channel_2", {
+    objectRef: "snapshot_object_2",
+    snapshotVersion: "v2",
+    snapshotDigest: secondDigest,
+    sequence: 1,
+  }, { expectedSnapshotDigest: firstDigest });
+
+  assert.equal(replacement.sequence, 1, "snapshot must preserve the stream position it actually materializes");
+  assert.equal((await streams.getHead("channel_2")).sequence, 2, "unrelated stream advancement must remain replayable");
+  assert.equal((await streams.getSnapshotPointer("channel_2")).objectRef, "snapshot_object_2");
+  await assert.rejects(
+    () => streams.publishSnapshot("channel_2", {
+      objectRef: "snapshot_object_stale",
+      snapshotVersion: "stale",
+      snapshotDigest: firstDigest,
+      sequence: 1,
+    }, { expectedSnapshotDigest: firstDigest }),
+    InfraSnapshotConflictError,
+  );
+
+  const published = await realtime.publish("channel_2", { sequence: 2, kind: "media.ready" });
   assert.equal(published.delivered, 2);
-  assert.equal(namespace.channels.get("channel_2").sequence, 1, "fanout must not allocate stream sequence");
-  assert.deepEqual(namespace.channels.get("channel_2").published, [{ kind: "media.ready", sequence: 1 }]);
+  assert.equal(namespace.channels.get("channel_2").sequence, 2, "fanout must not allocate stream sequence");
+  assert.deepEqual(namespace.channels.get("channel_2").published, [{ kind: "media.ready", sequence: 2 }]);
 });
 
 test("Cloudflare D1 catalog port is a replaceable JSON mirror", async () => {
