@@ -335,7 +335,20 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
   const service = createThreadGenesisRepairService({
     worldReader:{ getThread() { return thread; } },
     civilRegistry:{ getCivilRegistrationByThreadId() { return { fibreIdentityNumber:"ABCD-12-EFGH" }; } },
-    embodimentReader:{ listCurrent() { return [{ embodimentId:"emb_repair_1", kind:"portrait", visibility:"public", status:"available", asset:{ referenceObjectRef:"visual_identity_reference_1" } }]; } },
+    embodimentReader:{
+      listCurrent() {
+        const specification={ subject:{ description:"stable face" }, description:"stable visual rule" };
+        return [{
+          embodimentId:"emb_repair_1",
+          kind:"portrait",
+          visibility:"public",
+          status:"available",
+          specification,
+          specificationDigest:embodimentSpecificationDigest(specification),
+          asset:{ referenceObjectRef:"visual_identity_reference_1" },
+        }];
+      },
+    },
     presentationReader:{ async getSnapshot() { return state.presentation; } },
     presentationDelivery:{ async rebuildThreadPresentation() { throw new Error("not needed"); } },
     visualReconciler:{ async reconcileThread() { throw new Error("not needed"); } },
