@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { ThreadPhysicalGenomeMigrationStore } from "../src/thread-physical-genome-migration-store.mjs";
 import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
@@ -80,12 +81,17 @@ test("outdated physical appearance model upgrades in place with previous version
   withWorld(({world,migration})=>{
     const source=structuredClone(fixture);
     source.identity.sex="female";
-    source.genome.physical.version="physical-genome-v0.1";
-    const seeded=world.seedThread(source).thread;
     const physicalAncestry={
       maternal:[{population:"operator-confirmed Chinese family",share:1,referencePopulation:"east_asia.han_chinese"}],
       paternal:[{population:"operator-confirmed Chinese family",share:1,referencePopulation:"east_asia.han_chinese"}],
     };
+    source.genome.physical=resolveBirthPhysicalInheritance({
+      maternalAncestry:physicalAncestry.maternal,
+      paternalAncestry:physicalAncestry.paternal,
+      seed:"old-appearance-model-store-test",
+    }).genome;
+    source.genome.physical.version="physical-genome-v0.1";
+    const seeded=world.seedThread(source).thread;
 
     const result=migration.migrate(seeded,{
       physicalAncestry,
