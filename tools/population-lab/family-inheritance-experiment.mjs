@@ -1,4 +1,4 @@
-import {phenotypeFromPhysicalGenome,recombinePhysicalGenomes,sampleFounderPhysicalGenome} from "../../core/src/human-phenotype/index.mjs";
+import {phenotypeFromPhysicalGenome,recombinePhysicalGenomes,sampleFounderPhysicalGenome} from "../../core/src/human-appearance/index.mjs";
 
 const AFR_WEST=[{population:"West African",share:1,referencePopulation:"afr_west"}];
 const EUR_NORTH=[{population:"Northern European",share:1,referencePopulation:"eur_north"}];
