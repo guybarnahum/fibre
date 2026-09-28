@@ -1,4 +1,6 @@
-const THREAD_HEALTH_PROJECTION_VERSION = "thread-health-v0.3";
+import { THREAD_REPAIR_CONTRACT } from "./thread-genesis-repair-api.mjs";
+
+const THREAD_HEALTH_PROJECTION_VERSION = "thread-health-v0.4";
 
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") {
@@ -36,6 +38,7 @@ export function createThreadHealthProjectionService({
       reconciliation:world.reconciliation,
       witness:Object.freeze({
         projectionVersion:THREAD_HEALTH_PROJECTION_VERSION,
+        diagnosisContract:THREAD_REPAIR_CONTRACT,
         world:world.diagnosis,
         presentationSnapshotDigest:presentationSnapshotDigest ?? null,
       }),
