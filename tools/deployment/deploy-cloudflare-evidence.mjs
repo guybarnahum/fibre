@@ -181,7 +181,6 @@ async function main() {
   });
   console.log(`Cloudflare deployment accepted: ${result.deployment.environment}`);
   console.log(`SOURCE  ${result.source.gitSha}`);
-  console.log(`CREDENTIALS ${result.deployment.contentCredentialMode}`);
   for (const item of result.deployment.deployments) console.log(`HEALTH  ${item.serviceId} ${item.baseUrl}`);
   console.log(`VIEWER  ${result.deployment.externalViewerOrigin}`);
   console.log(`EVIDENCE ${result.evidencePath}`);
