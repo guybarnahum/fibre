@@ -166,7 +166,7 @@ export function generatePhysicalCalibrationCohort({
         spokenLanguages:[],
         referencePopulation,
         renderDescription:projection.renderDescription,
-        projectionVersion:projection.version,
+        projectionVersion:projection.projectionVersion,
         inheritance:Object.freeze({genome:inheritance.physicalGenome,phenotype:projection.phenotype}),
       }));
     }
