@@ -163,22 +163,28 @@ test("Middle East reference hierarchy preserves evidence without invented deltas
 });
 
 
-test("Polynesian calibration is a coherent Pacific basis with specific evidence-backed overrides",()=>{
+test("Polynesia has its own morphology center instead of an East-Asian template",()=>{
   const east=referencePopulationPrior("east_asia");
-  const oceanic=referencePopulationPrior("oceania");
   const polynesian=referencePopulationPrior("oceania.polynesia");
   const hawaiian=referencePopulationPrior("oceania.polynesia.native_hawaiian");
   const samoan=referencePopulationPrior("oceania.polynesia.samoan");
   const variation=referencePopulationVariation("oceania.polynesia");
 
-  for(const locus of ["pigmentation","hairForm","eyeShape","epicanthicFold","noseProjection"]){
-    const low=Math.min(east[locus],oceanic[locus]),high=Math.max(east[locus],oceanic[locus]);
-    assert.ok(polynesian[locus]>low&&polynesian[locus]<high,`${locus} did not resolve between Asian-related and Oceanian calibration bases`);
-    assert.ok(Math.abs(polynesian[locus]-east[locus])<Math.abs(polynesian[locus]-oceanic[locus]),`${locus} lost the predominantly Asian-related calibration basis`);
-  }
-  assert.ok(polynesian.faceBreadth>east.faceBreadth,"Polynesian facial breadth override missing");
-  assert.ok(polynesian.faceLength>east.faceLength,"Polynesian facial-height override missing");
-  assert.ok(polynesian.chinProjection>oceanic.chinProjection,"Polynesian chin projection override missing");
+  assert.ok(polynesian.pigmentation>-.2&&polynesian.pigmentation<.2,"Polynesian pigmentation center left the medium range");
+  assert.ok(polynesian.hairForm<0&&polynesian.hairForm>-.6,"Polynesian hair center lost straight-to-wavy range");
+  assert.ok(Math.abs(polynesian.eyeSpacing)<.18,"Polynesian eye spacing collapsed away from average");
+  assert.ok(polynesian.eyeShape>-.18&&polynesian.eyeShape<.18,"Polynesian eye opening collapsed to a narrow template");
+  assert.ok(polynesian.epicanthicFold<0&&polynesian.epicanthicFold>-.5,"Polynesian epicanthic center should be slight");
+  assert.ok(polynesian.upperEyelidExposure>-.18,"Polynesian upper eyelid exposure still follows East-Asian low-lid template");
+  assert.ok(polynesian.eyeShape>east.eyeShape+.2,"Polynesian eye morphology still tracks East Asia too closely");
+  assert.ok(polynesian.epicanthicFold<east.epicanthicFold-.4,"Polynesian fold morphology still tracks East Asia too closely");
+
+  assert.ok(polynesian.faceBreadth>.18,"Polynesian broad-face calibration missing");
+  assert.ok(polynesian.jawBreadth>.18,"Polynesian robust lower-face calibration missing");
+  assert.ok(polynesian.chinProjection>.18,"Polynesian anterior-chin calibration missing");
+  assert.ok(polynesian.noseBreadth>.18,"Polynesian nasal breadth calibration missing");
+  assert.ok(polynesian.nasalBridgeHeight<0,"Polynesian medium-to-low bridge calibration missing");
+
   assert.ok(variation.familyFactorMultiplier>1,"Polynesian family variation did not favor coherent factor variation");
   assert.ok(variation.structuralResidualMultiplier<1,"Polynesian variation still favors independent facial noise");
   assert.deepEqual(hawaiian,polynesian,"uncalibrated Native Hawaiian child should shrink to Polynesian prior");
