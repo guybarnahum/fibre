@@ -74,7 +74,7 @@ Why moderate: the anatomical mapping is direct, but the sample is modest and Mā
 
 The first 48-person v0.3 visual cohort falsified the assumption that Polynesia could safely inherit the broad `oceania` hair/pigmentation center unchanged: 11/12 Polynesian samples projected as deep pigmentation and 12/12 as curly hair, and the rendered cohort collapsed toward a generic African-descent-looking phenotype rather than plausible Polynesian variation.
 
-Fibre therefore applies conservative Polynesian-parent corrections for `pigmentation`, `hairPigmentation` and `hairForm`. These are explicitly **low-confidence** mappings. The supporting evidence is population-history/comparative evidence, not a direct modern quantitative conversion into Fibre's normalized skin/hair coordinates. Better direct measurements should replace them.
+Fibre therefore applies conservative Polynesian-parent corrections for `pigmentation` and `hairForm`. These are explicitly **low-confidence** mappings. The supporting evidence is population-history/comparative evidence, not a direct modern quantitative conversion into Fibre's normalized skin/hair coordinates. Better direct measurements should replace them.
 
 The purpose of these corrections is not to make Polynesians lighter or straighter-haired by rule. It is to stop a broad Oceania fallback from acting as a false Melanesian template for all Remote Oceania while preserving founder-level individual variation.
 
