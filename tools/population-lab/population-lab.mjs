@@ -2,7 +2,10 @@ import {createHash} from "node:crypto";
 import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
 
-import {expressInheritedAppearance} from "../../core/src/human-appearance/index.mjs";
+import {
+  expressInheritedAppearance,
+  referencePhysicalState,
+} from "../../core/src/human-appearance/index.mjs";
 import {composeBirthSubjectIdentity,selectBirthNameParts} from "../genesis/birth-material.mjs";
 import {populationPortraitPrompt} from "./portrait-prompt.mjs";
 import {
@@ -106,6 +109,11 @@ function generate(place,count,seed,context){
     const identity=composeBirthSubjectIdentity({requestId,material});
     const names=selectBirthNameParts({requestId,material});
     const projection=expressInheritedAppearance({physicalGenome:identity.physicalGenome,sex});
+    const physicalState=referencePhysicalState({
+      physicalGenome:identity.physicalGenome,
+      sex,
+      stateSeed:`population-lab:${requestId}`,
+    });
     return{
       name:sex==="female"?identity.femaleName:identity.maleName,
       givenName:sex==="female"?names.femaleGivenName:names.maleGivenName,
@@ -121,6 +129,7 @@ function generate(place,count,seed,context){
       spokenLanguages:[...identity.languages],
       renderDescription:projection.renderDescription,
       projectionVersion:projection.projectionVersion,
+      physicalState,
       inheritance:{genome:identity.physicalGenome,phenotype:projection.phenotype},
     };
   });
@@ -233,7 +242,11 @@ function score(people,contexts){
 }
 
 async function image(person,dir,index,model){
-  const prompt=populationPortraitPrompt({sex:person.sex,renderDescription:person.renderDescription});
+  const prompt=populationPortraitPrompt({
+    sex:person.sex,
+    renderDescription:person.renderDescription,
+    physicalStateDescription:person.physicalState?.description??null,
+  });
   const response=await resilientFetch("https://api.openai.com/v1/images/generations",{
     method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},
     body:JSON.stringify({model,prompt,size:"1024x1024",quality:"low",n:1})
