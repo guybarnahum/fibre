@@ -237,11 +237,6 @@ function identityCompleteness(thread, registration, presentation, sexEvidence, r
     sexFinding,
   ];
 
-  const canonicalSpec = identity.canonicalVisualIdentity?.specification ?? null;
-  findings.push(canonicalSpec
-    ? finding("CANONICAL_VISUAL_SPEC", "healthy")
-    : finding("CANONICAL_VISUAL_SPEC_MISSING", "migration_required"));
-
   const originOrientation = text(identity.originOrientation);
   findings.push(originOrientation === null
     ? finding("ORIGIN_ORIENTATION_MISSING", "migration_required")
@@ -515,12 +510,31 @@ export function createThreadGenesisRepairService({
       }));
     }
 
-    const canonicalSpec = thread.identity?.canonicalVisualIdentity?.specification ?? null;
+    const genesisVisualSeed = thread.identity?.canonicalVisualIdentity?.specification ?? null;
+    const canonicalSpec = embodiment?.specification ?? null;
     if (embodiment === null) {
-      findings.push(canonicalSpec
+      if (genesisVisualSeed === null) {
+        findings.push(finding("CANONICAL_VISUAL_SPEC_MISSING", "migration_required"));
+      } else {
+        findings.push(finding("GENESIS_VISUAL_SEED", "healthy", null, {
+          authority:"genesis_provenance",
+          reason:"Genesis visual seed is historical creation provenance; no current Embodiment is admitted.",
+        }));
+      }
+      findings.push(genesisVisualSeed
         ? finding("CANONICAL_EMBODIMENT_MISSING", "repairable", "reconcile_visual_publication")
         : finding("CANONICAL_EMBODIMENT_MISSING", "migration_required"));
-    } else if (embodiment.status === "available" && embodiment.asset?.referenceObjectRef) {
+    } else {
+      findings.push(canonicalSpec
+        ? finding("CANONICAL_VISUAL_SPEC", "healthy", null, {
+            authority:"embodiment",
+            specificationDigest:embodiment.specificationDigest??null,
+          })
+        : finding("CANONICAL_VISUAL_SPEC_MISSING", "integrity_error", null, {
+            reason:"current canonical Embodiment has no specification",
+          }));
+    }
+    if (embodiment !== null && embodiment.status === "available" && embodiment.asset?.referenceObjectRef) {
       findings.push(finding("CANONICAL_EMBODIMENT", "healthy", null, {
         embodimentId: embodiment.embodimentId,
         objectRef: embodiment.asset.referenceObjectRef,
