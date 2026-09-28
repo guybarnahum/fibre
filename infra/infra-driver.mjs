@@ -24,6 +24,7 @@ export {
 export const INFRA_DRIVER_VERSION = "infra-driver-v0.1";
 
 export class InfraSequenceConflictError extends Error {}
+export class InfraSnapshotConflictError extends Error {}
 export class InfraIdempotencyConflictError extends Error {}
 export class InfraImmutableObjectConflictError extends Error {}
 export class InfraWorkflowConflictError extends Error {}
