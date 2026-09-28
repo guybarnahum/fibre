@@ -277,7 +277,7 @@ A place-only image does not receive the Thread's reference image simply because 
 
 ## Provider requirements
 
-Native synthetic canonical roots require a provider profile that supports both text-to-image geometry generation and reference-image editing for the surface pass. The production OpenAI profile uses high input fidelity for reference edits so the second pass preserves the geometry anchor.
+Native synthetic canonical roots require a provider profile that supports both text-to-image geometry generation and reference-image editing for the surface pass. GPT Image 2 processes image inputs at high fidelity automatically, so Fibre deliberately sends no separate fidelity knob; the surface pass simply carries the verified geometry anchor as its required reference.
 
 Later Thread-depicting generation also requires a provider profile capable of reference-image conditioning. Fibre must not silently drop `referenceObjectRefs` and fall back to text-only generation, because that would reintroduce likeness drift.
 
