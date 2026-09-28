@@ -10,6 +10,7 @@ import {physicalPhenotypeRenderingProjection} from "../human-phenotype/rendering
 import {referencePopulationIds,referencePopulationPrior} from "../human-phenotype/reference-populations.mjs";
 import {sampleFounderPhysicalGenome} from "../human-phenotype/founder-genome.mjs";
 import {resolveBirthPhysicalInheritance} from "../human-phenotype/birth-inheritance.mjs";
+import {normalizeAncestry} from "../human-phenotype/ancestry.mjs";
 
 export const HUMAN_APPEARANCE_MODEL_VERSION="human-appearance-v0.1";
 
@@ -79,6 +80,8 @@ export function expressInheritedAppearance({physicalGenome,sex}={}){
     renderDescription:projection.description,
   });
 }
+
+export const normalizePhysicalLineage=normalizeAncestry;
 
 export {
   PHYSICAL_GENOME_VERSION,
