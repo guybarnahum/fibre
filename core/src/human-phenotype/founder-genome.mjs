@@ -1,7 +1,7 @@
 import {createHash} from "node:crypto";
 import {normalizeAncestry} from "./ancestry.mjs";
 import {createPhysicalGenome,physicalGenomeLoci} from "./physical-genome.mjs";
-import {referencePopulationPrior} from "./reference-populations.mjs";
+import {referencePopulationPrior,referencePopulationVariation} from "./reference-populations.mjs";
 
 /*
  * Small zero-mean factor model for within-population variation.
@@ -74,6 +74,22 @@ const FACTORS_BY_LOCUS=Object.freeze(Object.fromEntries(
   ]),
 ));
 
+function ancestryVariation(ancestry){
+  const total=ancestry.reduce((sum,item)=>sum+item.share,0);
+  return ancestry.reduce((profile,item)=>{
+    const variation=referencePopulationVariation(item.referencePopulation);
+    const weight=item.share/total;
+    profile.familyFactorMultiplier+=variation.familyFactorMultiplier*weight;
+    profile.structuralResidualMultiplier+=variation.structuralResidualMultiplier*weight;
+    profile.generalResidualMultiplier+=variation.generalResidualMultiplier*weight;
+    return profile;
+  },{
+    familyFactorMultiplier:0,
+    structuralResidualMultiplier:0,
+    generalResidualMultiplier:0,
+  });
+}
+
 function chooseComponent(ancestry,seed,key){
   for(const item of ancestry){
     if(!item.referencePopulation)throw Error("founder ancestry requires referencePopulation");
@@ -88,10 +104,11 @@ function chooseComponent(ancestry,seed,key){
 export function sampleFounderPhysicalGenome({ancestry,seed}){
   if(seed===undefined||seed===null||String(seed).length===0)throw Error("founder seed is required");
   const normalized=normalizeAncestry(ancestry);
+  const variation=ancestryVariation(normalized);
   const familyFactors=Object.fromEntries(
     Object.keys(FACTOR_LOADINGS).map(factor=>[
       factor,
-      bell(seed,`family:${factor}`)*FAMILY_FACTOR_SCALE,
+      bell(seed,`family:${factor}`)*FAMILY_FACTOR_SCALE*variation.familyFactorMultiplier,
     ]),
   );
   const loci={};
@@ -100,8 +117,8 @@ export function sampleFounderPhysicalGenome({ancestry,seed}){
     const correlated=FACTORS_BY_LOCUS[locus]
       .reduce((sum,{factor,loading})=>sum+familyFactors[factor]*loading,0);
     const residualScale=STRUCTURAL_LOCI.has(locus)
-      ? STRUCTURAL_RESIDUAL_SCALE
-      : GENERAL_RESIDUAL_SCALE;
+      ? STRUCTURAL_RESIDUAL_SCALE*variation.structuralResidualMultiplier
+      : GENERAL_RESIDUAL_SCALE*variation.generalResidualMultiplier;
 
     loci[locus]=[0,1].map(copy=>{
       const component=chooseComponent(normalized,seed,`${locus}:${copy}:ancestry`);
