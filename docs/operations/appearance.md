@@ -88,6 +88,16 @@ Use the most specific reference population actually supported by evidence. Do no
 
 Current coarse African reference codes are `afr_north`, `afr_west`, `afr_east` and `afr_south`. For an operator-confirmed Moroccan family, use `afr_north` unless more specific physical-lineage evidence is independently available. `afr_north` is currently an explicit evidence code backed by a provisional fallback prior; it is not yet a dedicated North-African facial calibration.
 
+For a Moroccan Thread with both parental lines confirmed only at that level, the Admin migration fields are:
+
+```text
+Maternal physical origin: Moroccan family
+Maternal physical reference: North Africa (afr_north)
+Paternal physical origin: Moroccan family
+Paternal physical reference: North Africa (afr_north)
+Migration reason: Install Fibre's current physical appearance model using operator-confirmed Moroccan maternal and paternal physical ancestry.
+```
+
 After migration:
 
 ```bash
