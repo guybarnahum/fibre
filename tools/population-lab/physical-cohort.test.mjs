@@ -10,12 +10,13 @@ const POPULATIONS=[
   "east_asia.han_chinese",
   "east_asia.korean",
   "east_asia.japanese",
+  "oceania.polynesia",
 ];
 
 test("Population Lab physical cohort preserves calibrated structure and individuality",()=>{
   const people=generatePhysicalCalibrationCohort({
     referencePopulations:POPULATIONS,
-    count:96,
+    count:128,
     seed:"east-asian-calibration-proof",
   });
   const diagnostics=physicalCalibrationDiagnostics({
@@ -24,7 +25,7 @@ test("Population Lab physical cohort preserves calibrated structure and individu
     seed:"east-asian-calibration-proof",
   });
 
-  assert.equal(people.length,96,"physical cohort count changed");
+  assert.equal(people.length,128,"physical cohort count changed");
   assert.deepEqual(diagnostics.warnings,[],"physical cohort calibration failed");
 
   for(const population of POPULATIONS){
@@ -40,7 +41,7 @@ test("Population Lab physical cohort preserves calibrated structure and individu
   for(const person of people){
     assert.doesNotMatch(
       person.renderDescription,
-      /east_asia|han_chinese|korean|japanese|calibration lineage/u,
+      /east_asia|han_chinese|korean|japanese|oceania|polynesia|calibration lineage/u,
       "population label leaked into renderer",
     );
   }
