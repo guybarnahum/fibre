@@ -73,7 +73,10 @@ function layersFor(embodiment) {
 
 export function requiresCanonicalVisualIdentityGeometryAnchor(embodimentCandidate) {
   const embodiment = normalizeEmbodimentRepresentation(embodimentCandidate);
-  return layersFor(embodiment) !== null;
+  if(layersFor(embodiment)===null){
+    throw new TypeError("synthetic canonical visual identity requires layered Human Appearance specification");
+  }
+  return true;
 }
 
 export function canonicalVisualIdentityGeometryObjectRef(embodimentCandidate) {
@@ -118,51 +121,31 @@ export function canonicalVisualIdentityBrief(embodimentCandidate) {
   const embodiment = normalizeEmbodimentRepresentation(embodimentCandidate);
   if (embodiment.kind !== "portrait") throw new TypeError("canonical visual identity generation requires portrait embodiment");
   if (embodiment.representationKind !== "synthetic_generation") {
-    throw new TypeError("text-only canonical visual identity generation requires synthetic_generation embodiment");
+    throw new TypeError("geometry-first canonical visual identity requires synthetic_generation embodiment");
   }
   richEnough(embodiment);
   const layers=layersFor(embodiment);
-  if(layers!==null){
-    return Object.freeze({
-      description:[
-        "Using the supplied geometry anchor, create the final canonical visual-identity reference portrait for this Fibre Thread.",
-        `Reference-age convention: depict the person at ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} years old.`,
-        `Sex: ${layers.sex}.`,
-        `Inherited surface phenotype: ${layers.surfaceDescription}`,
-        `Reference surface state: ${layers.surfaceStateDescription}`,
-        "The geometry anchor already defines the person's facial and body structure. Apply surface phenotype and ordinary presentation without redesigning that person.",
-      ].join(" "),
-      constraints:[
-        "Preserve the supplied geometry anchor's face shape, facial proportions, eye placement/opening, nose geometry, jaw/chin, facial fullness, and asymmetry exactly enough to remain the same recognizable person.",
-        "Apply only the specified pigmentation, eye color, hair color/texture/density, skin texture, hairline, hairstyle, and facial-hair presentation.",
-        "Never use pigmentation, hair, eye color, or grooming as permission to replace the anchor with a racial, ethnic, national, beauty, or stock-face template.",
-        "Do not slim, symmetrize, beautify, retouch, glamourize, or fashion-model the person.",
-        "Use a neutral head-and-shoulders reference composition, mostly front-facing, even daylight-balanced illumination, ordinary perspective, and a neutral natural expression.",
-        "The result is a synthetic identity reference, not documentary, historical, autobiographical, or captured-source evidence.",
-      ],
-    });
-  }
+  if(layers===null)throw new TypeError("synthetic canonical visual identity requires layered Human Appearance specification");
 
   return Object.freeze({
-    description: [
-      "Create the single canonical visual-identity reference portrait for this Fibre Thread.",
-      `Reference-age convention: depict the person at ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} years old. This is a normalization anchor for identity continuity, not a claim about the Thread's current or historical age.`,
-      `Canonical subject identity specification: ${embodiment.specification.subject.description}`,
-      `Canonical appearance and rendering specification: ${embodiment.specification.description}`,
-      "The result will become the immutable reference image used to preserve this same person's likeness across later images at different ages, expressions, clothing, places, and life events.",
+    description:[
+      "Using the supplied geometry anchor, create the final canonical visual-identity reference portrait for this Fibre Thread.",
+      `Reference-age convention: depict the person at ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} years old.`,
+      `Sex: ${layers.sex}.`,
+      `Inherited surface phenotype: ${layers.surfaceDescription}`,
+      `Reference surface state: ${layers.surfaceStateDescription}`,
+      "The geometry anchor already defines the person's facial and body structure. Apply surface phenotype and ordinary presentation without redesigning that person.",
     ].join(" "),
-    constraints: [
-      "Generate from the supplied canonical identity text only; there is intentionally no prior reference image for this root image.",
-      "Depict exactly one person and preserve every concrete facial, hair, skin, body, asymmetry, and distinctive-mark detail stated in the identity specification.",
-      "Treat the complete facial anatomy as hard identity constraints; do not choose phenotype again or average toward generic portrait defaults.",
-      `Depict the person at the normalized reference age of ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS}, without implying that this image is a historical event or current photograph.`,
-      "Use a neutral head-and-shoulders reference composition, mostly front-facing, even natural lighting, ordinary lens perspective, and no glamour or stylization drift.",
-      "Do not invent ancestry, ethnicity, scars, tattoos, disabilities, accessories, or other identity-defining traits that are absent from the specification.",
-      "This generated image establishes a synthetic visual reference for the Thread; it is not documentary, historical, autobiographical, or captured-source evidence.",
+    constraints:[
+      "Preserve the supplied geometry anchor's face shape, facial proportions, eye placement/opening, nose geometry, jaw/chin, facial fullness, and asymmetry exactly enough to remain the same recognizable person.",
+      "Apply only the specified pigmentation, eye color, hair color/texture/density, skin texture, hairline, hairstyle, and facial-hair presentation.",
+      "Never use pigmentation, hair, eye color, or grooming as permission to replace the anchor with a racial, ethnic, national, beauty, or stock-face template.",
+      "Do not slim, symmetrize, beautify, retouch, glamourize, or fashion-model the person.",
+      "Use a neutral head-and-shoulders reference composition, mostly front-facing, even daylight-balanced illumination, ordinary perspective, and a neutral natural expression.",
+      "The result is a synthetic identity reference, not documentary, historical, autobiographical, or captured-source evidence.",
     ],
   });
 }
-
 export function planCanonicalVisualIdentityGeometryGeneration({
   embodiment: embodimentCandidate,
   requestedAt,
@@ -213,16 +196,12 @@ export function planCanonicalVisualIdentityGeneration({
   if (embodiment.status !== "pending_generation" || embodiment.asset !== null) {
     throw new TypeError("canonical visual identity generation requires pending_generation embodiment without an asset");
   }
-  const layered=layersFor(embodiment)!==null;
-  const expectedGeometry=layered?canonicalVisualIdentityGeometryObjectRef(embodiment):null;
-  if(layered&&geometryAnchorObjectRef!==expectedGeometry){
+  const expectedGeometry=canonicalVisualIdentityGeometryObjectRef(embodiment);
+  if(geometryAnchorObjectRef!==expectedGeometry){
     throw new TypeError("canonical visual identity final pass requires its geometry anchor");
   }
-  if(!layered&&geometryAnchorObjectRef!==null){
-    throw new TypeError("non-layered canonical visual identity cannot use a geometry anchor");
-  }
   const brief = canonicalVisualIdentityBrief(embodiment);
-  const suffix=identity(embodiment,"final",layered?{geometryAnchorObjectRef}: {});
+  const suffix=identity(embodiment,"final",{geometryAnchorObjectRef});
   const outputObjectRef = `visual_identity_reference_${suffix}`;
 
   return normalizeAssetGenerationJob({
@@ -233,7 +212,7 @@ export function planCanonicalVisualIdentityGeneration({
     variant: `reference-age-${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS}`,
     brief,
     inputReferences: sourceReferences(embodiment),
-    referenceObjectRefs: layered?[geometryAnchorObjectRef]:[],
+    referenceObjectRefs: [geometryAnchorObjectRef],
     outputObjectRef,
     receiptObjectRef: `asset_receipt_visual_identity_${suffix}`,
     requestedAt,
@@ -245,7 +224,7 @@ export function planCanonicalVisualIdentityGeneration({
       embodimentRevision: embodiment.revision,
       specificationDigest: embodiment.specificationDigest,
       referenceAgeYears: CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
-      ...(layered?{geometryAnchorObjectRef}:{}),
+      geometryAnchorObjectRef,
     },
   });
 }
@@ -302,15 +281,13 @@ export function bindVerifiedCanonicalVisualIdentityProof({
     throw new TypeError("canonical visual identity proof job does not match the stored receipt");
   }
 
-  const layered=layersFor(embodiment)!==null;
-  if(layered){
-    if(geometryProof===null)throw new TypeError("canonical visual identity completion requires geometry-anchor proof");
-    const geometryObjectRef=assertGeometryProof({embodiment,proof:geometryProof});
-    if(job.referenceObjectRefs.length!==1||job.referenceObjectRefs[0]!==geometryObjectRef||job.context.geometryAnchorObjectRef!==geometryObjectRef){
-      throw new TypeError("canonical visual identity final pass does not reference its verified geometry anchor");
-    }
-  }else if(job.referenceObjectRefs.length!==0){
-    throw new TypeError("non-layered canonical visual identity root must not use reference images");
+  if(layersFor(embodiment)===null){
+    throw new TypeError("synthetic canonical visual identity requires layered Human Appearance specification");
+  }
+  if(geometryProof===null)throw new TypeError("canonical visual identity completion requires geometry-anchor proof");
+  const geometryObjectRef=assertGeometryProof({embodiment,proof:geometryProof});
+  if(job.referenceObjectRefs.length!==1||job.referenceObjectRefs[0]!==geometryObjectRef||job.context.geometryAnchorObjectRef!==geometryObjectRef){
+    throw new TypeError("canonical visual identity final pass does not reference its verified geometry anchor");
   }
 
   const context = receipt.context;
