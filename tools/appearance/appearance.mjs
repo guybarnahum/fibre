@@ -163,6 +163,42 @@ function canonicalPortrait(observatoryBody) {
   return portraits[0];
 }
 
+function observedPhysicalGenomeVersion(observatoryBody) {
+  return observatoryBody?.observatory?.thread?.genome?.physical?.version ?? null;
+}
+
+function diagnosisPhysicalFinding(diagnosis) {
+  return (diagnosis?.findings ?? []).find((entry) => (
+    entry.code === "PHYSICAL_GENOME"
+    || entry.code === "PHYSICAL_APPEARANCE_MODEL_OUTDATED"
+    || entry.code === "LEGACY_PHYSICAL_EMBODIMENT"
+  )) ?? null;
+}
+
+function diagnosedPhysicalGenomeVersion(finding) {
+  if (finding?.code === "PHYSICAL_GENOME") return finding.version ?? null;
+  return finding?.currentVersion ?? null;
+}
+
+function assertPhysicalDiagnosisMatchesWorld(diagnosis, observatoryBody) {
+  const finding = diagnosisPhysicalFinding(diagnosis);
+  const observed = observedPhysicalGenomeVersion(observatoryBody);
+  const diagnosed = diagnosedPhysicalGenomeVersion(finding);
+  if (observed !== diagnosed) {
+    throw new Error(
+      `repair diagnosis physical version ${diagnosed ?? "none"} disagrees with World ${observed ?? "none"}; redeploy current World Kernel and retry`,
+    );
+  }
+  if (observed !== null
+    && observed !== PHYSICAL_GENOME_VERSION
+    && finding?.code !== "PHYSICAL_APPEARANCE_MODEL_OUTDATED") {
+    throw new Error(
+      `World physical genome is ${observed} but repair diagnosis did not offer upgrade to ${PHYSICAL_GENOME_VERSION}`,
+    );
+  }
+  return finding;
+}
+
 async function submitCanonical({
   worldKernel,
   privateToken,
