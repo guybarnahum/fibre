@@ -34,26 +34,73 @@ const LATENT_MEANING=Object.freeze({
   shoulderHipProportion:"-1 hip-weighted, +1 shoulder-weighted"
 });
 
-const TRAIT_LABELS=Object.freeze({
-  zygomaticProjection:"zygomatic / cheekbone projection",
-  eyeShape:"palpebral eye opening",
-  epicanthicFold:"epicanthic fold",
-  upperEyelidExposure:"upper eyelid exposure",
-  orbitalDepth:"orbital depth",
-  nasalBridgeHeight:"nasal bridge height",
-});
+const pick=(source,names)=>Object.freeze(Object.fromEntries(names.map(name=>[name,source[name]])));
+
+function anatomyFromTraits(traits){
+  return Object.freeze({
+    face:pick(traits,[
+      "faceWidth","faceLength","midfaceProminence","zygomaticProjection",
+      "jawWidth","chinProjection","foreheadProportion",
+    ]),
+    eyes:pick(traits,[
+      "eyeSpacing","eyeShape","epicanthicFold","upperEyelidExposure",
+      "orbitalDepth","browProminence",
+    ]),
+    noseMouth:pick(traits,["noseWidth","noseProjection","nasalBridgeHeight","lipFullness"]),
+    pigmentationHair:pick(traits,[
+      "pigmentation","eyeColor","hairColor","frecklingTendency",
+      "hairTexture","hairDensity","hairlineLossTendency","facialHairTendency",
+    ]),
+    body:pick(traits,[
+      "frame","heightTendency","bodyProportion","adiposityTendency",
+      "muscularityTendency","shoulderHipProportion",
+    ]),
+  });
+}
+
+const join=(entries)=>Object.entries(entries).map(([name,value])=>`${name}: ${value}`).join("; ");
+
+function continuousFace(latent){
+  const names=[
+    "faceBreadth","faceLength","midfaceProminence","zygomaticProjection",
+    "jawBreadth","chinProjection","eyeSpacing","eyeShape","epicanthicFold",
+    "upperEyelidExposure","orbitalDepth","foreheadProportion","brow",
+    "noseBreadth","noseProjection","nasalBridgeHeight","softTissue",
+  ];
+  return names.map(name=>`${name}: ${Number(latent[name]).toFixed(2)} (${LATENT_MEANING[name]})`).join("; ");
+}
+
+function continuousOther(latent){
+  const facial=new Set([
+    "faceBreadth","faceLength","midfaceProminence","zygomaticProjection",
+    "jawBreadth","chinProjection","eyeSpacing","eyeShape","epicanthicFold",
+    "upperEyelidExposure","orbitalDepth","foreheadProportion","brow",
+    "noseBreadth","noseProjection","nasalBridgeHeight","softTissue",
+  ]);
+  return Object.entries(latent)
+    .filter(([name])=>!facial.has(name))
+    .map(([name,value])=>`${name}: ${Number(value).toFixed(2)} (${LATENT_MEANING[name]})`)
+    .join("; ");
+}
 
 export function physicalPhenotypeRenderingProjection(genome,{sex}={}){
   const phenotype=phenotypeFromPhysicalGenome(genome,{sex});
-  const semantic=Object.entries(phenotype.traits)
-    .map(([name,value])=>`${TRAIT_LABELS[name]??name}: ${value}`)
-    .join("; ");
-  const continuous=Object.entries(phenotype.latent)
-    .map(([name,value])=>`${TRAIT_LABELS[name]??name}: ${Number(value).toFixed(2)} (${LATENT_MEANING[name]})`)
-    .join("; ");
+  const anatomy=anatomyFromTraits(phenotype.traits);
+  const description=[
+    `Identity-critical inherited facial geometry — face and midface: ${join(anatomy.face)}.`,
+    `Eye and orbital anatomy: ${join(anatomy.eyes)}.`,
+    `Nasal and perioral anatomy: ${join(anatomy.noseMouth)}.`,
+    `Pigmentation and hair: ${join(anatomy.pigmentationHair)}.`,
+    `Inherited body structure: ${join(anatomy.body)}.`,
+    "Treat the facial relationships above as one coherent anatomy. Do not independently average them toward generic portrait defaults.",
+    `Continuous facial coordinates are secondary precision and preserve this individual's proportions inside the semantic anatomy: ${continuousFace(phenotype.latent)}.`,
+    `Other continuous inherited coordinates: ${continuousOther(phenotype.latent)}.`,
+    "Facial-hair and hairline-loss coordinates are inherited carrier tendencies; visible expression follows the sex-conditioned phenotype above.",
+  ].join(" ");
   return Object.freeze({
-    version:"physical-rendering-projection-v0.2",
+    version:"physical-rendering-projection-v0.3",
     phenotype,
-    description:`Concrete inherited facial and body anatomy: ${semantic}. Continuous inherited expression refines those categories and preserves individual differences inside them: ${continuous}. Facial-hair and hairline-loss coordinates are inherited carrier tendencies; visible expression follows the sex-conditioned phenotype above.`
+    anatomy,
+    description,
   });
 }
