@@ -452,7 +452,7 @@ The generic **Fix** action in Thread Admin is deliberately not an appearance edi
 
 Thread Details now exposes a dedicated **Appearance** surface. It shows physical-model version, target model, canonical visual authority, canonical root and any durable operator-confirmed parental physical-origin evidence. An outdated/missing physical model offers **Migrate appearance / Upgrade appearance model**; recorded evidence is reused as-is, while absent evidence requires explicit maternal/paternal origin plus a calibrated reference population. A current healthy model offers **Re-render appearance** without changing genome/specification.
 
-Admin submits one authority-changing action and stops. It does not poll image/FID convergence or reroll generated roots. **Refresh appearance** performs an explicit bounded read when the operator wants to inspect current state. Manual **Correct appearance** remains an exceptional CLI authority correction, not the ordinary inherited-appearance workflow.
+Admin never starts an automatic/background image watch and never rerolls generated roots. An operator pressing **Refresh appearance** explicitly starts one low-frequency watch: immediate status read, then one read every 20 seconds while canonical generation/publication remains pending. The watch stops when the canonical portrait is published and refreshes the Thread once. Manual **Correct appearance** remains an exceptional CLI authority correction, not the ordinary inherited-appearance workflow.
 
 ## Required end-to-end proof
 
