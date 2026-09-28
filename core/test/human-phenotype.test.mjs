@@ -80,9 +80,34 @@ test("East Asian founder signal survives individual variation without renderer l
     ancestry:[{population:"family-history",share:1,referencePopulation:"east_asia.han_chinese"}],
     seed:"renderer-anatomy-proof",
   });
-  const projection=physicalPhenotypeRenderingProjection(genome,{sex:"female"}).description;
-  assert.match(projection,/epicanthic fold:/u,"renderer lost eyelid anatomy");
-  assert.match(projection,/zygomatic \/ cheekbone projection:/u,"renderer lost cheek anatomy");
-  assert.match(projection,/nasal bridge height:/u,"renderer lost nasal anatomy");
-  assert.doesNotMatch(projection,/east_asia|han_chinese|family-history/u,"ancestry label leaked into renderer");
+  const projection=physicalPhenotypeRenderingProjection(genome,{sex:"female"});
+  const traits=projection.phenotype.traits;
+
+  assert.deepEqual(
+    projection.anatomy.eyes,
+    {
+      eyeSpacing:traits.eyeSpacing,
+      eyeShape:traits.eyeShape,
+      epicanthicFold:traits.epicanthicFold,
+      upperEyelidExposure:traits.upperEyelidExposure,
+      orbitalDepth:traits.orbitalDepth,
+      browProminence:traits.browProminence,
+    },
+    "renderer eye anatomy diverged from phenotype",
+  );
+
+  for(const group of Object.values(projection.anatomy)){
+    for(const [name,value] of Object.entries(group)){
+      assert.ok(
+        projection.description.includes(`${name}: ${value}`),
+        `renderer lost ${name}`,
+      );
+    }
+  }
+
+  assert.doesNotMatch(
+    projection.description,
+    /east_asia|han_chinese|family-history/u,
+    "ancestry label leaked into renderer",
+  );
 });
