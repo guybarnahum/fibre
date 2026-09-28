@@ -79,3 +79,34 @@ test("East Asian child priors change only evidence-backed anatomy",()=>{
   assert.ok(japanese.noseBreadth>korean.noseBreadth,"Japanese nasal breadth calibration missing");
   assert.deepEqual(northHan,han,"uncalibrated Han region must shrink to Han prior");
 });
+
+
+test("founder variation stays centered while facial systems remain coherent",()=>{
+  const prior=referencePopulationPrior("east_asia.han_chinese");
+  const cohort=Array.from({length:128},(_,index)=>
+    expressPhysicalGenome(sampleFounderPhysicalGenome({
+      ancestry:[{population:"Han Chinese family",share:1,referencePopulation:"east_asia.han_chinese"}],
+      seed:`han-founder-${index}`,
+    }))
+  );
+
+  const mean=key=>cohort.reduce((sum,person)=>sum+person[key],0)/cohort.length;
+  const sd=key=>{
+    const center=mean(key);
+    return Math.sqrt(cohort.reduce((sum,person)=>sum+(person[key]-center)**2,0)/cohort.length);
+  };
+  const corr=(left,right)=>{
+    const a=mean(left),b=mean(right);
+    const covariance=cohort.reduce((sum,person)=>sum+(person[left]-a)*(person[right]-b),0)/cohort.length;
+    return covariance/(sd(left)*sd(right));
+  };
+
+  for(const locus of ["zygomaticProjection","eyeSpacing","epicanthicFold","nasalBridgeHeight"]){
+    assert.ok(Math.abs(mean(locus)-prior[locus])<.08,`${locus} drifted from population center`);
+    assert.ok(sd(locus)>.04&&sd(locus)<.16,`${locus} variation is implausible`);
+  }
+
+  assert.ok(corr("faceBreadth","zygomaticProjection")>.2,"facial structure lost correlation");
+  assert.ok(corr("epicanthicFold","upperEyelidExposure")<-.2,"eyelid structure lost correlation");
+  assert.ok(corr("nasalBridgeHeight","noseProjection")>.2,"nasal structure lost correlation");
+});
