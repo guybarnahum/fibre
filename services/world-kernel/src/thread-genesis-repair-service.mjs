@@ -113,6 +113,18 @@ function latestPhysicalEvidence(physicalGenomeMigrator,threadId){
     : null;
 }
 
+function appearanceMigrationReason({physicalGenomeVersion,priorEvidence,suggestion}){
+  if(priorEvidence!==null){
+    return `Upgrade this Thread to ${PHYSICAL_GENOME_VERSION} using its recorded parental physical-origin evidence.`;
+  }
+  if(suggestion!==null){
+    return `Install ${PHYSICAL_GENOME_VERSION} using Fibre's preselected parental physical-origin defaults for ${suggestion.country}; review or override them if needed.`;
+  }
+  return physicalGenomeVersion===null
+    ? `Install ${PHYSICAL_GENOME_VERSION} using the parental physical-origin values reviewed below.`
+    : `Upgrade this Thread from ${physicalGenomeVersion} to ${PHYSICAL_GENOME_VERSION} using the parental physical-origin values reviewed below.`;
+}
+
 function overall(findings) {
   if (findings.some((entry) => entry.state === "unrecoverable")) return "unrecoverable";
   if (findings.some((entry) => entry.state === "integrity_error")) return "integrity_error";
@@ -510,8 +522,10 @@ export function createThreadGenesisRepairService({
                 ...ancestryFields,
                 Object.freeze({
                   name:"reason",label:"Migration reason",kind:"text",required:true,
-                  ...(suggestion===null?{}:{
-                    default:`Install Fibre's current physical appearance model using operator-reviewed birthplace defaults for ${suggestion.country}.`,
+                  default:appearanceMigrationReason({
+                    physicalGenomeVersion,
+                    priorEvidence,
+                    suggestion,
                   }),
                 }),
               ]),
