@@ -1,6 +1,8 @@
 import {
   bindVerifiedCanonicalVisualIdentityProof,
   planCanonicalVisualIdentityGeneration,
+  planCanonicalVisualIdentityGeometryGeneration,
+  requiresCanonicalVisualIdentityGeometryAnchor,
 } from "./canonical-visual-identity-generation.mjs";
 import { normalizeEmbodimentRepresentation } from "./embodiment-domain.mjs";
 import { assertId } from "./persistence-common.mjs";
@@ -175,7 +177,33 @@ export function createThreadVisualPublicationReconciler({
 
       if (embodiment.status === "pending_generation") {
         const requestedAt = assertIsoTimestamp("canonical visual root requestedAt", now());
-        const job = planCanonicalVisualIdentityGeneration({ embodiment, requestedAt });
+        let geometryProof=null;
+        let geometryObjectRef=null;
+
+        if(requiresCanonicalVisualIdentityGeometryAnchor(embodiment)){
+          const geometryJob=planCanonicalVisualIdentityGeometryGeneration({embodiment,requestedAt});
+          const geometry=normalizeRootResult(await canonicalRootBoundary.reconcile({
+            threadId,
+            embodiment,
+            job:geometryJob,
+            requestedAt,
+          }));
+          if(geometry.state==="pending"){
+            return pending("canonical_visual_geometry_pending",{
+              threadId,
+              embodimentId:embodiment.embodimentId,
+              jobId:geometryJob.jobId,
+            });
+          }
+          geometryProof=geometry.proof;
+          geometryObjectRef=geometry.proof?.receipt?.objectRef??geometryJob.outputObjectRef;
+        }
+
+        const job = planCanonicalVisualIdentityGeneration({
+          embodiment,
+          requestedAt,
+          geometryAnchorObjectRef:geometryObjectRef,
+        });
         const root = normalizeRootResult(await canonicalRootBoundary.reconcile({
           threadId,
           embodiment,
@@ -187,6 +215,7 @@ export function createThreadVisualPublicationReconciler({
             threadId,
             embodimentId: embodiment.embodimentId,
             jobId: job.jobId,
+            ...(geometryObjectRef===null?{}:{geometryAnchorObjectRef:geometryObjectRef}),
           });
         }
         const generatedObjectRef = root.proof?.receipt?.objectRef ?? job.outputObjectRef;
@@ -205,6 +234,7 @@ export function createThreadVisualPublicationReconciler({
         embodiment = await embodimentStore.record(bindVerifiedCanonicalVisualIdentityProof({
           embodiment,
           proof: root.proof,
+          geometryProof,
           recordedAt: root.recordedAt,
         }));
         await bestEffortRecord(activity, {
