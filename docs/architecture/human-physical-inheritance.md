@@ -1,7 +1,7 @@
 ---
 id: human-physical-inheritance
 status: accepted
-last-reviewed: 2026-09-27
+last-reviewed: 2026-09-28
 canonical: true
 ---
 
@@ -9,7 +9,7 @@ canonical: true
 
 ## Purpose
 
-Fibre gives a Thread a body through inheritance, not through a portrait prompt. The same small, pure component under `core/src/human-phenotype/` is used by Fibre and Population Lab.
+Fibre gives a Thread a body through inheritance, not through a portrait prompt. The portable public boundary is `core/src/human-appearance/`; the lower-level genome/phenotype implementation under `core/src/human-phenotype/` is internal machinery shared by Fibre and Population Lab. The adjacent Population Context boundary is defined in [Human Appearance](human-appearance.md).
 
 The durable causal chain is:
 
