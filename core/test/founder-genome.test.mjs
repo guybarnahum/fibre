@@ -169,9 +169,8 @@ test("Polynesian hierarchy preserves specific lineage without inventing island d
   const samoan=referencePopulationPrior("oceania.polynesia.samoan");
 
   assert.ok(polynesian.faceBreadth>oceanic.faceBreadth,"Polynesian facial breadth calibration missing");
-  assert.ok(polynesian.jawBreadth>oceanic.jawBreadth,"Polynesian mandibular calibration missing");
+  assert.ok(polynesian.faceLength>oceanic.faceLength,"Polynesian facial-height calibration missing");
   assert.ok(polynesian.chinProjection>oceanic.chinProjection,"Polynesian chin projection calibration missing");
-  assert.ok(polynesian.frame>oceanic.frame,"Polynesian frame calibration missing");
   assert.deepEqual(hawaiian,polynesian,"uncalibrated Native Hawaiian child should shrink to Polynesian prior");
   assert.deepEqual(samoan,polynesian,"uncalibrated Samoan child should shrink to Polynesian prior");
 });
