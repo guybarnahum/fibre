@@ -101,7 +101,7 @@ The runtime implementation is intentionally tiny: one zero-mean factor value per
 
 ## Slice 4 — Rendering projection fidelity
 
-**Status: implemented on `main`; pending focused validation.**
+**Status: validated 2026-09-27.** Focused projection/Genesis/canonical-root validation and the repository gate passed.
 
 Ensure the physical genome carries enough concrete anatomy to constrain one person without demographic labels.
 
@@ -136,6 +136,8 @@ The grouped anatomy is derived directly from the expressed physical phenotype an
 
 ## Slice 5 — Population Lab as calibration bench
 
+**Status: implemented on `main`; pending numerical and visual calibration evidence.**
+
 Use Population Lab rather than creating another framework.
 
 Numerical checks compare generated cohorts with calibrated distributions:
@@ -148,7 +150,11 @@ Numerical checks compare generated cohorts with calibrated distributions:
 - sibling relatedness without collapse;
 - mixed-parent inheritance.
 
-A small fixed visual sample then checks renderer fidelity to the generated anatomy. This is offline calibration evidence, never a runtime retry loop.
+Population Lab now has a controlled `--physical-populations` mode that bypasses model-authored city/family context while still using the exact production physical path: two missing-parent founders, ordinary recombination, shared phenotype expression, and the shared rendering projection.
+
+The numerical run is local-only and checks population-center drift, variance, percentile spread, continuous uniqueness, sibling/parent resemblance, and mixed-parent midpoint behavior. Statistical warnings activate only with at least 24 people per reference population.
+
+A small fixed visual sample then renders a subset of the same seeded cohort and checks renderer fidelity to the generated anatomy. This is offline calibration evidence, never a runtime retry loop.
 
 **Do not deploy the new appearance model or re-render Li Jing again until Slices 1–5 pass.**
 
