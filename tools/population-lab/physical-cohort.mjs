@@ -207,15 +207,17 @@ export function physicalCalibrationDiagnostics({
     )).size;
     const resemblance=familyResemblance(referencePopulation,seed);
 
-    if(maxCenterError>.08)warnings.push(`${referencePopulation} center drift >0.08`);
-    if(minSd<.025)warnings.push(`${referencePopulation} facial variation collapsed`);
-    if(maxSd>.18)warnings.push(`${referencePopulation} facial variation too broad`);
-    if(uniqueLatentSignatures/group.length<.95)warnings.push(`${referencePopulation} individual variation collapsed`);
+    const statisticalSample=group.length>=24;
+    if(statisticalSample&&maxCenterError>.08)warnings.push(`${referencePopulation} center drift >0.08`);
+    if(statisticalSample&&minSd<.025)warnings.push(`${referencePopulation} facial variation collapsed`);
+    if(statisticalSample&&maxSd>.18)warnings.push(`${referencePopulation} facial variation too broad`);
+    if(statisticalSample&&uniqueLatentSignatures/group.length<.95)warnings.push(`${referencePopulation} individual variation collapsed`);
     if(resemblance.siblingToUnrelatedRatio>=.9)warnings.push(`${referencePopulation} siblings not meaningfully related`);
     if(resemblance.childToUnrelatedRatio>=.9)warnings.push(`${referencePopulation} children lost parent resemblance`);
 
     byPopulation[referencePopulation]=Object.freeze({
       count:group.length,
+      statisticalSample,
       uniqueLatentSignatures,
       uniqueShare:uniqueLatentSignatures/group.length,
       maxCenterError,
