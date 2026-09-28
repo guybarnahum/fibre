@@ -1,4 +1,4 @@
-import { PHYSICAL_GENOME_VERSION, referencePopulationIds } from "#core/src/human-phenotype/index.mjs";
+import { PHYSICAL_GENOME_VERSION, referencePopulationIds } from "#core/src/human-appearance/index.mjs";
 import { canonicalVisualSpecificationFromPhysicalGenome } from "./canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "./embodiment-domain.mjs";
 import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
