@@ -34,6 +34,8 @@ function paint(text, code, enabled) {
   return enabled ? `${code}${text}${RESET}` : text;
 }
 
+const CLEAR_PROGRESS = "\r\u001b[2K";
+
 function summaryDiagnostic(data) {
   return data?.file === undefined
     && /^(?:tests|suites|pass|fail|cancelled|skipped|todo|duration_ms)\s+\d/u.test(String(data?.message ?? ""));
@@ -75,7 +77,7 @@ export async function* fibreSpecReporter(
       } else if (data.todo !== undefined && data.todo !== false) {
         yield `${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # TODO\n`;
       } else {
-        yield `${prefix}${paint("✔", GREEN, color)} ${terminalName(data)}${duration(data)}\n`;
+        yield `${CLEAR_PROGRESS}${prefix}${paint("✔", GREEN, color)} ${terminalName(data)}${duration(data)}`;
       }
       continue;
     }
@@ -83,29 +85,29 @@ export async function* fibreSpecReporter(
     if (event.type === "test:fail" && !isSuite(data)) {
       const nesting = Number.isInteger(data.nesting) ? data.nesting : 0;
       const prefix = "  ".repeat(nesting);
-      yield `${prefix}${paint("✖", RED, color)} ${terminalName(data)}${duration(data)}\n${indent(errorText(data.details?.error), nesting)}\n`;
+      yield `${CLEAR_PROGRESS}${prefix}${paint("✖", RED, color)} ${terminalName(data)}${duration(data)}\n${indent(errorText(data.details?.error), nesting)}\n`;
       continue;
     }
 
     if (event.type === "test:cancel" && !isSuite(data)) {
       const nesting = Number.isInteger(data.nesting) ? data.nesting : 0;
       const prefix = "  ".repeat(nesting);
-      yield `${prefix}${paint("⊘", RED, color)} ${terminalName(data)}${duration(data)}\n`;
+      yield `${CLEAR_PROGRESS}${prefix}${paint("⊘", RED, color)} ${terminalName(data)}${duration(data)}\n`;
       continue;
     }
 
     if (event.type === "test:stdout" || event.type === "test:stderr") {
       const message = String(data.message ?? "");
-      if (message !== "") yield message.endsWith("\n") ? message : `${message}\n`;
+      if (message !== "") yield `${CLEAR_PROGRESS}${message.endsWith("\n") ? message : `${message}\n`}`;
       continue;
     }
 
     if (event.type === "test:diagnostic" && !summaryDiagnostic(data)) {
-      yield `ℹ ${data.message ?? ""}\n`;
+      yield `${CLEAR_PROGRESS}ℹ ${data.message ?? ""}\n`;
     }
   }
 
-  if (summary !== null) yield renderSpecSummary(summary, { color });
+  if (summary !== null) yield `${CLEAR_PROGRESS}${renderSpecSummary(summary, { color })}`;
 }
 
 export default fibreSpecReporter;
