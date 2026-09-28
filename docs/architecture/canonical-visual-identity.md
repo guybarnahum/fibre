@@ -357,6 +357,8 @@ The active sequence is [Physical appearance model calibration and migration plan
 
 ## Operator appearance commands
 
+The complete operator procedure is [Appearance operations](../operations/appearance.md).
+
 Use the dedicated Appearance CLI for ordinary maintenance:
 
 ```bash
@@ -448,7 +450,9 @@ After completion, verify in Thread Observatory:
 
 The generic **Fix** action in Thread Admin is deliberately not an appearance editor. **Fix** repairs derived state from existing authority; it must not author a new canonical person.
 
-Admin should expose a dedicated **Appearance** surface rather than hiding visual authority inside generic Fix. An outdated/missing physical model offers **Migrate appearance / Upgrade appearance model** with explicit maternal/paternal physical-origin evidence; a current model offers **Re-render appearance** without changing genome/specification. Manual **Correct appearance** remains an exceptional operator action, not the ordinary inherited-appearance workflow.
+Thread Details now exposes a dedicated **Appearance** surface. It shows physical-model version, target model, canonical visual authority, canonical root and any durable operator-confirmed parental physical-origin evidence. An outdated/missing physical model offers **Migrate appearance / Upgrade appearance model**; recorded evidence is reused as-is, while absent evidence requires explicit maternal/paternal origin plus a calibrated reference population. A current healthy model offers **Re-render appearance** without changing genome/specification.
+
+Admin submits one authority-changing action and stops. It does not poll image/FID convergence or reroll generated roots. **Refresh appearance** performs an explicit bounded read when the operator wants to inspect current state. Manual **Correct appearance** remains an exceptional CLI authority correction, not the ordinary inherited-appearance workflow.
 
 ## Required end-to-end proof
 
