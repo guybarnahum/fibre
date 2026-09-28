@@ -74,3 +74,31 @@ test("legacy physical embodiment becomes one durable inherited genome without re
     );
   });
 });
+
+
+test("outdated physical appearance model upgrades in place with previous version evidence",()=>{
+  withWorld(({world,migration})=>{
+    const source=structuredClone(fixture);
+    source.identity.sex="female";
+    source.genome.physical.version="physical-genome-v0.1";
+    const seeded=world.seedThread(source).thread;
+    const physicalAncestry={
+      maternal:[{population:"operator-confirmed Chinese family",share:1,referencePopulation:"east_asia.han_chinese"}],
+      paternal:[{population:"operator-confirmed Chinese family",share:1,referencePopulation:"east_asia.han_chinese"}],
+    };
+
+    const result=migration.migrate(seeded,{
+      physicalAncestry,
+      operationKey:"physical_model_upgrade_mina_001",
+      changedAt:"2026-09-28T02:00:00.000Z",
+    });
+
+    assert.equal(result.migrated,true);
+    assert.equal(result.thread.genome.physical.version,"physical-genome-v0.2");
+    const event=world.listEvents(seeded.threadId).at(-1);
+    assert.equal(event.eventType,"THREAD_PHYSICAL_GENOME_MIGRATED");
+    assert.equal(event.payload.previousPhysicalGenomeVersion,"physical-genome-v0.1");
+    assert.equal(event.payload.physicalGenome.version,"physical-genome-v0.2");
+    assert.deepEqual(event.payload.physicalAncestry,physicalAncestry);
+  });
+});
