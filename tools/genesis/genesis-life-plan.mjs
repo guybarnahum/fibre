@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
+import { resolveHumanPhysicalInheritance } from "#core/src/human-appearance/index.mjs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -107,11 +107,11 @@ export function buildGenesisDevelopmentPlans({ fixturePath = PR39_DEVELOPMENT_CO
     if (!identity) fail(`PR39 slot ${slot.slot} lacks modern subject identity material`);
     const physicalAncestry=physicalAncestryBySlot.get(slot.slot);
     if(!physicalAncestry) fail(`PR39 slot ${slot.slot} lacks physical ancestry material`);
-    const subjectIdentity={...identity,physicalGenome:resolveBirthPhysicalInheritance({
-      maternalAncestry:physicalAncestry.maternal,
-      paternalAncestry:physicalAncestry.paternal,
-      seed:`pr39-development:slot:${pad(slot.slot)}`,
-    }).genome};
+    const subjectIdentity={...identity,physicalGenome:resolveHumanPhysicalInheritance({
+      maternal:{physicalLineage:physicalAncestry.maternal},
+      paternal:{physicalLineage:physicalAncestry.paternal},
+      conceptionSeed:`pr39-development:slot:${pad(slot.slot)}`,
+    }).physicalGenome};
     const genome = loadGenome(slot);
     const parentGenomes = loadParentGenomes(genome);
     const offersByWindow = new Map();
