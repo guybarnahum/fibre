@@ -14,13 +14,26 @@ The resulting portrait was not visually coherent with the operator-confirmed Eas
 
 That observed failure supersedes the earlier conclusion that population/appearance calibration was closed.
 
-The original calibration tranche established `physical-genome-v0.2` as the validated baseline and live staging proved its v0.1 -> v0.2 authority upgrade and downstream convergence. The current `main` candidate is `physical-genome-v0.3`: a global Human Appearance extension that adds a hierarchical Polynesian calibration plus a deterministic non-historical reference physical state for ordinary-human portrait realism. v0.3 is not staging-accepted until the focused/repository gate and a bounded visual cohort pass.
+The original calibration tranche established `physical-genome-v0.2` as the validated baseline and live staging proved its v0.1 -> v0.2 authority upgrade and downstream convergence. The current model is `physical-genome-v0.3` with `human-appearance-v0.4`: a global Human Appearance extension that adds a hierarchical Polynesian calibration plus a deterministic non-historical reference physical state for ordinary-human portrait realism. The bounded visual gate has now passed; representative staging upgrade/convergence remains the next acceptance step.
 
 The first v0.3 48-person controlled visual cohort on 2026-09-28 **failed visual acceptance**. It exposed four distinct issues: the broad-Oceania fallback collapsed Polynesia toward deep pigmentation + curly hair; facial variation remained too narrow despite unique continuous signatures; inherited facial-hair tendency was being rendered as current grooming; and one Han-Chinese subject rendered as European despite a strong East-Asian anatomy specification. A same-seed follow-up improved hair/grooming/variation but still produced a Polynesian cohort that alternated between European-looking and African-descended-looking defaults. A third same-seed run using a 79/21 East-Asian/Oceanian morphology basis removed that bimodality but over-corrected toward an East-Asian eye/nose template, falsifying ancestry-ratio morphology blending.
 
 The independent Polynesian prior fixed the numerical center: the production-model 12-person cohort had 10 medium / 2 deep pigmentation, 4 straight / 8 wavy hair, 6 broad / 6 medium faces, 10 broad jaws, 9 prominent chins, average eye spacing throughout, intermediate eye opening throughout, and 11 slight / 1 present epicanthic expression. Yet the final GPT Image 2 portraits still included convincing Polynesian faces alongside obvious South-Asian-, African- and White/European-looking renderer snaps. That separates the remaining problem from founder calibration: one-pass rendering is allowing surface cues to substitute a demographic face template.
 
-Human Appearance rendering is therefore now geometry-first. Structural morphology and reference geometry state create a text-only monochrome geometry anchor; the final image is a reference-conditioned edit that applies only surface phenotype and reference surface state. The anchor is generation scaffolding, never Embodiment authority. Population Lab stores both stages for inspection and uses the same production OpenAI adapter. v0.3 stays a candidate until this renderer-boundary change passes the same-seed visual cohort.
+Human Appearance rendering is therefore now geometry-first. Structural morphology and reference geometry state create a text-only monochrome geometry anchor; the final image is a reference-conditioned edit that applies only surface phenotype and reference surface state. The anchor is generation scaffolding, never Embodiment authority. Population Lab stores both stages for inspection and uses the same production OpenAI adapter.
+
+### Visual acceptance — 2026-09-28
+
+The renderer-boundary hypothesis passed two bounded same-seed gates:
+
+- a 12-person Polynesian geometry-first cohort was human-reviewed as believable;
+- a 48-person regression with 12 Han Chinese, 12 Korean, 12 Japanese and 12 Polynesian people used seed `human-appearance-v03`, image model `gpt-image-2-2026-04-21`, `physical-rendering-projection-v0.5` and `geometry-anchor+surface-edit`;
+- the 48-person run reported zero full-name collisions and zero objective warnings;
+- human review found substantial individual variation, normal population overlap, no cohort-level unrelated racial-template substitution, no universal male facial hair, and no uniform beauty/build collapse.
+
+`human-appearance-v0.4` / `physical-genome-v0.3` are therefore visually accepted as the current model. Polynesian coefficients and variation are frozen. Reopen that calibration only for materially contradictory evidence, a reproducible cohort failure, or a renderer/model change that invalidates this evidence. Do not tune it in response to one random portrait or normal overlap with neighboring populations.
+
+The remaining gate is operational rather than coefficient calibration: deploy the accepted implementation to staging and prove a very small representative set of existing Threads converges through layered specification -> geometry anchor -> surface edit -> final canonical root -> Presentation -> FID without changing an already-current physical genome during a renderer-only upgrade.
 
 ## Standing constraints
 

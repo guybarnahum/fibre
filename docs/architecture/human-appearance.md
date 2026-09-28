@@ -371,14 +371,16 @@ Production consumers should depend on these semantic boundaries rather than impo
 
 ## Capability status
 
+Current visually accepted appearance versions are `human-appearance-v0.4` and `physical-genome-v0.3`. The acceptance evidence is the bounded 12-person Polynesian geometry-first gate plus the 48-person Han-Chinese/Korean/Japanese/Polynesian same-seed regression recorded in the physical-appearance calibration plan. Polynesian calibration is frozen under that evidence; normal population overlap is not a reason to reopen it.
+
 - Human Appearance domain boundary — **accepted / active**
-- hierarchical population morphology atlas — **experimental; partial calibration**
+- hierarchical population morphology atlas — **experimental globally; accepted for the currently calibrated East-Asian and Polynesian tranche**
 - global Population Context family-profile authoring — **experimental; Genesis path exists**
 - existing-Thread place/era profile proposal — **deferred next slice**
-- population-specific factor spread calibration — **deferred calibration**
+- population-specific factor spread calibration — **deferred calibration outside the accepted tranche**
 - persistent lived physical state — **deferred**
-- deterministic reference physical state for canonical portrait realism — **implemented in v0.3 candidate**
-- renderer ordinary-human fidelity path in Population Lab — **implemented; bounded visual acceptance pending**
+- deterministic reference physical state for canonical portrait realism — **implemented / current**
+- renderer ordinary-human fidelity path in Population Lab — **implemented; bounded visual acceptance passed 2026-09-28**
 - source/confidence calibration sidecar + extension guide — **implemented**
 - network Human Appearance service — **deferred; no present need**
 

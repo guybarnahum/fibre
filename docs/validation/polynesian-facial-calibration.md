@@ -1,6 +1,6 @@
 ---
 id: polynesian-facial-calibration
-status: active
+status: accepted
 last-reviewed: 2026-09-28
 ---
 
@@ -208,7 +208,13 @@ Do not force overlapping biological evidence into mutually exclusive modern raci
 
 ## Acceptance boundary
 
-The calibration passes only if a fixed Population Lab cohort shows:
+**Accepted and frozen 2026-09-28.**
+
+The final acceptance used a 12-person same-seed Polynesian geometry-first gate followed by a 48-person same-seed East-Asian + Polynesian regression. The broader regression used `gpt-image-2-2026-04-21`, seed `human-appearance-v03`, `physical-rendering-projection-v0.5` and `geometry-anchor+surface-edit`; it produced zero objective warnings. Human review found a believable Polynesian distribution with substantial individual variation and no cohort-level return of the Black/White/South-Asian template substitutions that motivated geometry-first rendering.
+
+This calibration is now frozen. Do not retune it from intuition, a single unusual portrait, or ordinary overlap with neighboring populations. Reopen only if new anatomical evidence materially contradicts the model, a reproducible cohort-level failure appears, or a renderer/model change invalidates the acceptance evidence.
+
+The calibration acceptance bar was:
 
 - a distinct Polynesian distribution without looking generically Black, White, or East-Asian;
 - broad real-human variation within that distribution;
