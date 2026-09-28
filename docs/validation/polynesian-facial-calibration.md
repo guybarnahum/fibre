@@ -8,9 +8,9 @@ last-reviewed: 2026-09-28
 
 ## Purpose
 
-This note records the evidence behind Fibre's first Oceania / Polynesia calibration.
+This note records the evidence behind Fibre's oceania.polynesia morphology calibration.
 
-The goal is not to make a stereotypically recognizable Polynesian face. The goal is narrower: when Fibre must instantiate a missing biological parent from explicit Polynesian physical-lineage evidence, the founder distribution should reflect measured craniofacial tendencies while preserving substantial individual overlap and variation.
+The target is not a stereotypically recognizable face. It is a plausible distribution of distinct Polynesian humans when a missing biological parent is instantiated from explicit Polynesian physical-lineage evidence.
 
 Population labels never cross the rendering boundary.
 
@@ -30,113 +30,194 @@ oceania
 
 The island-specific Polynesian children currently inherit the shared oceania.polynesia prior. This preserves lineage specificity without inventing island-specific morphology.
 
+oceania.polynesia is a complete calibration root (parent:null) even though it remains taxonomically under Oceania. That is intentional: inheriting either the broad oceania morphology or an ancestry-weighted East-Asian/Oceanian blend produced false visual templates.
+
+## What the visual experiments falsified
+
+Three same-seed 48-person visual cohorts were useful because they exposed different model mistakes.
+
+### Broad-Oceania fallback
+
+The first Polynesian cohort inherited the broad oceania center too directly. It collapsed toward very deep pigmentation and uniformly curly hair and read visually as a generic African-descended/Melanesian-like template.
+
+### Broad-Oceania plus patches
+
+Conservative hair/pigmentation patches fixed the most obvious collapse, but the renderer still alternated between European-looking and African-descended-looking defaults. The morphology was not integrated enough.
+
+### 79/21 ancestry-weighted whole-profile basis
+
+The next experiment used a population-history-informed 79% east_asia / 21% oceania calibration blend plus direct Polynesian overrides.
+
+It produced a much more coherent cohort but over-corrected toward East Asia. In the same-seed 12-person Polynesian subset:
+
+- eye spacing was almost universally wide;
+- eye opening was universally narrow;
+- epicanthic expression was almost universally present;
+- upper-eyelid exposure was universally low;
+- the nasal bridge/projection also shifted toward the East-Asian parent.
+
+This falsified ancestry-ratio morphology blending as a Fibre abstraction. Genomic ancestry remains useful population-history context, but it must not be converted mechanically into facial coefficients.
+
+The blend mechanism was removed rather than merely reweighted.
+
+## Current independent Polynesian center
+
+The current oceania.polynesia prior is complete and explicit.
+
+Evidence-backed center directions are:
+
+- medium-brown pigmentation center;
+- predominantly straight-to-low-waved dark hair;
+- broad face;
+- substantial facial height;
+- slightly narrower-than-neutral eye opening without an East-Asian-template narrow eye;
+- slight / low-frequency epicanthic expression;
+- moderately broad nose;
+- medium-to-low nasal bridge;
+- broad / robust lower face;
+- more anterior / prominent chin.
+
+Unsupported axes are deliberately kept near neutral rather than borrowed from another population prior.
+
+The normalized numbers are calibration coordinates, not anthropometric units.
+
 ## Source and confidence model
 
-Confidence is attached to the mapping from evidence to a Fibre locus, not to the whole population.
+Confidence belongs to each source-to-Fibre-locus mapping, not to an ethnic label.
 
-A source can support several overlapping nodes, and a node can draw from several partially overlapping cohorts.
+Reusable source records live in:
 
-The reusable source records live in core/src/human-appearance/calibration-evidence.mjs.
+~~~text
+core/src/human-appearance/calibration-evidence.mjs
+~~~
 
-### faceBreadth — moderate confidence
+### pigmentation — moderate
 
-Current direction: higher than the broad oceania parent.
+Sullivan's 1922 Tongan series records unexposed skin in medium-brown ranges.
 
-Evidence:
+This is direct descriptive measurement, but the historical color scale does not map mechanically to Fibre's normalized coordinate.
 
-- Antoun et al., "A three-dimensional evaluation of Māori and New Zealand European faces" (2014), DOI 10.2478/aoj-2014-0014, PMID 25549519. Thirty Māori and thirty NZ European young adults were age/gender matched and scanned in 3D. Māori faces were significantly larger overall and broader, including after BMI adjustment.
-- Buck, "Craniofacial evolution in Polynesia: a geometric morphometric study of population diversity" (2012), DOI 10.1002/ajhb.22315. Three-dimensional geometric morphometrics across Oceanic population samples supports real craniofacial size/shape structure within Polynesia and cautions against one homogeneous island template.
+### hairForm — moderate
 
-Why only moderate: the Māori study is small, the Buck study spans multiple Oceanic samples, and Fibre's normalized coefficient is a conservative relative coordinate rather than a direct millimeter conversion.
+The same Tongan series records straight and low-waved hair as the two dominant forms. Together they make up the large majority of the observed sample.
 
-### faceLength — low confidence
+This directly supports a straight-to-wavy center while retaining deeper waves/curls as within-population variation.
 
-Current direction: slightly higher than the broad oceania parent.
+### faceBreadth — moderate
 
-Evidence:
+Supported by:
 
-- Schendel et al., "Hawaiian craniofacial morphometrics: average Mokapuan skull, artificial cranial deformation, and the rocker mandible" (1980), DOI 10.1002/ajpa.1330520406, PMID 7386611. Seventy-nine adult Hawaiian skulls from Mokapu, Oahu showed larger facial heights than the comparison sample.
-- Kean & Houghton, "The Polynesian head: growth and form" (1982), PMID 7174512, PMCID PMC1168245, describes large upper facial height in adult Polynesian craniofacial material.
+- Antoun et al. 2014 Māori 3D facial scans;
+- Coltman et al. 2000 Polynesian/Māori cephalometry;
+- Sullivan 1922 Tongan face-width measurements;
+- Buck & Viđarsdóttir 2012 Polynesian geometric morphometrics.
 
-Why low: both are historical skeletal/craniofacial sources, one Hawaiian sample includes culturally modified crania, and mapping skeletal facial height into Fibre's soft-tissue-oriented faceLength coordinate is indirect. The coefficient is therefore deliberately small.
+These sources consistently support a broad / large craniofacial skeleton.
 
-### chinProjection — moderate confidence
+### faceLength — low
 
-Current direction: higher than the broad oceania parent.
+Supported by Hawaiian and broader Polynesian craniofacial studies showing substantial facial height.
 
-Evidence:
+The mapping from skeletal/cephalometric facial height to Fibre's visible faceLength is indirect, so the shift remains small.
 
-- Antoun et al. (2014), DOI 10.2478/aoj-2014-0014. Māori participants showed a more anterior chin position than NZ European participants after BMI adjustment.
+### eyeShape — low
 
-Why moderate: the anatomical mapping is direct, but the sample is modest and Māori-specific. It supports the shared Polynesian parent conservatively, not a categorical requirement for every individual.
+The Tongan somatology series describes the common eye opening as somewhat less wide and slightly oblique relative to its European comparison.
 
-## Whole-profile Polynesian calibration basis — low confidence
+This supports only a small negative eyeShape shift.
 
-The first 48-person v0.3 visual cohort falsified the assumption that Polynesia could safely inherit the broad `oceania` prior and patch only a few visible traits. The follow-up cohort improved hair/pigmentation but still oscillated between European-looking and African-descended-looking renderer defaults rather than producing one coherent Polynesian distribution.
+### epicanthicFold — low
 
-Fibre now uses a **whole-profile calibration basis** for `oceania.polynesia`:
+The Tongan source describes a suggestion of an epicanthic fold in common types and summarizes the fold as low-frequency.
 
-```text
-79% east_asia calibration prior
-21% oceania calibration prior
-+ direct Polynesian facial overrides
-```
+Fibre therefore centers on slight, not present/pronounced, expression.
 
-The 79/21 ratio comes from Kayser et al. (2008), whose 377-autosomal-STR analysis estimated about 79% East-Asian-related and 21% Melanesian-related ancestry in its Polynesian sample. This is used only as a **low-confidence population-history-informed starting prior**. It is not a claim that visible facial phenotype is a linear 79/21 ancestry mixture, and it must be replaced or refined whenever direct modern Polynesian anthropometry supports better locus-specific values.
+### noseBreadth — moderate
 
-This whole-profile basis causes hair form, pigmentation, eye/orbit, nose and other currently uncalibrated axes to resolve to one integrated Pacific center rather than inherit an effectively Melanesian broad-Oceania template or rely on the renderer to fill missing gestalt.
+Tongan nasal index/absolute-width measurements support a moderately broad nose. Polynesian/Māori cephalometry also reports a broad bony nasal aperture.
 
-Direct evidence still wins. The current explicit overrides remain:
+### nasalBridgeHeight — low
 
-- `faceBreadth` — moderate confidence;
-- `faceLength` — low confidence;
-- `chinProjection` — moderate confidence.
+The Tongan series describes the bridge as predominantly medium or low in elevation.
+
+The mapping into Fibre's bridge-height coordinate is qualitative, hence low confidence.
+
+### jawBreadth — moderate
+
+Supported by:
+
+- Tongan bigonial measurements;
+- larger/broader Polynesian craniofacial skeleton in Coltman et al.;
+- large robust Polynesian mandible in Kean & Houghton.
+
+### chinProjection — moderate
+
+Māori 3D data reports a more anterior chin position, while Polynesian cephalometry reports larger, more prognathic mandibles.
 
 ## Coherent within-population variation
 
-Buck & Viđarsdóttir (2012) found a Polynesian craniofacial grouping relative to neighboring regions while also finding considerable diversity within Polynesian samples.
+Buck & Viđarsdóttir found a coherent Polynesian craniofacial grouping relative to neighboring regions while also finding substantial diversity within Polynesian samples.
 
-Fibre represents that with the existing compact founder factor model rather than a new covariance engine:
+Fibre represents that using the existing compact founder factor model:
 
-- family-factor variation is increased slightly (`1.12x`);
-- independent structural residual noise is reduced slightly (`0.90x`).
+- familyFactorMultiplier: 1.12
+- structuralResidualMultiplier: 0.90
 
-This is a **modeling profile**, not an anthropometric measurement. Its purpose is to make individual Polynesian variation more coherent—whole faces/families vary together—instead of creating diversity mainly by independently perturbing facial sliders.
+These are model calibration choices, not measured biological effect sizes.
 
-## Deliberately not directly calibrated
+The intent is simply to make individual/family variation more coherent—whole facial systems vary together—rather than obtaining diversity mainly through unrelated slider noise.
 
-The current Polynesian child still does not add direct locus-specific overrides for:
+No population-specific covariance matrix is introduced.
 
-- nose width/projection;
-- orbital/eye anatomy;
+## Deliberately neutral / not directly calibrated
+
+The current Polynesian center does not claim direct population-specific measurements for:
+
+- eye spacing;
+- upper-eyelid exposure;
+- orbital depth;
+- forehead proportion;
+- brow prominence;
+- midface prominence;
 - zygomatic projection;
-- jaw breadth;
-- soft tissue/lip fullness;
-- frame;
-- muscularity;
-- adiposity.
+- nose projection;
+- current body composition;
+- muscular development;
+- height;
+- shoulder/hip proportion.
 
-Those axes now receive the whole-profile calibration basis, but they are not claimed as directly measured Polynesian coefficients. New direct evidence should override the basis one locus at a time.
+Those inherited coordinates remain near neutral unless a source justifies a future change.
 
-Current body mass or body-composition prevalence must not be converted into inherited population morphology. Those belong to reference/lived physical state, not ancestry.
+Current body mass, grooming, skin condition and muscular development belong to reference/lived physical state, not population morphology.
 
-## Overlapping groups
+## Visual reference material
 
-The evidence intentionally overlaps.
+Commercial/editorial photo sets can be useful to catch obvious cohort-level failure—for example a population collapsing toward a renderer's Black, White or East-Asian default.
 
-Māori are Polynesian and may support a shared Polynesian parent while also potentially supporting a future Māori child override. Historical Hawaiian samples may support a Native Hawaiian child for a narrow claim while also contributing cautiously to a shared Polynesian direction. Multi-island Polynesian samples support shared structure but should not erase island-specific diversity.
+They are not coefficient evidence. Subject selection, styling, lighting, geography, age, and modern admixture are uncontrolled.
 
-Fibre should preserve this overlap rather than force every paper into one mutually exclusive racial or ethnic bucket.
+A visual sanity failure should trigger a search for better anatomical evidence, not direct tuning against stock photographs.
+
+## Overlapping populations
+
+Evidence is allowed to overlap.
+
+A Māori cohort may support a shared Polynesian axis and later a Māori-specific child axis. A Hawaiian skeletal study may support a shared direction while preserving native_hawaiian as a distinct lineage identifier. Tongan and Samoan historical measurements may support a parent distribution without implying those populations are identical.
+
+Do not force overlapping biological evidence into mutually exclusive modern racial categories.
 
 ## Acceptance boundary
 
-This calibration succeeds only if:
+The calibration passes only if a fixed Population Lab cohort shows:
 
-- Polynesian founders shift modestly in the supported dimensions;
-- Native Hawaiian, Samoan, Tongan and Māori lineage identifiers remain specific even while they share the current parent prior;
-- within-population variation remains broad;
-- family resemblance and mixed-parent inheritance remain healthy;
-- population labels never enter renderer prompts;
-- ordinary-human physical state remains independent of Polynesian lineage.
+- a distinct Polynesian distribution without looking generically Black, White, or East-Asian;
+- broad real-human variation within that distribution;
+- plausible straight/wavy hair variation with curls remaining possible;
+- medium/tan through deeper pigmentation variation without bimodal racial-template collapse;
+- average-to-slightly-narrow eye morphology with low-frequency/slight epicanthic expression rather than an East-Asian-template eye complex;
+- substantial face/lower-face structure;
+- family resemblance and mixed-parent continuity;
+- no population label reaching the renderer;
+- ordinary-human physical state independent of population lineage.
 
-The calibration should be revised whenever better 3D or anthropometric evidence supports a more precise mapping.
+Better direct modern 3D/anthropometric data should replace low-confidence historical mappings when available.
