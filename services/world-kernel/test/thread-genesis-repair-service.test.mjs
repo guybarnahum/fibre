@@ -449,7 +449,7 @@ test("legacy embodiment migration admits explicit North-African physical ancestr
   });
 
   assert.equal(result.migrated,true);
-  assert.equal(thread.genome.physical.version,"physical-genome-v0.2","migration did not establish physical authority");
+  assert.equal(thread.genome.physical.version,"physical-genome-v0.3","migration did not establish physical authority");
   assert.equal(repairInput.correctedSpecification.method,
     "canonical synthetic portrait specification derived from the Thread's inherited physical genome");
   assert.deepEqual(repairInput.evidenceReferences,["evt_physical_genome_migrated_1"],
@@ -722,7 +722,7 @@ test("outdated appearance model reuses durable ancestry evidence", async () => {
   const outdated=before.findings.find(entry=>entry.code==="PHYSICAL_APPEARANCE_MODEL_OUTDATED");
   assert.equal(outdated.state,"migration_required");
   assert.equal(outdated.currentVersion,"physical-genome-v0.1");
-  assert.equal(outdated.targetVersion,"physical-genome-v0.2");
+  assert.equal(outdated.targetVersion,"physical-genome-v0.3");
   assert.deepEqual(outdated.migration.evidence.physicalAncestry,physicalAncestry);
   assert.deepEqual(
     outdated.migration.input.fields.map(field=>field.name),
@@ -741,7 +741,7 @@ test("outdated appearance model reuses durable ancestry evidence", async () => {
   });
 
   assert.deepEqual(migrationInput.physicalAncestry,physicalAncestry,"upgrade did not reuse durable ancestry");
-  assert.equal(thread.genome.physical.version,"physical-genome-v0.2");
+  assert.equal(thread.genome.physical.version,"physical-genome-v0.3");
   const currentPhysical=result.after.findings.find(entry=>entry.code==="PHYSICAL_GENOME");
   assert.equal(currentPhysical.state,"healthy");
   assert.deepEqual(currentPhysical.evidence.physicalAncestry,physicalAncestry,
@@ -796,7 +796,7 @@ test("appearance migration suggests birthplace defaults without treating them as
       maternalReferencePopulation:"afr_north",
       paternalOrigin:"Moroccan family",
       paternalReferencePopulation:"afr_north",
-      reason:"Install physical-genome-v0.2 using Fibre's preselected parental physical-origin defaults for Morocco; review or override them if needed.",
+      reason:"Install physical-genome-v0.3 using Fibre's preselected parental physical-origin defaults for Morocco; review or override them if needed.",
     },
     "Moroccan migration defaults are not useful",
   );
