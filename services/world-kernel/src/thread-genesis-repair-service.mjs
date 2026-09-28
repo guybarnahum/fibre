@@ -449,8 +449,11 @@ export function createThreadGenesisRepairService({
     const findings = [...completeness.findings];
 
     const physicalGenomeVersion=thread.genome?.physical?.version??null;
+    const priorPhysicalEvidence=physicalGenomeMigrator===null
+      ? null
+      : latestPhysicalEvidence(physicalGenomeMigrator,threadId);
     if (physicalGenomeMigrator !== null && physicalGenomeVersion !== PHYSICAL_GENOME_VERSION) {
-      const priorEvidence=latestPhysicalEvidence(physicalGenomeMigrator,threadId);
+      const priorEvidence=priorPhysicalEvidence;
       const ancestryFields=priorEvidence===null
         ? [
             Object.freeze({name:"maternalOrigin",label:"Maternal physical origin",kind:"text",required:true}),
@@ -488,7 +491,14 @@ export function createThreadGenesisRepairService({
         },
       ));
     } else if (physicalGenomeVersion === PHYSICAL_GENOME_VERSION) {
-      findings.push(finding("PHYSICAL_GENOME", "healthy", null, { version:PHYSICAL_GENOME_VERSION }));
+      findings.push(finding("PHYSICAL_GENOME", "healthy", null, {
+        version:PHYSICAL_GENOME_VERSION,
+        evidence:priorPhysicalEvidence===null ? null : Object.freeze({
+          eventId:priorPhysicalEvidence.eventId,
+          physicalAncestry:priorPhysicalEvidence.physicalAncestry,
+          recordedAt:priorPhysicalEvidence.recordedAt,
+        }),
+      }));
     }
 
     const genomeMigration = symbolicGenomeMigrator?.inspectThreadGenomeMigration(threadId) ?? null;
