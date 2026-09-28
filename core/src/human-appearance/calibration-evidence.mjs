@@ -47,6 +47,7 @@ export const humanAppearanceCalibrationSources=Object.freeze({
     year:1922,
     cohort:"225 adult and adolescent Tongans",
     method:"direct anthropometry plus categorical skin, hair, eye and nasal observations",
+    source:"Bernice P. Bishop Museum Memoirs 8(4), public-domain scan",
   }),
   "coltman-2000-maori":Object.freeze({
     title:"Craniofacial form and obstructive sleep apnea in Polynesian and Caucasian men",
