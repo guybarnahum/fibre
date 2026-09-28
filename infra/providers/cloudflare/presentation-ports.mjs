@@ -1,11 +1,13 @@
 import {
   InfraIdempotencyConflictError,
   InfraSequenceConflictError,
+  InfraSnapshotConflictError,
 } from "../../infra-driver.mjs";
 import {
   assertInfraFiniteNumber,
   assertInfraId,
   assertInfraJsonValue,
+  assertInfraNonEmpty,
   assertInfraPlainObject,
   infraCanonicalJson,
 } from "../../internal.mjs";
@@ -38,6 +40,11 @@ function translateStreamFailure(result) {
   if (!result || result.ok !== false) return;
   if (result.error === "sequence_conflict") {
     throw new InfraSequenceConflictError(`expected sequence ${result.expectedSequence}, current ${result.currentSequence}`);
+  }
+  if (result.error === "snapshot_conflict") {
+    throw new InfraSnapshotConflictError(
+      `expected snapshot ${result.expectedSnapshotDigest}, current ${result.currentSnapshotDigest ?? "none"}`,
+    );
   }
   if (result.error === "idempotency_conflict") {
     throw new InfraIdempotencyConflictError("idempotency key reused for different stream value");
@@ -80,13 +87,15 @@ export function createCloudflareStreamPort(channelNamespace) {
         return { sequence: row.sequence, value: parseJson(`replay[${index}].valueJson`, valueJson) };
       });
     },
-    async publishSnapshot(channelId, snapshotPointer, { expectedSequence } = {}) {
+    async publishSnapshot(channelId, snapshotPointer, { expectedSequence, expectedSnapshotDigest } = {}) {
       assertInfraPlainObject("snapshotPointer", snapshotPointer);
       assertInfraJsonValue("snapshotPointer", snapshotPointer);
       if (expectedSequence !== undefined) assertInfraFiniteNumber("expectedSequence", expectedSequence, { integer: true, minimum: 0 });
+      if (expectedSnapshotDigest !== undefined) assertInfraNonEmpty("expectedSnapshotDigest", expectedSnapshotDigest);
       const result = await channelStub(namespace, channelId).publishSnapshot({
         snapshotPointerJson: infraCanonicalJson(snapshotPointer),
         expectedSequence: expectedSequence ?? null,
+        expectedSnapshotDigest: expectedSnapshotDigest ?? null,
       });
       translateStreamFailure(result);
       assertInfraFiniteNumber("snapshot sequence", result.sequence, { integer: true, minimum: 0 });
