@@ -71,7 +71,7 @@ Numerical calibration is entirely local:
 
 ```bash
 npm run population:lab -- \
-  --physical-populations="east_asia.han_chinese;east_asia.korean;east_asia.japanese" \
+  --physical-populations="east_asia.han_chinese,east_asia.korean,east_asia.japanese" \
   --count=96 \
   --seed=east-asian-calibration-v1
 ```
