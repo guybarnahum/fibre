@@ -39,12 +39,14 @@ const DEFINITIONS=Object.freeze({
   southeast_asia:{parent:null,values:{pigmentation:-.02,eyePigmentation:.7,hairPigmentation:.64,frecklingTendency:0,hairForm:-.48,hairDensity:.08,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:.2,faceLength:-.08,midfaceProminence:.16,zygomaticProjection:.34,eyeSpacing:.1,eyeShape:-.24,epicanthicFold:.48,upperEyelidExposure:-.26,orbitalDepth:-.14,foreheadProportion:.04,brow:-.04,noseBreadth:.18,noseProjection:-.24,nasalBridgeHeight:-.34,softTissue:.04,jawBreadth:.08,chinProjection:-.1,frame:-.04,height:-.04,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   indigenous_america:{parent:null,values:{pigmentation:-.02,eyePigmentation:.66,hairPigmentation:.6,frecklingTendency:0,hairForm:-.5,hairDensity:.08,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:.2,faceLength:-.04,midfaceProminence:.16,zygomaticProjection:.32,eyeSpacing:.1,eyeShape:-.16,epicanthicFold:.24,upperEyelidExposure:-.14,orbitalDepth:-.08,foreheadProportion:.02,brow:0,noseBreadth:.12,noseProjection:-.18,nasalBridgeHeight:-.16,softTissue:.04,jawBreadth:.1,chinProjection:-.06,frame:-.02,height:-.02,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   oceania:{parent:null,values:{pigmentation:.46,eyePigmentation:.68,hairPigmentation:.58,frecklingTendency:0,hairForm:.28,hairDensity:.12,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:.24,faceLength:0,midfaceProminence:.1,zygomaticProjection:.18,eyeSpacing:0,eyeShape:.04,epicanthicFold:-.18,upperEyelidExposure:.04,orbitalDepth:0,foreheadProportion:0,brow:.04,noseBreadth:.28,noseProjection:.04,nasalBridgeHeight:-.06,softTissue:.18,jawBreadth:.12,chinProjection:.02,frame:.04,height:.02,bodyProportion:.02,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
-  // Polynesian calibration: multiple craniofacial studies consistently
-  // support a larger/broader craniofacial skeleton, broad face, larger and
-  // more anterior/prognathic mandible, and wider bony nasal aperture relative
-  // to European comparison samples. These are modest parent-level shifts;
-  // island-specific children inherit them until direct calibration exists.
+  // Polynesia must not inherit the broad Oceania hair/pigmentation center
+  // unchanged: that collapses Remote Oceania into a Melanesian-looking
+  // template. The hair/pigmentation shifts remain deliberately conservative
+  // and low-confidence; facial geometry keeps the evidence-backed calibration.
   "oceania.polynesia":{parent:"oceania",values:{
+    pigmentation:.16,
+    hairPigmentation:.66,
+    hairForm:-.08,
     faceBreadth:.38,
     faceLength:.10,
     chinProjection:.20,
