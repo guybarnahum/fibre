@@ -640,3 +640,82 @@ test("symbolic genome migration is explicit, preserves repair separation, and co
     ["thread.migration.start", "thread.migration.symbolic_genome", "thread.migration.complete"],
   );
 });
+
+
+test("outdated appearance model reuses durable ancestry evidence", async () => {
+  const ancestry=[{population:"operator-confirmed Chinese family",share:1,referencePopulation:"east_asia.han_chinese"}];
+  const physicalAncestry={maternal:ancestry,paternal:ancestry};
+  let migrationInput=null;
+  const evidence={
+    eventId:"evt_prior_physical_migration",
+    recordedAt:"2026-09-27T18:00:00.000Z",
+    physicalAncestry,
+    physicalGenomeVersion:"physical-genome-v0.1",
+    previousPhysicalGenomeVersion:null,
+  };
+  const physicalGenomeMigrator={
+    latestEvidence(){return evidence;},
+    migrate(thread,input){
+      migrationInput=structuredClone(input);
+      const physicalGenome=resolveBirthPhysicalInheritance({
+        maternalAncestry:physicalAncestry.maternal,
+        paternalAncestry:physicalAncestry.paternal,
+        seed:"appearance-upgrade-test",
+      }).genome;
+      thread.genome.physical=physicalGenome;
+      return{
+        migrated:true,
+        reused:false,
+        eventId:"evt_physical_upgrade_v02",
+        physicalAncestry,
+        physicalGenome,
+        thread,
+      };
+    },
+  };
+  const visualIdentityRepairService={
+    repair(input){
+      return{
+        threadId:input.threadId,
+        operationKey:input.operationKey,
+        embodiment:{
+          revision:3,
+          status:"pending_generation",
+          specification:input.correctedSpecification,
+          specificationDigest:embodimentSpecificationDigest(input.correctedSpecification),
+        },
+      };
+    },
+  };
+  const {service,threadId,thread}=fixture({physicalGenomeMigrator,visualIdentityRepairService});
+  const oldGenome=resolveBirthPhysicalInheritance({
+    maternalAncestry:ancestry,
+    paternalAncestry:ancestry,
+    seed:"old-appearance-model",
+  }).genome;
+  oldGenome.version="physical-genome-v0.1";
+  thread.genome.physical=oldGenome;
+
+  const before=await service.diagnose(threadId);
+  const outdated=before.findings.find(entry=>entry.code==="PHYSICAL_APPEARANCE_MODEL_OUTDATED");
+  assert.equal(outdated.state,"migration_required");
+  assert.equal(outdated.currentVersion,"physical-genome-v0.1");
+  assert.equal(outdated.targetVersion,"physical-genome-v0.2");
+  assert.deepEqual(outdated.migration.evidence.physicalAncestry,physicalAncestry);
+  assert.deepEqual(
+    outdated.migration.input.fields.map(field=>field.name),
+    ["reason"],
+    "upgrade asked operator to re-enter durable ancestry",
+  );
+
+  const result=await service.migrate(threadId,{
+    migrationId:"physical_embodiment_v2",
+    migrationKey:"physical_upgrade_v02",
+    input:{reason:"Upgrade the Thread to the calibrated physical appearance model using its recorded ancestry evidence."},
+  });
+
+  assert.deepEqual(migrationInput.physicalAncestry,physicalAncestry,"upgrade did not reuse durable ancestry");
+  assert.equal(thread.genome.physical.version,"physical-genome-v0.2");
+  assert.equal(result.after.findings.find(entry=>entry.code==="PHYSICAL_GENOME").state,"healthy");
+  assert.equal(result.after.findings.some(entry=>entry.code==="PHYSICAL_APPEARANCE_MODEL_OUTDATED"),false);
+});
