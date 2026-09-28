@@ -76,3 +76,28 @@ test("reference physical state never carries demographic rendering labels",()=>{
     "population label leaked into reference physical state",
   );
 });
+
+
+test("reference physical state keeps geometry separate from surface presentation",()=>{
+  const state=referencePhysicalState({
+    physicalGenome:genome,
+    sex:"male",
+    stateSeed:"reference-layer-boundary",
+  });
+
+  assert.match(state.geometryDescription,/Body composition:/u,"geometry state lost body composition");
+  assert.match(state.geometryDescription,/facial fullness:/u,"geometry state lost facial fullness");
+  assert.doesNotMatch(
+    state.geometryDescription,
+    /Skin:|facial hair:|hairline:|head hair:/u,
+    "surface presentation leaked into geometry state",
+  );
+
+  assert.match(state.surfaceDescription,/Skin:/u,"surface state lost skin");
+  assert.match(state.surfaceDescription,/facial hair:/u,"surface state lost grooming");
+  assert.doesNotMatch(
+    state.surfaceDescription,
+    /Body composition:|facial fullness:|eye-opening offset/u,
+    "geometry state leaked into surface presentation",
+  );
+});
