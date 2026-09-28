@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { resolveBirthPhysicalInheritance } from "../../core/src/human-phenotype/index.mjs";
+import { resolveHumanPhysicalInheritance } from "../../core/src/human-appearance/index.mjs";
 
 function positiveOrdinal(requestId) {
   const suffix = /(\d+)$/u.exec(requestId)?.[1];
@@ -46,11 +46,11 @@ export function composeBirthSubjectIdentity({ requestId, material }) {
   if (!Array.isArray(material.raisedLanguages) || material.raisedLanguages.length === 0) throw new TypeError("birth requires raised languages");
   if (!material.physicalAncestry?.maternal || !material.physicalAncestry?.paternal) throw new TypeError("birth requires parental physical ancestry");
   const { femaleGivenName:femaleGiven, maleGivenName:maleGiven, familyName:family } = selectBirthNameParts({ requestId, material });
-  const physicalInheritance = resolveBirthPhysicalInheritance({
-    maternalAncestry:material.physicalAncestry.maternal,
-    paternalAncestry:material.physicalAncestry.paternal,
+  const physicalInheritance = resolveHumanPhysicalInheritance({
+    maternal:{physicalLineage:material.physicalAncestry.maternal},
+    paternal:{physicalLineage:material.physicalAncestry.paternal},
     // Historical deterministic namespace: keep stable unless birth material is intentionally reseeded.
-    seed:`modern-birth:${requestId}`,
+    conceptionSeed:`modern-birth:${requestId}`,
   });
   return Object.freeze({
     femaleName: fullName(femaleGiven, family, material.nameOrder),
@@ -58,7 +58,7 @@ export function composeBirthSubjectIdentity({ requestId, material }) {
     birthCity: material.birthCity,
     languages: Object.freeze([...material.languages]),
     raisedLanguages: Object.freeze([...material.raisedLanguages]),
-    physicalGenome:physicalInheritance.genome,
+    physicalGenome:physicalInheritance.physicalGenome,
   });
 }
 
