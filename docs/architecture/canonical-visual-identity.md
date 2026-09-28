@@ -342,6 +342,10 @@ parent genomes when known
 
 A current physical genome cannot be replaced merely to obtain a preferred style or face. A versioned appearance-model upgrade is valid only when Fibre has explicitly superseded the older physical model. The old genome/specification/root and downstream credentials remain historical evidence.
 
+For upgrades, the latest durable `THREAD_PHYSICAL_GENOME_MIGRATED` event is the authority for previously operator-confirmed maternal/paternal physical ancestry. Fibre reuses that evidence instead of asking an operator to retype it. If no trustworthy migration evidence exists, explicit ancestry input remains required.
+
+The canonical visual specification after Genesis belongs to the current Embodiment. The identity-level `canonicalVisualIdentity` material is historical Genesis seed/provenance and must not be treated as newer authority after a correction or appearance migration.
+
 Use **re-render appearance** when the current physical genome and canonical specification are sound but the generated canonical root is poor. Re-rendering preserves the exact specification digest and creates only a new operational root plus normal downstream Presentation/FID convergence.
 
 The 2026-09-27 Li Jing staging run proved the migration and replay machinery but **did not validate appearance quality**. The physical migration completed, exact replay was idempotent, and unchanged-spec renewal worked; however both generated portraits were visually inconsistent with the operator-confirmed East Asian ancestry. This observed failure reopened physical/population calibration and is now the primary regression case.
