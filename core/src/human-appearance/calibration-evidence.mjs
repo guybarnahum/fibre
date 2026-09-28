@@ -42,20 +42,27 @@ export const humanAppearanceCalibrationSources=Object.freeze({
     pmid:"7174512",
     pmcid:"PMC1168245",
   }),
-  "kayser-2008-polynesian-autosomal":Object.freeze({
-    title:"Genome-wide analysis indicates more Asian than Melanesian ancestry of Polynesians",
-    year:2008,
-    cohort:"47 Pacific Islanders including Cook Islanders, Tongans, Samoans, Tokelau Islanders and Niue Islanders",
-    method:"377 autosomal STR loci with East-Asian and Papua-New-Guinea comparison samples",
-    doi:"10.1016/j.ajhg.2007.09.010",
-    pmid:"18179899",
-    pmcid:"PMC2253960",
+  "sullivan-1922-tongan":Object.freeze({
+    title:"A contribution to Tongan somatology",
+    year:1922,
+    cohort:"225 adult and adolescent Tongans",
+    method:"direct anthropometry plus categorical skin, hair, eye and nasal observations",
   }),
-  "gill-2015-east-polynesian-synthesis":Object.freeze({
-    title:"East Polynesian and Paleoindian parallels and contrasts in skeletal morphology",
-    year:2015,
-    cohort:"East Polynesian comparative synthesis",
-    method:"comparative biological anthropology / skeletal morphology review",
+  "coltman-2000-maori":Object.freeze({
+    title:"Craniofacial form and obstructive sleep apnea in Polynesian and Caucasian men",
+    year:2000,
+    cohort:"New Zealand Māori (Polynesian) and European men with matched OSA severity",
+    method:"lateral and postero-anterior cephalometric radiography",
+    doi:"10.1093/sleep/23.7.1h",
+    pmid:"11083603",
+  }),
+  "kean-houghton-1990-polynesian":Object.freeze({
+    title:"Polynesian face and dentition: functional perspective",
+    year:1990,
+    cohort:"Polynesian craniofacial and dentofacial material",
+    method:"craniofacial anthropometry / functional morphology synthesis",
+    doi:"10.1002/ajpa.1330820311",
+    pmid:"2375384",
   }),
 });
 
@@ -64,18 +71,6 @@ const claim=(direction,confidence,sources,notes)=>Object.freeze({
   confidence,
   sources:Object.freeze([...sources]),
   notes,
-});
-
-export const humanAppearanceCalibrationBases=Object.freeze({
-  "oceania.polynesia":Object.freeze({
-    confidence:"low",
-    sources:Object.freeze(["kayser-2008-polynesian-autosomal","buck-2012-polynesia"]),
-    basis:Object.freeze([
-      Object.freeze({referencePopulation:"east_asia",share:.79}),
-      Object.freeze({referencePopulation:"oceania",share:.21}),
-    ]),
-    notes:"This is a population-history-informed whole-profile starting prior, not a claim that visible phenotype is a linear 79/21 ancestry mixture. Kayser et al. estimate about 79% East-Asian-related and 21% Melanesian-related autosomal ancestry in their Polynesian sample; Buck et al. independently show a coherent Polynesian craniofacial grouping with substantial internal diversity. Direct anatomical evidence must still override individual Fibre loci.",
-  }),
 });
 
 // Confidence is per Fibre-locus mapping, not per population.
@@ -93,23 +88,65 @@ export const humanAppearanceVariationProfiles=Object.freeze({
 
 export const humanAppearanceCalibrationEvidence=Object.freeze({
   "oceania.polynesia":Object.freeze({
-    faceBreadth:claim(
-      "higher than current broad oceania parent",
+    pigmentation:claim(
+      "centered on medium-brown rather than light or very-deep extremes",
       "moderate",
-      ["buck-2012-polynesia","antoun-2014-maori"],
-      "Māori 3D data directly supports a broader overall face; multi-population Polynesian geometric morphometrics supports real craniofacial size/shape structure across Polynesia.",
+      ["sullivan-1922-tongan"],
+      "The Tongan series directly records unexposed skin around medium-brown categories. Mapping the historical color scale into Fibre's normalized pigmentation coordinate remains approximate.",
+    ),
+    hairForm:claim(
+      "straight-to-low-waved center",
+      "moderate",
+      ["sullivan-1922-tongan"],
+      "The Tongan series reports straight and low-waved hair as the two dominant forms, together covering the large majority of observed subjects; deeper waves and curls remain part of the tail rather than the center.",
+    ),
+    faceBreadth:claim(
+      "broad",
+      "moderate",
+      ["buck-2012-polynesia","antoun-2014-maori","coltman-2000-maori","sullivan-1922-tongan"],
+      "Modern Māori 3D/cephalometric studies and historical Tongan measurements consistently support a broad/large craniofacial skeleton.",
     ),
     faceLength:claim(
-      "slightly higher than current broad oceania parent",
+      "slightly above neutral",
       "low",
-      ["schendel-1980-hawaiian","kean-houghton-1982-polynesian"],
-      "Historical craniofacial samples support greater facial height, but mapping skeletal/cephalometric height into Fibre faceLength is indirect and therefore deliberately low-confidence.",
+      ["schendel-1980-hawaiian","kean-houghton-1982-polynesian","sullivan-1922-tongan"],
+      "Several craniofacial sources support substantial facial height, but skeletal/cephalometric height maps only indirectly to Fibre faceLength.",
+    ),
+    eyeShape:claim(
+      "slightly narrower than neutral, not East-Asian-template narrow",
+      "low",
+      ["sullivan-1922-tongan"],
+      "The historical Tongan description reports eye openings less wide than European comparison subjects and somewhat oblique; this supports only a small shift.",
+    ),
+    epicanthicFold:claim(
+      "low-frequency / slight expression",
+      "low",
+      ["sullivan-1922-tongan"],
+      "The same Tongan series describes only a suggestion of an epicanthic fold in common types and summarizes the fold as low-frequency. Fibre therefore centers on slight rather than present/pronounced expression.",
+    ),
+    noseBreadth:claim(
+      "moderately broad",
+      "moderate",
+      ["sullivan-1922-tongan","coltman-2000-maori"],
+      "Tongan nasal indices and absolute width support a moderately broad nose; Māori/Polynesian cephalometry also identifies a broad bony nasal aperture.",
+    ),
+    nasalBridgeHeight:claim(
+      "medium-to-low",
+      "low",
+      ["sullivan-1922-tongan"],
+      "The Tongan series describes the nasal bridge as prevailing at medium or low elevation. Mapping that qualitative observation to Fibre's bridge-height coordinate is conservative.",
+    ),
+    jawBreadth:claim(
+      "broad / robust lower face",
+      "moderate",
+      ["sullivan-1922-tongan","coltman-2000-maori","kean-houghton-1990-polynesian"],
+      "Large bigonial width, a larger craniofacial skeleton and a large robust mandible all support a broader lower-face center.",
     ),
     chinProjection:claim(
-      "higher than current broad oceania parent",
+      "more anterior / prominent",
       "moderate",
-      ["antoun-2014-maori"],
-      "Māori 3D facial data directly reports a more anterior chin position after BMI adjustment.",
+      ["antoun-2014-maori","coltman-2000-maori"],
+      "Māori 3D data reports a more anterior chin position and Polynesian cephalometry reports larger, more prognathic mandibles.",
     ),
   }),
 });
