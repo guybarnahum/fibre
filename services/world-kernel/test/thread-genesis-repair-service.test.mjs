@@ -731,7 +731,10 @@ test("outdated appearance model reuses durable ancestry evidence", async () => {
 
   assert.deepEqual(migrationInput.physicalAncestry,physicalAncestry,"upgrade did not reuse durable ancestry");
   assert.equal(thread.genome.physical.version,"physical-genome-v0.2");
-  assert.equal(result.after.findings.find(entry=>entry.code==="PHYSICAL_GENOME").state,"healthy");
+  const currentPhysical=result.after.findings.find(entry=>entry.code==="PHYSICAL_GENOME");
+  assert.equal(currentPhysical.state,"healthy");
+  assert.deepEqual(currentPhysical.evidence.physicalAncestry,physicalAncestry,
+    "current appearance hid its recorded parental-origin evidence");
   assert.equal(result.after.findings.some(entry=>entry.code==="PHYSICAL_APPEARANCE_MODEL_OUTDATED"),false);
 });
 
