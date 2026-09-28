@@ -1,4 +1,4 @@
-import { physicalPhenotypeRenderingProjection } from "#core/src/human-phenotype/index.mjs";
+import { expressInheritedAppearance } from "#core/src/human-appearance/index.mjs";
 import { normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
 
 const encoder=new TextEncoder();
@@ -16,7 +16,10 @@ export function canonicalVisualSpecificationFromPhysicalGenome({
   const ownerId=nonEmpty("threadId",threadId);
   const normalizedSex=normalizeGenesisSex(sex);
   if(!physicalGenome)throw new TypeError("canonical visual identity requires the inherited physical genome");
-  const inheritedAppearance=physicalPhenotypeRenderingProjection(physicalGenome,{sex:normalizedSex}).description;
+  const inheritedAppearance=expressInheritedAppearance({
+    physicalGenome,
+    sex:normalizedSex,
+  }).renderDescription;
   const subjectDescription=`adult ${normalizedSex} person; ${inheritedAppearance}`;
   if(encoder.encode(subjectDescription).byteLength<500)throw new Error("canonical visual phenotype is too thin for durable cross-age identity");
   return Object.freeze({
