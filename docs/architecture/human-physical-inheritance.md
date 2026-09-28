@@ -240,4 +240,6 @@ Genesis now uses the same physical-inheritance core validated in Population Lab.
 
 Canonical visual identity derives its concrete inherited phenotype from that physical genome and authoritative sex. Ancestry/population labels are not passed to the renderer. The genome remains the durable inherited authority; the phenotype and portrait are projections.
 
+The rendering projection is intentionally anatomy-first. It groups the expressed phenotype into face/midface/jaw, eye/eyelid/orbit, nose/perioral, pigmentation/hair and body structure before providing continuous coordinates as secondary precision. This keeps the renderer focused on one coherent physical person instead of asking it to reconstruct a face from an unordered numeric trait dump.
+
 Live-Thread parent inheritance remains an explicit next capability, but it must enter through a chronologically truthful reproduction/newborn path rather than by attaching same-era young-adult Genesis Threads as biological parents. That future path will read each real parent's persisted `genome.physical`, use a founder only for a genuinely missing parent, recombine through the same shared core, and record durable biological lineage. No alternate genetics path is needed. Population Lab remains the bounded place to prove sibling and multigenerational inheritance mechanics until Fibre has that lived birth boundary.
