@@ -1,6 +1,6 @@
 import {createHash} from "node:crypto";
 
-export const PHYSICAL_GENOME_VERSION="physical-genome-v0.2";
+export const PHYSICAL_GENOME_VERSION="physical-genome-v0.3";
 
 const LOCI = Object.freeze([
   "pigmentation","eyePigmentation","hairPigmentation","frecklingTendency","hairForm","hairDensity","hairlineLossTendency","facialHairTendency",
