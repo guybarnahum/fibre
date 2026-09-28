@@ -136,7 +136,7 @@ The grouped anatomy is derived directly from the expressed physical phenotype an
 
 ## Slice 5 — Population Lab as calibration bench
 
-**Status: implemented on `main`; pending numerical and visual calibration evidence.**
+**Status: validated 2026-09-27.** The 96-person Han-Chinese/Korean/Japanese numerical cohort passed with zero warnings, 100% continuous uniqueness in every population, maximum center errors of 0.014/0.011/0.020, sibling-to-unrelated distance ratios of 0.66/0.64/0.55, child-to-unrelated ratios of 0.46/0.45/0.39, and Han/Korean mixed-parent midpoint error below 0.006. A fixed 12-person visual cohort through the same seed and shared renderer showed clearly East-Asian facial morphology with substantial individual variation and no regression to the generic-white failure that reopened this work.
 
 Use Population Lab rather than creating another framework.
 
@@ -160,7 +160,9 @@ A small fixed visual sample then renders a subset of the same seeded cohort and 
 
 ## Slice 6 — Versioned appearance-model migration
 
-Once the calibrated model passes:
+**Status: active.**
+
+Now that the calibrated model passes:
 - no physical genome -> appearance migration available;
 - older physical-genome version -> appearance-model migration required;
 - current version -> migration unavailable; re-render only.
