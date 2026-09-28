@@ -1,7 +1,7 @@
 ---
 id: physical-appearance-calibration-plan
 status: active
-last-reviewed: 2026-09-27
+last-reviewed: 2026-09-28
 ---
 
 # Physical appearance model calibration and migration plan
@@ -14,7 +14,7 @@ The resulting portrait was not visually coherent with the operator-confirmed Eas
 
 That observed failure supersedes the earlier conclusion that population/appearance calibration was closed.
 
-The calibration tranche below has now passed through Slice 5, and `physical-genome-v0.2` is the current calibrated physical model. Live staging migration has also proven v0.1 -> v0.2 authority upgrade and downstream convergence; final visual acceptance of the migrated Li Jing portrait is still pending direct inspection.
+The original calibration tranche established `physical-genome-v0.2` as the validated baseline and live staging proved its v0.1 -> v0.2 authority upgrade and downstream convergence. The current `main` candidate is `physical-genome-v0.3`: a global Human Appearance extension that adds a hierarchical Polynesian calibration plus a deterministic non-historical reference physical state for ordinary-human portrait realism. v0.3 is not staging-accepted until the focused/repository gate and a bounded visual cohort pass.
 
 ## Standing constraints
 
