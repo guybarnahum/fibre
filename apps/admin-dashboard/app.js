@@ -26,7 +26,23 @@ function text(node, input) { node.textContent = input ?? "—"; }
 function titleCase(input) { return String(input ?? "").split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" "); }
 function humanLabel(input) { return String(input ?? "").split(/[-_]/u).filter(Boolean).map((part) => part[0].toUpperCase() + part.slice(1)).join(" "); }
 function shortId(input) { if (!input) return null; return input.length > 24 ? `${input.slice(0, 12)}…${input.slice(-8)}` : input; }
-function clock(input) { try { return new Intl.DateTimeFormat([], { hour:"2-digit", minute:"2-digit", second:"2-digit" }).format(new Date(input)); } catch { return input; } }
+function activityTime(input,now=Date.now()){
+  const time=Date.parse(input);
+  if(!Number.isFinite(time))return input;
+  const age=Math.max(0,now-time);
+  if(age<45_000)return "now";
+  if(age<60*60_000)return Math.max(1,Math.floor(age/60_000))+" min ago";
+  if(age<24*60*60_000){
+    const hours=Math.floor(age/(60*60_000));
+    return hours+" hr"+(hours===1?"":"s")+" ago";
+  }
+  if(age<2*24*60*60_000)return "1 day ago";
+  return new Intl.DateTimeFormat([],{month:"short",day:"numeric",year:"numeric"}).format(new Date(time));
+}
+function exactActivityTime(input){
+  const time=Date.parse(input);
+  return Number.isFinite(time)?new Intl.DateTimeFormat([],{dateStyle:"medium",timeStyle:"medium"}).format(new Date(time)):input;
+}
 function queryLabel(record) { return record.threadId ?? record.genesisId ?? record.requestId ?? record.correlationId ?? "—"; }
 function singleValue(values) { const unique = [...new Set(values.filter(Boolean))]; return unique.length === 1 ? unique[0] : null; }
 
@@ -135,7 +151,7 @@ function recordRow(record) {
   const tr = document.createElement("tr");
   const label = queryLabel(record);
   const cells = [
-    [clock(record.occurredAt), "time"], [titleCase(record.service), "service"], [record.stage, "stage"],
+    [activityTime(record.occurredAt), "time"], [titleCase(record.service), "service"], [record.stage, "stage"],
     [record.status, ""], [String(record.attempt), "attempt"], [shortId(label), "correlation"],
   ];
   cells.forEach(([content, className], index) => {
@@ -153,7 +169,10 @@ function recordRow(record) {
       button.addEventListener("click", (event) => { event.stopPropagation(); void showThread(label); });
       td.append(button);
     } else {
-      td.className = className; td.textContent = content; if (index === 5) td.title = label;
+      td.className = className;
+      td.textContent = content;
+      if(index===0)td.title=exactActivityTime(record.occurredAt);
+      if(index===5)td.title=label;
     }
     tr.append(td);
   });
@@ -180,7 +199,7 @@ function renderCausal(records) {
       : record.causationId
         ? `Caused by ${record.causationId}`
         : "Activity without operation lineage";
-    const when = document.createElement("span"); when.className = "journey-time"; when.textContent = clock(record.occurredAt);
+    const when = document.createElement("span"); when.className = "journey-time"; when.textContent = activityTime(record.occurredAt); when.title=exactActivityTime(record.occurredAt);
     const copy = document.createElement("span"); copy.className = "journey-copy";
     const heading = document.createElement("strong"); heading.textContent = `${depth > 0 ? "↳ " : ""}${journeyPhase(record.stage)} · ${titleCase(record.service)}`;
     const stage = document.createElement("span"); stage.textContent = record.stage;
