@@ -174,45 +174,41 @@ If Fibre later needs a richer authoritative appearance timeline, it should becom
 
 ## Root generation
 
-The root generation job is special because it has no canonical image input for native synthetic identity.
+Native Human Appearance roots use two bounded Asset Generator jobs.
 
-The brief therefore needs substantially richer identity semantics than ordinary presentation generation. It should emphasize stable geometry and asymmetry, prohibit glamour/stylization drift, and request a neutral mostly-frontal head-and-shoulders reference suitable for later identity conditioning.
-
-The root job must carry:
-
-```text
-threadId
-embodimentId
-embodimentRevision
-specificationDigest
-referenceAgeYears
-exact semantic brief
-source/permission refs
-provider profile
-```
-
-For native synthetic roots:
+The **geometry-anchor job** receives structural morphology and reference geometry state only. It has no image input:
 
 ```text
 referenceObjectRefs = []
+role = canonical_visual_identity_geometry_anchor
 ```
 
-For source-grounded Echo/Homage roots, any supplied reference objects are explicit creation inputs and must have matching source/permission provenance.
+The **final root job** receives the verified geometry anchor as exactly one reference plus surface phenotype/state:
+
+```text
+referenceObjectRefs = [geometryAnchorObjectRef]
+role = canonical_visual_identity_reference
+```
+
+Both jobs carry Thread/Embodiment/specification identity, normalized reference age, exact semantic brief, source/permission refs and provider profile. The second job identity is bound to the deterministic anchor object ref.
+
+The geometry brief deliberately suppresses pigmentation, hair color/texture, grooming and other surface cues while fixing stable geometry/asymmetry. The final edit applies those surface cues with high reference fidelity and explicitly forbids redesigning facial geometry from them.
+
+For source-grounded Echo/Homage roots, authorized source references remain a distinct origin path and must carry matching source/permission provenance.
 
 ## Admission boundary
 
 Asset Generator remains an executor.
 
 ```text
-pending Embodiment specification
-      -> root AssetGenerationJob
-      -> provider execution
-      -> GenerationRecord
-      -> Fibre provenance verification
-      -> immutable root object + StoredAssetReceipt
-      -> World Kernel verifies exact proof
+pending layered Embodiment specification
+      -> geometry-anchor AssetGenerationJob
+      -> verified immutable geometry object + provenance
+      -> final surface-application AssetGenerationJob referencing that object
+      -> verified immutable final root + provenance
+      -> World Kernel verifies both proofs and exact anchor linkage
       -> Embodiment revision becomes available
-      -> canonical referenceObjectRef admitted
+      -> final canonical referenceObjectRef admitted
 ```
 
 A text-only pending embodiment must not be projected as if a usable visual identity image already existed.
@@ -281,9 +277,9 @@ A place-only image does not receive the Thread's reference image simply because 
 
 ## Provider requirements
 
-The canonical root can use a text-to-image provider profile for native synthetic identity.
+Native synthetic canonical roots require a provider profile that supports both text-to-image geometry generation and reference-image editing for the surface pass. The production OpenAI profile uses high input fidelity for reference edits so the second pass preserves the geometry anchor.
 
-Later Thread-depicting generation requires a provider profile capable of reference-image conditioning. Fibre must not silently drop `referenceObjectRefs` and fall back to text-only generation, because that would reintroduce likeness drift.
+Later Thread-depicting generation also requires a provider profile capable of reference-image conditioning. Fibre must not silently drop `referenceObjectRefs` and fall back to text-only generation, because that would reintroduce likeness drift.
 
 If the selected provider cannot accept the canonical reference, the asset demand remains deferred or selects another explicitly configured reference-capable provider.
 
@@ -472,11 +468,11 @@ The deployment E2E must ultimately prove one birth flowing through:
 ```text
 Genesis birth
   -> public pre-embodiment presentation
-  -> rich canonical visual identity specification
-  -> one root-reference job
-       native path: no image reference
-       source-grounded path: authorized reference(s)
-  -> verified immutable root image
+  -> rich layered canonical visual identity specification
+  -> text-only geometry-anchor job
+  -> verified immutable geometry anchor
+  -> final root job referencing that anchor
+  -> verified immutable final root image
   -> Embodiment admission
   -> visual identity projection carrying root objectRef
   -> public presentation rewrite
@@ -494,13 +490,14 @@ A second proof should exercise a memory/scene image at an age materially differe
 
 At minimum permanent tests should prove:
 
-1. native root generation has no reference image;
-2. generic/thin identity text is rejected as insufficient root material;
-3. a pending text-only embodiment does not become public visual identity;
-4. root admission requires exact verified generation proof;
-5. the public visual identity carries exactly the admitted canonical reference object;
-6. official-photo demand carries that reference and a chronology-derived target age;
-7. person-depicting memory generation carries the same root reference and event-derived target age;
-8. place-only images do not receive a person reference;
-9. ordinary aging cannot replace the root;
-10. Echo/Homage source-grounded creation retains source/permission provenance and later jobs stop depending on the original source image.
+1. native geometry-anchor generation has no reference image;
+2. the final native root references exactly its verified geometry anchor;
+3. geometry scaffolding can never become public visual identity;
+4. generic/thin identity text is rejected as insufficient root material;
+5. root admission requires verified provenance for both stages and exact anchor linkage;
+6. the public visual identity carries exactly the admitted final canonical reference object;
+7. official-photo demand carries that reference and a chronology-derived target age;
+8. person-depicting memory generation carries the same root reference and event-derived target age;
+9. place-only images do not receive a person reference;
+10. ordinary aging cannot replace the root;
+11. Echo/Homage source-grounded creation retains source/permission provenance and later jobs stop depending on the original source image.
