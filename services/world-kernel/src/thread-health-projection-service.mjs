@@ -1,6 +1,6 @@
 import { THREAD_REPAIR_CONTRACT } from "./thread-genesis-repair-api.mjs";
 
-const THREAD_HEALTH_PROJECTION_VERSION = "thread-health-v0.4";
+const THREAD_HEALTH_PROJECTION_VERSION = "thread-health-v0.5";
 
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") {
