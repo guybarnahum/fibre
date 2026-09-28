@@ -65,7 +65,7 @@ test("birth creates a deterministic heritable physical genome before rendering",
   const sibling = composeBirthSubjectIdentity({ requestId:"visual-birth-002", material:appearanceMaterial });
 
   assert.deepEqual(first, replay, "same birth changed inherited appearance");
-  assert.equal(first.physicalGenome.version,"physical-genome-v0.2");
+  assert.equal(first.physicalGenome.version,"physical-genome-v0.3");
   assert.notDeepEqual(first.physicalGenome,sibling.physicalGenome,"different births collapsed to one physical genome");
 });
 
