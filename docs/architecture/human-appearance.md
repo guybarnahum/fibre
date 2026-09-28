@@ -361,8 +361,9 @@ Production consumers should depend on these semantic boundaries rather than impo
 - existing-Thread place/era profile proposal — **deferred next slice**
 - population-specific factor spread calibration — **deferred calibration**
 - persistent lived physical state — **deferred**
-- deterministic reference physical state for canonical portrait realism — **deferred next slice**
-- renderer ordinary-human fidelity gate — **deferred next Population Lab slice**
+- deterministic reference physical state for canonical portrait realism — **implemented in v0.3 candidate**
+- renderer ordinary-human fidelity path in Population Lab — **implemented; bounded visual acceptance pending**
+- source/confidence calibration sidecar + extension guide — **implemented**
 - network Human Appearance service — **deferred; no present need**
 
 ## Vision / ambition review
