@@ -239,7 +239,9 @@ Physical state includes things such as:
 
 Inherited frame or adiposity tendency is not current weight.
 
-The current architecture still needs a small persistent lived-physical-state model before Fibre can claim that life history changes these values. Until then, a canonical portrait may use a deterministic non-historical **reference physical state** at the normalized reference age to avoid renderer beauty/default-face collapse. That reference state must be clearly marked as rendering normalization rather than autobiographical history.
+Fibre now uses a deterministic non-historical **reference physical state** at the normalized reference age to avoid renderer beauty/default-face collapse. It supplies ordinary variation in body composition, muscular development, facial fullness, skin texture/variation and mild asymmetry without changing inherited population morphology. It is explicitly rendering normalization, not autobiographical history. A separate persistent lived-physical-state model is still required before Fibre can claim that actual life history changes these values.
+
+Calibration data extension, source/confidence rules and overlap handling are documented in [`core/src/human-appearance/README.md`](../../core/src/human-appearance/README.md). Source/confidence metadata lives beside the runtime calibration in `core/src/human-appearance/calibration-evidence.mjs` and is intentionally absent from the hot path.
 
 ## Population morphology atlas
 
