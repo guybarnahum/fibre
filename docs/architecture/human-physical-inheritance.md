@@ -91,7 +91,9 @@ parental ancestry history
   -> one plausible founder genome
 ```
 
-Ancestry provenance remains semantic and inspectable. A small **hierarchical physical-population prior** shifts overlapping distributions over the same physical loci. Root priors explicitly define every locus; child populations inherit from a named geographic parent until evidence supports calibrated child-specific overrides. Unknown populations and incomplete effective priors fail rather than silently collapsing to a neutral face. The hierarchy is calibration structure, not a demographic verdict or a renderer label.
+Ancestry provenance remains semantic and inspectable. A small **hierarchical physical-population prior** shifts overlapping distributions over the same physical loci. Root priors explicitly define every locus; child populations inherit from a declared calibration fallback until evidence supports calibrated child-specific overrides. Unknown populations and incomplete effective priors fail rather than silently collapsing to a neutral face. The hierarchy is calibration structure, not a demographic verdict or a renderer label.
+
+The coarse operator vocabulary includes North, West, East and Southern Africa (`afr_north`, `afr_west`, `afr_east`, `afr_south`). North and Southern Africa are currently explicit evidence codes without their own calibrated facial deltas: `afr_north` shrinks to the existing West-Asian calibration basis and `afr_south` to the existing West-African basis. Those fallback relationships are provisional calibration mechanics, not claims of population equivalence.
 
 Founder sampling must preserve substantial within-population variation. Two founders with the same ancestry should usually have different genomes.
 
