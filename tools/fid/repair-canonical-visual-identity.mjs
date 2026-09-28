@@ -14,7 +14,7 @@ const POLL_PROGRESS_MS = 10_000;
 
 function progress(stage, detail = {}) {
   process.stderr.write(`${JSON.stringify({
-    event:"canonical-visual-identity-repair-progress",
+    event:"appearance-progress",
     stage,
     ...detail,
   })}\n`);
@@ -26,23 +26,47 @@ function required(name, value) {
 }
 
 function options(argv) {
-  const parsed = { threadId:null, specFile:null, renewCurrent:false, ancestryFile:null, reason:null };
+  const parsed = {
+    threadId:null,
+    diagnose:false,
+    migrate:false,
+    rerender:false,
+    specFile:null,
+    ancestryFile:null,
+    reason:null,
+  };
   for (const arg of argv) {
     if (arg.startsWith("--thread-id=")) parsed.threadId = arg.slice("--thread-id=".length);
+    else if (arg === "--diagnose") parsed.diagnose = true;
+    else if (arg === "--migrate") parsed.migrate = true;
+    else if (arg === "--rerender") parsed.rerender = true;
     else if (arg.startsWith("--spec-file=")) parsed.specFile = arg.slice("--spec-file=".length);
-    else if (arg === "--renew-current") parsed.renewCurrent = true;
-    else if (arg.startsWith("--legacy-physical-ancestry-file=")) parsed.ancestryFile = arg.slice("--legacy-physical-ancestry-file=".length);
+    else if (arg.startsWith("--physical-ancestry-file=")) parsed.ancestryFile = arg.slice("--physical-ancestry-file=".length);
     else if (arg.startsWith("--reason=")) parsed.reason = arg.slice("--reason=".length);
-    else throw new TypeError(`unsupported visual repair option ${arg}`);
+    else throw new TypeError(`unsupported appearance option ${arg}`);
   }
-  const modes=[parsed.renewCurrent,parsed.specFile!==null,parsed.ancestryFile!==null].filter(Boolean).length;
-  if(modes!==1)throw new TypeError("choose exactly one of --spec-file=<path>, --renew-current, or --legacy-physical-ancestry-file=<path>");
+
+  const modes=[
+    parsed.diagnose,
+    parsed.migrate,
+    parsed.rerender,
+    parsed.specFile!==null,
+  ].filter(Boolean).length;
+  if(modes!==1){
+    throw new TypeError("choose exactly one appearance operation: --diagnose, --migrate, --rerender, or --spec-file=<path>");
+  }
+  if(parsed.ancestryFile!==null&&!parsed.migrate){
+    throw new TypeError("--physical-ancestry-file is only valid with --migrate");
+  }
+
   return {
     threadId:required("--thread-id", parsed.threadId),
+    diagnose:parsed.diagnose,
+    migrate:parsed.migrate,
+    rerender:parsed.rerender,
     specFile:parsed.specFile,
-    renewCurrent:parsed.renewCurrent,
     ancestryFile:parsed.ancestryFile,
-    reason:required("--reason", parsed.reason),
+    reason:parsed.diagnose ? null : required("--reason", parsed.reason),
   };
 }
 
@@ -142,7 +166,7 @@ async function submitCanonical({
   operationKey,
   specification,
   reason,
-  renewCurrent,
+  rerender,
 }) {
   const response = await fetch(
     `${worldKernel}/internal/threads/${encodeURIComponent(threadId)}/repair`,
@@ -152,7 +176,7 @@ async function submitCanonical({
         "content-type":"application/json",
         "x-fibre-private-token":privateToken,
       },
-      body:JSON.stringify(renewCurrent
+      body:JSON.stringify(rerender
         ? {
             action:"canonical_visual_identity_renewal",
             operationKey,
@@ -166,10 +190,10 @@ async function submitCanonical({
           }),
     },
   );
-  return payload(response, renewCurrent ? "canonical visual identity renewal" : "canonical visual identity repair");
+  return payload(response, rerender ? "appearance rerender" : "canonical visual identity repair");
 }
 
-async function submitLegacyPhysicalMigration({
+async function submitAppearanceMigration({
   worldKernel,
   privateToken,
   threadId,
@@ -189,37 +213,80 @@ async function submitLegacyPhysicalMigration({
         action:"migrate",
         migrationId:"physical_embodiment_v2",
         migrationKey,
-        input:{physicalAncestry,reason},
+        input:{
+          ...(physicalAncestry===null?{}:{physicalAncestry}),
+          reason,
+        },
       }),
     },
   );
-  return payload(response,"legacy physical embodiment migration");
+  return payload(response,"appearance migration");
 }
 
 async function main() {
-  const { threadId, specFile, renewCurrent, ancestryFile, reason } = options(process.argv.slice(2));
+  const { threadId, diagnose, migrate, rerender, specFile, ancestryFile, reason } = options(process.argv.slice(2));
   const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
+  const mode=diagnose?"diagnose":migrate?"migration":rerender?"rerender":"correction";
 
-  const legacyMigration=ancestryFile!==null;
-  const mode=legacyMigration?"legacy_physical_embodiment_migration":renewCurrent?"renewal":"correction";
   progress("inspect_current_identity", { threadId, mode });
   const deployed = deployment();
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   progress("verify_repair_contract", { expectedContract:THREAD_REPAIR_CONTRACT });
-  await repairDiagnosis({ worldKernel, privateToken, threadId });
+  const diagnosis=await repairDiagnosis({ worldKernel, privateToken, threadId });
+
+  if(diagnose){
+    const physical=(diagnosis.findings??[]).find((entry)=>(
+      entry.code==="PHYSICAL_GENOME"
+      || entry.code==="PHYSICAL_APPEARANCE_MODEL_OUTDATED"
+      || entry.code==="LEGACY_PHYSICAL_EMBODIMENT"
+    ))??null;
+    const visual=(diagnosis.findings??[]).find((entry)=>(
+      entry.code==="CANONICAL_VISUAL_SPEC"
+      || entry.code==="CANONICAL_VISUAL_SPEC_MISSING"
+      || entry.code==="GENESIS_VISUAL_SEED"
+    ))??null;
+    const embodiment=(diagnosis.findings??[]).find((entry)=>(
+      entry.code==="CANONICAL_EMBODIMENT"
+      || entry.code==="CANONICAL_EMBODIMENT_PENDING"
+      || entry.code==="CANONICAL_EMBODIMENT_MISSING"
+    ))??null;
+    process.stdout.write(`${JSON.stringify({
+      event:"appearance-diagnosis",
+      threadId,
+      health:diagnosis.health,
+      physical,
+      visual,
+      embodiment,
+    },null,2)}\n`);
+    return;
+  }
+
   const beforeObservatory=await observatory({ worldKernel, privateToken, threadId });
   const before=canonicalPortrait(beforeObservatory);
-  const physicalAncestry=legacyMigration
-    ? JSON.parse(readFileSync(resolve(process.cwd(),ancestryFile),"utf8"))
-    : null;
-  const specification = renewCurrent
+  const physicalAncestry=ancestryFile===null
+    ? null
+    : JSON.parse(readFileSync(resolve(process.cwd(),ancestryFile),"utf8"));
+  const specification = rerender
     ? before.specification
-    : legacyMigration
+    : migrate
       ? null
       : JSON.parse(readFileSync(resolve(process.cwd(), specFile), "utf8"));
-  const operationKey = `${legacyMigration?"legacy_physical_embodiment":`visual_identity_${renewCurrent ? "renew" : "repair"}`}_${createHash("sha256")
-    .update(JSON.stringify({ threadId, specification, physicalAncestry, reason }))
+  const migrationFinding=migrate
+    ? (diagnosis.findings??[]).find((entry)=>entry.migration?.id==="physical_embodiment_v2")??null
+    : null;
+  if(migrate&&migrationFinding===null){
+    throw new Error("appearance migration is not available for this Thread");
+  }
+  const operationKey = `appearance_${mode}_${createHash("sha256")
+    .update(JSON.stringify({
+      threadId,
+      specification,
+      physicalAncestry,
+      targetVersion:migrationFinding?.targetVersion??null,
+      ancestryEvidenceEventId:migrationFinding?.migration?.evidence?.eventId??null,
+      reason,
+    }))
     .digest("hex")
     .slice(0, 24)}`;
   const beforePresentation = await presentation({ threadPresentation, threadId });
@@ -227,13 +294,13 @@ async function main() {
   const previousFidCredentialId = previousFidCard?.credentialId ?? null;
   const previousFidCredentialVersion = previousFidCard?.credentialVersion ?? null;
 
-  progress(legacyMigration ? "submit_legacy_physical_embodiment_migration" : renewCurrent ? "submit_canonical_renewal" : "submit_canonical_correction", {
+  progress(migrate ? "submit_appearance_migration" : rerender ? "submit_appearance_rerender" : "submit_appearance_correction", {
     previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
     previousSpecificationDigest:before.specificationDigest ?? null,
     previousFidCredentialId,
   });
-  const changed = legacyMigration
-    ? await submitLegacyPhysicalMigration({
+  const changed = migrate
+    ? await submitAppearanceMigration({
         worldKernel,
         privateToken,
         threadId,
@@ -248,23 +315,23 @@ async function main() {
         operationKey,
         specification,
         reason,
-        renewCurrent,
+        rerender,
       });
-  const result = legacyMigration
+  const result = migrate
     ? changed?.migration?.visualIdentityCorrection
-    : renewCurrent ? changed?.visualIdentityRenewal : changed?.visualIdentityCorrection;
+    : rerender ? changed?.visualIdentityRenewal : changed?.visualIdentityCorrection;
   const pendingRevision = result?.embodiment?.revision;
   if (!Number.isSafeInteger(pendingRevision)) throw new Error("visual identity change did not return an Embodiment revision");
-  if (renewCurrent && result.embodiment.specificationDigest !== before.specificationDigest) {
-    throw new Error("canonical renewal changed the authoritative visual specification");
+  if (rerender && result.embodiment.specificationDigest !== before.specificationDigest) {
+    throw new Error("appearance rerender changed the authoritative visual specification");
   }
-  if (legacyMigration && result?.reused === true && result.embodiment.status === "available") {
+  if (migrate && result?.reused === true && result.embodiment.status === "available") {
     const canonicalReferenceObjectRef=result.embodiment.asset?.referenceObjectRef ?? null;
     if(typeof canonicalReferenceObjectRef!=="string"||canonicalReferenceObjectRef===""){
       throw new Error("reused legacy embodiment migration lacks an admitted canonical root");
     }
     const converged=await poll(
-      "reused legacy physical embodiment projection",
+      "reused appearance projection",
       () => presentation({ threadPresentation, threadId }),
       (body) => {
         const card=body?.snapshot?.presentation?.identityCard ?? null;
@@ -288,7 +355,7 @@ async function main() {
     );
     const credential=converged.snapshot.presentation.identityCard;
     process.stdout.write(`${JSON.stringify({
-      event:"legacy-physical-embodiment-migration-complete",
+      event:"appearance-migration-complete",
       mode,
       reused:true,
       threadId,
@@ -305,7 +372,7 @@ async function main() {
 
   progress("await_canonical_root", { pendingRevision });
   const admitted = await poll(
-    legacyMigration ? "migrated canonical root admission" : renewCurrent ? "renewed canonical root admission" : "corrected canonical root admission",
+    migrate ? "migrated appearance root admission" : rerender ? "rerendered canonical root admission" : "corrected canonical root admission",
     () => observatory({ worldKernel, privateToken, threadId }),
     (body) => {
       const portrait = canonicalPortrait(body);
@@ -332,7 +399,7 @@ async function main() {
 
   progress("await_presentation_projection");
   await poll(
-    legacyMigration ? "migrated visual identity projection" : renewCurrent ? "renewed visual identity projection" : "corrected visual identity projection",
+    migrate ? "migrated appearance projection" : rerender ? "rerendered appearance projection" : "corrected visual identity projection",
     () => presentation({ threadPresentation, threadId }),
     (body) => body?.snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0] === canonicalReferenceObjectRef,
     DEFAULT_TIMEOUT_MS,
@@ -347,7 +414,7 @@ async function main() {
 
   progress("await_fin_card", { previousFidCredentialId });
   const correctedPresentation = await poll(
-    legacyMigration ? "automatic FID projection from migrated canonical root" : renewCurrent ? "automatic FID projection from renewed canonical root" : "automatic FID projection from corrected canonical root",
+    migrate ? "automatic FID projection from migrated appearance root" : rerender ? "automatic FID projection from rerendered appearance root" : "automatic FID projection from corrected canonical root",
     () => presentation({ threadPresentation, threadId }),
     (body) => {
       const card = body?.snapshot?.presentation?.identityCard ?? null;
@@ -383,7 +450,7 @@ async function main() {
   });
 
   process.stdout.write(`${JSON.stringify({
-    event:legacyMigration ? "legacy-physical-embodiment-migration-complete" : renewCurrent ? "canonical-visual-identity-renewal-complete" : "canonical-visual-identity-repair-complete",
+    event:migrate ? "appearance-migration-complete" : rerender ? "appearance-rerender-complete" : "appearance-correction-complete",
     mode,
     threadId,
     operationKey,
@@ -401,7 +468,7 @@ async function main() {
 
 main().catch((error) => {
   process.stderr.write(`${JSON.stringify({
-    event:"canonical-visual-identity-repair-failed",
+    event:"appearance-failed",
     message:error instanceof Error ? error.message : String(error),
   })}\n`);
   process.exitCode = 1;
