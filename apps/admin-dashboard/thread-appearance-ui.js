@@ -125,13 +125,8 @@ function actionButton(label,onClick,{primary=false,tooltip=label,appearanceProgr
 }
 
 function setAppearanceBusy(host,busy){
-  if(busy){
-    host.dataset.appearanceRefreshing="true";
-    host.setAttribute("aria-busy","true");
-  }else{
-    delete host.dataset.appearanceRefreshing;
-    host.removeAttribute("aria-busy");
-  }
+  if(busy)host.setAttribute("aria-busy","true");
+  else host.removeAttribute("aria-busy");
   for(const button of host.querySelectorAll("[data-appearance-progress]")){
     button.disabled=busy;
     button.setAttribute("aria-busy",String(busy));
@@ -177,7 +172,8 @@ function migrationDescription(state){
 }
 
 async function refreshUntilAppearanceReady(host,threadId,threadName){
-  if(host.dataset.appearanceRefreshing==="true")return;
+  if(host.dataset.appearanceWatching==="true")return;
+  host.dataset.appearanceWatching="true";
   setAppearanceBusy(host,true);
 
   const progress=el("div","thread-appearance-progress");
@@ -185,11 +181,12 @@ async function refreshUntilAppearanceReady(host,threadId,threadName){
   host.append(progress);
 
   try{
-    while(host.isConnected&&host.dataset.appearanceRefreshing==="true"){
+    while(host.isConnected&&host.dataset.appearanceWatching==="true"){
       const health=await requestHealth(threadId);
       const state=threadAppearanceState(health.diagnosis);
 
       if(state.appearanceReady){
+        delete host.dataset.appearanceWatching;
         setAppearanceBusy(host,false);
         progress.lastElementChild.textContent="Appearance ready · refreshing Thread…";
         announceThreadUpdated(threadId);
@@ -197,6 +194,7 @@ async function refreshUntilAppearanceReady(host,threadId,threadName){
       }
 
       if(state.appearanceBlocked||health.reconciliation?.state==="dead_letter"){
+        delete host.dataset.appearanceWatching;
         setAppearanceBusy(host,false);
         await render(
           host,
@@ -209,6 +207,7 @@ async function refreshUntilAppearanceReady(host,threadId,threadName){
       }
 
       if(!state.appearancePending){
+        delete host.dataset.appearanceWatching;
         setAppearanceBusy(host,false);
         await render(host,threadId,threadName,"Appearance status refreshed.",health);
         return;
@@ -218,6 +217,7 @@ async function refreshUntilAppearanceReady(host,threadId,threadName){
       await delay(REFRESH_POLL_MS);
     }
   }catch(error){
+    delete host.dataset.appearanceWatching;
     setAppearanceBusy(host,false);
     progress.remove();
     host.append(el("div","error-box","Appearance refresh failed: "+(error instanceof Error?error.message:String(error))));
@@ -297,7 +297,9 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
         eyebrow:"Appearance",
         description:"Generate a new canonical root from the unchanged current physical genome and canonical specification. Use this only when the authority is sound but one render is poor.",
         fields:[{name:"reason",label:"Reason",kind:"text",required:true}],
-        onBusyChange:busy=>setAppearanceBusy(host,busy),
+        onBusyChange:busy=>{
+          if(busy||host.dataset.appearanceWatching!=="true")setAppearanceBusy(host,busy);
+        },
         run:async input=>{
           const payload=await postRepair(threadId,{
             action:"canonical_visual_identity_renewal",
@@ -306,16 +308,15 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
             evidenceReferences:[],
           });
           const pending=payload?.visualIdentityRenewal?.embodiment?.status==="pending_generation";
-          await render(
-            host,
-            threadId,
-            threadName,
-            pending
-              ? "Re-render admitted. Physical genome and specification are unchanged; waiting for publication."
-              : "Re-render complete. Physical genome and canonical specification were unchanged.",
-          );
           if(pending){
-            window.setTimeout(()=>{ void refreshUntilAppearanceReady(host,threadId,threadName); },0);
+            void refreshUntilAppearanceReady(host,threadId,threadName);
+          }else{
+            await render(
+              host,
+              threadId,
+              threadName,
+              "Re-render complete. Physical genome and canonical specification were unchanged.",
+            );
           }
         },
       });
