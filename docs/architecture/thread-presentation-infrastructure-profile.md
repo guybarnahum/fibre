@@ -78,7 +78,7 @@ Required behavior remains conceptually:
 getHead(streamId)
 append(streamId, event, idempotencyKey, expectedSequence?)
 readAfter(streamId, sequence, limit)
-publishSnapshot(streamId, snapshotPointer, expectedSequence?)
+publishSnapshot(streamId, snapshotPointer, expectedSequence? | expectedSnapshotDigest?)
 getSnapshotPointer(streamId)
 ```
 
@@ -91,9 +91,10 @@ Required invariants:
 3. an event is durably admitted before any viewer may observe it;
 4. replay after a cursor is exact and ordered;
 5. concurrent appenders cannot allocate competing sequence values;
-6. snapshot metadata is tied to a known stream position;
-7. unavailable retained history produces an explicit snapshot-required recovery condition;
-8. provider restart/failover cannot change Fibre logical event identity/order.
+6. snapshot metadata is tied to the stream position actually materialized by that snapshot;
+7. structural snapshot replacement is compare-and-set against the snapshot being replaced, not unrelated later stream events;
+8. unavailable retained history produces an explicit snapshot-required recovery condition;
+9. provider restart/failover cannot change Fibre logical event identity/order.
 
 The presentation cursor names a public presentation-stream position, not authoritative Thread-history position.
 
