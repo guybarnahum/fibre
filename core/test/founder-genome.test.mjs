@@ -168,6 +168,8 @@ test("Polynesian hierarchy preserves specific lineage without inventing island d
   const hawaiian=referencePopulationPrior("oceania.polynesia.native_hawaiian");
   const samoan=referencePopulationPrior("oceania.polynesia.samoan");
 
+  assert.ok(polynesian.pigmentation<oceanic.pigmentation,"Polynesia still inherits broad-Oceania pigmentation");
+  assert.ok(polynesian.hairForm<oceanic.hairForm,"Polynesia still inherits broad-Oceania hair form");
   assert.ok(polynesian.faceBreadth>oceanic.faceBreadth,"Polynesian facial breadth calibration missing");
   assert.ok(polynesian.faceLength>oceanic.faceLength,"Polynesian facial-height calibration missing");
   assert.ok(polynesian.chinProjection>oceanic.chinProjection,"Polynesian chin projection calibration missing");
