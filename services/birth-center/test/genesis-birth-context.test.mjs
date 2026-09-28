@@ -1,7 +1,7 @@
 import {
-  physicalPhenotypeRenderingProjection,
-  resolveBirthPhysicalInheritance,
-} from "#core/src/human-phenotype/index.mjs";
+  expressInheritedAppearance,
+  resolveHumanPhysicalInheritance,
+} from "#core/src/human-appearance/index.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -23,7 +23,11 @@ test("Genesis carries explicit sex place and heritage into life context and embo
   const worldSpec = fixture(slot.worldSpecPath);
   const genome = fixture(slot.genomePath);
   const family=[{population:"Georgian family",share:1,referencePopulation:"west_asia"}];
-  const physicalGenome=resolveBirthPhysicalInheritance({maternalAncestry:family,paternalAncestry:family,seed:"birth-context"}).genome;
+  const physicalGenome=resolveHumanPhysicalInheritance({
+    maternal:{physicalLineage:family},
+    paternal:{physicalLineage:family},
+    conceptionSeed:"birth-context",
+  }).physicalGenome;
   const subjectIdentity = {
     femaleName: "Mariam Beridze",
     maleName: "Giorgi Beridze",
@@ -75,15 +79,19 @@ test("Genesis carries explicit sex place and heritage into life context and embo
     sex: seed.identity.sex,
     physicalGenome:plan.subjectIdentity.physicalGenome,
   });
-  const visualDescription = visual.specification.subject.description;
-  assert.match(visualDescription, /adult female person/u);
-  const physicalProjection=physicalPhenotypeRenderingProjection(
-    plan.subjectIdentity.physicalGenome,
-    { sex:seed.identity.sex },
+  const visualDescription=visual.specification.subject.description;
+  const physicalProjection=expressInheritedAppearance({
+    physicalGenome:plan.subjectIdentity.physicalGenome,
+    sex:seed.identity.sex,
+  });
+  assert.match(visualDescription,/\nSEX\nfemale\n/u,"birth lost authoritative visual sex");
+  assert.ok(
+    visualDescription.includes(physicalProjection.geometryDescription),
+    "birth lost inherited visual geometry",
   );
   assert.ok(
-    visualDescription.includes(physicalProjection.description),
-    "birth lost shared physical appearance projection",
+    visualDescription.includes(physicalProjection.surfaceDescription),
+    "birth lost inherited surface phenotype",
   );
   assert.doesNotMatch(visualDescription, /Georgian Jewish|Georgian family|west_asia/u, "family provenance must not become a portrait prompt");
   assert.deepEqual(seed.genome.physical,physicalGenome,"birth lost physical inheritance");
