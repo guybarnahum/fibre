@@ -191,6 +191,8 @@ The CLI is one implementation under `tools/appearance/appearance.mjs`. `appearan
 
 ## Slice 8 — Admin Appearance UI
 
+**Status: implemented on `main`; pending focused validation and staging UI proof.**
+
 Add a dedicated Appearance section in Thread Details.
 
 For old/missing physical authority:
@@ -206,11 +208,13 @@ For a current model:
 
 Do not hide appearance authority changes inside generic **Fix**.
 
+The implementation is intentionally bounded: Admin sends one migration or re-render command, performs one immediate refresh, then stops. There is no browser background polling, image reroll loop or duplicated appearance authority. **Refresh appearance** is explicit operator-driven inspection.
+
 ## Slice 9 — Staging proof
 
-**Status: partially proven live in staging 2026-09-27; final portrait inspection still pending.**
+**Status: live regression passed 2026-09-27.**
 
-First regression case: Li Jing. The live upgrade has already proven: old model diagnosed as migration-required; prior operator ancestry evidence reused unchanged; `physical-genome-v0.2` installed; a new anatomy-first specification admitted; canonical root changed from `visual_identity_reference_7939b8c5b13eb1a35f07020f6644422d` to `visual_identity_reference_6043f815374a1c610f92467e5edb29a1`; specification digest changed from `sha256:491ba6a34b6ec3775cd8e7d1c6d8aa4a0606423c72b5548d9ea43c8fd74f2915` to `sha256:eea9a38434971a13515bb4c1e2193fa3a9888c16e8cf8472c9a67c868baa8a2a`; Presentation converged; and FID revision 4 superseded revision 3. Final diagnosis is healthy with v0.2 and Embodiment as canonical visual authority.
+First regression case: Li Jing. The live upgrade proved: old model diagnosed as migration-required; prior operator ancestry evidence reused unchanged; `physical-genome-v0.2` installed; a new anatomy-first specification admitted; canonical root changed from `visual_identity_reference_7939b8c5b13eb1a35f07020f6644422d` to `visual_identity_reference_6043f815374a1c610f92467e5edb29a1`; specification digest changed from `sha256:491ba6a34b6ec3775cd8e7d1c6d8aa4a0606423c72b5548d9ea43c8fd74f2915` to `sha256:eea9a38434971a13515bb4c1e2193fa3a9888c16e8cf8472c9a67c868baa8a2a`; Presentation converged; and FID revision 4 superseded revision 3. Final diagnosis is healthy with v0.2 and Embodiment as canonical visual authority. Human inspection of the resulting root confirmed that it now reads as a believable Chinese/East-Asian individual rather than the generic-white failure that reopened calibration.
 
 Acceptance:
 - old model diagnosed as migration-required;
