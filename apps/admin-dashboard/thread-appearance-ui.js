@@ -2,18 +2,11 @@ import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js"
 import { decorateActionButton } from "./fa-icons.js";
 
 const PHYSICAL_MIGRATION_ID="physical_embodiment_v2";
-const POLL_MS=2000;
-const POLL_TIMEOUT_MS=10*60*1000;
-
 function el(tag,className=null,text=null){
   const node=document.createElement(tag);
   if(className)node.className=className;
   if(text!==null)node.textContent=text;
   return node;
-}
-
-function sleep(ms){
-  return new Promise(resolve=>window.setTimeout(resolve,ms));
 }
 
 function finding(diagnosis,codes){
@@ -92,20 +85,6 @@ async function postRepair(threadId,body){
   return payload;
 }
 
-async function waitForAppearance(threadId,{previousObjectRef,targetVersion}={}){
-  const deadline=Date.now()+POLL_TIMEOUT_MS;
-  let latest=null;
-  while(Date.now()<deadline){
-    latest=await requestHealth(threadId);
-    const state=threadAppearanceState(latest.diagnosis);
-    const versionReady=targetVersion===null||state.currentVersion===targetVersion;
-    const rootReady=state.objectRef!==null&&state.objectRef!==previousObjectRef;
-    if(versionReady&&rootReady&&state.canRerender)return latest;
-    await sleep(POLL_MS);
-  }
-  throw new Error("Appearance did not converge; latest "+JSON.stringify(threadAppearanceState(latest?.diagnosis)));
-}
-
 function actionButton(label,onClick,{primary=false,tooltip=label}={}){
   const button=el("button",(primary?"primary":"secondary")+" thread-repair-button");
   button.type="button";
@@ -179,18 +158,21 @@ async function render(host,threadId,threadName,message=null){
         description:migrationDescription(state),
         fields:actionFields(migration),
         run:async input=>{
-          await postRepair(threadId,{
+          const payload=await postRepair(threadId,{
             action:"migrate",
             migrationId:migration.id,
             migrationKey:"admin_appearance_migration_"+Date.now().toString(36),
             input,
           });
-          await waitForAppearance(threadId,{
-            previousObjectRef:state.objectRef,
-            targetVersion:state.targetVersion,
-          });
-          await render(host,threadId,threadName,label+" complete. Canonical appearance updated; Presentation and FID converge from the new root.");
-          window.dispatchEvent(new CustomEvent("fibre:thread-updated",{detail:{threadId,change:"appearance_migration"}}));
+          const pending=payload?.migration?.visualIdentityCorrection?.embodiment?.status==="pending_generation";
+          await render(
+            host,
+            threadId,
+            threadName,
+            pending
+              ? label+" admitted. Canonical root generation is pending; use Refresh appearance to inspect convergence."
+              : label+" complete.",
+          );
         },
       });
     },{
@@ -208,18 +190,21 @@ async function render(host,threadId,threadName,message=null){
         description:"Generate a new canonical root from the unchanged current physical genome and canonical specification. Use this only when the authority is sound but one render is poor.",
         fields:[{name:"reason",label:"Reason",kind:"text",required:true}],
         run:async input=>{
-          await postRepair(threadId,{
+          const payload=await postRepair(threadId,{
             action:"canonical_visual_identity_renewal",
             operationKey:"admin_appearance_rerender_"+Date.now().toString(36),
             reason:input.reason,
             evidenceReferences:[],
           });
-          await waitForAppearance(threadId,{
-            previousObjectRef:state.objectRef,
-            targetVersion:state.currentVersion,
-          });
-          await render(host,threadId,threadName,"Re-render complete. Physical genome and canonical specification were unchanged.");
-          window.dispatchEvent(new CustomEvent("fibre:thread-updated",{detail:{threadId,change:"appearance_rerender"}}));
+          const pending=payload?.visualIdentityRenewal?.embodiment?.status==="pending_generation";
+          await render(
+            host,
+            threadId,
+            threadName,
+            pending
+              ? "Re-render admitted. Physical genome and specification are unchanged; root generation is pending."
+              : "Re-render complete. Physical genome and canonical specification were unchanged.",
+          );
         },
       });
     },{
