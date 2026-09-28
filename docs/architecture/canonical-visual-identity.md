@@ -1,7 +1,7 @@
 ---
 id: architecture-canonical-visual-identity
 status: accepted
-last-reviewed: 2026-09-27
+last-reviewed: 2026-09-28
 canonical: true
 ---
 
@@ -34,12 +34,21 @@ It must be specific enough to materially constrain one recognizable individual, 
 
 The image is the root operational likeness anchor.
 
-For a native synthetic Thread it is generated once from the canonical visual identity text with **no prior reference image**. The normalized synthetic reference age is 25.
+For a native synthetic Thread, the **final** canonical reference is instantiated geometry-first at normalized reference age 25:
 
-The resulting bytes are not automatically identity. They become canonical only after Fibre verifies the exact generation proof and the World/Embodiment authority admits the immutable object into the matching embodiment lineage.
+```text
+layered canonical appearance text
+  -> text-only monochrome geometry anchor
+  -> reference-conditioned surface application
+  -> final canonical reference
+```
+
+The geometry anchor is generation scaffolding only. It is never projected as the Thread's visual identity and never becomes a second Embodiment authority. The final bytes become canonical only after Fibre verifies both the anchor provenance and the final generation proof, including the exact reference from final job to anchor, and World/Embodiment admits the final immutable object.
 
 The canonical reference remains stable as the Thread ages.
 
+
+Human Appearance partitions the canonical text into **structural morphology**, **reference geometry state**, **surface phenotype**, and **reference surface state**. The first generation receives only geometry-bearing layers. The second receives the resulting anchor plus only surface-bearing layers. This prevents pigmentation, hair and grooming from becoming latent instructions to choose a different face.
 
 Before any image exists, the Thread's inherited physical genome is the embodiment authority. Genesis expresses that genome into one concrete sex-conditioned phenotype and a continuous inherited rendering projection; ancestry and family-origin labels do not cross into the renderer as instructions. The canonical specification carries the selected person's inherited traits and continuous individual variation, not a demographic range for the provider to resolve. Once Fibre has admitted the canonical reference image, that reference becomes the operational likeness authority for downstream image generation. Derived prompts should describe only the requested age, time-local appearance, scene and rendering purpose; they should not replay ancestry, family, demographic or canonical phenotype text.
 
@@ -61,9 +70,10 @@ The derived output may be published, signed and cited as generated reconstructio
 ### De-novo / foundling / synthetic lineage
 
 ```text
-rich canonical identity text
-  -> text-only canonical root generation
-  -> verified root asset
+rich layered canonical identity text
+  -> text-only geometry anchor
+  -> surface application using the anchor
+  -> verified final root asset
 ```
 
 No external image identity is required.
@@ -84,8 +94,9 @@ parent B physical genome
         -> deterministic allele transmission/recombination
         -> child physical genome
         -> sex-conditioned inherited phenotype
-        -> canonical identity text
-        -> text-only child canonical reference image
+        -> layered canonical identity text
+        -> text-only child geometry anchor
+        -> surface-applied child canonical reference image
 ```
 
 The child's root generation does not use the parents' images as visual references. Family resemblance comes from inherited physical state, while recombination preserves sibling variation and hidden inherited material. The child remains a distinct visual identity.
