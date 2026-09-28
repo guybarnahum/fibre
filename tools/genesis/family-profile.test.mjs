@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {normalizeFamilyProfiles,sampleFamilyProfile,validateFamilyProfiles} from "./family-profile.mjs";
+import {normalizeFamilyProfiles,sampleFamilyProfile,validateFamilyProfiles} from "../../core/src/population-context/index.mjs";
 
 const names=prefix=>Array.from({length:12},(_,index)=>`${prefix}${index+1}`);
 const ancestry=population=>({maternal:[{population,share:1,referencePopulation:"eur_north"}],paternal:[{population,share:1,referencePopulation:"eur_north"}]});
