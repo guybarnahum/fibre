@@ -314,9 +314,9 @@ This is a software/presentation migration, not a life event or authority rewrite
 Run one renewal from the repo root after the matching code is deployed to staging:
 
 ```bash
-npm run fid:visual:renew -- \
+npm run appearance:rerender -- \
   --thread-id=thr_... \
-  --reason="Renew legacy canonical root under the current Fibre renderer; canonical visual specification unchanged."
+  --reason="Re-render the current canonical appearance; physical genome and canonical specification unchanged."
 ```
 
 The command verifies staging deployment evidence, asserts that the renewal response preserves the specification digest, waits for the new root, then waits for Presentation and FIN media to converge.
@@ -353,6 +353,26 @@ The 2026-09-27 Li Jing staging run proved the migration and replay machinery but
 The active model/calibration/migration sequence is [Physical appearance model calibration and migration plan](../validation/physical-appearance-calibration-plan.md). The provisional `physical-genome-v0.2` work must not be treated as accepted or deployed appearance quality until Slices 1-5 pass.
 
 
+## Operator appearance commands
+
+Use the dedicated Appearance CLI for ordinary maintenance:
+
+```bash
+npm run appearance:diagnose -- --thread-id=thr_...
+
+npm run appearance:migrate -- \
+  --thread-id=thr_... \
+  --reason="Upgrade the Thread to the current calibrated physical appearance model."
+
+npm run appearance:rerender -- \
+  --thread-id=thr_... \
+  --reason="Re-render the current canonical appearance without changing physical authority."
+```
+
+When a previous physical migration event contains operator-confirmed maternal/paternal ancestry, `appearance:migrate` reuses that durable evidence automatically. For a Thread without such evidence, provide `--physical-ancestry-file=/path/to/ancestry.json`.
+
+`appearance:correct` remains the exceptional manual-specification path described below.
+
 ## Operator runbook: correcting appearance
 
 A manual canonical appearance correction is an **exceptional authority correction**, not the normal path for inherited physical appearance. Use appearance-model migration for missing/outdated physical authority and re-rendering for a poor root. Manual correction remains only for genuinely exceptional cases such as wrong-subject binding or an independently established specification error that cannot be resolved from physical authority.
@@ -380,7 +400,7 @@ The subject description should be specific enough to constrain one recognizable 
 Run the correction from the repo root:
 
 ```bash
-npm run fid:visual:repair -- \
+npm run appearance:correct -- \
   --thread-id=thr_... \
   --spec-file=/tmp/thread-visual.json \
   --reason="Correct canonical visual identity: <concise factual reason>."
