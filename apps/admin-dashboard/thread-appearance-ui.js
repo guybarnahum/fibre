@@ -2,6 +2,7 @@ import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js"
 import { decorateActionButton } from "./fa-icons.js";
 
 const PHYSICAL_MIGRATION_ID="physical_embodiment_v2";
+const REFRESH_POLL_MS=20_000;
 function el(tag,className=null,text=null){
   const node=document.createElement(tag);
   if(className)node.className=className;
@@ -29,6 +30,10 @@ export function threadAppearanceState(diagnosis){
     "CANONICAL_EMBODIMENT_PENDING",
     "CANONICAL_EMBODIMENT_MISSING",
   ]);
+  const publication=finding(diagnosis,[
+    "CANONICAL_VISUAL_PUBLICATION",
+    "CANONICAL_VISUAL_NOT_PUBLISHED",
+  ]);
   const migration=physical?.migration?.id===PHYSICAL_MIGRATION_ID?physical.migration:null;
   const evidence=migration?.evidence??physical?.evidence??null;
   const currentVersion=physical?.code==="PHYSICAL_GENOME"
@@ -42,6 +47,7 @@ export function threadAppearanceState(diagnosis){
     physical,
     visual,
     embodiment,
+    publication,
     migration,
     evidence,
     currentVersion,
@@ -49,6 +55,13 @@ export function threadAppearanceState(diagnosis){
     objectRef:embodiment?.objectRef??null,
     canMigrate:migration!==null,
     canRerender:current&&visualHealthy&&embodimentHealthy,
+    appearanceReady:current
+      &&visualHealthy
+      &&embodimentHealthy
+      &&publication?.code==="CANONICAL_VISUAL_PUBLICATION"
+      &&publication?.state==="healthy",
+    appearancePending:embodiment?.code==="CANONICAL_EMBODIMENT_PENDING"
+      ||publication?.code==="CANONICAL_VISUAL_NOT_PUBLISHED",
   });
 }
 
@@ -83,6 +96,16 @@ async function postRepair(threadId,body){
   const payload=await response.json().catch(()=>null);
   if(!response.ok)throw new Error(payload?.error?.detail??payload?.error?.code??payload?.error??("HTTP "+response.status));
   return payload;
+}
+
+function delay(ms){
+  return new Promise(resolve=>window.setTimeout(resolve,ms));
+}
+
+function announceThreadUpdated(threadId){
+  window.dispatchEvent(new CustomEvent("fibre:thread-updated",{
+    detail:{threadId,change:"appearance_ready"},
+  }));
 }
 
 function actionButton(label,onClick,{primary=false,tooltip=label}={}){
@@ -125,8 +148,48 @@ function migrationDescription(state){
   return "Record explicit maternal and paternal physical origin, then migrate this Thread onto the current physical appearance model. Do not infer ancestry from identity, birthplace, language, culture, or the existing portrait.";
 }
 
-async function render(host,threadId,threadName,message=null){
-  const health=await requestHealth(threadId);
+async function refreshUntilAppearanceReady(host,threadId,threadName){
+  if(host.dataset.appearanceRefreshing==="true")return;
+  host.dataset.appearanceRefreshing="true";
+  host.setAttribute("aria-busy","true");
+
+  const progress=el("div","thread-appearance-progress");
+  progress.append(el("span","thread-appearance-spinner"),el("span",null,"Checking appearance…"));
+  host.append(progress);
+
+  try{
+    while(host.isConnected&&host.dataset.appearanceRefreshing==="true"){
+      const health=await requestHealth(threadId);
+      const state=threadAppearanceState(health.diagnosis);
+
+      if(state.appearanceReady){
+        delete host.dataset.appearanceRefreshing;
+        host.removeAttribute("aria-busy");
+        await render(host,threadId,threadName,"Appearance is current.",health);
+        announceThreadUpdated(threadId);
+        return;
+      }
+
+      if(!state.appearancePending){
+        delete host.dataset.appearanceRefreshing;
+        host.removeAttribute("aria-busy");
+        await render(host,threadId,threadName,"Appearance status refreshed.",health);
+        return;
+      }
+
+      progress.lastElementChild.textContent="Appearance generation is still running · checking again in 20 seconds…";
+      await delay(REFRESH_POLL_MS);
+    }
+  }catch(error){
+    delete host.dataset.appearanceRefreshing;
+    host.removeAttribute("aria-busy");
+    progress.remove();
+    host.append(el("div","error-box","Appearance refresh failed: "+(error instanceof Error?error.message:String(error))));
+  }
+}
+
+async function render(host,threadId,threadName,message=null,providedHealth=null){
+  const health=providedHealth??await requestHealth(threadId);
   const state=threadAppearanceState(health.diagnosis);
   host.replaceChildren();
 
@@ -223,8 +286,8 @@ async function render(host,threadId,threadName,message=null){
     host.append(el("p","thread-repair-note","Appearance authority is not ready for migration or re-rendering. Resolve the Thread health findings first."));
   }
 
-  actions.append(actionButton("Refresh appearance",()=>render(host,threadId,threadName),{
-    tooltip:"Refresh appearance authority from World.",
+  actions.append(actionButton("Refresh appearance",()=>refreshUntilAppearanceReady(host,threadId,threadName),{
+    tooltip:"Refresh appearance and, while generation is pending, check every 20 seconds until the canonical portrait is published.",
   }));
   host.append(actions);
 }
