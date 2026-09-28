@@ -185,12 +185,7 @@ export function selectImageIntegration(value, { environment = process.env, fetch
   const model = configured("image integration config.model", chosen.config?.model);
   const apiKey = environmentValue("image integration secrets", chosen.secrets, "apiKey", environment);
 
-  if (chosen.provider === "openai") return createOpenAIImageProvider({
-    apiKey,
-    model,
-    fetchImpl,
-    inputFidelity:chosen.config?.inputFidelity,
-  });
+  if (chosen.provider === "openai") return createOpenAIImageProvider({ apiKey, model, fetchImpl });
   if (chosen.provider === "bfl") return createBflFluxImageProvider({ apiKey, model, fetchImpl });
   throw new TypeError(`unsupported image integration provider ${chosen.provider}`);
 }
