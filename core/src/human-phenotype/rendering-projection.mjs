@@ -76,38 +76,54 @@ const STATE_ONLY_LOCI=new Set([
   "muscularityTendency",
 ]);
 
-function continuousOther(latent){
-  const facial=new Set([
-    "faceBreadth","faceLength","midfaceProminence","zygomaticProjection",
-    "jawBreadth","chinProjection","eyeSpacing","eyeShape","epicanthicFold",
-    "upperEyelidExposure","orbitalDepth","foreheadProportion","brow",
-    "noseBreadth","noseProjection","nasalBridgeHeight","softTissue",
-  ]);
+const FACIAL_LOCI=new Set([
+  "faceBreadth","faceLength","midfaceProminence","zygomaticProjection",
+  "jawBreadth","chinProjection","eyeSpacing","eyeShape","epicanthicFold",
+  "upperEyelidExposure","orbitalDepth","foreheadProportion","brow",
+  "noseBreadth","noseProjection","nasalBridgeHeight","softTissue",
+]);
+const SURFACE_LOCI=new Set([
+  "pigmentation","eyePigmentation","hairPigmentation","frecklingTendency",
+  "hairForm","hairDensity",
+]);
+
+function continuous(latent,predicate){
   return Object.entries(latent)
-    .filter(([name])=>!facial.has(name)&&!STATE_ONLY_LOCI.has(name))
+    .filter(([name])=>predicate(name))
     .map(([name,value])=>`${name}: ${Number(value).toFixed(2)} (${LATENT_MEANING[name]})`)
     .join("; ");
 }
 
+const continuousSurface=latent=>continuous(latent,name=>SURFACE_LOCI.has(name));
+const continuousBody=latent=>continuous(
+  latent,
+  name=>!FACIAL_LOCI.has(name)&&!SURFACE_LOCI.has(name)&&!STATE_ONLY_LOCI.has(name),
+);
+
 export function physicalPhenotypeRenderingProjection(genome,{sex}={}){
   const phenotype=phenotypeFromPhysicalGenome(genome,{sex});
   const anatomy=anatomyFromTraits(phenotype.traits);
-  const description=[
+  const geometryDescription=[
     `Identity-critical inherited facial geometry — face and midface: ${join(anatomy.face)}.`,
     `Eye and orbital anatomy: ${join(anatomy.eyes)}.`,
     `Nasal and perioral anatomy: ${join(anatomy.noseMouth)}.`,
-    `Pigmentation and hair: ${join(anatomy.pigmentationHair)}.`,
     `Inherited body structure: ${join(anatomy.body)}.`,
-    "Treat the facial relationships above as one coherent anatomy. Do not independently average them toward generic portrait defaults.",
+    "Treat these facial relationships as one coherent anatomy. Do not independently average them toward generic portrait defaults.",
     `Continuous facial coordinates are secondary precision and preserve this individual's proportions inside the semantic anatomy: ${continuousFace(phenotype.latent)}.`,
-    `Other continuous inherited coordinates: ${continuousOther(phenotype.latent)}.`,
-    "Pigmentation, hair color and hair texture are independent axes; never use them as permission to replace or reinterpret the specified facial geometry.",
+    `Other continuous inherited structural coordinates: ${continuousBody(phenotype.latent)}.`,
+  ].join(" ");
+  const surfaceDescription=[
+    `Inherited surface phenotype — pigmentation and hair: ${join(anatomy.pigmentationHair)}.`,
+    `Continuous inherited surface coordinates: ${continuousSurface(phenotype.latent)}.`,
+    "Surface phenotype must not replace or reinterpret the structural facial geometry.",
     "Visible facial hair, hairline, body composition and muscular development come from physical state, not directly from inherited tendency coordinates.",
   ].join(" ");
   return Object.freeze({
-    version:"physical-rendering-projection-v0.4",
+    version:"physical-rendering-projection-v0.5",
     phenotype,
     anatomy,
-    description,
+    geometryDescription,
+    surfaceDescription,
+    description:`${geometryDescription} ${surfaceDescription}`,
   });
 }
