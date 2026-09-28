@@ -22,7 +22,7 @@ npm run population:lab -- --place="United Kingdom/London" --year=2004 --count=12
 cat "$(ls -t .fibre/population-lab/*/population.json | head -1)" | pbcopy
 ```
 
-Visual mode additionally generates low-quality 1024px portraits and places them directly in the HTML contact sheet. The renderer receives sex plus the same semantic + continuous inherited-phenotype projection used by canonical Genesis visuals; it does not receive the person's name, place, family-origin label, ancestry label or languages. Keep visual cohorts small; text-only mode is the cheap default.
+Visual mode additionally generates low-quality 1024px portraits and places them directly in the HTML contact sheet. It uses the same geometry-first semantics as canonical Genesis rendering: a text-only monochrome geometry anchor is generated first, then the production image adapter applies only surface phenotype/state as a reference-conditioned edit. Both the geometry anchor and final portrait are saved for inspection. Neither pass receives the person's name, place, family-origin label, ancestry label or languages. Keep visual cohorts small; visual mode now costs two image generations per person, while text-only mode remains the cheap default.
 
 Multiple places can share a run:
 
@@ -37,7 +37,7 @@ Useful options are `--model=`, `--image-model=`, `--seed=`, and `--output=`.
 
 The automatic diagnostics intentionally cover objective collapse signals rather than demographic quotas: exact full-name collisions, exact phenotype collisions, given-name and surname concentration, family-profile coverage, categorical phenotype concentration, continuous inherited-latent spread, and a 10,000-birth model-free probe of the exact weighted family sampler. Semantic projection compression is reported separately when broad continuous variation is hidden inside a coarse label such as `medium`; it is not treated as genetic collapse. Cross-place differences are descriptive only and are never a requirement that populations differ on every trait.
 
-The contact sheet remains an essential test. A population can satisfy simple statistics and still visibly collapse toward one face, one beauty prior, or one photographic convention. Each person has a Copy action for the complete generated record; visual runs also expose and copy the exact render prompt. Analytics can be copied as JSON.
+The contact sheet remains an essential test. A population can satisfy simple statistics and still visibly collapse toward one face, one beauty prior, or one photographic convention. For geometry-first runs, inspect the geometry anchor and final portrait separately: if the anchor is wrong, revisit Human Appearance geometry; if the anchor is right but the surface edit changes the face, the failure belongs to renderer fidelity rather than population calibration. Each person has a Copy action for the complete generated record; visual runs expose both generation prompts. Analytics can be copied as JSON.
 
 Warnings are diagnostic. They are not a claim that a population is correct merely because no threshold fired.
 
@@ -88,6 +88,6 @@ npm run population:lab -- \
   --images
 ```
 
-The 12 rendered people are the first four deterministic births from each population in the numerical cohort. Reference-population labels appear in the HTML for human review but are not included in the image prompt; the renderer receives only the shared inherited-anatomy projection.
+The 12 rendered people are the first four deterministic births from each population in the numerical cohort. Reference-population labels appear in the HTML for human review but are not included in either image prompt. The first pass receives structural morphology + reference geometry state; the second receives only the geometry anchor + surface phenotype/state.
 
 The visual acceptance question is deliberately qualitative and narrow: do the portraits faithfully express the supplied anatomy, remain clearly distinct individuals, and avoid collapsing East-Asian cohorts toward a generic unrelated facial morphology? This is an offline calibration gate, never a runtime reroll mechanism.
