@@ -81,7 +81,7 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
     },
   });
 
-  assert.equal(THREAD_HEALTH_PROJECTION_VERSION, "thread-health-v0.5");
+  assert.equal(THREAD_HEALTH_PROJECTION_VERSION, "thread-health-v0.6");
   const refreshed = await service.inspect(threadId);
   assert.equal(refreshed.cacheHit, false, "older diagnostic semantics were reused");
   assert.equal(
