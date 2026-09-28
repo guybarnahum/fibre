@@ -7,7 +7,10 @@ import {
   referencePhysicalState,
 } from "../../core/src/human-appearance/index.mjs";
 import {composeBirthSubjectIdentity,selectBirthNameParts} from "../genesis/birth-material.mjs";
-import {populationPortraitPrompt} from "./portrait-prompt.mjs";
+import {
+  populationGeometryAnchorPrompt,
+  populationSurfacePortraitPrompt,
+} from "./portrait-prompt.mjs";
 import {
   generatePhysicalCalibrationCohort,
   physicalCalibrationDiagnostics,
@@ -18,7 +21,10 @@ import {
   sampleFamilyProfile,
   validateFamilyProfiles,
 } from "../../core/src/population-context/index.mjs";
-import {OPENAI_IMAGE_DEFAULT_MODEL} from "../../integrations/ai/image/openai.mjs";
+import {
+  OPENAI_IMAGE_DEFAULT_MODEL,
+  createOpenAIImageProvider,
+} from "../../integrations/ai/image/openai.mjs";
 
 const MODEL="gpt-5.1-2025-11-13";
 const MORPH=["faceWidth","faceLength","midfaceProminence","zygomaticProjection","jawWidth","chinProjection","eyeSpacing","eyeShape","epicanthicFold","upperEyelidExposure","orbitalDepth","foreheadProportion","browProminence","noseWidth","noseProjection","nasalBridgeHeight","lipFullness"];
@@ -129,6 +135,8 @@ function generate(place,count,seed,context){
       raisedLanguages:[...identity.raisedLanguages],
       spokenLanguages:[...identity.languages],
       renderDescription:projection.renderDescription,
+      geometryDescription:projection.geometryDescription,
+      surfaceDescription:projection.surfaceDescription,
       projectionVersion:projection.projectionVersion,
       physicalState,
       inheritance:{genome:identity.physicalGenome,phenotype:projection.phenotype},
@@ -242,22 +250,55 @@ function score(people,contexts){
   };
 }
 
-async function image(person,dir,index,model){
-  const prompt=populationPortraitPrompt({
+const digestBytes=bytes=>`sha256:${createHash("sha256").update(bytes).digest("hex")}`;
+
+async function image(person,dir,index,provider){
+  if(!person.geometryDescription||!person.surfaceDescription){
+    throw new Error("portrait is missing Human Appearance render layers");
+  }
+  if(!person.physicalState?.geometryDescription||!person.physicalState?.surfaceDescription){
+    throw new Error("portrait is missing layered reference physical state");
+  }
+  const ordinal=String(index+1).padStart(3,"0");
+  const geometryPrompt=populationGeometryAnchorPrompt({
     sex:person.sex,
-    renderDescription:person.renderDescription,
-    physicalStateDescription:person.physicalState?.description??null,
+    geometryDescription:person.geometryDescription,
+    physicalGeometryDescription:person.physicalState.geometryDescription,
   });
-  const response=await resilientFetch("https://api.openai.com/v1/images/generations",{
-    method:"POST",headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},
-    body:JSON.stringify({model,prompt,size:"1024x1024",quality:"low",n:1})
+  const geometry=await provider.generate({
+    assetKind:"image",
+    role:"population_lab_geometry_anchor",
+    brief:{description:geometryPrompt,constraints:[]},
+    referenceObjects:[],
   });
-  if(!response.ok)throw Error("image "+response.status+": "+await response.text());
-  const json=await response.json(),bytes=json.data?.[0]?.b64_json;
-  if(!bytes)throw Error("image provider returned no bytes");
-  const name=`person-${String(index+1).padStart(3,"0")}.png`;
-  await writeFile(resolve(dir,name),Buffer.from(bytes,"base64"));
-  return{name,prompt};
+  const geometryName=`person-${ordinal}-geometry.png`;
+  await writeFile(resolve(dir,geometryName),geometry.result.bytes);
+
+  const surfacePrompt=populationSurfacePortraitPrompt({
+    sex:person.sex,
+    surfaceDescription:person.surfaceDescription,
+    physicalSurfaceDescription:person.physicalState.surfaceDescription,
+  });
+  const geometryObjectRef=`population_lab_geometry_${ordinal}`;
+  const final=await provider.generate({
+    assetKind:"image",
+    role:"population_lab_surface_portrait",
+    brief:{description:surfacePrompt,constraints:[]},
+    referenceObjects:[{
+      objectRef:geometryObjectRef,
+      digest:digestBytes(geometry.result.bytes),
+      bytes:geometry.result.bytes,
+      metadata:{mediaType:geometry.result.mediaType,kind:"geometry_anchor"},
+    }],
+  });
+  const name=`person-${ordinal}.png`;
+  await writeFile(resolve(dir,name),final.result.bytes);
+  return{
+    name,
+    geometryAnchor:geometryName,
+    geometryPrompt,
+    renderPrompt:surfacePrompt,
+  };
 }
 
 function report(people,stats,meta){
@@ -269,11 +310,11 @@ function report(people,stats,meta){
     const context=person.referencePopulation
       ? `<p><b>Physical reference</b> ${esc(person.referencePopulation)}</p>`
       : `<p><b>Family</b> ${esc(person.familyOrigin)}</p><p><b>Languages</b> ${esc(person.raisedLanguages.join(", "))} → ${esc(person.spokenLanguages.join(", "))}</p>`;
-    return`<article><div class=pic>${person.image?`<img src="${esc(person.image)}" alt="">`:`<i>${esc(person.name.split(/\s+/).map(part=>part[0]).slice(0,2).join(""))}</i>`}</div><section><div class=title><h3>${esc(person.name)}</h3><button data-copy="person-${index}">Copy</button></div><small>${esc(person.sex)} · ${esc(person.birthplace)}</small>${context}<details><summary>Inherited phenotype</summary><pre>${esc(JSON.stringify(person.inheritance.phenotype,null,2))}</pre></details>${person.physicalState?`<details><summary>Reference physical state</summary><pre>${esc(JSON.stringify(person.physicalState,null,2))}</pre></details>`:""}${person.renderPrompt?`<details><summary>Render prompt <button data-copy="prompt-${index}">Copy</button></summary><pre>${esc(person.renderPrompt)}</pre></details>`:""}<textarea hidden id="person-${index}">${payload}</textarea>${person.renderPrompt?`<textarea hidden id="prompt-${index}">${esc(person.renderPrompt)}</textarea>`:""}</section></article>`;
+    return`<article><div class=pic>${person.image?`<img src="${esc(person.image)}" alt="">`:`<i>${esc(person.name.split(/\s+/).map(part=>part[0]).slice(0,2).join(""))}</i>`}</div><section><div class=title><h3>${esc(person.name)}</h3><button data-copy="person-${index}">Copy</button></div><small>${esc(person.sex)} · ${esc(person.birthplace)}</small>${context}${person.geometryAnchor?`<details><summary>Geometry anchor</summary><img class=anchor src="${esc(person.geometryAnchor)}" alt=""><pre>${esc(person.geometryPrompt??"")}</pre></details>`:""}<details><summary>Inherited phenotype</summary><pre>${esc(JSON.stringify(person.inheritance.phenotype,null,2))}</pre></details>${person.physicalState?`<details><summary>Reference physical state</summary><pre>${esc(JSON.stringify(person.physicalState,null,2))}</pre></details>`:""}${person.renderPrompt?`<details><summary>Surface-edit prompt <button data-copy="prompt-${index}">Copy</button></summary><pre>${esc(person.renderPrompt)}</pre></details>`:""}<textarea hidden id="person-${index}">${payload}</textarea>${person.renderPrompt?`<textarea hidden id="prompt-${index}">${esc(person.renderPrompt)}</textarea>`:""}</section></article>`;
   }).join("");
   const domains=T.map(trait=>`<div><b>${trait}</b><span>${Object.entries(stats.domains[trait].counts).map(([value,count])=>`${value} ${count}`).join(" · ")}</span></div>`).join("");
   const analytics=JSON.stringify(stats,null,2);
-  return`<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width"><title>Fibre Population Lab</title><style>body{font-family:system-ui;margin:0;padding:28px;background:#f5f5f4;color:#18181b}.wrap{max-width:1500px;margin:auto}header,.title{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.metrics,.grid,.domains{display:grid;gap:12px}.metrics{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin:20px 0}.metric,.panel,article{background:white;border:1px solid #ddd;border-radius:12px}.metric,.panel{padding:14px}.metric strong{display:block;font-size:24px}.warn{color:#9a3412}.ok{color:#166534}.domains{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.domains div{display:flex;justify-content:space-between;font-size:13px}.domains span,small{color:#71717a}.grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:16px}article{overflow:hidden}.pic{aspect-ratio:1;background:#e7e5e4;display:grid;place-items:center;font-size:42px}.pic img{width:100%;height:100%;object-fit:cover}.pic i{font-style:normal;color:#78716c}article section{padding:13px}h1,h3{margin:0}article p,details{font-size:13px;line-height:1.4}button{border:1px solid #d4d4d8;background:#fafafa;border-radius:7px;padding:4px 8px;cursor:pointer}pre{white-space:pre-wrap;font-size:11px}.copyrow{display:flex;justify-content:space-between}@media(max-width:500px){body{padding:14px}.grid{grid-template-columns:1fr}}</style><div class=wrap><header><div><h1>Fibre Population Lab</h1><small>${meta.count} people · ${esc(meta.places.join(" · "))}</small></div><small>${esc(meta.model)} · seed ${esc(meta.seed)} · ${meta.images?"visual":"text-only"}</small></header><div class=metrics><div class=metric><strong>${stats.collisions.length}</strong>full-name collisions</div><div class=metric><strong>${Math.round(stats.givenConcentration*100)}%</strong>top given-name share</div><div class=metric><strong>${Math.round(stats.familyConcentration*100)}%</strong>top surname share</div><div class=metric><strong class=${stats.warnings.length?"warn":"ok"}>${stats.warnings.length}</strong>objective warnings</div></div><div class=panel><div class=copyrow><h2>Automatic diagnostics</h2><button data-copy=analytics>Copy analytics</button></div><p class=${stats.warnings.length?"warn":"ok"}>${esc(stats.warnings.join(" · ")||"No objective collision or latent-collapse warning fired.")}</p><div class=domains>${domains}</div><details><summary>Semantic projection compression</summary><pre>${esc(JSON.stringify(stats.projectionCompression,null,2))}</pre></details><details><summary>Family-profile coverage</summary><pre>${esc(JSON.stringify(stats.familyProfileCoverage,null,2))}</pre></details><details><summary>10k production sampler probe</summary><pre>${esc(JSON.stringify(stats.samplerProbe,null,2))}</pre></details>${physical}<textarea hidden id=analytics>${esc(analytics)}</textarea></div><main class=grid>${cards}</main></div><script>document.addEventListener("click",async event=>{const button=event.target.closest("[data-copy]");if(!button)return;const source=document.getElementById(button.dataset.copy);if(!source)return;await navigator.clipboard.writeText(source.value);const old=button.textContent;button.textContent="Copied";setTimeout(()=>button.textContent=old,900)})</script>`;
+  return`<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width"><title>Fibre Population Lab</title><style>body{font-family:system-ui;margin:0;padding:28px;background:#f5f5f4;color:#18181b}.wrap{max-width:1500px;margin:auto}header,.title{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.metrics,.grid,.domains{display:grid;gap:12px}.metrics{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin:20px 0}.metric,.panel,article{background:white;border:1px solid #ddd;border-radius:12px}.metric,.panel{padding:14px}.metric strong{display:block;font-size:24px}.warn{color:#9a3412}.ok{color:#166534}.domains{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.domains div{display:flex;justify-content:space-between;font-size:13px}.domains span,small{color:#71717a}.grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:16px}article{overflow:hidden}.pic{aspect-ratio:1;background:#e7e5e4;display:grid;place-items:center;font-size:42px}.pic img{width:100%;height:100%;object-fit:cover}.anchor{width:100%;height:auto;border-radius:8px}.pic i{font-style:normal;color:#78716c}article section{padding:13px}h1,h3{margin:0}article p,details{font-size:13px;line-height:1.4}button{border:1px solid #d4d4d8;background:#fafafa;border-radius:7px;padding:4px 8px;cursor:pointer}pre{white-space:pre-wrap;font-size:11px}.copyrow{display:flex;justify-content:space-between}@media(max-width:500px){body{padding:14px}.grid{grid-template-columns:1fr}}</style><div class=wrap><header><div><h1>Fibre Population Lab</h1><small>${meta.count} people · ${esc(meta.places.join(" · "))}</small></div><small>${esc(meta.model)} · seed ${esc(meta.seed)} · ${meta.images?"visual":"text-only"}</small></header><div class=metrics><div class=metric><strong>${stats.collisions.length}</strong>full-name collisions</div><div class=metric><strong>${Math.round(stats.givenConcentration*100)}%</strong>top given-name share</div><div class=metric><strong>${Math.round(stats.familyConcentration*100)}%</strong>top surname share</div><div class=metric><strong class=${stats.warnings.length?"warn":"ok"}>${stats.warnings.length}</strong>objective warnings</div></div><div class=panel><div class=copyrow><h2>Automatic diagnostics</h2><button data-copy=analytics>Copy analytics</button></div><p class=${stats.warnings.length?"warn":"ok"}>${esc(stats.warnings.join(" · ")||"No objective collision or latent-collapse warning fired.")}</p><div class=domains>${domains}</div><details><summary>Semantic projection compression</summary><pre>${esc(JSON.stringify(stats.projectionCompression,null,2))}</pre></details><details><summary>Family-profile coverage</summary><pre>${esc(JSON.stringify(stats.familyProfileCoverage,null,2))}</pre></details><details><summary>10k production sampler probe</summary><pre>${esc(JSON.stringify(stats.samplerProbe,null,2))}</pre></details>${physical}<textarea hidden id=analytics>${esc(analytics)}</textarea></div><main class=grid>${cards}</main></div><script>document.addEventListener("click",async event=>{const button=event.target.closest("[data-copy]");if(!button)return;const source=document.getElementById(button.dataset.copy);if(!source)return;await navigator.clipboard.writeText(source.value);const old=button.textContent;button.textContent="Copied";setTimeout(()=>button.textContent=old,900)})</script>`;
 }
 
 async function main(){
@@ -307,10 +348,24 @@ async function main(){
     }
   }
 
-  if(images)for(let index=0;index<people.length;index++){
-    line(`[${index}/${people.length}] portraits · ${elapsed(start)}`);
-    const visual=await image(people[index],dir,index,imageModel);
-    people[index]={...people[index],image:visual.name,renderPrompt:visual.prompt};
+  if(images){
+    const imageProvider=createOpenAIImageProvider({
+      apiKey:token(),
+      model:imageModel,
+      quality:"low",
+      fetchImpl:resilientFetch,
+    });
+    for(let index=0;index<people.length;index++){
+      line(`[${index}/${people.length}] geometry + surface portraits · ${elapsed(start)}`);
+      const visual=await image(people[index],dir,index,imageProvider);
+      people[index]={
+        ...people[index],
+        image:visual.name,
+        geometryAnchor:visual.geometryAnchor,
+        geometryPrompt:visual.geometryPrompt,
+        renderPrompt:visual.renderPrompt,
+      };
+    }
   }
   if(images)line(`[${people.length}/${count}] portraits · ${elapsed(start)}`,true);
 
@@ -336,6 +391,7 @@ async function main(){
     productionFamilyPath:!physicalMode,
     physicalCalibration:physicalMode,
     renderingProjection:people[0]?.projectionVersion??null,
+    renderingMode:images?"geometry-anchor+surface-edit":"none",
   };
   console.log("Writing HTML…");
   await writeFile(resolve(dir,"population.json"),JSON.stringify({meta,populationContexts:contexts,stats,people},null,2));
