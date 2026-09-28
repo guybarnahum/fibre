@@ -130,7 +130,13 @@ async function render(host,threadId,threadName,message=null){
   const head=el("div","thread-person-section-head");
   head.append(
     el("h3",null,"Appearance"),
-    el("span",null,state.canMigrate?"model upgrade available":state.canRerender?"current":"needs attention"),
+    el("span",null,
+      state.canMigrate
+        ? (state.currentVersion===null?"migration available":"model upgrade available")
+        : state.embodiment?.code==="CANONICAL_EMBODIMENT_PENDING"
+          ? "generation pending"
+          : state.canRerender?"current":"needs attention"
+    ),
   );
   host.append(head);
 
