@@ -249,13 +249,13 @@ export function createThreadPresentationIdentityMediaRewriteService({ presentati
         },
       });
       const publicationIdentityValue = publicationIdentity(current, identityCard);
-      const expectedSequence = current.pointer.sequence ?? current.snapshot.cursor;
       const publication = await presentationServer.publishSnapshot({
         channelId,
         objectRef: publicationIdentityValue.objectRef,
         snapshotVersion: publicationIdentityValue.snapshotVersion,
         bundle: nextBundle,
-        expectedSequence,
+        cursor: current.snapshot.cursor,
+        expectedSnapshotDigest: current.pointer.snapshotDigest,
         catalog: {
           projectionKind: "identity_card_official_photo",
           identityCardCredentialId: identityCard.credentialId,
