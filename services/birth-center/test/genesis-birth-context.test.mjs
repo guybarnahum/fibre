@@ -1,4 +1,7 @@
-import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
+import {
+  physicalPhenotypeRenderingProjection,
+  resolveBirthPhysicalInheritance,
+} from "#core/src/human-phenotype/index.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -74,7 +77,14 @@ test("Genesis carries explicit sex place and heritage into life context and embo
   });
   const visualDescription = visual.specification.subject.description;
   assert.match(visualDescription, /adult female person/u);
-  assert.match(visualDescription, /Concrete inherited phenotype:/u);
+  const physicalProjection=physicalPhenotypeRenderingProjection(
+    plan.subjectIdentity.physicalGenome,
+    { sex:seed.identity.sex },
+  );
+  assert.ok(
+    visualDescription.includes(physicalProjection.description),
+    "birth lost shared physical appearance projection",
+  );
   assert.doesNotMatch(visualDescription, /Georgian Jewish|Georgian family|west_asia/u, "family provenance must not become a portrait prompt");
   assert.deepEqual(seed.genome.physical,physicalGenome,"birth lost physical inheritance");
 });
