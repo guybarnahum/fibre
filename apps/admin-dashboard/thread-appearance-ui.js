@@ -296,7 +296,13 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
         label,
         eyebrow:"Appearance",
         description:"Generate a new canonical root from the unchanged current physical genome and canonical specification. Use this only when the authority is sound but one render is poor.",
-        fields:[{name:"reason",label:"Reason",kind:"text",required:true}],
+        fields:[{
+          name:"reason",
+          label:"Reason",
+          kind:"text",
+          required:true,
+          default:"Generate a fresh canonical portrait from the unchanged current physical genome and canonical specification.",
+        }],
         onBusyChange:busy=>{
           if(busy||host.dataset.appearanceWatching!=="true")setAppearanceBusy(host,busy);
         },
