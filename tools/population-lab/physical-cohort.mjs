@@ -1,13 +1,13 @@
 import {createHash} from "node:crypto";
 
 import {
+  expressInheritedAppearance,
   expressPhysicalGenome,
-  physicalPhenotypeRenderingProjection,
   recombinePhysicalGenomes,
   referencePopulationPrior,
-  resolveBirthPhysicalInheritance,
+  resolveHumanPhysicalInheritance,
   sampleFounderPhysicalGenome,
-} from "../../core/src/human-phenotype/index.mjs";
+} from "../../core/src/human-appearance/index.mjs";
 
 export const PHYSICAL_CALIBRATION_LOCI=Object.freeze([
   "faceBreadth","faceLength","midfaceProminence","zygomaticProjection",
@@ -104,11 +104,11 @@ function familyResemblance(referencePopulation,seed){
 function mixedParentDiagnostic(leftPopulation,rightPopulation,seed){
   const leftPrior=referencePopulationPrior(leftPopulation);
   const rightPrior=referencePopulationPrior(rightPopulation);
-  const children=Array.from({length:96},(_,index)=>resolveBirthPhysicalInheritance({
-    maternalAncestry:ancestry(leftPopulation),
-    paternalAncestry:ancestry(rightPopulation),
-    seed:`${seed}:mixed:${leftPopulation}:${rightPopulation}:${index}`,
-  }).genome);
+  const children=Array.from({length:96},(_,index)=>resolveHumanPhysicalInheritance({
+    maternal:{physicalLineage:ancestry(leftPopulation)},
+    paternal:{physicalLineage:ancestry(rightPopulation)},
+    conceptionSeed:`${seed}:mixed:${leftPopulation}:${rightPopulation}:${index}`,
+  }).physicalGenome);
   const means=Object.fromEntries(PHYSICAL_CALIBRATION_LOCI.map(locus=>[
     locus,
     mean(children.map(genome=>expressPhysicalGenome(genome)[locus])),
@@ -144,12 +144,12 @@ export function generatePhysicalCalibrationCohort({
     for(let index=0;index<target;index++){
       const requestId=`physical-calibration:${seed}:${referencePopulation}:${index}`;
       const sex=sexFor(requestId);
-      const inheritance=resolveBirthPhysicalInheritance({
-        maternalAncestry:ancestry(referencePopulation),
-        paternalAncestry:ancestry(referencePopulation),
-        seed:requestId,
+      const inheritance=resolveHumanPhysicalInheritance({
+        maternal:{physicalLineage:ancestry(referencePopulation)},
+        paternal:{physicalLineage:ancestry(referencePopulation)},
+        conceptionSeed:requestId,
       });
-      const projection=physicalPhenotypeRenderingProjection(inheritance.genome,{sex});
+      const projection=expressInheritedAppearance({physicalGenome:inheritance.physicalGenome,sex});
       const ordinal=String(index+1).padStart(2,"0");
       people.push(Object.freeze({
         name:`${referencePopulation} ${ordinal}`,
@@ -165,9 +165,9 @@ export function generatePhysicalCalibrationCohort({
         raisedLanguages:[],
         spokenLanguages:[],
         referencePopulation,
-        renderDescription:projection.description,
+        renderDescription:projection.renderDescription,
         projectionVersion:projection.version,
-        inheritance:Object.freeze({genome:inheritance.genome,phenotype:projection.phenotype}),
+        inheritance:Object.freeze({genome:inheritance.physicalGenome,phenotype:projection.phenotype}),
       }));
     }
   }
