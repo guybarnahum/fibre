@@ -7,7 +7,8 @@ import {
   WITNESSED_MEDIA_GENERATION_PROVIDER_VERSION,
 } from "../asset-provenance-domain.mjs";
 
-const DEFAULT_MODEL = "gpt-image-2-2026-04-21";
+export const OPENAI_IMAGE_DEFAULT_MODEL = "gpt-image-2-2026-04-21";
+const DEFAULT_MODEL = OPENAI_IMAGE_DEFAULT_MODEL;
 const DEFAULT_ENDPOINT = "https://api.openai.com/v1/images/generations";
 const DEFAULT_EDIT_ENDPOINT = "https://api.openai.com/v1/images/edits";
 
