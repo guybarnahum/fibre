@@ -187,7 +187,7 @@ async function submitLegacyPhysicalMigration({
       },
       body:JSON.stringify({
         action:"migrate",
-        migrationId:"legacy_physical_embodiment_v1",
+        migrationId:"physical_embodiment_v2",
         migrationKey,
         input:{physicalAncestry,reason},
       }),
