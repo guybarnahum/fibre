@@ -2,7 +2,10 @@ import {execFileSync} from "node:child_process";
 import {createHash} from "node:crypto";
 import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
-import {expressInheritedAppearance} from "../../core/src/human-appearance/index.mjs";
+import {
+  expressInheritedAppearance,
+  referencePhysicalState,
+} from "../../core/src/human-appearance/index.mjs";
 import {populationPortraitPrompt} from "./portrait-prompt.mjs";
 
 const arg=(name,fallback)=>process.argv.find(x=>x.startsWith("--"+name+"="))?.slice(name.length+3)??fallback;
@@ -21,6 +24,11 @@ async function resilientFetch(url,options){
 
 function subject({id,role,sex,genome}){
   const projection=expressInheritedAppearance({physicalGenome:genome,sex});
+  const physicalState=referencePhysicalState({
+    physicalGenome:genome,
+    sex,
+    stateSeed:`population-lab:${id}`,
+  });
   return {
     id,
     role,
@@ -30,6 +38,7 @@ function subject({id,role,sex,genome}){
     expressedLatents:projection.phenotype.latent,
     renderDescription:projection.renderDescription,
     projectionVersion:projection.projectionVersion,
+    physicalState,
   };
 }
 
@@ -51,7 +60,11 @@ function subjects(experiment,siblingCount,grandchildCount){
 }
 
 async function render(subject,dir,index,model){
-  const prompt=populationPortraitPrompt({sex:subject.sex,renderDescription:subject.renderDescription});
+  const prompt=populationPortraitPrompt({
+    sex:subject.sex,
+    renderDescription:subject.renderDescription,
+    physicalStateDescription:subject.physicalState.description,
+  });
   const response=await resilientFetch("https://api.openai.com/v1/images/generations",{
     method:"POST",
     headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},
