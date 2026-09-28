@@ -4,11 +4,13 @@ import test from "node:test";
 import { createActivityRecorder } from "#infra/telemetry";
 import { createLocalActivityTelemetryPort } from "#infra/providers/local/telemetry";
 import { PROVENANCED_ASSET_RECEIPT_VERSION } from "#services/asset-generator/src/index.mjs";
+import { sampleFounderPhysicalGenome } from "#core/src/human-appearance/index.mjs";
 import {
   embodimentId,
   embodimentSpecificationDigest,
 } from "../src/embodiment-domain.mjs";
 import { createThreadVisualPublicationReconciler } from "../src/thread-visual-publication-reconciler.mjs";
+import { canonicalVisualSpecificationFromPhysicalGenome } from "../src/canonical-visual-identity-from-physical-genome.mjs";
 
 const sha = (char) => `sha256:${char.repeat(64)}`;
 
@@ -40,6 +42,24 @@ function pendingEmbodiment(threadId = "thr_visual_process_001") {
     asset: null,
     visibility: "public",
     recordedAt: "2026-08-30T20:00:00Z",
+  };
+}
+
+function pendingLayeredEmbodiment(threadId="thr_visual_layered_001"){
+  const base=pendingEmbodiment(threadId);
+  const physicalGenome=sampleFounderPhysicalGenome({
+    ancestry:[{population:"test family",share:1,referencePopulation:"oceania.polynesia"}],
+    seed:`layered:${threadId}`,
+  });
+  const specification=canonicalVisualSpecificationFromPhysicalGenome({
+    threadId,
+    sex:"female",
+    physicalGenome,
+  });
+  return {
+    ...base,
+    specification,
+    specificationDigest:embodimentSpecificationDigest(specification),
   };
 }
 
@@ -165,6 +185,47 @@ test("World visual reconciliation records state-changing work but stays silent w
   assert.equal(presentationCalls, 2, "Presentation reconciliation may replay idempotently");
   const replayActivity = await telemetry.query({ requestId: activityContext.requestId });
   assert.equal(replayActivity.length, countAfterWork, "an already-converged replay must emit no activity");
+});
+
+test("layered visual reconciliation completes geometry before surface and admits only the final root", async () => {
+  let current=pendingLayeredEmbodiment();
+  const jobs=[];
+  let writes=0;
+  let finalReady=false;
+  const reconciler=createThreadVisualPublicationReconciler({
+    embodimentStore:{
+      listCurrent(){return [structuredClone(current)];},
+      record(record){writes+=1;current=structuredClone(record);return structuredClone(current);},
+    },
+    canonicalRootBoundary:{
+      async reconcile({job}){
+        jobs.push(job);
+        if(job.role==="canonical_visual_identity_geometry_anchor")return readyRoot(job);
+        if(!finalReady)return {state:"pending",jobId:job.jobId};
+        return readyRoot(job);
+      },
+    },
+    presentationBoundary:{
+      async reconcileAvailableEmbodiment(){return {complete:true,stage:"complete"};},
+    },
+    now:()=>"2026-08-30T20:00:10Z",
+  });
+
+  const pending=await reconciler.reconcileThread({threadId:current.threadId});
+  assert.equal(pending.stage,"canonical_visual_root_pending");
+  assert.equal(writes,0,"geometry scaffolding became Embodiment authority");
+  assert.equal(jobs[0].role,"canonical_visual_identity_geometry_anchor");
+  assert.deepEqual(jobs[0].referenceObjectRefs,[]);
+  assert.equal(jobs[1].role,"canonical_visual_identity_reference");
+  assert.deepEqual(jobs[1].referenceObjectRefs,[jobs[0].outputObjectRef]);
+
+  finalReady=true;
+  const complete=await reconciler.reconcileThread({threadId:current.threadId});
+  assert.equal(complete.complete,true);
+  assert.equal(writes,1);
+  assert.equal(current.status,"available");
+  assert.equal(current.asset.referenceObjectRef,jobs.at(-1).outputObjectRef);
+  assert.notEqual(current.asset.referenceObjectRef,jobs.at(-2).outputObjectRef);
 });
 
 test("World visual reconciliation waits without mutating when root generation is still pending", async () => {
