@@ -56,6 +56,35 @@ test("Admin Appearance exposes upgrade, evidence reuse, and rerender as distinct
   assert.deepEqual(current.evidence.physicalAncestry,physicalAncestry);
 });
 
+test("Admin Appearance offers renderer upgrade without ancestry when physical authority is current",()=>{
+  const state=threadAppearanceState({
+    findings:[
+      {code:"PHYSICAL_GENOME",state:"healthy",version:"physical-genome-v0.3"},
+      {
+        code:"CANONICAL_VISUAL_MODEL_OUTDATED",
+        state:"migration_required",
+        authority:"embodiment",
+        currentAppearanceVersion:null,
+        targetAppearanceVersion:"human-appearance-v0.4",
+        migration:{
+          id:"physical_embodiment_v2",
+          label:"Upgrade visual model",
+          evidence:null,
+          input:{fields:[{name:"reason",kind:"text",required:true}]},
+        },
+      },
+      {code:"CANONICAL_EMBODIMENT",state:"healthy",objectRef:"visual_identity_reference_old"},
+    ],
+  });
+
+  assert.equal(state.canMigrate,true,"legacy visual spec lost upgrade action");
+  assert.equal(state.canRerender,false,"legacy visual spec exposed rerender");
+  assert.equal(state.currentVersion,"physical-genome-v0.3");
+  assert.equal(state.targetAppearanceVersion,"human-appearance-v0.4");
+  assert.deepEqual(state.migration.input.fields.map(field=>field.name),["reason"],
+    "visual-model upgrade requested physical ancestry");
+});
+
 test("Admin Appearance requires explicit migration input when no durable ancestry exists",()=>{
   const migration=threadAppearanceState({
     findings:[
