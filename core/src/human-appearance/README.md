@@ -254,6 +254,8 @@ Prefer:
 - replicated multi-cohort measurements;
 - body/frame anthropometry only where inherited structure can reasonably be separated from current environment.
 
+Commercial/editorial photo collections and image-search results may be useful **visual sanity checks** for obvious renderer collapse, but they are not coefficient evidence: subject selection, styling, lighting, geography and modern admixture are uncontrolled.
+
 Treat cautiously:
 
 - very small cohorts;
