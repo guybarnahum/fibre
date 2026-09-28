@@ -39,6 +39,7 @@ function labelFor(code) {
     PHYSICAL_GENOME:"Appearance model",
     PHYSICAL_APPEARANCE_MODEL_OUTDATED:"Appearance model",
     LEGACY_PHYSICAL_EMBODIMENT:"Appearance model",
+    CANONICAL_VISUAL_MODEL_OUTDATED:"Visual model",
     CANONICAL_VISUAL_SPEC:"Canonical visual identity",
     CANONICAL_VISUAL_SPEC_MISSING:"Canonical visual identity",
     ORIGIN_ORIENTATION:"Origin orientation",
