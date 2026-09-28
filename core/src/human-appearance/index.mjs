@@ -12,7 +12,7 @@ import {sampleFounderPhysicalGenome} from "../human-phenotype/founder-genome.mjs
 import {resolveBirthPhysicalInheritance} from "../human-phenotype/birth-inheritance.mjs";
 import {normalizeAncestry} from "../human-phenotype/ancestry.mjs";
 
-export const HUMAN_APPEARANCE_MODEL_VERSION="human-appearance-v0.1";
+export const HUMAN_APPEARANCE_MODEL_VERSION="human-appearance-v0.2";
 
 function parentSource(role,value){
   if(!value||typeof value!=="object"||Array.isArray(value)){
@@ -94,3 +94,9 @@ export {
   referencePopulationPrior,
   sampleFounderPhysicalGenome,
 };
+
+
+export {
+  REFERENCE_PHYSICAL_STATE_VERSION,
+  referencePhysicalState,
+} from "./reference-physical-state.mjs";
