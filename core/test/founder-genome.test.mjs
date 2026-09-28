@@ -110,3 +110,19 @@ test("founder variation stays centered while facial systems remain coherent",()=
   assert.ok(corr("epicanthicFold","upperEyelidExposure")<-.2,"eyelid structure lost correlation");
   assert.ok(corr("nasalBridgeHeight","noseProjection")>.2,"nasal structure lost correlation");
 });
+
+
+test("North and Southern Africa are explicit reference populations without invented deltas",()=>{
+  assert.ok(referencePopulationIds.includes("afr_north"),"North Africa reference population is missing");
+  assert.ok(referencePopulationIds.includes("afr_south"),"Southern Africa reference population is missing");
+  assert.deepEqual(
+    referencePopulationPrior("afr_north"),
+    referencePopulationPrior("west_asia"),
+    "uncalibrated North Africa should shrink to its declared calibration basis",
+  );
+  assert.deepEqual(
+    referencePopulationPrior("afr_south"),
+    referencePopulationPrior("afr_west"),
+    "uncalibrated Southern Africa should shrink to its declared calibration basis",
+  );
+});
