@@ -39,17 +39,25 @@ const DEFINITIONS=Object.freeze({
   southeast_asia:{parent:null,values:{pigmentation:-.02,eyePigmentation:.7,hairPigmentation:.64,frecklingTendency:0,hairForm:-.48,hairDensity:.08,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:.2,faceLength:-.08,midfaceProminence:.16,zygomaticProjection:.34,eyeSpacing:.1,eyeShape:-.24,epicanthicFold:.48,upperEyelidExposure:-.26,orbitalDepth:-.14,foreheadProportion:.04,brow:-.04,noseBreadth:.18,noseProjection:-.24,nasalBridgeHeight:-.34,softTissue:.04,jawBreadth:.08,chinProjection:-.1,frame:-.04,height:-.04,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   indigenous_america:{parent:null,values:{pigmentation:-.02,eyePigmentation:.66,hairPigmentation:.6,frecklingTendency:0,hairForm:-.5,hairDensity:.08,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:.2,faceLength:-.04,midfaceProminence:.16,zygomaticProjection:.32,eyeSpacing:.1,eyeShape:-.16,epicanthicFold:.24,upperEyelidExposure:-.14,orbitalDepth:-.08,foreheadProportion:.02,brow:0,noseBreadth:.12,noseProjection:-.18,nasalBridgeHeight:-.16,softTissue:.04,jawBreadth:.1,chinProjection:-.06,frame:-.02,height:-.02,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   oceania:{parent:null,values:{pigmentation:.46,eyePigmentation:.68,hairPigmentation:.58,frecklingTendency:0,hairForm:.28,hairDensity:.12,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:.24,faceLength:0,midfaceProminence:.1,zygomaticProjection:.18,eyeSpacing:0,eyeShape:.04,epicanthicFold:-.18,upperEyelidExposure:.04,orbitalDepth:0,foreheadProportion:0,brow:.04,noseBreadth:.28,noseProjection:.04,nasalBridgeHeight:-.06,softTissue:.18,jawBreadth:.12,chinProjection:.02,frame:.04,height:.02,bodyProportion:.02,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
-  // Polynesia must not inherit the broad Oceania hair/pigmentation center
-  // unchanged: that collapses Remote Oceania into a Melanesian-looking
-  // template. The hair/pigmentation shifts remain deliberately conservative
-  // and low-confidence; facial geometry keeps the evidence-backed calibration.
-  "oceania.polynesia":{parent:"oceania",values:{
-    pigmentation:.16,
-    hairForm:-.08,
-    faceBreadth:.38,
-    faceLength:.10,
-    chinProjection:.20,
-  }},
+  // Polynesia uses a whole-profile calibration basis rather than inheriting
+  // broad Oceania and patching a handful of visible traits. The 79/21 weights
+  // mirror one autosomal population-history estimate; they are an experimental
+  // morphology basis, not a claim that phenotype is a linear ancestry mixture.
+  // Direct Polynesian/Māori/Hawaiian morphology evidence supplies the explicit
+  // facial overrides below.
+  "oceania.polynesia":{
+    parent:null,
+    basis:[
+      {referencePopulation:"east_asia",share:.79},
+      {referencePopulation:"oceania",share:.21},
+    ],
+    variation:{familyFactorMultiplier:1.12,structuralResidualMultiplier:.90},
+    values:{
+      faceBreadth:.38,
+      faceLength:.10,
+      chinProjection:.20,
+    },
+  },
   "oceania.polynesia.native_hawaiian":{parent:"oceania.polynesia",values:{}},
   "oceania.polynesia.samoan":{parent:"oceania.polynesia",values:{}},
   "oceania.polynesia.tongan":{parent:"oceania.polynesia",values:{}},
@@ -98,14 +106,67 @@ const DEFINITIONS=Object.freeze({
 
 export const referencePopulationIds=Object.freeze(Object.keys(DEFINITIONS));
 
-export function referencePopulationPrior(id){
+const DEFAULT_VARIATION=Object.freeze({
+  familyFactorMultiplier:1,
+  structuralResidualMultiplier:1,
+  generalResidualMultiplier:1,
+});
+const PRIOR_CACHE=new Map();
+const VARIATION_CACHE=new Map();
+
+function definitionFor(id){
   const key=String(id??"").trim();
   const definition=DEFINITIONS[key];
   if(!definition)throw Error(`unknown physical reference population: ${key||"<empty>"}`);
-  const inherited=definition.parent===null?{}:referencePopulationPrior(definition.parent);
+  return [key,definition];
+}
+
+function blendedPrior(basis,stack){
+  if(!Array.isArray(basis)||basis.length===0)throw Error("physical population basis is empty");
+  const total=basis.reduce((sum,item)=>sum+Number(item.share),0);
+  if(!Number.isFinite(total)||total<=0)throw Error("physical population basis has invalid shares");
+  return Object.fromEntries(physicalGenomeLoci.map(locus=>[
+    locus,
+    basis.reduce((sum,item)=>{
+      const share=Number(item.share);
+      if(!Number.isFinite(share)||share<=0)throw Error("physical population basis has invalid shares");
+      return sum+referencePopulationPriorInternal(item.referencePopulation,stack)[locus]*share;
+    },0)/total,
+  ]));
+}
+
+function referencePopulationPriorInternal(id,stack){
+  const [key,definition]=definitionFor(id);
+  const cached=PRIOR_CACHE.get(key);
+  if(cached)return cached;
+  if(stack.has(key))throw Error(`physical population calibration cycle: ${key}`);
+  const next=new Set(stack).add(key);
+  const inherited=definition.basis
+    ? blendedPrior(definition.basis,next)
+    : definition.parent===null
+      ? {}
+      : referencePopulationPriorInternal(definition.parent,next);
   const prior={...inherited,...definition.values};
   for(const locus of physicalGenomeLoci){
     if(!Number.isFinite(prior[locus]))throw Error(`${key} has no physical prior for ${locus}`);
   }
-  return Object.freeze(Object.fromEntries(physicalGenomeLoci.map(locus=>[locus,prior[locus]])));
+  const resolved=Object.freeze(Object.fromEntries(physicalGenomeLoci.map(locus=>[locus,prior[locus]])));
+  PRIOR_CACHE.set(key,resolved);
+  return resolved;
+}
+
+export function referencePopulationPrior(id){
+  return referencePopulationPriorInternal(id,new Set());
+}
+
+export function referencePopulationVariation(id){
+  const [key,definition]=definitionFor(id);
+  const cached=VARIATION_CACHE.get(key);
+  if(cached)return cached;
+  const inherited=definition.parent===null||definition.parent===undefined
+    ? DEFAULT_VARIATION
+    : referencePopulationVariation(definition.parent);
+  const resolved=Object.freeze({...inherited,...definition.variation});
+  VARIATION_CACHE.set(key,resolved);
+  return resolved;
 }
