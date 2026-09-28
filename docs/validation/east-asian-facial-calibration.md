@@ -121,7 +121,7 @@ east_asia                         shared facial anchor
 ## What remains provisional
 
 - Pigmentation and hair coefficients were not recalibrated in this facial-morphology slice.
-- Founder variance and correlated-factor magnitudes are still the shared experimental sampler; Slice 3 owns their calibration/application.
+- Slice 3 now uses a compact zero-mean factor sampler: one shared founder factor per anatomical system plus smaller allele-specific residuals. The factors preserve coherent family morphology without changing the population center or adding runtime covariance machinery.
 - The northern/central/southern Han hierarchy is structurally real but currently fully shrunk to the Han prior.
 - Japanese child calibration is intentionally sparse.
 - Mongolian and Tibetan child deltas are intentionally absent.
