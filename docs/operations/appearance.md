@@ -86,6 +86,8 @@ npm run appearance:migrate -- \
 
 Use the most specific reference population actually supported by evidence. Do not silently refine `east_asia` to `east_asia.han_chinese`, or any other child population, merely because identity context makes it seem plausible.
 
+Current coarse African reference codes are `afr_north`, `afr_west`, `afr_east` and `afr_south`. For an operator-confirmed Moroccan family, use `afr_north` unless more specific physical-lineage evidence is independently available.
+
 After migration:
 
 ```bash
