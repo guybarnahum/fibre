@@ -64,6 +64,7 @@ test("OpenAI image provider uses image edits for canonical reference inputs and 
   const second = new TextEncoder().encode("reference-two");
   const provider = createOpenAIImageProvider({
     apiKey: "sk-secret-never-persist",
+    inputFidelity:"high",
     fetchImpl: async (url, init) => {
       seen.push({ url, init });
       return response({
@@ -103,6 +104,7 @@ test("OpenAI image provider uses image edits for canonical reference inputs and 
   assert.equal(seen[0].init.body.get("model"), "gpt-image-2-2026-04-21");
   assert.equal(seen[0].init.body.get("quality"), "medium");
   assert.equal(seen[0].init.body.get("size"), "1024x1024");
+  assert.equal(seen[0].init.body.get("input_fidelity"), "high");
   assert.equal(seen[0].init.body.getAll("image[]").length, 2);
   assert.deepEqual(
     seen[0].init.body.getAll("image[]").map((image) => image.type),
