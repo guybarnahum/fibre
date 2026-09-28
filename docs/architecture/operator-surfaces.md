@@ -44,7 +44,9 @@ Admin must keep three operations visibly distinct:
 
 A named migration may declare explicit operator inputs when its domain rule genuinely requires them. Admin may collect and pass only those migration-specific inputs; it must not expose a generic arbitrary-field editor as a substitute for migration authority.
 
-Canonical appearance correction is likewise not generic **Fix**. Fix reconstructs derived state from existing authority; changing the authoritative canonical visual specification creates a new Embodiment revision and therefore requires an explicit operator action with a reason and a complete corrected specification. The manual procedure is defined in [`canonical-visual-identity.md`](canonical-visual-identity.md#operator-runbook-correcting-appearance). A future Admin control should surface this as a distinct **Correct appearance** action and let normal visual/FID reconciliation perform the downstream regeneration.
+Appearance authority is likewise not generic **Fix**. Thread Details has a dedicated **Appearance** surface for the ordinary inherited-appearance workflow: missing/outdated physical authority uses **Migrate appearance / Upgrade appearance model**, while a current healthy model uses **Re-render appearance**. Recorded parental physical-origin evidence is shown and reused; if none exists, Admin collects only the explicit migration inputs declared by World. The browser submits one authority action and does not poll or reroll while normal Embodiment/Presentation/FID reconciliation runs.
+
+Changing the canonical specification manually remains an exceptional correction rather than ordinary Admin maintenance. The procedure is defined in [`canonical-visual-identity.md`](canonical-visual-identity.md#operator-runbook-correcting-appearance) and [Appearance operations](../operations/appearance.md).
 
 A compound UI action such as **Fix & Recover** may sequence those operations but does not merge their authority. A Thread with unresolved `migration_required`, integrity conflict or operator-decision state remains quarantined rather than being retried merely because an operator opened the page.
 
