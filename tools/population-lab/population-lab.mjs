@@ -280,11 +280,11 @@ async function main(){
   if(!Number.isInteger(count)||count<1||count>200)throw Error("--count must be 1..200");
   if(!Number.isInteger(year)||year<1800||year>2200)throw Error("--year must be 1800..2200");
   const model=arg("model",MODEL),imageModel=arg("image-model","gpt-image-1"),seed=arg("seed","population-v1"),images=process.argv.includes("--images");
-  const physicalPopulations=arg("physical-populations")?.split(";").map(value=>value.trim()).filter(Boolean)??[];
+  const physicalPopulations=arg("physical-populations")?.split(/[;,]/u).map(value=>value.trim()).filter(Boolean)??[];
   const physicalMode=physicalPopulations.length>0;
   const places=physicalMode
     ? physicalPopulations
-    : ((arg("places")?.split(";").map(value=>value.trim()).filter(Boolean))??[arg("place","United Kingdom/London")]);
+    : ((arg("places")?.split(/[;,]/u).map(value=>value.trim()).filter(Boolean))??[arg("place","United Kingdom/London")]);
   const dir=resolve(arg("output",resolve(".fibre","population-lab",Date.now()+"-"+createHash("sha256").update(seed).digest("hex").slice(0,8))));
   const start=Date.now();
   await mkdir(dir,{recursive:true});
