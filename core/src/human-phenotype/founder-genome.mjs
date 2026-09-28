@@ -52,8 +52,8 @@ const STRUCTURAL_LOCI=new Set([
   "noseBreadth","noseProjection","nasalBridgeHeight","softTissue",
 ]);
 
-const FAMILY_FACTOR_SCALE=.22;
-const STRUCTURAL_RESIDUAL_SCALE=.12;
+const FAMILY_FACTOR_SCALE=.34;
+const STRUCTURAL_RESIDUAL_SCALE=.18;
 const GENERAL_RESIDUAL_SCALE=.20;
 
 function unit(seed,key){
