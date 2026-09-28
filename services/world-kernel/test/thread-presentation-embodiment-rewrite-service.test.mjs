@@ -163,6 +163,28 @@ test("admitted public Embodiment rewrites bounded visual identity without creati
   assert.equal(catalog.visualIdentityEmbodimentRevision, 2);
 });
 
+test("visual identity adoption ignores unrelated stream advancement and preserves replay cursor", async () => {
+  const current = await fixture();
+  const before = await current.server.getSnapshot(CHANNEL_ID);
+  for (let index = 1; index <= 3; index += 1) {
+    await current.infra.streams.append(
+      CHANNEL_ID,
+      { kind: "unrelated.presentation.event", index },
+      { idempotencyKey: `unrelated_${index}` },
+    );
+  }
+  assert.equal((await current.server.getHead(CHANNEL_ID)).sequence, 3);
+
+  const result = await current.service.project({ channelId: CHANNEL_ID, embodimentId: EMBODIMENT_ID });
+  const after = await current.server.getSnapshot(CHANNEL_ID);
+
+  assert.equal(result.rewritten, true);
+  assert.equal(after.snapshot.cursor, before.snapshot.cursor);
+  assert.equal(after.pointer.sequence, before.pointer.sequence);
+  assert.equal((await current.server.getHead(CHANNEL_ID)).sequence, 3);
+  assert.deepEqual(after.snapshot.presentation.visualIdentity, result.projection);
+});
+
 test("replaying the same admitted Embodiment is an exact no-op", async () => {
   const current = await fixture();
   const first = await current.service.project({ channelId: CHANNEL_ID, embodimentId: EMBODIMENT_ID });
