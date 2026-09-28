@@ -387,8 +387,8 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
   assert.equal(migration.after.health, "healthy");
 });
 
-test("legacy embodiment migration installs physical authority before correcting the canonical person", async () => {
-  const ancestry=[{population:"operator-confirmed Sichuan Chinese family",share:1,referencePopulation:"east_asia"}];
+test("legacy embodiment migration admits explicit North-African physical ancestry", async () => {
+  const ancestry=[{population:"Moroccan family",share:1,referencePopulation:"afr_north"}];
   let repairInput=null;
   const physicalGenomeMigrator={
     migrate(thread,{physicalAncestry,operationKey}){
