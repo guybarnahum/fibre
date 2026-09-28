@@ -160,7 +160,7 @@ A small fixed visual sample then renders a subset of the same seeded cohort and 
 
 ## Slice 6 — Versioned appearance-model migration
 
-**Status: implemented on `main`; pending focused validation.**
+**Status: validated 2026-09-27.** Focused World migration/repair tests passed after the version-aware upgrade, durable ancestry reuse and Embodiment-authority changes.
 
 Now that the calibrated model passes:
 - no physical genome -> appearance migration available;
@@ -175,6 +175,8 @@ Migration remains one replayable World authority change followed by normal canon
 
 ## Slice 7 — Coherent CLI
 
+**Status: implemented on `main`; pending repository validation and staging proof.**
+
 Expose Fibre concepts directly:
 
 ```bash
@@ -184,6 +186,8 @@ npm run appearance:rerender -- --thread-id=... ...
 ```
 
 Migration may change physical authority. Re-render never changes the genome or canonical specification.
+
+The CLI is one implementation under `tools/appearance/appearance.mjs`. `appearance:migrate` reuses durable ancestry evidence automatically when diagnosis exposes it; `--physical-ancestry-file` is needed only when the Thread lacks trustworthy recorded evidence. The old `fid:visual:*` commands and FID-owned visual-maintenance source file are removed.
 
 ## Slice 8 — Admin Appearance UI
 
