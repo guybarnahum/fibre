@@ -2,6 +2,7 @@ import { PHYSICAL_GENOME_VERSION, referencePopulationIds } from "#core/src/human
 import { canonicalVisualSpecificationFromPhysicalGenome } from "./canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "./embodiment-domain.mjs";
 import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
+import { birthplacePhysicalMigrationSuggestion } from "./thread-appearance-defaults.mjs";
 
 const OPERATION_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
 const PLACEHOLDER_NAMES = new Set(["fibre thread", "fiber thread"]);
@@ -454,12 +455,29 @@ export function createThreadGenesisRepairService({
       : latestPhysicalEvidence(physicalGenomeMigrator,threadId);
     if (physicalGenomeMigrator !== null && physicalGenomeVersion !== PHYSICAL_GENOME_VERSION) {
       const priorEvidence=priorPhysicalEvidence;
+      const suggestion=priorEvidence===null
+        ? birthplacePhysicalMigrationSuggestion(thread.identity)
+        : null;
       const ancestryFields=priorEvidence===null
         ? [
-            Object.freeze({name:"maternalOrigin",label:"Maternal physical origin",kind:"text",required:true}),
-            Object.freeze({name:"maternalReferencePopulation",label:"Maternal physical reference",kind:"select",required:true,options:[...referencePopulationIds]}),
-            Object.freeze({name:"paternalOrigin",label:"Paternal physical origin",kind:"text",required:true}),
-            Object.freeze({name:"paternalReferencePopulation",label:"Paternal physical reference",kind:"select",required:true,options:[...referencePopulationIds]}),
+            Object.freeze({
+              name:"maternalOrigin",label:"Maternal physical origin",kind:"text",required:true,
+              ...(suggestion===null?{}:{default:suggestion.maternal.origin}),
+            }),
+            Object.freeze({
+              name:"maternalReferencePopulation",label:"Maternal physical reference",kind:"select",required:true,
+              options:[...referencePopulationIds],
+              ...(suggestion===null?{}:{default:suggestion.maternal.referencePopulation}),
+            }),
+            Object.freeze({
+              name:"paternalOrigin",label:"Paternal physical origin",kind:"text",required:true,
+              ...(suggestion===null?{}:{default:suggestion.paternal.origin}),
+            }),
+            Object.freeze({
+              name:"paternalReferencePopulation",label:"Paternal physical reference",kind:"select",required:true,
+              options:[...referencePopulationIds],
+              ...(suggestion===null?{}:{default:suggestion.paternal.referencePopulation}),
+            }),
           ]
         : [];
       findings.push(finding(
@@ -481,10 +499,21 @@ export function createThreadGenesisRepairService({
               physicalGenomeVersion:priorEvidence.physicalGenomeVersion,
               recordedAt:priorEvidence.recordedAt,
             }),
+            suggestion:suggestion===null ? null : Object.freeze({
+              source:suggestion.source,
+              country:suggestion.country,
+              maternal:suggestion.maternal,
+              paternal:suggestion.paternal,
+            }),
             input:Object.freeze({
               fields:Object.freeze([
                 ...ancestryFields,
-                Object.freeze({name:"reason",label:"Migration reason",kind:"text",required:true}),
+                Object.freeze({
+                  name:"reason",label:"Migration reason",kind:"text",required:true,
+                  ...(suggestion===null?{}:{
+                    default:`Install Fibre's current physical appearance model using operator-reviewed birthplace defaults for ${suggestion.country}.`,
+                  }),
+                }),
               ]),
             }),
           }),
