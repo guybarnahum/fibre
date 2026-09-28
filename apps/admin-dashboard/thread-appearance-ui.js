@@ -119,6 +119,9 @@ function migrationDescription(state){
   if(state.evidence!==null){
     return "Upgrade inherited physical authority using the recorded parental physical-origin evidence above. The renderer receives the resulting anatomy, not ancestry labels.";
   }
+  if(state.migration?.suggestion?.source==="birthplace"){
+    return "Suggested from birthplace ("+state.migration.suggestion.country+"). Review or override every parental field before migrating; birthplace is a statistical default, not ancestry evidence.";
+  }
   return "Record explicit maternal and paternal physical origin, then migrate this Thread onto the current physical appearance model. Do not infer ancestry from identity, birthplace, language, culture, or the existing portrait.";
 }
 
