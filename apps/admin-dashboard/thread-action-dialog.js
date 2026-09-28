@@ -9,6 +9,10 @@ function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
 }
 
+function choiceLabel(value) {
+  return String(value ?? "").split(".").map((part) => human(part)).join(" › ");
+}
+
 export function actionFields(action) {
   return Array.isArray(action?.input?.fields) ? action.input.fields : [];
 }
@@ -79,6 +83,31 @@ function renderFields(host, fields) {
   for (const field of fields) {
     if (typeof field?.name !== "string" || field.name === "") continue;
     const choices = Array.isArray(field.options) ? field.options : [];
+    if (choices.length > 0 && field.kind === "select") {
+      const label = element("label", "thread-action-field");
+      label.append(element("span", null, field.label ?? human(field.name)));
+      const select = document.createElement("select");
+      select.name = field.name;
+      select.required = field.required === true;
+      if (field.required === true) {
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Choose…";
+        placeholder.disabled = true;
+        placeholder.selected = field.default === undefined;
+        select.append(placeholder);
+      }
+      for (const choice of choices) {
+        const option = document.createElement("option");
+        option.value = choice;
+        option.textContent = choiceLabel(choice);
+        option.selected = field.default === choice;
+        select.append(option);
+      }
+      label.append(select);
+      host.append(label);
+      continue;
+    }
     if (choices.length > 0) {
       const group = element("fieldset", "thread-action-choice-group");
       group.append(element("legend", null, field.label ?? human(field.name)));
@@ -90,7 +119,7 @@ function renderFields(host, fields) {
         input.value = choice;
         input.required = field.required === true;
         input.checked = field.default === choice || (field.default === undefined && choices.length === 1 && index === 0);
-        option.append(input, element("span", null, human(choice)));
+        option.append(input, element("span", null, choiceLabel(choice)));
         group.append(option);
       }
       host.append(group);
