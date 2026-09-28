@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-09-27
+last-reviewed: 2026-09-28
 canonical: true
 ---
 
@@ -29,7 +29,7 @@ Models provide temporary cognition. Fibre owns continuity, authoritative state, 
 
 The shared **Population & Family Ancestry** boundary is implemented: place/era family profiles keep naming, raised/eventual languages and maternal/paternal physical ancestry distinct; individual births use the shared physical-inheritance core rather than a per-person appearance model call; ancestry labels are not renderer instructions. Earlier London/Lagos/Mumbai work usefully exposed packed-language authoring, an improper second styling pass, ambiguous founder-region mapping and over-broad family profiles, but its visual conclusion is now superseded by the Li Jing failure.
 
-The inherited-appearance calibration tranche is now validated through Slice 7. `physical-genome-v0.2` is the current calibrated physical model: hierarchical complete founder priors, additive paired-locus inheritance, compact correlated founder variation, anatomy-first rendering projection, and the controlled Population Lab calibration bench are all green. The 96-person Han-Chinese/Korean/Japanese numerical cohort passed with zero warnings and a fixed 12-person visual cohort produced clearly East-Asian morphology with substantial individual variation.
+The inherited-appearance calibration tranche established `physical-genome-v0.2` as the validated baseline: hierarchical complete founder priors, additive paired-locus inheritance, compact correlated founder variation, anatomy-first rendering projection, and the controlled Population Lab calibration bench all passed. The current `main` candidate is `physical-genome-v0.3`: it extends that same model with a hierarchical Polynesian calibration and a deterministic non-historical reference physical state so canonical portraits carry ordinary body composition, skin texture and facial asymmetry instead of leaving those dimensions to renderer beauty priors. v0.3 is pending the focused/repository validation for this slice before staging acceptance.
 
 Human appearance now has an explicit portable domain boundary rather than being treated as a loose collection of Genesis/rendering helpers. **Population Context** may consume canonical place, era and optional family/heritage evidence and selects one concrete family profile; its physical output is separate maternal/paternal physical lineage. **Human Appearance** consumes only those physical lineages or real biological-parent physical genomes plus a deterministic conception seed, and emits a private physical genome plus derived inherited anatomy. Geography, nationality, names, languages and culture do not cross into Human Appearance or the renderer. Real parent physical genomes are exclusive authority for that parent's contribution and cannot be combined with a population prior. The renderer receives concrete anatomy, never population labels. This is implemented as portable core domains (`core/src/population-context/` and `core/src/human-appearance/`), not a network service: the current computation is deterministic, stateless and cheap, and service extraction remains open if the atlas later needs an independent data/deployment lifecycle. Persistent lived physical state and a non-historical reference physical state for ordinary-human portrait realism remain the next appearance-model capabilities rather than being smuggled into population genetics. See [Human Appearance](../architecture/human-appearance.md).
 
