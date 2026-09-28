@@ -144,7 +144,9 @@ export class FibrePresentationChannelDurableObject extends DurableObject {
       throw new TypeError("snapshotPointerJson must describe an object");
     }
     sequenceOrNull("expectedSequence", expectedSequence);
-    if (expectedSnapshotDigest !== null) nonEmpty("expectedSnapshotDigest", expectedSnapshotDigest);
+    if (expectedSnapshotDigest !== null && expectedSnapshotDigest !== undefined) {
+      nonEmpty("expectedSnapshotDigest", expectedSnapshotDigest);
+    }
     if (pointer.sequence !== undefined) sequenceOrNull("snapshot sequence", pointer.sequence);
 
     return this.ctx.storage.transactionSync(() => {
@@ -158,7 +160,7 @@ export class FibrePresentationChannelDurableObject extends DurableObject {
           currentSequence: current,
         };
       }
-      if (expectedSnapshotDigest !== null) {
+      if (expectedSnapshotDigest !== null && expectedSnapshotDigest !== undefined) {
         const currentPointer = meta.snapshot_pointer_json === null ? null : JSON.parse(meta.snapshot_pointer_json);
         const currentSnapshotDigest = currentPointer?.snapshotDigest ?? null;
         if (currentSnapshotDigest !== expectedSnapshotDigest) {
