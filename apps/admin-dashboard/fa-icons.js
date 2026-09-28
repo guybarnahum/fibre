@@ -79,12 +79,17 @@ export function decorateActionButton(button, {
   label,
   tooltip = label,
   iconOnly = false,
+  spinning = false,
 } = {}) {
   button.title = tooltip;
   button.setAttribute("aria-label", label);
   button.dataset.tooltip = tooltip;
   const children = [];
-  if (icon) children.push(faIcon(icon));
+  if (icon) {
+    const iconNode=faIcon(icon);
+    if(spinning)iconNode.classList.add("fa-action-icon-spin");
+    children.push(iconNode);
+  }
   if (!iconOnly) {
     const text = document.createElement("span");
     text.className = "fa-action-label";
