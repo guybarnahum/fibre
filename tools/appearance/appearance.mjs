@@ -279,7 +279,8 @@ async function main() {
 
   if(diagnose){
     const visual=(diagnosis.findings??[]).find((entry)=>(
-      entry.code==="CANONICAL_VISUAL_SPEC"
+      entry.code==="CANONICAL_VISUAL_MODEL_OUTDATED"
+      || entry.code==="CANONICAL_VISUAL_SPEC"
       || entry.code==="CANONICAL_VISUAL_SPEC_MISSING"
       || entry.code==="GENESIS_VISUAL_SEED"
     ))??null;
