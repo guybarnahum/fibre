@@ -42,6 +42,20 @@ export const humanAppearanceCalibrationSources=Object.freeze({
     pmid:"7174512",
     pmcid:"PMC1168245",
   }),
+  "kayser-2008-polynesian-autosomal":Object.freeze({
+    title:"Genome-wide analysis indicates more Asian than Melanesian ancestry of Polynesians",
+    year:2008,
+    cohort:"47 Pacific Islanders including Cook Islanders, Tongans, Samoans, Tokelau Islanders and Niue Islanders",
+    method:"377 autosomal STR loci with East-Asian and Papua-New-Guinea comparison samples",
+    pmid:"18179899",
+    pmcid:"PMC2253960",
+  }),
+  "gill-2015-east-polynesian-synthesis":Object.freeze({
+    title:"East Polynesian and Paleoindian parallels and contrasts in skeletal morphology",
+    year:2015,
+    cohort:"East Polynesian comparative synthesis",
+    method:"comparative biological anthropology / skeletal morphology review",
+  }),
 });
 
 const claim=(direction,confidence,sources,notes)=>Object.freeze({
@@ -73,6 +87,18 @@ export const humanAppearanceCalibrationEvidence=Object.freeze({
       "moderate",
       ["antoun-2014-maori"],
       "Māori 3D facial data directly reports a more anterior chin position after BMI adjustment.",
+    ),
+    pigmentation:claim(
+      "lighter than current broad oceania parent",
+      "low",
+      ["kayser-2008-polynesian-autosomal","gill-2015-east-polynesian-synthesis"],
+      "The broad Oceania root was visually collapsing Polynesians toward a Melanesian-like template. Genomic evidence shows Polynesians are predominantly Asian-related with substantial but minority Papuan-related ancestry; comparative synthesis also describes lighter East-Polynesian pigmentation. This supports only a conservative correction, not a direct quantitative skin-color mapping.",
+    ),
+    hairForm:claim(
+      "straighter / less tightly curled than current broad oceania parent",
+      "low",
+      ["kayser-2008-polynesian-autosomal","gill-2015-east-polynesian-synthesis"],
+      "The broad Oceania root made the controlled Polynesian cohort uniformly curly. Population history and comparative biological-anthropology evidence support separating Polynesian hair form from a generic Melanesian-like Oceanian fallback. The Fibre coefficient remains deliberately conservative because direct modern hair-curvature measurements are still missing.",
     ),
   }),
 });
