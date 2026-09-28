@@ -1,7 +1,7 @@
 ---
 id: ADR-0021
 status: accepted
-last-reviewed: 2026-08-30
+last-reviewed: 2026-09-28
 ---
 
 # ADR-0021: Canonical visual identity text and root reference image
@@ -53,13 +53,22 @@ Generic text such as `brown hair, brown eyes` is not sufficient canonical identi
 
 The text remains authoritative even after an image exists. The image is the stronger operational likeness anchor; it does not erase the semantic specification or its provenance.
 
-### 2. Native synthetic root generation is text-only
+### 2. Native synthetic root instantiation is geometry-first
 
-For de-novo, foundling, synthetic-lineage and Thread-parent children whose visual identity is not grounded in an external human/source image, the canonical reference image is generated exactly once from canonical visual identity text **without a prior image reference**.
+For de-novo, foundling, synthetic-lineage and Thread-parent children whose visual identity is not grounded in an external human/source image, Fibre instantiates the canonical reference through two bounded generation steps:
 
-This first generation is the point at which Fibre instantiates one concrete face/body realization from the semantic visual specification. The resulting immutable, verified asset is then bound back to canonical Embodiment authority.
+```text
+canonical structural morphology
+        -> text-only geometry anchor
+        -> reference-conditioned surface application
+        -> final canonical reference image
+```
 
-A pending text specification alone is not yet a usable public visual reference. The visual identity becomes operationally usable only after the canonical reference asset has been generated, verified, durably stored, and admitted by the owning Embodiment authority.
+The geometry anchor fixes face/body structure before pigmentation, hair and other surface cues are introduced. It is immutable generation scaffolding with ordinary Asset Generator provenance, **not** a second Embodiment, public visual identity or canonical reference.
+
+Only the second-pass result may be admitted as the canonical reference image. Its generation proof must reference the verified geometry anchor produced for the same Embodiment revision and specification. This prevents skin/hair cues from silently causing the renderer to substitute a different demographic face while preserving one canonical identity authority.
+
+A pending text specification or completed geometry anchor alone is not a usable public visual reference. The visual identity becomes operationally usable only after the final reference-conditioned asset has been generated, verified, durably stored, and admitted by the owning Embodiment authority.
 
 ### 3. Fixed reference age; age is not identity
 
@@ -105,7 +114,8 @@ parent A visual phenotype loci
 + deterministic recombination
 + explicit bounded mutation witnesses
 -> child canonical visual identity text
--> text-only child canonical reference generation
+-> child geometry anchor
+-> surface-applied child canonical reference
 ```
 
 The preferred representation is atomic natural-language loci, compatible with semicolon-separated recombination where appropriate. Fibre chooses exact inherited textual atoms under deterministic policy rather than averaging numeric face vectors or blending parent pixels.
@@ -128,7 +138,7 @@ For example, a disclosed historical Homage may be visually inspired by an attest
 
 ### 7. Root-reference admission requires generation proof
 
-For generated roots, the canonical asset must be tied to its exact generation job, semantic brief, input/reference witnesses, immutable object digest, Fibre generation provenance proof, and the matching Embodiment revision.
+For geometry-first generated roots, admission requires both verified generation witnesses: the text-only geometry-anchor job and the final surface-application job that references exactly that anchor. The final canonical asset must be tied to its exact generation job, semantic brief, input/reference witnesses, immutable object digest, Fibre generation provenance proof, and the matching Embodiment revision. The geometry anchor remains generation provenance only.
 
 Asset Generator does not own the visual identity. It produces candidate bytes plus immutable generation proof. World/Embodiment authority decides whether that exact output is admitted as the canonical reference.
 
@@ -164,15 +174,15 @@ The standing implementation order is:
 
 ```text
 1. canonical visual identity text/origin provenance
-2. root-reference generation demand
-3. verified immutable root asset
-4. Embodiment admission
-5. bounded public visual-identity projection
-6. Thread Presentation rewrite / identity-card slot
-7. reference-conditioned + age-conditioned derived media demand
-8. Asset Generator + Fibre provenance completion
-9. Thread Presentation acceptance/publication
-10. Viewer consumption
+2. geometry-anchor generation demand
+3. verified immutable geometry anchor (generation scaffolding only)
+4. surface-application generation demand referencing that anchor
+5. verified immutable final root asset
+6. Embodiment admission
+7. bounded public visual-identity projection
+8. Thread Presentation rewrite / identity-card slot
+9. reference-conditioned + age-conditioned derived media demand
+10. Asset Generator + Fibre provenance completion / publication
 ```
 
 No later step may bypass steps 1–4 by inventing a face from name, culture, legacy `portraitRef`, a prior presentation image, or an arbitrary generator prompt.
