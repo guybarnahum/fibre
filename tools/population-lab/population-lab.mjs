@@ -14,7 +14,7 @@ import {
   normalizeFamilyProfiles,
   sampleFamilyProfile,
   validateFamilyProfiles,
-} from "../genesis/family-profile.mjs";
+} from "../../core/src/population-context/index.mjs";
 
 const MODEL="gpt-5.1-2025-11-13";
 const MORPH=["faceWidth","faceLength","midfaceProminence","zygomaticProjection","jawWidth","chinProjection","eyeSpacing","eyeShape","epicanthicFold","upperEyelidExposure","orbitalDepth","foreheadProportion","browProminence","noseWidth","noseProjection","nasalBridgeHeight","lipFullness"];
