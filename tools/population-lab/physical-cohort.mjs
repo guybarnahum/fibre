@@ -207,8 +207,10 @@ export function physicalCalibrationDiagnostics({
       })];
     }));
     const maxCenterError=Math.max(...Object.values(loci).map(value=>Math.abs(value.centerError)));
-    const minSd=Math.min(...Object.values(loci).map(value=>value.sd));
-    const maxSd=Math.max(...Object.values(loci).map(value=>value.sd));
+    const spread=Object.values(loci).map(value=>value.sd).sort((a,b)=>a-b);
+    const minSd=spread[0];
+    const medianSd=quantile(spread,.5);
+    const maxSd=spread.at(-1);
     const uniqueLatentSignatures=new Set(group.map(person=>
       PHYSICAL_CALIBRATION_LOCI.map(locus=>person.inheritance.phenotype.latent[locus].toFixed(3)).join("|")
     )).size;
@@ -216,7 +218,8 @@ export function physicalCalibrationDiagnostics({
 
     const statisticalSample=group.length>=24;
     if(statisticalSample&&maxCenterError>.08)warnings.push(`${referencePopulation} center drift >0.08`);
-    if(statisticalSample&&minSd<.025)warnings.push(`${referencePopulation} facial variation collapsed`);
+    if(group.length>=12&&medianSd<.05)warnings.push(`${referencePopulation} facial variation too narrow`);
+    if(statisticalSample&&minSd<.025)warnings.push(`${referencePopulation} facial locus collapsed`);
     if(statisticalSample&&maxSd>.18)warnings.push(`${referencePopulation} facial variation too broad`);
     if(statisticalSample&&uniqueLatentSignatures/group.length<.95)warnings.push(`${referencePopulation} individual variation collapsed`);
     if(resemblance.siblingToUnrelatedRatio>=.9)warnings.push(`${referencePopulation} siblings not meaningfully related`);
@@ -229,6 +232,7 @@ export function physicalCalibrationDiagnostics({
       uniqueShare:uniqueLatentSignatures/group.length,
       maxCenterError,
       minSd,
+      medianSd,
       maxSd,
       resemblance,
       loci:Object.freeze(loci),
