@@ -47,6 +47,7 @@ export const humanAppearanceCalibrationSources=Object.freeze({
     year:2008,
     cohort:"47 Pacific Islanders including Cook Islanders, Tongans, Samoans, Tokelau Islanders and Niue Islanders",
     method:"377 autosomal STR loci with East-Asian and Papua-New-Guinea comparison samples",
+    doi:"10.1016/j.ajhg.2007.09.010",
     pmid:"18179899",
     pmcid:"PMC2253960",
   }),
@@ -63,6 +64,18 @@ const claim=(direction,confidence,sources,notes)=>Object.freeze({
   confidence,
   sources:Object.freeze([...sources]),
   notes,
+});
+
+export const humanAppearanceCalibrationBases=Object.freeze({
+  "oceania.polynesia":Object.freeze({
+    confidence:"low",
+    sources:Object.freeze(["kayser-2008-polynesian-autosomal","buck-2012-polynesia"]),
+    basis:Object.freeze([
+      Object.freeze({referencePopulation:"east_asia",share:.79}),
+      Object.freeze({referencePopulation:"oceania",share:.21}),
+    ]),
+    notes:"This is a population-history-informed whole-profile starting prior, not a claim that visible phenotype is a linear 79/21 ancestry mixture. Kayser et al. estimate about 79% East-Asian-related and 21% Melanesian-related autosomal ancestry in their Polynesian sample; Buck et al. independently show a coherent Polynesian craniofacial grouping with substantial internal diversity. Direct anatomical evidence must still override individual Fibre loci.",
+  }),
 });
 
 // Confidence is per Fibre-locus mapping, not per population.
@@ -87,18 +100,6 @@ export const humanAppearanceCalibrationEvidence=Object.freeze({
       "moderate",
       ["antoun-2014-maori"],
       "Māori 3D facial data directly reports a more anterior chin position after BMI adjustment.",
-    ),
-    pigmentation:claim(
-      "lighter than current broad oceania parent",
-      "low",
-      ["kayser-2008-polynesian-autosomal","gill-2015-east-polynesian-synthesis"],
-      "The broad Oceania root was visually collapsing Polynesians toward a Melanesian-like template. Genomic evidence shows Polynesians are predominantly Asian-related with substantial but minority Papuan-related ancestry; comparative synthesis also describes lighter East-Polynesian pigmentation. This supports only a conservative correction, not a direct quantitative skin-color mapping.",
-    ),
-    hairForm:claim(
-      "straighter / less tightly curled than current broad oceania parent",
-      "low",
-      ["kayser-2008-polynesian-autosomal","gill-2015-east-polynesian-synthesis"],
-      "The broad Oceania root made the controlled Polynesian cohort uniformly curly. Population history and comparative biological-anthropology evidence support separating Polynesian hair form from a generic Melanesian-like Oceanian fallback. The Fibre coefficient remains deliberately conservative because direct modern hair-curvature measurements are still missing.",
     ),
   }),
 });
