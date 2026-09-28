@@ -120,7 +120,7 @@ function generate(place,count,seed,context){
       raisedLanguages:[...identity.raisedLanguages],
       spokenLanguages:[...identity.languages],
       renderDescription:projection.renderDescription,
-      projectionVersion:projection.version,
+      projectionVersion:projection.projectionVersion,
       inheritance:{genome:identity.physicalGenome,phenotype:projection.phenotype},
     };
   });
