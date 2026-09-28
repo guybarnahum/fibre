@@ -61,3 +61,33 @@ cat .fibre/family-inheritance.json | pbcopy
 ```
 
 The experiment creates same-parent sibling groups, a mixed-ancestry family, and a second generation. It records both genomes and expressed phenotypes so family resemblance, sibling variation, mixed inheritance, and multigenerational transmission can be inspected without introducing a second genetics implementation.
+
+
+## Controlled physical calibration
+
+Use Population Lab's controlled physical mode to isolate the shared physical-inheritance and rendering path from model-authored city/family context.
+
+Numerical calibration is entirely local:
+
+```bash
+npm run population:lab -- \
+  --physical-populations="east_asia.han_chinese;east_asia.korean;east_asia.japanese" \
+  --count=96 \
+  --seed=east-asian-calibration-v1
+```
+
+That produces 32 births per reference population through the same founder -> recombination -> phenotype -> rendering projection used by Genesis. The report records center drift, variation, percentile spread, continuous uniqueness, sibling/parent resemblance, and a mixed-parent midpoint diagnostic. No image or language model call is made.
+
+For renderer fidelity, reuse the same seed with a small image cohort:
+
+```bash
+npm run population:lab -- \
+  --physical-populations="east_asia.han_chinese;east_asia.korean;east_asia.japanese" \
+  --count=12 \
+  --seed=east-asian-calibration-v1 \
+  --images
+```
+
+The 12 rendered people are the first four deterministic births from each population in the numerical cohort. Reference-population labels appear in the HTML for human review but are not included in the image prompt; the renderer receives only the shared inherited-anatomy projection.
+
+The visual acceptance question is deliberately qualitative and narrow: do the portraits faithfully express the supplied anatomy, remain clearly distinct individuals, and avoid collapsing East-Asian cohorts toward a generic unrelated facial morphology? This is an offline calibration gate, never a runtime reroll mechanism.
