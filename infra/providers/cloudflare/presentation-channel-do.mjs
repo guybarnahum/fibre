@@ -138,15 +138,18 @@ export class FibrePresentationChannelDurableObject extends DurableObject {
     ).toArray();
   }
 
-  async publishSnapshot({ snapshotPointerJson, expectedSequence }) {
+  async publishSnapshot({ snapshotPointerJson, expectedSequence, expectedSnapshotDigest }) {
     const pointer = parseJson("snapshotPointerJson", snapshotPointerJson);
     if (pointer === null || typeof pointer !== "object" || Array.isArray(pointer)) {
       throw new TypeError("snapshotPointerJson must describe an object");
     }
     sequenceOrNull("expectedSequence", expectedSequence);
+    if (expectedSnapshotDigest !== null) nonEmpty("expectedSnapshotDigest", expectedSnapshotDigest);
+    if (pointer.sequence !== undefined) sequenceOrNull("snapshot sequence", pointer.sequence);
 
     return this.ctx.storage.transactionSync(() => {
-      const current = this.#meta().current_sequence;
+      const meta = this.#meta();
+      const current = meta.current_sequence;
       if (expectedSequence !== null && expectedSequence !== current) {
         return {
           ok: false,
@@ -155,13 +158,27 @@ export class FibrePresentationChannelDurableObject extends DurableObject {
           currentSequence: current,
         };
       }
-      const storedPointer = { ...pointer, sequence: current };
+      if (expectedSnapshotDigest !== null) {
+        const currentPointer = meta.snapshot_pointer_json === null ? null : JSON.parse(meta.snapshot_pointer_json);
+        const currentSnapshotDigest = currentPointer?.snapshotDigest ?? null;
+        if (currentSnapshotDigest !== expectedSnapshotDigest) {
+          return {
+            ok: false,
+            error: "snapshot_conflict",
+            expectedSnapshotDigest,
+            currentSnapshotDigest,
+          };
+        }
+      }
+      const sequence = pointer.sequence ?? current;
+      if (sequence > current) throw new TypeError("snapshot sequence cannot exceed the stream head");
+      const storedPointer = { ...pointer, sequence };
       const storedJson = JSON.stringify(storedPointer);
       this.ctx.storage.sql.exec(
         "UPDATE stream_meta SET snapshot_pointer_json = ? WHERE id = 1",
         storedJson,
       );
-      return { ok: true, snapshotPointerJson: storedJson, sequence: current };
+      return { ok: true, snapshotPointerJson: storedJson, sequence };
     });
   }
 
