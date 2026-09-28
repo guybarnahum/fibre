@@ -6,6 +6,7 @@ import {
   physicalGenomeLoci,
   referencePopulationIds,
   referencePopulationPrior,
+  referencePopulationVariation,
 } from "../src/human-phenotype/index.mjs";
 
 const ancestry=[
@@ -162,17 +163,29 @@ test("Middle East reference hierarchy preserves evidence without invented deltas
 });
 
 
-test("Polynesian hierarchy preserves specific lineage without inventing island deltas",()=>{
+test("Polynesian calibration is a coherent Pacific basis with specific evidence-backed overrides",()=>{
+  const east=referencePopulationPrior("east_asia");
   const oceanic=referencePopulationPrior("oceania");
   const polynesian=referencePopulationPrior("oceania.polynesia");
   const hawaiian=referencePopulationPrior("oceania.polynesia.native_hawaiian");
   const samoan=referencePopulationPrior("oceania.polynesia.samoan");
+  const variation=referencePopulationVariation("oceania.polynesia");
 
-  assert.ok(polynesian.pigmentation<oceanic.pigmentation,"Polynesia still inherits broad-Oceania pigmentation");
-  assert.ok(polynesian.hairForm<oceanic.hairForm,"Polynesia still inherits broad-Oceania hair form");
-  assert.ok(polynesian.faceBreadth>oceanic.faceBreadth,"Polynesian facial breadth calibration missing");
-  assert.ok(polynesian.faceLength>oceanic.faceLength,"Polynesian facial-height calibration missing");
-  assert.ok(polynesian.chinProjection>oceanic.chinProjection,"Polynesian chin projection calibration missing");
+  for(const locus of ["pigmentation","hairForm","eyeShape","epicanthicFold","noseProjection"]){
+    const low=Math.min(east[locus],oceanic[locus]),high=Math.max(east[locus],oceanic[locus]);
+    assert.ok(polynesian[locus]>low&&polynesian[locus]<high,`${locus} did not resolve between Asian-related and Oceanian calibration bases`);
+    assert.ok(Math.abs(polynesian[locus]-east[locus])<Math.abs(polynesian[locus]-oceanic[locus]),`${locus} lost the predominantly Asian-related calibration basis`);
+  }
+  assert.ok(polynesian.faceBreadth>east.faceBreadth,"Polynesian facial breadth override missing");
+  assert.ok(polynesian.faceLength>east.faceLength,"Polynesian facial-height override missing");
+  assert.ok(polynesian.chinProjection>oceanic.chinProjection,"Polynesian chin projection override missing");
+  assert.ok(variation.familyFactorMultiplier>1,"Polynesian family variation did not favor coherent factor variation");
+  assert.ok(variation.structuralResidualMultiplier<1,"Polynesian variation still favors independent facial noise");
   assert.deepEqual(hawaiian,polynesian,"uncalibrated Native Hawaiian child should shrink to Polynesian prior");
   assert.deepEqual(samoan,polynesian,"uncalibrated Samoan child should shrink to Polynesian prior");
+  assert.deepEqual(
+    referencePopulationVariation("oceania.polynesia.native_hawaiian"),
+    variation,
+    "uncalibrated Native Hawaiian child should inherit Polynesian variation profile",
+  );
 });
