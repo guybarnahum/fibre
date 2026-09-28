@@ -1,4 +1,7 @@
-import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
+import {
+  physicalPhenotypeRenderingProjection,
+  resolveBirthPhysicalInheritance,
+} from "#core/src/human-phenotype/index.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -19,10 +22,16 @@ test("Genesis embodiment is derived from inherited physical genome",()=>{
   const replay=buildGenesisCanonicalVisualIdentity({threadId:"thr_visual_one",sex:"female",physicalGenome:genome});
   assert.deepEqual(first,replay,"same genome changed embodiment");
   assert.equal(first.policyRef,GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY);
-  assert.match(first.specification.subject.description,/faceWidth:/u);
-  assert.match(first.specification.subject.description,/noseWidth:/u);
-  assert.match(first.specification.subject.description,/Continuous inherited expression/u);
-  assert.match(first.specification.subject.description,/faceBreadth: [-0-9.]+ \(-1 narrower, \+1 broader\)/u);
+  const projection=physicalPhenotypeRenderingProjection(genome,{sex:"female"});
+  assert.ok(
+    first.specification.subject.description.includes(projection.description),
+    "Genesis embodiment lost physical rendering projection",
+  );
+  assert.deepEqual(
+    Object.keys(projection.anatomy),
+    ["face","eyes","noseMouth","pigmentationHair","body"],
+    "physical projection lost an identity anatomy group",
+  );
   assert.throws(()=>buildGenesisCanonicalVisualIdentity({threadId:"thr_missing",sex:"male"}),/requires the inherited physical genome/u);
 });
 
