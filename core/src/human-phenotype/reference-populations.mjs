@@ -4,9 +4,9 @@ import {physicalGenomeLoci} from "./physical-genome.mjs";
  * Root priors are deliberately complete: every physical locus is named even
  * when its current mean is 0; there is no missing-locus fallback.
  *
- * East-Asian facial morphology has the evidence-backed Slice 2 calibration
- * below. Other roots, non-facial coordinates, and deliberately uncalibrated
- * child populations remain provisional. A definition's parent is its
+ * East-Asian and Polynesian facial morphology have evidence-backed child
+ * calibrations below. Other roots, non-facial coordinates, and deliberately
+ * uncalibrated child populations remain provisional. A definition's parent is its
  * calibration fallback, not a claim of ancestry or population equivalence.
  * Children inherit that prior until calibration supplies justified overrides.
  */
