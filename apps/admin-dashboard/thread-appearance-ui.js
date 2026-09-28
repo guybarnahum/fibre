@@ -129,7 +129,8 @@ function setAppearanceBusy(host,busy){
     host.dataset.appearanceRefreshing="true";
     host.setAttribute("aria-busy","true");
   }else{
-    setAppearanceBusy(host,false);
+    delete host.dataset.appearanceRefreshing;
+    host.removeAttribute("aria-busy");
   }
   for(const button of host.querySelectorAll("[data-appearance-progress]")){
     button.disabled=busy;
