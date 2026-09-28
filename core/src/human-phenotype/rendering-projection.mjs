@@ -49,11 +49,10 @@ function anatomyFromTraits(traits){
     noseMouth:pick(traits,["noseWidth","noseProjection","nasalBridgeHeight","lipFullness"]),
     pigmentationHair:pick(traits,[
       "pigmentation","eyeColor","hairColor","frecklingTendency",
-      "hairTexture","hairDensity","hairlineLossTendency","facialHairTendency",
+      "hairTexture","hairDensity",
     ]),
     body:pick(traits,[
-      "frame","heightTendency","bodyProportion","adiposityTendency",
-      "muscularityTendency","shoulderHipProportion",
+      "frame","heightTendency","bodyProportion","shoulderHipProportion",
     ]),
   });
 }
@@ -70,6 +69,13 @@ function continuousFace(latent){
   return names.map(name=>`${name}: ${Number(latent[name]).toFixed(2)} (${LATENT_MEANING[name]})`).join("; ");
 }
 
+const STATE_ONLY_LOCI=new Set([
+  "hairlineLossTendency",
+  "facialHairTendency",
+  "adiposityTendency",
+  "muscularityTendency",
+]);
+
 function continuousOther(latent){
   const facial=new Set([
     "faceBreadth","faceLength","midfaceProminence","zygomaticProjection",
@@ -78,7 +84,7 @@ function continuousOther(latent){
     "noseBreadth","noseProjection","nasalBridgeHeight","softTissue",
   ]);
   return Object.entries(latent)
-    .filter(([name])=>!facial.has(name))
+    .filter(([name])=>!facial.has(name)&&!STATE_ONLY_LOCI.has(name))
     .map(([name,value])=>`${name}: ${Number(value).toFixed(2)} (${LATENT_MEANING[name]})`)
     .join("; ");
 }
@@ -95,10 +101,11 @@ export function physicalPhenotypeRenderingProjection(genome,{sex}={}){
     "Treat the facial relationships above as one coherent anatomy. Do not independently average them toward generic portrait defaults.",
     `Continuous facial coordinates are secondary precision and preserve this individual's proportions inside the semantic anatomy: ${continuousFace(phenotype.latent)}.`,
     `Other continuous inherited coordinates: ${continuousOther(phenotype.latent)}.`,
-    "Facial-hair and hairline-loss coordinates are inherited carrier tendencies; visible expression follows the sex-conditioned phenotype above.",
+    "Pigmentation, hair color and hair texture are independent axes; never use them as permission to replace or reinterpret the specified facial geometry.",
+    "Visible facial hair, hairline, body composition and muscular development come from physical state, not directly from inherited tendency coordinates.",
   ].join(" ");
   return Object.freeze({
-    version:"physical-rendering-projection-v0.3",
+    version:"physical-rendering-projection-v0.4",
     phenotype,
     anatomy,
     description,
