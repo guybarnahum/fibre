@@ -44,7 +44,7 @@ test("legacy physical embodiment becomes one durable inherited genome without re
 
     const first=migration.migrate(seeded,request);
     assert.equal(first.migrated,true);
-    assert.equal(first.thread.genome.physical.version,"physical-genome-v0.2");
+    assert.equal(first.thread.genome.physical.version,"physical-genome-v0.3");
     assert.deepEqual(first.thread.identity,seeded.identity,"embodiment migration rewrote Thread identity");
     assert.deepEqual(world.replayThread(seeded.threadId),world.getThread(seeded.threadId),
       "physical embodiment migration did not survive World replay");
@@ -58,7 +58,7 @@ test("legacy physical embodiment becomes one durable inherited genome without re
     const evidence=migration.latestEvidence(seeded.threadId);
     assert.equal(evidence.eventId,first.eventId);
     assert.deepEqual(evidence.physicalAncestry,physicalAncestry);
-    assert.equal(evidence.physicalGenomeVersion,"physical-genome-v0.2");
+    assert.equal(evidence.physicalGenomeVersion,"physical-genome-v0.3");
     assert.equal(evidence.previousPhysicalGenomeVersion,null);
 
     const retry=migration.migrate(world.getThread(seeded.threadId),request);
@@ -100,11 +100,11 @@ test("outdated physical appearance model upgrades in place with previous version
     });
 
     assert.equal(result.migrated,true);
-    assert.equal(result.thread.genome.physical.version,"physical-genome-v0.2");
+    assert.equal(result.thread.genome.physical.version,"physical-genome-v0.3");
     const event=world.listEvents(seeded.threadId).at(-1);
     assert.equal(event.eventType,"THREAD_PHYSICAL_GENOME_MIGRATED");
     assert.equal(event.payload.previousPhysicalGenomeVersion,"physical-genome-v0.1");
-    assert.equal(event.payload.physicalGenome.version,"physical-genome-v0.2");
+    assert.equal(event.payload.physicalGenome.version,"physical-genome-v0.3");
     assert.deepEqual(event.payload.physicalAncestry,physicalAncestry);
   });
 });
