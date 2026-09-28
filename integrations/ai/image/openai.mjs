@@ -150,6 +150,7 @@ export function createOpenAIImageProvider({
   editEndpoint = DEFAULT_EDIT_ENDPOINT,
   size = "1024x1024",
   quality = "medium",
+  inputFidelity = null,
   outputFormat = "png",
   fetchImpl = fetch,
   now = () => new Date().toISOString(),
@@ -160,6 +161,9 @@ export function createOpenAIImageProvider({
   nonEmpty("OpenAI image edit endpoint", editEndpoint);
   nonEmpty("OpenAI image size", size);
   nonEmpty("OpenAI image quality", quality);
+  if(inputFidelity!==null&&!["low","high"].includes(inputFidelity)){
+    throw new TypeError("OpenAI image inputFidelity must be low, high, or null");
+  }
   nonEmpty("OpenAI image output format", outputFormat);
   if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl must be a function");
   const { width, height } = dimensions(size);
@@ -191,10 +195,13 @@ export function createOpenAIImageProvider({
           output_format: outputFormat,
         };
         const selectedEndpoint = references.length > 0 ? editEndpoint : endpoint;
+        const providerBody=references.length>0&&inputFidelity!==null
+          ? {...logicalBody,input_fidelity:inputFidelity}
+          : logicalBody;
         const requestWitness = references.length > 0
           ? {
               mediaType:"multipart/form-data",
-              body:{ ...logicalBody, referenceInputs:references.map(referenceWitness) },
+              body:{ ...providerBody, referenceInputs:references.map(referenceWitness) },
               secretsRemoved:true,
             }
           : {
@@ -207,7 +214,7 @@ export function createOpenAIImageProvider({
         const headers = { Authorization: `Bearer ${apiKey}` };
         if (references.length > 0) {
           const form = new FormData();
-          for (const [key, value] of Object.entries(logicalBody)) form.append(key, String(value));
+          for (const [key, value] of Object.entries(providerBody)) form.append(key, String(value));
           references.forEach((reference, index) => {
             form.append(
               "image[]",
@@ -218,7 +225,7 @@ export function createOpenAIImageProvider({
           requestBody = form;
         } else {
           headers["Content-Type"] = "application/json";
-          requestBody = JSON.stringify(logicalBody);
+          requestBody = JSON.stringify(providerBody);
         }
 
         let response;
@@ -293,6 +300,7 @@ export function createOpenAIImageProvider({
               size,
               quality,
               outputFormat,
+              ...(references.length>0&&inputFidelity!==null?{inputFidelity}:{}),
             },
           },
         };
