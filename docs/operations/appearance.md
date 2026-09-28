@@ -34,8 +34,11 @@ physical-genome-v0.2 -> physical-genome-v0.3
 no physical genome
   Migrate appearance
 
-physical-genome-v0.3 -> physical-genome-v0.3
-  current; migration unavailable
+physical-genome-v0.3 + current layered visual spec
+  current; re-render available
+
+physical-genome-v0.3 + pre-layered visual spec
+  Upgrade visual model; physical genome remains unchanged
 ```
 
 Do not infer physical ancestry from a Thread's name, birthplace, nationality, culture, language, or existing portrait.
@@ -105,6 +108,14 @@ npm run appearance:diagnose -- --thread-id=thr_...
 ```
 
 The expected terminal state is the current physical-genome version, healthy Embodiment-owned visual specification, and a healthy canonical Embodiment.
+
+## Upgrade visual model without changing physical inheritance
+
+A Thread may already carry the current physical genome while its canonical visual specification predates the geometry-first Human Appearance renderer. Diagnosis then offers **Upgrade visual model**.
+
+This migration derives the current layered canonical specification from the Thread's existing physical genome, supersedes the visual specification/root, and leaves the physical genome byte-for-byte unchanged. It does not ask for parental ancestry because no inheritance authority is being reconstructed.
+
+Use this path before re-rendering: re-render preserves the existing specification exactly and therefore cannot repair an obsolete one-pass rendering specification.
 
 ## Re-render appearance
 
