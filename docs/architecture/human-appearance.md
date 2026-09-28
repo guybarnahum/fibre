@@ -129,7 +129,20 @@ A selected population profile does not remain a runtime demographic controller a
 
 The renderer receives concrete anatomy and bounded physical-state/rendering instructions.
 
-It must never receive population, ancestry, race, ethnicity, nationality, birthplace, language or culture as permission to choose a face.
+For native synthetic canonical identity, the render contract is geometry-first:
+
+```text
+structural morphology + reference geometry state
+        -> geometry anchor
+        -> surface phenotype + reference surface state
+        -> final canonical portrait
+```
+
+The geometry anchor is generation scaffolding, not a second identity authority. Only the final surface-applied portrait may become the canonical Embodiment reference.
+
+This split exists because a one-pass image model may use pigmentation, hair or grooming as latent demographic-template cues and silently replace otherwise-correct facial geometry. Geometry is therefore instantiated before those surface cues are present.
+
+The renderer must never receive population, ancestry, race, ethnicity, nationality, birthplace, language or culture as permission to choose a face.
 
 ## Human Appearance input contract
 
