@@ -140,7 +140,7 @@ For example, a Morocco birthplace prefills both parental sides as `Moroccan fami
 
 Generic **Fix** never changes appearance authority.
 
-Admin submits one authoritative action and stops. Root generation, Presentation and FID convergence remain normal Fibre reconciliation work; the browser does not poll or reroll in the background. Use **Refresh appearance** when you want to inspect the current state.
+Admin submits one authoritative migration or re-render action and does not poll in the background. **Refresh appearance** is the explicit operator watch: it checks immediately, shows an animated progress indicator while the canonical appearance is still pending, then checks every 20 seconds until the new root is published. At that point it stops and refreshes the Thread view once. Closing the Thread view stops the watch; there is never more than one refresh loop per Appearance section.
 
 ## Staging workflow
 
