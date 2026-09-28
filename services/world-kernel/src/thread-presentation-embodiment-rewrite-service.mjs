@@ -200,13 +200,13 @@ export function createThreadPresentationEmbodimentRewriteService({
       }
 
       const identity = publicationIdentity(current, projection);
-      const expectedSequence = current.pointer.sequence ?? current.snapshot.cursor;
       const publication = await presentationServer.publishSnapshot({
         channelId,
         objectRef: identity.objectRef,
         snapshotVersion: identity.snapshotVersion,
         bundle: rewrite.bundle,
-        expectedSequence,
+        cursor: current.snapshot.cursor,
+        expectedSnapshotDigest: current.pointer.snapshotDigest,
         catalog: {
           projectionKind: "embodiment_visual_identity",
           visualIdentityEmbodimentId: projection.embodimentId,
