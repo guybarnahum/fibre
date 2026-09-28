@@ -232,10 +232,13 @@ Physical state includes things such as:
 - muscular development;
 - visible facial soft tissue;
 - skin texture/variation;
-- hair state;
+- visible facial-hair and hairline presentation;
+- hairstyle/grooming;
 - acquired marks/injury;
 - ordinary asymmetry expression;
 - aging.
+
+Inherited facial-hair, hairline-loss, adiposity and muscularity loci are **tendencies**, not the current visible state. They must not be sent directly to the renderer as current beard, baldness, weight or musculature.
 
 Inherited frame or adiposity tendency is not current weight.
 
