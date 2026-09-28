@@ -14,42 +14,10 @@ import { canonicalVisualSpecificationFromPhysicalGenome } from "../src/canonical
 
 const sha = (char) => `sha256:${char.repeat(64)}`;
 
-function pendingEmbodiment(threadId = "thr_visual_process_001") {
-  const specification = {
-    subject: {
-      partyId: threadId,
-      description: "A person with a softly angular oval face; medium warm-brown skin with ordinary visible texture; wide-set dark brown almond-shaped eyes; straight medium-width brows with a subtly higher left arch; a narrow straight nose with rounded tip; a defined cupid's bow and fuller lower lip; a tapered jaw and rounded chin; attached earlobes; thick dark-brown wavy hair with a subtly uneven natural hairline; and a small pale diagonal scar above the outer left eyebrow. These proportions, landmarks, asymmetries, and the scar remain stable identity cues across age transformations.",
-    },
-    method: "canonical synthetic portrait specification",
-    description: "Preserve ordinary asymmetry and skin detail instead of idealizing the face. Build is lean-to-average with relaxed shoulders and a long neck. The normalized reference composition is head-and-shoulders, mostly frontal, both ears and hairline visible, neutral mouth and relaxed eyes, no eyewear or jewelry obscuring landmarks, even daylight-balanced illumination, and ordinary perspective without wide-angle distortion.",
-    model: "replaceable-renderer",
-  };
-  return {
-    embodimentId: embodimentId({ threadId, kind: "portrait", lineage: "canonical" }),
-    revision: 1,
-    threadId,
-    kind: "portrait",
-    representationKind: "synthetic_generation",
-    truthStatus: "synthetic_representation_not_historical_evidence",
-    rightsBasis: "thread_self_owned",
-    permissionReferences: [],
-    sourceReferences: [`evt_seed_${threadId}`],
-    specification,
-    specificationDigest: embodimentSpecificationDigest(specification),
-    respecification: null,
-    status: "pending_generation",
-    unavailableReason: null,
-    asset: null,
-    visibility: "public",
-    recordedAt: "2026-08-30T20:00:00Z",
-  };
-}
-
-function pendingLayeredEmbodiment(threadId="thr_visual_layered_001"){
-  const base=pendingEmbodiment(threadId);
+function pendingEmbodiment(threadId="thr_visual_process_001"){
   const physicalGenome=sampleFounderPhysicalGenome({
     ancestry:[{population:"test family",share:1,referencePopulation:"oceania.polynesia"}],
-    seed:`layered:${threadId}`,
+    seed:`visual-reconcile:${threadId}`,
   });
   const specification=canonicalVisualSpecificationFromPhysicalGenome({
     threadId,
@@ -57,10 +25,28 @@ function pendingLayeredEmbodiment(threadId="thr_visual_layered_001"){
     physicalGenome,
   });
   return {
-    ...base,
+    embodimentId:embodimentId({threadId,kind:"portrait",lineage:"canonical"}),
+    revision:1,
+    threadId,
+    kind:"portrait",
+    representationKind:"synthetic_generation",
+    truthStatus:"synthetic_representation_not_historical_evidence",
+    rightsBasis:"thread_self_owned",
+    permissionReferences:[],
+    sourceReferences:[`evt_seed_${threadId}`],
     specification,
     specificationDigest:embodimentSpecificationDigest(specification),
+    respecification:null,
+    status:"pending_generation",
+    unavailableReason:null,
+    asset:null,
+    visibility:"public",
+    recordedAt:"2026-08-30T20:00:00Z",
   };
+}
+
+function pendingLayeredEmbodiment(threadId="thr_visual_layered_001"){
+  return pendingEmbodiment(threadId);
 }
 
 function readyRoot(job) {
@@ -153,7 +139,7 @@ test("World visual reconciliation records state-changing work but stays silent w
   assert.equal(first.complete, true);
   assert.equal(current.status, "available");
   assert.equal(current.revision, 2);
-  assert.equal(rootCalls, 1);
+  assert.equal(rootCalls, 2);
   assert.equal(presentationCalls, 1);
 
   const activity = await telemetry.query({ requestId: activityContext.requestId });
@@ -181,7 +167,7 @@ test("World visual reconciliation records state-changing work but stays silent w
 
   const replay = await reconciler.reconcileThread({ threadId: current.threadId, activityContext });
   assert.equal(replay.complete, true);
-  assert.equal(rootCalls, 1, "an admitted canonical root must never be generated twice");
+  assert.equal(rootCalls, 2, "an admitted canonical identity must not regenerate either root stage");
   assert.equal(presentationCalls, 2, "Presentation reconciliation may replay idempotently");
   const replayActivity = await telemetry.query({ requestId: activityContext.requestId });
   assert.equal(replayActivity.length, countAfterWork, "an already-converged replay must emit no activity");
@@ -248,7 +234,7 @@ test("World visual reconciliation waits without mutating when root generation is
 
   const result = await reconciler.reconcileThread({ threadId: current.threadId });
   assert.equal(result.complete, false);
-  assert.equal(result.stage, "canonical_visual_root_pending");
+  assert.equal(result.stage, "canonical_visual_geometry_pending");
   assert.equal(writes, 0);
   assert.equal(presentationCalls, 0);
 });
