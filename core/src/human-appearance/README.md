@@ -388,6 +388,40 @@ Any new calibration must preserve:
 
 If a population becomes visually uniform after calibration, or diversity appears mainly as incoherent feature combinations, the calibration is wrong even if its mean looks plausible.
 
+## Renderer layering
+
+Population calibration and image rendering are separate problems.
+
+A one-pass image model may use pigmentation, hair, or grooming as a latent demographic-template cue and silently replace otherwise-correct facial geometry. Human Appearance therefore emits two rendering layers:
+
+```text
+geometryDescription
+surfaceDescription
+```
+
+Reference physical state mirrors the same split:
+
+```text
+geometryDescription
+surfaceDescription
+```
+
+Native synthetic canonical identity renders those layers in two steps:
+
+```text
+inherited geometry + reference geometry state
+  -> monochrome geometry anchor
+
+geometry anchor
++ inherited surface phenotype
++ reference surface state
+  -> final canonical portrait
+```
+
+The anchor is disposable generation scaffolding with provenance, not a second identity authority. Only the final portrait is eligible for Embodiment admission.
+
+Do not compensate for renderer template substitution by distorting population priors. If the geometry anchor is correct and the final surface edit changes the face, the defect is renderer fidelity.
+
 ## Population Lab acceptance
 
 Use the same production Human Appearance path.
