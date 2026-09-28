@@ -525,10 +525,16 @@ function threadRow(thread) {
   const health = document.createElement("td"); health.append(badge(thread.admitted === false ? "not admitted" : thread.health, healthKind(thread.health)));
   const reconciliation = document.createElement("td");
   const reconciliationState = reconciliationLabel(thread.reconciliation);
-  reconciliation.append(reconciliationState === "—" ? document.createTextNode("—") : badge(
-    reconciliationState,
-    thread.reconciliation?.state === "dead_letter" ? "failed" : thread.reconciliation?.state === "complete" ? "succeeded" : "retrying",
-  ));
+  if(reconciliationState==="—"){
+    reconciliation.append(document.createTextNode("—"));
+  }else{
+    const reconciliationBadge=badge(
+      reconciliationState,
+      thread.reconciliation?.state === "dead_letter" ? "failed" : thread.reconciliation?.state === "complete" ? "succeeded" : "retrying",
+    );
+    if(thread.reconciliation?.state==="pending")reconciliationBadge.classList.add("thread-pending-throb");
+    reconciliation.append(reconciliationBadge);
+  }
   if (thread.reconciliation?.lastError?.message) reconciliation.title = thread.reconciliation.lastError.message;
   const lastActivity = document.createElement("td"); lastActivity.className = "time"; lastActivity.textContent = when(thread.lastActivityAt);
 
