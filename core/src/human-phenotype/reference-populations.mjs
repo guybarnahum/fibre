@@ -46,14 +46,8 @@ const DEFINITIONS=Object.freeze({
   // island-specific children inherit them until direct calibration exists.
   "oceania.polynesia":{parent:"oceania",values:{
     faceBreadth:.38,
-    faceLength:.08,
-    midfaceProminence:.14,
-    zygomaticProjection:.24,
-    noseBreadth:.34,
-    jawBreadth:.30,
-    chinProjection:.22,
-    frame:.18,
-    muscularityTendency:.08,
+    faceLength:.10,
+    chinProjection:.20,
   }},
   "oceania.polynesia.native_hawaiian":{parent:"oceania.polynesia",values:{}},
   "oceania.polynesia.samoan":{parent:"oceania.polynesia",values:{}},
