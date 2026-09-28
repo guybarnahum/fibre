@@ -1,4 +1,5 @@
-import { referencePopulationIds, sampleFamilyAncestry } from "../../core/src/human-phenotype/index.mjs";
+import { referencePopulationIds } from "../../core/src/human-appearance/index.mjs";
+import { selectPopulationFamilyProfile } from "../../core/src/population-context/family-profile-selection.mjs";
 
 const ancestrySchema={type:"array",minItems:1,maxItems:3,items:{type:"object",additionalProperties:false,required:["population","share","referencePopulation"],properties:{
   population:{type:"string",minLength:1},share:{type:"number",minimum:0.01,maximum:1},referencePopulation:{type:"string",enum:referencePopulationIds,description:"Physical founder population code from Fibre's shared calibrated hierarchy."}
@@ -92,20 +93,27 @@ export function sampleFamilyProfile({ profiles, requestId }) {
     ...profile,
     id:profile?.id ?? `family-${index + 1}`,
     share:profile?.share ?? 1,
-    maternalAncestry:profile?.physicalAncestry?.maternal,
-    paternalAncestry:profile?.physicalAncestry?.paternal,
+    maternalPhysicalLineage:profile?.physicalAncestry?.maternal,
+    paternalPhysicalLineage:profile?.physicalAncestry?.paternal,
   }));
   // Historical deterministic namespace: keep stable unless family sampling is intentionally reseeded.
-  const sampled = sampleFamilyAncestry({ profiles:normalized, seed:`modern-genesis:${requestId}` });
+  const sampled = selectPopulationFamilyProfile({
+    profiles:normalized,
+    selectionSeed:`modern-genesis:${requestId}`,
+  });
   const profile = normalized.find((candidate) => candidate.id === sampled.profileId);
   if (!profile) throw new Error("sampled Genesis family profile is unavailable");
 
-  const { maternalAncestry: _maternal, paternalAncestry: _paternal, ...material } = profile;
+  const {
+    maternalPhysicalLineage:_maternal,
+    paternalPhysicalLineage:_paternal,
+    ...material
+  }=profile;
   return Object.freeze({
     ...material,
     physicalAncestry:Object.freeze({
-      maternal:sampled.maternal.ancestry,
-      paternal:sampled.paternal.ancestry,
+      maternal:sampled.maternalPhysicalLineage,
+      paternal:sampled.paternalPhysicalLineage,
     }),
   });
 }
