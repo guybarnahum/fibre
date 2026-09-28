@@ -29,7 +29,7 @@ function subject({id,role,sex,genome}){
     phenotype:projection.phenotype.traits,
     expressedLatents:projection.phenotype.latent,
     renderDescription:projection.renderDescription,
-    projectionVersion:projection.version,
+    projectionVersion:projection.projectionVersion,
   };
 }
 
