@@ -125,7 +125,7 @@ east_asia                         shared facial anchor
 - The northern/central/southern Han hierarchy is structurally real but currently fully shrunk to the Han prior.
 - Japanese child calibration is intentionally sparse.
 - Mongolian and Tibetan child deltas are intentionally absent.
-- Renderer fidelity is unproven until the controlled Population Lab visual calibration passes. The lab now supports direct Han-Chinese/Korean/Japanese physical cohorts through the shared production inheritance/projection path; population labels remain outside the image prompt.
+- Renderer fidelity passed the controlled Population Lab calibration on 2026-09-27. The 96-person numerical cohort had zero warnings and the fixed 12-person visual cohort produced clearly East-Asian facial morphology with meaningful individual variation. Population labels remained outside the image prompt.
 
 ## Acceptance boundary
 
