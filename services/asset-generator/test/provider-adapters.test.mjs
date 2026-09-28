@@ -64,7 +64,6 @@ test("OpenAI image provider uses image edits for canonical reference inputs and 
   const second = new TextEncoder().encode("reference-two");
   const provider = createOpenAIImageProvider({
     apiKey: "sk-secret-never-persist",
-    inputFidelity:"high",
     fetchImpl: async (url, init) => {
       seen.push({ url, init });
       return response({
@@ -104,7 +103,7 @@ test("OpenAI image provider uses image edits for canonical reference inputs and 
   assert.equal(seen[0].init.body.get("model"), "gpt-image-2-2026-04-21");
   assert.equal(seen[0].init.body.get("quality"), "medium");
   assert.equal(seen[0].init.body.get("size"), "1024x1024");
-  assert.equal(seen[0].init.body.get("input_fidelity"), "high");
+  assert.equal(seen[0].init.body.get("input_fidelity"), null);
   assert.equal(seen[0].init.body.getAll("image[]").length, 2);
   assert.deepEqual(
     seen[0].init.body.getAll("image[]").map((image) => image.type),
@@ -130,6 +129,7 @@ test("OpenAI image provider uses image edits for canonical reference inputs and 
   assert.equal("bytes" in generated.requestWitness.body.referenceInputs[1], false);
   assert.equal(JSON.stringify(generated.requestWitness).includes("sk-secret-never-persist"), false);
   assert.equal(generated.result.configuration.endpoint, "/v1/images/edits");
+  assert.equal("inputFidelity" in generated.result.configuration, false);
   assert.equal(generated.result.providerRequestId, "req_openai_edit_fixture");
   assert.equal(new TextDecoder().decode(generated.result.bytes), "edited-png-fixture");
 });
