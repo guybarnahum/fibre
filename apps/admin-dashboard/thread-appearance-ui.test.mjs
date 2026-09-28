@@ -127,3 +127,21 @@ test("Appearance refresh waits for canonical publication, not only root generati
   assert.equal(ready.appearancePending,false,"published appearance remained pending");
   assert.equal(ready.appearanceReady,true,"published canonical appearance was not recognized");
 });
+
+
+test("Appearance refresh stops on terminal embodiment failure",()=>{
+  const state=threadAppearanceState({
+    findings:[
+      {code:"PHYSICAL_GENOME",state:"healthy",version:"physical-genome-v0.2"},
+      {code:"CANONICAL_VISUAL_SPEC",state:"healthy",authority:"embodiment"},
+      {
+        code:"CANONICAL_EMBODIMENT_PENDING",
+        state:"repairable",
+        embodimentStatus:"unavailable_with_reason",
+      },
+    ],
+  });
+  assert.equal(state.appearanceBlocked,true,"terminal embodiment failure was not surfaced");
+  assert.equal(state.appearancePending,false,"terminal embodiment failure would keep polling");
+  assert.equal(state.appearanceReady,false,"failed embodiment was treated as current");
+});
