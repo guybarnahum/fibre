@@ -160,3 +160,18 @@ test("Middle East reference hierarchy preserves evidence without invented deltas
     );
   }
 });
+
+
+test("Polynesian hierarchy preserves specific lineage without inventing island deltas",()=>{
+  const oceanic=referencePopulationPrior("oceania");
+  const polynesian=referencePopulationPrior("oceania.polynesia");
+  const hawaiian=referencePopulationPrior("oceania.polynesia.native_hawaiian");
+  const samoan=referencePopulationPrior("oceania.polynesia.samoan");
+
+  assert.ok(polynesian.faceBreadth>oceanic.faceBreadth,"Polynesian facial breadth calibration missing");
+  assert.ok(polynesian.jawBreadth>oceanic.jawBreadth,"Polynesian mandibular calibration missing");
+  assert.ok(polynesian.chinProjection>oceanic.chinProjection,"Polynesian chin projection calibration missing");
+  assert.ok(polynesian.frame>oceanic.frame,"Polynesian frame calibration missing");
+  assert.deepEqual(hawaiian,polynesian,"uncalibrated Native Hawaiian child should shrink to Polynesian prior");
+  assert.deepEqual(samoan,polynesian,"uncalibrated Samoan child should shrink to Polynesian prior");
+});
