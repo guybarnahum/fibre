@@ -17,6 +17,8 @@ That is a deliberate boundary choice, not a permanent infrastructure constraint.
 
 The domain may become a service later if its calibration atlas acquires an independently deployed data lifecycle, remote scientific datasets, expensive shared computation, or another product boundary that genuinely benefits from network ownership. No current contract prevents that extraction.
 
+If a network boundary becomes useful sooner, **Population Context is the more likely service candidate**: place/era authoring may eventually own shared caches, external demographic/historical datasets or model-assisted context generation. Human Appearance should remain a pure deterministic library for as long as its inputs are already-resolved parent genomes/physical lineages and its outputs are fixed-size physical state.
+
 ## The critical seam
 
 Geography does not choose a face.
