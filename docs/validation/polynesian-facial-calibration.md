@@ -70,26 +70,53 @@ Evidence:
 
 Why moderate: the anatomical mapping is direct, but the sample is modest and Māori-specific. It supports the shared Polynesian parent conservatively, not a categorical requirement for every individual.
 
-## Hair form and pigmentation — low confidence correction
+## Whole-profile Polynesian calibration basis — low confidence
 
-The first 48-person v0.3 visual cohort falsified the assumption that Polynesia could safely inherit the broad `oceania` hair/pigmentation center unchanged: 11/12 Polynesian samples projected as deep pigmentation and 12/12 as curly hair, and the rendered cohort collapsed toward a generic African-descent-looking phenotype rather than plausible Polynesian variation.
+The first 48-person v0.3 visual cohort falsified the assumption that Polynesia could safely inherit the broad `oceania` prior and patch only a few visible traits. The follow-up cohort improved hair/pigmentation but still oscillated between European-looking and African-descended-looking renderer defaults rather than producing one coherent Polynesian distribution.
 
-Fibre therefore applies conservative Polynesian-parent corrections for `pigmentation` and `hairForm`. These are explicitly **low-confidence** mappings. The supporting evidence is population-history/comparative evidence, not a direct modern quantitative conversion into Fibre's normalized skin/hair coordinates. Better direct measurements should replace them.
+Fibre now uses a **whole-profile calibration basis** for `oceania.polynesia`:
 
-The purpose of these corrections is not to make Polynesians lighter or straighter-haired by rule. It is to stop a broad Oceania fallback from acting as a false Melanesian template for all Remote Oceania while preserving founder-level individual variation.
+```text
+79% east_asia calibration prior
+21% oceania calibration prior
++ direct Polynesian facial overrides
+```
 
-## Deliberately not calibrated
+The 79/21 ratio comes from Kayser et al. (2008), whose 377-autosomal-STR analysis estimated about 79% East-Asian-related and 21% Melanesian-related ancestry in its Polynesian sample. This is used only as a **low-confidence population-history-informed starting prior**. It is not a claim that visible facial phenotype is a linear 79/21 ancestry mixture, and it must be replaced or refined whenever direct modern Polynesian anthropometry supports better locus-specific values.
 
-The current Polynesian child does not add specific overrides for:
+This whole-profile basis causes hair form, pigmentation, eye/orbit, nose and other currently uncalibrated axes to resolve to one integrated Pacific center rather than inherit an effectively Melanesian broad-Oceania template or rely on the renderer to fill missing gestalt.
 
-- nose width;
+Direct evidence still wins. The current explicit overrides remain:
+
+- `faceBreadth` — moderate confidence;
+- `faceLength` — low confidence;
+- `chinProjection` — moderate confidence.
+
+## Coherent within-population variation
+
+Buck & Viđarsdóttir (2012) found a Polynesian craniofacial grouping relative to neighboring regions while also finding considerable diversity within Polynesian samples.
+
+Fibre represents that with the existing compact founder factor model rather than a new covariance engine:
+
+- family-factor variation is increased slightly (`1.12x`);
+- independent structural residual noise is reduced slightly (`0.90x`).
+
+This is a **modeling profile**, not an anthropometric measurement. Its purpose is to make individual Polynesian variation more coherent—whole faces/families vary together—instead of creating diversity mainly by independently perturbing facial sliders.
+
+## Deliberately not directly calibrated
+
+The current Polynesian child still does not add direct locus-specific overrides for:
+
+- nose width/projection;
+- orbital/eye anatomy;
+- zygomatic projection;
 - jaw breadth;
+- soft tissue/lip fullness;
 - frame;
 - muscularity;
-- adiposity;
-- eye anatomy.
+- adiposity.
 
-The current sources do not justify those Fibre mappings strongly enough.
+Those axes now receive the whole-profile calibration basis, but they are not claimed as directly measured Polynesian coefficients. New direct evidence should override the basis one locus at a time.
 
 Current body mass or body-composition prevalence must not be converted into inherited population morphology. Those belong to reference/lived physical state, not ancestry.
 
