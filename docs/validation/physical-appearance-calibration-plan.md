@@ -16,6 +16,8 @@ That observed failure supersedes the earlier conclusion that population/appearan
 
 The original calibration tranche established `physical-genome-v0.2` as the validated baseline and live staging proved its v0.1 -> v0.2 authority upgrade and downstream convergence. The current `main` candidate is `physical-genome-v0.3`: a global Human Appearance extension that adds a hierarchical Polynesian calibration plus a deterministic non-historical reference physical state for ordinary-human portrait realism. v0.3 is not staging-accepted until the focused/repository gate and a bounded visual cohort pass.
 
+The first v0.3 48-person controlled visual cohort on 2026-09-28 **failed visual acceptance**. It exposed four distinct issues: the broad-Oceania fallback collapsed Polynesia toward deep pigmentation + curly hair; facial variation remained too narrow despite unique continuous signatures; inherited facial-hair tendency was being rendered as current grooming; and one Han-Chinese subject rendered as European despite a strong East-Asian anatomy specification. The repair is causal rather than prompt/reroll based: widen the shared founder factor/residual spread, correct only the source/confidence-supported Polynesian parent axes, move visible grooming/body state out of inherited tendency projection, and make Population Lab warn on narrow within-population facial spread.
+
 ## Standing constraints
 
 - Keep runtime O(1): fixed-size genome, bounded deterministic sampling and arithmetic.
