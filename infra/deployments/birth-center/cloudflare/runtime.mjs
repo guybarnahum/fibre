@@ -203,6 +203,25 @@ function pendingProjection(request, {
   });
 }
 
+export function stillbornBirths(runtime) {
+  return runtime.developmentRequestStore.recent({ limit:256 })
+    .flatMap((request) => {
+      const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
+      if (disposition?.outcome !== "stillborn") return [];
+      return [Object.freeze({
+        requestId:request.requestId,
+        genesisId:request.genesisId,
+        threadId:request.threadId,
+        failureCode:disposition.failureCode ?? null,
+        failureMessage:disposition.failureMessage ?? null,
+        settledAt:disposition.settledAt ?? null,
+        createdAt:request.createdAt,
+        updatedAt:disposition.updatedAt ?? request.updatedAt,
+      })];
+    })
+    .sort((left, right) => Date.parse(right.settledAt ?? right.updatedAt) - Date.parse(left.settledAt ?? left.updatedAt));
+}
+
 export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
   const queued = [];
   const known = new Set();
@@ -446,6 +465,7 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
   const birthApi = createBirthInitiationApi({
     service:birthService,
     pendingBirths:() => pendingBirths(runtime, { nowMs }),
+    stillbornBirths:() => stillbornBirths(runtime),
     birthplaces:BIRTHPLACES,
     requestStore:runtime.birthRequestStore,
     privateToken,
