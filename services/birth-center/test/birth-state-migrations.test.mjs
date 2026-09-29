@@ -22,7 +22,7 @@ test("Birth Center state is migrated explicitly and runtime schema checks are re
   assert.deepEqual(migrateBirthState(storage), {
     fromVersion:0,
     toVersion:BIRTH_STATE_SCHEMA_VERSION,
-    applied:[1],
+    applied:[1,2],
   });
   assert.equal(requireCurrentBirthState(storage), BIRTH_STATE_SCHEMA_VERSION);
 
