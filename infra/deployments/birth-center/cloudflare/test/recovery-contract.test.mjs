@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
+import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
+import { migrateBirthState } from "#services/birth-center/src/birth-state-migrations.mjs";
 import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
 import { attachTestCivilRegistration } from "#services/world-kernel/test/support/civil-registration-fixture.mjs";
 import { createWorldCloudflareRuntime } from "../../../world-kernel/cloudflare/runtime.mjs";
@@ -180,6 +182,10 @@ function birthRequest(bundle) {
 test("Cloudflare Birth Center survives lost World acknowledgement and converges on one authoritative Thread", async () => {
   const worldStorage = durableStorage();
   const birthStorage = durableStorage();
+  migrateBirthState({
+    infraDriver:createCloudflareInfraDriver({ stateScopes:{ birth:birthStorage } }),
+    stateScopeId:"birth",
+  });
   let clock = 10_000;
   const nowMs = () => clock;
   const now = () => "2026-08-31T19:00:00Z";
