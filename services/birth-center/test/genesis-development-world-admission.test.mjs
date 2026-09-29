@@ -13,6 +13,7 @@ import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { createGenesisBirthPublicationService } from "#services/world-kernel/src/genesis-birth-publication-service.mjs";
 
+import { migrateBirthState } from "../src/birth-state-migrations.mjs";
 import { GENESIS_DEVELOPMENT_REQUEST_VERSION } from "../src/genesis-development-plan.mjs";
 import { createGenesisDevelopmentService } from "../src/genesis-development-service.mjs";
 import { createBirthCenterRuntime } from "../src/runtime.mjs";
@@ -145,6 +146,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
   const root = mkdtempSync(join(tmpdir(), "fibre-genesis-development-world-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const birthStorage = localStorage(join(root, "birth.sqlite"), "birth");
+  migrateBirthState(birthStorage);
   const worldStorage = localStorage(join(root, "world.sqlite"), "world");
   const activity = activityRecorders();
 
