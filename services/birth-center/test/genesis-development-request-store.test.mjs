@@ -7,6 +7,7 @@ import {
   createGenesisDevelopmentRequestStore,
 } from "../src/genesis-development-request-store.mjs";
 import { tempBirthState } from "./support/birth-state-fixture.mjs";
+import { migrateBirthState } from "../src/birth-state-migrations.mjs";
 
 function plan(overrides = {}) {
   return {
@@ -184,18 +185,19 @@ test("historical terminal Genesis failures acquire explicit terminal evidence", 
       outcome TEXT,
       failure_code TEXT,
       failure_message TEXT,
-      failure_retryable INTEGER,
       settled_at TEXT,
       updated_at TEXT NOT NULL
     ) STRICT;
     INSERT INTO genesis_development_dispositions VALUES
-      ('old_pass_a',NULL,'GENESIS_PASS_A_VALIDATION_ERROR','Pass-A exhausted',NULL,NULL,'2026-09-25T00:00:00Z'),
-      ('old_pass_b',NULL,'ERROR','Pass-B model output episodeRef ep_missing is not visible history',NULL,NULL,'2026-09-25T00:00:00Z'),
-      ('old_place',NULL,'ERROR','episode ep_1 observableAction narrates an explicit scene setting incompatible with authoritative placeRef plc_1 (school)',NULL,NULL,'2026-09-25T00:00:00Z');
+      ('old_pass_a',NULL,'GENESIS_PASS_A_VALIDATION_ERROR','Pass-A exhausted',NULL,'2026-09-25T00:00:00Z'),
+      ('old_pass_b',NULL,'ERROR','Pass-B model output episodeRef ep_missing is not visible history',NULL,'2026-09-25T00:00:00Z'),
+      ('old_place',NULL,'ERROR','episode ep_1 observableAction narrates an explicit scene setting incompatible with authoritative placeRef plc_1 (school)',NULL,'2026-09-25T00:00:00Z');
   `);
   database.close();
 
-  const store = createGenesisDevelopmentRequestStore(state.storage());
+  const storage = state.rawStorage();
+  migrateBirthState(storage);
+  const store = createGenesisDevelopmentRequestStore(storage);
 
   for (const requestId of ["old_pass_a","old_pass_b","old_place"]) {
     assert.equal(
