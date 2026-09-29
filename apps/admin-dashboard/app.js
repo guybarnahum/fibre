@@ -478,23 +478,47 @@ function renderPager(payload) {
   $("#page-last").disabled = nav.page >= totalPages;
 }
 
-async function loadPage({ pushState = false, includeTotal = true } = {}) {
+async function loadPage({ pushState = false, includeTotal = true, delta = false } = {}) {
   if (mode === "threads" || mode === "stillborn") return;
   setLoading(true);
   if (pushState) syncUrl();
   const previousPayload = currentPayload;
+  const canDelta = delta
+    && previousPayload?.headCursor
+    && nav.page === 1
+    && nav.edge === "first"
+    && nav.cursor === null
+    && ["recent","failures"].includes(kind.value);
   const params = baseParams();
   params.set("edge", nav.edge);
   params.set("direction", nav.direction);
   if (nav.cursor) params.set("cursor", nav.cursor);
-  if (!includeTotal) params.set("count", "0");
+  if (canDelta) params.set("after", previousPayload.headCursor);
+  if (!includeTotal || canDelta) params.set("count", "0");
   try {
     const response = await fetch(`/api/activity/page?${params}`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
-    currentPayload = payload.total === null && previousPayload !== null
-      ? { ...payload, total:previousPayload.total, totalPages:previousPayload.totalPages }
-      : payload;
+    if (canDelta && previousPayload !== null) {
+      const seen = new Set();
+      const records = [...(payload.records ?? []), ...(previousPayload.records ?? [])]
+        .filter((record) => {
+          if (seen.has(record.activityId)) return false;
+          seen.add(record.activityId);
+          return true;
+        })
+        .slice(0, previousPayload.pageSize ?? 25);
+      currentPayload = {
+        ...previousPayload,
+        queriedAt:payload.queriedAt ?? previousPayload.queriedAt,
+        records,
+        headCursor:payload.headCursor ?? previousPayload.headCursor,
+      };
+    } else {
+      currentPayload = payload.total === null && previousPayload !== null
+        ? { ...payload, total:previousPayload.total, totalPages:previousPayload.totalPages }
+        : payload;
+    }
     const records = currentPayload.records ?? [];
     $("#export-button").disabled = false;
     text($("#environment-pill"), currentPayload.environment);
@@ -530,7 +554,7 @@ function scheduleRefresh() {
   if (!$("#auto-refresh").checked || document.hidden) return;
   timer = setTimeout(async () => {
     timer = null;
-    if (!document.hidden && $("#auto-refresh").checked) await loadPage({ includeTotal:false });
+    if (!document.hidden && $("#auto-refresh").checked) await loadPage({ includeTotal:false, delta:true });
     scheduleRefresh();
   }, refreshDelay());
 }
@@ -551,7 +575,7 @@ async function handleVisibilityChange() {
   lastUiSignalAt = Date.now();
   lastInteractionAt = lastUiSignalAt;
   scheduleRefresh();
-  if ($("#auto-refresh").checked) await loadPage({ includeTotal:false });
+  if ($("#auto-refresh").checked) await loadPage({ includeTotal:false, delta:true });
 }
 
 form.addEventListener("submit", (event) => { event.preventDefault(); nav = { edge:"first", direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
