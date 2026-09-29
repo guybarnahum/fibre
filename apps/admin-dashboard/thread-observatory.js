@@ -1,4 +1,4 @@
-import { decorateActionButton, faIcon } from "./fa-icons.js";
+import { decorateActionButton, faIcon, setWaitingContent } from "./fa-icons.js";
 import { createFibreFinCard } from "./fibre-fin-card.js";
 import { threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
 import { openThreadActionDialog } from "./thread-action-dialog.js";
@@ -848,11 +848,13 @@ export function renderFidSection(identity, threadId) {
         const result = await reissueFidCard(threadId, { idempotencyKey });
         const credential = result?.credential ?? null;
         actionStatus.hidden = false;
-        actionStatus.textContent = credential
-          ? `Re-issued · Revision ${credential.revision} · ${credential.credentialId}`
-          : result?.state === "derivation_requested"
-            ? "Reissue pending · official ID photo is being prepared."
-            : `Reissue · ${human(result?.state ?? "accepted")}`;
+        if (credential) {
+          actionStatus.textContent = `Re-issued · Revision ${credential.revision} · ${credential.credentialId}`;
+        } else if (result?.state === "derivation_requested") {
+          setWaitingContent(actionStatus, "Reissue pending · official ID photo is being prepared");
+        } else {
+          actionStatus.textContent = `Reissue · ${human(result?.state ?? "accepted")}`;
+        }
 
         const publish = (completed) => window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued", {
           detail:{
@@ -884,9 +886,11 @@ export function renderFidSection(identity, threadId) {
 
           if (actionStatus.isConnected) {
             actionStatus.hidden = false;
-            actionStatus.textContent = completed?.state === "derivation_requested"
-              ? "Reissue pending · official ID photo is still being prepared."
-              : `Reissue · ${human(completed?.state ?? "not completed")}`;
+            if (completed?.state === "derivation_requested") {
+              setWaitingContent(actionStatus, "Reissue pending · official ID photo is still being prepared");
+            } else {
+              actionStatus.textContent = `Reissue · ${human(completed?.state ?? "not completed")}`;
+            }
             reissue.disabled = false;
           }
         }).catch((error) => {
