@@ -16,7 +16,7 @@ test("Birth Center state is migrated explicitly and runtime schema checks are re
 
   assert.throws(
     () => requireCurrentBirthState(storage),
-    /deploy migration 1 before starting runtime/u,
+    /deploy migration 2 before starting runtime/u,
   );
 
   assert.deepEqual(migrateBirthState(storage), {
