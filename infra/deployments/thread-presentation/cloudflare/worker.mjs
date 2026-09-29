@@ -1,5 +1,10 @@
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { FibrePresentationChannelDurableObject } from "#infra/providers/cloudflare/presentation-channel-do";
+import { FibreAdminLiveDurableObject } from "./admin-live-do.mjs";
+import {
+  presentationCompletionInvalidation,
+  threadPresentationInvalidation,
+} from "./admin-live-invalidation.mjs";
 import { createService } from "#infra/service";
 import {
   createAssetGenerationService,
@@ -40,7 +45,7 @@ import {
 } from "./completion-queue-policy.mjs";
 import { createFidAuthorityBoundary } from "../fid-authority-boundary.mjs";
 
-export { FibrePresentationChannelDurableObject };
+export { FibreAdminLiveDurableObject, FibrePresentationChannelDurableObject };
 
 const HTTP_SERVICE = createService({
   serviceName: "thread-presentation",
@@ -109,6 +114,33 @@ function nonEmpty(name, value) {
   }
   return value;
 }
+
+function adminLive(env) {
+  if (!env?.ADMIN_LIVE?.getByName) return null;
+  return env.ADMIN_LIVE.getByName("admin");
+}
+
+async function publishAdminInvalidation(env, invalidation) {
+  if (invalidation === null) return;
+  const live = adminLive(env);
+  if (live === null) return;
+  try { await live.invalidate(invalidation); }
+  catch (error) {
+    console.warn(JSON.stringify({
+      event:"admin-live-invalidation-failed",
+      entity:invalidation.entity,
+      id:invalidation.id,
+      aspect:invalidation.aspect,
+      message:error instanceof Error ? error.message : String(error),
+    }));
+  }
+}
+
+function adminLiveAuthorized(request, env) {
+  const expected = typeof env?.FIBRE_PRIVATE_TOKEN === "string" ? env.FIBRE_PRIVATE_TOKEN : "";
+  return expected !== "" && request.headers.get("x-fibre-private-token") === expected;
+}
+
 
 function createFidLifecycle(env, infra, presentationServer) {
   const authorityBinding = env?.FIBRE_IDENTITY_AUTHORITY;
@@ -337,6 +369,13 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/healthz") return HTTP_SERVICE.fetch(request);
+    if (request.method === "GET" && url.pathname === "/internal/admin-live") {
+      if (!adminLiveAuthorized(request, env)) return Response.json({ error:"private_access_required" }, { status:403 });
+      const live = adminLive(env);
+      return live === null
+        ? Response.json({ error:"admin_live_unavailable" }, { status:503 })
+        : live.fetch(request);
+    }
 
     const infra = createInfra(env);
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
@@ -388,6 +427,7 @@ export default {
     for (const message of batch.messages) {
       try {
         const completion = await completions.consume(message.body);
+        await publishAdminInvalidation(env, presentationCompletionInvalidation(completion));
         if (
           activityRecorder !== null
           && completion?.handled === true
@@ -413,6 +453,9 @@ export default {
         const detail = error instanceof Error ? error.message : String(error);
         const disposition = completionQueueFailureDisposition({ attempts: message.attempts });
         const identity = await completionActivityIdentity(infra, message.body);
+        if (disposition.terminal) {
+          await publishAdminInvalidation(env, threadPresentationInvalidation(identity.threadId));
+        }
         if (activityRecorder !== null) {
           await activityRecorder.record({
             threadId: identity.threadId,
