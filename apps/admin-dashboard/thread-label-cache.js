@@ -19,9 +19,14 @@ function placeFrom(value) {
     });
   }
   const displayName = clean(value);
-  return displayName === null
-    ? null
-    : Object.freeze({ displayName, city:null, country:null, countryCode:null });
+  if (displayName === null) return null;
+  const slash = displayName.indexOf("/");
+  if (slash > 0 && slash < displayName.length - 1) {
+    const country = displayName.slice(0, slash).trim();
+    const city = displayName.slice(slash + 1).trim();
+    return Object.freeze({ displayName:[city, country].filter(Boolean).join(", "), city, country, countryCode:null });
+  }
+  return Object.freeze({ displayName, city:null, country:null, countryCode:null });
 }
 
 export function rememberThreadLabel(threadId, {
