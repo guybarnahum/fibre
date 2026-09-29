@@ -1,3 +1,5 @@
+import { reverseGeoNamesPlace, searchGeoNamesPlaces } from "#integrations/geography/geonames.mjs";
+
 import baseWorker, {
   authenticateAccessRequest,
   authorizeAdminPrincipal,
@@ -266,28 +268,9 @@ export async function proxyFidReissue(request, env, threadId) {
   return json(upstream.status, payload.result);
 }
 
-function mapboxToken(env) {
-  const value = typeof env?.MAPBOX_ACCESS_TOKEN === "string" ? env.MAPBOX_ACCESS_TOKEN.trim() : "";
-  if (value === "") throw new Error("Mapbox place search is not configured");
-  return value;
-}
-
-function canonicalMapboxPlace(feature) {
-  const properties = feature?.properties ?? {};
-  if (properties.feature_type !== "place") return null;
-  const countryContext = properties.context?.country ?? null;
-  const country = countryContext?.name_preferred ?? countryContext?.name ?? null;
-  const city = properties.name_preferred ?? properties.name ?? null;
-  const lat = Number(properties.coordinates?.latitude ?? feature?.geometry?.coordinates?.[1]);
-  const long = Number(properties.coordinates?.longitude ?? feature?.geometry?.coordinates?.[0]);
-  if (!country || !city || !Number.isFinite(lat) || !Number.isFinite(long)) return null;
-  return Object.freeze({
-    country,
-    city,
-    displayName:properties.full_address ?? `${city}, ${country}`,
-    lat,
-    long,
-  });
+function geoNamesUsername(env) {
+  const value = typeof env?.GEONAMES_USERNAME === "string" ? env.GEONAMES_USERNAME.trim() : "";
+  return value === "" ? null : value;
 }
 
 async function searchBirthPlaces(request, env) {
@@ -300,36 +283,28 @@ async function searchBirthPlaces(request, env) {
     return json(400, { error:"invalid_place_search", detail:"Provide either q or lat/long." });
   }
 
-  const url = reverse
-    ? new URL("https://api.mapbox.com/search/geocode/v6/reverse")
-    : new URL("https://api.mapbox.com/search/geocode/v6/forward");
-  url.searchParams.set("access_token", mapboxToken(env));
-  url.searchParams.set("permanent", "true");
-  url.searchParams.set("types", "place");
-  url.searchParams.set("limit", reverse ? "1" : "8");
-  url.searchParams.set("language", "en");
-  if (reverse) {
-    const latitude = Number(lat);
-    const longitude = Number(long);
-    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-      return json(400, { error:"invalid_place_search", detail:"lat/long are invalid." });
-    }
-    url.searchParams.set("latitude", String(latitude));
-    url.searchParams.set("longitude", String(longitude));
-  } else {
-    if (q.length < 2 || q.length > 256) return json(200, { ok:true, places:[] });
-    url.searchParams.set("q", q);
+  const username = geoNamesUsername(env);
+  if (username === null) {
+    return json(503, { error:"place_search_not_configured", detail:"GeoNames place search is not configured." });
   }
 
-  const response = await fetch(url, { headers:{ Accept:"application/json" } });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok || !Array.isArray(payload?.features)) {
-    return json(502, { error:"place_search_unavailable", detail:"Mapbox place search failed." });
+  try {
+    if (reverse) {
+      const latitude = Number(lat);
+      const longitude = Number(long);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        return json(400, { error:"invalid_place_search", detail:"lat/long are invalid." });
+      }
+      const place = await reverseGeoNamesPlace({ lat:latitude, long:longitude, username });
+      return json(200, { ok:true, places:place === null ? [] : [place] });
+    }
+
+    if (q.length < 2 || q.length > 256) return json(200, { ok:true, places:[] });
+    const places = await searchGeoNamesPlaces({ query:q, username, maxRows:8 });
+    return json(200, { ok:true, places });
+  } catch {
+    return json(502, { error:"place_search_unavailable", detail:"GeoNames place search failed." });
   }
-  return json(200, {
-    ok:true,
-    places:payload.features.map(canonicalMapboxPlace).filter(Boolean),
-  });
 }
 
 async function proxyThreadBirth(request, env) {
