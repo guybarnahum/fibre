@@ -13,6 +13,7 @@ import { GenesisStore } from "#services/world-kernel/src/genesis-store.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 
+import { migrateBirthState } from "../src/birth-state-migrations.mjs";
 import { GENESIS_DEVELOPMENT_REQUEST_VERSION } from "../src/genesis-development-plan.mjs";
 import { createGenesisDevelopmentService } from "../src/genesis-development-service.mjs";
 import { createBirthCenterRuntime } from "../src/runtime.mjs";
@@ -132,6 +133,7 @@ test("World rejects divergent replay of a Birth Center-developed birth and prese
   const root = mkdtempSync(join(tmpdir(), "fibre-genesis-world-divergent-replay-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const birthStorage = localStorage(join(root, "birth.sqlite"), "birth");
+  migrateBirthState(birthStorage);
   const worldStorage = localStorage(join(root, "world.sqlite"), "world");
   const genesisStore = new GenesisStore(worldStorage);
   const genomeStore = new SymbolicGenomeStore(worldStorage);
@@ -181,6 +183,7 @@ test("failed authoritative World birth may retain prerequisites but never leaks 
   const root = mkdtempSync(join(tmpdir(), "fibre-genesis-world-failed-admission-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const birthStorage = localStorage(join(root, "birth.sqlite"), "birth");
+  migrateBirthState(birthStorage);
   const worldStorage = localStorage(join(root, "world.sqlite"), "world");
   const activity = activityRecorders();
   const genesisStore = new GenesisStore(worldStorage);
