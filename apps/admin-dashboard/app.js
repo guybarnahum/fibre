@@ -478,27 +478,31 @@ function renderPager(payload) {
   $("#page-last").disabled = nav.page >= totalPages;
 }
 
-async function loadPage({ pushState = false } = {}) {
+async function loadPage({ pushState = false, includeTotal = true } = {}) {
   if (mode === "threads" || mode === "stillborn") return;
   setLoading(true);
   if (pushState) syncUrl();
+  const previousPayload = currentPayload;
   const params = baseParams();
   params.set("edge", nav.edge);
   params.set("direction", nav.direction);
   if (nav.cursor) params.set("cursor", nav.cursor);
+  if (!includeTotal) params.set("count", "0");
   try {
     const response = await fetch(`/api/activity/page?${params}`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
-    currentPayload = payload;
-    const records = payload.records ?? [];
+    currentPayload = payload.total === null && previousPayload !== null
+      ? { ...payload, total:previousPayload.total, totalPages:previousPayload.totalPages }
+      : payload;
+    const records = currentPayload.records ?? [];
     $("#export-button").disabled = false;
-    text($("#environment-pill"), payload.environment);
-    text($("#chain-title"), chainHeading(payload));
+    text($("#environment-pill"), currentPayload.environment);
+    text($("#chain-title"), chainHeading(currentPayload));
     text($("#chain-summary"), mode === "causal"
-      ? `Meaningful terminal and retry operations · ${payload.total} total.`
-      : `Raw Activity records exactly as logged · ${payload.total} total.`);
-    renderMetrics(records); renderMode(); renderRaw(mode === "raw" ? records : []); renderCausal(mode === "causal" ? records : []); populateServices(records); renderPager(payload);
+      ? `Meaningful terminal and retry operations · ${currentPayload.total ?? records.length} total.`
+      : `Raw Activity records exactly as logged · ${currentPayload.total ?? records.length} total.`);
+    renderMetrics(records); renderMode(); renderRaw(mode === "raw" ? records : []); renderCausal(mode === "causal" ? records : []); populateServices(records); renderPager(currentPayload);
   } catch (error) {
     currentPayload = null;
     $("#export-button").disabled = true;
@@ -526,7 +530,7 @@ function scheduleRefresh() {
   if (!$("#auto-refresh").checked || document.hidden) return;
   timer = setTimeout(async () => {
     timer = null;
-    if (!document.hidden && $("#auto-refresh").checked) await loadPage();
+    if (!document.hidden && $("#auto-refresh").checked) await loadPage({ includeTotal:false });
     scheduleRefresh();
   }, refreshDelay());
 }
@@ -547,7 +551,7 @@ async function handleVisibilityChange() {
   lastUiSignalAt = Date.now();
   lastInteractionAt = lastUiSignalAt;
   scheduleRefresh();
-  if ($("#auto-refresh").checked) await loadPage();
+  if ($("#auto-refresh").checked) await loadPage({ includeTotal:false });
 }
 
 form.addEventListener("submit", (event) => { event.preventDefault(); nav = { edge:"first", direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
