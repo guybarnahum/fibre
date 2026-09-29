@@ -611,9 +611,11 @@ function stillbornRow(thread) {
 
   const meaning = document.createElement("td");
   meaning.className = "stillborn-reason";
-  meaning.textContent = thread.admitted === false
-    ? "Observed in Activity, but World never admitted a recoverable Thread state."
-    : "World diagnosis marked this Thread unrecoverable.";
+  meaning.textContent = thread.failureMessage
+    ? `${human(thread.failureCode ?? "Birth failure")} · ${thread.failureMessage} · World confirmed no Thread was admitted.`
+    : thread.admitted === false
+      ? "Observed in Activity, but World never admitted a recoverable Thread state."
+      : "World diagnosis marked this Thread unrecoverable.";
 
   const action = document.createElement("td");
   action.className = "thread-population-actions";
