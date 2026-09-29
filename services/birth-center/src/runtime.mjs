@@ -5,6 +5,7 @@ import {
   createStateModelInvocationJournal,
 } from "./model-runtime/durable-invocation-journal.mjs";
 import { createGenesisDevelopmentRequestStore } from "./genesis-development-request-store.mjs";
+import { requireCurrentBirthState } from "./birth-state-migrations.mjs";
 import { createBirthRequestStore } from "./birth-request-store.mjs";
 import { createProvisionalBirthStore } from "./provisional-birth-store.mjs";
 import { createBirthReconciliationRuntime } from "./birth-reconciliation-process.mjs";
@@ -45,6 +46,7 @@ export function createBirthCenterRuntime({
   }
   assertPublisher(worldPublisher);
   const activity = optionalActivityRecorder(activityRecorder);
+  requireCurrentBirthState(storage);
 
   const invocationJournal = createStateModelInvocationJournal(storage, { now });
   let provisionalBirthStore = null;
