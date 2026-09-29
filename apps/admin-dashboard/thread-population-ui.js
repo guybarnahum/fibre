@@ -1383,6 +1383,7 @@ async function loadPopulation() {
   $("#refresh-button").disabled = true;
   setButtonWaiting($("#refresh-button"), "Refreshing");
   setWaitingContent($("#chain-summary"), "Reading Activity-discovered identities and authoritative World health");
+  setWaitingContent(threadPopulationMapSummary, "Loading current World locations");
   try {
     const response = await fetch("/api/threads/population", { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
