@@ -1,4 +1,10 @@
-import { decorateActionButton } from "./fa-icons.js";
+import { decorateActionButton, setWaitingContent } from "./fa-icons.js";
+import {
+  countryFlag,
+  knownThreadLabel,
+  rememberThreadLabel,
+  threadBirthplaceText,
+} from "./thread-label-cache.js";
 
 const $ = (selector) => document.querySelector(selector);
 const form = $("#filters");
@@ -129,8 +135,16 @@ function syncUrl() {
 }
 
 function setLoading(loading) {
-  $("#refresh-button").disabled = loading;
-  $("#refresh-button").textContent = loading ? "Refreshing…" : "Refresh";
+  const refresh = $("#refresh-button");
+  refresh.disabled = loading;
+  if (loading) {
+    decorateActionButton(refresh, { icon:"rotate", label:"Refreshing", tooltip:"Refreshing Activity", spinning:true });
+  } else {
+    refresh.textContent = "Refresh";
+    refresh.removeAttribute("aria-label");
+    refresh.removeAttribute("title");
+    delete refresh.dataset.tooltip;
+  }
   for (const id of ["page-first", "page-prev", "page-next", "page-last"]) $(`#${id}`).disabled = loading;
 }
 
