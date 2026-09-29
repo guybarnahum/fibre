@@ -1,4 +1,4 @@
-import { decorateActionButton } from "./fa-icons.js";
+import { decorateActionButton, setWaitingContent } from "./fa-icons.js";
 
 const button = document.querySelector("#infra-health-button");
 const dialog = document.querySelector("#infra-dialog");
@@ -174,7 +174,10 @@ function render(payload) {
 async function load({ force = false } = {}) {
   if (!button) return;
   if (!force && lastProbeAt > 0 && Date.now() - lastProbeAt < REFRESH_MS) return;
-  if (force) forceButton.disabled = true;
+  if (force) {
+    forceButton.disabled = true;
+    decorateActionButton(forceButton, { icon:"rotate", label:"Refreshing", tooltip:"Refreshing infrastructure health", spinning:true });
+  }
   lastProbeAt = Date.now();
   try {
     const response = await fetch("/api/infra-monitor", {
@@ -190,14 +193,23 @@ async function load({ force = false } = {}) {
     setBanner("unavailable", null, error.message);
     if (dialog.open) body.replaceChildren(detail("Monitor", error.message));
   } finally {
-    if (force) forceButton.disabled = false;
+    if (force) {
+      forceButton.disabled = false;
+      forceButton.textContent = "Refresh now";
+      forceButton.removeAttribute("aria-label");
+      forceButton.removeAttribute("title");
+      delete forceButton.dataset.tooltip;
+    }
   }
 }
 
 function openDetails() {
   if (!dialog.open) dialog.showModal();
   if (current) render(current);
-  else void load();
+  else {
+    setWaitingContent(body, "Loading infrastructure health");
+    void load();
+  }
 }
 
 function schedule() {
