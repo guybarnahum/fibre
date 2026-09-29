@@ -23,6 +23,8 @@ const access = {
   audience: "audience-tag",
 };
 
+const operatorConfig = { GEONAMES_USERNAME:"fibre-test" };
+
 function statusBase() {
   return {
     name: "fibre-status-page",
@@ -61,12 +63,14 @@ test("admin config reuses provisioned Activity D1 and injects reconciled Access 
     environment: "staging",
     resourceState: state,
     accessConfig: access,
+    operatorConfig,
   });
   assert.equal(resolved.name, "fibre-admin-dashboard-staging");
   assert.equal(resolved.routes[0].pattern, "admin.staging.insidefibre.com");
   assert.equal(resolved.vars.FIBRE_ENVIRONMENT, "staging");
   assert.equal(resolved.vars.FIBRE_ACCESS_TEAM_DOMAIN, "https://fibre.cloudflareaccess.com");
   assert.equal(resolved.vars.FIBRE_ACCESS_AUD, "audience-tag");
+  assert.equal(resolved.vars.GEONAMES_USERNAME, "fibre-test");
   assert.equal(resolved.d1_databases[0].database_name, "fibre-activity-log-staging");
   assert.equal(resolved.d1_databases[0].database_id, "d1_activity");
   assert.equal(validateResolvedCloudflareAppConfig("admin-dashboard", resolved, { environment: "staging" }), resolved);
@@ -77,6 +81,7 @@ test("status config targets staging runtime and cached Admin health through serv
     environment: "staging",
     resourceState: state,
     accessConfig: access,
+    operatorConfig,
   });
   assert.equal(resolved.name, "fibre-status-page-staging");
   assert.equal(resolved.routes[0].pattern, "status.staging.insidefibre.com");
@@ -102,7 +107,7 @@ test("admin deployment resolution fails closed when reconciled Access configurat
     d1_databases: [{ binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" }],
   };
   assert.throws(
-    () => resolveCloudflareAppConfig("admin-dashboard", base, { environment: "staging", resourceState: state }),
+    () => resolveCloudflareAppConfig("admin-dashboard", base, { environment: "staging", resourceState: state, operatorConfig }),
     /Cloudflare Access team domain/u,
   );
 });
@@ -118,6 +123,7 @@ test("resolved Admin config rejects unresolved Access or D1 placeholders before 
     environment: "staging",
     resourceState: state,
     accessConfig: access,
+    operatorConfig,
   });
   const badAudience = structuredClone(resolved);
   badAudience.vars.FIBRE_ACCESS_AUD = "replace-with-access-audience";
@@ -138,6 +144,7 @@ test("resolved Status config rejects missing or misdirected internal bindings", 
     environment: "staging",
     resourceState: state,
     accessConfig: access,
+    operatorConfig,
   });
   const missing = structuredClone(resolved);
   missing.services = missing.services.filter((service) => service.binding !== "ADMIN_DASHBOARD");
