@@ -1,10 +1,10 @@
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
-import baseWorker, { FibrePresentationChannelDurableObject } from "./worker.mjs";
+import baseWorker, { FibreAdminLiveDurableObject, FibrePresentationChannelDurableObject } from "./worker.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createPublicEncounterApi } from "#services/thread-presentation/src/http/encounter-api.mjs";
 import { selectCommittedAvailableThread } from "#services/thread-presentation/src/committed-meet-selection.mjs";
 
-export { FibrePresentationChannelDurableObject };
+export { FibreAdminLiveDurableObject, FibrePresentationChannelDurableObject };
 
 function binding(env, name) {
   const value = env?.[name];
