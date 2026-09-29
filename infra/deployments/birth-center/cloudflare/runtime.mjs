@@ -171,6 +171,9 @@ function pendingProjection(request, {
   locationSource,
   sex,
   timing,
+  error = request.error ?? null,
+  failureCode = null,
+  failureRetryable = null,
   terminalFailure = false,
 }) {
   const operational = birthOperationalState(request, timing, { terminalFailure });
@@ -186,7 +189,9 @@ function pendingProjection(request, {
     locationSource,
     sex,
     status,
-    error:request.error ?? null,
+    error,
+    failureCode,
+    failureRetryable,
     stage,
     createdAt:request.createdAt,
     updatedAt:request.updatedAt,
@@ -236,16 +241,24 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
 
     const identity = request.plan?.subjectIdentity ?? null;
     const place = identity?.place ?? null;
-    const status = request.status === "reserved" || request.status === "ready" ? "developing" : "publishing";
+    const terminalFailure = disposition?.failureRetryable === false;
+    const status = terminalFailure
+      ? "failed"
+      : request.status === "reserved" || request.status === "ready"
+        ? "developing"
+        : "publishing";
     queued.push(pendingProjection(request, {
       source:"development",
       status,
-      stage:operatorBirthStage(status),
+      stage:terminalFailure ? "failed" : operatorBirthStage(status),
       location:place?.country && place?.city ? `${place.country}/${place.city}` : identity?.birthCity ?? null,
       locationSource:null,
       sex:identity?.sex ?? null,
       timing:birthTiming(request, nowMs),
-      terminalFailure:disposition?.failureRetryable === false,
+      error:disposition?.failureMessage ?? null,
+      failureCode:disposition?.failureCode ?? null,
+      failureRetryable:disposition?.failureRetryable ?? null,
+      terminalFailure,
     }));
   }
 
