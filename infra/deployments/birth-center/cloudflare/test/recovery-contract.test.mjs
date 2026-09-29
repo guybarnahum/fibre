@@ -273,3 +273,48 @@ test("Cloudflare Birth Center survives lost World acknowledgement and converges 
   birthStorage.closeDatabase();
   worldStorage.closeDatabase();
 });
+
+
+test("Cloudflare Birth Center keeps operator progress separate from provisional publication", async () => {
+  const birthStorage = durableStorage();
+  migrateBirthState({
+    infraDriver:createCloudflareInfraDriver({ stateScopes:{ birth:birthStorage } }),
+    stateScopeId:"birth",
+  });
+  const adapter = Object.freeze({
+    provider:"fixture",
+    modelId:"fixture-reasoning-v1",
+    configuration:Object.freeze({ transport:"fixture" }),
+    async invoke() { throw new Error("operator progress read must not invoke the model"); },
+  });
+  const runtime = createBirthCenterCloudflareRuntime({
+    storage:birthStorage,
+    env:{
+      FIBRE_PRIVATE_TOKEN:PRIVATE_TOKEN,
+      FIBRE_BIRTH_RECONCILIATION_MS:"1000",
+      WORLD_KERNEL:{ async fetch() { return Response.json({ error:"not_expected" }, { status:500 }); } },
+    },
+    reasoningAdapters:{ creativeAdapter:adapter, repairAdapter:adapter },
+  });
+
+  try {
+    assert.notEqual(runtime.birthApi, runtime.publicationApi);
+    const pending = await runtime.birthApi.fetch(new Request(
+      "https://birth-center.internal/internal/births/pending",
+      { headers:{ "x-fibre-private-token":PRIVATE_TOKEN } },
+    ));
+    assert.equal(pending.status, 200);
+    assert.deepEqual(await pending.json(), { ok:true, births:[] });
+
+    assert.equal(
+      await runtime.publicationApi.fetch(new Request(
+        "https://birth-center.internal/internal/births/pending",
+        { headers:{ "x-fibre-private-token":PRIVATE_TOKEN } },
+      )),
+      null,
+    );
+  } finally {
+    runtime.close();
+    birthStorage.closeDatabase();
+  }
+});
