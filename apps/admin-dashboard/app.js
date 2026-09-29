@@ -418,7 +418,7 @@ async function activityExport(payload) {
     queriedAt:payload?.queriedAt ?? null,
     query:payload?.query ?? null,
     mode:payload?.mode ?? mode,
-    page:{ number:nav.page, total:null, size:payload?.pageSize ?? 25, totalRecords:null },
+    page:{ number:nav.page, total:payload?.totalPages ?? null, size:payload?.pageSize ?? 25, totalRecords:payload?.total ?? null },
     identity:await activityIdentity(payload),
     records,
   });
@@ -478,13 +478,17 @@ function nextPage() {
 }
 
 function renderPager(payload) {
+  const totalPages = payload.totalPages;
   const atFirst = nav.edge === "first" && nav.direction === "next" && nav.cursor === null;
   const atLast = nav.edge === "last" && nav.cursor === null;
-  const label = atLast
-    ? "Last page"
+  if (totalPages !== null && atLast) nav.page = totalPages;
+  const label = totalPages !== null && Number.isInteger(nav.page)
+    ? `Page ${nav.page} of ${totalPages}`
     : Number.isInteger(nav.page) && nav.page > 0
       ? `Page ${nav.page}`
-      : "Activity page";
+      : atLast
+        ? "Last page"
+        : "Activity page";
   text($("#page-label"), label);
   $("#page-first").disabled = atFirst;
   $("#page-prev").disabled = payload.prevCursor == null;
