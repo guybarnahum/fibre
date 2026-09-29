@@ -235,11 +235,16 @@ export function createThreadPresentationVisualPublicationReconciler({
         embodimentId: embodiment.embodimentId,
       }), (entry) => entry?.reused !== true);
 
-      const fid = await ensureFid({
+      const fid = await runChangedStage(activity, {
+        ...context,
+        stage:"presentation.identity_media.ensure",
+        attempt:1,
+        evidence:{ embodimentId:embodiment.embodimentId, objectRef:canonicalObjectRef },
+      }, async () => ensureFid({
         threadId,
         idempotencyKey:`fid_ensure_${embodiment.embodimentId}_${embodiment.revision}`,
         canonicalReferenceObjectRef:canonicalObjectRef,
-      });
+      }), (entry) => entry?.complete === true && entry?.presentation?.changed === true);
       if (fid?.complete !== true) {
         return result(false, "fid_pending", {
           visualReused:visual.reused === true,
