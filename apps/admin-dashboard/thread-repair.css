@@ -430,6 +430,11 @@
 }
 .thread-birth-stale-reason { color:#b54708 !important; line-height:1.4; }
 .thread-birth-pending-status { display:grid; justify-items:end; gap:4px; flex:0 0 auto; }
+.thread-birth-stage-badge { border-color:currentColor; }
+.thread-birth-stage-badge.stage-genesis { color:color-mix(in srgb,var(--accent) 44%,var(--text)); background:color-mix(in srgb,var(--accent) 8%,var(--surface)); }
+.thread-birth-stage-badge.stage-developing { color:color-mix(in srgb,var(--accent) 62%,var(--text)); background:color-mix(in srgb,var(--accent) 11%,var(--surface)); }
+.thread-birth-stage-badge.stage-emerging { color:color-mix(in srgb,var(--accent) 80%,var(--text)); background:color-mix(in srgb,var(--accent) 14%,var(--surface)); }
+.thread-birth-stage-badge.stage-in-world { color:var(--accent); background:color-mix(in srgb,var(--accent) 17%,var(--surface)); }
 .thread-birth-pending-row .status { flex:0 0 auto; }
 .thread-birth-pending-empty { padding:4px 1px; }
 .thread-birth-result {
