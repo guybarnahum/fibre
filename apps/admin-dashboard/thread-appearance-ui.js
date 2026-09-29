@@ -94,6 +94,29 @@ async function requestHealth(threadId){
   return Object.freeze({diagnosis:payload.diagnosis,reconciliation:payload.reconciliation??null});
 }
 
+async function requestIdentity(threadId){
+  const response=await fetch("/api/threads/"+encodeURIComponent(threadId)+"/identity",{
+    headers:{Accept:"application/json"},
+    cache:"no-store",
+  });
+  const payload=await response.json().catch(()=>null);
+  if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+  return payload?.identity??null;
+}
+
+export function presentationIdentityMediaReady(identity,canonicalObjectRef){
+  if(typeof canonicalObjectRef!=="string"||canonicalObjectRef==="")return false;
+  const snapshot=identity?.presentation??null;
+  if(snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0]!==canonicalObjectRef)return false;
+  const photos=(snapshot?.media?.assets??[]).filter(asset=>(
+    asset?.role==="official_id_photo"
+    &&asset?.status==="ready"
+    &&Array.isArray(asset?.sourceReferences)
+    &&asset.sourceReferences.includes(canonicalObjectRef)
+  ));
+  return photos.length===1;
+}
+
 async function postRepair(threadId,body){
   const response=await fetch("/api/threads/"+encodeURIComponent(threadId)+"/repair",{
     method:"POST",
@@ -193,11 +216,17 @@ async function refreshUntilAppearanceReady(host,threadId,threadName){
       const state=threadAppearanceState(health.diagnosis);
 
       if(state.appearanceReady){
-        delete host.dataset.appearanceWatching;
-        setAppearanceBusy(host,false);
-        progress.lastElementChild.textContent="Appearance ready · refreshing Thread…";
-        announceThreadUpdated(threadId);
-        return;
+        const identity=await requestIdentity(threadId);
+        if(presentationIdentityMediaReady(identity,state.objectRef)){
+          delete host.dataset.appearanceWatching;
+          setAppearanceBusy(host,false);
+          progress.lastElementChild.textContent="Appearance ready · refreshing Thread…";
+          announceThreadUpdated(threadId);
+          return;
+        }
+        progress.lastElementChild.textContent="Canonical appearance ready · waiting for identity photo…";
+        await delay(REFRESH_POLL_MS);
+        continue;
       }
 
       if(state.appearanceBlocked||health.reconciliation?.state==="dead_letter"){
