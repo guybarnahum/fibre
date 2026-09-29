@@ -187,6 +187,7 @@ export function createAdminDashboardWorker({ authenticate = authenticateAccessRe
             mode:page.mode,
             summary:summary(result.records),
             records:result.records,
+            headCursor:result.headCursor,
             prevCursor:result.prevCursor,
             nextCursor:result.nextCursor,
             total:result.total,
