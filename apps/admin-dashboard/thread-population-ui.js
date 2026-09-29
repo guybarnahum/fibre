@@ -1,5 +1,6 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
-import { decorateActionButton, faIcon, iconForIdentityAction } from "./fa-icons.js";
+import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
+import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
 import { reissueFidCard } from "./thread-observatory.js";
 import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
 import {
@@ -740,11 +741,7 @@ function mapCoordinates(event) {
 }
 
 function setButtonWaiting(button, label) {
-  const icon = faIcon("rotate");
-  icon.classList.add("fa-spin");
-  button.replaceChildren(icon);
-  button.setAttribute("aria-label", label);
-  button.title = label;
+  decorateActionButton(button, { icon:"rotate", label, tooltip:label, spinning:true });
 }
 
 function setButtonLabel(button, label) {
@@ -814,7 +811,10 @@ function renderBirthPipelineMarkers() {
       circle.classList.add("thread-birth-stage-marker", `stage-${stage}`);
       circle.style.animationDelay = `${-(index % 5) * 180}ms`;
       const title = document.createElementNS(SVG_NS, "title");
-      title.textContent = `${place.city}, ${place.country} · ${stage}${birth.threadId ? ` · ${birth.threadId}` : ""}`;
+      const known = birth.threadId ? rememberPendingBirth(birth) : null;
+      const birthplace = threadBirthplaceText(known) ?? [place.city, place.country].filter(Boolean).join(", ");
+      const flag = countryFlag(known?.birthLocation?.countryCode);
+      title.textContent = [birth.name, [flag, birthplace].filter(Boolean).join(" "), stage, birth.threadId].filter(Boolean).join(" · ");
       circle.append(title);
       birthPipelineMarkers.append(circle);
     });
@@ -1123,6 +1123,7 @@ function rememberCompletedBirths(nextBirths) {
 
 function renderPendingBirths(births) {
   rememberCompletedBirths(births);
+  for (const birth of births) rememberPendingBirth(birth);
   pendingBirthSnapshot = births;
   birthPending.replaceChildren();
   birthPendingCount.textContent = births.length === 0 ? "" : String(births.length);
@@ -1137,11 +1138,21 @@ function renderPendingBirths(births) {
       row.className = "thread-birth-pending-row";
       row.classList.toggle("stale", birth.stale === true);
       const copy = document.createElement("div");
-      const location = document.createElement("strong");
-      location.textContent = birth.location?.replace("/", " · ") ?? "Selecting birthplace…";
+      const known = birth.threadId ? rememberPendingBirth(birth) : null;
+      const birthplace = threadBirthplaceText(known) ?? birth.location?.replace("/", ", ") ?? null;
+      const flag = countryFlag(known?.birthLocation?.countryCode);
+      const heading = document.createElement("strong");
+      heading.textContent = birth.name ?? birthplace ?? "Selecting identity…";
+      heading.title = [birth.name, birthplace ? "Born " + birthplace : null, birth.threadId].filter(Boolean).join(" · ");
       const meta = document.createElement("span");
-      meta.textContent = `${birth.sex ? human(birth.sex) : "Random sex"} · ${pendingStatusText(birth)} · started ${elapsedText(birth.createdAt)} · last update ${elapsedText(birth.updatedAt)}`;
-      copy.append(location, meta);
+      meta.textContent = [
+        birthplace && birth.name ? [flag, birthplace].filter(Boolean).join(" ") : null,
+        birth.sex ? human(birth.sex) : "Random sex",
+        pendingStatusText(birth),
+        "started " + elapsedText(birth.createdAt),
+        "last update " + elapsedText(birth.updatedAt),
+      ].filter(Boolean).join(" · ");
+      copy.append(heading, meta);
       if (birth.stale === true) {
         const stale = document.createElement("span");
         stale.className = "thread-birth-stale-reason";
@@ -1183,7 +1194,7 @@ async function loadPendingBirths({ quiet = false } = {}) {
     birthPendingRefresh.disabled = true;
     setButtonWaiting(birthPendingRefresh, "Refreshing");
     if (pendingBirthSnapshot.length === 0) {
-      birthPending.textContent = "Loading…";
+      setWaitingContent(birthPending, "Loading births");
       birthPendingCount.textContent = "";
     }
   }
@@ -1255,7 +1266,7 @@ async function loadBirthCenter() {
   holdOperatorMode();
   $("#refresh-button").disabled = true;
   setButtonWaiting($("#refresh-button"), "Refreshing");
-  $("#chain-summary").textContent = "Reading durable Birth Center progress and birthplace catalog…";
+  setWaitingContent($("#chain-summary"), "Reading durable Birth Center progress and birthplace catalog");
   try {
     if (!birthCenterInitialized) {
       birthWorldPath.setAttribute("d", WORLD_MAP_PATH);
@@ -1366,12 +1377,13 @@ async function loadPopulation() {
   holdOperatorMode();
   $("#refresh-button").disabled = true;
   setButtonWaiting($("#refresh-button"), "Refreshing");
-  $("#chain-summary").textContent = "Reading Activity-discovered identities and authoritative World health…";
+  setWaitingContent($("#chain-summary"), "Reading Activity-discovered identities and authoritative World health");
   try {
     const response = await fetch("/api/threads/population", { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
     population = payload.threads ?? [];
+    for (const thread of population) rememberPopulationThread(thread);
     stillborn = payload.stillborn ?? [];
     populationPortraitCache.clear();
     renderSummary(payload.summary ?? {});
@@ -1450,7 +1462,7 @@ function enterPopulation(nextMode) {
   else if (populationMode === "stillborn") renderStillbornTopSummary();
   else renderThreadsTopSummary();
   holdOperatorMode();
-  $("#chain-summary").textContent = populationMode === "birth-center" ? "Loading Birth Center…" : "Loading population…";
+  setWaitingContent($("#chain-summary"), populationMode === "birth-center" ? "Loading Birth Center" : "Loading population");
   const params = new URLSearchParams(location.search);
   params.set("mode", populationMode);
   history.replaceState(null, "", `${location.pathname}?${params}`);
