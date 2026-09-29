@@ -61,7 +61,7 @@ function ensureSocket() {
   });
 }
 
-export function watchAdminLive(key, callback, { active = () => true } = {}) {
+export function watchAdminLive(key, callback, { active = () => true, reconcileOnSubscribe = true } = {}) {
   const entry = { active };
   let entries = liveKeys.get(key);
   if (!entries) {
@@ -75,7 +75,7 @@ export function watchAdminLive(key, callback, { active = () => true } = {}) {
   });
 
   if (socket?.readyState === WebSocket.OPEN) {
-    invalidateView(key, { source:"admin-live", reason:"watch-started" });
+    if (reconcileOnSubscribe) invalidateView(key, { source:"admin-live", reason:"watch-started" });
   } else {
     ensureSocket();
   }
