@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 import {
@@ -10,6 +11,7 @@ import { tempBirthState } from "./support/birth-state-fixture.mjs";
 
 test("Birth Center state is migrated explicitly and runtime schema checks are read-only", (t) => {
   const state = tempBirthState(t);
+  new DatabaseSync(state.databasePath).close();
   const storage = state.rawStorage();
 
   assert.throws(
