@@ -23,6 +23,7 @@ test("Admin reaches authoritative World and Thread Presentation through service 
     environment: "staging",
     resourceState,
     accessConfig,
+    operatorConfig:{ GEONAMES_USERNAME:"fibre-test" },
   });
   assert.equal(
     resolved.services.find((candidate) => candidate.binding === "WORLD_KERNEL")?.service,
