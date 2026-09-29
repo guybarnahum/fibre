@@ -112,6 +112,7 @@ export function createWranglerDeploymentClient({
   fetchImpl = globalThis.fetch,
   accountId = process.env.CLOUDFLARE_ACCOUNT_ID,
   apiToken = process.env.CLOUDFLARE_API_TOKEN,
+  privateToken = process.env.FIBRE_PRIVATE_TOKEN,
   workerDomainClient = null,
 } = {}) {
   if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl must be a function");
@@ -152,6 +153,24 @@ export function createWranglerDeploymentClient({
         await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/internal/health/state`),
         serviceId,
       );
+    },
+    async checkBirthCenterRuntime({ baseUrl }) {
+      const token = nonEmpty("FIBRE_PRIVATE_TOKEN", privateToken);
+      const url = `${baseUrl.replace(/\/$/u, "")}/internal/births/develop/deployment-runtime-probe/inspection`;
+      const response = await fetchImpl(url, {
+        headers: {
+          Accept:"application/json",
+          "x-fibre-private-token":token,
+        },
+      });
+      let payload = null;
+      try { payload = await response.json(); }
+      catch { throw new Error(`birth-center runtime acceptance returned non-JSON response: ${url}`); }
+      if (response.status !== 404 || payload?.error?.code !== "DEVELOPMENT_NOT_FOUND") {
+        const detail = payload?.error?.message ?? payload?.detail ?? payload?.title ?? payload?.error?.code ?? "unexpected response";
+        throw new Error(`birth-center runtime acceptance failed with HTTP ${response.status}: ${detail}`);
+      }
+      return Object.freeze({ ok:true, route:"development-inspection", status:response.status });
     },
     async checkPresentationAcceptance({ baseUrl }) {
       const payload = await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/api/threads?limit=1`);
@@ -257,7 +276,24 @@ export async function deployCloudflareStack({
     const stateHealth = STATEFUL_DO_SERVICES.has(serviceId)
       ? await retryStateHealth({ client, serviceId, baseUrl, wait })
       : null;
-    deployments.push(Object.freeze({ serviceId, workerName, baseUrl, health, stateHealth, customDomain }));
+    const runtimeAcceptance = serviceId === "birth-center"
+      ? await retryHealth({
+          serviceId,
+          attempts:HEALTH_RETRY_ATTEMPTS,
+          wait,
+          kind:"runtime",
+          check:() => client.checkBirthCenterRuntime({ baseUrl }),
+        })
+      : null;
+    deployments.push(Object.freeze({
+      serviceId,
+      workerName,
+      baseUrl,
+      health,
+      stateHealth,
+      runtimeAcceptance,
+      customDomain,
+    }));
   }
 
   const presentation = deployments.find((item) => item.serviceId === "thread-presentation");
