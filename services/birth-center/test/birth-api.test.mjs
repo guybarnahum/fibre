@@ -6,6 +6,14 @@ import { createBirthInitiationApi } from "../src/birth-api.mjs";
 const TOKEN = "private-token-for-birth-test";
 
 test("birth API exposes durable pending births without changing initiation", async () => {
+  const stillborn = [{
+    requestId:"admin_birth_old",
+    genesisId:"genesis_old",
+    threadId:"thr_old",
+    failureCode:"GENESIS_COMPILE_VALIDATION_ERROR",
+    failureMessage:"Genesis birth place Tokyo, Japan is not mappable",
+    settledAt:"2026-09-25T04:55:00.000Z",
+  }];
   const pending = [{
     requestId:"admin_birth_1",
     genesisId:"genesis_1",
@@ -35,6 +43,7 @@ test("birth API exposes durable pending births without changing initiation", asy
       },
     },
     pendingBirths:async () => pending,
+    stillbornBirths:async () => stillborn,
     birthplaces:[{ place:"Georgia/Tbilisi", lat:41.69, long:44.83 }],
     requestStore,
     privateToken:TOKEN,
@@ -45,6 +54,12 @@ test("birth API exposes durable pending births without changing initiation", asy
   }));
   assert.equal(list.status, 200);
   assert.deepEqual(await list.json(), { ok:true, births:pending });
+
+  const settled = await api.fetch(new Request("https://birth.internal/internal/births/stillborn", {
+    headers:{ "x-fibre-private-token":TOKEN },
+  }));
+  assert.equal(settled.status, 200);
+  assert.deepEqual(await settled.json(), { ok:true, births:stillborn });
 
   const places = await api.fetch(new Request("https://birth.internal/internal/births/places", {
     headers:{ "x-fibre-private-token":TOKEN },
