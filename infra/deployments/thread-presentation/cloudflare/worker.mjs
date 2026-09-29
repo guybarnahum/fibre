@@ -387,7 +387,27 @@ export default {
     const completions = createCompletionConsumer(env, infra, presentationServer);
     for (const message of batch.messages) {
       try {
-        await completions.consume(message.body);
+        const completion = await completions.consume(message.body);
+        if (
+          activityRecorder !== null
+          && completion?.handled === true
+          && completion?.duplicate !== true
+          && completion?.stale !== true
+          && completion?.scope?.entityKind === "thread"
+          && completion?.publication !== null
+        ) {
+          await activityRecorder.record({
+            threadId:completion.scope.entityRef,
+            causationId:completion.receipt?.jobId ?? null,
+            stage:"presentation.asset_completion.consume",
+            status:"succeeded",
+            attempt:message.attempts,
+            evidence:{
+              objectRef:completion.receipt?.objectRef ?? null,
+              queueMessageId:message.id,
+            },
+          });
+        }
         message.ack();
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error);
