@@ -52,25 +52,6 @@ function normalize(row) {
 export function createBirthRequestStore(storage, { now = () => new Date().toISOString() } = {}) {
   if (typeof now !== "function") throw new TypeError("birth request store now must be a function");
   const database = openBirthStateDatabase(storage, { storeName:"ModernBirthRequestStore" });
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS modern_birth_requests (
-      request_id TEXT PRIMARY KEY,
-      requested_at TEXT NOT NULL,
-      requested_location TEXT,
-      requested_sex TEXT CHECK (requested_sex IS NULL OR requested_sex IN ('female','male')),
-      selected_location TEXT,
-      location_source TEXT,
-      selected_sex TEXT CHECK (selected_sex IS NULL OR selected_sex IN ('female','male')),
-      status TEXT NOT NULL CHECK (status IN ('queued','authoring','developing','publishing','published','failed')),
-      thread_id TEXT,
-      genesis_id TEXT,
-      error_text TEXT,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    ) STRICT;
-    CREATE INDEX IF NOT EXISTS idx_modern_birth_requests_status_created
-      ON modern_birth_requests(status,created_at DESC,request_id DESC);
-  `);
 
   const select = database.prepare(`
     SELECT request_id,requested_at,requested_location,requested_sex,selected_location,location_source,
