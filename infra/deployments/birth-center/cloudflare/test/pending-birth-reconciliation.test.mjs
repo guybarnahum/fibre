@@ -32,6 +32,8 @@ function developmentFor(request) {
     threadId:request.threadId,
     status:"reserved",
     plan:{ subjectIdentity:{
+      femaleName:"Nino Beridze",
+      maleName:"Giorgi Beridze",
       birthCity:"Tbilisi, Georgia",
       place:{ country:"Georgia", city:"Tbilisi" },
       sex:request.sex,
@@ -110,6 +112,7 @@ test("pending births is local observation", () => {
   assert.equal(births.length, 1, "stale birth disappeared before reconciliation");
   assert.equal(births[0].classification, "stale_unresolved", "stale birth was presented as reconciled");
   assert.equal(births[0].requestedAt, request.requestedAt, "birth replay time was lost");
+  assert.equal(births[0].name, "Nino Beridze", "pending birth hid its already-authored name");
 });
 
 test("one World check settles duplicate stale birth records as born", async () => {
