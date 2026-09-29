@@ -40,7 +40,15 @@ export function parseAdminActivityPage(url) {
   const cursor = decodeCursor(rawCursor);
   if (direction === "prev" && cursor === null) throw new TypeError("previous activity page requires a cursor");
   const scopedCausal = mode === "causal" && SCOPED_CAUSAL_KINDS.has(kind);
-  return Object.freeze({ mode, size:scopedCausal ? SCOPED_CAUSAL_SIZE : PAGE_SIZE, direction, edge, cursor });
+  const includeTotal = edge === "last" || url.searchParams.get("count") !== "0";
+  return Object.freeze({
+    mode,
+    size:scopedCausal ? SCOPED_CAUSAL_SIZE : PAGE_SIZE,
+    direction,
+    edge,
+    cursor,
+    includeTotal,
+  });
 }
 
 function activityClauses({ environment, query, page }) {
@@ -99,11 +107,14 @@ function buildCountSql({ environment, query, page }) {
 export async function queryAdminActivityPage(env, environment, query, page) {
   if (!env.ACTIVITY_LOG?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
   const built = buildAdminActivityPageSql({ environment, query, page });
-  const count = buildCountSql({ environment, query, page });
-  const [result, countResult] = await Promise.all([
-    env.ACTIVITY_LOG.prepare(built.sql).bind(...built.bindings).all(),
-    env.ACTIVITY_LOG.prepare(count.sql).bind(...count.bindings).all(),
-  ]);
+  const count = page.includeTotal ? buildCountSql({ environment, query, page }) : null;
+  const resultPromise = env.ACTIVITY_LOG.prepare(built.sql).bind(...built.bindings).all();
+  const [result, countResult] = count === null
+    ? [await resultPromise, null]
+    : await Promise.all([
+        resultPromise,
+        env.ACTIVITY_LOG.prepare(count.sql).bind(...count.bindings).all(),
+      ]);
   logD1Cost({
     database:"activity-log",
     service:"admin-dashboard",
@@ -112,18 +123,20 @@ export async function queryAdminActivityPage(env, environment, query, page) {
     mode:page.mode,
     result,
   });
-  logD1Cost({
-    database:"activity-log",
-    service:"admin-dashboard",
-    operation:"admin.activity.count",
-    kind:query.kind,
-    mode:page.mode,
-    result:countResult,
-  });
+  if (countResult !== null) {
+    logD1Cost({
+      database:"activity-log",
+      service:"admin-dashboard",
+      operation:"admin.activity.count",
+      kind:query.kind,
+      mode:page.mode,
+      result:countResult,
+    });
+  }
 
   const rows = Array.isArray(result?.results) ? result.results : [];
-  const total = Number(countResult?.results?.[0]?.total ?? 0);
-  const lastPageSize = total === 0 ? 0 : (total % page.size || page.size);
+  const total = countResult === null ? null : Number(countResult?.results?.[0]?.total ?? 0);
+  const lastPageSize = total === null || total === 0 ? 0 : (total % page.size || page.size);
   const take = page.edge === "last" ? lastPageSize : page.size;
   const scanned = rows.slice(0, take);
   if (built.reverse) scanned.reverse();
@@ -138,7 +151,7 @@ export async function queryAdminActivityPage(env, environment, query, page) {
     prevCursor:hasPrev && records.length ? encodeCursor(records[0]) : null,
     nextCursor:hasNext && records.length ? encodeCursor(records.at(-1)) : null,
     total,
-    totalPages:Math.max(1, Math.ceil(total / page.size)),
+    totalPages:total === null ? null : Math.max(1, Math.ceil(total / page.size)),
     pageSize:page.size,
   });
 }
