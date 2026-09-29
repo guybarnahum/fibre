@@ -6,7 +6,7 @@ import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
-import { createBirthCenterCloudflareRuntime } from "./runtime.mjs";
+import { createBirthCenterCloudflareRuntime, publishQueuedBirths } from "./runtime.mjs";
 
 const BIRTH_SCOPE_ID = "birth";
 const DEPLOYMENT = resolveServiceDeployment(
@@ -136,10 +136,10 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     if (cloud.developmentApi !== null) {
       const developmentResponse = await cloud.developmentApi.fetch(request);
       if (developmentResponse !== null) {
-        if (request.method === "POST") {
-          this.ctx.waitUntil(cloud.ensureBirthStatusScheduled().catch((error) => {
+        if (request.method === "POST" && developmentResponse.status === 202) {
+          this.ctx.waitUntil(publishQueuedBirths(cloud).catch((error) => {
             console.error(JSON.stringify({
-              event:"birth-center-status-schedule-failed",
+              event:"birth-center-publication-kick-failed",
               message:error instanceof Error ? error.message : String(error),
             }));
           }));
