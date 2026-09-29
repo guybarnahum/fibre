@@ -1,6 +1,6 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { threadAppearanceSection } from "./thread-appearance-ui.js";
-import { decorateActionButton, iconForIdentityAction } from "./fa-icons.js";
+import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
 
 const dialogBody = document.querySelector("#dialog-body");
 
@@ -419,7 +419,9 @@ function renderHealth(host, threadId, health, message = null) {
 }
 
 export async function renderThreadHealth(host, threadId, message = null) {
-  host.replaceChildren(el("div", "thread-loading", "Checking Thread health…"));
+  const waiting = el("div", "thread-loading");
+  setWaitingContent(waiting, "Checking Thread health");
+  host.replaceChildren(waiting);
   try {
     renderHealth(host, threadId, await requestHealth(threadId), message);
   } catch (error) {
