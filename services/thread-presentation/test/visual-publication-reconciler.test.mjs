@@ -181,3 +181,47 @@ test("an enacted public present becomes durable Presentation and can request a s
   assert.equal(demand.slots[0].role, "present_scene");
   assert.equal(result.event.sequence, 7);
 });
+
+
+test("identity-media convergence emits one observable checkpoint", async () => {
+  const visual = embodiment("thr_visual_activity");
+  const records = [];
+  const reconciler = createThreadPresentationVisualPublicationReconciler({
+    presentationServer:{
+      async getSnapshot() { return snapshot(visual.threadId); },
+      async publishSnapshot() { throw new Error("not reached"); },
+    },
+    infra:{},
+    selectProviderProfile() { return "unused"; },
+    createDemandService:() => demandService(),
+    createVisualRewrite() {
+      return { async project() { return { reused:true }; } };
+    },
+    async ensureFid() {
+      return {
+        complete:true,
+        state:"active",
+        credential:{ credentialId:"fidc_visual_activity", revision:2 },
+        presentation:{ changed:true },
+      };
+    },
+    activityRecorder:{
+      async record(record) { records.push(record); },
+      async runStage() { throw new Error("not reached"); },
+    },
+  });
+
+  const result = await reconciler.reconcileAvailableEmbodiment({
+    threadId:visual.threadId,
+    embodiment:visual,
+    observedAt:"2026-09-24T16:03:00Z",
+  });
+
+  assert.equal(result.complete,true);
+  assert.deepEqual(
+    records.filter((record)=>record.stage==="presentation.identity_media.ensure")
+      .map((record)=>record.status),
+    ["succeeded"],
+    "current identity media was not observable in Activity",
+  );
+});
