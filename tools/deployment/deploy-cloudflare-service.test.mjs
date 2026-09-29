@@ -130,7 +130,7 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
     });
 
     assert.deepEqual(calls, ["d1","wrangler:deploy","birth-migrate-and-accept"]);
-    assert.equal(result.birthCenterAcceptance.migration.toVersion, 1);
+    assert.equal(result.birthCenterAcceptance.migration.toVersion, 2);
     assert.equal(result.birthCenterAcceptance.runtimeAcceptance.status, 404);
   } finally {
     rmSync(repoRoot, { recursive:true, force:true });
