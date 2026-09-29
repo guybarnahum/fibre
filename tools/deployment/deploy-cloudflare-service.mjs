@@ -14,6 +14,10 @@ import {
   d1BindingsFromConfig,
   ensureCloudflareD1Migrations,
 } from "./cloudflare-d1-migrations.mjs";
+import {
+  createWranglerDeploymentClient,
+  healthBaseUrlForDeployment,
+} from "./deploy-cloudflare.mjs";
 
 const execFile = promisify(execFileCallback);
 const SERVICES = Object.freeze(new Set([
@@ -68,6 +72,26 @@ export function prepareResolvedServiceConfig(config, { environment, service, git
   return Object.freeze({ environment: env, serviceId, workerName: name, config: next });
 }
 
+export async function acceptBirthCenterServiceDeployment({
+  runner,
+  cwd,
+  prepared,
+  deploymentOutput,
+  fetchImpl = globalThis.fetch,
+  privateToken = process.env.FIBRE_PRIVATE_TOKEN,
+} = {}) {
+  const client = createWranglerDeploymentClient({ runner, cwd, fetchImpl, privateToken });
+  const baseUrl = healthBaseUrlForDeployment({
+    serviceId:"birth-center",
+    resolvedConfig:prepared.config,
+    deploymentOutput,
+  });
+  const migration = await client.migrateBirthCenter({ baseUrl });
+  const stateHealth = await client.checkStateHealth({ serviceId:"birth-center", baseUrl });
+  const runtimeAcceptance = await client.checkBirthCenterRuntime({ baseUrl });
+  return Object.freeze({ baseUrl, migration, stateHealth, runtimeAcceptance });
+}
+
 export async function deployCloudflareService({
   repoRoot,
   environment,
@@ -77,6 +101,7 @@ export async function deployCloudflareService({
   readFileImpl = readFile,
   writeFileImpl = writeFile,
   ensureD1MigrationsImpl = ensureCloudflareD1Migrations,
+  acceptBirthCenterImpl = acceptBirthCenterServiceDeployment,
   print = console.log,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
@@ -111,14 +136,25 @@ export async function deployCloudflareService({
     "--experimental-provision=false",
     "--experimental-auto-create=false",
   ], { cwd: root });
+  const stdout = result.stdout ?? "";
+  const stderr = result.stderr ?? "";
+  const birthCenterAcceptance = serviceId === "birth-center"
+    ? await acceptBirthCenterImpl({
+        runner,
+        cwd:root,
+        prepared,
+        deploymentOutput:`${stdout}\n${stderr}`,
+      })
+    : null;
   return Object.freeze({
     environment: env,
     serviceId,
     workerName: prepared.workerName,
     sourceGitSha,
     configPath: deployConfigPath,
-    stdout: result.stdout ?? "",
-    stderr: result.stderr ?? "",
+    stdout,
+    stderr,
+    birthCenterAcceptance,
   });
 }
 
