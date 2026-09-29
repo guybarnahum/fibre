@@ -226,3 +226,45 @@ test("recovered birth geography is exposed as one explicit World identity repair
     long:recovered.long,
   }, "repair did not preserve the canonical recovered place");
 });
+
+
+test("Birth Center stillborn disposition replaces generic Activity-only explanation", async () => {
+  const activityLog = {
+    prepare() {
+      return {
+        bind() {
+          return {
+            async all() {
+              return { results:[{
+                thread_id:"thr_stillborn_tokyo",
+                last_activity_at:"2026-09-28T23:51:13.564Z",
+              }] };
+            },
+          };
+        },
+      };
+    },
+  };
+
+  const population = await readAdminThreadPopulation({
+    activityLog,
+    environment:"staging",
+    readRegistry:async () => [],
+    readStillborn:async () => [{
+      requestId:"tokyo-japanese-20260928-01",
+      genesisId:"genesis_tokyo_old",
+      threadId:"thr_stillborn_tokyo",
+      failureCode:"GENESIS_COMPILE_VALIDATION_ERROR",
+      failureMessage:"Genesis birth place Tokyo, Japan is not mappable",
+      settledAt:"2026-09-29T16:00:00.000Z",
+      updatedAt:"2026-09-29T16:00:00.000Z",
+    }],
+  });
+
+  assert.equal(population.stillborn.length,1,"authoritative stillborn was duplicated by Activity");
+  assert.equal(population.stillborn[0].authority,"birth_center");
+  assert.equal(population.stillborn[0].requestId,"tokyo-japanese-20260928-01");
+  assert.equal(population.stillborn[0].failureCode,"GENESIS_COMPILE_VALIDATION_ERROR");
+  assert.equal(population.stillborn[0].failureMessage,"Genesis birth place Tokyo, Japan is not mappable");
+  assert.equal(population.stillborn[0].lastActivityAt,"2026-09-28T23:51:13.564Z");
+});
