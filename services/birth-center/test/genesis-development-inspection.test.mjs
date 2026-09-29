@@ -41,6 +41,19 @@ function runtimeFixture() {
   return {
     developmentRequestStore: {
       get(requestId) { return requestId === reservation.requestId ? structuredClone(reservation) : null; },
+      getDisposition(requestId) {
+        return requestId === reservation.requestId
+          ? {
+              requestId,
+              outcome:null,
+              failureCode:null,
+              failureMessage:null,
+              failureRetryable:null,
+              settledAt:null,
+              updatedAt:"2026-08-31T23:50:01Z",
+            }
+          : null;
+      },
     },
     provisionalBirthStore: {
       get(genesisId) { return genesisId === reservation.genesisId ? { status: "published" } : null; },
@@ -60,6 +73,8 @@ test("Genesis development inspection exposes durable provider witnesses without 
   assert.equal(inspection.requestedAt, "2026-08-31T23:40:00Z");
   assert.equal(inspection.requestStatus, "submitted");
   assert.equal(inspection.provisionalStatus, "published");
+  assert.equal(inspection.disposition.outcome, null);
+  assert.equal(inspection.disposition.failureRetryable, null);
   assert.equal(inspection.invocationCount, 1);
   assert.deepEqual(inspection.invocations[0], {
     clientRequestId: "genesis-development:abc:model:slot-01:pass-a:episode-01",
