@@ -11,7 +11,7 @@ const empty = $("#empty-state");
 const dialog = $("#record-dialog");
 const threadIdentityCache = new Map();
 const ACTIVE_REFRESH_MS = 10_000;
-const ACTIVE_WINDOW_MS = 3 * 60_000;
+const ACTIVE_WINDOW_MS = 30_000;
 const IDLE_REFRESH_MS = 15 * 60_000;
 let mode = "raw";
 let currentPayload = null;
@@ -570,11 +570,12 @@ function refreshDelay(now = Date.now()) {
 function scheduleRefresh() {
   clearTimeout(timer); timer = null;
   if (!$("#auto-refresh").checked || document.hidden) return;
+  const delay = document.hasFocus() ? refreshDelay() : IDLE_REFRESH_MS;
   timer = setTimeout(async () => {
     timer = null;
     if (!document.hidden && $("#auto-refresh").checked) await loadPage({ delta:true });
     scheduleRefresh();
-  }, refreshDelay());
+  }, delay);
 }
 
 function noteUiActivity() {
@@ -613,6 +614,8 @@ document.addEventListener("pointerdown", noteUiActivity, { passive:true });
 document.addEventListener("pointermove", noteUiActivity, { passive:true });
 document.addEventListener("keydown", noteUiActivity);
 document.addEventListener("visibilitychange", () => { void handleVisibilityChange(); });
+window.addEventListener("focus", () => { noteUiActivity(); });
+window.addEventListener("blur", scheduleRefresh);
 document.addEventListener("keydown", (event) => {
   if (event.key === "/" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) { event.preventDefault(); (value.disabled ? service : value).focus(); }
 });
