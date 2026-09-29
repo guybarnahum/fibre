@@ -373,6 +373,23 @@ async function proxyBirthCenterGet(env, pathname) {
   });
 }
 
+async function birthCenterStillborn(env) {
+  const response = await serviceBinding(env, "BIRTH_CENTER").fetch(new Request(
+    "https://birth-center.internal/internal/births/stillborn",
+    {
+      method:"GET",
+      headers:{
+        Accept:"application/json",
+        "x-fibre-private-token":privateToken(env),
+      },
+    },
+  ));
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+  if (!Array.isArray(payload?.births)) throw new Error("Birth Center stillborn response is invalid");
+  return payload.births;
+}
+
 async function threadRegistry(env, limit) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     `https://world.internal/internal/thread-directory/search?limit=${encodeURIComponent(String(limit))}`,
@@ -431,6 +448,7 @@ export default {
             activityLog:env.ACTIVITY_LOG,
             environment,
             readRegistry:(limit) => threadRegistry(env, limit),
+            readStillborn:() => birthCenterStillborn(env),
           });
           return json(200, {
             contract:"fibre-admin-thread-population-v0.3",
