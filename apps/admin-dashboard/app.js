@@ -418,7 +418,7 @@ async function activityExport(payload) {
     queriedAt:payload?.queriedAt ?? null,
     query:payload?.query ?? null,
     mode:payload?.mode ?? mode,
-    page:{ number:nav.page, total:payload?.totalPages ?? 1, size:payload?.pageSize ?? 25, totalRecords:payload?.total ?? records.length },
+    page:{ number:nav.page, total:null, size:payload?.pageSize ?? 25, totalRecords:null },
     identity:await activityIdentity(payload),
     records,
   });
@@ -454,36 +454,45 @@ function firstPage() {
 }
 function lastPage() {
   nav = { edge:"last", direction:"next", cursor:null, page:null };
-  return loadPage({ includeTotal:true });
+  return loadPage();
 }
 function previousPage() {
-  if (!currentPayload?.prevCursor || nav.page <= 1) return;
-  nav = { edge:"first", direction:"prev", cursor:currentPayload.prevCursor, page:nav.page - 1 };
+  if (!currentPayload?.prevCursor || nav.page === 1) return;
+  nav = {
+    edge:"first",
+    direction:"prev",
+    cursor:currentPayload.prevCursor,
+    page:Number.isInteger(nav.page) ? nav.page - 1 : null,
+  };
   return loadPage();
 }
 function nextPage() {
   if (!currentPayload?.nextCursor) return;
-  nav = { edge:"first", direction:"next", cursor:currentPayload.nextCursor, page:nav.page + 1 };
+  nav = {
+    edge:"first",
+    direction:"next",
+    cursor:currentPayload.nextCursor,
+    page:Number.isInteger(nav.page) ? nav.page + 1 : null,
+  };
   return loadPage();
 }
 
 function renderPager(payload) {
-  const totalPages = payload.totalPages;
-  if (totalPages !== null) {
-    nav.page = nav.edge === "last"
-      ? totalPages
-      : Math.min(Math.max(1, nav.page ?? 1), totalPages);
-  } else if (!Number.isInteger(nav.page) || nav.page < 1) {
-    nav.page = 1;
-  }
-  text($("#page-label"), totalPages === null ? `Page ${nav.page}` : `Page ${nav.page} of ${totalPages}`);
-  $("#page-first").disabled = nav.page <= 1;
-  $("#page-prev").disabled = payload.prevCursor == null || nav.page <= 1;
+  const atFirst = nav.edge === "first" && nav.direction === "next" && nav.cursor === null;
+  const atLast = nav.edge === "last" && nav.cursor === null;
+  const label = atLast
+    ? "Last page"
+    : Number.isInteger(nav.page) && nav.page > 0
+      ? `Page ${nav.page}`
+      : "Activity page";
+  text($("#page-label"), label);
+  $("#page-first").disabled = atFirst;
+  $("#page-prev").disabled = payload.prevCursor == null;
   $("#page-next").disabled = payload.nextCursor == null;
-  $("#page-last").disabled = payload.nextCursor == null;
+  $("#page-last").disabled = atLast;
 }
 
-async function loadPage({ pushState = false, includeTotal = false, delta = false } = {}) {
+async function loadPage({ pushState = false, delta = false } = {}) {
   if (mode === "threads" || mode === "stillborn") return;
   setLoading(true);
   if (pushState) syncUrl();
@@ -499,7 +508,6 @@ async function loadPage({ pushState = false, includeTotal = false, delta = false
   params.set("direction", nav.direction);
   if (nav.cursor) params.set("cursor", nav.cursor);
   if (canDelta) params.set("after", previousPayload.headCursor);
-  if (includeTotal) params.set("count", "1");
   try {
     const response = await fetch(`/api/activity/page?${params}`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
@@ -560,7 +568,7 @@ function scheduleRefresh() {
   if (!$("#auto-refresh").checked || document.hidden) return;
   timer = setTimeout(async () => {
     timer = null;
-    if (!document.hidden && $("#auto-refresh").checked) await loadPage({ includeTotal:false, delta:true });
+    if (!document.hidden && $("#auto-refresh").checked) await loadPage({ delta:true });
     scheduleRefresh();
   }, refreshDelay());
 }
@@ -581,7 +589,7 @@ async function handleVisibilityChange() {
   lastUiSignalAt = Date.now();
   lastInteractionAt = lastUiSignalAt;
   scheduleRefresh();
-  if ($("#auto-refresh").checked) await loadPage({ includeTotal:false, delta:true });
+  if ($("#auto-refresh").checked) await loadPage({ delta:true });
 }
 
 form.addEventListener("submit", (event) => { event.preventDefault(); nav = { edge:"first", direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
