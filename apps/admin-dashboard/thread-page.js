@@ -1,3 +1,4 @@
+import { setWaitingContent } from "./fa-icons.js";
 import { threadAppearanceSection } from "./thread-appearance-ui.js";
 import { renderThreadHealth } from "./thread-repair-ui.js";
 import {
@@ -65,7 +66,7 @@ export async function renderThreadPage(threadId) {
   const portrait = node("div", "thread-page-avatar");
   portrait.append(node("span", "thread-page-avatar-mark", "◎"));
   const copy = node("div");
-  copy.append(node("p", "eyebrow", "Thread Observatory"), node("h1", null, "Loading Thread…"), node("p", "lede mono", threadId));
+  copy.append(node("p", "eyebrow", "Thread Observatory"), node("h1", null, "Thread"), node("p", "lede mono", threadId));
   person.append(portrait, copy);
 
   const pageActions = node("div", "page-actions");
@@ -79,7 +80,9 @@ export async function renderThreadPage(threadId) {
   main.append(pageHead);
 
   const host = node("section", "panel thread-observatory-page");
-  host.append(node("div", "thread-loading", "Loading Thread Observatory…"));
+  const waiting = node("div", "thread-loading");
+  setWaitingContent(waiting, "Loading Thread Observatory");
+  host.append(waiting);
   main.append(host);
 
   try {
