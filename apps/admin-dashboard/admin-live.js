@@ -7,6 +7,7 @@ import {
 const liveKeys = new Map();
 let socket = null;
 let reconnectTimer = null;
+let reconnectDelay = 1500;
 
 function socketUrl() {
   const url = new URL("/api/live", location.href);
@@ -16,10 +17,12 @@ function socketUrl() {
 
 function reconnectSoon() {
   if (reconnectTimer !== null || liveKeys.size === 0 || document.hidden) return;
+  const delay = reconnectDelay;
+  reconnectDelay = Math.min(30_000, reconnectDelay * 2);
   reconnectTimer = window.setTimeout(() => {
     reconnectTimer = null;
     ensureSocket();
-  }, 1500);
+  }, delay);
 }
 
 function reconcileLiveViews(reason) {
@@ -35,6 +38,7 @@ function handleMessage(event) {
   catch { return; }
 
   if (message?.type === "admin-live.ready") {
+    reconnectDelay = 1500;
     reconcileLiveViews("connected");
     return;
   }
@@ -88,9 +92,17 @@ export function watchAdminLive(key, callback, { active = () => true, reconcileOn
       current.delete(entry);
       if (current.size === 0) liveKeys.delete(key);
     }
-    if (liveKeys.size === 0 && socket) {
-      try { socket.close(1000, "no live Admin views"); } catch {}
-      socket = null;
+    if (liveKeys.size === 0) {
+      reconnectDelay = 1500;
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      reconnectDelay = 1500;
+      if (socket) {
+        try { socket.close(1000, "no live Admin views"); } catch {}
+        socket = null;
+      }
     }
   };
 }
