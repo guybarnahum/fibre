@@ -1,7 +1,11 @@
 function assertRuntime(runtime) {
   if (!runtime || typeof runtime !== "object") throw new TypeError("Genesis development inspection requires a Birth Center runtime");
-  if (!runtime.developmentRequestStore || typeof runtime.developmentRequestStore.get !== "function") {
-    throw new TypeError("Genesis development inspection requires development request lookup");
+  if (
+    !runtime.developmentRequestStore
+    || typeof runtime.developmentRequestStore.get !== "function"
+    || typeof runtime.developmentRequestStore.getDisposition !== "function"
+  ) {
+    throw new TypeError("Genesis development inspection requires development request and disposition lookup");
   }
   if (!runtime.invocationJournal || typeof runtime.invocationJournal.listByPrefix !== "function") {
     throw new TypeError("Genesis development inspection requires durable invocation lookup");
