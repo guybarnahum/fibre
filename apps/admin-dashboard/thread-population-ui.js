@@ -1,6 +1,6 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
-import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
+import { countryFlag, rememberPendingBirth, rememberPopulationThread, rememberThreadLabel, threadBirthplaceText } from "./thread-label-cache.js";
 import { reissueFidCard } from "./thread-observatory.js";
 import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
 import {
@@ -155,6 +155,11 @@ async function resolvePopulationPortrait(threadId) {
       });
       if (!response.ok) return null;
       const payload = await response.json();
+      rememberThreadLabel(threadId, {
+        name:payload.identity?.displayName ?? payload.identity?.name,
+        birthLocation:payload.identity?.birthLocation,
+        birthPlace:payload.identity?.birthPlace,
+      });
       return preferredPortraitUrl(payload.identity);
     } catch {
       return null;
