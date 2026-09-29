@@ -113,17 +113,17 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
   const createdOnce = [...client.state.creates];
   const second = await provisionCloudflareResources({ repoRoot, environment: "staging", client, sourceGitSha: SOURCE_SHA, now: () => "2026-08-31T20:21:00.000Z" });
 
-  assert.deepEqual(client.state.creates.filter(([kind]) => kind !== "d1-migrate"), createdOnce.filter(([kind]) => kind !== "d1-migrate"));
-  assert.deepEqual(client.state.creates.filter(([kind]) => kind === "d1-migrate"), [
-    ["d1-migrate", "fibre-presentation-catalog-staging", "infra/providers/cloudflare/d1/0001_fibre_catalog.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0003_activity_thread_heads.sql"],
-    ["d1-migrate", "fibre-presentation-catalog-staging", "infra/providers/cloudflare/d1/0001_fibre_catalog.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0003_activity_thread_heads.sql"],
-  ]);
+  const firstMigrationCalls = createdOnce.filter(([kind]) => kind === "d1-migrate");
+  assert.deepEqual(
+    client.state.creates.filter(([kind]) => kind !== "d1-migrate"),
+    createdOnce.filter(([kind]) => kind !== "d1-migrate"),
+    "repeat provision recreated durable Cloudflare resources",
+  );
+  assert.deepEqual(
+    client.state.creates.filter(([kind]) => kind === "d1-migrate"),
+    [...firstMigrationCalls, ...firstMigrationCalls],
+    "repeat provision changed the declared D1 migration set",
+  );
   assert.equal(first.resources.d1[0].id, second.resources.d1[0].id);
   assert.equal(first.resources.d1[1].id, second.resources.d1[1].id);
   assert.deepEqual(first.resources.d1.map(({ binding, schema, migrations }) => ({ binding, schema, migrations })), [
@@ -134,22 +134,35 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
     },
     {
       binding: "ACTIVITY_LOG",
-      schema: "0003_activity_thread_heads.sql",
-      migrations: ["0001_activity_log.sql", "0002_admin_entitlements.sql", "0003_activity_thread_heads.sql"],
+      schema: "0004_activity_recent_index.sql",
+      migrations: [
+        "0001_activity_log.sql",
+        "0002_admin_entitlements.sql",
+        "0003_activity_thread_heads.sql",
+        "0004_activity_recent_index.sql",
+      ],
     },
   ]);
-  assert.deepEqual(createdOnce, [
-    ["d1", "fibre-presentation-catalog-staging"],
-    ["d1-migrate", "fibre-presentation-catalog-staging", "infra/providers/cloudflare/d1/0001_fibre_catalog.sql"],
-    ["d1", "fibre-activity-log-staging"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0001_activity_log.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0002_admin_entitlements.sql"],
-    ["d1-migrate", "fibre-activity-log-staging", "infra/providers/cloudflare/d1/0003_activity_thread_heads.sql"],
-    ["r2", "fibre-presentation-assets-staging"],
-    ["r2", "fibre-thread-objects-staging"],
-    ["queue", "fibre-asset-completions-staging"],
-    ["queue", "fibre-asset-completions-dlq-staging"],
-  ]);
+  assert.equal(
+    firstMigrationCalls.some(([, name, file]) => (
+      name === "fibre-activity-log-staging"
+      && file.endsWith("/0004_activity_recent_index.sql")
+    )),
+    true,
+    "Activity provisioning omitted the recent-read index",
+  );
+  assert.deepEqual(
+    createdOnce.filter(([kind]) => kind !== "d1-migrate"),
+    [
+      ["d1", "fibre-presentation-catalog-staging"],
+      ["d1", "fibre-activity-log-staging"],
+      ["r2", "fibre-presentation-assets-staging"],
+      ["r2", "fibre-thread-objects-staging"],
+      ["queue", "fibre-asset-completions-staging"],
+      ["queue", "fibre-asset-completions-dlq-staging"],
+    ],
+    "first provision did not create the expected durable resources",
+  );
 
   const presentation = JSON.parse(await readFile(resolve(repoRoot, first.wranglerConfigs["thread-presentation"]), "utf8"));
   assert.equal(presentation.name, "fibre-thread-presentation-staging");
