@@ -207,7 +207,7 @@ async function refreshUntilAppearanceReady(host,threadId,threadName){
   setAppearanceBusy(host,true);
 
   const progress=el("div","thread-appearance-progress");
-  progress.append(el("span","thread-appearance-spinner"),el("span",null,"Checking appearance…"));
+  setWaitingContent(progress,"Checking appearance");
   host.append(progress);
 
   try{
