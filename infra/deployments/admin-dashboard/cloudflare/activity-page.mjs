@@ -45,7 +45,7 @@ export function parseAdminActivityPage(url) {
   const after = decodeCursor(rawAfter);
   if (direction === "prev" && cursor === null) throw new TypeError("previous activity page requires a cursor");
   const scopedCausal = mode === "causal" && SCOPED_CAUSAL_KINDS.has(kind);
-  const includeTotal = after === null && (edge === "last" || url.searchParams.get("count") !== "0");
+  const includeTotal = after === null && (edge === "last" || url.searchParams.get("count") === "1");
   return Object.freeze({
     mode,
     size:scopedCausal ? SCOPED_CAUSAL_SIZE : PAGE_SIZE,
