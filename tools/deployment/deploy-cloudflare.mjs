@@ -154,6 +154,25 @@ export function createWranglerDeploymentClient({
         serviceId,
       );
     },
+    async migrateBirthCenter({ baseUrl }) {
+      const token = nonEmpty("FIBRE_PRIVATE_TOKEN", privateToken);
+      const url = `${baseUrl.replace(/\/$/u, "")}/internal/migrate`;
+      const response = await fetchImpl(url, {
+        method:"POST",
+        headers:{
+          Accept:"application/json",
+          "x-fibre-private-token":token,
+        },
+      });
+      let payload = null;
+      try { payload = await response.json(); }
+      catch { throw new Error(`birth-center migration returned non-JSON response: ${url}`); }
+      if (!response.ok || payload?.ok !== true || payload?.service !== "birth-center") {
+        const detail = payload?.error?.message ?? payload?.detail ?? payload?.title ?? payload?.error?.code ?? "unexpected response";
+        throw new Error(`birth-center migration failed with HTTP ${response.status}: ${detail}`);
+      }
+      return payload.migration;
+    },
     async checkBirthCenterRuntime({ baseUrl }) {
       const token = nonEmpty("FIBRE_PRIVATE_TOKEN", privateToken);
       const url = `${baseUrl.replace(/\/$/u, "")}/internal/births/develop/deployment-runtime-probe/inspection`;
@@ -273,6 +292,9 @@ export async function deployCloudflareStack({
     const customDomain = deployed.customDomain ?? null;
     const attempts = customDomain === null ? HEALTH_RETRY_ATTEMPTS : CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS;
     const health = await retryServiceHealth({ client, serviceId, baseUrl, attempts, wait });
+    const migration = serviceId === "birth-center"
+      ? await client.migrateBirthCenter({ baseUrl })
+      : null;
     const stateHealth = STATEFUL_DO_SERVICES.has(serviceId)
       ? await retryStateHealth({ client, serviceId, baseUrl, wait })
       : null;
@@ -290,6 +312,7 @@ export async function deployCloudflareStack({
       workerName,
       baseUrl,
       health,
+      migration,
       stateHealth,
       runtimeAcceptance,
       customDomain,
