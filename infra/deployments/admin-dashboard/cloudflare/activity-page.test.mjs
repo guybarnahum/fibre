@@ -150,10 +150,11 @@ test("live Activity delta starts strictly after the current head", async () => {
   });
 
   assert.equal(delta.includeTotal,false,"delta refresh requested a historical count");
+  assert.equal(built.bindings.length,5,"delta refresh expanded one Activity cursor into redundant index predicates");
   assert.match(
     built.sql,
-    /occurred_at > \?/u,
-    "delta refresh did not constrain Activity to facts newer than the current head",
+    /\(occurred_at, recorded_at, activity_id\) > \(\?, \?, \?\)/u,
+    "delta refresh did not use the indexed Activity head tuple",
   );
   assert.throws(
     () => parseAdminActivityPage(new URL(
