@@ -43,6 +43,10 @@
       {
         "name": "PRESENTATION_CHANNELS",
         "class_name": "FibrePresentationChannelDurableObject"
+      },
+      {
+        "name": "ADMIN_LIVE",
+        "class_name": "FibreAdminLiveDurableObject"
       }
     ]
   },
@@ -69,8 +73,20 @@
     "FibrePresentationChannelDurableObject": {
       "type": "durable-object",
       "storage": "sqlite"
+    },
+    "FibreAdminLiveDurableObject": {
+      "type": "durable-object",
+      "storage": "sqlite"
     }
   },
+  "migrations": [
+    {
+      "tag": "admin-live-v1",
+      "new_sqlite_classes": [
+        "FibreAdminLiveDurableObject"
+      ]
+    }
+  ],
   "observability": {
     "enabled": true
   }
