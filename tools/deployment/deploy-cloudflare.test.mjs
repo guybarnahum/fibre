@@ -191,7 +191,7 @@ test("Wrangler client verifies secret names, shallow health and deep state healt
           return {
             ok:true,
             service:"birth-center",
-            migration:{ fromVersion:0, toVersion:1, applied:[1] },
+            migration:{ fromVersion:0, toVersion:2, applied:[1,2] },
           };
         },
       };
