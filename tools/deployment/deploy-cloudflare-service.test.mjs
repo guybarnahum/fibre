@@ -121,7 +121,7 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
         assert.match(deploymentOutput, /fibre-birth-center-staging/u);
         return {
           baseUrl:"https://fibre-birth-center-staging.account.workers.dev",
-          migration:{ fromVersion:0, toVersion:1, applied:[1] },
+          migration:{ fromVersion:0, toVersion:2, applied:[1,2] },
           stateHealth:{ ok:true, service:"birth-center", stateChecked:true },
           runtimeAcceptance:{ ok:true, status:404 },
         };
