@@ -82,7 +82,7 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
     },
     async migrateBirthCenter({ baseUrl }) {
       calls.push(`migrate:birth-center:${baseUrl}`);
-      return { fromVersion:0, toVersion:1, applied:[1] };
+      return { fromVersion:0, toVersion:2, applied:[1,2] };
     },
     async checkStateHealth({ serviceId, baseUrl }) {
       calls.push(`state-health:${serviceId}:${baseUrl}`);
