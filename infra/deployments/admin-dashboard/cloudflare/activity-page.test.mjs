@@ -129,3 +129,37 @@ test("background Activity refresh skips the full count scan", async () => {
   assert.equal(result.total,null);
   assert.equal(result.records.length,25);
 });
+
+
+test("live Activity delta starts strictly after the current head", async () => {
+  const first = await queryAdminActivityPage(
+    { ACTIVITY_LOG:d1 },
+    "staging",
+    query,
+    parseAdminActivityPage(new URL("https://admin/api/activity/page?mode=raw&kind=thread&value=thr_1")),
+  );
+  assert.ok(first.headCursor,"initial Activity page did not expose a durable head cursor");
+
+  const delta = parseAdminActivityPage(new URL(
+    `https://admin/api/activity/page?mode=raw&kind=recent&count=0&after=${encodeURIComponent(first.headCursor)}`,
+  ));
+  const built = buildAdminActivityPageSql({
+    environment:"staging",
+    query:{ ...query, kind:"recent", value:null },
+    page:delta,
+  });
+
+  assert.equal(delta.includeTotal,false,"delta refresh requested a historical count");
+  assert.match(
+    built.sql,
+    /occurred_at > \?/u,
+    "delta refresh did not constrain Activity to facts newer than the current head",
+  );
+  assert.throws(
+    () => parseAdminActivityPage(new URL(
+      `https://admin/api/activity/page?mode=raw&kind=recent&direction=prev&after=${encodeURIComponent(first.headCursor)}`,
+    )),
+    /first forward page/u,
+    "delta cursor was allowed to change historical paging semantics",
+  );
+});
