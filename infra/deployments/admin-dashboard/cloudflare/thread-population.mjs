@@ -223,6 +223,27 @@ function admittedThread(entry, lastActivityAt) {
   });
 }
 
+function settledStillborn(row, lastActivityAt = null) {
+  return Object.freeze({
+    threadId:row.threadId,
+    admitted:false,
+    requestId:row.requestId ?? null,
+    genesisId:row.genesisId ?? null,
+    lastActivityAt:lastActivityAt ?? row.settledAt ?? row.updatedAt ?? null,
+    health:"unrecoverable",
+    identity:null,
+    currentLocation:null,
+    runtime:null,
+    portraitUrl:null,
+    findings:Object.freeze([]),
+    reconciliation:null,
+    failureCode:clean(row.failureCode),
+    failureMessage:clean(row.failureMessage),
+    settledAt:clean(row.settledAt),
+    authority:"birth_center",
+  });
+}
+
 function activityOnly(row) {
   return Object.freeze({
     threadId:row.thread_id,
@@ -235,6 +256,10 @@ function activityOnly(row) {
     portraitUrl:null,
     findings:Object.freeze([]),
     reconciliation:null,
+    failureCode:null,
+    failureMessage:null,
+    settledAt:null,
+    authority:"activity",
   });
 }
 
@@ -270,15 +295,19 @@ export async function readAdminThreadPopulation({
   activityLog,
   environment,
   readRegistry,
+  readStillborn = async () => [],
 } = {}) {
   if (!activityLog?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
   if (typeof readRegistry !== "function") throw new TypeError("Thread population requires readRegistry()");
+  if (typeof readStillborn !== "function") throw new TypeError("Thread population requires readStillborn()");
 
-  const [registryEntries, activity] = await Promise.all([
+  const [registryEntries, activity, settledBirths] = await Promise.all([
     readRegistry(MAX_ADMITTED_THREADS),
     readActivityHeads(activityLog, environment),
+    readStillborn(),
   ]);
   if (!Array.isArray(registryEntries)) throw new Error("World Thread Registry returned an invalid population");
+  if (!Array.isArray(settledBirths)) throw new Error("Birth Center stillborn response is invalid");
 
   const activityResult = activity.result;
   logD1Cost({
@@ -290,9 +319,17 @@ export async function readAdminThreadPopulation({
   const activityRows = Array.isArray(activityResult?.results) ? activityResult.results : [];
   const activityByThread = new Map(activityRows.map((row) => [row.thread_id, row.last_activity_at ?? null]));
   const admittedIds = new Set(registryEntries.map((entry) => entry.threadId));
+  const settledStillbornIds = new Set(settledBirths.map((entry) => entry.threadId));
   const threads = registryEntries.map((entry) => admittedThread(entry, activityByThread.get(entry.threadId)));
+  for (const birth of settledBirths) {
+    if (!admittedIds.has(birth.threadId)) {
+      threads.push(settledStillborn(birth, activityByThread.get(birth.threadId)));
+    }
+  }
   for (const row of activityRows.slice(0, MAX_ACTIVITY_THREADS)) {
-    if (!admittedIds.has(row.thread_id)) threads.push(activityOnly(row));
+    if (!admittedIds.has(row.thread_id) && !settledStillbornIds.has(row.thread_id)) {
+      threads.push(activityOnly(row));
+    }
   }
 
   const stillborn = threads.filter((thread) => thread.health === "unrecoverable");
