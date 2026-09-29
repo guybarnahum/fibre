@@ -77,7 +77,7 @@ function activityClauses({ environment, query, page }) {
 }
 
 function cursorClause(op) {
-  return `(occurred_at ${op} ? OR (occurred_at = ? AND recorded_at ${op} ?) OR (occurred_at = ? AND recorded_at = ? AND activity_id ${op} ?))`;
+  return `(occurred_at, recorded_at, activity_id) ${op} (?, ?, ?)`;
 }
 
 export function buildAdminActivityPageSql({ environment, query, page }) {
@@ -88,19 +88,11 @@ export function buildAdminActivityPageSql({ environment, query, page }) {
 
   if (page.after) {
     clauses.push(cursorClause(">"));
-    bindings.push(
-      page.after.occurredAt,
-      page.after.occurredAt, page.after.recordedAt,
-      page.after.occurredAt, page.after.recordedAt, page.after.activityId,
-    );
+    bindings.push(page.after.occurredAt, page.after.recordedAt, page.after.activityId);
   } else if (page.cursor) {
     const op = scanAscending ? ">" : "<";
     clauses.push(cursorClause(op));
-    bindings.push(
-      page.cursor.occurredAt,
-      page.cursor.occurredAt, page.cursor.recordedAt,
-      page.cursor.occurredAt, page.cursor.recordedAt, page.cursor.activityId,
-    );
+    bindings.push(page.cursor.occurredAt, page.cursor.recordedAt, page.cursor.activityId);
   }
 
   bindings.push(page.size + 1);
