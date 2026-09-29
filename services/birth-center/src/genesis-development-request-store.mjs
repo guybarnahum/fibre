@@ -20,86 +20,6 @@ function parseJson(name, value) {
   catch (error) { throw new Error(`${name} contains invalid JSON: ${error.message}`); }
 }
 
-function migrate(session) {
-  session.exec(`
-    CREATE TABLE IF NOT EXISTS genesis_development_requests (
-      request_id TEXT PRIMARY KEY,
-      request_digest TEXT NOT NULL,
-      plan_digest TEXT NOT NULL,
-      genesis_id TEXT NOT NULL UNIQUE,
-      thread_id TEXT NOT NULL UNIQUE,
-      plan_json TEXT NOT NULL,
-      admission_digest TEXT,
-      admission_json TEXT,
-      status TEXT NOT NULL CHECK (status IN ('reserved', 'ready', 'submitted')),
-      submission_result_json TEXT,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL,
-      CHECK ((admission_digest IS NULL) = (admission_json IS NULL)),
-      CHECK (status = 'reserved' OR admission_json IS NOT NULL),
-      CHECK (status != 'submitted' OR submission_result_json IS NOT NULL)
-    );
-    CREATE TABLE IF NOT EXISTS genesis_development_dispositions (
-      request_id TEXT PRIMARY KEY,
-      outcome TEXT CHECK (outcome IS NULL OR outcome IN ('born','stillborn')),
-      failure_code TEXT,
-      failure_message TEXT,
-      failure_retryable INTEGER CHECK (failure_retryable IS NULL OR failure_retryable IN (0,1)),
-      settled_at TEXT,
-      updated_at TEXT NOT NULL
-    ) STRICT;
-  `);
-
-  const columns = new Set(
-    session.prepare("PRAGMA table_info(genesis_development_dispositions)").all().map((row) => row.name),
-  );
-  if (!columns.has("failure_retryable")) {
-    session.exec(`
-      ALTER TABLE genesis_development_dispositions
-      ADD COLUMN failure_retryable INTEGER
-        CHECK (failure_retryable IS NULL OR failure_retryable IN (0,1));
-    `);
-  }
-
-  session.exec(`
-    UPDATE genesis_development_dispositions
-    SET failure_retryable=0
-    WHERE outcome IS NULL
-      AND failure_retryable IS NULL
-      AND (
-        failure_code='GENESIS_PASS_A_VALIDATION_ERROR'
-        OR (
-          instr(failure_message,'Pass-B model output episodeRef ')=1
-          AND instr(failure_message,' is not visible history')>0
-        )
-        OR instr(
-          failure_message,
-          'observableAction narrates an explicit scene setting incompatible with authoritative placeRef'
-        )>0
-      );
-
-    -- Four retained staging attempts predate durable retryability capture. Their
-    -- retained Activity was manually adjudicated as terminal; preserve any
-    -- original failure text/code if present and add only the missing terminal bit.
-    INSERT INTO genesis_development_dispositions(
-      request_id,outcome,failure_code,failure_message,failure_retryable,settled_at,updated_at
-    )
-    SELECT request_id,NULL,NULL,NULL,0,NULL,updated_at
-    FROM genesis_development_requests
-    WHERE thread_id IN (
-      'thr_bceb56abf94f52e4caeb9f2830b5c2288cf5d2c8',
-      'thr_3609c3953fa371755ddea576e70964a9922e3c27',
-      'thr_654122d83fd271e3352d0cdba679f06e548d7d2c',
-      'thr_72bde089b036d01d489382cec37c8f99fa240b36'
-    )
-    ON CONFLICT(request_id) DO UPDATE SET
-      failure_code=COALESCE(genesis_development_dispositions.failure_code,excluded.failure_code),
-      failure_message=COALESCE(genesis_development_dispositions.failure_message,excluded.failure_message),
-      failure_retryable=COALESCE(genesis_development_dispositions.failure_retryable,excluded.failure_retryable),
-      updated_at=excluded.updated_at;
-  `);
-}
-
 function normalize(row) {
   if (row === undefined) return null;
   return Object.freeze({
@@ -144,8 +64,6 @@ export function createGenesisDevelopmentRequestStore(storage, {
 } = {}) {
   if (typeof now !== "function") throw new TypeError("Genesis development request store now must be a function");
   const session = openBirthStateDatabase(storage, { storeName: "Birth Center Genesis development request store" });
-  migrate(session);
-
   const selectByRequest = session.prepare(`
     SELECT request_id,request_digest,plan_digest,genesis_id,thread_id,plan_json,
            admission_digest,admission_json,status,submission_result_json,created_at,updated_at
