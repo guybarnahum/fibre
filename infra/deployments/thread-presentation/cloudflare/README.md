@@ -97,11 +97,13 @@ Worker:           fibre-thread-presentation
 Service bindings: WORLD_KERNEL, FIBRE_IDENTITY_AUTHORITY
 R2:               fibre-presentation-assets
 D1:               fibre-presentation-catalog + shared fibre-activity-log
-Durable Obj:      FibrePresentationChannelDurableObject
+Durable Obj:      FibrePresentationChannelDurableObject + one FibreAdminLiveDurableObject per environment
 Workflow:         fibre-asset-generation hosted by fibre-asset-generator
 Queue:            fibre-asset-completions
 DLQ:              fibre-asset-completions-dlq
 ```
+
+The Admin Live object is a storage-free, hibernatable invalidation fanout for the authenticated Admin UI. It carries no Thread data, history, ordering or replay authority and is separate from the per-Thread public presentation streams.
 
 Validate without publishing:
 
