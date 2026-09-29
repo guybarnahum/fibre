@@ -268,3 +268,61 @@ test("Birth Center stillborn disposition replaces generic Activity-only explanat
   assert.equal(population.stillborn[0].failureMessage,"Genesis birth place Tokyo, Japan is not mappable");
   assert.equal(population.stillborn[0].lastActivityAt,"2026-09-28T23:51:13.564Z");
 });
+
+
+test("stillborn enrichment failure cannot blank admitted Threads", async () => {
+  const activityLog = {
+    prepare() {
+      return {
+        bind() {
+          return {
+            async all() {
+              return { results:[{
+                thread_id:"thr_visible",
+                last_activity_at:"2026-09-29T16:40:00.000Z",
+              }] };
+            },
+          };
+        },
+      };
+    },
+  };
+
+  const population = await readAdminThreadPopulation({
+    activityLog,
+    environment:"staging",
+    readRegistry:async () => [{
+      threadId:"thr_visible",
+      fibreIdentityNumber:"FIN-VISIBLE",
+      displayName:"Visible Thread",
+      sex:"female",
+      status:"frozen",
+      originOrientation:"original",
+      birthDate:"2004-08-20",
+      birthPlace:"Tokyo, Japan",
+      birthLocation:{
+        displayName:"Tokyo, Japan",
+        country:"Japan",
+        city:"Tokyo",
+        lat:35.6895,
+        long:139.69171,
+        source:"thread_identity",
+      },
+      culture:[],
+      languages:["Japanese"],
+      raisedAs:{ languages:["Japanese"] },
+      currentLocation:null,
+      runtime:null,
+      version:1,
+      stateHash:"sha256:visible",
+      updatedAt:"2026-09-29T16:40:00.000Z",
+    }],
+    readStillborn:async () => { throw new Error("Birth Center stillborn route unavailable"); },
+  });
+
+  assert.deepEqual(
+    population.threads.map((thread) => thread.threadId),
+    ["thr_visible"],
+    "optional stillborn enrichment failure blanked authoritative World population",
+  );
+});
