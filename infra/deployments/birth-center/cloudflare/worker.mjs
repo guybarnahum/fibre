@@ -147,8 +147,8 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         return developmentResponse;
       }
     }
-    const birthResponse = await cloud.birthApi.fetch(request);
-    if (birthResponse !== null) return birthResponse;
+    const publicationResponse = await cloud.publicationApi.fetch(request);
+    if (publicationResponse !== null) return publicationResponse;
     return Response.json({ error: "not_found" }, { status: 404 });
   }
 
