@@ -228,7 +228,7 @@ For a current model:
 
 Do not hide appearance authority changes inside generic **Fix**.
 
-The implementation is intentionally bounded: Admin sends one migration or re-render command and does not automatically poll or reroll. **Refresh appearance** is an explicit operator-driven watch: one immediate read followed by 20-second reads only while canonical generation/publication is pending; it stops as soon as the appearance is current or the view closes.
+The implementation is intentionally bounded: Admin sends one migration or re-render command and never rerolls. **Refresh appearance** performs one explicit read. If canonical generation/publication is pending, the Appearance surface waits on the single Admin live invalidation socket with zero polling reads; a publication or terminal completion signal causes one authoritative reconciliation and the watch ends when the appearance is current, terminal, or no longer mounted.
 
 ## Slice 9 — Staging proof
 
