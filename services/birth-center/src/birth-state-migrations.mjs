@@ -1,6 +1,6 @@
 import { openBirthStateDatabase } from "./birth-state-storage.mjs";
 
-export const BIRTH_STATE_SCHEMA_VERSION = 1;
+export const BIRTH_STATE_SCHEMA_VERSION = 2;
 
 function schemaVersion(session) {
   const row = session.prepare("PRAGMA user_version").get();
@@ -131,6 +131,24 @@ function migrateToV1(session) {
   session.exec("PRAGMA user_version = 1");
 }
 
+
+function migrateToV2(session) {
+  session.exec(`
+    UPDATE genesis_development_dispositions
+    SET failure_code=CASE
+          WHEN failure_code IS NULL OR failure_code='ERROR'
+            THEN 'GENESIS_COMPILE_VALIDATION_ERROR'
+          ELSE failure_code
+        END,
+        failure_retryable=0
+    WHERE outcome IS NULL
+      AND failure_retryable IS NULL
+      AND instr(failure_message,'Genesis birth place ')=1
+      AND instr(failure_message,' is not mappable')>0;
+  `);
+  session.exec("PRAGMA user_version = 2");
+}
+
 export function migrateBirthState(storage) {
   const session = openBirthStateDatabase(storage, { storeName:"Birth Center state migration" });
   try {
@@ -144,6 +162,10 @@ export function migrateBirthState(storage) {
     if (fromVersion < 1) {
       session.transaction(() => migrateToV1(session));
       applied.push(1);
+    }
+    if (schemaVersion(session) < 2) {
+      session.transaction(() => migrateToV2(session));
+      applied.push(2);
     }
     const toVersion = schemaVersion(session);
     if (toVersion !== BIRTH_STATE_SCHEMA_VERSION) {
