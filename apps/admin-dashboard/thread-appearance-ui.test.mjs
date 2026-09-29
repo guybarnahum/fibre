@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { threadAppearanceState } from "./thread-appearance-ui.js";
+import { presentationIdentityMediaReady, threadAppearanceState } from "./thread-appearance-ui.js";
 
 const visualHealthy=[
   {code:"CANONICAL_VISUAL_SPEC",state:"healthy",authority:"embodiment",specificationDigest:"sha256:spec"},
@@ -173,4 +173,45 @@ test("Appearance refresh stops on terminal embodiment failure",()=>{
   assert.equal(state.appearanceBlocked,true,"terminal embodiment failure was not surfaced");
   assert.equal(state.appearancePending,false,"terminal embodiment failure would keep polling");
   assert.equal(state.appearanceReady,false,"failed embodiment was treated as current");
+});
+
+
+test("Presentation identity media must match the current canonical root",()=>{
+  const currentRoot="visual_identity_reference_new";
+  const base={
+    presentation:{
+      presentation:{ visualIdentity:{ referenceObjectRefs:[currentRoot] } },
+      media:{ assets:[] },
+    },
+  };
+
+  assert.equal(
+    presentationIdentityMediaReady(base,currentRoot),
+    false,
+    "canonical projection alone incorrectly refreshed the public portrait",
+  );
+
+  const oldPhoto=structuredClone(base);
+  oldPhoto.presentation.media.assets=[{
+    role:"official_id_photo",
+    status:"ready",
+    sourceReferences:["visual_identity_reference_old"],
+  }];
+  assert.equal(
+    presentationIdentityMediaReady(oldPhoto,currentRoot),
+    false,
+    "old FID photo was treated as current appearance",
+  );
+
+  const currentPhoto=structuredClone(base);
+  currentPhoto.presentation.media.assets=[{
+    role:"official_id_photo",
+    status:"ready",
+    sourceReferences:[currentRoot],
+  }];
+  assert.equal(
+    presentationIdentityMediaReady(currentPhoto,currentRoot),
+    true,
+    "current FID photo did not complete appearance convergence",
+  );
 });
