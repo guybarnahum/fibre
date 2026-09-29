@@ -174,14 +174,28 @@ function recordRow(record) {
       const badge = document.createElement("span"); badge.className = `status status-${record.status}`; badge.textContent = titleCase(record.status); td.append(badge);
     } else if (index === 5 && String(label).startsWith("thr_")) {
       td.className = className;
-      td.title = label;
+      const known = knownThreadLabel(label);
+      const birthplace = threadBirthplaceText(known);
+      const flag = countryFlag(known?.birthLocation?.countryCode);
+      const name = known?.name ?? content;
+      td.title = [known?.name, birthplace ? "Born " + birthplace : null, label].filter(Boolean).join(" · ");
+      const thread = document.createElement("span");
+      thread.className = "activity-thread-label";
       const button = document.createElement("button");
       button.type = "button";
       button.className = "thread-link";
-      button.textContent = content;
-      button.title = `Inspect ${label}`;
+      button.textContent = name;
+      button.title = [known?.name ? "Inspect " + known.name : "Inspect " + label, birthplace].filter(Boolean).join(" · ");
       button.addEventListener("click", (event) => { event.stopPropagation(); void showThread(label); });
-      td.append(button);
+      thread.append(button);
+      if (birthplace) {
+        const place = document.createElement("small");
+        place.className = "activity-thread-place";
+        place.textContent = [flag, birthplace].filter(Boolean).join(" ");
+        place.title = "Birthplace · " + birthplace;
+        thread.append(place);
+      }
+      td.append(thread);
     } else {
       td.className = className;
       td.textContent = content;
@@ -329,7 +343,13 @@ async function resolveThreadIdentity(threadId) {
     const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
-    return payload.identity ?? {};
+    const identity = payload.identity ?? {};
+    rememberThreadLabel(threadId, {
+      name:identity.displayName ?? identity.name,
+      birthLocation:identity.birthLocation,
+      birthPlace:identity.birthPlace,
+    });
+    return identity;
   })();
   threadIdentityCache.set(threadId, pending);
   try {
@@ -359,7 +379,10 @@ async function showThread(threadId) {
   text($("#dialog-eyebrow"), "Thread Observatory");
   text($("#dialog-title"), "Thread");
   const body = $("#dialog-body");
-  body.replaceChildren(detail("Thread ID", threadId, { wide:true, mono:true }), detail("Identity", "Loading…", { wide:true }));
+  const waiting = document.createElement("div");
+  waiting.className = "detail detail-wide";
+  setWaitingContent(waiting, "Loading identity");
+  body.replaceChildren(detail("Thread ID", threadId, { wide:true, mono:true }), waiting);
   if (!dialog.open) dialog.showModal();
   try {
     const identity = await resolveThreadIdentity(threadId);
