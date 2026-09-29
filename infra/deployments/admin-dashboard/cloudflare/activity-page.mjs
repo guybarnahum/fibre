@@ -36,17 +36,23 @@ export function parseAdminActivityPage(url) {
   if (!DIRECTIONS.has(direction)) throw new TypeError("unsupported activity page direction");
   if (!EDGES.has(edge)) throw new TypeError("unsupported activity page edge");
   const rawCursor = url.searchParams.get("cursor");
+  const rawAfter = url.searchParams.get("after");
   if (edge === "last" && rawCursor !== null) throw new TypeError("last page does not accept a cursor");
+  if (rawAfter !== null && (edge !== "first" || direction !== "next" || rawCursor !== null)) {
+    throw new TypeError("activity delta requires the first forward page");
+  }
   const cursor = decodeCursor(rawCursor);
+  const after = decodeCursor(rawAfter);
   if (direction === "prev" && cursor === null) throw new TypeError("previous activity page requires a cursor");
   const scopedCausal = mode === "causal" && SCOPED_CAUSAL_KINDS.has(kind);
-  const includeTotal = edge === "last" || url.searchParams.get("count") !== "0";
+  const includeTotal = after === null && (edge === "last" || url.searchParams.get("count") !== "0");
   return Object.freeze({
     mode,
     size:scopedCausal ? SCOPED_CAUSAL_SIZE : PAGE_SIZE,
     direction,
     edge,
     cursor,
+    after,
     includeTotal,
   });
 }
@@ -80,7 +86,14 @@ export function buildAdminActivityPageSql({ environment, query, page }) {
   const reverse = page.edge === "last" || page.direction === "prev";
   const scanAscending = reverse ? !logicalAscending : logicalAscending;
 
-  if (page.cursor) {
+  if (page.after) {
+    clauses.push(cursorClause(">"));
+    bindings.push(
+      page.after.occurredAt,
+      page.after.occurredAt, page.after.recordedAt,
+      page.after.occurredAt, page.after.recordedAt, page.after.activityId,
+    );
+  } else if (page.cursor) {
     const op = scanAscending ? ">" : "<";
     clauses.push(cursorClause(op));
     bindings.push(
@@ -146,8 +159,11 @@ export async function queryAdminActivityPage(env, environment, query, page) {
   const hasPrev = page.edge === "last" ? total > records.length : page.direction === "prev" ? extra : cameFromCursor;
   const hasNext = page.edge === "last" ? false : page.direction === "prev" ? cameFromCursor : extra;
 
+  const chronological = ["request","genesis","thread"].includes(query.kind);
+  const head = records.length === 0 ? null : chronological ? records.at(-1) : records[0];
   return Object.freeze({
     records:Object.freeze(records),
+    headCursor:head === null ? null : encodeCursor(head),
     prevCursor:hasPrev && records.length ? encodeCursor(records[0]) : null,
     nextCursor:hasNext && records.length ? encodeCursor(records.at(-1)) : null,
     total,
