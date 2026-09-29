@@ -209,3 +209,41 @@ test("Access claims require expected audience, issuer, and live expiry", () => {
   assert.equal(validateAccessClaims({ ...common, aud: "other" }, { audience: "aud_1", issuer: "https://fibre.cloudflareaccess.com", nowSeconds: now }), false);
   assert.equal(validateAccessClaims({ ...common, exp: now - 1 }, { audience: "aud_1", issuer: "https://fibre.cloudflareaccess.com", nowSeconds: now }), false);
 });
+
+
+test("Activity page API preserves the live head cursor", async () => {
+  const row = activity();
+  const d1 = {
+    prepare(sql) {
+      return {
+        bind() {
+          return {
+            async all() {
+              if (sql.startsWith("SELECT admin FROM fibre_admin_entitlements")) {
+                return { results:[{ admin:1 }] };
+              }
+              if (sql.startsWith("SELECT COUNT")) return { results:[{ total:1 }] };
+              return { results:[{
+                activity_id:row.activityId,
+                occurred_at:row.occurredAt,
+                recorded_at:row.recordedAt,
+                record_json:JSON.stringify(row),
+              }] };
+            },
+          };
+        },
+      };
+    },
+  };
+  const worker = createAdminDashboardWorker({
+    authenticate:async () => ({ email:"operator@example.com" }),
+  });
+  const response = await worker.fetch(
+    new Request("https://admin.insidefibre.com/api/activity/page?kind=recent&mode=raw"),
+    { FIBRE_ENVIRONMENT:"staging", ACTIVITY_LOG:d1 },
+  );
+  const payload = await response.json();
+
+  assert.equal(response.status,200);
+  assert.equal(typeof payload.headCursor,"string","Activity page hid the cursor required for live deltas");
+});
