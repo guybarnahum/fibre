@@ -30,6 +30,15 @@ function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
 }
 
+function terminalCompileValidationError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const classified = new Error(message, error instanceof Error ? { cause:error } : undefined);
+  classified.code = "GENESIS_COMPILE_VALIDATION_ERROR";
+  classified.retryable = false;
+  classified.activityCategory = "validation";
+  return classified;
+}
+
 function assertRuntime(runtime) {
   if (!runtime || typeof runtime !== "object" || typeof runtime.durableAdapter !== "function" || typeof runtime.submitBirth !== "function") {
     throw new TypeError("Genesis development service requires a Birth Center runtime");
@@ -297,16 +306,21 @@ export function createGenesisDevelopmentService({
             evidence: { digest: planDigest },
           }, async () => {
             const publicationAt = now();
-            let compiled = {
-              ...buildGenesisAdmissionPackage({
-                candidate,
-                slotPlan: plan,
-                cognition: currentCognition({ creativeAdapter: creativeBase, repairAdapter: repairBase }),
-                publicationAt,
-                randomIntFn,
-              }),
-              developmentPlanDigest: planDigest,
-            };
+            let compiled;
+            try {
+              compiled = {
+                ...buildGenesisAdmissionPackage({
+                  candidate,
+                  slotPlan: plan,
+                  cognition: currentCognition({ creativeAdapter: creativeBase, repairAdapter: repairBase }),
+                  publicationAt,
+                  randomIntFn,
+                }),
+                developmentPlanDigest: planDigest,
+              };
+            } catch (error) {
+              throw terminalCompileValidationError(error);
+            }
             compiled = birthRuntime.developmentRequestStore.saveAdmission(plan.requestId, compiled).admission;
             return compiled;
           });
