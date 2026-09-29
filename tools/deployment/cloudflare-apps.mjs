@@ -83,7 +83,7 @@ function normalizedAccessConfig(accessConfig) {
   return Object.freeze({ teamDomain: normalized, audience });
 }
 
-export function resolveCloudflareAppConfig(appId, baseConfig, { environment, resourceState, accessConfig = null } = {}) {
+export function resolveCloudflareAppConfig(appId, baseConfig, { environment, resourceState, accessConfig = null, operatorConfig = null } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (!CLOUDFLARE_APP_DEPLOY_ORDER.includes(appId)) throw new TypeError(`unsupported Cloudflare app ${appId}`);
   const config = structuredClone(baseConfig);
@@ -103,6 +103,7 @@ export function resolveCloudflareAppConfig(appId, baseConfig, { environment, res
     const access = normalizedAccessConfig(accessConfig);
     config.vars.FIBRE_ACCESS_TEAM_DOMAIN = access.teamDomain;
     config.vars.FIBRE_ACCESS_AUD = access.audience;
+    config.vars.GEONAMES_USERNAME = deployedValue("Admin GeoNames username", operatorConfig?.GEONAMES_USERNAME);
   }
 
   if (appId === "status-page") {
@@ -125,6 +126,7 @@ export function validateResolvedCloudflareAppConfig(appId, config, { environment
   if (appId === "admin-dashboard") {
     deployedValue("Admin Cloudflare Access team domain", config.vars?.FIBRE_ACCESS_TEAM_DOMAIN);
     deployedValue("Admin Cloudflare Access audience", config.vars?.FIBRE_ACCESS_AUD);
+    deployedValue("Admin GeoNames username", config.vars?.GEONAMES_USERNAME);
     const databases = (config?.d1_databases ?? []).filter((database) => database?.binding === "ACTIVITY_LOG");
     if (databases.length !== 1) throw new TypeError("admin-dashboard must resolve exactly one ACTIVITY_LOG D1 binding");
     deployedValue("Admin ACTIVITY_LOG database name", databases[0].database_name);
@@ -155,12 +157,12 @@ export async function loadCloudflareAppConfigs(repoRoot, appIds = CLOUDFLARE_APP
   return configs;
 }
 
-export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment, configs, resourceState, accessConfig, appIds = CLOUDFLARE_APP_DEPLOY_ORDER }) {
+export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment, configs, resourceState, accessConfig, operatorConfig, appIds = CLOUDFLARE_APP_DEPLOY_ORDER }) {
   const baseDir = resolve(repoRoot, ".fibre", "cloudflare", environment, "wrangler");
   await mkdir(baseDir, { recursive: true });
   const written = {};
   for (const appId of appIds) {
-    const resolvedConfig = resolveCloudflareAppConfig(appId, configs[appId], { environment, resourceState, accessConfig });
+    const resolvedConfig = resolveCloudflareAppConfig(appId, configs[appId], { environment, resourceState, accessConfig, operatorConfig });
     validateResolvedCloudflareAppConfig(appId, resolvedConfig, { environment });
     const path = resolve(baseDir, `${appId}.jsonc`);
     relocateWranglerMain(resolvedConfig, {
@@ -245,6 +247,7 @@ export async function deployCloudflareApps({
     configs,
     resourceState,
     accessConfig: access,
+    operatorConfig,
     appIds,
   });
   const deployments = [];
