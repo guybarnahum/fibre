@@ -132,7 +132,7 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
   assert.equal(result.deployments.find((item) => item.serviceId === "world-kernel").stateHealth.stateChecked, true);
   assert.equal(result.deployments.find((item) => item.serviceId === "fibre-identity-authority").stateHealth.stateChecked, true);
   const birthDeployment = result.deployments.find((item) => item.serviceId === "birth-center");
-  assert.equal(birthDeployment.migration.toVersion, 1);
+  assert.equal(birthDeployment.migration.toVersion, 2);
   assert.equal(birthDeployment.stateHealth.stateChecked, true);
   assert.equal(birthDeployment.runtimeAcceptance.status, 404);
   assert.equal(result.deployments.find((item) => item.serviceId === "asset-generator").stateHealth, null);
@@ -237,7 +237,7 @@ test("Wrangler client verifies secret names, shallow health and deep state healt
   })).stateChecked, true);
   assert.equal((await client.migrateBirthCenter({
     baseUrl:"https://birth.example",
-  })).toVersion, 1);
+  })).toVersion, 2);
   assert.equal((await client.checkBirthCenterRuntime({
     baseUrl:"https://birth.example",
   })).status, 404);
