@@ -148,6 +148,34 @@ test("one World check settles duplicate stale birth records as born", async () =
   assert.equal(result.born, 1);
 });
 
+
+test("terminal failure projects as failed with its durable error", () => {
+  const request = staleModern();
+  const runtime = {
+    birthRequestStore:{
+      recent:() => [],
+      isActive:() => false,
+    },
+    developmentRequestStore:{
+      recent:() => [developmentFor(request)],
+      getDisposition:() => ({
+        outcome:null,
+        failureCode:"GENESIS_COMPILE_VALIDATION_ERROR",
+        failureMessage:"Genesis birth place Tokyo, Japan is not mappable",
+        failureRetryable:false,
+      }),
+    },
+  };
+
+  const [birth] = pendingBirths(runtime, { nowMs:() => NOW });
+
+  assert.equal(birth.status, "failed", "terminal Genesis failure still looked active");
+  assert.equal(birth.stage, "failed", "terminal Genesis failure kept a developing stage");
+  assert.equal(birth.error, "Genesis birth place Tokyo, Japan is not mappable");
+  assert.equal(birth.failureCode, "GENESIS_COMPILE_VALIDATION_ERROR");
+  assert.equal(birth.classification, "failed_waiting_reconciliation");
+});
+
 test("terminal pre-admission failure becomes stillborn only after confirmed World absence", async () => {
   const request = staleModern({
     status:"failed",
