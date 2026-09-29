@@ -319,6 +319,7 @@ export function createGenesisDevelopmentService({
                 developmentPlanDigest: planDigest,
               };
             } catch (error) {
+              if (!(error instanceof TypeError)) throw error;
               throw terminalCompileValidationError(error);
             }
             compiled = birthRuntime.developmentRequestStore.saveAdmission(plan.requestId, compiled).admission;
