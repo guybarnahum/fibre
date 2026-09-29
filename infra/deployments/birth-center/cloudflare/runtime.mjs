@@ -483,7 +483,7 @@ export function createBirthCenterCloudflareRuntime({
     nowMs,
     randomIntFn,
   });
-  const birthApi = createBirthCenterWriteApi({ runtime, privateToken });
+  const publicationApi = createBirthCenterWriteApi({ runtime, privateToken });
 
   return Object.freeze({
     infraDriver,
@@ -497,7 +497,7 @@ export function createBirthCenterCloudflareRuntime({
     developmentApi: development.developmentApi,
     birthService: development.birthService,
     birthApi: development.birthApi,
-    birthApi,
+    publicationApi,
     reconcileStaleBirths:() => reconcileStaleBirths(runtime, {
       worldBinding,
       privateToken,
