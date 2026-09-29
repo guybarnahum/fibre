@@ -535,6 +535,7 @@ function renderPager(payload) {
 
 async function loadPage({ pushState = false, delta = false } = {}) {
   if (mode === "threads" || mode === "stillborn") return;
+  if (currentPayload === null) setWaitingContent($("#chain-summary"), "Loading Activity");
   setLoading(true);
   if (pushState) syncUrl();
   const previousPayload = currentPayload;
