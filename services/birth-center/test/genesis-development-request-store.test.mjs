@@ -191,7 +191,8 @@ test("historical terminal Genesis failures acquire explicit terminal evidence", 
     INSERT INTO genesis_development_dispositions VALUES
       ('old_pass_a',NULL,'GENESIS_PASS_A_VALIDATION_ERROR','Pass-A exhausted',NULL,'2026-09-25T00:00:00Z'),
       ('old_pass_b',NULL,'ERROR','Pass-B model output episodeRef ep_missing is not visible history',NULL,'2026-09-25T00:00:00Z'),
-      ('old_place',NULL,'ERROR','episode ep_1 observableAction narrates an explicit scene setting incompatible with authoritative placeRef plc_1 (school)',NULL,'2026-09-25T00:00:00Z');
+      ('old_place',NULL,'ERROR','episode ep_1 observableAction narrates an explicit scene setting incompatible with authoritative placeRef plc_1 (school)',NULL,'2026-09-25T00:00:00Z'),
+      ('old_birth_place',NULL,'ERROR','Genesis birth place Tokyo, Japan is not mappable',NULL,'2026-09-25T00:00:00Z');
   `);
   database.close();
 
@@ -199,12 +200,17 @@ test("historical terminal Genesis failures acquire explicit terminal evidence", 
   migrateBirthState(storage);
   const store = createGenesisDevelopmentRequestStore(storage);
 
-  for (const requestId of ["old_pass_a","old_pass_b","old_place"]) {
+  for (const requestId of ["old_pass_a","old_pass_b","old_place","old_birth_place"]) {
     assert.equal(
       store.getDisposition(requestId).failureRetryable,
       false,
       "terminal historical birth remained unresolved",
     );
   }
+  assert.equal(
+    store.getDisposition("old_birth_place").failureCode,
+    "GENESIS_COMPILE_VALIDATION_ERROR",
+    "historical compile failure kept an opaque error code",
+  );
   store.close();
 });
