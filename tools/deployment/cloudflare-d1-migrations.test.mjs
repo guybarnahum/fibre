@@ -37,6 +37,7 @@ test("D1 migration runner visibly applies missing migrations once and then skips
             { type:"index", name:"fibre_activity_genesis_idx" },
             { type:"index", name:"fibre_activity_thread_idx" },
             { type:"index", name:"fibre_activity_service_stage_idx" },
+            { type:"index", name:"fibre_activity_environment_time_idx" },
             { type:"trigger", name:"fibre_activity_thread_head_insert" },
           ] }]),
           stderr:"",
@@ -65,15 +66,16 @@ test("D1 migration runner visibly applies missing migrations once and then skips
     "0001_activity_log.sql",
     "0002_admin_entitlements.sql",
     "0003_activity_thread_heads.sql",
+    "0004_activity_recent_index.sql",
   ]);
-  assert.ok(printed.includes("D1 APPLY  ACTIVITY_LOG 0003_activity_thread_heads.sql"));
-  assert.ok(printed.includes("D1 READY  ACTIVITY_LOG -> fibre-activity-log-staging migrations=3"));
+  assert.ok(printed.includes("D1 APPLY  ACTIVITY_LOG 0004_activity_recent_index.sql"));
+  assert.ok(printed.includes("D1 READY  ACTIVITY_LOG -> fibre-activity-log-staging migrations=4"));
 
   files.length = 0;
   printed.length = 0;
   await ensureCloudflareD1Migrations(input);
   assert.deepEqual(files, [], "already-recorded migrations must not execute again");
-  assert.ok(printed.includes("D1 OK     ACTIVITY_LOG 0003_activity_thread_heads.sql"));
+  assert.ok(printed.includes("D1 OK     ACTIVITY_LOG 0004_activity_recent_index.sql"));
   assert.ok(printed.includes("D1 VERIFIED ACTIVITY_LOG -> fibre-activity-log-staging"));
 });
 
@@ -92,6 +94,6 @@ test("D1 migration dry-run is explicit without touching remote D1", async () => 
   });
 
   assert.equal(calls, 0);
-  assert.ok(printed.includes("D1 PLAN   ACTIVITY_LOG 0003_activity_thread_heads.sql"));
-  assert.ok(printed.includes("D1 DRY READY ACTIVITY_LOG -> fibre-activity-log-staging migrations=3"));
+  assert.ok(printed.includes("D1 PLAN   ACTIVITY_LOG 0004_activity_recent_index.sql"));
+  assert.ok(printed.includes("D1 DRY READY ACTIVITY_LOG -> fibre-activity-log-staging migrations=4"));
 });
