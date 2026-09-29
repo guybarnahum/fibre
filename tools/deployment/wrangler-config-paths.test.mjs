@@ -97,6 +97,7 @@ test("generated Admin and Status Wrangler configs retain source Worker entry poi
         teamDomain: "https://fibre.cloudflareaccess.com",
         audience: "audience-tag",
       },
+      operatorConfig:{ GEONAMES_USERNAME:"fibre-test" },
     });
 
     for (const [appId, generatedConfigPath] of Object.entries(written)) {
