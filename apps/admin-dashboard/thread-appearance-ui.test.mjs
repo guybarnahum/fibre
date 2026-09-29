@@ -171,7 +171,7 @@ test("Appearance refresh stops on terminal embodiment failure",()=>{
     ],
   });
   assert.equal(state.appearanceBlocked,true,"terminal embodiment failure was not surfaced");
-  assert.equal(state.appearancePending,false,"terminal embodiment failure would keep polling");
+  assert.equal(state.appearancePending,false,"terminal embodiment failure remained pending");
   assert.equal(state.appearanceReady,false,"failed embodiment was treated as current");
 });
 
