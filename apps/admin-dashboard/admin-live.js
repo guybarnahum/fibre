@@ -50,14 +50,15 @@ function ensureSocket() {
   if (liveKeys.size === 0 || document.hidden) return;
   if (socket && [WebSocket.CONNECTING, WebSocket.OPEN].includes(socket.readyState)) return;
 
-  socket = new WebSocket(socketUrl());
-  socket.addEventListener("message", handleMessage);
-  socket.addEventListener("close", () => {
-    socket = null;
+  const opened = new WebSocket(socketUrl());
+  socket = opened;
+  opened.addEventListener("message", handleMessage);
+  opened.addEventListener("close", () => {
+    if (socket === opened) socket = null;
     reconnectSoon();
   });
-  socket.addEventListener("error", () => {
-    try { socket?.close(); } catch {}
+  opened.addEventListener("error", () => {
+    try { opened.close(); } catch {}
   });
 }
 
