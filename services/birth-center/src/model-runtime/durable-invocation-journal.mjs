@@ -76,26 +76,11 @@ function normalizeStoredRecord(candidate) {
   return structuredClone(candidate);
 }
 
-function migrate(session) {
-  session.exec(`
-    CREATE TABLE IF NOT EXISTS birth_model_invocations (
-      client_request_id TEXT PRIMARY KEY,
-      request_digest TEXT NOT NULL,
-      record_json TEXT NOT NULL,
-      recorded_at TEXT NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS birth_model_invocations_request_digest_idx
-      ON birth_model_invocations(request_digest);
-  `);
-}
-
 export function createStateModelInvocationJournal(storage, {
   now = () => new Date().toISOString(),
 } = {}) {
   if (typeof now !== "function") throw new TypeError("durable invocation journal now must be a function");
   const session = openBirthStateDatabase(storage, { storeName: "Birth Center durable invocation journal" });
-  migrate(session);
-
   const selectRecord = session.prepare(`
     SELECT record_json
     FROM birth_model_invocations
