@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
+import { resolveGeoNamesPlace } from "#integrations/geography/geonames.mjs";
 import { genesisSexForThread } from "#services/birth-center/src/genesis-sex.mjs";
 import {
   GENESIS_DEVELOPMENT_REQUEST_VERSION,
@@ -15,6 +16,7 @@ import {
   selectBirthSlot,
 } from "./birth-material.mjs";
 import {
+  normalizeGenesisWorldSelector,
   parseGenesisArgs,
   resolveGenesisWorldSelection,
   selectDefaultBirthplace,
@@ -49,7 +51,7 @@ function serviceBase(record, serviceId) {
   return required(`${serviceId} baseUrl`, matches[0].baseUrl).replace(/\/$/u, "");
 }
 
-function birthRequest({ requestId, requestedAt, cohort, selection, sexSelection }) {
+function birthRequest({ requestId, requestedAt, cohort, selection, sexSelection, canonicalPlace = null }) {
   const genome = fixture(selection.genomePath);
   const composedIdentity = composeBirthSubjectIdentity({ requestId, material: selection.material });
   const subjectIdentity = Object.freeze({
@@ -57,8 +59,9 @@ function birthRequest({ requestId, requestedAt, cohort, selection, sexSelection 
     ...(sexSelection === null ? {} : { sex: sexSelection }),
     ...(selection.selector === null ? {} : {
       place: Object.freeze({
-        country: selection.selector.country,
-        city: selection.selector.city,
+        country: canonicalPlace?.country ?? selection.selector.country,
+        city: canonicalPlace?.city ?? selection.selector.city,
+        ...(canonicalPlace === null ? {} : { lat:canonicalPlace.lat, long:canonicalPlace.long }),
       }),
     }),
     ...(selection.heritage === null ? {} : { heritage: selection.heritage.display }),
@@ -230,8 +233,18 @@ async function main() {
     slotCount: cohort.slots.length,
     explicitSlot,
   });
+  const canonicalPlace = options.world === null
+    ? null
+    : await resolveGeoNamesPlace({
+        country:options.world.country,
+        city:options.world.city,
+        username:required("GEONAMES_USERNAME", process.env.GEONAMES_USERNAME),
+      });
+  const selector = canonicalPlace === null
+    ? selectDefaultBirthplace(requestId)
+    : normalizeGenesisWorldSelector(`${canonicalPlace.country}/${canonicalPlace.city}`);
   const selection = await resolveGenesisWorldSelection({
-    selector:options.world ?? selectDefaultBirthplace(requestId),
+    selector,
     heritage: options.heritage,
     forceNewWorld: options.forceNewWorld,
     cohort,
@@ -245,6 +258,7 @@ async function main() {
     cohort,
     selection,
     sexSelection: options.sex,
+    canonicalPlace,
   });
   const plan = buildGenesisDevelopmentPlan(body);
   if (existing !== null && existing.inspection.requestDigest !== plan.requestDigest) {
