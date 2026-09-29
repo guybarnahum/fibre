@@ -80,12 +80,20 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
       calls.push(`health:${serviceId}:${baseUrl}`);
       return { ok:true, service:serviceId, stateChecked:false };
     },
+    async migrateBirthCenter({ baseUrl }) {
+      calls.push(`migrate:birth-center:${baseUrl}`);
+      return { fromVersion:0, toVersion:1, applied:[1] };
+    },
     async checkStateHealth({ serviceId, baseUrl }) {
       calls.push(`state-health:${serviceId}:${baseUrl}`);
       if (serviceId === "birth-center" && birthStateAttempts++ === 0) {
         throw new Error("Durable Object still initializing");
       }
       return { ok:true, service:serviceId, stateChecked:true };
+    },
+    async checkBirthCenterRuntime({ baseUrl }) {
+      calls.push(`runtime-health:birth-center:${baseUrl}`);
+      return { ok:true, route:"development-inspection", status:404 };
     },
     async checkPresentationAcceptance({ baseUrl }) { calls.push(`accept:${baseUrl}`); return { threads:[] }; },
     async checkViewer({ origin }) { calls.push(`viewer:${origin}`); return { ok:true }; },
@@ -123,8 +131,19 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
   ]);
   assert.equal(result.deployments.find((item) => item.serviceId === "world-kernel").stateHealth.stateChecked, true);
   assert.equal(result.deployments.find((item) => item.serviceId === "fibre-identity-authority").stateHealth.stateChecked, true);
-  assert.equal(result.deployments.find((item) => item.serviceId === "birth-center").stateHealth.stateChecked, true);
+  const birthDeployment = result.deployments.find((item) => item.serviceId === "birth-center");
+  assert.equal(birthDeployment.migration.toVersion, 1);
+  assert.equal(birthDeployment.stateHealth.stateChecked, true);
+  assert.equal(birthDeployment.runtimeAcceptance.status, 404);
   assert.equal(result.deployments.find((item) => item.serviceId === "asset-generator").stateHealth, null);
+  assert.ok(
+    calls.indexOf("migrate:birth-center:https://birth-center.account.workers.dev")
+      < calls.indexOf("state-health:birth-center:https://birth-center.account.workers.dev"),
+  );
+  assert.ok(
+    calls.indexOf("state-health:birth-center:https://birth-center.account.workers.dev")
+      < calls.indexOf("runtime-health:birth-center:https://birth-center.account.workers.dev"),
+  );
   assert.equal(calls.at(-2), "accept:https://api.staging.insidefibre.com");
   assert.equal(calls.at(-1), "viewer:https://staging.insidefibre.com");
 });
@@ -160,16 +179,46 @@ test("Wrangler client verifies secret names, shallow health and deep state healt
     if (args[0] === "deploy") return { stdout:"https://worker.account.workers.dev", stderr:"", exitCode:0 };
     throw new Error(`unexpected command ${args.join(" ")}`);
   };
-  const fetchImpl = async (url) => ({
-    ok:true,
-    status:200,
-    async json() {
-      if (String(url).endsWith("/internal/health/state")) return { ok:true, service:"world-kernel", stateChecked:true };
-      if (String(url).endsWith("/healthz")) return { ok:true, service:"world-kernel", stateChecked:false };
-      return { threads:[] };
-    },
+  const fetchImpl = async (url, options = {}) => {
+    const path = String(url);
+    if (path.endsWith("/internal/migrate")) {
+      assert.equal(options.method, "POST");
+      assert.equal(options.headers["x-fibre-private-token"], "deployment-private-token");
+      return {
+        ok:true,
+        status:200,
+        async json() {
+          return {
+            ok:true,
+            service:"birth-center",
+            migration:{ fromVersion:0, toVersion:1, applied:[1] },
+          };
+        },
+      };
+    }
+    if (path.endsWith("/internal/births/develop/deployment-runtime-probe/inspection")) {
+      return {
+        ok:false,
+        status:404,
+        async json() { return { error:{ code:"DEVELOPMENT_NOT_FOUND" } }; },
+      };
+    }
+    return {
+      ok:true,
+      status:200,
+      async json() {
+        if (path.endsWith("/internal/health/state")) return { ok:true, service:"world-kernel", stateChecked:true };
+        if (path.endsWith("/healthz")) return { ok:true, service:"world-kernel", stateChecked:false };
+        return { threads:[] };
+      },
+    };
+  };
+  const client = createWranglerDeploymentClient({
+    runner,
+    cwd:"/repo",
+    fetchImpl,
+    privateToken:"deployment-private-token",
   });
-  const client = createWranglerDeploymentClient({ runner, cwd:"/repo", fetchImpl });
   await client.assertAuthenticated();
   assert.deepEqual(await client.listSecretNames("fibre-world-kernel-staging"), new Set(["FIBRE_PRIVATE_TOKEN"]));
   await client.deployService({ configPath:"/repo/.fibre/world.jsonc" });
@@ -186,6 +235,12 @@ test("Wrangler client verifies secret names, shallow health and deep state healt
     serviceId:"world-kernel",
     baseUrl:"https://world.example",
   })).stateChecked, true);
+  assert.equal((await client.migrateBirthCenter({
+    baseUrl:"https://birth.example",
+  })).toVersion, 1);
+  assert.equal((await client.checkBirthCenterRuntime({
+    baseUrl:"https://birth.example",
+  })).status, 404);
   assert.deepEqual(
     missingRequiredSecretNames(["FIBRE_PRIVATE_TOKEN", "OTHER"], new Set(["FIBRE_PRIVATE_TOKEN"])),
     ["OTHER"],
