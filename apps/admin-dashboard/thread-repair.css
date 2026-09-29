@@ -69,6 +69,13 @@
   to { transform:rotate(360deg); }
 }
 .fa-action-label { line-height:1; }
+.fa-waiting {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  color:var(--muted);
+}
+.fa-waiting .fa-action-icon { color:currentColor; }
 .thread-repair-message,
 .thread-repair-note {
   margin:9px 0 0;
@@ -256,10 +263,10 @@
   animation:thread-birth-pulse 1.45s ease-in-out infinite;
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.2));
 }
-.thread-birth-stage-marker.stage-genesis { fill:#7c3aed; }
-.thread-birth-stage-marker.stage-developing { fill:#2563eb; }
-.thread-birth-stage-marker.stage-emerging { fill:#d97706; }
-.thread-birth-stage-marker.stage-in-world { fill:#059669; }
+.thread-birth-stage-marker.stage-genesis { fill:color-mix(in srgb,var(--accent) 32%,var(--surface)); }
+.thread-birth-stage-marker.stage-developing { fill:color-mix(in srgb,var(--accent) 50%,var(--surface)); }
+.thread-birth-stage-marker.stage-emerging { fill:color-mix(in srgb,var(--accent) 72%,var(--surface)); }
+.thread-birth-stage-marker.stage-in-world { fill:var(--accent); }
 @keyframes thread-birth-pulse {
   0%,100% { opacity:.72; transform:scale(.84); }
   50% { opacity:1; transform:scale(1.16); }
@@ -288,10 +295,15 @@
   flex:0 0 7px;
   border-radius:50%;
 }
-.thread-birth-stage-legend .stage-genesis::before { background:#7c3aed; }
-.thread-birth-stage-legend .stage-developing::before { background:#2563eb; }
-.thread-birth-stage-legend .stage-emerging::before { background:#d97706; }
-.thread-birth-stage-legend .stage-in-world::before { background:#059669; }
+.thread-birth-stage-legend span::before { animation:thread-birth-legend-pulse 1.45s ease-in-out infinite; }
+.thread-birth-stage-legend .stage-genesis::before { background:color-mix(in srgb,var(--accent) 32%,var(--surface)); }
+.thread-birth-stage-legend .stage-developing::before { background:color-mix(in srgb,var(--accent) 50%,var(--surface)); animation-delay:-180ms; }
+.thread-birth-stage-legend .stage-emerging::before { background:color-mix(in srgb,var(--accent) 72%,var(--surface)); animation-delay:-360ms; }
+.thread-birth-stage-legend .stage-in-world::before { background:var(--accent); animation-delay:-540ms; }
+@keyframes thread-birth-legend-pulse {
+  0%,100% { opacity:.58; transform:scale(.82); }
+  50% { opacity:1; transform:scale(1.18); }
+}
 .thread-birth-options-row {
   display:grid;
   grid-template-columns:minmax(0,1fr) minmax(0,1fr);
@@ -500,6 +512,9 @@
   100% { transform:scale(1.65); opacity:0; }
 }
 @media (prefers-reduced-motion:reduce) {
+  .thread-birth-stage-marker,
+  .thread-birth-stage-legend span::before,
+  .fa-action-icon-spin { animation:none; }
   .thread-world-count-marker .thread-world-active-halo {
     animation:none;
     opacity:.35;
