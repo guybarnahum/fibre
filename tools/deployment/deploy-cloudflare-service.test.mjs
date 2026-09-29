@@ -93,3 +93,46 @@ test("service deploy uses the resolved environment config without provisioning",
     rmSync(repoRoot, { recursive: true, force: true });
   }
 });
+
+
+test("targeted Birth Center deploy runs state migration and runtime acceptance after Worker deploy", async () => {
+  const repoRoot = mkdtempSync(join(tmpdir(), "fibre-birth-service-deploy-"));
+  const calls = [];
+
+  try {
+    const birthConfig = resolvedConfig("fibre-birth-center-staging");
+    birthConfig.main = "../../../../infra/deployments/birth-center/cloudflare/worker.mjs";
+    birthConfig.d1_databases = [];
+
+    const result = await deployCloudflareService({
+      repoRoot,
+      environment:"staging",
+      service:"birth-center",
+      async resolveSource() { return SHA; },
+      async readFileImpl() { return JSON.stringify(birthConfig); },
+      async writeFileImpl() {},
+      async ensureD1MigrationsImpl() { calls.push("d1"); },
+      async runner(args) {
+        calls.push(`wrangler:${args[0]}`);
+        return { stdout:"Published https://fibre-birth-center-staging.account.workers.dev", stderr:"" };
+      },
+      async acceptBirthCenterImpl({ deploymentOutput }) {
+        calls.push("birth-migrate-and-accept");
+        assert.match(deploymentOutput, /fibre-birth-center-staging/u);
+        return {
+          baseUrl:"https://fibre-birth-center-staging.account.workers.dev",
+          migration:{ fromVersion:0, toVersion:1, applied:[1] },
+          stateHealth:{ ok:true, service:"birth-center", stateChecked:true },
+          runtimeAcceptance:{ ok:true, status:404 },
+        };
+      },
+      print() {},
+    });
+
+    assert.deepEqual(calls, ["d1","wrangler:deploy","birth-migrate-and-accept"]);
+    assert.equal(result.birthCenterAcceptance.migration.toVersion, 1);
+    assert.equal(result.birthCenterAcceptance.runtimeAcceptance.status, 404);
+  } finally {
+    rmSync(repoRoot, { recursive:true, force:true });
+  }
+});
