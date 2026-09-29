@@ -1146,6 +1146,12 @@ function renderPendingBirths(births) {
         stale.textContent = `${human(birth.classification ?? "stale")} · ${birth.staleReason ?? "Birth has stopped making progress."}`;
         copy.append(stale);
       }
+      if (birth.error) {
+        const failure = document.createElement("span");
+        failure.className = "thread-birth-stale-reason";
+        failure.textContent = [birth.failureCode, birth.error].filter(Boolean).join(" · ");
+        copy.append(failure);
+      }
       if (birth.threadId) {
         const id = threadIdCopyButton(birth.threadId);
         id.classList.add("thread-birth-thread-id");
