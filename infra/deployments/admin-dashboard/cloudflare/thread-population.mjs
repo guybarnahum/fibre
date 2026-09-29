@@ -291,6 +291,15 @@ async function readActivityHeads(activityLog, environment) {
   }
 }
 
+async function readOptionalStillborn(readStillborn) {
+  try {
+    const births = await readStillborn();
+    return Array.isArray(births) ? births : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function readAdminThreadPopulation({
   activityLog,
   environment,
@@ -304,10 +313,9 @@ export async function readAdminThreadPopulation({
   const [registryEntries, activity, settledBirths] = await Promise.all([
     readRegistry(MAX_ADMITTED_THREADS),
     readActivityHeads(activityLog, environment),
-    readStillborn(),
+    readOptionalStillborn(readStillborn),
   ]);
   if (!Array.isArray(registryEntries)) throw new Error("World Thread Registry returned an invalid population");
-  if (!Array.isArray(settledBirths)) throw new Error("Birth Center stillborn response is invalid");
 
   const activityResult = activity.result;
   logD1Cost({
