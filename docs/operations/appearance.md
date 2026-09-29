@@ -151,7 +151,7 @@ Current coarse birthplace defaults are temporary migration assistance while that
 
 Generic **Fix** never changes appearance authority.
 
-Admin submits one authoritative migration or re-render action and does not poll in the background. **Refresh appearance** is the explicit operator watch: it checks immediately, shows an animated progress indicator while the canonical appearance is still pending, then checks every 20 seconds until the new root is published. At that point it stops and refreshes the Thread view once. Closing the Thread view stops the watch; there is never more than one refresh loop per Appearance section.
+Admin submits one authoritative migration or re-render action and does not poll in the background. **Refresh appearance** performs one explicit authoritative check and shows animated progress while publication is pending. The pending Appearance surface listens through the single Admin live invalidation socket; when Thread Presentation settles relevant media publication, Admin performs one authoritative reconciliation read and redraws the surface. Invalidations carry no Thread data and are not authority. Reconnection causes one reconciliation, so a missed hint never requires a durable notification log.
 
 ## Staging workflow
 
