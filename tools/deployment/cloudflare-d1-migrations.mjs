@@ -8,6 +8,7 @@ export const D1_MIGRATIONS_BY_BINDING = Object.freeze({
     "infra/providers/cloudflare/d1/0001_activity_log.sql",
     "infra/providers/cloudflare/d1/0002_admin_entitlements.sql",
     "infra/providers/cloudflare/d1/0003_activity_thread_heads.sql",
+    "infra/providers/cloudflare/d1/0004_activity_recent_index.sql",
   ]),
 });
 
@@ -23,6 +24,7 @@ const D1_REQUIRED_OBJECTS_BY_BINDING = Object.freeze({
     Object.freeze({ type:"index", name:"fibre_activity_genesis_idx" }),
     Object.freeze({ type:"index", name:"fibre_activity_thread_idx" }),
     Object.freeze({ type:"index", name:"fibre_activity_service_stage_idx" }),
+    Object.freeze({ type:"index", name:"fibre_activity_environment_time_idx" }),
     Object.freeze({ type:"trigger", name:"fibre_activity_thread_head_insert" }),
   ]),
 });
