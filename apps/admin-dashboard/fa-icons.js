@@ -64,6 +64,22 @@ export function faIcon(name, className = "fa-action-icon") {
   return svg;
 }
 
+export function waitingIndicator(label, className = "fa-waiting") {
+  const host = document.createElement("span");
+  host.className = className;
+  const icon = faIcon("rotate");
+  icon.classList.add("fa-action-icon-spin");
+  const text = document.createElement("span");
+  text.textContent = label;
+  host.append(icon, text);
+  return host;
+}
+
+export function setWaitingContent(host, label) {
+  host.replaceChildren(waitingIndicator(label));
+  return host;
+}
+
 export function iconForIdentityAction(actionId) {
   if (["admit_name","admit_birth_date"].includes(actionId)) return "arrow-up-from-bracket";
   if (["set_name","change_name"].includes(actionId)) return "signature";
