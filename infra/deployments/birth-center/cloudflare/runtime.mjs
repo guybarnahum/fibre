@@ -362,6 +362,20 @@ export async function reconcileStaleBirths(runtime, {
   });
 }
 
+export async function publishQueuedBirths(cloud) {
+  if (!cloud?.runtime || typeof cloud.runtime.handleWake !== "function") {
+    throw new TypeError("Birth Center cloud runtime must expose runtime.handleWake()");
+  }
+  if (typeof cloud.ensureBirthStatusScheduled !== "function") {
+    throw new TypeError("Birth Center cloud runtime must expose ensureBirthStatusScheduled()");
+  }
+  try {
+    return await cloud.runtime.handleWake();
+  } finally {
+    await cloud.ensureBirthStatusScheduled();
+  }
+}
+
 async function ensureBirthStatusScheduled(runtime, {
   nowMs,
   reconcileStaleNow = false,
