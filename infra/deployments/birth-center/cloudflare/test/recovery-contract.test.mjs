@@ -216,7 +216,7 @@ test("Cloudflare Birth Center survives lost World acknowledgement and converges 
     now,
     nowMs,
   });
-  const acceptedResponse = await first.birthApi.fetch(birthRequest(birthBundle()));
+  const acceptedResponse = await first.publicationApi.fetch(birthRequest(birthBundle()));
   assert.equal(acceptedResponse.status, 202);
   assert.equal(first.runtime.status().pendingBirthCount, 1);
   assert.equal(await first.infraDriver.scheduler.get("birth"), 10_000);
@@ -259,7 +259,7 @@ test("Cloudflare Birth Center survives lost World acknowledgement and converges 
   assert.equal(recovered.runtime.provisionalBirthStore.get(GENESIS_ID).status, "published");
   assert.equal(await recovered.infraDriver.scheduler.get("birth"), null);
 
-  const replayResponse = await recovered.birthApi.fetch(birthRequest(birthBundle()));
+  const replayResponse = await recovered.publicationApi.fetch(birthRequest(birthBundle()));
   assert.equal(replayResponse.status, 200);
   const replayBody = await replayResponse.json();
   assert.equal(replayBody.accepted.idempotent, true);
