@@ -94,24 +94,28 @@ export function watchAdminLive(key, callback, { active = () => true, reconcileOn
   };
 }
 
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) {
-    if (reconnectTimer !== null) {
-      window.clearTimeout(reconnectTimer);
-      reconnectTimer = null;
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      if (socket) {
+        try { socket.close(1000, "Admin hidden"); } catch {}
+        socket = null;
+      }
+      return;
     }
+    ensureSocket();
+  });
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", () => {
     if (socket) {
-      try { socket.close(1000, "Admin hidden"); } catch {}
+      try { socket.close(1000, "Admin page closed"); } catch {}
       socket = null;
     }
-    return;
-  }
-  ensureSocket();
-});
-
-window.addEventListener("pagehide", () => {
-  if (socket) {
-    try { socket.close(1000, "Admin page closed"); } catch {}
-    socket = null;
-  }
-});
+  });
+}
