@@ -1,3 +1,5 @@
+import { setWaitingContent } from "./fa-icons.js";
+
 function element(tag, className = null, text = null) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -223,7 +225,7 @@ export function openThreadActionDialog({
     onBusyChange?.(true);
     status.hidden = false;
     status.className = "thread-action-status working";
-    status.textContent = `${label} in progress…`;
+    setWaitingContent(status, `${label} in progress`);
     progress.hidden = false;
 
     try {
