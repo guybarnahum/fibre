@@ -7,6 +7,7 @@ import { createLocalInfraDriver } from "#infra/providers/local";
 import { createNodeServiceHandler } from "#infra/providers/local/service";
 import { createService } from "#infra/service";
 import { createBirthCenterWriteApi } from "#services/birth-center/src/birth-write-api.mjs";
+import { migrateBirthState } from "#services/birth-center/src/birth-state-migrations.mjs";
 import { createGenesisDevelopmentApi } from "#services/birth-center/src/genesis-development-api.mjs";
 import { createGenesisDevelopmentService } from "#services/birth-center/src/genesis-development-service.mjs";
 import {
@@ -154,6 +155,7 @@ export async function startBirthCenterFromEnvironment(
     },
   });
   const birthStorage = Object.freeze({ infraDriver, stateScopeId: BIRTH_SCOPE_ID });
+  migrateBirthState(birthStorage);
   runtime = createBirthCenterRuntime({
     storage: birthStorage,
     worldPublisher,
