@@ -1,6 +1,7 @@
 const TOKEN_ENCODER = new TextEncoder();
 const ROUTE = "/internal/births/initiate";
 const PENDING_ROUTE = "/internal/births/pending";
+const STILLBORN_ROUTE = "/internal/births/stillborn";
 const PLACES_ROUTE = "/internal/births/places";
 
 function constantTimeEqual(left, right) {
@@ -58,6 +59,7 @@ function exactInput(value) {
 export function createBirthInitiationApi({
   service,
   pendingBirths = null,
+  stillbornBirths = null,
   birthplaces = null,
   requestStore = null,
   privateToken,
@@ -67,6 +69,9 @@ export function createBirthInitiationApi({
   }
   if (pendingBirths !== null && typeof pendingBirths !== "function") {
     throw new TypeError("birth API pendingBirths must be a function or null");
+  }
+  if (stillbornBirths !== null && typeof stillbornBirths !== "function") {
+    throw new TypeError("birth API stillbornBirths must be a function or null");
   }
   if (birthplaces !== null && !Array.isArray(birthplaces)) {
     throw new TypeError("birth API birthplaces must be an array or null");
@@ -87,7 +92,7 @@ export function createBirthInitiationApi({
         throw new TypeError("birth API defer must be a function or null");
       }
       const url = new URL(request.url);
-      if (![ROUTE,PENDING_ROUTE,PLACES_ROUTE].includes(url.pathname)) return null;
+      if (![ROUTE,PENDING_ROUTE,STILLBORN_ROUTE,PLACES_ROUTE].includes(url.pathname)) return null;
       if (url.search !== "") return json(400, { error:"query_not_supported" });
       if (!constantTimeEqual(request.headers.get("x-fibre-private-token"), privateToken)) {
         return json(403, { error:"private_token_required" });
@@ -105,6 +110,18 @@ export function createBirthInitiationApi({
         } catch (error) {
           return json(500, {
             error:"pending_births_failed",
+            detail:error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+      if (url.pathname === STILLBORN_ROUTE) {
+        if (request.method !== "GET") return json(405, { error:"method_not_allowed" });
+        if (stillbornBirths === null) return json(503, { error:"stillborn_births_not_configured" });
+        try {
+          return json(200, { ok:true, births:await stillbornBirths() });
+        } catch (error) {
+          return json(500, {
+            error:"stillborn_births_failed",
             detail:error instanceof Error ? error.message : String(error),
           });
         }
