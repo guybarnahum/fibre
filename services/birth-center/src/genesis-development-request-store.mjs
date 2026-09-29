@@ -68,8 +68,14 @@ function migrate(session) {
       AND failure_retryable IS NULL
       AND (
         failure_code='GENESIS_PASS_A_VALIDATION_ERROR'
-        OR failure_message LIKE 'Pass-B model output episodeRef % is not visible history'
-        OR failure_message LIKE '%observableAction narrates an explicit scene setting incompatible with authoritative placeRef%'
+        OR (
+          instr(failure_message,'Pass-B model output episodeRef ')=1
+          AND instr(failure_message,' is not visible history')>0
+        )
+        OR instr(
+          failure_message,
+          'observableAction narrates an explicit scene setting incompatible with authoritative placeRef'
+        )>0
       );
 
     -- Four retained staging attempts predate durable retryability capture. Their
