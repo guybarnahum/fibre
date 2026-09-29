@@ -1,8 +1,9 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { decorateActionButton, setWaitingContent } from "./fa-icons.js";
+import { watchAdminLive } from "./admin-live.js";
+import { invalidateView, threadViewKey } from "./view-invalidation.js";
 
 const PHYSICAL_MIGRATION_ID="physical_embodiment_v2";
-const REFRESH_POLL_MS=20_000;
 function el(tag,className=null,text=null){
   const node=document.createElement(tag);
   if(className)node.className=className;
@@ -128,15 +129,6 @@ async function postRepair(threadId,body){
   return payload;
 }
 
-function delay(ms){
-  return new Promise(resolve=>window.setTimeout(resolve,ms));
-}
-
-function announceThreadUpdated(threadId){
-  window.dispatchEvent(new CustomEvent("fibre:thread-updated",{
-    detail:{threadId,change:"appearance_ready"},
-  }));
-}
 
 function actionButton(label,onClick,{primary=false,tooltip=label,appearanceProgress=false}={}){
   const button=el("button",(primary?"primary":"secondary")+" thread-repair-button");
@@ -201,63 +193,97 @@ function migrationDescription(state){
   return "Record explicit maternal and paternal physical origin, then migrate this Thread onto the current physical appearance model. Do not infer ancestry from identity, birthplace, language, culture, or the existing portrait.";
 }
 
-async function refreshUntilAppearanceReady(host,threadId,threadName){
-  if(host.dataset.appearanceWatching==="true")return;
+const appearanceWatches=new WeakMap();
+
+function stopAppearanceWatch(host){
+  const stop=appearanceWatches.get(host);
+  if(stop)stop();
+  appearanceWatches.delete(host);
+  delete host.dataset.appearanceWatching;
+  setAppearanceBusy(host,false);
+}
+
+function appearanceProgress(host){
+  let progress=host.querySelector(".thread-appearance-progress");
+  if(progress)return progress;
+  progress=el("div","thread-appearance-progress");
+  setWaitingContent(progress,"Waiting for appearance publication");
+  host.append(progress);
+  return progress;
+}
+
+async function reconcileAppearance(host,threadId,threadName){
+  if(!host.isConnected){
+    stopAppearanceWatch(host);
+    return;
+  }
+  const progress=appearanceProgress(host);
+  setAppearanceBusy(host,true);
+  try{
+    const health=await requestHealth(threadId);
+    const state=threadAppearanceState(health.diagnosis);
+
+    if(state.appearanceReady){
+      const identity=await requestIdentity(threadId);
+      if(presentationIdentityMediaReady(identity,state.objectRef)){
+        stopAppearanceWatch(host);
+        await render(host,threadId,threadName,"Appearance ready.",health);
+        invalidateView(threadViewKey(threadId,"presentation"),{
+          source:"appearance",
+          reason:"ready",
+        });
+        return;
+      }
+      progress.lastElementChild.textContent="Canonical appearance ready · waiting for identity photo publication…";
+      return;
+    }
+
+    if(state.appearanceBlocked||health.reconciliation?.state==="dead_letter"){
+      stopAppearanceWatch(host);
+      await render(
+        host,
+        threadId,
+        threadName,
+        "Appearance generation stopped before publication. Check Thread health for the blocking reconciliation error.",
+        health,
+      );
+      return;
+    }
+
+    if(!state.appearancePending){
+      stopAppearanceWatch(host);
+      await render(host,threadId,threadName,"Appearance status refreshed.",health);
+      return;
+    }
+
+    progress.lastElementChild.textContent="Appearance generation is running · waiting for publication…";
+  }catch(error){
+    progress.lastElementChild.textContent="Appearance status unavailable · waiting for the next change…";
+    console.warn("Appearance live reconciliation failed",error);
+  }
+}
+
+function watchAppearance(host,threadId,threadName,{reconcileOnSubscribe=true}={}){
+  if(appearanceWatches.has(host))return;
   host.dataset.appearanceWatching="true";
   setAppearanceBusy(host,true);
+  appearanceProgress(host);
+  const stop=watchAdminLive(
+    threadViewKey(threadId,"presentation"),
+    ()=>reconcileAppearance(host,threadId,threadName),
+    {
+      active:()=>host.isConnected&&host.dataset.appearanceWatching==="true",
+      reconcileOnSubscribe,
+    },
+  );
+  appearanceWatches.set(host,stop);
+}
 
-  const progress=el("div","thread-appearance-progress");
-  setWaitingContent(progress,"Checking appearance");
-  host.append(progress);
-
-  try{
-    while(host.isConnected&&host.dataset.appearanceWatching==="true"){
-      const health=await requestHealth(threadId);
-      const state=threadAppearanceState(health.diagnosis);
-
-      if(state.appearanceReady){
-        const identity=await requestIdentity(threadId);
-        if(presentationIdentityMediaReady(identity,state.objectRef)){
-          delete host.dataset.appearanceWatching;
-          setAppearanceBusy(host,false);
-          progress.lastElementChild.textContent="Appearance ready · refreshing Thread…";
-          announceThreadUpdated(threadId);
-          return;
-        }
-        progress.lastElementChild.textContent="Canonical appearance ready · waiting for identity photo…";
-        await delay(REFRESH_POLL_MS);
-        continue;
-      }
-
-      if(state.appearanceBlocked||health.reconciliation?.state==="dead_letter"){
-        delete host.dataset.appearanceWatching;
-        setAppearanceBusy(host,false);
-        await render(
-          host,
-          threadId,
-          threadName,
-          "Appearance generation stopped before publication. Check Thread health for the blocking reconciliation error.",
-          health,
-        );
-        return;
-      }
-
-      if(!state.appearancePending){
-        delete host.dataset.appearanceWatching;
-        setAppearanceBusy(host,false);
-        await render(host,threadId,threadName,"Appearance status refreshed.",health);
-        return;
-      }
-
-      progress.lastElementChild.textContent="Appearance generation is still running · checking again in 20 seconds…";
-      await delay(REFRESH_POLL_MS);
-    }
-  }catch(error){
-    delete host.dataset.appearanceWatching;
-    setAppearanceBusy(host,false);
-    progress.remove();
-    host.append(el("div","error-box","Appearance refresh failed: "+(error instanceof Error?error.message:String(error))));
+async function refreshAppearance(host,threadId,threadName){
+  if(!appearanceWatches.has(host)){
+    watchAppearance(host,threadId,threadName,{reconcileOnSubscribe:false});
   }
+  await reconcileAppearance(host,threadId,threadName);
 }
 
 async function render(host,threadId,threadName,message=null,providedHealth=null){
@@ -354,7 +380,7 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
           });
           const pending=payload?.visualIdentityRenewal?.embodiment?.status==="pending_generation";
           if(pending){
-            void refreshUntilAppearanceReady(host,threadId,threadName);
+            watchAppearance(host,threadId,threadName);
           }else{
             await render(
               host,
@@ -373,11 +399,17 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
     host.append(el("p","thread-repair-note","Appearance authority is not ready for migration or re-rendering. Resolve the Thread health findings first."));
   }
 
-  actions.append(actionButton("Refresh appearance",()=>refreshUntilAppearanceReady(host,threadId,threadName),{
-    tooltip:"Refresh appearance and, while generation is pending, check every 20 seconds until the canonical portrait is published.",
+  actions.append(actionButton("Refresh appearance",()=>refreshAppearance(host,threadId,threadName),{
+    tooltip:"Refresh appearance once. If publication is pending, wait for the live completion signal without polling.",
     appearanceProgress:true,
   }));
   host.append(actions);
+
+  if(state.appearancePending){
+    watchAppearance(host,threadId,threadName);
+  }else{
+    stopAppearanceWatch(host);
+  }
 }
 
 export function threadAppearanceSection(threadId,threadName=null){
