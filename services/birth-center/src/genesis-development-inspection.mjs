@@ -40,6 +40,7 @@ export function createGenesisDevelopmentInspectionService({ runtime } = {}) {
         throw new Error(`Genesis development ${requestId} has no persisted request-time witness`);
       }
       const provisional = birthRuntime.provisionalBirthStore.get(reservation.genesisId);
+      const disposition = birthRuntime.developmentRequestStore.getDisposition(reservation.requestId);
       const invocations = birthRuntime.invocationJournal.listByPrefix(prefix).map(summarizeInvocation);
       return Object.freeze({
         requestId: reservation.requestId,
@@ -51,6 +52,7 @@ export function createGenesisDevelopmentInspectionService({ runtime } = {}) {
         requestedAt,
         requestStatus: reservation.status,
         provisionalStatus: provisional?.status ?? null,
+        disposition: disposition === null ? null : structuredClone(disposition),
         invocationCount: invocations.length,
         invocations: Object.freeze(invocations),
       });
