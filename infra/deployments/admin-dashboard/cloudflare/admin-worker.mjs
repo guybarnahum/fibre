@@ -29,6 +29,7 @@ const THREAD_PENDING_BIRTHS_ROUTE = "/api/threads/births/pending";
 const THREAD_BIRTHPLACES_ROUTE = "/api/threads/births/places";
 const THREAD_BIRTH_PLACE_SEARCH_ROUTE = "/api/threads/births/place-search";
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
+const ADMIN_LIVE_ROUTE = "/api/live";
 const INFRA_HEALTH_ROUTE = "/internal/infra-health";
 
 function json(status, payload, cacheControl = "no-store") {
@@ -92,6 +93,20 @@ function adminIdentity(identity) {
       deliveryStatus: asset.source === "current_public_presentation" ? "published" : "world_only",
     }))),
   });
+}
+
+async function proxyAdminLive(request, env) {
+  const upstream = await presentationBinding(env).fetch(new Request(
+    "https://thread-presentation.internal/internal/admin-live",
+    {
+      method:"GET",
+      headers:{
+        Upgrade:"websocket",
+        "x-fibre-private-token":privateToken(env),
+      },
+    },
+  ));
+  return upstream;
 }
 
 async function proxyAsset(request, env, objectRef) {
@@ -426,13 +441,20 @@ export default {
     const birthplaces = url.pathname === THREAD_BIRTHPLACES_ROUTE;
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor);
+    const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor);
     if (adminGet || adminPost) {
       const gate = await adminPrincipal(request, env);
       if (gate.response) return gate.response;
       try {
+        if (adminLive) {
+          if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
+            return json(426, { error:"websocket_required" });
+          }
+          return proxyAdminLive(request, env);
+        }
         if (infraMonitor) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const force = request.method === "POST" || url.searchParams.get("force") === "1";
