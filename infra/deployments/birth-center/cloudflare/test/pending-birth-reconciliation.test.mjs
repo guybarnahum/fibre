@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { nextBirthStatusCheckAt, pendingBirths, publishQueuedBirths, reconcileStaleBirths } from "../runtime.mjs";
+import { nextBirthStatusCheckAt, pendingBirths, publishQueuedBirths, reconcileStaleBirths, stillbornBirths } from "../runtime.mjs";
 
 const NOW = Date.parse("2026-09-25T15:00:00.000Z");
 const TOKEN = "test-token-1234567890";
@@ -174,6 +174,30 @@ test("terminal failure projects as failed with its durable error", () => {
   assert.equal(birth.error, "Genesis birth place Tokyo, Japan is not mappable");
   assert.equal(birth.failureCode, "GENESIS_COMPILE_VALIDATION_ERROR");
   assert.equal(birth.classification, "failed_waiting_reconciliation");
+});
+
+test("settled stillborn projection retains the terminal reason", () => {
+  const request = developmentFor(staleModern());
+  const runtime = {
+    developmentRequestStore:{
+      recent:() => [request],
+      getDisposition:() => ({
+        outcome:"stillborn",
+        failureCode:"GENESIS_COMPILE_VALIDATION_ERROR",
+        failureMessage:"Genesis birth place Tokyo, Japan is not mappable",
+        failureRetryable:false,
+        settledAt:"2026-09-25T14:58:00.000Z",
+        updatedAt:"2026-09-25T14:58:00.000Z",
+      }),
+    },
+  };
+
+  const [birth] = stillbornBirths(runtime);
+
+  assert.equal(birth.threadId, request.threadId);
+  assert.equal(birth.failureCode, "GENESIS_COMPILE_VALIDATION_ERROR");
+  assert.equal(birth.failureMessage, "Genesis birth place Tokyo, Japan is not mappable");
+  assert.equal(birth.settledAt, "2026-09-25T14:58:00.000Z");
 });
 
 test("terminal pre-admission failure becomes stillborn only after confirmed World absence", async () => {
