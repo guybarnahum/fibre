@@ -55,7 +55,8 @@ test("raw Activity remains cursor-paged", async () => {
 
   const result = await queryAdminActivityPage({ ACTIVITY_LOG:d1 }, "staging", query, page);
   assert.equal(result.records.length, 25);
-  assert.equal(result.totalPages, 2);
+  assert.equal(result.total, null);
+  assert.equal(result.totalPages, null);
   assert.equal(result.pageSize, 25);
   assert.ok(result.nextCursor);
   assert.equal(result.prevCursor, null);
@@ -71,7 +72,8 @@ test("scoped causal Activity keeps one operational chain intact", async () => {
 
   const result = await queryAdminActivityPage({ ACTIVITY_LOG:d1 }, "staging", query, page);
   assert.equal(result.records.length, 27);
-  assert.equal(result.totalPages, 1);
+  assert.equal(result.total, null);
+  assert.equal(result.totalPages, null);
   assert.equal(result.pageSize, 1000);
   assert.equal(result.nextCursor, null);
   assert.equal(result.prevCursor, null);
@@ -163,4 +165,48 @@ test("live Activity delta starts strictly after the current head", async () => {
     /first forward page/u,
     "delta cursor was allowed to change historical paging semantics",
   );
+});
+
+
+test("ordinary Activity reads never scan history for an exact total", async () => {
+  const calls = [];
+  const database = {
+    prepare(sql) {
+      calls.push(sql);
+      return {
+        bind() {
+          return {
+            async all() {
+              return {
+                results:records.slice(0, 26).map((item) => ({
+                  activity_id:item.activityId,
+                  occurred_at:item.occurredAt,
+                  recorded_at:item.recordedAt,
+                  record_json:JSON.stringify(item),
+                })),
+              };
+            },
+          };
+        },
+      };
+    },
+  };
+
+  const page = parseAdminActivityPage(new URL("https://admin/api/activity/page?mode=raw&kind=recent"));
+  const result = await queryAdminActivityPage(
+    { ACTIVITY_LOG:database },
+    "staging",
+    { ...query, kind:"recent", value:null },
+    page,
+  );
+
+  assert.equal(page.includeTotal,false,"ordinary Activity read requested an exact total");
+  assert.equal(calls.length,1,"ordinary Activity read performed an avoidable history scan");
+  assert.equal(result.total,null);
+  assert.equal(result.nextCursor !== null,true,"count-free Activity paging lost its continuation cursor");
+});
+
+test("jumping to Last is the explicit exact-count path", () => {
+  const page = parseAdminActivityPage(new URL("https://admin/api/activity/page?mode=raw&kind=recent&edge=last"));
+  assert.equal(page.includeTotal,true,"Last page lost the exact count needed to identify its page number");
 });
