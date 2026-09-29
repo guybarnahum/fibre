@@ -1,5 +1,5 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
-import { decorateActionButton } from "./fa-icons.js";
+import { decorateActionButton, setWaitingContent } from "./fa-icons.js";
 
 const PHYSICAL_MIGRATION_ID="physical_embodiment_v2";
 const REFRESH_POLL_MS=20_000;
@@ -382,7 +382,9 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
 
 export function threadAppearanceSection(threadId,threadName=null){
   const host=el("section","thread-person-section thread-appearance-section");
-  host.append(el("div","thread-loading","Loading appearance authority…"));
+  const waiting=el("div","thread-loading");
+  setWaitingContent(waiting,"Loading appearance authority");
+  host.append(waiting);
   void render(host,threadId,threadName).catch(error=>{
     host.replaceChildren(el("div","error-box","Appearance unavailable: "+(error instanceof Error?error.message:String(error))));
   });
