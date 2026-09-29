@@ -93,3 +93,39 @@ test("Activity paging can jump directly to the exact last raw page", async () =>
   assert.ok(result.prevCursor);
   assert.equal(result.nextCursor, null);
 });
+
+test("background Activity refresh skips the full count scan", async () => {
+  const calls = [];
+  const database = {
+    prepare(sql) {
+      calls.push(sql);
+      return {
+        bind() {
+          return {
+            async all() {
+              return {
+                results:records.slice(0, 26).map((item) => ({
+                  activity_id:item.activityId,
+                  occurred_at:item.occurredAt,
+                  recorded_at:item.recordedAt,
+                  record_json:JSON.stringify(item),
+                })),
+              };
+            },
+          };
+        },
+      };
+    },
+  };
+
+  const page = parseAdminActivityPage(new URL(
+    "https://admin/api/activity/page?mode=raw&kind=thread&value=thr_1&count=0",
+  ));
+  const result = await queryAdminActivityPage({ ACTIVITY_LOG:database }, "staging", query, page);
+
+  assert.equal(page.includeTotal,false,"background refresh unexpectedly requested an exact total");
+  assert.equal(calls.length,1,"background refresh performed an avoidable second D1 query");
+  assert.equal(calls.some((sql)=>sql.startsWith("SELECT COUNT")),false,"background refresh scanned Activity for COUNT(*)");
+  assert.equal(result.total,null);
+  assert.equal(result.records.length,25);
+});
