@@ -24,25 +24,6 @@ function identity(bundle) {
   });
 }
 
-function migrate(session) {
-  session.exec(`
-    CREATE TABLE IF NOT EXISTS provisional_births (
-      genesis_id TEXT PRIMARY KEY,
-      thread_id TEXT NOT NULL,
-      bundle_digest TEXT NOT NULL,
-      bundle_json TEXT NOT NULL,
-      status TEXT NOT NULL CHECK (status IN ('pending', 'published')),
-      world_result_json TEXT,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS provisional_births_thread_idx
-      ON provisional_births(thread_id);
-    CREATE INDEX IF NOT EXISTS provisional_births_status_idx
-      ON provisional_births(status, created_at, genesis_id);
-  `);
-}
-
 function parseJson(name, value) {
   try { return JSON.parse(value); }
   catch (error) { throw new Error(`${name} contains invalid JSON: ${error.message}`); }
@@ -67,8 +48,6 @@ export function createProvisionalBirthStore(storage, {
 } = {}) {
   if (typeof now !== "function") throw new TypeError("provisional birth store now must be a function");
   const session = openBirthStateDatabase(storage, { storeName: "Birth Center provisional birth store" });
-  migrate(session);
-
   const selectByGenesis = session.prepare(`
     SELECT genesis_id, thread_id, bundle_digest, bundle_json, status,
            world_result_json, created_at, updated_at
