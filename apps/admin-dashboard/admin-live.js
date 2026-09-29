@@ -98,7 +98,6 @@ export function watchAdminLive(key, callback, { active = () => true, reconcileOn
         window.clearTimeout(reconnectTimer);
         reconnectTimer = null;
       }
-      reconnectDelay = 1500;
       if (socket) {
         try { socket.close(1000, "no live Admin views"); } catch {}
         socket = null;
@@ -110,6 +109,7 @@ export function watchAdminLive(key, callback, { active = () => true, reconcileOn
 if (typeof document !== "undefined") {
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
+      reconnectDelay = 1500;
       if (reconnectTimer !== null) {
         window.clearTimeout(reconnectTimer);
         reconnectTimer = null;
