@@ -453,9 +453,8 @@ function firstPage() {
   return loadPage();
 }
 function lastPage() {
-  const last = currentPayload?.totalPages ?? 1;
-  nav = { edge:"last", direction:"next", cursor:null, page:last };
-  return loadPage();
+  nav = { edge:"last", direction:"next", cursor:null, page:null };
+  return loadPage({ includeTotal:true });
 }
 function previousPage() {
   if (!currentPayload?.prevCursor || nav.page <= 1) return;
@@ -469,16 +468,22 @@ function nextPage() {
 }
 
 function renderPager(payload) {
-  const totalPages = payload.totalPages ?? 1;
-  nav.page = Math.min(Math.max(1, nav.page), totalPages);
-  text($("#page-label"), `Page ${nav.page} of ${totalPages}`);
+  const totalPages = payload.totalPages;
+  if (totalPages !== null) {
+    nav.page = nav.edge === "last"
+      ? totalPages
+      : Math.min(Math.max(1, nav.page ?? 1), totalPages);
+  } else if (!Number.isInteger(nav.page) || nav.page < 1) {
+    nav.page = 1;
+  }
+  text($("#page-label"), totalPages === null ? `Page ${nav.page}` : `Page ${nav.page} of ${totalPages}`);
   $("#page-first").disabled = nav.page <= 1;
   $("#page-prev").disabled = payload.prevCursor == null || nav.page <= 1;
-  $("#page-next").disabled = payload.nextCursor == null || nav.page >= totalPages;
-  $("#page-last").disabled = nav.page >= totalPages;
+  $("#page-next").disabled = payload.nextCursor == null;
+  $("#page-last").disabled = payload.nextCursor == null;
 }
 
-async function loadPage({ pushState = false, includeTotal = true, delta = false } = {}) {
+async function loadPage({ pushState = false, includeTotal = false, delta = false } = {}) {
   if (mode === "threads" || mode === "stillborn") return;
   setLoading(true);
   if (pushState) syncUrl();
@@ -494,7 +499,7 @@ async function loadPage({ pushState = false, includeTotal = true, delta = false 
   params.set("direction", nav.direction);
   if (nav.cursor) params.set("cursor", nav.cursor);
   if (canDelta) params.set("after", previousPayload.headCursor);
-  if (!includeTotal || canDelta) params.set("count", "0");
+  if (includeTotal) params.set("count", "1");
   try {
     const response = await fetch(`/api/activity/page?${params}`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
@@ -515,17 +520,18 @@ async function loadPage({ pushState = false, includeTotal = true, delta = false 
         headCursor:payload.headCursor ?? previousPayload.headCursor,
       };
     } else {
-      currentPayload = payload.total === null && previousPayload !== null
-        ? { ...payload, total:previousPayload.total, totalPages:previousPayload.totalPages }
-        : payload;
+      currentPayload = payload;
     }
     const records = currentPayload.records ?? [];
     $("#export-button").disabled = false;
     text($("#environment-pill"), currentPayload.environment);
     text($("#chain-title"), chainHeading(currentPayload));
+    const scope = currentPayload.total === null
+      ? `${records.length} on this page${currentPayload.nextCursor ? " · more available" : ""}`
+      : `${currentPayload.total} total`;
     text($("#chain-summary"), mode === "causal"
-      ? `Meaningful terminal and retry operations · ${currentPayload.total ?? records.length} total.`
-      : `Raw Activity records exactly as logged · ${currentPayload.total ?? records.length} total.`);
+      ? `Meaningful terminal and retry operations · ${scope}.`
+      : `Raw Activity records exactly as logged · ${scope}.`);
     renderMetrics(records); renderMode(); renderRaw(mode === "raw" ? records : []); renderCausal(mode === "causal" ? records : []); populateServices(records); renderPager(currentPayload);
   } catch (error) {
     currentPayload = null;
