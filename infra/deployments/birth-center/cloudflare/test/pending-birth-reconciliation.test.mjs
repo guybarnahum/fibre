@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { nextBirthStatusCheckAt, pendingBirths, reconcileStaleBirths } from "../runtime.mjs";
+import { nextBirthStatusCheckAt, pendingBirths, publishQueuedBirths, reconcileStaleBirths } from "../runtime.mjs";
 
 const NOW = Date.parse("2026-09-25T15:00:00.000Z");
 const TOKEN = "test-token-1234567890";
@@ -257,4 +257,24 @@ test("retryable pre-admission failure remains recoverable when World is absent",
 
   assert.equal(stillborn, 0, "retryable Genesis interruption became stillborn");
   assert.equal(result.stillborn, 0);
+});
+
+
+test("queued publication is kicked immediately and leaves scheduling consistent", async () => {
+  const calls = [];
+  const result = await publishQueuedBirths({
+    runtime:{
+      async handleWake() {
+        calls.push("publish");
+        return { attempted:1, published:1 };
+      },
+    },
+    async ensureBirthStatusScheduled() {
+      calls.push("schedule");
+      return { scheduledAt:null };
+    },
+  });
+
+  assert.deepEqual(calls, ["publish","schedule"]);
+  assert.deepEqual(result, { attempted:1, published:1 });
 });
