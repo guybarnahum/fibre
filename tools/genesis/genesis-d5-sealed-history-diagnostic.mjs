@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 
 import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
 import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
+import { migrateBirthState } from "#services/birth-center/src/birth-state-migrations.mjs";
 import {
   createDurableModelAdapter,
   createStateModelInvocationJournal,
@@ -356,10 +357,12 @@ async function executePlan({ plan, rootPath, replay }) {
     driverId: "genesis-d5-local-state",
     scopes: { birth: resolve(rootPath, "birth-state.sqlite") },
   });
-  const journal = createStateModelInvocationJournal({
+  const journalStorage = {
     infraDriver: journalInfraDriver,
     stateScopeId: "birth",
-  });
+  };
+  migrateBirthState(journalStorage);
+  const journal = createStateModelInvocationJournal(journalStorage);
   const adapter = createDurableModelAdapter({
     baseAdapter: createBaseAdapter({ model: plan.model, observer: (event) => modelEvents.push(event), replay }),
     journal,
