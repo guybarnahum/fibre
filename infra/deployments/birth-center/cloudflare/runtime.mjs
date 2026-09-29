@@ -138,6 +138,11 @@ async function worldThreadPresenceSet({ worldBinding, privateToken, threadIds })
   }
 }
 
+function birthSubjectName(identity, sex) {
+  if (!identity || (sex !== "female" && sex !== "male")) return null;
+  const value = sex === "female" ? identity.femaleName : identity.maleName;
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
 function birthOperationalState(request, timing, { terminalFailure = false } = {}) {
   if (terminalFailure) {
     return Object.freeze({
@@ -170,6 +175,7 @@ function pendingProjection(request, {
   location,
   locationSource,
   sex,
+  name = null,
   timing,
   error = request.error ?? null,
   failureCode = null,
@@ -188,6 +194,7 @@ function pendingProjection(request, {
     location,
     locationSource,
     sex,
+    name,
     status,
     error,
     failureCode,
@@ -241,13 +248,16 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
       : runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
 
+    const sex = request.sex ?? request.requestedSex;
+    const identity = developmentRequest?.plan?.subjectIdentity ?? null;
     queued.push(pendingProjection(request, {
       source:"birth",
       status:request.status,
       stage:request.status === "failed" ? "failed" : operatorBirthStage(request.status),
       location:request.location ?? requestedLocationDisplay(request.requestedLocation),
       locationSource:request.locationSource,
-      sex:request.sex ?? request.requestedSex,
+      sex,
+      name:birthSubjectName(identity, sex),
       timing:birthTiming(request, nowMs),
       terminalFailure:request.status === "failed",
     }));
@@ -273,6 +283,7 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
       location:place?.country && place?.city ? `${place.country}/${place.city}` : identity?.birthCity ?? null,
       locationSource:null,
       sex:identity?.sex ?? null,
+      name:birthSubjectName(identity, identity?.sex ?? null),
       timing:birthTiming(request, nowMs),
       error:disposition?.failureMessage ?? null,
       failureCode:disposition?.failureCode ?? null,
