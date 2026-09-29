@@ -865,6 +865,8 @@ async function renderBirthSearch() {
     return;
   }
 
+  birthSearchResults.hidden = false;
+  setWaitingContent(birthSearchResults, "Searching places");
   const sequence = ++birthSearchSequence;
   const response = await fetch(`/api/threads/births/place-search?q=${encodeURIComponent(query)}`, {
     headers:{ Accept:"application/json" },
@@ -1177,7 +1179,10 @@ function renderPendingBirths(births) {
       }
       const statuses = document.createElement("div");
       statuses.className = "thread-birth-pending-status";
-      statuses.append(badge(pendingStatusText(birth), "retrying"));
+      const stage = birthStage(birth);
+      const stageBadge = badge(pendingStatusText(birth));
+      stageBadge.classList.add("thread-birth-stage-badge", `stage-${stage}`, "thread-pending-throb");
+      statuses.append(stageBadge);
       if (birth.stale === true) statuses.append(badge("stale", "failed"));
       row.append(copy, statuses);
       birthPending.append(row);
