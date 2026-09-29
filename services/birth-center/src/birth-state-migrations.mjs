@@ -127,9 +127,8 @@ function migrateToV1(session) {
       failure_message=COALESCE(genesis_development_dispositions.failure_message,excluded.failure_message),
       failure_retryable=COALESCE(genesis_development_dispositions.failure_retryable,excluded.failure_retryable),
       updated_at=excluded.updated_at;
-
-    PRAGMA user_version = 1;
   `);
+  session.exec("PRAGMA user_version = 1");
 }
 
 export function migrateBirthState(storage) {
