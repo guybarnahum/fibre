@@ -45,6 +45,7 @@ export function parseAdminActivityPage(url) {
   const after = decodeCursor(rawAfter);
   if (direction === "prev" && cursor === null) throw new TypeError("previous activity page requires a cursor");
   const scopedCausal = mode === "causal" && SCOPED_CAUSAL_KINDS.has(kind);
+  const includeTotal = after === null && edge === "last";
   return Object.freeze({
     mode,
     size:scopedCausal ? SCOPED_CAUSAL_SIZE : PAGE_SIZE,
@@ -52,6 +53,7 @@ export function parseAdminActivityPage(url) {
     edge,
     cursor,
     after,
+    includeTotal,
   });
 }
 
@@ -102,10 +104,22 @@ export function buildAdminActivityPageSql({ environment, query, page }) {
   });
 }
 
+function buildCountSql({ environment, query, page }) {
+  const { clauses, bindings } = activityClauses({ environment, query, page });
+  return { sql:`SELECT COUNT(*) AS total FROM fibre_activity_log WHERE ${clauses.join(" AND ")}`, bindings };
+}
+
 export async function queryAdminActivityPage(env, environment, query, page) {
   if (!env.ACTIVITY_LOG?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
   const built = buildAdminActivityPageSql({ environment, query, page });
-  const result = await env.ACTIVITY_LOG.prepare(built.sql).bind(...built.bindings).all();
+  const count = page.includeTotal ? buildCountSql({ environment, query, page }) : null;
+  const resultPromise = env.ACTIVITY_LOG.prepare(built.sql).bind(...built.bindings).all();
+  const [result, countResult] = count === null
+    ? [await resultPromise, null]
+    : await Promise.all([
+        resultPromise,
+        env.ACTIVITY_LOG.prepare(count.sql).bind(...count.bindings).all(),
+      ]);
   logD1Cost({
     database:"activity-log",
     service:"admin-dashboard",
@@ -114,15 +128,27 @@ export async function queryAdminActivityPage(env, environment, query, page) {
     mode:page.mode,
     result,
   });
+  if (countResult !== null) {
+    logD1Cost({
+      database:"activity-log",
+      service:"admin-dashboard",
+      operation:"admin.activity.count",
+      kind:query.kind,
+      mode:page.mode,
+      result:countResult,
+    });
+  }
 
   const rows = Array.isArray(result?.results) ? result.results : [];
-  const take = page.size;
+  const total = countResult === null ? null : Number(countResult?.results?.[0]?.total ?? 0);
+  const lastPageSize = total === null || total === 0 ? page.size : (total % page.size || page.size);
+  const take = page.edge === "last" ? lastPageSize : page.size;
   const scanned = rows.slice(0, take);
   if (built.reverse) scanned.reverse();
   const records = scanned.map((row) => normalizeActivityRecord(JSON.parse(row.record_json)));
   const extra = rows.length > page.size;
   const cameFromCursor = page.cursor !== null;
-  const hasPrev = page.edge === "last" ? extra : page.direction === "prev" ? extra : cameFromCursor;
+  const hasPrev = page.edge === "last" ? total > records.length : page.direction === "prev" ? extra : cameFromCursor;
   const hasNext = page.edge === "last" ? false : page.direction === "prev" ? cameFromCursor : extra;
 
   const chronological = ["request","genesis","thread"].includes(query.kind);
@@ -132,8 +158,8 @@ export async function queryAdminActivityPage(env, environment, query, page) {
     headCursor:head === null ? null : encodeCursor(head),
     prevCursor:hasPrev && records.length ? encodeCursor(records[0]) : null,
     nextCursor:hasNext && records.length ? encodeCursor(records.at(-1)) : null,
-    total:null,
-    totalPages:null,
+    total,
+    totalPages:total === null ? null : Math.max(1, Math.ceil(total / page.size)),
     pageSize:page.size,
   });
 }
