@@ -5,6 +5,7 @@ import { createThreadDirectoryService } from "../src/thread-directory-service.mj
 
 function fixture() {
   let reads = 0;
+  let batchReads = 0;
   const entries = [
     Object.freeze({
       threadId:"thr_mira",
@@ -57,6 +58,11 @@ function fixture() {
           reads += 1;
           return fin === null ? entries : entries.filter((entry) => entry.fibreIdentityNumber === fin);
         },
+        getEntries(threadIds) {
+          batchReads += 1;
+          const requested = new Set(threadIds);
+          return entries.filter((entry) => requested.has(entry.threadId));
+        },
         presentThreadIds(threadIds) {
           const admitted = new Set(entries.map((entry) => entry.threadId));
           return threadIds.filter((threadId) => admitted.has(threadId)).sort();
@@ -64,6 +70,7 @@ function fixture() {
       },
     }),
     reads:() => reads,
+    batchReads:() => batchReads,
   };
 }
 
@@ -109,4 +116,17 @@ test("World answers bounded Thread presence as one set", () => {
     ["thr_mira", "thr_nilo"],
     "bulk presence did not reflect admitted World Threads",
   );
+});
+
+
+test("World returns requested Activity Thread labels through one bounded directory read", () => {
+  const { directory, batchReads } = fixture();
+  const result = directory.entries(["thr_nilo", "thr_missing", "thr_mira"]);
+
+  assert.deepEqual(
+    result.threads.map(({ threadId, displayName }) => [threadId, displayName]),
+    [["thr_mira", null], ["thr_nilo", "Nilo Serrat"]],
+    "batch directory read did not preserve authoritative Thread labels",
+  );
+  assert.equal(batchReads(), 1, "Activity labels performed more than one directory read");
 });
