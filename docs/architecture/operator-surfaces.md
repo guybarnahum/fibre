@@ -32,6 +32,8 @@ Population statistics such as sex counts, health counts, migration availability 
 
 Population inspection is operator-driven and bounded. It should not become a background polling loop or a second directory authority. Normal Activity auto-refresh may pause while the population view is active so population diagnosis does not create avoidable infrastructure load.
 
+While Threads is open, the same single Admin live socket used by other operator views carries best-effort Thread invalidation hints. A normal Thread hint causes one exact authoritative reread for that Thread and replaces only that row; the browser recomputes table statistics and map presentation from its already-authoritative local population state. It must not call the full population endpoint for a single-Thread mutation. A socket reconnect is different: because hints may have been missed while disconnected, Admin performs one bounded full population reconciliation.
+
 ### Thread health and operator actions
 
 Admin may diagnose and invoke bounded Thread maintenance actions, but the authority for each action remains in the owning Fibre service. The canonical semantics are defined in [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md).
