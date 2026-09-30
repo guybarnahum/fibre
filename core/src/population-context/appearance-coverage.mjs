@@ -2,6 +2,10 @@ import {
   referencePopulationCalibration,
   referencePopulationCalibrations,
 } from "../human-appearance/index.mjs";
+import {
+  appearanceCalibrationDependencies,
+  planAppearanceCalibrationMigration,
+} from "./appearance-calibration-dependencies.mjs";
 
 function clean(value){
   return typeof value==="string"&&value.trim()!==""?value.trim():null;
@@ -107,9 +111,26 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
   const evidenceByThread=new Map((Array.isArray(ancestryEvidence)?ancestryEvidence:[]).map((entry)=>[entry.threadId,entry]));
   const entries=[];
   const missing=[];
+  const migrationCandidates=[];
   for(const thread of normalizedThreads){
     if(!thread||typeof thread.threadId!=="string")continue;
     const evidence=evidenceByThread.get(thread.threadId)??null;
+    if(evidence!==null){
+      const currentDependencies=appearanceCalibrationDependencies(evidence.physicalAncestry);
+      const migration=planAppearanceCalibrationMigration({
+        storedDependencies:evidence.calibrationDependencies??null,
+        currentDependencies,
+      });
+      if(migration.migrationRequired){
+        migrationCandidates.push(Object.freeze({
+          threadId:thread.threadId,
+          threadName:clean(thread.displayName),
+          reason:migration.reason,
+          changes:migration.changes,
+          birthLocation:locationOf(thread),
+        }));
+      }
+    }
     if(evidence===null){
       if(clean(thread.physicalGenomeVersion)!==null){
         missing.push(Object.freeze({
@@ -149,6 +170,9 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
     lineageCount:entries.length,
     coverage:Object.freeze(counts),
     holes:summarizeHoles(entries),
+    migrationCandidates:Object.freeze(migrationCandidates.sort((a,b)=>
+      (a.threadName??a.threadId).localeCompare(b.threadName??b.threadId)
+    )),
     lineages:Object.freeze(entries),
     model:Object.freeze(referencePopulationCalibrations()),
   });
