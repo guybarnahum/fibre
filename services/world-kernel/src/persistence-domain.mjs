@@ -247,8 +247,29 @@ function applyPhysicalGenomeMigration(thread,event){
     ){
       throw new IntegrityError(`physical genome migration event ${event.eventId} lacks historical migration provenance`);
     }
-  }else if(event.payloadSchemaVersion===2){
-    assertExactKeys(`physical genome migration event ${event.eventId} payload`,event.payload,["operationKey","physicalAncestry","physicalGenome","previousPhysicalGenomeVersion"]);
+  }else if(event.payloadSchemaVersion===2||event.payloadSchemaVersion===3){
+    const expectedKeys=event.payloadSchemaVersion===2
+      ? ["operationKey","physicalAncestry","physicalGenome","previousPhysicalGenomeVersion"]
+      : [
+          "operationKey",
+          "physicalAncestry",
+          "calibrationDependencies",
+          "previousCalibrationDependencies",
+          "physicalGenome",
+          "previousPhysicalGenomeVersion",
+        ];
+    assertExactKeys(`physical genome migration event ${event.eventId} payload`,event.payload,expectedKeys);
+    if(event.payloadSchemaVersion===3){
+      if(!Array.isArray(event.payload.calibrationDependencies)){
+        throw new IntegrityError(`physical genome migration event ${event.eventId} has invalid calibration dependencies`);
+      }
+      if(
+        event.payload.previousCalibrationDependencies!==null
+        && !Array.isArray(event.payload.previousCalibrationDependencies)
+      ){
+        throw new IntegrityError(`physical genome migration event ${event.eventId} has invalid previous calibration dependencies`);
+      }
+    }
     const previous=thread.genome.physical?.version??null;
     if(event.payload.previousPhysicalGenomeVersion!==previous){
       throw new IntegrityError(`physical genome migration event ${event.eventId} previous model does not match replay`);
