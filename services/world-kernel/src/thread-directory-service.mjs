@@ -43,6 +43,14 @@ export function createThreadDirectoryService({ directoryStore }) {
       if (typeof directoryStore.getEntry !== "function") throw new TypeError("Thread directory store must expose getEntry()");
       return directoryStore.getEntry(threadId);
     },
+    entries(threadIds) {
+      if (typeof directoryStore.getEntries !== "function") {
+        throw new TypeError("Thread directory store must expose getEntries()");
+      }
+      return Object.freeze({
+        threads:Object.freeze(directoryStore.getEntries(threadIds)),
+      });
+    },
     presence(threadIds) {
       if (typeof directoryStore.presentThreadIds !== "function") {
         throw new TypeError("Thread directory store must expose presentThreadIds()");
