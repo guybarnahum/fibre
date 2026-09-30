@@ -5,3 +5,5 @@ export {
   validateFamilyProfiles,
 } from "./family-profile.mjs";
 export {selectPopulationFamilyProfile} from "./family-profile-selection.mjs";
+
+export * from "./appearance-coverage.mjs";
