@@ -354,12 +354,11 @@ test("targeted Thread refresh preserves the bulk population row semantics", asyn
       return {
         bind(...args) {
           return {
-            async first() {
-              assert.match(sql, /thread_id = \?/u, "targeted refresh must query one Activity head");
-              assert.equal(args[1], "thr_target");
-              return { last_activity_at:"2026-09-30T03:01:00.000Z" };
-            },
             async all() {
+              if (/thread_id = \?/u.test(sql)) {
+                assert.equal(args[1], "thr_target");
+                return { results:[{ last_activity_at:"2026-09-30T03:01:00.000Z" }] };
+              }
               return { results:[{ thread_id:"thr_target", last_activity_at:"2026-09-30T03:01:00.000Z" }] };
             },
           };
