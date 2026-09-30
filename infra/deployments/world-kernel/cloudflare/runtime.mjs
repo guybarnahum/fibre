@@ -273,6 +273,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const visualPublicationProcess = createThreadVisualPublicationProcess({
     workset: visualPublicationWorkset,
     reconciler: visualReconciler,
+    activityRecorder,
     async onResult(entry) {
       if (entry.disposition === "complete") {
         await publishAdminReconciliationHint(infraDriver, entry.threadId);
@@ -291,21 +292,6 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
       if (entry.disposition === "dead_letter") {
         await publishAdminReconciliationHint(infraDriver, entry.threadId);
       }
-      if (activityRecorder === null) return;
-      try {
-        await activityRecorder.record({
-          threadId: entry.threadId,
-          stage: "world.visual_publication.reconcile",
-          status: "failed",
-          attempt: 1,
-          message: String(entry.message).slice(0, 512),
-          error: {
-            category: "reconciliation",
-            code: entry.code,
-            retryable: entry.retryable,
-          },
-        });
-      } catch {}
     },
   });
   const reconciliationProcess = createWorldReconciliationProcess({
