@@ -109,6 +109,7 @@ function registryEntry(row) {
     languages: strings(identity.languages),
     raisedAs,
     summary: clean(identity.selfDescription),
+    physicalGenomeVersion:clean(thread?.genome?.physical?.version),
     version: Number(row.version),
     stateHash: clean(row.state_hash),
     updatedAt: clean(row.updated_at),
