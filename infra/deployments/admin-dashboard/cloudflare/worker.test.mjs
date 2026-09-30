@@ -142,6 +142,15 @@ test("Admin Worker verifies a signed Cloudflare Access JWT and exposes its email
   assert.equal(claims.email, "Operator@Example.com");
   assert.equal(normalizeAdminPrincipalEmail(claims), "operator@example.com");
 
+  const cookieClaims = await authenticateAccessRequest(
+    new Request("https://admin.staging.insidefibre.com/api/live", {
+      headers:{ Cookie:`CF_Authorization=${signed.token}; other=value` },
+    }),
+    env,
+    { fetchImpl },
+  );
+  assert.equal(cookieClaims.email, "Operator@Example.com", "Access cookie did not authenticate WebSocket-style request");
+
   const tamperedSignature = Uint8Array.from(signed.signature);
   tamperedSignature[0] ^= 1;
   const tamperedToken = `${signed.input}.${Buffer.from(tamperedSignature).toString("base64url")}`;
