@@ -214,7 +214,14 @@ test("canonical visual renewal reopens generation without changing identity sema
       return true;
     },
   };
-  const response = await api({ reconciliationWorkset:workset }).fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
+  const stages = [];
+  const activityRecorder = {
+    async runStage(metadata, operation) {
+      stages.push([metadata.stage, metadata.operationId ?? null]);
+      return operation({ operationId:metadata.operationId ?? null });
+    },
+  };
+  const response = await api({ reconciliationWorkset:workset, activityRecorder }).fetch(authorized("https://world.internal/internal/threads/thr_1/repair", {
     method:"POST",
     headers:{ "content-type":"application/json" },
     body:JSON.stringify({
@@ -233,6 +240,7 @@ test("canonical visual renewal reopens generation without changing identity sema
   );
   assert.equal(body.visualIdentityRenewal.embodiment.status, "pending_generation", "visual renewal did not reopen generation");
   assert.equal(body.reconciliation.state, "pending", "visual renewal did not re-enter reconciliation");
+  assert.deepEqual(stages, [["thread.visual_identity.renew", "renew_visual_1"]], "visual renewal lacked Activity witness");
 });
 
 test("Raised languages use Genesis correction rather than identity mutation", async () => {
@@ -332,7 +340,14 @@ test("dead-letter Thread is visible and recovery revives only that work", async 
       return true;
     },
   };
-  const repairApi = api({ reconciliationWorkset:workset, onRecover:async () => { wakes += 1; } });
+  const stages = [];
+  const activityRecorder = {
+    async runStage(metadata, operation) {
+      stages.push(metadata.stage);
+      return operation({ operationId:null });
+    },
+  };
+  const repairApi = api({ reconciliationWorkset:workset, activityRecorder, onRecover:async () => { wakes += 1; } });
 
   const diagnosis = await repairApi.fetch(authorized("https://world.internal/internal/threads/thr_dead/repair"));
   assert.equal((await diagnosis.json()).reconciliation.state, "dead_letter", "dead letter must be visible");
@@ -346,6 +361,7 @@ test("dead-letter Thread is visible and recovery revives only that work", async 
   assert.equal(recovery.status, 200);
   assert.equal(body.recovery.after.state, "pending", "recovery must revive targeted work");
   assert.equal(wakes, 1, "recovery must schedule one reconciliation wake");
+  assert.deepEqual(stages, ["thread.visual_publication.recover"], "recovery lacked Activity witness");
 });
 
 test("repair diagnosis distinguishes a missing World Thread", async () => {
