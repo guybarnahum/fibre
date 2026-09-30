@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { PHYSICAL_GENOME_VERSION } from "../../core/src/human-appearance/index.mjs";
 import { analyzeAppearanceCoverage } from "../../core/src/population-context/appearance-coverage.mjs";
 
 const thread=(threadId,name,referencePopulation)=>({
@@ -8,7 +9,7 @@ const thread=(threadId,name,referencePopulation)=>({
   displayName:name,
   birthPlace:"Test City",
   birthLocation:{displayName:"Test City",country:"Testland",city:"Test City",lat:10,long:20},
-  physicalGenomeVersion:"physical-genome-v0.2",
+  physicalGenomeVersion:PHYSICAL_GENOME_VERSION,
   referencePopulation,
 });
 
@@ -61,4 +62,31 @@ test("appearance coverage treats root priors as broad rather than absent",()=>{
   assert.equal(result.coverage.broad,2);
   assert.equal(result.holes[0].referencePopulation,"south_asia");
   assert.equal(result.holes[0].priority,4);
+});
+
+
+test("physical model drift is reported as appearance migration",()=>{
+  const current=thread("thr_current","Current Thread");
+  const stale={...thread("thr_stale","Stale Thread"),physicalGenomeVersion:"physical-genome-v0.1"};
+  const evidence=(threadId)=>({
+    threadId,
+    calibrationDependencies:[],
+    physicalAncestry:{
+      maternal:[{population:"Family",share:1,referencePopulation:"west_asia"}],
+      paternal:[{population:"Family",share:1,referencePopulation:"west_asia"}],
+    },
+  });
+
+  const result=analyzeAppearanceCoverage({
+    threads:[current,stale],
+    ancestryEvidence:[evidence("thr_current"),evidence("thr_stale")],
+  });
+
+  const staleCandidate=result.migrationCandidates.find((entry)=>entry.threadId==="thr_stale");
+  assert.equal(staleCandidate.reasons.includes("physical_model_outdated"),true);
+  assert.equal(
+    result.migrationCandidates.some((entry)=>entry.threadId==="thr_current"&&entry.reasons.includes("physical_model_outdated")),
+    false,
+    "current physical model was marked stale",
+  );
 });
