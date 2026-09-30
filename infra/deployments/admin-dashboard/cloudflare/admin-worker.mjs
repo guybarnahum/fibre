@@ -24,6 +24,7 @@ const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
+const THREAD_LABELS_ROUTE = "/api/threads/labels";
 const THREAD_POPULATION_ENTRY_ROUTE = /^\/api\/threads\/([^/]+)\/population$/u;
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
 const THREAD_PENDING_BIRTHS_ROUTE = "/api/threads/births/pending";
@@ -423,6 +424,25 @@ async function threadRegistry(env, limit) {
   return payload.threads;
 }
 
+async function threadRegistryEntries(env, threadIds) {
+  const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
+    "https://world.internal/internal/thread-directory/entries",
+    {
+      method:"POST",
+      headers:{
+        Accept:"application/json",
+        "Content-Type":"application/json",
+        "x-fibre-private-token":privateToken(env),
+      },
+      body:JSON.stringify({ threadIds }),
+    },
+  ));
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
+  if (!Array.isArray(payload?.threads)) throw new Error("World Thread Registry batch response is invalid");
+  return payload.threads;
+}
+
 async function threadRegistryEntry(env, threadId) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     `https://world.internal/internal/thread-directory/entry/${encodeURIComponent(threadId)}`,
@@ -455,6 +475,7 @@ export default {
     const fidReissueMatch = THREAD_FID_REISSUE_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
+    const threadLabels = url.pathname === THREAD_LABELS_ROUTE;
     const threadPopulationEntryMatch = THREAD_POPULATION_ENTRY_ROUTE.exec(url.pathname);
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
     const pendingBirths = url.pathname === THREAD_PENDING_BIRTHS_ROUTE;
@@ -464,7 +485,7 @@ export default {
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
     const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor);
+    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels);
     if (adminGet || adminPost) {
       const gate = await adminPrincipal(request, env);
       if (gate.response) {
@@ -487,6 +508,28 @@ export default {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const force = request.method === "POST" || url.searchParams.get("force") === "1";
           return json(200, await readAdminInfraMonitor({ env, environment, force }));
+        }
+        if (threadLabels) {
+          let body;
+          try { body = await request.json(); }
+          catch { return json(400, { error:"invalid_thread_labels", detail:"threadIds must be JSON" }); }
+          if (!body || typeof body !== "object" || Array.isArray(body) || !Array.isArray(body.threadIds)) {
+            return json(400, { error:"invalid_thread_labels", detail:"threadIds must be an array" });
+          }
+          const threadIds = [...new Set(body.threadIds.map((value) => id("threadId", value)))];
+          if (threadIds.length < 1 || threadIds.length > 64) {
+            return json(400, { error:"invalid_thread_labels", detail:"threadIds must contain 1 through 64 IDs" });
+          }
+          const threads = await threadRegistryEntries(env, threadIds);
+          return json(200, {
+            contract:"fibre-admin-thread-labels-v0.1",
+            labels:threads.map((thread) => ({
+              threadId:thread.threadId,
+              name:thread.displayName ?? null,
+              birthLocation:thread.birthLocation ?? null,
+              birthPlace:thread.birthPlace ?? null,
+            })),
+          });
         }
         if (threadBirth) return proxyThreadBirth(request, env);
         if (pendingBirths) return proxyBirthCenterGet(env, "/internal/births/pending");
@@ -582,6 +625,7 @@ export default {
           return json(503, { error:"admin_live_unavailable", detail:error.message });
         }
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
+        if (threadLabels) return json(error instanceof TypeError ? 400 : 503, { error:"thread_labels_unavailable", detail:error.message });
         if (threadBirth) return json(error instanceof TypeError ? 400 : 503, { error:"thread_birth_unavailable", detail:error.message });
         if (pendingBirths || birthplaces) return json(503, { error:"thread_birth_data_unavailable", detail:error.message });
         if (threadPopulation || threadPopulationEntryMatch) return json(503, { error:"thread_population_unavailable", detail:error.message });
