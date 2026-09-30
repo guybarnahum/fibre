@@ -159,11 +159,7 @@ export function createAssetGenerationRuntime({
               parentOperationId: operationId,
               stage: "asset.provider.generate",
               attempt: checkedAttemptNumber,
-              evidence: {
-                ...evidence,
-                role: job.role,
-                providerProfile: job.providerProfile,
-              },
+              evidence,
             }, operation),
           });
           return runtimeResult(result);
