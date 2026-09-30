@@ -25,7 +25,10 @@ function ensureThreadPageWatch(threadId) {
     threadObservatoryViewKey(threadId),
     () => renderThreadPage(threadId),
     {
-      active:() => renderedThreadId === threadId,
+      active:() => (
+        renderedThreadId === threadId
+        && document.querySelector(".thread-observatory-page")?.isConnected === true
+      ),
       reconcileOnSubscribe:false,
     },
   );
