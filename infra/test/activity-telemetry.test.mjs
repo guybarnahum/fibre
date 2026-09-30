@@ -61,7 +61,21 @@ test("activity contract normalizes nullable identities and redacts common secret
   assert.match(normalized.message, /\[REDACTED\]/u);
 });
 
-test("activity evidence is a bounded safe identifier surface", () => {
+test("activity evidence stays key-bounded while preserving typed Fibre diagnostics", () => {
+  const normalized = normalizeActivityRecord(activity({
+    evidence:{
+      migrationId:"physical_embodiment_v2",
+      migrated:true,
+      findingCodes:["PHYSICAL_APPEARANCE_MODEL_OUTDATED"],
+      persistedVersion:22,
+    },
+  }));
+  assert.deepEqual(normalized.evidence, {
+    migrationId:"physical_embodiment_v2",
+    migrated:true,
+    findingCodes:["PHYSICAL_APPEARANCE_MODEL_OUTDATED"],
+    persistedVersion:22,
+  });
   assert.throws(
     () => normalizeActivityRecord(activity({ evidence: { authorization: "Bearer secret" } })),
     /activity\.evidence\.authorization is not allowed/u,
