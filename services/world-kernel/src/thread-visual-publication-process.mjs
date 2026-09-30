@@ -25,6 +25,39 @@ function optionalWorkset(value) {
   return value;
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.record !== "function") {
+    throw new TypeError("visual publication activityRecorder must expose record()");
+  }
+  return value;
+}
+
+async function recordOutcome(activity, entry) {
+  if (activity === null) return;
+  const complete = entry.ok === true && entry.disposition === "complete";
+  const retry = entry.disposition === "retry";
+  const record = {
+    threadId:entry.threadId,
+    stage:"world.visual_publication.reconcile",
+    status:complete ? "succeeded" : retry ? "retrying" : "failed",
+    attempt:1,
+    evidence:{
+      disposition:entry.disposition,
+      ...(entry.reconciliation?.stage ? { reconciliationStage:entry.reconciliation.stage } : {}),
+    },
+  };
+  if (entry.ok !== true) {
+    record.message=String(entry.message).slice(0,512);
+    record.error={
+      category:"reconciliation",
+      code:entry.code,
+      retryable:entry.retryable,
+    };
+  }
+  try { await activity.record(record); } catch {}
+}
+
 /**
  * Restart-safe World process that converges only Threads with active visual
  * publication work. Cloud runtime supplies a durable workset; local/legacy
@@ -34,12 +67,14 @@ export function createThreadVisualPublicationProcess({
   workset = null,
   threadSource = null,
   reconciler,
+  activityRecorder = null,
   onResult = null,
   onError = null,
 } = {}) {
   const queue = optionalWorkset(workset);
   const source = queue ?? requireMethod("threadSource", threadSource, "listThreadIds");
   requireMethod("reconciler", reconciler, "reconcileThread");
+  const activity = optionalActivityRecorder(activityRecorder);
   if (onResult !== null && typeof onResult !== "function") {
     throw new TypeError("visual publication onResult must be a function or null");
   }
@@ -69,6 +104,7 @@ export function createThreadVisualPublicationProcess({
               disposition:complete ? "complete" : "retry",
             });
             results.push(entry);
+            await recordOutcome(activity, entry);
             await onResult?.(entry);
           } catch (error) {
             const retryable = error?.retryable !== false;
@@ -88,6 +124,7 @@ export function createThreadVisualPublicationProcess({
               else await queue.deadLetter(threadId, entry);
             }
             results.push(entry);
+            await recordOutcome(activity, entry);
             await onError?.(entry, error);
           }
         }
