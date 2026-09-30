@@ -57,6 +57,34 @@ The Threads population view therefore exposes separate **Appearance migration** 
 
 A Thread may require both domains at once. This does not merge their authority or actions.
 
+### Appearance / Population Lab
+
+Admin **Appearance** is the operator control surface over the shared Population Lab and current Human Appearance registry. It is not a second appearance model and does not infer ancestry in the browser.
+
+World supplies one bounded authoritative projection of:
+- admitted Threads;
+- canonical birth-location context for mapping demand;
+- durable maternal/paternal physical ancestry evidence;
+- the calibration dependency snapshot consumed by the current physical genome.
+
+The shared Population Lab coverage engine combines those facts with the current reference-population registry and reports:
+- explicit, partial, broad, fallback and missing coverage;
+- ranked coverage holes based on actual Thread lineage demand;
+- represented locations as context only;
+- current reference-node versions and inheritance chains;
+- existing Threads whose stored appearance dependencies no longer match the current registry.
+
+The map answers **where Fibre currently has demand for weak calibration**. It must never be interpreted as a map of how people in a country look.
+
+A1 keeps expensive work explicit. **Prepare experiment** and **Prepare research** create bounded action specifications only. They do not change appearance authority. Later Population Lab execution persists experiment/research artifacts through InfraDriver.
+
+A future approved calibration changes the authoritative versioned registry. That approval deterministically exposes only affected Threads as appearance migration candidates. Threads view provides:
+- **Needs migration** — all authoritative `migration_required` Threads;
+- **Appearance migration** — only migration-required Threads whose affected domain is appearance;
+- **Identity migration** — the corresponding identity-domain subset.
+
+Filters are projections of World health/migration domains, never inferred from whether an action button happens to be rendered.
+
 ### Thread health and operator actions
 
 Admin may diagnose and invoke bounded Thread maintenance actions, but the authority for each action remains in the owning Fibre service. The canonical semantics are defined in [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md).
