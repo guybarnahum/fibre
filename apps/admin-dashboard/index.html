@@ -70,6 +70,7 @@
             <button id="view-raw" type="button" data-mode="raw">Raw activity</button>
             <button id="view-birth-center" type="button" data-mode="birth-center">Birth Center</button>
             <button id="view-threads" type="button" data-mode="threads">Threads</button>
+            <button id="view-appearance" type="button" data-mode="appearance">Appearance</button>
             <button id="view-stillborn" type="button" data-mode="stillborn">Stillborn</button>
           </div>
         </div>
@@ -220,6 +221,73 @@
           </div>
         </div>
 
+        <div id="appearance-view" class="activity-view appearance-coverage-view" hidden>
+          <div class="appearance-coverage-toolbar">
+            <div>
+              <p class="eyebrow">Population Lab</p>
+              <h3>Appearance coverage</h3>
+              <p>Actual Thread ancestry demand against Fibre's versioned physical-reference model.</p>
+            </div>
+            <button id="appearance-scan" class="secondary" type="button">Scan coverage</button>
+          </div>
+
+          <div class="appearance-coverage-metrics" aria-label="Appearance coverage summary">
+            <article><span>Threads</span><strong id="appearance-stat-threads">—</strong></article>
+            <article><span>Lineages</span><strong id="appearance-stat-lineages">—</strong></article>
+            <article><span>Coverage holes</span><strong id="appearance-stat-holes">—</strong></article>
+            <article><span>Migration candidates</span><strong id="appearance-stat-migrations">—</strong></article>
+            <article><span>Fallback / missing</span><strong id="appearance-stat-fallback">—</strong></article>
+          </div>
+
+          <div class="appearance-coverage-map-shell">
+            <div class="thread-world-map appearance-coverage-map" aria-label="Birth locations represented by appearance coverage holes">
+              <svg class="thread-world-map-svg" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">
+                <path id="appearance-world-path" class="thread-world-map-path"></path>
+                <g id="appearance-timezones" class="thread-world-timezones"></g>
+                <g id="appearance-hole-markers"></g>
+              </svg>
+            </div>
+            <div class="thread-population-map-caption">
+              <strong>Coverage demand</strong>
+              <span id="appearance-map-summary">Scan to map represented coverage holes.</span>
+            </div>
+          </div>
+
+          <div class="appearance-coverage-grid">
+            <section class="appearance-coverage-holes">
+              <div class="appearance-section-head">
+                <div><strong>Priority holes</strong><span>Ranked by actual Thread lineage demand and calibration weakness.</span></div>
+              </div>
+              <div class="table-wrap">
+                <table class="appearance-hole-table">
+                  <thead><tr><th>Reference</th><th>Coverage</th><th>Threads</th><th>Sides</th><th>Priority</th></tr></thead>
+                  <tbody id="appearance-hole-rows"></tbody>
+                </table>
+              </div>
+            </section>
+            <aside id="appearance-hole-detail" class="appearance-hole-detail">
+              <div class="empty"><div class="empty-icon">◌</div><h3>Select a coverage hole</h3><p>Inspect ancestry demand, calibration chain, represented places, and affected Threads.</p></div>
+            </aside>
+          </div>
+
+          <section class="appearance-migrations-section">
+            <div class="appearance-section-head">
+              <div><strong>Existing Threads needing recalibration</strong><span>Only Threads whose stored calibration dependency differs from today's resolved chain.</span></div>
+            </div>
+            <div id="appearance-migration-candidates" class="appearance-migration-candidates"></div>
+          </section>
+
+          <details class="appearance-model-section">
+            <summary>Reference-population model</summary>
+            <div class="table-wrap">
+              <table class="appearance-model-table">
+                <thead><tr><th>Reference</th><th>Version</th><th>Parent</th><th>Status</th><th>Own axes</th><th>Population IDs</th></tr></thead>
+                <tbody id="appearance-model-rows"></tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+
         <div id="stillborn-view" class="activity-view" hidden>
           <div class="stillborn-intro">
             <div><p class="eyebrow">Unrecoverable</p><h3>Stillborn Threads</h3></div>
@@ -273,6 +341,7 @@
   <script type="module" src="/image-lightbox.js"></script>
   <script type="module" src="/thread-popup-links.js"></script>
   <script type="module" src="/thread-repair-ui.js"></script>
+  <script type="module" src="/appearance-coverage-ui.js"></script>
   <script type="module" src="/activity-export.js"></script>
   <script type="module" src="/router.js"></script>
 </body>
