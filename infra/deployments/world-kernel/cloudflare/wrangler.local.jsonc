@@ -9,7 +9,9 @@
     "FIBRE_WORLD_RECONCILIATION_MS": "5000"
   },
   "secrets": {
-    "required": ["FIBRE_PRIVATE_TOKEN"]
+    "required": [
+      "FIBRE_PRIVATE_TOKEN"
+    ]
   },
   "d1_databases": [
     {
@@ -24,6 +26,11 @@
       {
         "name": "WORLD_STATE",
         "class_name": "FibreWorldDurableObject"
+      },
+      {
+        "name": "ADMIN_LIVE",
+        "class_name": "FibreAdminLiveDurableObject",
+        "script_name": "fibre-presentation-local"
       }
     ]
   },
