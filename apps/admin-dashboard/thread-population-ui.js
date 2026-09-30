@@ -1580,7 +1580,8 @@ async function loadPopulation() {
     for (const thread of population) rememberPopulationThread(thread);
     stillborn = payload.stillborn ?? [];
     populationPortraitCache.clear();
-    renderSummary(payload.summary ?? {});
+    const currentSummary=currentPopulationSummary();
+    renderSummary(currentSummary);
     renderPopulation();
     renderStillborn();
     renderThreadPopulationMap();
@@ -1589,7 +1590,7 @@ async function loadPopulation() {
       renderStillbornTopSummary(payload.summary ?? {});
       $("#chain-summary").textContent = `${stillborn.length} unrecoverable Thread ${stillborn.length === 1 ? "identifier" : "identifiers"} parked outside the admitted population${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
     } else {
-      renderThreadsTopSummary(payload.summary ?? {});
+      renderThreadsTopSummary(currentSummary);
       $("#chain-summary").textContent = `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
     }
   } catch (error) {
