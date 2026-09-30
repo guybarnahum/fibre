@@ -432,6 +432,61 @@ Approval is the hinge. Experiments and research may produce evidence and proposa
 
 Birthplace, name, language and culture never participate in dependency matching. A stable admitted `populationId` or other durable physical-lineage evidence is required. Old evidence without that identity is a data/coverage hole to repair explicitly, not permission to guess ancestry.
 
+## Versioned calibration dependencies and targeted migration
+
+The physical-population atlas evolves independently of the physical-genome schema.
+
+`PHYSICAL_GENOME_VERSION` changes only when the genome/inheritance representation or algorithm changes broadly. A refinement to one calibrated population must not make unrelated Threads stale merely because the repository changed.
+
+Each reference-population node therefore carries a **local monotonic integer calibration version**:
+
+```text
+afr_north.morocco@1
+afr_north.morocco@2
+...
+```
+
+A child depends on the full effective parent chain that supplied its calibration. Human Appearance exposes that chain explicitly, for example:
+
+```text
+west_asia@1 -> afr_north@1 -> afr_north.morocco@2
+```
+
+Durable physical ancestry separates a stable machine identity from human presentation:
+
+```json
+{
+  "populationId": "morocco",
+  "population": "Moroccan family",
+  "share": 1,
+  "referencePopulation": "afr_north.morocco"
+}
+```
+
+`populationId` is the stable ancestry identity used to resolve a current calibration node. `population` is display/provenance text. Fibre must never reconstruct `populationId` later from a Thread's name, language, portrait, nationality or birthplace. Place may author a reviewed default before ancestry admission; it is not runtime ancestry inference.
+
+Whenever World creates or migrates a physical genome from lineage evidence, it snapshots the exact effective calibration dependencies consumed by that genome. Diagnosis compares that stored dependency set with today's resolved dependency set.
+
+A Thread requires appearance migration when either:
+
+1. its physical-genome schema/model version is outdated; or
+2. its effective calibration dependency set has changed.
+
+The second case is targeted. If `afr_north.morocco` advances from version 1 to version 3, a Moroccan Thread that consumed version 1 becomes migration-required while an unchanged Korean Thread remains healthy.
+
+Calibration migration is **direct-to-current**, not an ordered SQL-style replay:
+
+```text
+stored afr_north.morocco@1
+current afr_north.morocco@3
+
+one recalculation: @1 -> @3
+```
+
+Version 2 is historical model evidence, not an executable migration step. The Thread is recomputed once from its durable ancestry and deterministic conception/founder seed using the current approved calibration. Historical genomes, Embodiments, roots and migration events remain evidence.
+
+Population Lab may produce experiments, research artifacts and calibration candidates. None of those become appearance authority by themselves. **Approval** is the authority hinge: an approved calibration enters the current versioned reference registry. At that point Fibre can deterministically compute the affected existing Threads from their stored dependency snapshots. Migration remains an explicit World authority change; approval does not silently rewrite people.
+
 ## Variation, not templates
 
 A population node is not a face template.
