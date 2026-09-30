@@ -110,17 +110,6 @@ export function createCloudflareStreamPort(channelNamespace) {
   });
 }
 
-export function createCloudflareRealtimePort(channelNamespace) {
-  const namespace = assertChannelNamespace(channelNamespace);
-  return Object.freeze({
-    async publish(channelId, value) {
-      assertInfraJsonValue("realtime value", value);
-      const result = await channelStub(namespace, channelId).publish({ valueJson: infraCanonicalJson(value) });
-      return { delivered: Number.isSafeInteger(result?.delivered) ? result.delivered : null };
-    },
-  });
-}
-
 function assertD1Database(database) {
   if (!database || typeof database.prepare !== "function") throw new TypeError("Cloudflare D1 catalog binding must provide prepare");
   return database;
