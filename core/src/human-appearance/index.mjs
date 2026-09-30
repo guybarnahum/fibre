@@ -10,8 +10,10 @@ import {physicalPhenotypeRenderingProjection} from "../human-phenotype/rendering
 import {
   referencePopulationCalibration,
   referencePopulationCalibrations,
+  referencePopulationDependencyChain,
   referencePopulationCalibration,
   referencePopulationCalibrations,
+  referencePopulationDependencyChain,
   referencePopulationIds,
   referencePopulationPrior,
   referencePopulationVariation,
