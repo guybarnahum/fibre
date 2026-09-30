@@ -146,7 +146,7 @@ export function createAssetGenerationRuntime({
         stage: "asset.request.execute",
         attempt: checkedAttemptNumber,
         evidence,
-      }, async () => {
+      }, async ({ operationId }) => {
         try {
           const result = await executeJob({
             infra,
@@ -154,6 +154,17 @@ export function createAssetGenerationRuntime({
             job,
             attemptNumber: checkedAttemptNumber,
             allowProviderSwitch,
+            runProviderGeneration: (operation) => runActivityStage(activity, {
+              ...context,
+              parentOperationId: operationId,
+              stage: "asset.provider.generate",
+              attempt: checkedAttemptNumber,
+              evidence: {
+                ...evidence,
+                role: job.role,
+                providerProfile: job.providerProfile,
+              },
+            }, operation),
           });
           return runtimeResult(result);
         } catch (error) {
