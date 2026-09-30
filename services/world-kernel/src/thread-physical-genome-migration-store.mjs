@@ -5,6 +5,10 @@ import {
   resolveHumanPhysicalInheritance,
 } from "#core/src/human-appearance/index.mjs";
 import {
+  appearanceCalibrationDependencies,
+  planAppearanceCalibrationMigration,
+} from "#core/src/population-context/index.mjs";
+import {
   boundedThreadScopedId,
   canonicalJson,
   sha256,
@@ -70,6 +74,12 @@ export class ThreadPhysicalGenomeMigrationStore{
       physicalAncestry:normalizePhysicalAncestry(payload.physicalAncestry),
       physicalGenomeVersion:payload?.physicalGenome?.version??null,
       previousPhysicalGenomeVersion:payload?.previousPhysicalGenomeVersion??null,
+      calibrationDependencies:Array.isArray(payload?.calibrationDependencies)
+        ? Object.freeze(structuredClone(payload.calibrationDependencies))
+        : null,
+      previousCalibrationDependencies:Array.isArray(payload?.previousCalibrationDependencies)
+        ? Object.freeze(structuredClone(payload.previousCalibrationDependencies))
+        : null,
     });
   }
 
@@ -105,6 +115,12 @@ export class ThreadPhysicalGenomeMigrationStore{
         physicalAncestry:normalizePhysicalAncestry(payload.physicalAncestry),
         physicalGenomeVersion:payload?.physicalGenome?.version??null,
         previousPhysicalGenomeVersion:payload?.previousPhysicalGenomeVersion??null,
+        calibrationDependencies:Array.isArray(payload?.calibrationDependencies)
+          ? Object.freeze(structuredClone(payload.calibrationDependencies))
+          : null,
+        previousCalibrationDependencies:Array.isArray(payload?.previousCalibrationDependencies)
+          ? Object.freeze(structuredClone(payload.previousCalibrationDependencies))
+          : null,
       })];
     }));
   }
@@ -113,6 +129,13 @@ export class ThreadPhysicalGenomeMigrationStore{
     validateThreadSnapshot(thread);
     const key=normalizeOperationKey(operationKey);
     const ancestry=normalizePhysicalAncestry(physicalAncestry);
+    const calibrationDependencies=appearanceCalibrationDependencies(ancestry);
+    const previousEvidence=this.latestEvidence(thread.threadId);
+    const previousCalibrationDependencies=previousEvidence?.calibrationDependencies??null;
+    const calibrationPlan=planAppearanceCalibrationMigration({
+      storedDependencies:previousCalibrationDependencies,
+      currentDependencies:calibrationDependencies,
+    });
     const genome=resultGenome(thread.threadId,ancestry);
     expressInheritedAppearance({physicalGenome:genome,sex:thread.identity?.sex});
 
@@ -128,6 +151,7 @@ export class ThreadPhysicalGenomeMigrationStore{
       if(
         payload?.operationKey!==key
         || canonicalJson(payload?.physicalAncestry??null)!==canonicalJson(ancestry)
+        || canonicalJson(payload?.calibrationDependencies??null)!==canonicalJson(calibrationDependencies)
         || canonicalJson(payload?.physicalGenome??null)!==canonicalJson(genome)
       ){
         throw new TypeError(`physical genome operationKey ${key} was already used with different migration input`);
@@ -139,14 +163,17 @@ export class ThreadPhysicalGenomeMigrationStore{
         reused:true,
         eventId:migrationEventId,
         physicalAncestry:ancestry,
+        calibrationDependencies,
+        previousCalibrationDependencies,
+        calibrationPlan,
         physicalGenome:genome,
         thread:JSON.parse(currentRow.state_json),
       });
     }
 
     const previousPhysicalGenomeVersion=thread.genome.physical?.version??null;
-    if(previousPhysicalGenomeVersion===PHYSICAL_GENOME_VERSION){
-      throw new TypeError("physical genome already uses the current appearance model");
+    if(previousPhysicalGenomeVersion===PHYSICAL_GENOME_VERSION&&!calibrationPlan.migrationRequired){
+      throw new TypeError("physical genome already uses the current appearance model and calibration");
     }
 
     const next=structuredClone(thread);
@@ -157,7 +184,14 @@ export class ThreadPhysicalGenomeMigrationStore{
 
     const stateJson=canonicalJson(next);
     const stateHash=threadStateHash(next);
-    const payload={operationKey:key,physicalAncestry:ancestry,physicalGenome:genome,previousPhysicalGenomeVersion};
+    const payload={
+      operationKey:key,
+      physicalAncestry:ancestry,
+      calibrationDependencies,
+      previousCalibrationDependencies,
+      physicalGenome:genome,
+      previousPhysicalGenomeVersion,
+    };
     const actor={entityId:"fibre.admin.operator",kind:"operator",displayName:"Fibre Admin"};
     const provenance={
       source:"operator_confirmed_physical_ancestry",
@@ -181,7 +215,7 @@ export class ThreadPhysicalGenomeMigrationStore{
           event_id,thread_id,sequence,expected_version,resulting_version,event_type,
           command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
           authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-        ) VALUES (?,?,?,?,?,'THREAD_PHYSICAL_GENOME_MIGRATED',NULL,NULL,?,?,?,?,NULL,?,?,2,?)
+        ) VALUES (?,?,?,?,?,'THREAD_PHYSICAL_GENOME_MIGRATED',NULL,NULL,?,?,?,?,NULL,?,?,3,?)
       `).run(
         migrationEventId,
         thread.threadId,
@@ -209,6 +243,9 @@ export class ThreadPhysicalGenomeMigrationStore{
       reused:false,
       eventId:migrationEventId,
       physicalAncestry:ancestry,
+      calibrationDependencies,
+      previousCalibrationDependencies,
+      calibrationPlan,
       physicalGenome:genome,
       thread:next,
     });
