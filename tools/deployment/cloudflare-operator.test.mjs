@@ -178,6 +178,15 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
   assert.equal(presentation.vars.VIEWER_ORIGIN, "https://staging.insidefibre.com");
   assert.equal(presentation.vars.FIBRE_ACTIVITY_ENV, "staging");
   assert.equal(presentation.vars.FIBRE_DEPLOYMENT_GIT_SHA, SOURCE_SHA);
+  assert.equal(presentation.migrations, undefined, "Thread Presentation mixed exports with legacy Durable Object migrations");
+  assert.deepEqual(
+    presentation.exports,
+    {
+      FibrePresentationChannelDurableObject:{ type:"durable-object", storage:"sqlite" },
+      FibreAdminLiveDurableObject:{ type:"durable-object", storage:"sqlite" },
+    },
+    "Thread Presentation did not declaratively export both Durable Object classes",
+  );
 
   for (const serviceId of ["asset-generator", "birth-center", "world-kernel"]) {
     const config = JSON.parse(await readFile(resolve(repoRoot, first.wranglerConfigs[serviceId]), "utf8"));
