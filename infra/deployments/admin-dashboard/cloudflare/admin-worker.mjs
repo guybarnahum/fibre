@@ -5,7 +5,7 @@ import baseWorker, {
   authorizeAdminPrincipal,
 } from "./worker.mjs";
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
-import { readAdminThreadPopulation } from "./thread-population.mjs";
+import { readAdminThreadPopulation, readAdminThreadPopulationThread } from "./thread-population.mjs";
 import {
   combineAdminThreadIdentity,
   resolveAdminThreadIdentity,
@@ -24,6 +24,7 @@ const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
+const THREAD_POPULATION_ENTRY_ROUTE = /^\/api\/threads\/([^/]+)\/population$/u;
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
 const THREAD_PENDING_BIRTHS_ROUTE = "/api/threads/births/pending";
 const THREAD_BIRTHPLACES_ROUTE = "/api/threads/births/places";
@@ -416,6 +417,18 @@ async function threadRegistry(env, limit) {
   return payload.threads;
 }
 
+async function threadRegistryEntry(env, threadId) {
+  const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
+    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/identity`,
+    { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
+  ));
+  const payload = await response.json().catch(() => null);
+  if (response.status === 404 && payload?.error?.code === "THREAD_NOT_FOUND") return null;
+  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
+  if (payload?.identity?.threadId !== threadId) throw new Error("World Thread Registry response is invalid");
+  return payload.identity;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -436,13 +449,14 @@ export default {
     const fidReissueMatch = THREAD_FID_REISSUE_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
+    const threadPopulationEntryMatch = THREAD_POPULATION_ENTRY_ROUTE.exec(url.pathname);
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
     const pendingBirths = url.pathname === THREAD_PENDING_BIRTHS_ROUTE;
     const birthplaces = url.pathname === THREAD_BIRTHPLACES_ROUTE;
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor);
     if (adminGet || adminPost) {
@@ -477,6 +491,23 @@ export default {
             environment,
             queriedAt:new Date().toISOString(),
             ...population,
+          });
+        }
+        if (threadPopulationEntryMatch) {
+          const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
+          const threadId = id("threadId", decodeURIComponent(threadPopulationEntryMatch[1]));
+          const thread = await readAdminThreadPopulationThread({
+            activityLog:env.ACTIVITY_LOG,
+            environment,
+            threadId,
+            readRegistryEntry:(candidate) => threadRegistryEntry(env, candidate),
+          });
+          if (thread === null) return json(404, { error:"thread_not_found" });
+          return json(200, {
+            contract:"fibre-admin-thread-population-entry-v0.1",
+            environment,
+            queriedAt:new Date().toISOString(),
+            thread,
           });
         }
         if (finVerify) return proxyFinCardVerify(request, env);
@@ -532,7 +563,7 @@ export default {
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
         if (threadBirth) return json(error instanceof TypeError ? 400 : 503, { error:"thread_birth_unavailable", detail:error.message });
         if (pendingBirths || birthplaces) return json(503, { error:"thread_birth_data_unavailable", detail:error.message });
-        if (threadPopulation) return json(503, { error:"thread_population_unavailable", detail:error.message });
+        if (threadPopulation || threadPopulationEntryMatch) return json(503, { error:"thread_population_unavailable", detail:error.message });
         if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
         if (fidReissueMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_reissue_unavailable", detail:error.message });
         return json(error instanceof TypeError ? 400 : 503, {
