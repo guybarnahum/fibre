@@ -17,7 +17,6 @@ import {
   createFidLifecycleReconciler,
   createFidPresentationProjectionService,
   createThreadPresentationVisualPublicationReconciler,
-  fidPresentationInvalidation,
   normalizeThreadPresentationBundle,
   presentationCompletionInvalidation,
   publishAdminInvalidation,
@@ -110,7 +109,7 @@ async function bestEffortAdminInvalidation(realtime, invalidation) {
   }
 }
 
-function createVisualReconciler(env, infra, presentationServer, activityRecorder, adminRealtime) {
+function createVisualReconciler(env, infra, presentationServer, activityRecorder) {
   return createThreadPresentationVisualPublicationReconciler({
     presentationServer,
     infra,
@@ -120,20 +119,16 @@ function createVisualReconciler(env, infra, presentationServer, activityRecorder
     ),
     createDemandService: createPresentationAssetDemandService,
     createVisualRewrite: createThreadPresentationEmbodimentRewriteService,
-    ensureFid:async ({ threadId, idempotencyKey, canonicalReferenceObjectRef }) => {
-      const result = await createFidLifecycle(
-        env,
-        infra,
-        presentationServer,
-      ).reconcile({
-        threadId,
-        idempotencyKey,
-        mode:"ensure",
-        canonicalReferenceObjectRef,
-      });
-      await bestEffortAdminInvalidation(adminRealtime, fidPresentationInvalidation(threadId, result));
-      return result;
-    },
+    ensureFid:({ threadId, idempotencyKey, canonicalReferenceObjectRef }) => createFidLifecycle(
+      env,
+      infra,
+      presentationServer,
+    ).reconcile({
+      threadId,
+      idempotencyKey,
+      mode:"ensure",
+      canonicalReferenceObjectRef,
+    }),
     activityRecorder,
   });
 }
@@ -436,7 +431,7 @@ export default {
     }
 
     const visualWriteApi = createVisualPublicationWriteApi({
-      reconciler: createVisualReconciler(env, infra, presentationServer, activityRecorder, adminRealtime),
+      reconciler: createVisualReconciler(env, infra, presentationServer, activityRecorder),
       privateToken: env.FIBRE_PRIVATE_TOKEN ?? null,
     });
     const visualWriteResponse = await visualWriteApi.fetch(request);
