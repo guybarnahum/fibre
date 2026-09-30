@@ -428,6 +428,41 @@ async function appearanceCoverage(env) {
   return payload;
 }
 
+async function threadMigrations(env) {
+  const response=await serviceBinding(env,"WORLD_KERNEL").fetch(new Request(
+    "https://world.internal/internal/thread-migrations",
+    { headers:{ Accept:"application/json","x-fibre-private-token":privateToken(env) } },
+  ));
+  const payload=await response.json().catch(()=>null);
+  if(!response.ok)throw new Error(payload?.error?.detail??payload?.error?.code??`HTTP ${response.status}`);
+  if(payload?.contract!=="fibre-thread-migration-summary-v0.1"||!Array.isArray(payload?.threads)){
+    throw new Error("World migration summary response is invalid");
+  }
+  return payload.threads;
+}
+
+async function threadMigrationEntry(env,threadId) {
+  const response=await serviceBinding(env,"WORLD_KERNEL").fetch(new Request(
+    `https://world.internal/internal/thread-migrations/${encodeURIComponent(threadId)}`,
+    { headers:{ Accept:"application/json","x-fibre-private-token":privateToken(env) } },
+  ));
+  const payload=await response.json().catch(()=>null);
+  if(response.status===404)return null;
+  if(!response.ok)throw new Error(payload?.error?.detail??payload?.error?.code??`HTTP ${response.status}`);
+  if(payload?.contract!=="fibre-thread-migration-summary-entry-v0.1"){
+    throw new Error("World migration summary entry response is invalid");
+  }
+  return payload.migration??null;
+}
+
+function attachMigrationSummary(thread,migration) {
+  return Object.freeze({
+    ...thread,
+    migrationDomains:Object.freeze([...(migration?.domains??[])]),
+    migrationReasons:migration?.reasons??Object.freeze({}),
+  });
+}
+
 async function threadRegistryEntries(env, threadIds) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     "https://world.internal/internal/thread-directory/entries",
@@ -541,34 +576,42 @@ export default {
         if (birthPlaceSearch) return searchBirthPlaces(request, env);
         if (threadPopulation) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
-          const population = await readAdminThreadPopulation({
-            activityLog:env.ACTIVITY_LOG,
-            environment,
-            readRegistry:(limit) => threadRegistry(env, limit),
-            readStillborn:() => birthCenterStillborn(env),
-          });
+          const [population,migrations] = await Promise.all([
+            readAdminThreadPopulation({
+              activityLog:env.ACTIVITY_LOG,
+              environment,
+              readRegistry:(limit) => threadRegistry(env, limit),
+              readStillborn:() => birthCenterStillborn(env),
+            }),
+            threadMigrations(env),
+          ]);
+          const migrationByThread=new Map(migrations.map((entry)=>[entry.threadId,entry]));
           return json(200, {
-            contract:"fibre-admin-thread-population-v0.3",
+            contract:"fibre-admin-thread-population-v0.4",
             environment,
             queriedAt:new Date().toISOString(),
             ...population,
+            threads:population.threads.map((thread)=>attachMigrationSummary(thread,migrationByThread.get(thread.threadId)??null)),
           });
         }
         if (threadPopulationEntryMatch) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const threadId = id("threadId", decodeURIComponent(threadPopulationEntryMatch[1]));
-          const thread = await readAdminThreadPopulationThread({
-            activityLog:env.ACTIVITY_LOG,
-            environment,
-            threadId,
-            readRegistryEntry:(candidate) => threadRegistryEntry(env, candidate),
-          });
+          const [thread,migration] = await Promise.all([
+            readAdminThreadPopulationThread({
+              activityLog:env.ACTIVITY_LOG,
+              environment,
+              threadId,
+              readRegistryEntry:(candidate) => threadRegistryEntry(env, candidate),
+            }),
+            threadMigrationEntry(env,threadId),
+          ]);
           if (thread === null) return json(404, { error:"thread_not_found" });
           return json(200, {
-            contract:"fibre-admin-thread-population-entry-v0.1",
+            contract:"fibre-admin-thread-population-entry-v0.2",
             environment,
             queriedAt:new Date().toISOString(),
-            thread,
+            thread:attachMigrationSummary(thread,migration),
           });
         }
         if (finVerify) return proxyFinCardVerify(request, env);
