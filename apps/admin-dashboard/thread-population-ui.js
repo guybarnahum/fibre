@@ -624,9 +624,7 @@ function renderPopulationFilter() {
   ];
   for(const [control,domain,label] of controls){
     if(!control)continue;
-    const count=population.filter((thread)=>
-      domain==="migration" ? thread.health==="migration_required" : hasMigrationDomain(thread,domain)
-    ).length;
+    const count=populationFilterCount(population,domain);
     control.textContent=`${label} · ${count}`;
     const selected=populationFilter===domain;
     control.classList.toggle("selected",selected);
