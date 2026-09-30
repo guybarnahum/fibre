@@ -1,3 +1,5 @@
+import { watchAdminLive } from "./admin-live.js";
+import { threadObservatoryViewKey } from "./view-invalidation.js";
 import { setWaitingContent } from "./fa-icons.js";
 import { threadAppearanceSection } from "./thread-appearance-ui.js";
 import { renderThreadHealth } from "./thread-repair-ui.js";
@@ -12,6 +14,22 @@ import {
 let renderedThreadId = null;
 let threadPageLoad = 0;
 let fidSectionLoad = 0;
+let threadPageWatchId = null;
+let stopThreadPageWatch = null;
+
+function ensureThreadPageWatch(threadId) {
+  if (threadPageWatchId === threadId && stopThreadPageWatch !== null) return;
+  stopThreadPageWatch?.();
+  threadPageWatchId = threadId;
+  stopThreadPageWatch = watchAdminLive(
+    threadObservatoryViewKey(threadId),
+    () => renderThreadPage(threadId),
+    {
+      active:() => renderedThreadId === threadId,
+      reconcileOnSubscribe:false,
+    },
+  );
+}
 
 function node(tag, className = null, text = null) {
   const element = document.createElement(tag);
@@ -43,6 +61,7 @@ function healthSection(threadId) {
 
 export async function renderThreadPage(threadId) {
   renderedThreadId = threadId;
+  ensureThreadPageWatch(threadId);
   const load = ++threadPageLoad;
   const main = document.querySelector(".main");
   document.querySelector("#record-dialog")?.remove();
