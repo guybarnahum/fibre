@@ -134,6 +134,7 @@ function syncUrl() {
 
 function setLoading(loading) {
   const refresh = $("#refresh-button");
+  if (!refresh.style.width) refresh.style.width = `${Math.ceil(refresh.getBoundingClientRect().width)}px`;
   refresh.disabled = loading;
   if (loading) {
     const icon = faIcon("rotate");
