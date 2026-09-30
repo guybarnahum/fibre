@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
+import { ACTIVITY_RECORD_VERSION, normalizeActivityRecord } from "#infra/telemetry";
 import { canonicalVisualSpecificationFromPhysicalGenome } from "../src/canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "../src/embodiment-domain.mjs";
 import { createThreadGenesisRepairService } from "../src/thread-genesis-repair-service.mjs";
@@ -16,6 +17,36 @@ const SEX_EVIDENCE = Object.freeze({
 const NO_IDENTITY_UPDATE = Object.freeze({
   update() { throw new Error("identity update should not run in this test"); },
 });
+
+function validatingActivityRecorder(state) {
+  let ordinal = 0;
+  return {
+    async record(entry) {
+      ordinal += 1;
+      state.activity.push(normalizeActivityRecord({
+        activityVersion:ACTIVITY_RECORD_VERSION,
+        activityId:`act_repair_${ordinal}`,
+        occurredAt:"2026-09-30T18:00:00.000Z",
+        recordedAt:"2026-09-30T18:00:00.001Z",
+        environment:"test",
+        service:"world-kernel",
+        deploymentGitSha:null,
+        requestId:null,
+        genesisId:null,
+        threadId:null,
+        experienceId:null,
+        sessionId:null,
+        correlationId:null,
+        causationId:null,
+        operationId:null,
+        parentOperationId:null,
+        message:null,
+        error:null,
+        ...entry,
+      }));
+    },
+  };
+}
 
 function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null, visualIdentityRepairService = null, identityUpdater = NO_IDENTITY_UPDATE } = {}) {
   const threadId = "thr_repair_1";
@@ -106,7 +137,7 @@ function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null,
       },
     },
     identityUpdater,
-    activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
+    activityRecorder:validatingActivityRecorder(state),
   });
   return { service, state, threadId, thread, embodiment };
 }
@@ -365,7 +396,7 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
       correctRaisedLanguages() { throw new Error("migration must not correct Genesis languages"); },
     },
     identityUpdater:NO_IDENTITY_UPDATE,
-    activityRecorder:{ async record(entry) { state.activity.push(structuredClone(entry)); } },
+    activityRecorder:validatingActivityRecorder(state),
   });
 
   const before = await service.diagnose(threadId);
@@ -385,6 +416,11 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
   assert.equal(migration.migrated, true);
   assert.equal(migration.after.findings.find((entry) => entry.code === "SEX").state, "healthy");
   assert.equal(migration.after.health, "healthy");
+  assert.deepEqual(
+    state.activity.filter((entry) => entry.stage.startsWith("thread.migration.")).map((entry) => entry.stage),
+    ["thread.migration.start", "thread.migration.genesis_sex", "thread.migration.complete"],
+    "successful migration vanished from Activity",
+  );
 });
 
 test("legacy embodiment migration admits explicit North-African physical ancestry", async () => {
