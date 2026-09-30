@@ -294,6 +294,87 @@ This avoids both failure modes:
 
 Population nodes describe overlapping physical distributions, not categorical faces.
 
+
+## Versioned calibration dependencies
+
+The physical-genome schema version and the population-calibration version are different authorities.
+
+`PHYSICAL_GENOME_VERSION` changes only when the physical-genome schema or inheritance algorithm changes. A better Moroccan, Korean or Samoan calibration must not force unrelated Threads through a global physical-genome migration.
+
+Every reference-population node therefore carries its own monotonic integer `version`:
+
+```text
+afr_north@1
+  -> afr_north.morocco@1
+```
+
+A physical lineage may also carry a stable `populationId` distinct from its human-readable `population` label. For example:
+
+```json
+{
+  "populationId": "morocco",
+  "population": "Moroccan family",
+  "share": 1,
+  "referencePopulation": "afr_north.morocco"
+}
+```
+
+The stable ID is migration identity. The display label remains provenance. Fibre must not reconstruct `populationId` later from birthplace, nationality, name, language, culture or portrait pixels.
+
+When World creates or migrates a physical genome from lineage evidence it snapshots the exact effective calibration dependency chain it consumed. A Moroccan lineage may therefore record:
+
+```text
+west_asia@1 -> afr_north@1 -> afr_north.morocco@1
+```
+
+A later approved refinement may advance only:
+
+```text
+afr_north.morocco@1 -> afr_north.morocco@3
+```
+
+An existing Thread that consumed the earlier chain becomes `migration_required`. An unrelated Korean Thread remains healthy because its dependency chain did not change.
+
+Calibration migration is **direct to current authority**. It is not an SQL-style ordered replay. A Thread at Morocco v1 migrates once to the currently approved Morocco v3; v2 is historical calibration evidence and is never executed as an intermediate transformation.
+
+Parent calibration changes propagate only through dependency chains that actually inherit that parent. This lets Fibre refine a broad parent prior without globally rewriting physical genomes that do not depend on it.
+
+## Population Lab coverage and approval lifecycle
+
+Population Lab is the shared calibration engine used by both CLI and Admin. Admin does not own a second coverage implementation.
+
+The lifecycle is:
+
+```text
+current Thread ancestry + location
+        |
+        v
+Population Lab coverage scan
+        |
+        +-- fallback / broad / missing coverage holes
+        +-- stale calibration dependency candidates
+        |
+        v
+bounded experiment / research evidence
+        |
+        v
+reviewed calibration candidate
+        |
+        v
+approved versioned calibration
+        |
+        v
+affected-Thread dependency diff
+        |
+        v
+explicit targeted migration
+```
+
+Experiments and research are evidence only. They do not change Thread authority or the production calibration registry. **Approval** is the authority hinge: only an approved calibration becomes current for new physical genomes and creates migration requirements for existing dependent Threads.
+
+Coverage geography is descriptive demand context only. A map point means Fibre currently has a Thread/family lineage represented at that birthplace. Geography never selects or infers ancestry.
+
+
 ## Versioned calibration dependencies and targeted migration
 
 Each reference-population node carries an explicit monotonic integer calibration version:
