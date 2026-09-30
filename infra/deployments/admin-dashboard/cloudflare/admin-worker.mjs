@@ -24,6 +24,7 @@ const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
+const APPEARANCE_COVERAGE_ROUTE = "/api/appearance/coverage";
 const THREAD_LABELS_ROUTE = "/api/threads/labels";
 const THREAD_POPULATION_ENTRY_ROUTE = /^\/api\/threads\/([^/]+)\/population$/u;
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
@@ -410,6 +411,23 @@ async function threadRegistry(env, limit) {
   return payload.threads;
 }
 
+async function appearanceCoverage(env) {
+  const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
+    "https://world.internal/internal/appearance/coverage",
+    {
+      method:"GET",
+      headers:{
+        Accept:"application/json",
+        "x-fibre-private-token":privateToken(env),
+      },
+    },
+  ));
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
+  if (payload?.contract !== "fibre-appearance-coverage-v0.1") throw new Error("World appearance coverage response is invalid");
+  return payload;
+}
+
 async function threadRegistryEntries(env, threadIds) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     "https://world.internal/internal/thread-directory/entries",
@@ -461,6 +479,7 @@ export default {
     const fidReissueMatch = THREAD_FID_REISSUE_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
+    const appearanceCoverageRequest = url.pathname === APPEARANCE_COVERAGE_ROUTE;
     const threadLabels = url.pathname === THREAD_LABELS_ROUTE;
     const threadPopulationEntryMatch = THREAD_POPULATION_ENTRY_ROUTE.exec(url.pathname);
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
@@ -469,7 +488,7 @@ export default {
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels);
     if (adminGet || adminPost) {
@@ -507,6 +526,13 @@ export default {
               birthLocation:thread.birthLocation ?? null,
               birthPlace:thread.birthPlace ?? null,
             })),
+          });
+        }
+        if (appearanceCoverageRequest) {
+          const coverage = await appearanceCoverage(env);
+          return json(200, {
+            ...coverage,
+            queriedAt:new Date().toISOString(),
           });
         }
         if (threadBirth) return proxyThreadBirth(request, env);
@@ -601,6 +627,7 @@ export default {
         if (threadBirth) return json(error instanceof TypeError ? 400 : 503, { error:"thread_birth_unavailable", detail:error.message });
         if (pendingBirths || birthplaces) return json(503, { error:"thread_birth_data_unavailable", detail:error.message });
         if (threadPopulation || threadPopulationEntryMatch) return json(503, { error:"thread_population_unavailable", detail:error.message });
+        if (appearanceCoverageRequest) return json(503, { error:"appearance_coverage_unavailable", detail:error.message });
         if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
         if (fidReissueMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_reissue_unavailable", detail:error.message });
         return json(error instanceof TypeError ? 400 : 503, {
