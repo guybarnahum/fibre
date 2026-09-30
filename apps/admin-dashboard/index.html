@@ -21,6 +21,7 @@
       <nav class="nav" aria-label="Admin navigation">
         <a href="/" class="nav-item"><span class="nav-icon">⌂</span>Overview</a>
         <a href="/activity" class="nav-item active"><span class="nav-icon">≋</span>Activity</a>
+        <a id="appearance-nav-link" href="/activity?mode=appearance" class="nav-item"><span class="nav-icon">◌</span>Appearance</a>
         <a id="status-link" href="https://status.insidefibre.com" class="nav-item"><span class="nav-icon">◉</span>System status<span class="external">↗</span></a>
       </nav>
       <div class="sidebar-note"><strong>Operational only</strong><span>Activity is non-authoritative and fail-open. World and service records remain the source of truth.</span></div>
@@ -71,7 +72,6 @@
             <button id="view-raw" type="button" data-mode="raw">Raw activity</button>
             <button id="view-birth-center" type="button" data-mode="birth-center">Birth Center</button>
             <button id="view-threads" type="button" data-mode="threads">Threads</button>
-            <button id="view-appearance" type="button" data-mode="appearance">Appearance</button>
             <button id="view-stillborn" type="button" data-mode="stillborn">Stillborn</button>
           </div>
         </div>
@@ -181,8 +181,6 @@
             <div><strong>Thread population</strong><span>Admitted and recoverable persons in World.</span></div>
             <div class="thread-population-toolbar-actions">
               <button id="thread-population-filter-migration" class="secondary" type="button" aria-pressed="false">Needs migration</button>
-              <button id="thread-population-filter-appearance" class="secondary" type="button" aria-pressed="false">Appearance migration</button>
-              <button id="thread-population-filter-identity" class="secondary" type="button" aria-pressed="false">Identity migration</button>
               <button id="thread-population-repair-geography" class="secondary" type="button" hidden></button>
             </div>
           </div>
@@ -206,8 +204,6 @@
             <article><span>Male</span><strong id="thread-stat-male">—</strong></article>
             <article><span>Sex unknown</span><strong id="thread-stat-unknown">—</strong></article>
             <article><span>Needs attention</span><strong id="thread-stat-attention">—</strong></article>
-            <article><span>Appearance migration</span><strong id="thread-stat-appearance-migrations">—</strong></article>
-            <article><span>Identity migration</span><strong id="thread-stat-identity-migrations">—</strong></article>
             <article><span>Dead letter</span><strong id="thread-stat-dead">—</strong></article>
           </div>
           <div class="table-wrap">
