@@ -7,7 +7,7 @@ const css=await readFile(new URL("./appearance-coverage.css",import.meta.url),"u
 const populationUi=await readFile(new URL("./thread-population-ui.js",import.meta.url),"utf8");
 
 test("Appearance is a top-level Admin surface and cannot leak into operator views",()=>{
-  assert.match(html,/id="appearance-nav-link"[^>]*href="\/activity\?mode=appearance"/u);
+  assert.match(html,/id="appearance-nav-link"[^>]*href="\/appearance"/u);
   const viewSwitch=html.match(/<div class="view-switch"[\s\S]*?<\/div>/u)?.[0]??"";
   assert.doesNotMatch(viewSwitch,/view-appearance/u,"Appearance leaked into Activity/Birth Center/Threads/Stillborn switch");
   assert.match(css,/\.appearance-coverage-view\[hidden\]\s*\{\s*display:none\s*\}/u,
