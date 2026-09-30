@@ -292,7 +292,8 @@ A1 acceptance:
 6. One Thread may appear in both filters without conflating the two actions.
 7. Exact live row refresh uses an exact migration summary and does not rescan the population.
 8. Appearance and Identity migration actions remain in their owning Observatory sections.
-9. No experiment/provider cost is incurred merely by opening or scanning Appearance.
+9. An admitted Thread with no durable physical-ancestry provenance appears as a **missing coverage** hole, not an inferred ancestry and not an Appearance migration.
+10. No experiment/provider cost is incurred merely by opening or scanning Appearance.
 
 ### A2 — InfraDriver-backed experiments
 
