@@ -311,7 +311,7 @@ asset.completion.publish
 
 Retries use the same stage with increasing `attempt` and status `retrying`/`started`/`succeeded` or `failed`.
 
-The current Asset Generator runtime deliberately keeps this coarser than the full vocabulary above. It emits `asset.request.execute`, one nested `asset.provider.generate` pair around the actual external provider operation, and `asset.completion.publish`. The provider stage carries the enclosing request as `parentOperationId`, so provider latency is measurable without adding per-storage-step telemetry noise.
+The current Asset Generator runtime deliberately keeps this coarser than the full vocabulary above. It emits `asset.request.execute`, one nested `asset.provider.generate` pair around the actual external provider operation, and `asset.completion.publish`. The provider stage carries the enclosing request as `parentOperationId`, so provider latency is measurable without adding per-storage-step telemetry noise. Terminal generation exhaustion is not left as an indefinitely pending provider workflow: Asset Generator first persists an immutable Fibre terminal-failure witness, then emits a best-effort settlement hint on the existing asset queue. World wakes from that hint, rereads the Fibre outcome, and can retire the visual work to dead-letter before Admin is invalidated. The hint is never authority.
 
 ### Thread Presentation
 
