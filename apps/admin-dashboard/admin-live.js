@@ -9,6 +9,7 @@ const liveKeys = new Map();
 let socket = null;
 let reconnectTimer = null;
 let reconnectDelay = 1500;
+let hasConnected = false;
 
 function socketUrl() {
   const url = new URL("/api/live", location.href);
@@ -40,7 +41,9 @@ function handleMessage(event) {
 
   if (message?.type === "admin-live.ready") {
     reconnectDelay = 1500;
-    reconcileLiveViews("connected");
+    const reason = hasConnected ? "reconnected" : "connected";
+    hasConnected = true;
+    reconcileLiveViews(reason);
     return;
   }
   if (message?.type !== "admin-live.invalidate") return;
@@ -101,6 +104,7 @@ export function watchAdminLive(key, callback, { active = () => true, reconcileOn
     }
     if (liveKeys.size === 0) {
       reconnectDelay = 1500;
+      hasConnected = false;
       if (reconnectTimer !== null) {
         window.clearTimeout(reconnectTimer);
         reconnectTimer = null;
