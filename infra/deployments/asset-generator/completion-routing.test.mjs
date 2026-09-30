@@ -41,6 +41,18 @@ test("official identity photo completion wakes pending World visual reconciliati
   assert.equal(shouldWakeWorldAfterAssetCompletion(job), true);
 });
 
+test("FID photo derivation completion wakes World instead of waiting for reconciliation backoff", () => {
+  const job = {
+    context: {
+      kind: "fid_photo_derivation",
+      threadId: "thr_visual_001",
+    },
+  };
+  assert.equal(assetGenerationCompletionRoute(job), ASSET_COMPLETION_ROUTE_WORLD_WAKE);
+  assert.equal(shouldPublishAssetGenerationCompletion(job), true);
+  assert.equal(shouldWakeWorldAfterAssetCompletion(job), true);
+});
+
 test("unknown completion contexts stay off the completion queue", () => {
   const job = { context: { kind: "future_asset_kind" } };
   assert.equal(assetGenerationCompletionRoute(job), ASSET_COMPLETION_ROUTE_NONE);
