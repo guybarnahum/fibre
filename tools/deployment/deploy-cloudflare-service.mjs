@@ -222,7 +222,9 @@ async function main(argv) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main(process.argv.slice(2)).catch((error) => {
-    console.error(error instanceof Error ? error.message : String(error));
+    const provider = [error?.stderr, error?.stdout]
+      .find((value) => typeof value === "string" && value.trim() !== "");
+    console.error(provider?.trim() ?? (error instanceof Error ? error.message : String(error)));
     process.exitCode = 1;
   });
 }
