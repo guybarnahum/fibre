@@ -203,8 +203,20 @@ function readyRoot(job) {
 }
 
 function serviceEnvironment(calls) {
+  calls.adminHints ??= [];
   return {
     FIBRE_PRIVATE_TOKEN: PRIVATE_TOKEN,
+    ADMIN_LIVE:{
+      getByName(name) {
+        assert.equal(name, "admin");
+        return {
+          async publish({ valueJson }) {
+            calls.adminHints.push(JSON.parse(valueJson));
+            return { delivered:1 };
+          },
+        };
+      },
+    },
     FIBRE_WORLD_RECONCILIATION_MS: "1000",
     ASSET_GENERATOR: {
       async fetch(request) {
@@ -293,5 +305,54 @@ test("Cloudflare World restart resumes pending work once and preserves convergen
   assert.equal(calls.root, 2, "admitted canonical identity must not regenerate either stage");
   assert.equal(calls.visualPresentation, 1, "completed visual publication must not be reinvoked");
   await replay.close({ cancelSchedule: true });
+  storage.closeDatabase();
+});
+
+
+test("visual renewal publishes pending before asynchronous reconciliation", async () => {
+  const storage = durableStorage();
+  const calls = { root:0, genesisPresentation:0, visualPresentation:0, visualRequests:[], adminHints:[] };
+  const env = serviceEnvironment(calls);
+  let clock = 40_000;
+  const runtime = createWorldCloudflareRuntime({
+    storage,
+    env,
+    now:() => "2026-09-30T18:30:00Z",
+    nowMs:() => clock,
+  });
+
+  runtime.genesisStore.recordWorldSpec(worldSpec());
+  await runtime.birthPublisher.publishBirth(birth());
+  await runtime.reconciliationRuntime.handleWake();
+  assert.equal(runtime.visualPublicationWorkset.get(THREAD_ID)?.state, "complete");
+
+  const baseline = calls.adminHints.length;
+  const response = await runtime.repairApi.fetch(new Request(
+    `https://world.internal/internal/threads/${THREAD_ID}/repair`,
+    {
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "x-fibre-private-token":PRIVATE_TOKEN,
+      },
+      body:JSON.stringify({
+        action:"canonical_visual_identity_renewal",
+        operationKey:"renew_pending_activity_1",
+        reason:"Generate a fresh canonical portrait for the pending-transition contract test.",
+        evidenceReferences:[],
+      }),
+    },
+  ));
+
+  assert.equal(response.status, 200);
+  assert.equal(runtime.visualPublicationWorkset.get(THREAD_ID)?.state, "pending");
+  assert.deepEqual(
+    calls.adminHints.slice(baseline),
+    [{ entity:"thread", id:THREAD_ID, aspect:"reconciliation" }],
+    "authoritative pending transition did not reach Admin live",
+  );
+  assert.equal(await runtime.infraDriver.scheduler.get("world"), clock);
+
+  await runtime.close({ cancelSchedule:true });
   storage.closeDatabase();
 });
