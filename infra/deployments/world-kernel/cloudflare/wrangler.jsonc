@@ -33,6 +33,11 @@
       {
         "name": "WORLD_STATE",
         "class_name": "FibreWorldDurableObject"
+      },
+      {
+        "name": "ADMIN_LIVE",
+        "class_name": "FibreAdminLiveDurableObject",
+        "script_name": "fibre-thread-presentation"
       }
     ]
   },
