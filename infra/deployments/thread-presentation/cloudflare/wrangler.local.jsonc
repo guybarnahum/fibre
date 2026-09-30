@@ -79,14 +79,6 @@
       "storage": "sqlite"
     }
   },
-  "migrations": [
-    {
-      "tag": "admin-live-v1",
-      "new_sqlite_classes": [
-        "FibreAdminLiveDurableObject"
-      ]
-    }
-  ],
   "observability": {
     "enabled": true
   }
