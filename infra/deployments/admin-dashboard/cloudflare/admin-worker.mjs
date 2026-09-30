@@ -96,18 +96,10 @@ function adminIdentity(identity) {
   });
 }
 
-async function proxyAdminLive(request, env) {
-  const upstream = await presentationBinding(env).fetch(new Request(
-    "https://thread-presentation.internal/internal/admin-live",
-    {
-      method:"GET",
-      headers:{
-        Upgrade:"websocket",
-        "x-fibre-private-token":privateToken(env),
-      },
-    },
-  ));
-  return upstream;
+export async function proxyAdminLive(request, env) {
+  const namespace = env?.ADMIN_LIVE;
+  if (!namespace?.getByName) throw new Error("ADMIN_LIVE binding is unavailable");
+  return namespace.getByName("admin").fetch(request);
 }
 
 async function proxyAsset(request, env, objectRef) {
