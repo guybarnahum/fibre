@@ -15,7 +15,7 @@ import {
 } from "#services/asset-generator/src/index.mjs";
 import { createAssetGenerationControlApi } from "#services/asset-generator/src/http/asset-generation-control-api.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
-import { shouldPublishPresentationAssetCompletion } from "../completion-routing.mjs";
+import { shouldPublishAssetGenerationCompletion } from "../completion-routing.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
 import {
@@ -234,7 +234,7 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
       }),
     );
 
-    if (shouldPublishPresentationAssetCompletion(job)) {
+    if (shouldPublishAssetGenerationCompletion(job)) {
       const completion = createAssetGenerationCompletion({
         jobId: generated.receipt.jobId,
         receiptObjectRef: generated.receiptObjectRef,
