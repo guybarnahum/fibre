@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
+import { appearanceCalibrationDependencies } from "#core/src/population-context/index.mjs";
 import { ACTIVITY_RECORD_VERSION, normalizeActivityRecord } from "#infra/telemetry";
 import { canonicalVisualSpecificationFromPhysicalGenome } from "../src/canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "../src/embodiment-domain.mjs";
@@ -768,12 +769,13 @@ test("outdated appearance model reuses durable ancestry evidence", async () => {
   const ancestry=[{population:"operator-confirmed Chinese family",share:1,referencePopulation:"east_asia.han_chinese"}];
   const physicalAncestry={maternal:ancestry,paternal:ancestry};
   let migrationInput=null;
-  const evidence={
+  let evidence={
     eventId:"evt_prior_physical_migration",
     recordedAt:"2026-09-27T18:00:00.000Z",
     physicalAncestry,
     physicalGenomeVersion:"physical-genome-v0.1",
     previousPhysicalGenomeVersion:null,
+    calibrationDependencies:null,
   };
   const physicalGenomeMigrator={
     latestEvidence(){return evidence;},
@@ -785,11 +787,23 @@ test("outdated appearance model reuses durable ancestry evidence", async () => {
         seed:"appearance-upgrade-test",
       }).genome;
       thread.genome.physical=physicalGenome;
+      const calibrationDependencies=appearanceCalibrationDependencies(physicalAncestry);
+      evidence={
+        eventId:"evt_physical_upgrade_v02",
+        recordedAt:"2026-09-30T20:00:00.000Z",
+        physicalAncestry,
+        physicalGenomeVersion:physicalGenome.version,
+        previousPhysicalGenomeVersion:"physical-genome-v0.1",
+        calibrationDependencies,
+        previousCalibrationDependencies:null,
+      };
       return{
         migrated:true,
         reused:false,
         eventId:"evt_physical_upgrade_v02",
         physicalAncestry,
+        calibrationDependencies,
+        previousCalibrationDependencies:null,
         physicalGenome,
         thread,
       };
