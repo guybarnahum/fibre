@@ -3,7 +3,6 @@ import test from "node:test";
 
 import {
   populationFilterCount,
-  threadHasMigrationDomain,
   threadMatchesPopulationFilter,
 } from "./thread-population-filter.js";
 
@@ -14,12 +13,10 @@ const threads=[
   {threadId:"thr_healthy",health:"healthy",migrationDomains:[]},
 ];
 
-test("Threads migration filters reflect authoritative health and migration domains",()=>{
+test("Threads exposes one authoritative Needs migration filter",()=>{
   assert.equal(populationFilterCount(threads,"migration"),2);
-  assert.equal(populationFilterCount(threads,"appearance"),1);
-  assert.equal(populationFilterCount(threads,"identity"),1);
   assert.equal(threadMatchesPopulationFilter(threads[0],"migration"),true);
+  assert.equal(threadMatchesPopulationFilter(threads[1],"migration"),true);
   assert.equal(threadMatchesPopulationFilter(threads[2],"migration"),false);
-  assert.equal(threadHasMigrationDomain(threads[0],"appearance"),true);
-  assert.equal(threadHasMigrationDomain(threads[1],"appearance"),false);
+  assert.equal(threadMatchesPopulationFilter(threads[3],"all"),true);
 });
