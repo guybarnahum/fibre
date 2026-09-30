@@ -344,7 +344,7 @@ A1 includes:
 - prepared **experiment** and **research** action specifications only;
 - versioned dependency snapshots on physical appearance migrations;
 - direct-to-current calibration migration planning: stored `v1` may move once to current `v3`; intermediate `v2` is never executed;
-- separate World migration domains and separate Threads filters for **Appearance migration** and **Identity migration**;
+- one domain-neutral Threads **Needs migration** filter backed by authoritative health; Appearance-specific impact stays in Admin Appearance;
 - Thread Observatory ownership remains split: Appearance renders/executes appearance migrations; Thread Health renders/executes identity migrations.
 
 A1 explicitly does **not** execute or persist Population Lab experiments, browse/research the web from Admin, approve calibration candidates, mutate calibration authority from the browser, or bulk-migrate affected Threads.
@@ -356,9 +356,9 @@ A1 acceptance:
 3. A Moroccan lineage may resolve through `populationId=morocco -> afr_north.morocco@N`; a Korean lineage remains independent.
 4. A calibration dependency change marks only affected Threads as **Appearance migration**.
 5. Symbolic/Genesis migration state marks only affected Threads as **Identity migration**.
-6. One Thread may appear in both filters without conflating the two actions.
+6. The Threads population view exposes one **Needs migration** filter and does not duplicate Appearance/Identity domain controls.
 7. Exact live row refresh uses an exact migration summary and does not rescan the population.
-8. Appearance and Identity migration actions remain in their owning Observatory sections.
+8. Appearance and Identity migration actions remain in their owning operator surfaces.
 9. An admitted Thread with no durable physical-ancestry provenance appears as a **missing coverage** hole, not an inferred ancestry and not an Appearance migration.
 10. No experiment/provider cost is incurred merely by opening or scanning Appearance.
 
@@ -405,7 +405,7 @@ A1 consists of:
 - direct comparison of stored vs current dependencies;
 - Admin Appearance coverage metrics, hole map, ranked holes, selected-hole detail and reference-model matrix;
 - affected existing Threads listed as recalibration candidates;
-- Threads filters for all **Needs migration**, **Appearance migration** and **Identity migration**;
+- one Threads **Needs migration** filter, with Appearance-specific impact kept in the Appearance workbench;
 - **Prepare experiment** / **Prepare research** action specs only.
 
 A1 does **not** execute experiments, research the web, approve calibration or mutate the appearance model.
@@ -418,7 +418,7 @@ Acceptance:
 - stored dependency snapshots distinguish schema/model drift from calibration drift;
 - a simulated `afr_north.morocco@1 -> @3` change produces one direct migration target and no intermediate `@2` execution;
 - unchanged Korean dependencies remain healthy;
-- Threads **Needs migration** reflects World `migration_required` health, not button availability;
+- Threads **Needs migration** reflects World `migration_required` health, not button availability, and no Appearance-specific controls leak into Threads/Birth Center/Stillborn;
 - Appearance geography is labeled as demand context only.
 
 ### A2 — InfraDriver experiment artifacts
