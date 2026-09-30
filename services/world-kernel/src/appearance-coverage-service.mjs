@@ -9,7 +9,9 @@ export function createAppearanceCoverageService({
   directoryStore,
   physicalGenomeMigrationStore,
 }={}){
+  requireMethod("directoryStore",directoryStore,"getEntry");
   requireMethod("directoryStore",directoryStore,"listEntries");
+  requireMethod("physicalGenomeMigrationStore",physicalGenomeMigrationStore,"latestEvidence");
   requireMethod("physicalGenomeMigrationStore",physicalGenomeMigrationStore,"listLatestEvidence");
 
   return Object.freeze({
