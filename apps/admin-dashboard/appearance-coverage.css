@@ -1,3 +1,4 @@
+.appearance-coverage-view[hidden]{display:none}
 .appearance-coverage-view{display:grid;gap:16px}
 .appearance-coverage-toolbar,.appearance-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .appearance-coverage-toolbar h3{margin:2px 0 4px}
