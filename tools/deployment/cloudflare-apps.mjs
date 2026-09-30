@@ -92,6 +92,11 @@ export function resolveCloudflareAppConfig(appId, baseConfig, { environment, res
   config.vars.FIBRE_ENVIRONMENT = env;
   for (const route of config.routes ?? []) route.pattern = cloudflareAppDomain(nonEmpty("custom domain", route.pattern), env);
   for (const binding of config.services ?? []) binding.service = environmentResourceName(nonEmpty("service binding target", binding.service), env);
+  for (const binding of config.durable_objects?.bindings ?? []) {
+    if (binding.script_name) {
+      binding.script_name = environmentResourceName(nonEmpty("Durable Object script target", binding.script_name), env);
+    }
+  }
 
   if (appId === "admin-dashboard") {
     const activity = activityDatabase(resourceState);
