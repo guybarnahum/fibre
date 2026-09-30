@@ -151,14 +151,12 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
       }
     }
     if(evidence===null){
-      if(clean(thread.physicalGenomeVersion)!==null){
-        missing.push(Object.freeze({
-          threadId:thread.threadId,
-          threadName:clean(thread.displayName),
-          physicalGenomeVersion:clean(thread.physicalGenomeVersion),
-          birthLocation:locationOf(thread),
-        }));
-      }
+      missing.push(Object.freeze({
+        threadId:thread.threadId,
+        threadName:clean(thread.displayName),
+        physicalGenomeVersion:clean(thread.physicalGenomeVersion),
+        birthLocation:locationOf(thread),
+      }));
       continue;
     }
     for(const side of ["maternal","paternal"]){
