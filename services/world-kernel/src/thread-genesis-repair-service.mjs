@@ -9,6 +9,10 @@ import {
 } from "./canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "./embodiment-domain.mjs";
 import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
+import {
+  appearanceCalibrationDependencies,
+  planAppearanceCalibrationMigration,
+} from "#core/src/population-context/index.mjs";
 import { birthplacePhysicalMigrationSuggestion } from "./thread-appearance-defaults.mjs";
 
 const OPERATION_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,220}$/u;
@@ -512,6 +516,15 @@ export function createThreadGenesisRepairService({
     const priorPhysicalEvidence=physicalGenomeMigrator===null
       ? null
       : latestPhysicalEvidence(physicalGenomeMigrator,threadId);
+    const currentCalibrationDependencies=priorPhysicalEvidence?.physicalAncestry
+      ? appearanceCalibrationDependencies(priorPhysicalEvidence.physicalAncestry)
+      : null;
+    const calibrationPlan=currentCalibrationDependencies===null
+      ? null
+      : planAppearanceCalibrationMigration({
+          storedDependencies:priorPhysicalEvidence.calibrationDependencies??null,
+          currentDependencies:currentCalibrationDependencies,
+        });
     if (physicalGenomeMigrator !== null && physicalGenomeVersion !== PHYSICAL_GENOME_VERSION) {
       const priorEvidence=priorPhysicalEvidence;
       const suggestion=priorEvidence===null
@@ -580,9 +593,44 @@ export function createThreadGenesisRepairService({
           }),
         },
       ));
+    } else if (
+      physicalGenomeVersion === PHYSICAL_GENOME_VERSION
+      && calibrationPlan?.migrationRequired === true
+    ) {
+      findings.push(finding("PHYSICAL_APPEARANCE_CALIBRATION_OUTDATED", "migration_required", null, {
+        currentVersion:physicalGenomeVersion,
+        targetVersion:PHYSICAL_GENOME_VERSION,
+        calibrationChanges:calibrationPlan.changes,
+        reason:calibrationPlan.reason === "dependency_snapshot_missing"
+          ? "This Thread predates versioned appearance-calibration dependencies and needs one direct recalculation against the current calibration."
+          : "One or more appearance calibration dependencies used by this Thread have changed.",
+        migration:Object.freeze({
+          id:"physical_embodiment_v2",
+          label:"Update appearance calibration",
+          evidence:Object.freeze({
+            eventId:priorPhysicalEvidence.eventId,
+            physicalAncestry:priorPhysicalEvidence.physicalAncestry,
+            physicalGenomeVersion:priorPhysicalEvidence.physicalGenomeVersion,
+            calibrationDependencies:priorPhysicalEvidence.calibrationDependencies??null,
+            recordedAt:priorPhysicalEvidence.recordedAt,
+          }),
+          input:Object.freeze({
+            fields:Object.freeze([
+              Object.freeze({
+                name:"reason",
+                label:"Migration reason",
+                kind:"text",
+                required:true,
+                default:"Recalculate this Thread once using its durable physical ancestry and the current versioned appearance calibration.",
+              }),
+            ]),
+          }),
+        }),
+      }));
     } else if (physicalGenomeVersion === PHYSICAL_GENOME_VERSION) {
       findings.push(finding("PHYSICAL_GENOME", "healthy", null, {
         version:PHYSICAL_GENOME_VERSION,
+        calibrationDependencies:priorPhysicalEvidence?.calibrationDependencies??null,
         evidence:priorPhysicalEvidence===null ? null : Object.freeze({
           eventId:priorPhysicalEvidence.eventId,
           physicalAncestry:priorPhysicalEvidence.physicalAncestry,
