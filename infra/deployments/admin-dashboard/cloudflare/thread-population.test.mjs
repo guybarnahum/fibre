@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { readAdminThreadPopulation } from "./thread-population.mjs";
+import { readAdminThreadPopulation, readAdminThreadPopulationThread } from "./thread-population.mjs";
 
 test("World Registry defines admitted population while Activity remains observational", async () => {
   const activityLog = {
@@ -325,4 +325,63 @@ test("stillborn enrichment failure cannot blank admitted Threads", async () => {
     ["thr_visible"],
     "optional stillborn enrichment failure blanked authoritative World population",
   );
+});
+
+
+test("targeted Thread refresh preserves the bulk population row semantics", async () => {
+  const entry = {
+    threadId:"thr_target",
+    fibreIdentityNumber:"FIN-TARGET",
+    displayName:"Target",
+    sex:"female",
+    status:"active",
+    originOrientation:"original",
+    birthDate:"2001-02-03",
+    birthPlace:"Tbilisi, Georgia",
+    birthLocation:{ displayName:"Tbilisi, Georgia", country:"Georgia", city:"Tbilisi", lat:41.7151, long:44.8271, source:"thread_identity" },
+    culture:["Georgian"],
+    languages:["Georgian","English"],
+    raisedAs:{ culturalContext:"Tbilisi household", languages:["Georgian"] },
+    currentLocation:{ kind:"place", current:true, displayName:"Tbilisi", locality:"Tbilisi", country:"Georgia", lat:41.7151, long:44.8271, authority:"live_world_place" },
+    runtime:{ state:"active", startedAt:"2026-09-30T03:00:00.000Z", expiresAt:"2099-01-01T00:00:00.000Z" },
+    version:3,
+    stateHash:"sha256:target",
+    updatedAt:"2026-09-30T03:00:00.000Z",
+    reconciliation:{ state:"idle", lastError:null, updatedAt:"2026-09-30T03:00:00.000Z" },
+  };
+  const activityLog = {
+    prepare(sql) {
+      return {
+        bind(...args) {
+          return {
+            async first() {
+              assert.match(sql, /thread_id = \?/u, "targeted refresh must query one Activity head");
+              assert.equal(args[1], "thr_target");
+              return { last_activity_at:"2026-09-30T03:01:00.000Z" };
+            },
+            async all() {
+              return { results:[{ thread_id:"thr_target", last_activity_at:"2026-09-30T03:01:00.000Z" }] };
+            },
+          };
+        },
+      };
+    },
+  };
+
+  const targeted = await readAdminThreadPopulationThread({
+    activityLog,
+    environment:"staging",
+    threadId:"thr_target",
+    readRegistryEntry:async (threadId) => {
+      assert.equal(threadId, "thr_target");
+      return entry;
+    },
+  });
+  const bulk = await readAdminThreadPopulation({
+    activityLog,
+    environment:"staging",
+    readRegistry:async () => [entry],
+  });
+
+  assert.deepEqual(targeted, bulk.threads[0], "targeted refresh drifted from the authoritative population row");
 });
