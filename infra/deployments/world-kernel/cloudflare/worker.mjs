@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
+import { createAppearanceCoverageService } from "#services/world-kernel/src/appearance-coverage-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
@@ -24,6 +25,7 @@ const THREAD_DIRECTORY_ROUTE = "/internal/thread-directory/search";
 const THREAD_DIRECTORY_ENTRIES_ROUTE = "/internal/thread-directory/entries";
 const THREAD_DIRECTORY_PRESENCE_ROUTE = "/internal/thread-directory/presence";
 const THREAD_DIRECTORY_ENTRY_ROUTE = /^\/internal\/thread-directory\/entry\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})$/u;
+const APPEARANCE_COVERAGE_ROUTE = "/internal/appearance/coverage";
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -194,6 +196,7 @@ export class FibreWorldDurableObject extends DurableObject {
     this.health = this.infraDriver.health;
     this.threadDirectoryStore = null;
     this.threadDirectory = null;
+    this.appearanceCoverage = null;
     this.threadHealthProjectionStore = null;
     this.threadHealthProjection = null;
   }
@@ -214,6 +217,17 @@ export class FibreWorldDurableObject extends DurableObject {
       this.threadDirectory = createThreadDirectoryService({ directoryStore:this.threadDirectoryStore });
     }
     return this.threadDirectory;
+  }
+
+  appearanceCoverageForRequest() {
+    if (this.appearanceCoverage === null) {
+      this.directoryForRequest();
+      this.appearanceCoverage = createAppearanceCoverageService({
+        directoryStore:this.threadDirectoryStore,
+        physicalGenomeMigrationStore:this.runtimeForRequest().threadPhysicalGenomeMigrationStore,
+      });
+    }
+    return this.appearanceCoverage;
   }
 
   directoryPopulationForRequest(search) {
@@ -296,6 +310,14 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetchWorldRequest(request, url) {
+    if (url.pathname === APPEARANCE_COVERAGE_ROUTE) {
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
+      if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
+      if (!privateOperatorAuthorized(request, this.env)) {
+        return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
+      }
+      return Response.json(this.appearanceCoverageForRequest().scan());
+    }
     if (url.pathname === THREAD_DIRECTORY_ROUTE) {
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
       if (!privateOperatorAuthorized(request, this.env)) {
