@@ -3,7 +3,6 @@ import { decorateActionButton, setWaitingContent } from "./fa-icons.js";
 import { watchAdminLive } from "./admin-live.js";
 import { invalidateView, threadViewKey } from "./view-invalidation.js";
 
-const PHYSICAL_MIGRATION_ID="physical_embodiment_v2";
 function el(tag,className=null,text=null){
   const node=document.createElement(tag);
   if(className)node.className=className;
@@ -19,6 +18,7 @@ export function threadAppearanceState(diagnosis){
   const physical=finding(diagnosis,[
     "PHYSICAL_GENOME",
     "PHYSICAL_APPEARANCE_MODEL_OUTDATED",
+    "PHYSICAL_APPEARANCE_CALIBRATION_OUTDATED",
     "LEGACY_PHYSICAL_EMBODIMENT",
   ]);
   const visual=finding(diagnosis,[
@@ -36,8 +36,10 @@ export function threadAppearanceState(diagnosis){
     "CANONICAL_VISUAL_PUBLICATION",
     "CANONICAL_VISUAL_NOT_PUBLISHED",
   ]);
-  const migrationSource=visual?.migration?.id===PHYSICAL_MIGRATION_ID?visual:physical;
-  const migration=migrationSource?.migration?.id===PHYSICAL_MIGRATION_ID?migrationSource.migration:null;
+  const migrationSource=(diagnosis?.findings??[]).find(
+    (entry)=>entry?.migration?.domain==="appearance",
+  )??null;
+  const migration=migrationSource?.migration??null;
   const evidence=migration?.evidence??physical?.evidence??null;
   const currentVersion=physical?.code==="PHYSICAL_GENOME"
     ? physical.version??null
