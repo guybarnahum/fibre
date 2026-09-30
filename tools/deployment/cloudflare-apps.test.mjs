@@ -58,6 +58,11 @@ test("admin config reuses provisioned Activity D1 and injects reconciled Access 
     routes: [{ pattern: "admin.insidefibre.com", custom_domain: true }],
     vars: { FIBRE_ENVIRONMENT: "production" },
     d1_databases: [{ binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" }],
+    durable_objects:{ bindings:[{
+      name:"ADMIN_LIVE",
+      class_name:"FibreAdminLiveDurableObject",
+      script_name:"fibre-thread-presentation",
+    }] },
   };
   const resolved = resolveCloudflareAppConfig("admin-dashboard", base, {
     environment: "staging",
@@ -73,6 +78,10 @@ test("admin config reuses provisioned Activity D1 and injects reconciled Access 
   assert.equal(resolved.vars.GEONAMES_USERNAME, "fibre-test");
   assert.equal(resolved.d1_databases[0].database_name, "fibre-activity-log-staging");
   assert.equal(resolved.d1_databases[0].database_id, "d1_activity");
+  assert.equal(
+    resolved.durable_objects.bindings.find((binding) => binding.name === "ADMIN_LIVE")?.script_name,
+    "fibre-thread-presentation-staging",
+  );
   assert.equal(validateResolvedCloudflareAppConfig("admin-dashboard", resolved, { environment: "staging" }), resolved);
 });
 
@@ -105,6 +114,11 @@ test("admin deployment resolution fails closed when reconciled Access configurat
     routes: [{ pattern: "admin.insidefibre.com", custom_domain: true }],
     vars: {},
     d1_databases: [{ binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" }],
+    durable_objects:{ bindings:[{
+      name:"ADMIN_LIVE",
+      class_name:"FibreAdminLiveDurableObject",
+      script_name:"fibre-thread-presentation",
+    }] },
   };
   assert.throws(
     () => resolveCloudflareAppConfig("admin-dashboard", base, { environment: "staging", resourceState: state, operatorConfig }),
@@ -118,6 +132,11 @@ test("resolved Admin config rejects unresolved Access or D1 placeholders before 
     routes: [{ pattern: "admin.insidefibre.com", custom_domain: true }],
     vars: {},
     d1_databases: [{ binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" }],
+    durable_objects:{ bindings:[{
+      name:"ADMIN_LIVE",
+      class_name:"FibreAdminLiveDurableObject",
+      script_name:"fibre-thread-presentation",
+    }] },
   };
   const resolved = resolveCloudflareAppConfig("admin-dashboard", base, {
     environment: "staging",
