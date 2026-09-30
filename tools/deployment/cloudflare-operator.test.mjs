@@ -188,6 +188,11 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
     "Thread Presentation did not declaratively export both Durable Object classes",
   );
 
+  const world = JSON.parse(await readFile(resolve(repoRoot, first.wranglerConfigs["world-kernel"]), "utf8"));
+  const worldAdminLive = world.durable_objects.bindings.find((binding) => binding.name === "ADMIN_LIVE");
+  assert.equal(worldAdminLive?.class_name, "FibreAdminLiveDurableObject");
+  assert.equal(worldAdminLive?.script_name, "fibre-thread-presentation-staging");
+
   for (const serviceId of ["asset-generator", "birth-center", "world-kernel"]) {
     const config = JSON.parse(await readFile(resolve(repoRoot, first.wranglerConfigs[serviceId]), "utf8"));
     const activity = config.d1_databases.find((database) => database.binding === "ACTIVITY_LOG");
