@@ -121,6 +121,45 @@ test("asset activity log identifies a failed attempt followed by an explicit suc
   });
 });
 
+test("provider generation timing stays nested in the Thread asset request", async () => {
+  const telemetry = createLocalActivityTelemetryPort();
+  const runtime = createAssetGenerationRuntime({
+    infra: infra(),
+    provider: { providerId: "fixture" },
+    activityRecorder: recorder(telemetry, "provider_stage"),
+    executeJob: async ({ job: injectedJob, runProviderGeneration }) => {
+      await runProviderGeneration(async () => {});
+      return generatedResult(injectedJob);
+    },
+  });
+
+  await runtime.execute(job());
+
+  const records = await telemetry.query({ threadId: "thr_activity_001" });
+  const request = records.find((record) => (
+    record.stage === "asset.request.execute" && record.status === "started"
+  ));
+  const providerRecords = records.filter((record) => record.stage === "asset.provider.generate");
+
+  assert.deepEqual(
+    providerRecords.map((record) => record.status),
+    ["started", "succeeded"],
+    "provider generation timing is incomplete",
+  );
+  assert.equal(
+    providerRecords.every((record) => record.parentOperationId === request?.operationId),
+    true,
+    "provider generation lost its parent asset request",
+  );
+  assert.equal(
+    providerRecords.every((record) => record.causationId === "emb_activity_001"),
+    true,
+    "provider generation lost Thread causality",
+  );
+  assert.equal(providerRecords[0]?.evidence?.role, "portrait");
+  assert.equal(providerRecords[0]?.evidence?.providerProfile, "fixture");
+});
+
 test("derived Thread media names its canonical reference as cause and keeps completion in the Thread trail", async () => {
   const telemetry = createLocalActivityTelemetryPort();
   const runtime = createAssetGenerationRuntime({
