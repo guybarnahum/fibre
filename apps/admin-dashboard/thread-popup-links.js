@@ -1,3 +1,5 @@
+import { watchAdminLive } from "./admin-live.js";
+import { threadObservatoryViewKey } from "./view-invalidation.js";
 import {
   fetchThreadObservatory,
   renderFidSection,
@@ -12,6 +14,7 @@ const body = document.querySelector("#dialog-body");
 const THREAD = /^thr_[A-Za-z0-9._:-]+$/u;
 let openThreadId = null;
 let openThreadLoad = 0;
+let stopOpenThreadWatch = null;
 
 function el(tag, className = null, text = null) {
   const node = document.createElement(tag);
@@ -26,14 +29,28 @@ function fact(label, value, className = null) {
   return item;
 }
 
-async function openThread(threadId) {
+async function openThread(threadId, { showLoading = true, ensureWatch = true } = {}) {
   if (!dialog || !body || !THREAD.test(threadId)) return;
+  const changedThread = openThreadId !== threadId;
   openThreadId = threadId;
+  if (ensureWatch && (changedThread || stopOpenThreadWatch === null)) {
+    stopOpenThreadWatch?.();
+    stopOpenThreadWatch = watchAdminLive(
+      threadObservatoryViewKey(threadId),
+      () => openThread(threadId, { showLoading:false, ensureWatch:false }),
+      {
+        active:() => openThreadId === threadId && dialog.open,
+        reconcileOnSubscribe:false,
+      },
+    );
+  }
   const load = ++openThreadLoad;
   dialog.classList.add("thread-observatory-dialog");
   eyebrow.textContent = "Thread Observatory";
-  title.textContent = "Thread";
-  body.replaceChildren(el("div", "thread-loading", "Loading Thread…"));
+  if (showLoading) {
+    title.textContent = "Thread";
+    body.replaceChildren(el("div", "thread-loading", "Loading Thread…"));
+  }
   if (!dialog.open) dialog.showModal();
 
   try {
@@ -133,6 +150,8 @@ document.addEventListener("keydown", (event) => {
 dialog?.addEventListener("close", () => {
   openThreadId = null;
   openThreadLoad += 1;
+  stopOpenThreadWatch?.();
+  stopOpenThreadWatch = null;
 });
 
 window.addEventListener("fibre:fid-card-reissued", (event) => {
