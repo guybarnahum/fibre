@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   activityExportParams,
+  beginPromisedClipboardWrite,
   collectAllActivityPages,
 } from "./activity-export.js";
 
@@ -64,4 +65,39 @@ test("Activity export preserves the displayed filters and walks every cursor pag
       edge: "first", direction: "next", cursor: "cursor_3",
     },
   ]);
+});
+
+
+test("Activity export starts the clipboard write before asynchronous export collection settles", async () => {
+  let resolveText;
+  const textPromise = new Promise((resolve) => { resolveText = resolve; });
+  const writes = [];
+  class ClipboardItemFixture {
+    constructor(parts) { this.parts = parts; }
+  }
+  class BlobFixture {
+    constructor(parts, options) {
+      this.parts = parts;
+      this.type = options.type;
+    }
+  }
+  const clipboard = {
+    write(items) {
+      writes.push(items);
+      return Promise.all([items[0].parts["text/plain"]]).then(() => undefined);
+    },
+  };
+
+  const writing = beginPromisedClipboardWrite(textPromise, {
+    clipboard,
+    ClipboardItemCtor:ClipboardItemFixture,
+    BlobCtor:BlobFixture,
+  });
+
+  assert.equal(writes.length, 1, "clipboard write waited for export collection and lost user activation");
+  resolveText("activity export");
+  assert.equal(await writing, true);
+  const blob = await writes[0][0].parts["text/plain"];
+  assert.deepEqual(blob.parts, ["activity export"]);
+  assert.equal(blob.type, "text/plain");
 });
