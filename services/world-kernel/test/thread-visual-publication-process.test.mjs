@@ -91,3 +91,30 @@ test("visual publication process does not overlap reconciliation sweeps", async 
   await first;
   assert.equal(entered, 1);
 });
+
+
+test("visual completion observers run only after authoritative workset retirement", async () => {
+  const active = new Set(["thr_settles"]);
+  let observedRetired = false;
+  const process = createThreadVisualPublicationProcess({
+    workset:{
+      async listThreadIds() { return [...active]; },
+      async complete(threadId) { active.delete(threadId); },
+      async retry() {},
+      async deadLetter(threadId) { active.delete(threadId); },
+      async hasPending() { return active.size > 0; },
+    },
+    reconciler:{
+      async reconcileThread() {
+        return { complete:true, stage:"complete" };
+      },
+    },
+    async onResult(entry) {
+      observedRetired = entry.disposition === "complete" && !active.has(entry.threadId);
+    },
+  });
+
+  await process.runOnce();
+
+  assert.equal(observedRetired, true, "completion observer ran before World retired visual work");
+});
