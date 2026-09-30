@@ -120,8 +120,8 @@ function actionable(diagnosis) {
 
 function migrations(diagnosis) {
   return (diagnosis?.findings ?? []).filter((finding) => (
-    typeof finding?.migration?.id === "string"
-    && finding.migration.id !== "physical_embodiment_v2"
+    finding?.migration?.domain === "identity"
+    && typeof finding?.migration?.id === "string"
   ));
 }
 
