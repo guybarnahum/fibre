@@ -107,8 +107,14 @@ export async function readAssetGenerationFailure({ infra, jobId } = {}) {
   const stored = await checked.objects.get(objectRef);
   if (stored === null) return null;
   let parsed;
-  try { parsed = JSON.parse(new TextDecoder().decode(stored.bytes)); }
-  catch { throw new Error(`asset generation failure ${objectRef} is not valid JSON`); }
+  try {
+    const text = typeof stored.bytes === "string"
+      ? stored.bytes
+      : new TextDecoder().decode(stored.bytes);
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error(`asset generation failure ${objectRef} is not valid JSON`);
+  }
   const failure = normalizeAssetGenerationFailure(parsed);
   if (failure.jobId !== jobId) throw new Error(`asset generation failure ${objectRef} belongs to a different job`);
   return Object.freeze({ failure, objectRef, digest:stored.digest });
