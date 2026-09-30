@@ -256,6 +256,11 @@ export function resolveWranglerConfig(baseConfig, { environment, resourceState, 
     workflow.name = environmentResourceName(workflow.name, env);
     if (workflow.script_name) workflow.script_name = environmentResourceName(workflow.script_name, env);
   }
+  for (const binding of config.durable_objects?.bindings ?? []) {
+    if (binding.script_name) {
+      binding.script_name = environmentResourceName(binding.script_name, env);
+    }
+  }
   for (const service of config.services ?? []) service.service = environmentResourceName(service.service, env);
   for (const route of config.routes ?? []) route.pattern = environmentDomain(route.pattern, env);
   config.vars ??= {};
