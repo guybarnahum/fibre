@@ -336,6 +336,34 @@ function showRecord(record) {
   dialog.showModal();
 }
 
+async function hydrateActivityThreadLabels(records) {
+  const threadIds = [...new Set(
+    records
+      .map((record) => record?.threadId)
+      .filter((threadId) => typeof threadId === "string" && threadId.startsWith("thr_") && knownThreadLabel(threadId) === null),
+  )];
+  if (threadIds.length === 0) return;
+  try {
+    const response = await fetch("/api/threads/labels", {
+      method:"POST",
+      headers:{ Accept:"application/json", "Content-Type":"application/json" },
+      cache:"no-store",
+      body:JSON.stringify({ threadIds }),
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !Array.isArray(payload?.labels)) return;
+    const received = new Set();
+    for (const label of payload.labels) {
+      if (typeof label?.threadId !== "string") continue;
+      received.add(label.threadId);
+      rememberThreadLabel(label.threadId, label);
+    }
+    for (const threadId of threadIds) {
+      if (!received.has(threadId)) rememberThreadLabel(threadId);
+    }
+  } catch {}
+}
+
 async function resolveThreadIdentity(threadId) {
   const cached = threadIdentityCache.get(threadId);
   if (cached) return cached;
@@ -573,6 +601,7 @@ async function loadPage({ pushState = false, delta = false } = {}) {
       currentPayload = payload;
     }
     const records = currentPayload.records ?? [];
+    await hydrateActivityThreadLabels(records);
     $("#export-button").disabled = false;
     text($("#environment-pill"), currentPayload.environment);
     text($("#chain-title"), chainHeading(currentPayload));
