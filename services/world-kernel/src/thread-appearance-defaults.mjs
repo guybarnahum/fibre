@@ -1,7 +1,7 @@
 import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 
 const COUNTRY_DEFAULTS=Object.freeze({
-  Morocco:Object.freeze({origin:"Moroccan family",referencePopulation:"afr_north"}),
+  Morocco:Object.freeze({populationId:"morocco",origin:"Moroccan family",referencePopulation:"afr_north.morocco"}),
   Algeria:Object.freeze({origin:"Algerian family",referencePopulation:"afr_north"}),
   Tunisia:Object.freeze({origin:"Tunisian family",referencePopulation:"afr_north"}),
   Libya:Object.freeze({origin:"Libyan family",referencePopulation:"afr_north"}),
