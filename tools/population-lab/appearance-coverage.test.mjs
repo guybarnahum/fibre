@@ -94,3 +94,21 @@ test("physical model drift is reported as appearance migration",()=>{
     "current physical model was marked stale",
   );
 });
+
+
+test("admitted Thread without durable physical ancestry is a visible coverage hole",()=>{
+  const result=analyzeAppearanceCoverage({
+    threads:[{
+      threadId:"thr_new_birth",
+      displayName:"New Birth",
+      birthPlace:"Tucson, United States",
+      birthLocation:{displayName:"Tucson, United States",country:"United States",city:"Tucson",lat:32.22,long:-110.97},
+      physicalGenomeVersion:null,
+    }],
+    ancestryEvidence:[],
+  });
+
+  assert.equal(result.coverage.missing,1);
+  assert.equal(result.holes[0].threadIds.includes("thr_new_birth"),true);
+  assert.equal(result.migrationCandidates.length,0,"missing ancestry provenance became an appearance migration");
+});
