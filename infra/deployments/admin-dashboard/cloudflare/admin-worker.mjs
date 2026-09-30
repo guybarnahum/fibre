@@ -419,14 +419,14 @@ async function threadRegistry(env, limit) {
 
 async function threadRegistryEntry(env, threadId) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
-    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/identity`,
+    `https://world.internal/internal/thread-directory/entry/${encodeURIComponent(threadId)}`,
     { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
   ));
   const payload = await response.json().catch(() => null);
   if (response.status === 404 && payload?.error?.code === "THREAD_NOT_FOUND") return null;
   if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
-  if (payload?.identity?.threadId !== threadId) throw new Error("World Thread Registry response is invalid");
-  return payload.identity;
+  if (payload?.thread?.threadId !== threadId) throw new Error("World Thread Registry response is invalid");
+  return payload.thread;
 }
 
 export default {
