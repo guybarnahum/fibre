@@ -2,6 +2,7 @@ import {
   PHYSICAL_GENOME_VERSION,
   referencePopulationCalibration,
   referencePopulationCalibrations,
+  referencePopulationForPopulationId,
 } from "../human-appearance/index.mjs";
 import {
   appearanceCalibrationDependencies,
@@ -39,17 +40,24 @@ function severity(state){
 }
 
 function lineageEntry({thread,side,lineage}){
-  const referencePopulation=clean(lineage?.referencePopulation);
+  const recordedReferencePopulation=clean(lineage?.referencePopulation);
+  const populationId=clean(lineage?.populationId);
   const population=clean(lineage?.population)??"Recorded family";
   const share=Number(lineage?.share);
+  const referencePopulation=referencePopulationForPopulationId(
+    populationId,
+    recordedReferencePopulation,
+  );
   const calibration=referencePopulation===null?null:referencePopulationCalibration(referencePopulation);
   const state=calibration===null?"missing":coverageState(calibration);
   return Object.freeze({
     threadId:thread.threadId,
     threadName:clean(thread.displayName),
     side,
+    populationId,
     population,
     share:Number.isFinite(share)&&share>0?share:1,
+    recordedReferencePopulation,
     referencePopulation,
     coverage:state,
     calibration,
