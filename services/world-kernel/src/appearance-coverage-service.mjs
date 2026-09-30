@@ -13,6 +13,15 @@ export function createAppearanceCoverageService({
   requireMethod("physicalGenomeMigrationStore",physicalGenomeMigrationStore,"listLatestEvidence");
 
   return Object.freeze({
+    inspect(threadId){
+      const thread=directoryStore.getEntry(threadId);
+      if(thread===null)return null;
+      const evidence=physicalGenomeMigrationStore.latestEvidence(threadId);
+      return analyzeAppearanceCoverage({
+        threads:[thread],
+        ancestryEvidence:evidence===null?[]:[{threadId,...evidence}],
+      });
+    },
     scan({limit=5000}={}){
       const threads=directoryStore.listEntries({limit});
       const ancestryEvidence=physicalGenomeMigrationStore.listLatestEvidence(
