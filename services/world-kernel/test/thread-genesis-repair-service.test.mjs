@@ -402,6 +402,7 @@ test("migration changes legacy authority; repair never substitutes for it", asyn
   const before = await service.diagnose(threadId);
   const missing = before.findings.find((entry) => entry.code === "SEX_MISSING");
   assert.equal(missing.migration.id, "genesis_sex_v1");
+  assert.equal(missing.migration.domain, "identity");
   assert.equal(missing.genesisId, SEX_EVIDENCE.genesisId);
 
   const repair = await service.repair(threadId, { repairKey:"repair_sex_1" });
@@ -467,6 +468,7 @@ test("legacy embodiment migration admits explicit North-African physical ancestr
   const legacy=before.findings.find(entry=>entry.code==="LEGACY_PHYSICAL_EMBODIMENT");
   assert.equal(legacy.state,"healthy");
   assert.equal(legacy.migration.id,"physical_embodiment_v2");
+  assert.equal(legacy.migration.domain,"appearance");
   const maternalReference=legacy.migration.input.fields.find(
     field=>field.name==="maternalReferencePopulation",
   );
@@ -742,7 +744,9 @@ test("symbolic genome migration is explicit, preserves repair separation, and co
 
   const before = await service.diagnose(threadId);
   assert.equal(before.health, "migration_required");
-  assert.equal(before.findings.find((entry) => entry.code === "SYMBOLIC_GENOME_V1").migration.id, "symbolic_genome_v1_to_v2");
+  const symbolicMigration=before.findings.find((entry) => entry.code === "SYMBOLIC_GENOME_V1").migration;
+  assert.equal(symbolicMigration.id, "symbolic_genome_v1_to_v2");
+  assert.equal(symbolicMigration.domain, "identity");
 
   const repair = await service.repair(threadId, { repairKey:"repair_before_genome_migration" });
   assert.deepEqual(repair.actions, [], "ordinary repair performed an authoritative genome migration");
@@ -889,9 +893,9 @@ test("appearance migration suggests birthplace defaults without treating them as
     Object.fromEntries(physical.migration.input.fields.map(field=>[field.name,field.default])),
     {
       maternalOrigin:"Moroccan family",
-      maternalReferencePopulation:"afr_north",
+      maternalReferencePopulation:"afr_north.morocco",
       paternalOrigin:"Moroccan family",
-      paternalReferencePopulation:"afr_north",
+      paternalReferencePopulation:"afr_north.morocco",
       reason:"Install physical-genome-v0.3 using Fibre's preselected parental physical-origin defaults for Morocco; review or override them if needed.",
     },
     "Moroccan migration defaults are not useful",
