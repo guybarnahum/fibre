@@ -51,3 +51,7 @@ export function threadViewKey(threadId, aspect) {
   if (typeof aspect !== "string" || aspect === "") throw new TypeError("view aspect is required");
   return `thread:${threadId}:${aspect}`;
 }
+
+export function threadPopulationViewKey() {
+  return "threads:population";
+}
