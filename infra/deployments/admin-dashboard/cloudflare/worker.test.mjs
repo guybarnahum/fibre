@@ -256,3 +256,54 @@ test("Activity page API preserves the live head cursor", async () => {
   assert.equal(response.status,200);
   assert.equal(typeof payload.headCursor,"string","Activity page hid the cursor required for live deltas");
 });
+
+
+test("Admin Appearance coverage proxies one authoritative World scan", async () => {
+  const d1 = fakeD1([], { admins:{ "operator@example.com":1 } });
+  const coverage = {
+    contract:"fibre-appearance-coverage-v0.1",
+    threadCount:2,
+    lineageCount:4,
+    coverage:{ explicit:2, partial:0, broad:0, fallback:2, missing:0 },
+    holes:[{
+      key:"afr_north.morocco",
+      referencePopulation:"afr_north.morocco",
+      coverage:"fallback",
+      threadIds:["thr_morocco"],
+      threadCount:1,
+      sides:2,
+      weightedSides:2,
+      priority:6,
+      places:[],
+    }],
+    migrationCandidates:[],
+    lineages:[],
+    model:[],
+  };
+  let worldCalls=0;
+  const worker=createAdminDashboardWorker({
+    authenticate:async()=>({ email:"operator@example.com" }),
+  });
+  const response=await worker.fetch(
+    new Request("https://admin.insidefibre.com/api/appearance/coverage"),
+    {
+      ACTIVITY_LOG:d1,
+      FIBRE_PRIVATE_TOKEN:"0123456789abcdef",
+      WORLD_KERNEL:{
+        async fetch(request){
+          worldCalls+=1;
+          assert.equal(request.method,"GET");
+          assert.equal(new URL(request.url).pathname,"/internal/appearance/coverage");
+          assert.equal(request.headers.get("x-fibre-private-token"),"0123456789abcdef");
+          return Response.json(coverage);
+        },
+      },
+    },
+  );
+  assert.equal(response.status,200);
+  const payload=await response.json();
+  assert.equal(payload.contract,"fibre-appearance-coverage-v0.1");
+  assert.equal(payload.holes[0].referencePopulation,"afr_north.morocco");
+  assert.equal(typeof payload.queriedAt,"string");
+  assert.equal(worldCalls,1,"Admin Appearance repeated the authoritative coverage scan");
+});
