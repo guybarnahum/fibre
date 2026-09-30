@@ -1,5 +1,6 @@
 import { requireInfraCapabilities } from "#infra";
 import { publishAssetGenerationCompletion } from "./asset-generation-completion.mjs";
+import { settleAssetGenerationFailure } from "./asset-generation-failure.mjs";
 import {
   AssetGenerationError,
   toAssetGenerationError,
@@ -196,6 +197,10 @@ export function createAssetGenerationRuntime({
           throw annotateActivityError(normalized);
         }
       });
+    },
+
+    settleFailure(job, error) {
+      return settleAssetGenerationFailure({ infra, job, error });
     },
   });
 }
