@@ -20,11 +20,6 @@ export function presentationCompletionInvalidation(completion) {
   return threadPresentationInvalidation(completion.scope.entityRef);
 }
 
-export function fidPresentationInvalidation(threadId, result) {
-  if (result?.complete !== true || result?.presentation?.changed !== true) return null;
-  return threadPresentationInvalidation(threadId);
-}
-
 export async function publishAdminInvalidation(realtime, invalidation) {
   if (invalidation === null) return { delivered:null };
   if (!realtime || typeof realtime.publish !== "function") {
