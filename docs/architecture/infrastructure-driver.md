@@ -178,11 +178,24 @@ A service may require:
 A service may require:
 
 - fanout after durable event admission;
-- reconnect/resume semantics;
+- best-effort invalidation hints whose correctness comes from a later authoritative reread;
+- reconnect/resume semantics where the use case requires them;
 - backpressure and disconnect handling;
 - transport independence at the semantic-event layer.
 
-The implementation may use WebSockets, SSE plus HTTP ingress, managed pub/sub delivery, or another mechanism.
+The implementation may use WebSockets, SSE plus HTTP ingress, managed pub/sub delivery, or another mechanism. Fibre services publish through `infra.realtime`; they do not call provider connection/session primitives directly.
+
+Admin live invalidation is deliberately the lightweight case:
+
+```text
+Thread Presentation
+  -> infra.realtime.publish("admin", { entity, id, aspect })
+  -> provider realtime adapter
+  -> Admin live transport
+  -> one authoritative reread
+```
+
+The hint carries no authority and requires no durable replay. If the live transport reconnects, the consumer reconciles authoritatively. Cloudflare currently maps the `admin` realtime channel to one Durable Object; another provider may map the same port to its own websocket/pub-sub mechanism without changing Thread Presentation semantics.
 
 ## Capability negotiation
 
