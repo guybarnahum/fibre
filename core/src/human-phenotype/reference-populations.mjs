@@ -128,6 +128,29 @@ const DEFINITIONS=Object.freeze({
 
 export const referencePopulationIds=Object.freeze(Object.keys(DEFINITIONS));
 
+export function referencePopulationCalibration(id){
+  const [key,definition]=definitionFor(id);
+  const ownAxes=Object.freeze(Object.keys(definition.values??{}).sort());
+  let fallbackDepth=0;
+  let cursor=definition;
+  while(cursor.parent!==null&&cursor.parent!==undefined){
+    fallbackDepth+=1;
+    cursor=DEFINITIONS[cursor.parent];
+  }
+  return Object.freeze({
+    id:key,
+    parent:definition.parent??null,
+    status:ownAxes.length===0 ? "fallback" : definition.parent===null ? "explicit" : "partial",
+    granularity:key.includes(".") ? "specific" : "broad",
+    ownAxes,
+    fallbackDepth,
+  });
+}
+
+export function referencePopulationCalibrations(){
+  return Object.freeze(referencePopulationIds.map(referencePopulationCalibration));
+}
+
 const DEFAULT_VARIATION=Object.freeze({
   familyFactorMultiplier:1,
   structuralResidualMultiplier:1,
