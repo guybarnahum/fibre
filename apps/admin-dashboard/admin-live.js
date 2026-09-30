@@ -30,7 +30,9 @@ function reconnectSoon() {
 
 function reconcileLiveViews(reason) {
   for (const [key, entries] of liveKeys) {
-    if (![...entries].some((entry) => entry.active())) continue;
+    const activeEntries = [...entries].filter((entry) => entry.active());
+    if (activeEntries.length === 0) continue;
+    if (reason === "connected" && !activeEntries.some((entry) => entry.reconcileOnSubscribe)) continue;
     invalidateView(key, { source:"admin-live", reason });
   }
 }
@@ -88,7 +90,7 @@ function ensureSocket() {
 }
 
 export function watchAdminLive(key, callback, { active = () => true, reconcileOnSubscribe = true } = {}) {
-  const entry = { active };
+  const entry = { active, reconcileOnSubscribe };
   let entries = liveKeys.get(key);
   if (!entries) {
     entries = new Set();
