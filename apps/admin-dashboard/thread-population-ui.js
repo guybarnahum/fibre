@@ -67,7 +67,6 @@ let populationPortraitPreview = null;
 let threadMapPopover = null;
 let threadMapPopoverCloseTimer = null;
 let stopPopulationLive = null;
-let populationLiveConnected = false;
 const populationPortraitObserver = typeof IntersectionObserver === "function"
   ? new IntersectionObserver((entries) => {
       for (const entry of entries) {
@@ -676,16 +675,12 @@ async function refreshPopulationThread(threadId) {
 
 function startPopulationLive() {
   if (stopPopulationLive !== null) return;
-  populationLiveConnected = false;
   stopPopulationLive = watchAdminLive(
     threadPopulationViewKey(),
     async (detail) => {
       if (!active || populationMode !== "threads") return;
-      if (detail?.reason === "connected" || detail?.reason === "watch-started") {
-        if (!populationLiveConnected) {
-          populationLiveConnected = true;
-          return;
-        }
+      if (detail?.reason === "connected" || detail?.reason === "watch-started") return;
+      if (detail?.reason === "reconnected") {
         await loadPopulation();
         return;
       }
@@ -694,7 +689,11 @@ function startPopulationLive() {
         await loadPopulation();
         return;
       }
-      await refreshPopulationThread(threadId);
+      try {
+        await refreshPopulationThread(threadId);
+      } catch (error) {
+        console.warn("Targeted Thread population refresh failed", error);
+      }
     },
     {
       active:() => active && populationMode === "threads",
@@ -706,7 +705,6 @@ function startPopulationLive() {
 function stopPopulationLiveWatch() {
   stopPopulationLive?.();
   stopPopulationLive = null;
-  populationLiveConnected = false;
 }
 
 function stillbornRow(thread) {
