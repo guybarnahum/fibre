@@ -67,6 +67,8 @@ Birth Center
 
 Wrangler automatic resource provisioning is disabled during these deploys so Fibre's operator state remains the resource authority. Each deployed service must answer `/healthz` with the expected service identity before the next acceptance phase.
 
+Targeted service deploys re-resolve the current checked-in Wrangler configuration against the existing provisioned resource state before deployment. They must not reuse an older generated Wrangler file as source authority, because new provider declarations such as Durable Object migrations, bindings, exports, queues, or workflows must be carried by the targeted deploy. Cross-script Durable Object consumers can only deploy after the owning Worker has successfully applied the class migration.
+
 Birth Center Durable Object schema evolution is deployment-owned rather than request-owned. After the Birth Center Worker is deployed, the deployment command runs its authenticated state migration, verifies current state health, and probes a non-mutating Genesis inspection route before accepting the deployment. Birth Center runtime/store construction only accepts the current schema; it never creates or migrates schema while serving an ordinary request. The targeted `cloud:deploy:service -- --service birth-center` path follows the same migration + acceptance sequence.
 
 The final non-mutating acceptance checks the Thread Presentation discovery API and verifies that the configured Viewer origin is reachable.
