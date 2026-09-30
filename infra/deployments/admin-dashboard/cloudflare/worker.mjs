@@ -102,6 +102,22 @@ export function validateAccessClaims(claims, { audience, issuer, nowSeconds = Ma
   return true;
 }
 
+function accessToken(request) {
+  const assertion = request.headers.get("Cf-Access-Jwt-Assertion");
+  if (assertion) return assertion;
+
+  const cookie = request.headers.get("Cookie");
+  if (!cookie) return null;
+  for (const part of cookie.split(";")) {
+    const [rawName, ...rest] = part.trim().split("=");
+    if (rawName === "CF_Authorization" && rest.length > 0) {
+      const value = rest.join("=").trim();
+      return value === "" ? null : value;
+    }
+  }
+  return null;
+}
+
 async function jwks(teamDomain, fetchImpl) {
   const cached = ACCESS_CACHE.get(teamDomain);
   if (cached && cached.expiresAt > Date.now()) return cached.keys;
@@ -117,7 +133,7 @@ export async function authenticateAccessRequest(request, env, { fetchImpl = glob
   const audience = env.FIBRE_ACCESS_AUD;
   const teamDomain = normalizedTeamDomain(env.FIBRE_ACCESS_TEAM_DOMAIN);
   if (typeof audience !== "string" || audience.trim() === "" || teamDomain === null) return null;
-  const token = request.headers.get("Cf-Access-Jwt-Assertion");
+  const token = accessToken(request);
   if (!token) return null;
   const parts = token.split("."); if (parts.length !== 3) return null;
   let header, claims;
