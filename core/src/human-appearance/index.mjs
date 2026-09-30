@@ -7,7 +7,15 @@ import {
 } from "../human-phenotype/physical-genome.mjs";
 import {phenotypeFromPhysicalGenome} from "../human-phenotype/phenotype.mjs";
 import {physicalPhenotypeRenderingProjection} from "../human-phenotype/rendering-projection.mjs";
-import {referencePopulationIds,referencePopulationPrior,referencePopulationVariation} from "../human-phenotype/reference-populations.mjs";
+import {
+  referencePopulationCalibration,
+  referencePopulationCalibrations,
+  referencePopulationCalibration,
+  referencePopulationCalibrations,
+  referencePopulationIds,
+  referencePopulationPrior,
+  referencePopulationVariation,
+} from "../human-phenotype/reference-populations.mjs";
 import {sampleFounderPhysicalGenome} from "../human-phenotype/founder-genome.mjs";
 import {resolveBirthPhysicalInheritance} from "../human-phenotype/birth-inheritance.mjs";
 import {normalizeAncestry} from "../human-phenotype/ancestry.mjs";
