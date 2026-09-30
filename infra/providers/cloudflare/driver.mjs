@@ -281,6 +281,7 @@ export function createCloudflareInfraDriver({
   objectBucket = null,
   workflowBindings = {},
   presentationChannels = null,
+  realtimeChannels = null,
   catalogDatabase = null,
 } = {}) {
   const driver = {
@@ -303,8 +304,12 @@ export function createCloudflareInfraDriver({
   }
   if (presentationChannels !== null) {
     driver.streams = createCloudflareStreamPort(presentationChannels);
-    driver.realtime = createCloudflareRealtimePort(presentationChannels);
-    driver.capabilities.push("streams", "realtime");
+    driver.capabilities.push("streams");
+  }
+  const realtimeNamespace = realtimeChannels ?? presentationChannels;
+  if (realtimeNamespace !== null) {
+    driver.realtime = createCloudflareRealtimePort(realtimeNamespace);
+    driver.capabilities.push("realtime");
   }
   if (catalogDatabase !== null) {
     driver.catalog = createCloudflareCatalogPort(catalogDatabase);
