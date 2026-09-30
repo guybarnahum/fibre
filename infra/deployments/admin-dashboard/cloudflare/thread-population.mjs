@@ -291,6 +291,58 @@ async function readActivityHeads(activityLog, environment) {
   }
 }
 
+async function readLastActivity(activityLog, environment, threadId) {
+  try {
+    const result = await activityLog.prepare(`
+      SELECT last_activity_at
+      FROM fibre_activity_thread_heads
+      WHERE environment = ? AND thread_id = ?
+      LIMIT 1
+    `).bind(environment, threadId).first();
+    logD1Cost({
+      database:"activity-log",
+      service:"admin-dashboard",
+      operation:"admin.thread_population.thread_activity",
+      result,
+    });
+    return result?.last_activity_at ?? null;
+  } catch (error) {
+    if (!missingActivityHeads(error)) throw error;
+    const result = await activityLog.prepare(`
+      SELECT MAX(occurred_at) AS last_activity_at
+      FROM fibre_activity_log
+      WHERE environment = ? AND thread_id = ?
+    `).bind(environment, threadId).first();
+    logD1Cost({
+      database:"activity-log",
+      service:"admin-dashboard",
+      operation:"admin.thread_population.thread_activity_fallback",
+      result,
+    });
+    return result?.last_activity_at ?? null;
+  }
+}
+
+export async function readAdminThreadPopulationThread({
+  activityLog,
+  environment,
+  threadId,
+  readRegistryEntry,
+} = {}) {
+  if (!activityLog?.prepare) throw new Error("ACTIVITY_LOG binding is unavailable");
+  if (typeof threadId !== "string" || threadId.trim() === "") throw new TypeError("Thread population threadId is required");
+  if (typeof readRegistryEntry !== "function") throw new TypeError("Thread population requires readRegistryEntry()");
+
+  const id = threadId.trim();
+  const [entry, lastActivityAt] = await Promise.all([
+    readRegistryEntry(id),
+    readLastActivity(activityLog, environment, id),
+  ]);
+  if (entry === null) return null;
+  if (!entry || entry.threadId !== id) throw new Error("World Thread Registry returned a mismatched Thread");
+  return admittedThread(entry, lastActivityAt);
+}
+
 async function readOptionalStillborn(readStillborn) {
   try {
     const births = await readStillborn();
