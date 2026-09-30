@@ -527,6 +527,7 @@ export async function executeProvenancedAssetGenerationJob({
   attemptNumber = 1,
   now = () => new Date().toISOString(),
   allowProviderSwitch = false,
+  runProviderGeneration = (operation) => operation(),
 } = {}) {
   let phase = "validation";
   let providerName = null;
@@ -534,6 +535,7 @@ export async function executeProvenancedAssetGenerationJob({
   let providerOutputDurable = false;
   try {
     requireInfraCapabilities(infra, "objects");
+    if (typeof runProviderGeneration !== "function") throw new TypeError("runProviderGeneration must be a function");
     const checkedProvider = assertWitnessedMediaGenerationProvider(provider);
     providerName = checkedProvider.providerId;
     const job = normalizeAssetGenerationJob(rawJob);
@@ -565,16 +567,18 @@ export async function executeProvenancedAssetGenerationJob({
         return { objectRef, ...stored };
       }));
       phase = "provider_generation";
-      const witnessed = normalizeWitnessedMediaGenerationResult(await prepared.provider.generate({
-        assetKind: job.assetKind,
-        role: job.role,
-        variant: job.variant,
-        brief: job.brief,
-        inputReferences: job.inputReferences,
-        referenceObjects,
-        providerProfile: job.providerProfile,
-        context: job.context,
-      }), { expectedKind: job.assetKind });
+      const witnessed = normalizeWitnessedMediaGenerationResult(await runProviderGeneration(
+        () => prepared.provider.generate({
+          assetKind: job.assetKind,
+          role: job.role,
+          variant: job.variant,
+          brief: job.brief,
+          inputReferences: job.inputReferences,
+          referenceObjects,
+          providerProfile: job.providerProfile,
+          context: job.context,
+        }),
+      ), { expectedKind: job.assetKind });
       providerName = witnessed.result.provider;
       modelName = witnessed.result.model;
       phase = "provider_output_staging";
