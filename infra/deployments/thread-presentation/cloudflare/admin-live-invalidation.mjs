@@ -17,3 +17,8 @@ export function presentationCompletionInvalidation(completion) {
   }
   return threadPresentationInvalidation(completion.scope.entityRef);
 }
+
+export function fidPresentationInvalidation(threadId, result) {
+  if (result?.complete !== true || result?.presentation?.changed !== true) return null;
+  return threadPresentationInvalidation(threadId);
+}
