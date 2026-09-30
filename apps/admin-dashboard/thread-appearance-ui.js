@@ -341,8 +341,12 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
             threadId,
             threadName,
             pending
-              ? label+" admitted. Canonical root generation is pending; use Refresh appearance to inspect convergence."
+              ? label+" admitted. Canonical root generation is pending."
               : label+" complete.",
+            {
+              diagnosis:payload.migration.after,
+              reconciliation:payload.reconciliation??null,
+            },
           );
         },
       });
