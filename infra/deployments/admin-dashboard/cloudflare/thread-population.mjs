@@ -298,28 +298,28 @@ async function readLastActivity(activityLog, environment, threadId) {
       FROM fibre_activity_thread_heads
       WHERE environment = ? AND thread_id = ?
       LIMIT 1
-    `).bind(environment, threadId).first();
+    `).bind(environment, threadId).all();
     logD1Cost({
       database:"activity-log",
       service:"admin-dashboard",
       operation:"admin.thread_population.thread_activity",
       result,
     });
-    return result?.last_activity_at ?? null;
+    return result?.results?.[0]?.last_activity_at ?? null;
   } catch (error) {
     if (!missingActivityHeads(error)) throw error;
     const result = await activityLog.prepare(`
       SELECT MAX(occurred_at) AS last_activity_at
       FROM fibre_activity_log
       WHERE environment = ? AND thread_id = ?
-    `).bind(environment, threadId).first();
+    `).bind(environment, threadId).all();
     logD1Cost({
       database:"activity-log",
       service:"admin-dashboard",
       operation:"admin.thread_population.thread_activity_fallback",
       result,
     });
-    return result?.last_activity_at ?? null;
+    return result?.results?.[0]?.last_activity_at ?? null;
   }
 }
 
