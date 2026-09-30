@@ -72,8 +72,7 @@ function threadGenomeRows(database, threadId) {
   `).all(threadId);
 }
 
-function migrationInspection(database, threadId) {
-  const rows = threadGenomeRows(database, threadId);
+function migrationInspectionRows(rows) {
   if (rows.length === 0) return Object.freeze({ state:"none", genomeIds:Object.freeze([]) });
 
   const legacy = [];
@@ -104,6 +103,10 @@ function migrationInspection(database, threadId) {
     genomeIds:Object.freeze(rows.map((row) => row.genome_id)),
     legacyGenomeIds:Object.freeze(legacy.map((entry) => entry.genomeId)),
   });
+}
+
+function migrationInspection(database, threadId) {
+  return migrationInspectionRows(threadGenomeRows(database, threadId));
 }
 
 function legacyV1DeNovoUpgrade(database, row, threadId) {
@@ -253,6 +256,27 @@ export class SymbolicGenomeStore {
   inspectThreadGenomeMigration(threadId) {
     assertId("threadId", threadId);
     return migrationInspection(this.#database, threadId);
+  }
+
+  listThreadMigrationCandidates() {
+    if (!tableExists(this.#database, "symbolic_genomes")) return Object.freeze([]);
+    const grouped = new Map();
+    for (const row of this.#database.prepare(`
+      SELECT owner_id,genome_id,header_json,genome_digest
+      FROM symbolic_genomes
+      WHERE owner_kind='thread'
+      ORDER BY owner_id,created_at,genome_id
+    `).all()) {
+      const rows = grouped.get(row.owner_id) ?? [];
+      rows.push(row);
+      grouped.set(row.owner_id, rows);
+    }
+    return Object.freeze([...grouped.entries()].flatMap(([threadId, rows]) => {
+      const inspection = migrationInspectionRows(rows);
+      return ["legacy_v1_de_novo","legacy_v1_recombined"].includes(inspection.state)
+        ? [Object.freeze({ threadId, state:inspection.state })]
+        : [];
+    }));
   }
 
   migrateThreadGenomeV1ToV2(threadId) {
