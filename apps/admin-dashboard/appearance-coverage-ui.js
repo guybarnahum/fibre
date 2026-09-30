@@ -142,11 +142,11 @@ function renderDetail(){
   const actions=el("div","thread-repair-actions");
   const experiment=el("button","secondary");
   experiment.type="button";
-  decorateActionButton(experiment,{icon:"flask",label:"Prepare experiment",tooltip:"Prepare a bounded Population Lab experiment for this coverage hole"});
+  decorateActionButton(experiment,{icon:"wrench",label:"Prepare experiment",tooltip:"Prepare a bounded Population Lab experiment for this coverage hole"});
   experiment.addEventListener("click",()=>renderPreparedAction("experiment",hole));
   const research=el("button","secondary");
   research.type="button";
-  decorateActionButton(research,{icon:"magnifying-glass",label:"Prepare research",tooltip:"Prepare an evidence-research request for this coverage hole"});
+  decorateActionButton(research,{icon:"file-export",label:"Prepare research",tooltip:"Prepare an evidence-research request for this coverage hole"});
   research.addEventListener("click",()=>renderPreparedAction("research",hole));
   actions.append(experiment,research);
 
