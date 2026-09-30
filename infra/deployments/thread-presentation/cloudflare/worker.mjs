@@ -5,6 +5,12 @@ import {
   presentationCompletionInvalidation,
   threadPresentationInvalidation,
 } from "./admin-live-invalidation.mjs";
+import {
+  ASSET_COMPLETION_ROUTE_PRESENTATION,
+  ASSET_COMPLETION_ROUTE_WORLD_WAKE,
+  assetGenerationCompletionRoute,
+  shouldWakeWorldAfterAssetCompletion,
+} from "../../asset-generator/completion-routing.mjs";
 import { createService } from "#infra/service";
 import {
   createAssetGenerationService,
@@ -139,6 +145,25 @@ async function publishAdminInvalidation(env, invalidation) {
 function adminLiveAuthorized(request, env) {
   const expected = typeof env?.FIBRE_PRIVATE_TOKEN === "string" ? env.FIBRE_PRIVATE_TOKEN : "";
   return expected !== "" && request.headers.get("x-fibre-private-token") === expected;
+}
+
+async function requestWorldReconciliationWake(env, threadId) {
+  if (typeof threadId !== "string" || threadId === "") return;
+  try {
+    const world = env?.WORLD_KERNEL;
+    if (!world || typeof world.fetch !== "function") throw new Error("WORLD_KERNEL binding is unavailable");
+    const response = await world.fetch(new Request("https://world-kernel.internal/internal/reconciliation/wake", {
+      method:"POST",
+      headers:{ "x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN },
+    }));
+    if (!response.ok) throw new Error(`World wake returned HTTP ${response.status}`);
+  } catch (error) {
+    console.warn(JSON.stringify({
+      event:"world-reconciliation-wake-failed",
+      threadId,
+      message:error instanceof Error ? error.message : String(error),
+    }));
+  }
 }
 
 
@@ -340,6 +365,22 @@ function decodeStoredJson(stored) {
   }
 }
 
+async function completionReceiptForRouting(infra, rawCompletion) {
+  const completion = normalizeAssetGenerationCompletion(rawCompletion);
+  const stored = await infra.objects.get(completion.receiptObjectRef);
+  if (stored === null) throw new Error("asset completion receipt object is not yet readable");
+  if (stored.digest !== completion.receiptDigest) {
+    throw new Error("asset completion receipt digest does not match immutable storage");
+  }
+  const parsed = decodeStoredJson(stored);
+  if (parsed === null) throw new Error("asset completion receipt contains invalid JSON");
+  const receipt = normalizeStoredAssetReceipt(parsed);
+  if (receipt.jobId !== completion.jobId) {
+    throw new Error("asset completion jobId does not match stored receipt");
+  }
+  return receipt;
+}
+
 async function completionActivityIdentity(infra, rawCompletion) {
   let jobId = typeof rawCompletion?.jobId === "string" ? rawCompletion.jobId : null;
   try {
@@ -425,9 +466,44 @@ export default {
     const presentationServer = createThreadPresentationServer({ infra });
     const completions = createCompletionConsumer(env, infra, presentationServer);
     for (const message of batch.messages) {
+      let routingReceipt;
+      try {
+        routingReceipt = await completionReceiptForRouting(infra, message.body);
+      } catch (error) {
+        const exponent = Math.min(Math.max(message.attempts - 1, 0), 6);
+        console.error(JSON.stringify({
+          event:"asset_completion_route_retry",
+          queue:batch.queue,
+          messageId:message.id,
+          attempts:message.attempts,
+          error:error instanceof Error ? error.message : String(error),
+        }));
+        message.retry({ delaySeconds:Math.min(300, 5 * (2 ** exponent)) });
+        continue;
+      }
+
+      const route = assetGenerationCompletionRoute(routingReceipt);
+      if (route === ASSET_COMPLETION_ROUTE_WORLD_WAKE) {
+        await requestWorldReconciliationWake(env, routingReceipt.context?.threadId);
+        message.ack();
+        continue;
+      }
+      if (route !== ASSET_COMPLETION_ROUTE_PRESENTATION) {
+        message.ack();
+        continue;
+      }
+
       try {
         const completion = await completions.consume(message.body);
         await publishAdminInvalidation(env, presentationCompletionInvalidation(completion));
+        if (
+          completion?.handled === true
+          && completion?.duplicate !== true
+          && completion?.stale !== true
+          && shouldWakeWorldAfterAssetCompletion(completion.receipt)
+        ) {
+          await requestWorldReconciliationWake(env, completion.scope?.entityRef);
+        }
         if (
           activityRecorder !== null
           && completion?.handled === true
