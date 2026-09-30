@@ -146,6 +146,7 @@ function visualModelMigrationFinding({embodiment,physicalGenomeVersion}){
     targetAppearanceVersion:HUMAN_APPEARANCE_MODEL_VERSION,
     reason:"The physical genome is current, but this canonical specification predates Fibre's geometry-first Human Appearance render layers.",
     migration:Object.freeze({
+      domain:"appearance",
       id:"physical_embodiment_v2",
       label:"Upgrade visual model",
       evidence:null,
@@ -284,7 +285,7 @@ function identityCompleteness(thread, registration, presentation, sexEvidence, r
         source:sexEvidence.source,
         genesisId:sexEvidence.genesisId,
         sex:sexEvidence.sex,
-        migration:Object.freeze({ id:"genesis_sex_v1", label:"Genesis sex", input:null }),
+        migration:Object.freeze({ domain:"identity", id:"genesis_sex_v1", label:"Genesis sex", input:null }),
       })
     : finding("SEX", "healthy", null, { authoritative:text(identity.sex) });
 
@@ -563,6 +564,7 @@ export function createThreadGenesisRepairService({
             ? "This Thread predates Fibre physical inheritance. Supply explicit maternal/paternal physical ancestry only when its canonical appearance needs migration."
             : `This Thread uses ${physicalGenomeVersion}; Fibre appearance authority now requires ${PHYSICAL_GENOME_VERSION}.`,
           migration:Object.freeze({
+            domain:"appearance",
             id:"physical_embodiment_v2",
             label:physicalGenomeVersion===null ? "Migrate appearance" : "Upgrade appearance model",
             evidence:priorEvidence===null ? null : Object.freeze({
@@ -644,7 +646,7 @@ export function createThreadGenesisRepairService({
       findings.push(finding("SYMBOLIC_GENOME_V1", "migration_required", null, {
         reason:"symbolic genome predates inherited runtime baselines",
         genomeIds:genomeMigration.legacyGenomeIds,
-        migration:Object.freeze({ id:"symbolic_genome_v1_to_v2", label:"Symbolic genome v2", input:null }),
+        migration:Object.freeze({ domain:"identity", id:"symbolic_genome_v1_to_v2", label:"Symbolic genome v2", input:null }),
       }));
     } else if (genomeMigration?.state === "legacy_v1_recombined") {
       findings.push(finding("SYMBOLIC_GENOME_V1_RECOMBINED", "migration_required", null, {
