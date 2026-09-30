@@ -64,7 +64,6 @@ export {
 
 export {
   ADMIN_INVALIDATION_CHANNEL,
-  fidPresentationInvalidation,
   presentationCompletionInvalidation,
   publishAdminInvalidation,
   threadPresentationInvalidation,
