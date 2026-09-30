@@ -7,6 +7,7 @@ export * from "./asset-generation-provider-operation.mjs";
 export * from "./asset-generation-reuse.mjs";
 export * from "./asset-generation-error.mjs";
 export * from "./asset-generation-completion.mjs";
+export * from "./asset-generation-failure.mjs";
 export * from "./asset-generation-runtime.mjs";
 export * from "./asset-provenance-domain.mjs";
 export * from "./asset-generation-control-service.mjs";
