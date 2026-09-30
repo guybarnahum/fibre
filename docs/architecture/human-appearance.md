@@ -1,7 +1,7 @@
 ---
 id: human-appearance
 status: accepted
-last-reviewed: 2026-09-28
+last-reviewed: 2026-09-30
 canonical: true
 ---
 
@@ -293,6 +293,63 @@ This avoids both failure modes:
 2. arbitrary country-specific coefficients invented merely to make images look different.
 
 Population nodes describe overlapping physical distributions, not categorical faces.
+
+## Versioned calibration dependencies and targeted migration
+
+Each reference-population node carries an explicit monotonic integer calibration version:
+
+```text
+afr_north.morocco@1
+afr_north.morocco@2
+afr_north.morocco@3
+```
+
+The version belongs to that calibration node, not to the entire physical-genome schema. Refining Moroccan calibration must not make Korean, Japanese or unrelated Threads stale.
+
+Durable physical ancestry therefore separates:
+
+- `populationId` — stable family/population identity used for calibration resolution;
+- `population` — human-readable provenance;
+- `referencePopulation` — the calibration node used at the time;
+- the effective dependency chain consumed by the Thread, including every inherited calibration node and version.
+
+For example:
+
+```text
+populationId = morocco
+resolved calibration = afr_north.morocco
+dependency chain = west_asia@1 -> afr_north@1 -> afr_north.morocco@2
+```
+
+World snapshots that effective dependency chain whenever physical appearance authority is migrated. A current registry is compared with the stored snapshot.
+
+Migration is required when the effective dependency set changes. That includes:
+
+- the same node receiving a newer local version;
+- a stable `populationId` resolving to a newly introduced more-specific node;
+- an inherited parent calibration changing in a way that changes the effective chain;
+- a physical-genome model version changing.
+
+Calibration migrations are **not ordered replay migrations**. If a Thread consumed `afr_north.morocco@1` and the approved current calibration is `@3`, Fibre recalculates once from the same durable ancestry and deterministic physical seed directly against `@3`. Version `@2` is model history, not an executable intermediate step.
+
+A calibration candidate has no authority. The lifecycle is:
+
+```text
+Population Lab coverage hole
+    -> experiment
+    -> research evidence
+    -> calibration candidate
+    -> human approval / reviewed model admission
+    -> current versioned calibration registry
+    -> dependency diff
+    -> affected Threads become Appearance migration candidates
+    -> explicit targeted migration
+    -> normal Embodiment / Presentation / FID convergence
+```
+
+Approval is the hinge. Experiments and research may produce evidence and proposals, but they cannot silently change how Threads look. Once a calibration is approved, new births use it immediately and only existing Threads whose stored appearance dependencies changed are migration candidates.
+
+Birthplace, name, language and culture never participate in dependency matching. A stable admitted `populationId` or other durable physical-lineage evidence is required. Old evidence without that identity is a data/coverage hole to repair explicitly, not permission to guess ancestry.
 
 ## Variation, not templates
 
