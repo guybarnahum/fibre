@@ -709,7 +709,7 @@ test("R7 records one repair root with causally parented repair actions", async (
     "thread.repair.complete",
   ]);
   assert.equal(repair[0].operationId, "repair_test_1");
-  assert.equal(repair[0].parentOperationId, undefined);
+  assert.equal(repair[0].parentOperationId, null);
   assert.equal(repair.slice(1).every((entry) => entry.parentOperationId === "repair_test_1"), true);
   assert.deepEqual(repair.slice(1).map((entry) => entry.operationId), [
     "repair_test_1.presentation",
