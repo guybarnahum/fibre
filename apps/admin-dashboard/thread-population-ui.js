@@ -27,6 +27,7 @@ const threadPopulationTimezones = $("#thread-population-timezones");
 const threadPopulationMapMarkers = $("#thread-population-map-markers");
 const threadPopulationMapSummary = $("#thread-population-map-summary");
 const threadPopulationRepairGeography = $("#thread-population-repair-geography");
+const threadPopulationFilterMigration = $("#thread-population-filter-migration");
 const threadPopulationFilterAppearance = $("#thread-population-filter-appearance");
 const threadPopulationFilterIdentity = $("#thread-population-filter-identity");
 const stillbornView = $("#stillborn-view");
@@ -607,6 +608,7 @@ function renderSortHeaders() {
 }
 
 function populationVisible(thread) {
+  if(populationFilter==="migration")return thread.health==="migration_required";
   if(populationFilter==="appearance")return hasMigrationDomain(thread,"appearance");
   if(populationFilter==="identity")return hasMigrationDomain(thread,"identity");
   return true;
@@ -618,12 +620,15 @@ function visiblePopulation() {
 
 function renderPopulationFilter() {
   const controls=[
+    [threadPopulationFilterMigration,"migration","Needs migration"],
     [threadPopulationFilterAppearance,"appearance","Appearance migration"],
     [threadPopulationFilterIdentity,"identity","Identity migration"],
   ];
   for(const [control,domain,label] of controls){
     if(!control)continue;
-    const count=population.filter((thread)=>hasMigrationDomain(thread,domain)).length;
+    const count=population.filter((thread)=>
+      domain==="migration" ? thread.health==="migration_required" : hasMigrationDomain(thread,domain)
+    ).length;
     control.textContent=`${label} · ${count}`;
     const selected=populationFilter===domain;
     control.classList.toggle("selected",selected);
@@ -637,10 +642,14 @@ function renderPopulation() {
   const ordered = visiblePopulation().sort((left, right) => compare(left, right, sortState.key, sortState.direction));
   rows.replaceChildren(...ordered.map(threadRow));
   empty.hidden = ordered.length !== 0;
-  if (ordered.length === 0 && ["appearance","identity"].includes(populationFilter)) {
-    const label=populationFilter==="appearance"?"Appearance migration":"Identity migration";
-    empty.querySelector("h3").textContent = `No Threads need ${label.toLocaleLowerCase("en-US")}`;
-    empty.querySelector("p").textContent = `No admitted Thread currently requires ${label.toLocaleLowerCase("en-US")}.`;
+  if (ordered.length === 0 && ["migration","appearance","identity"].includes(populationFilter)) {
+    const label=populationFilter==="migration"
+      ? "migration"
+      : populationFilter==="appearance"
+        ? "appearance migration"
+        : "identity migration";
+    empty.querySelector("h3").textContent = `No Threads need ${label}`;
+    empty.querySelector("p").textContent = `No admitted Thread currently requires ${label}.`;
   } else {
     empty.querySelector("h3").textContent = "No Threads available";
     empty.querySelector("p").textContent = "No Activity-discovered Thread population could be resolved.";
@@ -1748,6 +1757,7 @@ function togglePopulationMigrationFilter(domain){
     ? `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn.`
     : `${visible} of ${population.length} Threads need ${populationFilter} migration.`;
 }
+threadPopulationFilterMigration?.addEventListener("click",()=>togglePopulationMigrationFilter("migration"));
 threadPopulationFilterAppearance?.addEventListener("click",()=>togglePopulationMigrationFilter("appearance"));
 threadPopulationFilterIdentity?.addEventListener("click",()=>togglePopulationMigrationFilter("identity"));
 for (const [id, nextMode] of [["view-causal", "causal"], ["view-raw", "raw"]]) {
