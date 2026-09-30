@@ -216,23 +216,41 @@ export class AssetGenerationWorkflow extends WorkflowEntrypoint {
     const deployment = serviceDeployment(this.env);
     const route = imageRoute(deployment, job);
     const runtime = createRuntime(this.env, deployment, route.selectedProfile);
-    const generated = await step.do(
-      "generate provenanced asset",
-      {
-        timeout: "10 minutes",
-        retries: {
-          limit: WORKFLOW_RETRY_LIMIT,
-          delay: workflowRetryDelay,
+    let generated;
+    try {
+      generated = await step.do(
+        "generate provenanced asset",
+        {
+          timeout: "10 minutes",
+          retries: {
+            limit: WORKFLOW_RETRY_LIMIT,
+            delay: workflowRetryDelay,
+          },
         },
-      },
-      async (ctx) => executeImageRoute({
-        env:this.env,
-        deployment,
-        job,
-        route,
-        attempt:ctx.attempt,
-      }),
-    );
+        async (ctx) => executeImageRoute({
+          env:this.env,
+          deployment,
+          job,
+          route,
+          attempt:ctx.attempt,
+        }),
+      );
+    } catch (error) {
+      if (shouldPublishAssetGenerationCompletion(job)) {
+        await step.do(
+          "signal terminal asset generation",
+          {
+            retries: {
+              limit: WORKFLOW_RETRY_LIMIT,
+              delay: "2 seconds",
+              backoff: "exponential",
+            },
+          },
+          () => runtime.settleFailure(job, error),
+        );
+      }
+      throw error;
+    }
 
     if (shouldPublishAssetGenerationCompletion(job)) {
       const completion = createAssetGenerationCompletion({
