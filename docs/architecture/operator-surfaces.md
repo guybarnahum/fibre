@@ -1,7 +1,7 @@
 ---
 id: fibre-operator-surfaces
 status: accepted
-last-reviewed: 2026-09-24
+last-reviewed: 2026-09-30
 canonical: true
 ---
 
@@ -33,6 +33,29 @@ Population statistics such as sex counts, health counts, migration availability 
 Population inspection is operator-driven and bounded. It should not become a background polling loop or a second directory authority. Normal Activity auto-refresh may pause while the population view is active so population diagnosis does not create avoidable infrastructure load.
 
 While Threads is open, the same single Admin live connection used by other operator views carries best-effort Thread invalidation hints. Thread Presentation publishes those hints only through the provider-neutral `InfraDriver.realtime` capability; no Fibre semantic code depends on Durable Objects, WebSocket sessions or another cloud primitive. The deployment adapter owns the browser transport. Cloudflare currently maps that transport and the `admin` realtime channel to one environment-wide Admin-live Durable Object; another provider may realize the same capability differently. A normal Thread hint causes one exact authoritative reread for that Thread and replaces only that row; an open Thread Observatory also rereads that same Thread rather than remaining stale until reopened. The browser recomputes table statistics and map presentation from its already-authoritative local population state. It must not call the full population endpoint for a single-Thread mutation. A live reconnect is different: because hints may have been missed while disconnected, Admin performs one bounded full population reconciliation. Visual reconciliation has two authoritative edges: when World requeues work it emits a reconciliation hint so Admin can show `pending` immediately, and after World commits completion or terminal dead-letter it emits the final reconciliation hint. The browser therefore cannot depend on reload timing for either transition. Presentation-only media changes may emit Presentation invalidation hints, but raw asset or intermediate FID/Presentation completion is never treated as World readiness.
+
+### Appearance workbench
+
+Admin **Appearance** is the operator control surface over Population Lab coverage, not a second appearance engine.
+
+Its A1 responsibilities are deliberately read-mostly and cheap:
+
+- one bounded World scan of admitted Thread birth-location context plus durable maternal/paternal physical ancestry;
+- the shared Population Lab coverage engine classifies explicit, partial, broad, fallback and missing calibration coverage;
+- ranked holes are mapped only as represented Thread/family context, never as geographic phenotype inference;
+- the model matrix exposes each reference node's local version, parent, calibrated axes and stable population IDs;
+- the workbench exposes existing Threads whose stored appearance-calibration dependencies differ from the current registry;
+- experiment and research controls prepare explicit Population Lab action specifications in A1; they do not mutate calibration authority.
+
+Thread migration domains remain visibly separate.
+
+**Appearance migration** means physical-genome / physical-calibration evolution and is owned by the Thread Appearance surface and Population Lab impact view.
+
+**Identity migration** means preserved identity/Genesis migration such as Genesis sex or symbolic-genome policy evolution and is owned by Thread Health.
+
+The Threads population view therefore exposes separate **Appearance migration** and **Identity migration** filters. World supplies those domain classifications; the browser does not infer them from migration IDs or generic `migration_required` health.
+
+A Thread may require both domains at once. This does not merge their authority or actions.
 
 ### Thread health and operator actions
 
