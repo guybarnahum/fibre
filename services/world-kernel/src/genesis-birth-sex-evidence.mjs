@@ -32,8 +32,11 @@ export class GenesisBirthSexEvidence {
       try {
         result=JSON.parse(row.result_json);
         state=JSON.parse(row.state_json);
-      } catch {
-        return [];
+      } catch (error) {
+        throw new Error(`Genesis migration scan found invalid JSON for Thread ${row.thread_id}: ${error.message}`);
+      }
+      if(result?.thread?.threadId!==row.thread_id){
+        throw new Error(`Genesis migration scan found mismatched birth evidence for Thread ${row.thread_id}`);
       }
       return state?.identity?.sex===undefined && result?.thread?.identity?.sex!==undefined
         ? [row.thread_id]
