@@ -674,7 +674,8 @@ function renderPopulationThread(threadId) {
   if (nextRow) rows.insertBefore(row, nextRow);
   else rows.append(row);
 
-  empty.hidden = population.length !== 0;
+  empty.hidden = visiblePopulation().length !== 0;
+  renderPopulationFilter();
   renderSortHeaders();
   return true;
 }
