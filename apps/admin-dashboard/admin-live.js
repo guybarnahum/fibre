@@ -1,5 +1,6 @@
 import {
   invalidateView,
+  threadObservatoryViewKey,
   threadPopulationViewKey,
   threadViewKey,
   watchViewInvalidation,
@@ -51,6 +52,11 @@ function handleMessage(event) {
   invalidateView(threadViewKey(message.id, message.aspect), {
     source:"admin-live",
     reason:"changed",
+  });
+  invalidateView(threadObservatoryViewKey(message.id), {
+    source:"admin-live",
+    reason:"changed",
+    aspect:message.aspect,
   });
   invalidateView(threadPopulationViewKey(), {
     source:"admin-live",
