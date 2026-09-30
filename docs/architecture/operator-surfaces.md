@@ -36,7 +36,7 @@ While Threads is open, the same single Admin live connection used by other opera
 
 ### Appearance workbench
 
-Admin **Appearance** is the operator control surface over Population Lab coverage, not a second appearance engine.
+Admin **Appearance** is a top-level operator surface over Population Lab coverage, not a second appearance engine and not a subview of Threads, Birth Center or Stillborn.
 
 Its A1 responsibilities are deliberately read-mostly and cheap:
 
@@ -47,15 +47,7 @@ Its A1 responsibilities are deliberately read-mostly and cheap:
 - the workbench exposes existing Threads whose stored appearance-calibration dependencies differ from the current registry;
 - experiment and research controls prepare explicit Population Lab action specifications in A1; they do not mutate calibration authority.
 
-Thread migration domains remain visibly separate.
-
-**Appearance migration** means physical-genome / physical-calibration evolution and is owned by the Thread Appearance surface and Population Lab impact view.
-
-**Identity migration** means preserved identity/Genesis migration such as Genesis sex or symbolic-genome policy evolution and is owned by Thread Health.
-
-The Threads population view therefore exposes separate **Appearance migration** and **Identity migration** filters. World supplies those domain classifications; the browser does not infer them from migration IDs or generic `migration_required` health.
-
-A Thread may require both domains at once. This does not merge their authority or actions.
+Thread migration domains remain semantically separate in their owning surfaces, but the Threads population view deliberately exposes only one **Needs migration** filter backed by authoritative `migration_required` health. Appearance-specific impact belongs in Admin Appearance; identity-specific migration detail belongs in Thread Health/Observatory. The population table does not become a second migration taxonomy UI.
 
 ### Appearance / Population Lab
 
@@ -118,7 +110,7 @@ The map must never be interpreted as a country-to-face mapping. Location is cont
 
 A1 keeps expensive actions explicit. **Prepare experiment** and **Prepare research** create bounded action specifications only. They do not execute provider work or modify the model. Experiment storage/execution and research adapters belong to later Population Lab slices through InfraDriver.
 
-The Threads population view exposes **Needs migration** for all `migration_required` Threads, plus narrower Appearance-migration and Identity-migration filters. Filtering is presentation only; World health remains authority.
+The Threads population view exposes one **Needs migration** filter for all `migration_required` Threads. Filtering is presentation only; World health remains authority.
 
 An approved appearance calibration is expected to invalidate/recompute the affected migration projection so dependent Threads become visible as `migration_required`. Unrelated Threads must remain healthy. Existing Thread migration remains explicit; Admin does not silently rewrite a person's physical authority merely because a new calibration was approved.
 
