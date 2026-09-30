@@ -327,14 +327,17 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
       if (disposition === "retry_visual") {
         visualPublicationWorkset.requeue(threadId, { updatedAt:now() });
         if (visualPublicationWorkset.get(threadId)?.state === "pending") {
+          await publishAdminReconciliationHint(infraDriver, threadId);
           await reconciliationRuntime.requestWake();
         }
       }
     },
-    async onRecover() {
+    async onRecover({ threadId }) {
+      await publishAdminReconciliationHint(infraDriver, threadId);
       await reconciliationRuntime.requestWake();
     },
-    async onVisualIdentityCorrection() {
+    async onVisualIdentityCorrection({ threadId }) {
+      await publishAdminReconciliationHint(infraDriver, threadId);
       await reconciliationRuntime.requestWake();
     },
     async onIdentityUpdate({ threadId, result }) {
