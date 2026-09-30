@@ -55,3 +55,8 @@ export function threadViewKey(threadId, aspect) {
 export function threadPopulationViewKey() {
   return "threads:population";
 }
+
+export function threadObservatoryViewKey(threadId) {
+  if (typeof threadId !== "string" || threadId === "") throw new TypeError("threadId is required");
+  return `thread:${threadId}:observatory`;
+}
