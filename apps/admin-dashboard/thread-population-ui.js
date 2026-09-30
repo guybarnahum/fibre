@@ -33,8 +33,6 @@ const threadPopulationMapMarkers = $("#thread-population-map-markers");
 const threadPopulationMapSummary = $("#thread-population-map-summary");
 const threadPopulationRepairGeography = $("#thread-population-repair-geography");
 const threadPopulationFilterMigration = $("#thread-population-filter-migration");
-const threadPopulationFilterAppearance = $("#thread-population-filter-appearance");
-const threadPopulationFilterIdentity = $("#thread-population-filter-identity");
 const stillbornView = $("#stillborn-view");
 const stillbornRows = $("#stillborn-rows");
 const stillbornEmpty = $("#stillborn-empty");
@@ -617,19 +615,12 @@ function visiblePopulation() {
 }
 
 function renderPopulationFilter() {
-  const controls=[
-    [threadPopulationFilterMigration,"migration","Needs migration"],
-    [threadPopulationFilterAppearance,"appearance","Appearance migration"],
-    [threadPopulationFilterIdentity,"identity","Identity migration"],
-  ];
-  for(const [control,domain,label] of controls){
-    if(!control)continue;
-    const count=populationFilterCount(population,domain);
-    control.textContent=`${label} · ${count}`;
-    const selected=populationFilter===domain;
-    control.classList.toggle("selected",selected);
-    control.setAttribute("aria-pressed",String(selected));
-  }
+  if (!threadPopulationFilterMigration) return;
+  const count=populationFilterCount(population,"migration");
+  threadPopulationFilterMigration.textContent=`Needs migration · ${count}`;
+  const selected=populationFilter==="migration";
+  threadPopulationFilterMigration.classList.toggle("selected",selected);
+  threadPopulationFilterMigration.setAttribute("aria-pressed",String(selected));
 }
 
 function renderPopulation() {
@@ -638,14 +629,9 @@ function renderPopulation() {
   const ordered = visiblePopulation().sort((left, right) => compare(left, right, sortState.key, sortState.direction));
   rows.replaceChildren(...ordered.map(threadRow));
   empty.hidden = ordered.length !== 0;
-  if (ordered.length === 0 && ["migration","appearance","identity"].includes(populationFilter)) {
-    const label=populationFilter==="migration"
-      ? "migration"
-      : populationFilter==="appearance"
-        ? "appearance migration"
-        : "identity migration";
-    empty.querySelector("h3").textContent = `No Threads need ${label}`;
-    empty.querySelector("p").textContent = `No admitted Thread currently requires ${label}.`;
+  if (ordered.length === 0 && populationFilter === "migration") {
+    empty.querySelector("h3").textContent = "No Threads need migration";
+    empty.querySelector("p").textContent = "No admitted Thread currently requires migration.";
   } else {
     empty.querySelector("h3").textContent = "No Threads available";
     empty.querySelector("p").textContent = "No Activity-discovered Thread population could be resolved.";
@@ -662,8 +648,6 @@ function currentPopulationSummary() {
     unknownSex:population.filter((thread) => !["female","male"].includes(thread.identity?.sex)).length,
     attention:population.filter((thread) => thread.health !== "healthy").length,
     deadLetter:population.filter((thread) => thread.reconciliation?.state === "dead_letter").length,
-    appearanceMigrations:population.filter((thread)=>threadHasMigrationDomain(thread,"appearance")).length,
-    identityMigrations:population.filter((thread)=>threadHasMigrationDomain(thread,"identity")).length,
     migrationsAvailable:population.filter((thread)=>thread.health==="migration_required").length,
     stillborn:stillborn.length,
   };
@@ -909,8 +893,6 @@ function renderSummary(summary) {
     "thread-stat-male":summary.male,
     "thread-stat-unknown":summary.unknownSex,
     "thread-stat-attention":summary.attention,
-    "thread-stat-appearance-migrations":summary.appearanceMigrations,
-    "thread-stat-identity-migrations":summary.identityMigrations,
     "thread-stat-dead":summary.deadLetter,
   };
   for (const [id, value] of Object.entries(values)) $(`#${id}`).textContent = value ?? 0;
@@ -1539,8 +1521,16 @@ async function submitBirth(event) {
   if (active && populationMode === "threads") void loadPopulation();
 }
 
+function syncOperatorNavigation() {
+  const appearance = $("#appearance-nav-link");
+  const activity = document.querySelector('.nav-item[href="/activity"]');
+  appearance?.classList.toggle("active", populationMode === "appearance");
+  activity?.classList.toggle("active", populationMode !== "appearance");
+}
+
 function holdOperatorMode() {
   if (!active) return;
+  syncOperatorNavigation();
   $("#causal-view").hidden = true;
   $("#raw-view").hidden = true;
   birthCenterView.hidden = populationMode !== "birth-center";
@@ -1721,6 +1711,8 @@ function exitOperatorMode(nextMode) {
     history.replaceState(null, "", `${location.pathname}?${params}`);
     $("#refresh-button").click();
   }
+  populationMode = "threads";
+  syncOperatorNavigation();
 }
 
 birthLocation.addEventListener("input", renderBirthSearch);
@@ -1741,7 +1733,6 @@ birthForm.addEventListener("submit", submitBirth);
 
 $("#view-birth-center").addEventListener("click", enterBirthCenter);
 $("#view-threads").addEventListener("click", enterThreads);
-$("#view-appearance").addEventListener("click", enterAppearance);
 $("#view-stillborn").addEventListener("click", enterStillborn);
 function togglePopulationMigrationFilter(domain){
   populationFilter=populationFilter===domain?"all":domain;
@@ -1752,8 +1743,6 @@ function togglePopulationMigrationFilter(domain){
     : `${visible} of ${population.length} Threads need ${populationFilter} migration.`;
 }
 threadPopulationFilterMigration?.addEventListener("click",()=>togglePopulationMigrationFilter("migration"));
-threadPopulationFilterAppearance?.addEventListener("click",()=>togglePopulationMigrationFilter("appearance"));
-threadPopulationFilterIdentity?.addEventListener("click",()=>togglePopulationMigrationFilter("identity"));
 for (const [id, nextMode] of [["view-causal", "causal"], ["view-raw", "raw"]]) {
   $(`#${id}`).addEventListener("click", () => exitOperatorMode(nextMode));
 }
