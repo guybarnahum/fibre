@@ -23,6 +23,19 @@ function json(status, payload) {
   });
 }
 
+function optionalActivityRecorder(value) {
+  if (value === null) return null;
+  if (!value || typeof value.runStage !== "function") {
+    throw new TypeError("Thread repair activityRecorder must expose runStage()");
+  }
+  return value;
+}
+
+async function runActivityStage(activity, metadata, operation) {
+  if (activity === null) return operation();
+  return activity.runStage(metadata, operation);
+}
+
 async function repairBody(request) {
   try {
     const value = await request.json();
@@ -93,6 +106,7 @@ export function createThreadGenesisRepairApi({
   visualIdentityRepairService,
   privateToken,
   reconciliationWorkset = null,
+  activityRecorder = null,
   onRepair = null,
   onRecover = null,
   onIdentityUpdate = null,
@@ -119,6 +133,7 @@ export function createThreadGenesisRepairApi({
     && (typeof reconciliationWorkset.get !== "function" || typeof reconciliationWorkset.requeue !== "function")) {
     throw new TypeError("Thread repair reconciliationWorkset must expose get() and requeue()");
   }
+  const activity = optionalActivityRecorder(activityRecorder);
   if (onRepair !== null && typeof onRepair !== "function") {
     throw new TypeError("Thread repair onRepair must be a function or null");
   }
@@ -158,11 +173,19 @@ export function createThreadGenesisRepairApi({
           if (reconciliationWorkset === null) return json(409, { error:{ code:"THREAD_RECOVERY_UNAVAILABLE" } });
           const before = reconciliationWorkset.get(threadId);
           if (before?.state !== "dead_letter") return json(409, { error:{ code:"THREAD_NOT_DEAD_LETTER" } });
-          reconciliationWorkset.requeue(threadId);
-          await onRecover?.({ threadId, before });
+          const recovery = await runActivityStage(activity, {
+            threadId,
+            stage:"thread.visual_publication.recover",
+            attempt:1,
+            evidence:{ priorState:before.state },
+          }, async () => {
+            reconciliationWorkset.requeue(threadId);
+            await onRecover?.({ threadId, before });
+            return { threadId, before, after:reconciliationWorkset.get(threadId) };
+          });
           return json(200, {
             contract:THREAD_REPAIR_CONTRACT,
-            recovery:{ threadId, before, after:reconciliationWorkset.get(threadId) },
+            recovery,
           });
         }
         if (command.action === "identity") {
@@ -186,9 +209,17 @@ export function createThreadGenesisRepairApi({
           });
         }
         if (command.action === "canonical_visual_identity") {
-          const result = visualIdentityRepairService.repair({ threadId, ...command });
-          const requeued = reconciliationWorkset?.requeue(threadId) ?? false;
-          await onVisualIdentityCorrection?.({ threadId, result, requeued });
+          const result = await runActivityStage(activity, {
+            threadId,
+            operationId:command.operationKey,
+            stage:"thread.visual_identity.correct",
+            attempt:1,
+          }, async () => {
+            const repaired = visualIdentityRepairService.repair({ threadId, ...command });
+            const requeued = reconciliationWorkset?.requeue(threadId) ?? false;
+            await onVisualIdentityCorrection?.({ threadId, result:repaired, requeued });
+            return repaired;
+          });
           return json(200, {
             contract:THREAD_REPAIR_CONTRACT,
             visualIdentityCorrection:result,
@@ -196,9 +227,17 @@ export function createThreadGenesisRepairApi({
           });
         }
         if (command.action === "canonical_visual_identity_renewal") {
-          const result = visualIdentityRepairService.renew({ threadId, ...command });
-          const requeued = reconciliationWorkset?.requeue(threadId) ?? false;
-          await onVisualIdentityCorrection?.({ threadId, result, requeued });
+          const result = await runActivityStage(activity, {
+            threadId,
+            operationId:command.operationKey,
+            stage:"thread.visual_identity.renew",
+            attempt:1,
+          }, async () => {
+            const renewed = visualIdentityRepairService.renew({ threadId, ...command });
+            const requeued = reconciliationWorkset?.requeue(threadId) ?? false;
+            await onVisualIdentityCorrection?.({ threadId, result:renewed, requeued });
+            return renewed;
+          });
           return json(200, {
             contract:THREAD_REPAIR_CONTRACT,
             visualIdentityRenewal:result,
