@@ -1,4 +1,9 @@
 import { appearanceCoverageTopSummary, loadAppearanceCoverage } from "./appearance-coverage-ui.js";
+import {
+  populationFilterCount,
+  threadHasMigrationDomain,
+  threadMatchesPopulationFilter,
+} from "./thread-population-filter.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { watchAdminLive } from "./admin-live.js";
 import { invalidateView, threadPopulationViewKey } from "./view-invalidation.js";
@@ -287,10 +292,6 @@ function migrationFor(thread) {
   return (thread.findings ?? []).find((finding) => finding?.migration?.domain === "identity")?.migration ?? null;
 }
 
-function hasMigrationDomain(thread,domain) {
-  return Array.isArray(thread?.migrationDomains) && thread.migrationDomains.includes(domain);
-}
-
 function identityActions(thread) {
   const seen = new Set();
   return (thread.findings ?? []).flatMap((finding) => {
@@ -490,8 +491,8 @@ function actionCell(thread) {
     return cell;
   }
 
-  const reason = hasMigrationDomain(thread,"appearance") ? "Appearance migration"
-    : hasMigrationDomain(thread,"identity") ? "Identity migration"
+  const reason = threadHasMigrationDomain(thread,"appearance") ? "Appearance migration"
+    : threadHasMigrationDomain(thread,"identity") ? "Identity migration"
       : thread.health === "migration_required" ? "Migration required"
         : thread.health === "operator_decision_required" ? "Input required"
       : thread.health === "integrity_error" ? "Authority conflict"
@@ -608,10 +609,7 @@ function renderSortHeaders() {
 }
 
 function populationVisible(thread) {
-  if(populationFilter==="migration")return thread.health==="migration_required";
-  if(populationFilter==="appearance")return hasMigrationDomain(thread,"appearance");
-  if(populationFilter==="identity")return hasMigrationDomain(thread,"identity");
-  return true;
+  return threadMatchesPopulationFilter(thread,populationFilter);
 }
 
 function visiblePopulation() {
@@ -666,8 +664,8 @@ function currentPopulationSummary() {
     unknownSex:population.filter((thread) => !["female","male"].includes(thread.identity?.sex)).length,
     attention:population.filter((thread) => thread.health !== "healthy").length,
     deadLetter:population.filter((thread) => thread.reconciliation?.state === "dead_letter").length,
-    appearanceMigrations:population.filter((thread)=>hasMigrationDomain(thread,"appearance")).length,
-    identityMigrations:population.filter((thread)=>hasMigrationDomain(thread,"identity")).length,
+    appearanceMigrations:population.filter((thread)=>threadHasMigrationDomain(thread,"appearance")).length,
+    identityMigrations:population.filter((thread)=>threadHasMigrationDomain(thread,"identity")).length,
     migrationsAvailable:population.filter((thread)=>thread.health==="migration_required").length,
     stillborn:stillborn.length,
   };
