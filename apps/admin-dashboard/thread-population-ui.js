@@ -1518,11 +1518,22 @@ async function submitBirth(event) {
   if (active && populationMode === "threads") void loadPopulation();
 }
 
+function operatorUrl(mode) {
+  if (mode === "appearance") return "/appearance";
+  const params=new URLSearchParams();
+  params.set("mode",mode);
+  return `/activity?${params}`;
+}
+
 function syncOperatorNavigation() {
   const appearance = $("#appearance-nav-link");
   const activity = document.querySelector('.nav-item[href="/activity"]');
-  appearance?.classList.toggle("active", populationMode === "appearance");
-  activity?.classList.toggle("active", populationMode !== "appearance");
+  const appearanceActive=populationMode === "appearance";
+  appearance?.classList.toggle("active", appearanceActive);
+  activity?.classList.toggle("active", !appearanceActive);
+  document.title=appearanceActive ? "Fibre Admin · Appearance" : "Fibre Admin · Activity";
+  const crumb=document.querySelector(".crumbs strong");
+  if(crumb)crumb.textContent=appearanceActive ? "Appearance" : "Activity";
 }
 
 function holdOperatorMode() {
@@ -1646,9 +1657,7 @@ function enterPopulation(nextMode) {
       $("#chain-summary").textContent = `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn.`;
       void loadPopulation();
     }
-    const params = new URLSearchParams(location.search);
-    params.set("mode", populationMode);
-    history.replaceState(null, "", `${location.pathname}?${params}`);
+    history.replaceState(null, "", operatorUrl(populationMode));
     return;
   }
   active = true;
@@ -1667,9 +1676,7 @@ function enterPopulation(nextMode) {
     : populationMode === "appearance"
       ? "Scanning appearance coverage"
       : "Loading population");
-  const params = new URLSearchParams(location.search);
-  params.set("mode", populationMode);
-  history.replaceState(null, "", `${location.pathname}?${params}`);
+  history.replaceState(null, "", operatorUrl(populationMode));
   if (populationMode === "birth-center") void loadBirthCenter();
   else if (populationMode === "appearance") {
     void loadAppearanceCoverage().then((payload)=>{
@@ -1702,10 +1709,10 @@ function exitOperatorMode(nextMode) {
   $("#auto-refresh").checked = priorAutoRefresh;
   $("#auto-refresh").dispatchEvent(new Event("change"));
 
-  const params = new URLSearchParams(location.search);
-  if (["birth-center","threads","appearance","stillborn"].includes(params.get("mode"))) {
-    params.set("mode", nextMode);
-    history.replaceState(null, "", `${location.pathname}?${params}`);
+  const wasOperatorRoute = location.pathname === "/appearance"
+    || ["birth-center","threads","appearance","stillborn"].includes(new URLSearchParams(location.search).get("mode"));
+  if (wasOperatorRoute) {
+    history.replaceState(null, "", operatorUrl(nextMode));
     $("#refresh-button").click();
   }
   populationMode = "threads";
@@ -1782,7 +1789,9 @@ for (const eventName of [
 window.addEventListener("scroll", hidePopulationPortraitPreview, true);
 window.addEventListener("resize", hidePopulationPortraitPreview);
 
-const initialMode = new URLSearchParams(location.search).get("mode");
+const initialMode = location.pathname === "/appearance"
+  ? "appearance"
+  : new URLSearchParams(location.search).get("mode");
 if (initialMode === "birth-center") enterBirthCenter();
 if (initialMode === "threads") enterThreads();
 if (initialMode === "appearance") enterAppearance();
