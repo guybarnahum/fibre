@@ -311,6 +311,8 @@ asset.completion.publish
 
 Retries use the same stage with increasing `attempt` and status `retrying`/`started`/`succeeded` or `failed`.
 
+The current Asset Generator runtime deliberately keeps this coarser than the full vocabulary above. It emits `asset.request.execute`, one nested `asset.provider.generate` pair around the actual external provider operation, and `asset.completion.publish`. The provider stage carries the enclosing request as `parentOperationId`, so provider latency is measurable without adding per-storage-step telemetry noise.
+
 ### Thread Presentation
 
 ```text
