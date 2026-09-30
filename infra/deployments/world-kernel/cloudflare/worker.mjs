@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { createAppearanceCoverageService } from "#services/world-kernel/src/appearance-coverage-service.mjs";
+import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
@@ -26,6 +27,8 @@ const THREAD_DIRECTORY_ENTRIES_ROUTE = "/internal/thread-directory/entries";
 const THREAD_DIRECTORY_PRESENCE_ROUTE = "/internal/thread-directory/presence";
 const THREAD_DIRECTORY_ENTRY_ROUTE = /^\/internal\/thread-directory\/entry\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})$/u;
 const APPEARANCE_COVERAGE_ROUTE = "/internal/appearance/coverage";
+const THREAD_MIGRATIONS_ROUTE = "/internal/thread-migrations";
+const THREAD_MIGRATION_ENTRY_ROUTE = /^\/internal\/thread-migrations\/([^/]+)$/u;
 
 function constantTimeEqual(left, right) {
   if (typeof left !== "string" || typeof right !== "string") return false;
@@ -197,6 +200,7 @@ export class FibreWorldDurableObject extends DurableObject {
     this.threadDirectoryStore = null;
     this.threadDirectory = null;
     this.appearanceCoverage = null;
+    this.threadMigrationSummary = null;
     this.threadHealthProjectionStore = null;
     this.threadHealthProjection = null;
   }
@@ -281,6 +285,19 @@ export class FibreWorldDurableObject extends DurableObject {
     }
   }
 
+  migrationSummaryForRequest() {
+    if (this.threadMigrationSummary === null) {
+      const runtime=this.runtimeForRequest();
+      this.threadMigrationSummary=createThreadMigrationSummaryService({
+        appearanceCoverage:this.appearanceCoverageForRequest(),
+        directoryStore:this.threadDirectoryStore,
+        symbolicGenomeStore:runtime.symbolicGenomeStore,
+        genesisBirthSexEvidence:runtime.genesisBirthSexEvidence,
+      });
+    }
+    return this.threadMigrationSummary;
+  }
+
   healthProjectionForRequest() {
     if (this.threadHealthProjection === null) {
       this.threadHealthProjectionStore = new ThreadHealthProjectionStore(this.worldStorage);
@@ -317,6 +334,28 @@ export class FibreWorldDurableObject extends DurableObject {
         return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
       }
       return Response.json(this.appearanceCoverageForRequest().scan());
+    }
+    if (url.pathname === THREAD_MIGRATIONS_ROUTE) {
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
+      if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
+      if (!privateOperatorAuthorized(request, this.env)) {
+        return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
+      }
+      return Response.json(this.migrationSummaryForRequest().scan());
+    }
+    const migrationEntryMatch=THREAD_MIGRATION_ENTRY_ROUTE.exec(url.pathname);
+    if(migrationEntryMatch!==null){
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
+      if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
+      if (!privateOperatorAuthorized(request, this.env)) {
+        return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
+      }
+      const migration=this.migrationSummaryForRequest().inspect(decodeURIComponent(migrationEntryMatch[1]));
+      if(migration===null)return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
+      return Response.json({
+        contract:"fibre-thread-migration-summary-entry-v0.1",
+        migration,
+      });
     }
     if (url.pathname === THREAD_DIRECTORY_ROUTE) {
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
