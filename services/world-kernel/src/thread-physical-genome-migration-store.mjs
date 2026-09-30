@@ -73,6 +73,42 @@ export class ThreadPhysicalGenomeMigrationStore{
     });
   }
 
+  listLatestEvidence(threadIds=null){
+    const normalized=threadIds===null
+      ? null
+      : [...new Set(threadIds.map((threadId)=>{
+          if(typeof threadId!=="string"||threadId.trim()==="")throw new TypeError("Thread ancestry scan requires non-empty Thread IDs");
+          return threadId.trim();
+        }))];
+    if(normalized!==null&&normalized.length===0)return Object.freeze([]);
+    const rows=this.#database.prepare(`
+      WITH ranked AS (
+        SELECT
+          event_id,thread_id,payload_json,occurred_at,
+          ROW_NUMBER() OVER (PARTITION BY thread_id ORDER BY sequence DESC) AS ordinal
+        FROM thread_events
+        WHERE event_type='THREAD_PHYSICAL_GENOME_MIGRATED'
+          ${normalized===null ? "" : "AND thread_id IN (SELECT value FROM json_each(?))"}
+      )
+      SELECT event_id,thread_id,payload_json,occurred_at
+      FROM ranked
+      WHERE ordinal=1
+      ORDER BY thread_id
+    `).all(...(normalized===null?[]:[JSON.stringify(normalized)]));
+    return Object.freeze(rows.flatMap((row)=>{
+      const payload=JSON.parse(row.payload_json);
+      if(payload?.physicalAncestry===undefined)return [];
+      return [Object.freeze({
+        threadId:row.thread_id,
+        eventId:row.event_id,
+        recordedAt:row.occurred_at,
+        physicalAncestry:normalizePhysicalAncestry(payload.physicalAncestry),
+        physicalGenomeVersion:payload?.physicalGenome?.version??null,
+        previousPhysicalGenomeVersion:payload?.previousPhysicalGenomeVersion??null,
+      })];
+    }));
+  }
+
   migrate(thread,{physicalAncestry,operationKey,changedAt=new Date().toISOString()}={}){
     validateThreadSnapshot(thread);
     const key=normalizeOperationKey(operationKey);
