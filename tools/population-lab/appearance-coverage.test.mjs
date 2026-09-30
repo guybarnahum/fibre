@@ -30,8 +30,8 @@ test("appearance coverage distinguishes explicit, broad, fallback, and missing a
     {
       threadId:"thr_moroccan",
       physicalAncestry:{
-        maternal:[{population:"Moroccan family",share:1,referencePopulation:"afr_north"}],
-        paternal:[{population:"Moroccan family",share:1,referencePopulation:"afr_north"}],
+        maternal:[{populationId:"morocco",population:"Moroccan family",share:1,referencePopulation:"afr_north"}],
+        paternal:[{populationId:"morocco",population:"Moroccan family",share:1,referencePopulation:"afr_north"}],
       },
     },
   ];
@@ -43,7 +43,11 @@ test("appearance coverage distinguishes explicit, broad, fallback, and missing a
   assert.equal(result.coverage.fallback,2,"North-African fallback was not exposed");
   assert.equal(result.coverage.missing,1,"missing ancestry provenance was hidden");
   assert.equal(result.holes[0].coverage,"missing");
-  assert.equal(result.holes.some((hole)=>hole.referencePopulation==="afr_north"),true);
+  assert.equal(
+    result.holes.some((hole)=>hole.referencePopulation==="afr_north.morocco"),
+    true,
+    "stable Moroccan ancestry did not resolve to the current calibration node",
+  );
   assert.equal(result.holes.some((hole)=>hole.referencePopulation==="east_asia.korean"),true);
 });
 
