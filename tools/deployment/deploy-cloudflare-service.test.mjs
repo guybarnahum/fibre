@@ -38,6 +38,7 @@ test("service deploy preserves resolved bindings and stamps the exact source SHA
     gitSha: SHA,
   });
   assert.equal(prepared.workerName, "fibre-world-kernel-staging");
+  assert.equal(prepared.config.vars.FIBRE_ACTIVITY_ENV, "staging");
   assert.equal(prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA, SHA);
   assert.equal(prepared.config.d1_databases[0].database_name, "fibre-activity-log-staging");
   assert.equal(original.vars.FIBRE_DEPLOYMENT_GIT_SHA, "b".repeat(40));
@@ -86,6 +87,7 @@ test("service deploy re-resolves current source config without provisioning", as
     assert.deepEqual(calls[0], ["resolve-current"]);
     assert.equal(writes.length, 1);
     assert.deepEqual(writes[0][1].migrations, [{ tag:"new-do", new_sqlite_classes:["NewDurableObject"] }]);
+    assert.equal(writes[0][1].vars.FIBRE_ACTIVITY_ENV, "staging");
     assert.equal(writes[0][1].vars.FIBRE_DEPLOYMENT_GIT_SHA, SHA);
     const migrateIndex = calls.findIndex((entry) => entry[0] === "migrate");
     const wranglerIndex = calls.findIndex((entry) => entry[0] === "wrangler");
