@@ -1,4 +1,4 @@
-import { decorateActionButton, setWaitingContent } from "./fa-icons.js";
+import { decorateActionButton, faIcon, setWaitingContent } from "./fa-icons.js";
 import {
   countryFlag,
   knownThreadLabel,
@@ -25,8 +25,6 @@ let timer = null;
 let lastInteractionAt = 0;
 let lastUiSignalAt = 0;
 let nav = { edge:"first", direction:"next", cursor:null, page:1 };
-
-decorateActionButton($("#export-button"), { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
 
 function text(node, input) { node.textContent = input ?? "—"; }
 function titleCase(input) { return String(input ?? "").split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" "); }
@@ -138,12 +136,17 @@ function setLoading(loading) {
   const refresh = $("#refresh-button");
   refresh.disabled = loading;
   if (loading) {
-    decorateActionButton(refresh, { icon:"rotate", label:"Refreshing", tooltip:"Refreshing Activity", spinning:true });
+    const icon = faIcon("rotate");
+    icon.classList.add("fa-action-icon-spin");
+    refresh.replaceChildren(icon);
+    refresh.setAttribute("aria-label", "Refreshing Activity");
+    refresh.title = "Refreshing Activity";
+    refresh.classList.add("activity-refresh-loading");
   } else {
     refresh.textContent = "Refresh";
     refresh.removeAttribute("aria-label");
     refresh.removeAttribute("title");
-    delete refresh.dataset.tooltip;
+    refresh.classList.remove("activity-refresh-loading");
   }
   for (const id of ["page-first", "page-prev", "page-next", "page-last"]) $(`#${id}`).disabled = loading;
 }
@@ -489,30 +492,6 @@ async function activityExport(payload) {
   });
 }
 
-async function copyExport() {
-  if (!currentPayload) return;
-  const button = $("#export-button");
-  const exportText = JSON.stringify(await activityExport(currentPayload), null, 2);
-  try {
-    await navigator.clipboard.writeText(exportText);
-    decorateActionButton(button, { icon:"file-export", label:"Activity export copied", tooltip:"Activity export copied", iconOnly:true });
-  } catch {
-    const area = document.createElement("textarea"); area.value = exportText; area.setAttribute("readonly", ""); area.style.position = "fixed"; area.style.opacity = "0";
-    document.body.append(area); area.select();
-    const copied = document.execCommand("copy");
-    area.remove();
-    decorateActionButton(button, {
-      icon:"file-export",
-      label:copied ? "Activity export copied" : "Copy / Export activity failed",
-      tooltip:copied ? "Activity export copied" : "Copy / Export activity failed",
-      iconOnly:true,
-    });
-  }
-  setTimeout(() => {
-    decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
-  }, 1600);
-}
-
 function firstPage() {
   nav = { edge:"first", direction:"next", cursor:null, page:1 };
   return loadPage();
@@ -667,7 +646,6 @@ async function handleVisibilityChange() {
 form.addEventListener("submit", (event) => { event.preventDefault(); nav = { edge:"first", direction:"next", cursor:null, page:1 }; loadPage({ pushState:true }); });
 kind.addEventListener("change", updateIdentityState);
 $("#refresh-button").addEventListener("click", () => loadPage());
-$("#export-button").addEventListener("click", copyExport);
 $("#auto-refresh").addEventListener("change", scheduleRefresh);
 $("#view-causal").addEventListener("click", () => selectMode("causal"));
 $("#view-raw").addEventListener("click", () => selectMode("raw"));
