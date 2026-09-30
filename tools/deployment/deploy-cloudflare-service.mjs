@@ -73,6 +73,7 @@ export function prepareResolvedServiceConfig(config, { environment, service, git
   }
   const next = structuredClone(config);
   next.vars ??= {};
+  next.vars.FIBRE_ACTIVITY_ENV = env;
   next.vars.FIBRE_DEPLOYMENT_GIT_SHA = gitSha;
   return Object.freeze({ environment: env, serviceId, workerName: name, config: next });
 }
