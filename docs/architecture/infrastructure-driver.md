@@ -1,7 +1,7 @@
 ---
 id: architecture-infrastructure-driver-v0-1
 status: proposed
-last-reviewed: 2026-08-21
+last-reviewed: 2026-09-30
 canonical: false
 ---
 
@@ -257,6 +257,30 @@ provider mechanism
 ```
 
 This preserves the accepted storage rule that authority comes from Fibre records/provenance/replay contracts, not from a particular database product.
+
+## Population Lab experiment artifacts
+
+Population Lab experiment persistence is an application use of generic InfraDriver capabilities, not a new infrastructure port.
+
+When A2 introduces persisted experiments, the domain will compose:
+
+```text
+infra.objects   immutable manifest / population / HTML / images / research / calibration artifacts
+infra.catalog   mutable experiment index and status
+```
+
+Logical object identities use the Population Lab namespace, for example:
+
+```text
+population-lab:experiment:<experimentId>:manifest
+population-lab:experiment:<experimentId>:population
+population-lab:experiment:<experimentId>:report
+population-lab:experiment:<experimentId>:image:<ordinal>
+```
+
+Local infra may materialize those logical refs under `.fibre/population-lab/<experimentId>/...`; Cloudflare may map them to dedicated R2/catalog resources; another provider may map them to S3 or another object/catalog implementation. Population Lab itself must never write directly to a filesystem, R2, S3 or provider SDK.
+
+A1 does not persist experiments; its prepared experiment/research actions are control-plane specifications only.
 
 ## What does not belong in `InfraDriver`
 
