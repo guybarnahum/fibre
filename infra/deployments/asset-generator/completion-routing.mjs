@@ -5,6 +5,7 @@ export const ASSET_COMPLETION_ROUTE_NONE = "none";
 const WORLD_VISUAL_COMPLETION_KINDS = new Set([
   "thread_embodiment_canonical_visual_identity_geometry",
   "thread_embodiment_canonical_visual_identity",
+  "fid_photo_derivation",
 ]);
 
 export function assetGenerationCompletionRoute(job) {
