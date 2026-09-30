@@ -839,12 +839,33 @@ export function createThreadGenesisRepairService({
         throw new TypeError("physical appearance migration is unavailable");
       }
       const priorEvidence=latestPhysicalEvidence(physicalGenomeMigrator,threadId);
+      const currentThread=worldReader.getThread(threadId);
+      const suggestion=birthplacePhysicalMigrationSuggestion(currentThread.identity);
+      const acceptedSuggestion=suggestion!==null
+        && suppliedInput?.maternalOrigin===suggestion.maternal.origin
+        && suppliedInput?.maternalReferencePopulation===suggestion.maternal.referencePopulation
+        && suppliedInput?.paternalOrigin===suggestion.paternal.origin
+        && suppliedInput?.paternalReferencePopulation===suggestion.paternal.referencePopulation;
       const physicalAncestry=suppliedInput?.physicalAncestry??(
         suppliedInput?.maternalOrigin&&suppliedInput?.maternalReferencePopulation
-        &&suppliedInput?.paternalOrigin&&suppliedInput?.paternalReferencePopulation
+        && suppliedInput?.paternalOrigin&&suppliedInput?.paternalReferencePopulation
           ? {
-              maternal:[{population:String(suppliedInput.maternalOrigin).trim(),share:1,referencePopulation:String(suppliedInput.maternalReferencePopulation).trim()}],
-              paternal:[{population:String(suppliedInput.paternalOrigin).trim(),share:1,referencePopulation:String(suppliedInput.paternalReferencePopulation).trim()}],
+              maternal:[{
+                ...(acceptedSuggestion&&suggestion.maternal.populationId
+                  ? {populationId:suggestion.maternal.populationId}
+                  : {}),
+                population:String(suppliedInput.maternalOrigin).trim(),
+                share:1,
+                referencePopulation:String(suppliedInput.maternalReferencePopulation).trim(),
+              }],
+              paternal:[{
+                ...(acceptedSuggestion&&suggestion.paternal.populationId
+                  ? {populationId:suggestion.paternal.populationId}
+                  : {}),
+                population:String(suppliedInput.paternalOrigin).trim(),
+                share:1,
+                referencePopulation:String(suppliedInput.paternalReferencePopulation).trim(),
+              }],
             }
           : priorEvidence?.physicalAncestry??null
       );
