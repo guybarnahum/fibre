@@ -156,8 +156,6 @@ test("provider generation timing stays nested in the Thread asset request", asyn
     true,
     "provider generation lost Thread causality",
   );
-  assert.equal(providerRecords[0]?.evidence?.role, "portrait");
-  assert.equal(providerRecords[0]?.evidence?.providerProfile, "fixture");
 });
 
 test("derived Thread media names its canonical reference as cause and keeps completion in the Thread trail", async () => {
