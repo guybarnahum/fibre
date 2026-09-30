@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { presentationCompletionInvalidation } from "../admin-live-invalidation.mjs";
+import { fidPresentationInvalidation, presentationCompletionInvalidation } from "../admin-live-invalidation.mjs";
 
 test("only a newly admitted Thread media publication invalidates its Admin presentation", () => {
   const accepted = {
@@ -26,5 +26,15 @@ test("only a newly admitted Thread media publication invalidates its Admin prese
     presentationCompletionInvalidation({ ...accepted, scope:{ entityKind:"experience", entityRef:"exp_1" } }),
     null,
     "non-Thread media invalidated Admin",
+  );
+});
+
+
+test("FID convergence invalidates Admin only after Presentation actually changes", () => {
+  assert.equal(fidPresentationInvalidation("thr_1", { complete:false, presentation:{ changed:false } }), null);
+  assert.equal(fidPresentationInvalidation("thr_1", { complete:true, presentation:{ changed:false } }), null);
+  assert.deepEqual(
+    fidPresentationInvalidation("thr_1", { complete:true, presentation:{ changed:true } }),
+    { entity:"thread", id:"thr_1", aspect:"presentation" },
   );
 });
