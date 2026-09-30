@@ -7,3 +7,5 @@ export {
 export {selectPopulationFamilyProfile} from "./family-profile-selection.mjs";
 
 export * from "./appearance-coverage.mjs";
+
+export * from "./appearance-calibration-dependencies.mjs";
