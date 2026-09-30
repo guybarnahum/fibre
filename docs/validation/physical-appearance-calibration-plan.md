@@ -386,6 +386,88 @@ Migration jumps directly from stored authority to the current approved dependenc
 
 Admin then exposes **Migrate affected Threads** as a bounded operator action. Each Thread follows the existing World appearance migration and normal Embodiment / Presentation / FID convergence path; live Admin invalidation shows pending and completion.
 
+## Tranche A — demand-driven appearance calibration lifecycle
+
+The accepted appearance foundation now needs an operator loop that improves calibration where Fibre's actual Thread population exposes weak coverage. This tranche reuses Population Lab; it does not create another genetics or rendering framework.
+
+### A1 — Appearance coverage workbench
+
+**Status: implemented on `main`; pending focused validation and staging UI proof.**
+
+Purpose: make current model reach, holes and targeted migration impact visible without model calls or provider work.
+
+A1 consists of:
+- a pure shared Population Lab coverage analyzer;
+- one bounded World projection of admitted Thread location + durable physical ancestry;
+- machine-readable reference-node calibration metadata;
+- explicit per-node integer calibration versions and effective dependency chains;
+- durable calibration-dependency snapshots in physical-genome migration evidence;
+- direct comparison of stored vs current dependencies;
+- Admin Appearance coverage metrics, hole map, ranked holes, selected-hole detail and reference-model matrix;
+- affected existing Threads listed as recalibration candidates;
+- Threads filters for all **Needs migration**, **Appearance migration** and **Identity migration**;
+- **Prepare experiment** / **Prepare research** action specs only.
+
+A1 does **not** execute experiments, research the web, approve calibration or mutate the appearance model.
+
+Acceptance:
+- one coverage scan performs one bounded directory read and one bounded ancestry-evidence read, not N× Thread inspection;
+- stable `populationId` may resolve an admitted lineage to a newer/more-specific calibration node without using name/language/portrait inference;
+- missing durable ancestry remains a visible data/coverage hole rather than being guessed;
+- reference nodes expose local integer versions;
+- stored dependency snapshots distinguish schema/model drift from calibration drift;
+- a simulated `afr_north.morocco@1 -> @3` change produces one direct migration target and no intermediate `@2` execution;
+- unchanged Korean dependencies remain healthy;
+- Threads **Needs migration** reflects World `migration_required` health, not button availability;
+- Appearance geography is labeled as demand context only.
+
+### A2 — InfraDriver experiment artifacts
+
+Persist Population Lab experiments entirely through generic InfraDriver `objects` + `catalog`.
+
+Logical experiment namespace:
+
+```text
+population-lab:experiment:<experimentId>:manifest
+population-lab:experiment:<experimentId>:population
+population-lab:experiment:<experimentId>:report
+population-lab:experiment:<experimentId>:image:<ordinal>
+```
+
+Local infra may materialize this under `.fibre/population-lab/<experimentId>/...`; cloud providers may map it to dedicated R2/S3/object + catalog resources. Population Lab code must not know filesystem, R2, S3 or D1 mechanics.
+
+### A3 — Research, candidate and approval
+
+A coverage hole can launch bounded external research. Research stores provenance and may propose only evidence-supported calibration axes.
+
+Experiment/research output is a **candidate**, never authority.
+
+Human approval is the explicit authority transition:
+- approved calibration enters the current reference-population registry;
+- its local integer version advances when that node is refined;
+- new Threads immediately use the current approved registry;
+- existing Threads are compared against the new dependency set.
+
+### A4 — affected-Thread migration workset
+
+Approval computes the affected existing Thread set directly from durable ancestry + stored calibration dependencies.
+
+A calibration version is not an ordered executable migration chain. Existing Threads jump once from their stored dependency to the current approved version:
+
+```text
+v1 -> v3
+```
+
+not:
+
+```text
+v1 -> v2 -> v3
+```
+
+Only affected Threads become `migration_required`. A Moroccan calibration change must not migrate Korean Threads.
+
+Admin exposes the resulting workset and may initiate bounded migration of affected Threads. Each migration remains an ordinary replayable World authority change followed by canonical Embodiment, Presentation and FID convergence. Pending and completion are reflected through the normal Admin live invalidation path.
+
 ## Ambition / extension path
 
 This work strengthens physical lineage as causal Thread identity without turning Fibre into a molecular-genetics simulator. It preserves the path to real Thread parent inheritance at a truthful reproduction/newborn boundary. No permanent architecture path is closed.
