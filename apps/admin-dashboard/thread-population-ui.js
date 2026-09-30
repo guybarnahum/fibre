@@ -488,10 +488,8 @@ function actionCell(thread) {
     return cell;
   }
 
-  const reason = threadHasMigrationDomain(thread,"appearance") ? "Appearance migration"
-    : threadHasMigrationDomain(thread,"identity") ? "Identity migration"
-      : thread.health === "migration_required" ? "Migration required"
-        : thread.health === "operator_decision_required" ? "Input required"
+  const reason = thread.health === "migration_required" ? "Migration required"
+    : thread.health === "operator_decision_required" ? "Input required"
       : thread.health === "integrity_error" ? "Authority conflict"
         : thread.health === "unrecoverable" ? "Not admitted"
           : thread.health === "unavailable" ? "Unavailable"
