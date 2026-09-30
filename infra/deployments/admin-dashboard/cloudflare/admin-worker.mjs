@@ -5,6 +5,7 @@ import baseWorker, {
   authorizeAdminPrincipal,
 } from "./worker.mjs";
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
+import { readAdminAppearanceCoverage } from "./appearance-coverage.mjs";
 import { readAdminThreadPopulation, readAdminThreadPopulationThread } from "./thread-population.mjs";
 import {
   combineAdminThreadIdentity,
@@ -411,58 +412,6 @@ async function threadRegistry(env, limit) {
   return payload.threads;
 }
 
-async function appearanceCoverage(env) {
-  const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
-    "https://world.internal/internal/appearance/coverage",
-    {
-      method:"GET",
-      headers:{
-        Accept:"application/json",
-        "x-fibre-private-token":privateToken(env),
-      },
-    },
-  ));
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? `HTTP ${response.status}`);
-  if (payload?.contract !== "fibre-appearance-coverage-v0.1") throw new Error("World appearance coverage response is invalid");
-  return payload;
-}
-
-async function threadMigrations(env) {
-  const response=await serviceBinding(env,"WORLD_KERNEL").fetch(new Request(
-    "https://world.internal/internal/thread-migrations",
-    { headers:{ Accept:"application/json","x-fibre-private-token":privateToken(env) } },
-  ));
-  const payload=await response.json().catch(()=>null);
-  if(!response.ok)throw new Error(payload?.error?.detail??payload?.error?.code??`HTTP ${response.status}`);
-  if(payload?.contract!=="fibre-thread-migration-summary-v0.1"||!Array.isArray(payload?.threads)){
-    throw new Error("World migration summary response is invalid");
-  }
-  return payload.threads;
-}
-
-async function threadMigrationEntry(env,threadId) {
-  const response=await serviceBinding(env,"WORLD_KERNEL").fetch(new Request(
-    `https://world.internal/internal/thread-migrations/${encodeURIComponent(threadId)}`,
-    { headers:{ Accept:"application/json","x-fibre-private-token":privateToken(env) } },
-  ));
-  const payload=await response.json().catch(()=>null);
-  if(response.status===404)return null;
-  if(!response.ok)throw new Error(payload?.error?.detail??payload?.error?.code??`HTTP ${response.status}`);
-  if(payload?.contract!=="fibre-thread-migration-summary-entry-v0.1"){
-    throw new Error("World migration summary entry response is invalid");
-  }
-  return payload.migration??null;
-}
-
-function attachMigrationSummary(thread,migration) {
-  return Object.freeze({
-    ...thread,
-    migrationDomains:Object.freeze([...(migration?.domains??[])]),
-    migrationReasons:migration?.reasons??Object.freeze({}),
-  });
-}
-
 async function threadRegistryEntries(env, threadIds) {
   const response = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     "https://world.internal/internal/thread-directory/entries",
@@ -564,7 +513,10 @@ export default {
           });
         }
         if (appearanceCoverageRequest) {
-          const coverage = await appearanceCoverage(env);
+          const coverage = await readAdminAppearanceCoverage({
+            worldKernel:serviceBinding(env, "WORLD_KERNEL"),
+            privateToken:privateToken(env),
+          });
           return json(200, {
             ...coverage,
             queriedAt:new Date().toISOString(),
