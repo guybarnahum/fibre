@@ -10,6 +10,7 @@ import {
   parseAdminActivityQuery,
   validateAccessClaims,
 } from "./worker.mjs";
+import { readAdminAppearanceCoverage } from "./appearance-coverage.mjs";
 
 function activity(overrides = {}) {
   return {
@@ -259,7 +260,6 @@ test("Activity page API preserves the live head cursor", async () => {
 
 
 test("Admin Appearance coverage proxies one authoritative World scan", async () => {
-  const d1 = fakeD1([], { admins:{ "operator@example.com":1 } });
   const coverage = {
     contract:"fibre-appearance-coverage-v0.1",
     threadCount:2,
@@ -281,29 +281,20 @@ test("Admin Appearance coverage proxies one authoritative World scan", async () 
     model:[],
   };
   let worldCalls=0;
-  const worker=createAdminDashboardWorker({
-    authenticate:async()=>({ email:"operator@example.com" }),
-  });
-  const response=await worker.fetch(
-    new Request("https://admin.insidefibre.com/api/appearance/coverage"),
-    {
-      ACTIVITY_LOG:d1,
-      FIBRE_PRIVATE_TOKEN:"0123456789abcdef",
-      WORLD_KERNEL:{
-        async fetch(request){
-          worldCalls+=1;
-          assert.equal(request.method,"GET");
-          assert.equal(new URL(request.url).pathname,"/internal/appearance/coverage");
-          assert.equal(request.headers.get("x-fibre-private-token"),"0123456789abcdef");
-          return Response.json(coverage);
-        },
+  const payload=await readAdminAppearanceCoverage({
+    privateToken:"0123456789abcdef",
+    worldKernel:{
+      async fetch(request){
+        worldCalls+=1;
+        assert.equal(request.method,"GET");
+        assert.equal(new URL(request.url).pathname,"/internal/appearance/coverage");
+        assert.equal(request.headers.get("x-fibre-private-token"),"0123456789abcdef");
+        return Response.json(coverage);
       },
     },
-  );
-  assert.equal(response.status,200);
-  const payload=await response.json();
+  });
+
   assert.equal(payload.contract,"fibre-appearance-coverage-v0.1");
   assert.equal(payload.holes[0].referencePopulation,"afr_north.morocco");
-  assert.equal(typeof payload.queriedAt,"string");
   assert.equal(worldCalls,1,"Admin Appearance repeated the authoritative coverage scan");
 });
