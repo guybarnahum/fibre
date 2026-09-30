@@ -10,7 +10,11 @@ function normalizedInvalidation(value) {
 }
 
 export class FibreAdminLiveDurableObject extends DurableObject {
-  async invalidate(value) {
+  async publish({ valueJson }) {
+    if (typeof valueJson !== "string") throw new TypeError("Admin live valueJson is required");
+    let value;
+    try { value = JSON.parse(valueJson); }
+    catch { throw new TypeError("Admin live valueJson must contain valid JSON"); }
     const invalidation = normalizedInvalidation(value);
     const message = JSON.stringify({ type:"admin-live.invalidate", ...invalidation });
     let delivered = 0;
