@@ -11,6 +11,7 @@ import { createService } from "#infra/service";
 import {
   createAssetGenerationService,
   normalizeAssetGenerationCompletion,
+  normalizeAssetGenerationSettlement,
   normalizeStoredAssetReceipt,
 } from "#services/asset-generator/src/index.mjs";
 import {
@@ -453,6 +454,29 @@ export default {
     const presentationServer = createThreadPresentationServer({ infra });
     const completions = createCompletionConsumer(env, infra, presentationServer);
     for (const message of batch.messages) {
+      if (message.body?.settlementVersion === "asset-generation-settlement-v0.1") {
+        let settlement;
+        try {
+          settlement = normalizeAssetGenerationSettlement(message.body);
+        } catch (error) {
+          console.error(JSON.stringify({
+            event:"asset_generation_settlement_invalid",
+            queue:batch.queue,
+            messageId:message.id,
+            error:error instanceof Error ? error.message : String(error),
+          }));
+          message.ack();
+          continue;
+        }
+        const route = assetGenerationCompletionRoute({ context:settlement.context });
+        if (route === ASSET_COMPLETION_ROUTE_WORLD_WAKE
+          || shouldWakeWorldAfterAssetCompletion({ context:settlement.context })) {
+          await requestWorldReconciliationWake(env, settlement.context?.threadId);
+        }
+        message.ack();
+        continue;
+      }
+
       let routingReceipt;
       try {
         routingReceipt = await completionReceiptForRouting(infra, message.body);
