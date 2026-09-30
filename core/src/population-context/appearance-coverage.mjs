@@ -1,4 +1,5 @@
 import {
+  PHYSICAL_GENOME_VERSION,
   referencePopulationCalibration,
   referencePopulationCalibrations,
 } from "../human-appearance/index.mjs";
@@ -111,10 +112,26 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
   const evidenceByThread=new Map((Array.isArray(ancestryEvidence)?ancestryEvidence:[]).map((entry)=>[entry.threadId,entry]));
   const entries=[];
   const missing=[];
-  const migrationCandidates=[];
+  const migrationCandidates=new Map();
+  const addMigrationCandidate=(thread,reason,changes=[])=>{
+    const current=migrationCandidates.get(thread.threadId)??{
+      threadId:thread.threadId,
+      threadName:clean(thread.displayName),
+      reasons:[],
+      changes:[],
+      birthLocation:locationOf(thread),
+    };
+    if(!current.reasons.includes(reason))current.reasons.push(reason);
+    current.changes.push(...changes);
+    migrationCandidates.set(thread.threadId,current);
+  };
   for(const thread of normalizedThreads){
     if(!thread||typeof thread.threadId!=="string")continue;
     const evidence=evidenceByThread.get(thread.threadId)??null;
+    const physicalGenomeVersion=clean(thread.physicalGenomeVersion);
+    if(physicalGenomeVersion!==null&&physicalGenomeVersion!==PHYSICAL_GENOME_VERSION){
+      addMigrationCandidate(thread,"physical_model_outdated");
+    }
     if(evidence!==null){
       const currentDependencies=appearanceCalibrationDependencies(evidence.physicalAncestry);
       const migration=planAppearanceCalibrationMigration({
@@ -122,13 +139,7 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
         currentDependencies,
       });
       if(migration.migrationRequired){
-        migrationCandidates.push(Object.freeze({
-          threadId:thread.threadId,
-          threadName:clean(thread.displayName),
-          reason:migration.reason,
-          changes:migration.changes,
-          birthLocation:locationOf(thread),
-        }));
+        addMigrationCandidate(thread,migration.reason,migration.changes);
       }
     }
     if(evidence===null){
@@ -170,7 +181,12 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
     lineageCount:entries.length,
     coverage:Object.freeze(counts),
     holes:summarizeHoles(entries),
-    migrationCandidates:Object.freeze(migrationCandidates.sort((a,b)=>
+    migrationCandidates:Object.freeze([...migrationCandidates.values()].map((candidate)=>Object.freeze({
+      ...candidate,
+      reason:candidate.reasons[0]??"appearance_migration_required",
+      reasons:Object.freeze([...candidate.reasons]),
+      changes:Object.freeze([...candidate.changes]),
+    })).sort((a,b)=>
       (a.threadName??a.threadId).localeCompare(b.threadName??b.threadId)
     )),
     lineages:Object.freeze(entries),
