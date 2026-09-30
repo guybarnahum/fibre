@@ -315,6 +315,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     visualIdentityRepairService,
     privateToken,
     reconciliationWorkset:visualPublicationWorkset,
+    activityRecorder,
     async onRepair({ threadId, result }) {
       const disposition = repairReconciliationDisposition(result);
       if (disposition === "retire") {
