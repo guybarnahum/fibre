@@ -51,7 +51,21 @@ test("legacy physical embodiment becomes one durable inherited genome without re
 
     const event=world.listEvents(seeded.threadId).at(-1);
     assert.equal(event.eventType,"THREAD_PHYSICAL_GENOME_MIGRATED");
+    assert.equal(event.payloadSchemaVersion,3);
     assert.deepEqual(event.payload.physicalAncestry,physicalAncestry);
+    assert.deepEqual(
+      event.payload.calibrationDependencies.map((entry)=>({
+        side:entry.side,
+        resolvedReferencePopulation:entry.resolvedReferencePopulation,
+        chain:entry.dependencyChain.map(({id,version})=>`${id}@${version}`),
+      })),
+      [
+        {side:"maternal",resolvedReferencePopulation:"east_asia",chain:["east_asia@1"]},
+        {side:"paternal",resolvedReferencePopulation:"east_asia",chain:["east_asia@1"]},
+      ],
+      "physical migration did not snapshot the appearance calibration it consumed",
+    );
+    assert.equal(event.payload.previousCalibrationDependencies,null);
     assert.equal(event.provenance.source,"operator_confirmed_physical_ancestry");
     assert.equal(event.provenance.notThreadLifeEvent,true);
 
@@ -60,6 +74,7 @@ test("legacy physical embodiment becomes one durable inherited genome without re
     assert.deepEqual(evidence.physicalAncestry,physicalAncestry);
     assert.equal(evidence.physicalGenomeVersion,"physical-genome-v0.3");
     assert.equal(evidence.previousPhysicalGenomeVersion,null);
+    assert.deepEqual(evidence.calibrationDependencies,event.payload.calibrationDependencies);
 
     const retry=migration.migrate(world.getThread(seeded.threadId),request);
     assert.equal(retry.reused,true);
