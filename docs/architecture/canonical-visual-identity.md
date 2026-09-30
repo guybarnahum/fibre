@@ -196,6 +196,10 @@ The geometry brief deliberately suppresses pigmentation, hair color/texture, gro
 
 For source-grounded Echo/Homage roots, authorized source references remain a distinct origin path and must carry matching source/permission provenance.
 
+Normal completion observation is event-driven. Asset Generator publishes its existing immutable completion pointer for geometry-anchor and final-root jobs onto the existing asset-completion queue. The Cloudflare completion consumer treats those World-owned completions only as wake hints: it asks the existing World reconciliation scheduler to run now, and World rereads and verifies the durable Asset Generator proof before changing Embodiment authority. The same wake occurs after a newly accepted official-ID-photo completion because World may still be waiting for downstream FID convergence.
+
+The exponential World reconciliation schedule remains a recovery fallback for missed hints, temporary downstream failures and genuinely incomplete work. It is not the normal latency clock for a successful visual pipeline. Completion hints carry no Thread data authority, require no replay log and create no second completion store.
+
 ## Admission boundary
 
 Asset Generator remains an executor.
