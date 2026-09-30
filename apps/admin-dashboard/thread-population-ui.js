@@ -668,9 +668,7 @@ function currentPopulationSummary() {
     deadLetter:population.filter((thread) => thread.reconciliation?.state === "dead_letter").length,
     appearanceMigrations:population.filter((thread)=>hasMigrationDomain(thread,"appearance")).length,
     identityMigrations:population.filter((thread)=>hasMigrationDomain(thread,"identity")).length,
-    migrationsAvailable:population.filter((thread)=>(
-      hasMigrationDomain(thread,"appearance")||hasMigrationDomain(thread,"identity")
-    )).length,
+    migrationsAvailable:population.filter((thread)=>thread.health==="migration_required").length,
     stillborn:stillborn.length,
   };
 }
