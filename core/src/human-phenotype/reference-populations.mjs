@@ -17,6 +17,7 @@ const DEFINITIONS=Object.freeze({
   // their own facial calibration exists. They temporarily inherit an existing
   // provisional prior without implying population equivalence.
   afr_north:{version:1,parent:"west_asia",values:{}},
+  "afr_north.morocco":{version:1,parent:"afr_north",populationIds:["morocco"],values:{}},
   afr_south:{version:1,parent:"afr_west",values:{}},
   eur_north:{version:1,parent:null,values:{pigmentation:-.7,eyePigmentation:-.48,hairPigmentation:-.34,frecklingTendency:0,hairForm:-.34,hairDensity:0,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.12,faceLength:.1,midfaceProminence:-.04,zygomaticProjection:-.08,eyeSpacing:.04,eyeShape:0,epicanthicFold:-.68,upperEyelidExposure:.22,orbitalDepth:.18,foreheadProportion:.04,brow:.05,noseBreadth:-.22,noseProjection:.18,nasalBridgeHeight:.38,softTissue:-.14,jawBreadth:-.04,chinProjection:.1,frame:.08,height:.12,bodyProportion:.02,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   eur_south:{version:1,parent:null,values:{pigmentation:-.42,eyePigmentation:.08,hairPigmentation:-.06,frecklingTendency:0,hairForm:-.1,hairDensity:.02,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.06,faceLength:.08,midfaceProminence:.02,zygomaticProjection:-.02,eyeSpacing:.02,eyeShape:.02,epicanthicFold:-.62,upperEyelidExposure:.18,orbitalDepth:.14,foreheadProportion:.02,brow:.08,noseBreadth:-.1,noseProjection:.22,nasalBridgeHeight:.3,softTissue:-.02,jawBreadth:0,chinProjection:.1,frame:.02,height:0,bodyProportion:0,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
@@ -156,6 +157,7 @@ export function referencePopulationCalibration(id){
     status:ownAxes.length===0 ? "fallback" : definition.parent===null ? "explicit" : "partial",
     granularity:key.includes(".") ? "specific" : "broad",
     ownAxes,
+    populationIds:Object.freeze([...(definition.populationIds??[])]),
     fallbackDepth:dependencyChain.length-1,
     dependencyChain,
   });
@@ -163,6 +165,17 @@ export function referencePopulationCalibration(id){
 
 export function referencePopulationCalibrations(){
   return Object.freeze(referencePopulationIds.map(referencePopulationCalibration));
+}
+
+export function referencePopulationForPopulationId(populationId, fallback=null){
+  const key=String(populationId??"").trim();
+  if(key!==""){
+    const matches=referencePopulationIds.filter((id)=>DEFINITIONS[id].populationIds?.includes(key));
+    if(matches.length>1)throw new Error(`populationId ${key} maps to multiple physical references`);
+    if(matches.length===1)return matches[0];
+  }
+  if(fallback===null||fallback===undefined)return null;
+  return definitionFor(fallback)[0];
 }
 
 const DEFAULT_VARIATION=Object.freeze({
