@@ -1,5 +1,6 @@
 import { normalizeAssetGenerationJob } from "./asset-generation-domain.mjs";
 import { createAssetGenerationService } from "./asset-generation-service.mjs";
+import { readAssetGenerationFailure } from "./asset-generation-failure.mjs";
 import {
   normalizeStoredAssetReceipt,
   verifyProvenancedAssetForPublication,
@@ -64,6 +65,20 @@ export function createAssetGenerationControlService({
         const scheduled = await assetGeneration.request(job);
         const terminal = terminalGenerationError(job, scheduled.instance);
         if (terminal !== null) throw terminal;
+
+        const settled = await readAssetGenerationFailure({ infra, jobId:job.jobId });
+        if (settled !== null) {
+          const error = new Error(
+            `asset generation ${job.jobId} ended terminally: ${settled.failure.detail}`,
+          );
+          error.name = "AssetGenerationTerminalError";
+          error.code = settled.failure.code;
+          error.activityCategory = "generation";
+          error.retryable = false;
+          error.jobId = job.jobId;
+          throw error;
+        }
+
         return Object.freeze({
           state: "pending",
           retryable: true,
