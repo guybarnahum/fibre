@@ -73,6 +73,27 @@ Appearance authority is likewise not generic **Fix**. Thread Details has a dedic
 
 Changing the canonical specification manually remains an exceptional correction rather than ordinary Admin maintenance. The procedure is defined in [`canonical-visual-identity.md`](canonical-visual-identity.md#operator-runbook-correcting-appearance) and [Appearance operations](../operations/appearance.md).
 
+
+### Appearance coverage workbench
+
+Admin **Appearance** is the operator UI over the shared Population Lab coverage engine. It does not own phenotype logic, ancestry inference or calibration authority.
+
+One bounded World scan supplies authoritative Thread facts: admitted Thread identity/location plus durable maternal/paternal physical-ancestry evidence. Population Lab classifies those facts against the current versioned reference-population hierarchy and returns:
+
+- explicit, partial, broad, fallback and missing coverage counts;
+- ranked coverage holes weighted by actual Thread lineage demand;
+- represented birth locations for mapping demand context;
+- the current reference-population/version matrix;
+- existing Threads whose stored calibration dependency snapshot differs from current authority.
+
+The map must never be interpreted as a country-to-face mapping. Location is context for where Fibre's represented families occur; durable ancestry evidence selects the physical reference.
+
+A1 keeps expensive actions explicit. **Prepare experiment** and **Prepare research** create bounded action specifications only. They do not execute provider work or modify the model. Experiment storage/execution and research adapters belong to later Population Lab slices through InfraDriver.
+
+The Threads population view exposes **Needs migration** for all `migration_required` Threads, plus narrower Appearance-migration and Identity-migration filters. Filtering is presentation only; World health remains authority.
+
+An approved appearance calibration is expected to invalidate/recompute the affected migration projection so dependent Threads become visible as `migration_required`. Unrelated Threads must remain healthy. Existing Thread migration remains explicit; Admin does not silently rewrite a person's physical authority merely because a new calibration was approved.
+
 A compound UI action such as **Fix & Recover** may sequence those operations but does not merge their authority. A Thread with unresolved `migration_required`, integrity conflict or operator-decision state remains quarantined rather than being retried merely because an operator opened the page.
 
 Dead-letter reconciliation state and its last failure should be visible in Thread Observatory and the population view. `dead_letter` is operational quarantine, not a Thread lifecycle or personhood state.
