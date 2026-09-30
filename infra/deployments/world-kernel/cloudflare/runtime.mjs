@@ -110,6 +110,23 @@ function closeAll(stores) {
   }
 }
 
+async function publishAdminReconciliationHint(infraDriver, threadId) {
+  if (!infraDriver?.realtime || typeof infraDriver.realtime.publish !== "function") return;
+  try {
+    await infraDriver.realtime.publish("admin", {
+      entity:"thread",
+      id:threadId,
+      aspect:"reconciliation",
+    });
+  } catch (error) {
+    console.warn(JSON.stringify({
+      event:"admin-reconciliation-invalidation-failed",
+      threadId,
+      message:error instanceof Error ? error.message : String(error),
+    }));
+  }
+}
+
 async function recordIdentityProjectionFailure(activityRecorder, { threadId, operationId, error }) {
   if (activityRecorder === null) return;
   try {
@@ -153,6 +170,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const infraDriver = createCloudflareInfraDriver({
     stateScopes: { [WORLD_SCOPE_ID]: storage },
     schedulerScopes: { [WORLD_SCOPE_ID]: storage },
+    realtimeChannels: env?.ADMIN_LIVE ?? null,
   });
   const worldStorage = Object.freeze({ infraDriver, stateScopeId: WORLD_SCOPE_ID });
   const worldStore = openWorldStore(worldStorage);
@@ -255,6 +273,11 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
   const visualPublicationProcess = createThreadVisualPublicationProcess({
     workset: visualPublicationWorkset,
     reconciler: visualReconciler,
+    async onResult(entry) {
+      if (entry.disposition === "complete") {
+        await publishAdminReconciliationHint(infraDriver, entry.threadId);
+      }
+    },
     async onError(entry, error) {
       console.error(JSON.stringify({
         event: "thread-visual-publication-failed",
@@ -265,6 +288,9 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
         message: entry.message,
         stack: error instanceof Error ? error.stack : null,
       }));
+      if (entry.disposition === "dead_letter") {
+        await publishAdminReconciliationHint(infraDriver, entry.threadId);
+      }
       if (activityRecorder === null) return;
       try {
         await activityRecorder.record({
