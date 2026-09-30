@@ -47,6 +47,11 @@
       {
         "name": "INFRA_MONITOR",
         "class_name": "FibreAdminInfraMonitor"
+      },
+      {
+        "name": "ADMIN_LIVE",
+        "class_name": "FibreAdminLiveDurableObject",
+        "script_name": "fibre-thread-presentation"
       }
     ]
   },
