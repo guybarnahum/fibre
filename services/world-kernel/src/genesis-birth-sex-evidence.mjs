@@ -17,6 +17,30 @@ export class GenesisBirthSexEvidence {
 
   close() { this.#database.close(); }
 
+  listMigrationThreadIds() {
+    if (!tableExists(this.#database, "genesis_birth_publications")
+      || !tableExists(this.#database, "threads")) return Object.freeze([]);
+    const rows=this.#database.prepare(`
+      SELECT g.thread_id,g.result_json,t.state_json
+      FROM genesis_birth_publications g
+      JOIN threads t ON t.thread_id=g.thread_id
+      ORDER BY g.thread_id
+    `).all();
+    return Object.freeze(rows.flatMap((row)=>{
+      let result;
+      let state;
+      try {
+        result=JSON.parse(row.result_json);
+        state=JSON.parse(row.state_json);
+      } catch {
+        return [];
+      }
+      return state?.identity?.sex===undefined && result?.thread?.identity?.sex!==undefined
+        ? [row.thread_id]
+        : [];
+    }));
+  }
+
   resolve(threadId) {
     assertId("threadId", threadId);
     if (!tableExists(this.#database, "genesis_birth_publications")) return null;
