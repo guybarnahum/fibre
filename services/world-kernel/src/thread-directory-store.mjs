@@ -136,14 +136,24 @@ export class ThreadDirectoryStore {
 
   close() { this.#database.close(); }
 
-  getEntry(threadId) {
-    if (typeof threadId !== "string" || threadId.trim() === "") throw new TypeError("Thread directory threadId is required");
-    if (!this.#tables.has("threads")) return null;
+  getEntries(threadIds) {
+    if (!Array.isArray(threadIds) || threadIds.length < 1 || threadIds.length > 256) {
+      throw new TypeError("Thread directory entries require 1 through 256 Thread IDs");
+    }
+    const normalized = [...new Set(threadIds.map((threadId) => {
+      if (typeof threadId !== "string" || threadId.trim() === "") {
+        throw new TypeError("Thread directory entries require non-empty Thread IDs");
+      }
+      return threadId.trim();
+    }))];
+    if (!this.#tables.has("threads")) return [];
+
     const hasCivilRegistry = this.#tables.has("fibre_civil_registrations");
     const hasGenesis = this.#tables.has("genesis_manifests") && this.#tables.has("genesis_world_specs");
     const hasRaisedCorrections = this.#tables.has("genesis_raised_language_corrections");
     const hasRuntime = this.#tables.has("thaw_leases") && this.#tables.has("runtime_sessions");
-    const row = this.#database.prepare(`
+    const rows = this.#database.prepare(`
+      WITH requested(thread_id) AS (SELECT value FROM json_each(?))
       SELECT
         t.thread_id,t.version,t.status,t.state_json,t.state_hash,t.updated_at,
         ${hasCivilRegistry ? "r.fibre_identity_number" : "NULL"} AS fibre_identity_number,
@@ -157,15 +167,20 @@ export class ThreadDirectoryStore {
         ${hasRuntime ? "s.started_at" : "NULL"} AS runtime_started_at,
         ${hasRuntime ? "l.status" : "NULL"} AS runtime_lease_status,
         ${hasRuntime ? "l.expires_at" : "NULL"} AS runtime_expires_at
-      FROM threads t
+      FROM requested q
+      JOIN threads t ON t.thread_id=q.thread_id
       ${hasCivilRegistry ? "LEFT JOIN fibre_civil_registrations r ON r.thread_id=t.thread_id" : ""}
       ${hasGenesis ? "LEFT JOIN genesis_manifests m ON m.thread_id=t.thread_id AND m.publication_status='published' LEFT JOIN genesis_world_specs w ON w.world_spec_id=m.world_spec_id" : ""}
       ${this.#tables.has("thread_visual_publication_work") ? "LEFT JOIN thread_visual_publication_work v ON v.thread_id=t.thread_id" : ""}
       ${hasRuntime ? "LEFT JOIN thaw_leases l ON l.thread_id=t.thread_id AND l.status='active' LEFT JOIN runtime_sessions s ON s.lease_id=l.lease_id AND s.status='active'" : ""}
-      WHERE t.thread_id=?
-      LIMIT 1
-    `).get(threadId.trim());
-    return row === undefined ? null : registryEntry(row);
+      ORDER BY t.thread_id
+    `).all(JSON.stringify(normalized));
+    return rows.map(registryEntry);
+  }
+
+  getEntry(threadId) {
+    if (typeof threadId !== "string" || threadId.trim() === "") throw new TypeError("Thread directory threadId is required");
+    return this.getEntries([threadId])[0] ?? null;
   }
 
   presentThreadIds(threadIds) {
