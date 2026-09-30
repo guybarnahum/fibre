@@ -1,7 +1,6 @@
 import { appearanceCoverageTopSummary, loadAppearanceCoverage } from "./appearance-coverage-ui.js";
 import {
   populationFilterCount,
-  threadHasMigrationDomain,
   threadMatchesPopulationFilter,
 } from "./thread-population-filter.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
