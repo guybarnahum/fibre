@@ -4,6 +4,7 @@ import test from "node:test";
 
 const html=await readFile(new URL("./index.html",import.meta.url),"utf8");
 const css=await readFile(new URL("./appearance-coverage.css",import.meta.url),"utf8");
+const populationUi=await readFile(new URL("./thread-population-ui.js",import.meta.url),"utf8");
 
 test("Appearance is a top-level Admin surface and cannot leak into operator views",()=>{
   assert.match(html,/id="appearance-nav-link"[^>]*href="\/activity\?mode=appearance"/u);
@@ -19,4 +20,12 @@ test("Threads exposes one generic migration filter, not Appearance-specific cont
   assert.doesNotMatch(html,/thread-population-filter-identity/u);
   assert.doesNotMatch(html,/thread-stat-appearance-migrations/u);
   assert.doesNotMatch(html,/thread-stat-identity-migrations/u);
+});
+
+
+test("Threads module has no hard references to removed Appearance controls",()=>{
+  assert.doesNotMatch(populationUi,/threadPopulationFilterAppearance/u);
+  assert.doesNotMatch(populationUi,/threadPopulationFilterIdentity/u);
+  assert.doesNotMatch(populationUi,/threadHasMigrationDomain/u);
+  assert.doesNotMatch(populationUi,/#view-appearance/u);
 });
