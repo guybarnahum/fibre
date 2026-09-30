@@ -226,3 +226,26 @@ test("cloudflare-v1 composes presentation ports without changing driver identity
   assert.equal(typeof driver.realtime.publish, "function");
   assert.equal(typeof driver.catalog.upsert, "function");
 });
+
+
+test("cloudflare-v1 can bind realtime independently from stream storage", async () => {
+  const presentation = fakePresentationNamespace();
+  const live = fakePresentationNamespace();
+  const driver = createCloudflareInfraDriver({
+    presentationChannels:presentation,
+    realtimeChannels:live,
+  });
+
+  await driver.streams.append("channel_stream", { kind:"present.updated" }, {
+    idempotencyKey:"evt_stream",
+    expectedSequence:0,
+  });
+  await driver.realtime.publish("admin", { entity:"thread", id:"thr_1", aspect:"presentation" });
+
+  assert.equal(presentation.channels.has("admin"), false, "Admin realtime leaked into Presentation channels");
+  assert.deepEqual(
+    live.channels.get("admin").published,
+    [{ entity:"thread", id:"thr_1", aspect:"presentation" }],
+    "Cloudflare realtime did not use its configured provider namespace",
+  );
+});
