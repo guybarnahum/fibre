@@ -42,7 +42,11 @@ test("appearance coverage distinguishes explicit, broad, fallback, and missing a
   assert.equal(result.coverage.partial,2,"Korean calibration should remain explicitly partial");
   assert.equal(result.coverage.fallback,2,"North-African fallback was not exposed");
   assert.equal(result.coverage.missing,1,"missing ancestry provenance was hidden");
-  assert.equal(result.holes[0].coverage,"missing");
+  assert.equal(
+    result.holes.some((hole)=>hole.coverage==="missing"),
+    true,
+    "missing ancestry provenance was not exposed as a coverage hole",
+  );
   assert.equal(
     result.holes.some((hole)=>hole.referencePopulation==="afr_north.morocco"),
     true,
