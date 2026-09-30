@@ -27,7 +27,8 @@ const threadPopulationTimezones = $("#thread-population-timezones");
 const threadPopulationMapMarkers = $("#thread-population-map-markers");
 const threadPopulationMapSummary = $("#thread-population-map-summary");
 const threadPopulationRepairGeography = $("#thread-population-repair-geography");
-const threadPopulationFilterMigration = $("#thread-population-filter-migration");
+const threadPopulationFilterAppearance = $("#thread-population-filter-appearance");
+const threadPopulationFilterIdentity = $("#thread-population-filter-identity");
 const stillbornView = $("#stillborn-view");
 const stillbornRows = $("#stillborn-rows");
 const stillbornEmpty = $("#stillborn-empty");
@@ -282,7 +283,11 @@ function reconciliationLabel(value) {
 }
 
 function migrationFor(thread) {
-  return (thread.findings ?? []).find((finding) => finding?.migration?.id)?.migration ?? null;
+  return (thread.findings ?? []).find((finding) => finding?.migration?.domain === "identity")?.migration ?? null;
+}
+
+function hasMigrationDomain(thread,domain) {
+  return Array.isArray(thread?.migrationDomains) && thread.migrationDomains.includes(domain);
 }
 
 function identityActions(thread) {
@@ -484,8 +489,10 @@ function actionCell(thread) {
     return cell;
   }
 
-  const reason = thread.health === "migration_required" ? "Migration required"
-    : thread.health === "operator_decision_required" ? "Input required"
+  const reason = hasMigrationDomain(thread,"appearance") ? "Appearance migration"
+    : hasMigrationDomain(thread,"identity") ? "Identity migration"
+      : thread.health === "migration_required" ? "Migration required"
+        : thread.health === "operator_decision_required" ? "Input required"
       : thread.health === "integrity_error" ? "Authority conflict"
         : thread.health === "unrecoverable" ? "Not admitted"
           : thread.health === "unavailable" ? "Unavailable"
@@ -600,7 +607,9 @@ function renderSortHeaders() {
 }
 
 function populationVisible(thread) {
-  return populationFilter !== "migration" || thread.health === "migration_required";
+  if(populationFilter==="appearance")return hasMigrationDomain(thread,"appearance");
+  if(populationFilter==="identity")return hasMigrationDomain(thread,"identity");
+  return true;
 }
 
 function visiblePopulation() {
@@ -608,12 +617,18 @@ function visiblePopulation() {
 }
 
 function renderPopulationFilter() {
-  if (!threadPopulationFilterMigration) return;
-  const count=population.filter((thread)=>thread.health==="migration_required").length;
-  threadPopulationFilterMigration.textContent=`Needs migration · ${count}`;
-  const active=populationFilter==="migration";
-  threadPopulationFilterMigration.classList.toggle("selected",active);
-  threadPopulationFilterMigration.setAttribute("aria-pressed",String(active));
+  const controls=[
+    [threadPopulationFilterAppearance,"appearance","Appearance migration"],
+    [threadPopulationFilterIdentity,"identity","Identity migration"],
+  ];
+  for(const [control,domain,label] of controls){
+    if(!control)continue;
+    const count=population.filter((thread)=>hasMigrationDomain(thread,domain)).length;
+    control.textContent=`${label} · ${count}`;
+    const selected=populationFilter===domain;
+    control.classList.toggle("selected",selected);
+    control.setAttribute("aria-pressed",String(selected));
+  }
 }
 
 function renderPopulation() {
@@ -622,9 +637,10 @@ function renderPopulation() {
   const ordered = visiblePopulation().sort((left, right) => compare(left, right, sortState.key, sortState.direction));
   rows.replaceChildren(...ordered.map(threadRow));
   empty.hidden = ordered.length !== 0;
-  if (ordered.length === 0 && populationFilter === "migration") {
-    empty.querySelector("h3").textContent = "No Threads need migration";
-    empty.querySelector("p").textContent = "All admitted Threads are current against their authoritative migration requirements.";
+  if (ordered.length === 0 && ["appearance","identity"].includes(populationFilter)) {
+    const label=populationFilter==="appearance"?"Appearance migration":"Identity migration";
+    empty.querySelector("h3").textContent = `No Threads need ${label.toLocaleLowerCase("en-US")}`;
+    empty.querySelector("p").textContent = `No admitted Thread currently requires ${label.toLocaleLowerCase("en-US")}.`;
   } else {
     empty.querySelector("h3").textContent = "No Threads available";
     empty.querySelector("p").textContent = "No Activity-discovered Thread population could be resolved.";
@@ -641,7 +657,11 @@ function currentPopulationSummary() {
     unknownSex:population.filter((thread) => !["female","male"].includes(thread.identity?.sex)).length,
     attention:population.filter((thread) => thread.health !== "healthy").length,
     deadLetter:population.filter((thread) => thread.reconciliation?.state === "dead_letter").length,
-    migrationsAvailable:population.filter((thread) => migrationFor(thread) !== null).length,
+    appearanceMigrations:population.filter((thread)=>hasMigrationDomain(thread,"appearance")).length,
+    identityMigrations:population.filter((thread)=>hasMigrationDomain(thread,"identity")).length,
+    migrationsAvailable:population.filter((thread)=>(
+      hasMigrationDomain(thread,"appearance")||hasMigrationDomain(thread,"identity")
+    )).length,
     stillborn:stillborn.length,
   };
 }
@@ -886,7 +906,8 @@ function renderSummary(summary) {
     "thread-stat-male":summary.male,
     "thread-stat-unknown":summary.unknownSex,
     "thread-stat-attention":summary.attention,
-    "thread-stat-migrations":summary.migrationsAvailable,
+    "thread-stat-appearance-migrations":summary.appearanceMigrations,
+    "thread-stat-identity-migrations":summary.identityMigrations,
     "thread-stat-dead":summary.deadLetter,
   };
   for (const [id, value] of Object.entries(values)) $(`#${id}`).textContent = value ?? 0;
@@ -1718,14 +1739,16 @@ $("#view-birth-center").addEventListener("click", enterBirthCenter);
 $("#view-threads").addEventListener("click", enterThreads);
 $("#view-appearance").addEventListener("click", enterAppearance);
 $("#view-stillborn").addEventListener("click", enterStillborn);
-threadPopulationFilterMigration?.addEventListener("click",()=>{
-  populationFilter=populationFilter==="migration"?"all":"migration";
+function togglePopulationMigrationFilter(domain){
+  populationFilter=populationFilter===domain?"all":domain;
   renderPopulation();
   const visible=visiblePopulation().length;
-  $("#chain-summary").textContent=populationFilter==="migration"
-    ? `${visible} of ${population.length} admitted/recoverable Threads need migration.`
-    : `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn.`;
-});
+  $("#chain-summary").textContent=populationFilter==="all"
+    ? `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn.`
+    : `${visible} of ${population.length} Threads need ${populationFilter} migration.`;
+}
+threadPopulationFilterAppearance?.addEventListener("click",()=>togglePopulationMigrationFilter("appearance"));
+threadPopulationFilterIdentity?.addEventListener("click",()=>togglePopulationMigrationFilter("identity"));
 for (const [id, nextMode] of [["view-causal", "causal"], ["view-raw", "raw"]]) {
   $(`#${id}`).addEventListener("click", () => exitOperatorMode(nextMode));
 }
