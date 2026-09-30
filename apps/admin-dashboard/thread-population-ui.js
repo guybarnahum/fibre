@@ -1,4 +1,6 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
+import { watchAdminLive } from "./admin-live.js";
+import { invalidateView, threadPopulationViewKey } from "./view-invalidation.js";
 import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
 import { countryFlag, rememberPendingBirth, rememberPopulationThread, rememberThreadLabel, threadBirthplaceText } from "./thread-label-cache.js";
 import { reissueFidCard } from "./thread-observatory.js";
@@ -64,6 +66,8 @@ const populationPortraitCache = new Map();
 let populationPortraitPreview = null;
 let threadMapPopover = null;
 let threadMapPopoverCloseTimer = null;
+let stopPopulationLive = null;
+let populationLiveConnected = false;
 const populationPortraitObserver = typeof IntersectionObserver === "function"
   ? new IntersectionObserver((entries) => {
       for (const entry of entries) {
@@ -330,7 +334,7 @@ function button(label, spec, thread) {
       onBusyChange:setPopulationControlsDisabled,
       run:async (input) => {
         await command(thread.threadId, spec.body(input));
-        await loadPopulation();
+        await refreshPopulationThread(thread.threadId);
         $("#chain-summary").textContent = `${label} completed for ${thread.identity?.name ?? "Unnamed Thread"}.`;
       },
     });
@@ -490,6 +494,7 @@ function actionCell(thread) {
 
 function threadRow(thread) {
   const tr = document.createElement("tr");
+  tr.dataset.threadId = thread.threadId;
   const identity = thread.identity ?? {};
   if (thread.admitted === false) tr.className = "thread-population-activity-only";
 
@@ -598,6 +603,110 @@ function renderPopulation() {
   rows.replaceChildren(...ordered.map(threadRow));
   empty.hidden = ordered.length !== 0;
   renderSortHeaders();
+}
+
+function currentPopulationSummary() {
+  return {
+    total:population.length,
+    female:population.filter((thread) => thread.identity?.sex === "female").length,
+    male:population.filter((thread) => thread.identity?.sex === "male").length,
+    unknownSex:population.filter((thread) => !["female","male"].includes(thread.identity?.sex)).length,
+    attention:population.filter((thread) => thread.health !== "healthy").length,
+    deadLetter:population.filter((thread) => thread.reconciliation?.state === "dead_letter").length,
+    migrationsAvailable:population.filter((thread) => migrationFor(thread) !== null).length,
+    stillborn:stillborn.length,
+  };
+}
+
+function renderPopulationThread(threadId) {
+  const thread = population.find((entry) => entry.threadId === threadId);
+  if (!thread) return false;
+  hidePopulationPortraitPreview();
+
+  const existing = [...rows.children].find((row) => row.dataset.threadId === threadId) ?? null;
+  const existingPortrait = existing?.querySelector?.(".thread-population-portrait") ?? null;
+  if (existingPortrait) populationPortraitObserver?.unobserve(existingPortrait);
+
+  const row = threadRow(thread);
+  if (existing) existing.replaceWith(row);
+  else rows.append(row);
+
+  const ordered = [...population].sort((left, right) => compare(left, right, sortState.key, sortState.direction));
+  const index = ordered.findIndex((entry) => entry.threadId === threadId);
+  const nextId = ordered[index + 1]?.threadId ?? null;
+  const nextRow = nextId === null
+    ? null
+    : [...rows.children].find((candidate) => candidate.dataset.threadId === nextId) ?? null;
+  if (nextRow) rows.insertBefore(row, nextRow);
+  else rows.append(row);
+
+  empty.hidden = population.length !== 0;
+  renderSortHeaders();
+  return true;
+}
+
+async function refreshPopulationThread(threadId) {
+  if (!active || populationMode !== "threads" || loading) return;
+  const index = population.findIndex((entry) => entry.threadId === threadId);
+  if (index < 0) {
+    await loadPopulation();
+    return;
+  }
+
+  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/population`, {
+    headers:{ Accept:"application/json" },
+    cache:"no-store",
+  });
+  const payload = await response.json().catch(() => null);
+  if (response.status === 404) {
+    await loadPopulation();
+    return;
+  }
+  if (!response.ok || payload?.thread?.threadId !== threadId) {
+    throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+  }
+
+  population[index] = payload.thread;
+  rememberPopulationThread(payload.thread);
+  populationPortraitCache.delete(threadId);
+  renderPopulationThread(threadId);
+  renderSummary(currentPopulationSummary());
+  renderThreadPopulationMap();
+}
+
+function startPopulationLive() {
+  if (stopPopulationLive !== null) return;
+  populationLiveConnected = false;
+  stopPopulationLive = watchAdminLive(
+    threadPopulationViewKey(),
+    async (detail) => {
+      if (!active || populationMode !== "threads") return;
+      if (detail?.reason === "connected" || detail?.reason === "watch-started") {
+        if (!populationLiveConnected) {
+          populationLiveConnected = true;
+          return;
+        }
+        await loadPopulation();
+        return;
+      }
+      const threadId = detail?.threadId;
+      if (typeof threadId !== "string" || threadId === "") {
+        await loadPopulation();
+        return;
+      }
+      await refreshPopulationThread(threadId);
+    },
+    {
+      active:() => active && populationMode === "threads",
+      reconcileOnSubscribe:false,
+    },
+  );
+}
+
+function stopPopulationLiveWatch() {
+  stopPopulationLive?.();
+  stopPopulationLive = null;
+  populationLiveConnected = false;
 }
 
 function stillbornRow(thread) {
@@ -1440,6 +1549,8 @@ function enterPopulation(nextMode) {
   populationMode = nextMode;
   if (active) {
     if (previousMode === "birth-center" && nextMode !== "birth-center") stopPendingPolling();
+    if (previousMode === "threads" && nextMode !== "threads") stopPopulationLiveWatch();
+    if (nextMode === "threads") startPopulationLive();
     holdOperatorMode();
     if (populationMode === "birth-center") {
       renderBirthCenterTopSummary();
@@ -1465,6 +1576,7 @@ function enterPopulation(nextMode) {
     return;
   }
   active = true;
+  if (populationMode === "threads") startPopulationLive();
   priorAutoRefresh = $("#auto-refresh").checked;
   $("#auto-refresh").checked = false;
   $("#auto-refresh").dispatchEvent(new Event("change"));
@@ -1488,6 +1600,7 @@ function exitOperatorMode(nextMode) {
   if (!active) return;
   active = false;
   stopPendingPolling();
+  stopPopulationLiveWatch();
   birthCenterView.hidden = true;
   view.hidden = true;
   stillbornView.hidden = true;
@@ -1547,8 +1660,12 @@ for (const control of document.querySelectorAll("[data-thread-sort]")) {
 function refreshPopulationAfterThreadChange(event) {
   const threadId = event?.detail?.threadId ?? null;
   if (!active || populationMode !== "threads" || typeof threadId !== "string") return;
-  populationPortraitCache.delete(threadId);
-  void loadPopulation();
+  invalidateView(threadPopulationViewKey(), {
+    source:"admin",
+    reason:"local-change",
+    threadId,
+    aspect:"thread",
+  });
 }
 
 for (const eventName of [
