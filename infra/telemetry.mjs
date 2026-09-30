@@ -1,6 +1,7 @@
 import {
   assertInfraFiniteNumber,
   assertInfraId,
+  assertInfraJsonValue,
   assertInfraNonEmpty,
   assertInfraPlainObject,
 } from "./internal.mjs";
@@ -46,6 +47,38 @@ export const ACTIVITY_EVIDENCE_KEYS = Object.freeze([
   "regenerationKey",
   "failedGate",
   "repairOrdinal",
+  "encounterRef",
+  "experienceId",
+  "changes",
+  "persistedVersion",
+  "correctionId",
+  "changed",
+  "migrationId",
+  "scope",
+  "specificationDigest",
+  "reused",
+  "physicalGenomeChanged",
+  "migrated",
+  "reusedAncestryEventId",
+  "genomes",
+  "health",
+  "findingCodes",
+  "blocked",
+  "birthPlace",
+  "genesisId",
+  "rebuilt",
+  "reconciled",
+  "stage",
+  "complete",
+  "remaining",
+  "queue",
+  "messageId",
+  "jobId",
+  "mediaId",
+  "maxRetries",
+  "disposition",
+  "reconciliationStage",
+  "priorState",
 ]);
 
 const ACTIVITY_STATUS_SET = new Set(ACTIVITY_STATUSES);
@@ -172,8 +205,9 @@ function normalizeActivityEvidence(value) {
       normalized[key] = null;
       continue;
     }
-    assertInfraNonEmpty(`activity.evidence.${key}`, item);
-    normalized[key] = item;
+    assertInfraJsonValue(`activity.evidence.${key}`, item);
+    if (typeof item === "string") assertInfraNonEmpty(`activity.evidence.${key}`, item);
+    normalized[key] = structuredClone(item);
   }
   return Object.freeze(normalized);
 }
