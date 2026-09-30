@@ -2,6 +2,7 @@ import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { FibrePresentationChannelDurableObject } from "#infra/providers/cloudflare/presentation-channel-do";
 import { FibreAdminLiveDurableObject } from "./admin-live-do.mjs";
 import {
+  fidPresentationInvalidation,
   presentationCompletionInvalidation,
   threadPresentationInvalidation,
 } from "./admin-live-invalidation.mjs";
@@ -100,16 +101,20 @@ function createVisualReconciler(env, infra, presentationServer, activityRecorder
     ),
     createDemandService: createPresentationAssetDemandService,
     createVisualRewrite: createThreadPresentationEmbodimentRewriteService,
-    ensureFid:({ threadId, idempotencyKey, canonicalReferenceObjectRef }) => createFidLifecycle(
-      env,
-      infra,
-      presentationServer,
-    ).reconcile({
-      threadId,
-      idempotencyKey,
-      mode:"ensure",
-      canonicalReferenceObjectRef,
-    }),
+    ensureFid:async ({ threadId, idempotencyKey, canonicalReferenceObjectRef }) => {
+      const result = await createFidLifecycle(
+        env,
+        infra,
+        presentationServer,
+      ).reconcile({
+        threadId,
+        idempotencyKey,
+        mode:"ensure",
+        canonicalReferenceObjectRef,
+      });
+      await publishAdminInvalidation(env, fidPresentationInvalidation(threadId, result));
+      return result;
+    },
     activityRecorder,
   });
 }
