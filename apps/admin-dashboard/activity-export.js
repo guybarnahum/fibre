@@ -163,6 +163,7 @@ button?.addEventListener("click", async (event) => {
   });
   const textPromise = exportPromise.then((payload) => JSON.stringify(payload, null, 2));
   const promisedWrite = beginPromisedClipboardWrite(textPromise);
+  promisedWrite?.catch(() => {});
 
   try {
     const payload = await exportPromise;
