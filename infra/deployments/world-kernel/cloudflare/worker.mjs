@@ -244,6 +244,27 @@ export class FibreWorldDurableObject extends DurableObject {
     });
   }
 
+  directoryEntryForRequest(threadId) {
+    const entry = this.directoryForRequest().get(threadId);
+    if (entry === null) return null;
+    const livedNow = openLivedNowInspectionStore(this.worldStorage);
+    const situatedLife = openSituatedLifeInspectionStore(this.worldStorage);
+    try {
+      return Object.freeze({
+        ...entry,
+        currentLocation:projectCurrentThreadLocation({
+          entry,
+          currentSituation:optionalLivedRead(() => livedNow.getCurrentSituation(threadId), null),
+          worldPlaces:optionalLivedRead(() => livedNow.listWorldPlaces(threadId), []),
+          placeEpisodes:optionalLivedRead(() => situatedLife.listCurrentPlaceEpisodes(threadId), []),
+        }),
+      });
+    } finally {
+      situatedLife.close();
+      livedNow.close();
+    }
+  }
+
   healthProjectionForRequest() {
     if (this.threadHealthProjection === null) {
       this.threadHealthProjectionStore = new ThreadHealthProjectionStore(this.worldStorage);
@@ -314,7 +335,7 @@ export class FibreWorldDurableObject extends DurableObject {
     if (identityMatch !== null) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
-      const identity = this.directoryForRequest().get(decodeURIComponent(identityMatch[1]));
+      const identity = this.directoryEntryForRequest(decodeURIComponent(identityMatch[1]));
       if (identity === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({ contract:"fibre-world-thread-identity-v0.3", identity });
     }
