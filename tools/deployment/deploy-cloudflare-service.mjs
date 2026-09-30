@@ -5,11 +5,16 @@ import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
 import {
+  CLOUDFLARE_SERVICE_CONFIGS,
   normalizeCloudflareEnvironment,
   parseJsonc,
+  readCloudflareOperatorState,
+  readCloudflareRuntimeConfig,
   repoRootFrom,
+  resolveWranglerConfig,
   runWrangler,
 } from "./cloudflare-operator.mjs";
+import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
 import {
   d1BindingsFromConfig,
   ensureCloudflareD1Migrations,
@@ -72,6 +77,34 @@ export function prepareResolvedServiceConfig(config, { environment, service, git
   return Object.freeze({ environment: env, serviceId, workerName: name, config: next });
 }
 
+export async function resolveCurrentServiceConfig({
+  repoRoot,
+  environment,
+  service,
+  readFileImpl = readFile,
+  readOperatorState = readCloudflareOperatorState,
+  readRuntimeConfig = readCloudflareRuntimeConfig,
+} = {}) {
+  const env = normalizeCloudflareEnvironment(environment);
+  const serviceId = normalizeService(service);
+  const root = resolve(nonEmpty("repoRoot", repoRoot));
+  const sourceConfigPath = CLOUDFLARE_SERVICE_CONFIGS[serviceId];
+  if (!sourceConfigPath) throw new TypeError(`Wrangler source config is missing for ${serviceId}`);
+  const [sourceText, resourceState, runtimeConfigByService] = await Promise.all([
+    readFileImpl(resolve(root, sourceConfigPath), "utf8"),
+    readOperatorState({ repoRoot:root, environment:env }),
+    readRuntimeConfig({ repoRoot:root, environment:env }),
+  ]);
+  return Object.freeze({
+    sourceConfigPath,
+    config:resolveWranglerConfig(parseJsonc(sourceText, sourceConfigPath), {
+      environment:env,
+      resourceState,
+      runtimeConfig:runtimeConfigByService[serviceId] ?? {},
+    }),
+  });
+}
+
 export async function acceptBirthCenterServiceDeployment({
   runner,
   cwd,
@@ -98,6 +131,7 @@ export async function deployCloudflareService({
   service,
   runner = runWrangler,
   resolveSource = resolveCleanGitSha,
+  resolveConfig = resolveCurrentServiceConfig,
   readFileImpl = readFile,
   writeFileImpl = writeFile,
   ensureD1MigrationsImpl = ensureCloudflareD1Migrations,
@@ -108,24 +142,29 @@ export async function deployCloudflareService({
   const serviceId = normalizeService(service);
   const root = resolve(nonEmpty("repoRoot", repoRoot));
   const sourceGitSha = await resolveSource(root);
-  const resolvedPath = resolve(root, ".fibre", "cloudflare", env, "wrangler", `${serviceId}.jsonc`);
-  let raw;
-  try {
-    raw = await readFileImpl(resolvedPath, "utf8");
-  } catch (error) {
-    throw new Error(`resolved ${env} Wrangler config is missing for ${serviceId}; run npm run cloud:deploy -- --env ${env} once first`, { cause: error });
-  }
-  const prepared = prepareResolvedServiceConfig(parseJsonc(raw, resolvedPath), {
-    environment: env,
-    service: serviceId,
-    gitSha: sourceGitSha,
+  const current = await resolveConfig({
+    repoRoot:root,
+    environment:env,
+    service:serviceId,
+    readFileImpl,
+  });
+  const prepared = prepareResolvedServiceConfig(current.config, {
+    environment:env,
+    service:serviceId,
+    gitSha:sourceGitSha,
   });
   const deployConfigPath = resolve(root, ".fibre", "cloudflare", env, "service-deploy", `${serviceId}.jsonc`);
-  await mkdir(dirname(deployConfigPath), { recursive: true });
-  await writeFileImpl(deployConfigPath, `${JSON.stringify(prepared.config, null, 2)}\n`, { mode: 0o600 });
+  await mkdir(dirname(deployConfigPath), { recursive:true });
+  const deployConfig = structuredClone(prepared.config);
+  relocateWranglerMain(deployConfig, {
+    repoRoot:root,
+    sourceConfigPath:current.sourceConfigPath,
+    generatedConfigPath:deployConfigPath,
+  });
+  await writeFileImpl(deployConfigPath, `${JSON.stringify(deployConfig, null, 2)}\n`, { mode:0o600 });
   await ensureD1MigrationsImpl({
     repoRoot:root,
-    databases:d1BindingsFromConfig(prepared.config),
+    databases:d1BindingsFromConfig(deployConfig),
     runner,
     print,
   });
