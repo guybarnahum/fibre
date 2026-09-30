@@ -26,9 +26,9 @@ Private/admin service tokens are never delivered to browser JavaScript. Admin en
 
 The Activity workspace may expose a **Threads** population view beside Causal and Raw Activity.
 
-Activity supplies population discovery only: a Thread appears because Activity has observed its `threadId`. Activity records must never be treated as authority for the person's name, sex, lifecycle, health, migration state or recoverability. Those facts are resolved at read time from World and the owning maintenance/reconciliation authorities.
+World Thread Registry defines the admitted population. Activity only annotates recent observation and may surface identifiers that were observed operationally but never admitted as Threads; those remain explicitly outside the admitted population. Activity records must never be treated as authority for the person's name, sex, lifecycle, health, migration state or recoverability. Those facts are resolved at read time from World and the owning maintenance/reconciliation authorities.
 
-Population statistics such as sex counts, health counts, migration availability and dead-letter counts are therefore computed from the authoritative Thread diagnoses returned for the Activity-discovered population, not from telemetry payloads.
+Population statistics such as sex counts, health counts, migration availability and dead-letter counts are therefore computed from authoritative World-derived Thread rows, not from telemetry payloads.
 
 Population inspection is operator-driven and bounded. It should not become a background polling loop or a second directory authority. Normal Activity auto-refresh may pause while the population view is active so population diagnosis does not create avoidable infrastructure load.
 
