@@ -48,7 +48,7 @@ test("service deploy preserves resolved bindings and stamps the exact source SHA
   }), /does not target staging/);
 });
 
-test("service deploy uses the resolved environment config without provisioning", async () => {
+test("service deploy re-resolves current source config without provisioning", async () => {
   const repoRoot = mkdtempSync(join(tmpdir(), "fibre-service-deploy-"));
   const calls = [];
   const writes = [];
@@ -59,9 +59,14 @@ test("service deploy uses the resolved environment config without provisioning",
       environment: "staging",
       service: "world-kernel",
       async resolveSource() { return SHA; },
-      async readFileImpl(path) {
-        calls.push(["read", path]);
-        return JSON.stringify(resolvedConfig());
+      async resolveConfig() {
+        calls.push(["resolve-current"]);
+        const config = resolvedConfig();
+        config.migrations = [{ tag:"new-do", new_sqlite_classes:["NewDurableObject"] }];
+        return {
+          sourceConfigPath:"infra/deployments/world-kernel/cloudflare/wrangler.jsonc",
+          config,
+        };
       },
       async writeFileImpl(path, content) {
         writes.push([path, JSON.parse(content)]);
@@ -78,8 +83,9 @@ test("service deploy uses the resolved environment config without provisioning",
 
     assert.equal(result.sourceGitSha, SHA);
     assert.equal(result.workerName, "fibre-world-kernel-staging");
-    assert.match(calls[0][1], /\.fibre\/cloudflare\/staging\/wrangler\/world-kernel\.jsonc$/);
+    assert.deepEqual(calls[0], ["resolve-current"]);
     assert.equal(writes.length, 1);
+    assert.deepEqual(writes[0][1].migrations, [{ tag:"new-do", new_sqlite_classes:["NewDurableObject"] }]);
     assert.equal(writes[0][1].vars.FIBRE_DEPLOYMENT_GIT_SHA, SHA);
     const migrateIndex = calls.findIndex((entry) => entry[0] === "migrate");
     const wranglerIndex = calls.findIndex((entry) => entry[0] === "wrangler");
@@ -109,7 +115,12 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
       environment:"staging",
       service:"birth-center",
       async resolveSource() { return SHA; },
-      async readFileImpl() { return JSON.stringify(birthConfig); },
+      async resolveConfig() {
+        return {
+          sourceConfigPath:"infra/deployments/birth-center/cloudflare/wrangler.jsonc",
+          config:birthConfig,
+        };
+      },
       async writeFileImpl() {},
       async ensureD1MigrationsImpl() { calls.push("d1"); },
       async runner(args) {
