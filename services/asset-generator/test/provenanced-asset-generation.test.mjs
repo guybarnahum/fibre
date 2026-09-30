@@ -74,14 +74,21 @@ function provider(calls) {
 test("Fibre-native generation retains durable provider provenance and exact final-byte integrity", async () => {
   const infra = createMemoryInfraDriver();
   const calls = [];
+  const providerRuns = [];
+  const observeProvider = async (operation) => {
+    providerRuns.push("generate");
+    return operation();
+  };
   const first = await executeProvenancedAssetGenerationJob({
     infra,
     provider: provider(calls),
     job: job(),
     now: () => "2026-09-01T02:52:00Z",
+    runProviderGeneration: observeProvider,
   });
 
   assert.equal(calls.length, 1);
+  assert.equal(providerRuns.length, 1, "provider generation was not observed exactly once");
   assert.equal(first.receipt.receiptVersion, PROVENANCED_ASSET_RECEIPT_VERSION);
   assert.equal(first.receipt.sha256, first.receipt.providerOutputDigest);
   assert.equal(first.generationRecord.generation.providerRequestId, "provider-request-native-001");
@@ -98,8 +105,10 @@ test("Fibre-native generation retains durable provider provenance and exact fina
     provider: provider(calls),
     job: job(),
     now: () => "2026-09-01T02:53:00Z",
+    runProviderGeneration: observeProvider,
   });
   assert.equal(calls.length, 1);
+  assert.equal(providerRuns.length, 1, "exact replay re-observed provider generation");
   assert.equal(replay.finalAssetReused, true);
   assert.equal(replay.receipt.sha256, first.receipt.sha256);
   assert.equal(replay.receipt.generationRecordDigest, first.receipt.generationRecordDigest);
