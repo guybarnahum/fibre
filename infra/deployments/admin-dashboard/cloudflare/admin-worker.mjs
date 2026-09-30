@@ -100,21 +100,7 @@ function adminIdentity(identity) {
 export async function proxyAdminLive(request, env) {
   const namespace = env?.ADMIN_LIVE;
   if (!namespace?.getByName) throw new Error("ADMIN_LIVE binding is unavailable");
-  try {
-    const response = await namespace.getByName("admin").fetch(request);
-    console.log(JSON.stringify({
-      event:"admin-live-upgrade",
-      status:response.status,
-      upgraded:response.status === 101,
-    }));
-    return response;
-  } catch (error) {
-    console.error(JSON.stringify({
-      event:"admin-live-upgrade-failed",
-      message:error instanceof Error ? error.message : String(error),
-    }));
-    throw error;
-  }
+  return namespace.getByName("admin").fetch(request);
 }
 
 async function proxyAsset(request, env, objectRef) {
@@ -488,15 +474,7 @@ export default {
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels);
     if (adminGet || adminPost) {
       const gate = await adminPrincipal(request, env);
-      if (gate.response) {
-        if (adminLive) {
-          console.warn(JSON.stringify({
-            event:"admin-live-auth-rejected",
-            status:gate.response.status,
-          }));
-        }
-        return gate.response;
-      }
+      if (gate.response) return gate.response;
       try {
         if (adminLive) {
           if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
@@ -617,13 +595,7 @@ export default {
         }
         return proxyAsset(request, env, id("objectRef", decodeURIComponent(assetMatch[1])));
       } catch (error) {
-        if (adminLive) {
-          console.error(JSON.stringify({
-            event:"admin-live-request-failed",
-            message:error instanceof Error ? error.message : String(error),
-          }));
-          return json(503, { error:"admin_live_unavailable", detail:error.message });
-        }
+        if (adminLive) return json(503, { error:"admin_live_unavailable", detail:error.message });
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
         if (threadLabels) return json(error instanceof TypeError ? 400 : 503, { error:"thread_labels_unavailable", detail:error.message });
         if (threadBirth) return json(error instanceof TypeError ? 400 : 503, { error:"thread_birth_unavailable", detail:error.message });
