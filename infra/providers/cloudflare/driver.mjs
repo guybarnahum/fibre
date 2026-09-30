@@ -13,9 +13,9 @@ import {
 } from "../../internal.mjs";
 import {
   createCloudflareCatalogPort,
-  createCloudflareRealtimePort,
   createCloudflareStreamPort,
 } from "./presentation-ports.mjs";
+import { createCloudflareRealtimePort } from "./realtime.mjs";
 import { createCloudflareTransactionalStatePort } from "./transactional-state.mjs";
 
 const DIGEST_META = "fibre-digest";
