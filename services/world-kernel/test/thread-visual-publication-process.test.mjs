@@ -118,3 +118,42 @@ test("visual completion observers run only after authoritative workset retiremen
 
   assert.equal(observedRetired, true, "completion observer ran before World retired visual work");
 });
+
+
+test("visual publication records one terminal Activity outcome per Thread pass", async () => {
+  const records = [];
+  const process = createThreadVisualPublicationProcess({
+    threadSource:{ async listThreadIds() { return ["thr_done", "thr_wait"]; } },
+    reconciler:{
+      async reconcileThread({ threadId }) {
+        return threadId === "thr_done"
+          ? { complete:true, stage:"complete" }
+          : { complete:false, stage:"fid_pending" };
+      },
+    },
+    activityRecorder:{
+      async record(record) { records.push(record); },
+    },
+  });
+
+  await process.runOnce();
+
+  assert.deepEqual(
+    records.map(({ threadId, stage, status, evidence }) => ({ threadId, stage, status, evidence })),
+    [
+      {
+        threadId:"thr_done",
+        stage:"world.visual_publication.reconcile",
+        status:"succeeded",
+        evidence:{ disposition:"complete", reconciliationStage:"complete" },
+      },
+      {
+        threadId:"thr_wait",
+        stage:"world.visual_publication.reconcile",
+        status:"retrying",
+        evidence:{ disposition:"retry", reconciliationStage:"fid_pending" },
+      },
+    ],
+    "visual reconciliation terminal state was not visible in Activity",
+  );
+});
