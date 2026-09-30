@@ -2,11 +2,6 @@ import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { FibrePresentationChannelDurableObject } from "#infra/providers/cloudflare/presentation-channel-do";
 import { FibreAdminLiveDurableObject } from "./admin-live-do.mjs";
 import {
-  fidPresentationInvalidation,
-  presentationCompletionInvalidation,
-  threadPresentationInvalidation,
-} from "./admin-live-invalidation.mjs";
-import {
   ASSET_COMPLETION_ROUTE_PRESENTATION,
   ASSET_COMPLETION_ROUTE_WORLD_WAKE,
   assetGenerationCompletionRoute,
@@ -22,7 +17,11 @@ import {
   createFidLifecycleReconciler,
   createFidPresentationProjectionService,
   createThreadPresentationVisualPublicationReconciler,
+  fidPresentationInvalidation,
   normalizeThreadPresentationBundle,
+  presentationCompletionInvalidation,
+  publishAdminInvalidation,
+  threadPresentationInvalidation,
   presentationProvenanceDigest,
   threadMediaPacketDigest,
   threadPresentationPacketDigest,
@@ -91,7 +90,27 @@ function createInfra(env, { includeWorkflows = true } = {}) {
   });
 }
 
-function createVisualReconciler(env, infra, presentationServer, activityRecorder) {
+function createAdminRealtime(env) {
+  return createCloudflareInfraDriver({
+    realtimeChannels:env.ADMIN_LIVE,
+  }).realtime;
+}
+
+async function bestEffortAdminInvalidation(realtime, invalidation) {
+  if (invalidation === null) return;
+  try { await publishAdminInvalidation(realtime, invalidation); }
+  catch (error) {
+    console.warn(JSON.stringify({
+      event:"admin-live-invalidation-failed",
+      entity:invalidation.entity,
+      id:invalidation.id,
+      aspect:invalidation.aspect,
+      message:error instanceof Error ? error.message : String(error),
+    }));
+  }
+}
+
+function createVisualReconciler(env, infra, presentationServer, activityRecorder, adminRealtime) {
   return createThreadPresentationVisualPublicationReconciler({
     presentationServer,
     infra,
@@ -112,7 +131,7 @@ function createVisualReconciler(env, infra, presentationServer, activityRecorder
         mode:"ensure",
         canonicalReferenceObjectRef,
       });
-      await publishAdminInvalidation(env, fidPresentationInvalidation(threadId, result));
+      await bestEffortAdminInvalidation(adminRealtime, fidPresentationInvalidation(threadId, result));
       return result;
     },
     activityRecorder,
@@ -124,32 +143,6 @@ function nonEmpty(name, value) {
     throw new TypeError(`${name} must be a non-empty string`);
   }
   return value;
-}
-
-function adminLive(env) {
-  if (!env?.ADMIN_LIVE?.getByName) return null;
-  return env.ADMIN_LIVE.getByName("admin");
-}
-
-async function publishAdminInvalidation(env, invalidation) {
-  if (invalidation === null) return;
-  const live = adminLive(env);
-  if (live === null) return;
-  try { await live.invalidate(invalidation); }
-  catch (error) {
-    console.warn(JSON.stringify({
-      event:"admin-live-invalidation-failed",
-      entity:invalidation.entity,
-      id:invalidation.id,
-      aspect:invalidation.aspect,
-      message:error instanceof Error ? error.message : String(error),
-    }));
-  }
-}
-
-function adminLiveAuthorized(request, env) {
-  const expected = typeof env?.FIBRE_PRIVATE_TOKEN === "string" ? env.FIBRE_PRIVATE_TOKEN : "";
-  return expected !== "" && request.headers.get("x-fibre-private-token") === expected;
 }
 
 async function requestWorldReconciliationWake(env, threadId) {
@@ -415,15 +408,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/healthz") return HTTP_SERVICE.fetch(request);
-    if (request.method === "GET" && url.pathname === "/internal/admin-live") {
-      if (!adminLiveAuthorized(request, env)) return Response.json({ error:"private_access_required" }, { status:403 });
-      const live = adminLive(env);
-      return live === null
-        ? Response.json({ error:"admin_live_unavailable" }, { status:503 })
-        : live.fetch(request);
-    }
-
     const infra = createInfra(env);
+    const adminRealtime = createAdminRealtime(env);
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
     const presentationServer = createThreadPresentationServer({ infra });
     const genesisWriteApi = createGenesisPresentationWriteApi({ presentationServer, privateToken: env.FIBRE_PRIVATE_TOKEN ?? null });
@@ -450,7 +436,7 @@ export default {
     }
 
     const visualWriteApi = createVisualPublicationWriteApi({
-      reconciler: createVisualReconciler(env, infra, presentationServer, activityRecorder),
+      reconciler: createVisualReconciler(env, infra, presentationServer, activityRecorder, adminRealtime),
       privateToken: env.FIBRE_PRIVATE_TOKEN ?? null,
     });
     const visualWriteResponse = await visualWriteApi.fetch(request);
@@ -467,6 +453,7 @@ export default {
 
   async queue(batch, env) {
     const infra = createInfra(env);
+    const adminRealtime = createAdminRealtime(env);
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
     const presentationServer = createThreadPresentationServer({ infra });
     const completions = createCompletionConsumer(env, infra, presentationServer);
@@ -500,7 +487,7 @@ export default {
 
       try {
         const completion = await completions.consume(message.body);
-        await publishAdminInvalidation(env, presentationCompletionInvalidation(completion));
+        await bestEffortAdminInvalidation(adminRealtime, presentationCompletionInvalidation(completion));
         if (
           completion?.handled === true
           && completion?.duplicate !== true
@@ -535,7 +522,7 @@ export default {
         const disposition = completionQueueFailureDisposition({ attempts: message.attempts });
         const identity = await completionActivityIdentity(infra, message.body);
         if (disposition.terminal) {
-          await publishAdminInvalidation(env, threadPresentationInvalidation(identity.threadId));
+          await bestEffortAdminInvalidation(adminRealtime, threadPresentationInvalidation(identity.threadId));
         }
         if (activityRecorder !== null) {
           await activityRecorder.record({
