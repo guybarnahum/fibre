@@ -136,6 +136,15 @@ export function validateResolvedCloudflareAppConfig(appId, config, { environment
     if (databases.length !== 1) throw new TypeError("admin-dashboard must resolve exactly one ACTIVITY_LOG D1 binding");
     deployedValue("Admin ACTIVITY_LOG database name", databases[0].database_name);
     deployedValue("Admin ACTIVITY_LOG database id", databases[0].database_id);
+    const adminLive = (config.durable_objects?.bindings ?? []).filter((binding) => binding?.name === "ADMIN_LIVE");
+    if (adminLive.length !== 1) throw new TypeError("admin-dashboard must bind exactly one ADMIN_LIVE Durable Object");
+    if (adminLive[0].class_name !== "FibreAdminLiveDurableObject") {
+      throw new TypeError("admin-dashboard ADMIN_LIVE must target FibreAdminLiveDurableObject");
+    }
+    const expectedAdminLiveScript = environmentResourceName("fibre-thread-presentation", env);
+    if (adminLive[0].script_name !== expectedAdminLiveScript) {
+      throw new TypeError(`admin-dashboard ADMIN_LIVE must target ${expectedAdminLiveScript}`);
+    }
   }
 
   if (appId === "status-page") {
