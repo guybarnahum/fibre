@@ -111,6 +111,18 @@ async function completeExport(onProgress) {
   };
 }
 
+export function beginPromisedClipboardWrite(textPromise, {
+  clipboard = globalThis.navigator?.clipboard,
+  ClipboardItemCtor = globalThis.ClipboardItem,
+  BlobCtor = globalThis.Blob,
+} = {}) {
+  if (!clipboard || typeof clipboard.write !== "function"
+    || typeof ClipboardItemCtor !== "function"
+    || typeof BlobCtor !== "function") return null;
+  const text = Promise.resolve(textPromise).then((value) => new BlobCtor([value], { type:"text/plain" }));
+  return clipboard.write([new ClipboardItemCtor({ "text/plain":text })]).then(() => true);
+}
+
 async function copyText(value) {
   try {
     await navigator.clipboard.writeText(value);
@@ -132,32 +144,57 @@ async function copyText(value) {
 const button = typeof document === "undefined" ? null : document.querySelector("#export-button");
 if (button) decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
 button?.addEventListener("click", async (event) => {
-  event.stopImmediatePropagation();
+  event.preventDefault();
   if (button.disabled) return;
   button.disabled = true;
-  button.title = "";
+  button.classList.remove("action-success", "action-error");
+  decorateActionButton(button, {
+    icon:"rotate",
+    label:"Collecting Activity export",
+    tooltip:"Collecting Activity export",
+    iconOnly:true,
+    spinning:true,
+  });
+
+  const exportPromise = completeExport((count, total) => {
+    const label = `Collecting activity ${count} of ${total}`;
+    button.setAttribute("aria-label", label);
+    button.title = label;
+  });
+  const textPromise = exportPromise.then((payload) => JSON.stringify(payload, null, 2));
+  const promisedWrite = beginPromisedClipboardWrite(textPromise);
+
   try {
-    const payload = await completeExport((count, total) => {
-      decorateActionButton(button, {
-        icon:"file-export",
-        label:`Collecting activity ${count} of ${total}`,
-        tooltip:`Collecting activity ${count} of ${total}`,
-        iconOnly:true,
-      });
-    });
-    const copied = await copyText(JSON.stringify(payload, null, 2));
+    const payload = await exportPromise;
+    const copied = promisedWrite === null
+      ? await copyText(await textPromise)
+      : await promisedWrite;
     decorateActionButton(button, {
-      icon:"file-export",
+      icon:copied ? "copy" : "file-export",
       label:copied ? `Copied ${payload.records.length} activity records` : "Copy / Export activity failed",
       tooltip:copied ? `Copied ${payload.records.length} activity records` : "Copy / Export activity failed",
       iconOnly:true,
     });
+    button.classList.add(copied ? "action-success" : "action-error");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity failed", tooltip:`Copy / Export failed — ${message}`, iconOnly:true });
+    decorateActionButton(button, {
+      icon:"file-export",
+      label:"Copy / Export activity failed",
+      tooltip:`Copy / Export failed — ${message}`,
+      iconOnly:true,
+    });
+    button.classList.add("action-error");
   }
+
   setTimeout(() => {
-    decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
+    button.classList.remove("action-success", "action-error");
+    decorateActionButton(button, {
+      icon:"file-export",
+      label:"Copy / Export activity",
+      tooltip:"Copy / Export activity",
+      iconOnly:true,
+    });
     button.disabled = false;
   }, 1600);
-}, { capture: true });
+});
