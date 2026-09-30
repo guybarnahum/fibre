@@ -35,20 +35,9 @@ function reconcileLiveViews(reason) {
   }
 }
 
-function handleMessage(event) {
-  let message;
-  try { message = JSON.parse(event.data); }
-  catch { return; }
-
-  if (message?.type === "admin-live.ready") {
-    reconnectDelay = 1500;
-    const reason = hasConnected ? "reconnected" : "connected";
-    hasConnected = true;
-    reconcileLiveViews(reason);
-    return;
-  }
-  if (message?.type !== "admin-live.invalidate") return;
-  if (message.entity !== "thread" || typeof message.id !== "string" || typeof message.aspect !== "string") return;
+export function routeAdminLiveMessage(message) {
+  if (message?.type !== "admin-live.invalidate") return false;
+  if (message.entity !== "thread" || typeof message.id !== "string" || typeof message.aspect !== "string") return false;
   invalidateView(threadViewKey(message.id, message.aspect), {
     source:"admin-live",
     reason:"changed",
@@ -64,6 +53,22 @@ function handleMessage(event) {
     threadId:message.id,
     aspect:message.aspect,
   });
+  return true;
+}
+
+function handleMessage(event) {
+  let message;
+  try { message = JSON.parse(event.data); }
+  catch { return; }
+
+  if (message?.type === "admin-live.ready") {
+    reconnectDelay = 1500;
+    const reason = hasConnected ? "reconnected" : "connected";
+    hasConnected = true;
+    reconcileLiveViews(reason);
+    return;
+  }
+  routeAdminLiveMessage(message);
 }
 
 function ensureSocket() {
