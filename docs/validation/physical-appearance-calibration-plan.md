@@ -250,6 +250,73 @@ Acceptance:
 
 Then run a bounded cohort including Han Chinese, Korean, Japanese and a Southeast Asian population to demonstrate both population/family coherence and substantial individual diversity.
 
+## Post-calibration lifecycle — demand-driven model extension
+
+The accepted physical model still needs a disciplined way to discover and extend under-covered family lineages without building an encyclopedic ethnicity database.
+
+### A1 — Appearance coverage workbench
+
+**Status: implemented on `main`; pending focused/local validation and staging UI proof.**
+
+Use the existing Population Lab domain as the single coverage engine.
+
+World supplies one bounded authoritative population projection:
+- Thread ID/display identity;
+- canonical birth location for demand mapping;
+- durable maternal/paternal physical ancestry when available;
+- stored calibration dependency snapshot.
+
+Population Lab compares those facts with the current reference-population hierarchy and reports:
+- explicit / partial / broad / fallback / missing coverage;
+- ranked holes using actual Thread-side demand;
+- current calibration node versions and dependency chains;
+- existing Threads whose physical-model or calibration dependency is stale.
+
+Admin **Appearance** presents that result as:
+- summary metrics;
+- demand map;
+- ranked hole table and drill-through to affected Threads;
+- reference-population model/version matrix;
+- existing Threads requiring recalibration;
+- prepared experiment/research specifications.
+
+The Threads view exposes:
+- **Needs migration** — every Thread whose authoritative World health is `migration_required`;
+- **Appearance migration** — migration projection domain `appearance`;
+- **Identity migration** — migration projection domain `identity`.
+
+A1 does not execute experiments, perform web research, approve models or bulk-migrate Threads.
+
+Acceptance:
+- one coverage scan performs one bounded Thread-directory read and one bounded ancestry-evidence read;
+- no N× Observatory/identity reads;
+- stable ancestry IDs may refine a broad recorded reference to a more specific current calibration;
+- missing durable ancestry is visible as a data/coverage hole, never inferred from name/place/language;
+- a Moroccan calibration dependency change marks only affected Moroccan Threads;
+- unchanged Korean dependencies remain current;
+- version migration jumps directly from stored version to current version;
+- Admin and CLI consume the same Population Lab coverage logic.
+
+### A2 — InfraDriver-backed experiment artifacts
+
+Persist Population Lab experiment manifests, population inputs, HTML reports, images and results through generic `InfraDriver.objects` and `InfraDriver.catalog`. Local storage may materialize under `.fibre/population-lab/<experimentId>/...`; cloud providers map the same logical object references to their object/catalog implementations.
+
+Admin may launch and inspect the same existing Population Lab experiment runner. No dashboard-specific renderer or metrics implementation is allowed.
+
+### A3 — Research and approval
+
+Research is an evidence adapter over a selected coverage hole. It may gather provenance and propose only evidence-supported calibration axes. Research artifacts never mutate the production model.
+
+Human approval promotes one reviewed candidate into the current versioned calibration registry. Approval is the authority hinge. Each calibration node carries a monotonic integer local version.
+
+### A4 — Targeted migration after approval
+
+After approval, compare existing Threads' stored effective calibration dependencies with current registry resolution.
+
+Only affected Threads become `migration_required`. A Thread at local calibration v1 migrates once directly to current vN; intermediate versions are not replayed.
+
+Admin exposes the affected set and may invoke bounded explicit migrations. Normal Embodiment -> Presentation -> FID reconciliation follows each authority change. Staging acceptance must demonstrate a Moroccan refinement affecting Moroccan Threads while unrelated Korean Threads remain unchanged.
+
 ## Slice 10 — Closeout
 
 Only after staging evidence is convincing:
