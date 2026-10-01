@@ -1,7 +1,8 @@
 import {execFileSync} from "node:child_process";
 import {createHash} from "node:crypto";
-import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
+import {createLocalArtifactInfraDriver} from "#infra/providers/local";
+import {createPopulationLabExperimentStore} from "../../services/population-lab/src/experiment-artifacts.mjs";
 import {
   expressInheritedAppearance,
   referencePhysicalState,
@@ -70,7 +71,7 @@ function subjects(experiment,siblingCount,grandchildCount){
 
 const digestBytes=bytes=>`sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 
-async function render(subject,dir,index,provider){
+async function render(subject,index,provider,{experimentId,artifacts}){
   const ordinal=String(index+1).padStart(3,"0");
   const geometryPrompt=populationGeometryAnchorPrompt({
     sex:subject.sex,
@@ -83,8 +84,13 @@ async function render(subject,dir,index,provider){
     brief:{description:geometryPrompt,constraints:[]},
     referenceObjects:[],
   });
-  const geometryAnchor=`person-${ordinal}-geometry.png`;
-  await writeFile(resolve(dir,geometryAnchor),geometry.result.bytes);
+  const geometryArtifact=await artifacts.putImage(experimentId,{
+    ordinal:index+1,
+    role:"geometry",
+    bytes:geometry.result.bytes,
+    mediaType:geometry.result.mediaType??"image/png",
+  });
+  const geometryAnchor=`image/${ordinal}/geometry`;
 
   const renderPrompt=populationSurfacePortraitPrompt({
     sex:subject.sex,
@@ -102,9 +108,22 @@ async function render(subject,dir,index,provider){
       metadata:{mediaType:geometry.result.mediaType,kind:"geometry_anchor"},
     }],
   });
-  const image=`person-${ordinal}.png`;
-  await writeFile(resolve(dir,image),final.result.bytes);
-  return {...subject,image,geometryAnchor,geometryPrompt,renderPrompt};
+  const portraitArtifact=await artifacts.putImage(experimentId,{
+    ordinal:index+1,
+    role:"portrait",
+    bytes:final.result.bytes,
+    mediaType:final.result.mediaType??"image/png",
+  });
+  const image=`image/${ordinal}/portrait`;
+  return {
+    ...subject,
+    image,
+    imageObjectRef:portraitArtifact.objectRef,
+    geometryAnchor,
+    geometryObjectRef:geometryArtifact.objectRef,
+    geometryPrompt,
+    renderPrompt,
+  };
 }
 
 function html(subjects,model,projectionVersion){
@@ -120,8 +139,20 @@ async function main(){
   const source=JSON.parse(raw),selected=subjects(source.experiment,siblings,grandchildren);
   const projectionVersion=selected[0]?.projectionVersion??"unknown";
   const seed=`family-renderer-v3:${projectionVersion}:${siblings}:${grandchildren}`;
-  const dir=resolve(arg("output",resolve(".fibre","population-lab",Date.now()+"-"+createHash("sha256").update(seed).digest("hex").slice(0,8))));
-  await mkdir(dir,{recursive:true});
+  const artifactRoot=resolve(arg("output",resolve(".fibre","population-lab")));
+  const experimentId=arg("experiment-id",Date.now()+"-"+createHash("sha256").update(seed).digest("hex").slice(0,8));
+  const artifacts=createPopulationLabExperimentStore(createLocalArtifactInfraDriver({root:artifactRoot}));
+  const startedAt=new Date().toISOString();
+  await artifacts.start(experimentId,{
+    contract:"fibre-population-lab-manifest-v0.1",
+    experimentId,
+    startedAt,
+    mode:"family-renderer-fidelity",
+    model,
+    siblings,
+    grandchildren,
+    seed,
+  });
   const provider=createOpenAIImageProvider({
     apiKey:token(),
     model,
@@ -129,9 +160,10 @@ async function main(){
     fetchImpl:resilientFetch,
   });
   const rendered=[];
+  try{
   for(let i=0;i<selected.length;i++){
     process.stdout.write(`\r[${i+1}/${selected.length}] geometry + surface ${selected[i].id}   `);
-    rendered.push(await render(selected[i],dir,i,provider));
+    rendered.push(await render(selected[i],i,provider,{experimentId,artifacts}));
   }
   process.stdout.write("\n");
   const result={
@@ -146,9 +178,23 @@ async function main(){
     sourceDiagnostics:source.diagnostics,
     people:rendered,
   };
-  await writeFile(resolve(dir,"population.json"),JSON.stringify(result,null,2));
-  await writeFile(resolve(dir,"index.html"),html(rendered,model,projectionVersion));
-  console.log(`Done · ${resolve(dir,"index.html")}`);
+  await artifacts.putPopulation(experimentId,{
+    contract:"fibre-population-lab-population-v0.1",
+    meta:{...result.meta,experimentId,startedAt},
+    people:rendered,
+  });
+  await artifacts.putResult(experimentId,{
+    contract:"fibre-population-lab-result-v0.1",
+    meta:{...result.meta,experimentId,startedAt},
+    sourceDiagnostics:source.diagnostics,
+  });
+  await artifacts.putReport(experimentId,html(rendered,model,projectionVersion));
+  await artifacts.complete(experimentId,{people:rendered.length,warnings:0,images:rendered.length});
+  console.log(`Done · experiment ${experimentId}`);
+  }catch(error){
+    await artifacts.fail(experimentId,error).catch(()=>{});
+    throw error;
+  }
 }
 
 main().catch(error=>{console.error("family renderer failed:",error.message);process.exitCode=1});
