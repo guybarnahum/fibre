@@ -10,8 +10,7 @@ function id(value){
 }
 
 async function digest(bytes){
-  const value=typeof bytes==="string"?new TextEncoder().encode(bytes):bytes;
-  const hashed=await crypto.subtle.digest("SHA-256",value);
+  const hashed=await crypto.subtle.digest("SHA-256",bytes);
   return `sha256:${Array.from(new Uint8Array(hashed),byte=>byte.toString(16).padStart(2,"0")).join("")}`;
 }
 
@@ -34,7 +33,11 @@ export function createPopulationLabExperimentStore(infra){
 
   const put=async(experimentId,kind,bytes,metadata={})=>{
     const objectRef=populationLabExperimentRef(experimentId,kind);
-    const value=typeof bytes==="string"||bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+    const value=typeof bytes==="string"
+      ? new TextEncoder().encode(bytes)
+      : bytes instanceof Uint8Array
+        ? bytes
+        : new Uint8Array(bytes);
     const objectDigest=await digest(value);
     const write=await infra.objects.putImmutable(objectRef,value,objectDigest,{
       experimentId:id(experimentId),
