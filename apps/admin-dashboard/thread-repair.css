@@ -587,6 +587,7 @@
 .thread-map-popover-head span { color:var(--muted); font-size:8.5px; }
 .thread-map-popover-head strong .thread-location { color:var(--text); }
 .thread-map-popover-head strong .thread-location-text { font-size:10px; }
+.thread-map-popover-head strong .thread-location-flag { font-size:26px; line-height:1; cursor:default; }
 .thread-map-faces {
   display:grid;
   gap:6px;
