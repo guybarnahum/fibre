@@ -31,6 +31,12 @@ const resourceState = Object.freeze({
         id: "d1-activity",
       }),
     ]),
+    r2: Object.freeze([
+      Object.freeze({
+        name: "fibre-presentation-assets-staging",
+        status: "existing",
+      }),
+    ]),
   }),
 });
 
