@@ -5,7 +5,10 @@ import baseWorker, {
   authorizeAdminPrincipal,
 } from "./worker.mjs";
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
-import { readAdminAppearanceCoverage } from "./appearance-coverage.mjs";
+import {
+  optionalAdminAppearanceOrigins,
+  readAdminAppearanceCoverage,
+} from "./appearance-coverage.mjs";
 import {
   attachAdminMigrationSummary,
   optionalAdminThreadMigration,
@@ -546,22 +549,32 @@ export default {
               privateToken:privateToken(env),
             }),
           ]);
+          const origins=await optionalAdminAppearanceOrigins({
+            worldKernel,
+            privateToken:privateToken(env),
+            threadIds:population.threads.map((thread)=>thread.threadId),
+          });
           const migrationByThread=new Map(migrations.map((entry)=>[entry.threadId,entry]));
+          const originsByThread=new Map(origins.map((entry)=>[entry.threadId,entry.ethnicity??[]]));
           return json(200, {
-            contract:"fibre-admin-thread-population-v0.4",
+            contract:"fibre-admin-thread-population-v0.5",
             environment,
             queriedAt:new Date().toISOString(),
             ...population,
-            threads:population.threads.map((thread)=>attachAdminMigrationSummary(
-              thread,
-              migrationByThread.get(thread.threadId)??null,
-            )),
+            threads:population.threads.map((thread)=>Object.freeze({
+              ...attachAdminMigrationSummary(
+                thread,
+                migrationByThread.get(thread.threadId)??null,
+              ),
+              physicalOrigins:Object.freeze([...(originsByThread.get(thread.threadId)??[])]),
+            })),
           });
         }
         if (threadPopulationEntryMatch) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const threadId = id("threadId", decodeURIComponent(threadPopulationEntryMatch[1]));
-          const [thread,migration] = await Promise.all([
+          const worldKernel=serviceBinding(env,"WORLD_KERNEL");
+          const [thread,migration,origins] = await Promise.all([
             readAdminThreadPopulationThread({
               activityLog:env.ACTIVITY_LOG,
               environment,
@@ -569,17 +582,25 @@ export default {
               readRegistryEntry:(candidate) => threadRegistryEntry(env, candidate),
             }),
             optionalAdminThreadMigration({
-              worldKernel:serviceBinding(env,"WORLD_KERNEL"),
+              worldKernel,
               privateToken:privateToken(env),
               threadId,
+            }),
+            optionalAdminAppearanceOrigins({
+              worldKernel,
+              privateToken:privateToken(env),
+              threadIds:[threadId],
             }),
           ]);
           if (thread === null) return json(404, { error:"thread_not_found" });
           return json(200, {
-            contract:"fibre-admin-thread-population-entry-v0.2",
+            contract:"fibre-admin-thread-population-entry-v0.3",
             environment,
             queriedAt:new Date().toISOString(),
-            thread:attachAdminMigrationSummary(thread,migration),
+            thread:Object.freeze({
+              ...attachAdminMigrationSummary(thread,migration),
+              physicalOrigins:Object.freeze([...(origins[0]?.ethnicity??[])]),
+            }),
           });
         }
         if (finVerify) return proxyFinCardVerify(request, env);
