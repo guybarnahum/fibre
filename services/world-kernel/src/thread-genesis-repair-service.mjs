@@ -71,18 +71,38 @@ function recoveredBirthGeography(identity) {
 function birthGeographyFinding(identity) {
   const recovered = recoveredBirthGeography(identity);
   if (recovered === null) return null;
-  return finding("BIRTH_GEOGRAPHY_RECOVERABLE", "repairable", "repair_birth_geography", {
+  const birthPlace=Object.freeze({
+    displayName:recovered.displayName,
+    country:recovered.country,
+    city:recovered.city,
+    lat:recovered.lat,
+    long:recovered.long,
+  });
+  return finding("BIRTH_GEOGRAPHY_RECOVERABLE", "operator_decision_required", null, {
     authoritative:text(identity?.birthCity),
     recovered,
-    reason:`World birth geography can be restored unambiguously as ${recovered.displayName} from the Thread's existing birth record`,
+    reason:`World can restore the birth place as ${recovered.displayName}; an operator must confirm the ISO country code before changing authoritative identity.`,
+    identityAction:identityAction(
+      "repair_birth_geography",
+      "Repair birth place",
+      [{
+        name:"countryCode",
+        label:"Country code (ISO-2)",
+        kind:"country_code",
+        required:true,
+        placeholder:recovered.countryCode??"EG",
+      }],
+      { fixed:{ birthPlace } },
+    ),
   });
 }
 
-function identityAction(id, label, fields, { command = "identity" } = {}) {
+function identityAction(id, label, fields, { command = "identity", fixed = null } = {}) {
   return Object.freeze({
     id,
     label,
     command,
+    ...(fixed===null?{}:{fixed:Object.freeze(fixed)}),
     input:Object.freeze({ fields:Object.freeze(fields.map((field) => Object.freeze(field))) }),
   });
 }
@@ -1087,25 +1107,6 @@ export function createThreadGenesisRepairService({
     });
 
     const actions = [];
-    const geography = before.findings.find((entry) => entry.action === "repair_birth_geography") ?? null;
-    if (geography !== null) {
-      const current = worldReader.getThread(threadId);
-      const result = identityUpdater.update(current, {
-        birthPlace:geography.recovered,
-        operationKey:childOperation(root, "birth_geography"),
-      });
-      actions.push(Object.freeze({ action:"repair_birth_geography", result }));
-      await record(activity, {
-        threadId,
-        operationId:childOperation(root, "birth_geography"),
-        parentOperationId:root,
-        stage:"thread.repair.birth_geography",
-        status:"succeeded",
-        attempt:1,
-        evidence:{ eventId:result.eventId, birthPlace:geography.recovered.displayName },
-      });
-    }
-
     const afterGeography = await diagnose(threadId);
     if (!blocked && afterGeography.findings.some((entry) => entry.action === "rebuild_presentation")) {
       const result = await presentationDelivery.rebuildThreadPresentation(threadId);
