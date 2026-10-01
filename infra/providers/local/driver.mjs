@@ -65,3 +65,5 @@ export {
 } from "./sqlite-state.mjs";
 export { createLocalSchedulerPort } from "./scheduler.mjs";
 export { createLocalActivityTelemetryPort } from "./telemetry.mjs";
+
+export { createLocalArtifactInfraDriver } from "./artifact-driver.mjs";
