@@ -1,4 +1,3 @@
-import {createHash} from "node:crypto";
 import {requireInfraCapabilities} from "#infra";
 
 const PREFIX="population-lab:experiment:";
@@ -10,8 +9,10 @@ function id(value){
   return value;
 }
 
-function digest(bytes){
-  return `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
+async function digest(bytes){
+  const value=typeof bytes==="string"?new TextEncoder().encode(bytes):bytes;
+  const hashed=await crypto.subtle.digest("SHA-256",value);
+  return `sha256:${Array.from(new Uint8Array(hashed),byte=>byte.toString(16).padStart(2,"0")).join("")}`;
 }
 
 function jsonBytes(value){
@@ -34,7 +35,7 @@ export function createPopulationLabExperimentStore(infra){
   const put=async(experimentId,kind,bytes,metadata={})=>{
     const objectRef=populationLabExperimentRef(experimentId,kind);
     const value=typeof bytes==="string"||bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
-    const objectDigest=digest(value);
+    const objectDigest=await digest(value);
     await infra.objects.putImmutable(objectRef,value,objectDigest,{
       experimentId:id(experimentId),
       kind,
