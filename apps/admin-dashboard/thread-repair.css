@@ -665,6 +665,30 @@
 .thread-population-table td:nth-child(2) { padding-left:4px; }
 .thread-population-person { display:flex; align-items:center; gap:8px; min-width:190px; }
 .thread-population-person > div { min-width:0; }
+.thread-population-ethnicity {
+  min-width:150px;
+  max-width:220px;
+  white-space:normal;
+  line-height:1.35;
+  color:var(--text);
+}
+.thread-population-birthplace {
+  min-width:150px;
+  max-width:220px;
+  white-space:normal;
+  line-height:1.35;
+}
+.thread-population-birthplace-value {
+  display:flex;
+  align-items:flex-start;
+  gap:5px;
+}
+.thread-population-country-flag {
+  flex:0 0 auto;
+  cursor:help;
+  font-size:13px;
+  line-height:1;
+}
 .thread-population-portrait {
   display:grid;
   place-items:center;
@@ -905,7 +929,7 @@
   .thread-birth-map-caption { align-items:flex-start; flex-direction:column; gap:2px; }
   .thread-birth-map-caption span { text-align:left; }
   .thread-health-tag { white-space:normal; }
-  .thread-population-table { min-width:860px; }
+  .thread-population-table { min-width:1120px; }
   .thread-action-choice-group { grid-template-columns:1fr; }
 }
 
