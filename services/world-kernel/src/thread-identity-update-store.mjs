@@ -61,15 +61,22 @@ function normalizeBirthPlace(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new TypeError("Thread birth place must be an object");
   }
-  const expected = ["displayName","country","city","lat","long"];
-  const keys = Object.keys(value).sort();
-  if (JSON.stringify(keys) !== JSON.stringify([...expected].sort())) {
+  const allowed = new Set(["displayName","country","countryCode","city","lat","long"]);
+  const required = ["displayName","country","city","lat","long"];
+  const keys = Object.keys(value);
+  if (keys.some((key) => !allowed.has(key)) || required.some((key) => !Object.hasOwn(value,key))) {
     throw new TypeError("Thread birth place must contain displayName, country, city, lat, and long");
   }
   for (const field of ["displayName","country","city"]) {
     if (typeof value[field] !== "string" || value[field].trim() === "") {
       throw new TypeError(`Thread birth place ${field} is required`);
     }
+  }
+  const countryCode = value.countryCode === undefined || value.countryCode === null
+    ? null
+    : String(value.countryCode).trim().toUpperCase();
+  if (countryCode !== null && !/^[A-Z]{2}$/u.test(countryCode)) {
+    throw new TypeError("Thread birth place countryCode must use ISO alpha-2");
   }
   if (!Number.isFinite(value.lat) || value.lat < -90 || value.lat > 90
     || !Number.isFinite(value.long) || value.long < -180 || value.long > 180) {
@@ -78,6 +85,7 @@ function normalizeBirthPlace(value) {
   return Object.freeze({
     displayName:value.displayName.trim(),
     country:value.country.trim(),
+    ...(countryCode?{countryCode}:{}),
     city:value.city.trim(),
     lat:value.lat,
     long:value.long,
