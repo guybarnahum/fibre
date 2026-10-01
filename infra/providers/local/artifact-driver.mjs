@@ -108,6 +108,16 @@ export function createLocalArtifactInfraDriver({root}={}){
         metadata:structuredClone(meta.metadata),
       };
     },
+    async remove(objectRef){
+      assertInfraId("objectRef",objectRef);
+      const present=await jsonOrNull(objectMetaPath(objectRef));
+      if(present===null)return false;
+      await Promise.all([
+        rm(objectBytesPath(objectRef),{force:true}),
+        rm(objectMetaPath(objectRef),{force:true}),
+      ]);
+      return true;
+    },
   });
 
   const readCatalog=async key=>{
