@@ -73,6 +73,19 @@ function activityDatabase(resourceState) {
   return matches[0];
 }
 
+function presentationCatalogDatabase(resourceState) {
+  const matches = (resourceState?.resources?.d1 ?? []).filter((item) => item.binding === "PRESENTATION_CATALOG");
+  if (matches.length !== 1 || !matches[0]?.id || !matches[0]?.name) throw new TypeError("Cloudflare operator state must contain one provisioned PRESENTATION_CATALOG D1 database");
+  return matches[0];
+}
+
+function presentationObjectBucket(resourceState, environment) {
+  const expected = environmentResourceName("fibre-presentation-assets", normalizeCloudflareEnvironment(environment));
+  const matches = (resourceState?.resources?.r2 ?? []).filter((item) => item?.name === expected);
+  if (matches.length !== 1) throw new TypeError(`Cloudflare operator state must contain R2 bucket ${expected}`);
+  return matches[0];
+}
+
 function normalizedAccessConfig(accessConfig) {
   const teamDomain = nonEmpty("Cloudflare Access team domain", accessConfig?.teamDomain);
   const audience = nonEmpty("Cloudflare Access audience", accessConfig?.audience);
@@ -100,11 +113,20 @@ export function resolveCloudflareAppConfig(appId, baseConfig, { environment, res
 
   if (appId === "admin-dashboard") {
     const activity = activityDatabase(resourceState);
+    const catalog = presentationCatalogDatabase(resourceState);
+    const objects = presentationObjectBucket(resourceState, env);
     const databases = config.d1_databases ?? [];
     const database = databases.find((item) => item.binding === "ACTIVITY_LOG");
     if (!database) throw new TypeError("admin-dashboard must bind ACTIVITY_LOG");
     database.database_name = activity.name;
     database.database_id = activity.id;
+    const experimentCatalog = databases.find((item) => item.binding === "POPULATION_LAB_CATALOG");
+    if (!experimentCatalog) throw new TypeError("admin-dashboard must bind POPULATION_LAB_CATALOG");
+    experimentCatalog.database_name = catalog.name;
+    experimentCatalog.database_id = catalog.id;
+    const experimentObjects = (config.r2_buckets ?? []).find((item) => item.binding === "POPULATION_LAB_OBJECTS");
+    if (!experimentObjects) throw new TypeError("admin-dashboard must bind POPULATION_LAB_OBJECTS");
+    experimentObjects.bucket_name = objects.name;
     const access = normalizedAccessConfig(accessConfig);
     config.vars.FIBRE_ACCESS_TEAM_DOMAIN = access.teamDomain;
     config.vars.FIBRE_ACCESS_AUD = access.audience;
@@ -136,6 +158,13 @@ export function validateResolvedCloudflareAppConfig(appId, config, { environment
     if (databases.length !== 1) throw new TypeError("admin-dashboard must resolve exactly one ACTIVITY_LOG D1 binding");
     deployedValue("Admin ACTIVITY_LOG database name", databases[0].database_name);
     deployedValue("Admin ACTIVITY_LOG database id", databases[0].database_id);
+    const experimentCatalogs=(config?.d1_databases??[]).filter(database=>database?.binding==="POPULATION_LAB_CATALOG");
+    if(experimentCatalogs.length!==1)throw new TypeError("admin-dashboard must resolve exactly one POPULATION_LAB_CATALOG D1 binding");
+    deployedValue("Admin Population Lab catalog database name",experimentCatalogs[0].database_name);
+    deployedValue("Admin Population Lab catalog database id",experimentCatalogs[0].database_id);
+    const experimentObjects=(config?.r2_buckets??[]).filter(bucket=>bucket?.binding==="POPULATION_LAB_OBJECTS");
+    if(experimentObjects.length!==1)throw new TypeError("admin-dashboard must resolve exactly one POPULATION_LAB_OBJECTS R2 binding");
+    deployedValue("Admin Population Lab object bucket",experimentObjects[0].bucket_name);
     const adminLive = (config.durable_objects?.bindings ?? []).filter((binding) => binding?.name === "ADMIN_LIVE");
     if (adminLive.length !== 1) throw new TypeError("admin-dashboard must bind exactly one ADMIN_LIVE Durable Object");
     if (adminLive[0].class_name !== "FibreAdminLiveDurableObject") {
