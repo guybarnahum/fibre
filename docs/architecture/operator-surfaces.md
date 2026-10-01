@@ -68,7 +68,7 @@ The shared Population Lab coverage engine combines those facts with the current 
 
 The map answers **where Fibre currently has demand for weak calibration**. It must never be interpreted as a map of how people in a country look.
 
-A1 keeps expensive work explicit. **Prepare experiment** and **Prepare research** create bounded action specifications only. They do not change appearance authority. Later Population Lab execution persists experiment/research artifacts through InfraDriver.
+A1 kept expensive work explicit through prepared action specifications. A2 now lets the operator **Run experiment** for a coverage hole that already resolves to durable physical-ancestry evidence. Admin queues a bounded controlled physical cohort through a Cloudflare Workflow and returns immediately; Population Lab persists the manifest, cohort, diagnostics and report through InfraDriver. Missing-provenance holes cannot run a calibration experiment because geography is not ancestry authority. **Prepare research** remains specification-only until A3. Experiment output is evidence only and cannot change appearance authority.
 
 A future approved calibration changes the authoritative versioned registry. That approval deterministically exposes only affected Threads as appearance migration candidates. Threads view provides:
 - **Needs migration** — all authoritative `migration_required` Threads;
