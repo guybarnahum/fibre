@@ -108,6 +108,7 @@ function registryFindings(entry) {
     const birthPlace = Object.freeze({
       displayName:entry.birthLocation.displayName,
       country:entry.birthLocation.country,
+      ...(entry.birthLocation.countryCode?{countryCode:entry.birthLocation.countryCode}:{}),
       city:entry.birthLocation.city,
       lat:entry.birthLocation.lat,
       long:entry.birthLocation.long,
