@@ -1548,7 +1548,9 @@ function syncOperatorNavigation() {
 
   for(const selector of [".metrics",".page-actions"]){
     const node=document.querySelector(selector);
-    if(node)node.hidden=appearanceActive;
+    if(!node)continue;
+    node.hidden=appearanceActive;
+    node.style.display=appearanceActive?"none":"";
   }
 }
 
@@ -1773,8 +1775,7 @@ $("#refresh-button").addEventListener("click", (event) => {
   event.preventDefault();
   event.stopImmediatePropagation();
   if (populationMode === "birth-center") void loadBirthCenter();
-  else if (populationMode === "appearance") void loadAppearanceCoverage().then(renderAppearanceTopSummary);
-  else void loadPopulation();
+  else if (populationMode !== "appearance") void loadPopulation();
 }, { capture:true });
 for (const control of document.querySelectorAll("[data-thread-sort]")) {
   control.addEventListener("click", () => {
