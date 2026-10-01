@@ -654,11 +654,11 @@
 .thread-location {
   display:inline-flex;
   align-items:center;
-  gap:5px;
+  gap:7px;
   min-width:0;
-  cursor:help;
+  cursor:default;
 }
-.thread-location-flag { flex:0 0 auto; font-size:13px; line-height:1; }
+.thread-location-flag { flex:0 0 auto; font-size:26px; line-height:1; cursor:default; }
 .thread-location-text { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .thread-location-suffix { flex:0 0 auto; }
 
