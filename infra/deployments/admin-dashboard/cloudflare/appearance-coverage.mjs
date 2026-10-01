@@ -1,27 +1,19 @@
-function requireWorld(worldKernel,privateToken){
-  if(!worldKernel?.fetch)throw new TypeError("WORLD_KERNEL binding is required");
-  if(typeof privateToken!=="string"||privateToken.trim().length<16){
-    throw new TypeError("Fibre private service token is required");
-  }
-  return {
-    worldKernel,
-    headers:{
-      Accept:"application/json",
-      "x-fibre-private-token":privateToken.trim(),
-    },
-  };
-}
-
 export async function readAdminAppearanceCoverage({
   worldKernel,
   privateToken,
 } = {}) {
-  const boundary=requireWorld(worldKernel,privateToken);
-  const response = await boundary.worldKernel.fetch(new Request(
+  if (!worldKernel?.fetch) throw new TypeError("WORLD_KERNEL binding is required");
+  if (typeof privateToken !== "string" || privateToken.trim().length < 16) {
+    throw new TypeError("Fibre private service token is required");
+  }
+  const response = await worldKernel.fetch(new Request(
     "https://world.internal/internal/appearance/coverage",
     {
       method:"GET",
-      headers:boundary.headers,
+      headers:{
+        Accept:"application/json",
+        "x-fibre-private-token":privateToken.trim(),
+      },
     },
   ));
   const payload = await response.json().catch(() => null);
