@@ -3,12 +3,79 @@ import {
   createPopulationLabExperimentStore,
   populationLabExperimentRef,
 } from "#services/population-lab/src/experiment-artifacts.mjs";
+import {
+  normalizePhysicalExperimentRequest,
+  runPersistedPhysicalExperiment,
+} from "#services/population-lab/src/physical-experiment.mjs";
 
-function experimentStore(env){
-  return createPopulationLabExperimentStore(createCloudflareInfraDriver({
+const WORKFLOW_NAME="population_lab_experiment_v1";
+
+function experimentInfra(env,{workflow=false}={}){
+  return createCloudflareInfraDriver({
     objectBucket:env?.PRESENTATION_OBJECTS,
     catalogDatabase:env?.PRESENTATION_CATALOG,
-  }));
+    workflowBindings:workflow&&env?.POPULATION_LAB_EXPERIMENT
+      ? {[WORKFLOW_NAME]:env.POPULATION_LAB_EXPERIMENT}
+      : {},
+  });
+}
+
+function experimentStore(env){
+  return createPopulationLabExperimentStore(experimentInfra(env));
+}
+
+function physicalExperimentSeed(spec){
+  const version=spec?.calibration?.version??"current";
+  return `appearance:${spec.coverageKey}:${spec.referencePopulation}:${version}`;
+}
+
+function experimentId(){
+  return "plexp_"+crypto.randomUUID().replaceAll("-","").slice(0,24);
+}
+
+export async function launchAdminPopulationLabExperiment(env,spec){
+  if(!spec||typeof spec!=="object"||Array.isArray(spec))throw new TypeError("experiment specification must be an object");
+  if(spec.action!=="experiment")throw new TypeError("experiment action is required");
+  if(typeof spec.referencePopulation!=="string"||spec.referencePopulation.trim()===""){
+    throw new TypeError("coverage hole must have a reference population before an experiment can run");
+  }
+  const requestedAt=new Date().toISOString();
+  const request=normalizePhysicalExperimentRequest({
+    experimentId:experimentId(),
+    referencePopulation:spec.referencePopulation,
+    count:Number.isInteger(spec.count)?spec.count:24,
+    seed:physicalExperimentSeed(spec),
+    requestedAt,
+    source:{
+      coverageKey:spec.coverageKey??null,
+      coverage:spec.coverage??null,
+      populations:Array.isArray(spec.populations)?spec.populations:[],
+      threadIds:Array.isArray(spec.threadIds)?spec.threadIds:[],
+      places:Array.isArray(spec.places)?spec.places:[],
+      calibration:spec.calibration??null,
+    },
+  });
+  const store=experimentStore(env);
+  await store.queue(request.experimentId,request);
+  const infra=experimentInfra(env,{workflow:true});
+  try{
+    const workflow=await infra.workflows.start(WORKFLOW_NAME,request.experimentId,request);
+    return Object.freeze({
+      experiment:await store.get(request.experimentId),
+      workflow,
+    });
+  }catch(error){
+    await store.fail(request.experimentId,error).catch(()=>{});
+    throw error;
+  }
+}
+
+export async function runAdminPopulationLabExperimentWorkflow(env,rawRequest){
+  const request=normalizePhysicalExperimentRequest(rawRequest);
+  return runPersistedPhysicalExperiment({
+    request,
+    artifacts:experimentStore(env),
+  });
 }
 
 export async function listAdminPopulationLabExperiments(env){
