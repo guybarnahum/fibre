@@ -1,7 +1,7 @@
 {
   "$schema": "../../../../node_modules/wrangler/config-schema.json",
   "name": "fibre-admin-dashboard",
-  "main": "./admin-worker.mjs",
+  "main": "./workflow-worker.mjs",
   "compatibility_date": "2026-09-01",
   "workers_dev": false,
   "preview_urls": false,
@@ -83,6 +83,13 @@
     {
       "binding": "PRESENTATION_OBJECTS",
       "bucket_name": "fibre-presentation-assets"
+    }
+  ],
+  "workflows": [
+    {
+      "name": "fibre-population-lab-experiment",
+      "binding": "POPULATION_LAB_EXPERIMENT",
+      "class_name": "PopulationLabExperimentWorkflow"
     }
   ]
 }
