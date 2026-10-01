@@ -16,7 +16,7 @@ const thread=(threadId,name,referencePopulation)=>({
 test("appearance coverage distinguishes explicit, broad, fallback, and missing ancestry",()=>{
   const threads=[
     thread("thr_korean","Korean Thread"),
-    thread("thr_moroccan","Moroccan Thread"),
+    {...thread("thr_moroccan","Moroccan Thread"),reconciliation:{state:"pending"}},
     thread("thr_missing","Missing Provenance"),
   ];
   const ancestryEvidence=[
@@ -59,6 +59,8 @@ test("appearance coverage distinguishes explicit, broad, fallback, and missing a
     ["thr_moroccan"],
     "coverage map location lost its affected Threads",
   );
+  assert.equal(moroccoHole.threads[0].active,true,
+    "coverage map lost active World reconciliation state");
   assert.equal(result.holes.some((hole)=>hole.referencePopulation==="east_asia.korean"),true);
 });
 
