@@ -4,7 +4,7 @@ import {createMemoryInfraDriver} from "#infra/providers/local";
 import {
   createPopulationLabExperimentStore,
   populationLabExperimentRef,
-} from "./experiment-artifacts.mjs";
+} from "../../services/population-lab/src/experiment-artifacts.mjs";
 
 test("Population Lab experiment store persists one provider-neutral experiment artifact set",async()=>{
   const infra=createMemoryInfraDriver();
