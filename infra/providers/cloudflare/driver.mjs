@@ -142,6 +142,15 @@ export function createCloudflareObjectPort(bucketBinding) {
         metadata: structuredClone(stored.metadata),
       };
     },
+
+    async remove(objectRef) {
+      if (typeof bucket.delete !== "function") throw new Error("Cloudflare R2 bucket binding does not support delete");
+      const key=objectKey(objectRef);
+      const prior=await bucket.head(key);
+      if(prior===null)return false;
+      await bucket.delete(key);
+      return true;
+    },
   });
 }
 
