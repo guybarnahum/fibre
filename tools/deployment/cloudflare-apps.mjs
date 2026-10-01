@@ -110,6 +110,12 @@ export function resolveCloudflareAppConfig(appId, baseConfig, { environment, res
       binding.script_name = environmentResourceName(nonEmpty("Durable Object script target", binding.script_name), env);
     }
   }
+  for(const workflow of config.workflows??[]){
+    workflow.name=environmentResourceName(nonEmpty("Workflow name",workflow.name),env);
+    if(workflow.script_name){
+      workflow.script_name=environmentResourceName(nonEmpty("Workflow script target",workflow.script_name),env);
+    }
+  }
 
   if (appId === "admin-dashboard") {
     const activity = activityDatabase(resourceState);
@@ -165,6 +171,15 @@ export function validateResolvedCloudflareAppConfig(appId, config, { environment
     const experimentObjects=(config?.r2_buckets??[]).filter(bucket=>bucket?.binding==="PRESENTATION_OBJECTS");
     if(experimentObjects.length!==1)throw new TypeError("admin-dashboard must resolve exactly one PRESENTATION_OBJECTS R2 binding");
     deployedValue("Admin Population Lab object bucket",experimentObjects[0].bucket_name);
+    const experimentWorkflows=(config.workflows??[]).filter(workflow=>workflow?.binding==="POPULATION_LAB_EXPERIMENT");
+    if(experimentWorkflows.length!==1)throw new TypeError("admin-dashboard must bind exactly one POPULATION_LAB_EXPERIMENT Workflow");
+    if(experimentWorkflows[0].class_name!=="PopulationLabExperimentWorkflow"){
+      throw new TypeError("admin-dashboard Population Lab Workflow must use PopulationLabExperimentWorkflow");
+    }
+    const expectedExperimentWorkflow=environmentResourceName("fibre-population-lab-experiment",env);
+    if(experimentWorkflows[0].name!==expectedExperimentWorkflow){
+      throw new TypeError(`admin-dashboard Population Lab Workflow must be ${expectedExperimentWorkflow}`);
+    }
     const adminLive = (config.durable_objects?.bindings ?? []).filter((binding) => binding?.name === "ADMIN_LIVE");
     if (adminLive.length !== 1) throw new TypeError("admin-dashboard must bind exactly one ADMIN_LIVE Durable Object");
     if (adminLive[0].class_name !== "FibreAdminLiveDurableObject") {
