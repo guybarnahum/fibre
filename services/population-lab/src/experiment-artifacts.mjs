@@ -74,12 +74,16 @@ export function createPopulationLabExperimentStore(infra){
   return Object.freeze({
     async start(experimentId,manifest){
       const artifact=await put(experimentId,"manifest",jsonBytes(manifest),{mediaType:"application/json"});
-      await indexArtifact(experimentId,artifact,{
-        status:"running",
-        startedAt:manifest.startedAt??new Date().toISOString(),
-        artifacts:{manifest:artifact},
-      });
-      return this.get(experimentId);
+      try{
+        return await update(experimentId,{
+          status:"running",
+          startedAt:manifest.startedAt??new Date().toISOString(),
+          artifacts:{manifest:artifact},
+        });
+      }catch(error){
+        if(typeof infra.objects.remove==="function")await infra.objects.remove(artifact.objectRef).catch(()=>{});
+        throw error;
+      }
     },
     async putPopulation(experimentId,population){
       const artifact=await put(experimentId,"population",jsonBytes(population),{mediaType:"application/json"});
