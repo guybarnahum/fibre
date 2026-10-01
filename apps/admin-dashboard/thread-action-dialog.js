@@ -180,7 +180,7 @@ function readInput(form, fields) {
   return values;
 }
 
-function announceThreadActionBusy(threadId,busy){
+export function announceThreadActionBusy(threadId,busy){
   window.dispatchEvent(new CustomEvent("fibre:thread-action-busy",{
     detail:{threadId,busy},
   }));
