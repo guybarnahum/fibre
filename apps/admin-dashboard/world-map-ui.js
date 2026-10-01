@@ -119,6 +119,7 @@ function mappableLocation(thread, state = threadMapState(thread)) {
       displayName:birth.displayName ?? thread?.identity?.birthPlace ?? birth.city ?? "Birthplace",
       locality:birth.city ?? birth.displayName ?? "Birthplace",
       country:birth.country ?? "",
+      countryCode:birth.countryCode ?? null,
       lat:birth.lat,
       long:birth.long,
       authority:"birthplace_placeholder",
@@ -169,6 +170,7 @@ export function groupThreadsByCurrentLocation(threads) {
     const place = Object.freeze({
       place:key,
       country,
+      countryCode:location.countryCode ?? null,
       city:locality,
       displayName:location.displayName ?? locality,
       lat:location.lat,
