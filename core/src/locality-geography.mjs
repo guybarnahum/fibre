@@ -1,3 +1,21 @@
+const COUNTRY_CODES=Object.freeze({
+  Argentina:"AR", Armenia:"AM", Australia:"AU", Bangladesh:"BD", "Bosnia and Herzegovina":"BA",
+  Brazil:"BR", Canada:"CA", Chile:"CL", China:"CN", Colombia:"CO", Ecuador:"EC", Egypt:"EG",
+  Estonia:"EE", Ethiopia:"ET", Fiji:"FJ", Georgia:"GE", Germany:"DE", Ghana:"GH", India:"IN",
+  Indonesia:"ID", Ireland:"IE", Israel:"IL", Japan:"JP", Jordan:"JO", Kazakhstan:"KZ", Kenya:"KE",
+  Kyrgyzstan:"KG", Lebanon:"LB", Mexico:"MX", Mongolia:"MN", Morocco:"MA", Nepal:"NP",
+  "New Zealand":"NZ", Nigeria:"NG", Norway:"NO", Oman:"OM", Pakistan:"PK", "Papua New Guinea":"PG",
+  Peru:"PE", Philippines:"PH", Poland:"PL", Portugal:"PT", Romania:"RO", Samoa:"WS",
+  "South Africa":"ZA", "South Korea":"KR", Spain:"ES", "Sri Lanka":"LK", Taiwan:"TW",
+  Tajikistan:"TJ", Tanzania:"TZ", Thailand:"TH", Turkey:"TR", "United Kingdom":"GB",
+  "United States":"US", Vietnam:"VN",
+});
+
+export function countryCodeForCountry(value){
+  const country=typeof value==="string"?value.trim():"";
+  return COUNTRY_CODES[country]??null;
+}
+
 const LOCALITY_COORDINATES = Object.freeze({
   "India/Mumbai":Object.freeze({ lat:19.07283, long:72.88261 }),
   "Pakistan/Lahore":Object.freeze({ lat:31.558, long:74.35071 }),
@@ -122,6 +140,7 @@ function entry(place, coordinates, displayName = null) {
   return Object.freeze({
     place,
     country,
+    countryCode:countryCodeForCountry(country),
     city,
     displayName:displayName ?? `${city}, ${country}`,
     lat:coordinates.lat,
