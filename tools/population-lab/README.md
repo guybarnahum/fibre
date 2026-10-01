@@ -10,7 +10,7 @@ The calibration path reuses the exact production family-profile sampler, determi
 
 ```sh
 npm run population:lab -- --place="United Kingdom/London" --year=2004 --count=50 --seed=uk-v1
-cat "$(ls -t .fibre/population-lab/*/population.json | head -1)" | pbcopy
+npm run population:lab:experiments
 ```
 
 The command persists one experiment through the generic InfraDriver object/catalog contract beneath the local artifact root `.fibre/population-lab/`. The runner prints the experiment ID; use `npm run population:lab:experiments` to inspect the catalog rather than depending on provider-specific files.
@@ -19,7 +19,7 @@ The command persists one experiment through the generic InfraDriver object/catal
 
 ```sh
 npm run population:lab -- --place="United Kingdom/London" --year=2004 --count=12 --seed=uk-v1 --images
-cat "$(ls -t .fibre/population-lab/*/population.json | head -1)" | pbcopy
+npm run population:lab:experiments
 ```
 
 Visual mode additionally generates low-quality 1024px portraits and places them directly in the HTML contact sheet. It uses the same geometry-first semantics as canonical Genesis rendering: a text-only monochrome geometry anchor is generated first, then the production image adapter applies only surface phenotype/state as a reference-conditioned edit. Both the geometry anchor and final portrait are saved for inspection. Neither pass receives the person's name, place, family-origin label, ancestry label or languages. Keep visual cohorts small; visual mode now costs two image generations per person, while text-only mode remains the cheap default.
@@ -28,7 +28,7 @@ Multiple places can share a run:
 
 ```sh
 npm run population:lab -- --places="United Kingdom/London;Nigeria/Lagos;India/Mumbai" --year=2004 --count=72 --seed=population-calibration-v2
-cat "$(ls -t .fibre/population-lab/*/population.json | head -1)" | pbcopy
+npm run population:lab:experiments
 ```
 
 Useful options are `--model=`, `--image-model=`, `--seed=`, `--experiment-id=`, and `--output=`. `--output` selects the local InfraDriver artifact root; it is not an experiment directory.
