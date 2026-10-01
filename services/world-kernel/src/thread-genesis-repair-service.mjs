@@ -8,7 +8,7 @@ import {
   canonicalVisualSpecificationFromPhysicalGenome,
 } from "./canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "./embodiment-domain.mjs";
-import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
+import { countryCodeForCountry, resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 import {
   appearanceCalibrationDependencies,
   planAppearanceCalibrationMigration,
@@ -122,7 +122,7 @@ function birthGeographyFinding(identity) {
         label:"Country code (ISO-2)",
         kind:"country_code",
         required:true,
-        placeholder:"EG",
+        placeholder:countryCodeForCountry(storedPlace.country)??"US",
       }],
       { fixed:{ birthPlace:storedPlace } },
     ),
