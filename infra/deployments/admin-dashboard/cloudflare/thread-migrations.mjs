@@ -8,17 +8,33 @@ function headers(privateToken){
   return {Accept:"application/json","x-fibre-private-token":privateToken};
 }
 
-export async function readAdminThreadMigrations({worldKernel,privateToken}={}){
+async function readAdminThreadMigrationSummary({worldKernel,privateToken}={}){
   const response=await requireBinding(worldKernel).fetch(new Request(
     "https://world.internal/internal/thread-migrations",
     {method:"GET",headers:headers(privateToken)},
   ));
   const payload=await response.json().catch(()=>null);
   if(!response.ok)throw new Error(payload?.error?.detail??payload?.error?.code??`HTTP ${response.status}`);
-  if(payload?.contract!=="fibre-thread-migration-summary-v0.1"||!Array.isArray(payload.threads)){
+  if(
+    payload?.contract!=="fibre-thread-migration-summary-v0.1"
+    ||!Array.isArray(payload.threads)
+    ||!Array.isArray(payload.origins)
+  ){
     throw new Error("World Thread migration summary is invalid");
   }
-  return payload.threads;
+  return payload;
+}
+
+export async function readAdminThreadMigrations(input){
+  return (await readAdminThreadMigrationSummary(input)).threads;
+}
+
+export async function readAdminThreadPopulationContext(input){
+  const payload=await readAdminThreadMigrationSummary(input);
+  return Object.freeze({
+    migrations:payload.threads,
+    origins:payload.origins,
+  });
 }
 
 export async function readAdminThreadMigration({worldKernel,privateToken,threadId}={}){
@@ -51,6 +67,11 @@ export function attachAdminMigrationSummary(thread,migration){
 export async function optionalAdminThreadMigrations(input){
   try{return await readAdminThreadMigrations(input)}
   catch{return []}
+}
+
+export async function optionalAdminThreadPopulationContext(input){
+  try{return await readAdminThreadPopulationContext(input)}
+  catch{return Object.freeze({migrations:Object.freeze([]),origins:Object.freeze([])})}
 }
 
 export async function optionalAdminThreadMigration(input){
