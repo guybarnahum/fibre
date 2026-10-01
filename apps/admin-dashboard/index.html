@@ -262,7 +262,10 @@
               <h3>Appearance coverage</h3>
               <p>Actual Thread ancestry demand against Fibre's versioned physical-reference model.</p>
             </div>
-            <button id="appearance-scan" class="secondary" type="button">Scan coverage</button>
+            <div class="appearance-coverage-toolbar-actions">
+              <button id="appearance-copy" class="secondary icon-only-action" type="button" disabled aria-label="Copy appearance coverage" title="Copy appearance coverage"></button>
+              <button id="appearance-scan" class="secondary" type="button">Scan coverage</button>
+            </div>
           </div>
 
           <div class="appearance-coverage-metrics" aria-label="Appearance coverage summary">
@@ -290,7 +293,7 @@
           <div class="appearance-coverage-grid">
             <section class="appearance-coverage-holes">
               <div class="appearance-section-head">
-                <div><strong>Priority holes</strong><span>Ranked by actual Thread lineage demand and calibration weakness.</span></div>
+                <div class="appearance-section-copy"><strong>Priority holes</strong><span>Ranked by actual Thread lineage demand and calibration weakness.</span></div>
               </div>
               <div class="table-wrap">
                 <table class="appearance-hole-table">
@@ -306,7 +309,7 @@
 
           <section class="appearance-migrations-section">
             <div class="appearance-section-head">
-              <div><strong>Existing Threads needing recalibration</strong><span>Only Threads whose stored calibration dependency differs from today's resolved chain.</span></div>
+              <div class="appearance-section-copy"><strong>Threads needing recalibration</strong><span>Only Threads whose stored calibration dependency differs from today's resolved chain.</span></div>
             </div>
             <div id="appearance-migration-candidates" class="appearance-migration-candidates"></div>
           </section>
