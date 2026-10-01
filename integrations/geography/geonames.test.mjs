@@ -26,6 +26,7 @@ test("GeoNames place search returns only canonical Fibre geography", async () =>
           fcl:"P",
           name:"Tokyo",
           countryName:"Japan",
+          countryCode:"JP",
           adminName1:"Tokyo",
           lat:"35.6895",
           lng:"139.69171",
@@ -46,6 +47,7 @@ test("GeoNames place search returns only canonical Fibre geography", async () =>
   assert.equal(requested.searchParams.get("username"), "fibre-test");
   assert.deepEqual(places, [{
     country:"Japan",
+    countryCode:"JP",
     city:"Tokyo",
     displayName:"Tokyo, Japan",
     lat:35.6895,
@@ -63,6 +65,7 @@ test("GeoNames explicit resolution respects country and locality qualifier", asy
         fcl:"P",
         name:"Santa Fe",
         countryName:"Argentina",
+        countryCode:"AR",
         adminName1:"Santa Fe",
         lat:"-31.6333",
         lng:"-60.7",
@@ -71,6 +74,7 @@ test("GeoNames explicit resolution respects country and locality qualifier", asy
         fcl:"P",
         name:"Santa Fe",
         countryName:"United States",
+        countryCode:"US",
         adminName1:"New Mexico",
         lat:"35.68698",
         lng:"-105.9378",
@@ -79,6 +83,7 @@ test("GeoNames explicit resolution respects country and locality qualifier", asy
   });
 
   assert.equal(place.displayName, "Santa Fe, New Mexico, United States");
+  assert.equal(place.countryCode, "US");
   assert.equal(place.lat, 35.68698);
 });
 
@@ -95,6 +100,7 @@ test("GeoNames reverse lookup produces the same canonical geography shape", asyn
         fcl:"P",
         name:"Tokyo",
         countryName:"Japan",
+        countryCode:"JP",
         adminName1:"Tokyo",
         lat:"35.6895",
         lng:"139.69171",
@@ -104,6 +110,7 @@ test("GeoNames reverse lookup produces the same canonical geography shape", asyn
 
   assert.deepEqual(place, {
     country:"Japan",
+    countryCode:"JP",
     city:"Tokyo",
     displayName:"Tokyo, Japan",
     lat:35.6895,
