@@ -258,6 +258,36 @@ function queuePopulationPortrait(portrait, thread) {
   else void hydratePopulationPortrait(portrait);
 }
 
+function physicalOriginsText(thread) {
+  const values=Array.isArray(thread?.physicalOrigins)
+    ? [...new Set(thread.physicalOrigins.filter((value)=>typeof value==="string"&&value.trim()!=="").map((value)=>value.trim()))]
+    : [];
+  return values.length===0?"—":values.join(" · ");
+}
+
+function threadBirthplaceCell(identity) {
+  const cell=document.createElement("td");
+  cell.className="thread-population-birthplace";
+  const location=identity?.birthLocation??null;
+  const text=location?.displayName??identity?.birthPlace??"—";
+  if(text==="—"){
+    cell.textContent=text;
+    return cell;
+  }
+  const wrap=document.createElement("div");
+  wrap.className="thread-population-birthplace-value";
+  if(location?.country){
+    const flag=document.createElement("span");
+    flag.className="thread-population-country-flag";
+    flag.textContent=countryFlag(location.countryCode)||"⚑";
+    flag.title=location.country;
+    wrap.append(flag);
+  }
+  wrap.append(document.createTextNode(text));
+  cell.append(wrap);
+  return cell;
+}
+
 function when(value) {
   if (!value) return "—";
   const date = new Date(value);
@@ -539,6 +569,13 @@ function threadRow(thread) {
   personLayout.append(personText);
   person.append(personLayout);
 
+  const ethnicity=document.createElement("td");
+  ethnicity.className="thread-population-ethnicity";
+  ethnicity.textContent=physicalOriginsText(thread);
+  ethnicity.title=ethnicity.textContent==="—"
+    ?"No durable parental physical-origin evidence is recorded for this Thread."
+    :"Recorded parental physical-origin evidence; never inferred from birthplace, name, language, culture, or portrait.";
+  const birthplace=threadBirthplaceCell(identity);
   const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
   const birthDate = document.createElement("td"); birthDate.textContent = identity.birthDate ?? "—";
   const health = document.createElement("td"); health.append(badge(thread.admitted === false ? "not admitted" : thread.health, healthKind(thread.health)));
@@ -557,7 +594,7 @@ function threadRow(thread) {
   if (thread.reconciliation?.lastError?.message) reconciliation.title = thread.reconciliation.lastError.message;
   const lastActivity = document.createElement("td"); lastActivity.className = "time"; lastActivity.textContent = when(thread.lastActivityAt);
 
-  tr.append(portraitCell, person, sex, birthDate, health, reconciliation, lastActivity, actionCell(thread));
+  tr.append(portraitCell, person, ethnicity, birthplace, sex, birthDate, health, reconciliation, lastActivity, actionCell(thread));
   return tr;
 }
 
