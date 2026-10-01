@@ -55,7 +55,7 @@ function coverageTone(value){
 }
 
 function experimentTone(status){
-  return status==="completed"?"good":status==="failed"?"bad":status==="running"?"warn":"";
+  return status==="completed"?"good":status==="failed"?"bad":["queued","running"].includes(status)?"warn":"";
 }
 
 function experimentSummary(experiment){
