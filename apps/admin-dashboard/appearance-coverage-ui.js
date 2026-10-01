@@ -1,7 +1,10 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { watchAdminLive } from "./admin-live.js";
 import { decorateActionButton } from "./fa-icons.js";
-import { countryFlag } from "./thread-label-cache.js";
+import {
+  createThreadIdentityViewer,
+  createThreadLocation,
+} from "./thread-person-ui.js";
 import {
   postThreadAppearanceRepair,
   requestThreadAppearanceHealth,
@@ -28,7 +31,6 @@ let snapshot=null;
 let selectedKey=null;
 let loadPromise=null;
 let mapPopover=null;
-const portraitCache=new Map();
 const pendingMigrations=new Map();
 const busyThreads=new Set();
 
@@ -53,13 +55,6 @@ function human(value){
   return String(value??"").replace(/([a-z0-9])([A-Z])/gu,"$1 $2").replace(/[_-]+/gu," ").replace(/\b\w/gu,(c)=>c.toUpperCase());
 }
 
-function initials(value){
-  const parts=String(value??"").trim().split(/\s+/u).filter(Boolean);
-  if(parts.length===0)return "·";
-  if(parts.length===1)return parts[0].slice(0,1).toLocaleUpperCase();
-  return `${parts[0].slice(0,1)}${parts.at(-1).slice(0,1)}`.toLocaleUpperCase();
-}
-
 function coverageTone(value){
   return value==="missing"||value==="fallback"?"bad":value==="broad"||value==="partial"?"warn":"good";
 }
@@ -70,70 +65,13 @@ function chainText(calibration){
   return chain.map(({id,version})=>`${id}@${version}`).join(" → ");
 }
 
-function preferredPortraitUrl(identity){
-  const assets=Array.isArray(identity?.assets)?identity.assets:[];
-  const asset=assets.find((entry)=>entry?.role==="official_id_photo"&&entry?.url)
-    ??assets.find((entry)=>entry?.role==="canonical_portrait"&&entry?.url)
-    ??assets.find((entry)=>entry?.url&&String(entry.mediaType??"").startsWith("image/"))
-    ??null;
-  return typeof asset?.url==="string"&&asset.url!==""?asset.url:null;
-}
-
-async function resolvePortrait(threadId){
-  if(portraitCache.has(threadId))return portraitCache.get(threadId);
-  const pending=(async()=>{
-    try{
-      const response=await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`,{
-        headers:{Accept:"application/json"},
-        cache:"no-store",
-      });
-      if(!response.ok)return null;
-      const payload=await response.json();
-      return preferredPortraitUrl(payload?.identity);
-    }catch{
-      return null;
-    }
-  })();
-  portraitCache.set(threadId,pending);
-  return pending;
-}
-
-async function hydratePortrait(button){
-  const threadId=button?.dataset?.threadId;
-  if(!threadId||!button.isConnected)return;
-  const url=await resolvePortrait(threadId);
-  if(!url||!button.isConnected||button.dataset.threadId!==threadId)return;
-  const image=document.createElement("img");
-  image.src=url;
-  image.alt=button.dataset.threadName?`${button.dataset.threadName} portrait`:"Thread portrait";
-  image.loading="lazy";
-  button.replaceChildren(image);
-}
-
-function threadFace(thread){
-  const threadId=thread?.threadId;
-  const name=thread?.threadName??threadId;
-  const button=el("button","appearance-thread-face thread-link",initials(name));
-  button.type="button";
-  button.dataset.threadId=threadId;
-  button.dataset.threadName=name??"";
-  button.title=`Open ${name??threadId} in Thread Observatory`;
-  if(portraitObserver)portraitObserver.observe(button);
-  else void hydratePortrait(button);
-  return button;
-}
-
 function threadIdentity(thread,{compact=false}={}){
-  const wrapper=el("div",compact?"appearance-thread-viewer compact":"appearance-thread-viewer");
-  const copy=el("div","appearance-thread-viewer-copy");
-  const name=el("button","appearance-thread-name thread-link",thread?.threadName??thread?.threadId??"Thread");
-  name.type="button";
-  name.dataset.threadId=thread.threadId;
-  name.title=`Open ${thread.threadName??thread.threadId} in Thread Observatory`;
-  const id=el("small","mono",thread.threadId);
-  copy.append(name,id);
-  wrapper.append(threadFace(thread),copy);
-  return wrapper;
+  return createThreadIdentityViewer({
+    threadId:thread?.threadId,
+    name:thread?.threadName??thread?.threadId??"Thread",
+    compact,
+    className:"appearance-thread-viewer",
+  });
 }
 
 async function copyJson(value,button,{restoreLabel="Copy JSON",restoreTooltip="Copy JSON"}={}){
@@ -223,7 +161,10 @@ function renderDetail(){
 
   const places=el("div","appearance-place-list");
   for(const place of (hole.places??[]).slice(0,10)){
-    places.append(el("span","appearance-place-chip",`${place.displayName??[place.city,place.country].filter(Boolean).join(", ")} · ${place.count}`));
+    places.append(createThreadLocation(place,{
+      className:"appearance-place-chip",
+      suffix:" · "+place.count,
+    }));
   }
 
   const actions=el("div","appearance-hole-actions");
@@ -329,15 +270,7 @@ function migrationOrigin(candidate){
 }
 
 function birthplaceNode(location){
-  const wrap=el("div","appearance-migration-place-value");
-  const flag=countryFlag(location?.countryCode);
-  if(location?.country){
-    const flagNode=el("span","appearance-country-flag",flag||"⚑");
-    flagNode.title=location.country;
-    wrap.append(flagNode);
-  }
-  wrap.append(el("span",null,location?.displayName??([location?.city,location?.country].filter(Boolean).join(", ")||"—")));
-  return wrap;
+  return createThreadLocation(location,{className:"appearance-migration-place-value"});
 }
 
 function pendingCandidateList(){
@@ -546,9 +479,11 @@ function hideMapPopover(){
 function showMapPopover(hole,place,marker){
   const popover=ensureMapPopover();
   const head=el("div","appearance-map-popover-head");
+  const placeLabel=el("strong");
+  placeLabel.append(createThreadLocation(place));
   head.append(
-    el("strong",null,place.displayName??([place.city,place.country].filter(Boolean).join(", ")||"Coverage location")),
-    el("span",null,`${place.threadIds?.length??0} Thread${(place.threadIds?.length??0)===1?"":"s"}`),
+    placeLabel,
+    el("span",null,String(place.threadIds?.length??0)+" Thread"+((place.threadIds?.length??0)===1?"":"s")),
   );
   const threadById=new Map((hole.threads??[]).map((thread)=>[thread.threadId,thread]));
   const people=el("div","appearance-map-people");
