@@ -111,7 +111,7 @@ function birthGeographyFinding(identity) {
       : null;
   if(storedPlace===null||text(stored.countryCode)!==null)return null;
 
-  return finding("BIRTH_COUNTRY_CODE_MISSING","operator_decision_required",null,{
+  return finding("BIRTH_COUNTRY_CODE_MISSING","attention",null,{
     authoritative:storedPlace.displayName,
     reason:"The authoritative birth place is complete except for its ISO country code; an operator must confirm that code.",
     identityAction:identityAction(
