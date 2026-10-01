@@ -2,7 +2,7 @@ export function identityActionPayload(action,input,{operationKey}={}){
   if(!action||typeof action!=="object")throw new TypeError("identity action is required");
   if(typeof operationKey!=="string"||operationKey.trim()==="")throw new TypeError("identity operationKey is required");
   const command=action.command??"identity";
-  if(action.id!=="repair_birth_geography"){
+  if(!["repair_birth_geography","set_birth_country_code"].includes(action.id)){
     return {
       action:command,
       operationKey:operationKey.trim(),
