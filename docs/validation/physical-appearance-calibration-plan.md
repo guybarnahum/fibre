@@ -364,6 +364,22 @@ A1 acceptance:
 9. An admitted Thread with no durable physical-ancestry provenance appears as a **missing coverage** hole, not an inferred ancestry and not an Appearance migration.
 10. No experiment/provider cost is incurred merely by opening or scanning Appearance.
 
+
+#### A1 causal-status register
+
+A1 is an operator/control-plane milestone, not a claim of new Thread cognition or personhood. It introduces no new identity, dignity, relationship, developmental or economic field.
+
+| Mechanism | Status | Author / authority | Current consequence | Next stronger proof |
+|---|---|---|---|---|
+| Durable parental physical ancestry consumed by coverage | Behaviorally/future-state causal | World-held explicit ancestry evidence; never inferred by Admin | Determines which calibration dependency applies and therefore which existing Thread can become `migration_required` after model drift | A3 approval + A4 targeted migration changes only the affected Threads |
+| Calibration dependency snapshot | Behaviorally/future-state causal | Human Appearance migration evidence + current approved registry | Exact stored/current mismatch enters the authoritative appearance migration workset | Approved version change followed by direct-to-current migration and convergence |
+| Birth geography in Appearance | Context-only | World canonical location | Changes demand-map/display context only; cannot select ancestry or calibration | None required for ancestry; preserve the non-causal boundary |
+| Ranked coverage holes | Stored-only / Notarial | Pure Population Lab projection from World evidence + current registry | Changes operator prioritization and drill-through; does not mutate a Thread or calibration | A2 experiment execution tied to a selected hole |
+| Prepared experiment/research specifications | Named-only | Admin projection of the selected hole | Copyable control-plane intent only; A1 performs no provider work or research | A2 persists/executes experiments; A3 research remains separate |
+| Threads **Needs migration** projection | Context-only projection of causal World health | World health is authority; Admin only displays it | Changes operator visibility/filtering, not the underlying health state | A4 executes bounded migrations through World authority |
+
+Authorship remains explicit: World/durable ancestry and the approved calibration registry create migration truth; Admin never authors ethnicity, calibration truth, or migration authority.
+
 ### A2 — InfraDriver-backed experiments
 
 Persist and execute reproducible Population Lab experiments through generic `InfraDriver.objects` and `InfraDriver.catalog` only. Local provider materialization lives beneath `.fibre/population-lab/`; cloud mappings use provider object/catalog resources. The current Admin binding reuses Fibre's already-provisioned presentation object/catalog resources under the distinct `population-lab:experiment:*` namespace. Population Lab must not directly depend on filesystem, R2, S3, D1 or another provider mechanism.
