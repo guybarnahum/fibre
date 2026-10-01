@@ -568,8 +568,8 @@
   z-index:1300;
   display:grid;
   gap:8px;
-  min-width:150px;
-  max-width:290px;
+  min-width:190px;
+  max-width:320px;
   padding:9px 10px;
   border:1px solid var(--border);
   border-radius:10px;
@@ -585,6 +585,7 @@
 }
 .thread-map-popover-head strong { font-size:10px; }
 .thread-map-popover-head span { color:var(--muted); font-size:8.5px; }
+.thread-map-popover-head strong .thread-location { color:var(--text); font-size:10px; }
 .thread-map-faces {
   display:grid;
   gap:6px;
