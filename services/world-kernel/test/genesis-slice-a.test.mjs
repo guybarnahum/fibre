@@ -178,6 +178,7 @@ test("Directory keeps raised languages distinct from spoken languages", () =>
     assert.deepEqual(entry.languages, ["English", "Korean"], "spoken languages were altered");
     assert.deepEqual(entry.raisedAs.languages, ["English"], "raised languages collapsed into spoken languages");
     assert.equal(entry.birthLocation.city, "Los Angeles, California", "birthplace was not mappable");
+    assert.equal(entry.birthLocation.countryCode, "US", "birthplace country code was dropped");
     assert.equal(entry.birthLocation.lat, 34.05223);
     assert.deepEqual(
       directory.presentThreadIds([thread.threadId, "thr_missing", thread.threadId]),
