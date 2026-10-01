@@ -29,19 +29,21 @@ function physicalExperimentSeed(spec){
   return `appearance:${spec.coverageKey}:${spec.referencePopulation}:${version}`;
 }
 
-function experimentId(){
+function newExperimentId(){
   return "plexp_"+crypto.randomUUID().replaceAll("-","").slice(0,24);
 }
 
-export async function launchAdminPopulationLabExperiment(env,spec){
+export function adminPopulationLabExperimentRequest(spec,{
+  experimentId=newExperimentId(),
+  requestedAt=new Date().toISOString(),
+}={}){
   if(!spec||typeof spec!=="object"||Array.isArray(spec))throw new TypeError("experiment specification must be an object");
   if(spec.action!=="experiment")throw new TypeError("experiment action is required");
   if(typeof spec.referencePopulation!=="string"||spec.referencePopulation.trim()===""){
     throw new TypeError("coverage hole must have a reference population before an experiment can run");
   }
-  const requestedAt=new Date().toISOString();
-  const request=normalizePhysicalExperimentRequest({
-    experimentId:experimentId(),
+  return normalizePhysicalExperimentRequest({
+    experimentId,
     referencePopulation:spec.referencePopulation,
     count:Number.isInteger(spec.count)?spec.count:24,
     seed:physicalExperimentSeed(spec),
@@ -55,6 +57,10 @@ export async function launchAdminPopulationLabExperiment(env,spec){
       calibration:spec.calibration??null,
     },
   });
+}
+
+export async function launchAdminPopulationLabExperiment(env,spec){
+  const request=adminPopulationLabExperimentRequest(spec);
   const store=experimentStore(env);
   await store.queue(request.experimentId,request);
   const infra=experimentInfra(env,{workflow:true});
