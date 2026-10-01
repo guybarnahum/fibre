@@ -85,7 +85,15 @@ export async function runAdminPopulationLabExperimentWorkflow(env,rawRequest){
 }
 
 export async function listAdminPopulationLabExperiments(env){
-  return experimentStore(env).list({limit:200});
+  const page=await experimentStore(env).list({limit:200});
+  return{
+    ...page,
+    experiments:[...page.experiments].sort((left,right)=>{
+      const a=left.requestedAt??left.startedAt??"";
+      const b=right.requestedAt??right.startedAt??"";
+      return b.localeCompare(a);
+    }),
+  };
 }
 
 export async function readAdminPopulationLabExperiment(env,experimentId){
