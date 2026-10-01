@@ -69,6 +69,34 @@ function recoveredBirthGeography(identity) {
 }
 
 function birthGeographyFinding(identity) {
+  const recovered = recoveredBirthGeography(identity);
+  if (recovered !== null) {
+    const birthPlace=Object.freeze({
+      displayName:recovered.displayName,
+      country:recovered.country,
+      city:recovered.city,
+      lat:recovered.lat,
+      long:recovered.long,
+    });
+    return finding("BIRTH_GEOGRAPHY_RECOVERABLE", "operator_decision_required", null, {
+      authoritative:text(identity?.birthCity),
+      recovered,
+      reason:`World can restore the birth place as ${recovered.displayName}; an operator must confirm the ISO country code before changing authoritative identity.`,
+      identityAction:identityAction(
+        "repair_birth_geography",
+        "Repair birth place",
+        [{
+          name:"countryCode",
+          label:"Country code (ISO-2)",
+          kind:"country_code",
+          required:true,
+          placeholder:recovered.countryCode??"EG",
+        }],
+        { fixed:{ birthPlace } },
+      ),
+    });
+  }
+
   const stored=identity?.birthPlace;
   const storedPlace=stored&&typeof stored==="object"&&!Array.isArray(stored)
     && text(stored.displayName)&&text(stored.country)&&text(stored.city)
@@ -81,49 +109,22 @@ function birthGeographyFinding(identity) {
           long:stored.long,
         })
       : null;
-  if(storedPlace!==null&&text(stored.countryCode)===null){
-    return finding("BIRTH_COUNTRY_CODE_MISSING","operator_decision_required",null,{
-      authoritative:storedPlace.displayName,
-      reason:"The authoritative birth place is complete except for its ISO country code; an operator must confirm that code.",
-      identityAction:identityAction(
-        "set_birth_country_code",
-        "Set birth country code",
-        [{
-          name:"countryCode",
-          label:"Country code (ISO-2)",
-          kind:"country_code",
-          required:true,
-          placeholder:"EG",
-        }],
-        { fixed:{ birthPlace:storedPlace } },
-      ),
-    });
-  }
+  if(storedPlace===null||text(stored.countryCode)!==null)return null;
 
-  const recovered = recoveredBirthGeography(identity);
-  if (recovered === null) return null;
-  const birthPlace=Object.freeze({
-    displayName:recovered.displayName,
-    country:recovered.country,
-    city:recovered.city,
-    lat:recovered.lat,
-    long:recovered.long,
-  });
-  return finding("BIRTH_GEOGRAPHY_RECOVERABLE", "operator_decision_required", null, {
-    authoritative:text(identity?.birthCity),
-    recovered,
-    reason:`World can restore the birth place as ${recovered.displayName}; an operator must confirm the ISO country code before changing authoritative identity.`,
+  return finding("BIRTH_COUNTRY_CODE_MISSING","operator_decision_required",null,{
+    authoritative:storedPlace.displayName,
+    reason:"The authoritative birth place is complete except for its ISO country code; an operator must confirm that code.",
     identityAction:identityAction(
-      "repair_birth_geography",
-      "Repair birth place",
+      "set_birth_country_code",
+      "Set birth country code",
       [{
         name:"countryCode",
         label:"Country code (ISO-2)",
         kind:"country_code",
         required:true,
-        placeholder:recovered.countryCode??"EG",
+        placeholder:"EG",
       }],
-      { fixed:{ birthPlace } },
+      { fixed:{ birthPlace:storedPlace } },
     ),
   });
 }
