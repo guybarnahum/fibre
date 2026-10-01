@@ -38,6 +38,7 @@ export interface ThreadSnapshot {
     birthPlace?: {
       displayName: string;
       country: string;
+      countryCode?: string;
       city: string;
       lat: number;
       long: number;
