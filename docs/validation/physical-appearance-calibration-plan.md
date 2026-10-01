@@ -441,7 +441,7 @@ Acceptance:
 
 ### A2 — InfraDriver experiment artifacts
 
-**Status: A2.1 implemented on `main`, pending validation.** The existing Population Lab CLI runner persists experiment manifests, generated population, diagnostics result, HTML report and optional image artifacts through one shared Population Lab artifact store over generic InfraDriver `objects` + `catalog`. Failed partial runs remain inspectable evidence. Explicit experiment deletion removes the experiment object set plus catalog entry; immutable objects still cannot be rewritten in place. Admin Appearance can list/open/delete persisted cloud experiments through that same store, with icon-only delete progress. Launching cloud experiments from Admin remains the next A2 slice; no A3 research/approval or A4 migration authority is introduced.
+**Status: A2.1 deployed; A2.2 implemented on `main`, pending validation.** A2.1 proved provider-neutral experiment persistence and whole-experiment cleanup through generic InfraDriver `objects` + `catalog`. A2.2 adds authenticated Admin launch of a bounded controlled physical cohort through an environment-scoped Cloudflare Workflow. Admin returns immediately; the shared Population Lab service generates the cohort/diagnostics and persists manifest, population, result and HTML report. Missing-provenance holes cannot launch a physical calibration experiment. Queued/running experiments cannot be deleted; completed/failed experiments may be removed explicitly. Visual/provider generation remains a later A2 slice so Admin does not acquire model credentials or a long-running HTTP path. No A3 research/approval or A4 migration authority is introduced.
 
 Persist Population Lab experiments entirely through generic InfraDriver `objects` + `catalog`.
 
