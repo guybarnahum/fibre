@@ -20,6 +20,7 @@ const detail=$("#appearance-hole-detail");
 const modelRows=$("#appearance-model-rows");
 const migrations=$("#appearance-migration-candidates");
 const experiments=$("#appearance-experiments");
+const experimentRefreshButton=$("#appearance-experiments-refresh");
 const mapShell=$(".appearance-coverage-map-shell");
 const worldPath=$("#appearance-world-path");
 const timezones=$("#appearance-timezones");
@@ -101,10 +102,14 @@ function renderAppearanceExperiments(){
 
     const remove=el("button","secondary");
     remove.type="button";
+    const terminal=!["queued","running"].includes(experiment.status);
+    remove.disabled=!terminal;
     decorateActionButton(remove,{
       icon:"trash-can",
       label:"Delete experiment",
-      tooltip:"Delete this experiment and all stored artifacts",
+      tooltip:terminal
+        ?"Delete this experiment and all stored artifacts"
+        :"Experiment can be deleted after it finishes",
       iconOnly:true,
     });
     remove.addEventListener("click",async()=>{
@@ -164,6 +169,49 @@ export async function loadAppearanceExperiments(){
     }
   })();
   return experimentLoadPromise;
+}
+
+async function launchAppearanceExperiment(hole,button){
+  if(!hole?.referencePopulation)throw new Error("Resolve durable ancestry provenance before running a calibration experiment");
+  const spec={...actionSpec("experiment",hole),count:24};
+  button.disabled=true;
+  decorateActionButton(button,{
+    icon:"rotate",
+    label:"Launching experiment",
+    tooltip:"Launching Population Lab experiment",
+    iconOnly:true,
+    spinning:true,
+  });
+  try{
+    const response=await fetch("/api/appearance/experiments",{
+      method:"POST",
+      headers:{Accept:"application/json","Content-Type":"application/json"},
+      body:JSON.stringify(spec),
+    });
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+    detail.querySelector(".appearance-prepared-action")?.remove();
+    const panel=el("div","appearance-prepared-action");
+    panel.append(
+      el("strong",null,"Population Lab experiment queued"),
+      el("p",null,"The controlled physical cohort is running asynchronously. Refresh the experiment list to inspect status or open the report when complete."),
+      el("pre","appearance-action-json",JSON.stringify({
+        experimentId:payload?.experiment?.experimentId??null,
+        status:payload?.experiment?.status??payload?.workflow?.status??"queued",
+        referencePopulation:hole.referencePopulation,
+        count:24,
+      },null,2)),
+    );
+    detail.append(panel);
+    await loadAppearanceExperiments();
+  }finally{
+    button.disabled=false;
+    decorateActionButton(button,{
+      icon:"wrench",
+      label:"Run experiment",
+      tooltip:"Run a bounded controlled physical cohort for this coverage hole",
+    });
+  }
 }
 
 function chainText(calibration){
@@ -275,42 +323,55 @@ function renderDetail(){
   }
 
   const actions=el("div","appearance-hole-actions");
-  for(const [kind,label,icon] of [
-    ["experiment","Prepare experiment","wrench"],
-    ["research","Prepare research","file-export"],
-  ]){
-    const button=el("button","secondary");
-    button.type="button";
-    decorateActionButton(button,{
-      icon,
-      label,
-      tooltip:kind==="experiment"
-        ?"Prepare a bounded Population Lab experiment for this coverage hole"
-        :"Prepare an evidence-research request for this coverage hole",
+
+  const experimentButton=el("button","secondary");
+  experimentButton.type="button";
+  experimentButton.disabled=!hole.referencePopulation;
+  decorateActionButton(experimentButton,{
+    icon:"wrench",
+    label:"Run experiment",
+    tooltip:hole.referencePopulation
+      ?"Run a bounded controlled physical cohort for this coverage hole"
+      :"Resolve durable ancestry provenance before running a calibration experiment",
+  });
+  experimentButton.addEventListener("click",()=>void launchAppearanceExperiment(hole,experimentButton).catch((error)=>{
+    detail.querySelector(".appearance-prepared-action")?.remove();
+    const panel=el("div","appearance-prepared-action");
+    panel.append(
+      el("strong",null,"Experiment launch failed"),
+      el("p",null,error instanceof Error?error.message:String(error)),
+    );
+    detail.append(panel);
+  }));
+  actions.append(experimentButton);
+
+  const researchButton=el("button","secondary");
+  researchButton.type="button";
+  decorateActionButton(researchButton,{
+    icon:"file-export",
+    label:"Prepare research",
+    tooltip:"Prepare an evidence-research request for this coverage hole",
+  });
+  researchButton.addEventListener("click",()=>{
+    researchButton.disabled=true;
+    decorateActionButton(researchButton,{
+      icon:"rotate",
+      label:"Preparing research",
+      tooltip:"Preparing research specification",
+      iconOnly:true,
+      spinning:true,
     });
-    button.addEventListener("click",()=>{
-      button.disabled=true;
-      decorateActionButton(button,{
-        icon:"rotate",
-        label:`Preparing ${kind}`,
-        tooltip:`Preparing ${kind} specification`,
-        iconOnly:true,
-        spinning:true,
-      });
-      requestAnimationFrame(()=>{
-        renderPreparedAction(kind,hole);
-        button.disabled=false;
-        decorateActionButton(button,{
-          icon,
-          label,
-          tooltip:kind==="experiment"
-            ?"Prepare a bounded Population Lab experiment for this coverage hole"
-            :"Prepare an evidence-research request for this coverage hole",
-        });
+    requestAnimationFrame(()=>{
+      renderPreparedAction("research",hole);
+      researchButton.disabled=false;
+      decorateActionButton(researchButton,{
+        icon:"file-export",
+        label:"Prepare research",
+        tooltip:"Prepare an evidence-research request for this coverage hole",
       });
     });
-    actions.append(button);
-  }
+  });
+  actions.append(researchButton);
 
   detail.append(head,facts,chain,populations,threadViewer,places,actions);
 }
@@ -741,7 +802,33 @@ if(copyButton)decorateActionButton(copyButton,{
   tooltip:"Copy appearance coverage JSON",
   iconOnly:true,
 });
+if(experimentRefreshButton)decorateActionButton(experimentRefreshButton,{
+  icon:"rotate",
+  label:"Refresh experiments",
+  tooltip:"Refresh Population Lab experiments",
+  iconOnly:true,
+});
 scanButton?.addEventListener("click",()=>void loadAppearanceCoverage());
+experimentRefreshButton?.addEventListener("click",async()=>{
+  experimentRefreshButton.disabled=true;
+  decorateActionButton(experimentRefreshButton,{
+    icon:"rotate",
+    label:"Refreshing experiments",
+    tooltip:"Refreshing Population Lab experiments",
+    iconOnly:true,
+    spinning:true,
+  });
+  try{await loadAppearanceExperiments()}
+  finally{
+    experimentRefreshButton.disabled=false;
+    decorateActionButton(experimentRefreshButton,{
+      icon:"rotate",
+      label:"Refresh experiments",
+      tooltip:"Refresh Population Lab experiments",
+      iconOnly:true,
+    });
+  }
+});
 copyButton?.addEventListener("click",()=>{
   if(snapshot)void copyJson(snapshot,copyButton,{restoreLabel:"Copy coverage",restoreTooltip:"Copy appearance coverage JSON"});
 });
