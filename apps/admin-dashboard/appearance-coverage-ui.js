@@ -326,9 +326,9 @@ function migrationOrigin(candidate){
 function birthplaceNode(location){
   const wrap=el("div","appearance-migration-place-value");
   const flag=countryFlag(location?.countryCode);
-  if(flag){
-    const flagNode=el("span","appearance-country-flag",flag);
-    flagNode.title=location?.country??"Birth country";
+  if(location?.country){
+    const flagNode=el("span","appearance-country-flag",flag||"⚑");
+    flagNode.title=location.country;
     wrap.append(flagNode);
   }
   wrap.append(el("span",null,location?.displayName??[location?.city,location?.country].filter(Boolean).join(", ")||"—"));
@@ -460,9 +460,10 @@ function renderMigrations(){
   }
 
   for(const candidate of candidates){
-    const pending=pendingMigrations.has(candidate.threadId)||busyThreads.has(candidate.threadId);
+    const calibrationPending=pendingMigrations.has(candidate.threadId);
+    const busy=calibrationPending||busyThreads.has(candidate.threadId);
     const row=el("div","appearance-migration-row");
-    if(pending)row.classList.add("is-pending");
+    if(busy)row.classList.add("is-pending");
 
     const person=threadIdentity(candidate);
     const meta=el("div","appearance-migration-meta");
@@ -473,11 +474,16 @@ function renderMigrations(){
     meta.append(origin,birthplace);
 
     const status=el("div","appearance-migration-status");
-    const tag=el("span","thread-health-tag warn",pending?"Updating calibration":"Needs recalibration");
-    if(pending)tag.classList.add("thread-pending-throb");
-    const reason=el("p",null,pending
-      ?"Appearance authority is updating and canonical publication is converging."
-      :migrationReason(candidate)
+    const tag=el("span","thread-health-tag warn",
+      calibrationPending?"Updating calibration":busy?"Repair / migration active":"Needs recalibration"
+    );
+    if(busy)tag.classList.add("thread-pending-throb");
+    const reason=el("p",null,
+      calibrationPending
+        ?"Appearance authority is updating and canonical publication is converging."
+        :busy
+          ?"This Thread currently has an operator repair or migration in progress."
+          :migrationReason(candidate)
     );
     status.append(tag,reason);
     const changes=el("div","appearance-migration-changes");
@@ -491,12 +497,12 @@ function renderMigrations(){
     const actions=el("div","appearance-migration-actions");
     const action=el("button","secondary");
     action.type="button";
-    if(pending){
+    if(busy){
       action.disabled=true;
       decorateActionButton(action,{
         icon:"rotate",
-        label:"Updating",
-        tooltip:"Appearance recalibration is in progress",
+        label:calibrationPending?"Updating":"Working",
+        tooltip:calibrationPending?"Appearance recalibration is in progress":"Thread repair or migration is in progress",
         spinning:true,
       });
     }else{
