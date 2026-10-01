@@ -4,9 +4,12 @@ import test from "node:test";
 import { createThreadMigrationSummaryService } from "../src/thread-migration-summary-service.mjs";
 
 test("migration summary keeps appearance and identity work distinct",()=>{
+  let appearanceScans=0;
   const service=createThreadMigrationSummaryService({
     appearanceCoverage:{
-      scan(){return {
+      scan(){
+        appearanceScans+=1;
+        return {
         migrationCandidates:[
           {threadId:"thr_both",reasons:["calibration_dependencies_changed"]},
           {threadId:"thr_appearance",reasons:["physical_model_outdated"]},
@@ -16,7 +19,8 @@ test("migration summary keeps appearance and identity work distinct",()=>{
           {threadId:"thr_both",side:"paternal",population:"Moroccan family"},
           {threadId:"thr_appearance",side:"maternal",population:"Korean family"},
         ],
-      };},
+      };
+      },
       inspect(threadId){
         return {
           migrationCandidates:threadId==="thr_both"||threadId==="thr_appearance"
@@ -57,6 +61,7 @@ test("migration summary keeps appearance and identity work distinct",()=>{
     {threadId:"thr_appearance",physicalOrigins:["Korean family"]},
     {threadId:"thr_both",physicalOrigins:["Moroccan family"]},
   ],"migration scan did not reuse appearance ancestry for Thread context");
+  assert.equal(appearanceScans,1,"Thread context repeated the appearance ancestry scan");
 });
 
 test("exact migration summary does not require a population scan",()=>{
