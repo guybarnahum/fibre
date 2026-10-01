@@ -184,3 +184,28 @@ The flat score is intentional evidence discipline, not lack of progress:
 > **#35-#38 built the substrate honestly first. The next work must test whether that substrate can carry causal personhood before Genesis authors a childhood corpus at scale.**
 
 The canonical continuation plan therefore inserts a Pre-Genesis causal-wire entry gate before milestone #39 and an early cognition-replacement preflight before M2 standing.
+
+### A1 Appearance coverage workbench checkpoint (accepted 2026-10-01)
+
+**Rubric v2: no score movement attributed to A1.** The last recorded score remains **15 / 26**; this entry records A1's own contribution without retroactively rescoring unrelated Fibre work completed after the August checkpoint.
+
+A1 makes actual durable physical-ancestry demand, calibration holes and exact appearance-migration impact human-inspectable and operationally useful. It deliberately does **not** claim new Thread cognition, dignity, development, relationship consequence, economic consequence, institutional plurality or cognition replacement. Its strongest new evidence is therefore notarial/control-plane evidence rather than a new personhood rubric band.
+
+| Dimension | A1 movement | Basis |
+|---|---:|---|
+| Persistence | 0 | A1 reads existing durable World ancestry/dependency evidence; it does not add freeze/thaw continuity. |
+| Non-interchangeability | 0 | Different ancestry may create different future appearance migration impact, but A1 proves no cognition/behavioral divergence between Threads. |
+| Natural-language identity | 0 | No new meaning-bearing identity field is introduced. |
+| Dignity and consent | 0 | No participation/consent mechanism changes. |
+| Interiority and privacy | 0 | No private cognition boundary changes. |
+| Authorization integrity | 0 | No request-authorization mechanism changes. |
+| Economic consequence | 0 | No economic state changes. |
+| Social and relationship memory | 0 | No relationship mechanism changes. |
+| Development | 0 | No learned self-state or later appraisal changes. |
+| Model supervision | 0 | No cognition supervision mechanism changes. |
+| Human inspectability | 0 | A1 materially improves appearance-specific inspectability, but the rubric's existing score concerns broad accepted-personhood inspectability; A1 alone does not justify moving that band. |
+| Institutional plurality | 0 | No institutional mechanism changes. |
+| Cognition replaceability | 0 | No cognition runtime replacement proof. |
+
+Drift review: **pass for this checkpoint.** A1 preserves rather than narrows the ambitious path: geography remains non-causal for ancestry, World evidence remains authority, calibration approval remains human-governed in A3, and targeted Thread mutation remains deferred to A4. The checkpoint should not be cited as evidence that appearance calibration itself is correct merely because coverage/migration bookkeeping is inspectable.
+
