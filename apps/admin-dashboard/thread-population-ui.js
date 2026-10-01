@@ -1534,6 +1534,21 @@ function syncOperatorNavigation() {
   document.title=appearanceActive ? "Fibre Admin · Appearance" : "Fibre Admin · Activity";
   const crumb=document.querySelector(".crumbs strong");
   if(crumb)crumb.textContent=appearanceActive ? "Appearance" : "Activity";
+
+  const pageHead=document.querySelector(".page-head");
+  const pageEyebrow=pageHead?.querySelector(".eyebrow");
+  const pageTitle=pageHead?.querySelector("h1");
+  const pageLede=pageHead?.querySelector(".lede");
+  if(pageEyebrow)pageEyebrow.textContent=appearanceActive ? "Population Lab" : "Operations";
+  if(pageTitle)pageTitle.textContent=appearanceActive ? "Appearance" : "Activity";
+  if(pageLede)pageLede.textContent=appearanceActive
+    ? "Inspect actual Thread ancestry demand, calibration coverage, and targeted migration impact."
+    : "See Fibre as one operating system: birth, publication, situated meetings, cognition, experience, and what continues.";
+
+  for(const selector of [".activity-view-head",".metrics",".page-actions"]){
+    const node=document.querySelector(selector);
+    if(node)node.hidden=appearanceActive;
+  }
 }
 
 function holdOperatorMode() {
