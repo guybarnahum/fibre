@@ -30,6 +30,7 @@ let loadPromise=null;
 let mapPopover=null;
 const portraitCache=new Map();
 const pendingMigrations=new Map();
+const busyThreads=new Set();
 
 const portraitObserver=typeof IntersectionObserver==="function"
   ? new IntersectionObserver((entries)=>{
@@ -323,7 +324,7 @@ function migrationOrigin(candidate){
 }
 
 function birthplaceNode(location){
-  const wrap=el("div","appearance-migration-place");
+  const wrap=el("div","appearance-migration-place-value");
   const flag=countryFlag(location?.countryCode);
   if(flag){
     const flagNode=el("span","appearance-country-flag",flag);
@@ -459,7 +460,7 @@ function renderMigrations(){
   }
 
   for(const candidate of candidates){
-    const pending=pendingMigrations.has(candidate.threadId);
+    const pending=pendingMigrations.has(candidate.threadId)||busyThreads.has(candidate.threadId);
     const row=el("div","appearance-migration-row");
     if(pending)row.classList.add("is-pending");
 
@@ -567,7 +568,7 @@ function renderMap(){
       circle.setAttribute("cy",point.y.toFixed(1));
       circle.setAttribute("r",String(Math.min(12,4+Math.sqrt(place.count??1)*2)));
       circle.classList.add("appearance-hole-marker",`coverage-${hole.coverage}`);
-      if((place.threadIds??[]).some((threadId)=>pendingMigrations.has(threadId)))circle.classList.add("active");
+      if((place.threadIds??[]).some((threadId)=>pendingMigrations.has(threadId)||busyThreads.has(threadId)))circle.classList.add("active");
       circle.setAttribute("tabindex","0");
       circle.setAttribute("role","button");
       circle.setAttribute("aria-label",`${hole.referencePopulation??"Missing provenance"} at ${place.displayName??place.city??"represented place"}`);
@@ -664,4 +665,15 @@ if(copyButton)decorateActionButton(copyButton,{
 scanButton?.addEventListener("click",()=>void loadAppearanceCoverage());
 copyButton?.addEventListener("click",()=>{
   if(snapshot)void copyJson(snapshot,copyButton,{restoreLabel:"Copy coverage",restoreTooltip:"Copy appearance coverage JSON"});
+});
+
+window.addEventListener("fibre:thread-action-busy",(event)=>{
+  const threadId=event?.detail?.threadId;
+  if(typeof threadId!=="string"||threadId==="")return;
+  if(event.detail?.busy===true)busyThreads.add(threadId);
+  else busyThreads.delete(threadId);
+  if(snapshot!==null){
+    renderMigrations();
+    renderMap();
+  }
 });
