@@ -110,7 +110,8 @@ export function createPopulationLabExperimentStore(infra){
       const key=`image:${String(ordinal).padStart(3,"0")}:${role}`;
       const write=await put(experimentId,key,bytes,{mediaType,ordinal,role});
       const current=await infra.catalog.get(populationLabExperimentCatalogKey(experimentId));
-      const images=Array.isArray(current?.images)?current.images:[];
+      const images=(Array.isArray(current?.images)?current.images:[])
+        .filter(image=>image?.objectRef!==write.artifact.objectRef);
       return indexArtifact(experimentId,write,{images:Object.freeze([
         ...images,
         Object.freeze({...write.artifact,ordinal,role,mediaType}),
