@@ -180,6 +180,12 @@ function readInput(form, fields) {
   return values;
 }
 
+function announceThreadActionBusy(threadId,busy){
+  window.dispatchEvent(new CustomEvent("fibre:thread-action-busy",{
+    detail:{threadId,busy},
+  }));
+}
+
 export function openThreadActionDialog({
   threadId,
   threadName = null,
@@ -223,6 +229,7 @@ export function openThreadActionDialog({
     cancel.disabled = true;
     close.disabled = true;
     onBusyChange?.(true);
+    announceThreadActionBusy(threadId,true);
     status.hidden = false;
     status.className = "thread-action-status working";
     setWaitingContent(status, `${label} in progress`);
@@ -232,10 +239,12 @@ export function openThreadActionDialog({
       await run(input);
       dialog.dataset.busy = "false";
       onBusyChange?.(false);
+      announceThreadActionBusy(threadId,false);
       dialog.close();
     } catch (error) {
       dialog.dataset.busy = "false";
       onBusyChange?.(false);
+      announceThreadActionBusy(threadId,false);
       status.className = "thread-action-status failed";
       status.textContent = `${label} failed: ${error instanceof Error ? error.message : String(error)}`;
       progress.hidden = true;
