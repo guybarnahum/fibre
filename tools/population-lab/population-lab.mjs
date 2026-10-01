@@ -1,6 +1,8 @@
 import {createHash} from "node:crypto";
-import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
+
+import {createLocalArtifactInfraDriver} from "#infra/providers/local";
+import {createPopulationLabExperimentStore} from "./experiment-artifacts.mjs";
 
 import {
   expressInheritedAppearance,
@@ -252,7 +254,7 @@ function score(people,contexts){
 
 const digestBytes=bytes=>`sha256:${createHash("sha256").update(bytes).digest("hex")}`;
 
-async function image(person,dir,index,provider){
+async function image(person,index,provider,{experimentId,artifacts}){
   if(!person.geometryDescription||!person.surfaceDescription){
     throw new Error("portrait is missing Human Appearance render layers");
   }
@@ -271,8 +273,13 @@ async function image(person,dir,index,provider){
     brief:{description:geometryPrompt,constraints:[]},
     referenceObjects:[],
   });
-  const geometryName=`person-${ordinal}-geometry.png`;
-  await writeFile(resolve(dir,geometryName),geometry.result.bytes);
+  const geometryArtifact=await artifacts.putImage(experimentId,{
+    ordinal:index+1,
+    role:"geometry",
+    bytes:geometry.result.bytes,
+    mediaType:geometry.result.mediaType??"image/png",
+  });
+  const geometryName=`image/${ordinal}/geometry`;
 
   const surfacePrompt=populationSurfacePortraitPrompt({
     sex:person.sex,
@@ -291,11 +298,18 @@ async function image(person,dir,index,provider){
       metadata:{mediaType:geometry.result.mediaType,kind:"geometry_anchor"},
     }],
   });
-  const name=`person-${ordinal}.png`;
-  await writeFile(resolve(dir,name),final.result.bytes);
+  const portraitArtifact=await artifacts.putImage(experimentId,{
+    ordinal:index+1,
+    role:"portrait",
+    bytes:final.result.bytes,
+    mediaType:final.result.mediaType??"image/png",
+  });
+  const name=`image/${ordinal}/portrait`;
   return{
     name,
+    imageObjectRef:portraitArtifact.objectRef,
     geometryAnchor:geometryName,
+    geometryObjectRef:geometryArtifact.objectRef,
     geometryPrompt,
     renderPrompt:surfacePrompt,
   };
@@ -327,10 +341,28 @@ async function main(){
   const places=physicalMode
     ? physicalPopulations
     : ((arg("places")?.split(/[;,]/u).map(value=>value.trim()).filter(Boolean))??[arg("place","United Kingdom/London")]);
-  const dir=resolve(arg("output",resolve(".fibre","population-lab",Date.now()+"-"+createHash("sha256").update(seed).digest("hex").slice(0,8))));
+  const artifactRoot=resolve(arg("output",resolve(".fibre","population-lab")));
+  const experimentId=arg("experiment-id",Date.now()+"-"+createHash("sha256").update(seed).digest("hex").slice(0,8));
+  const artifacts=createPopulationLabExperimentStore(createLocalArtifactInfraDriver({root:artifactRoot}));
+  const startedAt=new Date().toISOString();
   const start=Date.now();
-  await mkdir(dir,{recursive:true});
   let people=[],contexts=[];
+  await artifacts.start(experimentId,{
+    contract:"fibre-population-lab-manifest-v0.1",
+    experimentId,
+    startedAt,
+    count,
+    year,
+    model,
+    imageModel,
+    seed,
+    images,
+    physicalPopulations,
+    places,
+    mode:physicalMode?"physical":"population-context",
+  });
+
+  try{
 
   if(physicalMode){
     console.log(`Population Lab · ${count} people · controlled physical cohort · ${physicalPopulations.join(" · ")}`);
@@ -357,11 +389,13 @@ async function main(){
     });
     for(let index=0;index<people.length;index++){
       line(`[${index}/${people.length}] geometry + surface portraits · ${elapsed(start)}`);
-      const visual=await image(people[index],dir,index,imageProvider);
+      const visual=await image(people[index],index,imageProvider,{experimentId,artifacts});
       people[index]={
         ...people[index],
         image:visual.name,
+        imageObjectRef:visual.imageObjectRef,
         geometryAnchor:visual.geometryAnchor,
+        geometryObjectRef:visual.geometryObjectRef,
         geometryPrompt:visual.geometryPrompt,
         renderPrompt:visual.renderPrompt,
       };
@@ -393,15 +427,35 @@ async function main(){
     renderingProjection:people[0]?.projectionVersion??null,
     renderingMode:images?"geometry-anchor+surface-edit":"none",
   };
-  console.log("Writing HTML…");
-  await writeFile(resolve(dir,"population.json"),JSON.stringify({meta,populationContexts:contexts,stats,people},null,2));
-  await writeFile(resolve(dir,"index.html"),report(people,stats,meta));
-  console.log(`Done · ${elapsed(start)} · ${resolve(dir,"index.html")}`);
+  console.log("Writing experiment artifacts…");
+  const experimentMeta={...meta,experimentId,startedAt};
+  await artifacts.putPopulation(experimentId,{
+    contract:"fibre-population-lab-population-v0.1",
+    meta:experimentMeta,
+    populationContexts:contexts,
+    people,
+  });
+  await artifacts.putResult(experimentId,{
+    contract:"fibre-population-lab-result-v0.1",
+    meta:experimentMeta,
+    stats,
+  });
+  await artifacts.putReport(experimentId,report(people,stats,experimentMeta));
+  await artifacts.complete(experimentId,{
+    people:people.length,
+    warnings:stats.warnings.length,
+    images:images?people.length:0,
+  });
+  console.log(`Done · ${elapsed(start)} · experiment ${experimentId}`);
   if(physicalMode){
     const calibration=stats.physicalCalibration;
     console.log(`Physical calibration · warnings ${calibration.warnings.length} · ${Object.entries(calibration.populations).map(([name,value])=>`${name}: center ${value.maxCenterError.toFixed(3)}, unique ${Math.round(value.uniqueShare*100)}%, siblings/unrelated ${value.resemblance.siblingToUnrelatedRatio.toFixed(2)}`).join(" · ")}`);
   }else{
     console.log("Warnings:",stats.warnings.length);
+  }
+  }catch(error){
+    await artifacts.fail(experimentId,error).catch(()=>{});
+    throw error;
   }
 }
 
