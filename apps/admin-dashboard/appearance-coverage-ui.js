@@ -19,6 +19,7 @@ const rows=$("#appearance-hole-rows");
 const detail=$("#appearance-hole-detail");
 const modelRows=$("#appearance-model-rows");
 const migrations=$("#appearance-migration-candidates");
+const experiments=$("#appearance-experiments");
 const mapShell=$(".appearance-coverage-map-shell");
 const worldPath=$("#appearance-world-path");
 const timezones=$("#appearance-timezones");
@@ -30,6 +31,8 @@ const copyButton=$("#appearance-copy");
 let snapshot=null;
 let selectedKey=null;
 let loadPromise=null;
+let experimentLoadPromise=null;
+let experimentSnapshot=[];
 let mapPopover=null;
 let mapPopoverCloseTimer=null;
 const pendingMigrations=new Map();
@@ -48,6 +51,119 @@ function human(value){
 
 function coverageTone(value){
   return value==="missing"||value==="fallback"?"bad":value==="broad"||value==="partial"?"warn":"good";
+}
+
+function experimentTone(status){
+  return status==="completed"?"good":status==="failed"?"bad":status==="running"?"warn":"";
+}
+
+function experimentSummary(experiment){
+  const summary=experiment?.summary??{};
+  const bits=[];
+  if(Number.isInteger(summary.people))bits.push(summary.people+" people");
+  if(Number.isInteger(summary.warnings))bits.push(summary.warnings+" warning"+(summary.warnings===1?"":"s"));
+  if(Number.isInteger(summary.images)&&summary.images>0)bits.push(summary.images+" portraits");
+  return bits.join(" · ")||"No summary yet";
+}
+
+function renderAppearanceExperiments(){
+  if(!experiments)return;
+  experiments.replaceChildren();
+  if(experimentSnapshot.length===0){
+    experiments.append(el("div","empty","No persisted Population Lab experiments."));
+    return;
+  }
+  for(const experiment of experimentSnapshot){
+    const row=el("article","appearance-experiment");
+    const copy=el("div","appearance-experiment-copy");
+    const head=el("div","appearance-experiment-head");
+    head.append(
+      el("strong",null,experiment.experimentId),
+      el("span","thread-health-tag "+experimentTone(experiment.status),human(experiment.status??"unknown")),
+    );
+    const meta=el("span","appearance-experiment-meta",experimentSummary(experiment));
+    const started=experiment.startedAt?new Date(experiment.startedAt).toLocaleString():"";
+    if(started)meta.textContent+=" · "+started;
+    copy.append(head,meta);
+    if(experiment.error?.message)copy.append(el("span","appearance-experiment-error",experiment.error.message));
+
+    const actions=el("div","appearance-experiment-actions");
+    if(experiment.artifacts?.report?.objectRef){
+      const open=el("button","secondary","Open report");
+      open.type="button";
+      open.addEventListener("click",()=>window.open(
+        "/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/report",
+        "_blank",
+        "noopener",
+      ));
+      actions.append(open);
+    }
+
+    const remove=el("button","secondary");
+    remove.type="button";
+    decorateActionButton(remove,{
+      icon:"trash-can",
+      label:"Delete experiment",
+      tooltip:"Delete this experiment and all stored artifacts",
+      iconOnly:true,
+    });
+    remove.addEventListener("click",async()=>{
+      if(!window.confirm("Delete experiment "+experiment.experimentId+" and all of its stored artifacts?"))return;
+      remove.disabled=true;
+      row.classList.add("deleting");
+      decorateActionButton(remove,{
+        icon:"rotate",
+        label:"Deleting experiment",
+        tooltip:"Deleting experiment artifacts",
+        iconOnly:true,
+        spinning:true,
+      });
+      try{
+        const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId),{
+          method:"DELETE",
+          headers:{Accept:"application/json"},
+        });
+        const payload=await response.json().catch(()=>null);
+        if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+        await loadAppearanceExperiments();
+      }catch(error){
+        row.classList.remove("deleting");
+        remove.disabled=false;
+        decorateActionButton(remove,{
+          icon:"trash-can",
+          label:"Delete experiment",
+          tooltip:error instanceof Error?error.message:String(error),
+          iconOnly:true,
+        });
+      }
+    });
+    actions.append(remove);
+    row.append(copy,actions);
+    experiments.append(row);
+  }
+}
+
+export async function loadAppearanceExperiments(){
+  if(experimentLoadPromise)return experimentLoadPromise;
+  experimentLoadPromise=(async()=>{
+    try{
+      const response=await fetch("/api/appearance/experiments",{headers:{Accept:"application/json"},cache:"no-store"});
+      const payload=await response.json().catch(()=>null);
+      if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+      experimentSnapshot=Array.isArray(payload?.experiments)?payload.experiments:[];
+      renderAppearanceExperiments();
+      return experimentSnapshot;
+    }catch(error){
+      experimentSnapshot=[];
+      if(experiments){
+        experiments.replaceChildren(el("div","empty","Experiments unavailable: "+(error instanceof Error?error.message:String(error))));
+      }
+      throw error;
+    }finally{
+      experimentLoadPromise=null;
+    }
+  })();
+  return experimentLoadPromise;
 }
 
 function chainText(calibration){
@@ -606,6 +722,7 @@ export async function loadAppearanceCoverage({quiet=false}={}){
       const payload=await response.json().catch(()=>null);
       if(!response.ok)throw new Error(payload?.detail??payload?.error??`HTTP ${response.status}`);
       renderAppearanceCoverage(payload);
+      void loadAppearanceExperiments().catch(()=>{});
       return payload;
     }finally{
       if(!quiet)setScanBusy(false);
