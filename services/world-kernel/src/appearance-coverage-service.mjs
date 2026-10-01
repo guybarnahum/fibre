@@ -30,6 +30,6 @@ export function createAppearanceCoverageService({
         threads.map((thread)=>thread.threadId),
       );
       return analyzeAppearanceCoverage({threads,ancestryEvidence});
-    }
+    },
   });
 }
