@@ -116,6 +116,7 @@
     "appearance:migrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/appearance/appearance.mjs --migrate",
     "appearance:rerender": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/appearance/appearance.mjs --rerender",
     "appearance:correct": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/appearance/appearance.mjs",
+    "identity:country-codes:migrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/migrations/thread-country-codes.mjs",
     "inside-fibre:staging": "node tools/deployment/run-with-progress.mjs inside-fibre:staging node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/inside-fibre-staging.mjs",
     "inside-fibre": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs"
   },
