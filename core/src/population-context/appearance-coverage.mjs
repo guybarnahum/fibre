@@ -22,6 +22,7 @@ function locationOf(thread){
   return Object.freeze({
     displayName:clean(value.displayName)??clean(thread?.birthPlace),
     country:clean(value.country),
+    countryCode:clean(value.countryCode)?.toUpperCase()??null,
     city:clean(value.city),
     lat,
     long,
@@ -37,6 +38,21 @@ function coverageState(calibration){
 
 function severity(state){
   return ({missing:4,fallback:3,broad:2,partial:1,explicit:0})[state]??0;
+}
+
+function physicalOrigins(physicalAncestry){
+  const labels=(side)=>Object.freeze([...new Set(
+    (Array.isArray(physicalAncestry?.[side])?physicalAncestry[side]:[])
+      .map((entry)=>clean(entry?.population))
+      .filter(Boolean),
+  )]);
+  const maternal=labels("maternal");
+  const paternal=labels("paternal");
+  return Object.freeze({
+    maternal,
+    paternal,
+    summary:Object.freeze([...new Set([...maternal,...paternal])]),
+  });
 }
 
 function lineageEntry({thread,side,lineage}){
@@ -83,18 +99,27 @@ function summarizeHoles(entries){
       calibration:entry.calibration,
       populations:new Set(),
       threadIds:new Set(),
+      threads:new Map(),
       sides:0,
       weightedSides:0,
       places:new Map(),
     };
     current.populations.add(entry.population);
     current.threadIds.add(entry.threadId);
+    if(!current.threads.has(entry.threadId)){
+      current.threads.set(entry.threadId,Object.freeze({
+        threadId:entry.threadId,
+        threadName:entry.threadName,
+        birthLocation:entry.birthLocation,
+      }));
+    }
     current.sides+=1;
     current.weightedSides+=entry.share;
     if(entry.birthLocation){
       const placeKey=`${entry.birthLocation.lat.toFixed(4)}:${entry.birthLocation.long.toFixed(4)}`;
-      const place=current.places.get(placeKey)??{...entry.birthLocation,count:0};
+      const place=current.places.get(placeKey)??{...entry.birthLocation,count:0,threadIds:new Set()};
       place.count+=1;
+      place.threadIds.add(entry.threadId);
       current.places.set(placeKey,place);
     }
     if(severity(entry.coverage)>severity(current.coverage))current.coverage=entry.coverage;
@@ -107,11 +132,15 @@ function summarizeHoles(entries){
     calibration:hole.calibration,
     populations:Object.freeze([...hole.populations].sort()),
     threadIds:Object.freeze([...hole.threadIds].sort()),
+    threads:Object.freeze([...hole.threads.values()].sort((a,b)=>(a.threadName??a.threadId).localeCompare(b.threadName??b.threadId))),
     threadCount:hole.threadIds.size,
     sides:hole.sides,
     weightedSides:Number(hole.weightedSides.toFixed(3)),
     priority:Number((severity(hole.coverage)*hole.weightedSides).toFixed(3)),
-    places:Object.freeze([...hole.places.values()].sort((a,b)=>b.count-a.count||(a.displayName??"").localeCompare(b.displayName??""))),
+    places:Object.freeze([...hole.places.values()].map((place)=>Object.freeze({
+      ...place,
+      threadIds:Object.freeze([...place.threadIds].sort()),
+    })).sort((a,b)=>b.count-a.count||(a.displayName??"").localeCompare(b.displayName??""))),
   })).sort((a,b)=>b.priority-a.priority||b.threadCount-a.threadCount||a.key.localeCompare(b.key)));
 }
 
@@ -121,13 +150,14 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
   const entries=[];
   const missing=[];
   const migrationCandidates=new Map();
-  const addMigrationCandidate=(thread,reason,changes=[])=>{
+  const addMigrationCandidate=(thread,reason,changes=[],evidence=null)=>{
     const current=migrationCandidates.get(thread.threadId)??{
       threadId:thread.threadId,
       threadName:clean(thread.displayName),
       reasons:[],
       changes:[],
       birthLocation:locationOf(thread),
+      physicalOrigins:physicalOrigins(evidence?.physicalAncestry),
     };
     if(!current.reasons.includes(reason))current.reasons.push(reason);
     current.changes.push(...changes);
@@ -138,7 +168,7 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
     const evidence=evidenceByThread.get(thread.threadId)??null;
     const physicalGenomeVersion=clean(thread.physicalGenomeVersion);
     if(physicalGenomeVersion!==null&&physicalGenomeVersion!==PHYSICAL_GENOME_VERSION){
-      addMigrationCandidate(thread,"physical_model_outdated");
+      addMigrationCandidate(thread,"physical_model_outdated",[],evidence);
     }
     if(evidence!==null){
       const currentDependencies=appearanceCalibrationDependencies(evidence.physicalAncestry);
@@ -147,7 +177,7 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
         currentDependencies,
       });
       if(migration.migrationRequired){
-        addMigrationCandidate(thread,migration.reason,migration.changes);
+        addMigrationCandidate(thread,migration.reason,migration.changes,evidence);
       }
     }
     if(evidence===null){
