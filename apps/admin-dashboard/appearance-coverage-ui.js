@@ -350,12 +350,6 @@ function pendingCandidateList(){
   return [...merged.values()].sort((a,b)=>(a.threadName??a.threadId).localeCompare(b.threadName??b.threadId));
 }
 
-function stopMigrationWatch(threadId){
-  const current=pendingMigrations.get(threadId);
-  current?.stop?.();
-  if(current)pendingMigrations.set(threadId,{...current,stop:null});
-}
-
 function clearMigrationPending(threadId){
   const current=pendingMigrations.get(threadId);
   current?.stop?.();
