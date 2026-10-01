@@ -13,7 +13,7 @@ npm run population:lab -- --place="United Kingdom/London" --year=2004 --count=50
 cat "$(ls -t .fibre/population-lab/*/population.json | head -1)" | pbcopy
 ```
 
-The command writes `population.json` and a self-contained `index.html` beneath `.fibre/population-lab/`.
+The command persists one experiment through the generic InfraDriver object/catalog contract beneath the local artifact root `.fibre/population-lab/`. The runner prints the experiment ID; use `npm run population:lab:experiments` to inspect the catalog rather than depending on provider-specific files.
 
 ## Visual run
 
@@ -31,7 +31,27 @@ npm run population:lab -- --places="United Kingdom/London;Nigeria/Lagos;India/Mu
 cat "$(ls -t .fibre/population-lab/*/population.json | head -1)" | pbcopy
 ```
 
-Useful options are `--model=`, `--image-model=`, `--seed=`, and `--output=`.
+Useful options are `--model=`, `--image-model=`, `--seed=`, `--experiment-id=`, and `--output=`. `--output` selects the local InfraDriver artifact root; it is not an experiment directory.
+
+
+## Experiment artifacts
+
+Population Lab experiments are non-authoritative calibration evidence. Each run persists an immutable manifest, generated population, diagnostics result, HTML report and any geometry/portrait images through `InfraDriver.objects`; `InfraDriver.catalog` holds only the mutable experiment status/index. Population Lab code never writes experiment artifacts directly to a filesystem or cloud SDK.
+
+Inspect local experiments:
+
+```sh
+npm run population:lab:experiments
+npm run population:lab:experiments -- --show=<experimentId>
+```
+
+Delete one experiment and all of its stored artifacts:
+
+```sh
+npm run population:lab:experiments -- --delete=<experimentId>
+```
+
+Failed experiments remain indexed with their already-written immutable artifacts so partial evidence is inspectable until explicitly deleted.
 
 ## What the report measures
 
