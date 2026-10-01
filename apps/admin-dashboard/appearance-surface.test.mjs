@@ -13,11 +13,10 @@ test("Appearance is a top-level Admin surface and cannot leak into operator view
   assert.match(css,/\.appearance-coverage-view\[hidden\]\s*\{\s*display:none\s*\}/u,
     "Appearance panel can override the hidden attribute");
 
-  const navigation=populationUi.match(/function syncOperatorNavigation\(\)[\s\S]*?\n\}/u)?.[0]??"";
-  assert.match(navigation,/\.activity-view-head","\.metrics","\.page-actions"/u,
-    "Appearance kept shared Activity chrome");
-  assert.match(navigation,/node\.hidden=appearanceActive/u,
-    "Appearance did not isolate its top-level surface");
+  const pager=html.indexOf('class="activity-pager"');
+  const appearance=html.indexOf('id="appearance-view" class="panel appearance-coverage-view"');
+  assert.ok(pager>=0&&appearance>pager&&html.slice(pager,appearance).includes("</section>"),
+    "Appearance remained inside the Activity workspace");
 });
 
 test("Threads exposes one generic migration filter, not Appearance-specific controls",()=>{
