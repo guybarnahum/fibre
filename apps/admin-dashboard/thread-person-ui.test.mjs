@@ -12,6 +12,7 @@ test("Thread locations present city/country without changing authority",()=>{
   assert.equal(threadLocationText(location),"Aswan, Egypt");
   assert.equal(threadLocationTooltip(location),"Aswan/Egypt");
   assert.equal(threadLocationFlag(location),"🇪🇬");
+  assert.equal(threadLocationFlag({city:"Aswan",country:"EG"}),"🇪🇬");
 });
 
 test("Legacy country/city locations normalize only for presentation",()=>{
