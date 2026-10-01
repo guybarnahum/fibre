@@ -110,6 +110,11 @@ export function createLocalArtifactInfraDriver({root}={}){
     },
   });
 
+  const readCatalog=async key=>{
+    const value=await jsonOrNull(catalogPath(key));
+    return value===null?null:structuredClone(value);
+  };
+
   const catalog=Object.freeze({
     async upsert(key,value){
       assertInfraId("catalog key",key);
@@ -121,8 +126,7 @@ export function createLocalArtifactInfraDriver({root}={}){
     },
     async get(key){
       assertInfraId("catalog key",key);
-      const value=await jsonOrNull(catalogPath(key));
-      return value===null?null:structuredClone(value);
+      return readCatalog(key);
     },
     async remove(key){
       assertInfraId("catalog key",key);
@@ -141,7 +145,7 @@ export function createLocalArtifactInfraDriver({root}={}){
         .sort();
       const selected=keys.slice(0,limit);
       return{
-        entries:await Promise.all(selected.map(async key=>({key,value:await this.get(key)}))),
+        entries:await Promise.all(selected.map(async key=>({key,value:await readCatalog(key)}))),
         nextCursor:keys.length>limit?selected.at(-1):null,
       };
     },
