@@ -4,13 +4,38 @@ function requireMethod(name,value,method){
 
 const IDENTITY_STATES=new Set(["legacy_v1_de_novo","legacy_v1_recombined"]);
 
-function freezeEntry(threadId,domains,reasons){
+function appearanceOrigins(lineages){
+  const byThread=new Map();
+  for(const lineage of Array.isArray(lineages)?lineages:[]){
+    if(!["maternal","paternal"].includes(lineage?.side))continue;
+    if(typeof lineage?.threadId!=="string"||lineage.threadId==="")continue;
+    const value=typeof lineage?.population==="string"?lineage.population.trim():"";
+    if(value==="")continue;
+    const origins=byThread.get(lineage.threadId)??new Set();
+    origins.add(value);
+    byThread.set(lineage.threadId,origins);
+  }
+  return Object.freeze([...byThread.entries()]
+    .map(([threadId,origins])=>Object.freeze({
+      threadId,
+      physicalOrigins:Object.freeze([...origins]),
+    }))
+    .sort((a,b)=>a.threadId.localeCompare(b.threadId)));
+}
+
+function physicalOriginsFor(appearance,threadId){
+  return appearanceOrigins(appearance?.lineages)
+    .find((entry)=>entry.threadId===threadId)?.physicalOrigins??Object.freeze([]);
+}
+
+function freezeEntry(threadId,domains,reasons,physicalOrigins=[]){
   return Object.freeze({
     threadId,
     domains:Object.freeze([...domains].sort()),
     reasons:Object.freeze(Object.fromEntries(
       [...reasons.entries()].map(([domain,values])=>[domain,Object.freeze([...values].sort())]),
     )),
+    physicalOrigins:Object.freeze([...physicalOrigins]),
   });
 }
 
@@ -67,12 +92,13 @@ export function createThreadMigrationSummaryService({
         reasons.set("identity",identity);
       }
 
-      return freezeEntry(threadId,domains,reasons);
+      return freezeEntry(threadId,domains,reasons,physicalOriginsFor(appearance,threadId));
     },
 
     scan(){
       const migrations=new Map();
-      for(const candidate of appearanceCoverage.scan().migrationCandidates){
+      const appearance=appearanceCoverage.scan();
+      for(const candidate of appearance.migrationCandidates){
         for(const reason of candidate.reasons??[candidate.reason]){
           add(migrations,candidate.threadId,"appearance",reason);
         }
@@ -86,8 +112,14 @@ export function createThreadMigrationSummaryService({
       return Object.freeze({
         contract:"fibre-thread-migration-summary-v0.1",
         threads:Object.freeze([...migrations.entries()]
-          .map(([threadId,{domains,reasons}])=>freezeEntry(threadId,domains,reasons))
+          .map(([threadId,{domains,reasons}])=>freezeEntry(
+            threadId,
+            domains,
+            reasons,
+            physicalOriginsFor(appearance,threadId),
+          ))
           .sort((a,b)=>a.threadId.localeCompare(b.threadId))),
+        origins:appearanceOrigins(appearance.lineages),
       });
     },
   });
