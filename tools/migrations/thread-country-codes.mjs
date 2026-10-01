@@ -95,6 +95,18 @@ async function observatory(worldKernel,token,threadId){
   return json(response,"Thread observatory "+threadId);
 }
 
+async function diagnosis(worldKernel,token,threadId){
+  const response=await fetch(
+    worldKernel+"/internal/threads/"+encodeURIComponent(threadId)+"/repair",
+    {headers:headers(token),cache:"no-store"},
+  );
+  return json(response,"Thread diagnosis "+threadId);
+}
+
+function needsCountryCode(body){
+  return (body?.diagnosis?.findings??[]).some((finding)=>finding?.code==="BIRTH_COUNTRY_CODE_MISSING");
+}
+
 function storedBirthPlace(body){
   const place=body?.observatory?.thread?.identity?.birthPlace;
   return place&&typeof place==="object"&&!Array.isArray(place)?place:null;
@@ -146,8 +158,11 @@ async function main(){
     const threads=await directory(worldKernel,token);
     const planned=[];
     for(const thread of threads){
-      const body=await observatory(worldKernel,token,thread.threadId);
-      const entry=planEntry(thread,body);
+      const [body,health]=await Promise.all([
+        observatory(worldKernel,token,thread.threadId),
+        diagnosis(worldKernel,token,thread.threadId),
+      ]);
+      const entry=needsCountryCode(health)?planEntry(thread,body):null;
       if(entry!==null)planned.push(entry);
     }
     process.stdout.write(JSON.stringify({
@@ -161,7 +176,13 @@ async function main(){
   const mapping=migrationEntries(JSON.parse(readFileSync(resolve(parsed.mappingFile),"utf8")));
   const results=[];
   for(const entry of mapping){
-    const before=await observatory(worldKernel,token,entry.threadId);
+    const [before,health]=await Promise.all([
+      observatory(worldKernel,token,entry.threadId),
+      diagnosis(worldKernel,token,entry.threadId),
+    ]);
+    if(!needsCountryCode(health)){
+      throw new Error(entry.threadId+" is not a country-code-only migration; repair any malformed birth place in Thread Observatory first");
+    }
     const birthPlace=storedBirthPlace(before);
     if(birthPlace===null)throw new Error(entry.threadId+" has no authoritative birthPlace");
     const existing=typeof birthPlace.countryCode==="string"?birthPlace.countryCode.trim().toUpperCase():null;
