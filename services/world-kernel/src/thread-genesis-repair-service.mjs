@@ -61,6 +61,7 @@ function recoveredBirthGeography(identity) {
   return Object.freeze({
     displayName:recovered.displayName,
     country:recovered.country,
+    ...(recovered.countryCode?{countryCode:recovered.countryCode}:{}),
     city:recovered.city,
     lat:recovered.lat,
     long:recovered.long,
