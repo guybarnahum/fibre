@@ -7,6 +7,13 @@ import baseWorker, {
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
 import { readAdminAppearanceCoverage } from "./appearance-coverage.mjs";
 import {
+  deleteAdminPopulationLabExperiment,
+  listAdminPopulationLabExperiments,
+  readAdminPopulationLabExperiment,
+  readAdminPopulationLabImage,
+  readAdminPopulationLabReport,
+} from "./appearance-experiments.mjs";
+import {
   attachAdminMigrationSummary,
   optionalAdminThreadMigration,
   optionalAdminThreadPopulationContext,
@@ -31,6 +38,10 @@ const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
 const APPEARANCE_COVERAGE_ROUTE = "/api/appearance/coverage";
+const APPEARANCE_EXPERIMENTS_ROUTE = "/api/appearance/experiments";
+const APPEARANCE_EXPERIMENT_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)$/u;
+const APPEARANCE_EXPERIMENT_REPORT_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/report$/u;
+const APPEARANCE_EXPERIMENT_IMAGE_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/image\/(\d{3})\/(geometry|portrait)$/u;
 const THREAD_LABELS_ROUTE = "/api/threads/labels";
 const THREAD_POPULATION_ENTRY_ROUTE = /^\/api\/threads\/([^/]+)\/population$/u;
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
@@ -469,6 +480,10 @@ export default {
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
     const appearanceCoverageRequest = url.pathname === APPEARANCE_COVERAGE_ROUTE;
+    const appearanceExperimentsRequest = url.pathname === APPEARANCE_EXPERIMENTS_ROUTE;
+    const appearanceExperimentMatch = APPEARANCE_EXPERIMENT_ROUTE.exec(url.pathname);
+    const appearanceExperimentReportMatch = APPEARANCE_EXPERIMENT_REPORT_ROUTE.exec(url.pathname);
+    const appearanceExperimentImageMatch = APPEARANCE_EXPERIMENT_IMAGE_ROUTE.exec(url.pathname);
     const threadLabels = url.pathname === THREAD_LABELS_ROUTE;
     const threadPopulationEntryMatch = THREAD_POPULATION_ENTRY_ROUTE.exec(url.pathname);
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
@@ -477,10 +492,11 @@ export default {
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentImageMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels);
-    if (adminGet || adminPost) {
+    const adminDelete = request.method === "DELETE" && appearanceExperimentMatch;
+    if (adminGet || adminPost || adminDelete) {
       const gate = await adminPrincipal(request, env);
       if (gate.response) return gate.response;
       try {
@@ -526,6 +542,53 @@ export default {
             ...coverage,
             queriedAt:new Date().toISOString(),
           });
+        }
+        if(appearanceExperimentsRequest){
+          const page=await listAdminPopulationLabExperiments(env);
+          return json(200,{
+            contract:"fibre-admin-population-lab-experiments-v0.1",
+            experiments:page.experiments,
+            nextCursor:page.nextCursor,
+            queriedAt:new Date().toISOString(),
+          });
+        }
+        if(appearanceExperimentReportMatch){
+          const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentReportMatch[1]));
+          const artifact=await readAdminPopulationLabReport(env,experimentId);
+          if(artifact===null)return json(404,{error:"experiment_report_not_found"});
+          return new Response(artifact.bytes,{
+            headers:{
+              "Content-Type":artifact.metadata?.mediaType??"text/html; charset=utf-8",
+              "Cache-Control":"no-store",
+            },
+          });
+        }
+        if(appearanceExperimentImageMatch){
+          const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentImageMatch[1]));
+          const artifact=await readAdminPopulationLabImage(
+            env,
+            experimentId,
+            appearanceExperimentImageMatch[2],
+            appearanceExperimentImageMatch[3],
+          );
+          if(artifact===null)return json(404,{error:"experiment_image_not_found"});
+          return new Response(artifact.bytes,{
+            headers:{
+              "Content-Type":artifact.metadata?.mediaType??"image/png",
+              "Cache-Control":"private, max-age=3600",
+            },
+          });
+        }
+        if(appearanceExperimentMatch){
+          const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentMatch[1]));
+          if(request.method==="DELETE"){
+            const result=await deleteAdminPopulationLabExperiment(env,experimentId);
+            return json(200,{contract:"fibre-admin-population-lab-delete-v0.1",...result});
+          }
+          const experiment=await readAdminPopulationLabExperiment(env,experimentId);
+          return experiment===null
+            ? json(404,{error:"experiment_not_found"})
+            : json(200,{contract:"fibre-admin-population-lab-experiment-v0.1",experiment});
         }
         if (threadBirth) return proxyThreadBirth(request, env);
         if (pendingBirths) return proxyBirthCenterGet(env, "/internal/births/pending");
@@ -647,6 +710,9 @@ export default {
         if (pendingBirths || birthplaces) return json(503, { error:"thread_birth_data_unavailable", detail:error.message });
         if (threadPopulation || threadPopulationEntryMatch) return json(503, { error:"thread_population_unavailable", detail:error.message });
         if (appearanceCoverageRequest) return json(503, { error:"appearance_coverage_unavailable", detail:error.message });
+        if (appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentImageMatch) {
+          return json(error instanceof TypeError ? 400 : 503, { error:"appearance_experiments_unavailable", detail:error.message });
+        }
         if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
         if (fidReissueMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_reissue_unavailable", detail:error.message });
         return json(error instanceof TypeError ? 400 : 503, {
