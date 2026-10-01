@@ -16,6 +16,7 @@ import {
   forgetThreadPortrait,
   hideThreadPortraitPreview,
 } from "./thread-person-ui.js";
+import { identityActionPayload } from "./thread-identity-action.js";
 import { reissueFidCard } from "./thread-observatory.js";
 import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
 import {
@@ -317,12 +318,9 @@ function actionCell(thread) {
       fields:actionFields(action),
       body:(input) => {
         const commandAction = action.command ?? "identity";
-        return {
-          action:commandAction,
+        return identityActionPayload(action,input,{
           operationKey:`${commandAction === "raised_languages" ? "admin_raised_languages" : "admin_identity"}_${Date.now().toString(36)}`,
-          ...(action.fixed ?? {}),
-          ...input,
-        };
+        });
       },
     }, thread));
   }
@@ -1067,7 +1065,7 @@ function showThreadMapPopover(location, marker) {
 function birthGeographyRepairs() {
   return population.flatMap((thread) => {
     const action = identityActions(thread).find((candidate) => candidate.id === "repair_birth_geography") ?? null;
-    return action === null ? [] : [{ thread, action }];
+    return action === null || actionFields(action).length > 0 ? [] : [{ thread, action }];
   });
 }
 
