@@ -63,22 +63,28 @@ function validateTimeZone(value) {
 
 function normalizeSubjectPlace(candidate) {
   const keys = Object.keys(candidate);
-  if (keys.some((key) => !["country","city","lat","long"].includes(key))) {
+  if (keys.some((key) => !["country","countryCode","city","lat","long"].includes(key))) {
     throw new TypeError("Genesis development request subjectIdentity.place contains an unsupported field");
   }
   const country = nonEmpty("Genesis development request subjectIdentity.place.country", candidate.country);
+  const countryCode = candidate.countryCode === null || candidate.countryCode === undefined
+    ? null
+    : nonEmpty("Genesis development request subjectIdentity.place.countryCode", candidate.countryCode).toUpperCase();
+  if (countryCode !== null && !/^[A-Z]{2}$/u.test(countryCode)) {
+    throw new TypeError("Genesis development request subjectIdentity.place.countryCode must use ISO alpha-2");
+  }
   const city = nonEmpty("Genesis development request subjectIdentity.place.city", candidate.city);
   const hasLat = Object.hasOwn(candidate, "lat");
   const hasLong = Object.hasOwn(candidate, "long");
   if (hasLat !== hasLong) throw new TypeError("Genesis development request subjectIdentity.place coordinates must include lat and long together");
-  if (!hasLat) return Object.freeze({ country, city });
+  if (!hasLat) return Object.freeze({ country, ...(countryCode?{countryCode}:{}), city });
   if (!Number.isFinite(candidate.lat) || candidate.lat < -90 || candidate.lat > 90) {
     throw new TypeError("Genesis development request subjectIdentity.place.lat is invalid");
   }
   if (!Number.isFinite(candidate.long) || candidate.long < -180 || candidate.long > 180) {
     throw new TypeError("Genesis development request subjectIdentity.place.long is invalid");
   }
-  return Object.freeze({ country, city, lat:candidate.lat, long:candidate.long });
+  return Object.freeze({ country, ...(countryCode?{countryCode}:{}), city, lat:candidate.lat, long:candidate.long });
 }
 
 function normalizeSubjectIdentity(candidate) {
