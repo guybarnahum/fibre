@@ -6,8 +6,8 @@ import {
 
 function experimentStore(env){
   return createPopulationLabExperimentStore(createCloudflareInfraDriver({
-    objectBucket:env?.POPULATION_LAB_OBJECTS,
-    catalogDatabase:env?.POPULATION_LAB_CATALOG,
+    objectBucket:env?.PRESENTATION_OBJECTS,
+    catalogDatabase:env?.PRESENTATION_CATALOG,
   }));
 }
 
