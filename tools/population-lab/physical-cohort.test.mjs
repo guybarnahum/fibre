@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   generatePhysicalCalibrationCohort,
   physicalCalibrationDiagnostics,
-} from "./physical-cohort.mjs";
+} from "../../services/population-lab/src/physical-cohort.mjs";
 
 const POPULATIONS=[
   "east_asia.han_chinese",
