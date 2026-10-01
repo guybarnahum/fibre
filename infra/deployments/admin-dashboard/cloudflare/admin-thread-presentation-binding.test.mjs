@@ -41,5 +41,7 @@ test("Admin reaches authoritative World and Thread Presentation through service 
     resolved.services.find((candidate) => candidate.binding === "FIBRE_IDENTITY_AUTHORITY")?.service,
     "fibre-identity-authority-staging",
   );
-  assert.equal(resolved.main, "./admin-worker.mjs");
+  assert.equal(resolved.main, "./workflow-worker.mjs");
+  assert.equal(resolved.workflows[0]?.binding,"POPULATION_LAB_EXPERIMENT");
+  assert.equal(resolved.workflows[0]?.name,"fibre-population-lab-experiment-staging");
 });
