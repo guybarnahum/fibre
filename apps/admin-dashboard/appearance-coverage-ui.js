@@ -336,7 +336,7 @@ function birthplaceNode(location){
     flagNode.title=location.country;
     wrap.append(flagNode);
   }
-  wrap.append(el("span",null,location?.displayName??[location?.city,location?.country].filter(Boolean).join(", ")||"—"));
+  wrap.append(el("span",null,location?.displayName??([location?.city,location?.country].filter(Boolean).join(", ")||"—")));
   return wrap;
 }
 
@@ -547,7 +547,7 @@ function showMapPopover(hole,place,marker){
   const popover=ensureMapPopover();
   const head=el("div","appearance-map-popover-head");
   head.append(
-    el("strong",null,place.displayName??[place.city,place.country].filter(Boolean).join(", ")||"Coverage location"),
+    el("strong",null,place.displayName??([place.city,place.country].filter(Boolean).join(", ")||"Coverage location")),
     el("span",null,`${place.threadIds?.length??0} Thread${(place.threadIds?.length??0)===1?"":"s"}`),
   );
   const threadById=new Map((hole.threads??[]).map((thread)=>[thread.threadId,thread]));
