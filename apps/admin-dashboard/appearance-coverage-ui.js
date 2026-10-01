@@ -239,7 +239,27 @@ function renderDetail(){
         ?"Prepare a bounded Population Lab experiment for this coverage hole"
         :"Prepare an evidence-research request for this coverage hole",
     });
-    button.addEventListener("click",()=>renderPreparedAction(kind,hole));
+    button.addEventListener("click",()=>{
+      button.disabled=true;
+      decorateActionButton(button,{
+        icon:"rotate",
+        label:`Preparing ${kind}`,
+        tooltip:`Preparing ${kind} specification`,
+        iconOnly:true,
+        spinning:true,
+      });
+      requestAnimationFrame(()=>{
+        renderPreparedAction(kind,hole);
+        button.disabled=false;
+        decorateActionButton(button,{
+          icon,
+          label,
+          tooltip:kind==="experiment"
+            ?"Prepare a bounded Population Lab experiment for this coverage hole"
+            :"Prepare an evidence-research request for this coverage hole",
+        });
+      });
+    });
     actions.append(button);
   }
 
@@ -445,10 +465,11 @@ function renderMigrations(){
 
     const person=threadIdentity(candidate);
     const meta=el("div","appearance-migration-meta");
-    meta.append(
-      el("div","appearance-migration-origin",migrationOrigin(candidate)),
-      birthplaceNode(candidate.birthLocation),
-    );
+    const origin=el("div","appearance-migration-origin");
+    origin.append(el("strong",null,"Ethnicity"),el("span",null,migrationOrigin(candidate)));
+    const birthplace=el("div","appearance-migration-place");
+    birthplace.append(el("strong",null,"Birth place"),birthplaceNode(candidate.birthLocation));
+    meta.append(origin,birthplace);
 
     const status=el("div","appearance-migration-status");
     const tag=el("span","thread-health-tag warn",pending?"Updating calibration":"Needs recalibration");
@@ -634,6 +655,12 @@ export async function loadAppearanceCoverage({quiet=false}={}){
   }
 }
 
+if(copyButton)decorateActionButton(copyButton,{
+  icon:"copy",
+  label:"Copy coverage",
+  tooltip:"Copy appearance coverage JSON",
+  iconOnly:true,
+});
 scanButton?.addEventListener("click",()=>void loadAppearanceCoverage());
 copyButton?.addEventListener("click",()=>{
   if(snapshot)void copyJson(snapshot,copyButton,{restoreLabel:"Copy coverage",restoreTooltip:"Copy appearance coverage JSON"});
