@@ -43,6 +43,7 @@ test("current World place, not birthplace, defines the Threads map position", ()
   assert.equal(location.displayName, "A neighborhood library in Jerusalem");
   assert.equal(location.locality, "Jerusalem");
   assert.equal(location.country, "Israel");
+  assert.equal(location.countryCode, "IL");
   assert.equal(location.lat, 31.76904);
   assert.equal(location.long, 35.21633);
 });
@@ -63,6 +64,7 @@ test("shared current venue uses current situation while retaining World-locality
   assert.equal(location.current, true);
   assert.equal(location.displayName, "Neighborhood public library");
   assert.equal(location.locality, "Tbilisi");
+  assert.equal(location.countryCode, "GE");
   assert.equal(location.authority, "live_world_place");
 });
 
@@ -100,6 +102,7 @@ test("authoritative situated place prose resolves a uniquely named locality", ()
 
   assert.equal(location?.locality, "Tbilisi", "situated Thread stayed unmapped despite explicit locality evidence");
   assert.equal(location?.country, "Georgia");
+  assert.equal(location?.countryCode, "GE");
   assert.equal(location?.current, true);
 });
 
