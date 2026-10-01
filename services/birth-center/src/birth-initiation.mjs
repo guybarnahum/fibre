@@ -293,7 +293,7 @@ function buildDevelopmentRequest({ requestId, requestedAt, selector, sex, author
       ...(sex === null ? {} : { sex }),
       place:Object.freeze({
         country:selector.country,
-        countryCode:selector.countryCode??null,
+        ...(selector.countryCode?{countryCode:selector.countryCode}:{}),
         city:selector.city,
         lat:selector.lat,
         long:selector.long,
