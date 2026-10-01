@@ -95,6 +95,7 @@ function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt })
       ? Object.freeze({
           displayName:subjectIdentity.birthCity.trim(),
           country:authoredPlace.country,
+          countryCode:authoredPlace.countryCode??null,
           city:authoredPlace.city,
           lat:authoredPlace.lat,
           long:authoredPlace.long,
@@ -110,6 +111,7 @@ function modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt })
     birthPlace:Object.freeze({
       displayName:subjectIdentity.birthCity.trim(),
       country:geography.country,
+      ...(geography.countryCode?{countryCode:geography.countryCode}:{}),
       city:geography.city,
       lat:geography.lat,
       long:geography.long,
