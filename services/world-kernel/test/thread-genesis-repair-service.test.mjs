@@ -655,7 +655,7 @@ test("valid legacy birthplace missing only countryCode becomes an operator decis
 
   const diagnosis = await service.diagnose(threadId);
   const finding = diagnosis.findings.find((entry) => entry.code === "BIRTH_COUNTRY_CODE_MISSING");
-  assert.equal(finding?.state, "operator_decision_required", "missing country code was not surfaced");
+  assert.equal(finding?.state, "attention", "missing country code was not surfaced as a non-blocking migration");
   assert.equal(finding?.identityAction?.id, "set_birth_country_code");
   assert.equal(finding?.identityAction?.fixed?.birthPlace?.country, "United States");
   assert.equal(finding?.identityAction?.input?.fields?.[0]?.name, "countryCode");
