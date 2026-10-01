@@ -69,6 +69,37 @@ function recoveredBirthGeography(identity) {
 }
 
 function birthGeographyFinding(identity) {
+  const stored=identity?.birthPlace;
+  const storedPlace=stored&&typeof stored==="object"&&!Array.isArray(stored)
+    && text(stored.displayName)&&text(stored.country)&&text(stored.city)
+    && Number.isFinite(stored.lat)&&Number.isFinite(stored.long)
+      ? Object.freeze({
+          displayName:text(stored.displayName),
+          country:text(stored.country),
+          city:text(stored.city),
+          lat:stored.lat,
+          long:stored.long,
+        })
+      : null;
+  if(storedPlace!==null&&text(stored.countryCode)===null){
+    return finding("BIRTH_COUNTRY_CODE_MISSING","operator_decision_required",null,{
+      authoritative:storedPlace.displayName,
+      reason:"The authoritative birth place is complete except for its ISO country code; an operator must confirm that code.",
+      identityAction:identityAction(
+        "set_birth_country_code",
+        "Set birth country code",
+        [{
+          name:"countryCode",
+          label:"Country code (ISO-2)",
+          kind:"country_code",
+          required:true,
+          placeholder:"EG",
+        }],
+        { fixed:{ birthPlace:storedPlace } },
+      ),
+    });
+  }
+
   const recovered = recoveredBirthGeography(identity);
   if (recovered === null) return null;
   const birthPlace=Object.freeze({
