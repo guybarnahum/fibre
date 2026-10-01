@@ -5,8 +5,10 @@ import {
   attachAdminMigrationSummary,
   optionalAdminThreadMigration,
   optionalAdminThreadMigrations,
+  optionalAdminThreadPopulationContext,
   readAdminThreadMigration,
   readAdminThreadMigrations,
+  readAdminThreadPopulationContext,
 } from "./thread-migrations.mjs";
 
 test("Threads migration enrichment is fail-open when World summary is unavailable", async () => {
@@ -21,6 +23,10 @@ test("Threads migration enrichment is fail-open when World summary is unavailabl
     await optionalAdminThreadMigration({ worldKernel, privateToken:"token", threadId:"thr_1" }),
     null,
   );
+  assert.deepEqual(
+    await optionalAdminThreadPopulationContext({ worldKernel, privateToken:"token" }),
+    { migrations:[], origins:[] },
+  );
 });
 
 test("migration summary marks only affected Thread as migration_required", async () => {
@@ -34,7 +40,12 @@ test("migration summary marks only affected Thread as migration_required", async
             threadId:"thr_morocco",
             domains:["appearance"],
             reasons:{ appearance:["calibration_dependencies_changed"] },
+            physicalOrigins:["Moroccan family"],
           }],
+          origins:[
+            {threadId:"thr_morocco",physicalOrigins:["Moroccan family"]},
+            {threadId:"thr_korea",physicalOrigins:["Korean family"]},
+          ],
         });
       }
       if(path==="/internal/thread-migrations/thr_morocco"){
@@ -44,6 +55,7 @@ test("migration summary marks only affected Thread as migration_required", async
             threadId:"thr_morocco",
             domains:["appearance"],
             reasons:{ appearance:["calibration_dependencies_changed"] },
+            physicalOrigins:["Moroccan family"],
           },
         });
       }
@@ -55,6 +67,13 @@ test("migration summary marks only affected Thread as migration_required", async
   assert.equal(list.length,1);
   const entry=await readAdminThreadMigration({ worldKernel, privateToken:"token", threadId:"thr_morocco" });
   assert.equal(entry.threadId,"thr_morocco");
+  assert.deepEqual(entry.physicalOrigins,["Moroccan family"]);
+
+  const context=await readAdminThreadPopulationContext({ worldKernel, privateToken:"token" });
+  assert.deepEqual(context.origins,[
+    {threadId:"thr_morocco",physicalOrigins:["Moroccan family"]},
+    {threadId:"thr_korea",physicalOrigins:["Korean family"]},
+  ],"Threads context did not reuse the migration scan ancestry");
 
   const healthy={ threadId:"thr_korea", health:"healthy", findings:[] };
   assert.equal(attachAdminMigrationSummary(healthy,null).health,"healthy");
