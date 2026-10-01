@@ -58,6 +58,10 @@ export function validateThreadSnapshot(thread) {
     ]);
     assertNonEmpty("thread.identity.birthPlace.displayName", thread.identity.birthPlace.displayName);
     assertNonEmpty("thread.identity.birthPlace.country", thread.identity.birthPlace.country);
+    if (thread.identity.birthPlace.countryCode !== undefined
+      && !/^[A-Z]{2}$/u.test(thread.identity.birthPlace.countryCode)) {
+      throw new TypeError("thread.identity.birthPlace.countryCode must use ISO alpha-2");
+    }
     assertNonEmpty("thread.identity.birthPlace.city", thread.identity.birthPlace.city);
     assertFiniteNumber("thread.identity.birthPlace.lat", thread.identity.birthPlace.lat, { minimum:-90 });
     assertFiniteNumber("thread.identity.birthPlace.long", thread.identity.birthPlace.long, { minimum:-180 });
@@ -367,9 +371,12 @@ function applyThreadIdentityUpdate(thread, event) {
     const birthPlace = event.payload.changes.birthPlace;
     assertNonEmpty(`identity event ${event.eventId} birthCity`, birthCity);
     assertPlainObject(`identity event ${event.eventId} birthPlace`, birthPlace);
-    assertExactKeys(`identity event ${event.eventId} birthPlace`, birthPlace, ["displayName","country","city","lat","long"]);
+    assertExactKeys(`identity event ${event.eventId} birthPlace`, birthPlace, ["displayName","country","countryCode","city","lat","long"]);
     assertNonEmpty(`identity event ${event.eventId} birthPlace.displayName`, birthPlace.displayName);
     assertNonEmpty(`identity event ${event.eventId} birthPlace.country`, birthPlace.country);
+    if (birthPlace.countryCode !== undefined && !/^[A-Z]{2}$/u.test(birthPlace.countryCode)) {
+      throw new IntegrityError(`identity event ${event.eventId} has invalid birth country code`);
+    }
     assertNonEmpty(`identity event ${event.eventId} birthPlace.city`, birthPlace.city);
     assertFiniteNumber(`identity event ${event.eventId} birthPlace.lat`, birthPlace.lat, { minimum:-90 });
     assertFiniteNumber(`identity event ${event.eventId} birthPlace.long`, birthPlace.long, { minimum:-180 });
