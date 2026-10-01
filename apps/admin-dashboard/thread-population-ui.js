@@ -22,6 +22,7 @@ import {
 
 const $ = (selector) => document.querySelector(selector);
 const view = $("#threads-view");
+const activityViewPanel = $(".activity-view-panel");
 const appearanceView = $("#appearance-view");
 const rows = $("#thread-population-rows");
 const empty = $("#thread-population-empty");
@@ -1545,7 +1546,7 @@ function syncOperatorNavigation() {
     ? "Inspect actual Thread ancestry demand, calibration coverage, and targeted migration impact."
     : "See Fibre as one operating system: birth, publication, situated meetings, cognition, experience, and what continues.";
 
-  for(const selector of [".activity-view-head",".metrics",".page-actions"]){
+  for(const selector of [".metrics",".page-actions"]){
     const node=document.querySelector(selector);
     if(node)node.hidden=appearanceActive;
   }
@@ -1554,6 +1555,7 @@ function syncOperatorNavigation() {
 function holdOperatorMode() {
   if (!active) return;
   syncOperatorNavigation();
+  activityViewPanel.hidden = populationMode === "appearance";
   $("#causal-view").hidden = true;
   $("#raw-view").hidden = true;
   birthCenterView.hidden = populationMode !== "birth-center";
@@ -1714,6 +1716,7 @@ function exitOperatorMode(nextMode) {
   active = false;
   stopPendingPolling();
   stopPopulationLiveWatch();
+  activityViewPanel.hidden = false;
   birthCenterView.hidden = true;
   view.hidden = true;
   appearanceView.hidden = true;
