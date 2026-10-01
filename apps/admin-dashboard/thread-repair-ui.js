@@ -4,6 +4,7 @@ import {
   openThreadActionDialog,
 } from "./thread-action-dialog.js";
 import { threadAppearanceSection } from "./thread-appearance-ui.js";
+import { identityActionPayload } from "./thread-identity-action.js";
 import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
 
 const dialogBody = document.querySelector("#dialog-body");
@@ -258,11 +259,9 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
         description,
         fields:actionFields(action),
         run:async (input) => {
-          await post(threadId, {
-            action:action.command ?? "identity",
+          await post(threadId, identityActionPayload(action,input,{
             operationKey:`${action.command === "raised_languages" ? "admin_raised_languages" : "admin_identity"}_${Date.now().toString(36)}`,
-            ...input,
-          });
+          }));
           window.dispatchEvent(new CustomEvent("fibre:thread-identity-updated", {
             detail:{ threadId, actionId:action.id },
           }));
