@@ -468,7 +468,7 @@ function renderMigrations(){
 
   for(const candidate of candidates){
     const calibrationPending=pendingMigrations.has(candidate.threadId);
-    const busy=calibrationPending||busyThreads.has(candidate.threadId);
+    const busy=calibrationPending||busyThreads.has(candidate.threadId)||candidate.active===true;
     const row=el("div","appearance-migration-row");
     if(busy)row.classList.add("is-pending");
 
@@ -573,6 +573,9 @@ function renderMap(){
   hideMapPopover();
   let points=0;
   for(const hole of snapshot?.holes??[]){
+    const activeThreadIds=new Set((hole.threads??[])
+      .filter((thread)=>thread.active===true)
+      .map((thread)=>thread.threadId));
     for(const place of hole.places??[]){
       if(!Number.isFinite(Number(place.lat))||!Number.isFinite(Number(place.long)))continue;
       const point=worldMapPoint(Number(place.lat),Number(place.long));
@@ -581,7 +584,9 @@ function renderMap(){
       circle.setAttribute("cy",point.y.toFixed(1));
       circle.setAttribute("r",String(Math.min(12,4+Math.sqrt(place.count??1)*2)));
       circle.classList.add("appearance-hole-marker",`coverage-${hole.coverage}`);
-      if((place.threadIds??[]).some((threadId)=>pendingMigrations.has(threadId)||busyThreads.has(threadId)))circle.classList.add("active");
+      if((place.threadIds??[]).some((threadId)=>
+        pendingMigrations.has(threadId)||busyThreads.has(threadId)||activeThreadIds.has(threadId)
+      ))circle.classList.add("active");
       circle.setAttribute("tabindex","0");
       circle.setAttribute("role","button");
       circle.setAttribute("aria-label",`${hole.referencePopulation??"Missing provenance"} at ${place.displayName??place.city??"represented place"}`);
