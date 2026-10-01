@@ -31,6 +31,7 @@ let snapshot=null;
 let selectedKey=null;
 let loadPromise=null;
 let mapPopover=null;
+let mapPopoverCloseTimer=null;
 const pendingMigrations=new Map();
 const busyThreads=new Set();
 
@@ -454,19 +455,33 @@ function renderMigrations(){
   }
 }
 
+function clearMapPopoverClose(){
+  if(mapPopoverCloseTimer!==null)window.clearTimeout(mapPopoverCloseTimer);
+  mapPopoverCloseTimer=null;
+}
+
+function hideMapPopover(){
+  clearMapPopoverClose();
+  if(mapPopover)mapPopover.hidden=true;
+}
+
+function scheduleMapPopoverClose(){
+  clearMapPopoverClose();
+  mapPopoverCloseTimer=window.setTimeout(hideMapPopover,2000);
+}
+
 function ensureMapPopover(){
   if(mapPopover)return mapPopover;
   mapPopover=el("div","appearance-map-popover");
   mapPopover.hidden=true;
+  mapPopover.addEventListener("pointerenter",clearMapPopoverClose);
+  mapPopover.addEventListener("pointerleave",scheduleMapPopoverClose);
   mapShell?.append(mapPopover);
   return mapPopover;
 }
 
-function hideMapPopover(){
-  if(mapPopover)mapPopover.hidden=true;
-}
-
 function showMapPopover(hole,place,marker){
+  clearMapPopoverClose();
   const popover=ensureMapPopover();
   const head=el("div","appearance-map-popover-head");
   const placeLabel=el("strong");
@@ -523,6 +538,8 @@ function renderMap(){
         renderDetail();
         showMapPopover(hole,place,circle);
       };
+      circle.addEventListener("pointerenter",()=>showMapPopover(hole,place,circle));
+      circle.addEventListener("pointerleave",scheduleMapPopoverClose);
       circle.addEventListener("click",select);
       circle.addEventListener("keydown",(event)=>{
         if(event.key!=="Enter"&&event.key!==" ")return;
