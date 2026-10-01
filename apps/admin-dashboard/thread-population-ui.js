@@ -1696,8 +1696,6 @@ for (const eventName of [
 ]) {
   window.addEventListener(eventName, refreshPopulationAfterThreadChange);
 }
-window.addEventListener("scroll", hidePopulationPortraitPreview, true);
-window.addEventListener("resize", hidePopulationPortraitPreview);
 
 const initialMode=operatorModeFromLocation(location);
 if (initialMode === "birth-center") enterBirthCenter();
