@@ -278,9 +278,11 @@ population-lab:experiment:<experimentId>:report
 population-lab:experiment:<experimentId>:image:<ordinal>
 ```
 
-Local infra may materialize those logical refs under `.fibre/population-lab/<experimentId>/...`; Cloudflare may map them to dedicated R2/catalog resources; another provider may map them to S3 or another object/catalog implementation. Population Lab itself must never write directly to a filesystem, R2, S3 or provider SDK.
+Local infra may materialize those logical refs beneath `.fibre/population-lab/`; Cloudflare may map them to R2/catalog resources; another provider may map them to S3 or another object/catalog implementation. Population Lab itself must never write experiment artifacts directly to a filesystem, R2, S3 or provider SDK.
 
-A1 does not persist experiments; its prepared experiment/research actions are control-plane specifications only.
+Experiment objects are immutable while present: the same object reference cannot be rewritten with different bytes or metadata. Because Population Lab experiments are non-authoritative calibration evidence rather than Thread/World history, an explicit whole-experiment cleanup may remove its object set and catalog entry. Cleanup never mutates an existing artifact in place and never changes calibration authority.
+
+A1 does not persist experiments; its prepared experiment/research actions are control-plane specifications only. A2 introduces this artifact lifecycle without granting experiment output authority over Human Appearance.
 
 ## What does not belong in `InfraDriver`
 
