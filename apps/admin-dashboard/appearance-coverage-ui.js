@@ -34,16 +34,6 @@ let mapPopover=null;
 const pendingMigrations=new Map();
 const busyThreads=new Set();
 
-const portraitObserver=typeof IntersectionObserver==="function"
-  ? new IntersectionObserver((entries)=>{
-      for(const entry of entries){
-        if(!entry.isIntersecting)continue;
-        portraitObserver.unobserve(entry.target);
-        void hydratePortrait(entry.target);
-      }
-    },{rootMargin:"160px 0px"})
-  : null;
-
 function el(tag,className,text=null){
   const node=document.createElement(tag);
   if(className)node.className=className;
