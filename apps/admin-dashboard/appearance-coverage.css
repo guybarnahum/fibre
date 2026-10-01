@@ -24,7 +24,8 @@
 .appearance-map-popover-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .appearance-map-popover-head strong{font-size:10px}
 .appearance-map-popover-head span{font-size:8.5px;color:var(--muted)}
-.appearance-map-popover-head strong .thread-location{color:var(--text);font-size:10px}
+.appearance-map-popover-head strong .thread-location{color:var(--text)}
+.appearance-map-popover-head strong .thread-location-text{font-size:10px}
 .appearance-map-people{display:grid;gap:6px;max-height:180px;overflow:auto}
 .appearance-coverage-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.9fr);gap:12px;align-items:start}
 .appearance-coverage-holes,.appearance-hole-detail,.appearance-migrations-section,.appearance-model-section{border:1px solid var(--border);border-radius:10px;background:var(--surface-subtle)}
