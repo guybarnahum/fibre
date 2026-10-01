@@ -87,6 +87,10 @@
             "country": {
               "type": "string"
             },
+            "countryCode": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            },
             "city": {
               "type": "string"
             },
