@@ -12,6 +12,12 @@ test("Appearance is a top-level Admin surface and cannot leak into operator view
   assert.doesNotMatch(viewSwitch,/view-appearance/u,"Appearance leaked into Activity/Birth Center/Threads/Stillborn switch");
   assert.match(css,/\.appearance-coverage-view\[hidden\]\s*\{\s*display:none\s*\}/u,
     "Appearance panel can override the hidden attribute");
+
+  const navigation=populationUi.match(/function syncOperatorNavigation\(\)[\s\S]*?\n\}/u)?.[0]??"";
+  assert.match(navigation,/\.activity-view-head","\.metrics","\.page-actions"/u,
+    "Appearance kept shared Activity chrome");
+  assert.match(navigation,/node\.hidden=appearanceActive/u,
+    "Appearance did not isolate its top-level surface");
 });
 
 test("Threads exposes one generic migration filter, not Appearance-specific controls",()=>{
