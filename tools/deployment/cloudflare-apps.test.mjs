@@ -15,6 +15,9 @@ const state = {
       { binding: "PRESENTATION_CATALOG", name: "fibre-presentation-catalog-staging", id: "d1_catalog" },
       { binding: "ACTIVITY_LOG", name: "fibre-activity-log-staging", id: "d1_activity" },
     ],
+    r2: [
+      { name:"fibre-presentation-assets-staging", status:"existing" },
+    ],
   },
 };
 
@@ -57,7 +60,11 @@ test("admin config reuses provisioned Activity D1 and injects reconciled Access 
     name: "fibre-admin-dashboard",
     routes: [{ pattern: "admin.insidefibre.com", custom_domain: true }],
     vars: { FIBRE_ENVIRONMENT: "production" },
-    d1_databases: [{ binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" }],
+    d1_databases: [
+      { binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" },
+      { binding: "POPULATION_LAB_CATALOG", database_name: "fibre-presentation-catalog" },
+    ],
+    r2_buckets:[{ binding:"POPULATION_LAB_OBJECTS", bucket_name:"fibre-presentation-assets" }],
     durable_objects:{ bindings:[{
       name:"ADMIN_LIVE",
       class_name:"FibreAdminLiveDurableObject",
@@ -78,6 +85,9 @@ test("admin config reuses provisioned Activity D1 and injects reconciled Access 
   assert.equal(resolved.vars.GEONAMES_USERNAME, "fibre-test");
   assert.equal(resolved.d1_databases[0].database_name, "fibre-activity-log-staging");
   assert.equal(resolved.d1_databases[0].database_id, "d1_activity");
+  assert.equal(resolved.d1_databases[1].database_name, "fibre-presentation-catalog-staging");
+  assert.equal(resolved.d1_databases[1].database_id, "d1_catalog");
+  assert.equal(resolved.r2_buckets[0].bucket_name, "fibre-presentation-assets-staging");
   assert.equal(
     resolved.durable_objects.bindings.find((binding) => binding.name === "ADMIN_LIVE")?.script_name,
     "fibre-thread-presentation-staging",
