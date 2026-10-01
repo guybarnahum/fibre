@@ -224,7 +224,38 @@
           </div>
         </div>
 
-        <div id="appearance-view" class="activity-view appearance-coverage-view" hidden>
+        <div id="stillborn-view" class="activity-view" hidden>
+          <div class="stillborn-intro">
+            <div><p class="eyebrow">Unrecoverable</p><h3>Stillborn Threads</h3></div>
+            <p>Activity observed these Thread identifiers, but World has no recoverable admitted person state. This is an operational parking view, not a lifecycle state.</p>
+          </div>
+          <div class="table-wrap">
+            <table class="stillborn-table">
+              <thead><tr>
+                <th>Thread identifier</th>
+                <th>Last activity</th>
+                <th>Health</th>
+                <th>Meaning</th>
+                <th>Action</th>
+              </tr></thead>
+              <tbody id="stillborn-rows"></tbody>
+            </table>
+            <div id="stillborn-empty" class="empty" hidden><div class="empty-icon">○</div><h3>No Stillborn Threads</h3><p>No unrecoverable Thread identifiers are currently parked here.</p></div>
+          </div>
+        </div>
+
+        <div class="activity-pager" aria-label="Activity pages">
+          <div class="pager-nav">
+            <button id="page-first" class="secondary pager-button pager-edge" type="button" title="First page" aria-label="First page">≪ First</button>
+            <button id="page-prev" class="secondary pager-button" type="button">← Previous</button>
+            <span id="page-label">Page 1 of 1</span>
+            <button id="page-next" class="secondary pager-button" type="button">Next →</button>
+            <button id="page-last" class="secondary pager-button pager-edge" type="button" title="Last page" aria-label="Last page">Last ≫</button>
+          </div>
+        </div>
+      </section>
+
+        <div id="appearance-view" class="panel appearance-coverage-view" hidden>
           <div class="appearance-coverage-toolbar">
             <div>
               <p class="eyebrow">Population Lab</p>
@@ -290,37 +321,6 @@
             </div>
           </details>
         </div>
-
-        <div id="stillborn-view" class="activity-view" hidden>
-          <div class="stillborn-intro">
-            <div><p class="eyebrow">Unrecoverable</p><h3>Stillborn Threads</h3></div>
-            <p>Activity observed these Thread identifiers, but World has no recoverable admitted person state. This is an operational parking view, not a lifecycle state.</p>
-          </div>
-          <div class="table-wrap">
-            <table class="stillborn-table">
-              <thead><tr>
-                <th>Thread identifier</th>
-                <th>Last activity</th>
-                <th>Health</th>
-                <th>Meaning</th>
-                <th>Action</th>
-              </tr></thead>
-              <tbody id="stillborn-rows"></tbody>
-            </table>
-            <div id="stillborn-empty" class="empty" hidden><div class="empty-icon">○</div><h3>No Stillborn Threads</h3><p>No unrecoverable Thread identifiers are currently parked here.</p></div>
-          </div>
-        </div>
-
-        <div class="activity-pager" aria-label="Activity pages">
-          <div class="pager-nav">
-            <button id="page-first" class="secondary pager-button pager-edge" type="button" title="First page" aria-label="First page">≪ First</button>
-            <button id="page-prev" class="secondary pager-button" type="button">← Previous</button>
-            <span id="page-label">Page 1 of 1</span>
-            <button id="page-next" class="secondary pager-button" type="button">Next →</button>
-            <button id="page-last" class="secondary pager-button pager-edge" type="button" title="Last page" aria-label="Last page">Last ≫</button>
-          </div>
-        </div>
-      </section>
     </main>
   </div>
 
