@@ -78,6 +78,7 @@ function lineageEntry({thread,side,lineage}){
     coverage:state,
     calibration,
     birthLocation:locationOf(thread),
+    active:thread?.reconciliation?.state==="pending",
   });
 }
 
@@ -111,6 +112,7 @@ function summarizeHoles(entries){
         threadId:entry.threadId,
         threadName:entry.threadName,
         birthLocation:entry.birthLocation,
+        active:entry.active===true,
       }));
     }
     current.sides+=1;
@@ -157,6 +159,7 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
       reasons:[],
       changes:[],
       birthLocation:locationOf(thread),
+      active:thread?.reconciliation?.state==="pending",
       physicalOrigins:physicalOrigins(evidence?.physicalAncestry),
     };
     if(!current.reasons.includes(reason))current.reasons.push(reason);
@@ -186,6 +189,7 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
         threadName:clean(thread.displayName),
         physicalGenomeVersion:clean(thread.physicalGenomeVersion),
         birthLocation:locationOf(thread),
+        active:thread?.reconciliation?.state==="pending",
       }));
       continue;
     }
@@ -206,6 +210,7 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
       coverage:"missing",
       calibration:null,
       birthLocation:thread.birthLocation,
+      active:thread.active===true,
     }));
   }
 
