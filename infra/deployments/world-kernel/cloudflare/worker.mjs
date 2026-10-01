@@ -27,6 +27,7 @@ const THREAD_DIRECTORY_ENTRIES_ROUTE = "/internal/thread-directory/entries";
 const THREAD_DIRECTORY_PRESENCE_ROUTE = "/internal/thread-directory/presence";
 const THREAD_DIRECTORY_ENTRY_ROUTE = /^\/internal\/thread-directory\/entry\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})$/u;
 const APPEARANCE_COVERAGE_ROUTE = "/internal/appearance/coverage";
+const APPEARANCE_ORIGINS_ROUTE = "/internal/appearance/origins";
 const THREAD_MIGRATIONS_ROUTE = "/internal/thread-migrations";
 const THREAD_MIGRATION_ENTRY_ROUTE = /^\/internal\/thread-migrations\/([^/]+)$/u;
 
@@ -334,6 +335,28 @@ export class FibreWorldDurableObject extends DurableObject {
         return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
       }
       return Response.json(this.appearanceCoverageForRequest().scan());
+    }
+    if (url.pathname === APPEARANCE_ORIGINS_ROUTE) {
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
+      if (request.method !== "POST") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
+      if (!privateOperatorAuthorized(request, this.env)) {
+        return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
+      }
+      try {
+        const body=await request.json();
+        if(!body||typeof body!=="object"||Array.isArray(body)||!Array.isArray(body.threadIds)){
+          throw new TypeError("Appearance origins request requires threadIds");
+        }
+        return Response.json({
+          contract:"fibre-appearance-origins-v0.1",
+          threads:this.appearanceCoverageForRequest().origins(body.threadIds),
+        });
+      } catch (error) {
+        if(error instanceof TypeError||error instanceof SyntaxError){
+          return Response.json({ error:{ code:"INVALID_REQUEST",detail:error.message } },{status:400});
+        }
+        throw error;
+      }
     }
     if (url.pathname === THREAD_MIGRATIONS_ROUTE) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
