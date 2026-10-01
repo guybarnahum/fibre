@@ -25,6 +25,8 @@ test("local artifact InfraDriver persists immutable objects and catalog entries"
 
     const page=await second.catalog.list({prefix:"population-lab:experiment:"});
     assert.deepEqual(page.entries.map(entry=>entry.key),["population-lab:experiment:exp_1"],"catalog prefix listing lost experiment");
+    assert.equal(await second.objects.remove("population-lab:experiment:exp_1:report"),true,"artifact cleanup did not remove stored bytes");
+    assert.equal(await second.objects.get("population-lab:experiment:exp_1:report"),null,"deleted artifact remained readable");
   }finally{
     await rm(root,{recursive:true,force:true});
   }
