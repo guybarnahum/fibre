@@ -27,8 +27,10 @@ function locationParts(value){
   if(value&&typeof value==="object"&&!Array.isArray(value)){
     const city=clean(value.city??value.locality);
     const country=clean(value.country);
+    const explicitCode=clean(value.countryCode)?.toUpperCase()??null;
+    const countryCode=explicitCode??(/^[A-Za-z]{2}$/u.test(country??"")?country.toUpperCase():null);
     const displayName=clean(value.displayName)??([city,country].filter(Boolean).join(", ")||null);
-    if(city||country)return {city,country,displayName,countryCode:clean(value.countryCode)?.toUpperCase()??null};
+    if(city||country)return {city,country,displayName,countryCode};
     return locationParts(displayName);
   }
   const text=clean(value);
