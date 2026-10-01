@@ -51,7 +51,7 @@ test("Threads map exposes active, frozen-situated and awaiting-LivedNow states w
       identity:{
         lifecycleStatus:"active",
         birthPlace:"Kaohsiung, Taiwan",
-        birthLocation:{ displayName:"Kaohsiung, Taiwan", city:"Kaohsiung", country:"Taiwan", lat:22.62728, long:120.30144 },
+        birthLocation:{ displayName:"Kaohsiung, Taiwan", city:"Kaohsiung", country:"Taiwan", countryCode:"TW", lat:22.62728, long:120.30144 },
       },
       currentLocation:null,
       runtime:{ state:"active", expiresAt:"2099-01-01T00:00:00Z" },
