@@ -49,15 +49,6 @@
 .appearance-hole-facts strong{font-size:12px}
 .appearance-calibration-chain,.appearance-hole-populations{margin:0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
 .appearance-thread-viewers{display:grid;gap:6px}
-.appearance-thread-viewer{display:flex;align-items:center;gap:8px;min-width:0}
-.appearance-thread-viewer.compact{gap:7px}
-.appearance-thread-face{display:grid;place-items:center;width:30px;height:30px;min-width:30px;padding:0;overflow:hidden;border:1px solid var(--border);border-radius:50%;background:var(--surface);color:var(--muted);font-size:10px;font-weight:700;text-decoration:none}
-.appearance-thread-face:hover{border-color:var(--accent)}
-.appearance-thread-face img{width:100%;height:100%;object-fit:cover;display:block}
-.appearance-thread-viewer-copy{display:grid;gap:1px;min-width:0}
-.appearance-thread-name{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-size:10px;font-weight:700;text-decoration:none}
-.appearance-thread-name:hover{text-decoration:underline}
-.appearance-thread-viewer-copy small{font-size:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .appearance-place-list{display:flex;flex-wrap:wrap;gap:6px}
 .appearance-place-chip{padding:4px 7px;border-radius:999px;background:color-mix(in srgb,var(--accent) 7%,transparent);border:1px solid var(--border);font-size:10px}
 .appearance-hole-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:80%;margin:2px auto 0}
@@ -75,7 +66,6 @@
 .appearance-migration-origin>strong,.appearance-migration-place>strong{font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .appearance-migration-origin>span{color:var(--text)}
 .appearance-migration-place-value{display:flex;align-items:center;gap:4px;min-width:0}
-.appearance-country-flag{cursor:help;font-size:13px;line-height:1}
 .appearance-migration-status{display:grid;justify-items:start;gap:5px;min-width:0}
 .appearance-migration-status p{margin:0;color:var(--muted);font-size:10px;line-height:1.4}
 .appearance-migration-changes{display:flex;flex-wrap:wrap;gap:5px}
