@@ -256,7 +256,7 @@ The accepted physical model still needs a disciplined way to discover and extend
 
 ### A1 — Appearance coverage workbench
 
-**Status: implemented on `main`; pending focused/local validation and staging UI proof.**
+**Status: accepted in staging 2026-10-01.** Full `slice:validate` passed 1483/1483; staging Appearance reported 41 Threads / 59 lineage sides / 11 ranked holes and exactly matched World on all 17 appearance-migration candidates. Operator review confirmed hole drill-through, map/portrait/flag behavior, cross-surface identity consistency and the Threads **Needs migration** projection.
 
 Use the existing Population Lab domain as the single coverage engine.
 
@@ -330,7 +330,7 @@ Only after staging evidence is convincing:
 
 ### A1 — Coverage workbench
 
-**Status: implemented on `main`; pending focused validation and staging proof.**
+**Status: accepted in staging 2026-10-01.** The live coverage projection and World migration projection agreed exactly for all 17 appearance migration candidates, and the operator UI acceptance checks passed.
 
 Purpose: make the current Thread population drive the next calibration work without creating a second appearance implementation.
 
@@ -422,6 +422,8 @@ Acceptance:
 - Appearance geography is labeled as demand context only.
 
 ### A2 — InfraDriver experiment artifacts
+
+**Status: A2.1 implemented on `main`, pending validation.** The existing Population Lab CLI runner persists experiment manifests, generated population, diagnostics result, HTML report and optional image artifacts through one shared Population Lab artifact store over generic InfraDriver `objects` + `catalog`. Failed partial runs remain inspectable evidence. Explicit experiment deletion removes the experiment object set plus catalog entry; immutable objects still cannot be rewritten in place. Admin Appearance can list/open/delete persisted cloud experiments through that same store, with icon-only delete progress. Launching cloud experiments from Admin remains the next A2 slice; no A3 research/approval or A4 migration authority is introduced.
 
 Persist Population Lab experiments entirely through generic InfraDriver `objects` + `catalog`.
 
