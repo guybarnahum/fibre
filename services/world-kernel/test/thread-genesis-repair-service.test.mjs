@@ -864,6 +864,43 @@ test("outdated appearance model reuses durable ancestry evidence", async () => {
 });
 
 
+
+test("calibration drift is an explicit Appearance migration", async () => {
+  const ancestry=[{population:"Moroccan family",share:1,referencePopulation:"afr_north.morocco"}];
+  const physicalAncestry={maternal:ancestry,paternal:ancestry};
+  const physicalGenome=resolveBirthPhysicalInheritance({
+    maternalAncestry:ancestry,
+    paternalAncestry:ancestry,
+    seed:"calibration-domain-test",
+  }).genome;
+  const currentDependencies=appearanceCalibrationDependencies(physicalAncestry);
+  const storedDependencies=structuredClone(currentDependencies);
+  storedDependencies[0].dependencyChain.at(-1).version=0;
+
+  const physicalGenomeMigrator={
+    latestEvidence(){
+      return {
+        eventId:"evt_calibration_domain",
+        recordedAt:"2026-09-30T22:00:00.000Z",
+        physicalAncestry,
+        physicalGenomeVersion:physicalGenome.version,
+        calibrationDependencies:storedDependencies,
+      };
+    },
+    migrate(){throw new Error("diagnosis must not migrate");},
+  };
+  const {service,threadId,thread}=fixture({physicalGenomeMigrator});
+  thread.genome.physical=physicalGenome;
+
+  const diagnosis=await service.diagnose(threadId);
+  const finding=diagnosis.findings.find((entry)=>entry.code==="PHYSICAL_APPEARANCE_CALIBRATION_OUTDATED");
+
+  assert.equal(finding.state,"migration_required");
+  assert.equal(finding.migration.domain,"appearance",
+    "calibration drift was not exposed through the shared Appearance migration path");
+  assert.equal(finding.migration.id,"physical_embodiment_v2");
+});
+
 test("canonical visual diagnosis follows current Embodiment, not stale Genesis seed", async () => {
   const {service,threadId,thread,embodiment}=fixture();
   thread.identity.canonicalVisualIdentity.specification={
