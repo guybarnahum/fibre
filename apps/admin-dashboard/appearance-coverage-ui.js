@@ -311,10 +311,15 @@ function renderModel(){
   }
 }
 
+function isRecalibrationCandidate(candidate){
+  return (candidate?.reasons??[candidate?.reason]).some((reason)=>
+    reason==="dependency_snapshot_missing"||reason==="calibration_dependencies_changed"
+  );
+}
+
 function migrationReason(candidate){
   if(candidate.reason==="dependency_snapshot_missing")return "Stored calibration dependency snapshot is missing.";
-  if(candidate.reason==="calibration_dependency_changed")return "One or more stored calibration dependencies differ from the current resolved chain.";
-  if(candidate.reason==="physical_model_outdated")return "Physical appearance model is older than Fibre's current model.";
+  if(candidate.reason==="calibration_dependencies_changed")return "One or more stored calibration dependencies differ from the current resolved chain.";
   return human(candidate.reason);
 }
 
@@ -336,7 +341,9 @@ function birthplaceNode(location){
 }
 
 function pendingCandidateList(){
-  const merged=new Map((snapshot?.migrationCandidates??[]).map((candidate)=>[candidate.threadId,candidate]));
+  const merged=new Map((snapshot?.migrationCandidates??[])
+    .filter(isRecalibrationCandidate)
+    .map((candidate)=>[candidate.threadId,candidate]));
   for(const [threadId,{candidate}] of pendingMigrations){
     if(!merged.has(threadId))merged.set(threadId,candidate);
   }
@@ -605,7 +612,7 @@ export function renderAppearanceCoverage(payload){
   $("#appearance-stat-threads").textContent=payload.threadCount??0;
   $("#appearance-stat-lineages").textContent=payload.lineageCount??0;
   $("#appearance-stat-holes").textContent=payload.holes?.length??0;
-  $("#appearance-stat-migrations").textContent=payload.migrationCandidates?.length??0;
+  $("#appearance-stat-migrations").textContent=(payload.migrationCandidates??[]).filter(isRecalibrationCandidate).length;
   $("#appearance-stat-fallback").textContent=(payload.coverage?.fallback??0)+(payload.coverage?.missing??0);
   if(copyButton)copyButton.disabled=false;
   renderHoles();
@@ -618,7 +625,7 @@ export function renderAppearanceCoverage(payload){
 export function appearanceCoverageTopSummary(payload=snapshot){
   return Object.freeze({
     holes:payload?.holes?.length??0,
-    migrations:payload?.migrationCandidates?.length??0,
+    migrations:(payload?.migrationCandidates??[]).filter(isRecalibrationCandidate).length,
     lineages:payload?.lineageCount??0,
   });
 }
