@@ -47,10 +47,17 @@ test("appearance coverage distinguishes explicit, broad, fallback, and missing a
     true,
     "missing ancestry provenance was not exposed as a coverage hole",
   );
-  assert.equal(
-    result.holes.some((hole)=>hole.referencePopulation==="afr_north.morocco"),
-    true,
-    "stable Moroccan ancestry did not resolve to the current calibration node",
+  const moroccoHole=result.holes.find((hole)=>hole.referencePopulation==="afr_north.morocco");
+  assert.ok(moroccoHole,"stable Moroccan ancestry did not resolve to the current calibration node");
+  assert.deepEqual(
+    moroccoHole.threads.map((entry)=>[entry.threadId,entry.threadName]),
+    [["thr_moroccan","Moroccan Thread"]],
+    "coverage hole lost its human Thread drill-through",
+  );
+  assert.deepEqual(
+    moroccoHole.places[0].threadIds,
+    ["thr_moroccan"],
+    "coverage map location lost its affected Threads",
   );
   assert.equal(result.holes.some((hole)=>hole.referencePopulation==="east_asia.korean"),true);
 });
@@ -92,6 +99,8 @@ test("physical model drift is reported as appearance migration",()=>{
 
   const staleCandidate=result.migrationCandidates.find((entry)=>entry.threadId==="thr_stale");
   assert.equal(staleCandidate.reasons.includes("physical_model_outdated"),true);
+  assert.deepEqual(staleCandidate.physicalOrigins.summary,["Family"],
+    "migration candidate lost durable physical-origin context");
   assert.equal(
     result.migrationCandidates.some((entry)=>entry.threadId==="thr_current"&&entry.reasons.includes("physical_model_outdated")),
     false,
