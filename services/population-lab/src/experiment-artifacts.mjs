@@ -36,12 +36,15 @@ export function createPopulationLabExperimentStore(infra){
     const objectRef=populationLabExperimentRef(experimentId,kind);
     const value=typeof bytes==="string"||bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
     const objectDigest=await digest(value);
-    await infra.objects.putImmutable(objectRef,value,objectDigest,{
+    const write=await infra.objects.putImmutable(objectRef,value,objectDigest,{
       experimentId:id(experimentId),
       kind,
       ...metadata,
     });
-    return Object.freeze({objectRef,digest:objectDigest});
+    return Object.freeze({
+      artifact:Object.freeze({objectRef,digest:objectDigest}),
+      created:write?.duplicate!==true,
+    });
   };
 
   const update=async(experimentId,patch)=>{
@@ -61,50 +64,57 @@ export function createPopulationLabExperimentStore(infra){
     return next;
   };
 
-  const indexArtifact=async(experimentId,artifact,patch)=>{
+  const indexArtifact=async(experimentId,write,patch)=>{
     try{
       await update(experimentId,patch);
-      return artifact;
+      return write.artifact;
     }catch(error){
-      if(typeof infra.objects.remove==="function")await infra.objects.remove(artifact.objectRef).catch(()=>{});
+      if(write.created&&typeof infra.objects.remove==="function"){
+        await infra.objects.remove(write.artifact.objectRef).catch(()=>{});
+      }
       throw error;
     }
   };
 
   return Object.freeze({
     async start(experimentId,manifest){
-      const artifact=await put(experimentId,"manifest",jsonBytes(manifest),{mediaType:"application/json"});
+      const write=await put(experimentId,"manifest",jsonBytes(manifest),{mediaType:"application/json"});
       try{
         return await update(experimentId,{
           status:"running",
           startedAt:manifest.startedAt??new Date().toISOString(),
-          artifacts:{manifest:artifact},
+          artifacts:{manifest:write.artifact},
         });
       }catch(error){
-        if(typeof infra.objects.remove==="function")await infra.objects.remove(artifact.objectRef).catch(()=>{});
+        if(write.created&&typeof infra.objects.remove==="function"){
+          await infra.objects.remove(write.artifact.objectRef).catch(()=>{});
+        }
         throw error;
       }
     },
     async putPopulation(experimentId,population){
-      const artifact=await put(experimentId,"population",jsonBytes(population),{mediaType:"application/json"});
-      return indexArtifact(experimentId,artifact,{artifacts:{population:artifact}});
+      const write=await put(experimentId,"population",jsonBytes(population),{mediaType:"application/json"});
+      return indexArtifact(experimentId,write,{artifacts:{population:write.artifact}});
     },
     async putResult(experimentId,result){
-      const artifact=await put(experimentId,"result",jsonBytes(result),{mediaType:"application/json"});
-      return indexArtifact(experimentId,artifact,{artifacts:{result:artifact}});
+      const write=await put(experimentId,"result",jsonBytes(result),{mediaType:"application/json"});
+      return indexArtifact(experimentId,write,{artifacts:{result:write.artifact}});
     },
     async putReport(experimentId,html){
-      const artifact=await put(experimentId,"report",html,{mediaType:"text/html; charset=utf-8"});
-      return indexArtifact(experimentId,artifact,{artifacts:{report:artifact}});
+      const write=await put(experimentId,"report",html,{mediaType:"text/html; charset=utf-8"});
+      return indexArtifact(experimentId,write,{artifacts:{report:write.artifact}});
     },
     async putImage(experimentId,{ordinal,role,bytes,mediaType="image/png"}){
       if(!Number.isInteger(ordinal)||ordinal<1)throw new TypeError("image ordinal must be a positive integer");
       if(!["geometry","portrait"].includes(role))throw new TypeError("image role must be geometry or portrait");
       const key=`image:${String(ordinal).padStart(3,"0")}:${role}`;
-      const artifact=await put(experimentId,key,bytes,{mediaType,ordinal,role});
+      const write=await put(experimentId,key,bytes,{mediaType,ordinal,role});
       const current=await infra.catalog.get(populationLabExperimentCatalogKey(experimentId));
       const images=Array.isArray(current?.images)?current.images:[];
-      return indexArtifact(experimentId,artifact,{images:Object.freeze([...images,Object.freeze({...artifact,ordinal,role,mediaType})])});
+      return indexArtifact(experimentId,write,{images:Object.freeze([
+        ...images,
+        Object.freeze({...write.artifact,ordinal,role,mediaType}),
+      ])});
     },
     async complete(experimentId,summary={}){
       return update(experimentId,{status:"completed",completedAt:new Date().toISOString(),summary});
