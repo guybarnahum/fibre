@@ -607,6 +607,7 @@ export function createThreadGenesisRepairService({
           ? "This Thread predates versioned appearance-calibration dependencies and needs one direct recalculation against the current calibration."
           : "One or more appearance calibration dependencies used by this Thread have changed.",
         migration:Object.freeze({
+          domain:"appearance",
           id:"physical_embodiment_v2",
           label:"Update appearance calibration",
           evidence:Object.freeze({
