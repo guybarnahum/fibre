@@ -108,6 +108,7 @@ test("birth geography repair is one replayable World identity event", () => {
     const birthPlace = {
       displayName:"Hilo, Hawaii, United States",
       country:"United States",
+      countryCode:"US",
       city:"Hilo, Hawaii",
       lat:19.70737,
       long:-155.08158,
