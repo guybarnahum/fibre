@@ -211,7 +211,7 @@ The CLI is one implementation under `tools/appearance/appearance.mjs`. `appearan
 
 ## Slice 8 — Admin Appearance UI
 
-**Status: implemented on `main`; pending focused validation and staging UI proof.**
+**Status: accepted in staging 2026-10-01.** Full repository validation and live operator acceptance passed; Appearance and World agreed exactly on the 17 affected appearance-migration Threads.
 
 Add a dedicated Appearance section in Thread Details.
 
@@ -299,7 +299,9 @@ Acceptance:
 
 ### A2 — InfraDriver-backed experiment artifacts
 
-Persist Population Lab experiment manifests, population inputs, HTML reports, images and results through generic `InfraDriver.objects` and `InfraDriver.catalog`. Local storage may materialize under `.fibre/population-lab/<experimentId>/...`; cloud providers map the same logical object references to their object/catalog implementations.
+**Status: A2.1 implemented on `main`, pending validation.** Population Lab runner outputs now use one shared experiment-artifact store over generic `InfraDriver.objects` + `InfraDriver.catalog`; Admin can list/open/delete persisted cloud experiments. Admin launch/execution is the next A2 slice.
+
+Persist Population Lab experiment manifests, population inputs, HTML reports, images and results through generic `InfraDriver.objects` and `InfraDriver.catalog`. Local storage materializes beneath `.fibre/population-lab/`; cloud providers map the same logical object references to their object/catalog implementations.
 
 Admin may launch and inspect the same existing Population Lab experiment runner. No dashboard-specific renderer or metrics implementation is allowed.
 
@@ -364,7 +366,7 @@ A1 acceptance:
 
 ### A2 — InfraDriver-backed experiments
 
-Persist and execute reproducible Population Lab experiments through generic `InfraDriver.objects` and `InfraDriver.catalog` only. Local provider materialization may live under `.fibre/population-lab/<experimentId>/...`; cloud mappings use dedicated object/catalog resources. Population Lab must not directly depend on filesystem, R2, S3, D1 or another provider mechanism.
+Persist and execute reproducible Population Lab experiments through generic `InfraDriver.objects` and `InfraDriver.catalog` only. Local provider materialization lives beneath `.fibre/population-lab/`; cloud mappings use provider object/catalog resources. The current Admin binding reuses Fibre's already-provisioned presentation object/catalog resources under the distinct `population-lab:experiment:*` namespace. Population Lab must not directly depend on filesystem, R2, S3, D1 or another provider mechanism.
 
 An experiment record owns immutable inputs, population/cohort JSON, generated images, HTML report, diagnostics and model/calibration versions. Admin may launch and inspect these experiments.
 
@@ -392,7 +394,7 @@ The accepted appearance foundation now needs an operator loop that improves cali
 
 ### A1 — Appearance coverage workbench
 
-**Status: implemented on `main`; pending focused validation and staging UI proof.**
+**Status: accepted in staging 2026-10-01.** Full repository validation and live operator acceptance passed; Appearance and World agreed exactly on the 17 affected appearance-migration Threads.
 
 Purpose: make current model reach, holes and targeted migration impact visible without model calls or provider work.
 
@@ -436,7 +438,7 @@ population-lab:experiment:<experimentId>:report
 population-lab:experiment:<experimentId>:image:<ordinal>
 ```
 
-Local infra may materialize this under `.fibre/population-lab/<experimentId>/...`; cloud providers may map it to dedicated R2/S3/object + catalog resources. Population Lab code must not know filesystem, R2, S3 or D1 mechanics.
+Local infra materializes this beneath `.fibre/population-lab/`; cloud providers may map it to R2/S3/object + catalog resources. Population Lab code must not know filesystem, R2, S3 or D1 mechanics.
 
 ### A3 — Research, candidate and approval
 
