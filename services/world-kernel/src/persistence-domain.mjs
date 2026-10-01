@@ -54,7 +54,7 @@ export function validateThreadSnapshot(thread) {
   if (thread.identity.birthPlace !== undefined) {
     assertPlainObject("thread.identity.birthPlace", thread.identity.birthPlace);
     assertExactKeys("thread.identity.birthPlace", thread.identity.birthPlace, [
-      "displayName","country","city","lat","long",
+      "displayName","country","countryCode","city","lat","long",
     ]);
     assertNonEmpty("thread.identity.birthPlace.displayName", thread.identity.birthPlace.displayName);
     assertNonEmpty("thread.identity.birthPlace.country", thread.identity.birthPlace.country);
