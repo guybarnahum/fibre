@@ -613,21 +613,13 @@ test("legacy embodiment migration retry resumes its matching pending canonical s
   assert.equal(repairCalls,0,"retry created a second canonical supersession");
 });
 
-test("Fix restores unambiguous malformed birth geography from existing World identity", async () => {
+test("birth geography requires explicit country code and generic Fix cannot mutate identity", async () => {
   const identityUpdater = {
-    update(current, { birthPlace, operationKey }) {
-      assert.equal(operationKey, "repair_birth_geography_1.birth_geography");
-      current.identity.birthCity = birthPlace.displayName;
-      current.identity.birthPlace = structuredClone(birthPlace);
-      return {
-        changed:true,
-        eventId:"evt_birth_geography_repaired",
-        changes:{ birthCity:birthPlace.displayName, birthPlace:structuredClone(birthPlace) },
-        thread:current,
-      };
+    update() {
+      throw new Error("generic Fix must not mutate birth geography");
     },
   };
-  const { service, state, threadId, thread } = fixture({ identityUpdater });
+  const { service, threadId, thread } = fixture({ identityUpdater });
   thread.identity.birthCity = "Hilo, Hawaii, United SAtates";
   thread.identity.birthPlace = {
     displayName:"Hilo, Hawaii, United SAtates",
@@ -636,68 +628,49 @@ test("Fix restores unambiguous malformed birth geography from existing World ide
     lat:19.70737,
     long:-155.08158,
   };
-  state.presentation = {
-    presentation:{
-      subject:{ displayName:"Repair Thread", birthDate:"2004-08-20", languages:["English"] },
-      civilIdentity:{ fibreIdentityNumber:"ABCD-12-EFGH" },
-      visualIdentity:{ referenceObjectRefs:["visual_identity_reference_1"] },
-      identityCard:null,
-    },
-    media:{ assets:[] },
-  };
 
   const before = await service.diagnose(threadId);
   const finding = before.findings.find((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE");
-  assert.equal(finding.action, "repair_birth_geography", "unambiguous birthplace was not repairable");
-  assert.equal(finding.recovered.displayName, "Hilo, Hawaii, United States");
+  assert.equal(finding.state, "operator_decision_required", "birth geography remained an automatic repair");
+  assert.equal(finding.action, null, "birth geography still exposed generic Fix authority");
+  assert.equal(finding.identityAction.id, "repair_birth_geography");
+  assert.equal(finding.identityAction.input.fields[0].name, "countryCode");
+  assert.equal(finding.identityAction.input.fields[0].required, true);
 
   const result = await service.repair(threadId, { repairKey:"repair_birth_geography_1" });
+  assert.equal(result.actions.some((entry) => entry.action === "repair_birth_geography"), false, "generic Fix bypassed operator input");
+  assert.equal(thread.identity.birthCity, "Hilo, Hawaii, United SAtates", "generic Fix changed authoritative birth geography");
+});
 
-  assert.deepEqual(result.actions.map((entry) => entry.action), ["repair_birth_geography"], "Fix did more than birth geography repair");
-  assert.equal(thread.identity.birthCity, "Hilo, Hawaii, United States");
-  assert.deepEqual(thread.identity.birthPlace, {
+test("valid legacy birthplace missing only countryCode becomes an operator decision", async () => {
+  const { service, threadId, thread } = fixture();
+  thread.identity.birthCity = "Hilo, Hawaii, United States";
+  thread.identity.birthPlace = {
     displayName:"Hilo, Hawaii, United States",
     country:"United States",
     city:"Hilo, Hawaii",
     lat:19.70737,
     long:-155.08158,
-  });
-  assert.equal(result.after.findings.some((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE"), false);
-  assert.equal(result.after.health, "healthy");
+  };
+
+  const diagnosis = await service.diagnose(threadId);
+  const finding = diagnosis.findings.find((entry) => entry.code === "BIRTH_COUNTRY_CODE_MISSING");
+  assert.equal(finding?.state, "operator_decision_required", "missing country code was not surfaced");
+  assert.equal(finding?.identityAction?.id, "set_birth_country_code");
+  assert.equal(finding?.identityAction?.fixed?.birthPlace?.country, "United States");
+  assert.equal(finding?.identityAction?.input?.fields?.[0]?.name, "countryCode");
 });
 
-
-test("birth geography recovery ignores punctuation noise without guessing locality", async () => {
+test("birth geography recovery tolerates punctuation noise without guessing the country code", async () => {
   const { service, threadId, thread } = fixture();
   thread.identity.birthCity = "San Francisco Califronia,, USA";
 
   const diagnosis = await service.diagnose(threadId);
   const finding = diagnosis.findings.find((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE");
 
-  assert.equal(finding?.action, "repair_birth_geography", "punctuation hid recoverable birthplace");
-  assert.equal(finding.recovered.displayName, "San Francisco, California, United States");
-});
-
-test("safe birth geography repair is not blocked by unrelated operator input", async () => {
-  const identityUpdater = {
-    update(current, { birthPlace }) {
-      current.identity.birthCity = birthPlace.displayName;
-      current.identity.birthPlace = structuredClone(birthPlace);
-      return { changed:true, eventId:"evt_birth_geography_repaired", changes:{ birthPlace }, thread:current };
-    },
-  };
-  const { service, threadId, thread } = fixture({ identityUpdater });
-  thread.identity.birthCity = "Hilo, Hawaii, United SAtates";
-  delete thread.identity.birthDate;
-
-  const before = await service.diagnose(threadId);
-  assert.equal(before.health, "operator_decision_required");
-  assert.ok(before.findings.some((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE"));
-
-  const result = await service.repair(threadId, { repairKey:"repair_birth_geography_with_input_pending" });
-
-  assert.equal(thread.identity.birthCity, "Hilo, Hawaii, United States", "safe geography repair stayed blocked");
-  assert.equal(result.after.health, "operator_decision_required", "repair hid unresolved operator input");
+  assert.equal(finding?.identityAction?.id, "repair_birth_geography", "punctuation hid recoverable birthplace");
+  assert.equal(finding?.recovered?.displayName, "San Francisco, California, United States");
+  assert.equal(finding?.identityAction?.input?.fields?.[0]?.required, true);
 });
 
 
