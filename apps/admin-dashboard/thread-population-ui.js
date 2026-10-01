@@ -1010,7 +1010,7 @@ function showThreadMapPopover(location, marker) {
   const heading = document.createElement("div");
   heading.className = "thread-map-popover-head";
   const title = document.createElement("strong");
-  title.textContent = [location.place.city, location.place.country].filter(Boolean).join(", ");
+  title.append(createThreadLocation(location.place));
   const count = document.createElement("span");
   count.textContent = [
     location.activeCount > 0 ? `${location.activeCount} active` : null,
