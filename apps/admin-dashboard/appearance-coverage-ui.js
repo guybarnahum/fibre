@@ -468,7 +468,9 @@ function renderMigrations(){
 
   for(const candidate of candidates){
     const calibrationPending=pendingMigrations.has(candidate.threadId);
-    const busy=calibrationPending||busyThreads.has(candidate.threadId)||candidate.active===true;
+    const localBusy=busyThreads.has(candidate.threadId);
+    const worldBusy=candidate.active===true;
+    const busy=calibrationPending||localBusy||worldBusy;
     const row=el("div","appearance-migration-row");
     if(busy)row.classList.add("is-pending");
 
@@ -482,15 +484,17 @@ function renderMigrations(){
 
     const status=el("div","appearance-migration-status");
     const tag=el("span","thread-health-tag warn",
-      calibrationPending?"Updating calibration":busy?"Repair / migration active":"Needs recalibration"
+      calibrationPending?"Updating calibration":localBusy?"Repair / migration active":worldBusy?"Reconciliation active":"Needs recalibration"
     );
     if(busy)tag.classList.add("thread-pending-throb");
     const reason=el("p",null,
       calibrationPending
         ?"Appearance authority is updating and canonical publication is converging."
-        :busy
+        :localBusy
           ?"This Thread currently has an operator repair or migration in progress."
-          :migrationReason(candidate)
+          :worldBusy
+            ?"World reconciliation for this Thread is still active."
+            :migrationReason(candidate)
     );
     status.append(tag,reason);
     const changes=el("div","appearance-migration-changes");
@@ -508,8 +512,12 @@ function renderMigrations(){
       action.disabled=true;
       decorateActionButton(action,{
         icon:"rotate",
-        label:calibrationPending?"Updating":"Working",
-        tooltip:calibrationPending?"Appearance recalibration is in progress":"Thread repair or migration is in progress",
+        label:calibrationPending?"Updating":worldBusy&&!localBusy?"Reconciling":"Working",
+        tooltip:calibrationPending
+          ?"Appearance recalibration is in progress"
+          :worldBusy&&!localBusy
+            ?"World reconciliation is in progress"
+            :"Thread repair or migration is in progress",
         spinning:true,
       });
     }else{
