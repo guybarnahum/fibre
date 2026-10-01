@@ -61,29 +61,37 @@ export function createPopulationLabExperimentStore(infra){
     return next;
   };
 
+  const indexArtifact=async(experimentId,artifact,patch)=>{
+    try{
+      await update(experimentId,patch);
+      return artifact;
+    }catch(error){
+      if(typeof infra.objects.remove==="function")await infra.objects.remove(artifact.objectRef).catch(()=>{});
+      throw error;
+    }
+  };
+
   return Object.freeze({
     async start(experimentId,manifest){
       const artifact=await put(experimentId,"manifest",jsonBytes(manifest),{mediaType:"application/json"});
-      return update(experimentId,{
+      await indexArtifact(experimentId,artifact,{
         status:"running",
         startedAt:manifest.startedAt??new Date().toISOString(),
         artifacts:{manifest:artifact},
       });
+      return this.get(experimentId);
     },
     async putPopulation(experimentId,population){
       const artifact=await put(experimentId,"population",jsonBytes(population),{mediaType:"application/json"});
-      await update(experimentId,{artifacts:{population:artifact}});
-      return artifact;
+      return indexArtifact(experimentId,artifact,{artifacts:{population:artifact}});
     },
     async putResult(experimentId,result){
       const artifact=await put(experimentId,"result",jsonBytes(result),{mediaType:"application/json"});
-      await update(experimentId,{artifacts:{result:artifact}});
-      return artifact;
+      return indexArtifact(experimentId,artifact,{artifacts:{result:artifact}});
     },
     async putReport(experimentId,html){
       const artifact=await put(experimentId,"report",html,{mediaType:"text/html; charset=utf-8"});
-      await update(experimentId,{artifacts:{report:artifact}});
-      return artifact;
+      return indexArtifact(experimentId,artifact,{artifacts:{report:artifact}});
     },
     async putImage(experimentId,{ordinal,role,bytes,mediaType="image/png"}){
       if(!Number.isInteger(ordinal)||ordinal<1)throw new TypeError("image ordinal must be a positive integer");
@@ -92,8 +100,7 @@ export function createPopulationLabExperimentStore(infra){
       const artifact=await put(experimentId,key,bytes,{mediaType,ordinal,role});
       const current=await infra.catalog.get(populationLabExperimentCatalogKey(experimentId));
       const images=Array.isArray(current?.images)?current.images:[];
-      await update(experimentId,{images:Object.freeze([...images,Object.freeze({...artifact,ordinal,role,mediaType})])});
-      return artifact;
+      return indexArtifact(experimentId,artifact,{images:Object.freeze([...images,Object.freeze({...artifact,ordinal,role,mediaType})])});
     },
     async complete(experimentId,summary={}){
       return update(experimentId,{status:"completed",completedAt:new Date().toISOString(),summary});
