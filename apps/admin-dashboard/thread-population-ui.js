@@ -8,7 +8,14 @@ import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js"
 import { watchAdminLive } from "./admin-live.js";
 import { invalidateView, threadPopulationViewKey } from "./view-invalidation.js";
 import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
-import { countryFlag, rememberPendingBirth, rememberPopulationThread, rememberThreadLabel, threadBirthplaceText } from "./thread-label-cache.js";
+import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
+import {
+  createThreadIdentityViewer,
+  createThreadLocation,
+  createThreadPortrait,
+  forgetThreadPortrait,
+  hideThreadPortraitPreview,
+} from "./thread-person-ui.js";
 import { reissueFidCard } from "./thread-observatory.js";
 import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
 import {
@@ -72,21 +79,9 @@ let population = [];
 let stillborn = [];
 let populationFilter = "all";
 let sortState = { key:"lastActivity", direction:"desc" };
-const populationPortraitCache = new Map();
-let populationPortraitPreview = null;
 let threadMapPopover = null;
 let threadMapPopoverCloseTimer = null;
 let stopPopulationLive = null;
-const populationPortraitObserver = typeof IntersectionObserver === "function"
-  ? new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        populationPortraitObserver.unobserve(entry.target);
-        void hydratePopulationPortrait(entry.target);
-      }
-    }, { rootMargin:"160px 0px" })
-  : null;
-
 function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
 }
@@ -142,123 +137,6 @@ function threadIdCopyButton(threadId) {
   return control;
 }
 
-function initials(value) {
-  const parts = String(value ?? "").trim().split(/\s+/u).filter(Boolean);
-  if (parts.length === 0) return "·";
-  if (parts.length === 1) return parts[0].slice(0, 1).toLocaleUpperCase();
-  return `${parts[0].slice(0, 1)}${parts.at(-1).slice(0, 1)}`.toLocaleUpperCase();
-}
-
-function preferredPortraitUrl(identity) {
-  const assets = Array.isArray(identity?.assets) ? identity.assets : [];
-  const asset = assets.find((entry) => entry?.role === "official_id_photo" && entry?.url)
-    ?? assets.find((entry) => entry?.role === "canonical_portrait" && entry?.url)
-    ?? assets.find((entry) => entry?.url && String(entry.mediaType ?? "").startsWith("image/"))
-    ?? null;
-  return typeof asset?.url === "string" && asset.url !== "" ? asset.url : null;
-}
-
-async function resolvePopulationPortrait(threadId) {
-  if (populationPortraitCache.has(threadId)) return populationPortraitCache.get(threadId);
-  const pending = (async () => {
-    try {
-      const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, {
-        headers:{ Accept:"application/json" },
-        cache:"no-store",
-      });
-      if (!response.ok) return null;
-      const payload = await response.json();
-      rememberThreadLabel(threadId, {
-        name:payload.identity?.displayName ?? payload.identity?.name,
-        birthLocation:payload.identity?.birthLocation,
-        birthPlace:payload.identity?.birthPlace,
-      });
-      return preferredPortraitUrl(payload.identity);
-    } catch {
-      return null;
-    }
-  })();
-  populationPortraitCache.set(threadId, pending);
-  return pending;
-}
-
-function hidePopulationPortraitPreview() {
-  if (populationPortraitPreview) populationPortraitPreview.hidden = true;
-}
-
-function showPopulationPortraitPreview(portrait, url, name) {
-  if (!url) return;
-  if (!populationPortraitPreview) {
-    populationPortraitPreview = document.createElement("div");
-    populationPortraitPreview.className = "thread-population-portrait-preview";
-    populationPortraitPreview.hidden = true;
-    document.body.append(populationPortraitPreview);
-  }
-  const image = document.createElement("img");
-  image.src = url;
-  image.alt = `${name ?? "Thread"} portrait preview`;
-  populationPortraitPreview.replaceChildren(image);
-  populationPortraitPreview.hidden = false;
-
-  const size = 200;
-  const gap = 10;
-  const rect = portrait.getBoundingClientRect();
-  const left = rect.right + gap + size <= window.innerWidth
-    ? rect.right + gap
-    : Math.max(8, rect.left - size - gap);
-  const top = Math.min(
-    Math.max(8, rect.top + (rect.height - size) / 2),
-    Math.max(8, window.innerHeight - size - 8),
-  );
-  populationPortraitPreview.style.left = `${Math.round(left)}px`;
-  populationPortraitPreview.style.top = `${Math.round(top)}px`;
-}
-
-function setPopulationPortrait(portrait, url, name) {
-  portrait.replaceChildren();
-  portrait.removeAttribute("role");
-  portrait.removeAttribute("tabindex");
-  delete portrait.dataset.lightboxSrc;
-  delete portrait.dataset.lightboxAlt;
-  if (!url) {
-    portrait.textContent = initials(name);
-    return;
-  }
-
-  const image = document.createElement("img");
-  image.src = url;
-  image.alt = `${name ?? "Thread"} portrait`;
-  image.loading = "lazy";
-  portrait.dataset.lightboxSrc = url;
-  portrait.dataset.lightboxAlt = image.alt;
-  portrait.setAttribute("role", "button");
-  portrait.tabIndex = 0;
-  portrait.append(image);
-  portrait.addEventListener("pointerenter", () => showPopulationPortraitPreview(portrait, url, name));
-  portrait.addEventListener("pointerleave", hidePopulationPortraitPreview);
-  portrait.addEventListener("focus", () => showPopulationPortraitPreview(portrait, url, name));
-  portrait.addEventListener("blur", hidePopulationPortraitPreview);
-  image.addEventListener("error", () => {
-    hidePopulationPortraitPreview();
-    setPopulationPortrait(portrait, null, name);
-  }, { once:true });
-}
-
-async function hydratePopulationPortrait(portrait) {
-  const threadId = portrait.dataset.threadId;
-  if (!threadId) return;
-  const url = await resolvePopulationPortrait(threadId);
-  if (!portrait.isConnected || portrait.dataset.threadId !== threadId) return;
-  setPopulationPortrait(portrait, url, portrait.dataset.threadName || null);
-}
-
-function queuePopulationPortrait(portrait, thread) {
-  portrait.dataset.threadId = thread.threadId;
-  portrait.dataset.threadName = thread.identity?.name ?? "";
-  if (populationPortraitObserver) populationPortraitObserver.observe(portrait);
-  else void hydratePopulationPortrait(portrait);
-}
-
 function physicalOriginsText(thread) {
   const values=Array.isArray(thread?.physicalOrigins)
     ? [...new Set(thread.physicalOrigins.filter((value)=>typeof value==="string"&&value.trim()!=="").map((value)=>value.trim()))]
@@ -269,23 +147,10 @@ function physicalOriginsText(thread) {
 function threadBirthplaceCell(identity) {
   const cell=document.createElement("td");
   cell.className="thread-population-birthplace";
-  const location=identity?.birthLocation??null;
-  const text=location?.displayName??identity?.birthPlace??"—";
-  if(text==="—"){
-    cell.textContent=text;
-    return cell;
-  }
-  const wrap=document.createElement("div");
-  wrap.className="thread-population-birthplace-value";
-  if(location?.country){
-    const flag=document.createElement("span");
-    flag.className="thread-population-country-flag";
-    flag.textContent=countryFlag(location.countryCode)||"⚑";
-    flag.title=location.country;
-    wrap.append(flag);
-  }
-  wrap.append(document.createTextNode(text));
-  cell.append(wrap);
+  cell.append(createThreadLocation(identity?.birthLocation,{
+    fallback:identity?.birthPlace??null,
+    className:"thread-population-birthplace-value",
+  }));
   return cell;
 }
 
@@ -539,14 +404,15 @@ function threadRow(thread) {
 
   const portraitCell = document.createElement("td");
   portraitCell.className = "thread-population-portrait-cell";
-  const portrait = document.createElement("span");
-  portrait.className = "thread-population-portrait";
-  if (thread.admitted === true) {
-    setPopulationPortrait(portrait, thread.portraitUrl, identity.name);
-    if (!thread.portraitUrl) queuePopulationPortrait(portrait, thread);
-  } else {
-    portrait.textContent = "·";
-  }
+  const portrait = thread.admitted === true
+    ? createThreadPortrait({
+        threadId:thread.threadId,
+        name:identity.name,
+        url:thread.portraitUrl??null,
+        className:"thread-population-portrait",
+        link:false,
+      })
+    : createThreadPortrait({ name:null, className:"thread-population-portrait", link:false });
   portraitCell.append(portrait);
 
   const person = document.createElement("td");
@@ -660,8 +526,7 @@ function renderPopulationFilter() {
 }
 
 function renderPopulation() {
-  hidePopulationPortraitPreview();
-  populationPortraitObserver?.disconnect();
+  hideThreadPortraitPreview();
   const ordered = visiblePopulation().sort((left, right) => compare(left, right, sortState.key, sortState.direction));
   rows.replaceChildren(...ordered.map(threadRow));
   empty.hidden = ordered.length !== 0;
@@ -692,7 +557,7 @@ function currentPopulationSummary() {
 function renderPopulationThread(threadId) {
   const thread = population.find((entry) => entry.threadId === threadId);
   if (!thread) return false;
-  hidePopulationPortraitPreview();
+  hideThreadPortraitPreview();
 
   const existing = [...rows.children].find((row) => row.dataset.threadId === threadId) ?? null;
   if (!populationVisible(thread)) {
@@ -701,9 +566,6 @@ function renderPopulationThread(threadId) {
     renderPopulationFilter();
     return true;
   }
-  const existingPortrait = existing?.querySelector?.(".thread-population-portrait") ?? null;
-  if (existingPortrait) populationPortraitObserver?.unobserve(existingPortrait);
-
   const row = threadRow(thread);
   if (existing) existing.replaceWith(row);
   else rows.append(row);
@@ -746,7 +608,7 @@ async function refreshPopulationThread(threadId) {
 
   population[index] = payload.thread;
   rememberPopulationThread(payload.thread);
-  populationPortraitCache.delete(threadId);
+  forgetThreadPortrait(threadId);
   renderPopulationThread(threadId);
   renderSummary(currentPopulationSummary());
   renderThreadPopulationMap();
@@ -1142,16 +1004,6 @@ function ensureThreadMapPopover() {
   return threadMapPopover;
 }
 
-async function hydrateThreadMapFace(link, thread) {
-  const url = await resolvePopulationPortrait(thread.threadId);
-  if (!url || !link.isConnected || link.dataset.threadId !== thread.threadId) return;
-  const image = document.createElement("img");
-  image.src = url;
-  image.alt = `${thread.identity?.name ?? "Thread"} portrait`;
-  image.loading = "lazy";
-  link.replaceChildren(image);
-}
-
 function showThreadMapPopover(location, marker) {
   clearThreadMapPopoverClose();
   const popover = ensureThreadMapPopover();
@@ -1173,13 +1025,9 @@ function showThreadMapPopover(location, marker) {
   for (const threadId of location.threadIds) {
     const thread = population.find((candidate) => candidate.threadId === threadId);
     if (!thread) continue;
-    const link = document.createElement("a");
     const state = threadMapState(thread);
-    link.className = `thread-map-face map-state-${state.kind}`;
-    link.href = `/thread/${encodeURIComponent(threadId)}`;
-    link.dataset.threadId = threadId;
     const situatedAt = thread.currentLocation?.establishedAt
-      ? ` · situation ${elapsedText(thread.currentLocation.establishedAt)}`
+      ? " · situation "+elapsedText(thread.currentLocation.establishedAt)
       : "";
     const stateLabel = state.kind === "active"
       ? "active"
@@ -1190,10 +1038,14 @@ function showThreadMapPopover(location, marker) {
           : state.kind === "active_unsituated"
             ? "active · situation missing"
             : state.lifecycle;
-    link.title = `${thread.identity?.name ?? threadId} · ${stateLabel}${situatedAt}`;
-    link.textContent = initials(thread.identity?.name);
-    faces.append(link);
-    void hydrateThreadMapFace(link, thread);
+    faces.append(createThreadIdentityViewer({
+      threadId,
+      name:thread.identity?.name??threadId,
+      url:thread.portraitUrl??null,
+      compact:true,
+      className:"thread-map-person map-state-"+state.kind,
+      title:stateLabel+situatedAt,
+    }));
   }
 
   popover.replaceChildren(heading, faces);
@@ -1639,7 +1491,6 @@ async function loadPopulation() {
     population = payload.threads ?? [];
     for (const thread of population) rememberPopulationThread(thread);
     stillborn = payload.stillborn ?? [];
-    populationPortraitCache.clear();
     const currentSummary=currentPopulationSummary();
     renderSummary(currentSummary);
     renderPopulation();
