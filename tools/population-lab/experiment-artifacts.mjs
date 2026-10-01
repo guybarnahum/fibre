@@ -107,6 +107,20 @@ export function createPopulationLabExperimentStore(infra){
     async get(experimentId){
       return infra.catalog.get(populationLabExperimentCatalogKey(experimentId));
     },
+    async delete(experimentId){
+      if(typeof infra.objects.remove!=="function")throw new Error("InfraDriver objects.remove is required to delete experiment artifacts");
+      const key=populationLabExperimentCatalogKey(experimentId);
+      const current=await infra.catalog.get(key);
+      if(current===null)return Object.freeze({experimentId:id(experimentId),deleted:false,artifactCount:0});
+      const refs=new Set([
+        ...Object.values(current.artifacts??{}).map(value=>value?.objectRef),
+        ...(current.images??[]).map(value=>value?.objectRef),
+      ].filter(Boolean));
+      let artifactCount=0;
+      for(const objectRef of refs)if(await infra.objects.remove(objectRef))artifactCount+=1;
+      await infra.catalog.remove(key);
+      return Object.freeze({experimentId:id(experimentId),deleted:true,artifactCount});
+    },
     async list({after=null,limit=100}={}){
       const page=await infra.catalog.list({prefix:PREFIX,after,limit});
       return{experiments:page.entries.map(entry=>entry.value),nextCursor:page.nextCursor};
