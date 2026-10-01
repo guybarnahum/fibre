@@ -108,21 +108,28 @@ function registryFindings(entry) {
     const birthPlace = Object.freeze({
       displayName:entry.birthLocation.displayName,
       country:entry.birthLocation.country,
-      ...(entry.birthLocation.countryCode?{countryCode:entry.birthLocation.countryCode}:{}),
       city:entry.birthLocation.city,
       lat:entry.birthLocation.lat,
       long:entry.birthLocation.long,
     });
     findings.push(Object.freeze({
       code:"BIRTH_GEOGRAPHY_RECOVERABLE",
-      state:"repairable",
-      reason:`Stored birth geography is malformed; World can restore it unambiguously as ${birthPlace.displayName}`,
+      state:"operator_decision_required",
+      reason:`Stored birth geography can be restored as ${birthPlace.displayName}; confirm the ISO country code before changing authoritative identity.`,
       identityAction:Object.freeze({
         id:"repair_birth_geography",
         label:"Repair birth place",
         command:"identity",
         fixed:Object.freeze({ birthPlace }),
-        input:Object.freeze({ fields:Object.freeze([]) }),
+        input:Object.freeze({ fields:Object.freeze([
+          Object.freeze({
+            name:"countryCode",
+            label:"Country code (ISO-2)",
+            kind:"country_code",
+            required:true,
+            placeholder:entry.birthLocation.countryCode??"EG",
+          }),
+        ]) }),
       }),
     }));
   }
