@@ -85,7 +85,7 @@ function sideEvidence(evidence,side){
   }).join(" + ");
 }
 
-async function requestHealth(threadId){
+export async function requestThreadAppearanceHealth(threadId){
   const response=await fetch("/api/threads/"+encodeURIComponent(threadId)+"/repair",{
     headers:{Accept:"application/json"},
     cache:"no-store",
@@ -120,7 +120,7 @@ export function presentationIdentityMediaReady(identity,canonicalObjectRef){
   return photos.length===1;
 }
 
-async function postRepair(threadId,body){
+export async function postThreadAppearanceRepair(threadId,body){
   const response=await fetch("/api/threads/"+encodeURIComponent(threadId)+"/repair",{
     method:"POST",
     headers:{"content-type":"application/json",Accept:"application/json"},
@@ -222,7 +222,7 @@ async function reconcileAppearance(host,threadId,threadName){
   const progress=appearanceProgress(host);
   setAppearanceBusy(host,true);
   try{
-    const health=await requestHealth(threadId);
+    const health=await requestThreadAppearanceHealth(threadId);
     const state=threadAppearanceState(health.diagnosis);
 
     if(state.appearanceReady){
@@ -289,7 +289,7 @@ async function refreshAppearance(host,threadId,threadName){
 }
 
 async function render(host,threadId,threadName,message=null,providedHealth=null){
-  const health=providedHealth??await requestHealth(threadId);
+  const health=providedHealth??await requestThreadAppearanceHealth(threadId);
   const state=threadAppearanceState(health.diagnosis);
   host.replaceChildren();
 
@@ -331,7 +331,7 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
         description:migrationDescription(state),
         fields:actionFields(migration),
         run:async input=>{
-          const payload=await postRepair(threadId,{
+          const payload=await postThreadAppearanceRepair(threadId,{
             action:"migrate",
             migrationId:migration.id,
             migrationKey:"admin_appearance_migration_"+Date.now().toString(36),
@@ -378,7 +378,7 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
           if(busy||host.dataset.appearanceWatching!=="true")setAppearanceBusy(host,busy);
         },
         run:async input=>{
-          const payload=await postRepair(threadId,{
+          const payload=await postThreadAppearanceRepair(threadId,{
             action:"canonical_visual_identity_renewal",
             operationKey:"admin_appearance_rerender_"+Date.now().toString(36),
             reason:input.reason,
