@@ -1,0 +1,42 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { identityActionPayload } from "./thread-identity-action.js";
+
+test("Birth-place identity action requires an explicit country code",()=>{
+  const action={
+    id:"repair_birth_geography",
+    command:"identity",
+    fixed:{birthPlace:{displayName:"Aswan, Egypt",country:"Egypt",city:"Aswan",lat:24.08894,long:32.89983}},
+  };
+  assert.throws(
+    ()=>identityActionPayload(action,{}, {operationKey:"admin_identity_1"}),
+    /two-letter ISO code/,
+  );
+  assert.deepEqual(
+    identityActionPayload(action,{countryCode:"eg"},{operationKey:"admin_identity_1"}),
+    {
+      action:"identity",
+      operationKey:"admin_identity_1",
+      birthPlace:{
+        displayName:"Aswan, Egypt",
+        country:"Egypt",
+        city:"Aswan",
+        lat:24.08894,
+        long:32.89983,
+        countryCode:"EG",
+      },
+    },
+  );
+});
+
+test("Ordinary identity actions still merge fixed and operator input",()=>{
+  assert.deepEqual(
+    identityActionPayload(
+      {id:"set_name",fixed:{sex:"female"}},
+      {name:"Amina"},
+      {operationKey:"admin_identity_2"},
+    ),
+    {action:"identity",operationKey:"admin_identity_2",sex:"female",name:"Amina"},
+  );
+});
