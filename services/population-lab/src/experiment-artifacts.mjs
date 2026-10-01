@@ -80,6 +80,26 @@ export function createPopulationLabExperimentStore(infra){
   };
 
   return Object.freeze({
+    async queue(experimentId,manifest){
+      const write=await put(experimentId,"manifest",jsonBytes(manifest),{mediaType:"application/json"});
+      try{
+        return await update(experimentId,{
+          status:"queued",
+          requestedAt:manifest.requestedAt??new Date().toISOString(),
+          artifacts:{manifest:write.artifact},
+        });
+      }catch(error){
+        if(write.created&&typeof infra.objects.remove==="function"){
+          await infra.objects.remove(write.artifact.objectRef).catch(()=>{});
+        }
+        throw error;
+      }
+    },
+    async running(experimentId,{startedAt=new Date().toISOString()}={}){
+      const key=populationLabExperimentCatalogKey(experimentId);
+      if(await infra.catalog.get(key)===null)throw new Error("experiment must be queued before running");
+      return update(experimentId,{status:"running",startedAt});
+    },
     async start(experimentId,manifest){
       const write=await put(experimentId,"manifest",jsonBytes(manifest),{mediaType:"application/json"});
       try{
@@ -138,6 +158,9 @@ export function createPopulationLabExperimentStore(infra){
       const key=populationLabExperimentCatalogKey(experimentId);
       const current=await infra.catalog.get(key);
       if(current===null)return Object.freeze({experimentId:id(experimentId),deleted:false,artifactCount:0});
+      if(["queued","running"].includes(current.status)){
+        throw new TypeError("queued or running experiment cannot be deleted");
+      }
       const refs=new Set([
         ...Object.values(current.artifacts??{}).map(value=>value?.objectRef),
         ...(current.images??[]).map(value=>value?.objectRef),
