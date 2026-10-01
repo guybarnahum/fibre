@@ -191,7 +191,7 @@ async function main(){
   },null,2)+"\n");
 }
 
-if(import.meta.url===new URL(process.argv[1],"file:").href){
+if(process.argv[1]===fileURLToPath(import.meta.url)){
   main().catch((error)=>{
     process.stderr.write((error instanceof Error?error.stack:String(error))+"\n");
     process.exitCode=1;
