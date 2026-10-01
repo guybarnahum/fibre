@@ -98,6 +98,8 @@ export function createThreadMigrationSummaryService({
     scan(){
       const migrations=new Map();
       const appearance=appearanceCoverage.scan();
+      const origins=appearanceOrigins(appearance.lineages);
+      const originsByThread=new Map(origins.map((entry)=>[entry.threadId,entry.physicalOrigins]));
       for(const candidate of appearance.migrationCandidates){
         for(const reason of candidate.reasons??[candidate.reason]){
           add(migrations,candidate.threadId,"appearance",reason);
@@ -116,10 +118,10 @@ export function createThreadMigrationSummaryService({
             threadId,
             domains,
             reasons,
-            physicalOriginsFor(appearance,threadId),
+            originsByThread.get(threadId)??[],
           ))
           .sort((a,b)=>a.threadId.localeCompare(b.threadId))),
-        origins:appearanceOrigins(appearance.lineages),
+        origins,
       });
     },
   });
