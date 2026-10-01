@@ -30,6 +30,18 @@ test("Birth-place identity action requires an explicit country code",()=>{
   );
 });
 
+test("Country-code-only migration uses the same explicit payload path",()=>{
+  const action={
+    id:"set_birth_country_code",
+    command:"identity",
+    fixed:{birthPlace:{displayName:"Tokyo, Japan",country:"Japan",city:"Tokyo",lat:35.6895,long:139.69171}},
+  };
+  assert.equal(
+    identityActionPayload(action,{countryCode:"jp"},{operationKey:"admin_identity_3"}).birthPlace.countryCode,
+    "JP",
+  );
+});
+
 test("Ordinary identity actions still merge fixed and operator input",()=>{
   assert.deepEqual(
     identityActionPayload(
