@@ -1,4 +1,4 @@
-import { resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
+import { countryCodeForCountry, resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 import { IntegrityError } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
@@ -46,6 +46,7 @@ function birthLocation(identity) {
     return Object.freeze({
       displayName:recovered.displayName,
       country:recovered.country,
+      countryCode:recovered.countryCode??countryCodeForCountry(recovered.country),
       city:recovered.city,
       lat:recovered.lat,
       long:recovered.long,
@@ -63,6 +64,7 @@ function birthLocation(identity) {
     return Object.freeze({
       displayName:clean(place.displayName) ?? clean(identity?.birthCity),
       country:clean(place.country),
+      countryCode:clean(place.countryCode)?.toUpperCase()??countryCodeForCountry(clean(place.country)),
       city:clean(place.city),
       lat:place.lat,
       long:place.long,
