@@ -5,14 +5,11 @@ import baseWorker, {
   authorizeAdminPrincipal,
 } from "./worker.mjs";
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
-import {
-  optionalAdminAppearanceOrigins,
-  readAdminAppearanceCoverage,
-} from "./appearance-coverage.mjs";
+import { readAdminAppearanceCoverage } from "./appearance-coverage.mjs";
 import {
   attachAdminMigrationSummary,
   optionalAdminThreadMigration,
-  optionalAdminThreadMigrations,
+  optionalAdminThreadPopulationContext,
 } from "./thread-migrations.mjs";
 import { readAdminThreadPopulation, readAdminThreadPopulationThread } from "./thread-population.mjs";
 import {
@@ -537,25 +534,20 @@ export default {
         if (threadPopulation) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const worldKernel=serviceBinding(env,"WORLD_KERNEL");
-          const [population,migrations] = await Promise.all([
+          const [population,context] = await Promise.all([
             readAdminThreadPopulation({
               activityLog:env.ACTIVITY_LOG,
               environment,
               readRegistry:(limit) => threadRegistry(env, limit),
               readStillborn:() => birthCenterStillborn(env),
             }),
-            optionalAdminThreadMigrations({
+            optionalAdminThreadPopulationContext({
               worldKernel,
               privateToken:privateToken(env),
             }),
           ]);
-          const origins=await optionalAdminAppearanceOrigins({
-            worldKernel,
-            privateToken:privateToken(env),
-            threadIds:population.threads.map((thread)=>thread.threadId),
-          });
-          const migrationByThread=new Map(migrations.map((entry)=>[entry.threadId,entry]));
-          const originsByThread=new Map(origins.map((entry)=>[entry.threadId,entry.ethnicity??[]]));
+          const migrationByThread=new Map(context.migrations.map((entry)=>[entry.threadId,entry]));
+          const originsByThread=new Map(context.origins.map((entry)=>[entry.threadId,entry.physicalOrigins??[]]));
           return json(200, {
             contract:"fibre-admin-thread-population-v0.5",
             environment,
@@ -574,7 +566,7 @@ export default {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const threadId = id("threadId", decodeURIComponent(threadPopulationEntryMatch[1]));
           const worldKernel=serviceBinding(env,"WORLD_KERNEL");
-          const [thread,migration,origins] = await Promise.all([
+          const [thread,migration] = await Promise.all([
             readAdminThreadPopulationThread({
               activityLog:env.ACTIVITY_LOG,
               environment,
@@ -586,11 +578,6 @@ export default {
               privateToken:privateToken(env),
               threadId,
             }),
-            optionalAdminAppearanceOrigins({
-              worldKernel,
-              privateToken:privateToken(env),
-              threadIds:[threadId],
-            }),
           ]);
           if (thread === null) return json(404, { error:"thread_not_found" });
           return json(200, {
@@ -599,7 +586,7 @@ export default {
             queriedAt:new Date().toISOString(),
             thread:Object.freeze({
               ...attachAdminMigrationSummary(thread,migration),
-              physicalOrigins:Object.freeze([...(origins[0]?.ethnicity??[])]),
+              physicalOrigins:Object.freeze([...(migration?.physicalOrigins??[])]),
             }),
           });
         }
