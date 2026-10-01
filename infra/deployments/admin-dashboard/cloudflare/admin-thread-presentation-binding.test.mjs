@@ -7,7 +7,11 @@ import { resolveCloudflareAppConfig } from "../../../../tools/deployment/cloudfl
 
 const resourceState = {
   resources: {
-    d1: [{ binding: "ACTIVITY_LOG", name: "fibre-activity-log-staging", id: "d1_activity" }],
+    d1: [
+      { binding:"PRESENTATION_CATALOG", name:"fibre-presentation-catalog-staging", id:"d1_catalog" },
+      { binding:"ACTIVITY_LOG", name:"fibre-activity-log-staging", id:"d1_activity" },
+    ],
+    r2:[{ name:"fibre-presentation-assets-staging", status:"existing" }],
   },
 };
 
