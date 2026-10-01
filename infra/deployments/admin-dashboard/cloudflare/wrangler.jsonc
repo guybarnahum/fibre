@@ -42,7 +42,7 @@
       "database_name": "fibre-activity-log"
     },
     {
-      "binding": "POPULATION_LAB_CATALOG",
+      "binding": "PRESENTATION_CATALOG",
       "database_name": "fibre-presentation-catalog"
     }
   ],
@@ -81,7 +81,7 @@
   },
   "r2_buckets": [
     {
-      "binding": "POPULATION_LAB_OBJECTS",
+      "binding": "PRESENTATION_OBJECTS",
       "bucket_name": "fibre-presentation-assets"
     }
   ]
