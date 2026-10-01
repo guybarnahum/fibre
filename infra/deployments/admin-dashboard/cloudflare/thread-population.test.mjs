@@ -216,8 +216,15 @@ test("recovered birth geography is exposed as one explicit World identity repair
 
   const thread = population.threads[0];
   const finding = thread.findings.find((entry) => entry.code === "BIRTH_GEOGRAPHY_RECOVERABLE");
-  assert.equal(thread.health, "repairable", "malformed geography looked healthy");
+  assert.equal(thread.health, "operator_decision_required", "malformed geography did not require operator confirmation");
   assert.equal(finding.identityAction.id, "repair_birth_geography", "repair action was not exposed");
+  assert.deepEqual(finding.identityAction.input.fields, [{
+    name:"countryCode",
+    label:"Country code (ISO-2)",
+    kind:"country_code",
+    required:true,
+    placeholder:"EG",
+  }], "birth geography repair did not ask for a country code");
   assert.deepEqual(finding.identityAction.fixed.birthPlace, {
     displayName:recovered.displayName,
     country:recovered.country,
