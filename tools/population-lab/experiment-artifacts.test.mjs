@@ -36,4 +36,10 @@ test("Population Lab experiment store persists one provider-neutral experiment a
 
   const page=await store.list();
   assert.deepEqual(page.experiments.map(value=>value.experimentId),[experimentId],"experiment catalog listing is wrong");
+
+  const deleted=await store.delete(experimentId);
+  assert.equal(deleted.deleted,true,"experiment was not deleted");
+  assert.equal(deleted.artifactCount,6,"experiment artifacts were not fully deleted");
+  assert.equal(await store.get(experimentId),null,"deleted experiment remained indexed");
+  assert.equal(await store.getArtifact(populationLabExperimentRef(experimentId,"report")),null,"deleted report bytes remained");
 });
