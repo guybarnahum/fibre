@@ -10,5 +10,5 @@ test("Fibre geography carries country codes as location metadata",()=>{
   assert.equal(countryCodeForCountry("Egypt"),"EG");
   assert.equal(countryCodeForCountry("Japan"),"JP");
   assert.equal(resolveLocalityGeography("Egypt/Aswan")?.countryCode,"EG");
-  assert.equal(resolveLocalityGeography("Tokyo, Japan")?.countryCode,"JP");
+  assert.equal(resolveLocalityGeography("Osaka, Japan")?.countryCode,"JP");
 });
