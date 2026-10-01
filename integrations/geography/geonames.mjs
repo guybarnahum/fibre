@@ -26,6 +26,9 @@ function coordinate(name, value, { min, max }) {
 function canonicalPlace(entry) {
   if (!entry || typeof entry !== "object" || (entry.fcl && entry.fcl !== "P")) return null;
   const country = typeof entry.countryName === "string" ? entry.countryName.trim() : "";
+  const countryCode = typeof entry.countryCode === "string" && /^[A-Za-z]{2}$/u.test(entry.countryCode.trim())
+    ? entry.countryCode.trim().toUpperCase()
+    : null;
   const city = typeof entry.name === "string"
     ? entry.name.trim()
     : typeof entry.toponymName === "string" ? entry.toponymName.trim() : "";
@@ -40,6 +43,7 @@ function canonicalPlace(entry) {
 
   return Object.freeze({
     country,
+    countryCode,
     city,
     displayName:parts.join(", "),
     lat,
