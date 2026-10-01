@@ -65,6 +65,7 @@ function projectedPoint(place) {
     long:place.geography.long,
     locality:place.geography.city ?? null,
     country:place.geography.country ?? null,
+    countryCode:place.geography.countryCode ?? null,
   });
 }
 
@@ -104,6 +105,7 @@ export function projectCurrentThreadLocation({
     const progress = Number.isFinite(location.progress) ? Math.max(0, Math.min(1, location.progress)) : 0.5;
     const sameLocality = start.locality !== null && start.locality === end.locality;
     const sameCountry = start.country !== null && start.country === end.country;
+    const sameCountryCode = start.countryCode !== null && start.countryCode === end.countryCode;
     return Object.freeze({
       kind:"transit",
       current:true,
@@ -114,6 +116,7 @@ export function projectCurrentThreadLocation({
       displayName:`In transit · ${from.displayName ?? start.locality ?? "place"} → ${to.displayName ?? end.locality ?? "place"}`,
       locality:sameLocality ? start.locality : "In transit",
       country:sameCountry ? start.country : null,
+      countryCode:sameCountryCode ? start.countryCode : null,
       lat:start.lat + ((end.lat - start.lat) * progress),
       long:start.long + ((end.long - start.long) * progress),
       authority:"current_situation",
