@@ -19,6 +19,7 @@ test("Population Lab experiment store persists one provider-neutral experiment a
   await store.putPopulation(experimentId,{people:[{id:"one"},{id:"two"}]});
   await store.putResult(experimentId,{warnings:[]});
   await store.putImage(experimentId,{ordinal:1,role:"geometry",bytes:new Uint8Array([1,2,3])});
+  await store.putImage(experimentId,{ordinal:1,role:"geometry",bytes:new Uint8Array([1,2,3])});
   await store.putImage(experimentId,{ordinal:1,role:"portrait",bytes:new Uint8Array([4,5,6])});
   await store.putReport(experimentId,"<html>report</html>");
   await store.complete(experimentId,{people:2,warnings:0});
