@@ -8,6 +8,7 @@ import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mj
 import { readAdminAppearanceCoverage } from "./appearance-coverage.mjs";
 import {
   deleteAdminPopulationLabExperiment,
+  launchAdminPopulationLabExperiment,
   listAdminPopulationLabExperiments,
   readAdminPopulationLabExperiment,
   readAdminPopulationLabImage,
@@ -494,7 +495,7 @@ export default {
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
     const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentImageMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels);
+    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest);
     const adminDelete = request.method === "DELETE" && appearanceExperimentMatch;
     if (adminGet || adminPost || adminDelete) {
       const gate = await adminPrincipal(request, env);
@@ -544,6 +545,16 @@ export default {
           });
         }
         if(appearanceExperimentsRequest){
+          if(request.method==="POST"){
+            let spec;
+            try{spec=await request.json()}
+            catch{return json(400,{error:"invalid_experiment_spec",detail:"experiment specification must be JSON"})}
+            const launched=await launchAdminPopulationLabExperiment(env,spec);
+            return json(202,{
+              contract:"fibre-admin-population-lab-launch-v0.1",
+              ...launched,
+            });
+          }
           const page=await listAdminPopulationLabExperiments(env);
           return json(200,{
             contract:"fibre-admin-population-lab-experiments-v0.1",
