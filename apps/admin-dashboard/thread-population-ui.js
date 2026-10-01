@@ -1,4 +1,5 @@
 import { appearanceCoverageTopSummary, loadAppearanceCoverage } from "./appearance-coverage-ui.js";
+import { operatorModeFromLocation } from "./operator-route.js";
 import {
   populationFilterCount,
   threadMatchesPopulationFilter,
@@ -1594,7 +1595,9 @@ function syncOperatorNavigation() {
 function holdOperatorMode() {
   if (!active) return;
   syncOperatorNavigation();
-  activityViewPanel.hidden = populationMode === "appearance";
+  const appearanceActive=populationMode === "appearance";
+  activityViewPanel.hidden=appearanceActive;
+  activityViewPanel.style.display=appearanceActive?"none":"";
   $("#causal-view").hidden = true;
   $("#raw-view").hidden = true;
   birthCenterView.hidden = populationMode !== "birth-center";
@@ -1755,7 +1758,8 @@ function exitOperatorMode(nextMode) {
   active = false;
   stopPendingPolling();
   stopPopulationLiveWatch();
-  activityViewPanel.hidden = false;
+  activityViewPanel.hidden=false;
+  activityViewPanel.style.display="";
   birthCenterView.hidden = true;
   view.hidden = true;
   appearanceView.hidden = true;
@@ -1766,8 +1770,7 @@ function exitOperatorMode(nextMode) {
   $("#auto-refresh").checked = priorAutoRefresh;
   $("#auto-refresh").dispatchEvent(new Event("change"));
 
-  const wasOperatorRoute = location.pathname === "/appearance"
-    || ["birth-center","threads","appearance","stillborn"].includes(new URLSearchParams(location.search).get("mode"));
+  const wasOperatorRoute=operatorModeFromLocation(location)!==null;
   if (wasOperatorRoute) {
     history.replaceState(null, "", operatorUrl(nextMode));
     $("#refresh-button").click();
@@ -1845,9 +1848,7 @@ for (const eventName of [
 window.addEventListener("scroll", hidePopulationPortraitPreview, true);
 window.addEventListener("resize", hidePopulationPortraitPreview);
 
-const initialMode = location.pathname === "/appearance"
-  ? "appearance"
-  : new URLSearchParams(location.search).get("mode");
+const initialMode=operatorModeFromLocation(location);
 if (initialMode === "birth-center") enterBirthCenter();
 if (initialMode === "threads") enterThreads();
 if (initialMode === "appearance") enterAppearance();
