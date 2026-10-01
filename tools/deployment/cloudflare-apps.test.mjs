@@ -65,6 +65,11 @@ test("admin config reuses provisioned Activity D1 and injects reconciled Access 
       { binding: "PRESENTATION_CATALOG", database_name: "fibre-presentation-catalog" },
     ],
     r2_buckets:[{ binding:"PRESENTATION_OBJECTS", bucket_name:"fibre-presentation-assets" }],
+    workflows:[{
+      name:"fibre-population-lab-experiment",
+      binding:"POPULATION_LAB_EXPERIMENT",
+      class_name:"PopulationLabExperimentWorkflow",
+    }],
     durable_objects:{ bindings:[{
       name:"ADMIN_LIVE",
       class_name:"FibreAdminLiveDurableObject",
@@ -88,6 +93,7 @@ test("admin config reuses provisioned Activity D1 and injects reconciled Access 
   assert.equal(resolved.d1_databases[1].database_name, "fibre-presentation-catalog-staging");
   assert.equal(resolved.d1_databases[1].database_id, "d1_catalog");
   assert.equal(resolved.r2_buckets[0].bucket_name, "fibre-presentation-assets-staging");
+  assert.equal(resolved.workflows[0].name, "fibre-population-lab-experiment-staging");
   assert.equal(
     resolved.durable_objects.bindings.find((binding) => binding.name === "ADMIN_LIVE")?.script_name,
     "fibre-thread-presentation-staging",
@@ -128,6 +134,11 @@ test("admin deployment resolution fails closed when reconciled Access configurat
       { binding: "PRESENTATION_CATALOG", database_name: "fibre-presentation-catalog" },
     ],
     r2_buckets:[{ binding:"PRESENTATION_OBJECTS", bucket_name:"fibre-presentation-assets" }],
+    workflows:[{
+      name:"fibre-population-lab-experiment",
+      binding:"POPULATION_LAB_EXPERIMENT",
+      class_name:"PopulationLabExperimentWorkflow",
+    }],
     durable_objects:{ bindings:[{
       name:"ADMIN_LIVE",
       class_name:"FibreAdminLiveDurableObject",
@@ -150,6 +161,11 @@ test("resolved Admin config rejects unresolved Access or D1 placeholders before 
       { binding: "PRESENTATION_CATALOG", database_name: "fibre-presentation-catalog" },
     ],
     r2_buckets:[{ binding:"PRESENTATION_OBJECTS", bucket_name:"fibre-presentation-assets" }],
+    workflows:[{
+      name:"fibre-population-lab-experiment",
+      binding:"POPULATION_LAB_EXPERIMENT",
+      class_name:"PopulationLabExperimentWorkflow",
+    }],
     durable_objects:{ bindings:[{
       name:"ADMIN_LIVE",
       class_name:"FibreAdminLiveDurableObject",
