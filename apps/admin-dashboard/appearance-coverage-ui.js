@@ -263,12 +263,9 @@ function actionSpec(kind,hole){
 function renderPreparedAction(kind,hole){
   detail.querySelector(".appearance-prepared-action")?.remove();
   const panel=el("div","appearance-prepared-action");
-  const title=kind==="experiment"?"Population Lab experiment":"Research request";
-  panel.append(el("strong",null,`${title} prepared`));
+  panel.append(el("strong",null,"Research request prepared"));
   panel.append(el("p",null,
-    kind==="experiment"
-      ?"This spec is ready for the Population Lab runner. A1 does not execute image/provider work from the dashboard."
-      :"This spec is ready for the research adapter. Research may propose calibration evidence but cannot mutate the model."
+    "This spec is ready for the research adapter. Research may propose calibration evidence but cannot mutate the model."
   ));
   const spec=actionSpec(kind,hole);
   const pre=el("pre","appearance-action-json",JSON.stringify(spec,null,2));
