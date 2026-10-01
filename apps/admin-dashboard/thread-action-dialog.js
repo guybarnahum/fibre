@@ -157,6 +157,14 @@ function renderFields(host, fields) {
       input.inputMode = "numeric";
     } else if (field.kind === "string_list") {
       input.placeholder = field.placeholder ?? "Language 1, Language 2";
+    } else if (field.kind === "country_code") {
+      input.placeholder = field.placeholder ?? "EG";
+      input.maxLength = 2;
+      input.pattern = "[A-Za-z]{2}";
+      input.autocapitalize = "characters";
+      input.inputMode = "text";
+    } else if (field.placeholder) {
+      input.placeholder = field.placeholder;
     }
     input.value = field.default ?? "";
     label.append(input);
@@ -175,7 +183,9 @@ function readInput(form, fields) {
     if (field.required === true && value === "") return null;
     values[field.name] = field.kind === "string_list"
       ? value.split(",").map((item) => item.trim()).filter(Boolean)
-      : value;
+      : field.kind === "country_code"
+        ? value.toUpperCase()
+        : value;
   }
   return values;
 }
