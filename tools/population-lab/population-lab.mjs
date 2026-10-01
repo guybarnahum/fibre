@@ -2,7 +2,7 @@ import {createHash} from "node:crypto";
 import {resolve} from "node:path";
 
 import {createLocalArtifactInfraDriver} from "#infra/providers/local";
-import {createPopulationLabExperimentStore} from "./experiment-artifacts.mjs";
+import {createPopulationLabExperimentStore} from "../../services/population-lab/src/experiment-artifacts.mjs";
 
 import {
   expressInheritedAppearance,
