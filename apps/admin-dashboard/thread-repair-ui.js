@@ -54,6 +54,7 @@ function labelFor(code) {
     BIRTH_DATE_PRESENTATION_MISSING:"Birth date",
     BIRTH_DATE_CONFLICT:"Birth date",
     BIRTH_GEOGRAPHY_RECOVERABLE:"Birth place",
+    BIRTH_COUNTRY_CODE_MISSING:"Birth country code",
     SPOKEN_LANGUAGES:"Spoken languages",
     SPOKEN_LANGUAGES_PRESENTATION_STALE:"Spoken languages",
     RAISED_LANGUAGES:"Raised languages",
@@ -249,7 +250,9 @@ function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
         ? "Admit the preserved birth date into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
         : ["set_raised_languages","change_raised_languages"].includes(action.id)
           ? "Correct the languages this person was raised with in Genesis. This does not edit Spoken languages, which belong to the Thread's lived history."
-          : "Record an explicit operator identity decision in World history.";
+          : ["repair_birth_geography","set_birth_country_code"].includes(action.id)
+            ? "Confirm the two-letter ISO country code and record the birth-place update in authoritative World identity."
+            : "Record an explicit operator identity decision in World history.";
     const control = dialogActionButton(label, () => {
       openThreadActionDialog({
         threadId,
