@@ -147,6 +147,10 @@ export function createMemoryInfraDriver() {
       const value = objects.get(objectRef);
       return value ? { objectRef, digest: value.digest, metadata: clone(value.metadata) } : null;
     },
+    async remove(objectRef) {
+      assertInfraId("objectRef", objectRef);
+      return objects.delete(objectRef);
+    },
   };
 
   const catalogPort = {
