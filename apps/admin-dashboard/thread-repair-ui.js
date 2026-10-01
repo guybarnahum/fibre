@@ -1,4 +1,8 @@
-import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
+import {
+  actionFields,
+  announceThreadActionBusy,
+  openThreadActionDialog,
+} from "./thread-action-dialog.js";
 import { threadAppearanceSection } from "./thread-appearance-ui.js";
 import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
 
@@ -188,6 +192,12 @@ async function requestHealth(threadId) {
   return Object.freeze({ diagnosis:payload.diagnosis, reconciliation:payload.reconciliation ?? null });
 }
 
+async function withThreadBusy(threadId,run) {
+  announceThreadActionBusy(threadId,true);
+  try { return await run(); }
+  finally { announceThreadActionBusy(threadId,false); }
+}
+
 async function post(threadId, body) {
   const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
     method:"POST",
@@ -322,7 +332,7 @@ function renderRepairAction(host, threadId, diagnosis, reconciliation) {
   if (actions.length === 0 || diagnosis.health !== "repairable") return;
   const label = reconciliation?.state === "dead_letter" ? "Fix & Recover" : "Fix";
   const bar = el("div", "thread-repair-actions");
-  const button = actionButton(label, async () => {
+  const button = actionButton(label, () => withThreadBusy(threadId, async () => {
     const payload = await post(threadId, { repairKey:`admin_repair_${Date.now().toString(36)}` });
     const names = (payload.result.actions ?? []).map((entry) => human(entry.action)).join(" · ");
     renderHealth(host, threadId, {
@@ -330,7 +340,7 @@ function renderRepairAction(host, threadId, diagnosis, reconciliation) {
       reconciliation:payload.reconciliation ?? null,
     }, names ? `Applied: ${names}` : "No repair action was required.");
     announceThreadUpdated(threadId, "repair");
-  }, {
+  }), {
     icon:reconciliation?.state === "dead_letter" ? "heart-pulse" : "wrench",
     tooltip:reconciliation?.state === "dead_letter"
       ? "Fix & Recover — repair derived state from World authority and return this Thread from quarantine."
@@ -344,14 +354,14 @@ function renderRepairAction(host, threadId, diagnosis, reconciliation) {
 function renderPendingReconciliationAction(host, threadId, diagnosis, reconciliation) {
   if (reconciliation?.state !== "pending" || diagnosis.health !== "healthy") return;
   const bar = el("div", "thread-repair-actions");
-  const button = actionButton("Resolve reconciliation", async () => {
+  const button = actionButton("Resolve reconciliation", () => withThreadBusy(threadId, async () => {
     const payload = await post(threadId, { repairKey:`admin_reconcile_${Date.now().toString(36)}` });
     renderHealth(host, threadId, {
       diagnosis:payload.result.after,
       reconciliation:payload.reconciliation ?? null,
     }, "Reconciliation state resolved from current authoritative health.");
     announceThreadUpdated(threadId, "reconciliation");
-  }, {
+  }), {
     icon:"rotate",
     tooltip:"Resolve reconciliation — retire stale pending reconciliation after authoritative health is verified.",
   });
@@ -363,14 +373,14 @@ function renderPendingReconciliationAction(host, threadId, diagnosis, reconcilia
 function renderRecoveryAction(host, threadId, diagnosis, reconciliation) {
   if (reconciliation?.state !== "dead_letter" || unresolved(diagnosis).length !== 0) return;
   const bar = el("div", "thread-repair-actions");
-  const button = actionButton("Recover", async () => {
+  const button = actionButton("Recover", () => withThreadBusy(threadId, async () => {
     const payload = await post(threadId, { action:"recover" });
     renderHealth(host, threadId, {
       diagnosis,
       reconciliation:payload.recovery.after,
     }, "Recovered · reconciliation is pending.");
     announceThreadUpdated(threadId, "recovery");
-  }, {
+  }), {
     icon:"heart-pulse",
     tooltip:"Recover — return this healthy Thread from dead-letter quarantine to reconciliation processing.",
   });
