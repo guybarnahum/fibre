@@ -62,9 +62,9 @@ test("admin config reuses provisioned Activity D1 and injects reconciled Access 
     vars: { FIBRE_ENVIRONMENT: "production" },
     d1_databases: [
       { binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" },
-      { binding: "POPULATION_LAB_CATALOG", database_name: "fibre-presentation-catalog" },
+      { binding: "PRESENTATION_CATALOG", database_name: "fibre-presentation-catalog" },
     ],
-    r2_buckets:[{ binding:"POPULATION_LAB_OBJECTS", bucket_name:"fibre-presentation-assets" }],
+    r2_buckets:[{ binding:"PRESENTATION_OBJECTS", bucket_name:"fibre-presentation-assets" }],
     durable_objects:{ bindings:[{
       name:"ADMIN_LIVE",
       class_name:"FibreAdminLiveDurableObject",
@@ -125,9 +125,9 @@ test("admin deployment resolution fails closed when reconciled Access configurat
     vars: {},
     d1_databases: [
       { binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" },
-      { binding: "POPULATION_LAB_CATALOG", database_name: "fibre-presentation-catalog" },
+      { binding: "PRESENTATION_CATALOG", database_name: "fibre-presentation-catalog" },
     ],
-    r2_buckets:[{ binding:"POPULATION_LAB_OBJECTS", bucket_name:"fibre-presentation-assets" }],
+    r2_buckets:[{ binding:"PRESENTATION_OBJECTS", bucket_name:"fibre-presentation-assets" }],
     durable_objects:{ bindings:[{
       name:"ADMIN_LIVE",
       class_name:"FibreAdminLiveDurableObject",
@@ -147,9 +147,9 @@ test("resolved Admin config rejects unresolved Access or D1 placeholders before 
     vars: {},
     d1_databases: [
       { binding: "ACTIVITY_LOG", database_name: "fibre-activity-log" },
-      { binding: "POPULATION_LAB_CATALOG", database_name: "fibre-presentation-catalog" },
+      { binding: "PRESENTATION_CATALOG", database_name: "fibre-presentation-catalog" },
     ],
-    r2_buckets:[{ binding:"POPULATION_LAB_OBJECTS", bucket_name:"fibre-presentation-assets" }],
+    r2_buckets:[{ binding:"PRESENTATION_OBJECTS", bucket_name:"fibre-presentation-assets" }],
     durable_objects:{ bindings:[{
       name:"ADMIN_LIVE",
       class_name:"FibreAdminLiveDurableObject",
