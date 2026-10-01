@@ -116,6 +116,7 @@ function normalizeLocation(raw) {
   }
   return Object.freeze({
     country,
+    countryCode:geography.countryCode??null,
     city,
     display,
     birthCity:`${city}, ${country}`,
@@ -128,11 +129,15 @@ function canonicalOperatorLocation(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new TypeError("operator location must be canonical geography");
   }
-  const allowed = new Set(["country","city","displayName","lat","long"]);
+  const allowed = new Set(["country","countryCode","city","displayName","lat","long"]);
   for (const key of Object.keys(value)) {
     if (!allowed.has(key)) throw new TypeError(`operator location.${key} is not allowed`);
   }
   const country = nonEmpty("operator location.country", value.country);
+  const countryCode = value.countryCode === null || value.countryCode === undefined || value.countryCode === ""
+    ? null
+    : nonEmpty("operator location.countryCode", value.countryCode).toUpperCase();
+  if (countryCode !== null && !/^[A-Z]{2}$/u.test(countryCode)) throw new TypeError("operator location.countryCode must be ISO alpha-2");
   const city = nonEmpty("operator location.city", value.city);
   const displayName = nonEmpty("operator location.displayName", value.displayName);
   const lat = Number(value.lat);
@@ -141,6 +146,7 @@ function canonicalOperatorLocation(value) {
   if (!Number.isFinite(long) || long < -180 || long > 180) throw new TypeError("operator location.long is invalid");
   return Object.freeze({
     country,
+    countryCode,
     city,
     displayName,
     display:`${country}/${city}`,
@@ -287,6 +293,7 @@ function buildDevelopmentRequest({ requestId, requestedAt, selector, sex, author
       ...(sex === null ? {} : { sex }),
       place:Object.freeze({
         country:selector.country,
+        countryCode:selector.countryCode??null,
         city:selector.city,
         lat:selector.lat,
         long:selector.long,
