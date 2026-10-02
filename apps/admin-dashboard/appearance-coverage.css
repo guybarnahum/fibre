@@ -79,14 +79,16 @@
 .appearance-experiment{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
 .appearance-experiment.deleting{opacity:.65}
 .appearance-experiment-copy{display:grid;gap:4px;min-width:0}
-.appearance-experiment-head{display:flex;align-items:center;gap:8px;min-width:0}
+.appearance-experiment-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
 .appearance-experiment-head strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:10px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace}
+.appearance-experiment-status.is-active{animation:appearance-status-pulse 1.25s ease-in-out infinite}
+@keyframes appearance-status-pulse{0%,100%{opacity:.68}50%{opacity:1}}
 .appearance-experiment-meta,.appearance-experiment-error{font-size:10px;color:var(--muted)}
 .appearance-experiment-error{color:#b42318}
 .appearance-experiment-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 .appearance-experiment-actions .icon-only-action{width:32px;min-width:32px;height:32px;padding:7px}
 .appearance-model-section{padding:0 12px 12px}
 .appearance-model-section summary{cursor:pointer;padding:12px 0;font-weight:700;font-size:11px}
-@media(prefers-reduced-motion:reduce){.appearance-hole-marker.active{animation:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.appearance-hole-marker.active,.appearance-experiment-status.is-active{animation:none;opacity:1}}
 @media(max-width:980px){.appearance-coverage-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.appearance-coverage-grid{grid-template-columns:1fr}.appearance-migration-row{grid-template-columns:minmax(220px,1fr) minmax(220px,1fr)}.appearance-migration-actions{grid-column:2;justify-content:flex-start}}
 @media(max-width:680px){.appearance-coverage-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.appearance-coverage-toolbar,.appearance-section-head{align-items:stretch;flex-direction:column}.appearance-coverage-toolbar-actions{justify-content:flex-end}.appearance-hole-facts{grid-template-columns:1fr}.appearance-hole-actions{width:100%;grid-template-columns:1fr}.appearance-migration-row{grid-template-columns:1fr}.appearance-migration-actions{grid-column:auto;justify-content:flex-start}.appearance-migration-meta{padding-left:0}.appearance-experiment{align-items:stretch;flex-direction:column}.appearance-experiment-actions{justify-content:flex-end}.appearance-hole-table{min-width:520px}}
