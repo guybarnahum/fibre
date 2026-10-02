@@ -3,7 +3,6 @@ import test from "node:test";
 
 import {
   forgetThreadPortrait,
-  refreshThreadPortraitUrl,
   threadPortraitUrl,
   threadLocationFlag,
   threadLocationText,
