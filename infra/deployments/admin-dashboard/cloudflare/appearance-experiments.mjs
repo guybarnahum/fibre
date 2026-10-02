@@ -90,23 +90,21 @@ export function adminPopulationLabExperimentRequest(spec,{
   });
 }
 
-export function adminPopulationLabRerunSpec(manifest){
+export function adminPopulationLabRerunRequest(manifest,{
+  experimentId=newExperimentId(),
+  requestedAt=new Date().toISOString(),
+}={}){
   if(!manifest||typeof manifest!=="object"||Array.isArray(manifest)){
     throw new TypeError("experiment manifest is required");
   }
-  if(typeof manifest.referencePopulation!=="string"||manifest.referencePopulation.trim()===""){
-    throw new TypeError("experiment manifest reference population is required");
-  }
-  return Object.freeze({
-    action:"experiment",
+  return normalizePhysicalExperimentRequest({
+    experimentId,
     referencePopulation:manifest.referencePopulation,
-    count:Number.isInteger(manifest.count)?manifest.count:24,
-    coverageKey:manifest.source?.coverageKey??null,
-    coverage:manifest.source?.coverage??null,
-    populations:Object.freeze([...(manifest.source?.populations??[])]),
-    threadIds:Object.freeze([...(manifest.source?.threadIds??[])]),
-    places:Object.freeze([...(manifest.source?.places??[])]),
-    calibration:manifest.source?.calibration??null,
+    count:manifest.count,
+    seed:manifest.seed,
+    requestedAt,
+    shadowCalibration:manifest.shadowCalibration??null,
+    source:manifest.source??{},
   });
 }
 
@@ -337,7 +335,7 @@ export async function rerunAdminPopulationLabExperiment(env,experimentId){
   }
   const manifest=await readJsonArtifact(store,experiment.artifacts?.manifest?.objectRef);
   if(manifest===null)throw new Error("experiment manifest is missing");
-  return launchAdminPopulationLabExperiment(env,adminPopulationLabRerunSpec(manifest));
+  return launchPopulationLabRequest(env,adminPopulationLabRerunRequest(manifest));
 }
 
 export async function readAdminPopulationLabReport(env,experimentId){
