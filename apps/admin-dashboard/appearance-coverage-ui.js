@@ -404,6 +404,11 @@ function renderAppearanceExperiments(){
           +" · portraits "+progress.portraits+"/"+progress.sampleSize;
       }
     }
+    if(experiment.review?.scores){
+      meta.textContent+=" · review G"+experiment.review.scores.geometryFidelity
+        +" · I"+experiment.review.scores.identityContinuity
+        +" · S"+experiment.review.scores.surfaceRealism;
+    }
     copy.append(head,meta);
     if(experiment.error?.message)copy.append(el("span","appearance-experiment-error",experiment.error.message));
     if(experiment.visual?.error?.message)copy.append(el("span","appearance-experiment-error","Visuals: "+experiment.visual.error.message));
