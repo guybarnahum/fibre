@@ -3,10 +3,12 @@ import { DurableObject } from "cloudflare:workers";
 const TAG = "admin-live";
 
 function normalizedInvalidation(value) {
-  if (!value || value.entity !== "thread") throw new TypeError("Admin live entity must be thread");
+  if (!value || !["thread","population_lab_experiment"].includes(value.entity)) {
+    throw new TypeError("Admin live entity is invalid");
+  }
   if (typeof value.id !== "string" || value.id === "") throw new TypeError("Admin live id is required");
   if (typeof value.aspect !== "string" || value.aspect === "") throw new TypeError("Admin live aspect is required");
-  return Object.freeze({ entity:"thread", id:value.id, aspect:value.aspect });
+  return Object.freeze({ entity:value.entity, id:value.id, aspect:value.aspect });
 }
 
 export class FibreAdminLiveDurableObject extends DurableObject {
