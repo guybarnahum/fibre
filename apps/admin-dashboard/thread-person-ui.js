@@ -202,6 +202,10 @@ export function forgetThreadPortrait(threadId){
   portraitCache.delete(threadId);
 }
 
+export async function threadPortraitUrl(threadId){
+  return resolveThreadPortrait(threadId);
+}
+
 export async function refreshThreadPortraitUrl(threadId){
   forgetThreadPortrait(threadId);
   return resolveThreadPortrait(threadId);
