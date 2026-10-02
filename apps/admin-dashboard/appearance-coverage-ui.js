@@ -159,13 +159,13 @@ function renderAppearanceExperiments(){
     const visualActive=["queued","running"].includes(experiment.visual?.status);
     const visualRetryable=experiment.visual?.status==="failed"&&!experiment.visual?.startedAt;
     if(experiment.status==="completed"&&(!experiment.visual||visualActive||visualRetryable)){
-      const visuals=el("button","secondary");
+      const visuals=el("button","secondary appearance-visual-action");
       const progress=visualProgress(experiment);
       visuals.type="button";
       visuals.disabled=visualActive;
       decorateActionButton(visuals,{
         icon:visualActive?"rotate":"image",
-        label:visualActive?(progress?.completed??0)+"/"+(progress?.total??8):visualRetryable?"Retry visuals":"Run visuals",
+        label:visualActive?"Progress "+(progress?.completed??0)+"/"+(progress?.total??8):visualRetryable?"Retry visuals":"Run visuals",
         tooltip:visualActive
           ?"Generating images: "+(progress?.completed??0)+"/"+(progress?.total??8)
           :visualRetryable
@@ -180,7 +180,7 @@ function renderAppearanceExperiments(){
         visuals.disabled=true;
         decorateActionButton(visuals,{
           icon:"rotate",
-          label:"0/8",
+          label:"Progress 0/8",
           tooltip:"Queueing visual fidelity experiment",
           spinning:true,
         });
