@@ -137,3 +137,27 @@ test("completed visual evidence indexes generated assets without copying and del
   assert.equal(await infra.objects.get(imageRef),null,"generated visual image remained after experiment deletion");
   assert.equal(await infra.objects.get(receiptRef),null,"generated visual receipt remained after experiment deletion");
 });
+
+
+test("visual launch failure retries only the exact persisted manifest before execution starts",async()=>{
+  const infra=createMemoryInfraDriver();
+  const store=createPopulationLabExperimentStore(infra);
+  const experimentId="exp_visual_launch_retry";
+  await store.start(experimentId,{startedAt:"2026-10-01T00:00:00.000Z",count:8});
+  await store.putPopulation(experimentId,{people:[{id:"one"}]});
+  await store.putResult(experimentId,{warnings:[]});
+  await store.putReport(experimentId,"<html>base</html>");
+  await store.complete(experimentId,{people:1,warnings:0,images:0});
+
+  const request={
+    experimentId,
+    requestedAt:"2026-10-01T00:01:00.000Z",
+    sampleSize:4,
+  };
+  await store.queueVisual(experimentId,request);
+  await store.failVisual(experimentId,new Error("workflow launch rejected provider id"));
+
+  const retried=await store.retryQueuedVisual(experimentId);
+  assert.deepEqual(retried,request,"visual launch retry changed immutable manifest");
+  assert.equal((await store.get(experimentId)).visual.status,"queued","visual launch retry did not return to queued state");
+});
