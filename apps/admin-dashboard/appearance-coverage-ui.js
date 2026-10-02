@@ -67,6 +67,23 @@ function experimentSummary(experiment){
   return bits.join(" · ")||"No summary yet";
 }
 
+function visualProgress(experiment){
+  if(!experiment?.visual)return null;
+  const sampleSize=Number.isInteger(experiment.visual.sampleSize)&&experiment.visual.sampleSize>0
+    ? experiment.visual.sampleSize
+    : 4;
+  const images=Array.isArray(experiment.images)?experiment.images:[];
+  const geometry=images.filter(image=>image?.role==="geometry").length;
+  const portraits=images.filter(image=>image?.role==="portrait").length;
+  return Object.freeze({
+    sampleSize,
+    geometry,
+    portraits,
+    completed:geometry+portraits,
+    total:sampleSize*2,
+  });
+}
+
 function renderAppearanceExperiments(){
   if(!experiments)return;
   experiments.replaceChildren();
@@ -86,7 +103,13 @@ function renderAppearanceExperiments(){
     const started=experiment.startedAt?new Date(experiment.startedAt).toLocaleString():"";
     if(started)meta.textContent+=" · "+started;
     if(experiment.visual?.status){
+      const progress=visualProgress(experiment);
       meta.textContent+=" · visuals "+human(experiment.visual.status);
+      if(progress){
+        meta.textContent+=" "+progress.completed+"/"+progress.total
+          +" · geometry "+progress.geometry+"/"+progress.sampleSize
+          +" · portraits "+progress.portraits+"/"+progress.sampleSize;
+      }
     }
     copy.append(head,meta);
     if(experiment.error?.message)copy.append(el("span","appearance-experiment-error",experiment.error.message));
@@ -95,20 +118,25 @@ function renderAppearanceExperiments(){
     const actions=el("div","appearance-experiment-actions");
     const visualActive=["queued","running"].includes(experiment.visual?.status);
     const visualComplete=experiment.visual?.status==="completed";
-    if(experiment.status==="completed"&&(!experiment.visual||visualActive)){
+    const visualRetryable=experiment.visual?.status==="failed"&&!experiment.visual?.startedAt;
+    if(experiment.status==="completed"&&(!experiment.visual||visualActive||visualRetryable)){
       const visuals=el("button","secondary");
       visuals.type="button";
       visuals.disabled=visualActive;
       decorateActionButton(visuals,{
         icon:visualActive?"rotate":"image",
-        label:visualActive?"Generating visuals":"Run visuals",
+        label:visualActive?"Generating visuals":visualRetryable?"Retry visuals":"Run visuals",
         tooltip:visualActive
           ?"Visual fidelity sample is running"
-          :"Generate 4 geometry anchors and 4 reference-conditioned portraits",
+          :visualRetryable
+            ?"Retry the same visual manifest; the prior Workflow never started"
+            :"Generate 4 geometry anchors and 4 reference-conditioned portraits",
         spinning:visualActive,
       });
       if(!visualActive)visuals.addEventListener("click",async()=>{
-        if(!window.confirm("Run the 4-person visual fidelity sample? This generates 8 images through Asset Generator."))return;
+        if(!window.confirm(visualRetryable
+          ?"Retry the same visual fidelity run? The prior Workflow did not start, so this will reuse the exact immutable manifest."
+          :"Run the 4-person visual fidelity sample? This generates 8 images through Asset Generator."))return;
         visuals.disabled=true;
         decorateActionButton(visuals,{
           icon:"rotate",
@@ -128,7 +156,7 @@ function renderAppearanceExperiments(){
           visuals.disabled=false;
           decorateActionButton(visuals,{
             icon:"image",
-            label:"Run visuals",
+            label:visualRetryable?"Retry visuals":"Run visuals",
             tooltip:error instanceof Error?error.message:String(error),
           });
         }
