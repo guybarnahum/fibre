@@ -27,7 +27,7 @@ A2.3 extends a completed controlled physical experiment with one optional visual
 1. a monochrome geometry anchor with no image reference;
 2. a surface portrait conditioned on that exact geometry anchor.
 
-The Population Lab Workflow delegates those jobs through the Asset Generator private control API. Provider credentials, model adapters, retry/resume logic and generation provenance remain owned by Asset Generator. Population Lab only records verified ready receipts, indexes the resulting image object refs into the experiment, and writes a visual contact-sheet report.
+The Population Lab Workflow delegates those jobs through the provider-neutral InfraDriver service-call port to Asset Generator. It queues the four geometry jobs as one bounded wave, waits for verified geometry receipts, then queues the four reference-conditioned portraits as a second bounded wave. Provider credentials, model adapters, retry/resume logic and generation provenance remain owned by Asset Generator. Population Lab only records verified ready receipts, indexes the resulting image object refs into the experiment, and writes a visual contact-sheet report.
 
 The contact sheet is human renderer-fidelity evidence. It intentionally has no invented automatic “looks right” score. A correct numerical cohort can still expose a renderer that collapses faces, beautifies subjects, or changes geometry during the surface pass.
 
