@@ -159,6 +159,14 @@ async function sha256Text(value) {
   return `sha256:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
+const CLOUDFLARE_WORKFLOW_INSTANCE_ID=/^[A-Za-z0-9_-]{1,100}$/u;
+
+async function cloudflareWorkflowInstanceId(instanceId){
+  if(CLOUDFLARE_WORKFLOW_INSTANCE_ID.test(instanceId))return instanceId;
+  const digest=(await sha256Text(instanceId)).slice("sha256:".length);
+  return `fibre_${digest}`;
+}
+
 function workflowWitnessRef(workflowName, instanceId) {
   return `${WORKFLOW_INPUT_PREFIX}:${workflowName}:${instanceId}`;
 }
@@ -205,6 +213,7 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
       assertInfraId("workflow instanceId", instanceId);
       assertInfraJsonValue("workflow input", input);
       const binding = bindingFor(workflowName);
+      const physicalInstanceId=await cloudflareWorkflowInstanceId(instanceId);
       const serialized = infraCanonicalJson(input);
       const inputDigest = await sha256Text(serialized);
       const witnessRef = workflowWitnessRef(workflowName, instanceId);
@@ -229,7 +238,7 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
       let instance;
       if (duplicate && started !== null) {
         try {
-          instance = await binding.get(instanceId);
+          instance = await binding.get(physicalInstanceId);
         } catch {
           return { workflowName, instanceId, status: "unknown", error: null, duplicate: true };
         }
@@ -242,9 +251,9 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
       }
 
       try {
-        instance = await binding.create({ id: instanceId, params: structuredClone(input) });
+        instance = await binding.create({ id: physicalInstanceId, params: structuredClone(input) });
       } catch (error) {
-        try { instance = await binding.get(instanceId); }
+        try { instance = await binding.get(physicalInstanceId); }
         catch { throw error; }
       }
 
@@ -277,7 +286,7 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
       const binding = bindingFor(workflowName);
       let observation = { status: "unknown", error: null };
       try {
-        const instance = await binding.get(instanceId);
+        const instance = await binding.get(physicalInstanceId);
         observation = observeWorkflowStatus(await instance.status());
       } catch {}
       return { workflowName, instanceId, ...observation, input };
