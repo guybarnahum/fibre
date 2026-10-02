@@ -2,6 +2,7 @@ import {
   physicalGenomeLoci,
   referencePopulationCalibration,
   referencePopulationPrior,
+  referencePopulationVariation,
 } from "../../../core/src/human-appearance/index.mjs";
 
 export const POPULATION_LAB_CALIBRATION_CANDIDATE_VERSION="fibre-population-lab-calibration-candidate-v0.1";
@@ -28,7 +29,8 @@ function artifactEvidence(experiment){
 export function buildPopulationLabCalibrationCandidate({
   experiment,
   manifest,
-  values,
+  values={},
+  variation={},
   rationale,
   createdAt=new Date().toISOString(),
 }={}){
@@ -58,10 +60,13 @@ export function buildPopulationLabCalibrationCandidate({
   }
 
   if(!values||typeof values!=="object"||Array.isArray(values)){
-    throw new TypeError("candidate values are required");
+    throw new TypeError("candidate values must be an object");
+  }
+  if(!variation||typeof variation!=="object"||Array.isArray(variation)){
+    throw new TypeError("candidate variation must be an object");
   }
   const prior=referencePopulationPrior(referencePopulation);
-  const changes=[];
+  const valueChanges=[];
   for(const [locus,rawValue] of Object.entries(values).sort(([left],[right])=>left.localeCompare(right))){
     if(!LOCI.has(locus))throw new TypeError(`unknown physical calibration locus: ${locus}`);
     const value=Number(rawValue);
@@ -69,9 +74,23 @@ export function buildPopulationLabCalibrationCandidate({
       throw new TypeError(`${locus} calibration value must be from -1 through 1`);
     }
     if(value===prior[locus])continue;
-    changes.push(Object.freeze({locus,from:prior[locus],to:value}));
+    valueChanges.push(Object.freeze({locus,from:prior[locus],to:value}));
   }
-  if(changes.length===0)throw new TypeError("calibration candidate must change at least one physical locus");
+
+  const currentVariation=referencePopulationVariation(referencePopulation);
+  const variationChanges=[];
+  for(const [parameter,rawValue] of Object.entries(variation).sort(([left],[right])=>left.localeCompare(right))){
+    if(!(parameter in currentVariation))throw new TypeError(`unknown physical variation parameter: ${parameter}`);
+    const value=Number(rawValue);
+    if(!Number.isFinite(value)||value<=0){
+      throw new TypeError(`${parameter} variation multiplier must be positive`);
+    }
+    if(value===currentVariation[parameter])continue;
+    variationChanges.push(Object.freeze({parameter,from:currentVariation[parameter],to:value}));
+  }
+  if(valueChanges.length===0&&variationChanges.length===0){
+    throw new TypeError("calibration candidate must change at least one calibration parameter");
+  }
 
   return Object.freeze({
     contract:POPULATION_LAB_CALIBRATION_CANDIDATE_VERSION,
@@ -85,7 +104,8 @@ export function buildPopulationLabCalibrationCandidate({
     proposedCalibration:Object.freeze({
       id:calibration.id,
       version:calibration.version+1,
-      changes:Object.freeze(changes),
+      values:Object.freeze(valueChanges),
+      variation:Object.freeze(variationChanges),
     }),
     rationale:nonEmpty("rationale",rationale),
     evidence:Object.freeze({
