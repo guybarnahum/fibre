@@ -34,3 +34,10 @@ test("Threads module has no hard references to removed Appearance controls",()=>
   assert.doesNotMatch(populationUi,/threadHasMigrationDomain/u);
   assert.doesNotMatch(populationUi,/#view-appearance/u);
 });
+
+
+test("Population Lab experiment queue sits before recalibration candidates",()=>{
+  const experiments=html.indexOf('class="appearance-experiments-section"');
+  const migrations=html.indexOf('class="appearance-migrations-section"');
+  assert.ok(experiments>=0&&migrations>experiments,"experiment queue is not above Threads needing recalibration");
+});
