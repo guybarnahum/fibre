@@ -67,4 +67,16 @@ test("visual calibration samples four deterministic people and preserves geometr
   assert.match(reviewed,/Human review · Supports candidate/u,"report lost submitted review decision");
   assert.match(reviewed,/Geometry 5\/5 · Identity 4\/5 · Surface 4\/5/u,"report lost per-sample submitted scores");
   assert.match(reviewed,/Geometry 4\.5\/5 · Identity 4\.25\/5 · Surface 4\/5/u,"report lost review score summary");
+
+  const shadowReport=renderPopulationLabVisualReport({
+    ...plan,
+    shadowCalibration:{
+      values:{faceBreadth:.18},
+      variation:{familyFactorMultiplier:1.08},
+      rationale:"Evidence-backed shadow refinement.",
+    },
+  });
+  assert.match(shadowReport,/Population Lab · shadow candidate/u,"shadow visual report lost candidate identity");
+  assert.match(shadowReport,/Evidence-backed shadow refinement/u,"shadow visual report lost proposal rationale");
+  assert.match(shadowReport,/without changing the live reference registry/u,"shadow report blurred candidate and authority");
 });
