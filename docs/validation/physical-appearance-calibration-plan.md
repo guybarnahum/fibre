@@ -299,7 +299,7 @@ Acceptance:
 
 ### A2 — InfraDriver-backed experiment artifacts
 
-**Status: A2.1 implemented on `main`, pending validation.** Population Lab runner outputs now use one shared experiment-artifact store over generic `InfraDriver.objects` + `InfraDriver.catalog`; Admin can list/open/delete persisted cloud experiments. Admin launch/execution is the next A2 slice.
+**Status: A2.1 and A2.2 accepted in staging; A2.3 implemented on `main`, pending validation.** Population Lab runner outputs use one shared experiment-artifact store over generic `InfraDriver.objects` + `InfraDriver.catalog`; Admin can launch/list/open/delete bounded experiments, and A2.3 adds an optional four-person geometry-first visual fidelity sample through the existing Asset Generator.
 
 Persist Population Lab experiment manifests, population inputs, HTML reports, images and results through generic `InfraDriver.objects` and `InfraDriver.catalog`. Local storage materializes beneath `.fibre/population-lab/`; cloud providers map the same logical object references to their object/catalog implementations.
 
