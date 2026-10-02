@@ -1,4 +1,5 @@
 import {requireInfraCapabilities} from "#infra";
+import {buildPopulationLabCalibrationCandidate} from "./calibration-candidate.mjs";
 
 const PREFIX="population-lab:experiment:";
 
@@ -231,6 +232,29 @@ export function createPopulationLabExperimentStore(infra){
     async putVisualReport(experimentId,html){
       const write=await put(experimentId,"report:visual",html,{mediaType:"text/html; charset=utf-8"});
       return indexArtifact(experimentId,write,{artifacts:{visualReport:write.artifact}});
+    },
+    async putCalibrationCandidate(experimentId,input){
+      const key=populationLabExperimentCatalogKey(experimentId);
+      const current=await infra.catalog.get(key);
+      if(current===null)throw new Error("experiment not found");
+      if(current.artifacts?.calibrationCandidate){
+        throw new TypeError("calibration candidate already exists for this experiment");
+      }
+      const manifestRef=current.artifacts?.manifest?.objectRef;
+      if(typeof manifestRef!=="string")throw new Error("experiment manifest is missing");
+      const storedManifest=await infra.objects.get(manifestRef);
+      if(storedManifest===null)throw new Error("experiment manifest bytes are missing");
+      let manifest;
+      try{manifest=JSON.parse(new TextDecoder().decode(storedManifest.bytes))}
+      catch{throw new Error("experiment manifest is invalid")}
+      const candidate=buildPopulationLabCalibrationCandidate({
+        experiment:current,
+        manifest,
+        ...input,
+      });
+      const write=await put(experimentId,"calibration:candidate",jsonBytes(candidate),{mediaType:"application/json"});
+      await indexArtifact(experimentId,write,{artifacts:{calibrationCandidate:write.artifact}});
+      return candidate;
     },
     async completeVisual(experimentId,summary={}){
       return updateVisual(experimentId,{
