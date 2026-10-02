@@ -60,3 +60,7 @@ export function threadObservatoryViewKey(threadId) {
   if (typeof threadId !== "string" || threadId === "") throw new TypeError("threadId is required");
   return `thread:${threadId}:observatory`;
 }
+
+export function appearanceExperimentsViewKey() {
+  return "appearance:experiments";
+}
