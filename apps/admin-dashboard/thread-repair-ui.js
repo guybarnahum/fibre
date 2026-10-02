@@ -5,7 +5,7 @@ import {
 } from "./thread-action-dialog.js";
 import { threadAppearanceSection } from "./thread-appearance-ui.js";
 import { identityActionPayload } from "./thread-identity-action.js";
-import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
+import { decorateActionButton, iconForIdentityAction, setBlockingButtonState, setWaitingContent } from "./fa-icons.js";
 
 const dialogBody = document.querySelector("#dialog-body");
 
@@ -211,18 +211,31 @@ async function post(threadId, body) {
   return payload;
 }
 
-function actionButton(label, run, { icon = null, tooltip = label } = {}) {
+function actionButton(label, run, { icon = null, tooltip = label, blocking = false } = {}) {
   const button = el("button", "secondary thread-repair-button");
   button.type = "button";
   decorateActionButton(button, { icon, label, tooltip });
   button.addEventListener("click", async () => {
     try {
-      button.disabled = true;
-      decorateActionButton(button, { icon, label:`${label}…`, tooltip });
+      if (blocking) {
+        setBlockingButtonState(button,true,{
+          label,
+          tooltip,
+          icon,
+          busyLabel:label,
+          busyTooltip:label+"…",
+        });
+      } else {
+        button.disabled = true;
+        decorateActionButton(button, { icon, label:`${label}…`, tooltip });
+      }
       await run();
     } catch (error) {
-      button.disabled = false;
-      decorateActionButton(button, { icon, label, tooltip });
+      if (blocking) setBlockingButtonState(button,false,{ label, tooltip, icon });
+      else {
+        button.disabled = false;
+        decorateActionButton(button, { icon, label, tooltip });
+      }
       button.parentElement?.after(el("div", "error-box", error instanceof Error ? error.message : String(error)));
     }
   });
@@ -393,7 +406,7 @@ function renderRecoveryAction(host, threadId, diagnosis, reconciliation) {
 
 function renderHealthRefresh(host, threadId) {
   const bar = el("div", "thread-repair-actions");
-  bar.append(actionButton("Refresh health", () => renderThreadHealth(host, threadId)));
+  bar.append(actionButton("Refresh health", () => renderThreadHealth(host, threadId), { blocking:true }));
   host.append(bar);
 }
 
