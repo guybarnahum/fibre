@@ -1,5 +1,6 @@
 import {
   invalidateView,
+  appearanceExperimentsViewKey,
   threadObservatoryViewKey,
   threadPopulationViewKey,
   threadViewKey,
@@ -39,7 +40,17 @@ function reconcileLiveViews(reason) {
 
 export function routeAdminLiveMessage(message) {
   if (message?.type !== "admin-live.invalidate") return false;
-  if (message.entity !== "thread" || typeof message.id !== "string" || typeof message.aspect !== "string") return false;
+  if (typeof message.id !== "string" || typeof message.aspect !== "string") return false;
+  if(message.entity==="population_lab_experiment"){
+    invalidateView(appearanceExperimentsViewKey(),{
+      source:"admin-live",
+      reason:"changed",
+      experimentId:message.id,
+      aspect:message.aspect,
+    });
+    return true;
+  }
+  if (message.entity !== "thread") return false;
   invalidateView(threadViewKey(message.id, message.aspect), {
     source:"admin-live",
     reason:"changed",
