@@ -74,10 +74,10 @@ const FACTORS_BY_LOCUS=Object.freeze(Object.fromEntries(
   ]),
 ));
 
-function ancestryVariation(ancestry){
+function ancestryVariation(ancestry,variationFor){
   const total=ancestry.reduce((sum,item)=>sum+item.share,0);
   return ancestry.reduce((profile,item)=>{
-    const variation=referencePopulationVariation(item.referencePopulation);
+    const variation=variationFor(item.referencePopulation);
     const weight=item.share/total;
     profile.familyFactorMultiplier+=variation.familyFactorMultiplier*weight;
     profile.structuralResidualMultiplier+=variation.structuralResidualMultiplier*weight;
@@ -90,10 +90,10 @@ function ancestryVariation(ancestry){
   });
 }
 
-function chooseComponent(ancestry,seed,key){
+function chooseComponent(ancestry,seed,key,priorFor){
   for(const item of ancestry){
     if(!item.referencePopulation)throw Error("founder ancestry requires referencePopulation");
-    referencePopulationPrior(item.referencePopulation);
+    priorFor(item.referencePopulation);
   }
   const total=ancestry.reduce((n,x)=>n+x.share,0),pick=unit(seed,key)*total;
   let cursor=0;
@@ -101,10 +101,16 @@ function chooseComponent(ancestry,seed,key){
   return ancestry.at(-1);
 }
 
-export function sampleFounderPhysicalGenome({ancestry,seed}){
+export function sampleFounderPhysicalGenome({
+  ancestry,
+  seed,
+  priorFor=referencePopulationPrior,
+  variationFor=referencePopulationVariation,
+}){
   if(seed===undefined||seed===null||String(seed).length===0)throw Error("founder seed is required");
   const normalized=normalizeAncestry(ancestry);
-  const variation=ancestryVariation(normalized);
+  if(typeof priorFor!=="function"||typeof variationFor!=="function")throw new TypeError("founder calibration resolvers are required");
+  const variation=ancestryVariation(normalized,variationFor);
   const familyFactors=Object.fromEntries(
     Object.keys(FACTOR_LOADINGS).map(factor=>[
       factor,
@@ -121,8 +127,8 @@ export function sampleFounderPhysicalGenome({ancestry,seed}){
       : GENERAL_RESIDUAL_SCALE*variation.generalResidualMultiplier;
 
     loci[locus]=[0,1].map(copy=>{
-      const component=chooseComponent(normalized,seed,`${locus}:${copy}:ancestry`);
-      const mean=referencePopulationPrior(component.referencePopulation)[locus];
+      const component=chooseComponent(normalized,seed,`${locus}:${copy}:ancestry`,priorFor);
+      const mean=priorFor(component.referencePopulation)[locus];
       const residual=bell(seed,`${locus}:${copy}:residual`)*residualScale;
       return {value:clamp(mean+correlated+residual)};
     });
