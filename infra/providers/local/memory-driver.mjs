@@ -3,6 +3,7 @@ import {
   InfraIdempotencyConflictError,
   InfraImmutableObjectConflictError,
   InfraSequenceConflictError,
+  InfraServiceCallError,
   InfraSnapshotConflictError,
   InfraWorkflowConflictError,
   assertInfraDriver,
@@ -20,6 +21,7 @@ export {
   InfraIdempotencyConflictError,
   InfraImmutableObjectConflictError,
   InfraSequenceConflictError,
+  InfraServiceCallError,
   InfraSnapshotConflictError,
   InfraWorkflowConflictError,
 } from "../../infra-driver.mjs";
@@ -45,7 +47,8 @@ function normalizeCatalogListOptions({ prefix = "", after = null, limit = 100 } 
   return { prefix, after, limit };
 }
 
-export function createMemoryInfraDriver() {
+export function createMemoryInfraDriver({serviceHandlers={}}={}) {
+  assertInfraPlainObject("serviceHandlers",serviceHandlers);
   const channels = new Map();
   const objects = new Map();
   const catalog = new Map();
@@ -227,14 +230,40 @@ export function createMemoryInfraDriver() {
     },
   };
 
+  const services = {
+    async call(serviceName,operation,input){
+      assertInfraId("serviceName",serviceName);
+      assertInfraId("service operation",operation);
+      assertInfraJsonValue("service input",input);
+      const handler=serviceHandlers[serviceName];
+      if(typeof handler!=="function"){
+        throw new InfraServiceCallError(`memory service ${serviceName} is unavailable`,{
+          serviceName,
+          operation,
+          retryable:false,
+        });
+      }
+      return clone(await handler(operation,clone(input)));
+    },
+  };
+
+  const hasServices=Object.keys(serviceHandlers).length>0;
   return assertInfraDriver({
     driverId: "memory-v1",
     driverVersion: INFRA_DRIVER_VERSION,
-    capabilities: ["streams", "objects", "catalog", "realtime", "workflows"],
+    capabilities: [
+      "streams",
+      "objects",
+      "catalog",
+      "realtime",
+      "workflows",
+      ...(hasServices?["services"]:[]),
+    ],
     streams,
     objects: objectPort,
     catalog: catalogPort,
     realtime,
     workflows,
+    ...(hasServices?{services}:{}),
   });
 }
