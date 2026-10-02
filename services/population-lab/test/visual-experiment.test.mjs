@@ -51,4 +51,20 @@ test("visual calibration samples four deterministic people and preserves geometr
   assert.match(report,/Identity continuity/u,"visual report lost identity review criterion");
   assert.match(report,/Surface realism/u,"visual report lost surface review criterion");
   assert.match(report,/not appearance authority/u,"visual report blurred evidence and authority");
+
+  const reviewed=renderPopulationLabVisualReport(plan,{review:{
+    decision:"supports_candidate",
+    scores:{geometryFidelity:4.5,identityContinuity:4.25,surfaceRealism:4},
+    samples:plan.samples.map(sample=>({
+      ordinal:sample.ordinal,
+      geometryFidelity:5,
+      identityContinuity:4,
+      surfaceRealism:4,
+      note:null,
+    })),
+    note:"Renderer fidelity is strong enough to support candidate review.",
+  }});
+  assert.match(reviewed,/Human review · Supports candidate/u,"report lost submitted review decision");
+  assert.match(reviewed,/Geometry 5\/5 · Identity 4\/5 · Surface 4\/5/u,"report lost per-sample submitted scores");
+  assert.match(reviewed,/Geometry 4\.5\/5 · Identity 4\.25\/5 · Surface 4\/5/u,"report lost review score summary");
 });
