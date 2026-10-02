@@ -108,7 +108,7 @@ One bounded World scan supplies authoritative Thread facts: admitted Thread iden
 
 The map must never be interpreted as a country-to-face mapping. Location is context for where Fibre's represented families occur; durable ancestry evidence selects the physical reference.
 
-A1 keeps expensive actions explicit. **Prepare experiment** and **Prepare research** create bounded action specifications only. They do not execute provider work or modify the model. Experiment storage/execution and research adapters belong to later Population Lab slices through InfraDriver.
+A1 kept expensive actions explicit through prepared action specifications. A2 now executes bounded Population Lab experiments while preserving that explicit operator boundary: **Run experiment** queues the model-free numerical cohort, and a completed experiment may optionally **Run visuals** for a four-person geometry-first fidelity sample through Asset Generator. **Prepare research** remains specification-only until A3. Neither experiment path can modify calibration authority.
 
 The Threads population view exposes one **Needs migration** filter for all `migration_required` Threads. Filtering is presentation only; World health remains authority.
 
