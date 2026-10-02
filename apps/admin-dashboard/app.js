@@ -1,4 +1,4 @@
-import { decorateActionButton, faIcon, setWaitingContent } from "./fa-icons.js";
+import { decorateActionButton, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 import {
   countryFlag,
   knownThreadLabel,
@@ -133,22 +133,10 @@ function syncUrl() {
 }
 
 function setLoading(loading) {
-  const refresh = $("#refresh-button");
-  if (!refresh.style.width) refresh.style.width = `${Math.ceil(refresh.getBoundingClientRect().width)}px`;
-  refresh.disabled = loading;
-  if (loading) {
-    const icon = faIcon("rotate");
-    icon.classList.add("fa-action-icon-spin");
-    refresh.replaceChildren(icon);
-    refresh.setAttribute("aria-label", "Refreshing Activity");
-    refresh.title = "Refreshing Activity";
-    refresh.classList.add("activity-refresh-loading");
-  } else {
-    refresh.textContent = "Refresh";
-    refresh.removeAttribute("aria-label");
-    refresh.removeAttribute("title");
-    refresh.classList.remove("activity-refresh-loading");
-  }
+  setRefreshButtonState($("#refresh-button"),loading,{
+    tooltip:"Refresh Activity",
+    busyTooltip:"Refreshing Activity",
+  });
   for (const id of ["page-first", "page-prev", "page-next", "page-last"]) $(`#${id}`).disabled = loading;
 }
 
