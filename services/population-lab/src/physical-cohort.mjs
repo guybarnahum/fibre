@@ -6,9 +6,10 @@ import {
   recombinePhysicalGenomes,
   referencePhysicalState,
   referencePopulationPrior,
-  resolveHumanPhysicalInheritance,
+  referencePopulationVariation,
   sampleFounderPhysicalGenome,
 } from "../../../core/src/human-appearance/index.mjs";
+import {populationLabShadowCalibrationResolvers} from "./shadow-calibration.mjs";
 
 export const PHYSICAL_CALIBRATION_LOCI=Object.freeze([
   "faceBreadth","faceLength","midfaceProminence","zygomaticProjection",
@@ -22,6 +23,38 @@ const ancestry=referencePopulation=>[{
   share:1,
   referencePopulation,
 }];
+
+function calibrationResolvers(shadowCalibration){
+  if(shadowCalibration===null||shadowCalibration===undefined){
+    return Object.freeze({
+      shadow:null,
+      priorFor:referencePopulationPrior,
+      variationFor:referencePopulationVariation,
+    });
+  }
+  return populationLabShadowCalibrationResolvers(shadowCalibration);
+}
+
+function founderGenome(referencePopulation,seed,{priorFor,variationFor}){
+  const lineage=ancestry(referencePopulation);
+  const maternal=sampleFounderPhysicalGenome({
+    ancestry:lineage,
+    seed:`${seed}:maternal:founder`,
+    priorFor,
+    variationFor,
+  });
+  const paternal=sampleFounderPhysicalGenome({
+    ancestry:lineage,
+    seed:`${seed}:paternal:founder`,
+    priorFor,
+    variationFor,
+  });
+  return recombinePhysicalGenomes({
+    maternalGenome:maternal,
+    paternalGenome:paternal,
+    seed,
+  });
+}
 
 const sexFor=value=>Number.parseInt(
   createHash("sha256").update(`${value}\0sex`).digest("hex").slice(0,12),
@@ -52,16 +85,20 @@ const distance=(left,right)=>Math.sqrt(
 
 const averageDistance=pairs=>mean(pairs.map(([left,right])=>distance(left,right)));
 
-function familyResemblance(referencePopulation,seed){
+function familyResemblance(referencePopulation,seed,resolvers){
   const families=Array.from({length:12},(_,familyIndex)=>{
     const a=ancestry(referencePopulation);
     const maternal=sampleFounderPhysicalGenome({
       ancestry:a,
       seed:`${seed}:${referencePopulation}:family:${familyIndex}:mother`,
+      priorFor:resolvers.priorFor,
+      variationFor:resolvers.variationFor,
     });
     const paternal=sampleFounderPhysicalGenome({
       ancestry:a,
       seed:`${seed}:${referencePopulation}:family:${familyIndex}:father`,
+      priorFor:resolvers.priorFor,
+      variationFor:resolvers.variationFor,
     });
     const children=Array.from({length:4},(_,childIndex)=>recombinePhysicalGenomes({
       maternalGenome:maternal,
@@ -102,14 +139,25 @@ function familyResemblance(referencePopulation,seed){
   });
 }
 
-function mixedParentDiagnostic(leftPopulation,rightPopulation,seed){
-  const leftPrior=referencePopulationPrior(leftPopulation);
-  const rightPrior=referencePopulationPrior(rightPopulation);
-  const children=Array.from({length:96},(_,index)=>resolveHumanPhysicalInheritance({
-    maternal:{physicalLineage:ancestry(leftPopulation)},
-    paternal:{physicalLineage:ancestry(rightPopulation)},
-    conceptionSeed:`${seed}:mixed:${leftPopulation}:${rightPopulation}:${index}`,
-  }).physicalGenome);
+function mixedParentDiagnostic(leftPopulation,rightPopulation,seed,resolvers){
+  const leftPrior=resolvers.priorFor(leftPopulation);
+  const rightPrior=resolvers.priorFor(rightPopulation);
+  const children=Array.from({length:96},(_,index)=>{
+    const childSeed=`${seed}:mixed:${leftPopulation}:${rightPopulation}:${index}`;
+    const maternal=sampleFounderPhysicalGenome({
+      ancestry:ancestry(leftPopulation),
+      seed:`${childSeed}:maternal:founder`,
+      priorFor:resolvers.priorFor,
+      variationFor:resolvers.variationFor,
+    });
+    const paternal=sampleFounderPhysicalGenome({
+      ancestry:ancestry(rightPopulation),
+      seed:`${childSeed}:paternal:founder`,
+      priorFor:resolvers.priorFor,
+      variationFor:resolvers.variationFor,
+    });
+    return recombinePhysicalGenomes({maternalGenome:maternal,paternalGenome:paternal,seed:childSeed});
+  });
   const means=Object.fromEntries(PHYSICAL_CALIBRATION_LOCI.map(locus=>[
     locus,
     mean(children.map(genome=>expressPhysicalGenome(genome)[locus])),
@@ -129,6 +177,7 @@ export function generatePhysicalCalibrationCohort({
   referencePopulations,
   count,
   seed="physical-calibration-v1",
+  shadowCalibration=null,
 }={}){
   if(!Array.isArray(referencePopulations)||referencePopulations.length===0){
     throw new TypeError("physical calibration requires reference populations");
@@ -136,7 +185,8 @@ export function generatePhysicalCalibrationCohort({
   if(!Number.isInteger(count)||count<referencePopulations.length){
     throw new TypeError("physical calibration count must cover every reference population");
   }
-  for(const referencePopulation of referencePopulations)referencePopulationPrior(referencePopulation);
+  const resolvers=calibrationResolvers(shadowCalibration);
+  for(const referencePopulation of referencePopulations)resolvers.priorFor(referencePopulation);
 
   const people=[];
   for(let populationIndex=0;populationIndex<referencePopulations.length;populationIndex++){
@@ -145,14 +195,10 @@ export function generatePhysicalCalibrationCohort({
     for(let index=0;index<target;index++){
       const requestId=`physical-calibration:${seed}:${referencePopulation}:${index}`;
       const sex=sexFor(requestId);
-      const inheritance=resolveHumanPhysicalInheritance({
-        maternal:{physicalLineage:ancestry(referencePopulation)},
-        paternal:{physicalLineage:ancestry(referencePopulation)},
-        conceptionSeed:requestId,
-      });
-      const projection=expressInheritedAppearance({physicalGenome:inheritance.physicalGenome,sex});
+      const physicalGenome=founderGenome(referencePopulation,requestId,resolvers);
+      const projection=expressInheritedAppearance({physicalGenome,sex});
       const physicalState=referencePhysicalState({
-        physicalGenome:inheritance.physicalGenome,
+        physicalGenome,
         sex,
         stateSeed:`physical-calibration:${requestId}`,
       });
@@ -176,7 +222,7 @@ export function generatePhysicalCalibrationCohort({
         surfaceDescription:projection.surfaceDescription,
         projectionVersion:projection.projectionVersion,
         physicalState,
-        inheritance:Object.freeze({genome:inheritance.physicalGenome,phenotype:projection.phenotype}),
+        inheritance:Object.freeze({genome:physicalGenome,phenotype:projection.phenotype}),
       }));
     }
   }
@@ -187,15 +233,17 @@ export function physicalCalibrationDiagnostics({
   people,
   referencePopulations,
   seed="physical-calibration-v1",
+  shadowCalibration=null,
 }={}){
   if(!Array.isArray(people)||people.length===0)throw new TypeError("physical calibration people are required");
   const byPopulation={};
   const warnings=[];
+  const resolvers=calibrationResolvers(shadowCalibration);
 
   for(const referencePopulation of referencePopulations){
     const group=people.filter(person=>person.referencePopulation===referencePopulation);
     if(group.length===0)throw new Error(`physical calibration missing ${referencePopulation}`);
-    const prior=referencePopulationPrior(referencePopulation);
+    const prior=resolvers.priorFor(referencePopulation);
     const loci=Object.fromEntries(PHYSICAL_CALIBRATION_LOCI.map(locus=>{
       const values=group.map(person=>person.inheritance.phenotype.latent[locus]);
       const average=mean(values);
@@ -216,7 +264,7 @@ export function physicalCalibrationDiagnostics({
     const uniqueLatentSignatures=new Set(group.map(person=>
       PHYSICAL_CALIBRATION_LOCI.map(locus=>person.inheritance.phenotype.latent[locus].toFixed(3)).join("|")
     )).size;
-    const resemblance=familyResemblance(referencePopulation,seed);
+    const resemblance=familyResemblance(referencePopulation,seed,resolvers);
 
     const statisticalSample=group.length>=24;
     if(statisticalSample&&maxCenterError>.08)warnings.push(`${referencePopulation} center drift >0.08`);
@@ -242,7 +290,7 @@ export function physicalCalibrationDiagnostics({
   }
 
   const mixed=referencePopulations.length>=2
-    ? mixedParentDiagnostic(referencePopulations[0],referencePopulations[1],seed)
+    ? mixedParentDiagnostic(referencePopulations[0],referencePopulations[1],seed,resolvers)
     : null;
   if(mixed?.maxAbsoluteMidpointError>.08)warnings.push("mixed-parent cohort drifted from parental midpoint");
 
