@@ -458,17 +458,19 @@ Local infra materializes this beneath `.fibre/population-lab/`; cloud providers 
 
 ### A3 — Research, candidate and approval
 
-**A3.1 — immutable calibration candidate evidence: implemented on `main`, pending validation.** A completed Population Lab experiment may acquire one immutable calibration candidate artifact. The candidate targets the exact reference-population version snapshotted by the experiment, rejects stale evidence, and proposes only explicit physical-locus values and existing variation multipliers. It records the experiment-owned evidence refs used for review. Creating a candidate does not mutate Human Appearance, the current reference-population registry, World state or migration state.
+**A3.1 — immutable calibration candidate evidence: implemented and locally validated 2026-10-02; staging acceptance pending.** A completed Population Lab experiment may acquire one immutable calibration candidate artifact. The candidate targets the exact reference-population version snapshotted by the experiment, rejects stale evidence, and proposes only explicit physical-locus values and existing variation multipliers. It records the experiment-owned evidence refs used for review. Creating a candidate does not mutate Human Appearance, the current reference-population registry, World state or migration state.
 
-A coverage hole can later launch bounded external research. Research stores provenance and may propose only evidence-supported calibration axes; that research adapter is not part of A3.1.
+Human visual review is now durable experiment evidence as well: every completed A/B visual run may receive one immutable per-sample review over geometry fidelity, identity continuity and surface realism, plus an overall `supports_candidate` / `inconclusive` / `reject` decision. Rejected evidence remains immutable; a retry creates a new experiment identity from the same source/calibration/cohort seed.
 
-Experiment/research output is a **candidate**, never authority.
+**A3.2 — research + shadow candidate evaluation: designed, not implemented.** A coverage hole should launch bounded provenance-bearing research that proposes only evidence-supported axes. Proposed values/variation then run as a shadow calibration inside Population Lab without changing the live reference registry, so numerical and visual evidence evaluate the candidate itself rather than only the current model.
 
-Human approval is the explicit authority transition:
+**A3.3 — explicit approval / registry admission: designed, not implemented.** Human approval is the authority transition:
 - approved calibration enters the current reference-population registry;
-- its local integer version advances when that node is refined;
+- its local integer version advances when that node is refined, or a new node enters at version 1;
 - new Threads immediately use the current approved registry;
 - existing Threads are compared against the new dependency set.
+
+Experiment/research/review output is a **candidate**, never authority.
 
 ### A4 — affected-Thread migration workset
 
