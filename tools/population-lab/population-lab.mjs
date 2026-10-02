@@ -12,7 +12,7 @@ import {composeBirthSubjectIdentity,selectBirthNameParts} from "../genesis/birth
 import {
   populationGeometryAnchorPrompt,
   populationSurfacePortraitPrompt,
-} from "./portrait-prompt.mjs";
+} from "../../services/population-lab/src/portrait-prompt.mjs";
 import {
   generatePhysicalCalibrationCohort,
   physicalCalibrationDiagnostics,
