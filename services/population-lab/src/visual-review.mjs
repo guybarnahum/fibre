@@ -67,6 +67,15 @@ export function buildPopulationLabVisualReview({experiment,input,reviewedAt=new 
     throw new TypeError("visual review must score every sample ordinal");
   }
 
+  const images=(experiment.images??[])
+    .filter(image=>["geometry","portrait"].includes(image?.role));
+  for(const sample of samples){
+    const roles=new Set(images.filter(image=>image?.ordinal===sample.ordinal).map(image=>image.role));
+    if(!roles.has("geometry")||!roles.has("portrait")){
+      throw new TypeError("visual review requires complete A/B image evidence");
+    }
+  }
+
   const decision=text("decision",input.decision,{required:true});
   if(!DECISIONS.has(decision))throw new TypeError("visual review decision is invalid");
   const summary=Object.freeze(Object.fromEntries(SCORE_FIELDS.map(field=>[
@@ -87,9 +96,7 @@ export function buildPopulationLabVisualReview({experiment,input,reviewedAt=new 
     samples:Object.freeze(samples),
     note:text("review note",input.note),
     evidence:Object.freeze({
-      images:Object.freeze((experiment.images??[])
-        .filter(image=>["geometry","portrait"].includes(image?.role))
-        .map(image=>Object.freeze({
+      images:Object.freeze(images.map(image=>Object.freeze({
           ordinal:image.ordinal,
           role:image.role,
           objectRef:image.objectRef,
