@@ -16,13 +16,17 @@ import {
 
 const WORKFLOW_NAME="population_lab_experiment_v1";
 
-function experimentInfra(env,{workflow=false}={}){
+function experimentInfra(env,{workflow=false,services=false}={}){
   return createCloudflareInfraDriver({
     objectBucket:env?.PRESENTATION_OBJECTS,
     catalogDatabase:env?.PRESENTATION_CATALOG,
     workflowBindings:workflow&&env?.POPULATION_LAB_EXPERIMENT
       ? {[WORKFLOW_NAME]:env.POPULATION_LAB_EXPERIMENT}
       : {},
+    serviceBindings:services&&env?.ASSET_GENERATOR
+      ? {asset_generator:env.ASSET_GENERATOR}
+      : {},
+    privateToken:services?env?.FIBRE_PRIVATE_TOKEN:null,
   });
 }
 
@@ -132,34 +136,9 @@ export async function prepareAdminPopulationLabVisualExperiment(env,rawRequest){
   });
 }
 
-function privateServiceToken(env){
-  const token=typeof env?.FIBRE_PRIVATE_TOKEN==="string"?env.FIBRE_PRIVATE_TOKEN.trim():"";
-  if(token.length<16)throw new Error("Fibre private service token is unavailable");
-  return token;
-}
-
 export async function reconcileAdminPopulationLabAsset(env,job){
-  const binding=env?.ASSET_GENERATOR;
-  if(!binding?.fetch)throw new Error("ASSET_GENERATOR binding is unavailable");
-  const response=await binding.fetch(new Request(
-    "https://asset-generator.internal/internal/generation/reconcile",
-    {
-      method:"POST",
-      headers:{
-        Accept:"application/json",
-        "Content-Type":"application/json",
-        "x-fibre-private-token":privateServiceToken(env),
-      },
-      body:JSON.stringify({job}),
-    },
-  ));
-  const payload=await response.json().catch(()=>null);
-  if(!response.ok||payload?.ok!==true){
-    const error=new Error(payload?.detail??payload?.error??("Asset Generator HTTP "+response.status));
-    error.retryable=payload?.retryable!==false;
-    throw error;
-  }
-  return payload.result;
+  const infra=experimentInfra(env,{services:true});
+  return infra.services.call("asset_generator","generation.reconcile",{job});
 }
 
 export async function recordAdminPopulationLabVisualAsset(env,{experimentId,sample,role,result}){
