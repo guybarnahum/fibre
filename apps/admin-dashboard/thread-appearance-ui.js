@@ -1,5 +1,5 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
-import { decorateActionButton, setWaitingContent } from "./fa-icons.js";
+import { decorateActionButton, setBlockingButtonState, setWaitingContent } from "./fa-icons.js";
 import { watchAdminLive } from "./admin-live.js";
 import { invalidateView, threadViewKey } from "./view-invalidation.js";
 
@@ -140,6 +140,7 @@ function actionButton(label,onClick,{primary=false,tooltip=label,appearanceProgr
     button.dataset.appearanceProgress="";
     button.dataset.appearanceLabel=label;
     button.dataset.appearanceTooltip=tooltip;
+    button.dataset.appearanceIcon=primary?"arrow-up-from-bracket":"rotate";
   }
   button.addEventListener("click",onClick);
   return button;
@@ -149,13 +150,12 @@ function setAppearanceBusy(host,busy){
   if(busy)host.setAttribute("aria-busy","true");
   else host.removeAttribute("aria-busy");
   for(const button of host.querySelectorAll("[data-appearance-progress]")){
-    button.disabled=busy;
-    button.setAttribute("aria-busy",String(busy));
-    decorateActionButton(button,{
-      icon:"rotate",
+    setBlockingButtonState(button,busy,{
       label:button.dataset.appearanceLabel,
       tooltip:button.dataset.appearanceTooltip,
-      spinning:busy,
+      icon:button.dataset.appearanceIcon||null,
+      busyLabel:button.dataset.appearanceLabel,
+      busyTooltip:button.dataset.appearanceTooltip,
     });
   }
 }
