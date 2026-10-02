@@ -31,5 +31,9 @@ The Population Lab Workflow delegates those jobs through the Asset Generator pri
 
 The contact sheet is human renderer-fidelity evidence. It intentionally has no invented automatic “looks right” score. A correct numerical cohort can still expose a renderer that collapses faces, beautifies subjects, or changes geometry during the surface pass.
 
-Visual generation is single-shot per experiment in A2.3. Queued/running visual work prevents deletion; completed or failed visual evidence remains inspectable until the operator deletes the experiment.
+Visual generation is single-shot once execution has begun. A provider/deployment launch failure that occurs before the visual Workflow starts may retry the exact persisted manifest; mid-run failures are never silently rerun. Queued/running visual work prevents deletion; completed or failed visual evidence remains inspectable until the operator deletes the experiment.
+
+Visual progress is derived from the already-indexed experiment image artifacts rather than a second counter: the queue can show total, geometry and portrait completion from the authoritative `images` set on each explicit refresh. There is no progress polling loop.
+
+The cloud path stays InfraDriver-pure. Population Lab uses `objects`, `catalog`, `workflows` and provider-neutral `services.call()`; Cloudflare Worker bindings, workflow-ID restrictions and private service transport live only in the Cloudflare driver. A future AWS driver can map those same capabilities to AWS infrastructure without changing Population Lab.
 
