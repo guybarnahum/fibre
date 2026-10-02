@@ -200,7 +200,7 @@ export function createPopulationLabExperimentStore(infra){
     },
     async adoptArtifact(experimentId,{key,objectRef,digest:expectedDigest}){
       if(typeof key!=="string"||key.trim()==="")throw new TypeError("artifact key is required");
-      const prefix=populationLabExperimentRef(experimentId,"");
+      const prefix=populationLabExperimentCatalogKey(experimentId)+":";
       if(!objectRef?.startsWith(prefix))throw new TypeError("adopted artifact must belong to the experiment namespace");
       const stored=await infra.objects.get(objectRef);
       if(stored===null)throw new Error("generated experiment artifact is missing");
