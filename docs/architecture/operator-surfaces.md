@@ -110,6 +110,8 @@ The map must never be interpreted as a country-to-face mapping. Location is cont
 
 A1 kept expensive actions explicit through prepared action specifications. A2 now executes bounded Population Lab experiments while preserving that explicit operator boundary: **Run experiment** queues the model-free numerical cohort, and a completed experiment may optionally **Run visuals** for a four-person geometry-first fidelity sample through Asset Generator. **Prepare research** remains specification-only until A3. Neither experiment path can modify calibration authority.
 
+While Appearance is open, visual progress is event-driven through the existing Admin-live invalidation channel. Each durable geometry/portrait adoption publishes a best-effort experiment hint; the browser then rereads the authoritative experiment catalog and derives progress from the indexed image set. There is no progress timer, no polling loop and no second progress store. The live subscription exists only while Appearance is active.
+
 The Threads population view exposes one **Needs migration** filter for all `migration_required` Threads. Filtering is presentation only; World health remains authority.
 
 An approved appearance calibration is expected to invalidate/recompute the affected migration projection so dependent Threads become visible as `migration_required`. Unrelated Threads must remain healthy. Existing Thread migration remains explicit; Admin does not silently rewrite a person's physical authority merely because a new calibration was approved.
