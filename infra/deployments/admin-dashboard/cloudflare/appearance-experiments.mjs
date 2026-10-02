@@ -222,6 +222,29 @@ export async function readAdminPopulationLabReport(env,experimentId){
   const store=experimentStore(env);
   const experiment=await store.get(experimentId);
   if(experiment===null)return null;
+
+  if(experiment.artifacts?.visualManifest?.objectRef&&experiment.artifacts?.population?.objectRef){
+    try{
+      const [manifest,population]=await Promise.all([
+        store.getArtifact(experiment.artifacts.visualManifest.objectRef),
+        store.getArtifact(experiment.artifacts.population.objectRef),
+      ]);
+      if(manifest!==null&&population!==null){
+        const request=normalizeVisualExperimentRequest(
+          JSON.parse(new TextDecoder().decode(manifest.bytes)),
+        );
+        const plan=buildPopulationLabVisualPlan({
+          request,
+          populationBytes:population.bytes,
+        });
+        return Object.freeze({
+          bytes:new TextEncoder().encode(renderPopulationLabVisualReport(plan)),
+          metadata:Object.freeze({mediaType:"text/html; charset=utf-8",derived:true}),
+        });
+      }
+    }catch{}
+  }
+
   const objectRef=experiment.artifacts?.visualReport?.objectRef
     ?? experiment.artifacts?.report?.objectRef
     ?? populationLabExperimentRef(experimentId,"report");
