@@ -348,16 +348,16 @@ async function loadVisualReview(experiment){
     );
     return;
   }
+  if(!experiment.artifacts?.visualReview?.objectRef){
+    renderVisualReviewForm(experiment);
+    return;
+  }
   reportReview.replaceChildren(el("p","appearance-review-note-readonly","Loading review…"));
   try{
     const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/review",{
       headers:{Accept:"application/json"},
       cache:"no-store",
     });
-    if(response.status===404){
-      renderVisualReviewForm(experiment);
-      return;
-    }
     const payload=await response.json().catch(()=>null);
     if(!response.ok||!payload?.review)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
     renderSubmittedVisualReview(experiment,payload.review);
