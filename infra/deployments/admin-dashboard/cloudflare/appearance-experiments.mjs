@@ -16,7 +16,7 @@ import {
 
 const WORKFLOW_NAME="population_lab_experiment_v1";
 
-function experimentInfra(env,{workflow=false,services=false}={}){
+function experimentInfra(env,{workflow=false,services=false,realtime=false}={}){
   return createCloudflareInfraDriver({
     objectBucket:env?.PRESENTATION_OBJECTS,
     catalogDatabase:env?.PRESENTATION_CATALOG,
@@ -27,11 +27,24 @@ function experimentInfra(env,{workflow=false,services=false}={}){
       ? {asset_generator:env.ASSET_GENERATOR}
       : {},
     privateToken:services?env?.FIBRE_PRIVATE_TOKEN:null,
+    realtimeChannels:realtime?env?.ADMIN_LIVE:null,
   });
 }
 
 function experimentStore(env){
   return createPopulationLabExperimentStore(experimentInfra(env));
+}
+
+async function publishExperimentHint(env,experimentId,aspect="progress"){
+  try{
+    const infra=experimentInfra(env,{realtime:true});
+    if(!infra.realtime)return;
+    await infra.realtime.publish("admin",{
+      entity:"population_lab_experiment",
+      id:experimentId,
+      aspect,
+    });
+  }catch{}
 }
 
 function physicalExperimentSeed(spec){
@@ -127,6 +140,7 @@ export async function prepareAdminPopulationLabVisualExperiment(env,rawRequest){
   const request=normalizeVisualExperimentRequest(rawRequest);
   const store=experimentStore(env);
   await store.runningVisual(request.experimentId);
+  await publishExperimentHint(env,request.experimentId,"running");
   const experiment=await store.get(request.experimentId);
   const populationRef=experiment?.artifacts?.population?.objectRef;
   if(typeof populationRef!=="string")throw new Error("experiment population artifact is missing");
@@ -162,21 +176,26 @@ export async function recordAdminPopulationLabVisualAsset(env,{experimentId,samp
     key:`visualReceipt${String(sample.ordinal).padStart(3,"0")}${role==="geometry"?"Geometry":"Portrait"}`,
     objectRef:job.receiptObjectRef,
   });
+  await publishExperimentHint(env,experimentId,role);
   return receipt;
 }
 
 export async function completeAdminPopulationLabVisualExperiment(env,plan){
   const store=experimentStore(env);
   await store.putVisualReport(plan.request.experimentId,renderPopulationLabVisualReport(plan));
-  return store.completeVisual(plan.request.experimentId,{
+  const completed=await store.completeVisual(plan.request.experimentId,{
     sampleSize:plan.samples.length,
     images:plan.samples.length*2,
     referencePopulation:plan.referencePopulation,
   });
+  await publishExperimentHint(env,plan.request.experimentId,"completed");
+  return completed;
 }
 
 export async function failAdminPopulationLabVisualExperiment(env,experimentId,error){
-  return experimentStore(env).failVisual(experimentId,error);
+  const failed=await experimentStore(env).failVisual(experimentId,error);
+  await publishExperimentHint(env,experimentId,"failed");
+  return failed;
 }
 
 export async function listAdminPopulationLabExperiments(env){
