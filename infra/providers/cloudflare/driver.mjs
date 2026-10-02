@@ -284,6 +284,7 @@ export function createCloudflareWorkflowPort({ workflowBindings, objects }) {
         throw new Error(`Cloudflare workflow input witness for ${instanceId} is invalid`);
       }
       const binding = bindingFor(workflowName);
+      const physicalInstanceId=await cloudflareWorkflowInstanceId(instanceId);
       let observation = { status: "unknown", error: null };
       try {
         const instance = await binding.get(physicalInstanceId);
