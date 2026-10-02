@@ -98,12 +98,14 @@ export async function launchAdminPopulationLabVisualExperiment(env,experimentId)
   const store=experimentStore(env);
   const experiment=await store.get(experimentId);
   if(experiment===null)throw new TypeError("experiment not found");
-  const request=normalizeVisualExperimentRequest({
-    experimentId,
-    requestedAt:new Date().toISOString(),
-    sampleSize:POPULATION_LAB_VISUAL_SAMPLE_SIZE,
-  });
-  await store.queueVisual(experimentId,request);
+  const request=experiment.visual?.status==="failed"&&!experiment.visual?.startedAt
+    ? normalizeVisualExperimentRequest(await store.retryQueuedVisual(experimentId))
+    : normalizeVisualExperimentRequest({
+        experimentId,
+        requestedAt:new Date().toISOString(),
+        sampleSize:POPULATION_LAB_VISUAL_SAMPLE_SIZE,
+      });
+  if(!experiment.visual)await store.queueVisual(experimentId,request);
   const infra=experimentInfra(env,{workflow:true});
   try{
     const workflow=await infra.workflows.start(
