@@ -676,7 +676,7 @@
   flex:0 0 30px;
   padding:0;
   overflow:hidden;
-  border:1px solid var(--border-strong);
+  border:1px solid #d7dbe0;
   border-radius:50%;
   background:var(--surface-subtle);
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--surface) 72%,transparent),0 1px 4px rgba(20,22,26,.12);
@@ -715,7 +715,7 @@
   height:220px;
   overflow:hidden;
   pointer-events:none;
-  border:1px solid var(--border-strong);
+  border:1px solid #d7dbe0;
   border-radius:50%;
   background:var(--surface);
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--surface) 72%,transparent),0 16px 44px rgba(0,0,0,.24);
