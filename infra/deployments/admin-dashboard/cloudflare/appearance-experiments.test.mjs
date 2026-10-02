@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   adminPopulationLabExperimentRequest,
   adminPopulationLabRerunSpec,
+  adminPopulationLabShadowExperimentRequest,
   reconcileAdminPopulationLabAsset,
 } from "./appearance-experiments.mjs";
 
@@ -99,4 +100,42 @@ test("rejected experiment rerun preserves source and cohort seed under a new ide
   assert.notEqual(rerun.experimentId,original.experimentId,"rerun overwrote experiment identity");
   assert.equal(rerun.seed,original.seed,"rerun changed deterministic cohort seed");
   assert.deepEqual(rerun.source,original.source,"rerun changed experiment source evidence");
+});
+
+
+test("Admin shadow experiment preserves the baseline cohort seed and source",()=>{
+  const baseline=adminPopulationLabExperimentRequest({
+    action:"experiment",
+    coverageKey:"reference:east_asia.japanese",
+    referencePopulation:"east_asia.japanese",
+    coverage:"partial",
+    populations:["Japanese"],
+    threadIds:["thr_one"],
+    places:[{displayName:"Tokyo, Japan"}],
+    calibration:{id:"east_asia.japanese",version:1},
+    count:24,
+  },{
+    experimentId:"plexp_shadow_base",
+    requestedAt:"2026-10-02T18:00:00.000Z",
+  });
+
+  const shadow=adminPopulationLabShadowExperimentRequest(
+    baseline,
+    {
+      values:{faceBreadth:.18},
+      variation:{},
+      rationale:"Fixture proposal with explicit provenance.",
+      evidence:["doi:10.0000/fibre-shadow-fixture"],
+    },
+    {
+      experimentId:"plexp_shadow_candidate",
+      requestedAt:"2026-10-02T18:01:00.000Z",
+    },
+  );
+
+  assert.notEqual(shadow.experimentId,baseline.experimentId,"shadow experiment reused baseline identity");
+  assert.equal(shadow.seed,baseline.seed,"shadow experiment changed deterministic cohort seed");
+  assert.equal(shadow.source.shadowOfExperimentId,baseline.experimentId,"shadow experiment lost baseline provenance");
+  assert.deepEqual(shadow.source.calibration,baseline.source.calibration,"shadow experiment changed base calibration snapshot");
+  assert.equal(shadow.shadowCalibration.values.faceBreadth,.18,"shadow experiment lost proposed calibration");
 });
