@@ -10,10 +10,7 @@ import {
   requestThreadAppearanceHealth,
   threadAppearanceState,
 } from "./thread-appearance-ui.js";
-import {
-  appearanceExperimentsViewKey,
-  threadViewKey,
-} from "./view-invalidation.js";
+import { threadViewKey } from "./view-invalidation.js";
 import { WORLD_MAP_PATH } from "./world-map-data.js";
 import { SVG_NS, renderWorldTimeZoneLines, worldMapPoint } from "./world-map-ui.js";
 
@@ -903,15 +900,6 @@ experimentRefreshButton?.addEventListener("click",async()=>{
     });
   }
 });
-watchAdminLive(
-  appearanceExperimentsViewKey(),
-  ()=>loadAppearanceExperiments(),
-  {
-    active:()=>experiments?.closest("#appearance-view")?.hidden===false,
-    reconcileOnSubscribe:true,
-  },
-);
-
 copyButton?.addEventListener("click",()=>{
   if(snapshot)void copyJson(snapshot,copyButton,{restoreLabel:"Copy coverage",restoreTooltip:"Copy appearance coverage JSON"});
 });
