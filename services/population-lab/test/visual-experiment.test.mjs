@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import {normalizeAssetGenerationJob} from "#services/asset-generator/src/index.mjs";
 import {generatePhysicalCalibrationCohort} from "../src/physical-cohort.mjs";
 import {
   POPULATION_LAB_VISUAL_PROVIDER_PROFILE,
@@ -36,6 +37,8 @@ test("visual calibration samples four deterministic people and preserves geometr
     assert.deepEqual(sample.portraitJob.referenceObjectRefs,[sample.geometryJob.outputObjectRef],"surface job lost its geometry anchor");
     assert.match(sample.geometryJob.outputObjectRef,/image:\d{3}:geometry$/u,"geometry output is outside experiment identity");
     assert.match(sample.portraitJob.outputObjectRef,/image:\d{3}:portrait$/u,"portrait output is outside experiment identity");
+    assert.doesNotThrow(()=>normalizeAssetGenerationJob(sample.geometryJob),"geometry job violates Asset Generator contract");
+    assert.doesNotThrow(()=>normalizeAssetGenerationJob(sample.portraitJob),"portrait job violates Asset Generator contract");
   }
 
   const report=renderPopulationLabVisualReport(plan);
