@@ -44,8 +44,14 @@
     dialog.showModal();
   }
 
-  function responseExpired(response){
-    if(response.status===401||response.status===403)return true;
+  async function responseExpired(response){
+    if(response.status===401)return true;
+    if(response.status===403){
+      try{
+        const payload=await response.clone().json();
+        return payload?.error==="access_required";
+      }catch{return false}
+    }
     if(!response.redirected)return false;
     try{
       return new URL(response.url,window.location.href).origin!==window.location.origin;
@@ -79,7 +85,7 @@
     const adminApi=apiRequest(args[0]);
     try{
       const response=await nativeFetch(...args);
-      if(adminApi&&responseExpired(response))showExpired();
+      if(adminApi&&await responseExpired(response))showExpired();
       return response;
     }catch(error){
       if(adminApi&&navigator.onLine)void probeSession();
