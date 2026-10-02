@@ -21,6 +21,11 @@ const modelRows=$("#appearance-model-rows");
 const migrations=$("#appearance-migration-candidates");
 const experiments=$("#appearance-experiments");
 const experimentRefreshButton=$("#appearance-experiments-refresh");
+const reportDialog=$("#appearance-report-dialog");
+const reportTitle=$("#appearance-report-title");
+const reportFrame=$("#appearance-report-frame");
+const reportNewTab=$("#appearance-report-new-tab");
+const reportClose=$("#appearance-report-close");
 const mapShell=$(".appearance-coverage-map-shell");
 const worldPath=$("#appearance-world-path");
 const timezones=$("#appearance-timezones");
@@ -86,6 +91,19 @@ function experimentSummary(experiment){
   if(Number.isInteger(summary.warnings))bits.push(summary.warnings+" warning"+(summary.warnings===1?"":"s"));
   if(Number.isInteger(summary.images)&&summary.images>0)bits.push(summary.images+" portraits");
   return bits.join(" · ")||"No summary yet";
+}
+
+function experimentReportUrl(experimentId){
+  return "/api/appearance/experiments/"+encodeURIComponent(experimentId)+"/report";
+}
+
+function openExperimentReport(experiment){
+  if(!reportDialog||!reportFrame)return;
+  const url=experimentReportUrl(experiment.experimentId);
+  if(reportTitle)reportTitle.textContent="Visual fidelity · "+(experiment.referencePopulation??experiment.experimentId);
+  reportFrame.src=url;
+  reportFrame.dataset.reportUrl=url;
+  if(!reportDialog.open)reportDialog.showModal();
 }
 
 function visualProgress(experiment){
@@ -186,14 +204,11 @@ function renderAppearanceExperiments(){
       });
       actions.append(visuals);
     }
-    if(experiment.artifacts?.report?.objectRef){
+    if(experiment.artifacts?.report?.objectRef||experiment.artifacts?.visualReport?.objectRef){
       const open=el("button","secondary","Open report");
       open.type="button";
-      open.addEventListener("click",()=>window.open(
-        "/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/report",
-        "_blank",
-        "noopener",
-      ));
+      open.title="Review experiment report inside Admin";
+      open.addEventListener("click",()=>openExperimentReport(experiment));
       actions.append(open);
     }
 
@@ -890,6 +905,26 @@ export async function loadAppearanceCoverage({quiet=false}={}){
     loadPromise=null;
   }
 }
+
+if(reportNewTab)decorateActionButton(reportNewTab,{
+  icon:"arrow-up-from-bracket",
+  label:"Open in new tab",
+  tooltip:"Open this report in a new tab",
+});
+reportNewTab?.addEventListener("click",()=>{
+  const url=reportFrame?.dataset?.reportUrl;
+  if(url)window.open(url,"_blank","noopener");
+});
+reportClose?.addEventListener("click",()=>reportDialog?.close());
+reportDialog?.addEventListener("click",(event)=>{
+  if(event.target===reportDialog)reportDialog.close();
+});
+reportDialog?.addEventListener("close",()=>{
+  if(reportFrame){
+    reportFrame.src="about:blank";
+    delete reportFrame.dataset.reportUrl;
+  }
+});
 
 if(copyButton)decorateActionButton(copyButton,{
   icon:"copy",
