@@ -35,6 +35,14 @@ function experimentStore(env){
   return createPopulationLabExperimentStore(experimentInfra(env));
 }
 
+async function readJsonArtifact(store,objectRef){
+  if(typeof objectRef!=="string")return null;
+  const artifact=await store.getArtifact(objectRef);
+  if(artifact===null)return null;
+  try{return JSON.parse(new TextDecoder().decode(artifact.bytes))}
+  catch{throw new Error("Population Lab JSON artifact is invalid")}
+}
+
 async function publishExperimentHint(env,experimentId,aspect="progress"){
   try{
     const infra=experimentInfra(env,{realtime:true});
@@ -218,6 +226,41 @@ export async function deleteAdminPopulationLabExperiment(env,experimentId){
   return experimentStore(env).delete(experimentId);
 }
 
+export async function readAdminPopulationLabVisualReview(env,experimentId){
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)return null;
+  return readJsonArtifact(store,experiment.artifacts?.visualReview?.objectRef);
+}
+
+export async function recordAdminPopulationLabVisualReview(env,experimentId,input){
+  const review=await experimentStore(env).putVisualReview(experimentId,input);
+  await publishExperimentHint(env,experimentId,"review");
+  return review;
+}
+
+export async function rerunAdminPopulationLabExperiment(env,experimentId){
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)throw new TypeError("experiment not found");
+  if(experiment.review?.decision!=="reject"){
+    throw new TypeError("only a rejected reviewed experiment may be rerun");
+  }
+  const manifest=await readJsonArtifact(store,experiment.artifacts?.manifest?.objectRef);
+  if(manifest===null)throw new Error("experiment manifest is missing");
+  return launchAdminPopulationLabExperiment(env,{
+    action:"experiment",
+    referencePopulation:manifest.referencePopulation,
+    count:manifest.count,
+    coverageKey:manifest.source?.coverageKey??null,
+    coverage:manifest.source?.coverage??null,
+    populations:manifest.source?.populations??[],
+    threadIds:manifest.source?.threadIds??[],
+    places:manifest.source?.places??[],
+    calibration:manifest.source?.calibration??null,
+  });
+}
+
 export async function readAdminPopulationLabReport(env,experimentId){
   const store=experimentStore(env);
   const experiment=await store.get(experimentId);
@@ -225,9 +268,10 @@ export async function readAdminPopulationLabReport(env,experimentId){
 
   if(experiment.visual?.status==="completed"&&experiment.artifacts?.visualManifest?.objectRef&&experiment.artifacts?.population?.objectRef){
     try{
-      const [manifest,population]=await Promise.all([
+      const [manifest,population,review]=await Promise.all([
         store.getArtifact(experiment.artifacts.visualManifest.objectRef),
         store.getArtifact(experiment.artifacts.population.objectRef),
+        readJsonArtifact(store,experiment.artifacts?.visualReview?.objectRef),
       ]);
       if(manifest!==null&&population!==null){
         const request=normalizeVisualExperimentRequest(
@@ -238,7 +282,7 @@ export async function readAdminPopulationLabReport(env,experimentId){
           populationBytes:population.bytes,
         });
         return Object.freeze({
-          bytes:new TextEncoder().encode(renderPopulationLabVisualReport(plan)),
+          bytes:new TextEncoder().encode(renderPopulationLabVisualReport(plan,{review})),
           metadata:Object.freeze({mediaType:"text/html; charset=utf-8",derived:true}),
         });
       }
