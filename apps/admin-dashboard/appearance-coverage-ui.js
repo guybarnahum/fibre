@@ -95,7 +95,7 @@ function renderAppearanceExperiments(){
     const actions=el("div","appearance-experiment-actions");
     const visualActive=["queued","running"].includes(experiment.visual?.status);
     const visualComplete=experiment.visual?.status==="completed";
-    if(experiment.status==="completed"&&!visualComplete){
+    if(experiment.status==="completed"&&(!experiment.visual||visualActive)){
       const visuals=el("button","secondary");
       visuals.type="button";
       visuals.disabled=visualActive;
