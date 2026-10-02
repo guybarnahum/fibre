@@ -110,8 +110,44 @@ export function adminPopulationLabRerunSpec(manifest){
   });
 }
 
-export async function launchAdminPopulationLabExperiment(env,spec){
-  const request=adminPopulationLabExperimentRequest(spec);
+export function adminPopulationLabShadowExperimentRequest(baseManifest,proposal,{
+  experimentId=newExperimentId(),
+  requestedAt=new Date().toISOString(),
+}={}){
+  if(!baseManifest||typeof baseManifest!=="object"||Array.isArray(baseManifest)){
+    throw new TypeError("base experiment manifest is required");
+  }
+  if(baseManifest.shadowCalibration)throw new TypeError("shadow experiments must start from a current-model baseline");
+  const calibration=baseManifest.source?.calibration;
+  if(!calibration||typeof calibration!=="object"||Array.isArray(calibration)){
+    throw new TypeError("base experiment calibration snapshot is required");
+  }
+  if(!proposal||typeof proposal!=="object"||Array.isArray(proposal)){
+    throw new TypeError("shadow calibration proposal is required");
+  }
+  return normalizePhysicalExperimentRequest({
+    experimentId,
+    referencePopulation:baseManifest.referencePopulation,
+    count:baseManifest.count,
+    seed:baseManifest.seed,
+    requestedAt,
+    shadowCalibration:{
+      referencePopulation:baseManifest.referencePopulation,
+      baseCalibration:calibration,
+      values:proposal.values??{},
+      variation:proposal.variation??{},
+      rationale:proposal.rationale,
+      evidence:proposal.evidence,
+    },
+    source:{
+      ...(baseManifest.source??{}),
+      calibration,
+      shadowOfExperimentId:baseManifest.experimentId,
+    },
+  });
+}
+
+async function launchPopulationLabRequest(env,request){
   const store=experimentStore(env);
   await store.queue(request.experimentId,request);
   const infra=experimentInfra(env,{workflow:true});
@@ -125,6 +161,20 @@ export async function launchAdminPopulationLabExperiment(env,spec){
     await store.fail(request.experimentId,error).catch(()=>{});
     throw error;
   }
+}
+
+export async function launchAdminPopulationLabExperiment(env,spec){
+  return launchPopulationLabRequest(env,adminPopulationLabExperimentRequest(spec));
+}
+
+export async function launchAdminPopulationLabShadowExperiment(env,baseExperimentId,proposal){
+  const store=experimentStore(env);
+  const base=await store.get(baseExperimentId);
+  if(base===null)throw new TypeError("base experiment not found");
+  if(base.status!=="completed")throw new TypeError("shadow calibration requires a completed baseline experiment");
+  const manifest=await readJsonArtifact(store,base.artifacts?.manifest?.objectRef);
+  if(manifest===null)throw new Error("base experiment manifest is missing");
+  return launchPopulationLabRequest(env,adminPopulationLabShadowExperimentRequest(manifest,proposal));
 }
 
 export async function runAdminPopulationLabExperimentWorkflow(env,rawRequest){
@@ -244,6 +294,25 @@ export async function readAdminPopulationLabExperiment(env,experimentId){
 
 export async function deleteAdminPopulationLabExperiment(env,experimentId){
   return experimentStore(env).delete(experimentId);
+}
+
+export async function createAdminPopulationLabCalibrationCandidate(env,experimentId){
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)throw new TypeError("experiment not found");
+  if(experiment.review?.decision!=="supports_candidate"){
+    throw new TypeError("calibration candidate requires a supporting visual review");
+  }
+  const manifest=await readJsonArtifact(store,experiment.artifacts?.manifest?.objectRef);
+  const shadow=manifest?.shadowCalibration;
+  if(!shadow)throw new TypeError("calibration candidate requires a shadow calibration experiment");
+  const candidate=await store.putCalibrationCandidate(experimentId,{
+    values:shadow.values,
+    variation:shadow.variation,
+    rationale:shadow.rationale,
+  });
+  await publishExperimentHint(env,experimentId,"candidate");
+  return candidate;
 }
 
 export async function readAdminPopulationLabVisualReview(env,experimentId){
