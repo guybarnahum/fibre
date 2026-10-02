@@ -37,6 +37,7 @@ test("calibration candidate is durable evidence, not appearance authority",async
   await completedMoroccoExperiment(store,experimentId,beforeCalibration);
   const candidate=await store.putCalibrationCandidate(experimentId,{
     values:{faceBreadth:.12,noseBreadth:.08},
+    variation:{familyFactorMultiplier:1.08},
     rationale:"Bounded Population Lab evidence supports a Morocco-specific refinement.",
     createdAt:"2026-10-02T00:01:00.000Z",
   });
@@ -44,9 +45,14 @@ test("calibration candidate is durable evidence, not appearance authority",async
   assert.equal(candidate.baseCalibration.version,1,"candidate lost the reviewed base version");
   assert.equal(candidate.proposedCalibration.version,2,"candidate did not propose one local version advance");
   assert.deepEqual(
-    candidate.proposedCalibration.changes.map(change=>change.locus),
+    candidate.proposedCalibration.values.map(change=>change.locus),
     ["faceBreadth","noseBreadth"],
     "candidate changed the wrong physical axes",
+  );
+  assert.deepEqual(
+    candidate.proposedCalibration.variation.map(change=>change.parameter),
+    ["familyFactorMultiplier"],
+    "candidate changed the wrong variation parameters",
   );
 
   const experiment=await store.get(experimentId);
