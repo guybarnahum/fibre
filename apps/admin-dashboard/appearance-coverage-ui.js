@@ -1,6 +1,6 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { watchAdminLive } from "./admin-live.js";
-import { decorateActionButton, setRefreshButtonState } from "./fa-icons.js";
+import { decorateActionButton, setBlockingButtonState, setRefreshButtonState } from "./fa-icons.js";
 import {
   createThreadIdentityViewer,
   createThreadLocation,
@@ -26,6 +26,7 @@ const reportTitle=$("#appearance-report-title");
 const reportFrame=$("#appearance-report-frame");
 const reportNewTab=$("#appearance-report-new-tab");
 const reportClose=$("#appearance-report-close");
+const reportReview=$("#appearance-report-review");
 const mapShell=$(".appearance-coverage-map-shell");
 const worldPath=$("#appearance-world-path");
 const timezones=$("#appearance-timezones");
@@ -39,6 +40,7 @@ let selectedKey=null;
 let loadPromise=null;
 let experimentLoadPromise=null;
 let experimentSnapshot=[];
+let reportExperiment=null;
 let mapPopover=null;
 let mapPopoverCloseTimer=null;
 const pendingMigrations=new Map();
@@ -75,6 +77,13 @@ function visualStatus(status){
   return {label:human(status),tone:"",active:false};
 }
 
+function reviewStatus(review){
+  if(review?.decision==="supports_candidate")return {label:"Review Supports Candidate",tone:"good",active:false};
+  if(review?.decision==="reject")return {label:"Review Rejected",tone:"bad",active:false};
+  if(review?.decision==="inconclusive")return {label:"Review Inconclusive",tone:"warn",active:false};
+  return null;
+}
+
 function experimentStatusPill(state){
   return el("span",[
     "thread-health-tag",
@@ -99,11 +108,13 @@ function experimentReportUrl(experimentId){
 
 function openExperimentReport(experiment){
   if(!reportDialog||!reportFrame)return;
+  reportExperiment=experiment;
   const url=experimentReportUrl(experiment.experimentId);
   const reference=experiment.visual?.summary?.referencePopulation??experiment.summary?.referencePopulation??experiment.experimentId;
   if(reportTitle)reportTitle.textContent=(experiment.visual?.status==="completed"?"Visual fidelity · ":"Experiment report · ")+reference;
   reportFrame.src=url;
   reportFrame.dataset.reportUrl=url;
+  void loadVisualReview(experiment);
   if(!reportDialog.open)reportDialog.showModal();
 }
 
@@ -124,6 +135,246 @@ function visualProgress(experiment){
   });
 }
 
+
+function reviewDecisionLabel(value){
+  if(value==="supports_candidate")return "Supports candidate";
+  if(value==="reject")return "Rejected";
+  if(value==="inconclusive")return "Inconclusive";
+  return human(value);
+}
+
+function reviewScoreSelect(field){
+  const select=el("select",null);
+  select.dataset.reviewField=field;
+  select.append(new Option("—",""));
+  for(let value=1;value<=5;value+=1)select.append(new Option(String(value),String(value)));
+  return select;
+}
+
+function reviewScoreSummary(review){
+  const grid=el("div","appearance-review-score-summary");
+  for(const [label,field] of [
+    ["Geometry","geometryFidelity"],
+    ["Identity","identityContinuity"],
+    ["Surface","surfaceRealism"],
+  ]){
+    const item=el("div",null);
+    item.append(el("span",null,label),el("strong",null,(review.scores?.[field]??"—")+"/5"));
+    grid.append(item);
+  }
+  return grid;
+}
+
+async function rerunRejectedExperiment(experiment,button){
+  if(!window.confirm("Keep this rejected experiment as evidence and launch a new experiment from the same source and calibration?"))return;
+  setBlockingButtonState(button,true,{
+    label:"Run another experiment",
+    tooltip:"Run another experiment",
+    busyLabel:"Launching",
+    busyTooltip:"Launching a new experiment from the rejected evidence",
+  });
+  try{
+    const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/rerun",{
+      method:"POST",
+      headers:{Accept:"application/json"},
+    });
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+    await loadAppearanceExperiments();
+    const note=el("p","appearance-review-note-readonly","New experiment queued · "+(payload?.experiment?.experimentId??"new experiment"));
+    reportReview?.append(note);
+    setBlockingButtonState(button,false,{
+      label:"Run another experiment",
+      tooltip:"New experiment queued",
+      icon:"rotate",
+    });
+    button.disabled=true;
+  }catch(error){
+    setBlockingButtonState(button,false,{
+      label:"Run another experiment",
+      tooltip:error instanceof Error?error.message:String(error),
+      icon:"rotate",
+    });
+  }
+}
+
+function renderSubmittedVisualReview(experiment,review){
+  if(!reportReview)return;
+  reportReview.replaceChildren();
+  const head=el("div","appearance-review-head");
+  head.append(
+    el("h3",null,"Submitted human review"),
+    el("p",null,"Immutable evidence for this exact A/B image set. It cannot change calibration authority by itself."),
+  );
+  const state=reviewStatus(review);
+  if(state)head.append(experimentStatusPill(state));
+  reportReview.append(head,reviewScoreSummary(review));
+
+  for(const sample of review.samples??[]){
+    const row=el("div","appearance-review-sample");
+    row.append(
+      el("strong",null,"Sample "+sample.ordinal),
+      el("p","appearance-review-note-readonly",
+        "Geometry "+sample.geometryFidelity+"/5 · Identity "+sample.identityContinuity+"/5 · Surface "+sample.surfaceRealism+"/5"),
+    );
+    if(sample.note)row.append(el("p","appearance-review-note-readonly",sample.note));
+    reportReview.append(row);
+  }
+  if(review.note)reportReview.append(el("p","appearance-review-note-readonly",review.note));
+
+  if(review.decision==="supports_candidate"){
+    reportReview.append(el("p","appearance-review-note-readonly",
+      "This review can support a calibration candidate. Research/proposed parameter changes and explicit approval are still required before the reference registry changes."));
+  }else if(review.decision==="reject"){
+    const actions=el("div","appearance-review-actions");
+    const rerun=el("button","secondary");
+    rerun.type="button";
+    decorateActionButton(rerun,{
+      icon:"rotate",
+      label:"Run another experiment",
+      tooltip:"Keep this rejected evidence and launch a new experiment from the same source",
+    });
+    rerun.addEventListener("click",()=>void rerunRejectedExperiment(experiment,rerun));
+    actions.append(rerun);
+    reportReview.append(actions);
+  }else{
+    reportReview.append(el("p","appearance-review-note-readonly",
+      "Inconclusive evidence remains attached to this experiment; it does not support promotion or rejection."));
+  }
+}
+
+function renderVisualReviewForm(experiment){
+  if(!reportReview)return;
+  reportReview.replaceChildren();
+  const progress=visualProgress(experiment);
+  const sampleSize=progress?.sampleSize??4;
+  const head=el("div","appearance-review-head");
+  head.append(
+    el("h3",null,"Score visual fidelity"),
+    el("p",null,"Score the A → B transition, not attractiveness or demographic identity. 1 = material failure · 3 = usable with visible drift · 5 = strong fidelity."),
+  );
+  reportReview.append(head);
+
+  for(let ordinal=1;ordinal<=sampleSize;ordinal+=1){
+    const sample=el("div","appearance-review-sample");
+    sample.dataset.reviewOrdinal=String(ordinal);
+    sample.append(el("strong",null,"Sample "+ordinal));
+    const grid=el("div","appearance-review-grid");
+    for(const [label,field] of [
+      ["Geometry","geometryFidelity"],
+      ["Identity","identityContinuity"],
+      ["Surface","surfaceRealism"],
+    ]){
+      const fieldLabel=el("label",null);
+      fieldLabel.append(el("span",null,label),reviewScoreSelect(field));
+      grid.append(fieldLabel);
+    }
+    sample.append(grid);
+    reportReview.append(sample);
+  }
+
+  const decisionWrap=el("label","appearance-review-decision");
+  const decision=el("select",null);
+  decision.id="appearance-review-decision";
+  decision.append(
+    new Option("Choose…",""),
+    new Option("Supports candidate","supports_candidate"),
+    new Option("Inconclusive","inconclusive"),
+    new Option("Reject","reject"),
+  );
+  decisionWrap.append(el("span",null,"Overall decision"),decision);
+
+  const note=el("textarea","appearance-review-note");
+  note.placeholder="Optional review note";
+  note.setAttribute("aria-label","Visual review note");
+  reportReview.append(decisionWrap,note);
+
+  const actions=el("div","appearance-review-actions");
+  const submit=el("button","primary");
+  submit.type="button";
+  decorateActionButton(submit,{
+    icon:"arrow-up-from-bracket",
+    label:"Submit review",
+    tooltip:"Submit immutable visual review evidence",
+  });
+  submit.addEventListener("click",async()=>{
+    const samples=[...reportReview.querySelectorAll("[data-review-ordinal]")].map(sample=>{
+      const value=(field)=>sample.querySelector('[data-review-field="'+field+'"]')?.value??"";
+      return{
+        ordinal:Number(sample.dataset.reviewOrdinal),
+        geometryFidelity:Number(value("geometryFidelity")),
+        identityContinuity:Number(value("identityContinuity")),
+        surfaceRealism:Number(value("surfaceRealism")),
+      };
+    });
+    if(!decision.value||samples.some(sample=>(
+      !Number.isInteger(sample.geometryFidelity)||sample.geometryFidelity<1
+      ||!Number.isInteger(sample.identityContinuity)||sample.identityContinuity<1
+      ||!Number.isInteger(sample.surfaceRealism)||sample.surfaceRealism<1
+    ))){
+      submit.title="Score all samples and choose an overall decision";
+      return;
+    }
+    setBlockingButtonState(submit,true,{
+      label:"Submit review",
+      tooltip:"Submit immutable visual review evidence",
+      icon:"arrow-up-from-bracket",
+      busyLabel:"Submitting",
+      busyTooltip:"Submitting visual review",
+    });
+    try{
+      const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/review",{
+        method:"POST",
+        headers:{Accept:"application/json","content-type":"application/json"},
+        body:JSON.stringify({samples,decision:decision.value,note:note.value.trim()||null}),
+      });
+      const payload=await response.json().catch(()=>null);
+      if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+      renderSubmittedVisualReview(experiment,payload.review);
+      if(reportFrame?.dataset?.reportUrl)reportFrame.src=reportFrame.dataset.reportUrl;
+      await loadAppearanceExperiments();
+    }catch(error){
+      setBlockingButtonState(submit,false,{
+        label:"Submit review",
+        tooltip:error instanceof Error?error.message:String(error),
+        icon:"arrow-up-from-bracket",
+      });
+    }
+  });
+  actions.append(submit);
+  reportReview.append(actions);
+}
+
+async function loadVisualReview(experiment){
+  if(!reportReview)return;
+  if(experiment.visual?.status!=="completed"){
+    reportReview.replaceChildren(
+      el("div","appearance-review-head"),
+    );
+    reportReview.firstChild.append(
+      el("h3",null,"Human review"),
+      el("p",null,"Visual scoring becomes available after all A/B images are generated."),
+    );
+    return;
+  }
+  reportReview.replaceChildren(el("p","appearance-review-note-readonly","Loading review…"));
+  try{
+    const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/review",{
+      headers:{Accept:"application/json"},
+      cache:"no-store",
+    });
+    if(response.status===404){
+      renderVisualReviewForm(experiment);
+      return;
+    }
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok||!payload?.review)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+    renderSubmittedVisualReview(experiment,payload.review);
+  }catch(error){
+    reportReview.replaceChildren(el("p","appearance-experiment-error","Review unavailable: "+(error instanceof Error?error.message:String(error))));
+  }
+}
+
 function renderAppearanceExperiments(){
   if(!experiments)return;
   experiments.replaceChildren();
@@ -141,6 +392,8 @@ function renderAppearanceExperiments(){
     );
     const visualState=visualStatus(experiment.visual?.status);
     if(visualState)head.append(experimentStatusPill(visualState));
+    const reviewedState=reviewStatus(experiment.review);
+    if(reviewedState)head.append(experimentStatusPill(reviewedState));
     const meta=el("span","appearance-experiment-meta",experimentSummary(experiment));
     const started=experiment.startedAt?new Date(experiment.startedAt).toLocaleString():"";
     if(started)meta.textContent+=" · "+started;
@@ -921,6 +1174,8 @@ reportDialog?.addEventListener("click",(event)=>{
   if(event.target===reportDialog)reportDialog.close();
 });
 reportDialog?.addEventListener("close",()=>{
+  reportExperiment=null;
+  reportReview?.replaceChildren();
   if(reportFrame){
     reportFrame.src="about:blank";
     delete reportFrame.dataset.reportUrl;
