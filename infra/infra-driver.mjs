@@ -28,6 +28,16 @@ export class InfraSnapshotConflictError extends Error {}
 export class InfraIdempotencyConflictError extends Error {}
 export class InfraImmutableObjectConflictError extends Error {}
 export class InfraWorkflowConflictError extends Error {}
+export class InfraServiceCallError extends Error {
+  constructor(message,{serviceName=null,operation=null,retryable=true,status=null}={}){
+    super(message);
+    this.name="InfraServiceCallError";
+    this.serviceName=serviceName;
+    this.operation=operation;
+    this.retryable=retryable;
+    this.status=status;
+  }
+}
 
 export const INFRA_CAPABILITIES = Object.freeze([
   "state",
@@ -42,6 +52,7 @@ export const INFRA_CAPABILITIES = Object.freeze([
   "secrets",
   "cache",
   "telemetry",
+  "services",
 ]);
 
 const CAPABILITY_SET = new Set(INFRA_CAPABILITIES);
@@ -52,6 +63,7 @@ const REQUIRED_METHODS = Object.freeze({
   realtime: ["publish"],
   queues: ["send"],
   workflows: ["start", "get"],
+  services: ["call"],
 });
 
 export function assertInfraDriver(driver, { required = [] } = {}) {
