@@ -53,6 +53,7 @@ export function createCloudflareHealthPort({
   stateScopes = {},
   objectBucket = null,
   workflowBindings = {},
+  serviceBindings = {},
   presentationChannels = null,
   catalogDatabase = null,
   telemetryDatabase = null,
@@ -77,6 +78,9 @@ export function createCloudflareHealthPort({
       }
       for (const workflowName of Object.keys(workflowBindings)) {
         checks.push(normalCloudflareCheck("workflows", workflowName, { mode:"configured" }));
+      }
+      for (const serviceName of Object.keys(serviceBindings)) {
+        checks.push(normalCloudflareCheck("services", serviceName, { mode:"configured" }));
       }
       return Object.freeze({
         contract:"fibre-infra-driver-health-v0.1",
