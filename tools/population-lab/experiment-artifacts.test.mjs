@@ -44,3 +44,47 @@ test("Population Lab experiment store persists one provider-neutral experiment a
   assert.equal(await store.get(experimentId),null,"deleted experiment remained indexed");
   assert.equal(await store.getArtifact(populationLabExperimentRef(experimentId,"report")),null,"deleted report bytes remained");
 });
+
+
+test("visual experiment lifecycle blocks deletion until visual work is terminal",async()=>{
+  const infra=createMemoryInfraDriver();
+  const store=createPopulationLabExperimentStore(infra);
+  const experimentId="exp_visual_lifecycle";
+
+  await store.start(experimentId,{
+    startedAt:"2026-10-01T00:00:00.000Z",
+    count:8,
+  });
+  await store.putPopulation(experimentId,{people:[{id:"one"}]});
+  await store.putResult(experimentId,{warnings:[]});
+  await store.putReport(experimentId,"<html>base</html>");
+  await store.complete(experimentId,{people:1,warnings:0,images:0});
+
+  await store.queueVisual(experimentId,{
+    experimentId,
+    requestedAt:"2026-10-01T00:01:00.000Z",
+    sampleSize:4,
+  });
+  await assert.rejects(
+    ()=>store.delete(experimentId),
+    /queued or running experiment cannot be deleted/u,
+    "queued visual work did not protect experiment artifacts",
+  );
+  await store.runningVisual(experimentId,{startedAt:"2026-10-01T00:01:01.000Z"});
+  await assert.rejects(
+    ()=>store.delete(experimentId),
+    /queued or running experiment cannot be deleted/u,
+    "running visual work did not protect experiment artifacts",
+  );
+  await store.failVisual(experimentId,new Error("fixture visual failure"));
+  await assert.rejects(
+    ()=>store.queueVisual(experimentId,{
+      experimentId,
+      requestedAt:"2026-10-01T00:02:00.000Z",
+      sampleSize:4,
+    }),
+    /already has an attempt/u,
+    "visual experiment silently reused immutable attempt identity",
+  );
+  assert.equal((await store.delete(experimentId)).deleted,true,"failed visual experiment could not be deleted");
+});
