@@ -299,7 +299,7 @@ Acceptance:
 
 ### A2 — InfraDriver-backed experiment artifacts
 
-**Status: A2.1 and A2.2 accepted in staging; A2.3 implemented on `main`, pending validation.** Population Lab runner outputs use one shared experiment-artifact store over generic `InfraDriver.objects` + `InfraDriver.catalog`; Admin can launch/list/open/delete bounded experiments, and A2.3 adds an optional four-person geometry-first visual fidelity sample through the existing Asset Generator.
+**Status: A2.1, A2.2 and A2.3 accepted in staging; A3.1 implemented on `main`, pending validation.** Population Lab runner outputs use one shared experiment-artifact store over generic `InfraDriver.objects` + `InfraDriver.catalog`; Admin can launch/list/open/delete bounded experiments, and A2.3 adds an optional four-person geometry-first visual fidelity sample through the existing Asset Generator.
 
 Persist Population Lab experiment manifests, population inputs, HTML reports, images and results through generic `InfraDriver.objects` and `InfraDriver.catalog`. Local storage materializes beneath `.fibre/population-lab/`; cloud providers map the same logical object references to their object/catalog implementations.
 
@@ -458,7 +458,9 @@ Local infra materializes this beneath `.fibre/population-lab/`; cloud providers 
 
 ### A3 — Research, candidate and approval
 
-A coverage hole can launch bounded external research. Research stores provenance and may propose only evidence-supported calibration axes.
+**A3.1 — immutable calibration candidate evidence: implemented on `main`, pending validation.** A completed Population Lab experiment may acquire one immutable calibration candidate artifact. The candidate targets the exact reference-population version snapshotted by the experiment, rejects stale evidence, and proposes only explicit physical-locus values and existing variation multipliers. It records the experiment-owned evidence refs used for review. Creating a candidate does not mutate Human Appearance, the current reference-population registry, World state or migration state.
+
+A coverage hole can later launch bounded external research. Research stores provenance and may propose only evidence-supported calibration axes; that research adapter is not part of A3.1.
 
 Experiment/research output is a **candidate**, never authority.
 
