@@ -85,10 +85,56 @@ function renderAppearanceExperiments(){
     const meta=el("span","appearance-experiment-meta",experimentSummary(experiment));
     const started=experiment.startedAt?new Date(experiment.startedAt).toLocaleString():"";
     if(started)meta.textContent+=" · "+started;
+    if(experiment.visual?.status){
+      meta.textContent+=" · visuals "+human(experiment.visual.status);
+    }
     copy.append(head,meta);
     if(experiment.error?.message)copy.append(el("span","appearance-experiment-error",experiment.error.message));
+    if(experiment.visual?.error?.message)copy.append(el("span","appearance-experiment-error","Visuals: "+experiment.visual.error.message));
 
     const actions=el("div","appearance-experiment-actions");
+    const visualActive=["queued","running"].includes(experiment.visual?.status);
+    const visualComplete=experiment.visual?.status==="completed";
+    if(experiment.status==="completed"&&!visualComplete){
+      const visuals=el("button","secondary");
+      visuals.type="button";
+      visuals.disabled=visualActive;
+      decorateActionButton(visuals,{
+        icon:visualActive?"rotate":"image",
+        label:visualActive?"Generating visuals":"Run visuals",
+        tooltip:visualActive
+          ?"Visual fidelity sample is running"
+          :"Generate 4 geometry anchors and 4 reference-conditioned portraits",
+        spinning:visualActive,
+      });
+      if(!visualActive)visuals.addEventListener("click",async()=>{
+        if(!window.confirm("Run the 4-person visual fidelity sample? This generates 8 images through Asset Generator."))return;
+        visuals.disabled=true;
+        decorateActionButton(visuals,{
+          icon:"rotate",
+          label:"Queueing visuals",
+          tooltip:"Queueing visual fidelity experiment",
+          spinning:true,
+        });
+        try{
+          const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/visuals",{
+            method:"POST",
+            headers:{Accept:"application/json"},
+          });
+          const payload=await response.json().catch(()=>null);
+          if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+          await loadAppearanceExperiments();
+        }catch(error){
+          visuals.disabled=false;
+          decorateActionButton(visuals,{
+            icon:"image",
+            label:"Run visuals",
+            tooltip:error instanceof Error?error.message:String(error),
+          });
+        }
+      });
+      actions.append(visuals);
+    }
     if(experiment.artifacts?.report?.objectRef){
       const open=el("button","secondary","Open report");
       open.type="button";
@@ -102,7 +148,8 @@ function renderAppearanceExperiments(){
 
     const remove=el("button","secondary");
     remove.type="button";
-    const terminal=!["queued","running"].includes(experiment.status);
+    const terminal=!["queued","running"].includes(experiment.status)
+      && !["queued","running"].includes(experiment.visual?.status);
     remove.disabled=!terminal;
     decorateActionButton(remove,{
       icon:"trash-can",
