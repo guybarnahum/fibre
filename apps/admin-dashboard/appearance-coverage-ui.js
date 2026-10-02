@@ -40,7 +40,6 @@ let selectedKey=null;
 let loadPromise=null;
 let experimentLoadPromise=null;
 let experimentSnapshot=[];
-let reportExperiment=null;
 let mapPopover=null;
 let mapPopoverCloseTimer=null;
 const pendingMigrations=new Map();
@@ -108,7 +107,6 @@ function experimentReportUrl(experimentId){
 
 function openExperimentReport(experiment){
   if(!reportDialog||!reportFrame)return;
-  reportExperiment=experiment;
   const url=experimentReportUrl(experiment.experimentId);
   const reference=experiment.visual?.summary?.referencePopulation??experiment.summary?.referencePopulation??experiment.experimentId;
   if(reportTitle)reportTitle.textContent=(experiment.visual?.status==="completed"?"Visual fidelity · ":"Experiment report · ")+reference;
@@ -135,13 +133,6 @@ function visualProgress(experiment){
   });
 }
 
-
-function reviewDecisionLabel(value){
-  if(value==="supports_candidate")return "Supports candidate";
-  if(value==="reject")return "Rejected";
-  if(value==="inconclusive")return "Inconclusive";
-  return human(value);
-}
 
 function reviewScoreSelect(field){
   const select=el("select",null);
@@ -1179,7 +1170,6 @@ reportDialog?.addEventListener("click",(event)=>{
   if(event.target===reportDialog)reportDialog.close();
 });
 reportDialog?.addEventListener("close",()=>{
-  reportExperiment=null;
   reportReview?.replaceChildren();
   if(reportFrame){
     reportFrame.src="about:blank";
