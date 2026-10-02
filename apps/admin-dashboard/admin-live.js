@@ -29,6 +29,12 @@ function reconnectSoon() {
   }, delay);
 }
 
+async function accessSessionExpired(){
+  const session=window.FibreAdminSession;
+  if(!session?.check)return false;
+  return session.check();
+}
+
 function reconcileLiveViews(reason) {
   for (const [key, entries] of liveKeys) {
     const activeEntries = [...entries].filter((entry) => entry.active());
@@ -91,8 +97,10 @@ function ensureSocket() {
   const opened = new WebSocket(socketUrl());
   socket = opened;
   opened.addEventListener("message", handleMessage);
-  opened.addEventListener("close", () => {
+  opened.addEventListener("close", async () => {
     if (socket === opened) socket = null;
+    if(liveKeys.size===0||document.hidden)return;
+    if(await accessSessionExpired())return;
     reconnectSoon();
   });
   opened.addEventListener("error", () => {
