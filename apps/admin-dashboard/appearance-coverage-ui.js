@@ -100,7 +100,8 @@ function experimentReportUrl(experimentId){
 function openExperimentReport(experiment){
   if(!reportDialog||!reportFrame)return;
   const url=experimentReportUrl(experiment.experimentId);
-  if(reportTitle)reportTitle.textContent="Visual fidelity · "+(experiment.referencePopulation??experiment.experimentId);
+  const reference=experiment.visual?.summary?.referencePopulation??experiment.summary?.referencePopulation??experiment.experimentId;
+  if(reportTitle)reportTitle.textContent=(experiment.visual?.status==="completed"?"Visual fidelity · ":"Experiment report · ")+reference;
   reportFrame.src=url;
   reportFrame.dataset.reportUrl=url;
   if(!reportDialog.open)reportDialog.showModal();
