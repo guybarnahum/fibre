@@ -144,6 +144,7 @@ export async function runPersistedPhysicalExperiment({request:rawRequest,artifac
       images:0,
       referencePopulation:request.referencePopulation,
       shadow:request.shadowCalibration!==null,
+      shadowOfExperimentId:request.source?.shadowOfExperimentId??null,
     };
     await artifacts.complete(request.experimentId,summary);
     return Object.freeze({request,summary});
