@@ -508,11 +508,11 @@ function renderAppearanceExperiments(){
     const actions=el("div","appearance-experiment-actions");
 
     if(experiment.status==="completed"&&!experiment.summary?.shadow){
-      const shadow=el("button","secondary");
+      const shadow=el("button","secondary appearance-refine-action");
       shadow.type="button";
       decorateActionButton(shadow,{
         icon:"wrench",
-        label:"Try refinement",
+        label:"Refine",
         tooltip:"Evaluate explicit calibration changes against the same deterministic cohort",
       });
       shadow.addEventListener("click",()=>openShadowCalibrationDialog(experiment));
