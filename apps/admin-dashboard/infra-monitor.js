@@ -1,4 +1,4 @@
-import { decorateActionButton, setWaitingContent } from "./fa-icons.js";
+import { decorateActionButton, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 
 const button = document.querySelector("#infra-health-button");
 const dialog = document.querySelector("#infra-dialog");
@@ -175,8 +175,11 @@ async function load({ force = false } = {}) {
   if (!button) return;
   if (!force && lastProbeAt > 0 && Date.now() - lastProbeAt < REFRESH_MS) return;
   if (force) {
-    forceButton.disabled = true;
-    decorateActionButton(forceButton, { icon:"rotate", label:"Refreshing", tooltip:"Refreshing infrastructure health", spinning:true });
+    setRefreshButtonState(forceButton,true,{
+      label:"Refresh now",
+      tooltip:"Refresh infrastructure health",
+      busyTooltip:"Refreshing infrastructure health",
+    });
   }
   lastProbeAt = Date.now();
   try {
@@ -194,11 +197,10 @@ async function load({ force = false } = {}) {
     if (dialog.open) body.replaceChildren(detail("Monitor", error.message));
   } finally {
     if (force) {
-      forceButton.disabled = false;
-      forceButton.textContent = "Refresh now";
-      forceButton.removeAttribute("aria-label");
-      forceButton.removeAttribute("title");
-      delete forceButton.dataset.tooltip;
+      setRefreshButtonState(forceButton,false,{
+        label:"Refresh now",
+        tooltip:"Refresh infrastructure health",
+      });
     }
   }
 }
