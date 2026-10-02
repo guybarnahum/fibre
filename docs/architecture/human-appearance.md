@@ -406,6 +406,10 @@ coverage hole / stable populationId
 
 The shadow candidate experiment applies proposed parameter overrides only inside Population Lab. It must not mutate the current reference-population registry. This is how Fibre can visually and numerically evaluate a refinement before it becomes authority.
 
+A3.2 v0.1 uses an operator-assisted research boundary: the proposal contains explicit changed axes/variation, a rationale, and one-or-more provenance references. That proposal is stored in the immutable shadow experiment manifest and evaluated with the exact baseline cohort seed. A later provider-neutral research adapter may author the same proposal contract; it does not need a different evaluation path and must never infer physical calibration from geography, nationality, religion, culture, names or generated portraits.
+
+A supporting human review may freeze the shadow run into immutable calibration-candidate evidence. That freeze still has no authority; registry admission remains a separate approval event.
+
 Only the final reviewed admission changes the source calibration registry. New births then use the admitted version; existing Threads are affected only through the dependency diff and explicit World migration.
 
 ### Canonical reference-population ID grammar
