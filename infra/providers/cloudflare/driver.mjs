@@ -83,6 +83,7 @@ export function createCloudflareServicePort({serviceBindings,privateToken}={}){
           },
         );
       }
+      assertInfraJsonValue("service result",payload.result);
       return structuredClone(payload.result);
     },
   });
