@@ -374,6 +374,75 @@ Experiments and research are evidence only. They do not change Thread authority 
 
 Coverage geography is descriptive demand context only. A map point means Fibre currently has a Thread/family lineage represented at that birthplace. Geography never selects or infers ancestry.
 
+### Human visual review
+
+A completed visual experiment may receive one immutable human review artifact. The review scores every A/B pair from 1–5 on three renderer-fidelity dimensions:
+
+- **geometry fidelity** — B preserves the structural relationships established by A;
+- **identity continuity** — B remains recognizably the same individual rather than drifting to a nearby face;
+- **surface realism** — skin, hair, age and texture become believable without overriding geometry.
+
+The overall review disposition is `supports_candidate`, `reject` or `inconclusive`.
+
+These scores evaluate the **renderer transition**, not whether a population calibration is ethnically or demographically correct. A renderer can faithfully render a poor calibration. No demographic classifier or portrait-based ancestry inference participates in review.
+
+A rejected report remains immutable evidence. Re-running creates a new experiment identity from the same source/calibration and deterministic cohort seed; it never overwrites or silently retries the rejected run.
+
+### From evidence to approved calibration
+
+A good renderer-fidelity report is necessary evidence, but it is not sufficient to promote a calibration. Promotion requires an explicit proposed model:
+
+```text
+coverage hole / stable populationId
+    -> research + numerical evidence
+    -> proposed calibration parameters
+    -> shadow candidate experiment in Population Lab
+    -> human visual review of the candidate
+    -> calibration candidate artifact
+    -> explicit human approval
+    -> source-registry admission
+    -> local node version N -> N+1 (or new node @1)
+```
+
+The shadow candidate experiment applies proposed parameter overrides only inside Population Lab. It must not mutate the current reference-population registry. This is how Fibre can visually and numerically evaluate a refinement before it becomes authority.
+
+Only the final reviewed admission changes the source calibration registry. New births then use the admitted version; existing Threads are affected only through the dependency diff and explicit World migration.
+
+### Canonical reference-population ID grammar
+
+The current atlas contains mixed historical naming such as `afr_north`, `west_asia`, `east_asia` and `middle_east`. Do not extend that inconsistency.
+
+The canonical target grammar is dotted, broad-to-specific:
+
+```text
+<macro-region>.<subregion>[.<lineage-or-population>...]
+```
+
+Examples:
+
+```text
+africa.north.morocco
+asia.east.han_chinese
+asia.west.arabia
+oceania.polynesia.samoan
+```
+
+Use full macro-region names and direction second: `asia.west`, not `asia_west` or `west_asia`. Avoid geopolitical umbrella terms such as `middle_east` in new calibration IDs.
+
+The path is a **calibration hierarchy**, not a claim derived from nationality or religion. Its parent must be the nearest evidence-supported morphology prior. A durable ancestry identity remains separate:
+
+```json
+{
+  "populationId": "yemeni_jewish",
+  "population": "Yemeni Jewish family",
+  "referencePopulation": "asia.west.arabia"
+}
+```
+
+If reviewed evidence later supports a distinct Yemeni-Jewish calibration, admission may introduce a node such as `asia.west.arabia.yemeni_jewish@1` (or another parent if the evidence supports a different prior), and the same stable `populationId` then resolves to that more-specific node. Fibre must not create the node merely because a Thread was born in Yemen, has a Jewish name, speaks Hebrew, or carries a cultural label.
+
+Existing mixed IDs should be normalized in one explicit taxonomy migration rather than through a permanent alias/backward-compatibility layer. Because reference-population IDs are part of stored calibration dependency chains, that normalization is an appearance dependency migration, not a cosmetic rename.
+
 
 ## Versioned calibration dependencies and targeted migration
 
