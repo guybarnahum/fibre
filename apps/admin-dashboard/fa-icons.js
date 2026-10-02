@@ -169,7 +169,7 @@ export function setRefreshButtonState(button,busy,{
   iconOnly=false,
   busyTooltip=null,
 }={}){
-  const subject=label.replace(/^Refresh\\s*/iu,"").trim();
+  const subject=label.replace(/^Refresh\s*/iu,"").trim();
   return setBlockingButtonState(button,busy,{
     label,
     tooltip,
