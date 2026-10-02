@@ -88,7 +88,7 @@ async function runVisualWorkflow(workflow,event,step){
       );
     }
 
-    return step.do(
+    return await step.do(
       "complete visual fidelity report",
       ()=>completeAdminPopulationLabVisualExperiment(workflow.env,plan),
     );
