@@ -109,7 +109,9 @@ async function resolveThreadPortrait(threadId){
     }
   })();
   portraitCache.set(threadId,pending);
-  return pending;
+  const url=await pending;
+  if(url===null&&portraitCache.get(threadId)===pending)portraitCache.delete(threadId);
+  return url;
 }
 
 function ensurePortraitPreview(){
@@ -198,6 +200,11 @@ const portraitObserver=typeof IntersectionObserver==="function"
 
 export function forgetThreadPortrait(threadId){
   portraitCache.delete(threadId);
+}
+
+export async function refreshThreadPortraitUrl(threadId){
+  forgetThreadPortrait(threadId);
+  return resolveThreadPortrait(threadId);
 }
 
 export function createThreadPortrait({threadId,name=null,url=null,className="",link=true}={}){
