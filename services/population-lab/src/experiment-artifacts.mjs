@@ -1,5 +1,6 @@
 import {requireInfraCapabilities} from "#infra";
 import {buildPopulationLabCalibrationCandidate} from "./calibration-candidate.mjs";
+import {buildPopulationLabVisualReview} from "./visual-review.mjs";
 
 const PREFIX="population-lab:experiment:";
 
@@ -232,6 +233,25 @@ export function createPopulationLabExperimentStore(infra){
     async putVisualReport(experimentId,html){
       const write=await put(experimentId,"report:visual",html,{mediaType:"text/html; charset=utf-8"});
       return indexArtifact(experimentId,write,{artifacts:{visualReport:write.artifact}});
+    },
+    async putVisualReview(experimentId,input){
+      const key=populationLabExperimentCatalogKey(experimentId);
+      const current=await infra.catalog.get(key);
+      if(current===null)throw new Error("experiment not found");
+      if(current.artifacts?.visualReview){
+        throw new TypeError("visual review already exists for this experiment");
+      }
+      const review=buildPopulationLabVisualReview({experiment:current,input});
+      const write=await put(experimentId,"visual:review",jsonBytes(review),{mediaType:"application/json"});
+      await indexArtifact(experimentId,write,{
+        artifacts:{visualReview:write.artifact},
+        review:Object.freeze({
+          decision:review.decision,
+          scores:review.scores,
+          reviewedAt:review.reviewedAt,
+        }),
+      });
+      return review;
     },
     async putCalibrationCandidate(experimentId,input){
       const key=populationLabExperimentCatalogKey(experimentId);
