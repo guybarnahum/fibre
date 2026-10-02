@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   adminPopulationLabExperimentRequest,
+  adminPopulationLabRerunSpec,
   reconcileAdminPopulationLabAsset,
 } from "./appearance-experiments.mjs";
 
@@ -68,4 +69,34 @@ test("Admin visual experiments delegate generation only to Asset Generator recon
   assert.equal(observed.method,"POST","Admin used the wrong Asset Generator method");
   assert.equal(observed.token,"fixture-private-token-12345","Admin did not use the private service boundary");
   assert.deepEqual(observed.body,{job},"Admin changed the deterministic Asset Generator job");
+});
+
+
+test("rejected experiment rerun preserves source and cohort seed under a new identity",()=>{
+  const original=adminPopulationLabExperimentRequest({
+    action:"experiment",
+    coverageKey:"reference:east_asia.korean",
+    referencePopulation:"east_asia.korean",
+    coverage:"broad",
+    populations:["Korean"],
+    threadIds:["thr_one"],
+    places:[{displayName:"Seoul, South Korea"}],
+    calibration:{id:"east_asia.korean",version:2},
+    count:24,
+  },{
+    experimentId:"plexp_original",
+    requestedAt:"2026-10-01T00:00:00.000Z",
+  });
+
+  const rerun=adminPopulationLabExperimentRequest(
+    adminPopulationLabRerunSpec(original),
+    {
+      experimentId:"plexp_rerun",
+      requestedAt:"2026-10-02T00:00:00.000Z",
+    },
+  );
+
+  assert.notEqual(rerun.experimentId,original.experimentId,"rerun overwrote experiment identity");
+  assert.equal(rerun.seed,original.seed,"rerun changed deterministic cohort seed");
+  assert.deepEqual(rerun.source,original.source,"rerun changed experiment source evidence");
 });
