@@ -79,6 +79,15 @@ export function createPopulationLabExperimentStore(infra){
     }
   };
 
+  const updateVisual=async(experimentId,patch)=>{
+    const key=populationLabExperimentCatalogKey(experimentId);
+    const current=await infra.catalog.get(key);
+    if(current===null)throw new Error("experiment not found");
+    return update(experimentId,{
+      visual:Object.freeze({...current.visual,...patch}),
+    });
+  };
+
   return Object.freeze({
     async queue(experimentId,manifest){
       const write=await put(experimentId,"manifest",jsonBytes(manifest),{mediaType:"application/json"});
@@ -140,6 +149,74 @@ export function createPopulationLabExperimentStore(infra){
         Object.freeze({...write.artifact,ordinal,role,mediaType}),
       ])});
     },
+    async queueVisual(experimentId,request){
+      const key=populationLabExperimentCatalogKey(experimentId);
+      const current=await infra.catalog.get(key);
+      if(current===null)throw new Error("experiment not found");
+      if(current.status!=="completed")throw new TypeError("visual calibration requires a completed experiment");
+      if(["queued","running"].includes(current.visual?.status)){
+        throw new TypeError("visual calibration is already queued or running");
+      }
+      const write=await put(experimentId,"visual:manifest",jsonBytes(request),{mediaType:"application/json"});
+      try{
+        return await update(experimentId,{
+          artifacts:{visualManifest:write.artifact},
+          visual:Object.freeze({
+            status:"queued",
+            requestedAt:request.requestedAt??new Date().toISOString(),
+            sampleSize:request.sampleSize??null,
+            error:null,
+          }),
+        });
+      }catch(error){
+        if(write.created&&typeof infra.objects.remove==="function"){
+          await infra.objects.remove(write.artifact.objectRef).catch(()=>{});
+        }
+        throw error;
+      }
+    },
+    async runningVisual(experimentId,{startedAt=new Date().toISOString()}={}){
+      return updateVisual(experimentId,{status:"running",startedAt,error:null});
+    },
+    async adoptImage(experimentId,{ordinal,role,objectRef,digest:expectedDigest,mediaType="image/png"}){
+      if(!Number.isInteger(ordinal)||ordinal<1)throw new TypeError("image ordinal must be a positive integer");
+      if(!["geometry","portrait"].includes(role))throw new TypeError("image role must be geometry or portrait");
+      const expectedRef=populationLabExperimentRef(experimentId,`image:${String(ordinal).padStart(3,"0")}:${role}`);
+      if(objectRef!==expectedRef)throw new TypeError("generated image objectRef does not match experiment artifact identity");
+      const stored=await infra.objects.get(objectRef);
+      if(stored===null)throw new Error("generated image artifact is missing");
+      if(typeof expectedDigest==="string"&&stored.digest!==expectedDigest){
+        throw new Error("generated image digest does not match stored artifact");
+      }
+      const artifact=Object.freeze({objectRef,digest:stored.digest});
+      const current=await infra.catalog.get(populationLabExperimentCatalogKey(experimentId));
+      const images=(Array.isArray(current?.images)?current.images:[])
+        .filter(image=>image?.objectRef!==objectRef);
+      await update(experimentId,{images:Object.freeze([
+        ...images,
+        Object.freeze({...artifact,ordinal,role,mediaType}),
+      ])});
+      return artifact;
+    },
+    async putVisualReport(experimentId,html){
+      const write=await put(experimentId,"report:visual",html,{mediaType:"text/html; charset=utf-8"});
+      return indexArtifact(experimentId,write,{artifacts:{visualReport:write.artifact}});
+    },
+    async completeVisual(experimentId,summary={}){
+      return updateVisual(experimentId,{
+        status:"completed",
+        completedAt:new Date().toISOString(),
+        summary:Object.freeze({...summary}),
+        error:null,
+      });
+    },
+    async failVisual(experimentId,error){
+      return updateVisual(experimentId,{
+        status:"failed",
+        completedAt:new Date().toISOString(),
+        error:{name:error?.name??"Error",message:error?.message??String(error)},
+      });
+    },
     async complete(experimentId,summary={}){
       return update(experimentId,{status:"completed",completedAt:new Date().toISOString(),summary});
     },
@@ -158,7 +235,7 @@ export function createPopulationLabExperimentStore(infra){
       const key=populationLabExperimentCatalogKey(experimentId);
       const current=await infra.catalog.get(key);
       if(current===null)return Object.freeze({experimentId:id(experimentId),deleted:false,artifactCount:0});
-      if(["queued","running"].includes(current.status)){
+      if(["queued","running"].includes(current.status)||["queued","running"].includes(current.visual?.status)){
         throw new TypeError("queued or running experiment cannot be deleted");
       }
       const refs=new Set([
