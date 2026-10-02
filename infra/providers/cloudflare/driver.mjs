@@ -397,7 +397,6 @@ export function createCloudflareInfraDriver({
 export {
   createCloudflareCatalogPort,
   createCloudflareRealtimePort,
-  createCloudflareServicePort,
   createCloudflareStreamPort,
   createCloudflareTransactionalStatePort,
 };
