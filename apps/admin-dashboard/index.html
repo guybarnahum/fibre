@@ -350,6 +350,25 @@
     <div id="infra-dialog-body" class="dialog-body"></div>
   </dialog>
 
+  <dialog id="appearance-shadow-dialog" class="appearance-shadow-dialog">
+    <div class="dialog-head">
+      <div><p class="eyebrow">Population Lab</p><h2>Try calibration refinement</h2></div>
+      <button id="appearance-shadow-close" class="icon-button" type="button" aria-label="Close shadow calibration dialog">×</button>
+    </div>
+    <div class="dialog-body appearance-shadow-body">
+      <p id="appearance-shadow-context" class="appearance-shadow-context"></p>
+      <label class="appearance-shadow-field"><span>Rationale</span><textarea id="appearance-shadow-rationale" rows="3" placeholder="Why these proposed changes?"></textarea></label>
+      <label class="appearance-shadow-field"><span>Evidence</span><textarea id="appearance-shadow-evidence" rows="4" placeholder="One source, DOI, URL, or research reference per line"></textarea></label>
+      <label class="appearance-shadow-field"><span>Value changes (JSON)</span><textarea id="appearance-shadow-values" rows="7">{}</textarea></label>
+      <label class="appearance-shadow-field"><span>Variation changes (JSON)</span><textarea id="appearance-shadow-variation" rows="4">{}</textarea></label>
+      <p class="appearance-shadow-note">Only changed axes belong here. The shadow run uses the exact baseline cohort seed and cannot modify the live calibration registry.</p>
+      <div class="appearance-shadow-actions">
+        <button id="appearance-shadow-cancel" class="secondary" type="button">Cancel</button>
+        <button id="appearance-shadow-run" class="primary" type="button">Run shadow experiment</button>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="appearance-report-dialog" class="appearance-report-dialog">
     <div class="appearance-report-dialog-head">
       <div><p class="eyebrow">Population Lab</p><h2 id="appearance-report-title">Visual fidelity report</h2></div>
