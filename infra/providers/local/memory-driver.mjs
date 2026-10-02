@@ -243,7 +243,9 @@ export function createMemoryInfraDriver({serviceHandlers={}}={}) {
           retryable:false,
         });
       }
-      return clone(await handler(operation,clone(input)));
+      const result=await handler(operation,clone(input));
+      assertInfraJsonValue("service result",result);
+      return clone(result);
     },
   };
 
