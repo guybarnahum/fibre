@@ -198,6 +198,19 @@ export function createPopulationLabExperimentStore(infra){
       ])});
       return artifact;
     },
+    async adoptArtifact(experimentId,{key,objectRef,digest:expectedDigest}){
+      if(typeof key!=="string"||key.trim()==="")throw new TypeError("artifact key is required");
+      const prefix=populationLabExperimentRef(experimentId,"");
+      if(!objectRef?.startsWith(prefix))throw new TypeError("adopted artifact must belong to the experiment namespace");
+      const stored=await infra.objects.get(objectRef);
+      if(stored===null)throw new Error("generated experiment artifact is missing");
+      if(typeof expectedDigest==="string"&&stored.digest!==expectedDigest){
+        throw new Error("generated experiment artifact digest does not match stored bytes");
+      }
+      const artifact=Object.freeze({objectRef,digest:stored.digest});
+      await update(experimentId,{artifacts:{[key]:artifact}});
+      return artifact;
+    },
     async putVisualReport(experimentId,html){
       const write=await put(experimentId,"report:visual",html,{mediaType:"text/html; charset=utf-8"});
       return indexArtifact(experimentId,write,{artifacts:{visualReport:write.artifact}});
