@@ -28,6 +28,15 @@ const reportFrame=$("#appearance-report-frame");
 const reportNewTab=$("#appearance-report-new-tab");
 const reportClose=$("#appearance-report-close");
 const reportReview=$("#appearance-report-review");
+const shadowDialog=$("#appearance-shadow-dialog");
+const shadowClose=$("#appearance-shadow-close");
+const shadowCancel=$("#appearance-shadow-cancel");
+const shadowRun=$("#appearance-shadow-run");
+const shadowContext=$("#appearance-shadow-context");
+const shadowRationale=$("#appearance-shadow-rationale");
+const shadowEvidence=$("#appearance-shadow-evidence");
+const shadowValues=$("#appearance-shadow-values");
+const shadowVariation=$("#appearance-shadow-variation");
 const mapShell=$(".appearance-coverage-map-shell");
 const worldPath=$("#appearance-world-path");
 const timezones=$("#appearance-timezones");
@@ -41,6 +50,7 @@ let selectedKey=null;
 let loadPromise=null;
 let experimentLoadPromise=null;
 let experimentSnapshot=[];
+let shadowBaseExperiment=null;
 let mapPopover=null;
 let mapPopoverCloseTimer=null;
 const pendingMigrations=new Map();
@@ -362,6 +372,94 @@ async function loadVisualReview(experiment){
   }
 }
 
+function parseShadowObject(text,name){
+  let value;
+  try{value=JSON.parse(text||"{}")}
+  catch{throw new Error(name+" must be valid JSON")}
+  if(!value||typeof value!=="object"||Array.isArray(value))throw new Error(name+" must be a JSON object");
+  return value;
+}
+
+function openShadowCalibrationDialog(experiment){
+  if(!shadowDialog)return;
+  shadowBaseExperiment=experiment;
+  if(shadowContext)shadowContext.textContent=
+    "Baseline "+experiment.experimentId+" · "+(experiment.summary?.referencePopulation??"unknown population");
+  if(shadowRationale)shadowRationale.value="";
+  if(shadowEvidence)shadowEvidence.value="";
+  if(shadowValues)shadowValues.value="{}";
+  if(shadowVariation)shadowVariation.value="{}";
+  shadowDialog.showModal();
+}
+
+async function launchShadowCalibration(){
+  const experiment=shadowBaseExperiment;
+  if(!experiment||!shadowRun)return;
+  const rationale=shadowRationale?.value?.trim()??"";
+  const evidence=(shadowEvidence?.value??"")
+    .split("\n")
+    .map(value=>value.trim())
+    .filter(Boolean);
+  if(rationale===""||evidence.length===0){
+    shadowRun.title="Rationale and at least one evidence reference are required";
+    return;
+  }
+  let values,variation;
+  try{
+    values=parseShadowObject(shadowValues?.value,"Value changes");
+    variation=parseShadowObject(shadowVariation?.value,"Variation changes");
+  }catch(error){
+    shadowRun.title=error instanceof Error?error.message:String(error);
+    return;
+  }
+
+  setBlockingButtonState(shadowRun,true,{
+    label:"Run shadow experiment",
+    tooltip:"Run shadow calibration experiment",
+    busyLabel:"Launching",
+    busyTooltip:"Launching same-seed shadow calibration experiment",
+  });
+  try{
+    const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/shadow",{
+      method:"POST",
+      headers:{Accept:"application/json","content-type":"application/json"},
+      body:JSON.stringify({values,variation,rationale,evidence}),
+    });
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+    shadowDialog?.close();
+    await loadAppearanceExperiments();
+  }catch(error){
+    setBlockingButtonState(shadowRun,false,{
+      label:"Run shadow experiment",
+      tooltip:error instanceof Error?error.message:String(error),
+    });
+  }
+}
+
+async function freezeCalibrationCandidate(experiment,button){
+  setBlockingButtonState(button,true,{
+    label:"Freeze candidate",
+    tooltip:"Freeze reviewed shadow evidence as a calibration candidate",
+    busyLabel:"Freezing",
+    busyTooltip:"Writing immutable calibration candidate evidence",
+  });
+  try{
+    const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/candidate",{
+      method:"POST",
+      headers:{Accept:"application/json"},
+    });
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+    await loadAppearanceExperiments();
+  }catch(error){
+    setBlockingButtonState(button,false,{
+      label:"Freeze candidate",
+      tooltip:error instanceof Error?error.message:String(error),
+    });
+  }
+}
+
 function renderAppearanceExperiments(){
   if(!experiments)return;
   experiments.replaceChildren();
@@ -381,6 +479,10 @@ function renderAppearanceExperiments(){
     if(visualState)head.append(experimentStatusPill(visualState));
     const reviewedState=reviewStatus(experiment.review);
     if(reviewedState)head.append(experimentStatusPill(reviewedState));
+    if(experiment.summary?.shadow)head.append(experimentStatusPill({label:"Shadow",tone:"warn",active:false}));
+    if(experiment.artifacts?.calibrationCandidate?.objectRef){
+      head.append(experimentStatusPill({label:"Candidate Evidence",tone:"good",active:false}));
+    }
     const meta=el("span","appearance-experiment-meta",experimentSummary(experiment));
     const started=experiment.startedAt?new Date(experiment.startedAt).toLocaleString():"";
     if(started)meta.textContent+=" · "+started;
@@ -396,11 +498,44 @@ function renderAppearanceExperiments(){
         +" · I"+experiment.review.scores.identityContinuity
         +" · S"+experiment.review.scores.surfaceRealism;
     }
+    if(experiment.summary?.shadowOfExperimentId){
+      meta.textContent+=" · baseline "+experiment.summary.shadowOfExperimentId;
+    }
     copy.append(head,meta);
     if(experiment.error?.message)copy.append(el("span","appearance-experiment-error",experiment.error.message));
     if(experiment.visual?.error?.message)copy.append(el("span","appearance-experiment-error","Visuals: "+experiment.visual.error.message));
 
     const actions=el("div","appearance-experiment-actions");
+
+    if(experiment.status==="completed"&&!experiment.summary?.shadow){
+      const shadow=el("button","secondary");
+      shadow.type="button";
+      decorateActionButton(shadow,{
+        icon:"wrench",
+        label:"Try refinement",
+        tooltip:"Evaluate explicit calibration changes against the same deterministic cohort",
+      });
+      shadow.addEventListener("click",()=>openShadowCalibrationDialog(experiment));
+      actions.append(shadow);
+    }
+
+    if(
+      experiment.status==="completed"
+      && experiment.summary?.shadow
+      && experiment.review?.decision==="supports_candidate"
+      && !experiment.artifacts?.calibrationCandidate?.objectRef
+    ){
+      const freeze=el("button","secondary");
+      freeze.type="button";
+      decorateActionButton(freeze,{
+        icon:"wrench",
+        label:"Freeze candidate",
+        tooltip:"Freeze this reviewed shadow proposal as immutable candidate evidence",
+      });
+      freeze.addEventListener("click",()=>void freezeCalibrationCandidate(experiment,freeze));
+      actions.append(freeze);
+    }
+
     const visualActive=["queued","running"].includes(experiment.visual?.status);
     const visualRetryable=experiment.visual?.status==="failed"&&!experiment.visual?.startedAt;
     if(experiment.status==="completed"&&(!experiment.visual||visualActive||visualRetryable)){
@@ -1151,6 +1286,23 @@ export async function loadAppearanceCoverage({quiet=false}={}){
     loadPromise=null;
   }
 }
+
+if(shadowRun)decorateActionButton(shadowRun,{
+  icon:"wrench",
+  label:"Run shadow experiment",
+  tooltip:"Run the proposed calibration against the baseline cohort seed",
+});
+shadowRun?.addEventListener("click",()=>void launchShadowCalibration());
+shadowClose?.addEventListener("click",()=>shadowDialog?.close());
+shadowCancel?.addEventListener("click",()=>shadowDialog?.close());
+shadowDialog?.addEventListener("close",()=>{
+  shadowBaseExperiment=null;
+  if(shadowRun)setBlockingButtonState(shadowRun,false,{
+    label:"Run shadow experiment",
+    tooltip:"Run the proposed calibration against the baseline cohort seed",
+    icon:"wrench",
+  });
+});
 
 if(reportNewTab)decorateActionButton(reportNewTab,{
   icon:"arrow-up-from-bracket",
