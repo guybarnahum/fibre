@@ -23,6 +23,7 @@ import {
   createThreadPortrait,
   forgetThreadPortrait,
   hideThreadPortraitPreview,
+  refreshThreadPortraitUrl,
 } from "./thread-person-ui.js";
 import { identityActionPayload } from "./thread-identity-action.js";
 import { reissueFidCard } from "./thread-observatory.js";
@@ -592,7 +593,7 @@ function renderPopulationThread(threadId) {
   return true;
 }
 
-async function refreshPopulationThread(threadId) {
+async function refreshPopulationThread(threadId,{ refreshPortrait=false }={}) {
   if (!active || populationMode !== "threads" || loading) return;
   const index = population.findIndex((entry) => entry.threadId === threadId);
   if (index < 0) {
@@ -613,9 +614,15 @@ async function refreshPopulationThread(threadId) {
     throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
   }
 
-  population[index] = payload.thread;
-  rememberPopulationThread(payload.thread);
-  forgetThreadPortrait(threadId);
+  const portraitUrl=refreshPortrait
+    ?await refreshThreadPortraitUrl(threadId)
+    :null;
+  const thread=refreshPortrait
+    ?Object.freeze({...payload.thread,portraitUrl})
+    :payload.thread;
+  population[index] = thread;
+  rememberPopulationThread(thread);
+  if(!refreshPortrait)forgetThreadPortrait(threadId);
   renderPopulationThread(threadId);
   renderSummary(currentPopulationSummary());
   renderThreadPopulationMap();
@@ -638,7 +645,9 @@ function startPopulationLive() {
         return;
       }
       try {
-        await refreshPopulationThread(threadId);
+        await refreshPopulationThread(threadId,{
+          refreshPortrait:detail?.aspect==="presentation",
+        });
       } catch (error) {
         console.warn("Targeted Thread population refresh failed", error);
       }
