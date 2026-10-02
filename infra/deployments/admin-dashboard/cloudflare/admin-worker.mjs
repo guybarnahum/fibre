@@ -14,6 +14,9 @@ import {
   readAdminPopulationLabExperiment,
   readAdminPopulationLabImage,
   readAdminPopulationLabReport,
+  readAdminPopulationLabVisualReview,
+  recordAdminPopulationLabVisualReview,
+  rerunAdminPopulationLabExperiment,
 } from "./appearance-experiments.mjs";
 import {
   attachAdminMigrationSummary,
@@ -45,6 +48,8 @@ const APPEARANCE_EXPERIMENT_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)$/u
 const APPEARANCE_EXPERIMENT_REPORT_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/report$/u;
 const APPEARANCE_EXPERIMENT_IMAGE_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/image\/(\d{3})\/(geometry|portrait)$/u;
 const APPEARANCE_EXPERIMENT_VISUAL_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/visuals$/u;
+const APPEARANCE_EXPERIMENT_REVIEW_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/review$/u;
+const APPEARANCE_EXPERIMENT_RERUN_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/rerun$/u;
 const THREAD_LABELS_ROUTE = "/api/threads/labels";
 const THREAD_POPULATION_ENTRY_ROUTE = /^\/api\/threads\/([^/]+)\/population$/u;
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
@@ -488,6 +493,8 @@ export default {
     const appearanceExperimentReportMatch = APPEARANCE_EXPERIMENT_REPORT_ROUTE.exec(url.pathname);
     const appearanceExperimentImageMatch = APPEARANCE_EXPERIMENT_IMAGE_ROUTE.exec(url.pathname);
     const appearanceExperimentVisualMatch = APPEARANCE_EXPERIMENT_VISUAL_ROUTE.exec(url.pathname);
+    const appearanceExperimentReviewMatch = APPEARANCE_EXPERIMENT_REVIEW_ROUTE.exec(url.pathname);
+    const appearanceExperimentRerunMatch = APPEARANCE_EXPERIMENT_RERUN_ROUTE.exec(url.pathname);
     const threadLabels = url.pathname === THREAD_LABELS_ROUTE;
     const threadPopulationEntryMatch = THREAD_POPULATION_ENTRY_ROUTE.exec(url.pathname);
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
@@ -496,9 +503,9 @@ export default {
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentImageMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch);
+    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentRerunMatch);
     const adminDelete = request.method === "DELETE" && appearanceExperimentMatch;
     if (adminGet || adminPost || adminDelete) {
       const gate = await adminPrincipal(request, env);
@@ -571,6 +578,28 @@ export default {
           const launched=await launchAdminPopulationLabVisualExperiment(env,experimentId);
           return json(202,{
             contract:"fibre-admin-population-lab-visual-launch-v0.1",
+            ...launched,
+          });
+        }
+        if(appearanceExperimentReviewMatch){
+          const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentReviewMatch[1]));
+          if(request.method==="POST"){
+            const review=await recordAdminPopulationLabVisualReview(env,experimentId,await request.json());
+            return json(201,{
+              contract:"fibre-admin-population-lab-visual-review-v0.1",
+              review,
+            });
+          }
+          const review=await readAdminPopulationLabVisualReview(env,experimentId);
+          return review===null
+            ? json(404,{error:"visual_review_not_found"})
+            : json(200,{contract:"fibre-admin-population-lab-visual-review-v0.1",review});
+        }
+        if(appearanceExperimentRerunMatch){
+          const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentRerunMatch[1]));
+          const launched=await rerunAdminPopulationLabExperiment(env,experimentId);
+          return json(202,{
+            contract:"fibre-admin-population-lab-rerun-v0.1",
             ...launched,
           });
         }
@@ -732,7 +761,7 @@ export default {
         if (pendingBirths || birthplaces) return json(503, { error:"thread_birth_data_unavailable", detail:error.message });
         if (threadPopulation || threadPopulationEntryMatch) return json(503, { error:"thread_population_unavailable", detail:error.message });
         if (appearanceCoverageRequest) return json(503, { error:"appearance_coverage_unavailable", detail:error.message });
-        if (appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentImageMatch || appearanceExperimentVisualMatch) {
+        if (appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentImageMatch || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentRerunMatch) {
           return json(error instanceof TypeError ? 400 : 503, { error:"appearance_experiments_unavailable", detail:error.message });
         }
         if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
