@@ -183,7 +183,7 @@ export function createPopulationLabExperimentStore(infra){
       if(!["geometry","portrait"].includes(role))throw new TypeError("image role must be geometry or portrait");
       const expectedRef=populationLabExperimentRef(experimentId,`image:${String(ordinal).padStart(3,"0")}:${role}`);
       if(objectRef!==expectedRef)throw new TypeError("generated image objectRef does not match experiment artifact identity");
-      const stored=await infra.objects.get(objectRef);
+      const stored=await infra.objects.head(objectRef);
       if(stored===null)throw new Error("generated image artifact is missing");
       if(typeof expectedDigest==="string"&&stored.digest!==expectedDigest){
         throw new Error("generated image digest does not match stored artifact");
@@ -202,7 +202,7 @@ export function createPopulationLabExperimentStore(infra){
       if(typeof key!=="string"||key.trim()==="")throw new TypeError("artifact key is required");
       const prefix=populationLabExperimentCatalogKey(experimentId)+":";
       if(!objectRef?.startsWith(prefix))throw new TypeError("adopted artifact must belong to the experiment namespace");
-      const stored=await infra.objects.get(objectRef);
+      const stored=await infra.objects.head(objectRef);
       if(stored===null)throw new Error("generated experiment artifact is missing");
       if(typeof expectedDigest==="string"&&stored.digest!==expectedDigest){
         throw new Error("generated experiment artifact digest does not match stored bytes");
