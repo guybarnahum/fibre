@@ -90,6 +90,26 @@ export function adminPopulationLabExperimentRequest(spec,{
   });
 }
 
+export function adminPopulationLabRerunSpec(manifest){
+  if(!manifest||typeof manifest!=="object"||Array.isArray(manifest)){
+    throw new TypeError("experiment manifest is required");
+  }
+  if(typeof manifest.referencePopulation!=="string"||manifest.referencePopulation.trim()===""){
+    throw new TypeError("experiment manifest reference population is required");
+  }
+  return Object.freeze({
+    action:"experiment",
+    referencePopulation:manifest.referencePopulation,
+    count:Number.isInteger(manifest.count)?manifest.count:24,
+    coverageKey:manifest.source?.coverageKey??null,
+    coverage:manifest.source?.coverage??null,
+    populations:Object.freeze([...(manifest.source?.populations??[])]),
+    threadIds:Object.freeze([...(manifest.source?.threadIds??[])]),
+    places:Object.freeze([...(manifest.source?.places??[])]),
+    calibration:manifest.source?.calibration??null,
+  });
+}
+
 export async function launchAdminPopulationLabExperiment(env,spec){
   const request=adminPopulationLabExperimentRequest(spec);
   const store=experimentStore(env);
@@ -248,17 +268,7 @@ export async function rerunAdminPopulationLabExperiment(env,experimentId){
   }
   const manifest=await readJsonArtifact(store,experiment.artifacts?.manifest?.objectRef);
   if(manifest===null)throw new Error("experiment manifest is missing");
-  return launchAdminPopulationLabExperiment(env,{
-    action:"experiment",
-    referencePopulation:manifest.referencePopulation,
-    count:manifest.count,
-    coverageKey:manifest.source?.coverageKey??null,
-    coverage:manifest.source?.coverage??null,
-    populations:manifest.source?.populations??[],
-    threadIds:manifest.source?.threadIds??[],
-    places:manifest.source?.places??[],
-    calibration:manifest.source?.calibration??null,
-  });
+  return launchAdminPopulationLabExperiment(env,adminPopulationLabRerunSpec(manifest));
 }
 
 export async function readAdminPopulationLabReport(env,experimentId){
