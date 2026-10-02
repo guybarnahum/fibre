@@ -16,7 +16,7 @@ function nonEmpty(name,value){
 
 function artifactEvidence(experiment){
   const artifacts={};
-  for(const key of ["manifest","population","result","report","visualReport"]){
+  for(const key of ["manifest","population","result","report","visualReport","visualReview"]){
     const artifact=experiment.artifacts?.[key];
     if(artifact?.objectRef)artifacts[key]=Object.freeze({
       objectRef:artifact.objectRef,
