@@ -1,9 +1,10 @@
-import {ASSET_GENERATION_JOB_VERSION,normalizeAssetGenerationJob} from "#services/asset-generator/src/index.mjs";
 import {populationLabExperimentRef} from "./experiment-artifacts.mjs";
 import {
   populationGeometryAnchorPrompt,
   populationSurfacePortraitPrompt,
 } from "./portrait-prompt.mjs";
+
+const ASSET_GENERATION_JOB_VERSION="asset-generation-job-v0.1";
 
 export const POPULATION_LAB_VISUAL_EXPERIMENT_VERSION="fibre-population-lab-visual-experiment-v0.1";
 export const POPULATION_LAB_VISUAL_SAMPLE_SIZE=4;
@@ -73,7 +74,7 @@ function job({
   const padded=String(ordinal).padStart(3,"0");
   const role=pass==="geometry"?"population_lab_geometry_anchor":"population_lab_surface_portrait";
   const outputObjectRef=populationLabExperimentRef(experimentId,`image:${padded}:${pass==="geometry"?"geometry":"portrait"}`);
-  return normalizeAssetGenerationJob({
+  return Object.freeze({
     jobVersion:ASSET_GENERATION_JOB_VERSION,
     jobId:`assetjob_population_lab_${experimentId}_${padded}_${pass}`,
     assetKind:"image",
