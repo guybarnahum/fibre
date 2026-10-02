@@ -4,9 +4,11 @@ import assert from "node:assert/strict";
 import {createMemoryInfraDriver} from "#infra/providers/local";
 import {createPopulationLabExperimentStore} from "../src/experiment-artifacts.mjs";
 import {
+  buildPhysicalExperimentEvidence,
   normalizePhysicalExperimentRequest,
   runPersistedPhysicalExperiment,
 } from "../src/physical-experiment.mjs";
+import {referencePopulationCalibration} from "../../../core/src/human-appearance/index.mjs";
 
 test("controlled physical experiment runs from queued evidence to persisted completion",async()=>{
   const store=createPopulationLabExperimentStore(createMemoryInfraDriver());
@@ -52,5 +54,49 @@ test("queued experiments cannot be deleted while execution may still write artif
     ()=>store.delete(request.experimentId),
     /queued or running experiment cannot be deleted/u,
     "queued experiment deletion was accepted",
+  );
+});
+
+
+test("shadow experiment reuses the cohort seed while changing only proposed calibration behavior",()=>{
+  const calibration=referencePopulationCalibration("east_asia.japanese");
+  const baseline=normalizePhysicalExperimentRequest({
+    experimentId:"exp_shadow_baseline",
+    referencePopulation:"east_asia.japanese",
+    count:8,
+    seed:"shadow-comparison-seed",
+    requestedAt:"2026-10-02T18:00:00.000Z",
+    source:{calibration},
+  });
+  const shadow=normalizePhysicalExperimentRequest({
+    ...baseline,
+    experimentId:"exp_shadow_candidate",
+    shadowCalibration:{
+      referencePopulation:"east_asia.japanese",
+      baseCalibration:{id:calibration.id,version:calibration.version},
+      values:{faceBreadth:.18},
+      variation:{},
+      rationale:"Fixture candidate for controlled comparison.",
+      evidence:["doi:10.0000/fibre-shadow-fixture"],
+    },
+  });
+
+  const before=buildPhysicalExperimentEvidence(baseline);
+  const after=buildPhysicalExperimentEvidence(shadow);
+
+  assert.deepEqual(
+    after.people.map(person=>[person.name,person.sex]),
+    before.people.map(person=>[person.name,person.sex]),
+    "shadow experiment changed deterministic cohort identity",
+  );
+  assert.notEqual(
+    after.people[0].inheritance.phenotype.latent.faceBreadth,
+    before.people[0].inheritance.phenotype.latent.faceBreadth,
+    "shadow experiment did not apply proposed calibration",
+  );
+  assert.equal(
+    after.people[0].inheritance.phenotype.latent.faceLength,
+    before.people[0].inheritance.phenotype.latent.faceLength,
+    "shadow experiment changed an unproposed physical axis",
   );
 });
