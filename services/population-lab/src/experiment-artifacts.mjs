@@ -175,6 +175,23 @@ export function createPopulationLabExperimentStore(infra){
         throw error;
       }
     },
+    async retryQueuedVisual(experimentId){
+      const key=populationLabExperimentCatalogKey(experimentId);
+      const current=await infra.catalog.get(key);
+      if(current===null)throw new Error("experiment not found");
+      if(current.visual?.status!=="failed"||current.visual?.startedAt){
+        throw new TypeError("only a visual launch failure may be retried");
+      }
+      const manifestRef=current.artifacts?.visualManifest?.objectRef;
+      if(typeof manifestRef!=="string")throw new Error("visual manifest is missing");
+      const manifest=await infra.objects.get(manifestRef);
+      if(manifest===null)throw new Error("visual manifest bytes are missing");
+      let request;
+      try{request=JSON.parse(new TextDecoder().decode(manifest.bytes))}
+      catch{throw new Error("visual manifest is invalid")}
+      await updateVisual(experimentId,{status:"queued",completedAt:null,error:null});
+      return Object.freeze(request);
+    },
     async runningVisual(experimentId,{startedAt=new Date().toISOString()}={}){
       return updateVisual(experimentId,{status:"running",startedAt,error:null});
     },
