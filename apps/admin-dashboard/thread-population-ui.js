@@ -15,7 +15,7 @@ import {
   invalidateView,
   threadPopulationViewKey,
 } from "./view-invalidation.js";
-import { decorateActionButton, iconForIdentityAction, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
+import { decorateActionButton, iconForIdentityAction, setBlockingButtonState, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
 import {
   createThreadIdentityViewer,
@@ -836,16 +836,6 @@ function mapCoordinates(event) {
   };
 }
 
-function setButtonWaiting(button, label) {
-  decorateActionButton(button, { icon:"rotate", label, tooltip:label, spinning:true });
-}
-
-function setButtonLabel(button, label) {
-  button.textContent = label;
-  button.removeAttribute("aria-label");
-  button.removeAttribute("title");
-}
-
 function birthStage(birth) {
   if (["genesis","developing","emerging","in-world"].includes(birth?.stage)) return birth.stage;
   return ({
@@ -1411,8 +1401,13 @@ async function submitBirth(event) {
     sex:sex === "" ? null : sex,
   }));
 
-  birthSubmit.disabled = true;
-  setButtonWaiting(birthSubmit, "Starting");
+  const submitLabel=count===1?"Birth Thread":`Birth ${count} Threads`;
+  setBlockingButtonState(birthSubmit,true,{
+    label:submitLabel,
+    tooltip:submitLabel,
+    busyLabel:"Starting",
+    busyTooltip:"Starting birth request",
+  });
   birthResult.classList.remove("failed");
   renderBirthBatchProgress({ total:count, accepted:0, failed:0 });
 
@@ -1438,7 +1433,10 @@ async function submitBirth(event) {
     }
   }));
 
-  birthSubmit.disabled = false;
+  setBlockingButtonState(birthSubmit,false,{
+    label:submitLabel,
+    tooltip:submitLabel,
+  });
   syncBirthMode();
   void loadPendingBirths();
   if (active && populationMode === "threads") void loadPopulation();
