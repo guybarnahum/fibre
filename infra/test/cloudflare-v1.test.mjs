@@ -228,3 +228,28 @@ test("cloudflare-v1 service port hides Worker binding transport behind InfraDriv
   assert.equal(observed.token,"fixture-private-token-12345","service adapter lost private service credential");
   assert.deepEqual(observed.body,{job:{jobId:"job_1"}},"service adapter changed semantic input");
 });
+
+
+test("cloudflare-v1 service port preserves terminal retryability", async () => {
+  const infra=createCloudflareInfraDriver({
+    serviceBindings:{
+      asset_generator:{
+        async fetch(){
+          return Response.json(
+            {ok:false,error:"asset_generation_failed",detail:"provider rejected request",retryable:false},
+            {status:400},
+          );
+        },
+      },
+    },
+    privateToken:"fixture-private-token-12345",
+  });
+
+  await assert.rejects(
+    ()=>infra.services.call("asset_generator","generation.reconcile",{job:{jobId:"job_bad"}}),
+    (error)=>error?.name==="InfraServiceCallError"
+      && error.retryable===false
+      && error.status===400,
+    "terminal service failure lost retryability semantics",
+  );
+});
