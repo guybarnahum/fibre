@@ -1,4 +1,8 @@
-import { appearanceCoverageTopSummary, loadAppearanceCoverage } from "./appearance-coverage-ui.js";
+import {
+  appearanceCoverageTopSummary,
+  loadAppearanceCoverage,
+  loadAppearanceExperiments,
+} from "./appearance-coverage-ui.js";
 import { operatorModeFromLocation } from "./operator-route.js";
 import {
   populationFilterCount,
@@ -6,7 +10,11 @@ import {
 } from "./thread-population-filter.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { watchAdminLive } from "./admin-live.js";
-import { invalidateView, threadPopulationViewKey } from "./view-invalidation.js";
+import {
+  appearanceExperimentsViewKey,
+  invalidateView,
+  threadPopulationViewKey,
+} from "./view-invalidation.js";
 import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
 import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
 import {
@@ -83,6 +91,7 @@ let sortState = { key:"lastActivity", direction:"desc" };
 let threadMapPopover = null;
 let threadMapPopoverCloseTimer = null;
 let stopPopulationLive = null;
+let stopAppearanceExperimentsLive = null;
 function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
 }
@@ -644,6 +653,28 @@ function startPopulationLive() {
 function stopPopulationLiveWatch() {
   stopPopulationLive?.();
   stopPopulationLive = null;
+}
+
+function startAppearanceExperimentsLive(){
+  if(stopAppearanceExperimentsLive!==null)return;
+  stopAppearanceExperimentsLive=watchAdminLive(
+    appearanceExperimentsViewKey(),
+    async(detail)=>{
+      if(!active||populationMode!=="appearance")return;
+      if(detail?.reason==="connected"||detail?.reason==="watch-started")return;
+      try{await loadAppearanceExperiments()}
+      catch(error){console.warn("Population Lab experiment live refresh failed",error)}
+    },
+    {
+      active:()=>active&&populationMode==="appearance",
+      reconcileOnSubscribe:false,
+    },
+  );
+}
+
+function stopAppearanceExperimentsLiveWatch(){
+  stopAppearanceExperimentsLive?.();
+  stopAppearanceExperimentsLive=null;
 }
 
 function stillbornRow(thread) {
@@ -1534,7 +1565,9 @@ function enterPopulation(nextMode) {
   if (active) {
     if (previousMode === "birth-center" && nextMode !== "birth-center") stopPendingPolling();
     if (previousMode === "threads" && nextMode !== "threads") stopPopulationLiveWatch();
+    if (previousMode === "appearance" && nextMode !== "appearance") stopAppearanceExperimentsLiveWatch();
     if (nextMode === "threads") startPopulationLive();
+    if (nextMode === "appearance") startAppearanceExperimentsLive();
     holdOperatorMode();
     if (populationMode === "birth-center") {
       renderBirthCenterTopSummary();
@@ -1570,6 +1603,7 @@ function enterPopulation(nextMode) {
   }
   active = true;
   if (populationMode === "threads") startPopulationLive();
+  if (populationMode === "appearance") startAppearanceExperimentsLive();
   priorAutoRefresh = $("#auto-refresh").checked;
   $("#auto-refresh").checked = false;
   $("#auto-refresh").dispatchEvent(new Event("change"));
@@ -1607,6 +1641,7 @@ function exitOperatorMode(nextMode) {
   active = false;
   stopPendingPolling();
   stopPopulationLiveWatch();
+  stopAppearanceExperimentsLiveWatch();
   activityViewPanel.hidden=false;
   activityViewPanel.style.display="";
   birthCenterView.hidden = true;
