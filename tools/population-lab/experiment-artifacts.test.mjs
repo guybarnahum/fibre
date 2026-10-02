@@ -88,3 +88,52 @@ test("visual experiment lifecycle blocks deletion until visual work is terminal"
   );
   assert.equal((await store.delete(experimentId)).deleted,true,"failed visual experiment could not be deleted");
 });
+
+
+test("completed visual evidence indexes generated assets without copying and deletes the experiment-owned set",async()=>{
+  const infra=createMemoryInfraDriver();
+  const store=createPopulationLabExperimentStore(infra);
+  const experimentId="exp_visual_cleanup";
+
+  await store.start(experimentId,{startedAt:"2026-10-01T00:00:00.000Z",count:8});
+  await store.putPopulation(experimentId,{people:[{id:"one"}]});
+  await store.putResult(experimentId,{warnings:[]});
+  await store.putReport(experimentId,"<html>base</html>");
+  await store.complete(experimentId,{people:1,warnings:0,images:0});
+  await store.queueVisual(experimentId,{
+    experimentId,
+    requestedAt:"2026-10-01T00:01:00.000Z",
+    sampleSize:4,
+  });
+  await store.runningVisual(experimentId,{startedAt:"2026-10-01T00:01:01.000Z"});
+
+  const imageRef=populationLabExperimentRef(experimentId,"image:001:geometry");
+  const receiptRef=populationLabExperimentRef(experimentId,"image:001:geometry:receipt");
+  await infra.objects.putImmutable(imageRef,new Uint8Array([1,2,3]),"sha256:image",{mediaType:"image/png"});
+  await infra.objects.putImmutable(receiptRef,new Uint8Array([4,5,6]),"sha256:receipt",{kind:"receipt"});
+
+  await store.adoptImage(experimentId,{
+    ordinal:1,
+    role:"geometry",
+    objectRef:imageRef,
+    digest:"sha256:image",
+    mediaType:"image/png",
+  });
+  await store.adoptArtifact(experimentId,{
+    key:"visualReceipt001Geometry",
+    objectRef:receiptRef,
+    digest:"sha256:receipt",
+  });
+  await store.putVisualReport(experimentId,"<html>visual</html>");
+  await store.completeVisual(experimentId,{sampleSize:1,images:1});
+
+  const experiment=await store.get(experimentId);
+  assert.equal(experiment.images[0].objectRef,imageRef,"generated image was not indexed");
+  assert.equal(experiment.artifacts.visualReceipt001Geometry.objectRef,receiptRef,"generation receipt was not indexed");
+  assert.ok(experiment.artifacts.visualReport?.objectRef,"visual report was not indexed");
+
+  const deleted=await store.delete(experimentId);
+  assert.equal(deleted.artifactCount,8,"experiment-owned visual artifacts were not fully deleted");
+  assert.equal(await infra.objects.get(imageRef),null,"generated visual image remained after experiment deletion");
+  assert.equal(await infra.objects.get(receiptRef),null,"generated visual receipt remained after experiment deletion");
+});
