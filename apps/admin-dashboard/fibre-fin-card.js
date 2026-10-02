@@ -2,6 +2,7 @@ import { verifyFibreFinCardAssets } from "./fibre-fin-card-verification.js";
 
 const TAG_NAME = "fibre-fin-card";
 const STYLESHEET_HREF = "/fibre-fin-card.css";
+const HTMLElementBase = globalThis.HTMLElement ?? class {};
 
 function imageAsset(value) {
   return value
@@ -12,7 +13,7 @@ function imageAsset(value) {
     : null;
 }
 
-class FibreFinCardElement extends HTMLElement {
+class FibreFinCardElement extends HTMLElementBase {
   constructor() {
     super();
     this.attachShadow({ mode:"open" });
