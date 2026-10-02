@@ -64,7 +64,7 @@ test("Admin visual experiments delegate generation only to Asset Generator recon
   },job);
 
   assert.equal(result.state,"pending","Admin changed Asset Generator reconciliation state");
-  assert.equal(observed.url,"https://asset-generator.internal/internal/generation/reconcile","Admin bypassed Asset Generator control API");
+  assert.equal(observed.url,"https://fibre.internal/internal/generation/reconcile","Admin did not route service call through InfraDriver");
   assert.equal(observed.method,"POST","Admin used the wrong Asset Generator method");
   assert.equal(observed.token,"fixture-private-token-12345","Admin did not use the private service boundary");
   assert.deepEqual(observed.body,{job},"Admin changed the deterministic Asset Generator job");
