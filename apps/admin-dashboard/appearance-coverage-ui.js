@@ -54,8 +54,29 @@ function coverageTone(value){
   return value==="missing"||value==="fallback"?"bad":value==="broad"||value==="partial"?"warn":"good";
 }
 
-function experimentTone(status){
-  return status==="completed"?"good":status==="failed"?"bad":["queued","running"].includes(status)?"warn":"";
+function experimentStatus(status){
+  if(status==="completed")return {label:"Experiment Defined",tone:"good",active:false};
+  if(status==="failed")return {label:"Experiment Failed",tone:"bad",active:false};
+  if(status==="running")return {label:"Experiment Running",tone:"warn",active:true};
+  if(status==="queued")return {label:"Experiment Queued",tone:"warn",active:true};
+  return {label:human(status??"unknown"),tone:"",active:false};
+}
+
+function visualStatus(status){
+  if(!status)return null;
+  if(status==="completed")return {label:"Images Generated",tone:"good",active:false};
+  if(status==="failed")return {label:"Image Generation Failed",tone:"bad",active:false};
+  if(["queued","running"].includes(status))return {label:"Generating Images",tone:"warn",active:true};
+  return {label:human(status),tone:"",active:false};
+}
+
+function experimentStatusPill(state){
+  return el("span",[
+    "thread-health-tag",
+    "appearance-experiment-status",
+    state.tone,
+    state.active?"is-active":"",
+  ].filter(Boolean).join(" "),state.label);
 }
 
 function experimentSummary(experiment){
@@ -97,17 +118,17 @@ function renderAppearanceExperiments(){
     const head=el("div","appearance-experiment-head");
     head.append(
       el("strong",null,experiment.experimentId),
-      el("span","thread-health-tag "+experimentTone(experiment.status),human(experiment.status??"unknown")),
+      experimentStatusPill(experimentStatus(experiment.status)),
     );
+    const visualState=visualStatus(experiment.visual?.status);
+    if(visualState)head.append(experimentStatusPill(visualState));
     const meta=el("span","appearance-experiment-meta",experimentSummary(experiment));
     const started=experiment.startedAt?new Date(experiment.startedAt).toLocaleString():"";
     if(started)meta.textContent+=" · "+started;
     if(experiment.visual?.status){
       const progress=visualProgress(experiment);
-      meta.textContent+=" · visuals "+human(experiment.visual.status);
       if(progress){
-        meta.textContent+=" "+progress.completed+"/"+progress.total
-          +" · geometry "+progress.geometry+"/"+progress.sampleSize
+        meta.textContent+=" · geometry "+progress.geometry+"/"+progress.sampleSize
           +" · portraits "+progress.portraits+"/"+progress.sampleSize;
       }
     }
@@ -120,13 +141,14 @@ function renderAppearanceExperiments(){
     const visualRetryable=experiment.visual?.status==="failed"&&!experiment.visual?.startedAt;
     if(experiment.status==="completed"&&(!experiment.visual||visualActive||visualRetryable)){
       const visuals=el("button","secondary");
+      const progress=visualProgress(experiment);
       visuals.type="button";
       visuals.disabled=visualActive;
       decorateActionButton(visuals,{
         icon:visualActive?"rotate":"image",
-        label:visualActive?"Generating visuals":visualRetryable?"Retry visuals":"Run visuals",
+        label:visualActive?(progress?.completed??0)+"/"+(progress?.total??8):visualRetryable?"Retry visuals":"Run visuals",
         tooltip:visualActive
-          ?"Visual fidelity sample is running"
+          ?"Generating images: "+(progress?.completed??0)+"/"+(progress?.total??8)
           :visualRetryable
             ?"Retry the same visual manifest; the prior Workflow never started"
             :"Generate 4 geometry anchors and 4 reference-conditioned portraits",
@@ -139,7 +161,7 @@ function renderAppearanceExperiments(){
         visuals.disabled=true;
         decorateActionButton(visuals,{
           icon:"rotate",
-          label:"Queueing visuals",
+          label:"0/8",
           tooltip:"Queueing visual fidelity experiment",
           spinning:true,
         });
@@ -152,6 +174,8 @@ function renderAppearanceExperiments(){
           if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
           await loadAppearanceExperiments();
         }catch(error){
+          await loadAppearanceExperiments().catch(()=>{});
+          if(!visuals.isConnected)return;
           visuals.disabled=false;
           decorateActionButton(visuals,{
             icon:"image",
