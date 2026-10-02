@@ -298,3 +298,28 @@ test("Admin Appearance coverage proxies one authoritative World scan", async () 
   assert.equal(payload.holes[0].referencePopulation,"afr_north.morocco");
   assert.equal(worldCalls,1,"Admin Appearance repeated the authoritative coverage scan");
 });
+
+
+test("Admin static CSP allows Cloudflare analytics without allowing inline scripts",async()=>{
+  const worker=createAdminDashboardWorker({
+    authenticate:async()=>({email:"operator@example.com"}),
+    authorize:async()=>true,
+  });
+  const response=await worker.fetch(
+    new Request("https://admin.insidefibre.com/"),
+    {
+      ASSETS:{
+        fetch:async()=>new Response("<!doctype html><title>Admin</title>",{
+          headers:{"Content-Type":"text/html; charset=utf-8"},
+        }),
+      },
+    },
+  );
+  const csp=response.headers.get("Content-Security-Policy")??"";
+  assert.match(csp,/script-src 'self' https:\/\/static\.cloudflareinsights\.com/u,
+    "Admin CSP blocked Cloudflare analytics");
+  assert.match(csp,/connect-src 'self' https:\/\/cloudflareinsights\.com/u,
+    "Admin CSP blocked Cloudflare analytics telemetry");
+  assert.doesNotMatch(csp,/unsafe-inline/u,
+    "Admin CSP allowed inline scripts while fixing analytics");
+});
