@@ -37,3 +37,17 @@ Visual progress is derived from the already-indexed experiment image artifacts r
 
 The cloud path stays InfraDriver-pure. Population Lab uses `objects`, `catalog`, `workflows` and provider-neutral `services.call()`; Cloudflare Worker bindings, workflow-ID restrictions and private service transport live only in the Cloudflare driver. A future AWS driver can map those same capabilities to AWS infrastructure without changing Population Lab.
 
+
+
+## Calibration candidate evidence
+
+A3.1 adds one deliberately non-authoritative calibration-candidate artifact to a completed experiment.
+
+A candidate:
+- targets the exact reference-population calibration version captured by the experiment manifest;
+- may propose explicit physical-locus values and the existing variation multipliers;
+- records the experiment-owned evidence artifacts/images used for review;
+- is immutable and limited to one candidate per experiment;
+- is rejected when the experiment's calibration snapshot is no longer current.
+
+Candidate creation does **not** mutate the Human Appearance registry, active physical priors, Thread state, or migration state. Human-reviewed source-registry admission remains the later authority hinge; A3.1 does not implement approval.
