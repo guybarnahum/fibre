@@ -10,7 +10,7 @@ import {
 import {
   populationGeometryAnchorPrompt,
   populationSurfacePortraitPrompt,
-} from "./portrait-prompt.mjs";
+} from "../../services/population-lab/src/portrait-prompt.mjs";
 import {
   OPENAI_IMAGE_DEFAULT_MODEL,
   createOpenAIImageProvider,
