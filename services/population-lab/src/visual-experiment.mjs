@@ -159,7 +159,21 @@ export function buildPopulationLabVisualPlan({request:rawRequest,populationBytes
   });
 }
 
-export function renderPopulationLabVisualReport(plan){
+function reviewDecisionLabel(value){
+  if(value==="supports_candidate")return "Supports candidate";
+  if(value==="reject")return "Rejected";
+  if(value==="inconclusive")return "Inconclusive";
+  return null;
+}
+
+function sampleReview(review,ordinal){
+  return Array.isArray(review?.samples)
+    ?review.samples.find(sample=>sample?.ordinal===ordinal)??null
+    :null;
+}
+
+export function renderPopulationLabVisualReport(plan,{review=null}={}){
+
   if(!plan||!Array.isArray(plan.samples)||plan.samples.length===0)throw new TypeError("visual experiment plan is required");
   const cards=plan.samples.map(sample=>{
     const ordinal=String(sample.ordinal).padStart(3,"0");
@@ -173,6 +187,7 @@ export function renderPopulationLabVisualReport(plan){
       '<figure><div class="image-label"><strong>B</strong><span>Reference-conditioned portrait</span></div><img src="image/'+ordinal+'/portrait" alt="'+esc(sample.name)+' surface portrait"><figcaption><strong>Final rendering.</strong> This pass uses A as its exact visual reference, then adds skin, hair, age and other surface detail.</figcaption></figure>',
       '</div>',
       '<div class="review-hint"><strong>Review A → B</strong><span>Does B remain recognizably the same person, preserve A\'s geometry, and add believable surface detail without reshaping the face?</span></div>',
+      (()=>{const scored=sampleReview(review,sample.ordinal);return scored?'<div class="submitted-score"><span>Submitted review</span><strong>Geometry '+scored.geometryFidelity+'/5 · Identity '+scored.identityContinuity+'/5 · Surface '+scored.surfaceRealism+'/5</strong>'+(scored.note?'<p>'+esc(scored.note)+'</p>':'')+'</div>':""})(),
       '<div class="expected"><div><span>Expected geometry</span><p>'+esc(geometryDescription)+'</p></div><div><span>Expected surface</span><p>'+esc(surfaceDescription)+'</p></div></div>',
       '<details><summary>Inherited phenotype data</summary><pre>'+esc(JSON.stringify(sample.phenotype,null,2))+'</pre></details>',
       '<details><summary>Reference physical state</summary><pre>'+esc(JSON.stringify(sample.physicalState,null,2))+'</pre></details>',
@@ -193,13 +208,13 @@ export function renderPopulationLabVisualReport(plan){
     ".sample-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px;box-shadow:0 6px 22px rgba(20,22,26,.04)}.sample-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.sample-head h2{margin:3px 0 2px;font-size:16px}.sample-head p{margin:0;color:var(--muted);font-size:10px}",
     ".population-chip{padding:4px 7px;border:1px solid var(--border);border-radius:999px;background:var(--subtle);font:9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);overflow-wrap:anywhere}.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}figure{margin:0}.image-label{display:flex;align-items:center;gap:7px;margin-bottom:6px}.image-label strong{width:22px;height:22px;display:grid;place-items:center;border-radius:999px;background:var(--accent-soft);color:#8d4313;font-size:10px}.image-label span{font-size:10px;font-weight:750}",
     "img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--border);background:#e7e5e4}figcaption{margin-top:6px;color:var(--muted);font-size:9.5px;line-height:1.45}figcaption strong{color:#45474a}",
-    ".review-hint{display:grid;gap:3px;margin-top:10px;padding:9px 10px;border-radius:9px;background:var(--accent-soft);border:1px solid #f2ceb2}.review-hint strong{font-size:10px}.review-hint span{font-size:9.5px;line-height:1.45;color:#6f4a2e}",
+    ".review-hint{display:grid;gap:3px;margin-top:10px;padding:9px 10px;border-radius:9px;background:var(--accent-soft);border:1px solid #f2ceb2}.review-hint strong{font-size:10px}.review-hint span{font-size:9.5px;line-height:1.45;color:#6f4a2e}.submitted-score{display:grid;gap:3px;margin-top:8px;padding:9px 10px;border-radius:9px;border:1px solid var(--border);background:var(--subtle)}.submitted-score span{font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.submitted-score strong{font-size:10px}.submitted-score p{margin:2px 0 0;color:var(--muted);font-size:9px;line-height:1.4}",
     ".expected{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.expected>div{padding:9px;border:1px solid var(--border);border-radius:9px;background:var(--subtle)}.expected span{font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:750}.expected p{margin:5px 0 0;font-size:9.5px;line-height:1.45}",
     "details{margin-top:8px;border-top:1px solid var(--border);padding-top:8px}summary{cursor:pointer;font-size:9.5px;font-weight:700;color:#4d4f52}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:9px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#55585c}.prompt{display:grid;gap:4px;margin-top:8px}.prompt strong{font-size:9px}",
     ".footer{margin:18px 0 4px;text-align:center;color:var(--muted);font-size:9px;line-height:1.5}",
     "@media(max-width:850px){.wrap{padding:14px}.hero{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}@media(max-width:620px){.pair,.expected,.rubric{grid-template-columns:1fr}}",
     "</style></head><body><div class=\"wrap\">",
-    '<section class="hero"><div class="hero-copy"><span class="eyebrow">Population Lab · visual fidelity</span><h1>'+esc(plan.referencePopulation)+'</h1><p>'+plan.samples.length+' deterministic A/B samples from a controlled cohort of '+plan.populationCount+'. The report asks whether the renderer preserves inherited physical structure while adding realistic surface detail. It is review evidence, not appearance authority.</p></div>',
+    '<section class="hero"><div class="hero-copy"><span class="eyebrow">Population Lab · visual fidelity</span><h1>'+esc(plan.referencePopulation)+'</h1><p>'+plan.samples.length+' deterministic A/B samples from a controlled cohort of '+plan.populationCount+'. The report asks whether the renderer preserves inherited physical structure while adding realistic surface detail. It is review evidence, not appearance authority.</p>'+(review?'<div class="submitted-score"><span>Human review · '+esc(reviewDecisionLabel(review.decision)??review.decision)+'</span><strong>Geometry '+review.scores.geometryFidelity+'/5 · Identity '+review.scores.identityContinuity+'/5 · Surface '+review.scores.surfaceRealism+'/5</strong>'+(review.note?'<p>'+esc(review.note)+'</p>':'')+'</div>':'')+'</div>',
     '<aside class="guide"><h2>How to read each A/B pair</h2><ol><li><strong>A · Geometry anchor</strong> isolates structural facial geometry from most surface styling.</li><li><strong>B · Final portrait</strong> is generated using A as its exact reference image.</li><li>Judge the transition, not attractiveness: B should preserve structure and identity while adding believable surface detail.</li></ol><div class="rubric"><div><strong>Geometry fidelity</strong><span>Are facial proportions and structural relationships preserved from A to B?</span></div><div><strong>Identity continuity</strong><span>Does B still look like the same individual rather than a nearby person?</span></div><div><strong>Surface realism</strong><span>Are skin, hair, age and texture believable without overriding geometry?</span></div></div><div class="scale"><strong>Suggested human score:</strong> 1 = material failure · 3 = usable with visible drift · 5 = strong fidelity. Score patterns across all four samples; no single face establishes population calibration correctness.</div></aside></section>',
     '<main class="grid">'+cards+'</main>',
     '<p class="footer">Human visual review complements the numerical cohort. No automated demographic or ethnicity classifier is used, and this report cannot change the approved calibration registry.</p>',
