@@ -117,7 +117,6 @@ function renderAppearanceExperiments(){
 
     const actions=el("div","appearance-experiment-actions");
     const visualActive=["queued","running"].includes(experiment.visual?.status);
-    const visualComplete=experiment.visual?.status==="completed";
     const visualRetryable=experiment.visual?.status==="failed"&&!experiment.visual?.startedAt;
     if(experiment.status==="completed"&&(!experiment.visual||visualActive||visualRetryable)){
       const visuals=el("button","secondary");
