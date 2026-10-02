@@ -223,7 +223,7 @@ export async function readAdminPopulationLabReport(env,experimentId){
   const experiment=await store.get(experimentId);
   if(experiment===null)return null;
 
-  if(experiment.artifacts?.visualManifest?.objectRef&&experiment.artifacts?.population?.objectRef){
+  if(experiment.visual?.status==="completed"&&experiment.artifacts?.visualManifest?.objectRef&&experiment.artifacts?.population?.objectRef){
     try{
       const [manifest,population]=await Promise.all([
         store.getArtifact(experiment.artifacts.visualManifest.objectRef),
