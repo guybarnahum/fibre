@@ -1,6 +1,7 @@
 import {
   INFRA_DRIVER_VERSION,
   InfraImmutableObjectConflictError,
+  InfraServiceCallError,
   InfraWorkflowConflictError,
   assertInfraDriver,
 } from "../../infra-driver.mjs";
@@ -36,6 +37,55 @@ function assertWorkflowBinding(binding, workflowName) {
     throw new TypeError(`Cloudflare Workflow binding for ${workflowName} must provide create/get`);
   }
   return binding;
+}
+
+function assertServiceBinding(binding, serviceName) {
+  if (!binding || typeof binding.fetch !== "function") {
+    throw new TypeError(`Cloudflare service binding for ${serviceName} must provide fetch`);
+  }
+  return binding;
+}
+
+function serviceOperationPath(operation){
+  assertInfraId("service operation",operation);
+  return "/internal/"+operation.split(".").join("/");
+}
+
+export function createCloudflareServicePort({serviceBindings,privateToken}={}){
+  assertInfraPlainObject("serviceBindings",serviceBindings);
+  assertInfraNonEmpty("privateToken",privateToken);
+  return Object.freeze({
+    async call(serviceName,operation,input){
+      assertInfraId("serviceName",serviceName);
+      assertInfraJsonValue("service input",input);
+      const binding=assertServiceBinding(serviceBindings[serviceName],serviceName);
+      const response=await binding.fetch(new Request(
+        "https://fibre.internal"+serviceOperationPath(operation),
+        {
+          method:"POST",
+          headers:{
+            Accept:"application/json",
+            "Content-Type":"application/json",
+            "x-fibre-private-token":privateToken,
+          },
+          body:JSON.stringify(input),
+        },
+      ));
+      const payload=await response.json().catch(()=>null);
+      if(!response.ok||payload?.ok!==true){
+        throw new InfraServiceCallError(
+          payload?.detail??payload?.error??`service ${serviceName} returned HTTP ${response.status}`,
+          {
+            serviceName,
+            operation,
+            retryable:typeof payload?.retryable==="boolean"?payload.retryable:response.status>=500,
+            status:response.status,
+          },
+        );
+      }
+      return structuredClone(payload.result);
+    },
+  });
 }
 
 function cloneBytes(value) {
@@ -299,6 +349,8 @@ export function createCloudflareInfraDriver({
   stateScopes = {},
   objectBucket = null,
   workflowBindings = {},
+  serviceBindings = {},
+  privateToken = null,
   presentationChannels = null,
   realtimeChannels = null,
   catalogDatabase = null,
@@ -321,6 +373,10 @@ export function createCloudflareInfraDriver({
     driver.workflows = createCloudflareWorkflowPort({ workflowBindings, objects: driver.objects });
     driver.capabilities.push("workflows");
   }
+  if (Object.keys(serviceBindings).length > 0) {
+    driver.services = createCloudflareServicePort({serviceBindings,privateToken});
+    driver.capabilities.push("services");
+  }
   if (presentationChannels !== null) {
     driver.streams = createCloudflareStreamPort(presentationChannels);
     driver.capabilities.push("streams");
@@ -340,6 +396,7 @@ export function createCloudflareInfraDriver({
 export {
   createCloudflareCatalogPort,
   createCloudflareRealtimePort,
+  createCloudflareServicePort,
   createCloudflareStreamPort,
   createCloudflareTransactionalStatePort,
 };
