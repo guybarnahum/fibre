@@ -45,4 +45,10 @@ test("visual calibration samples four deterministic people and preserves geometr
   assert.match(report,/image\/001\/geometry/u,"visual report lost geometry anchor");
   assert.match(report,/image\/001\/portrait/u,"visual report lost final portrait");
   assert.match(report,/middle_east\.egypt/u,"visual report lost reference population");
+  assert.match(report,/A · Geometry anchor/u,"visual report lost A/B geometry meaning");
+  assert.match(report,/B · Final portrait/u,"visual report lost A/B portrait meaning");
+  assert.match(report,/Geometry fidelity/u,"visual report lost human review rubric");
+  assert.match(report,/Identity continuity/u,"visual report lost identity review criterion");
+  assert.match(report,/Surface realism/u,"visual report lost surface review criterion");
+  assert.match(report,/not appearance authority/u,"visual report blurred evidence and authority");
 });
