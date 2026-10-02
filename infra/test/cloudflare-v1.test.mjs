@@ -48,8 +48,10 @@ function fakeWorkflowBinding({ failCreateOnce = false } = {}) {
       async status() { return structuredClone(statuses.get(id) ?? { status: "queued" }); },
     };
   }
+  const createdIds=[];
   return {
     get createCount() { return creates; },
+    get createdIds() { return [...createdIds]; },
     expire(id) { instances.delete(id); },
     setStatus(id, status) { statuses.set(id, structuredClone(status)); },
     async create({ id }) {
@@ -59,6 +61,7 @@ function fakeWorkflowBinding({ failCreateOnce = false } = {}) {
       }
       if (instances.has(id)) throw new Error("instance already exists");
       creates += 1;
+      createdIds.push(id);
       const value = instance(id);
       instances.set(id, value);
       return value;
@@ -175,4 +178,53 @@ test("cloudflare-v1 workflow retry remains possible until a start marker is comm
   assert.equal(retried.status, "queued");
   assert.equal(retried.error, null);
   assert.equal(workflow.createCount, 1);
+});
+
+
+test("cloudflare-v1 workflow port maps provider-incompatible logical IDs without changing Fibre identity", async () => {
+  const bucket = fakeR2Bucket();
+  const workflow = fakeWorkflowBinding();
+  const infra = createCloudflareInfraDriver({
+    objectBucket: bucket,
+    workflowBindings: { population_lab_experiment_v1: workflow },
+  });
+  const logicalId = "plexp_78b720c721d949028c20b62a:visual";
+  const input = { experimentId: "plexp_78b720c721d949028c20b62a", kind: "visual" };
+
+  const started = await infra.workflows.start("population_lab_experiment_v1", logicalId, input);
+  assert.equal(started.instanceId, logicalId, "InfraDriver leaked provider workflow identity");
+  assert.equal(workflow.createdIds.length, 1, "workflow was not created");
+  assert.match(workflow.createdIds[0], /^[A-Za-z0-9_-]{1,100}$/u, "Cloudflare workflow id remained provider-invalid");
+  assert.notEqual(workflow.createdIds[0], logicalId, "provider-invalid logical id was passed through unchanged");
+
+  const observed = await infra.workflows.get("population_lab_experiment_v1", logicalId);
+  assert.equal(observed.instanceId, logicalId, "workflow read lost Fibre logical identity");
+  assert.deepEqual(observed.input, input, "workflow read lost logical input witness");
+});
+
+test("cloudflare-v1 service port hides Worker binding transport behind InfraDriver", async () => {
+  let observed=null;
+  const infra=createCloudflareInfraDriver({
+    serviceBindings:{
+      asset_generator:{
+        async fetch(request){
+          observed={
+            url:request.url,
+            method:request.method,
+            token:request.headers.get("x-fibre-private-token"),
+            body:await request.json(),
+          };
+          return Response.json({ok:true,result:{state:"pending"}});
+        },
+      },
+    },
+    privateToken:"fixture-private-token-12345",
+  });
+
+  const result=await infra.services.call("asset_generator","generation.reconcile",{job:{jobId:"job_1"}});
+  assert.deepEqual(result,{state:"pending"},"service call changed provider response");
+  assert.equal(observed.url,"https://fibre.internal/internal/generation/reconcile","service operation did not map through provider adapter");
+  assert.equal(observed.method,"POST","service operation used wrong transport method");
+  assert.equal(observed.token,"fixture-private-token-12345","service adapter lost private service credential");
+  assert.deepEqual(observed.body,{job:{jobId:"job_1"}},"service adapter changed semantic input");
 });
