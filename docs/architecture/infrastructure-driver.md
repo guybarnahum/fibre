@@ -84,6 +84,7 @@ InfraDriver {
   queues?         QueueDriver
   scheduler?      SchedulerDriver
   workflows?      WorkflowDriver
+  services?       ServiceCallDriver
   coordination?   CoordinationDriver
   secrets?        SecretsDriver
   cache?          CacheDriver
@@ -197,6 +198,21 @@ Thread Presentation
 
 The hint carries no authority and requires no durable replay. If the live transport reconnects, the consumer reconciles authoritatively. Cloudflare currently maps the `admin` realtime channel to one Durable Object; another provider may map the same port to its own websocket/pub-sub mechanism without changing Thread Presentation semantics.
 
+### Internal service calls
+
+A service may require:
+
+- one named logical service target;
+- one named semantic operation;
+- JSON request/response values;
+- retryability surfaced independently of provider transport;
+- provider-local authentication and addressing hidden by the adapter.
+
+Fibre application code calls `infra.services.call(serviceName, operation, input)`. It does not call Cloudflare Worker bindings, Lambda invocation, internal HTTP endpoints, or another provider transport directly.
+
+For example, Population Lab visual calibration asks for `asset_generator / generation.reconcile`. Cloudflare maps that to the existing Asset Generator Worker binding; a future AWS provider may map the same semantic call to Lambda, ECS/internal HTTP, or another implementation without changing Population Lab or Admin orchestration.
+
+
 ## Capability negotiation
 
 A driver exposes explicit capabilities rather than inviting optimistic feature detection.
@@ -212,6 +228,7 @@ infra.capabilities = {
   queues: true,
   scheduling: true,
   workflows: true,
+  services: true,
   coordination: {...guarantees...},
   secrets: true,
   cache: true,
