@@ -45,6 +45,26 @@ async function readyAsset(step,env,job,label){
   );
 }
 
+async function queueAssetWave(step,env,jobs,label){
+  return step.do(
+    label,
+    {
+      timeout:"1 minute",
+      retries:{limit:3,delay:"2 seconds",backoff:"exponential"},
+    },
+    async()=>{
+      try{
+        return await Promise.all(jobs.map(job=>reconcileAdminPopulationLabAsset(env,job)));
+      }catch(error){
+        if(error?.retryable===false){
+          throw new NonRetryableError(error.message,"PopulationLabVisualAssetError");
+        }
+        throw error;
+      }
+    },
+  );
+}
+
 async function runVisualWorkflow(workflow,event,step){
   const experimentId=event.payload?.experimentId;
   try{
@@ -53,13 +73,20 @@ async function runVisualWorkflow(workflow,event,step){
       ()=>prepareAdminPopulationLabVisualExperiment(workflow.env,event.payload),
     );
 
+    await queueAssetWave(
+      step,
+      workflow.env,
+      plan.samples.map(sample=>sample.geometryJob),
+      "queue geometry wave",
+    );
+
     for(const sample of plan.samples){
       const ordinal=String(sample.ordinal).padStart(3,"0");
       const geometry=await readyAsset(
         step,
         workflow.env,
         sample.geometryJob,
-        `generate geometry ${ordinal}`,
+        `await geometry ${ordinal}`,
       );
       await step.do(
         `record geometry ${ordinal}`,
@@ -70,12 +97,22 @@ async function runVisualWorkflow(workflow,event,step){
           result:geometry,
         }),
       );
+    }
 
+    await queueAssetWave(
+      step,
+      workflow.env,
+      plan.samples.map(sample=>sample.portraitJob),
+      "queue portrait wave",
+    );
+
+    for(const sample of plan.samples){
+      const ordinal=String(sample.ordinal).padStart(3,"0");
       const portrait=await readyAsset(
         step,
         workflow.env,
         sample.portraitJob,
-        `generate portrait ${ordinal}`,
+        `await portrait ${ordinal}`,
       );
       await step.do(
         `record portrait ${ordinal}`,
