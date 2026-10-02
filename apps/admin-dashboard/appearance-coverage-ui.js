@@ -1,6 +1,6 @@
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { watchAdminLive } from "./admin-live.js";
-import { decorateActionButton } from "./fa-icons.js";
+import { decorateActionButton, setRefreshButtonState } from "./fa-icons.js";
 import {
   createThreadIdentityViewer,
   createThreadLocation,
@@ -897,27 +897,22 @@ if(copyButton)decorateActionButton(copyButton,{
   tooltip:"Copy appearance coverage JSON",
   iconOnly:true,
 });
-if(experimentRefreshButton)decorateActionButton(experimentRefreshButton,{
-  icon:"rotate",
+if(experimentRefreshButton)setRefreshButtonState(experimentRefreshButton,false,{
   label:"Refresh experiments",
   tooltip:"Refresh Population Lab experiments",
   iconOnly:true,
 });
 scanButton?.addEventListener("click",()=>void loadAppearanceCoverage());
 experimentRefreshButton?.addEventListener("click",async()=>{
-  experimentRefreshButton.disabled=true;
-  decorateActionButton(experimentRefreshButton,{
-    icon:"rotate",
-    label:"Refreshing experiments",
-    tooltip:"Refreshing Population Lab experiments",
+  setRefreshButtonState(experimentRefreshButton,true,{
+    label:"Refresh experiments",
+    tooltip:"Refresh Population Lab experiments",
+    busyTooltip:"Refreshing Population Lab experiments",
     iconOnly:true,
-    spinning:true,
   });
   try{await loadAppearanceExperiments()}
   finally{
-    experimentRefreshButton.disabled=false;
-    decorateActionButton(experimentRefreshButton,{
-      icon:"rotate",
+    setRefreshButtonState(experimentRefreshButton,false,{
       label:"Refresh experiments",
       tooltip:"Refresh Population Lab experiments",
       iconOnly:true,
