@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { routeAdminLiveMessage } from "./admin-live.js";
 import {
+  appearanceExperimentsViewKey,
   threadObservatoryViewKey,
   threadPopulationViewKey,
   threadViewKey,
@@ -38,4 +39,23 @@ test("one Thread live hint refreshes its aspect, Observatory, and population row
   ]);
 
   stops.forEach((stop) => stop());
+});
+
+
+test("one Population Lab hint refreshes only the experiment queue view",async()=>{
+  const seen=[];
+  const stop=watchViewInvalidation(appearanceExperimentsViewKey(),async(detail)=>{
+    seen.push([detail.experimentId,detail.aspect,detail.reason]);
+  });
+
+  assert.equal(routeAdminLiveMessage({
+    type:"admin-live.invalidate",
+    entity:"population_lab_experiment",
+    id:"plexp_live",
+    aspect:"portrait",
+  }),true);
+
+  await new Promise((resolve)=>setTimeout(resolve,0));
+  assert.deepEqual(seen,[["plexp_live","portrait","changed"]],"Population Lab live hint did not invalidate experiment queue");
+  stop();
 });
