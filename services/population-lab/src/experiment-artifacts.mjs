@@ -154,8 +154,8 @@ export function createPopulationLabExperimentStore(infra){
       const current=await infra.catalog.get(key);
       if(current===null)throw new Error("experiment not found");
       if(current.status!=="completed")throw new TypeError("visual calibration requires a completed experiment");
-      if(["queued","running"].includes(current.visual?.status)){
-        throw new TypeError("visual calibration is already queued or running");
+      if(current.visual!==undefined&&current.visual!==null){
+        throw new TypeError("visual calibration already has an attempt for this experiment");
       }
       const write=await put(experimentId,"visual:manifest",jsonBytes(request),{mediaType:"application/json"});
       try{
