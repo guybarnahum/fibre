@@ -192,6 +192,39 @@ async function rerunRejectedExperiment(experiment,button){
   }
 }
 
+function scrollReportToSample(ordinal){
+  const id="sample-"+String(ordinal).padStart(3,"0");
+  const target=reportFrame?.contentDocument?.getElementById(id);
+  if(target){
+    target.scrollIntoView({behavior:"smooth",block:"start"});
+    return;
+  }
+  const url=reportFrame?.dataset?.reportUrl;
+  if(url)reportFrame.src=url+"#"+id;
+}
+
+function reviewSampleJump(experiment,ordinal){
+  const jump=el("button","appearance-review-sample-jump");
+  jump.type="button";
+  jump.title="Show Sample "+ordinal+" in report";
+  jump.setAttribute("aria-label","Show Sample "+ordinal+" in visual report");
+
+  const thumb=document.createElement("img");
+  thumb.className="appearance-review-sample-thumb";
+  thumb.alt="";
+  thumb.loading="lazy";
+  thumb.src="/api/appearance/experiments/"
+    +encodeURIComponent(experiment.experimentId)
+    +"/image/"
+    +String(ordinal).padStart(3,"0")
+    +"/portrait";
+  thumb.addEventListener("error",()=>thumb.remove(),{once:true});
+
+  jump.append(thumb,el("strong",null,"Sample "+ordinal));
+  jump.addEventListener("click",()=>scrollReportToSample(ordinal));
+  return jump;
+}
+
 function renderSubmittedVisualReview(experiment,review){
   if(!reportReview)return;
   reportReview.replaceChildren();
@@ -207,7 +240,7 @@ function renderSubmittedVisualReview(experiment,review){
   for(const sample of review.samples??[]){
     const row=el("div","appearance-review-sample");
     row.append(
-      el("strong",null,"Sample "+sample.ordinal),
+      reviewSampleJump(experiment,sample.ordinal),
       el("p","appearance-review-note-readonly",
         "Geometry "+sample.geometryFidelity+"/5 · Identity "+sample.identityContinuity+"/5 · Surface "+sample.surfaceRealism+"/5"),
     );
@@ -252,7 +285,7 @@ function renderVisualReviewForm(experiment){
   for(let ordinal=1;ordinal<=sampleSize;ordinal+=1){
     const sample=el("div","appearance-review-sample");
     sample.dataset.reviewOrdinal=String(ordinal);
-    sample.append(el("strong",null,"Sample "+ordinal));
+    sample.append(reviewSampleJump(experiment,ordinal));
     const grid=el("div","appearance-review-grid");
     for(const [label,field] of [
       ["Geometry","geometryFidelity"],
