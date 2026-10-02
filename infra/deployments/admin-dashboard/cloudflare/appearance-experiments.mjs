@@ -7,6 +7,12 @@ import {
   normalizePhysicalExperimentRequest,
   runPersistedPhysicalExperiment,
 } from "#services/population-lab/src/physical-experiment.mjs";
+import {
+  POPULATION_LAB_VISUAL_SAMPLE_SIZE,
+  buildPopulationLabVisualPlan,
+  normalizeVisualExperimentRequest,
+  renderPopulationLabVisualReport,
+} from "#services/population-lab/src/visual-experiment.mjs";
 
 const WORKFLOW_NAME="population_lab_experiment_v1";
 
@@ -84,6 +90,114 @@ export async function runAdminPopulationLabExperimentWorkflow(env,rawRequest){
   });
 }
 
+export async function launchAdminPopulationLabVisualExperiment(env,experimentId){
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)throw new TypeError("experiment not found");
+  const request=normalizeVisualExperimentRequest({
+    experimentId,
+    requestedAt:new Date().toISOString(),
+    sampleSize:POPULATION_LAB_VISUAL_SAMPLE_SIZE,
+  });
+  await store.queueVisual(experimentId,request);
+  const infra=experimentInfra(env,{workflow:true});
+  try{
+    const workflow=await infra.workflows.start(
+      WORKFLOW_NAME,
+      experimentId+":visual",
+      request,
+    );
+    return Object.freeze({
+      experiment:await store.get(experimentId),
+      workflow,
+    });
+  }catch(error){
+    await store.failVisual(experimentId,error).catch(()=>{});
+    throw error;
+  }
+}
+
+export async function prepareAdminPopulationLabVisualExperiment(env,rawRequest){
+  const request=normalizeVisualExperimentRequest(rawRequest);
+  const store=experimentStore(env);
+  await store.runningVisual(request.experimentId);
+  const experiment=await store.get(request.experimentId);
+  const populationRef=experiment?.artifacts?.population?.objectRef;
+  if(typeof populationRef!=="string")throw new Error("experiment population artifact is missing");
+  const population=await store.getArtifact(populationRef);
+  if(population===null)throw new Error("experiment population bytes are missing");
+  return buildPopulationLabVisualPlan({
+    request,
+    populationBytes:population.bytes,
+  });
+}
+
+function privateServiceToken(env){
+  const token=typeof env?.FIBRE_PRIVATE_TOKEN==="string"?env.FIBRE_PRIVATE_TOKEN.trim():"";
+  if(token.length<16)throw new Error("Fibre private service token is unavailable");
+  return token;
+}
+
+export async function reconcileAdminPopulationLabAsset(env,job){
+  const binding=env?.ASSET_GENERATOR;
+  if(!binding?.fetch)throw new Error("ASSET_GENERATOR binding is unavailable");
+  const response=await binding.fetch(new Request(
+    "https://asset-generator.internal/internal/generation/reconcile",
+    {
+      method:"POST",
+      headers:{
+        Accept:"application/json",
+        "Content-Type":"application/json",
+        "x-fibre-private-token":privateServiceToken(env),
+      },
+      body:JSON.stringify({job}),
+    },
+  ));
+  const payload=await response.json().catch(()=>null);
+  if(!response.ok||payload?.ok!==true){
+    const error=new Error(payload?.detail??payload?.error??("Asset Generator HTTP "+response.status));
+    error.retryable=payload?.retryable!==false;
+    throw error;
+  }
+  return payload.result;
+}
+
+export async function recordAdminPopulationLabVisualAsset(env,{experimentId,sample,role,result}){
+  if(result?.state!=="ready")throw new TypeError("visual asset must be ready before recording");
+  const receipt=result?.proof?.receipt;
+  const job=role==="geometry"?sample.geometryJob:sample.portraitJob;
+  if(!receipt||receipt.objectRef!==job.outputObjectRef||receipt.jobId!==job.jobId){
+    throw new Error("Asset Generator proof does not match Population Lab visual job");
+  }
+  const store=experimentStore(env);
+  await store.adoptImage(experimentId,{
+    ordinal:sample.ordinal,
+    role,
+    objectRef:receipt.objectRef,
+    digest:receipt.sha256,
+    mediaType:receipt.mediaType,
+  });
+  await store.adoptArtifact(experimentId,{
+    key:`visualReceipt${String(sample.ordinal).padStart(3,"0")}${role==="geometry"?"Geometry":"Portrait"}`,
+    objectRef:job.receiptObjectRef,
+  });
+  return receipt;
+}
+
+export async function completeAdminPopulationLabVisualExperiment(env,plan){
+  const store=experimentStore(env);
+  await store.putVisualReport(plan.request.experimentId,renderPopulationLabVisualReport(plan));
+  return store.completeVisual(plan.request.experimentId,{
+    sampleSize:plan.samples.length,
+    images:plan.samples.length*2,
+    referencePopulation:plan.referencePopulation,
+  });
+}
+
+export async function failAdminPopulationLabVisualExperiment(env,experimentId,error){
+  return experimentStore(env).failVisual(experimentId,error);
+}
+
 export async function listAdminPopulationLabExperiments(env){
   const page=await experimentStore(env).list({limit:200});
   return{
@@ -105,7 +219,13 @@ export async function deleteAdminPopulationLabExperiment(env,experimentId){
 }
 
 export async function readAdminPopulationLabReport(env,experimentId){
-  return experimentStore(env).getArtifact(populationLabExperimentRef(experimentId,"report"));
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)return null;
+  const objectRef=experiment.artifacts?.visualReport?.objectRef
+    ?? experiment.artifacts?.report?.objectRef
+    ?? populationLabExperimentRef(experimentId,"report");
+  return store.getArtifact(objectRef);
 }
 
 export async function readAdminPopulationLabImage(env,experimentId,ordinal,role){
