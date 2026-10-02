@@ -15,7 +15,7 @@ import {
   invalidateView,
   threadPopulationViewKey,
 } from "./view-invalidation.js";
-import { decorateActionButton, iconForIdentityAction, setWaitingContent } from "./fa-icons.js";
+import { decorateActionButton, iconForIdentityAction, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
 import {
   createThreadIdentityViewer,
@@ -1282,8 +1282,10 @@ function renderPendingBirths(births) {
 }
 async function loadPendingBirths({ quiet = false } = {}) {
   if (!quiet) {
-    birthPendingRefresh.disabled = true;
-    setButtonWaiting(birthPendingRefresh, "Refreshing");
+    setRefreshButtonState(birthPendingRefresh,true,{
+      tooltip:"Refresh pending births",
+      busyTooltip:"Refreshing pending births",
+    });
     if (pendingBirthSnapshot.length === 0) {
       setWaitingContent(birthPending, "Loading births");
       birthPendingCount.textContent = "";
@@ -1306,8 +1308,9 @@ async function loadPendingBirths({ quiet = false } = {}) {
     }
   } finally {
     if (!quiet) {
-      birthPendingRefresh.disabled = false;
-      setButtonLabel(birthPendingRefresh, "Refresh");
+      setRefreshButtonState(birthPendingRefresh,false,{
+        tooltip:"Refresh pending births",
+      });
     }
   }
 }
@@ -1355,8 +1358,10 @@ async function loadBirthCenter() {
   if (!active || populationMode !== "birth-center" || birthLoading) return;
   birthLoading = true;
   holdOperatorMode();
-  $("#refresh-button").disabled = true;
-  setButtonWaiting($("#refresh-button"), "Refreshing");
+  setRefreshButtonState($("#refresh-button"),true,{
+    tooltip:"Refresh Birth Center",
+    busyTooltip:"Refreshing Birth Center",
+  });
   setWaitingContent($("#chain-summary"), "Reading durable Birth Center progress and birthplace catalog");
   try {
     if (!birthCenterInitialized) {
@@ -1374,8 +1379,9 @@ async function loadBirthCenter() {
     $("#chain-summary").textContent = `Birth Center unavailable: ${error instanceof Error ? error.message : String(error)}`;
   } finally {
     birthLoading = false;
-    $("#refresh-button").disabled = false;
-    setButtonLabel($("#refresh-button"), "Refresh");
+    setRefreshButtonState($("#refresh-button"),false,{
+      tooltip:"Refresh Birth Center",
+    });
   }
 }
 function renderBirthBatchProgress({ total, accepted, failed }) {
@@ -1509,8 +1515,10 @@ async function loadPopulation() {
   if (!active || ["birth-center","appearance"].includes(populationMode) || loading) return;
   loading = true;
   holdOperatorMode();
-  $("#refresh-button").disabled = true;
-  setButtonWaiting($("#refresh-button"), "Refreshing");
+  setRefreshButtonState($("#refresh-button"),true,{
+    tooltip:"Refresh Threads",
+    busyTooltip:"Refreshing Threads",
+  });
   setWaitingContent($("#chain-summary"), "Reading Activity-discovered identities and authoritative World health");
   setWaitingContent(threadPopulationMapSummary, "Loading current World locations");
   try {
@@ -1545,8 +1553,9 @@ async function loadPopulation() {
   } finally {
     loading = false;
     holdOperatorMode();
-    $("#refresh-button").disabled = false;
-    setButtonLabel($("#refresh-button"), "Refresh");
+    setRefreshButtonState($("#refresh-button"),false,{
+      tooltip:"Refresh Threads",
+    });
     setPopulationControlsDisabled(false);
   }
 }
