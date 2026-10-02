@@ -10,6 +10,7 @@ import {
   requestThreadAppearanceHealth,
   threadAppearanceState,
 } from "./thread-appearance-ui.js";
+import { createStarRating, starRatingValue } from "./star-rating.js";
 import { threadViewKey } from "./view-invalidation.js";
 import { WORLD_MAP_PATH } from "./world-map-data.js";
 import { SVG_NS, renderWorldTimeZoneLines, worldMapPoint } from "./world-map-ui.js";
@@ -134,14 +135,6 @@ function visualProgress(experiment){
 }
 
 
-function reviewScoreSelect(field){
-  const select=el("select",null);
-  select.dataset.reviewField=field;
-  select.append(new Option("—",""));
-  for(let value=1;value<=5;value+=1)select.append(new Option(String(value),String(value)));
-  return select;
-}
-
 function reviewScoreSummary(review){
   const grid=el("div","appearance-review-score-summary");
   for(const [label,field] of [
@@ -256,8 +249,11 @@ function renderVisualReviewForm(experiment){
       ["Identity","identityContinuity"],
       ["Surface","surfaceRealism"],
     ]){
-      const fieldLabel=el("label",null);
-      fieldLabel.append(el("span",null,label),reviewScoreSelect(field));
+      const fieldLabel=el("div","appearance-review-rating");
+      fieldLabel.append(
+        el("span",null,label),
+        createStarRating({name:field,label:label+" score"}),
+      );
       grid.append(fieldLabel);
     }
     sample.append(grid);
@@ -290,12 +286,12 @@ function renderVisualReviewForm(experiment){
   });
   submit.addEventListener("click",async()=>{
     const samples=[...reportReview.querySelectorAll("[data-review-ordinal]")].map(sample=>{
-      const value=(field)=>sample.querySelector('[data-review-field="'+field+'"]')?.value??"";
+      const value=(field)=>starRatingValue(sample.querySelector('[data-rating-name="'+field+'"]'));
       return{
         ordinal:Number(sample.dataset.reviewOrdinal),
-        geometryFidelity:Number(value("geometryFidelity")),
-        identityContinuity:Number(value("identityContinuity")),
-        surfaceRealism:Number(value("surfaceRealism")),
+        geometryFidelity:value("geometryFidelity"),
+        identityContinuity:value("identityContinuity"),
+        surfaceRealism:value("surfaceRealism"),
       };
     });
     if(!decision.value||samples.some(sample=>(
