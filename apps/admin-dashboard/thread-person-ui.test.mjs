@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   forgetThreadPortrait,
   refreshThreadPortraitUrl,
+  threadPortraitUrl,
   threadLocationFlag,
   threadLocationText,
   threadLocationTooltip,
@@ -44,10 +45,10 @@ test("missing portrait lookup does not hide a newly published visual",async()=>{
   };
   try{
     forgetThreadPortrait(threadId);
-    assert.equal(await refreshThreadPortraitUrl(threadId),null,
+    assert.equal(await threadPortraitUrl(threadId),null,
       "missing portrait should remain a placeholder");
     assert.equal(
-      await refreshThreadPortraitUrl(threadId),
+      await threadPortraitUrl(threadId),
       "https://api.staging.insidefibre.com/api/assets/new_portrait",
       "newly published portrait stayed hidden behind a cached miss",
     );
