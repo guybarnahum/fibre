@@ -125,3 +125,57 @@ export function decorateActionButton(button, {
   else button.classList.remove("icon-only-action");
   return button;
 }
+
+function preserveBlockingButtonSize(button){
+  if(button.dataset.blockingButtonSized==="true")return;
+  const rect=button.getBoundingClientRect();
+  if(rect.width>0)button.style.minWidth=Math.ceil(rect.width)+"px";
+  if(rect.height>0)button.style.minHeight=Math.ceil(rect.height)+"px";
+  button.dataset.blockingButtonSized="true";
+}
+
+export function setBlockingButtonState(button,busy,{
+  label,
+  tooltip=label,
+  icon=null,
+  iconOnly=false,
+  busyLabel=label,
+  busyTooltip=busyLabel,
+}={}){
+  if(!button)return button;
+  if(typeof label!=="string"||label.trim()==="")throw new TypeError("button label is required");
+  if(busy)preserveBlockingButtonSize(button);
+  button.disabled=busy;
+  button.classList.toggle("blocking-action-busy",busy);
+  if(busy){
+    button.setAttribute("aria-busy","true");
+    decorateActionButton(button,{
+      icon:"rotate",
+      label:busyLabel,
+      tooltip:busyTooltip,
+      iconOnly:true,
+      spinning:true,
+    });
+  }else{
+    button.removeAttribute("aria-busy");
+    decorateActionButton(button,{icon,label,tooltip,iconOnly});
+  }
+  return button;
+}
+
+export function setRefreshButtonState(button,busy,{
+  label="Refresh",
+  tooltip=label,
+  iconOnly=false,
+  busyTooltip=null,
+}={}){
+  const subject=label.replace(/^Refresh\\s*/iu,"").trim();
+  return setBlockingButtonState(button,busy,{
+    label,
+    tooltip,
+    icon:iconOnly?"rotate":null,
+    iconOnly,
+    busyLabel:"Refreshing",
+    busyTooltip:busyTooltip??(subject?"Refreshing "+subject:"Refreshing"),
+  });
+}
