@@ -60,6 +60,14 @@ test("visual review scores every A/B sample and binds exact image evidence",()=>
     /score every sample/u,
     "partial visual review was accepted",
   );
+
+  const missingPair=completedVisualExperiment();
+  missingPair.images=missingPair.images.filter(image=>!(image.ordinal===2&&image.role==="portrait"));
+  assert.throws(
+    ()=>buildPopulationLabVisualReview({experiment:missingPair,input}),
+    /complete A\/B image evidence/u,
+    "review accepted an incomplete A/B evidence pair",
+  );
 });
 
 test("experiment store persists one immutable visual review",async()=>{
