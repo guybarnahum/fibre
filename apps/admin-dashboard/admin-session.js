@@ -59,7 +59,8 @@
   }
 
   async function probeSession(){
-    if(expired||probePromise)return probePromise;
+    if(expired)return true;
+    if(probePromise)return probePromise;
     probePromise=(async()=>{
       try{
         const response=await nativeFetch(window.location.href,{
@@ -70,16 +71,24 @@
         });
         if(response.status===401||response.status===403||response.type==="opaqueredirect"){
           showExpired();
+          return true;
         }
+        return false;
       }catch{
         // A failed probe is indistinguishable from ordinary connectivity loss.
         // Leave the current error visible rather than claiming the session expired.
+        return false;
       }finally{
         probePromise=null;
       }
     })();
     return probePromise;
   }
+
+  window.FibreAdminSession=Object.freeze({
+    check:()=>probeSession(),
+    expired:()=>expired,
+  });
 
   window.fetch=async(...args)=>{
     const adminApi=apiRequest(args[0]);
