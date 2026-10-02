@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   adminPopulationLabExperimentRequest,
-  adminPopulationLabRerunSpec,
+  adminPopulationLabRerunRequest,
   adminPopulationLabShadowExperimentRequest,
   reconcileAdminPopulationLabAsset,
 } from "./appearance-experiments.mjs";
@@ -89,13 +89,10 @@ test("rejected experiment rerun preserves source and cohort seed under a new ide
     requestedAt:"2026-10-01T00:00:00.000Z",
   });
 
-  const rerun=adminPopulationLabExperimentRequest(
-    adminPopulationLabRerunSpec(original),
-    {
-      experimentId:"plexp_rerun",
-      requestedAt:"2026-10-02T00:00:00.000Z",
-    },
-  );
+  const rerun=adminPopulationLabRerunRequest(original,{
+    experimentId:"plexp_rerun",
+    requestedAt:"2026-10-02T00:00:00.000Z",
+  });
 
   assert.notEqual(rerun.experimentId,original.experimentId,"rerun overwrote experiment identity");
   assert.equal(rerun.seed,original.seed,"rerun changed deterministic cohort seed");
@@ -138,4 +135,40 @@ test("Admin shadow experiment preserves the baseline cohort seed and source",()=
   assert.equal(shadow.source.shadowOfExperimentId,baseline.experimentId,"shadow experiment lost baseline provenance");
   assert.deepEqual(shadow.source.calibration,baseline.source.calibration,"shadow experiment changed base calibration snapshot");
   assert.equal(shadow.shadowCalibration.values.faceBreadth,.18,"shadow experiment lost proposed calibration");
+});
+
+
+test("rejected shadow rerun preserves the exact shadow proposal",()=>{
+  const baseline=adminPopulationLabExperimentRequest({
+    action:"experiment",
+    coverageKey:"reference:east_asia.japanese",
+    referencePopulation:"east_asia.japanese",
+    coverage:"partial",
+    calibration:{id:"east_asia.japanese",version:1},
+    count:24,
+  },{
+    experimentId:"plexp_shadow_rerun_base",
+    requestedAt:"2026-10-02T18:00:00.000Z",
+  });
+  const shadow=adminPopulationLabShadowExperimentRequest(
+    baseline,
+    {
+      values:{faceBreadth:.18},
+      variation:{familyFactorMultiplier:1.08},
+      rationale:"Fixture shadow proposal.",
+      evidence:["doi:10.0000/fibre-shadow-rerun"],
+    },
+    {
+      experimentId:"plexp_shadow_rerun_first",
+      requestedAt:"2026-10-02T18:01:00.000Z",
+    },
+  );
+  const rerun=adminPopulationLabRerunRequest(shadow,{
+    experimentId:"plexp_shadow_rerun_second",
+    requestedAt:"2026-10-02T18:02:00.000Z",
+  });
+
+  assert.equal(rerun.seed,shadow.seed,"shadow rerun changed cohort seed");
+  assert.deepEqual(rerun.shadowCalibration,shadow.shadowCalibration,"shadow rerun changed proposed calibration");
+  assert.deepEqual(rerun.source,shadow.source,"shadow rerun changed research provenance");
 });
