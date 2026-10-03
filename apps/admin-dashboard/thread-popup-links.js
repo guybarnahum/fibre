@@ -1,3 +1,4 @@
+import { bindPortraitPreview } from "./portrait-preview.js";
 import { watchAdminLive } from "./admin-live.js";
 import { threadObservatoryViewKey } from "./view-invalidation.js";
 import {
@@ -59,6 +60,7 @@ function stickyIdentityChip(identity, threadId) {
   const imageAsset = portraitAsset(identity);
   const name = threadName(identity) ?? "Thread";
   const avatar = el("span", "thread-observatory-sticky-avatar");
+  bindPortraitPreview(avatar,{url:imageAsset?.url??null,name});
   if (imageAsset?.url) {
     const image = el("img");
     image.src = imageAsset.url;
