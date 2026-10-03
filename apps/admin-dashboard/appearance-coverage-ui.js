@@ -871,6 +871,23 @@ const EYE_ALIGNMENT_STEPS=Object.freeze([
   Object.freeze({key:"afterRight",side:"after",eye:"R",label:"After · click the image-right eye"}),
 ]);
 
+function eyeAlignmentAvailability(){
+  const changes=comparisonState?.changes??[];
+  if(changes.some(change=>change?.kind==="variation")){
+    return Object.freeze({
+      allowed:false,
+      reason:"Eye alignment is disabled when variation changes because scale normalization could hide real phenotype spread.",
+    });
+  }
+  if(changes.some(change=>change?.parameter==="eyeSpacing")){
+    return Object.freeze({
+      allowed:false,
+      reason:"Eye alignment is disabled because eyeSpacing is itself part of this refinement.",
+    });
+  }
+  return Object.freeze({allowed:true,reason:null});
+}
+
 function comparisonEyeAlignmentKey(ordinal){
   return comparisonVisualRole+":"+ordinal;
 }
@@ -932,6 +949,7 @@ function alignmentTransformForReveal(reveal,before,after,alignment){
 }
 
 function startEyeAlignment(ordinal){
+  if(!eyeAlignmentAvailability().allowed)return;
   comparisonEyeAlignmentEditor={
     ordinal,
     role:comparisonVisualRole,
@@ -1163,8 +1181,11 @@ function renderVisualComparison(){
       if(editing){
         actions.append(el("span","appearance-eye-align-status","Aligning eyes"));
       }else{
+        const availability=eyeAlignmentAvailability();
         const align=el("button","secondary",alignment?"Re-align eyes":"Align eyes");
         align.type="button";
+        align.disabled=!availability.allowed;
+        align.title=availability.reason??"Match eye midpoint, scale, and tilt for visual inspection only";
         align.addEventListener("click",()=>startEyeAlignment(ordinal));
         actions.append(align);
         if(alignment){
