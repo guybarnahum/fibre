@@ -18,6 +18,12 @@ import { createStarRating, starRatingValue } from "./star-rating.js";
 import { threadViewKey } from "./view-invalidation.js";
 import { WORLD_MAP_PATH } from "./world-map-data.js";
 import { SVG_NS, renderWorldTimeZoneLines, worldMapPoint } from "./world-map-ui.js";
+import {
+  cssSimilarityMatrix,
+  displayedImagePoint,
+  eyeSimilarityTransform,
+  normalizedImagePoint,
+} from "./visual-eye-alignment.js";
 
 const $=(selector)=>document.querySelector(selector);
 const rows=$("#appearance-hole-rows");
@@ -79,6 +85,8 @@ let comparisonState=null;
 let comparisonView="numerical";
 let comparisonVisualRole="geometry";
 let comparisonVisualMode="reveal";
+const comparisonEyeAlignments=new Map();
+let comparisonEyeAlignmentEditor=null;
 let shadowBaseExperiment=null;
 let mapPopover=null;
 let mapPopoverCloseTimer=null;
@@ -856,6 +864,202 @@ function comparisonImageUrl(experimentId,ordinal,role){
     +role;
 }
 
+const EYE_ALIGNMENT_STEPS=Object.freeze([
+  Object.freeze({key:"beforeLeft",side:"before",eye:"L",label:"Before · click the image-left eye"}),
+  Object.freeze({key:"beforeRight",side:"before",eye:"R",label:"Before · click the image-right eye"}),
+  Object.freeze({key:"afterLeft",side:"after",eye:"L",label:"After · click the image-left eye"}),
+  Object.freeze({key:"afterRight",side:"after",eye:"R",label:"After · click the image-right eye"}),
+]);
+
+function comparisonEyeAlignmentKey(ordinal){
+  return comparisonVisualRole+":"+ordinal;
+}
+
+function comparisonEyeAlignment(ordinal){
+  return comparisonEyeAlignments.get(comparisonEyeAlignmentKey(ordinal))??null;
+}
+
+function comparisonEyePoint(event,image){
+  const rect=image.getBoundingClientRect();
+  return normalizedImagePoint({
+    x:event.clientX-rect.left,
+    y:event.clientY-rect.top,
+    width:rect.width,
+    height:rect.height,
+    naturalWidth:image.naturalWidth,
+    naturalHeight:image.naturalHeight,
+  });
+}
+
+function positionEyeMarker(marker,image,point){
+  if(!marker||!image||!point||!image.complete||image.naturalWidth<1)return;
+  const rect=image.getBoundingClientRect();
+  const displayed=displayedImagePoint(point,{
+    width:rect.width,
+    height:rect.height,
+    naturalWidth:image.naturalWidth,
+    naturalHeight:image.naturalHeight,
+  });
+  marker.style.left=displayed.x+"px";
+  marker.style.top=displayed.y+"px";
+}
+
+function alignmentTransformForReveal(reveal,before,after,alignment){
+  const rect=reveal.getBoundingClientRect();
+  if(
+    rect.width<=0||rect.height<=0
+    ||before.naturalWidth<1||before.naturalHeight<1
+    ||after.naturalWidth<1||after.naturalHeight<1
+  )return null;
+  const beforeDimensions={
+    width:rect.width,
+    height:rect.height,
+    naturalWidth:before.naturalWidth,
+    naturalHeight:before.naturalHeight,
+  };
+  const afterDimensions={
+    width:rect.width,
+    height:rect.height,
+    naturalWidth:after.naturalWidth,
+    naturalHeight:after.naturalHeight,
+  };
+  return eyeSimilarityTransform({
+    beforeLeft:displayedImagePoint(alignment.beforeLeft,beforeDimensions),
+    beforeRight:displayedImagePoint(alignment.beforeRight,beforeDimensions),
+    afterLeft:displayedImagePoint(alignment.afterLeft,afterDimensions),
+    afterRight:displayedImagePoint(alignment.afterRight,afterDimensions),
+  });
+}
+
+function startEyeAlignment(ordinal){
+  comparisonEyeAlignmentEditor={
+    ordinal,
+    role:comparisonVisualRole,
+    step:0,
+    points:{},
+    error:null,
+  };
+  renderVisualComparison();
+  requestAnimationFrame(()=>{
+    compareVisualBody?.querySelector('[data-compare-sample="'+ordinal+'"]')?.scrollIntoView({block:"start"});
+  });
+}
+
+function resetEyeAlignment(ordinal){
+  comparisonEyeAlignments.delete(comparisonEyeAlignmentKey(ordinal));
+  if(comparisonEyeAlignmentEditor?.ordinal===ordinal)comparisonEyeAlignmentEditor=null;
+  renderVisualComparison();
+  requestAnimationFrame(()=>{
+    compareVisualBody?.querySelector('[data-compare-sample="'+ordinal+'"]')?.scrollIntoView({block:"start"});
+  });
+}
+
+function cancelEyeAlignment(ordinal){
+  if(comparisonEyeAlignmentEditor?.ordinal===ordinal)comparisonEyeAlignmentEditor=null;
+  renderVisualComparison();
+  requestAnimationFrame(()=>{
+    compareVisualBody?.querySelector('[data-compare-sample="'+ordinal+'"]')?.scrollIntoView({block:"start"});
+  });
+}
+
+function eyeAlignmentEditorPanel({side,src,ordinal}){
+  const session=comparisonEyeAlignmentEditor;
+  const step=EYE_ALIGNMENT_STEPS[session?.step??0];
+  const panel=el("button","appearance-eye-align-panel"+(step?.side===side?" is-active":""));
+  panel.type="button";
+  panel.disabled=step?.side!==side;
+  panel.setAttribute("aria-label",step?.side===side?step.label:(side==="before"?"Before image":"After image"));
+
+  const image=document.createElement("img");
+  image.src=src;
+  image.alt=(side==="before"?"Before":"After")+" Sample "+ordinal+" "+comparisonVisualRole;
+  image.draggable=false;
+
+  const label=el("span","appearance-eye-align-panel-label",side==="before"?"Before":"After");
+  const markers=el("div","appearance-eye-align-markers");
+  const prefix=side==="before"?"before":"after";
+  for(const [key,eye] of [[prefix+"Left","L"],[prefix+"Right","R"]]){
+    const point=session?.points?.[key];
+    if(!point)continue;
+    const marker=el("span","appearance-eye-align-marker",eye);
+    markers.append(marker);
+    const place=()=>positionEyeMarker(marker,image,point);
+    image.addEventListener("load",place,{once:true});
+    requestAnimationFrame(place);
+  }
+
+  panel.append(image,markers,label);
+  panel.addEventListener("click",(event)=>{
+    if(!session||step?.side!==side||image.naturalWidth<1)return;
+    const point=comparisonEyePoint(event,image);
+    if(point===null){
+      session.error="Click inside the rendered face image";
+      renderVisualComparison();
+      return;
+    }
+    session.points[step.key]=point;
+    session.error=null;
+    if(session.step<EYE_ALIGNMENT_STEPS.length-1){
+      session.step+=1;
+      renderVisualComparison();
+      requestAnimationFrame(()=>{
+        compareVisualBody?.querySelector('[data-compare-sample="'+ordinal+'"]')?.scrollIntoView({block:"start"});
+      });
+      return;
+    }
+
+    try{
+      const transform=eyeSimilarityTransform({
+        beforeLeft:session.points.beforeLeft,
+        beforeRight:session.points.beforeRight,
+        afterLeft:session.points.afterLeft,
+        afterRight:session.points.afterRight,
+      });
+      if(transform.scale<.6||transform.scale>1.65||Math.abs(transform.rotation)>.45){
+        throw new Error("Eye alignment looks implausible; mark the four eye centers again");
+      }
+      comparisonEyeAlignments.set(comparisonEyeAlignmentKey(ordinal),Object.freeze({...session.points}));
+      comparisonEyeAlignmentEditor=null;
+      renderVisualComparison();
+      requestAnimationFrame(()=>{
+        compareVisualBody?.querySelector('[data-compare-sample="'+ordinal+'"]')?.scrollIntoView({block:"start"});
+      });
+    }catch(error){
+      session.step=0;
+      session.points={};
+      session.error=error instanceof Error?error.message:String(error);
+      renderVisualComparison();
+    }
+  });
+  return panel;
+}
+
+function comparisonEyeAlignmentEditorNode({beforeSrc,afterSrc,ordinal}){
+  const session=comparisonEyeAlignmentEditor;
+  const editor=el("div","appearance-eye-align-editor");
+  const instruction=el("div","appearance-eye-align-instruction");
+  instruction.append(
+    el("strong",null,EYE_ALIGNMENT_STEPS[session?.step??0]?.label??"Align eyes"),
+    el("span",null,"Mark eye centers only. Fibre will match eye midpoint, distance, and tilt."),
+  );
+  if(session?.error)instruction.append(el("em",null,session.error));
+
+  const actions=el("div","appearance-eye-align-actions");
+  const cancel=el("button","secondary","Cancel");
+  cancel.type="button";
+  cancel.addEventListener("click",()=>cancelEyeAlignment(ordinal));
+  actions.append(cancel);
+  instruction.append(actions);
+
+  const panels=el("div","appearance-eye-align-panels");
+  panels.append(
+    eyeAlignmentEditorPanel({side:"before",src:beforeSrc,ordinal}),
+    eyeAlignmentEditorPanel({side:"after",src:afterSrc,ordinal}),
+  );
+  editor.append(instruction,panels);
+  return editor;
+}
+
 function comparisonReveal({beforeSrc,afterSrc,ordinal}){
   const reveal=el("div","appearance-compare-reveal");
   reveal.style.setProperty("--reveal","50%");
@@ -872,6 +1076,30 @@ function comparisonReveal({beforeSrc,afterSrc,ordinal}){
   after.alt="After Sample "+ordinal+" "+comparisonVisualRole;
   after.loading="lazy";
   afterLayer.append(after);
+
+  const alignment=comparisonEyeAlignment(ordinal);
+  if(alignment){
+    const applyAlignment=()=>{
+      const transform=alignmentTransformForReveal(reveal,before,after,alignment);
+      if(transform===null)return;
+      after.style.transformOrigin="0 0";
+      after.style.transform=cssSimilarityMatrix(transform);
+    };
+    before.addEventListener("load",applyAlignment);
+    after.addEventListener("load",applyAlignment);
+    requestAnimationFrame(applyAlignment);
+    if(typeof ResizeObserver==="function"){
+      const observer=new ResizeObserver(()=>{
+        if(!reveal.isConnected){
+          observer.disconnect();
+          return;
+        }
+        applyAlignment();
+      });
+      observer.observe(reveal);
+    }
+    reveal.classList.add("is-eye-aligned");
+  }
 
   const divider=el("div","appearance-compare-reveal-divider");
   divider.append(el("span","appearance-compare-reveal-handle","↔"));
@@ -915,17 +1143,44 @@ function renderVisualComparison(){
 
   for(let ordinal=1;ordinal<=sampleSize;ordinal+=1){
     const sample=el("article","appearance-compare-visual-sample");
+    sample.dataset.compareSample=String(ordinal);
     const head=el("div","appearance-compare-visual-sample-head");
-    head.append(
+    const headCopy=el("div","appearance-compare-visual-sample-copy");
+    headCopy.append(
       el("strong",null,"Sample "+ordinal+" of "+sampleSize),
       el("span",null,(comparisonVisualRole==="geometry"?"Geometry":"Portrait")+" · same deterministic cohort person"),
     );
+    head.append(headCopy);
 
     const beforeSrc=comparisonImageUrl(baseline.experimentId,ordinal,comparisonVisualRole);
     const afterSrc=comparisonImageUrl(shadow.experimentId,ordinal,comparisonVisualRole);
+    const editing=comparisonEyeAlignmentEditor?.ordinal===ordinal
+      && comparisonEyeAlignmentEditor?.role===comparisonVisualRole;
+    const alignment=comparisonEyeAlignment(ordinal);
 
     if(comparisonVisualMode==="reveal"){
-      sample.append(head,comparisonReveal({beforeSrc,afterSrc,ordinal}));
+      const actions=el("div","appearance-compare-visual-sample-actions");
+      if(editing){
+        actions.append(el("span","appearance-eye-align-status","Aligning eyes"));
+      }else{
+        const align=el("button","secondary",alignment?"Re-align eyes":"Align eyes");
+        align.type="button";
+        align.addEventListener("click",()=>startEyeAlignment(ordinal));
+        actions.append(align);
+        if(alignment){
+          const reset=el("button","secondary","Reset");
+          reset.type="button";
+          reset.addEventListener("click",()=>resetEyeAlignment(ordinal));
+          actions.append(reset);
+        }
+      }
+      head.append(actions);
+      sample.append(
+        head,
+        editing
+          ?comparisonEyeAlignmentEditorNode({beforeSrc,afterSrc,ordinal})
+          :comparisonReveal({beforeSrc,afterSrc,ordinal}),
+      );
     }else{
       const pair=el("div","appearance-compare-visual-pair");
       for(const [label,src] of [["Before",beforeSrc],["After",afterSrc]]){
@@ -966,6 +1221,7 @@ function setComparisonView(view){
 }
 
 function setComparisonVisualRole(role){
+  comparisonEyeAlignmentEditor=null;
   comparisonVisualRole=role==="portrait"?"portrait":"geometry";
   compareGeometryButton?.classList.toggle("is-active",comparisonVisualRole==="geometry");
   comparePortraitButton?.classList.toggle("is-active",comparisonVisualRole==="portrait");
@@ -976,6 +1232,7 @@ function setComparisonVisualRole(role){
 }
 
 function setComparisonVisualMode(mode){
+  comparisonEyeAlignmentEditor=null;
   comparisonVisualMode=mode==="side-by-side"?"side-by-side":"reveal";
   compareRevealButton?.classList.toggle("is-active",comparisonVisualMode==="reveal");
   compareSideBySideButton?.classList.toggle("is-active",comparisonVisualMode==="side-by-side");
@@ -1150,6 +1407,8 @@ async function openExperimentComparison(experiment){
     throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
   }
   const comparison=payload.comparison;
+  comparisonEyeAlignments.clear();
+  comparisonEyeAlignmentEditor=null;
   comparisonState=comparison;
   const baseline=experimentById(comparison.baselineExperimentId);
   const shadow=experimentById(comparison.shadowExperimentId)??experiment;
@@ -2120,6 +2379,8 @@ compareDialog?.addEventListener("close",()=>{
   comparisonView="numerical";
   comparisonVisualRole="geometry";
   comparisonVisualMode="reveal";
+  comparisonEyeAlignments.clear();
+  comparisonEyeAlignmentEditor=null;
   compareActions?.replaceChildren();
   compareChanges?.replaceChildren();
   compareParameterMatrix?.replaceChildren();
