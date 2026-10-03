@@ -218,6 +218,7 @@ document.addEventListener("keydown", (event) => {
 
 dialog?.addEventListener("close", () => {
   clearStickyIdentity();
+  dialog.classList.remove("thread-observatory-dialog");
   openThreadId = null;
   openThreadLoad += 1;
   stopOpenThreadWatch?.();
