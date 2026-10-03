@@ -913,8 +913,12 @@ async function launchAppearanceExperiment(hole,button){
     if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
     detail.querySelector(".appearance-prepared-action")?.remove();
     const panel=el("div","appearance-prepared-action");
+    const queuedExperiment={
+      ...(payload?.experiment??{}),
+      referencePopulation:payload?.experiment?.referencePopulation??hole.referencePopulation,
+    };
     panel.append(
-      el("strong",null,"Population Lab experiment queued"),
+      el("strong",null,populationLabExperimentName(queuedExperiment)+" queued"),
       el("p",null,"The controlled physical cohort is running asynchronously. Status updates automatically; open the report when complete."),
       el("pre","appearance-action-json",JSON.stringify({
         experimentId:payload?.experiment?.experimentId??null,
