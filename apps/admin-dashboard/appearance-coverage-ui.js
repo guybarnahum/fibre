@@ -1176,7 +1176,6 @@ async function openExperimentComparison(experiment){
   comparisonView="numerical";
   comparisonVisualRole="geometry";
   comparisonVisualMode="reveal";
-  comparisonVisualMode="reveal";
   setComparisonVisualRole("geometry");
   setComparisonVisualMode("reveal");
   setComparisonView("numerical");
@@ -2120,6 +2119,7 @@ compareDialog?.addEventListener("close",()=>{
   comparisonState=null;
   comparisonView="numerical";
   comparisonVisualRole="geometry";
+  comparisonVisualMode="reveal";
   compareActions?.replaceChildren();
   compareChanges?.replaceChildren();
   compareParameterMatrix?.replaceChildren();
