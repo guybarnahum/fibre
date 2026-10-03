@@ -100,6 +100,7 @@ export function createPopulationLabExperimentStore(infra){
           requestedAt:manifest.requestedAt??new Date().toISOString(),
           referencePopulation:manifest.referencePopulation??null,
           experimentKind:manifest.shadowCalibration?"refinement":"baseline",
+          baselineExperimentId:manifest.source?.shadowOfExperimentId??null,
           artifacts:{manifest:write.artifact},
         });
       }catch(error){
@@ -122,6 +123,7 @@ export function createPopulationLabExperimentStore(infra){
           startedAt:manifest.startedAt??new Date().toISOString(),
           referencePopulation:manifest.referencePopulation??null,
           experimentKind:manifest.shadowCalibration?"refinement":"baseline",
+          baselineExperimentId:manifest.source?.shadowOfExperimentId??null,
           artifacts:{manifest:write.artifact},
         });
       }catch(error){
