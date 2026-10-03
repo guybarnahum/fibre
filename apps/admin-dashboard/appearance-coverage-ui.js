@@ -33,6 +33,8 @@ const reportClose=$("#appearance-report-close");
 const reportReview=$("#appearance-report-review");
 const shadowDialog=$("#appearance-shadow-dialog");
 const shadowClose=$("#appearance-shadow-close");
+const shadowImport=$("#appearance-shadow-import");
+const shadowCopy=$("#appearance-shadow-copy");
 const shadowCancel=$("#appearance-shadow-cancel");
 const shadowRun=$("#appearance-shadow-run");
 const shadowContext=$("#appearance-shadow-context");
@@ -418,6 +420,75 @@ function parseShadowObject(text,name){
   return value;
 }
 
+function shadowProposalFromForm(){
+  const experiment=shadowBaseExperiment;
+  const evidence=(shadowEvidence?.value??"")
+    .split("\n")
+    .map(value=>value.trim())
+    .filter(Boolean);
+  return Object.freeze({
+    ...(experiment?.summary?.referencePopulation?{referencePopulation:experiment.summary.referencePopulation}:{}),
+    ...(experiment?.experimentId?{baseExperimentId:experiment.experimentId}:{}),
+    rationale:shadowRationale?.value??"",
+    evidence,
+    values:parseShadowObject(shadowValues?.value,"Value changes"),
+    variation:parseShadowObject(shadowVariation?.value,"Variation changes"),
+  });
+}
+
+function normalizeImportedShadowProposal(raw){
+  let value=raw;
+  if(typeof value==="string"){
+    try{value=JSON.parse(value)}
+    catch{throw new Error("Refinement import must be valid JSON")}
+  }
+  if(!value||typeof value!=="object"||Array.isArray(value)){
+    throw new Error("Refinement import must be a JSON object");
+  }
+  const expectedPopulation=shadowBaseExperiment?.summary?.referencePopulation??null;
+  const expectedExperiment=shadowBaseExperiment?.experimentId??null;
+  if(value.referencePopulation&&expectedPopulation&&value.referencePopulation!==expectedPopulation){
+    throw new Error("Refinement JSON targets "+value.referencePopulation+", not "+expectedPopulation);
+  }
+  if(value.baseExperimentId&&expectedExperiment&&value.baseExperimentId!==expectedExperiment){
+    throw new Error("Refinement JSON targets a different baseline experiment");
+  }
+  const evidence=Array.isArray(value.evidence)
+    ?value.evidence.map(item=>String(item).trim()).filter(Boolean)
+    :typeof value.evidence==="string"
+      ?value.evidence.split("\n").map(item=>item.trim()).filter(Boolean)
+      :[];
+  return Object.freeze({
+    rationale:typeof value.rationale==="string"?value.rationale:"",
+    evidence,
+    values:value.values??{},
+    variation:value.variation??{},
+  });
+}
+
+function applyImportedShadowProposal(raw){
+  const proposal=normalizeImportedShadowProposal(raw);
+  if(shadowRationale)shadowRationale.value=proposal.rationale;
+  if(shadowEvidence)shadowEvidence.value=proposal.evidence.join("\n");
+  if(shadowValues)shadowValues.value=JSON.stringify(parseShadowObject(JSON.stringify(proposal.values),"Value changes"),null,2);
+  if(shadowVariation)shadowVariation.value=JSON.stringify(parseShadowObject(JSON.stringify(proposal.variation),"Variation changes"),null,2);
+}
+
+async function importShadowProposal(){
+  let text=null;
+  try{
+    if(navigator.clipboard?.readText)text=await navigator.clipboard.readText();
+  }catch{}
+  if(!text)text=window.prompt("Paste calibration refinement JSON")??"";
+  if(!text.trim())return;
+  try{
+    applyImportedShadowProposal(text);
+    if(shadowImport)shadowImport.title="Imported refinement JSON";
+  }catch(error){
+    if(shadowImport)shadowImport.title=error instanceof Error?error.message:String(error);
+  }
+}
+
 function openShadowCalibrationDialog(experiment){
   if(!shadowDialog)return;
   shadowBaseExperiment=experiment;
@@ -433,21 +504,18 @@ function openShadowCalibrationDialog(experiment){
 async function launchShadowCalibration(){
   const experiment=shadowBaseExperiment;
   if(!experiment||!shadowRun)return;
-  const rationale=shadowRationale?.value?.trim()??"";
-  const evidence=(shadowEvidence?.value??"")
-    .split("\n")
-    .map(value=>value.trim())
-    .filter(Boolean);
-  if(rationale===""||evidence.length===0){
-    shadowRun.title="Rationale and at least one evidence reference are required";
+  let proposal;
+  try{proposal=shadowProposalFromForm()}
+  catch(error){
+    shadowRun.title=error instanceof Error?error.message:String(error);
     return;
   }
-  let values,variation;
-  try{
-    values=parseShadowObject(shadowValues?.value,"Value changes");
-    variation=parseShadowObject(shadowVariation?.value,"Variation changes");
-  }catch(error){
-    shadowRun.title=error instanceof Error?error.message:String(error);
+  const rationale=proposal.rationale.trim();
+  const evidence=proposal.evidence;
+  const values=proposal.values;
+  const variation=proposal.variation;
+  if(rationale===""||evidence.length===0){
+    shadowRun.title="Rationale and at least one evidence reference are required";
     return;
   }
 
@@ -845,7 +913,7 @@ async function launchAppearanceExperiment(hole,button){
     const panel=el("div","appearance-prepared-action");
     panel.append(
       el("strong",null,"Population Lab experiment queued"),
-      el("p",null,"The controlled physical cohort is running asynchronously. Refresh the experiment list to inspect status or open the report when complete."),
+      el("p",null,"The controlled physical cohort is running asynchronously. Status updates automatically; open the report when complete."),
       el("pre","appearance-action-json",JSON.stringify({
         experimentId:payload?.experiment?.experimentId??null,
         status:payload?.experiment?.status??payload?.workflow?.status??"queued",
@@ -1536,6 +1604,20 @@ export async function loadAppearanceCoverage({quiet=false}={}){
   }
 }
 
+if(shadowCopy)bindCopyAction(shadowCopy,{
+  value:()=>shadowProposalFromForm(),
+  label:"Copy refinement JSON",
+  tooltip:"Copy complete calibration refinement JSON",
+  copiedLabel:"Refinement copied",
+  failedLabel:"Copy refinement failed",
+  iconOnly:true,
+});
+if(shadowImport)decorateActionButton(shadowImport,{
+  icon:"arrow-up-from-bracket",
+  label:"Import JSON",
+  tooltip:"Import calibration refinement JSON from the clipboard",
+});
+shadowImport?.addEventListener("click",()=>void importShadowProposal());
 if(shadowRun)decorateActionButton(shadowRun,{
   icon:"wrench",
   label:"Run shadow experiment",
