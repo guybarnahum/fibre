@@ -878,7 +878,7 @@ function renderAppearanceExperiments(){
     if(visualState)head.append(experimentStatusPill(visualState));
     const reviewedState=reviewStatus(experiment.review);
     if(reviewedState)head.append(experimentStatusPill(reviewedState));
-    if(experiment.summary?.shadow)head.append(experimentStatusPill({label:"Shadow",tone:"warn",active:false}));
+    if(isRefinement)head.append(experimentStatusPill({label:"Shadow",tone:"warn",active:false}));
     if(experiment.artifacts?.calibrationCandidate?.objectRef){
       head.append(experimentStatusPill({label:"Candidate Evidence",tone:"good",active:false}));
     }
