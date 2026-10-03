@@ -1,3 +1,4 @@
+import { bindCopyAction, copyWithFeedback } from "./copy-action.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { watchAdminLive } from "./admin-live.js";
 import { decorateActionButton, setBlockingButtonState, setRefreshButtonState } from "./fa-icons.js";
@@ -566,9 +567,12 @@ async function copyCalibrationApproval(experiment,button){
   try{
     const state=await readCalibrationApprovalState(experiment);
     if(!state.approval)throw new Error("Calibration is not approved yet");
-    await copyJson(state.approval,button,{
-      restoreLabel:"Copy approval",
-      restoreTooltip:"Copy approval JSON for source admission",
+    await copyWithFeedback(button,state.approval,{
+      label:"Copy approval",
+      tooltip:"Copy approval JSON for source admission",
+      copiedLabel:"Copied approval",
+      failedLabel:"Copy approval failed",
+      iconOnly:true,
     });
   }catch(error){
     button.title=error instanceof Error?error.message:String(error);
@@ -875,22 +879,6 @@ function threadIdentity(thread,{compact=false}={}){
   });
 }
 
-async function copyJson(value,button,{restoreLabel="Copy JSON",restoreTooltip="Copy JSON"}={}){
-  const text=JSON.stringify(value,null,2);
-  try{
-    await navigator.clipboard.writeText(text);
-  }catch{
-    const area=document.createElement("textarea");
-    area.value=text;
-    document.body.append(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
-  }
-  decorateActionButton(button,{icon:"copy",label:"Copied",tooltip:"Copied",iconOnly:true});
-  setTimeout(()=>decorateActionButton(button,{icon:"copy",label:restoreLabel,tooltip:restoreTooltip,iconOnly:true}),1200);
-}
-
 function actionSpec(kind,hole){
   return Object.freeze({
     contract:"fibre-population-lab-action-v0.1",
@@ -917,8 +905,14 @@ function renderPreparedAction(kind,hole){
   const pre=el("pre","appearance-action-json",JSON.stringify(spec,null,2));
   const copy=el("button","secondary");
   copy.type="button";
-  decorateActionButton(copy,{icon:"copy",label:"Copy JSON",tooltip:"Copy action JSON"});
-  copy.addEventListener("click",()=>void copyJson(spec,copy,{restoreTooltip:"Copy action JSON"}));
+  bindCopyAction(copy,{
+    value:spec,
+    label:"Copy JSON",
+    tooltip:"Copy action JSON",
+    copiedLabel:"Copied",
+    failedLabel:"Copy failed",
+    iconOnly:false,
+  });
   panel.append(copy,pre);
   detail.append(panel);
 }
