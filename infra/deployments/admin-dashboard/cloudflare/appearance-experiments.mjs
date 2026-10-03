@@ -341,6 +341,15 @@ export function populationLabComparisonChanges({shadow,baselineResult,shadowResu
   ]);
 }
 
+export function populationLabSameCohort(baselineManifest,shadowManifest){
+  return Boolean(
+    baselineManifest
+    &&shadowManifest
+    &&baselineManifest.seed===shadowManifest.seed
+    &&baselineManifest.count===shadowManifest.count
+  );
+}
+
 export async function readAdminPopulationLabComparison(env,experimentId){
   const store=experimentStore(env);
   const shadowExperiment=await store.get(experimentId);
@@ -371,11 +380,7 @@ export async function readAdminPopulationLabComparison(env,experimentId){
     baseCalibration:shadow.baseCalibration,
     rationale:shadow.rationale,
     evidence:shadow.evidence,
-    sameCohort:Boolean(
-      baselineManifest
-      &&baselineManifest.seed===shadowManifest.seed
-      &&baselineManifest.count===shadowManifest.count
-    ),
+    sameCohort:populationLabSameCohort(baselineManifest,shadowManifest),
     cohort:Object.freeze({
       seed:shadowManifest.seed??null,
       count:shadowManifest.count??null,
