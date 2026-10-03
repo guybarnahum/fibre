@@ -313,6 +313,35 @@ export async function createAdminPopulationLabCalibrationCandidate(env,experimen
   return candidate;
 }
 
+export async function readAdminPopulationLabCalibrationApproval(env,experimentId,{coverage}={}){
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)throw new TypeError("experiment not found");
+
+  const approval=await readJsonArtifact(store,experiment.artifacts?.calibrationApproval?.objectRef);
+  if(approval!==null)return Object.freeze({approval,impact:approval.impact,candidate:null});
+
+  const candidate=await readJsonArtifact(store,experiment.artifacts?.calibrationCandidate?.objectRef);
+  if(candidate===null)throw new TypeError("calibration approval requires candidate evidence");
+  return Object.freeze({
+    approval:null,
+    impact:projectCalibrationCandidateImpact({candidate,coverage}),
+    candidate,
+  });
+}
+
+export async function approveAdminPopulationLabCalibration(env,experimentId,{approvedBy,coverage}={}){
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)throw new TypeError("experiment not found");
+  const candidate=await readJsonArtifact(store,experiment.artifacts?.calibrationCandidate?.objectRef);
+  if(candidate===null)throw new TypeError("calibration approval requires candidate evidence");
+  const impact=projectCalibrationCandidateImpact({candidate,coverage});
+  const approval=await store.putCalibrationApproval(experimentId,{approvedBy,impact});
+  await publishExperimentHint(env,experimentId,"approval");
+  return approval;
+}
+
 export async function readAdminPopulationLabVisualReview(env,experimentId){
   const store=experimentStore(env);
   const experiment=await store.get(experimentId);
