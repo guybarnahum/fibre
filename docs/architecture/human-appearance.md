@@ -408,9 +408,13 @@ The shadow candidate experiment applies proposed parameter overrides only inside
 
 A3.2 v0.1 uses an operator-assisted research boundary: the proposal contains explicit changed axes/variation, a rationale, and one-or-more provenance references. That proposal is stored in the immutable shadow experiment manifest and evaluated with the exact baseline cohort seed. A later provider-neutral research adapter may author the same proposal contract; it does not need a different evaluation path and must never infer physical calibration from geography, nationality, religion, culture, names or generated portraits.
 
-A supporting human review may freeze the shadow run into immutable calibration-candidate evidence. That freeze still has no authority; registry admission remains a separate approval event.
+A supporting human review may freeze the shadow run into immutable calibration-candidate evidence. That freeze still has no authority.
 
-Only the final reviewed admission changes the source calibration registry. New births then use the admitted version; existing Threads are affected only through the dependency diff and explicit World migration.
+A3.3 separates **human approval evidence** from **runtime registry mutation**. Admin approval binds the exact candidate and visual review to the authenticated human reviewer and records the projected affected Thread set from current World coverage. The approval artifact contains the exact source-admission payload, but the browser does not rewrite Human Appearance.
+
+The canonical registry is Git-owned. A deterministic source-admission command consumes the immutable approval artifact, verifies that its base calibration is still current and that it advances exactly one local version, then appends the reviewed refinement to the source-controlled admission overlay. Deployment of that source change is what makes the calibration current. Registry metadata retains the admission provenance.
+
+This preserves the core authority rule in both directions: an experiment cannot silently become calibration authority, and source calibration cannot be advanced from an unapproved candidate. New births use the admitted version after deploy; existing Threads are affected only through the dependency diff and explicit World migration.
 
 ### Canonical reference-population ID grammar
 
