@@ -1,5 +1,5 @@
 import { populationLabExperimentName } from "./population-lab-experiment-name.js";
-import { populationLabExperimentRows } from "./population-lab-experiment-tree.js";
+import { populationLabExperimentParentId, populationLabExperimentRows } from "./population-lab-experiment-tree.js";
 import { bindPortraitPreview } from "./portrait-preview.js";
 import { bindCopyAction, copyWithFeedback, decorateCopyAction } from "./copy-action.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
@@ -954,15 +954,20 @@ function renderAppearanceExperiments(){
     const terminal=!["queued","running"].includes(experiment.status)
       && !["queued","running"].includes(experiment.visual?.status);
     const retained=Boolean(experiment.artifacts?.calibrationApproval?.objectRef);
-    remove.disabled=!terminal||retained;
+    const hasRefinements=experimentSnapshot.some(candidate=>
+      populationLabExperimentParentId(candidate)===experiment.experimentId
+    );
+    remove.disabled=!terminal||retained||hasRefinements;
     decorateActionButton(remove,{
       icon:"trash-can",
       label:"Delete experiment",
       tooltip:retained
         ?"Approved calibration evidence is retained"
-        :terminal
-          ?"Delete this experiment and all stored artifacts"
-          :"Experiment can be deleted after it finishes",
+        :hasRefinements
+          ?"Baseline is retained while refinement evidence depends on it"
+          :terminal
+            ?"Delete this experiment and all stored artifacts"
+            :"Experiment can be deleted after it finishes",
       iconOnly:true,
     });
     remove.addEventListener("click",async()=>{
