@@ -98,6 +98,8 @@ export function createPopulationLabExperimentStore(infra){
         return await update(experimentId,{
           status:"queued",
           requestedAt:manifest.requestedAt??new Date().toISOString(),
+          referencePopulation:manifest.referencePopulation??null,
+          experimentKind:manifest.shadowCalibration?"refinement":"baseline",
           artifacts:{manifest:write.artifact},
         });
       }catch(error){
@@ -118,6 +120,8 @@ export function createPopulationLabExperimentStore(infra){
         return await update(experimentId,{
           status:"running",
           startedAt:manifest.startedAt??new Date().toISOString(),
+          referencePopulation:manifest.referencePopulation??null,
+          experimentKind:manifest.shadowCalibration?"refinement":"baseline",
           artifacts:{manifest:write.artifact},
         });
       }catch(error){
