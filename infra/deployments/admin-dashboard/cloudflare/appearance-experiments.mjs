@@ -35,6 +35,29 @@ function experimentStore(env){
   return createPopulationLabExperimentStore(experimentInfra(env));
 }
 
+export function withExperimentLifecycleHints(store,publish){
+  if(!store||typeof store!=="object")throw new TypeError("experiment store is required");
+  if(typeof publish!=="function")throw new TypeError("experiment lifecycle publisher is required");
+  return Object.freeze({
+    ...store,
+    async running(experimentId,...args){
+      const result=await store.running(experimentId,...args);
+      await publish(experimentId,"running");
+      return result;
+    },
+    async complete(experimentId,...args){
+      const result=await store.complete(experimentId,...args);
+      await publish(experimentId,"completed");
+      return result;
+    },
+    async fail(experimentId,...args){
+      const result=await store.fail(experimentId,...args);
+      await publish(experimentId,"failed");
+      return result;
+    },
+  });
+}
+
 async function readJsonArtifact(store,objectRef){
   if(typeof objectRef!=="string")return null;
   const artifact=await store.getArtifact(objectRef);
@@ -177,10 +200,11 @@ export async function launchAdminPopulationLabShadowExperiment(env,baseExperimen
 
 export async function runAdminPopulationLabExperimentWorkflow(env,rawRequest){
   const request=normalizePhysicalExperimentRequest(rawRequest);
-  return runPersistedPhysicalExperiment({
-    request,
-    artifacts:experimentStore(env),
-  });
+  const artifacts=withExperimentLifecycleHints(
+    experimentStore(env),
+    (experimentId,aspect)=>publishExperimentHint(env,experimentId,aspect),
+  );
+  return runPersistedPhysicalExperiment({request,artifacts});
 }
 
 export async function launchAdminPopulationLabVisualExperiment(env,experimentId){
