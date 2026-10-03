@@ -6,6 +6,7 @@ import {
   adminPopulationLabRerunRequest,
   adminPopulationLabShadowExperimentRequest,
   populationLabComparisonChanges,
+  populationLabSameCohort,
   reconcileAdminPopulationLabAsset,
   withExperimentLifecycleHints,
 } from "./appearance-experiments.mjs";
@@ -257,5 +258,33 @@ test("Population Lab comparison reports exact calibration and observed mean shif
       },
     ],
     "comparison stopped exposing the reviewed before/after evidence",
+  );
+});
+
+
+test("visual comparison pairs only the same deterministic cohort",()=>{
+  assert.equal(
+    populationLabSameCohort(
+      {seed:"appearance:egypt:1",count:24},
+      {seed:"appearance:egypt:1",count:24},
+    ),
+    true,
+    "matching deterministic cohorts stopped pairing",
+  );
+  assert.equal(
+    populationLabSameCohort(
+      {seed:"appearance:egypt:1",count:24},
+      {seed:"appearance:egypt:2",count:24},
+    ),
+    false,
+    "different cohort seeds were paired as the same people",
+  );
+  assert.equal(
+    populationLabSameCohort(
+      {seed:"appearance:egypt:1",count:24},
+      {seed:"appearance:egypt:1",count:48},
+    ),
+    false,
+    "different cohort sizes were paired as the same people",
   );
 });
