@@ -6,6 +6,7 @@ import {
   adminPopulationLabRerunRequest,
   adminPopulationLabShadowExperimentRequest,
   populationLabComparisonChanges,
+  populationLabComparisonHealth,
   populationLabSameCohort,
   reconcileAdminPopulationLabAsset,
   withExperimentLifecycleHints,
@@ -247,6 +248,12 @@ test("Population Lab comparison reports exact calibration and observed mean shif
         after:.12,
         baselineMean:-.021,
         shadowMean:.139,
+        baselineSd:null,
+        shadowSd:null,
+        baselineP05:null,
+        shadowP05:null,
+        baselineP95:null,
+        shadowP95:null,
       },
       {
         kind:"variation",
@@ -255,6 +262,12 @@ test("Population Lab comparison reports exact calibration and observed mean shif
         after:1.08,
         baselineMean:null,
         shadowMean:null,
+        baselineSd:null,
+        shadowSd:null,
+        baselineP05:null,
+        shadowP05:null,
+        baselineP95:null,
+        shadowP95:null,
       },
     ],
     "comparison stopped exposing the reviewed before/after evidence",
@@ -286,5 +299,50 @@ test("visual comparison pairs only the same deterministic cohort",()=>{
     ),
     false,
     "different cohort sizes were paired as the same people",
+  );
+});
+
+
+test("Population Lab comparison keeps cohort health side by side",()=>{
+  const baselineResult={stats:{physicalCalibration:{
+    warnings:[],
+    populations:{"middle_east.egypt":{
+      uniqueShare:1,
+      maxCenterError:.031,
+      medianSd:.091,
+      minSd:.061,
+      maxSd:.142,
+      resemblance:{siblingToUnrelatedRatio:.61,childToUnrelatedRatio:.67},
+    }},
+  }}};
+  const shadowResult={stats:{physicalCalibration:{
+    warnings:["middle_east.egypt center drift >0.08"],
+    populations:{"middle_east.egypt":{
+      uniqueShare:1,
+      maxCenterError:.034,
+      medianSd:.091,
+      minSd:.061,
+      maxSd:.142,
+      resemblance:{siblingToUnrelatedRatio:.61,childToUnrelatedRatio:.67},
+    }},
+  }}};
+
+  assert.deepEqual(
+    populationLabComparisonHealth({
+      referencePopulation:"middle_east.egypt",
+      baselineResult,
+      shadowResult,
+    }),
+    [
+      {metric:"Unique share",baseline:1,shadow:1},
+      {metric:"Max center error",baseline:.031,shadow:.034},
+      {metric:"Median spread",baseline:.091,shadow:.091},
+      {metric:"Min spread",baseline:.061,shadow:.061},
+      {metric:"Max spread",baseline:.142,shadow:.142},
+      {metric:"Sibling / unrelated",baseline:.61,shadow:.61},
+      {metric:"Child / unrelated",baseline:.67,shadow:.67},
+      {metric:"Warnings",baseline:0,shadow:1,integer:true},
+    ],
+    "comparison health stopped preserving baseline/refinement evidence",
   );
 });
