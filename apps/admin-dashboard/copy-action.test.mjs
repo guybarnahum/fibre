@@ -43,3 +43,27 @@ test("shared copy action falls back to the document copy command",async()=>{
   assert.equal(command,"copy");
   assert.equal(removed,true);
 });
+
+
+test("shared copy action falls back when the native clipboard rejects",async()=>{
+  let command=null;
+  const area={
+    value:"",
+    style:{},
+    setAttribute(){},
+    select(){},
+    remove(){},
+  };
+  const documentRef={
+    body:{append(){}},
+    createElement(){return area},
+    execCommand(value){command=value;return true},
+  };
+
+  assert.equal(await writeClipboard("fallback",{
+    clipboard:{writeText:async()=>{throw new Error("blocked")}},
+    documentRef,
+  }),true);
+  assert.equal(area.value,"fallback");
+  assert.equal(command,"copy");
+});
