@@ -1,4 +1,5 @@
 import { populationLabExperimentName } from "./population-lab-experiment-name.js";
+import { populationLabExperimentRows } from "./population-lab-experiment-tree.js";
 import { bindPortraitPreview } from "./portrait-preview.js";
 import { bindCopyAction, copyWithFeedback, decorateCopyAction } from "./copy-action.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
@@ -26,6 +27,15 @@ const migrations=$("#appearance-migration-candidates");
 const migrateAllButton=$("#appearance-migrate-all");
 const experiments=$("#appearance-experiments");
 const experimentRefreshButton=$("#appearance-experiments-refresh");
+const compareDialog=$("#appearance-compare-dialog");
+const compareTitle=$("#appearance-compare-title");
+const compareChanges=$("#appearance-compare-changes");
+const compareActions=$("#appearance-compare-actions");
+const compareClose=$("#appearance-compare-close");
+const compareBaselineName=$("#appearance-compare-baseline-name");
+const compareShadowName=$("#appearance-compare-shadow-name");
+const compareBaselineFrame=$("#appearance-compare-baseline-frame");
+const compareShadowFrame=$("#appearance-compare-shadow-frame");
 const reportDialog=$("#appearance-report-dialog");
 const reportTitle=$("#appearance-report-title");
 const reportFrame=$("#appearance-report-frame");
@@ -56,6 +66,7 @@ let selectedKey=null;
 let loadPromise=null;
 let experimentLoadPromise=null;
 let experimentSnapshot=[];
+let comparisonState=null;
 let shadowBaseExperiment=null;
 let mapPopover=null;
 let mapPopoverCloseTimer=null;
@@ -650,6 +661,194 @@ async function copyCalibrationApproval(experiment,button){
   }
 }
 
+function experimentById(experimentId){
+  return experimentSnapshot.find(experiment=>experiment.experimentId===experimentId)??null;
+}
+
+function numericalExperimentReportUrl(experimentId){
+  return experimentReportUrl(experimentId)+"?kind=numerical";
+}
+
+function comparisonChangeNode(change){
+  const node=el("span","appearance-compare-change");
+  const before=Number.isFinite(change?.before)?String(change.before):"current";
+  const after=Number.isFinite(change?.after)?String(change.after):"—";
+  node.append(
+    el("strong",null,change?.parameter??"parameter"),
+    document.createTextNode(" "+before+" → "+after),
+  );
+  if(Number.isFinite(change?.baselineMean)&&Number.isFinite(change?.shadowMean)){
+    node.append(el("em",null," · mean "+change.baselineMean.toFixed(3)+" → "+change.shadowMean.toFixed(3)));
+  }
+  return node;
+}
+
+function visualActionButton(experiment){
+  const visualActive=["queued","running"].includes(experiment.visual?.status);
+  const visualRetryable=experiment.visual?.status==="failed"&&!experiment.visual?.startedAt;
+  if(experiment.status!=="completed"||(!visualActive&&experiment.visual&&!visualRetryable))return null;
+
+  const button=el("button","secondary appearance-visual-action");
+  const progress=visualProgress(experiment);
+  button.type="button";
+  button.disabled=visualActive;
+  decorateActionButton(button,{
+    icon:visualActive?"rotate":"image",
+    label:visualActive?"Progress "+(progress?.completed??0)+"/"+(progress?.total??8):visualRetryable?"Retry visuals":"Run visuals",
+    tooltip:visualActive
+      ?"Generating images: "+(progress?.completed??0)+"/"+(progress?.total??8)
+      :visualRetryable
+        ?"Retry the same visual manifest; the prior Workflow never started"
+        :"Generate 4 geometry anchors and 4 reference-conditioned portraits",
+    spinning:visualActive,
+  });
+  if(visualActive)return button;
+
+  button.addEventListener("click",async()=>{
+    if(!window.confirm(visualRetryable
+      ?"Retry the same visual fidelity run? The prior Workflow never started, so this will reuse the exact immutable manifest."
+      :"Run the 4-person visual fidelity sample? This generates 8 images through Asset Generator."))return;
+    setBlockingButtonState(button,true,{
+      label:visualRetryable?"Retry visuals":"Run visuals",
+      tooltip:"Generate visual fidelity evidence",
+      busyLabel:"Queueing",
+      busyTooltip:"Queueing visual fidelity experiment",
+    });
+    try{
+      const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/visuals",{
+        method:"POST",
+        headers:{Accept:"application/json"},
+      });
+      const payload=await response.json().catch(()=>null);
+      if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+      await loadAppearanceExperiments();
+    }catch(error){
+      setBlockingButtonState(button,false,{
+        label:visualRetryable?"Retry visuals":"Run visuals",
+        tooltip:error instanceof Error?error.message:String(error),
+        icon:"image",
+      });
+    }
+  });
+  return button;
+}
+
+function renderComparisonActions(experiment){
+  if(!compareActions)return;
+  compareActions.replaceChildren();
+  if(!experiment)return;
+
+  const visualButton=visualActionButton(experiment);
+  if(visualButton)compareActions.append(visualButton);
+
+  if(experiment.visual?.status==="completed"){
+    const review=el("button","secondary");
+    review.type="button";
+    decorateActionButton(review,{
+      icon:"image",
+      label:experiment.review?"Review evidence":"Review visuals",
+      tooltip:experiment.review
+        ?"Open the submitted visual evidence and review"
+        :"Inspect visual fidelity and submit the human review",
+    });
+    review.addEventListener("click",()=>openExperimentReport(experiment));
+    compareActions.append(review);
+  }
+
+  const reviewState=reviewStatus(experiment.review);
+  if(reviewState)compareActions.append(experimentStatusPill(reviewState));
+
+  if(
+    experiment.status==="completed"
+    && experiment.review?.decision==="supports_candidate"
+    && !experiment.artifacts?.calibrationCandidate?.objectRef
+  ){
+    const freeze=el("button","primary");
+    freeze.type="button";
+    decorateActionButton(freeze,{
+      icon:"wrench",
+      label:"Freeze candidate",
+      tooltip:"Freeze this reviewed refinement as immutable candidate evidence",
+    });
+    freeze.addEventListener("click",()=>void freezeCalibrationCandidate(experiment,freeze));
+    compareActions.append(freeze);
+  }
+
+  if(
+    experiment.artifacts?.calibrationCandidate?.objectRef
+    && !experiment.artifacts?.calibrationApproval?.objectRef
+  ){
+    const approve=el("button","primary appearance-approval-action");
+    approve.type="button";
+    decorateActionButton(approve,{
+      icon:"check",
+      label:"Approve",
+      tooltip:"Review projected impact and approve candidate evidence",
+    });
+    approve.addEventListener("click",()=>void approveCalibrationCandidate(experiment,approve));
+    compareActions.append(approve);
+  }
+
+  if(experiment.artifacts?.calibrationApproval?.objectRef){
+    compareActions.append(experimentStatusPill({label:"Approved",tone:"good",active:false}));
+    const copyApproval=el("button","secondary");
+    copyApproval.type="button";
+    decorateCopyAction(copyApproval,{
+      label:"Copy approval",
+      tooltip:"Copy approval JSON for source admission",
+      iconOnly:false,
+    });
+    copyApproval.addEventListener("click",()=>void copyCalibrationApproval(experiment,copyApproval));
+    compareActions.append(copyApproval);
+  }
+
+  if(experiment.review?.decision==="reject"){
+    const rerun=el("button","secondary");
+    rerun.type="button";
+    decorateActionButton(rerun,{
+      icon:"rotate",
+      label:"Run another experiment",
+      tooltip:"Keep this rejected evidence and launch another deterministic run",
+    });
+    rerun.addEventListener("click",()=>void rerunRejectedExperiment(experiment,rerun));
+    compareActions.append(rerun);
+  }
+}
+
+function refreshOpenComparison(){
+  if(!compareDialog?.open||!comparisonState)return;
+  const experiment=experimentById(comparisonState.shadowExperimentId);
+  if(experiment)renderComparisonActions(experiment);
+}
+
+async function openExperimentComparison(experiment){
+  if(!compareDialog||!experiment?.experimentId)return;
+  const response=await fetch(
+    "/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/compare",
+    {headers:{Accept:"application/json"},cache:"no-store"},
+  );
+  const payload=await response.json().catch(()=>null);
+  if(!response.ok||!payload?.comparison){
+    throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+  }
+  const comparison=payload.comparison;
+  comparisonState=comparison;
+  const baseline=experimentById(comparison.baselineExperimentId);
+  const shadow=experimentById(comparison.shadowExperimentId)??experiment;
+
+  if(compareTitle)compareTitle.textContent=comparison.referencePopulation+" · baseline vs refinement";
+  if(compareBaselineName)compareBaselineName.textContent=baseline?populationLabExperimentName(baseline):comparison.baselineExperimentId;
+  if(compareShadowName)compareShadowName.textContent=populationLabExperimentName(shadow);
+  if(compareChanges){
+    compareChanges.replaceChildren();
+    for(const change of comparison.changes??[])compareChanges.append(comparisonChangeNode(change));
+  }
+  if(compareBaselineFrame)compareBaselineFrame.src=numericalExperimentReportUrl(comparison.baselineExperimentId);
+  if(compareShadowFrame)compareShadowFrame.src=numericalExperimentReportUrl(comparison.shadowExperimentId);
+  renderComparisonActions(shadow);
+  if(!compareDialog.open)compareDialog.showModal();
+}
+
 function renderAppearanceExperiments(){
   if(!experiments)return;
   experiments.replaceChildren();
@@ -657,8 +856,9 @@ function renderAppearanceExperiments(){
     experiments.append(el("div","empty","No persisted Population Lab experiments."));
     return;
   }
-  for(const experiment of experimentSnapshot){
-    const row=el("article","appearance-experiment");
+  for(const {experiment,depth} of populationLabExperimentRows(experimentSnapshot)){
+    const isRefinement=depth>0||experiment.experimentKind==="refinement"||experiment.summary?.shadow===true;
+    const row=el("article",["appearance-experiment",isRefinement?"is-refinement":""].filter(Boolean).join(" "));
     const copy=el("div","appearance-experiment-copy");
     const head=el("div","appearance-experiment-head");
     head.append(
@@ -692,9 +892,6 @@ function renderAppearanceExperiments(){
         +" · I"+experiment.review.scores.identityContinuity
         +" · S"+experiment.review.scores.surfaceRealism;
     }
-    if(experiment.summary?.shadowOfExperimentId){
-      meta.textContent+=" · baseline "+experiment.summary.shadowOfExperimentId;
-    }
     if(experiment.approval?.impact){
       meta.textContent+=" · approval impact "+experiment.approval.impact.threadCount+" Thread(s)";
     }
@@ -704,117 +901,43 @@ function renderAppearanceExperiments(){
 
     const actions=el("div","appearance-experiment-actions");
 
-    if(experiment.status==="completed"&&!experiment.summary?.shadow){
-      const shadow=el("button","secondary appearance-refine-action");
-      shadow.type="button";
-      decorateActionButton(shadow,{
+    if(isRefinement){
+      const compare=el("button","secondary");
+      compare.type="button";
+      compare.disabled=experiment.status!=="completed";
+      decorateActionButton(compare,{
         icon:"wrench",
-        label:"Refine",
-        tooltip:"Evaluate explicit calibration changes against the same deterministic cohort",
+        label:"Compare with baseline",
+        tooltip:compare.disabled
+          ?"Comparison is available when the refinement experiment completes"
+          :"Review baseline vs refinement and continue the calibration workflow",
       });
-      shadow.addEventListener("click",()=>openShadowCalibrationDialog(experiment));
-      actions.append(shadow);
-    }
-
-    if(
-      experiment.status==="completed"
-      && experiment.summary?.shadow
-      && experiment.review?.decision==="supports_candidate"
-      && !experiment.artifacts?.calibrationCandidate?.objectRef
-    ){
-      const freeze=el("button","secondary");
-      freeze.type="button";
-      decorateActionButton(freeze,{
-        icon:"wrench",
-        label:"Freeze candidate",
-        tooltip:"Freeze this reviewed shadow proposal as immutable candidate evidence",
+      if(!compare.disabled)compare.addEventListener("click",async()=>{
+        try{await openExperimentComparison(experiment)}
+        catch(error){compare.title=error instanceof Error?error.message:String(error)}
       });
-      freeze.addEventListener("click",()=>void freezeCalibrationCandidate(experiment,freeze));
-      actions.append(freeze);
-    }
-
-    if(
-      experiment.artifacts?.calibrationCandidate?.objectRef
-      && !experiment.artifacts?.calibrationApproval?.objectRef
-    ){
-      const approve=el("button","secondary appearance-approval-action");
-      approve.type="button";
-      decorateActionButton(approve,{
-        icon:"check",
-        label:"Approve",
-        tooltip:"Review projected impact and approve this calibration candidate",
-      });
-      approve.addEventListener("click",()=>void approveCalibrationCandidate(experiment,approve));
-      actions.append(approve);
-    }
-
-    if(experiment.artifacts?.calibrationApproval?.objectRef){
-      const copyApproval=el("button","icon-button");
-      copyApproval.type="button";
-      decorateCopyAction(copyApproval,{
-        label:"Copy approval",
-        tooltip:"Copy approval JSON for source admission",
-        iconOnly:true,
-      });
-      copyApproval.addEventListener("click",()=>void copyCalibrationApproval(experiment,copyApproval));
-      actions.append(copyApproval);
-    }
-
-    const visualActive=["queued","running"].includes(experiment.visual?.status);
-    const visualRetryable=experiment.visual?.status==="failed"&&!experiment.visual?.startedAt;
-    if(experiment.status==="completed"&&(!experiment.visual||visualActive||visualRetryable)){
-      const visuals=el("button","secondary appearance-visual-action");
-      const progress=visualProgress(experiment);
-      visuals.type="button";
-      visuals.disabled=visualActive;
-      decorateActionButton(visuals,{
-        icon:visualActive?"rotate":"image",
-        label:visualActive?"Progress "+(progress?.completed??0)+"/"+(progress?.total??8):visualRetryable?"Retry visuals":"Run visuals",
-        tooltip:visualActive
-          ?"Generating images: "+(progress?.completed??0)+"/"+(progress?.total??8)
-          :visualRetryable
-            ?"Retry the same visual manifest; the prior Workflow never started"
-            :"Generate 4 geometry anchors and 4 reference-conditioned portraits",
-        spinning:visualActive,
-      });
-      if(!visualActive)visuals.addEventListener("click",async()=>{
-        if(!window.confirm(visualRetryable
-          ?"Retry the same visual fidelity run? The prior Workflow did not start, so this will reuse the exact immutable manifest."
-          :"Run the 4-person visual fidelity sample? This generates 8 images through Asset Generator."))return;
-        visuals.disabled=true;
-        decorateActionButton(visuals,{
-          icon:"rotate",
-          label:"Progress 0/8",
-          tooltip:"Queueing visual fidelity experiment",
-          spinning:true,
+      actions.append(compare);
+    }else{
+      if(experiment.status==="completed"){
+        const shadow=el("button","secondary appearance-refine-action");
+        shadow.type="button";
+        decorateActionButton(shadow,{
+          icon:"wrench",
+          label:"Refine",
+          tooltip:"Evaluate explicit calibration changes against the same deterministic cohort",
         });
-        try{
-          const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/visuals",{
-            method:"POST",
-            headers:{Accept:"application/json"},
-          });
-          const payload=await response.json().catch(()=>null);
-          if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
-          await loadAppearanceExperiments();
-        }catch(error){
-          await loadAppearanceExperiments().catch(()=>{});
-          if(!visuals.isConnected)return;
-          visuals.disabled=false;
-          decorateActionButton(visuals,{
-            icon:"image",
-            label:visualRetryable?"Retry visuals":"Run visuals",
-            tooltip:error instanceof Error?error.message:String(error),
-          });
-        }
-      });
-      actions.append(visuals);
-    }
-    if(experiment.artifacts?.report?.objectRef||experiment.artifacts?.visualReport?.objectRef){
-      const open=el("button","secondary","Open report");
-      open.type="button";
-      open.title="Review experiment report inside Admin";
-      open.addEventListener("click",()=>openExperimentReport(experiment));
-      actions.append(open);
+        shadow.addEventListener("click",()=>openShadowCalibrationDialog(experiment));
+        actions.append(shadow);
+      }
+      const visuals=visualActionButton(experiment);
+      if(visuals)actions.append(visuals);
+      if(experiment.artifacts?.report?.objectRef||experiment.artifacts?.visualReport?.objectRef){
+        const open=el("button","secondary","Open report");
+        open.type="button";
+        open.title="Review experiment report inside Admin";
+        open.addEventListener("click",()=>openExperimentReport(experiment));
+        actions.append(open);
+      }
     }
 
     const remove=el("button","secondary");
@@ -878,6 +1001,7 @@ export async function loadAppearanceExperiments(){
       if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
       experimentSnapshot=Array.isArray(payload?.experiments)?payload.experiments:[];
       renderAppearanceExperiments();
+      refreshOpenComparison();
       return experimentSnapshot;
     }catch(error){
       experimentSnapshot=[];
@@ -1639,6 +1763,18 @@ shadowDialog?.addEventListener("close",()=>{
     tooltip:"Run the proposed calibration against the baseline cohort seed",
     icon:"wrench",
   });
+});
+
+compareClose?.addEventListener("click",()=>compareDialog?.close());
+compareDialog?.addEventListener("click",(event)=>{
+  if(event.target===compareDialog)compareDialog.close();
+});
+compareDialog?.addEventListener("close",()=>{
+  comparisonState=null;
+  compareActions?.replaceChildren();
+  compareChanges?.replaceChildren();
+  if(compareBaselineFrame)compareBaselineFrame.src="about:blank";
+  if(compareShadowFrame)compareShadowFrame.src="about:blank";
 });
 
 if(reportNewTab)decorateActionButton(reportNewTab,{
