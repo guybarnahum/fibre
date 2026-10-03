@@ -130,7 +130,7 @@
 .appearance-compare-visual-controls{display:flex;align-items:center;gap:10px}
 .appearance-compare-reveal{--reveal:50%;position:relative;min-height:0;flex:1 1 auto;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--surface-subtle)}
 .appearance-compare-reveal>img,.appearance-compare-reveal-after img{display:block;width:100%;height:100%;object-fit:contain;user-select:none;pointer-events:none}
-.appearance-compare-reveal-after{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--reveal)) 0 0);background:var(--accent-soft);pointer-events:none}
+.appearance-compare-reveal-after{position:absolute;inset:0;clip-path:inset(0 0 0 var(--reveal));background:var(--surface-subtle);pointer-events:none}
 .appearance-compare-reveal-divider{position:absolute;top:0;bottom:0;left:var(--reveal);width:2px;transform:translateX(-1px);background:var(--accent);pointer-events:none;z-index:3}
 .appearance-compare-reveal-handle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;width:32px;height:32px;border:2px solid var(--surface);border-radius:50%;background:var(--accent);color:#fff;font-size:14px;font-weight:800;box-shadow:0 2px 8px rgba(20,22,26,.22)}
 .appearance-compare-reveal-label{position:absolute;top:10px;z-index:4;padding:5px 8px;border-radius:999px;background:rgba(20,22,26,.72);color:#fff;font-size:10px;font-weight:800;pointer-events:none}.appearance-compare-reveal-label.is-before{left:10px}.appearance-compare-reveal-label.is-after{right:10px}
