@@ -1,4 +1,4 @@
-function parentId(experiment){
+export function populationLabExperimentParentId(experiment){
   return experiment?.baselineExperimentId
     ??experiment?.summary?.shadowOfExperimentId
     ??null;
@@ -13,7 +13,7 @@ export function populationLabExperimentRows(experiments=[]){
   const byId=new Map(list.map(experiment=>[experiment.experimentId,experiment]));
   const children=new Map();
   for(const experiment of list){
-    const parent=parentId(experiment);
+    const parent=populationLabExperimentParentId(experiment);
     if(!parent||!byId.has(parent))continue;
     const siblings=children.get(parent)??[];
     siblings.push(experiment);
@@ -21,7 +21,7 @@ export function populationLabExperimentRows(experiments=[]){
   }
 
   const roots=list.filter(experiment=>{
-    const parent=parentId(experiment);
+    const parent=populationLabExperimentParentId(experiment);
     return !parent||!byId.has(parent);
   });
   const familyActivity=experiment=>{
