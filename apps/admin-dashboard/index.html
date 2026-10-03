@@ -354,7 +354,11 @@
   <dialog id="appearance-shadow-dialog" class="appearance-shadow-dialog">
     <div class="dialog-head">
       <div><p class="eyebrow">Population Lab</p><h2>Try calibration refinement</h2></div>
-      <button id="appearance-shadow-close" class="icon-button" type="button" aria-label="Close shadow calibration dialog">×</button>
+      <div class="appearance-shadow-head-actions">
+        <button id="appearance-shadow-import" class="secondary" type="button">Import JSON</button>
+        <button id="appearance-shadow-copy" class="secondary icon-only-action" type="button" aria-label="Copy refinement JSON" title="Copy refinement JSON"></button>
+        <button id="appearance-shadow-close" class="icon-button" type="button" aria-label="Close shadow calibration dialog">×</button>
+      </div>
     </div>
     <div class="dialog-body appearance-shadow-body">
       <p id="appearance-shadow-context" class="appearance-shadow-context"></p>
