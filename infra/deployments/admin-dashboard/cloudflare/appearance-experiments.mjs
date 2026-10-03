@@ -310,6 +310,37 @@ export async function listAdminPopulationLabExperiments(env){
   };
 }
 
+export function populationLabComparisonChanges({shadow,baselineResult,shadowResult}={}){
+  if(!shadow||typeof shadow!=="object"||Array.isArray(shadow)){
+    throw new TypeError("shadow calibration is required");
+  }
+  const referencePopulation=shadow.referencePopulation;
+  const baselineLoci=
+    baselineResult?.stats?.physicalCalibration?.populations?.[referencePopulation]?.loci
+    ??{};
+  const shadowLoci=
+    shadowResult?.stats?.physicalCalibration?.populations?.[referencePopulation]?.loci
+    ??{};
+  return Object.freeze([
+    ...Object.entries(shadow.values??{}).sort(([a],[b])=>a.localeCompare(b)).map(([parameter,after])=>Object.freeze({
+      kind:"value",
+      parameter,
+      before:Number.isFinite(baselineLoci?.[parameter]?.prior)?baselineLoci[parameter].prior:null,
+      after:Number(after),
+      baselineMean:Number.isFinite(baselineLoci?.[parameter]?.mean)?baselineLoci[parameter].mean:null,
+      shadowMean:Number.isFinite(shadowLoci?.[parameter]?.mean)?shadowLoci[parameter].mean:null,
+    })),
+    ...Object.entries(shadow.variation??{}).sort(([a],[b])=>a.localeCompare(b)).map(([parameter,after])=>Object.freeze({
+      kind:"variation",
+      parameter,
+      before:null,
+      after:Number(after),
+      baselineMean:null,
+      shadowMean:null,
+    })),
+  ]);
+}
+
 export async function readAdminPopulationLabComparison(env,experimentId){
   const store=experimentStore(env);
   const shadowExperiment=await store.get(experimentId);
@@ -330,31 +361,7 @@ export async function readAdminPopulationLabComparison(env,experimentId){
     readJsonArtifact(store,shadowExperiment.artifacts?.result?.objectRef),
   ]);
   const referencePopulation=shadow.referencePopulation;
-  const baselineLoci=
-    baselineResult?.stats?.physicalCalibration?.populations?.[referencePopulation]?.loci
-    ??{};
-  const shadowLoci=
-    shadowResult?.stats?.physicalCalibration?.populations?.[referencePopulation]?.loci
-    ??{};
-
-  const changes=[
-    ...Object.entries(shadow.values??{}).sort(([a],[b])=>a.localeCompare(b)).map(([parameter,after])=>Object.freeze({
-      kind:"value",
-      parameter,
-      before:Number.isFinite(baselineLoci?.[parameter]?.prior)?baselineLoci[parameter].prior:null,
-      after:Number(after),
-      baselineMean:Number.isFinite(baselineLoci?.[parameter]?.mean)?baselineLoci[parameter].mean:null,
-      shadowMean:Number.isFinite(shadowLoci?.[parameter]?.mean)?shadowLoci[parameter].mean:null,
-    })),
-    ...Object.entries(shadow.variation??{}).sort(([a],[b])=>a.localeCompare(b)).map(([parameter,after])=>Object.freeze({
-      kind:"variation",
-      parameter,
-      before:null,
-      after:Number(after),
-      baselineMean:null,
-      shadowMean:null,
-    })),
-  ];
+  const changes=populationLabComparisonChanges({shadow,baselineResult,shadowResult});
 
   return Object.freeze({
     referencePopulation,
