@@ -82,10 +82,19 @@ export function bindCopyAction(button,{
   button.addEventListener("click",async(event)=>{
     if(preventDefault)event.preventDefault();
     if(stopPropagation)event.stopPropagation();
-    const resolved=typeof value==="function"?await value():value;
-    await copyWithFeedback(button,resolved,{
-      label,tooltip,iconOnly,copiedLabel,copiedTooltip,failedLabel,failedTooltip,resetMs,
-    });
+    try{
+      const resolved=typeof value==="function"?await value():value;
+      await copyWithFeedback(button,resolved,{
+        label,tooltip,iconOnly,copiedLabel,copiedTooltip,failedLabel,failedTooltip,resetMs,
+      });
+    }catch(error){
+      decorateCopyAction(button,{
+        label:failedLabel,
+        tooltip:error instanceof Error?failedTooltip+": "+error.message:failedTooltip,
+        iconOnly,
+      });
+      globalThis.setTimeout?.(()=>decorateCopyAction(button,{label,tooltip,iconOnly}),resetMs);
+    }
   });
   return button;
 }
