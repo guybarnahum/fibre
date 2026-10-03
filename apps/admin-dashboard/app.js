@@ -1,3 +1,4 @@
+import { bindCopyAction } from "./copy-action.js";
 import { decorateActionButton, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 import {
   countryFlag,
@@ -252,44 +253,19 @@ function detail(label, input, { wide = false, mono = false } = {}) {
   item.append(name, body); return item;
 }
 
-async function copyText(value) {
-  const textValue = typeof value === "string" ? value : JSON.stringify(value, null, 2);
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(textValue);
-    return;
-  }
-  const textarea = document.createElement("textarea");
-  textarea.value = textValue;
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.append(textarea);
-  textarea.select();
-  document.execCommand("copy");
-  textarea.remove();
-}
-
 function activityCopyAction(record) {
   const actions = document.createElement("div");
   actions.className = "activity-record-actions";
   const button = document.createElement("button");
   button.type = "button";
   button.className = "secondary icon-only-action";
-  decorateActionButton(button, {
-    icon:"copy",
+  bindCopyAction(button,{
+    value:record,
     label:"Copy activity details",
     tooltip:"Copy activity details",
+    copiedLabel:"Activity details copied",
+    failedLabel:"Copy activity details failed",
     iconOnly:true,
-  });
-  button.addEventListener("click", async () => {
-    try {
-      await copyText(record);
-      decorateActionButton(button, { icon:"copy", label:"Activity details copied", tooltip:"Activity details copied", iconOnly:true });
-    } catch {
-      decorateActionButton(button, { icon:"copy", label:"Copy activity details failed", tooltip:"Copy activity details failed", iconOnly:true });
-    }
-    window.setTimeout(() => {
-      decorateActionButton(button, { icon:"copy", label:"Copy activity details", tooltip:"Copy activity details", iconOnly:true });
-    }, 1200);
   });
   actions.append(button);
   return actions;
