@@ -37,6 +37,8 @@ const compareVisualButton=$("#appearance-compare-visual");
 const compareVisualRole=$("#appearance-compare-visual-role");
 const compareGeometryButton=$("#appearance-compare-geometry");
 const comparePortraitButton=$("#appearance-compare-portrait");
+const compareRevealButton=$("#appearance-compare-reveal");
+const compareSideBySideButton=$("#appearance-compare-side-by-side");
 const compareNumericalBody=$("#appearance-compare-numerical-body");
 const compareVisualBody=$("#appearance-compare-visual-body");
 const compareParameterMatrix=$("#appearance-compare-parameter-matrix");
@@ -76,6 +78,7 @@ let experimentSnapshot=[];
 let comparisonState=null;
 let comparisonView="numerical";
 let comparisonVisualRole="geometry";
+let comparisonVisualMode="reveal";
 let shadowBaseExperiment=null;
 let mapPopover=null;
 let mapPopoverCloseTimer=null;
@@ -853,6 +856,45 @@ function comparisonImageUrl(experimentId,ordinal,role){
     +role;
 }
 
+function comparisonReveal({beforeSrc,afterSrc,ordinal}){
+  const reveal=el("div","appearance-compare-reveal");
+  reveal.style.setProperty("--reveal","50%");
+
+  const before=document.createElement("img");
+  before.className="appearance-compare-reveal-before";
+  before.src=beforeSrc;
+  before.alt="Before Sample "+ordinal+" "+comparisonVisualRole;
+  before.loading="lazy";
+
+  const afterLayer=el("div","appearance-compare-reveal-after");
+  const after=document.createElement("img");
+  after.src=afterSrc;
+  after.alt="After Sample "+ordinal+" "+comparisonVisualRole;
+  after.loading="lazy";
+  afterLayer.append(after);
+
+  const divider=el("div","appearance-compare-reveal-divider");
+  divider.append(el("span","appearance-compare-reveal-handle","↔"));
+
+  const beforeLabel=el("span","appearance-compare-reveal-label is-before","Before");
+  const afterLabel=el("span","appearance-compare-reveal-label is-after","After");
+
+  const slider=document.createElement("input");
+  slider.className="appearance-compare-reveal-range";
+  slider.type="range";
+  slider.min="0";
+  slider.max="100";
+  slider.value="50";
+  slider.step="1";
+  slider.setAttribute("aria-label","Reveal refinement for Sample "+ordinal);
+  slider.addEventListener("input",()=>{
+    reveal.style.setProperty("--reveal",slider.value+"%");
+  });
+
+  reveal.append(before,afterLayer,divider,beforeLabel,afterLabel,slider);
+  return reveal;
+}
+
 function renderVisualComparison(){
   if(!compareVisualBody||!comparisonState)return;
   const baseline=experimentById(comparisonState.baselineExperimentId);
@@ -875,30 +917,36 @@ function renderVisualComparison(){
     const sample=el("article","appearance-compare-visual-sample");
     const head=el("div","appearance-compare-visual-sample-head");
     head.append(
-      el("strong",null,"Sample "+ordinal),
-      el("span",null,"Same deterministic cohort person"),
+      el("strong",null,"Sample "+ordinal+" of "+sampleSize),
+      el("span",null,(comparisonVisualRole==="geometry"?"Geometry":"Portrait")+" · same deterministic cohort person"),
     );
-    const pair=el("div","appearance-compare-visual-pair");
 
-    for(const [label,experiment] of [["Before",baseline],["After",shadow]]){
-      const figure=document.createElement("figure");
-      if(label==="After")figure.classList.add("is-refinement");
-      const caption=el("figcaption",null);
-      caption.append(
-        el("span",null,label),
-        el("strong",null,comparisonVisualRole==="geometry"?"Geometry":"Portrait"),
-      );
-      const image=document.createElement("img");
-      const src=comparisonImageUrl(experiment.experimentId,ordinal,comparisonVisualRole);
-      image.src=src;
-      image.alt=label+" Sample "+ordinal+" "+comparisonVisualRole;
-      image.loading="lazy";
-      image.dataset.lightboxSrc=src;
-      image.dataset.lightboxAlt=image.alt;
-      figure.append(caption,image);
-      pair.append(figure);
+    const beforeSrc=comparisonImageUrl(baseline.experimentId,ordinal,comparisonVisualRole);
+    const afterSrc=comparisonImageUrl(shadow.experimentId,ordinal,comparisonVisualRole);
+
+    if(comparisonVisualMode==="reveal"){
+      sample.append(head,comparisonReveal({beforeSrc,afterSrc,ordinal}));
+    }else{
+      const pair=el("div","appearance-compare-visual-pair");
+      for(const [label,src] of [["Before",beforeSrc],["After",afterSrc]]){
+        const figure=document.createElement("figure");
+        if(label==="After")figure.classList.add("is-refinement");
+        const caption=el("figcaption",null);
+        caption.append(
+          el("span",null,label),
+          el("strong",null,comparisonVisualRole==="geometry"?"Geometry":"Portrait"),
+        );
+        const image=document.createElement("img");
+        image.src=src;
+        image.alt=label+" Sample "+ordinal+" "+comparisonVisualRole;
+        image.loading="lazy";
+        image.dataset.lightboxSrc=src;
+        image.dataset.lightboxAlt=image.alt;
+        figure.append(caption,image);
+        pair.append(figure);
+      }
+      sample.append(head,pair);
     }
-    sample.append(head,pair);
     compareVisualBody.append(sample);
   }
 }
@@ -921,6 +969,16 @@ function setComparisonVisualRole(role){
   comparisonVisualRole=role==="portrait"?"portrait":"geometry";
   compareGeometryButton?.classList.toggle("is-active",comparisonVisualRole==="geometry");
   comparePortraitButton?.classList.toggle("is-active",comparisonVisualRole==="portrait");
+  if(comparisonView==="visual"){
+    renderVisualComparison();
+    compareVisualBody?.scrollTo({top:0,behavior:"instant"});
+  }
+}
+
+function setComparisonVisualMode(mode){
+  comparisonVisualMode=mode==="side-by-side"?"side-by-side":"reveal";
+  compareRevealButton?.classList.toggle("is-active",comparisonVisualMode==="reveal");
+  compareSideBySideButton?.classList.toggle("is-active",comparisonVisualMode==="side-by-side");
   if(comparisonView==="visual"){
     renderVisualComparison();
     compareVisualBody?.scrollTo({top:0,behavior:"instant"});
@@ -1117,7 +1175,10 @@ async function openExperimentComparison(experiment){
   );
   comparisonView="numerical";
   comparisonVisualRole="geometry";
+  comparisonVisualMode="reveal";
+  comparisonVisualMode="reveal";
   setComparisonVisualRole("geometry");
+  setComparisonVisualMode("reveal");
   setComparisonView("numerical");
   renderComparisonActions(shadow);
   refreshComparisonViewAvailability();
@@ -2049,6 +2110,8 @@ compareNumericalButton?.addEventListener("click",()=>setComparisonView("numerica
 compareVisualButton?.addEventListener("click",()=>setComparisonView("visual"));
 compareGeometryButton?.addEventListener("click",()=>setComparisonVisualRole("geometry"));
 comparePortraitButton?.addEventListener("click",()=>setComparisonVisualRole("portrait"));
+compareRevealButton?.addEventListener("click",()=>setComparisonVisualMode("reveal"));
+compareSideBySideButton?.addEventListener("click",()=>setComparisonVisualMode("side-by-side"));
 compareClose?.addEventListener("click",()=>compareDialog?.close());
 compareDialog?.addEventListener("click",(event)=>{
   if(event.target===compareDialog)compareDialog.close();
