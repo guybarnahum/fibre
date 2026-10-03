@@ -110,7 +110,7 @@
 .appearance-compare-viewbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-bottom:1px solid var(--border);background:var(--surface);flex:0 0 auto}
 .appearance-compare-view-switch{display:flex;align-items:center;gap:4px}.appearance-compare-view-switch button{min-height:28px;padding:5px 9px;font-size:9px}.appearance-compare-view-switch button.is-active{background:var(--text);color:var(--surface);border-color:var(--text)}
 .appearance-compare-view-switch button:disabled{opacity:.45;cursor:not-allowed}
-.appearance-compare-numerical-body[hidden],.appearance-compare-visual-body[hidden],.appearance-compare-view-switch[hidden]{display:none}
+.appearance-compare-numerical-body[hidden],.appearance-compare-visual-body[hidden],.appearance-compare-view-switch[hidden],.appearance-compare-visual-controls[hidden]{display:none}
 .appearance-compare-numerical-body{display:grid;grid-template-columns:1fr;grid-template-rows:auto auto;align-content:start;gap:10px;min-height:0;flex:1 1 auto;padding:10px;overflow:hidden;background:var(--surface-subtle)}
 .appearance-compare-matrix-card{display:grid;grid-template-rows:auto minmax(0,1fr);min-width:0;min-height:0;border:1px solid var(--border);border-radius:10px;background:var(--surface);overflow:hidden}
 .appearance-compare-matrix-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border-bottom:1px solid var(--border)}.appearance-compare-matrix-head>div:first-child{display:grid;gap:2px}.appearance-compare-matrix-head span{font-size:9px;font-weight:800;letter-spacing:.055em;text-transform:uppercase;color:var(--muted)}.appearance-compare-matrix-head strong{font-size:12px}
