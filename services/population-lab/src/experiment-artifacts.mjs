@@ -351,6 +351,9 @@ export function createPopulationLabExperimentStore(infra){
       if(["queued","running"].includes(current.status)||["queued","running"].includes(current.visual?.status)){
         throw new TypeError("queued or running experiment cannot be deleted");
       }
+      if(current.artifacts?.calibrationApproval){
+        throw new TypeError("approved calibration experiment cannot be deleted");
+      }
       const refs=new Set([
         ...Object.values(current.artifacts??{}).map(value=>value?.objectRef),
         ...(current.images??[]).map(value=>value?.objectRef),
