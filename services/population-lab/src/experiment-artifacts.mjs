@@ -1,5 +1,6 @@
 import {requireInfraCapabilities} from "#infra";
 import {buildPopulationLabCalibrationCandidate} from "./calibration-candidate.mjs";
+import {buildPopulationLabCalibrationApproval} from "./calibration-approval.mjs";
 import {buildPopulationLabVisualReview} from "./visual-review.mjs";
 
 const PREFIX="population-lab:experiment:";
@@ -275,6 +276,44 @@ export function createPopulationLabExperimentStore(infra){
       const write=await put(experimentId,"calibration:candidate",jsonBytes(candidate),{mediaType:"application/json"});
       await indexArtifact(experimentId,write,{artifacts:{calibrationCandidate:write.artifact}});
       return candidate;
+    },
+    async putCalibrationApproval(experimentId,{approvedBy,impact,approvedAt}={}){
+      const key=populationLabExperimentCatalogKey(experimentId);
+      const current=await infra.catalog.get(key);
+      if(current===null)throw new Error("experiment not found");
+      if(current.artifacts?.calibrationApproval){
+        throw new TypeError("calibration approval already exists for this experiment");
+      }
+      const candidateArtifact=current.artifacts?.calibrationCandidate;
+      const reviewArtifact=current.artifacts?.visualReview;
+      if(!candidateArtifact?.objectRef)throw new TypeError("calibration approval requires candidate evidence");
+      if(!reviewArtifact?.objectRef)throw new TypeError("calibration approval requires visual review evidence");
+
+      const storedCandidate=await infra.objects.get(candidateArtifact.objectRef);
+      if(storedCandidate===null)throw new Error("calibration candidate bytes are missing");
+      let candidate;
+      try{candidate=JSON.parse(new TextDecoder().decode(storedCandidate.bytes))}
+      catch{throw new Error("calibration candidate is invalid")}
+
+      const approval=buildPopulationLabCalibrationApproval({
+        experiment:current,
+        candidate,
+        candidateArtifact,
+        reviewArtifact,
+        approvedBy,
+        impact,
+        approvedAt,
+      });
+      const write=await put(experimentId,"calibration:approval",jsonBytes(approval),{mediaType:"application/json"});
+      await indexArtifact(experimentId,write,{
+        artifacts:{calibrationApproval:write.artifact},
+        approval:Object.freeze({
+          approvedBy:approval.approvedBy,
+          approvedAt:approval.approvedAt,
+          impact:approval.impact,
+        }),
+      });
+      return approval;
     },
     async completeVisual(experimentId,summary={}){
       return updateVisual(experimentId,{
