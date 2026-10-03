@@ -493,6 +493,86 @@ async function freezeCalibrationCandidate(experiment,button){
   }
 }
 
+async function readCalibrationApprovalState(experiment){
+  const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/approval",{
+    headers:{Accept:"application/json"},
+    cache:"no-store",
+  });
+  const payload=await response.json().catch(()=>null);
+  if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+  return payload;
+}
+
+async function approveCalibrationCandidate(experiment,button){
+  setBlockingButtonState(button,true,{
+    label:"Approve",
+    tooltip:"Review projected impact and approve candidate evidence",
+    busyLabel:"Checking",
+    busyTooltip:"Reading current World impact",
+  });
+  try{
+    const state=await readCalibrationApprovalState(experiment);
+    if(state.approval){
+      await loadAppearanceExperiments();
+      return;
+    }
+    const candidate=state.candidate;
+    const impact=state.impact;
+    const changes=[
+      ...(candidate?.proposedCalibration?.values??[]).map(change=>change.locus+" "+change.from+" → "+change.to),
+      ...(candidate?.proposedCalibration?.variation??[]).map(change=>change.parameter+" "+change.from+" → "+change.to),
+    ];
+    const message=[
+      "Approve "+candidate.referencePopulation+" @"+candidate.proposedCalibration.version+"?",
+      "",
+      changes.join("\n"),
+      "",
+      "Projected existing impact: "+impact.threadCount+" Thread(s), "+impact.lineageCount+" lineage side(s).",
+      "",
+      "Approval records immutable human authority evidence. It does NOT make the calibration live until the approval is admitted to the Git-owned registry and deployed.",
+    ].join("\n");
+    if(!window.confirm(message)){
+      setBlockingButtonState(button,false,{
+        label:"Approve",
+        tooltip:"Review projected impact and approve candidate evidence",
+      });
+      return;
+    }
+
+    setBlockingButtonState(button,true,{
+      label:"Approve",
+      tooltip:"Approve candidate evidence",
+      busyLabel:"Approving",
+      busyTooltip:"Recording immutable calibration approval",
+    });
+    const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/approval",{
+      method:"POST",
+      headers:{Accept:"application/json"},
+    });
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+    await loadAppearanceExperiments();
+  }catch(error){
+    setBlockingButtonState(button,false,{
+      label:"Approve",
+      tooltip:error instanceof Error?error.message:String(error),
+    });
+  }
+}
+
+async function copyCalibrationApproval(experiment,button){
+  try{
+    const state=await readCalibrationApprovalState(experiment);
+    if(!state.approval)throw new Error("Calibration is not approved yet");
+    await copyJson(state.approval,button,{
+      restoreLabel:"Copy approval",
+      restoreTooltip:"Copy approval JSON for source admission",
+    });
+  }catch(error){
+    button.title=error instanceof Error?error.message:String(error);
+  }
+}
+
 function renderAppearanceExperiments(){
   if(!experiments)return;
   experiments.replaceChildren();
@@ -516,6 +596,9 @@ function renderAppearanceExperiments(){
     if(experiment.artifacts?.calibrationCandidate?.objectRef){
       head.append(experimentStatusPill({label:"Candidate Evidence",tone:"good",active:false}));
     }
+    if(experiment.artifacts?.calibrationApproval?.objectRef){
+      head.append(experimentStatusPill({label:"Approved",tone:"good",active:false}));
+    }
     const meta=el("span","appearance-experiment-meta",experimentSummary(experiment));
     const started=experiment.startedAt?new Date(experiment.startedAt).toLocaleString():"";
     if(started)meta.textContent+=" · "+started;
@@ -533,6 +616,9 @@ function renderAppearanceExperiments(){
     }
     if(experiment.summary?.shadowOfExperimentId){
       meta.textContent+=" · baseline "+experiment.summary.shadowOfExperimentId;
+    }
+    if(experiment.approval?.impact){
+      meta.textContent+=" · approval impact "+experiment.approval.impact.threadCount+" Thread(s)";
     }
     copy.append(head,meta);
     if(experiment.error?.message)copy.append(el("span","appearance-experiment-error",experiment.error.message));
@@ -567,6 +653,34 @@ function renderAppearanceExperiments(){
       });
       freeze.addEventListener("click",()=>void freezeCalibrationCandidate(experiment,freeze));
       actions.append(freeze);
+    }
+
+    if(
+      experiment.artifacts?.calibrationCandidate?.objectRef
+      && !experiment.artifacts?.calibrationApproval?.objectRef
+    ){
+      const approve=el("button","secondary appearance-approval-action");
+      approve.type="button";
+      decorateActionButton(approve,{
+        icon:"check",
+        label:"Approve",
+        tooltip:"Review projected impact and approve this calibration candidate",
+      });
+      approve.addEventListener("click",()=>void approveCalibrationCandidate(experiment,approve));
+      actions.append(approve);
+    }
+
+    if(experiment.artifacts?.calibrationApproval?.objectRef){
+      const copyApproval=el("button","icon-button");
+      copyApproval.type="button";
+      decorateActionButton(copyApproval,{
+        icon:"copy",
+        label:"Copy approval",
+        tooltip:"Copy approval JSON for source admission",
+        iconOnly:true,
+      });
+      copyApproval.addEventListener("click",()=>void copyCalibrationApproval(experiment,copyApproval));
+      actions.append(copyApproval);
     }
 
     const visualActive=["queued","running"].includes(experiment.visual?.status);
