@@ -6,6 +6,7 @@ import {
   adminPopulationLabRerunRequest,
   adminPopulationLabShadowExperimentRequest,
   reconcileAdminPopulationLabAsset,
+  withExperimentLifecycleHints,
 } from "./appearance-experiments.mjs";
 
 test("Admin launches reproducible physical experiments only from resolved ancestry coverage",()=>{
@@ -171,4 +172,47 @@ test("rejected shadow rerun preserves the exact shadow proposal",()=>{
   assert.equal(rerun.seed,shadow.seed,"shadow rerun changed cohort seed");
   assert.deepEqual(rerun.shadowCalibration,shadow.shadowCalibration,"shadow rerun changed proposed calibration");
   assert.deepEqual(rerun.source,shadow.source,"shadow rerun changed research provenance");
+});
+
+
+test("numerical experiment lifecycle publishes Admin live hints",async()=>{
+  const transitions=[];
+  const published=[];
+  const store={
+    async running(experimentId){
+      transitions.push("running:"+experimentId);
+      return {status:"running"};
+    },
+    async complete(experimentId){
+      transitions.push("completed:"+experimentId);
+      return {status:"completed"};
+    },
+    async fail(experimentId){
+      transitions.push("failed:"+experimentId);
+      return {status:"failed"};
+    },
+  };
+  const wrapped=withExperimentLifecycleHints(
+    store,
+    async(experimentId,aspect)=>published.push([experimentId,aspect]),
+  );
+
+  await wrapped.running("plexp_live");
+  await wrapped.complete("plexp_live");
+  await wrapped.fail("plexp_failed");
+
+  assert.deepEqual(
+    transitions,
+    ["running:plexp_live","completed:plexp_live","failed:plexp_failed"],
+    "lifecycle wrapper changed experiment state transitions",
+  );
+  assert.deepEqual(
+    published,
+    [
+      ["plexp_live","running"],
+      ["plexp_live","completed"],
+      ["plexp_failed","failed"],
+    ],
+    "numerical lifecycle stopped publishing Admin live hints",
+  );
 });
