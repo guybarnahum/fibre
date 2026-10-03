@@ -118,3 +118,53 @@ test("experiment store persists one immutable visual review",async()=>{
     "experiment accepted competing immutable visual reviews",
   );
 });
+
+
+test("comparison alignment lives and dies with its shadow experiment",async()=>{
+  const infra=createMemoryInfraDriver();
+  const store=createPopulationLabExperimentStore(infra);
+  const experimentId="exp_shadow_alignment";
+
+  await store.start(experimentId,{
+    startedAt:"2026-10-03T22:00:00.000Z",
+    referencePopulation:"middle_east.egypt",
+    shadowCalibration:{referencePopulation:"middle_east.egypt",values:{noseBreadth:.12}},
+    source:{shadowOfExperimentId:"exp_egypt_baseline"},
+  });
+
+  const points={
+    beforeLeft:{x:.41,y:.36},
+    beforeRight:{x:.59,y:.36},
+    afterLeft:{x:.40,y:.35},
+    afterRight:{x:.58,y:.35},
+  };
+  await store.putComparisonAlignment(experimentId,{
+    key:"geometry:1",
+    points,
+    updatedAt:"2026-10-03T22:01:00.000Z",
+  });
+
+  let experiment=await store.get(experimentId);
+  assert.deepEqual(
+    experiment.comparisonAlignments["geometry:1"],
+    {...points,updatedAt:"2026-10-03T22:01:00.000Z"},
+    "shadow report lost its eye alignment",
+  );
+
+  await store.removeComparisonAlignment(experimentId,"geometry:1");
+  experiment=await store.get(experimentId);
+  assert.deepEqual(
+    experiment.comparisonAlignments,
+    {},
+    "reset did not remove the shadow report alignment",
+  );
+
+  await store.putComparisonAlignment(experimentId,{key:"geometry:1",points});
+  await store.complete(experimentId,{referencePopulation:"middle_east.egypt"});
+  await store.delete(experimentId);
+  assert.equal(
+    await store.get(experimentId),
+    null,
+    "deleted shadow retained comparison presentation state",
+  );
+});
