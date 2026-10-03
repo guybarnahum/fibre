@@ -241,6 +241,29 @@ export function createPopulationLabExperimentStore(infra){
       const write=await put(experimentId,"report:visual",html,{mediaType:"text/html; charset=utf-8"});
       return indexArtifact(experimentId,write,{artifacts:{visualReport:write.artifact}});
     },
+    async putComparisonAlignment(experimentId,{key:alignmentKey,points,updatedAt=new Date().toISOString()}={}){
+      const key=populationLabExperimentCatalogKey(experimentId);
+      const current=await infra.catalog.get(key);
+      if(current===null)throw new Error("experiment not found");
+      const comparisonAlignments=Object.freeze({
+        ...(current.comparisonAlignments??{}),
+        [alignmentKey]:Object.freeze({
+          ...points,
+          updatedAt,
+        }),
+      });
+      return update(experimentId,{comparisonAlignments});
+    },
+    async removeComparisonAlignment(experimentId,alignmentKey){
+      const key=populationLabExperimentCatalogKey(experimentId);
+      const current=await infra.catalog.get(key);
+      if(current===null)throw new Error("experiment not found");
+      const entries=Object.entries(current.comparisonAlignments??{})
+        .filter(([entryKey])=>entryKey!==alignmentKey);
+      return update(experimentId,{
+        comparisonAlignments:Object.freeze(Object.fromEntries(entries)),
+      });
+    },
     async putVisualReview(experimentId,input){
       const key=populationLabExperimentCatalogKey(experimentId);
       const current=await infra.catalog.get(key);
