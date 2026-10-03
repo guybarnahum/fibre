@@ -728,6 +728,52 @@ function comparisonMatrixRow({label,before,after,integer=false,forceDifferent=fa
   return row;
 }
 
+function comparisonDistributionCell({center,mean,sd,p05,p95,highlight=false}={}){
+  const cell=el("div","appearance-compare-distribution "+(highlight?"is-different":""));
+  cell.append(
+    el("strong",null,"center "+comparisonNumber(center)),
+    el("span",null,"μ "+comparisonNumber(mean)+" · σ "+comparisonNumber(sd)),
+    el("span",null,"p05 "+comparisonNumber(p05)+" · p95 "+comparisonNumber(p95)),
+  );
+  return cell;
+}
+
+function comparisonDistributionDelta(change){
+  const center=comparisonDelta(change.before,change.after);
+  const mean=comparisonDelta(change.baselineMean,change.shadowMean);
+  const spread=comparisonDelta(change.baselineSd,change.shadowSd);
+  const cell=el("div","appearance-compare-distribution-delta is-different");
+  cell.append(
+    el("strong",null,"center "+center.text),
+    el("span",null,"μ "+mean.text+" · σ "+spread.text),
+  );
+  return cell;
+}
+
+function comparisonDistributionRow(change){
+  const row=el("div","appearance-compare-matrix-row appearance-compare-distribution-row");
+  row.append(
+    el("div","appearance-compare-matrix-label",change.parameter),
+    comparisonDistributionCell({
+      center:change.before,
+      mean:change.baselineMean,
+      sd:change.baselineSd,
+      p05:change.baselineP05,
+      p95:change.baselineP95,
+    }),
+    comparisonDistributionCell({
+      center:change.after,
+      mean:change.shadowMean,
+      sd:change.shadowSd,
+      p05:change.shadowP05,
+      p95:change.shadowP95,
+      highlight:true,
+    }),
+    comparisonDistributionDelta(change),
+  );
+  return row;
+}
+
 function comparisonMatrixTextRow({label,before,after,different=true}){
   const row=el("div","appearance-compare-matrix-row");
   row.append(
@@ -768,41 +814,7 @@ function renderNumericalComparison(){
         }));
         continue;
       }
-      compareParameterMatrix.append(
-        comparisonMatrixRow({
-          label:change.parameter+" · center",
-          before:change.before,
-          after:change.after,
-          forceDifferent:true,
-        }),
-        comparisonMatrixRow({
-          label:change.parameter+" · mean",
-          before:change.baselineMean,
-          after:change.shadowMean,
-        }),
-        comparisonMatrixRow({
-          label:change.parameter+" · spread",
-          before:change.baselineSd,
-          after:change.shadowSd,
-        }),
-        comparisonMatrixTextRow({
-          label:change.parameter+" · p05–p95",
-          before:Number.isFinite(change.baselineP05)&&Number.isFinite(change.baselineP95)
-            ?comparisonNumber(change.baselineP05)+" … "+comparisonNumber(change.baselineP95)
-            :"—",
-          after:Number.isFinite(change.shadowP05)&&Number.isFinite(change.shadowP95)
-            ?comparisonNumber(change.shadowP05)+" … "+comparisonNumber(change.shadowP95)
-            :"—",
-          different:Boolean(
-            Number.isFinite(change.baselineP05)
-            &&Number.isFinite(change.shadowP05)
-            &&(
-              Math.abs(change.baselineP05-change.shadowP05)>=.0005
-              ||Math.abs(change.baselineP95-change.shadowP95)>=.0005
-            )
-          ),
-        }),
-      );
+      compareParameterMatrix.append(comparisonDistributionRow(change));
     }
   }
 
@@ -1080,7 +1092,10 @@ async function openExperimentComparison(experiment){
   const baseline=experimentById(comparison.baselineExperimentId);
   const shadow=experimentById(comparison.shadowExperimentId)??experiment;
 
-  if(compareTitle)compareTitle.textContent=comparison.referencePopulation+" · baseline vs refinement";
+  if(compareTitle)compareTitle.textContent=
+    (baseline?populationLabExperimentName(baseline):comparison.referencePopulation+" baseline")
+    +" → "
+    +populationLabExperimentName(shadow);
   if(compareChanges){
     compareChanges.replaceChildren();
     for(const change of comparison.changes??[])compareChanges.append(comparisonChangeNode(change));
