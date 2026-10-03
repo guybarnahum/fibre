@@ -478,7 +478,7 @@ Experiment/research/review output is a **candidate**, never authority. Human app
 
 ### A4 — affected-Thread migration workset
 
-Approval computes the affected existing Thread set directly from durable ancestry + stored calibration dependencies.
+**Implemented on `main`, validation pending.** After a deployed A3.3 source admission, World recomputes current calibration dependencies from durable ancestry and stored dependency snapshots. Only changed dependencies enter the Appearance workset.
 
 A calibration version is not an ordered executable migration chain. Existing Threads jump once from their stored dependency to the current approved version:
 
@@ -494,7 +494,7 @@ v1 -> v2 -> v3
 
 Only affected Threads become `migration_required`. A Moroccan calibration change must not migrate Korean Threads.
 
-Admin exposes the resulting workset and may initiate bounded migration of affected Threads. Each migration remains an ordinary replayable World authority change followed by canonical Embodiment, Presentation and FID convergence. Pending and completion are reflected through the normal Admin live invalidation path.
+Admin retains the existing per-Thread **Update calibration** action and now exposes **Migrate affected** for the current workset. The batch action is intentionally thin: it confirms the bounded set once, then launches each Thread sequentially through the exact same World migration action and default migration reason used by the individual control. It adds no batch authority, no parallel migration service and no polling. Canonical Embodiment, Presentation and FID convergence remain owned by the existing World/publication path, with pending/completion reflected through normal Admin live invalidation.
 
 ## Ambition / extension path
 
