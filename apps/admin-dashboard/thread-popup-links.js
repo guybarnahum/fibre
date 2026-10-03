@@ -47,6 +47,7 @@ function clearStickyIdentity() {
   heroObserver?.disconnect();
   heroObserver = null;
   stickyIdentity?.classList.remove("is-visible");
+  stickyIdentity?.parentElement?.classList.remove("is-thread-condensed");
   stickyIdentity?.remove();
   stickyIdentity = null;
 }
@@ -83,16 +84,20 @@ function watchHeroForStickyIdentity(identity, threadId) {
   const hero = body.querySelector(".thread-person-hero");
   if (!hero) return;
 
+  const heroName=hero.querySelector(".thread-person-hero-copy h2")??hero;
+  const titleBlock=title?.parentElement??null;
   stickyIdentity = stickyIdentityChip(identity, threadId);
-  dialogHead.insertBefore(stickyIdentity, closeButton);
+  (titleBlock??dialogHead).append(stickyIdentity);
 
   heroObserver = new IntersectionObserver(([entry]) => {
-    stickyIdentity?.classList.toggle("is-visible", entry.intersectionRatio<0.12);
+    const compact=!entry.isIntersecting;
+    stickyIdentity?.classList.toggle("is-visible",compact);
+    titleBlock?.classList.toggle("is-thread-condensed",compact);
   }, {
     root:body,
-    threshold:[0,0.12,1],
+    threshold:0,
   });
-  heroObserver.observe(hero);
+  heroObserver.observe(heroName);
 }
 
 async function openThread(threadId, { showLoading = true, ensureWatch = true } = {}) {
