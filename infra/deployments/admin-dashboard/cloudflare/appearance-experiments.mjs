@@ -87,6 +87,36 @@ function newExperimentId(){
   return "plexp_"+crypto.randomUUID().replaceAll("-","").slice(0,24);
 }
 
+function comparisonAlignmentPoint(name,value){
+  if(!value||typeof value!=="object"||Array.isArray(value)){
+    throw new TypeError(name+" point is required");
+  }
+  const x=Number(value.x);
+  const y=Number(value.y);
+  if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>1||y<0||y>1){
+    throw new TypeError(name+" point must be normalized to [0,1]");
+  }
+  return Object.freeze({x,y});
+}
+
+function comparisonAlignmentInput(input){
+  if(!input||typeof input!=="object"||Array.isArray(input)){
+    throw new TypeError("comparison alignment must be an object");
+  }
+  return Object.freeze({
+    beforeLeft:comparisonAlignmentPoint("beforeLeft",input.beforeLeft),
+    beforeRight:comparisonAlignmentPoint("beforeRight",input.beforeRight),
+    afterLeft:comparisonAlignmentPoint("afterLeft",input.afterLeft),
+    afterRight:comparisonAlignmentPoint("afterRight",input.afterRight),
+  });
+}
+
+function comparisonAlignmentKey(role,ordinal){
+  if(!["geometry","portrait"].includes(role))throw new TypeError("comparison alignment role is invalid");
+  if(!Number.isInteger(ordinal)||ordinal<1||ordinal>8)throw new TypeError("comparison alignment ordinal is invalid");
+  return role+":"+ordinal;
+}
+
 export function adminPopulationLabExperimentRequest(spec,{
   experimentId=newExperimentId(),
   requestedAt=new Date().toISOString(),
@@ -429,6 +459,53 @@ export async function readAdminPopulationLabComparison(env,experimentId){
     }),
     changes:Object.freeze(changes),
     health:populationLabComparisonHealth({referencePopulation,baselineResult,shadowResult}),
+    comparisonAlignments:Object.freeze({...shadowExperiment.comparisonAlignments}),
+  });
+}
+
+export async function recordAdminPopulationLabComparisonAlignment(env,experimentId,role,ordinal,input){
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)throw new TypeError("experiment not found");
+  if(experiment.experimentKind!=="refinement"&&experiment.summary?.shadow!==true){
+    throw new TypeError("comparison alignment belongs to a shadow experiment");
+  }
+  if(experiment.visual?.status!=="completed"){
+    throw new TypeError("comparison alignment requires completed visuals");
+  }
+  const sampleSize=Number(experiment.visual?.sampleSize??experiment.visual?.summary?.sampleSize);
+  if(!Number.isInteger(sampleSize)||ordinal>sampleSize){
+    throw new TypeError("comparison alignment sample is outside the visual cohort");
+  }
+  const manifest=await readJsonArtifact(store,experiment.artifacts?.manifest?.objectRef);
+  const shadow=manifest?.shadowCalibration;
+  if(!shadow)throw new TypeError("comparison alignment requires shadow calibration evidence");
+  if(Object.keys(shadow.variation??{}).length>0){
+    throw new TypeError("comparison alignment is disabled when variation changes");
+  }
+  if(Object.hasOwn(shadow.values??{},"eyeSpacing")){
+    throw new TypeError("comparison alignment is disabled when eyeSpacing changes");
+  }
+  const key=comparisonAlignmentKey(role,ordinal);
+  const points=comparisonAlignmentInput(input);
+  const updated=await store.putComparisonAlignment(experimentId,{key,points});
+  await publishExperimentHint(env,experimentId,"comparison_alignment");
+  return updated.comparisonAlignments[key];
+}
+
+export async function deleteAdminPopulationLabComparisonAlignment(env,experimentId,role,ordinal){
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)throw new TypeError("experiment not found");
+  const key=comparisonAlignmentKey(role,ordinal);
+  const existed=Object.hasOwn(experiment.comparisonAlignments??{},key);
+  const updated=await store.removeComparisonAlignment(experimentId,key);
+  await publishExperimentHint(env,experimentId,"comparison_alignment");
+  return Object.freeze({
+    experimentId,
+    key,
+    deleted:existed,
+    comparisonAlignments:Object.freeze({...updated.comparisonAlignments}),
   });
 }
 
