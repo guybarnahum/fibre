@@ -1,4 +1,4 @@
-import { bindCopyAction, copyWithFeedback } from "./copy-action.js";
+import { bindCopyAction, copyWithFeedback, decorateCopyAction } from "./copy-action.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { watchAdminLive } from "./admin-live.js";
 import { decorateActionButton, setBlockingButtonState, setRefreshButtonState } from "./fa-icons.js";
@@ -679,8 +679,7 @@ function renderAppearanceExperiments(){
     if(experiment.artifacts?.calibrationApproval?.objectRef){
       const copyApproval=el("button","icon-button");
       copyApproval.type="button";
-      decorateActionButton(copyApproval,{
-        icon:"copy",
+      decorateCopyAction(copyApproval,{
         label:"Copy approval",
         tooltip:"Copy approval JSON for source admission",
         iconOnly:true,
@@ -1573,10 +1572,12 @@ reportDialog?.addEventListener("close",()=>{
   }
 });
 
-if(copyButton)decorateActionButton(copyButton,{
-  icon:"copy",
+if(copyButton)bindCopyAction(copyButton,{
+  value:()=>snapshot??{},
   label:"Copy coverage",
   tooltip:"Copy appearance coverage JSON",
+  copiedLabel:"Coverage copied",
+  failedLabel:"Copy coverage failed",
   iconOnly:true,
 });
 if(experimentRefreshButton)setRefreshButtonState(experimentRefreshButton,false,{
@@ -1602,10 +1603,6 @@ experimentRefreshButton?.addEventListener("click",async()=>{
     });
   }
 });
-copyButton?.addEventListener("click",()=>{
-  if(snapshot)void copyJson(snapshot,copyButton,{restoreLabel:"Copy coverage",restoreTooltip:"Copy appearance coverage JSON"});
-});
-
 window.addEventListener("fibre:thread-action-busy",(event)=>{
   const threadId=event?.detail?.threadId;
   if(typeof threadId!=="string"||threadId==="")return;
