@@ -744,13 +744,16 @@ function renderAppearanceExperiments(){
     remove.type="button";
     const terminal=!["queued","running"].includes(experiment.status)
       && !["queued","running"].includes(experiment.visual?.status);
-    remove.disabled=!terminal;
+    const retained=Boolean(experiment.artifacts?.calibrationApproval?.objectRef);
+    remove.disabled=!terminal||retained;
     decorateActionButton(remove,{
       icon:"trash-can",
       label:"Delete experiment",
-      tooltip:terminal
-        ?"Delete this experiment and all stored artifacts"
-        :"Experiment can be deleted after it finishes",
+      tooltip:retained
+        ?"Approved calibration evidence is retained"
+        :terminal
+          ?"Delete this experiment and all stored artifacts"
+          :"Experiment can be deleted after it finishes",
       iconOnly:true,
     });
     remove.addEventListener("click",async()=>{
