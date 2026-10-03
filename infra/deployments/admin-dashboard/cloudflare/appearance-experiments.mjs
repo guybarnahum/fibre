@@ -329,6 +329,12 @@ export function populationLabComparisonChanges({shadow,baselineResult,shadowResu
       after:Number(after),
       baselineMean:Number.isFinite(baselineLoci?.[parameter]?.mean)?baselineLoci[parameter].mean:null,
       shadowMean:Number.isFinite(shadowLoci?.[parameter]?.mean)?shadowLoci[parameter].mean:null,
+      baselineSd:Number.isFinite(baselineLoci?.[parameter]?.sd)?baselineLoci[parameter].sd:null,
+      shadowSd:Number.isFinite(shadowLoci?.[parameter]?.sd)?shadowLoci[parameter].sd:null,
+      baselineP05:Number.isFinite(baselineLoci?.[parameter]?.p05)?baselineLoci[parameter].p05:null,
+      shadowP05:Number.isFinite(shadowLoci?.[parameter]?.p05)?shadowLoci[parameter].p05:null,
+      baselineP95:Number.isFinite(baselineLoci?.[parameter]?.p95)?baselineLoci[parameter].p95:null,
+      shadowP95:Number.isFinite(shadowLoci?.[parameter]?.p95)?shadowLoci[parameter].p95:null,
     })),
     ...Object.entries(shadow.variation??{}).sort(([a],[b])=>a.localeCompare(b)).map(([parameter,after])=>Object.freeze({
       kind:"variation",
@@ -337,7 +343,43 @@ export function populationLabComparisonChanges({shadow,baselineResult,shadowResu
       after:Number(after),
       baselineMean:null,
       shadowMean:null,
+      baselineSd:null,
+      shadowSd:null,
+      baselineP05:null,
+      shadowP05:null,
+      baselineP95:null,
+      shadowP95:null,
     })),
+  ]);
+}
+
+export function populationLabComparisonHealth({referencePopulation,baselineResult,shadowResult}={}){
+  const baseline=
+    baselineResult?.stats?.physicalCalibration?.populations?.[referencePopulation]
+    ??{};
+  const shadow=
+    shadowResult?.stats?.physicalCalibration?.populations?.[referencePopulation]
+    ??{};
+  const warningCount=result=>Array.isArray(result?.stats?.physicalCalibration?.warnings)
+    ?result.stats.physicalCalibration.warnings.length
+    :0;
+  return Object.freeze([
+    Object.freeze({metric:"Unique share",baseline:baseline.uniqueShare??null,shadow:shadow.uniqueShare??null}),
+    Object.freeze({metric:"Max center error",baseline:baseline.maxCenterError??null,shadow:shadow.maxCenterError??null}),
+    Object.freeze({metric:"Median spread",baseline:baseline.medianSd??null,shadow:shadow.medianSd??null}),
+    Object.freeze({metric:"Min spread",baseline:baseline.minSd??null,shadow:shadow.minSd??null}),
+    Object.freeze({metric:"Max spread",baseline:baseline.maxSd??null,shadow:shadow.maxSd??null}),
+    Object.freeze({
+      metric:"Sibling / unrelated",
+      baseline:baseline.resemblance?.siblingToUnrelatedRatio??null,
+      shadow:shadow.resemblance?.siblingToUnrelatedRatio??null,
+    }),
+    Object.freeze({
+      metric:"Child / unrelated",
+      baseline:baseline.resemblance?.childToUnrelatedRatio??null,
+      shadow:shadow.resemblance?.childToUnrelatedRatio??null,
+    }),
+    Object.freeze({metric:"Warnings",baseline:warningCount(baselineResult),shadow:warningCount(shadowResult),integer:true}),
   ]);
 }
 
@@ -386,6 +428,7 @@ export async function readAdminPopulationLabComparison(env,experimentId){
       count:shadowManifest.count??null,
     }),
     changes:Object.freeze(changes),
+    health:populationLabComparisonHealth({referencePopulation,baselineResult,shadowResult}),
   });
 }
 
