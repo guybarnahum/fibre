@@ -394,14 +394,20 @@
         <button id="appearance-compare-portrait" class="secondary" type="button">Portrait</button>
       </div>
     </div>
-    <div id="appearance-compare-numerical-body" class="appearance-compare-body">
-      <section class="appearance-compare-pane">
-        <div class="appearance-compare-pane-head"><span>Baseline</span><strong id="appearance-compare-baseline-name"></strong><div id="appearance-compare-baseline-values" class="appearance-compare-pane-values"></div></div>
-        <iframe id="appearance-compare-baseline-frame" title="Baseline numerical calibration report"></iframe>
+    <div id="appearance-compare-numerical-body" class="appearance-compare-numerical-body">
+      <section class="appearance-compare-matrix-card">
+        <div class="appearance-compare-matrix-head">
+          <div><span>Changed parameters</span><strong>Baseline vs refinement</strong></div>
+          <div class="appearance-compare-report-links">
+            <button id="appearance-compare-baseline-report" class="secondary" type="button">Baseline report</button>
+            <button id="appearance-compare-shadow-report" class="secondary" type="button">Refinement report</button>
+          </div>
+        </div>
+        <div id="appearance-compare-parameter-matrix" class="appearance-compare-matrix"></div>
       </section>
-      <section class="appearance-compare-pane">
-        <div class="appearance-compare-pane-head"><span>Refinement</span><strong id="appearance-compare-shadow-name"></strong><div id="appearance-compare-shadow-values" class="appearance-compare-pane-values"></div></div>
-        <iframe id="appearance-compare-shadow-frame" title="Refinement numerical calibration report"></iframe>
+      <section class="appearance-compare-matrix-card">
+        <div class="appearance-compare-matrix-head"><div><span>Cohort health</span><strong>Should remain stable unless intentionally changed</strong></div></div>
+        <div id="appearance-compare-health-matrix" class="appearance-compare-matrix"></div>
       </section>
     </div>
     <div id="appearance-compare-visual-body" class="appearance-compare-visual-body" hidden></div>
