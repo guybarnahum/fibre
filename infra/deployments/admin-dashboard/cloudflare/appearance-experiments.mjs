@@ -325,7 +325,7 @@ export async function readAdminPopulationLabCalibrationApproval(env,experimentId
   if(candidate===null)throw new TypeError("calibration approval requires candidate evidence");
   return Object.freeze({
     approval:null,
-    impact:projectCalibrationCandidateImpact({candidate,coverage}),
+    impact:coverage?projectCalibrationCandidateImpact({candidate,coverage}):null,
     candidate,
   });
 }
