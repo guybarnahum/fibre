@@ -310,6 +310,63 @@ export async function listAdminPopulationLabExperiments(env){
   };
 }
 
+export async function readAdminPopulationLabComparison(env,experimentId){
+  const store=experimentStore(env);
+  const shadowExperiment=await store.get(experimentId);
+  if(shadowExperiment===null)throw new TypeError("experiment not found");
+  const shadowManifest=await readJsonArtifact(store,shadowExperiment.artifacts?.manifest?.objectRef);
+  const shadow=shadowManifest?.shadowCalibration;
+  const baselineExperimentId=shadowManifest?.source?.shadowOfExperimentId
+    ??shadowExperiment.summary?.shadowOfExperimentId
+    ??null;
+  if(!shadow||typeof baselineExperimentId!=="string"||baselineExperimentId===""){
+    throw new TypeError("comparison requires a shadow experiment with a baseline");
+  }
+  const baselineExperiment=await store.get(baselineExperimentId);
+  if(baselineExperiment===null)throw new Error("baseline experiment not found");
+
+  const [baselineResult,shadowResult]=await Promise.all([
+    readJsonArtifact(store,baselineExperiment.artifacts?.result?.objectRef),
+    readJsonArtifact(store,shadowExperiment.artifacts?.result?.objectRef),
+  ]);
+  const referencePopulation=shadow.referencePopulation;
+  const baselineLoci=
+    baselineResult?.stats?.physicalCalibration?.populations?.[referencePopulation]?.loci
+    ??{};
+  const shadowLoci=
+    shadowResult?.stats?.physicalCalibration?.populations?.[referencePopulation]?.loci
+    ??{};
+
+  const changes=[
+    ...Object.entries(shadow.values??{}).sort(([a],[b])=>a.localeCompare(b)).map(([parameter,after])=>Object.freeze({
+      kind:"value",
+      parameter,
+      before:Number.isFinite(baselineLoci?.[parameter]?.prior)?baselineLoci[parameter].prior:null,
+      after:Number(after),
+      baselineMean:Number.isFinite(baselineLoci?.[parameter]?.mean)?baselineLoci[parameter].mean:null,
+      shadowMean:Number.isFinite(shadowLoci?.[parameter]?.mean)?shadowLoci[parameter].mean:null,
+    })),
+    ...Object.entries(shadow.variation??{}).sort(([a],[b])=>a.localeCompare(b)).map(([parameter,after])=>Object.freeze({
+      kind:"variation",
+      parameter,
+      before:null,
+      after:Number(after),
+      baselineMean:null,
+      shadowMean:null,
+    })),
+  ];
+
+  return Object.freeze({
+    referencePopulation,
+    baselineExperimentId,
+    shadowExperimentId:experimentId,
+    baseCalibration:shadow.baseCalibration,
+    rationale:shadow.rationale,
+    evidence:shadow.evidence,
+    changes:Object.freeze(changes),
+  });
+}
+
 export async function readAdminPopulationLabExperiment(env,experimentId){
   return experimentStore(env).get(experimentId);
 }
@@ -391,12 +448,12 @@ export async function rerunAdminPopulationLabExperiment(env,experimentId){
   return launchPopulationLabRequest(env,adminPopulationLabRerunRequest(manifest));
 }
 
-export async function readAdminPopulationLabReport(env,experimentId){
+export async function readAdminPopulationLabReport(env,experimentId,{kind="current"}={}){
   const store=experimentStore(env);
   const experiment=await store.get(experimentId);
   if(experiment===null)return null;
 
-  if(experiment.visual?.status==="completed"&&experiment.artifacts?.visualManifest?.objectRef&&experiment.artifacts?.population?.objectRef){
+  if(kind!=="numerical"&&experiment.visual?.status==="completed"&&experiment.artifacts?.visualManifest?.objectRef&&experiment.artifacts?.population?.objectRef){
     try{
       const [manifest,population,review]=await Promise.all([
         store.getArtifact(experiment.artifacts.visualManifest.objectRef),
@@ -419,9 +476,11 @@ export async function readAdminPopulationLabReport(env,experimentId){
     }catch{}
   }
 
-  const objectRef=experiment.artifacts?.visualReport?.objectRef
-    ?? experiment.artifacts?.report?.objectRef
-    ?? populationLabExperimentRef(experimentId,"report");
+  const objectRef=kind==="numerical"
+    ?experiment.artifacts?.report?.objectRef??populationLabExperimentRef(experimentId,"report")
+    :experiment.artifacts?.visualReport?.objectRef
+      ??experiment.artifacts?.report?.objectRef
+      ??populationLabExperimentRef(experimentId,"report");
   return store.getArtifact(objectRef);
 }
 
