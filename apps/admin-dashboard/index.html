@@ -374,6 +374,28 @@
     </div>
   </dialog>
 
+  <dialog id="appearance-compare-dialog" class="appearance-compare-dialog">
+    <div class="appearance-compare-head">
+      <div class="appearance-compare-title">
+        <p class="eyebrow">Population Lab · Calibration comparison</p>
+        <h2 id="appearance-compare-title">Compare with baseline</h2>
+        <div id="appearance-compare-changes" class="appearance-compare-changes"></div>
+      </div>
+      <div id="appearance-compare-actions" class="appearance-compare-actions"></div>
+      <button id="appearance-compare-close" class="icon-button" type="button" aria-label="Close calibration comparison">×</button>
+    </div>
+    <div class="appearance-compare-body">
+      <section class="appearance-compare-pane">
+        <div class="appearance-compare-pane-head"><span>Baseline</span><strong id="appearance-compare-baseline-name"></strong></div>
+        <iframe id="appearance-compare-baseline-frame" title="Baseline numerical calibration report"></iframe>
+      </section>
+      <section class="appearance-compare-pane">
+        <div class="appearance-compare-pane-head"><span>Refinement</span><strong id="appearance-compare-shadow-name"></strong></div>
+        <iframe id="appearance-compare-shadow-frame" title="Refinement numerical calibration report"></iframe>
+      </section>
+    </div>
+  </dialog>
+
   <dialog id="appearance-report-dialog" class="appearance-report-dialog">
     <div class="appearance-report-dialog-head">
       <div><p class="eyebrow">Population Lab</p><h2 id="appearance-report-title">Visual fidelity report</h2></div>
