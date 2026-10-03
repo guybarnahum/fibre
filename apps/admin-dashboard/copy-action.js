@@ -10,8 +10,12 @@ export async function writeClipboard(value,{
 }={}){
   const text=copyText(value);
   if(clipboard?.writeText){
-    await clipboard.writeText(text);
-    return true;
+    try{
+      await clipboard.writeText(text);
+      return true;
+    }catch{
+      if(!documentRef?.createElement)throw new Error("Clipboard copy failed");
+    }
   }
   if(!documentRef?.createElement)throw new Error("Clipboard is unavailable");
   const area=documentRef.createElement("textarea");
