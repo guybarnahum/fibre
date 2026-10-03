@@ -242,7 +242,7 @@ function appearanceProgress(host){
   if(progress)return progress;
   progress=el("div","thread-appearance-progress");
   setWaitingContent(progress,"Waiting for appearance publication");
-  host.append(progress);
+  (host.querySelector(".thread-appearance-body")??host).append(progress);
   return progress;
 }
 
@@ -428,7 +428,7 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
       appearanceProgress:true,
     }));
   }else{
-    host.append(el("p","thread-repair-note","Appearance authority is not ready for migration or re-rendering. Resolve the Thread health findings first."));
+    body.append(el("p","thread-repair-note","Appearance authority is not ready for migration or re-rendering. Resolve the Thread health findings first."));
   }
 
   actions.append(actionButton("Refresh appearance",()=>refreshAppearance(host,threadId,threadName),{
