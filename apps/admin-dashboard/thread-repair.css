@@ -708,26 +708,6 @@
 }
 .thread-person-name:hover { background:transparent; text-decoration:underline; }
 .thread-person-copy small { font-size:8px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.thread-portrait-preview {
-  position:fixed;
-  z-index:1600;
-  width:220px;
-  height:220px;
-  overflow:hidden;
-  pointer-events:none;
-  border:1px solid #d7dbe0;
-  border-radius:50%;
-  background:var(--surface);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--surface) 72%,transparent),0 16px 44px rgba(0,0,0,.24);
-}
-.thread-portrait-preview[hidden] { display:none; }
-.thread-portrait-preview img {
-  display:block;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  border-radius:50%;
-}
 .thread-population-name.thread-link { display:block; color:var(--text); font-weight:700; font-size:11px; text-decoration:none; }
 .thread-population-name.thread-link:hover { color:var(--text); text-decoration:underline; }
 .thread-population-identifiers { display:flex; align-items:center; flex-wrap:wrap; gap:2px; margin-top:2px; color:var(--muted); font-size:8px; }
