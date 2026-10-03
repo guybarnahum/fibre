@@ -160,26 +160,58 @@ function setAppearanceBusy(host,busy){
   }
 }
 
-function fact(label,value,{mono=false}={}){
-  const item=el("div","thread-appearance-fact");
+function appearanceField(label,value,{mono=false,wide=false}={}){
+  const item=el("div","thread-appearance-field"+(wide?" is-wide":""));
   item.append(
-    el("span",null,label),
+    el("span","thread-appearance-field-label",label),
     el("strong",mono?"mono":null,value??"—"),
   );
   return item;
 }
 
-function renderEvidence(host,evidence){
-  if(evidence===null)return;
+function appearanceGroup(title,fields,{wide=false}={}){
+  const group=el("section","thread-appearance-group"+(wide?" is-wide":""));
+  group.append(el("h4",null,title));
+  const body=el("div","thread-appearance-group-fields");
+  body.append(...fields);
+  group.append(body);
+  return group;
+}
+
+function appearanceStatus(state){
+  if(state.appearanceReady)return Object.freeze({label:"Current",tone:"good"});
+  if(state.appearanceBlocked)return Object.freeze({label:"Blocked",tone:"bad"});
+  if(state.appearancePending)return Object.freeze({label:"Generating",tone:"warn"});
+  if(state.canMigrate)return Object.freeze({label:"Migration available",tone:"warn"});
+  if(state.canRerender)return Object.freeze({label:"Current",tone:"good"});
+  return Object.freeze({label:"Needs attention",tone:"warn"});
+}
+
+function appearanceSummary(state){
+  const summary=el("summary","thread-appearance-summary");
+  const copy=el("div","thread-appearance-summary-copy");
+  copy.append(
+    el("strong",null,"Appearance"),
+    el("span",null,"Physical lineage, model authority, and canonical visual identity"),
+  );
+  const status=appearanceStatus(state);
+  summary.append(copy,el("span","thread-health-tag "+status.tone,status.label));
+  return summary;
+}
+
+function appearanceLineageGroup(evidence){
   const maternal=sideEvidence(evidence,"maternal");
   const paternal=sideEvidence(evidence,"paternal");
-  if(maternal===null&&paternal===null)return;
-  const box=el("div","thread-appearance-evidence");
-  box.append(el("strong",null,"Recorded parental physical origin"));
-  if(maternal)box.append(el("p",null,"Maternal · "+maternal));
-  if(paternal)box.append(el("p",null,"Paternal · "+paternal));
-  box.append(el("small",null,"Durable operator evidence is reused as recorded; Fibre does not infer ancestry from name, place, language, culture, or portrait."));
-  host.append(box);
+  const fields=[
+    appearanceField("Maternal",maternal??"Not recorded"),
+    appearanceField("Paternal",paternal??"Not recorded"),
+  ];
+  const group=appearanceGroup("Physical lineage",fields);
+  const note=el("p","thread-appearance-evidence-note",
+    "Durable operator evidence is reused as recorded. Fibre does not infer ancestry from name, place, language, culture, or portrait."
+  );
+  group.append(note);
+  return group;
 }
 
 function migrationDescription(state){
@@ -293,30 +325,24 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
   const state=threadAppearanceState(health.diagnosis);
   host.replaceChildren();
 
-  const head=el("div","thread-person-section-head");
-  head.append(
-    el("h3",null,"Appearance"),
-    el("span",null,
-      state.canMigrate
-        ? (state.currentVersion===null?"migration available":"model upgrade available")
-        : state.embodiment?.code==="CANONICAL_EMBODIMENT_PENDING"
-          ? "generation pending"
-          : state.canRerender?"current":"needs attention"
-    ),
-  );
-  host.append(head);
+  host.append(appearanceSummary(state));
 
-  const facts=el("div","thread-appearance-facts");
-  facts.append(
-    fact("Physical model",state.currentVersion??"None",{mono:true}),
-    fact("Target model",state.targetVersion??"—",{mono:true}),
-    fact("Render model",state.currentAppearanceVersion??(state.visual?.code==="CANONICAL_VISUAL_MODEL_OUTDATED"?"Legacy":"—"),{mono:true}),
-    fact("Visual authority",state.visual?.authority??(["CANONICAL_VISUAL_SPEC","CANONICAL_VISUAL_MODEL_OUTDATED"].includes(state.visual?.code)?"Embodiment":"—")),
-    fact("Canonical root",state.objectRef??"Not available",{mono:true}),
+  const body=el("div","thread-appearance-body");
+  const groups=el("div","thread-appearance-groups");
+  groups.append(
+    appearanceGroup("Physical authority",[
+      appearanceField("Current model",state.currentVersion??"None",{mono:true}),
+      appearanceField("Target model",state.targetVersion??"—",{mono:true}),
+    ]),
+    appearanceLineageGroup(state.evidence),
+    appearanceGroup("Canonical visual identity",[
+      appearanceField("Render model",state.currentAppearanceVersion??(state.visual?.code==="CANONICAL_VISUAL_MODEL_OUTDATED"?"Legacy":"—"),{mono:true}),
+      appearanceField("Authority",state.visual?.authority??(["CANONICAL_VISUAL_SPEC","CANONICAL_VISUAL_MODEL_OUTDATED"].includes(state.visual?.code)?"Embodiment":"—")),
+      appearanceField("Canonical root",state.objectRef??"Not available",{mono:true,wide:true}),
+    ],{wide:true}),
   );
-  host.append(facts);
-  renderEvidence(host,state.evidence);
-  if(message)host.append(el("p","thread-repair-message",message));
+  body.append(groups);
+  if(message)body.append(el("p","thread-repair-message",message));
 
   const actions=el("div","thread-repair-actions");
   if(state.canMigrate){
@@ -409,7 +435,8 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
     tooltip:"Refresh appearance once. If publication is pending, wait for the live completion signal without polling.",
     appearanceProgress:true,
   }));
-  host.append(actions);
+  body.append(actions);
+  host.append(body);
 
   if(state.appearancePending){
     watchAppearance(host,threadId,threadName);
@@ -419,12 +446,23 @@ async function render(host,threadId,threadName,message=null,providedHealth=null)
 }
 
 export function threadAppearanceSection(threadId,threadName=null){
-  const host=el("section","thread-person-section thread-appearance-section");
+  const host=el("details","thread-person-section thread-appearance-section");
+  const summary=el("summary","thread-appearance-summary");
+  const copy=el("div","thread-appearance-summary-copy");
+  copy.append(
+    el("strong",null,"Appearance"),
+    el("span",null,"Physical lineage, model authority, and canonical visual identity"),
+  );
+  summary.append(copy,el("span","thread-health-tag muted","Loading"));
   const waiting=el("div","thread-loading");
   setWaitingContent(waiting,"Loading appearance authority");
-  host.append(waiting);
+  host.append(summary,waiting);
   void render(host,threadId,threadName).catch(error=>{
-    host.replaceChildren(el("div","error-box","Appearance unavailable: "+(error instanceof Error?error.message:String(error))));
+    const failedSummary=el("summary","thread-appearance-summary");
+    const failedCopy=el("div","thread-appearance-summary-copy");
+    failedCopy.append(el("strong",null,"Appearance"),el("span",null,"Appearance authority unavailable"));
+    failedSummary.append(failedCopy,el("span","thread-health-tag bad","Unavailable"));
+    host.replaceChildren(failedSummary,el("div","error-box","Appearance unavailable: "+(error instanceof Error?error.message:String(error))));
   });
   return host;
 }
