@@ -87,10 +87,10 @@ function watchHeroForStickyIdentity(identity, threadId) {
   dialogHead.insertBefore(stickyIdentity, closeButton);
 
   heroObserver = new IntersectionObserver(([entry]) => {
-    stickyIdentity?.classList.toggle("is-visible", !entry.isIntersecting);
+    stickyIdentity?.classList.toggle("is-visible", entry.intersectionRatio<0.12);
   }, {
     root:body,
-    threshold:0.08,
+    threshold:[0,0.12,1],
   });
   heroObserver.observe(hero);
 }
@@ -134,6 +134,7 @@ async function openThread(threadId, { showLoading = true, ensureWatch = true } =
     }));
     requestAnimationFrame(()=>watchHeroForStickyIdentity(identity,threadId));
   } catch (error) {
+    clearStickyIdentity();
     const payload = error?.payload ?? null;
     eyebrow.textContent = payload?.existence === "not_admitted" ? "Pre-birth candidate" : "Thread Observatory";
     title.textContent = payload?.existence === "not_admitted" ? "Not admitted to World" : "Thread unavailable";
