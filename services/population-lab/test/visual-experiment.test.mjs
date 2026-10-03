@@ -42,6 +42,7 @@ test("visual calibration samples four deterministic people and preserves geometr
   }
 
   const report=renderPopulationLabVisualReport(plan);
+  assert.match(report,/id="sample-001"/u,"visual report lost stable sample anchor");
   assert.match(report,/image\/001\/geometry/u,"visual report lost geometry anchor");
   assert.match(report,/image\/001\/portrait/u,"visual report lost final portrait");
   assert.match(report,/middle_east\.egypt/u,"visual report lost reference population");
