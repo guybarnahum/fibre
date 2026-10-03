@@ -1,3 +1,4 @@
+import { writeClipboard } from "./copy-action.js";
 import { decorateActionButton } from "./fa-icons.js";
 
 function singleValue(values) {
@@ -123,26 +124,8 @@ export function beginPromisedClipboardWrite(textPromise, {
   return clipboard.write([new ClipboardItemCtor({ "text/plain":text })]).then(() => true);
 }
 
-async function copyText(value) {
-  try {
-    await navigator.clipboard.writeText(value);
-    return true;
-  } catch {
-    const area = document.createElement("textarea");
-    area.value = value;
-    area.setAttribute("readonly", "");
-    area.style.position = "fixed";
-    area.style.opacity = "0";
-    document.body.append(area);
-    area.select();
-    const copied = document.execCommand("copy");
-    area.remove();
-    return copied;
-  }
-}
-
 const button = typeof document === "undefined" ? null : document.querySelector("#export-button");
-if (button) decorateActionButton(button, { icon:"file-export", label:"Copy / Export activity", tooltip:"Copy / Export activity", iconOnly:true });
+if (button) decorateActionButton(button, { icon:"copy", label:"Copy activity", tooltip:"Copy activity", iconOnly:true });
 button?.addEventListener("click", async (event) => {
   event.preventDefault();
   if (button.disabled) return;
@@ -168,21 +151,21 @@ button?.addEventListener("click", async (event) => {
   try {
     const payload = await exportPromise;
     const copied = promisedWrite === null
-      ? await copyText(await textPromise)
+      ? await writeClipboard(await textPromise)
       : await promisedWrite;
     decorateActionButton(button, {
-      icon:copied ? "copy" : "file-export",
-      label:copied ? `Copied ${payload.records.length} activity records` : "Copy / Export activity failed",
-      tooltip:copied ? `Copied ${payload.records.length} activity records` : "Copy / Export activity failed",
+      icon:"copy",
+      label:copied ? `Copied ${payload.records.length} activity records` : "Copy activity failed",
+      tooltip:copied ? `Copied ${payload.records.length} activity records` : "Copy activity failed",
       iconOnly:true,
     });
     button.classList.add(copied ? "action-success" : "action-error");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     decorateActionButton(button, {
-      icon:"file-export",
-      label:"Copy / Export activity failed",
-      tooltip:`Copy / Export failed — ${message}`,
+      icon:"copy",
+      label:"Copy activity failed",
+      tooltip:`Copy failed — ${message}`,
       iconOnly:true,
     });
     button.classList.add("action-error");
@@ -191,9 +174,9 @@ button?.addEventListener("click", async (event) => {
   setTimeout(() => {
     button.classList.remove("action-success", "action-error");
     decorateActionButton(button, {
-      icon:"file-export",
-      label:"Copy / Export activity",
-      tooltip:"Copy / Export activity",
+      icon:"copy",
+      label:"Copy activity",
+      tooltip:"Copy activity",
       iconOnly:true,
     });
     button.disabled = false;
