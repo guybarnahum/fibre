@@ -1,10 +1,11 @@
+import { bindCopyAction } from "./copy-action.js";
 import { decorateActionButton, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 
 const button = document.querySelector("#infra-health-button");
 const dialog = document.querySelector("#infra-dialog");
 const body = document.querySelector("#infra-dialog-body");
 const copyButton = document.querySelector("#infra-copy-status");
-if (copyButton) decorateActionButton(copyButton, { icon:"copy", label:"Copy infrastructure status", tooltip:"Copy infrastructure status", iconOnly:true });
+if (copyButton) bindCopyAction(copyButton,{value:()=>current===null?"":statusText(current),label:"Copy infrastructure status",tooltip:"Copy infrastructure status",copiedLabel:"Infrastructure status copied",failedLabel:"Copy infrastructure status failed",iconOnly:true});
 const forceButton = document.querySelector("#infra-force-sample");
 const closeButton = document.querySelector("#infra-dialog-close");
 const banner = document.querySelector("#infra-degradation-banner");
@@ -111,34 +112,6 @@ function statusText(payload) {
   return lines.join("\n");
 }
 
-async function copyStatus() {
-  if (!current) return;
-  const text = statusText(current);
-  try {
-    await navigator.clipboard.writeText(text);
-    decorateActionButton(copyButton, { icon:"copy", label:"Infrastructure status copied", tooltip:"Infrastructure status copied", iconOnly:true });
-  } catch {
-    const area = document.createElement("textarea");
-    area.value = text;
-    area.setAttribute("readonly", "");
-    area.style.position = "fixed";
-    area.style.opacity = "0";
-    document.body.append(area);
-    area.select();
-    const copied = document.execCommand("copy");
-    area.remove();
-    decorateActionButton(copyButton, {
-      icon:"copy",
-      label:copied ? "Infrastructure status copied" : "Copy infrastructure status failed",
-      tooltip:copied ? "Infrastructure status copied" : "Copy infrastructure status failed",
-      iconOnly:true,
-    });
-  }
-  setTimeout(() => {
-    decorateActionButton(copyButton, { icon:"copy", label:"Copy infrastructure status", tooltip:"Copy infrastructure status", iconOnly:true });
-  }, 1600);
-}
-
 function render(payload) {
   current = payload;
   const sample = payload?.sample;
@@ -227,7 +200,6 @@ function schedule() {
 
 button?.addEventListener("click", openDetails);
 bannerDetails?.addEventListener("click", openDetails);
-copyButton?.addEventListener("click", copyStatus);
 forceButton?.addEventListener("click", () => load({ force:true }));
 closeButton?.addEventListener("click", () => dialog.close());
 dialog?.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
