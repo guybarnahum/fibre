@@ -20,6 +20,7 @@ const rows=$("#appearance-hole-rows");
 const detail=$("#appearance-hole-detail");
 const modelRows=$("#appearance-model-rows");
 const migrations=$("#appearance-migration-candidates");
+const migrateAllButton=$("#appearance-migrate-all");
 const experiments=$("#appearance-experiments");
 const experimentRefreshButton=$("#appearance-experiments-refresh");
 const reportDialog=$("#appearance-report-dialog");
@@ -55,6 +56,7 @@ let mapPopover=null;
 let mapPopoverCloseTimer=null;
 const pendingMigrations=new Map();
 const busyThreads=new Set();
+let migrationBatch=null;
 
 function el(tag,className,text=null){
   const node=document.createElement(tag);
@@ -1194,9 +1196,111 @@ async function openMigrationAction(candidate,button){
   }
 }
 
+function migrationIsBusy(candidate){
+  return pendingMigrations.has(candidate.threadId)
+    ||busyThreads.has(candidate.threadId)
+    ||candidate.active===true;
+}
+
+function defaultMigrationInput(migration){
+  const input={};
+  for(const field of actionFields(migration)){
+    if(typeof field?.name!=="string"||field.name==="")continue;
+    if(field.default!==undefined&&field.default!==null&&String(field.default)!==""){
+      input[field.name]=field.default;
+      continue;
+    }
+    if(field.required===true){
+      throw new Error("Migration requires operator input: "+(field.label??field.name));
+    }
+  }
+  return input;
+}
+
+function renderMigrateAllAction(candidates){
+  if(!migrateAllButton)return;
+  if(migrationBatch){
+    const done=Math.min(migrationBatch.completed,migrationBatch.total);
+    migrateAllButton.disabled=true;
+    decorateActionButton(migrateAllButton,{
+      icon:"rotate",
+      label:"Progress "+done+"/"+migrationBatch.total,
+      tooltip:"Launching affected Thread migrations sequentially",
+      spinning:true,
+    });
+    return;
+  }
+  const available=candidates.filter(candidate=>!migrationIsBusy(candidate));
+  migrateAllButton.disabled=available.length===0;
+  decorateActionButton(migrateAllButton,{
+    icon:"wrench",
+    label:"Migrate affected",
+    tooltip:available.length===0
+      ?"No affected Thread is currently ready to migrate"
+      :"Migrate "+available.length+" affected Thread"+(available.length===1?"":"s")+" sequentially through World authority",
+  });
+}
+
+async function migrateAffectedThreads(){
+  if(migrationBatch)return;
+  const candidates=pendingCandidateList().filter(candidate=>!migrationIsBusy(candidate));
+  if(candidates.length===0)return;
+  if(!window.confirm(
+    "Migrate "+candidates.length+" affected Thread"+(candidates.length===1?"":"s")
+    +" to the current approved appearance calibration?\n\n"
+    +"Each Thread keeps its durable ancestry and existing history. Migrations launch sequentially through the same World authority path used by the individual action."
+  ))return;
+
+  migrationBatch={completed:0,total:candidates.length,failures:[]};
+  renderMigrations();
+  const batchKey=Date.now().toString(36);
+  try{
+    for(const [index,candidate] of candidates.entries()){
+      try{
+        const health=await requestThreadAppearanceHealth(candidate.threadId);
+        const migration=threadAppearanceState(health.diagnosis).migration;
+        if(!migration){
+          migrationBatch.completed=index+1;
+          renderMigrations();
+          continue;
+        }
+        const input=defaultMigrationInput(migration);
+        setMigrationPending(candidate);
+        const payload=await postThreadAppearanceRepair(candidate.threadId,{
+          action:"migrate",
+          migrationId:migration.id,
+          migrationKey:"admin_appearance_workset_"+batchKey+"_"+String(index+1),
+          input,
+        });
+        const after=threadAppearanceState(payload?.migration?.after);
+        if(after.appearancePending)watchMigration(candidate.threadId);
+        else clearMigrationPending(candidate.threadId);
+      }catch(error){
+        clearMigrationPending(candidate.threadId);
+        migrationBatch.failures.push({
+          threadId:candidate.threadId,
+          message:error instanceof Error?error.message:String(error),
+        });
+      }
+      migrationBatch.completed=index+1;
+      renderMigrations();
+    }
+    await loadAppearanceCoverage({quiet:true});
+  }finally{
+    const failures=migrationBatch?.failures??[];
+    migrationBatch=null;
+    renderMigrations();
+    if(failures.length>0&&migrateAllButton){
+      migrateAllButton.title=failures.length+" migration launch failure"+(failures.length===1?"":"s")+": "
+        +failures.map(item=>item.threadId+" · "+item.message).join(" | ");
+    }
+  }
+}
+
 function renderMigrations(){
   migrations.replaceChildren();
   const candidates=pendingCandidateList();
+  renderMigrateAllAction(candidates);
   if(candidates.length===0){
     migrations.append(el("p","thread-repair-note","No admitted Thread with durable ancestry evidence is stale against the current versioned calibration dependencies."));
     return;
@@ -1486,6 +1590,7 @@ if(experimentRefreshButton)setRefreshButtonState(experimentRefreshButton,false,{
   tooltip:"Refresh Population Lab experiments",
   iconOnly:true,
 });
+migrateAllButton?.addEventListener("click",()=>void migrateAffectedThreads());
 scanButton?.addEventListener("click",()=>void loadAppearanceCoverage());
 experimentRefreshButton?.addEventListener("click",async()=>{
   setRefreshButtonState(experimentRefreshButton,true,{
