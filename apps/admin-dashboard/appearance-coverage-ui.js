@@ -729,25 +729,26 @@ function comparisonMatrixRow({label,before,after,integer=false,forceDifferent=fa
 }
 
 function comparisonDistributionCell({center,mean,sd,p05,p95,highlight=false}={}){
-  const cell=el("div","appearance-compare-distribution "+(highlight?"is-different":""));
-  cell.append(
-    el("strong",null,"center "+comparisonNumber(center)),
-    el("span",null,"μ "+comparisonNumber(mean)+" · σ "+comparisonNumber(sd)),
-    el("span",null,"p05 "+comparisonNumber(p05)+" · p95 "+comparisonNumber(p95)),
+  return el(
+    "div",
+    "appearance-compare-distribution "+(highlight?"is-different":""),
+    "center "+comparisonNumber(center)
+      +" · μ "+comparisonNumber(mean)
+      +" · σ "+comparisonNumber(sd)
+      +" · p05 "+comparisonNumber(p05)
+      +" · p95 "+comparisonNumber(p95),
   );
-  return cell;
 }
 
 function comparisonDistributionDelta(change){
   const center=comparisonDelta(change.before,change.after);
   const mean=comparisonDelta(change.baselineMean,change.shadowMean);
   const spread=comparisonDelta(change.baselineSd,change.shadowSd);
-  const cell=el("div","appearance-compare-distribution-delta is-different");
-  cell.append(
-    el("strong",null,"center "+center.text),
-    el("span",null,"μ "+mean.text+" · σ "+spread.text),
+  return el(
+    "div",
+    "appearance-compare-distribution-delta is-different",
+    "center "+center.text+" · μ "+mean.text+" · σ "+spread.text,
   );
-  return cell;
 }
 
 function comparisonDistributionRow(change){
@@ -870,8 +871,6 @@ function renderVisualComparison(){
     return;
   }
 
-  compareVisualBody.style.setProperty("--appearance-compare-columns",String(Math.min(sampleSize,4)));
-
   for(let ordinal=1;ordinal<=sampleSize;ordinal+=1){
     const sample=el("article","appearance-compare-visual-sample");
     const head=el("div","appearance-compare-visual-sample-head");
@@ -881,9 +880,9 @@ function renderVisualComparison(){
     );
     const pair=el("div","appearance-compare-visual-pair");
 
-    for(const [label,experiment] of [["Baseline",baseline],["Refinement",shadow]]){
+    for(const [label,experiment] of [["Before",baseline],["After",shadow]]){
       const figure=document.createElement("figure");
-      if(label==="Refinement")figure.classList.add("is-refinement");
+      if(label==="After")figure.classList.add("is-refinement");
       const caption=el("figcaption",null);
       caption.append(
         el("span",null,label),
@@ -912,15 +911,20 @@ function setComparisonView(view){
   if(compareVisualRole)compareVisualRole.hidden=!visual;
   compareNumericalButton?.classList.toggle("is-active",!visual);
   compareVisualButton?.classList.toggle("is-active",visual);
-  if(visual)renderVisualComparison();
-  else renderNumericalComparison();
+  if(visual){
+    renderVisualComparison();
+    compareVisualBody?.scrollTo({top:0,behavior:"instant"});
+  }else renderNumericalComparison();
 }
 
 function setComparisonVisualRole(role){
   comparisonVisualRole=role==="portrait"?"portrait":"geometry";
   compareGeometryButton?.classList.toggle("is-active",comparisonVisualRole==="geometry");
   comparePortraitButton?.classList.toggle("is-active",comparisonVisualRole==="portrait");
-  if(comparisonView==="visual")renderVisualComparison();
+  if(comparisonView==="visual"){
+    renderVisualComparison();
+    compareVisualBody?.scrollTo({top:0,behavior:"instant"});
+  }
 }
 
 function refreshComparisonViewAvailability(){
@@ -2058,7 +2062,6 @@ compareDialog?.addEventListener("close",()=>{
   compareParameterMatrix?.replaceChildren();
   compareHealthMatrix?.replaceChildren();
   compareVisualBody?.replaceChildren();
-  if(compareVisualBody)compareVisualBody.style.removeProperty("--appearance-compare-columns");
   if(compareBaselineReport)compareBaselineReport.onclick=null;
   if(compareShadowReport)compareShadowReport.onclick=null;
   if(compareNumericalBody)compareNumericalBody.hidden=false;
