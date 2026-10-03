@@ -192,7 +192,7 @@ function decorate(root = document) {
     if (!["BUTTON", "A"].includes(node.tagName)) {
       node.setAttribute("role", "button");
       node.tabIndex = 0;
-      node.title = `Inspect ${threadId}`;
+      node.title = "Inspect";
     }
   }
   const chain = document.querySelector("#chain-title");
@@ -202,7 +202,7 @@ function decorate(root = document) {
     chain.classList.add("thread-link");
     chain.setAttribute("role", "button");
     chain.tabIndex = 0;
-    chain.title = `Inspect ${chainThread}`;
+    chain.title = "Inspect";
   }
 }
 
