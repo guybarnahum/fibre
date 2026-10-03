@@ -1,3 +1,4 @@
+import { bindCopyAction } from "./copy-action.js";
 import { decorateActionButton, faIcon, setWaitingContent } from "./fa-icons.js";
 import { createFibreFinCard } from "./fibre-fin-card.js";
 import { threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
@@ -66,26 +67,6 @@ function memoryAgeLabel(memory, birthDate) {
   return remainder === 0 ? `Age ${years}` : `Age ${years}y ${remainder}m`;
 }
 
-function copyPayload(value) {
-  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
-}
-
-async function copyToClipboard(value) {
-  const payload = copyPayload(value);
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(payload);
-    return;
-  }
-  const textarea = el("textarea");
-  textarea.value = payload;
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.append(textarea);
-  textarea.select();
-  document.execCommand("copy");
-  textarea.remove();
-}
-
 export function threadObservatoryCopyPayload({
   threadId,
   identity,
@@ -121,49 +102,26 @@ function observatoryCopyAction({ identity, threadId, memories, memoryError }) {
   const actions = el("div", "thread-observatory-actions");
   const button = el("button", "secondary thread-observatory-copy");
   button.type = "button";
-  const normal = () => decorateActionButton(button, {
-    icon:"copy",
-    label:"Copy Thread Observatory",
-    tooltip:"Copy Thread Observatory with current repair diagnosis",
-    iconOnly:true,
-  });
-  normal();
-  button.addEventListener("click", async () => {
-    button.disabled = true;
-    let repair = null;
-    let repairError = null;
-    try {
-      repair = await fetchThreadRepairSnapshot(threadId);
-    } catch (error) {
-      repairError = error instanceof Error ? error.message : String(error);
-    }
-    try {
-      await copyToClipboard(threadObservatoryCopyPayload({
+  bindCopyAction(button,{
+    value:async()=>{
+      let repair=null;
+      let repairError=null;
+      try{repair=await fetchThreadRepairSnapshot(threadId)}
+      catch(error){repairError=error instanceof Error?error.message:String(error)}
+      return threadObservatoryCopyPayload({
         threadId,
         identity,
         memories,
         memoryError,
         repair,
         repairError,
-      }));
-      decorateActionButton(button, {
-        icon:"copy",
-        label:"Copied Thread Observatory",
-        tooltip:"Copied Thread Observatory",
-        iconOnly:true,
       });
-    } catch {
-      decorateActionButton(button, {
-        icon:"copy",
-        label:"Copy Thread Observatory failed",
-        tooltip:"Copy Thread Observatory failed",
-        iconOnly:true,
-      });
-    }
-    window.setTimeout(() => {
-      button.disabled = false;
-      normal();
-    }, 1200);
+    },
+    label:"Copy Thread Observatory",
+    tooltip:"Copy Thread Observatory with current repair diagnosis",
+    copiedLabel:"Copied Thread Observatory",
+    failedLabel:"Copy Thread Observatory failed",
+    iconOnly:true,
   });
   actions.append(button);
   return actions;
@@ -284,24 +242,15 @@ function disclosure(label, value, { open = false, prose = false } = {}) {
   summary.append(el("span", null, label));
   const copy = el("button", "thread-copy-button");
   copy.type = "button";
-  decorateActionButton(copy, {
-    icon:"copy",
+  bindCopyAction(copy,{
+    value,
     label:`Copy ${label}`,
     tooltip:`Copy ${label}`,
+    copiedLabel:`Copied ${label}`,
+    failedLabel:`Copy ${label} failed`,
     iconOnly:true,
-  });
-  copy.addEventListener("click", async (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    try {
-      await copyToClipboard(value);
-      decorateActionButton(copy, { icon:"copy", label:`Copied ${label}`, tooltip:`Copied ${label}`, iconOnly:true });
-    } catch {
-      decorateActionButton(copy, { icon:"copy", label:`Copy ${label} failed`, tooltip:`Copy ${label} failed`, iconOnly:true });
-    }
-    window.setTimeout(() => {
-      decorateActionButton(copy, { icon:"copy", label:`Copy ${label}`, tooltip:`Copy ${label}`, iconOnly:true });
-    }, 1200);
+    preventDefault:true,
+    stopPropagation:true,
   });
   summary.append(copy);
   details.append(summary);
