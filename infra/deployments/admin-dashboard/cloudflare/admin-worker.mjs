@@ -634,12 +634,15 @@ export default {
         }
         if(appearanceExperimentApprovalMatch){
           const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentApprovalMatch[1]));
-          const coverage=await readAdminAppearanceCoverage({
-            worldKernel:serviceBinding(env,"WORLD_KERNEL"),
-            privateToken:privateToken(env),
-          });
           if(request.method==="GET"){
-            const state=await readAdminPopulationLabCalibrationApproval(env,experimentId,{coverage});
+            let state=await readAdminPopulationLabCalibrationApproval(env,experimentId);
+            if(state.approval===null){
+              const coverage=await readAdminAppearanceCoverage({
+                worldKernel:serviceBinding(env,"WORLD_KERNEL"),
+                privateToken:privateToken(env),
+              });
+              state=await readAdminPopulationLabCalibrationApproval(env,experimentId,{coverage});
+            }
             return json(200,{
               contract:"fibre-admin-population-lab-approval-state-v0.1",
               ...state,
@@ -649,6 +652,10 @@ export default {
           if(typeof approvedBy!=="string"||approvedBy.trim()===""){
             return json(400,{error:"approval_principal_missing"});
           }
+          const coverage=await readAdminAppearanceCoverage({
+            worldKernel:serviceBinding(env,"WORLD_KERNEL"),
+            privateToken:privateToken(env),
+          });
           const approval=await approveAdminPopulationLabCalibration(env,experimentId,{approvedBy,coverage});
           return json(201,{
             contract:"fibre-admin-population-lab-approval-v0.1",
