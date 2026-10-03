@@ -5,6 +5,7 @@ import {
   adminPopulationLabExperimentRequest,
   adminPopulationLabRerunRequest,
   adminPopulationLabShadowExperimentRequest,
+  populationLabComparisonChanges,
   reconcileAdminPopulationLabAsset,
   withExperimentLifecycleHints,
 } from "./appearance-experiments.mjs";
@@ -214,5 +215,47 @@ test("numerical experiment lifecycle publishes Admin live hints",async()=>{
       ["plexp_failed","failed"],
     ],
     "numerical lifecycle stopped publishing Admin live hints",
+  );
+});
+
+
+test("Population Lab comparison reports exact calibration and observed mean shifts",()=>{
+  const shadow={
+    referencePopulation:"middle_east.egypt",
+    values:{noseBreadth:.12},
+    variation:{familyFactorMultiplier:1.08},
+  };
+  const baselineResult={
+    stats:{physicalCalibration:{populations:{
+      "middle_east.egypt":{loci:{noseBreadth:{prior:-.04,mean:-.021}}},
+    }}},
+  };
+  const shadowResult={
+    stats:{physicalCalibration:{populations:{
+      "middle_east.egypt":{loci:{noseBreadth:{prior:.12,mean:.139}}},
+    }}},
+  };
+
+  assert.deepEqual(
+    populationLabComparisonChanges({shadow,baselineResult,shadowResult}),
+    [
+      {
+        kind:"value",
+        parameter:"noseBreadth",
+        before:-.04,
+        after:.12,
+        baselineMean:-.021,
+        shadowMean:.139,
+      },
+      {
+        kind:"variation",
+        parameter:"familyFactorMultiplier",
+        before:null,
+        after:1.08,
+        baselineMean:null,
+        shadowMean:null,
+      },
+    ],
+    "comparison stopped exposing the reviewed before/after evidence",
   );
 });
