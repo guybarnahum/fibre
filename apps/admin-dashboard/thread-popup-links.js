@@ -2,6 +2,7 @@ import { watchAdminLive } from "./admin-live.js";
 import { threadObservatoryViewKey } from "./view-invalidation.js";
 import {
   fetchThreadObservatory,
+  portraitAsset,
   renderFidSection,
   renderThreadObservatory,
   threadName,
@@ -11,10 +12,14 @@ const dialog = document.querySelector("#record-dialog");
 const title = document.querySelector("#dialog-title");
 const eyebrow = document.querySelector("#dialog-eyebrow");
 const body = document.querySelector("#dialog-body");
+const dialogHead = dialog?.querySelector(".dialog-head") ?? null;
+const closeButton = document.querySelector("#dialog-close");
 const THREAD = /^thr_[A-Za-z0-9._:-]+$/u;
 let openThreadId = null;
 let openThreadLoad = 0;
 let stopOpenThreadWatch = null;
+let heroObserver = null;
+let stickyIdentity = null;
 
 function el(tag, className = null, text = null) {
   const node = document.createElement(tag);
@@ -27,6 +32,67 @@ function fact(label, value, className = null) {
   const item = el("div", "thread-person-fact");
   item.append(el("span", "thread-person-label", label), el("strong", className, value ?? "—"));
   return item;
+}
+
+function initials(value) {
+  return String(value ?? "")
+    .trim()
+    .split(/\s+/u)
+    .slice(0,2)
+    .map((part)=>part[0]?.toUpperCase() ?? "")
+    .join("") || "•";
+}
+
+function clearStickyIdentity() {
+  heroObserver?.disconnect();
+  heroObserver = null;
+  stickyIdentity?.classList.remove("is-visible");
+  stickyIdentity?.remove();
+  stickyIdentity = null;
+}
+
+function stickyIdentityChip(identity, threadId) {
+  const chip = el("div", "thread-observatory-sticky-identity");
+  chip.setAttribute("aria-hidden", "true");
+
+  const imageAsset = portraitAsset(identity);
+  const name = threadName(identity) ?? "Thread";
+  const avatar = el("span", "thread-observatory-sticky-avatar");
+  if (imageAsset?.url) {
+    const image = el("img");
+    image.src = imageAsset.url;
+    image.alt = "";
+    image.loading = "eager";
+    avatar.append(image);
+  } else {
+    avatar.textContent = initials(name);
+  }
+
+  const copy = el("span", "thread-observatory-sticky-copy");
+  copy.append(
+    el("strong", null, name),
+    el("small", "mono", threadId),
+  );
+  chip.append(avatar, copy);
+  return chip;
+}
+
+function watchHeroForStickyIdentity(identity, threadId) {
+  clearStickyIdentity();
+  if (!dialogHead || !body || !closeButton || !dialog?.open) return;
+  const hero = body.querySelector(".thread-person-hero");
+  if (!hero) return;
+
+  stickyIdentity = stickyIdentityChip(identity, threadId);
+  dialogHead.insertBefore(stickyIdentity, closeButton);
+
+  heroObserver = new IntersectionObserver(([entry]) => {
+    stickyIdentity?.classList.toggle("is-visible", !entry.isIntersecting);
+  }, {
+    root:body,
+    threshold:0.08,
+  });
+  heroObserver.observe(hero);
 }
 
 async function openThread(threadId, { showLoading = true, ensureWatch = true } = {}) {
@@ -48,8 +114,10 @@ async function openThread(threadId, { showLoading = true, ensureWatch = true } =
   dialog.classList.add("thread-observatory-dialog");
   eyebrow.textContent = "Thread Observatory";
   if (showLoading) {
+    clearStickyIdentity();
     title.textContent = "Thread";
     body.replaceChildren(el("div", "thread-loading", "Loading Thread…"));
+    if(changedThread)body.scrollTop=0;
   }
   if (!dialog.open) dialog.showModal();
 
@@ -64,6 +132,7 @@ async function openThread(threadId, { showLoading = true, ensureWatch = true } =
       memories:payload.memories,
       memoryError:payload.memoryError,
     }));
+    requestAnimationFrame(()=>watchHeroForStickyIdentity(identity,threadId));
   } catch (error) {
     const payload = error?.payload ?? null;
     eyebrow.textContent = payload?.existence === "not_admitted" ? "Pre-birth candidate" : "Thread Observatory";
@@ -148,6 +217,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 dialog?.addEventListener("close", () => {
+  clearStickyIdentity();
   openThreadId = null;
   openThreadLoad += 1;
   stopOpenThreadWatch?.();
