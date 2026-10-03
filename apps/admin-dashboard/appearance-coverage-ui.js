@@ -33,7 +33,9 @@ const compareChanges=$("#appearance-compare-changes");
 const compareActions=$("#appearance-compare-actions");
 const compareClose=$("#appearance-compare-close");
 const compareBaselineName=$("#appearance-compare-baseline-name");
+const compareBaselineValues=$("#appearance-compare-baseline-values");
 const compareShadowName=$("#appearance-compare-shadow-name");
+const compareShadowValues=$("#appearance-compare-shadow-values");
 const compareBaselineFrame=$("#appearance-compare-baseline-frame");
 const compareShadowFrame=$("#appearance-compare-shadow-frame");
 const reportDialog=$("#appearance-report-dialog");
@@ -645,7 +647,7 @@ async function approveCalibrationCandidate(experiment,button){
   }
 }
 
-async function copyCalibrationApproval(experiment,button){
+async function copyCalibrationApproval(experiment,button,{iconOnly=true}={}){
   try{
     const state=await readCalibrationApprovalState(experiment);
     if(!state.approval)throw new Error("Calibration is not approved yet");
@@ -654,7 +656,7 @@ async function copyCalibrationApproval(experiment,button){
       tooltip:"Copy approval JSON for source admission",
       copiedLabel:"Copied approval",
       failedLabel:"Copy approval failed",
-      iconOnly:true,
+      iconOnly,
     });
   }catch(error){
     button.title=error instanceof Error?error.message:String(error);
@@ -798,7 +800,7 @@ function renderComparisonActions(experiment){
       tooltip:"Copy approval JSON for source admission",
       iconOnly:false,
     });
-    copyApproval.addEventListener("click",()=>void copyCalibrationApproval(experiment,copyApproval));
+    copyApproval.addEventListener("click",()=>void copyCalibrationApproval(experiment,copyApproval,{iconOnly:false}));
     compareActions.append(copyApproval);
   }
 
@@ -839,6 +841,13 @@ async function openExperimentComparison(experiment){
   if(compareTitle)compareTitle.textContent=comparison.referencePopulation+" · baseline vs refinement";
   if(compareBaselineName)compareBaselineName.textContent=baseline?populationLabExperimentName(baseline):comparison.baselineExperimentId;
   if(compareShadowName)compareShadowName.textContent=populationLabExperimentName(shadow);
+  if(compareBaselineValues)compareBaselineValues.replaceChildren(...(comparison.changes??[]).map(change=>{
+    const value=Number.isFinite(change.before)?change.before:"current";
+    return el("code",null,change.parameter+" "+value);
+  }));
+  if(compareShadowValues)compareShadowValues.replaceChildren(...(comparison.changes??[]).map(change=>
+    el("code",null,change.parameter+" "+(Number.isFinite(change.after)?change.after:"—"))
+  ));
   if(compareChanges){
     compareChanges.replaceChildren();
     for(const change of comparison.changes??[])compareChanges.append(comparisonChangeNode(change));
@@ -1773,6 +1782,8 @@ compareDialog?.addEventListener("close",()=>{
   comparisonState=null;
   compareActions?.replaceChildren();
   compareChanges?.replaceChildren();
+  compareBaselineValues?.replaceChildren();
+  compareShadowValues?.replaceChildren();
   if(compareBaselineFrame)compareBaselineFrame.src="about:blank";
   if(compareShadowFrame)compareShadowFrame.src="about:blank";
 });
