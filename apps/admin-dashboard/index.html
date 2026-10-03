@@ -384,7 +384,17 @@
       <div id="appearance-compare-actions" class="appearance-compare-actions"></div>
       <button id="appearance-compare-close" class="icon-button" type="button" aria-label="Close calibration comparison">×</button>
     </div>
-    <div class="appearance-compare-body">
+    <div class="appearance-compare-viewbar">
+      <div class="appearance-compare-view-switch" role="group" aria-label="Comparison view">
+        <button id="appearance-compare-numerical" class="secondary is-active" type="button">Numerical</button>
+        <button id="appearance-compare-visual" class="secondary" type="button">Visual</button>
+      </div>
+      <div id="appearance-compare-visual-role" class="appearance-compare-view-switch" role="group" aria-label="Visual comparison layer" hidden>
+        <button id="appearance-compare-geometry" class="secondary is-active" type="button">Geometry</button>
+        <button id="appearance-compare-portrait" class="secondary" type="button">Portrait</button>
+      </div>
+    </div>
+    <div id="appearance-compare-numerical-body" class="appearance-compare-body">
       <section class="appearance-compare-pane">
         <div class="appearance-compare-pane-head"><span>Baseline</span><strong id="appearance-compare-baseline-name"></strong><div id="appearance-compare-baseline-values" class="appearance-compare-pane-values"></div></div>
         <iframe id="appearance-compare-baseline-frame" title="Baseline numerical calibration report"></iframe>
@@ -394,6 +404,7 @@
         <iframe id="appearance-compare-shadow-frame" title="Refinement numerical calibration report"></iframe>
       </section>
     </div>
+    <div id="appearance-compare-visual-body" class="appearance-compare-visual-body" hidden></div>
   </dialog>
 
   <dialog id="appearance-report-dialog" class="appearance-report-dialog">
