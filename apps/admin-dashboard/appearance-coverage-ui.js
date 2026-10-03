@@ -1,3 +1,4 @@
+import { bindPortraitPreview } from "./portrait-preview.js";
 import { bindCopyAction, copyWithFeedback, decorateCopyAction } from "./copy-action.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { watchAdminLive } from "./admin-live.js";
@@ -221,6 +222,7 @@ function reviewSampleJump(experiment,ordinal){
     +"/image/"
     +String(ordinal).padStart(3,"0")
     +"/portrait";
+  bindPortraitPreview(thumb,{url:thumb.src,name:"Sample "+ordinal});
   thumb.addEventListener("error",()=>thumb.remove(),{once:true});
 
   jump.append(thumb,el("strong",null,"Sample "+ordinal));
