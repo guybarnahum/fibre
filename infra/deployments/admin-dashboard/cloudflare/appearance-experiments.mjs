@@ -379,7 +379,14 @@ export async function readAdminPopulationLabExperiment(env,experimentId){
 }
 
 export async function deleteAdminPopulationLabExperiment(env,experimentId){
-  return experimentStore(env).delete(experimentId);
+  const store=experimentStore(env);
+  const page=await store.list({limit:200});
+  const dependent=page.experiments.find(experiment=>
+    experiment.baselineExperimentId===experimentId
+    ||experiment.summary?.shadowOfExperimentId===experimentId
+  );
+  if(dependent)throw new TypeError("baseline experiment is retained while refinement evidence depends on it");
+  return store.delete(experimentId);
 }
 
 export async function createAdminPopulationLabCalibrationCandidate(env,experimentId){
