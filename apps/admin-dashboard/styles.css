@@ -18,4 +18,4 @@
 .star-rating-star.is-selected{color:var(--warning)}
 @media(prefers-reduced-motion:reduce){.star-rating-star{transition:none}.star-rating-star:hover,.star-rating-star:focus-visible{transform:none}}
 
-.portrait-hover-preview{position:fixed;z-index:1600;width:220px;height:220px;overflow:hidden;pointer-events:none;border:1px solid #d7dbe0;border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--surface) 72%,transparent),0 16px 44px rgba(0,0,0,.24)}.portrait-hover-preview[hidden]{display:none}.portrait-hover-preview img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.portrait-hover-preview{position:fixed;inset:auto;margin:0;padding:0;z-index:1600;width:220px;height:220px;overflow:hidden;pointer-events:none;border:1px solid #d7dbe0;border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--surface) 72%,transparent),0 16px 44px rgba(0,0,0,.24)}.portrait-hover-preview[hidden]{display:none}.portrait-hover-preview img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%}
