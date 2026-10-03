@@ -7,6 +7,8 @@ function clean(value){
   return typeof value==="string"&&value.trim()!==""?value.trim():null;
 }
 
+export {hidePortraitPreview as hideThreadPortraitPreview};
+
 export function threadInitials(value){
   const parts=String(value??"").trim().split(/\s+/u).filter(Boolean);
   if(parts.length===0)return "·";
