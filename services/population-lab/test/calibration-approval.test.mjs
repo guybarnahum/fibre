@@ -104,6 +104,11 @@ test("approved calibration remains evidence until source admission",async()=>{
     /already exists/u,
     "experiment accepted competing immutable approvals",
   );
+  await assert.rejects(
+    ()=>store.delete(experimentId),
+    /approved calibration experiment cannot be deleted/u,
+    "approved calibration evidence was deletable",
+  );
 });
 
 test("candidate impact includes descendant dependency chains",()=>{
