@@ -32,6 +32,13 @@ const compareTitle=$("#appearance-compare-title");
 const compareChanges=$("#appearance-compare-changes");
 const compareActions=$("#appearance-compare-actions");
 const compareClose=$("#appearance-compare-close");
+const compareNumericalButton=$("#appearance-compare-numerical");
+const compareVisualButton=$("#appearance-compare-visual");
+const compareVisualRole=$("#appearance-compare-visual-role");
+const compareGeometryButton=$("#appearance-compare-geometry");
+const comparePortraitButton=$("#appearance-compare-portrait");
+const compareNumericalBody=$("#appearance-compare-numerical-body");
+const compareVisualBody=$("#appearance-compare-visual-body");
 const compareBaselineName=$("#appearance-compare-baseline-name");
 const compareBaselineValues=$("#appearance-compare-baseline-values");
 const compareShadowName=$("#appearance-compare-shadow-name");
@@ -69,6 +76,8 @@ let loadPromise=null;
 let experimentLoadPromise=null;
 let experimentSnapshot=[];
 let comparisonState=null;
+let comparisonView="numerical";
+let comparisonVisualRole="geometry";
 let shadowBaseExperiment=null;
 let mapPopover=null;
 let mapPopoverCloseTimer=null;
@@ -685,6 +694,118 @@ function comparisonChangeNode(change){
   return node;
 }
 
+function visualComparisonSampleSize(baseline,shadow){
+  if(
+    comparisonState?.sameCohort!==true
+    ||baseline?.visual?.status!=="completed"
+    ||shadow?.visual?.status!=="completed"
+  )return 0;
+  const baselineSize=Number(baseline.visual?.sampleSize??baseline.visual?.summary?.sampleSize);
+  const shadowSize=Number(shadow.visual?.sampleSize??shadow.visual?.summary?.sampleSize);
+  if(!Number.isInteger(baselineSize)||baselineSize<1||baselineSize!==shadowSize)return 0;
+  return baselineSize;
+}
+
+function comparisonImageUrl(experimentId,ordinal,role){
+  return "/api/appearance/experiments/"
+    +encodeURIComponent(experimentId)
+    +"/image/"
+    +String(ordinal).padStart(3,"0")
+    +"/"
+    +role;
+}
+
+function renderVisualComparison(){
+  if(!compareVisualBody||!comparisonState)return;
+  const baseline=experimentById(comparisonState.baselineExperimentId);
+  const shadow=experimentById(comparisonState.shadowExperimentId);
+  const sampleSize=visualComparisonSampleSize(baseline,shadow);
+  compareVisualBody.replaceChildren();
+
+  if(sampleSize===0){
+    compareVisualBody.append(el(
+      "div",
+      "appearance-compare-visual-empty",
+      comparisonState.sameCohort!==true
+        ?"Visual comparison is unavailable because baseline and refinement are not the same deterministic cohort."
+        :"Generate matching visual evidence for both baseline and refinement before comparing images.",
+    ));
+    return;
+  }
+
+  const note=el(
+    "p",
+    "appearance-compare-visual-note",
+    comparisonVisualRole==="geometry"
+      ?"Geometry isolates the calibration change before surface rendering."
+      :"Portrait shows the final rendered effect of the same calibration change.",
+  );
+  compareVisualBody.append(note);
+
+  for(let ordinal=1;ordinal<=sampleSize;ordinal+=1){
+    const sample=el("article","appearance-compare-visual-sample");
+    const head=el("div","appearance-compare-visual-sample-head");
+    head.append(
+      el("strong",null,"Sample "+ordinal),
+      el("span",null,"Same deterministic cohort person"),
+    );
+    const pair=el("div","appearance-compare-visual-pair");
+
+    for(const [label,experiment] of [["Baseline",baseline],["Refinement",shadow]]){
+      const figure=document.createElement("figure");
+      const caption=el("figcaption",null);
+      caption.append(
+        el("span",null,label),
+        el("strong",null,populationLabExperimentName(experiment)),
+      );
+      const image=document.createElement("img");
+      const src=comparisonImageUrl(experiment.experimentId,ordinal,comparisonVisualRole);
+      image.src=src;
+      image.alt=label+" Sample "+ordinal+" "+comparisonVisualRole;
+      image.loading="lazy";
+      image.dataset.lightboxSrc=src;
+      image.dataset.lightboxAlt=image.alt;
+      figure.append(caption,image);
+      pair.append(figure);
+    }
+    sample.append(head,pair);
+    compareVisualBody.append(sample);
+  }
+}
+
+function setComparisonView(view){
+  comparisonView=view==="visual"?"visual":"numerical";
+  const visual=comparisonView==="visual";
+  if(compareNumericalBody)compareNumericalBody.hidden=visual;
+  if(compareVisualBody)compareVisualBody.hidden=!visual;
+  if(compareVisualRole)compareVisualRole.hidden=!visual;
+  compareNumericalButton?.classList.toggle("is-active",!visual);
+  compareVisualButton?.classList.toggle("is-active",visual);
+  if(visual)renderVisualComparison();
+}
+
+function setComparisonVisualRole(role){
+  comparisonVisualRole=role==="portrait"?"portrait":"geometry";
+  compareGeometryButton?.classList.toggle("is-active",comparisonVisualRole==="geometry");
+  comparePortraitButton?.classList.toggle("is-active",comparisonVisualRole==="portrait");
+  if(comparisonView==="visual")renderVisualComparison();
+}
+
+function refreshComparisonViewAvailability(){
+  if(!comparisonState)return;
+  const baseline=experimentById(comparisonState.baselineExperimentId);
+  const shadow=experimentById(comparisonState.shadowExperimentId);
+  const ready=visualComparisonSampleSize(baseline,shadow)>0;
+  if(compareVisualButton){
+    compareVisualButton.disabled=!ready;
+    compareVisualButton.title=ready
+      ?"Compare the same deterministic samples before and after refinement"
+      :"Visual comparison requires completed matching visuals for baseline and refinement";
+  }
+  if(!ready&&comparisonView==="visual")setComparisonView("numerical");
+  else if(comparisonView==="visual")renderVisualComparison();
+}
+
 function visualActionButton(experiment){
   const visualActive=["queued","running"].includes(experiment.visual?.status);
   const visualRetryable=experiment.visual?.status==="failed"&&!experiment.visual?.startedAt;
@@ -821,6 +942,7 @@ function refreshOpenComparison(){
   if(!compareDialog?.open||!comparisonState)return;
   const experiment=experimentById(comparisonState.shadowExperimentId);
   if(experiment)renderComparisonActions(experiment);
+  refreshComparisonViewAvailability();
 }
 
 async function openExperimentComparison(experiment){
@@ -854,7 +976,12 @@ async function openExperimentComparison(experiment){
   }
   if(compareBaselineFrame)compareBaselineFrame.src=numericalExperimentReportUrl(comparison.baselineExperimentId);
   if(compareShadowFrame)compareShadowFrame.src=numericalExperimentReportUrl(comparison.shadowExperimentId);
+  comparisonView="numerical";
+  comparisonVisualRole="geometry";
+  setComparisonVisualRole("geometry");
+  setComparisonView("numerical");
   renderComparisonActions(shadow);
+  refreshComparisonViewAvailability();
   if(!compareDialog.open)compareDialog.showModal();
 }
 
@@ -1779,16 +1906,26 @@ shadowDialog?.addEventListener("close",()=>{
   });
 });
 
+compareNumericalButton?.addEventListener("click",()=>setComparisonView("numerical"));
+compareVisualButton?.addEventListener("click",()=>setComparisonView("visual"));
+compareGeometryButton?.addEventListener("click",()=>setComparisonVisualRole("geometry"));
+comparePortraitButton?.addEventListener("click",()=>setComparisonVisualRole("portrait"));
 compareClose?.addEventListener("click",()=>compareDialog?.close());
 compareDialog?.addEventListener("click",(event)=>{
   if(event.target===compareDialog)compareDialog.close();
 });
 compareDialog?.addEventListener("close",()=>{
   comparisonState=null;
+  comparisonView="numerical";
+  comparisonVisualRole="geometry";
   compareActions?.replaceChildren();
   compareChanges?.replaceChildren();
   compareBaselineValues?.replaceChildren();
   compareShadowValues?.replaceChildren();
+  compareVisualBody?.replaceChildren();
+  if(compareNumericalBody)compareNumericalBody.hidden=false;
+  if(compareVisualBody)compareVisualBody.hidden=true;
+  if(compareVisualRole)compareVisualRole.hidden=true;
   if(compareBaselineFrame)compareBaselineFrame.src="about:blank";
   if(compareShadowFrame)compareShadowFrame.src="about:blank";
 });
