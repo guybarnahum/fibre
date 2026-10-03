@@ -38,6 +38,33 @@ Useful options are `--model=`, `--image-model=`, `--seed=`, `--experiment-id=`, 
 
 Population Lab experiments are non-authoritative calibration evidence. Each run persists an immutable manifest, generated population, diagnostics result, HTML report and any geometry/portrait images through `InfraDriver.objects`; `InfraDriver.catalog` holds only the mutable experiment status/index. Population Lab code never writes experiment artifacts directly to a filesystem or cloud SDK.
 
+### Reviewed calibration admission
+
+A reviewed shadow refinement follows one authority path:
+
+```text
+baseline experiment
+  -> shadow proposal
+  -> numerical + visual evidence
+  -> human review
+  -> frozen calibration candidate
+  -> Admin approval
+  -> source admission
+  -> deploy
+```
+
+Admin approval is immutable evidence, not a browser-side registry mutation. It records the authenticated reviewer and the projected affected Thread set from current World coverage. Approved experiments are retained because their artifacts may become registry provenance.
+
+Copy the approved JSON from Admin, save it locally, then admit it to the Git-owned reference registry:
+
+```bash
+npm run population:calibration:admit -- --approval=/path/to/approval.json
+```
+
+The command accepts only a reviewed approval whose base calibration is still current and whose proposed version advances exactly one local node version. It appends the approved values/variation to `core/src/human-phenotype/reference-population-admissions.mjs`. Review that source diff and deploy normally; only the deployed source admission changes current Human Appearance calibration authority.
+
+A3.3 v0.1 admits refinements of existing nodes. New-node admission remains deferred until parent selection is an explicit evidence-backed contract.
+
 Inspect local experiments:
 
 ```sh
