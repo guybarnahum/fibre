@@ -15,6 +15,7 @@ import {
   invalidateView,
   threadPopulationViewKey,
 } from "./view-invalidation.js";
+import { bindCopyAction } from "./copy-action.js";
 import { decorateActionButton, iconForIdentityAction, setBlockingButtonState, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
 import {
@@ -97,53 +98,20 @@ function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
 }
 
-async function copyText(value) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
-  }
-  const textarea = document.createElement("textarea");
-  textarea.value = value;
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.append(textarea);
-  textarea.select();
-  document.execCommand("copy");
-  textarea.remove();
-}
-
 function threadIdCopyButton(threadId) {
   const control = document.createElement("button");
   control.type = "button";
   control.className = "thread-id-copy";
-  const restore = () => {
-    control.classList.remove("copied", "copy-failed");
-    decorateActionButton(control, {
-      icon:"copy",
-      label:threadId,
-      tooltip:`Copy Thread ID: ${threadId}`,
-    });
-  };
-  restore();
-  control.addEventListener("click", async (event) => {
-    event.stopPropagation();
-    try {
-      await copyText(threadId);
-      control.classList.add("copied");
-      decorateActionButton(control, {
-        icon:"copy",
-        label:"Copied",
-        tooltip:`Copied Thread ID: ${threadId}`,
-      });
-    } catch {
-      control.classList.add("copy-failed");
-      decorateActionButton(control, {
-        icon:"copy",
-        label:"Copy failed",
-        tooltip:`Could not copy Thread ID: ${threadId}`,
-      });
-    }
-    window.setTimeout(restore, 1200);
+  bindCopyAction(control,{
+    value:threadId,
+    label:threadId,
+    tooltip:`Copy Thread ID: ${threadId}`,
+    copiedLabel:"Copied",
+    copiedTooltip:`Copied Thread ID: ${threadId}`,
+    failedLabel:"Copy failed",
+    failedTooltip:`Could not copy Thread ID: ${threadId}`,
+    iconOnly:false,
+    stopPropagation:true,
   });
   return control;
 }
