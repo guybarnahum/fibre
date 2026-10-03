@@ -162,6 +162,7 @@ export function referencePopulationCalibration(id){
     granularity:key.includes(".") ? "specific" : "broad",
     ownAxes,
     populationIds:Object.freeze([...(definition.populationIds??[])]),
+    admissionEvidence:definition.admissionEvidence??null,
     fallbackDepth:dependencyChain.length-1,
     dependencyChain,
   });
