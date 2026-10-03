@@ -212,6 +212,6 @@ export function createThreadIdentityViewer({threadId,name=null,url=null,compact=
 }
 
 if(typeof window!=="undefined"){
-  window.addEventListener("scroll",hideThreadPortraitPreview,true);
-  window.addEventListener("resize",hideThreadPortraitPreview);
+  window.addEventListener("scroll",hidePortraitPreview,true);
+  window.addEventListener("resize",hidePortraitPreview);
 }
