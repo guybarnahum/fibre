@@ -39,7 +39,7 @@ export function threadAppearanceState(diagnosis){
   const migrationSource=(diagnosis?.findings??[]).find(
     (entry)=>entry?.migration?.domain==="appearance",
   )??null;
-  const migration=migrationSource?.migration??null;
+  const migration=physical?.migration??visual?.migration??migrationSource?.migration??null;
   const evidence=migration?.evidence??physical?.evidence??null;
   const currentVersion=physical?.code==="PHYSICAL_GENOME"
     ? physical.version??null
