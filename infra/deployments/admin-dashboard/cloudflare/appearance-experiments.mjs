@@ -356,7 +356,8 @@ export async function readAdminPopulationLabComparison(env,experimentId){
   const baselineExperiment=await store.get(baselineExperimentId);
   if(baselineExperiment===null)throw new Error("baseline experiment not found");
 
-  const [baselineResult,shadowResult]=await Promise.all([
+  const [baselineManifest,baselineResult,shadowResult]=await Promise.all([
+    readJsonArtifact(store,baselineExperiment.artifacts?.manifest?.objectRef),
     readJsonArtifact(store,baselineExperiment.artifacts?.result?.objectRef),
     readJsonArtifact(store,shadowExperiment.artifacts?.result?.objectRef),
   ]);
@@ -370,6 +371,15 @@ export async function readAdminPopulationLabComparison(env,experimentId){
     baseCalibration:shadow.baseCalibration,
     rationale:shadow.rationale,
     evidence:shadow.evidence,
+    sameCohort:Boolean(
+      baselineManifest
+      &&baselineManifest.seed===shadowManifest.seed
+      &&baselineManifest.count===shadowManifest.count
+    ),
+    cohort:Object.freeze({
+      seed:shadowManifest.seed??null,
+      count:shadowManifest.count??null,
+    }),
     changes:Object.freeze(changes),
   });
 }
