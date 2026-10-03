@@ -399,7 +399,7 @@ function threadRow(thread) {
   link.type = "button";
   link.className = "thread-population-name thread-link";
   link.dataset.threadId = thread.threadId;
-  link.title = `Inspect ${thread.threadId}`;
+  link.title = "Inspect";
   link.textContent = thread.admitted === true
     ? identity.name ?? "Unnamed Thread"
     : thread.admitted === false ? "Activity-only ID" : "Unresolved ID";
