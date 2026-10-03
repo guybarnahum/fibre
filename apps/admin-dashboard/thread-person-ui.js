@@ -1,7 +1,7 @@
+import { bindPortraitPreview, hidePortraitPreview, setPortraitPreviewSource } from "./portrait-preview.js";
 import { countryFlag } from "./thread-label-cache.js";
 
 const portraitCache=new Map();
-let portraitPreview=null;
 
 function clean(value){
   return typeof value==="string"&&value.trim()!==""?value.trim():null;
@@ -114,53 +114,10 @@ async function resolveThreadPortrait(threadId){
   return url;
 }
 
-function ensurePortraitPreview(){
-  if(portraitPreview)return portraitPreview;
-  portraitPreview=document.createElement("div");
-  portraitPreview.className="thread-portrait-preview";
-  portraitPreview.hidden=true;
-  document.body.append(portraitPreview);
-  return portraitPreview;
-}
-
-export function hideThreadPortraitPreview(){
-  if(portraitPreview)portraitPreview.hidden=true;
-}
-
-function showThreadPortraitPreview(face){
-  const url=face?.dataset?.portraitUrl;
-  if(!url)return;
-  const preview=ensurePortraitPreview();
-  const image=document.createElement("img");
-  image.src=url;
-  image.alt=(face.dataset.threadName||"Thread")+" portrait preview";
-  preview.replaceChildren(image);
-  preview.hidden=false;
-
-  const size=220;
-  const gap=10;
-  const rect=face.getBoundingClientRect();
-  const left=rect.right+gap+size<=window.innerWidth
-    ?rect.right+gap
-    :Math.max(8,rect.left-size-gap);
-  const top=Math.min(
-    Math.max(8,rect.top+(rect.height-size)/2),
-    Math.max(8,window.innerHeight-size-8),
-  );
-  preview.style.left=Math.round(left)+"px";
-  preview.style.top=Math.round(top)+"px";
-}
-
-function bindPortraitPreview(face){
-  face.addEventListener("pointerenter",()=>showThreadPortraitPreview(face));
-  face.addEventListener("pointerleave",hideThreadPortraitPreview);
-  face.addEventListener("focus",()=>showThreadPortraitPreview(face));
-  face.addEventListener("blur",hideThreadPortraitPreview);
-}
-
 function applyPortrait(face,url,name){
   face.replaceChildren();
   face.dataset.portraitUrl=url??"";
+  setPortraitPreviewSource(face,{url,name});
   delete face.dataset.lightboxSrc;
   delete face.dataset.lightboxAlt;
   if(!url){
@@ -175,7 +132,7 @@ function applyPortrait(face,url,name){
   face.dataset.lightboxAlt=image.alt;
   face.append(image);
   image.addEventListener("error",()=>{
-    hideThreadPortraitPreview();
+    hidePortraitPreview();
     applyPortrait(face,null,name);
   },{once:true});
 }
@@ -221,7 +178,7 @@ export function createThreadPortrait({threadId,name=null,url=null,className="",l
   face.title=link
     ?"Open "+(name??threadId??"Thread")+" in Thread Observatory"
     :(name??threadId??"Thread")+" portrait";
-  bindPortraitPreview(face);
+  bindPortraitPreview(face,{url,name});
   applyPortrait(face,url,name);
   if(!url&&threadId){
     if(portraitObserver)portraitObserver.observe(face);
