@@ -39,12 +39,10 @@ const compareGeometryButton=$("#appearance-compare-geometry");
 const comparePortraitButton=$("#appearance-compare-portrait");
 const compareNumericalBody=$("#appearance-compare-numerical-body");
 const compareVisualBody=$("#appearance-compare-visual-body");
-const compareBaselineName=$("#appearance-compare-baseline-name");
-const compareBaselineValues=$("#appearance-compare-baseline-values");
-const compareShadowName=$("#appearance-compare-shadow-name");
-const compareShadowValues=$("#appearance-compare-shadow-values");
-const compareBaselineFrame=$("#appearance-compare-baseline-frame");
-const compareShadowFrame=$("#appearance-compare-shadow-frame");
+const compareParameterMatrix=$("#appearance-compare-parameter-matrix");
+const compareHealthMatrix=$("#appearance-compare-health-matrix");
+const compareBaselineReport=$("#appearance-compare-baseline-report");
+const compareShadowReport=$("#appearance-compare-shadow-report");
 const reportDialog=$("#appearance-report-dialog");
 const reportTitle=$("#appearance-report-title");
 const reportFrame=$("#appearance-report-frame");
@@ -694,6 +692,133 @@ function comparisonChangeNode(change){
   return node;
 }
 
+function comparisonNumber(value,{integer=false}={}){
+  if(!Number.isFinite(value))return "—";
+  if(integer)return String(Math.round(value));
+  const rounded=Math.round(value*1000)/1000;
+  return Object.is(rounded,-0)?"0":String(rounded);
+}
+
+function comparisonDelta(before,after,{integer=false}={}){
+  if(!Number.isFinite(before)||!Number.isFinite(after))return {text:"—",different:false};
+  const delta=after-before;
+  const different=integer?delta!==0:Math.abs(delta)>=.0005;
+  if(!different)return {text:"0",different:false};
+  const value=integer?Math.round(delta):Math.round(delta*1000)/1000;
+  return {text:(value>0?"+":"")+value,different:true};
+}
+
+function comparisonMatrixRow({label,before,after,integer=false,forceDifferent=false,delta=true}){
+  const row=el("div","appearance-compare-matrix-row");
+  const change=comparisonDelta(before,after,{integer});
+  const different=forceDifferent||change.different;
+  const labelNode=el("div","appearance-compare-matrix-label",label);
+  const beforeNode=el("div","appearance-compare-matrix-value",comparisonNumber(before,{integer}));
+  const afterNode=el(
+    "div",
+    "appearance-compare-matrix-value "+(different?"is-different":""),
+    comparisonNumber(after,{integer}),
+  );
+  const deltaNode=el(
+    "div",
+    "appearance-compare-matrix-delta "+(different?"is-different":""),
+    delta?change.text:"—",
+  );
+  row.append(labelNode,beforeNode,afterNode,deltaNode);
+  return row;
+}
+
+function comparisonMatrixTextRow({label,before,after,different=true}){
+  const row=el("div","appearance-compare-matrix-row");
+  row.append(
+    el("div","appearance-compare-matrix-label",label),
+    el("div","appearance-compare-matrix-value",before??"—"),
+    el("div","appearance-compare-matrix-value "+(different?"is-different":""),after??"—"),
+    el("div","appearance-compare-matrix-delta "+(different?"is-different":""),different?"changed":"—"),
+  );
+  return row;
+}
+
+function comparisonMatrixHeader(baseline,shadow){
+  const row=el("div","appearance-compare-matrix-row appearance-compare-matrix-columns");
+  row.append(
+    el("div","appearance-compare-matrix-label","Metric"),
+    el("div","appearance-compare-matrix-value","Baseline"),
+    el("div","appearance-compare-matrix-value","Refinement"),
+    el("div","appearance-compare-matrix-delta","Δ"),
+  );
+  row.children[1].title=baseline?populationLabExperimentName(baseline):"Baseline";
+  row.children[2].title=shadow?populationLabExperimentName(shadow):"Refinement";
+  return row;
+}
+
+function renderNumericalComparison(){
+  if(!comparisonState)return;
+  const baseline=experimentById(comparisonState.baselineExperimentId);
+  const shadow=experimentById(comparisonState.shadowExperimentId);
+
+  if(compareParameterMatrix){
+    compareParameterMatrix.replaceChildren(comparisonMatrixHeader(baseline,shadow));
+    for(const change of comparisonState.changes??[]){
+      if(change.kind==="variation"){
+        compareParameterMatrix.append(comparisonMatrixTextRow({
+          label:change.parameter,
+          before:"baseline",
+          after:comparisonNumber(change.after),
+        }));
+        continue;
+      }
+      compareParameterMatrix.append(
+        comparisonMatrixRow({
+          label:change.parameter+" · center",
+          before:change.before,
+          after:change.after,
+          forceDifferent:true,
+        }),
+        comparisonMatrixRow({
+          label:change.parameter+" · mean",
+          before:change.baselineMean,
+          after:change.shadowMean,
+        }),
+        comparisonMatrixRow({
+          label:change.parameter+" · spread",
+          before:change.baselineSd,
+          after:change.shadowSd,
+        }),
+        comparisonMatrixTextRow({
+          label:change.parameter+" · p05–p95",
+          before:Number.isFinite(change.baselineP05)&&Number.isFinite(change.baselineP95)
+            ?comparisonNumber(change.baselineP05)+" … "+comparisonNumber(change.baselineP95)
+            :"—",
+          after:Number.isFinite(change.shadowP05)&&Number.isFinite(change.shadowP95)
+            ?comparisonNumber(change.shadowP05)+" … "+comparisonNumber(change.shadowP95)
+            :"—",
+          different:Boolean(
+            Number.isFinite(change.baselineP05)
+            &&Number.isFinite(change.shadowP05)
+            &&(
+              Math.abs(change.baselineP05-change.shadowP05)>=.0005
+              ||Math.abs(change.baselineP95-change.shadowP95)>=.0005
+            )
+          ),
+        }),
+      );
+    }
+  }
+
+  if(compareHealthMatrix){
+    compareHealthMatrix.replaceChildren(comparisonMatrixHeader(baseline,shadow));
+    for(const metric of comparisonState.health??[]){
+      compareHealthMatrix.append(comparisonMatrixRow({
+        label:metric.metric,
+        before:metric.baseline,
+        after:metric.shadow,
+        integer:metric.integer===true,
+      }));
+    }
+  }
+}
+
 function visualComparisonSampleSize(baseline,shadow){
   if(
     comparisonState?.sameCohort!==true
@@ -733,14 +858,7 @@ function renderVisualComparison(){
     return;
   }
 
-  const note=el(
-    "p",
-    "appearance-compare-visual-note",
-    comparisonVisualRole==="geometry"
-      ?"Geometry isolates the calibration change before surface rendering."
-      :"Portrait shows the final rendered effect of the same calibration change.",
-  );
-  compareVisualBody.append(note);
+  compareVisualBody.style.setProperty("--appearance-compare-columns",String(Math.min(sampleSize,4)));
 
   for(let ordinal=1;ordinal<=sampleSize;ordinal+=1){
     const sample=el("article","appearance-compare-visual-sample");
@@ -753,10 +871,11 @@ function renderVisualComparison(){
 
     for(const [label,experiment] of [["Baseline",baseline],["Refinement",shadow]]){
       const figure=document.createElement("figure");
+      if(label==="Refinement")figure.classList.add("is-refinement");
       const caption=el("figcaption",null);
       caption.append(
         el("span",null,label),
-        el("strong",null,populationLabExperimentName(experiment)),
+        el("strong",null,comparisonVisualRole==="geometry"?"Geometry":"Portrait"),
       );
       const image=document.createElement("img");
       const src=comparisonImageUrl(experiment.experimentId,ordinal,comparisonVisualRole);
@@ -782,6 +901,7 @@ function setComparisonView(view){
   compareNumericalButton?.classList.toggle("is-active",!visual);
   compareVisualButton?.classList.toggle("is-active",visual);
   if(visual)renderVisualComparison();
+  else renderNumericalComparison();
 }
 
 function setComparisonVisualRole(role){
@@ -961,21 +1081,21 @@ async function openExperimentComparison(experiment){
   const shadow=experimentById(comparison.shadowExperimentId)??experiment;
 
   if(compareTitle)compareTitle.textContent=comparison.referencePopulation+" · baseline vs refinement";
-  if(compareBaselineName)compareBaselineName.textContent=baseline?populationLabExperimentName(baseline):comparison.baselineExperimentId;
-  if(compareShadowName)compareShadowName.textContent=populationLabExperimentName(shadow);
-  if(compareBaselineValues)compareBaselineValues.replaceChildren(...(comparison.changes??[]).map(change=>{
-    const value=Number.isFinite(change.before)?change.before:"current";
-    return el("code",null,change.parameter+" "+value);
-  }));
-  if(compareShadowValues)compareShadowValues.replaceChildren(...(comparison.changes??[]).map(change=>
-    el("code",null,change.parameter+" "+(Number.isFinite(change.after)?change.after:"—"))
-  ));
   if(compareChanges){
     compareChanges.replaceChildren();
     for(const change of comparison.changes??[])compareChanges.append(comparisonChangeNode(change));
   }
-  if(compareBaselineFrame)compareBaselineFrame.src=numericalExperimentReportUrl(comparison.baselineExperimentId);
-  if(compareShadowFrame)compareShadowFrame.src=numericalExperimentReportUrl(comparison.shadowExperimentId);
+  renderNumericalComparison();
+  if(compareBaselineReport)compareBaselineReport.onclick=()=>window.open(
+    numericalExperimentReportUrl(comparison.baselineExperimentId),
+    "_blank",
+    "noopener",
+  );
+  if(compareShadowReport)compareShadowReport.onclick=()=>window.open(
+    numericalExperimentReportUrl(comparison.shadowExperimentId),
+    "_blank",
+    "noopener",
+  );
   comparisonView="numerical";
   comparisonVisualRole="geometry";
   setComparisonVisualRole("geometry");
@@ -1920,14 +2040,15 @@ compareDialog?.addEventListener("close",()=>{
   comparisonVisualRole="geometry";
   compareActions?.replaceChildren();
   compareChanges?.replaceChildren();
-  compareBaselineValues?.replaceChildren();
-  compareShadowValues?.replaceChildren();
+  compareParameterMatrix?.replaceChildren();
+  compareHealthMatrix?.replaceChildren();
   compareVisualBody?.replaceChildren();
+  if(compareVisualBody)compareVisualBody.style.removeProperty("--appearance-compare-columns");
+  if(compareBaselineReport)compareBaselineReport.onclick=null;
+  if(compareShadowReport)compareShadowReport.onclick=null;
   if(compareNumericalBody)compareNumericalBody.hidden=false;
   if(compareVisualBody)compareVisualBody.hidden=true;
   if(compareVisualRole)compareVisualRole.hidden=true;
-  if(compareBaselineFrame)compareBaselineFrame.src="about:blank";
-  if(compareShadowFrame)compareShadowFrame.src="about:blank";
 });
 
 if(reportNewTab)decorateActionButton(reportNewTab,{
