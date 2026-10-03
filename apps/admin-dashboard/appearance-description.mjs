@@ -28,14 +28,14 @@ function sentenceParts(value){
 function pairs(value){
   const out=[];
   for(const part of String(value??"").split(";")){
-    const match=/^\s*([A-Za-z][A-Za-z0-9]+):\s*(.+?)\s*$/u.exec(part);
+    const match=/^\s*([A-Za-z][A-Za-z0-9 _-]*):\s*(.+?)\s*$/u.exec(part);
     if(match)out.push(Object.freeze({key:match[1],value:match[2]}));
   }
   return out;
 }
 
 function groupSentence(sentence){
-  const match=/^(.+?):\s+((?:[A-Za-z][A-Za-z0-9]+:\s).+)$/u.exec(sentence);
+  const match=/^(.+?):\s+((?:[A-Za-z][A-Za-z0-9 _-]*:\s).+)$/u.exec(sentence);
   if(!match)return null;
   const rows=pairs(match[2]);
   return rows.length?Object.freeze({title:match[1],rows}):null;
@@ -123,8 +123,16 @@ function simpleLayer(value){
   const notes=[];
   for(const sentence of sentences){
     const group=groupSentence(sentence);
-    if(group)groups.push(group);
-    else notes.push(sentence);
+    if(group){
+      groups.push(group);
+      continue;
+    }
+    const rows=pairs(sentence);
+    if(rows.length>1){
+      groups.push(Object.freeze({title:"Reference state",rows:Object.freeze(rows)}));
+      continue;
+    }
+    notes.push(sentence);
   }
   return Object.freeze({groups:Object.freeze(groups),notes:Object.freeze(notes)});
 }
