@@ -15,6 +15,7 @@ import {
   launchAdminPopulationLabVisualExperiment,
   listAdminPopulationLabExperiments,
   readAdminPopulationLabExperiment,
+  readAdminPopulationLabComparison,
   readAdminPopulationLabCalibrationApproval,
   readAdminPopulationLabImage,
   readAdminPopulationLabReport,
@@ -50,6 +51,7 @@ const APPEARANCE_COVERAGE_ROUTE = "/api/appearance/coverage";
 const APPEARANCE_EXPERIMENTS_ROUTE = "/api/appearance/experiments";
 const APPEARANCE_EXPERIMENT_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)$/u;
 const APPEARANCE_EXPERIMENT_REPORT_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/report$/u;
+const APPEARANCE_EXPERIMENT_COMPARE_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/compare$/u;
 const APPEARANCE_EXPERIMENT_IMAGE_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/image\/(\d{3})\/(geometry|portrait)$/u;
 const APPEARANCE_EXPERIMENT_VISUAL_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/visuals$/u;
 const APPEARANCE_EXPERIMENT_REVIEW_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/review$/u;
@@ -498,6 +500,7 @@ export default {
     const appearanceExperimentsRequest = url.pathname === APPEARANCE_EXPERIMENTS_ROUTE;
     const appearanceExperimentMatch = APPEARANCE_EXPERIMENT_ROUTE.exec(url.pathname);
     const appearanceExperimentReportMatch = APPEARANCE_EXPERIMENT_REPORT_ROUTE.exec(url.pathname);
+    const appearanceExperimentCompareMatch = APPEARANCE_EXPERIMENT_COMPARE_ROUTE.exec(url.pathname);
     const appearanceExperimentImageMatch = APPEARANCE_EXPERIMENT_IMAGE_ROUTE.exec(url.pathname);
     const appearanceExperimentVisualMatch = APPEARANCE_EXPERIMENT_VISUAL_ROUTE.exec(url.pathname);
     const appearanceExperimentReviewMatch = APPEARANCE_EXPERIMENT_REVIEW_ROUTE.exec(url.pathname);
@@ -513,7 +516,7 @@ export default {
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch);
     const adminDelete = request.method === "DELETE" && appearanceExperimentMatch;
@@ -662,9 +665,18 @@ export default {
             approval,
           });
         }
+        if(appearanceExperimentCompareMatch){
+          const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentCompareMatch[1]));
+          const comparison=await readAdminPopulationLabComparison(env,experimentId);
+          return json(200,{
+            contract:"fibre-admin-population-lab-comparison-v0.1",
+            comparison,
+          });
+        }
         if(appearanceExperimentReportMatch){
           const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentReportMatch[1]));
-          const artifact=await readAdminPopulationLabReport(env,experimentId);
+          const kind=url.searchParams.get("kind")==="numerical"?"numerical":"current";
+          const artifact=await readAdminPopulationLabReport(env,experimentId,{kind});
           if(artifact===null)return json(404,{error:"experiment_report_not_found"});
           return new Response(artifact.bytes,{
             headers:{
@@ -820,7 +832,7 @@ export default {
         if (pendingBirths || birthplaces) return json(503, { error:"thread_birth_data_unavailable", detail:error.message });
         if (threadPopulation || threadPopulationEntryMatch) return json(503, { error:"thread_population_unavailable", detail:error.message });
         if (appearanceCoverageRequest) return json(503, { error:"appearance_coverage_unavailable", detail:error.message });
-        if (appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentImageMatch || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch) {
+        if (appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch) {
           return json(error instanceof TypeError ? 400 : 503, { error:"appearance_experiments_unavailable", detail:error.message });
         }
         if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
