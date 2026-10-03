@@ -1,4 +1,5 @@
 import { bindCopyAction } from "./copy-action.js";
+import { humanAppearanceKey, parseCanonicalAppearancePresentation } from "./appearance-description.mjs";
 import { decorateActionButton, faIcon, setWaitingContent } from "./fa-icons.js";
 import { createFibreFinCard } from "./fibre-fin-card.js";
 import { threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
@@ -876,20 +877,92 @@ function whoSection(identity) {
   wrap.append(prose); return wrap;
 }
 
+function appearanceGroupTitle(value) {
+  return ({
+    "face and midface":"Face & midface",
+    "Eye and orbital anatomy":"Eyes & orbit",
+    "Nasal and perioral anatomy":"Nose & mouth",
+    "body structure":"Body structure",
+    "surface phenotype — pigmentation and hair":"Pigmentation & hair",
+    "Reference grooming":"Grooming",
+    "Reference state":"Reference state",
+    "Additional precision":"Additional precision",
+  })[value] ?? value;
+}
+
+function appearanceLayer(titleText,layer,{open=false}={}) {
+  const details=el("details","thread-appearance-layer");
+  details.open=open;
+  const summary=el("summary","thread-appearance-layer-summary");
+  summary.append(
+    el("strong",null,titleText),
+    el("span",null,layer.groups.reduce((count,group)=>count+group.rows.length,0)+" traits"),
+  );
+  details.append(summary);
+
+  const body=el("div","thread-appearance-layer-body");
+  for(const group of layer.groups){
+    const block=el("section","thread-appearance-trait-group");
+    block.append(el("h4",null,appearanceGroupTitle(group.title)));
+    const rows=el("div","thread-appearance-trait-rows");
+    for(const row of group.rows){
+      const item=el("div","thread-appearance-trait-row");
+      item.append(
+        el("span","thread-appearance-trait-key",humanAppearanceKey(row.key)),
+        el("strong","thread-appearance-trait-value",row.value??"—"),
+      );
+      if(row.coordinate){
+        const coordinate=el("span","thread-appearance-coordinate mono",row.coordinate.value);
+        if(row.coordinate.meaning)coordinate.title=row.coordinate.meaning;
+        item.append(coordinate);
+      }else{
+        item.append(el("span","thread-appearance-coordinate muted",""));
+      }
+      rows.append(item);
+    }
+    block.append(rows);
+    body.append(block);
+  }
+  for(const note of layer.notes){
+    body.append(el("p","thread-appearance-guidance",note+"."));
+  }
+  details.append(body);
+  return details;
+}
+
 function appearanceSection(identity) {
   const description = phenotype(identity);
   const rule = appearanceRule(identity);
   const sex = threadSex(identity);
   if (!description && !rule && !sex) return null;
-  const wrap = section("Appearance");
-  if (description) wrap.append(el("p", "thread-appearance-prose", description));
+
+  const parsed=parseCanonicalAppearancePresentation(description);
+  const subtitle=parsed
+    ? human(parsed.sex)+" · "+parsed.version
+    : null;
+  const wrap = section("Appearance",subtitle);
+
   const grid = el("div", "thread-person-facts");
   grid.append(
     fact("Sex", sex ? human(sex) : "—"),
     fact("Renderer", identity.world?.thread?.identity?.canonicalVisualIdentity?.specification?.model ?? "—"),
   );
   wrap.append(grid);
-  if (rule) wrap.append(disclosure("Identity continuity rule", rule, { prose:true }));
+
+  if(parsed){
+    const layers=el("div","thread-appearance-layers");
+    layers.append(
+      appearanceLayer("Structural morphology",parsed.structural,{open:true}),
+      appearanceLayer("Reference geometry",parsed.referenceGeometry),
+      appearanceLayer("Surface phenotype",parsed.surface),
+      appearanceLayer("Reference surface",parsed.referenceSurface),
+    );
+    wrap.append(layers);
+  }else if(description){
+    wrap.append(el("p", "thread-appearance-prose", description));
+  }
+
+  if (rule) wrap.append(disclosure("Renderer / identity continuity guidance", rule, { prose:true }));
   return wrap;
 }
 
