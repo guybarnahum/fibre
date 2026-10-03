@@ -466,13 +466,15 @@ Human visual review is now durable experiment evidence as well: every completed 
 
 No runtime web/LLM research is introduced in A3.2 v0.1. A future provider-neutral research adapter may populate the same provenance-bearing proposal contract, but it must not infer morphology from geography, nationality, culture, religion, names or generated portraits.
 
-**A3.3 — explicit approval / registry admission: designed, not implemented.** Human approval is the authority transition:
-- approved calibration enters the current reference-population registry;
-- its local integer version advances when that node is refined, or a new node enters at version 1;
-- new Threads immediately use the current approved registry;
-- existing Threads are compared against the new dependency set.
+**A3.3 — explicit approval / registry admission: implemented on `main`, validation pending.** A frozen candidate now has one explicit human approval transition. Admin first reads World appearance coverage and shows the projected affected Thread/lineage count against the exact candidate base version. Approval records one immutable artifact bound to the candidate digest, visual-review artifact, authenticated Admin identity, proposed calibration, rationale and projected impact.
 
-Experiment/research/review output is a **candidate**, never authority.
+Approval authorizes admission but does not silently mutate runtime authority from the browser. The canonical reference registry remains Git-owned. The approved artifact contains the exact source-admission payload; Admin can copy that JSON, and `npm run population:calibration:admit -- --approval=/path/to/approval.json` deterministically appends the reviewed refinement to the source-controlled admission overlay. The command accepts only an approval whose base is still current and advances exactly one local version. Deployment of that source change makes the calibration current for new births and exposes its admission provenance through registry metadata.
+
+This split keeps the human authority decision explicit while preserving Git as the law/current-calibration source. A browser approval cannot silently rewrite Human Appearance, and a source admission cannot be authored from an unapproved candidate.
+
+A3.3 v0.1 admits **refinements of existing reference nodes**. Admission of a brand-new calibration node remains deferred until the same evidence/review/approval path has an explicit parent-selection contract; Fibre must not create a node merely from geography, nationality, religion, culture, names or portraits.
+
+Experiment/research/review output is a **candidate**, never authority. Human approval authorizes registry admission; deployed source admission is the point at which runtime calibration authority changes.
 
 ### A4 — affected-Thread migration workset
 
