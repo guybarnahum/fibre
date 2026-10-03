@@ -91,6 +91,9 @@ export function buildPopulationLabCalibrationApproval({
   if(!impact||impact.referencePopulation!==candidate.referencePopulation){
     throw new TypeError("calibration impact preview is required");
   }
+  if(Number(impact.fromVersion)!==current.version||Number(impact.toVersion)!==candidate.proposedCalibration.version){
+    throw new TypeError("calibration impact preview version changed");
+  }
 
   return Object.freeze({
     contract:POPULATION_LAB_CALIBRATION_APPROVAL_VERSION,
