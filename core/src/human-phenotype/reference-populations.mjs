@@ -1,4 +1,6 @@
 import {physicalGenomeLoci} from "./physical-genome.mjs";
+import {applyReferencePopulationAdmissions} from "./reference-population-admission.mjs";
+import {referencePopulationAdmissions} from "./reference-population-admissions.mjs";
 
 /*
  * Root priors are deliberately complete: every physical locus is named even
@@ -10,7 +12,7 @@ import {physicalGenomeLoci} from "./physical-genome.mjs";
  * calibration fallback, not a claim of ancestry or population equivalence.
  * Children inherit that prior until calibration supplies justified overrides.
  */
-const DEFINITIONS=Object.freeze({
+const BASE_DEFINITIONS=Object.freeze({
   afr_west:{version:1,parent:null,values:{pigmentation:.72,eyePigmentation:.72,hairPigmentation:.66,frecklingTendency:0,hairForm:.72,hairDensity:.18,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:.3,faceLength:-.06,midfaceProminence:.14,zygomaticProjection:.08,eyeSpacing:-.1,eyeShape:.12,epicanthicFold:-.55,upperEyelidExposure:.1,orbitalDepth:.04,foreheadProportion:0,brow:.02,noseBreadth:.42,noseProjection:-.04,nasalBridgeHeight:-.18,softTissue:.4,jawBreadth:.14,chinProjection:-.04,frame:.04,height:.02,bodyProportion:.06,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   afr_east:{version:1,parent:null,values:{pigmentation:.62,eyePigmentation:.68,hairPigmentation:.6,frecklingTendency:0,hairForm:.58,hairDensity:.14,hairlineLossTendency:0,facialHairTendency:0,faceBreadth:-.02,faceLength:.18,midfaceProminence:.1,zygomaticProjection:.04,eyeSpacing:-.02,eyeShape:.08,epicanthicFold:-.52,upperEyelidExposure:.1,orbitalDepth:.05,foreheadProportion:.02,brow:.06,noseBreadth:.14,noseProjection:.12,nasalBridgeHeight:-.02,softTissue:.24,jawBreadth:.02,chinProjection:.08,frame:.02,height:.1,bodyProportion:.1,adiposityTendency:0,muscularityTendency:0,shoulderHipProportion:0}},
   // Coarse African regions are explicit operator evidence codes even before
@@ -127,6 +129,8 @@ const DEFINITIONS=Object.freeze({
   "east_asia.mongolian":{version:1,parent:"east_asia",values:{}},
   "east_asia.tibetan":{version:1,parent:"east_asia",values:{}},
 });
+
+const DEFINITIONS=applyReferencePopulationAdmissions(BASE_DEFINITIONS,referencePopulationAdmissions);
 
 export const referencePopulationIds=Object.freeze(Object.keys(DEFINITIONS));
 
