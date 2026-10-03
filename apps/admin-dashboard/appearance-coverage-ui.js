@@ -1,3 +1,4 @@
+import { populationLabExperimentName } from "./population-lab-experiment-name.js";
 import { bindPortraitPreview } from "./portrait-preview.js";
 import { bindCopyAction, copyWithFeedback, decorateCopyAction } from "./copy-action.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
@@ -125,8 +126,8 @@ function experimentReportUrl(experimentId){
 function openExperimentReport(experiment){
   if(!reportDialog||!reportFrame)return;
   const url=experimentReportUrl(experiment.experimentId);
-  const reference=experiment.visual?.summary?.referencePopulation??experiment.summary?.referencePopulation??experiment.experimentId;
-  if(reportTitle)reportTitle.textContent=(experiment.visual?.status==="completed"?"Visual fidelity · ":"Experiment report · ")+reference;
+  const name=populationLabExperimentName(experiment);
+  if(reportTitle)reportTitle.textContent=(experiment.visual?.status==="completed"?"Visual fidelity · ":"Experiment report · ")+name;
   reportFrame.src=url;
   reportFrame.dataset.reportUrl=url;
   void loadVisualReview(experiment);
@@ -493,7 +494,7 @@ function openShadowCalibrationDialog(experiment){
   if(!shadowDialog)return;
   shadowBaseExperiment=experiment;
   if(shadowContext)shadowContext.textContent=
-    "Baseline "+experiment.experimentId+" · "+(experiment.summary?.referencePopulation??"unknown population");
+    "Baseline "+populationLabExperimentName(experiment)+" · "+experiment.experimentId;
   if(shadowRationale)shadowRationale.value="";
   if(shadowEvidence)shadowEvidence.value="";
   if(shadowValues)shadowValues.value="{}";
@@ -661,7 +662,7 @@ function renderAppearanceExperiments(){
     const copy=el("div","appearance-experiment-copy");
     const head=el("div","appearance-experiment-head");
     head.append(
-      el("strong",null,experiment.experimentId),
+      el("strong",null,populationLabExperimentName(experiment)),
       experimentStatusPill(experimentStatus(experiment.status)),
     );
     const visualState=visualStatus(experiment.visual?.status);
@@ -676,6 +677,7 @@ function renderAppearanceExperiments(){
       head.append(experimentStatusPill({label:"Approved",tone:"good",active:false}));
     }
     const meta=el("span","appearance-experiment-meta",experimentSummary(experiment));
+    meta.title=experiment.experimentId;
     const started=experiment.startedAt?new Date(experiment.startedAt).toLocaleString():"";
     if(started)meta.textContent+=" · "+started;
     if(experiment.visual?.status){
