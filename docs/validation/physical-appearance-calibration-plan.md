@@ -494,7 +494,43 @@ v1 -> v2 -> v3
 
 Only affected Threads become `migration_required`. A Moroccan calibration change must not migrate Korean Threads.
 
-Admin retains the existing per-Thread **Update calibration** action and now exposes **Migrate affected** for the current workset. The batch action is intentionally thin: it confirms the bounded set once, then launches each Thread sequentially through the exact same World migration action and default migration reason used by the individual control. It adds no batch authority, no parallel migration service and no polling. Canonical Embodiment, Presentation and FID convergence remain owned by the existing World/publication path, with pending/completion reflected through normal Admin live invalidation.
+Admin retains the existing per-Thread **Update calibration** action and exposes a scoped **Migrate affected** action for the approved calibration workset. The batch action is intentionally thin: it confirms the bounded set once, then launches each Thread sequentially through the exact same World migration action and default migration reason used by the individual control. It adds no batch authority, no parallel migration service and no polling. Canonical Embodiment, Presentation and FID convergence remain owned by the existing World/publication path, with pending/completion reflected through normal Admin live invalidation.
+
+### A5 — real calibration adoption and closure
+
+**Implemented on `main`, staging acceptance pending.** Admin **Appearance** now carries the operational acceptance flight instead of requiring the operator to reconstruct it from CLI output.
+
+An approved refinement appears in **Calibration adoption** as a derived four-stage rail:
+
+```text
+Approved -> Released -> Affected -> Converged
+```
+
+The rail is a projection of existing authority, not a new workflow database:
+
+- **Approved** comes from the immutable calibration approval artifact;
+- **Released** becomes true only when the deployed Git-owned reference registry reaches the approved target version;
+- **Affected** is the intersection of the approval's projected Thread IDs with World's current appearance-migration workset;
+- **Converged** means the approved version is deployed and none of the projected affected Threads remains stale.
+
+The source-release hinge deliberately remains outside the deployed Admin runtime. Admin may copy the approval artifact, but it cannot silently rewrite Git-owned Human Appearance authority. Once the reviewed source admission is committed and deployed, the next Appearance scan recognizes the new version automatically.
+
+Affected Threads are explicitly marked in the Appearance workset. The adoption card's **Migrate affected** action is scoped to that approval's remaining Thread IDs and reuses the existing sequential World migration path. Unrelated migration candidates remain visible but are not marked as affected by that calibration and are never included in the scoped batch.
+
+When the card reaches **A5 complete**, **Copy evidence** emits a compact acceptance snapshot containing the approval experiment, reference population, from/to/current versions, projected Thread IDs and the empty remaining affected set. This is operator acceptance evidence only; World and the deployed registry remain authority.
+
+Tranche A closes in staging when one real reviewed calibration demonstrates all of the following:
+
+1. the approved node advances exactly one local source version;
+2. new runtime resolution reports that deployed version;
+3. only the approval's dependent Threads become affected/migration-required;
+4. at least one unrelated control Thread remains unchanged;
+5. **Migrate affected** updates only the marked workset through World authority;
+6. every marked Thread converges through Embodiment -> Presentation -> FID and leaves the workset;
+7. Admin shows **A5 complete** and copied adoption evidence reports zero remaining affected Threads;
+8. full `npm run slice:validate` passes on the admitted source.
+
+After that evidence is recorded, mark A3.1/A3.2/A3.3/A4/A5 accepted and close Tranche A. A6/new-node admission is optional follow-on work, not part of A closure.
 
 ## Ambition / extension path
 
