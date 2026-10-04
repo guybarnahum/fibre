@@ -59,7 +59,7 @@ export function populationLabAdoptionState(experiment,{model=[],migrationCandida
 export function populationLabAdoptions(experiments,context={}){
   return Object.freeze((Array.isArray(experiments)?experiments:[])
     .filter(experiment=>
-      experiment?.experimentKind==="refinement"
+      (experiment?.experimentKind==="refinement"||experiment?.summary?.shadow===true)
       &&experiment?.artifacts?.calibrationApproval?.objectRef
       &&impactOf(experiment)!==null
     )
