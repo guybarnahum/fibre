@@ -31,7 +31,6 @@ const rows=$("#appearance-hole-rows");
 const detail=$("#appearance-hole-detail");
 const modelRows=$("#appearance-model-rows");
 const migrations=$("#appearance-migration-candidates");
-const migrateAllButton=$("#appearance-migrate-all");
 const experiments=$("#appearance-experiments");
 const experimentRefreshButton=$("#appearance-experiments-refresh");
 const adoptionList=$("#appearance-adoptions");
@@ -2262,30 +2261,6 @@ function defaultMigrationInput(migration){
   return input;
 }
 
-function renderMigrateAllAction(candidates){
-  if(!migrateAllButton)return;
-  if(migrationBatch){
-    const done=Math.min(migrationBatch.completed,migrationBatch.total);
-    migrateAllButton.disabled=true;
-    decorateActionButton(migrateAllButton,{
-      icon:"rotate",
-      label:"Progress "+done+"/"+migrationBatch.total,
-      tooltip:"Launching affected Thread migrations sequentially",
-      spinning:true,
-    });
-    return;
-  }
-  const available=candidates.filter(candidate=>!migrationIsBusy(candidate));
-  migrateAllButton.disabled=available.length===0;
-  decorateActionButton(migrateAllButton,{
-    icon:"wrench",
-    label:"Migrate affected",
-    tooltip:available.length===0
-      ?"No affected Thread is currently ready to migrate"
-      :"Migrate "+available.length+" affected Thread"+(available.length===1?"":"s")+" sequentially through World authority",
-  });
-}
-
 async function migrateAffectedThreads(targetThreadIds=null){
   if(migrationBatch)return;
   const candidates=pendingCandidateList().filter(candidate=>
@@ -2345,8 +2320,8 @@ async function migrateAffectedThreads(targetThreadIds=null){
     migrationBatch=null;
     renderMigrations();
     renderCalibrationAdoptions();
-    if(failures.length>0&&migrateAllButton){
-      migrateAllButton.title=failures.length+" migration launch failure"+(failures.length===1?"":"s")+": "
+    if(failures.length>0&&adoptionList){
+      adoptionList.title=failures.length+" migration launch failure"+(failures.length===1?"":"s")+": "
         +failures.map(item=>item.threadId+" · "+item.message).join(" | ");
     }
   }
@@ -2355,7 +2330,6 @@ async function migrateAffectedThreads(targetThreadIds=null){
 function renderMigrations(){
   migrations.replaceChildren();
   const candidates=pendingCandidateList();
-  renderMigrateAllAction(candidates);
   if(candidates.length===0){
     migrations.append(el("p","thread-repair-note","No admitted Thread with durable ancestry evidence is stale against the current versioned calibration dependencies."));
     return;
@@ -2696,7 +2670,6 @@ if(experimentRefreshButton)setRefreshButtonState(experimentRefreshButton,false,{
   tooltip:"Refresh Population Lab experiments",
   iconOnly:true,
 });
-migrateAllButton?.addEventListener("click",()=>void migrateAffectedThreads());
 scanButton?.addEventListener("click",()=>void loadAppearanceCoverage());
 experimentRefreshButton?.addEventListener("click",async()=>{
   setRefreshButtonState(experimentRefreshButton,true,{
