@@ -580,6 +580,60 @@ async function launchShadowCalibration(){
   }
 }
 
+async function decideVisualReview(experiment,decision,button){
+  const label=decision==="supports_candidate"?"Accept":"Reject";
+  if(!window.confirm(label+" this visual review? Scoring will be locked until you Reopen it."))return;
+  setBlockingButtonState(button,true,{
+    label,
+    tooltip:label+" visual review",
+    busyLabel:decision==="supports_candidate"?"Accepting":"Rejecting",
+    busyTooltip:(decision==="supports_candidate"?"Accepting":"Rejecting")+" visual review",
+  });
+  try{
+    const response=await fetch(
+      "/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/review/decision",
+      {
+        method:"POST",
+        headers:{Accept:"application/json","content-type":"application/json"},
+        body:JSON.stringify({decision}),
+      },
+    );
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+    if(reportDialog?.open)void loadVisualReview({...experiment,review:{...experiment.review,decision}});
+    await loadAppearanceExperiments();
+  }catch(error){
+    setBlockingButtonState(button,false,{
+      label,
+      tooltip:error instanceof Error?error.message:String(error),
+    });
+  }
+}
+
+async function reopenVisualReview(experiment,button){
+  if(!window.confirm("Reopen this review? Scores and notes will become editable again."))return;
+  setBlockingButtonState(button,true,{
+    label:"Reopen",
+    tooltip:"Unlock scoring and notes",
+    busyLabel:"Reopening",
+    busyTooltip:"Reopening visual review",
+  });
+  try{
+    const response=await fetch(
+      "/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/review/reopen",
+      {method:"POST",headers:{Accept:"application/json"}},
+    );
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+    await loadAppearanceExperiments();
+  }catch(error){
+    setBlockingButtonState(button,false,{
+      label:"Reopen",
+      tooltip:error instanceof Error?error.message:String(error),
+    });
+  }
+}
+
 async function freezeCalibrationCandidate(experiment,button){
   setBlockingButtonState(button,true,{
     label:"Freeze candidate",
@@ -1384,12 +1438,16 @@ function renderComparisonActions(experiment){
   if(experiment.visual?.status==="completed"){
     const review=el("button","secondary");
     review.type="button";
+    const decision=experiment.review?.decision??null;
+    const label=!decision?"Score visuals":decision==="open"?"Edit scoring":"View review";
     decorateActionButton(review,{
       icon:"image",
-      label:experiment.review?"Review evidence":"Review visuals",
-      tooltip:experiment.review
-        ?"Open the submitted visual evidence and review"
-        :"Inspect visual fidelity and submit the human review",
+      label,
+      tooltip:decision==="open"
+        ?"Edit saved visual scores and notes"
+        :decision
+          ?"View the locked visual review"
+          :"Score visual fidelity before accepting or rejecting",
     });
     review.addEventListener("click",()=>openExperimentReport(experiment));
     compareActions.append(review);
@@ -1398,30 +1456,67 @@ function renderComparisonActions(experiment){
   const reviewState=reviewStatus(experiment.review);
   if(reviewState)compareActions.append(experimentStatusPill(reviewState));
 
+  const decision=experiment.review?.decision??null;
+  const candidateFrozen=Boolean(experiment.artifacts?.calibrationCandidate?.objectRef);
+
+  if(decision==="open"&&!candidateFrozen){
+    const accept=el("button","primary");
+    accept.type="button";
+    decorateActionButton(accept,{
+      label:"Accept",
+      tooltip:"Accept this scored review and lock scoring until Reopen",
+    });
+    accept.addEventListener("click",()=>void decideVisualReview(experiment,"supports_candidate",accept));
+
+    const reject=el("button","secondary");
+    reject.type="button";
+    decorateActionButton(reject,{
+      label:"Reject",
+      tooltip:"Reject this scored review and lock scoring until Reopen",
+    });
+    reject.addEventListener("click",()=>void decideVisualReview(experiment,"reject",reject));
+    compareActions.append(accept,reject);
+  }
+
+  if(["supports_candidate","reject","inconclusive"].includes(decision)&&!candidateFrozen){
+    const reopen=el("button","secondary");
+    reopen.type="button";
+    decorateActionButton(reopen,{
+      icon:"rotate",
+      label:"Reopen",
+      tooltip:"Unlock scoring and notes for this review",
+    });
+    reopen.addEventListener("click",()=>void reopenVisualReview(experiment,reopen));
+    compareActions.append(reopen);
+  }
+
   if(
     experiment.status==="completed"
-    && experiment.review?.decision==="supports_candidate"
-    && !experiment.artifacts?.calibrationCandidate?.objectRef
+    && decision==="supports_candidate"
+    && !candidateFrozen
   ){
     const freeze=el("button","primary");
     freeze.type="button";
     decorateActionButton(freeze,{
       icon:"wrench",
       label:"Freeze candidate",
-      tooltip:"Freeze this reviewed refinement as immutable candidate evidence",
+      tooltip:"Freeze the accepted review and refinement as immutable candidate evidence",
     });
     freeze.addEventListener("click",()=>void freezeCalibrationCandidate(experiment,freeze));
     compareActions.append(freeze);
   }
 
+  if(candidateFrozen){
+    compareActions.append(experimentStatusPill({label:"Candidate Frozen",tone:"good",active:false}));
+  }
+
   if(
-    experiment.artifacts?.calibrationCandidate?.objectRef
+    candidateFrozen
     && !experiment.artifacts?.calibrationApproval?.objectRef
   ){
     const approve=el("button","primary appearance-approval-action");
     approve.type="button";
     decorateActionButton(approve,{
-      icon:"check",
       label:"Approve",
       tooltip:"Review projected impact and approve candidate evidence",
     });
@@ -1442,7 +1537,7 @@ function renderComparisonActions(experiment){
     compareActions.append(copyApproval);
   }
 
-  if(experiment.review?.decision==="reject"){
+  if(decision==="reject"){
     const rerun=el("button","secondary");
     rerun.type="button";
     decorateActionButton(rerun,{
