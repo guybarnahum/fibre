@@ -1,6 +1,11 @@
 import { populationLabExperimentName } from "./population-lab-experiment-name.js";
 import { populationLabExperimentParentId, populationLabExperimentRows } from "./population-lab-experiment-tree.js";
 import {
+  populationLabCalibrationHistoryGroups,
+  populationLabHistoricalExperimentIds,
+  populationLabHistoryDraft,
+} from "./population-lab-history.js";
+import {
   populationLabAdoptions,
   populationLabAffectedThreadIds,
   populationLabExperimentAdmitted,
@@ -37,6 +42,7 @@ const modelRows=$("#appearance-model-rows");
 const migrations=$("#appearance-migration-candidates");
 const experiments=$("#appearance-experiments");
 const experimentRefreshButton=$("#appearance-experiments-refresh");
+const calibrationHistory=$("#appearance-calibration-history");
 const adoptionList=$("#appearance-adoptions");
 const appearanceHelp=$("#appearance-help");
 const appearanceHelpDialog=$("#appearance-help-dialog");
@@ -1790,18 +1796,160 @@ function renderCalibrationAdoptions(){
   }
 }
 
+function currentCalibrationHistoryGroups(){
+  return populationLabCalibrationHistoryGroups(snapshot?.calibrationHistory??[],experimentSnapshot);
+}
+
+function historyChanges(version){
+  const values=Object.entries(version?.changes?.values??{})
+    .map(([key,value])=>key+" "+comparisonNumber(value));
+  const variation=Object.entries(version?.changes?.variation??{})
+    .map(([key,value])=>key+" "+comparisonNumber(value));
+  return [...values,...variation];
+}
+
+function renderCalibrationHistory(){
+  if(!calibrationHistory)return;
+  calibrationHistory.replaceChildren();
+  const groups=currentCalibrationHistoryGroups();
+  if(groups.length===0){
+    calibrationHistory.append(el("div","empty","No admitted calibration history yet."));
+    return;
+  }
+
+  for(const group of groups){
+    const shell=document.createElement("details");
+    shell.className="appearance-history-group";
+    shell.open=true;
+
+    const summary=document.createElement("summary");
+    const summaryCopy=el("div","appearance-history-summary-copy");
+    summaryCopy.append(
+      el("strong",null,group.id),
+      el("span",null,group.versions.length+" baselines · current @"+group.currentVersion),
+    );
+    summary.append(summaryCopy);
+    shell.append(summary);
+
+    const timeline=el("div","appearance-history-timeline");
+    for(const version of [...group.versions].reverse()){
+      const row=el("article","appearance-history-row"+(version.current?" is-current":""));
+      const markerNode=el("div","appearance-history-marker",version.current?"●":"○");
+      const body=el("div","appearance-history-body");
+      const head=el("div","appearance-history-head");
+      const title=el("div","appearance-history-title");
+      title.append(
+        el("strong",null,"@"+version.version),
+        version.current
+          ?experimentStatusPill({label:"Current",tone:"good",active:false})
+          :version.origin
+            ?experimentStatusPill({label:"Origin",tone:"",active:false})
+            :experimentStatusPill({label:"Admitted",tone:"good",active:false}),
+      );
+      const approvedAt=version.evidence?.approvedAt;
+      if(approvedAt)title.append(el("span","appearance-history-date",new Date(approvedAt).toLocaleString()));
+      head.append(title);
+
+      const actions=el("div","appearance-history-actions");
+      const admissionExperiment=version.admissionExperimentId
+        ?experimentById(version.admissionExperimentId)
+        :null;
+      const reportExperiment=version.reportExperimentId
+        ?experimentById(version.reportExperimentId)
+        :null;
+
+      if(admissionExperiment){
+        const compare=el("button","secondary appearance-compare-action");
+        compare.type="button";
+        decorateActionButton(compare,{
+          icon:"wrench",
+          label:"Compare",
+          tooltip:"Compare this admitted baseline with the baseline before it",
+        });
+        compare.addEventListener("click",async()=>{
+          try{
+            await openExperimentComparison(admissionExperiment);
+          }catch(error){
+            compare.title=error instanceof Error?error.message:String(error);
+          }
+        });
+        actions.append(compare);
+      }
+
+      if(reportExperiment){
+        const report=el("button","secondary","Report");
+        report.type="button";
+        report.title="Open retained Population Lab evidence for this baseline";
+        report.addEventListener("click",()=>openExperimentReport(reportExperiment));
+        actions.append(report);
+      }
+
+      const copy=el("button","secondary");
+      copy.type="button";
+      bindCopyAction(copy,{
+        value:()=>populationLabHistoryDraft(group,version),
+        label:"Copy JSON",
+        tooltip:"Copy this baseline's local values as a starting point for a refinement",
+        copiedLabel:"JSON copied",
+        failedLabel:"Copy failed",
+        iconOnly:false,
+      });
+      actions.append(copy);
+      head.append(actions);
+
+      const changes=historyChanges(version);
+      const changeRow=el("div","appearance-history-changes");
+      if(version.origin){
+        changeRow.append(el(
+          "span",
+          "appearance-history-origin",
+          "Built-in baseline · "+Object.keys(version.values??{}).length+" local value"
+            +(Object.keys(version.values??{}).length===1?"":"s"),
+        ));
+      }else if(changes.length===0){
+        changeRow.append(el("span","appearance-history-origin","No local-value delta recorded."));
+      }else{
+        for(const change of changes)changeRow.append(el("code",null,change));
+      }
+
+      const valueDetails=document.createElement("details");
+      valueDetails.className="appearance-history-values";
+      const valueSummary=document.createElement("summary");
+      valueSummary.textContent="Values";
+      const valuePre=el("pre","appearance-action-json",JSON.stringify({
+        values:version.values??{},
+        variation:version.variation??{},
+      },null,2));
+      valueDetails.append(valueSummary,valuePre);
+
+      body.append(head,changeRow,valueDetails);
+      row.append(markerNode,body);
+      timeline.append(row);
+    }
+    shell.append(timeline);
+    calibrationHistory.append(shell);
+  }
+}
+
 function renderAppearanceExperiments(){
   if(!experiments)return;
   experiments.replaceChildren();
   if(experimentSnapshot.length===0){
     experiments.append(el("div","empty","No persisted Population Lab experiments."));
+    renderCalibrationHistory();
     renderCalibrationAdoptions();
     return;
   }
   const adoptionByExperiment=new Map(
     currentCalibrationAdoptions().map(adoption=>[adoption.experimentId,adoption])
   );
-  for(const {experiment,depth} of populationLabExperimentRows(experimentSnapshot)){
+  const historyGroups=currentCalibrationHistoryGroups();
+  const historicalExperimentIds=populationLabHistoricalExperimentIds(historyGroups);
+  const activeExperiments=experimentSnapshot.filter(experiment=>!historicalExperimentIds.has(experiment.experimentId));
+  if(activeExperiments.length===0){
+    experiments.append(el("div","empty","No active Population Lab experiments."));
+  }
+  for(const {experiment,depth} of populationLabExperimentRows(activeExperiments)){
     const isRefinement=depth>0||experiment.experimentKind==="refinement"||experiment.summary?.shadow===true;
     const adoption=adoptionByExperiment.get(experiment.experimentId)??null;
     const admitted=populationLabExperimentAdmitted(adoption);
@@ -1913,7 +2061,7 @@ function renderAppearanceExperiments(){
     const terminal=!["queued","running"].includes(experiment.status)
       && !["queued","running"].includes(experiment.visual?.status);
     const retained=Boolean(experiment.artifacts?.calibrationApproval?.objectRef);
-    const hasRefinements=experimentSnapshot.some(candidate=>
+    const hasRefinements=activeExperiments.some(candidate=>
       populationLabExperimentParentId(candidate)===experiment.experimentId
     );
     remove.disabled=!terminal||retained||hasRefinements;
@@ -1963,6 +2111,7 @@ function renderAppearanceExperiments(){
     row.append(copy,actions);
     experiments.append(row);
   }
+  renderCalibrationHistory();
   renderCalibrationAdoptions();
 }
 
@@ -2266,6 +2415,7 @@ function clearMigrationPending(threadId){
   current?.stop?.();
   pendingMigrations.delete(threadId);
   renderMigrations();
+  renderCalibrationHistory();
   renderCalibrationAdoptions();
   renderMap();
 }
