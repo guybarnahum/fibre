@@ -317,10 +317,17 @@
             <div id="appearance-experiments" class="appearance-experiments"><div class="empty">No persisted experiments.</div></div>
           </section>
 
+          <section class="appearance-adoption-section">
+            <div class="appearance-section-head">
+              <div class="appearance-section-copy"><strong>Calibration adoption</strong><span>Approved refinements move through source release, affected Threads, and World convergence.</span></div>
+            </div>
+            <div id="appearance-adoptions" class="appearance-adoptions"><div class="empty">Approve a reviewed refinement to begin adoption.</div></div>
+          </section>
+
           <section class="appearance-migrations-section">
             <div class="appearance-section-head">
-              <div class="appearance-section-copy"><strong>Threads needing recalibration</strong><span>Only Threads whose stored calibration dependency differs from today's resolved chain.</span></div>
-              <button id="appearance-migrate-all" class="secondary appearance-migrate-all-action" type="button" disabled></button>
+              <div class="appearance-section-copy"><strong>Affected Threads</strong><span>Current appearance migrations from deployed calibration authority. Affected Threads are explicitly marked below.</span></div>
+              <button id="appearance-migrate-all" class="secondary appearance-migrate-all-action" type="button" disabled hidden></button>
             </div>
             <div id="appearance-migration-candidates" class="appearance-migration-candidates"></div>
           </section>
