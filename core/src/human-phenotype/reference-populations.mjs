@@ -168,7 +168,9 @@ export function referencePopulationCalibrationHistory(id){
     evidence:null,
   })];
 
-  for(const admission of referencePopulationAdmissions.filter(entry=>entry.id===key)){
+  for(const admission of referencePopulationAdmissions
+    .filter(entry=>entry.id===key)
+    .sort((left,right)=>Number(left.version)-Number(right.version))){
     if(Number(admission.version)!==version+1){
       throw new Error(`${key} admission history must advance exactly one local version`);
     }
