@@ -50,7 +50,7 @@ test("Appearance explains the calibration workflow in the operator surface",()=>
     "Appearance lost its workflow help dialog");
   assert.match(html,/Find what needs work/u);
   assert.match(html,/Compare before and after/u);
-  assert.match(html,/Release and migrate/u);
+  assert.match(html,/Admit and migrate/u);
   assert.match(html,/Adding a group that is not in the model yet/u);
   assert.doesNotMatch(html,/Compare with baseline/u,
     "Appearance comparison action became verbose again");
