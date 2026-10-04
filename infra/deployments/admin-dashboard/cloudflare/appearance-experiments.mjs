@@ -422,16 +422,23 @@ export function populationLabSameCohort(baselineManifest,shadowManifest){
   );
 }
 
+export function populationLabComparisonBaselineId({shadowManifest,shadowExperiment}={}){
+  return shadowManifest?.source?.shadowOfExperimentId
+    ??shadowExperiment?.baselineExperimentId
+    ??shadowExperiment?.summary?.shadowOfExperimentId
+    ??null;
+}
+
 export async function readAdminPopulationLabComparison(env,experimentId){
   const store=experimentStore(env);
   const shadowExperiment=await store.get(experimentId);
   if(shadowExperiment===null)throw new TypeError("experiment not found");
   const shadowManifest=await readJsonArtifact(store,shadowExperiment.artifacts?.manifest?.objectRef);
   const shadow=shadowManifest?.shadowCalibration;
-  const baselineExperimentId=shadowManifest?.source?.shadowOfExperimentId
-    ??shadowExperiment.baselineExperimentId
-    ??shadowExperiment.summary?.shadowOfExperimentId
-    ??null;
+  const baselineExperimentId=populationLabComparisonBaselineId({
+    shadowManifest,
+    shadowExperiment,
+  });
   if(!shadow||typeof baselineExperimentId!=="string"||baselineExperimentId===""){
     throw new TypeError("comparison requires a shadow experiment with a baseline");
   }
