@@ -1702,9 +1702,18 @@ function renderAppearanceExperiments(){
     renderCalibrationAdoptions();
     return;
   }
+  const adoptionByExperiment=new Map(
+    currentCalibrationAdoptions().map(adoption=>[adoption.experimentId,adoption])
+  );
   for(const {experiment,depth} of populationLabExperimentRows(experimentSnapshot)){
     const isRefinement=depth>0||experiment.experimentKind==="refinement"||experiment.summary?.shadow===true;
-    const row=el("article",["appearance-experiment",isRefinement?"is-refinement":""].filter(Boolean).join(" "));
+    const adoption=adoptionByExperiment.get(experiment.experimentId)??null;
+    const admitted=Boolean(adoption?.released&&adoption?.exactAdmission);
+    const row=el("article",[
+      "appearance-experiment",
+      isRefinement?"is-refinement":"",
+      admitted?"is-admitted":"",
+    ].filter(Boolean).join(" "));
     const copy=el("div","appearance-experiment-copy");
     const head=el("div","appearance-experiment-head");
     head.append(
@@ -1721,6 +1730,9 @@ function renderAppearanceExperiments(){
     }
     if(experiment.artifacts?.calibrationApproval?.objectRef){
       head.append(experimentStatusPill({label:"Approved",tone:"good",active:false}));
+    }
+    if(admitted){
+      head.append(experimentStatusPill({label:"Admitted",tone:"good",active:false}));
     }
     const meta=el("span","appearance-experiment-meta",experimentSummary(experiment));
     meta.title=experiment.experimentId;
@@ -1748,7 +1760,7 @@ function renderAppearanceExperiments(){
     const actions=el("div","appearance-experiment-actions");
 
     if(isRefinement){
-      const compare=el("button","secondary");
+      const compare=el("button","secondary appearance-compare-action");
       compare.type="button";
       compare.disabled=experiment.status!=="completed";
       decorateActionButton(compare,{
@@ -1759,8 +1771,22 @@ function renderAppearanceExperiments(){
           :"Review baseline vs refinement and continue the calibration workflow",
       });
       if(!compare.disabled)compare.addEventListener("click",async()=>{
-        try{await openExperimentComparison(experiment)}
-        catch(error){compare.title=error instanceof Error?error.message:String(error)}
+        compare.classList.remove("action-error");
+        decorateActionButton(compare,{
+          icon:"wrench",
+          label:"Compare",
+          tooltip:"Review baseline vs refinement and continue the calibration workflow",
+        });
+        try{
+          await openExperimentComparison(experiment);
+        }catch(error){
+          compare.classList.add("action-error");
+          decorateActionButton(compare,{
+            icon:"wrench",
+            label:"Compare failed",
+            tooltip:error instanceof Error?error.message:String(error),
+          });
+        }
       });
       actions.append(compare);
     }else{
