@@ -2415,8 +2415,7 @@ function clearMigrationPending(threadId){
   current?.stop?.();
   pendingMigrations.delete(threadId);
   renderMigrations();
-  renderCalibrationHistory();
-  renderCalibrationAdoptions();
+  renderAppearanceExperiments();
   renderMap();
 }
 
