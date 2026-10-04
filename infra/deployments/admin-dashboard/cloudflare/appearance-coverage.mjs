@@ -1,3 +1,5 @@
+import {referencePopulationAdmissions} from "../../../../core/src/human-phenotype/reference-population-admissions.mjs";
+
 export async function readAdminAppearanceCoverage({
   worldKernel,
   privateToken,
@@ -23,5 +25,14 @@ export async function readAdminAppearanceCoverage({
   if (payload?.contract !== "fibre-appearance-coverage-v0.1") {
     throw new Error("World appearance coverage response is invalid");
   }
-  return payload;
+  return Object.freeze({
+    ...payload,
+    calibrationAdmissions:Object.freeze(referencePopulationAdmissions.map(admission=>Object.freeze({
+      id:admission.id,
+      version:admission.version,
+      values:Object.freeze({...admission.values}),
+      variation:Object.freeze({...admission.variation}),
+      evidence:Object.freeze({...admission.evidence}),
+    }))),
+  });
 }
