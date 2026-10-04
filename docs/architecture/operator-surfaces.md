@@ -116,6 +116,8 @@ The Threads population view exposes one **Needs migration** filter for all `migr
 
 An approved appearance calibration is expected to invalidate/recompute the affected migration projection so dependent Threads become visible as `migration_required`. Unrelated Threads must remain healthy. Existing Thread migration remains explicit; Admin does not silently rewrite a person's physical authority merely because a new calibration was approved.
 
+Admin presents approved refinements through **Calibration adoption** as `Approved -> Released -> Affected -> Converged`. This rail is derived from the immutable approval artifact, deployed reference-registry version and current World migration workset; it is not separately persisted workflow truth. Git remains the source-release authority. After deployment, Admin explicitly marks Threads belonging to that approval's affected workset and may invoke one scoped **Migrate affected** batch through the existing sequential World migration path. The card reaches **A5 complete** only when the approved version is deployed and no projected affected Thread remains stale.
+
 A compound UI action such as **Fix & Recover** may sequence those operations but does not merge their authority. A Thread with unresolved `migration_required`, integrity conflict or operator-decision state remains quarantined rather than being retried merely because an operator opened the page.
 
 Dead-letter reconciliation state and its last failure should be visible in Thread Observatory and the population view. `dead_letter` is operational quarantine, not a Thread lifecycle or personhood state.
