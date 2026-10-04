@@ -1,6 +1,6 @@
 export const POPULATION_LAB_VISUAL_REVIEW_VERSION="fibre-population-lab-visual-review-v0.1";
 
-const DECISIONS=new Set(["supports_candidate","reject","inconclusive"]);
+const DECISIONS=new Set(["open","supports_candidate","reject","inconclusive"]);
 const SCORE_FIELDS=["geometryFidelity","identityContinuity","surfaceRealism"];
 
 function text(name,value,{required=false}={}){
