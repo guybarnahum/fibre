@@ -115,7 +115,7 @@
 @keyframes appearance-status-pulse{0%,100%{opacity:.68}50%{opacity:1}}
 .appearance-experiment-meta,.appearance-experiment-error{font-size:10px;color:var(--muted)}
 .appearance-experiment-error{color:#b42318}
-.appearance-experiment-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}.appearance-experiment-actions button{white-space:nowrap}
+.appearance-experiment-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}.appearance-experiment-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}.appearance-experiment-actions .fa-action-icon{flex:0 0 auto}.appearance-experiment-actions .fa-action-label{white-space:nowrap}
 .appearance-visual-action{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:118px;white-space:nowrap}
 .appearance-refine-action{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .appearance-approval-action{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
