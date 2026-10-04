@@ -268,19 +268,32 @@ export function createPopulationLabExperimentStore(infra){
       const key=populationLabExperimentCatalogKey(experimentId);
       const current=await infra.catalog.get(key);
       if(current===null)throw new Error("experiment not found");
-      if(current.artifacts?.visualReview){
-        throw new TypeError("visual review already exists for this experiment");
+      if(current.artifacts?.calibrationCandidate){
+        throw new TypeError("candidate evidence locks the visual review");
       }
       const review=buildPopulationLabVisualReview({experiment:current,input});
-      const write=await put(experimentId,"visual:review",jsonBytes(review),{mediaType:"application/json"});
-      await indexArtifact(experimentId,write,{
-        artifacts:{visualReview:write.artifact},
-        review:Object.freeze({
-          decision:review.decision,
-          scores:review.scores,
-          reviewedAt:review.reviewedAt,
-        }),
-      });
+      const revision=(current.reviewRevision??0)+1;
+      const write=await put(experimentId,"visual:review:r"+revision,jsonBytes(review),{mediaType:"application/json"});
+      const previous=current.artifacts?.visualReview?.objectRef??null;
+      try{
+        await update(experimentId,{
+          artifacts:{visualReview:write.artifact},
+          reviewRevision:revision,
+          review:Object.freeze({
+            decision:review.decision,
+            scores:review.scores,
+            reviewedAt:review.reviewedAt,
+          }),
+        });
+      }catch(error){
+        if(write.created&&typeof infra.objects.remove==="function"){
+          await infra.objects.remove(write.artifact.objectRef).catch(()=>{});
+        }
+        throw error;
+      }
+      if(previous&&previous!==write.artifact.objectRef&&typeof infra.objects.remove==="function"){
+        await infra.objects.remove(previous).catch(()=>{});
+      }
       return review;
     },
     async putCalibrationCandidate(experimentId,input){
