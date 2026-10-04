@@ -116,6 +116,9 @@
 .appearance-experiment-meta,.appearance-experiment-error{font-size:10px;color:var(--muted)}
 .appearance-experiment-error{color:#b42318}
 .appearance-experiment-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}.appearance-experiment-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}.appearance-experiment-actions .fa-action-icon{flex:0 0 auto}.appearance-experiment-actions .fa-action-label{white-space:nowrap}
+.appearance-compare-action{display:inline-flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;width:max-content;min-width:max-content;white-space:nowrap}.appearance-compare-action .fa-action-icon,.appearance-compare-action .fa-action-label{display:block;flex:0 0 auto;white-space:nowrap}
+.appearance-experiment.is-admitted{box-shadow:inset 3px 0 0 var(--success),inset 6px 0 0 var(--surface),inset 8px 0 0 color-mix(in srgb,var(--success) 62%,var(--border));border-color:color-mix(in srgb,var(--success) 38%,var(--border))}
+
 .appearance-visual-action{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:118px;white-space:nowrap}
 .appearance-refine-action{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .appearance-approval-action{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
