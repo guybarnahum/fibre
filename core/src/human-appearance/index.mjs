@@ -9,6 +9,7 @@ import {phenotypeFromPhysicalGenome} from "../human-phenotype/phenotype.mjs";
 import {physicalPhenotypeRenderingProjection} from "../human-phenotype/rendering-projection.mjs";
 import {
   referencePopulationCalibration,
+  referencePopulationCalibrationHistory,
   referencePopulationCalibrations,
   referencePopulationDependencyChain,
   referencePopulationForPopulationId,
@@ -101,6 +102,7 @@ export {
   recombinePhysicalGenomes,
   phenotypeFromPhysicalGenome,
   referencePopulationCalibration,
+  referencePopulationCalibrationHistory,
   referencePopulationCalibrations,
   referencePopulationDependencyChain,
   referencePopulationForPopulationId,
