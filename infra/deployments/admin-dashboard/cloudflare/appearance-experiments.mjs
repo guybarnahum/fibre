@@ -588,7 +588,46 @@ export async function readAdminPopulationLabVisualReview(env,experimentId){
 }
 
 export async function recordAdminPopulationLabVisualReview(env,experimentId,input){
-  const review=await experimentStore(env).putVisualReview(experimentId,input);
+  const review=await experimentStore(env).putVisualReview(experimentId,{
+    ...input,
+    decision:"open",
+  });
+  await publishExperimentHint(env,experimentId,"review");
+  return review;
+}
+
+export async function decideAdminPopulationLabVisualReview(env,experimentId,decision){
+  if(!["supports_candidate","reject"].includes(decision)){
+    throw new TypeError("visual review decision must be accept or reject");
+  }
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)throw new TypeError("experiment not found");
+  const current=await readJsonArtifact(store,experiment.artifacts?.visualReview?.objectRef);
+  if(current===null)throw new TypeError("save visual scoring before deciding");
+  const review=await store.putVisualReview(experimentId,{
+    samples:current.samples,
+    note:current.note,
+    decision,
+  });
+  await publishExperimentHint(env,experimentId,"review");
+  return review;
+}
+
+export async function reopenAdminPopulationLabVisualReview(env,experimentId){
+  const store=experimentStore(env);
+  const experiment=await store.get(experimentId);
+  if(experiment===null)throw new TypeError("experiment not found");
+  if(experiment.artifacts?.calibrationCandidate){
+    throw new TypeError("candidate evidence locks the visual review");
+  }
+  const current=await readJsonArtifact(store,experiment.artifacts?.visualReview?.objectRef);
+  if(current===null)throw new TypeError("visual review is not saved yet");
+  const review=await store.putVisualReview(experimentId,{
+    samples:current.samples,
+    note:current.note,
+    decision:"open",
+  });
   await publishExperimentHint(env,experimentId,"review");
   return review;
 }
