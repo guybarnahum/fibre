@@ -34,6 +34,9 @@ const migrations=$("#appearance-migration-candidates");
 const experiments=$("#appearance-experiments");
 const experimentRefreshButton=$("#appearance-experiments-refresh");
 const adoptionList=$("#appearance-adoptions");
+const appearanceHelp=$("#appearance-help");
+const appearanceHelpDialog=$("#appearance-help-dialog");
+const appearanceHelpClose=$("#appearance-help-close");
 const compareDialog=$("#appearance-compare-dialog");
 const compareTitle=$("#appearance-compare-title");
 const compareChanges=$("#appearance-compare-changes");
@@ -2607,6 +2610,14 @@ shadowDialog?.addEventListener("close",()=>{
     tooltip:"Run the proposed calibration against the baseline cohort seed",
     icon:"wrench",
   });
+});
+
+appearanceHelp?.addEventListener("click",()=>{
+  if(appearanceHelpDialog&&!appearanceHelpDialog.open)appearanceHelpDialog.showModal();
+});
+appearanceHelpClose?.addEventListener("click",()=>appearanceHelpDialog?.close());
+appearanceHelpDialog?.addEventListener("click",(event)=>{
+  if(event.target===appearanceHelpDialog)appearanceHelpDialog.close();
 });
 
 compareNumericalButton?.addEventListener("click",()=>setComparisonView("numerical"));
