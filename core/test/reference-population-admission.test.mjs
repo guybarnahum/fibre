@@ -2,6 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {applyReferencePopulationAdmissions} from "../src/human-phenotype/reference-population-admission.mjs";
+import {
+  referencePopulationCalibration,
+  referencePopulationCalibrationHistory,
+} from "../src/human-phenotype/reference-populations.mjs";
 
 test("source admission advances only the reviewed calibration node",()=>{
   const base={
@@ -31,4 +35,19 @@ test("source admission advances only the reviewed calibration node",()=>{
     /advance exactly one local version/u,
     "source admission skipped a calibration version",
   );
+});
+
+
+test("calibration history preserves every local baseline through current authority",()=>{
+  const history=referencePopulationCalibrationHistory("middle_east.egypt");
+  const current=referencePopulationCalibration("middle_east.egypt");
+  assert.equal(history[0].origin,true,"calibration history lost its source baseline");
+  assert.equal(history.at(-1).version,current.version,"calibration history does not reach current authority");
+  for(let index=1;index<history.length;index+=1){
+    assert.equal(
+      history[index].version,
+      history[index-1].version+1,
+      "calibration history skipped a local version",
+    );
+  }
 });
