@@ -678,10 +678,10 @@ async function copyCalibrationApproval(experiment,button,{iconOnly=true}={}){
     const state=await readCalibrationApprovalState(experiment);
     if(!state.approval)throw new Error("Calibration is not approved yet");
     await copyWithFeedback(button,state.approval,{
-      label:"Copy approval",
-      tooltip:"Copy approval JSON for source admission",
-      copiedLabel:"Copied approval",
-      failedLabel:"Copy approval failed",
+      label:"Prepare admission",
+      tooltip:"Copy the exact approved admission payload for source-controlled release",
+      copiedLabel:"Admission prepared",
+      failedLabel:"Prepare admission failed",
       iconOnly,
     });
   }catch(error){
@@ -1437,8 +1437,8 @@ function renderComparisonActions(experiment){
     const copyApproval=el("button","secondary");
     copyApproval.type="button";
     decorateCopyAction(copyApproval,{
-      label:"Copy approval",
-      tooltip:"Copy approval JSON for source admission",
+      label:"Prepare admission",
+      tooltip:"Copy the exact approved admission payload for source-controlled release",
       iconOnly:false,
     });
     copyApproval.addEventListener("click",()=>void copyCalibrationApproval(experiment,copyApproval,{iconOnly:false}));
@@ -1645,7 +1645,7 @@ function renderCalibrationAdoptions(){
 
     const note=el("p","appearance-adoption-note");
     if(adoption.state==="release_required"){
-      note.textContent="Approval is complete. The Git-owned registry still needs the reviewed source admission and deploy; Admin will recognize the new version on the next coverage scan.";
+      note.textContent="Approval is complete. Prepare the exact admission payload here, then release it through the Git-owned registry. Admin will recognize the admitted version after deploy.";
     }else if(adoption.state==="affected"){
       note.textContent="The reviewed calibration is live. Only the marked Threads below remain stale against that deployed dependency.";
     }else{
@@ -1659,7 +1659,7 @@ function renderCalibrationAdoptions(){
     actions.append(compare);
 
     if(adoption.state==="release_required"){
-      const copy=el("button","primary","Copy approval");
+      const copy=el("button","primary","Prepare admission");
       copy.type="button";
       copy.addEventListener("click",()=>void copyCalibrationApproval(experiment,copy,{iconOnly:false}));
       actions.append(copy);
