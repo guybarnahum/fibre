@@ -2,8 +2,6 @@ import {
   referencePopulationCalibrationHistory,
   referencePopulationCalibrations,
 } from "../../../../core/src/human-phenotype/reference-populations.mjs";
-import {referencePopulationAdmissions} from "../../../../core/src/human-phenotype/reference-population-admissions.mjs";
-
 export async function readAdminAppearanceCoverage({
   worldKernel,
   privateToken,
@@ -31,13 +29,6 @@ export async function readAdminAppearanceCoverage({
   }
   return Object.freeze({
     ...payload,
-    calibrationAdmissions:Object.freeze(referencePopulationAdmissions.map(admission=>Object.freeze({
-      id:admission.id,
-      version:admission.version,
-      values:Object.freeze({...admission.values}),
-      variation:Object.freeze({...admission.variation}),
-      evidence:Object.freeze({...admission.evidence}),
-    }))),
     calibrationHistory:Object.freeze(referencePopulationCalibrations()
       .filter(calibration=>calibration.version>1)
       .map(calibration=>Object.freeze({
