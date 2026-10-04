@@ -5,6 +5,7 @@ import test from "node:test";
 const html=await readFile(new URL("./index.html",import.meta.url),"utf8");
 const css=await readFile(new URL("./appearance-coverage.css",import.meta.url),"utf8");
 const populationUi=await readFile(new URL("./thread-population-ui.js",import.meta.url),"utf8");
+const appearanceUi=await readFile(new URL("./appearance-coverage-ui.js",import.meta.url),"utf8");
 
 test("Appearance is a top-level Admin surface and cannot leak into operator views",()=>{
   assert.match(html,/id="appearance-nav-link"[^>]*href="\/appearance"/u);
@@ -54,4 +55,23 @@ test("Appearance explains the calibration workflow in the operator surface",()=>
   assert.match(html,/Adding a group that is not in the model yet/u);
   assert.doesNotMatch(html,/Compare with baseline/u,
     "Appearance comparison action became verbose again");
+});
+
+
+test("Appearance keeps admitted baselines in immutable calibration history",()=>{
+  assert.match(html,/id="appearance-calibration-history"/u,
+    "Appearance lost admitted calibration history");
+  assert.match(html,/Calibration history/u);
+  const start=appearanceUi.indexOf("function renderCalibrationHistory()");
+  const end=appearanceUi.indexOf("function renderAppearanceExperiments()",start);
+  assert.ok(start>=0&&end>start,"calibration history renderer is missing");
+  const renderer=appearanceUi.slice(start,end);
+  assert.doesNotMatch(renderer,/trash-can|Delete experiment/u,
+    "historical calibration rows became deletable");
+  assert.match(renderer,/label:"Compare"/u,
+    "historical baselines lost comparison");
+  assert.match(renderer,/label:"Copy JSON"/u,
+    "historical baselines lost reusable JSON export");
+  assert.match(css,/\.appearance-compare-action[^\n]*white-space:nowrap/u,
+    "Compare button can wrap icon and label");
 });
