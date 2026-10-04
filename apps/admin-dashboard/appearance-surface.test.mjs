@@ -44,7 +44,7 @@ test("Population Lab experiment queue sits before recalibration candidates",()=>
 
 
 test("Appearance explains the calibration workflow in the operator surface",()=>{
-  assert.match(html,/id="appearance-help"[^>]*>How it works</button>/u,
+  assert.match(html,/id="appearance-help"[^>]*>How it works<\/button>/u,
     "Appearance lost its workflow help entry");
   assert.match(html,/id="appearance-help-dialog"/u,
     "Appearance lost its workflow help dialog");
