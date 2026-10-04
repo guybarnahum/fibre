@@ -73,6 +73,10 @@ export function populationLabAdoptions(experiments,context={}){
     }));
 }
 
+export function populationLabExperimentAdmitted(adoption){
+  return Boolean(adoption?.released&&adoption?.exactAdmission);
+}
+
 export function populationLabAffectedThreadIds(adoptions){
   return new Set((Array.isArray(adoptions)?adoptions:[])
     .filter(adoption=>adoption?.released&&adoption?.state!=="converged")
