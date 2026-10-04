@@ -1,5 +1,6 @@
 import { populationLabExperimentName } from "./population-lab-experiment-name.js";
 import { populationLabExperimentParentId, populationLabExperimentRows } from "./population-lab-experiment-tree.js";
+import { populationLabAdoptions, populationLabAffectedThreadIds } from "./population-lab-adoption.js";
 import { bindPortraitPreview } from "./portrait-preview.js";
 import { bindCopyAction, copyWithFeedback, decorateCopyAction } from "./copy-action.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
@@ -33,6 +34,7 @@ const migrations=$("#appearance-migration-candidates");
 const migrateAllButton=$("#appearance-migrate-all");
 const experiments=$("#appearance-experiments");
 const experimentRefreshButton=$("#appearance-experiments-refresh");
+const adoptionList=$("#appearance-adoptions");
 const compareDialog=$("#appearance-compare-dialog");
 const compareTitle=$("#appearance-compare-title");
 const compareChanges=$("#appearance-compare-changes");
@@ -1507,11 +1509,195 @@ async function openExperimentComparison(experiment){
   if(!compareDialog.open)compareDialog.showModal();
 }
 
+function currentCalibrationAdoptions(){
+  return populationLabAdoptions(experimentSnapshot,{
+    model:snapshot?.model??[],
+    migrationCandidates:pendingCandidateList(),
+  });
+}
+
+function threadLabel(threadId){
+  const lineage=(snapshot?.lineages??[]).find(item=>item?.threadId===threadId);
+  return lineage?.threadName??threadId;
+}
+
+function adoptionTone(state){
+  if(state==="converged")return "good";
+  if(state==="affected"||state==="release_required")return "warn";
+  return "neutral";
+}
+
+function adoptionLabel(state){
+  if(state==="release_required")return "Release required";
+  if(state==="affected")return "Affected";
+  if(state==="converged")return "A5 complete";
+  return human(state);
+}
+
+function adoptionStep(label,{done=false,active=false,detail=""}={}){
+  const node=el("div","appearance-adoption-step"+(done?" is-done":"")+(active?" is-active":""));
+  node.append(
+    el("span","appearance-adoption-step-mark",done?"✓":active?"•":"○"),
+    el("strong",null,label),
+  );
+  if(detail)node.append(el("em",null,detail));
+  return node;
+}
+
+function adoptionEvidence(adoption){
+  return Object.freeze({
+    contract:"fibre-population-lab-adoption-evidence-v0.1",
+    experimentId:adoption.experimentId,
+    referencePopulation:adoption.referencePopulation,
+    fromVersion:adoption.fromVersion,
+    toVersion:adoption.toVersion,
+    currentVersion:adoption.currentVersion,
+    projectedThreadIds:adoption.projectedThreadIds,
+    projectedThreadCount:adoption.projectedThreadCount,
+    remainingThreadIds:adoption.remainingThreadIds,
+    remainingThreadCount:adoption.remainingThreadCount,
+    state:adoption.state,
+    observedAt:new Date().toISOString(),
+  });
+}
+
+function renderCalibrationAdoptions(){
+  if(!adoptionList)return;
+  adoptionList.replaceChildren();
+  const states=currentCalibrationAdoptions();
+  if(states.length===0){
+    adoptionList.append(el("div","empty","Approve a reviewed refinement to begin adoption."));
+    return;
+  }
+
+  for(const adoption of states){
+    const experiment=experimentById(adoption.experimentId);
+    if(!experiment)continue;
+
+    const card=el("article","appearance-adoption-card");
+    card.dataset.adoptionState=adoption.state;
+
+    const head=el("div","appearance-adoption-head");
+    const title=el("div","appearance-adoption-title");
+    title.append(
+      el("strong",null,adoption.referencePopulation),
+      el("span",null,"@"+adoption.fromVersion+" → @"+adoption.toVersion),
+    );
+    head.append(
+      title,
+      experimentStatusPill({
+        label:adoptionLabel(adoption.state),
+        tone:adoptionTone(adoption.state),
+        active:adoption.state==="affected"&&Boolean(migrationBatch),
+      }),
+    );
+
+    const steps=el("div","appearance-adoption-steps");
+    steps.append(
+      adoptionStep("Approved",{done:true,detail:"human authority"}),
+      adoptionStep("Released",{
+        done:adoption.released,
+        active:!adoption.released,
+        detail:adoption.released
+          ? "@"+adoption.currentVersion+(adoption.superseded?" current":" live")
+          : "registry @"+(adoption.currentVersion??"—"),
+      }),
+      adoptionStep("Affected",{
+        done:adoption.released&&adoption.remainingThreadCount===0,
+        active:adoption.state==="affected",
+        detail:adoption.released
+          ? adoption.remainingThreadCount+" remaining / "+adoption.projectedThreadCount+" projected"
+          : adoption.projectedThreadCount+" projected",
+      }),
+      adoptionStep("Converged",{
+        done:adoption.state==="converged",
+        active:false,
+        detail:adoption.state==="converged"?"World current":"pending",
+      }),
+    );
+
+    const people=el("div","appearance-adoption-people");
+    const projected=adoption.projectedThreadIds??[];
+    people.append(el("strong",null,"Affected Threads"));
+    if(projected.length===0){
+      people.append(el("span","appearance-adoption-none","No existing Thread is projected to require migration."));
+    }else{
+      const chips=el("div","appearance-adoption-thread-chips");
+      for(const threadId of projected){
+        const chip=el("button","appearance-adoption-thread-chip",threadLabel(threadId));
+        chip.type="button";
+        chip.title=threadId;
+        chip.classList.toggle("is-remaining",adoption.remainingThreadIds.includes(threadId));
+        chip.addEventListener("click",()=>{
+          const row=migrations?.querySelector('[data-thread-id="'+CSS.escape(threadId)+'"]');
+          row?.scrollIntoView({behavior:"smooth",block:"center"});
+        });
+        chips.append(chip);
+      }
+      people.append(chips);
+    }
+
+    const note=el("p","appearance-adoption-note");
+    if(adoption.state==="release_required"){
+      note.textContent="Approval is complete. The Git-owned registry still needs the reviewed source admission and deploy; Admin will recognize the new version on the next coverage scan.";
+    }else if(adoption.state==="affected"){
+      note.textContent="The reviewed calibration is live. Only the marked Threads below remain stale against that deployed dependency.";
+    }else{
+      note.textContent="The reviewed calibration is live and every projected affected Thread has converged to current World appearance authority.";
+    }
+
+    const actions=el("div","appearance-adoption-actions");
+    const compare=el("button","secondary","Compare");
+    compare.type="button";
+    compare.addEventListener("click",()=>void openExperimentComparison(experiment));
+    actions.append(compare);
+
+    if(adoption.state==="release_required"){
+      const copy=el("button","primary","Copy approval");
+      copy.type="button";
+      copy.addEventListener("click",()=>void copyCalibrationApproval(experiment,copy,{iconOnly:false}));
+      actions.append(copy);
+    }else if(adoption.state==="affected"){
+      const targetIds=new Set(adoption.remainingThreadIds);
+      const inBatch=Boolean(migrationBatch?.threadIds?.some(threadId=>targetIds.has(threadId)));
+      const migrate=el("button","primary");
+      migrate.type="button";
+      migrate.disabled=Boolean(migrationBatch);
+      decorateActionButton(migrate,{
+        icon:inBatch?"rotate":"wrench",
+        label:inBatch
+          ?"Progress "+Math.min(migrationBatch.completed,migrationBatch.total)+"/"+migrationBatch.total
+          :"Migrate "+adoption.remainingThreadCount+" affected",
+        tooltip:"Migrate only the Threads affected by this deployed calibration",
+        spinning:inBatch,
+      });
+      if(!migrate.disabled)migrate.addEventListener("click",()=>void migrateAffectedThreads(targetIds));
+      actions.append(migrate);
+    }else if(adoption.state==="converged"){
+      const copy=el("button","secondary","Copy evidence");
+      copy.type="button";
+      bindCopyAction(copy,{
+        value:()=>adoptionEvidence(adoption),
+        label:"Copy evidence",
+        tooltip:"Copy A5 adoption/convergence evidence",
+        copiedLabel:"Evidence copied",
+        failedLabel:"Copy failed",
+        iconOnly:false,
+      });
+      actions.append(copy);
+    }
+
+    card.append(head,steps,people,note,actions);
+    adoptionList.append(card);
+  }
+}
+
 function renderAppearanceExperiments(){
   if(!experiments)return;
   experiments.replaceChildren();
   if(experimentSnapshot.length===0){
     experiments.append(el("div","empty","No persisted Population Lab experiments."));
+    renderCalibrationAdoptions();
     return;
   }
   for(const {experiment,depth} of populationLabExperimentRows(experimentSnapshot)){
@@ -1565,7 +1751,7 @@ function renderAppearanceExperiments(){
       compare.disabled=experiment.status!=="completed";
       decorateActionButton(compare,{
         icon:"wrench",
-        label:"Compare with baseline",
+        label:"Compare",
         tooltip:compare.disabled
           ?"Comparison is available when the refinement experiment completes"
           :"Review baseline vs refinement and continue the calibration workflow",
@@ -1653,6 +1839,7 @@ function renderAppearanceExperiments(){
     row.append(copy,actions);
     experiments.append(row);
   }
+  renderCalibrationAdoptions();
 }
 
 export async function loadAppearanceExperiments(){
@@ -1955,6 +2142,7 @@ function clearMigrationPending(threadId){
   current?.stop?.();
   pendingMigrations.delete(threadId);
   renderMigrations();
+  renderCalibrationAdoptions();
   renderMap();
 }
 
@@ -1995,6 +2183,7 @@ function setMigrationPending(candidate){
   const current=pendingMigrations.get(candidate.threadId);
   pendingMigrations.set(candidate.threadId,{candidate,stop:current?.stop??null});
   renderMigrations();
+  renderCalibrationAdoptions();
   renderMap();
 }
 
@@ -2097,9 +2286,12 @@ function renderMigrateAllAction(candidates){
   });
 }
 
-async function migrateAffectedThreads(){
+async function migrateAffectedThreads(targetThreadIds=null){
   if(migrationBatch)return;
-  const candidates=pendingCandidateList().filter(candidate=>!migrationIsBusy(candidate));
+  const candidates=pendingCandidateList().filter(candidate=>
+    !migrationIsBusy(candidate)
+    &&(targetThreadIds===null||targetThreadIds.has(candidate.threadId))
+  );
   if(candidates.length===0)return;
   if(!window.confirm(
     "Migrate "+candidates.length+" affected Thread"+(candidates.length===1?"":"s")
@@ -2107,7 +2299,12 @@ async function migrateAffectedThreads(){
     +"Each Thread keeps its durable ancestry and existing history. Migrations launch sequentially through the same World authority path used by the individual action."
   ))return;
 
-  migrationBatch={completed:0,total:candidates.length,failures:[]};
+  migrationBatch={
+    completed:0,
+    total:candidates.length,
+    failures:[],
+    threadIds:candidates.map(candidate=>candidate.threadId),
+  };
   renderMigrations();
   const batchKey=Date.now().toString(36);
   try{
@@ -2140,12 +2337,14 @@ async function migrateAffectedThreads(){
       }
       migrationBatch.completed=index+1;
       renderMigrations();
+      renderCalibrationAdoptions();
     }
     await loadAppearanceCoverage({quiet:true});
   }finally{
     const failures=migrationBatch?.failures??[];
     migrationBatch=null;
     renderMigrations();
+    renderCalibrationAdoptions();
     if(failures.length>0&&migrateAllButton){
       migrateAllButton.title=failures.length+" migration launch failure"+(failures.length===1?"":"s")+": "
         +failures.map(item=>item.threadId+" · "+item.message).join(" | ");
@@ -2168,6 +2367,10 @@ function renderMigrations(){
     const worldBusy=candidate.active===true;
     const busy=calibrationPending||localBusy||worldBusy;
     const row=el("div","appearance-migration-row");
+    row.dataset.threadId=candidate.threadId;
+    const affectedIds=populationLabAffectedThreadIds(currentCalibrationAdoptions());
+    const affected=affectedIds.has(candidate.threadId);
+    if(affected)row.classList.add("is-affected");
     if(busy)row.classList.add("is-pending");
 
     const person=threadIdentity(candidate);
@@ -2179,6 +2382,7 @@ function renderMigrations(){
     meta.append(origin,birthplace);
 
     const status=el("div","appearance-migration-status");
+    if(affected)status.append(el("span","appearance-affected-tag","Affected"));
     const tag=el("span","thread-health-tag warn",
       calibrationPending?"Updating calibration":localBusy?"Repair / migration active":worldBusy?"Reconciliation active":"Needs recalibration"
     );
@@ -2346,6 +2550,7 @@ export function renderAppearanceCoverage(payload){
   renderDetail();
   renderModel();
   renderMigrations();
+  renderCalibrationAdoptions();
   renderMap();
 }
 
