@@ -1,6 +1,10 @@
 import { populationLabExperimentName } from "./population-lab-experiment-name.js";
 import { populationLabExperimentParentId, populationLabExperimentRows } from "./population-lab-experiment-tree.js";
-import { populationLabAdoptions, populationLabAffectedThreadIds } from "./population-lab-adoption.js";
+import {
+  populationLabAdoptions,
+  populationLabAffectedThreadIds,
+  populationLabExperimentAdmitted,
+} from "./population-lab-adoption.js";
 import { bindPortraitPreview } from "./portrait-preview.js";
 import { bindCopyAction, copyWithFeedback, decorateCopyAction } from "./copy-action.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
@@ -1708,7 +1712,7 @@ function renderAppearanceExperiments(){
   for(const {experiment,depth} of populationLabExperimentRows(experimentSnapshot)){
     const isRefinement=depth>0||experiment.experimentKind==="refinement"||experiment.summary?.shadow===true;
     const adoption=adoptionByExperiment.get(experiment.experimentId)??null;
-    const admitted=Boolean(adoption?.released&&adoption?.exactAdmission);
+    const admitted=populationLabExperimentAdmitted(adoption);
     const row=el("article",[
       "appearance-experiment",
       isRefinement?"is-refinement":"",
