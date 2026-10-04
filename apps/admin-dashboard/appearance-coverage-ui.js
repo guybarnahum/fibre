@@ -2281,6 +2281,7 @@ async function migrateAffectedThreads(targetThreadIds=null){
     threadIds:candidates.map(candidate=>candidate.threadId),
   };
   renderMigrations();
+  renderCalibrationAdoptions();
   const batchKey=Date.now().toString(36);
   try{
     for(const [index,candidate] of candidates.entries()){
@@ -2290,6 +2291,7 @@ async function migrateAffectedThreads(targetThreadIds=null){
         if(!migration){
           migrationBatch.completed=index+1;
           renderMigrations();
+          renderCalibrationAdoptions();
           continue;
         }
         const input=defaultMigrationInput(migration);
@@ -2330,6 +2332,7 @@ async function migrateAffectedThreads(targetThreadIds=null){
 function renderMigrations(){
   migrations.replaceChildren();
   const candidates=pendingCandidateList();
+  const affectedIds=populationLabAffectedThreadIds(currentCalibrationAdoptions());
   if(candidates.length===0){
     migrations.append(el("p","thread-repair-note","No admitted Thread with durable ancestry evidence is stale against the current versioned calibration dependencies."));
     return;
@@ -2342,7 +2345,6 @@ function renderMigrations(){
     const busy=calibrationPending||localBusy||worldBusy;
     const row=el("div","appearance-migration-row");
     row.dataset.threadId=candidate.threadId;
-    const affectedIds=populationLabAffectedThreadIds(currentCalibrationAdoptions());
     const affected=affectedIds.has(candidate.threadId);
     if(affected)row.classList.add("is-affected");
     if(busy)row.classList.add("is-pending");
