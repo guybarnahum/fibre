@@ -5,6 +5,7 @@ import {
   adminPopulationLabExperimentRequest,
   adminPopulationLabRerunRequest,
   adminPopulationLabShadowExperimentRequest,
+  populationLabComparisonBaselineId,
   populationLabComparisonChanges,
   populationLabComparisonHealth,
   populationLabSameCohort,
@@ -344,5 +345,28 @@ test("Population Lab comparison keeps cohort health side by side",()=>{
       {metric:"Warnings",baseline:0,shadow:1,integer:true},
     ],
     "comparison health stopped preserving baseline/refinement evidence",
+  );
+});
+
+
+test("comparison resolves the durable baseline linkage",()=>{
+  assert.equal(
+    populationLabComparisonBaselineId({
+      shadowManifest:{source:{}},
+      shadowExperiment:{
+        baselineExperimentId:"baseline_catalog",
+        summary:{shadowOfExperimentId:"baseline_summary"},
+      },
+    }),
+    "baseline_catalog",
+    "comparison lost durable baseline linkage",
+  );
+  assert.equal(
+    populationLabComparisonBaselineId({
+      shadowManifest:{source:{shadowOfExperimentId:"baseline_manifest"}},
+      shadowExperiment:{baselineExperimentId:"baseline_catalog"},
+    }),
+    "baseline_manifest",
+    "manifest baseline linkage stopped taking precedence",
   );
 });
