@@ -150,6 +150,48 @@ export function referencePopulationDependencyChain(id){
   return Object.freeze(chain);
 }
 
+export function referencePopulationCalibrationHistory(id){
+  const key=String(id??"").trim();
+  const base=BASE_DEFINITIONS[key];
+  if(!base)throw Error(`unknown physical reference population: ${key||"<empty>"}`);
+
+  let version=Number(base.version);
+  let values={...(base.values??{})};
+  let variation={...(base.variation??{})};
+  const history=[Object.freeze({
+    id:key,
+    version,
+    origin:true,
+    values:Object.freeze({...values}),
+    variation:Object.freeze({...variation}),
+    changes:Object.freeze({values:Object.freeze({...values}),variation:Object.freeze({...variation})}),
+    evidence:null,
+  })];
+
+  for(const admission of referencePopulationAdmissions.filter(entry=>entry.id===key)){
+    if(Number(admission.version)!==version+1){
+      throw new Error(`${key} admission history must advance exactly one local version`);
+    }
+    version=Number(admission.version);
+    values={...values,...(admission.values??{})};
+    variation={...variation,...(admission.variation??{})};
+    history.push(Object.freeze({
+      id:key,
+      version,
+      origin:false,
+      values:Object.freeze({...values}),
+      variation:Object.freeze({...variation}),
+      changes:Object.freeze({
+        values:Object.freeze({...admission.values}),
+        variation:Object.freeze({...admission.variation}),
+      }),
+      evidence:Object.freeze({...admission.evidence}),
+    }));
+  }
+
+  return Object.freeze(history);
+}
+
 export function referencePopulationCalibration(id){
   const [key,definition]=definitionFor(id);
   const ownAxes=Object.freeze(Object.keys(definition.values??{}).sort());
