@@ -134,9 +134,10 @@ function visualStatus(status){
 }
 
 function reviewStatus(review){
-  if(review?.decision==="supports_candidate")return {label:"Review Supports Candidate",tone:"good",active:false};
-  if(review?.decision==="reject")return {label:"Review Rejected",tone:"bad",active:false};
-  if(review?.decision==="inconclusive")return {label:"Review Inconclusive",tone:"warn",active:false};
+  if(review?.decision==="open")return {label:"Review Open",tone:"warn",active:false};
+  if(review?.decision==="supports_candidate")return {label:"Accepted",tone:"good",active:false};
+  if(review?.decision==="reject")return {label:"Rejected",tone:"bad",active:false};
+  if(review?.decision==="inconclusive")return {label:"Inconclusive",tone:"warn",active:false};
   return null;
 }
 
@@ -277,8 +278,10 @@ function renderSubmittedVisualReview(experiment,review){
   reportReview.replaceChildren();
   const head=el("div","appearance-review-head");
   head.append(
-    el("h3",null,"Submitted human review"),
-    el("p",null,"Immutable evidence for this exact A/B image set. It cannot change calibration authority by itself."),
+    el("h3",null,"Human review"),
+    el("p",null,experiment.artifacts?.calibrationCandidate?.objectRef
+      ?"Frozen with candidate evidence. Scores and decision are now immutable."
+      :"Decision is locked. Reopen from Compare to edit the scores or note."),
   );
   const state=reviewStatus(review);
   if(state)head.append(experimentStatusPill(state));
@@ -317,19 +320,22 @@ function renderSubmittedVisualReview(experiment,review){
   }
 }
 
-function renderVisualReviewForm(experiment){
+function renderVisualReviewForm(experiment,saved=null){
   if(!reportReview)return;
   reportReview.replaceChildren();
   const progress=visualProgress(experiment);
   const sampleSize=progress?.sampleSize??4;
+  const savedByOrdinal=new Map((saved?.samples??[]).map(sample=>[sample.ordinal,sample]));
   const head=el("div","appearance-review-head");
   head.append(
     el("h3",null,"Score visual fidelity"),
-    el("p",null,"Score the A → B transition, not attractiveness or demographic identity. 1 = material failure · 3 = usable with visible drift · 5 = strong fidelity."),
+    el("p",null,"Score the A → B transition, not attractiveness or demographic identity. Save scoring here; Accept or Reject the experiment from Compare."),
+    experimentStatusPill({label:"Review Open",tone:"warn",active:false}),
   );
   reportReview.append(head);
 
   for(let ordinal=1;ordinal<=sampleSize;ordinal+=1){
+    const prior=savedByOrdinal.get(ordinal)??null;
     const sample=el("div","appearance-review-sample");
     sample.dataset.reviewOrdinal=String(ordinal);
     sample.append(reviewSampleJump(experiment,ordinal));
@@ -342,7 +348,7 @@ function renderVisualReviewForm(experiment){
       const fieldLabel=el("div","appearance-review-rating");
       fieldLabel.append(
         el("span",null,label),
-        createStarRating({name:field,label:label+" score"}),
+        createStarRating({name:field,label:label+" score",value:prior?.[field]??0}),
       );
       grid.append(fieldLabel);
     }
@@ -350,29 +356,19 @@ function renderVisualReviewForm(experiment){
     reportReview.append(sample);
   }
 
-  const decisionWrap=el("label","appearance-review-decision");
-  const decision=el("select",null);
-  decision.id="appearance-review-decision";
-  decision.append(
-    new Option("Choose…",""),
-    new Option("Supports candidate","supports_candidate"),
-    new Option("Inconclusive","inconclusive"),
-    new Option("Reject","reject"),
-  );
-  decisionWrap.append(el("span",null,"Overall decision"),decision);
-
   const note=el("textarea","appearance-review-note");
   note.placeholder="Optional review note";
   note.setAttribute("aria-label","Visual review note");
-  reportReview.append(decisionWrap,note);
+  note.value=saved?.note??"";
+  reportReview.append(note);
 
   const actions=el("div","appearance-review-actions");
   const submit=el("button","primary");
   submit.type="button";
   decorateActionButton(submit,{
     icon:"arrow-up-from-bracket",
-    label:"Submit review",
-    tooltip:"Submit immutable visual review evidence",
+    label:saved?"Save scoring":"Save scoring",
+    tooltip:"Save editable scoring. Accept or Reject from Compare.",
   });
   submit.addEventListener("click",async()=>{
     const samples=[...reportReview.querySelectorAll("[data-review-ordinal]")].map(sample=>{
@@ -384,35 +380,35 @@ function renderVisualReviewForm(experiment){
         surfaceRealism:value("surfaceRealism"),
       };
     });
-    if(!decision.value||samples.some(sample=>(
+    if(samples.some(sample=>(
       !Number.isInteger(sample.geometryFidelity)||sample.geometryFidelity<1
       ||!Number.isInteger(sample.identityContinuity)||sample.identityContinuity<1
       ||!Number.isInteger(sample.surfaceRealism)||sample.surfaceRealism<1
     ))){
-      submit.title="Score all samples and choose an overall decision";
+      submit.title="Score all samples before saving";
       return;
     }
     setBlockingButtonState(submit,true,{
-      label:"Submit review",
-      tooltip:"Submit immutable visual review evidence",
+      label:"Save scoring",
+      tooltip:"Save editable scoring",
       icon:"arrow-up-from-bracket",
-      busyLabel:"Submitting",
-      busyTooltip:"Submitting visual review",
+      busyLabel:"Saving",
+      busyTooltip:"Saving review scoring",
     });
     try{
       const response=await fetch("/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/review",{
         method:"POST",
         headers:{Accept:"application/json","content-type":"application/json"},
-        body:JSON.stringify({samples,decision:decision.value,note:note.value.trim()||null}),
+        body:JSON.stringify({samples,note:note.value.trim()||null}),
       });
       const payload=await response.json().catch(()=>null);
       if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
-      renderSubmittedVisualReview(experiment,payload.review);
+      renderVisualReviewForm(experiment,payload.review);
       if(reportFrame?.dataset?.reportUrl)reportFrame.src=reportFrame.dataset.reportUrl;
       await loadAppearanceExperiments();
     }catch(error){
       setBlockingButtonState(submit,false,{
-        label:"Submit review",
+        label:"Save scoring",
         tooltip:error instanceof Error?error.message:String(error),
         icon:"arrow-up-from-bracket",
       });
@@ -446,7 +442,8 @@ async function loadVisualReview(experiment){
     });
     const payload=await response.json().catch(()=>null);
     if(!response.ok||!payload?.review)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
-    renderSubmittedVisualReview(experiment,payload.review);
+    if(payload.review.decision==="open")renderVisualReviewForm(experiment,payload.review);
+    else renderSubmittedVisualReview(experiment,payload.review);
   }catch(error){
     reportReview.replaceChildren(el("p","appearance-experiment-error","Review unavailable: "+(error instanceof Error?error.message:String(error))));
   }
