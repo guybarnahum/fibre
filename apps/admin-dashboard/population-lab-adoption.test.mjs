@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   populationLabAdoptionState,
   populationLabAffectedThreadIds,
+  populationLabExperimentAdmitted,
 } from "./population-lab-adoption.js";
 
 const experiment={
@@ -47,4 +48,23 @@ test("calibration adoption follows deployed authority and affected World workset
     migrationCandidates:[{threadId:"thr_other"}],
   });
   assert.equal(converged.state,"converged","completed adoption did not converge");
+});
+
+
+test("experiment is admitted only when deployed provenance names that exact experiment",()=>{
+  assert.equal(
+    populationLabExperimentAdmitted({released:true,exactAdmission:true}),
+    true,
+    "exact deployed admission was not recognized",
+  );
+  assert.equal(
+    populationLabExperimentAdmitted({released:true,exactAdmission:false}),
+    false,
+    "version movement falsely admitted a different experiment",
+  );
+  assert.equal(
+    populationLabExperimentAdmitted({released:false,exactAdmission:true}),
+    false,
+    "undeployed admission evidence looked live",
+  );
 });
