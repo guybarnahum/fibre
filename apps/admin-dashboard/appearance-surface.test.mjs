@@ -41,3 +41,17 @@ test("Population Lab experiment queue sits before recalibration candidates",()=>
   const migrations=html.indexOf('class="appearance-migrations-section"');
   assert.ok(experiments>=0&&migrations>experiments,"experiment queue is not above Threads needing recalibration");
 });
+
+
+test("Appearance explains the calibration workflow in the operator surface",()=>{
+  assert.match(html,/id="appearance-help"[^>]*>How it works</button>/u,
+    "Appearance lost its workflow help entry");
+  assert.match(html,/id="appearance-help-dialog"/u,
+    "Appearance lost its workflow help dialog");
+  assert.match(html,/Find what needs work/u);
+  assert.match(html,/Compare before and after/u);
+  assert.match(html,/Release and migrate/u);
+  assert.match(html,/Adding a group that is not in the model yet/u);
+  assert.doesNotMatch(html,/Compare with baseline/u,
+    "Appearance comparison action became verbose again");
+});
