@@ -429,6 +429,7 @@ export async function readAdminPopulationLabComparison(env,experimentId){
   const shadowManifest=await readJsonArtifact(store,shadowExperiment.artifacts?.manifest?.objectRef);
   const shadow=shadowManifest?.shadowCalibration;
   const baselineExperimentId=shadowManifest?.source?.shadowOfExperimentId
+    ??shadowExperiment.baselineExperimentId
     ??shadowExperiment.summary?.shadowOfExperimentId
     ??null;
   if(!shadow||typeof baselineExperimentId!=="string"||baselineExperimentId===""){
