@@ -10,6 +10,7 @@ import {
   approveAdminPopulationLabCalibration,
   createAdminPopulationLabCalibrationCandidate,
   deleteAdminPopulationLabComparisonAlignment,
+  decideAdminPopulationLabVisualReview,
   deleteAdminPopulationLabExperiment,
   launchAdminPopulationLabExperiment,
   launchAdminPopulationLabShadowExperiment,
@@ -23,6 +24,7 @@ import {
   readAdminPopulationLabVisualReview,
   recordAdminPopulationLabComparisonAlignment,
   recordAdminPopulationLabVisualReview,
+  reopenAdminPopulationLabVisualReview,
   rerunAdminPopulationLabExperiment,
 } from "./appearance-experiments.mjs";
 import {
@@ -58,6 +60,8 @@ const APPEARANCE_EXPERIMENT_IMAGE_ROUTE = /^\/api\/appearance\/experiments\/([^/
 const APPEARANCE_EXPERIMENT_ALIGNMENT_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/alignment\/(geometry|portrait)\/(\d{3})$/u;
 const APPEARANCE_EXPERIMENT_VISUAL_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/visuals$/u;
 const APPEARANCE_EXPERIMENT_REVIEW_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/review$/u;
+const APPEARANCE_EXPERIMENT_REVIEW_DECISION_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/review\/decision$/u;
+const APPEARANCE_EXPERIMENT_REVIEW_REOPEN_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/review\/reopen$/u;
 const APPEARANCE_EXPERIMENT_RERUN_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/rerun$/u;
 const APPEARANCE_EXPERIMENT_SHADOW_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/shadow$/u;
 const APPEARANCE_EXPERIMENT_CANDIDATE_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/candidate$/u;
@@ -508,6 +512,8 @@ export default {
     const appearanceExperimentAlignmentMatch = APPEARANCE_EXPERIMENT_ALIGNMENT_ROUTE.exec(url.pathname);
     const appearanceExperimentVisualMatch = APPEARANCE_EXPERIMENT_VISUAL_ROUTE.exec(url.pathname);
     const appearanceExperimentReviewMatch = APPEARANCE_EXPERIMENT_REVIEW_ROUTE.exec(url.pathname);
+    const appearanceExperimentReviewDecisionMatch = APPEARANCE_EXPERIMENT_REVIEW_DECISION_ROUTE.exec(url.pathname);
+    const appearanceExperimentReviewReopenMatch = APPEARANCE_EXPERIMENT_REVIEW_REOPEN_ROUTE.exec(url.pathname);
     const appearanceExperimentRerunMatch = APPEARANCE_EXPERIMENT_RERUN_ROUTE.exec(url.pathname);
     const appearanceExperimentShadowMatch = APPEARANCE_EXPERIMENT_SHADOW_ROUTE.exec(url.pathname);
     const appearanceExperimentCandidateMatch = APPEARANCE_EXPERIMENT_CANDIDATE_ROUTE.exec(url.pathname);
@@ -522,7 +528,7 @@ export default {
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
     const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch);
+    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch);
     const adminDelete = request.method === "DELETE" && (appearanceExperimentMatch || appearanceExperimentAlignmentMatch);
     if (adminGet || adminPost || adminDelete) {
       const gate = await adminPrincipal(request, env);
@@ -615,6 +621,25 @@ export default {
           return json(200,{
             contract:"fibre-admin-population-lab-comparison-alignment-v0.1",
             alignment:saved,
+          });
+        }
+        if(appearanceExperimentReviewDecisionMatch){
+          const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentReviewDecisionMatch[1]));
+          let input;
+          try{input=await request.json()}
+          catch{return json(400,{error:"invalid_visual_review_decision",detail:"decision must be JSON"})}
+          const review=await decideAdminPopulationLabVisualReview(env,experimentId,input?.decision);
+          return json(200,{
+            contract:"fibre-admin-population-lab-visual-review-v0.2",
+            review,
+          });
+        }
+        if(appearanceExperimentReviewReopenMatch){
+          const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentReviewReopenMatch[1]));
+          const review=await reopenAdminPopulationLabVisualReview(env,experimentId);
+          return json(200,{
+            contract:"fibre-admin-population-lab-visual-review-v0.2",
+            review,
           });
         }
         if(appearanceExperimentReviewMatch){
