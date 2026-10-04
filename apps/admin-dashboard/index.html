@@ -265,6 +265,7 @@
               <p>Actual Thread ancestry demand against Fibre's versioned physical-reference model.</p>
             </div>
             <div class="appearance-coverage-toolbar-actions">
+              <button id="appearance-help" class="secondary" type="button">How it works</button>
               <button id="appearance-copy" class="secondary icon-only-action" type="button" disabled aria-label="Copy appearance coverage" title="Copy appearance coverage"></button>
               <button id="appearance-scan" class="secondary" type="button">Scan coverage</button>
             </div>
@@ -355,6 +356,32 @@
       <div class="infra-dialog-actions"><button id="infra-copy-status" class="secondary icon-only-action" type="button" aria-label="Copy infrastructure status" title="Copy infrastructure status"></button><button id="infra-force-sample" class="secondary" type="button">Refresh now</button><button id="infra-dialog-close" class="icon-button" aria-label="Close">×</button></div>
     </div>
     <div id="infra-dialog-body" class="dialog-body"></div>
+  </dialog>
+
+  <dialog id="appearance-help-dialog" class="appearance-help-dialog">
+    <div class="dialog-head">
+      <div><p class="eyebrow">Appearance</p><h2>How this works</h2></div>
+      <button id="appearance-help-close" class="icon-button" type="button" aria-label="Close Appearance help">×</button>
+    </div>
+    <div class="dialog-body appearance-help-body">
+      <p class="appearance-help-intro">Use Appearance to find groups that need better representation, test a change safely, and update only the Threads that depend on it.</p>
+
+      <div class="appearance-help-flow" aria-label="Appearance calibration workflow">
+        <article><span>1</span><div><strong>Find what needs work</strong><p>Run <b>Scan coverage</b>. Start with a Priority hole that has real Thread demand.</p></div></article>
+        <article><span>2</span><div><strong>Get a baseline</strong><p>Select the group and run an experiment. This shows how the current appearance model behaves.</p></div></article>
+        <article><span>3</span><div><strong>Refine carefully</strong><p>Use <b>Refine</b> to change only the appearance traits supported by research. Keep the change small and specific.</p></div></article>
+        <article><span>4</span><div><strong>Compare before and after</strong><p>Use <b>Compare</b> for numerical and visual before/after checks. Align eyes only when it does not hide the trait being tested.</p></div></article>
+        <article><span>5</span><div><strong>Review and approve</strong><p>If the change looks sound, review the visuals, freeze the candidate, and approve it. Approval alone does not make it live.</p></div></article>
+        <article><span>6</span><div><strong>Release and migrate</strong><p>After the approved calibration is released, Calibration adoption marks the affected Threads. Use <b>Migrate affected</b> to update only those Threads.</p></div></article>
+      </div>
+
+      <div class="appearance-help-new-group">
+        <strong>Adding a group that is not in the model yet</strong>
+        <p>Start from its Priority hole: inspect the affected Threads, prepare research, and run a baseline experiment. A brand-new reference group still needs the separate new-group admission step; do not copy another group's appearance or infer it from names, language, birthplace, or portraits.</p>
+      </div>
+
+      <p class="appearance-help-footer">Rule of thumb: research can suggest a change; a human approves it; the released model becomes current; World updates only the Threads that actually depend on it.</p>
+    </div>
   </dialog>
 
   <dialog id="appearance-shadow-dialog" class="appearance-shadow-dialog">
