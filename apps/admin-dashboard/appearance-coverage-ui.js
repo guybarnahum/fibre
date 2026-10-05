@@ -700,7 +700,7 @@ async function approveCalibrationCandidate(experiment,button){
       "",
       "Projected existing impact: "+impact.threadCount+" Thread(s), "+impact.lineageCount+" lineage side(s).",
       "",
-      "Approval records immutable human authority evidence. It does NOT make the calibration live until the approval is admitted to the Git-owned registry and deployed.",
+      "Approval records immutable human authority evidence. Admit is the separate action that makes this the next append-only calibration version.",
     ].join("\n");
     if(!window.confirm(message)){
       setBlockingButtonState(button,false,{
@@ -731,19 +731,27 @@ async function approveCalibrationCandidate(experiment,button){
   }
 }
 
-async function copyCalibrationApproval(experiment,button,{iconOnly=true}={}){
+async function admitCalibration(experiment,button){
+  setBlockingButtonState(button,true,{
+    label:"Admit",
+    tooltip:"Admit this approved calibration as the next immutable version",
+    busyLabel:"Admitting",
+    busyTooltip:"Writing immutable calibration authority",
+  });
   try{
-    const state=await readCalibrationApprovalState(experiment);
-    if(!state.approval)throw new Error("Calibration is not approved yet");
-    await copyWithFeedback(button,state.approval,{
-      label:"Prepare admission",
-      tooltip:"Copy the exact approved admission payload for source-controlled release",
-      copiedLabel:"Admission prepared",
-      failedLabel:"Prepare admission failed",
-      iconOnly,
-    });
+    const response=await fetch(
+      "/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/admission",
+      {method:"POST",headers:{Accept:"application/json"}},
+    );
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
+    await loadAppearanceCoverage({quiet:true});
+    await loadAppearanceExperiments();
   }catch(error){
-    button.title=error instanceof Error?error.message:String(error);
+    setBlockingButtonState(button,false,{
+      label:"Admit",
+      tooltip:error instanceof Error?error.message:String(error),
+    });
   }
 }
 
@@ -1533,15 +1541,23 @@ function renderComparisonActions(experiment){
 
   if(experiment.artifacts?.calibrationApproval?.objectRef){
     compareActions.append(experimentStatusPill({label:"Approved",tone:"good",active:false}));
-    const copyApproval=el("button","secondary");
-    copyApproval.type="button";
-    decorateCopyAction(copyApproval,{
-      label:"Prepare admission",
-      tooltip:"Copy the exact approved admission payload for source-controlled release",
-      iconOnly:false,
-    });
-    copyApproval.addEventListener("click",()=>void copyCalibrationApproval(experiment,copyApproval,{iconOnly:false}));
-    compareActions.append(copyApproval);
+    const adoption=currentCalibrationAdoptions().find(item=>item.experimentId===experiment.experimentId)??null;
+    if(populationLabExperimentAdmitted(adoption)){
+      compareActions.append(experimentStatusPill({
+        label:"Admitted @"+adoption.toVersion,
+        tone:"good",
+        active:false,
+      }));
+    }else{
+      const admit=el("button","primary");
+      admit.type="button";
+      decorateActionButton(admit,{
+        label:"Admit",
+        tooltip:"Admit this approved calibration as the next immutable runtime version",
+      });
+      admit.addEventListener("click",()=>void admitCalibration(experiment,admit));
+      compareActions.append(admit);
+    }
   }
 
   if(decision==="reject"){
@@ -1633,7 +1649,7 @@ function adoptionTone(state){
 }
 
 function adoptionLabel(state){
-  if(state==="release_required")return "Release required";
+  if(state==="release_required")return "Admission required";
   if(state==="affected")return "Affected";
   if(state==="converged")return "A5 complete";
   return human(state);
@@ -1700,7 +1716,7 @@ function renderCalibrationAdoptions(){
     const steps=el("div","appearance-adoption-steps");
     steps.append(
       adoptionStep("Approved",{done:true,detail:"human authority"}),
-      adoptionStep("Released",{
+      adoptionStep("Admitted",{
         done:adoption.released,
         active:!adoption.released,
         detail:adoption.released
@@ -1744,7 +1760,7 @@ function renderCalibrationAdoptions(){
 
     const note=el("p","appearance-adoption-note");
     if(adoption.state==="release_required"){
-      note.textContent="Approval is complete. Prepare the exact admission payload here, then release it through the Git-owned registry. Admin will recognize the admitted version after deploy.";
+      note.textContent="Approval is complete. Admit this calibration to append the next runtime-authority version. No code deployment is required.";
     }else if(adoption.state==="affected"){
       note.textContent="The reviewed calibration is live. Only the marked Threads below remain stale against that deployed dependency.";
     }else{
@@ -1758,10 +1774,10 @@ function renderCalibrationAdoptions(){
     actions.append(compare);
 
     if(adoption.state==="release_required"){
-      const copy=el("button","primary","Prepare admission");
-      copy.type="button";
-      copy.addEventListener("click",()=>void copyCalibrationApproval(experiment,copy,{iconOnly:false}));
-      actions.append(copy);
+      const admit=el("button","primary","Admit");
+      admit.type="button";
+      admit.addEventListener("click",()=>void admitCalibration(experiment,admit));
+      actions.append(admit);
     }else if(adoption.state==="affected"){
       const targetIds=new Set(adoption.remainingThreadIds);
       const inBatch=Boolean(migrationBatch?.threadIds?.some(threadId=>targetIds.has(threadId)));
