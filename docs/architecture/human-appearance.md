@@ -1,7 +1,7 @@
 ---
 id: human-appearance
 status: accepted
-last-reviewed: 2026-09-30
+last-reviewed: 2026-10-05
 canonical: true
 ---
 
@@ -370,7 +370,7 @@ affected-Thread dependency diff
 explicit targeted migration
 ```
 
-Experiments and research are evidence only. They do not change Thread authority or the production calibration registry. **Approval** is the authority hinge: only an approved calibration becomes current for new physical genomes and creates migration requirements for existing dependent Threads.
+Experiments and research are evidence only. They do not change Thread authority or the production calibration registry. Human **approval** authorizes a reviewed candidate; the separate **Admit** operation is the authority hinge that appends the next immutable runtime calibration version. Only an admitted calibration becomes current for new physical genomes and creates migration requirements for existing dependent Threads.
 
 Coverage geography is descriptive demand context only. A map point means Fibre currently has a Thread/family lineage represented at that birthplace. Geography never selects or infers ancestry.
 
@@ -417,6 +417,8 @@ The canonical calibration registry is provider-neutral data over `InfraDriver.ob
 Admission consumes the immutable approval artifact, verifies that its frozen base calibration is still World-current and that it advances exactly one local version, writes the immutable admission, and makes that version immediately visible to World. No code commit or deployment is part of a calibration change. World uses the registry model for dependency comparison and physical migration; Population Lab freezes the exact admitted prior/variation snapshot into each experiment so historical evidence remains reproducible.
 
 This preserves the core authority rule in both directions: an experiment cannot silently become calibration authority, and the registry cannot advance from unapproved or stale evidence. Existing Threads are affected only through the dependency diff and explicit World migration.
+
+The complete lifecycle was accepted in staging on 2026-10-05 with a real `middle_east.egypt@1 -> @2` refinement. The admitted `noseBreadth` change moved into Calibration History as current authority, only the approval-scoped dependent Threads entered the migration workset, those Threads converged through the ordinary World appearance path, and the final `npm run slice:validate` passed. Historical versions remain immutable; reopening one creates a new shadow candidate against current authority rather than rolling the registry backward.
 
 ### Canonical reference-population ID grammar
 
@@ -646,6 +648,8 @@ Production consumers should depend on these semantic boundaries rather than impo
 Current visually accepted appearance versions are `human-appearance-v0.4` and `physical-genome-v0.3`. The acceptance evidence is the bounded 12-person Polynesian geometry-first gate plus the 48-person Han-Chinese/Korean/Japanese/Polynesian same-seed regression recorded in the physical-appearance calibration plan. Polynesian calibration is frozen under that evidence; normal population overlap is not a reason to reopen it.
 
 - Human Appearance domain boundary — **accepted / active**
+- demand-driven Population Lab calibration lifecycle (coverage -> experiment -> shadow -> review -> approval -> Admit -> targeted migration -> History) — **accepted in staging 2026-10-05; Tranche A closed**
+- append-only runtime calibration registry over `InfraDriver.objects` + `InfraDriver.catalog` — **accepted / current**
 - hierarchical population morphology atlas — **experimental globally; accepted for the currently calibrated East-Asian and Polynesian tranche**
 - global Population Context family-profile authoring — **experimental; Genesis path exists**
 - existing-Thread place/era profile proposal — **deferred next slice**
