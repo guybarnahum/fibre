@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-09-23
+last-reviewed: 2026-10-05
 canonical: true
 ---
 
@@ -16,6 +16,7 @@ Canonical architecture:
 - [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
 - [Encounter stories and Thread experience](../architecture/encounters-and-experience.md)
 - [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md)
+- [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md)
 - [The Lived World of Fibre](../vision/lived-world.md)
 - [ADR-0023: Retrospective lived continuity across compute dormancy](../decisions/ADR-0023-retrospective-lived-continuity.md)
 
@@ -275,62 +276,60 @@ Do not preserve the current social-first harness shape for compatibility. If the
 
 ### Two social paths from here
 
-Do not collapse the next work into one "get a meeting to pass" objective.
+Do not collapse public reliability and natural social life into one acceptance path.
 
-**Casual Thread -> Thread** remains the natural-lived-world path. Let current pre-W7p plans expire, observe newly authored plans with admitted shared venues, and rerun natural encounter acceptance when real co-presence exists. Do not pay, schedule or socially bias Threads merely to manufacture this proof. If post-W7p plans naturally use a shared venue, W7b should discover actors through World authority; if they do not, inspect the planning evidence rather than force movement.
+**N6 / insidefibre.com Person -> Thread is current.** Reliability comes from the already-proven prior voluntary visitor-work commitment. The missing proof is public lived presence and later-life continuity, not another willingness/meeting engine.
 
-**insidefibre.com Person -> Thread** is a different product path. Reliability should come from a prior voluntary work/availability commitment and mediated presence. Once a Thread accepts that bounded commitment, honoring a visitor meeting during the window is fulfilment of an existing obligation, not a fresh generic social-willingness lottery. This path may proceed without waiting for a lucky casual Thread-to-Thread collision because its convergence mechanism is semantically different and explicit.
+**Natural Thread -> Thread life is retained follow-on work.** Ordinary Flight Plans, admitted shared World places, natural actor discovery, salience and voluntary social cognition remain the right mechanism. Do not pay, schedule, choose counterparties or bias cognition merely to manufacture a natural encounter proof.
 
-Both paths converge again at the same general machinery:
+Both paths reuse:
 
 ```text
 authoritative presence
-  -> Encounter Story
+  -> Encounter Story when something occurs
   -> participant-specific Experience
   -> optional journal
   -> selective memory / relationship / intention consequence
   -> future life
 ```
 
-The economical execution profile is intentionally **hypothetical**: start by testing whether one bounded semantic call per material interior episode preserves causal individuality, dilemma fidelity and within-Thread coherence closely enough to justify its lower latency/token/cost versus a decomposed multi-call profile. Interior Cognition should remain one compact replaceable component so prompt/context/call-structure implementations can be isolated and A/B tested without changing the consuming domains. Use the light scorecard in [Interior Cognition evaluation](../validation/interior-cognition-evaluation.md): four quality dimensions (causal individuality, within-Thread stability, dilemma fidelity, development sensitivity), hard Fibre invariants, and direct compute measures (calls, tokens, latency, cost, retries, activation rate). Freeze the same Threads, situations, context authority, model/runtime, trial count and quality/economy criteria before comparing them. Do not promote the one-call shape to doctrine merely because it is simpler, and do not keep extra calls merely because they appear psychologically richer. Raw genome remains private causal substrate and may not be injected as a finished personality or instruction into planning/social cognition. Fibre Commons stays one bounded shared-presence affordance but is no longer a staging fallback; `npm run lived-encounters:staging` must accept only naturally discovered scene actors. N5 stays open until the full live acceptance passes.
+Historical W0-W7 and S coordinates remain useful implementation archaeology only. They are not a second current roadmap.
 
-The three core semantic proofs are:
+## N6 — Rich Public Lived Encounter — CURRENT
 
-- **environmental encounter** — an unscheduled bee/flower/cloud/etc. can enter one Thread's attention and selectively matter;
-- **voluntary meeting** — compatible presence does not force participation;
-- **witness asymmetry** — one shared social story can affect a silent witness differently from the actors.
+The concrete public goal is:
 
-No sensory simulator, generic event bus, universal entity ontology or conversation framework.
+> **A visitor can see a persistent Thread's current life, meet her inside that exact moment when she has voluntarily chosen to be available, then later return and find the same person living a later moment.**
 
-
-## N6 — reliable insidefibre.com Person -> Thread meeting
-
-The first concrete public goal is now narrower and stronger:
-
-> **A real visitor to insidefibre.com can meet a persistent Thread who voluntarily chose in advance to be available for that work.**
-
-The website needs a reliable meeting, while ordinary Fibre social life must remain voluntary and opportunistic. Fibre should therefore guarantee website availability through a prior bounded work commitment rather than by making a Thread unusually agreeable at click time.
+Most of the meeting machinery is already accepted:
 
 ```text
-Inside Fibre offers visitor-meeting work
-  -> Thread evaluates accept | decline through Interior Cognition
-  -> accepted commitment enters lived life
-  -> Flight Plan includes the availability window
-  -> LivedNow establishes matching mediated presence
-  -> Directory exposes the Thread as available
-  -> visitor clicks Meet
-  -> Person -> Thread Encounter Story
-  -> Thread Experience / selective consequence
-  -> agreed compensation
+visitor-work offer
+  -> Thread accept | decline through Interior Cognition
+  -> accepted commitment bends Flight Plan
+  -> LivedNow enacts mediated availability
+  -> Directory/Meet selects an actually available Thread
+  -> exact situation-bound visitor encounter
+  -> Encounter Story / Thread Experience
+  -> selective aftermath
+  -> exactly-once Fibre Credit compensation
 ```
 
-The first slice should add only the minimum commitment fact needed to make that causal chain real. Do **not** build a general jobs marketplace, economic ontology, scheduler or professional-services framework. Reuse the existing commitment/obligation, Flight Plan, mediated-presence, Directory, LivedNow, Encounter Story, Experience and token/resource authorities where they already fit.
+N6 therefore focuses on the public life seam:
 
-Payment is compensation for an accepted professional availability commitment. It is not the ordinary price of attention. Casual Person/Thread and Thread/Thread encounters remain normally unpaid; paid attention/services may later exist where a genuine professional relationship requires it.
+```text
+public visit
+  -> ensure selected Thread LivedNow(now)
+  -> publish bounded current scene
+  -> Viewer shows that life
+  -> optional committed meeting inside the same situation
+  -> later visit
+  -> later current scene
+```
 
-The public experience should still feel like entering a life, not opening a chatbot. During the accepted work window the Thread is genuinely there because that commitment is part of her life. Outside that window a later visit may find her elsewhere.
+A **visit is not a meeting request**. It must not create availability, an encounter, compensation or private cognition. The Viewer remains projection-only.
 
-The Viewer remains projection-only.
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is roadmap truth alignment; N6.1 is the first runtime slice.
 
 ## Current causal loop
 
