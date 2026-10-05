@@ -245,22 +245,22 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Show a Thread's current life to a visitor, let a committed meeting happen inside that exact moment, then return later and find later life.",
-      "currentStep": "N6.0 aligns roadmap truth; N6.1 adds a public visit seam that reconciles a selected public Thread to now without creating a meeting.",
+      "currentStep": "N6.0 is closed. N6.1 is implemented pending validation: a public visit asks World for the selected public Thread's current life without creating a meeting.",
       "nextSteps": [
-        "Add one public visit/current-life seam over existing World ensure-LivedNow and Presentation current-present authority.",
-        "Have the Viewer render the bounded lived scene without exposing private plan, memory or cognition state.",
-        "Reuse the accepted committed Meet/encounter path inside that exact situation.",
-        "Prove a later visit reaches a different current situation for the same Thread rather than resuming a chat session."
+        "Validate the new public current-life visit endpoint and full Fibre slice locally.",
+        "Deploy Thread Presentation and prove a real public visit returns a freshly reconciled current situation.",
+        "Move to N6.2: render that bounded current life in the Viewer without inventing private or Viewer-authored scene facts.",
+        "Reuse the existing committed Meet path inside that exact scene."
       ]
     },
     "detail": {
       "summary": "N5 is closed live. N6 reuses the accepted visitor-work, LivedNow, Meet, Encounter Story/Experience and compensation machinery; it does not build another meeting engine.",
-      "currentStep": "N6.0 truth alignment is active/closing in-repo. N6.1 is the first runtime slice: public visit != meeting request.",
+      "currentStep": "N6.1 adds GET /api/threads/:threadId/present. Thread Presentation verifies public visibility, calls World ensure-LivedNow at server time, and returns only the bounded current present. Query parameters are rejected so the visitor cannot author time or scene.",
       "nextSteps": [
-        "Complete N6.0 repository truth alignment and validation.",
-        "Implement N6.1 public current-life visit without availability/encounter side effects.",
-        "Implement Viewer lived-moment presentation against existing bounded public authority.",
-        "Close N6 with one staging visitor flight that returns later to a later life."
+        "Run focused N6.1 tests and npm run slice:validate.",
+        "Deploy thread-presentation to staging.",
+        "Verify the public visit endpoint against a real public Thread and confirm it does not require visitor-work availability.",
+        "Begin N6.2 Viewer lived-moment presentation."
       ]
     },
     "finalLifeCognitionAuthorized": true
