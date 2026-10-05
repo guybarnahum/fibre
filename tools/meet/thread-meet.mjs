@@ -46,9 +46,6 @@ function printScene(meeting) {
   if (scene.activity) console.log(`  doing:   ${scene.activity}`);
   if (scene.participants.length > 0) console.log(`  with:    ${scene.participants.join(", ")}`);
   if (scene.establishedAt) console.log(`  since:   ${scene.establishedAt}`);
-  if (scene.encounterAvailability?.endAt) {
-    console.log(`  available until: ${scene.encounterAvailability.endAt}`);
-  }
   console.log("Type :q to leave the meeting without adding another encounter.");
 }
 
@@ -95,13 +92,12 @@ export async function openThreadMeeting({
   const selectedThreadId = threadId.trim();
   const encoded = encodeURIComponent(selectedThreadId);
   const api = meetingBaseUrl({ environment, baseUrl });
-  const entry = await body(await fetchImpl(`${api}/api/threads/${encoded}/meet`, {
-    method:"POST",
+  const entry = await body(await fetchImpl(`${api}/api/threads/${encoded}/present`, {
     headers:{ Accept:"application/json" },
   }));
-  const scene = entry?.livedScene;
+  const scene = entry?.currentPresent?.payload;
   const situationId = scene?.situationId;
-  if (typeof situationId !== "string" || situationId === "") throw new Error("Thread has no public lived scene");
+  if (typeof situationId !== "string" || situationId === "") throw new Error("Thread has no public current life");
 
   return Object.freeze({
     threadId:selectedThreadId,
@@ -176,7 +172,7 @@ async function main(args) {
         });
         return;
       } catch (error) {
-        if (error?.message !== "Thread has no public lived scene") throw error;
+        if (error?.message !== "Thread has no public current life") throw error;
         const name = selected.displayName ?? selected.threadId;
         console.log(`${name} is not currently in a published situation. Choose another Thread.\n`);
       }
