@@ -1,7 +1,3 @@
-import {
-  referencePopulationCalibrationHistory,
-  referencePopulationCalibrations,
-} from "../../../../core/src/human-phenotype/reference-populations.mjs";
 export async function readAdminAppearanceCoverage({
   worldKernel,
   privateToken,
@@ -27,14 +23,5 @@ export async function readAdminAppearanceCoverage({
   if (payload?.contract !== "fibre-appearance-coverage-v0.1") {
     throw new Error("World appearance coverage response is invalid");
   }
-  return Object.freeze({
-    ...payload,
-    calibrationHistory:Object.freeze(referencePopulationCalibrations()
-      .filter(calibration=>calibration.version>1)
-      .map(calibration=>Object.freeze({
-        id:calibration.id,
-        currentVersion:calibration.version,
-        versions:referencePopulationCalibrationHistory(calibration.id),
-      }))),
-  });
+  return Object.freeze(payload);
 }
