@@ -309,11 +309,11 @@ Admin may launch and inspect the same existing Population Lab experiment runner.
 
 Research is an evidence adapter over a selected coverage hole. It may gather provenance and propose only evidence-supported calibration axes. Research artifacts never mutate the production model.
 
-Human approval promotes one reviewed candidate into the current versioned calibration registry. Approval is the authority hinge. Each calibration node carries a monotonic integer local version.
+Human approval authorizes one reviewed candidate. The separate **Admit** action promotes it into the current versioned calibration registry after rechecking that its frozen base is still World-current. Each calibration node carries a monotonic integer local version.
 
 ### A4 — Targeted migration after approval
 
-After approval, compare existing Threads' stored effective calibration dependencies with current registry resolution.
+After admission, compare existing Threads' stored effective calibration dependencies with current registry resolution.
 
 Only affected Threads become `migration_required`. A Thread at local calibration v1 migrates once directly to current vN; intermediate versions are not replayed.
 
@@ -390,13 +390,13 @@ An experiment record owns immutable inputs, population/cohort JSON, generated im
 
 A coverage hole may trigger evidence research. Research creates a provenance-bearing proposal that overrides only evidence-supported calibration axes.
 
-Research and experiment output are **candidates**, never authority. A human-reviewed approval admits one new current calibration version into the reference-population registry. Example: `afr_north.morocco@1 -> afr_north.morocco@2`.
+Research and experiment output are **candidates**, never authority. Human approval authorizes a candidate; **Admit** appends one new current calibration version to the runtime registry after validating the exact current base. Example: `afr_north.morocco@1 -> afr_north.morocco@2`.
 
-Approval is the only event that may create new migration impact.
+Admission is the event that creates new migration impact.
 
 ### A4 — Targeted migration workset
 
-After approval, compare stored Thread appearance dependencies with the approved current registry. Only affected Threads enter the Appearance migration workset.
+After admission, compare stored Thread appearance dependencies with the admitted current registry. Only affected Threads enter the Appearance migration workset.
 
 Example: a Moroccan Thread whose stored chain ends at `afr_north.morocco@1` becomes stale when current is `@2`; a Korean Thread whose chain remains `east_asia@1 -> east_asia.korean@1` does not.
 
@@ -466,19 +466,19 @@ Human visual review is now durable experiment evidence as well: every completed 
 
 No runtime web/LLM research is introduced in A3.2 v0.1. A future provider-neutral research adapter may populate the same provenance-bearing proposal contract, but it must not infer morphology from geography, nationality, culture, religion, names or generated portraits.
 
-**A3.3 — explicit approval / registry admission: implemented on `main`, validation pending.** A frozen candidate now has one explicit human approval transition. Admin first reads World appearance coverage and shows the projected affected Thread/lineage count against the exact candidate base version. Approval records one immutable artifact bound to the candidate digest, visual-review artifact, authenticated Admin identity, proposed calibration, rationale and projected impact.
+**A3.3 — explicit approval / runtime registry admission: implemented on `main`, validation pending.** A frozen candidate has one explicit human approval transition. Admin reads World appearance coverage and shows the projected affected Thread/lineage count against the candidate's exact frozen base. Approval records one immutable artifact bound to the candidate digest, visual-review artifact, authenticated Admin identity, proposed calibration, rationale and projected impact.
 
-Approval authorizes admission but does not silently mutate runtime authority from the browser. The canonical reference registry remains Git-owned. The approved artifact contains the exact source-admission payload; Admin can copy that JSON, and `npm run population:calibration:admit -- --approval=/path/to/approval.json` deterministically appends the reviewed refinement to the source-controlled admission overlay. The command accepts only an approval whose base is still current and advances exactly one local version. Deployment of that source change makes the calibration current for new births and exposes its admission provenance through registry metadata.
+Approval remains evidence. The separate **Admit** action rechecks that the approved base calibration and dependency chain are still World-current, requires an exact `N -> N+1` local version advance, then writes one immutable admission object plus one catalog record through `InfraDriver.objects` + `InfraDriver.catalog`. Cloudflare maps these to the existing R2 object store and D1 catalog. No source edit or deployment is part of a calibration change.
 
-This split keeps the human authority decision explicit while preserving Git as the law/current-calibration source. A browser approval cannot silently rewrite Human Appearance, and a source admission cannot be authored from an unapproved candidate.
+The registry is append-only: there is no rollback pointer and no deletion path. If an older parameter set should be restored, it is admitted as a new version with new provenance. World reads this registry as current calibration authority; Population Lab freezes the exact admitted snapshot into every experiment.
 
 A3.3 v0.1 admits **refinements of existing reference nodes**. Admission of a brand-new calibration node remains deferred until the same evidence/review/approval path has an explicit parent-selection contract; Fibre must not create a node merely from geography, nationality, religion, culture, names or portraits.
 
-Experiment/research/review output is a **candidate**, never authority. Human approval authorizes registry admission; deployed source admission is the point at which runtime calibration authority changes.
+Experiment/research/review output is a **candidate**, never authority. Human approval authorizes registry admission; the successful **Admit** operation is the point at which runtime calibration authority changes.
 
 ### A4 — affected-Thread migration workset
 
-**Implemented on `main`, validation pending.** After a deployed A3.3 source admission, World recomputes current calibration dependencies from durable ancestry and stored dependency snapshots. Only changed dependencies enter the Appearance workset.
+**Implemented on `main`, validation pending.** After A3.3 runtime admission, World recomputes current calibration dependencies from durable ancestry and stored dependency snapshots. Only changed dependencies enter the Appearance workset.
 
 A calibration version is not an ordered executable migration chain. Existing Threads jump once from their stored dependency to the current approved version:
 
@@ -503,17 +503,17 @@ Admin retains the existing per-Thread **Update calibration** action and exposes 
 An approved refinement appears in **Calibration adoption** as a derived four-stage rail:
 
 ```text
-Approved -> Released -> Affected -> Converged
+Approved -> Admitted -> Affected -> Converged
 ```
 
 The rail is a projection of existing authority, not a new workflow database:
 
 - **Approved** comes from the immutable calibration approval artifact;
-- **Released** becomes true only when the deployed Git-owned reference registry reaches the approved target version;
+- **Admitted** becomes true only when the append-only runtime registry reaches the approved target version with that experiment's admission provenance;
 - **Affected** is the intersection of the approval's projected Thread IDs with World's current appearance-migration workset;
-- **Converged** means the approved version is deployed and none of the projected affected Threads remains stale.
+- **Converged** means the admitted version is current and none of the projected affected Threads remains stale.
 
-The source-release hinge deliberately remains outside the deployed Admin runtime. Admin may copy the approval artifact, but it cannot silently rewrite Git-owned Human Appearance authority. Once the reviewed source admission is committed and deployed, the next Appearance scan recognizes the new version automatically.
+Admin exposes **Admit** only for approved evidence. Admission writes the reviewed calibration through the existing InfraDriver object/catalog authority and the next authoritative Appearance reread observes it immediately; no code deployment is required.
 
 Affected Threads are explicitly marked in the Appearance workset. The adoption card's **Migrate affected** action is scoped to that approval's remaining Thread IDs and reuses the existing sequential World migration path. Unrelated migration candidates remain visible but are not marked as affected by that calibration and are never included in the scoped batch.
 
@@ -521,14 +521,14 @@ When the card reaches **A5 complete**, **Copy evidence** emits a compact accepta
 
 Tranche A closes in staging when one real reviewed calibration demonstrates all of the following:
 
-1. the approved node advances exactly one local source version;
-2. new runtime resolution reports that deployed version;
+1. the approved node is admitted as exactly one new local registry version;
+2. World runtime resolution immediately reports that admitted version;
 3. only the approval's dependent Threads become affected/migration-required;
 4. at least one unrelated control Thread remains unchanged;
 5. **Migrate affected** updates only the marked workset through World authority;
 6. every marked Thread converges through Embodiment -> Presentation -> FID and leaves the workset;
 7. Admin shows **A5 complete** and copied adoption evidence reports zero remaining affected Threads;
-8. full `npm run slice:validate` passes on the admitted source.
+8. full `npm run slice:validate` passes on the runtime-registry implementation.
 
 After that evidence is recorded, mark A3.1/A3.2/A3.3/A4/A5 accepted and close Tranche A. A6/new-node admission is optional follow-on work, not part of A closure.
 
