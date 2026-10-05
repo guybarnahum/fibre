@@ -72,13 +72,15 @@ export function createInsideFibreVisitorMeetingService({
   if (activityRecorder !== null) requireMethod(activityRecorder, "Inside Fibre activityRecorder", "runStage");
 
   return Object.freeze({
-    async enter({ threadId, at }) {
+    async enter({ threadId, at, expectedSituationId = null }) {
       assertId("Inside Fibre meeting threadId", threadId);
       assertIsoTimestamp("Inside Fibre meeting at", at);
+      if (expectedSituationId !== null) assertId("Inside Fibre meeting expectedSituationId", expectedSituationId);
       const currentAvailability = await availability.current({ threadId, at });
       if (currentAvailability === null) return null;
       const situation = livedNowStore.getCurrentSituation(threadId);
       if (situation?.situationId !== currentAvailability.situationId) return null;
+      if (expectedSituationId !== null && situation.situationId !== expectedSituationId) return null;
       return Object.freeze({
         availability:currentAvailability,
         situation:structuredClone(situation),
