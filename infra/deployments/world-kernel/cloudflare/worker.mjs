@@ -328,6 +328,12 @@ export class FibreWorldDurableObject extends DurableObject {
           getSnapshotDigest:(threadId) => presentationSnapshotDigest(this.env, threadId),
         },
         diagnose:(threadId) => this.runtimeForRequest().repairService.diagnose(threadId),
+        authorityWitness:()=>Object.freeze((this.calibrationModel?.admissions??[]).map(entry=>Object.freeze({
+          id:entry.id,
+          version:entry.version,
+          approvalExperimentId:entry.evidence?.approvalExperimentId??null,
+          admissionDigest:entry.evidence?.admissionDigest??null,
+        }))),
       });
     }
     return this.threadHealthProjection;
