@@ -15,7 +15,7 @@ function proposal(){
   const calibration=referencePopulationCalibration("east_asia.japanese");
   return {
     referencePopulation:"east_asia.japanese",
-    baseCalibration:{id:calibration.id,version:calibration.version},
+    baseCalibration:calibration,
     values:{faceBreadth:.18},
     variation:{familyFactorMultiplier:1.08},
     rationale:"Explicit research evidence proposes a narrower center and slightly broader family variation.",
@@ -41,13 +41,13 @@ test("shadow calibration changes only the lab resolver, never canonical authorit
     "shadow proposal changed canonical variation");
 });
 
-test("shadow calibration requires current versioned evidence and explicit provenance",()=>{
-  const stale=proposal();
-  stale.baseCalibration={...stale.baseCalibration,version:stale.baseCalibration.version-1};
+test("shadow calibration requires a complete frozen baseline and explicit provenance",()=>{
+  const incomplete=proposal();
+  incomplete.baseCalibration={...incomplete.baseCalibration,prior:null};
   assert.throws(
-    ()=>normalizePopulationLabShadowCalibration(stale),
-    /no longer current/u,
-    "stale calibration evidence entered shadow evaluation",
+    ()=>normalizePopulationLabShadowCalibration(incomplete),
+    /baseCalibration\.prior/u,
+    "shadow proposal without a frozen prior was accepted",
   );
 
   const noEvidence=proposal();
