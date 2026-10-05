@@ -59,7 +59,11 @@ function rawAdmission(record){
     baseVariation:Object.freeze({...record.baseVariation}),
     resolvedPrior:Object.freeze({...record.resolvedPrior}),
     resolvedVariation:Object.freeze({...record.resolvedVariation}),
-    evidence:Object.freeze({...record.evidence}),
+    evidence:Object.freeze({
+      ...record.evidence,
+      admissionObjectRef:record.objectRef??null,
+      admissionDigest:record.digest??null,
+    }),
   });
 }
 
