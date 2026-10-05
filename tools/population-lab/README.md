@@ -49,21 +49,17 @@ baseline experiment
   -> human review
   -> frozen calibration candidate
   -> Admin approval
-  -> source admission
-  -> deploy
+  -> Admit
+  -> affected Thread migration
 ```
 
-Admin approval is immutable evidence, not a browser-side registry mutation. It records the authenticated reviewer and the projected affected Thread set from current World coverage. Approved experiments are retained because their artifacts may become registry provenance.
+Admin approval is immutable evidence, not calibration authority. It records the authenticated reviewer and projected affected Thread set from current World coverage. **Admit** is a separate operation that rechecks the approved frozen base against World's current registry and requires an exact local `N -> N+1` advance.
 
-Copy the approved JSON from Admin, save it locally, then admit it to the Git-owned reference registry:
+The calibration registry uses generic `InfraDriver.objects` + `InfraDriver.catalog`. Each admitted version is one immutable object plus one catalog record; Cloudflare maps these to the existing R2 object store and D1 catalog. There is no rollback pointer and no delete operation. Restoring older values creates a new version with new provenance.
 
-```bash
-npm run population:calibration:admit -- --approval=/path/to/approval.json
-```
+Admission is immediately visible to World and does not require a code commit or deployment. Approved experiments remain retained because their immutable candidate/review artifacts are admission provenance.
 
-The command accepts only a reviewed approval whose base calibration is still current and whose proposed version advances exactly one local node version. It appends the approved values/variation to `core/src/human-phenotype/reference-population-admissions.mjs`. Review that source diff and deploy normally; only the deployed source admission changes current Human Appearance calibration authority.
-
-A3.3 v0.1 admits refinements of existing nodes. New-node admission remains deferred until parent selection is an explicit evidence-backed contract.
+A3.3 currently admits refinements of existing nodes. New-node admission remains deferred until parent selection is an explicit evidence-backed contract.
 
 Inspect local experiments:
 
