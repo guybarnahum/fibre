@@ -58,6 +58,34 @@ test("queued experiments cannot be deleted while execution may still write artif
 });
 
 
+test("baseline experiment consumes its frozen admitted calibration snapshot",()=>{
+  const calibration=referencePopulationCalibration("east_asia.japanese");
+  const baseline=normalizePhysicalExperimentRequest({
+    experimentId:"exp_dynamic_baseline",
+    referencePopulation:"east_asia.japanese",
+    count:8,
+    seed:"dynamic-baseline-seed",
+    requestedAt:"2026-10-02T17:00:00.000Z",
+    source:{calibration},
+  });
+  const shifted=normalizePhysicalExperimentRequest({
+    ...baseline,
+    experimentId:"exp_dynamic_baseline_shifted",
+    source:{calibration:{
+      ...calibration,
+      prior:{...calibration.prior,faceBreadth:.18},
+    }},
+  });
+
+  const before=buildPhysicalExperimentEvidence(baseline);
+  const after=buildPhysicalExperimentEvidence(shifted);
+  assert.notEqual(
+    after.people[0].inheritance.phenotype.latent.faceBreadth,
+    before.people[0].inheritance.phenotype.latent.faceBreadth,
+    "baseline experiment ignored its admitted calibration snapshot",
+  );
+});
+
 test("shadow experiment reuses the cohort seed while changing only proposed calibration behavior",()=>{
   const calibration=referencePopulationCalibration("east_asia.japanese");
   const baseline=normalizePhysicalExperimentRequest({
@@ -73,7 +101,7 @@ test("shadow experiment reuses the cohort seed while changing only proposed cali
     experimentId:"exp_shadow_candidate",
     shadowCalibration:{
       referencePopulation:"east_asia.japanese",
-      baseCalibration:{id:calibration.id,version:calibration.version},
+      baseCalibration:calibration,
       values:{faceBreadth:.18},
       variation:{},
       rationale:"Fixture candidate for controlled comparison.",
