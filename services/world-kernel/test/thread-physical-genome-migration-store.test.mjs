@@ -11,6 +11,7 @@ import {
   resolveHumanPhysicalInheritance,
 } from "#core/src/human-appearance/index.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
+import { canonicalJson, sha256 } from "../src/persistence-common.mjs";
 import { ThreadPhysicalGenomeMigrationStore } from "../src/thread-physical-genome-migration-store.mjs";
 import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 
@@ -165,14 +166,23 @@ test("physical migration consumes the admitted runtime calibration model",()=>{
       [2,2],
       "physical migration ignored admitted calibration version",
     );
+    const ancestryDigest=sha256(canonicalJson(physicalAncestry));
+    const conceptionSeed=`legacy-physical-embodiment:${seeded.threadId}:${ancestryDigest}`;
     const expected=resolveHumanPhysicalInheritance({
       maternal:{physicalLineage:physicalAncestry.maternal},
       paternal:{physicalLineage:physicalAncestry.paternal},
-      conceptionSeed:`legacy-physical-embodiment:${seeded.threadId}:${result.physicalGenome.ancestryDigest??""}`,
+      conceptionSeed,
       calibrationModel:model,
-    });
-    assert.equal(result.physicalGenome.version,expected.physicalGenome.version,
-      "dynamic migration did not use Human Appearance calibration model");
+    }).physicalGenome;
+    const base=resolveHumanPhysicalInheritance({
+      maternal:{physicalLineage:physicalAncestry.maternal},
+      paternal:{physicalLineage:physicalAncestry.paternal},
+      conceptionSeed,
+    }).physicalGenome;
+    assert.deepEqual(result.physicalGenome,expected,
+      "physical migration did not consume runtime calibration");
+    assert.notDeepEqual(result.physicalGenome,base,
+      "runtime calibration had no effect on migrated physical genome");
   }finally{
     migration.close();
     world.close();
