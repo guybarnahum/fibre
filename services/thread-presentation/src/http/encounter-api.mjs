@@ -1,4 +1,3 @@
-
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
 function id(name, value) {
@@ -45,98 +44,46 @@ export function createPublicEncounterApi({
       const url = new URL(request.url);
       const match = /^\/api\/threads\/([^/]+)\/encounter$/.exec(url.pathname);
       if (!match) return null;
+
       if (request.headers.get("Origin") !== null && allowedOrigin(request, viewerOrigin) === false) {
         return json({ error: "origin_not_allowed" }, request, viewerOrigin, 403);
       }
-      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(request, viewerOrigin) });
-      if (request.method !== "POST") return json({ error: "method_not_allowed" }, request, viewerOrigin, 405);
+      if (request.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: cors(request, viewerOrigin) });
+      }
+      if (request.method !== "POST") {
+        return json({ error: "method_not_allowed" }, request, viewerOrigin, 405);
+      }
 
       let threadId;
+      let body;
       try {
         threadId = id("threadId", decodeURIComponent(match[1]));
-      } catch (error) {
-        return json({ error: "invalid_encounter", detail: error.message }, request, viewerOrigin, 400);
-      }
-
-      let body;
-        try {
-          body = await request.json();
-          if (body === null || typeof body !== "object" || Array.isArray(body)) {
-            throw new TypeError("meeting request must be an object");
-          }
-          const keys = Object.keys(body);
-          if (keys.length !== 1 || keys[0] !== "situationId") {
-            throw new TypeError("meeting request may contain only situationId");
-          }
-          id("situationId", body.situationId);
-        } catch (error) {
-          return json({ error:"invalid_meeting", detail:error.message }, request, viewerOrigin, 400);
-        }
-        try {
-          const admitted = await ensurePublicPresent(threadId, body.situationId, request);
-          const present = admitted?.present ?? admitted;
-          if (present === null || typeof present?.situationId !== "string") {
-            return json({ error: "public_present_required" }, request, viewerOrigin, 409);
-          }
-          const availability = publicInsideFibreAvailability(admitted?.availability ?? null);
-          const livedScene = projectInsideFibreLivedScene({
-            present,
-            availability:admitted?.availability ?? null,
-          });
-          return json({
-            currentPresent: { payload: present },
-            livedScene,
-            availability,
-          }, request, viewerOrigin);
-        } catch (error) {
-          if (error?.status === 409) {
-            const worldError = typeof error?.body?.error === "string" && ID_PATTERN.test(error.body.error)
-              ? error.body.error
-              : null;
-            const detail = typeof error?.body?.detail === "string" && error.body.detail.trim() !== ""
-              ? error.body.detail
-              : null;
-            return json({
-              error:worldError === "thread_meeting_changed"
-                ? "encounter_scene_changed"
-                : worldError === "thread_meeting_unavailable"
-                  ? "thread_meeting_unavailable"
-                  : "lived_now_unavailable",
-              ...(detail === null ? {} : { detail }),
-            }, request, viewerOrigin, 409);
-          }
-          const code = typeof error?.body?.code === "string" && ID_PATTERN.test(error.body.code)
-            ? error.body.code
-            : null;
-          const detail = typeof error?.body?.detail === "string" && error.body.detail.trim() !== ""
-            ? error.body.detail
-            : null;
-          return json({
-            error: "lived_now_unavailable",
-            ...(code === null ? {} : { code }),
-            ...(detail === null ? {} : { detail }),
-          }, request, viewerOrigin, 503);
-        }
-      }
-
-      let body;
-      try {
         body = await request.json();
-        if (body === null || typeof body !== "object" || Array.isArray(body)) throw new TypeError("encounter request must be an object");
+        if (body === null || typeof body !== "object" || Array.isArray(body)) {
+          throw new TypeError("encounter request must be an object");
+        }
         const keys = Object.keys(body).sort();
         if (keys.length !== 2 || keys[0] !== "situationId" || keys[1] !== "utterance") {
           throw new TypeError("encounter request may contain only situationId and utterance");
         }
         id("situationId", body.situationId);
-        if (typeof body.utterance !== "string" || body.utterance.trim() === "") throw new TypeError("utterance is required");
+        if (typeof body.utterance !== "string" || body.utterance.trim() === "") {
+          throw new TypeError("utterance is required");
+        }
       } catch (error) {
         return json({ error: "invalid_encounter", detail: error.message }, request, viewerOrigin, 400);
       }
 
       const present = await readPublicPresent(threadId, request);
-      if (present === null) return json({ error: "public_present_required" }, request, viewerOrigin, 409);
+      if (present === null) {
+        return json({ error: "public_present_required" }, request, viewerOrigin, 409);
+      }
       if (present.situationId !== body.situationId) {
-        return json({ error: "encounter_scene_changed", situationId: present.situationId }, request, viewerOrigin, 409);
+        return json({
+          error: "encounter_scene_changed",
+          situationId: present.situationId,
+        }, request, viewerOrigin, 409);
       }
 
       let result;
@@ -153,10 +100,17 @@ export function createPublicEncounterApi({
         }
         return json({ error: "encounter_unavailable" }, request, viewerOrigin, 503);
       }
+
       if (result.situationId !== body.situationId) {
-        return json({ error: "encounter_scene_changed", situationId: result.situationId }, request, viewerOrigin, 409);
+        return json({
+          error: "encounter_scene_changed",
+          situationId: result.situationId,
+        }, request, viewerOrigin, 409);
       }
-      return json({ situationId: result.situationId, responseText: result.responseText }, request, viewerOrigin);
+      return json({
+        situationId: result.situationId,
+        responseText: result.responseText,
+      }, request, viewerOrigin);
     },
   });
 }
