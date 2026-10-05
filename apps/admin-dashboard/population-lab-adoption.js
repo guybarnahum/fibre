@@ -82,6 +82,6 @@ export function populationLabExperimentAdmitted(adoption){
 
 export function populationLabAffectedThreadIds(adoptions){
   return new Set((Array.isArray(adoptions)?adoptions:[])
-    .filter(adoption=>adoption?.admitted&&adoption?.state!=="converged")
+    .filter(adoption=>adoption?.state==="affected")
     .flatMap(adoption=>adoption.remainingThreadIds??[]));
 }
