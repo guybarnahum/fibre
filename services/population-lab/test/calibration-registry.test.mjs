@@ -60,11 +60,9 @@ test("appearance calibration registry rejects stale, skipped, and duplicate admi
   const first=approval();
   await registry.admit(first);
 
-  await assert.rejects(
-    registry.admit(first),
-    /base is no longer current|already exists/u,
-    "duplicate admission was accepted",
-  );
+  const duplicate=await registry.admit(first);
+  assert.equal(duplicate.duplicate,true,"identical admission retry was not idempotent");
+  assert.equal(duplicate.current.version,2,"identical admission retry changed current version");
 
   const current=(await registry.model()).calibration("middle_east.egypt");
   await assert.rejects(
