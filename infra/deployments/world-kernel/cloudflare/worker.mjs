@@ -28,6 +28,7 @@ const THREAD_DIRECTORY_ENTRIES_ROUTE = "/internal/thread-directory/entries";
 const THREAD_DIRECTORY_PRESENCE_ROUTE = "/internal/thread-directory/presence";
 const THREAD_DIRECTORY_ENTRY_ROUTE = /^\/internal\/thread-directory\/entry\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})$/u;
 const APPEARANCE_COVERAGE_ROUTE = "/internal/appearance/coverage";
+const APPEARANCE_CALIBRATIONS_ROUTE = "/internal/appearance/calibrations";
 const THREAD_MIGRATIONS_ROUTE = "/internal/thread-migrations";
 const THREAD_MIGRATION_ENTRY_ROUTE = /^\/internal\/thread-migrations\/([^/]+)$/u;
 
@@ -362,6 +363,18 @@ export class FibreWorldDurableObject extends DurableObject {
       }
       await this.refreshCalibrationModel();
       return Response.json(this.appearanceCoverageForRequest().scan());
+    }
+    if (url.pathname === APPEARANCE_CALIBRATIONS_ROUTE) {
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
+      if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
+      if (!privateOperatorAuthorized(request, this.env)) {
+        return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
+      }
+      const model=await this.refreshCalibrationModel();
+      return Response.json({
+        contract:"fibre-human-appearance-calibration-model-v0.1",
+        model:model.calibrations(),
+      });
     }
     if (url.pathname === THREAD_MIGRATIONS_ROUTE) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
