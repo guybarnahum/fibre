@@ -1,7 +1,7 @@
 ---
 id: physical-appearance-calibration-plan
-status: active
-last-reviewed: 2026-09-28
+status: accepted
+last-reviewed: 2026-10-05
 ---
 
 # Physical appearance model calibration and migration plan
@@ -14,7 +14,7 @@ The resulting portrait was not visually coherent with the operator-confirmed Eas
 
 That observed failure supersedes the earlier conclusion that population/appearance calibration was closed.
 
-The original calibration tranche established `physical-genome-v0.2` as the validated baseline and live staging proved its v0.1 -> v0.2 authority upgrade and downstream convergence. The current model is `physical-genome-v0.3` with `human-appearance-v0.4`: a global Human Appearance extension that adds a hierarchical Polynesian calibration plus a deterministic non-historical reference physical state for ordinary-human portrait realism. The bounded visual gate has now passed; representative staging upgrade/convergence remains the next acceptance step.
+The original calibration tranche established `physical-genome-v0.2` as the validated baseline and live staging proved its v0.1 -> v0.2 authority upgrade and downstream convergence. The current model is `physical-genome-v0.3` with `human-appearance-v0.4`: a global Human Appearance extension that adds a hierarchical Polynesian calibration plus a deterministic non-historical reference physical state for ordinary-human portrait realism. The bounded visual gate and the demand-driven calibration/adoption lifecycle have now both passed staging acceptance.
 
 The first v0.3 48-person controlled visual cohort on 2026-09-28 **failed visual acceptance**. It exposed four distinct issues: the broad-Oceania fallback collapsed Polynesia toward deep pigmentation + curly hair; facial variation remained too narrow despite unique continuous signatures; inherited facial-hair tendency was being rendered as current grooming; and one Han-Chinese subject rendered as European despite a strong East-Asian anatomy specification. A same-seed follow-up improved hair/grooming/variation but still produced a Polynesian cohort that alternated between European-looking and African-descended-looking defaults. A third same-seed run using a 79/21 East-Asian/Oceanian morphology basis removed that bimodality but over-corrected toward an East-Asian eye/nose template, falsifying ancestry-ratio morphology blending.
 
@@ -33,7 +33,7 @@ The renderer-boundary hypothesis passed two bounded same-seed gates:
 
 `human-appearance-v0.4` / `physical-genome-v0.3` are therefore visually accepted as the current model. Polynesian coefficients and variation are frozen. Reopen that calibration only for materially contradictory evidence, a reproducible cohort failure, or a renderer/model change that invalidates this evidence. Do not tune it in response to one random portrait or normal overlap with neighboring populations.
 
-The remaining gate is operational rather than coefficient calibration: deploy the accepted implementation to staging and prove a very small representative set of existing Threads converges through layered specification -> geometry anchor -> surface edit -> final canonical root -> Presentation -> FID without changing an already-current physical genome during a renderer-only upgrade.
+The operational gate is now closed. Staging has proven both representative appearance convergence and the later demand-driven calibration lifecycle through explicit approval, append-only runtime admission, targeted affected-Thread migration and final World convergence.
 
 ## Standing constraints
 
@@ -406,7 +406,43 @@ Admin then exposes **Migrate affected Threads** as a bounded operator action. Ea
 
 ## Tranche A — demand-driven appearance calibration lifecycle
 
-The accepted appearance foundation now needs an operator loop that improves calibration where Fibre's actual Thread population exposes weak coverage. This tranche reuses Population Lab; it does not create another genetics or rendering framework.
+**Status: CLOSED — accepted in staging 2026-10-05.** The full A1-A5 loop is now operationally proven. A6/new-node admission remains optional follow-on work and is not part of Tranche A closure.
+
+The accepted appearance foundation now has an operator loop that improves calibration where Fibre's actual Thread population exposes weak coverage. This tranche reuses Population Lab; it does not create another genetics or rendering framework.
+
+### Tranche A staging closure evidence — 2026-10-05
+
+One real reviewed refinement completed the full authority path:
+
+```text
+Population Lab evidence
+  -> human visual review
+  -> frozen calibration candidate
+  -> approval
+  -> Admit
+  -> append-only runtime registry
+  -> affected Thread workset
+  -> bounded World migration
+  -> History / current baseline
+  -> convergence
+```
+
+Accepted flight:
+- reference node: `middle_east.egypt`;
+- local calibration: `@1 -> @2`;
+- approved experiment: `plexp_5b1f7c76e1f54996ad0694e0`;
+- admitted change: `noseBreadth -0.04 -> 0.12`;
+- immutable admission: `human-appearance:calibration:middle_east.egypt:v000002`;
+- admission authority persisted through provider-neutral `InfraDriver.objects` + `InfraDriver.catalog` and became visible to World without a code deployment;
+- Admin moved the admitted version into **Calibration history** as the current baseline;
+- only the approval-scoped dependent Threads entered the affected workset;
+- **Migrate affected** updated that bounded set through ordinary World appearance migration and the affected Threads left the stale workset after convergence;
+- the append-only registry retained `@1` as immutable historical baseline and `@2` as current authority;
+- retrying Admit was idempotent and did not create `@3`;
+- a historical baseline may be reopened only as a new shadow refinement against current authority; it never rolls authority backward;
+- the final repository gate `npm run slice:validate` passed on the closure implementation.
+
+This closes A3.1 candidate evidence, A3.2 shadow evaluation, A3.3 approval/admission, A4 targeted migration and A5 adoption. No additional closure mechanism or A6 work is required.
 
 ### A1 — Appearance coverage workbench
 
@@ -458,15 +494,15 @@ Local infra materializes this beneath `.fibre/population-lab/`; cloud providers 
 
 ### A3 — Research, candidate and approval
 
-**A3.1 — immutable calibration candidate evidence: implemented and locally validated 2026-10-02; staging acceptance pending.** A completed Population Lab experiment may acquire one immutable calibration candidate artifact. The candidate targets the exact reference-population version snapshotted by the experiment, rejects stale evidence, and proposes only explicit physical-locus values and existing variation multipliers. It records the experiment-owned evidence refs used for review. Creating a candidate does not mutate Human Appearance, the current reference-population registry, World state or migration state.
+**A3.1 — immutable calibration candidate evidence: accepted in staging 2026-10-05.** A completed Population Lab experiment may acquire one immutable calibration candidate artifact. The candidate targets the exact frozen reference-population snapshot used by the experiment and proposes only explicit physical-locus values and existing variation multipliers; staleness is checked at approval/admission against current World authority. It records the experiment-owned evidence refs used for review. Creating a candidate does not mutate Human Appearance, the current reference-population registry, World state or migration state.
 
 Human visual review is now durable experiment evidence as well: every completed A/B visual run may receive one immutable per-sample review over geometry fidelity, identity continuity and surface realism, plus an overall `supports_candidate` / `inconclusive` / `reject` decision. Rejected evidence remains immutable; a retry creates a new experiment identity from the same source/calibration/cohort seed.
 
-**A3.2 — research + shadow candidate evaluation: implemented on `main`, validation pending.** The v0.1 research boundary is deliberately operator-assisted: a completed baseline experiment can launch **Try refinement** with explicit changed value axes, changed variation parameters, rationale and one-or-more provenance references. Population Lab validates the exact base calibration version, stores the proposal inside the immutable shadow experiment manifest, and runs the same deterministic cohort seed through temporary prior/variation resolvers. The live Human Appearance registry is never modified. The normal optional visual A/B path then evaluates the shadow cohort, and a submitted `supports_candidate` review enables **Freeze candidate**, which writes the existing immutable A3.1 calibration-candidate artifact. A rejected shadow run remains evidence; rerun creates a new experiment identity with the exact same proposal, provenance and cohort seed.
+**A3.2 — research + shadow candidate evaluation: accepted in staging 2026-10-05.** The v0.1 research boundary is deliberately operator-assisted: a completed baseline experiment can launch **Try refinement** with explicit changed value axes, changed variation parameters, rationale and one-or-more provenance references. Population Lab validates the exact base calibration version, stores the proposal inside the immutable shadow experiment manifest, and runs the same deterministic cohort seed through temporary prior/variation resolvers. The live Human Appearance registry is never modified. The normal optional visual A/B path then evaluates the shadow cohort, and a submitted `supports_candidate` review enables **Freeze candidate**, which writes the existing immutable A3.1 calibration-candidate artifact. A rejected shadow run remains evidence; rerun creates a new experiment identity with the exact same proposal, provenance and cohort seed.
 
 No runtime web/LLM research is introduced in A3.2 v0.1. A future provider-neutral research adapter may populate the same provenance-bearing proposal contract, but it must not infer morphology from geography, nationality, culture, religion, names or generated portraits.
 
-**A3.3 — explicit approval / runtime registry admission: implemented on `main`, validation pending.** A frozen candidate has one explicit human approval transition. Admin reads World appearance coverage and shows the projected affected Thread/lineage count against the candidate's exact frozen base. Approval records one immutable artifact bound to the candidate digest, visual-review artifact, authenticated Admin identity, proposed calibration, rationale and projected impact.
+**A3.3 — explicit approval / runtime registry admission: accepted in staging 2026-10-05.** A frozen candidate has one explicit human approval transition. Admin reads World appearance coverage and shows the projected affected Thread/lineage count against the candidate's exact frozen base. Approval records one immutable artifact bound to the candidate digest, visual-review artifact, authenticated Admin identity, proposed calibration, rationale and projected impact.
 
 Approval remains evidence. The separate **Admit** action rechecks that the approved base calibration and dependency chain are still World-current, requires an exact `N -> N+1` local version advance, then writes one immutable admission object plus one catalog record through `InfraDriver.objects` + `InfraDriver.catalog`. Cloudflare maps these to the existing R2 object store and D1 catalog. No source edit or deployment is part of a calibration change.
 
@@ -478,7 +514,7 @@ Experiment/research/review output is a **candidate**, never authority. Human app
 
 ### A4 — affected-Thread migration workset
 
-**Implemented on `main`, validation pending.** After A3.3 runtime admission, World recomputes current calibration dependencies from durable ancestry and stored dependency snapshots. Only changed dependencies enter the Appearance workset.
+**Accepted in staging 2026-10-05.** After A3.3 runtime admission, World recomputes current calibration dependencies from durable ancestry and stored dependency snapshots. Only changed dependencies enter the Appearance workset.
 
 A calibration version is not an ordered executable migration chain. Existing Threads jump once from their stored dependency to the current approved version:
 
@@ -498,7 +534,7 @@ Admin retains the existing per-Thread **Update calibration** action and exposes 
 
 ### A5 — real calibration adoption and closure
 
-**Implemented on `main`, staging acceptance pending.** Admin **Appearance** now carries the operational acceptance flight instead of requiring the operator to reconstruct it from CLI output.
+**Accepted in staging 2026-10-05.** Admin **Appearance** carries the operational acceptance flight instead of requiring the operator to reconstruct it from CLI output.
 
 An approved refinement appears in **Calibration adoption** as a derived four-stage rail:
 
@@ -530,7 +566,7 @@ Tranche A closes in staging when one real reviewed calibration demonstrates all 
 7. Admin shows **A5 complete** and copied adoption evidence reports zero remaining affected Threads;
 8. full `npm run slice:validate` passes on the runtime-registry implementation.
 
-After that evidence is recorded, mark A3.1/A3.2/A3.3/A4/A5 accepted and close Tranche A. A6/new-node admission is optional follow-on work, not part of A closure.
+That evidence is now recorded. A3.1/A3.2/A3.3/A4/A5 are accepted and Tranche A is closed. A6/new-node admission is optional follow-on work, not part of A closure.
 
 ## Ambition / extension path
 
