@@ -5,6 +5,11 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { resolveBirthPhysicalInheritance } from "#core/src/human-phenotype/index.mjs";
+import {
+  createReferencePopulationModel,
+  referencePopulationPrior,
+  resolveHumanPhysicalInheritance,
+} from "#core/src/human-appearance/index.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { ThreadPhysicalGenomeMigrationStore } from "../src/thread-physical-genome-migration-store.mjs";
 import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
@@ -122,4 +127,55 @@ test("outdated physical appearance model upgrades in place with previous version
     assert.equal(event.payload.physicalGenome.version,"physical-genome-v0.3");
     assert.deepEqual(event.payload.physicalAncestry,physicalAncestry);
   });
+});
+
+test("physical migration consumes the admitted runtime calibration model",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-dynamic-physical-calibration-"));
+  const storage=localWorldStateStorage(join(directory,"world.sqlite"));
+  const world=openWorldStore(storage);
+  const prior=referencePopulationPrior("afr_north.morocco");
+  const model=createReferencePopulationModel([{
+    id:"afr_north.morocco",
+    version:2,
+    values:{noseBreadth:Math.min(1,prior.noseBreadth+.05)},
+    variation:{},
+    evidence:{approvalExperimentId:"plexp_morocco_v2"},
+  }]);
+  const migration=new ThreadPhysicalGenomeMigrationStore(storage,{
+    calibrationModelProvider:()=>model,
+  });
+  try{
+    const source=structuredClone(fixture);
+    delete source.genome.physical;
+    source.identity.sex="female";
+    const seeded=world.seedThread(source).thread;
+    const physicalAncestry={
+      maternal:[{population:"Moroccan family",share:1,referencePopulation:"afr_north.morocco"}],
+      paternal:[{population:"Moroccan family",share:1,referencePopulation:"afr_north.morocco"}],
+    };
+    const result=migration.migrate(seeded,{
+      physicalAncestry,
+      operationKey:"dynamic_morocco_v2",
+      changedAt:"2026-10-05T00:00:00.000Z",
+    });
+    assert.deepEqual(
+      result.calibrationDependencies.flatMap(entry=>entry.dependencyChain)
+        .filter(entry=>entry.id==="afr_north.morocco")
+        .map(entry=>entry.version),
+      [2,2],
+      "physical migration ignored admitted calibration version",
+    );
+    const expected=resolveHumanPhysicalInheritance({
+      maternal:{physicalLineage:physicalAncestry.maternal},
+      paternal:{physicalLineage:physicalAncestry.paternal},
+      conceptionSeed:`legacy-physical-embodiment:${seeded.threadId}:${result.physicalGenome.ancestryDigest??""}`,
+      calibrationModel:model,
+    });
+    assert.equal(result.physicalGenome.version,expected.physicalGenome.version,
+      "dynamic migration did not use Human Appearance calibration model");
+  }finally{
+    migration.close();
+    world.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
 });
