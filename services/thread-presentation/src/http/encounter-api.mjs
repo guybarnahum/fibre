@@ -63,8 +63,22 @@ export function createPublicEncounterApi({
       }
 
       if (match[2] === "meet") {
+        let body;
         try {
-          const admitted = await ensurePublicPresent(threadId, request);
+          body = await request.json();
+          if (body === null || typeof body !== "object" || Array.isArray(body)) {
+            throw new TypeError("meeting request must be an object");
+          }
+          const keys = Object.keys(body);
+          if (keys.length !== 1 || keys[0] !== "situationId") {
+            throw new TypeError("meeting request may contain only situationId");
+          }
+          id("situationId", body.situationId);
+        } catch (error) {
+          return json({ error:"invalid_meeting", detail:error.message }, request, viewerOrigin, 400);
+        }
+        try {
+          const admitted = await ensurePublicPresent(threadId, body.situationId, request);
           const present = admitted?.present ?? admitted;
           if (present === null || typeof present?.situationId !== "string") {
             return json({ error: "public_present_required" }, request, viewerOrigin, 409);
@@ -88,9 +102,11 @@ export function createPublicEncounterApi({
               ? error.body.detail
               : null;
             return json({
-              error:worldError === "thread_meeting_unavailable"
-                ? "thread_meeting_unavailable"
-                : "lived_now_unavailable",
+              error:worldError === "thread_meeting_changed"
+                ? "encounter_scene_changed"
+                : worldError === "thread_meeting_unavailable"
+                  ? "thread_meeting_unavailable"
+                  : "lived_now_unavailable",
               ...(detail === null ? {} : { detail }),
             }, request, viewerOrigin, 409);
           }
