@@ -3,7 +3,6 @@ import baseWorker, { FibreAdminLiveDurableObject, FibrePresentationChannelDurabl
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createPublicEncounterApi } from "#services/thread-presentation/src/http/encounter-api.mjs";
 import { createPublicCurrentLifeApi } from "#services/thread-presentation/src/http/current-life-api.mjs";
-import { selectCommittedAvailableThread } from "#services/thread-presentation/src/committed-meet-selection.mjs";
 
 export { FibreAdminLiveDurableObject, FibrePresentationChannelDurableObject };
 
@@ -172,47 +171,6 @@ function worldEncounter(env, activityRecorder, input) {
   );
 }
 
-function selectionRequest(original, url) {
-  const headers = new Headers();
-  const origin = original.headers.get("Origin");
-  if (origin !== null) headers.set("Origin", origin);
-  return new Request(url, { method:"GET", headers });
-}
-
-async function committedMeetSelection(request, env, ctx, activityRecorder) {
-  let selectionHeaders = null;
-  let selected;
-  try {
-    selected = await selectCommittedAvailableThread({
-      requestUrl:request.url,
-      async selectCandidate(url) {
-        const response = await baseWorker.fetch(selectionRequest(request, url), env, ctx);
-        if (!response.ok) {
-          const error = new Error(`Thread directory selection failed with HTTP ${response.status}`);
-          error.response = response;
-          throw error;
-        }
-        selectionHeaders = new Headers(response.headers);
-        return response.json();
-      },
-      async admitCandidate(threadId) {
-        try {
-          return await worldMeetingEntry(env, activityRecorder, threadId);
-        } catch (error) {
-          if (error?.status === 409) return null;
-          throw error;
-        }
-      },
-    });
-  } catch (error) {
-    if (error?.response instanceof Response) return error.response;
-    throw error;
-  }
-  const headers = selectionHeaders ?? new Headers();
-  headers.set("Cache-Control", "no-store");
-  return Response.json(selected, { status:200, headers });
-}
-
 async function infraHealth(env) {
   const health = await createCloudflareInfraDriver({
     objectBucket:env.PRESENTATION_OBJECTS,
@@ -250,9 +208,6 @@ export default {
     const currentLifeResponse=await currentLifeApi.fetch(request);
     if(currentLifeResponse!==null)return currentLifeResponse;
 
-    if (request.method === "GET" && url.pathname === "/api/threads/meet") {
-      return committedMeetSelection(request, env, ctx, activityRecorder);
-    }
     const encounterApi = createPublicEncounterApi({
       viewerOrigin: env.VIEWER_ORIGIN ?? null,
       ensurePublicPresent(threadId, expectedSituationId) {
