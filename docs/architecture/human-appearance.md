@@ -400,8 +400,8 @@ coverage hole / stable populationId
     -> human visual review of the candidate
     -> calibration candidate artifact
     -> explicit human approval
-    -> source-registry admission
-    -> local node version N -> N+1 (or new node @1)
+    -> runtime registry admission
+    -> local node version N -> N+1
 ```
 
 The shadow candidate experiment applies proposed parameter overrides only inside Population Lab. It must not mutate the current reference-population registry. This is how Fibre can visually and numerically evaluate a refinement before it becomes authority.
@@ -410,11 +410,13 @@ A3.2 v0.1 uses an operator-assisted research boundary: the proposal contains exp
 
 A supporting human review may freeze the shadow run into immutable calibration-candidate evidence. That freeze still has no authority.
 
-A3.3 separates **human approval evidence** from **runtime registry mutation**. Admin approval binds the exact candidate and visual review to the authenticated human reviewer and records the projected affected Thread set from current World coverage. The approval artifact contains the exact source-admission payload, but the browser does not rewrite Human Appearance.
+A3.3 separates **human approval evidence** from **runtime registry admission**. Admin approval binds the exact candidate and visual review to the authenticated human reviewer and records the projected affected Thread set from current World coverage. Approval remains evidence; the separate **Admit** action is the authority transition.
 
-The canonical registry is Git-owned. A deterministic source-admission command consumes the immutable approval artifact, verifies that its base calibration is still current and that it advances exactly one local version, then appends the reviewed refinement to the source-controlled admission overlay. Deployment of that source change is what makes the calibration current. Registry metadata retains the admission provenance.
+The canonical calibration registry is provider-neutral data over `InfraDriver.objects` + `InfraDriver.catalog`. Each admitted local version is one immutable object plus one catalog record. Cloudflare maps those ports to the existing R2 object store and D1 catalog. There is no mutable rollback pointer and no delete path: a node advances `v1 -> v2 -> v3`; restoring older parameter values is still a new version with new provenance. Current authority is the highest contiguous admitted version.
 
-This preserves the core authority rule in both directions: an experiment cannot silently become calibration authority, and source calibration cannot be advanced from an unapproved candidate. New births use the admitted version after deploy; existing Threads are affected only through the dependency diff and explicit World migration.
+Admission consumes the immutable approval artifact, verifies that its frozen base calibration is still World-current and that it advances exactly one local version, writes the immutable admission, and makes that version immediately visible to World. No code commit or deployment is part of a calibration change. World uses the registry model for dependency comparison and physical migration; Population Lab freezes the exact admitted prior/variation snapshot into each experiment so historical evidence remains reproducible.
+
+This preserves the core authority rule in both directions: an experiment cannot silently become calibration authority, and the registry cannot advance from unapproved or stale evidence. Existing Threads are affected only through the dependency diff and explicit World migration.
 
 ### Canonical reference-population ID grammar
 
@@ -505,7 +507,7 @@ Population Lab coverage hole
     -> normal Embodiment / Presentation / FID convergence
 ```
 
-Approval is the hinge. Experiments and research may produce evidence and proposals, but they cannot silently change how Threads look. Once a calibration is approved, new births use it immediately and only existing Threads whose stored appearance dependencies changed are migration candidates.
+Approval authorizes the reviewed change; **Admit** is the authority hinge. Experiments and research may produce evidence and proposals, but they cannot silently change how Threads look. Once admitted, World immediately uses the new calibration for dependency comparison and physical migration, and only existing Threads whose stored appearance dependencies changed are migration candidates.
 
 Birthplace, name, language and culture never participate in dependency matching. A stable admitted `populationId` or other durable physical-lineage evidence is required. Old evidence without that identity is a data/coverage hole to repair explicitly, not permission to guess ancestry.
 
