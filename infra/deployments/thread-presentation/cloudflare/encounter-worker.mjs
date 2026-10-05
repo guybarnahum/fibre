@@ -2,6 +2,7 @@ import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import baseWorker, { FibreAdminLiveDurableObject, FibrePresentationChannelDurableObject } from "./worker.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createPublicEncounterApi } from "#services/thread-presentation/src/http/encounter-api.mjs";
+import { createPublicCurrentLifeApi } from "#services/thread-presentation/src/http/current-life-api.mjs";
 import { selectCommittedAvailableThread } from "#services/thread-presentation/src/committed-meet-selection.mjs";
 
 export { FibreAdminLiveDurableObject, FibrePresentationChannelDurableObject };
@@ -20,6 +21,40 @@ function snapshotRequest(request, threadId) {
     method: "GET",
     headers: request.headers.get("Origin") === null ? {} : { Origin: request.headers.get("Origin") },
   });
+}
+
+function publicThreadHeadRequest(request, threadId) {
+  const url=new URL(request.url);
+  url.pathname=`/api/threads/${encodeURIComponent(threadId)}/snapshot`;
+  url.search="";
+  return new Request(url,{
+    method:"HEAD",
+    headers:request.headers.get("Origin")===null?{}:{ Origin:request.headers.get("Origin") },
+  });
+}
+
+async function callWorldCurrentPresent(env, threadId) {
+  const response=await binding(env,"WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/lived-now/ensure",{
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN,
+    },
+    body:JSON.stringify({ threadId }),
+  }));
+  let body=null;
+  try{ body=await response.json(); }catch{}
+  if(!response.ok){
+    const error=new Error(body?.detail??body?.error??`World LivedNow failed with HTTP ${response.status}`);
+    error.status=response.status;
+    error.body=body;
+    if(typeof body?.code==="string")error.code=body.code;
+    throw error;
+  }
+  if(body?.result?.present?.situationId!==body?.result?.situationId){
+    throw new Error("World LivedNow returned an inconsistent public present");
+  }
+  return body.result;
 }
 
 async function callWorldMeetingEntry(env, threadId) {
@@ -69,6 +104,18 @@ async function runWorldStage(activityRecorder, metadata, operation, expectedConf
   });
   if (expectedError !== null) throw expectedError;
   return result;
+}
+
+function worldCurrentPresent(env, activityRecorder, threadId) {
+  return runWorldStage(
+    activityRecorder,
+    {
+      threadId,
+      stage:"presentation.visit.current_life",
+    },
+    () => callWorldCurrentPresent(env, threadId),
+    (error) => expectedWorldConflict(error, "lived_now_unavailable"),
+  );
 }
 
 function worldMeetingEntry(env, activityRecorder, threadId) {
@@ -186,6 +233,22 @@ export default {
     if (request.method === "GET" && url.pathname === "/internal/health/infra") return infraHealth(env);
 
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
+
+    const currentLifeApi=createPublicCurrentLifeApi({
+      viewerOrigin:env.VIEWER_ORIGIN??null,
+      async isPublicThread(threadId,originalRequest){
+        const response=await baseWorker.fetch(publicThreadHeadRequest(originalRequest,threadId),env,ctx);
+        if(response.status===200)return true;
+        if(response.status===404)return false;
+        throw new Error(`public Thread lookup failed with HTTP ${response.status}`);
+      },
+      ensureCurrentPresent(threadId){
+        return worldCurrentPresent(env,activityRecorder,threadId);
+      },
+    });
+    const currentLifeResponse=await currentLifeApi.fetch(request);
+    if(currentLifeResponse!==null)return currentLifeResponse;
+
     if (request.method === "GET" && url.pathname === "/api/threads/meet") {
       return committedMeetSelection(request, env, ctx, activityRecorder);
     }
