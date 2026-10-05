@@ -29,11 +29,12 @@ Start with:
 7. `state/current-state.md`
 8. `state/current-priorities.md`
 9. `validation/m2-pr-plan.md`
-10. `architecture/intrinsic-regulation.md`
-11. `architecture/situated-perception-and-salience.md`
-12. `architecture/interior-cognition.md`
-13. `decisions/ADR-0020-vision-led-development-discipline.md`
-14. the relevant architecture/ADR for the task
+10. `validation/n6-public-lived-encounter-slices.md`
+11. `architecture/intrinsic-regulation.md`
+12. `architecture/situated-perception-and-salience.md`
+13. `architecture/interior-cognition.md`
+14. `decisions/ADR-0020-vision-led-development-discipline.md`
+15. the relevant architecture/ADR for the task
 
 For implementation agents, also read repository-root `AGENTS.md` and the relevant subsystem README/contract.
 
@@ -52,8 +53,8 @@ N1 ensure-LivedNow                                         closed
 N2 dormant interval catch-up                               closed
 N3 Genesis -> multi-day continuing life                    closed
 N4 Person -> Thread /meet                                  closed
-N5 Encounter Story -> Thread Experience                    current (E0-E4 closed, E5 active)
-N6 rich insidefibre.com lived encounter                    next
+N5 Encounter Story -> Thread Experience                    closed live
+N6 Rich Public Lived Encounter                             current
 ```
 
 The active architecture is:
@@ -62,6 +63,7 @@ The active architecture is:
 - [`architecture/interior-cognition.md`](architecture/interior-cognition.md)
 - [`architecture/encounters-and-experience.md`](architecture/encounters-and-experience.md)
 - [`validation/n5-encounter-slices.md`](validation/n5-encounter-slices.md)
+- [`validation/n6-public-lived-encounter-slices.md`](validation/n6-public-lived-encounter-slices.md)
 
 The E2E meeting remains an architectural forcing function, but meeting is no longer the primitive. When making an encounter real exposes a missing life primitive, build that primitive generally in World/LivedNow rather than faking it in the Viewer or hard-coding it to dialogue.
 
@@ -69,15 +71,14 @@ Current active chain:
 
 ```text
 World reality + Thread-owned life
-  -> Flight Plan
-  -> enacted presence / movement
-  -> elapsed-life reconciliation when compute slept
-  -> authoritative LivedNow
-  -> World occurrence / requested meeting
-  -> Encounter Story
-  -> Thread-specific noticing / experience
-  -> selective consequence
-  -> future life
+  -> authoritative LivedNow now
+  -> bounded public visit
+  -> optional committed meeting in that exact scene
+  -> Encounter Story / Thread Experience consequence
+  -> visitor leaves
+  -> life continues
+  -> later public visit
+  -> later current scene
 ```
 
 ## Intrinsic regulation, emotions and needs
