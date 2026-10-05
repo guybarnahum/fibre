@@ -350,7 +350,7 @@ There is no conversation/session store. Each later visitor turn remains situatio
 
 Keep the suite small:
 
-1. **ordinary life is not rearranged** — visitor request cannot change place/activity/Flight Plan;
+1. **actual life outranks plan** — a later compatible enacted situation can keep the displayed scene valid even when the Flight Plan expected movement, and validation does not rewrite it;
 2. **Thread retains agency** — decline/defer creates no accepted Encounter Story;
 3. **accepted visitor meets existing life** — accepted encounter cites the displayed ordinary situation;
 4. **life moved** — stale scene returns `encounter_scene_changed` with zero participation/encounter work;
