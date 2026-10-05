@@ -25,6 +25,7 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
   let reconciliationState = "complete";
   let symbolicGenomeDigest = "sha256:genome-a";
   let raisedLanguages = ["Georgian", "English"];
+  let calibrationAuthority = [];
   let deepDiagnoses = 0;
   let cached = {
     witness:JSON.stringify({
@@ -79,9 +80,10 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
       deepDiagnoses += 1;
       return { threadId, exists:true, health:"healthy", findings:[] };
     },
+    authorityWitness:()=>calibrationAuthority,
   });
 
-  assert.equal(THREAD_HEALTH_PROJECTION_VERSION, "thread-health-v0.6");
+  assert.equal(THREAD_HEALTH_PROJECTION_VERSION, "thread-health-v0.7");
   const refreshed = await service.inspect(threadId);
   assert.equal(refreshed.cacheHit, false, "older diagnostic semantics were reused");
   assert.equal(
@@ -111,9 +113,18 @@ test("Thread health reuses unchanged authority and invalidates only on diagnosis
   assert.equal((await service.inspect(threadId)).cacheHit, false);
   assert.equal(deepDiagnoses, 4, "Raised-language correction must invalidate cached health");
 
+  calibrationAuthority = [{
+    id:"afr_north.morocco",
+    version:2,
+    approvalExperimentId:"plexp_morocco_v2",
+    admissionDigest:"sha256:calibration-v2",
+  }];
+  assert.equal((await service.inspect(threadId)).cacheHit, false);
+  assert.equal(deepDiagnoses, 5, "calibration admission must invalidate cached health");
+
   worldVersion = 8;
   assert.equal((await service.inspect(threadId)).cacheHit, false);
-  assert.equal(deepDiagnoses, 5, "World authority changes must invalidate cached health");
+  assert.equal(deepDiagnoses, 6, "World authority changes must invalidate cached health");
 });
 
 
