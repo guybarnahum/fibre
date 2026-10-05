@@ -1,5 +1,3 @@
-import { publicInsideFibreAvailability } from "../inside-fibre-public-availability.mjs";
-import { projectInsideFibreLivedScene } from "../inside-fibre-lived-scene.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
@@ -34,20 +32,18 @@ function json(value, request, viewerOrigin, status = 200) {
 
 export function createPublicEncounterApi({
   readPublicPresent,
-  ensurePublicPresent,
   encounter,
   viewerOrigin = null,
   now = () => new Date().toISOString(),
 }) {
   if (typeof readPublicPresent !== "function") throw new TypeError("public encounter API requires readPublicPresent");
-  if (typeof ensurePublicPresent !== "function") throw new TypeError("public encounter API requires ensurePublicPresent");
   if (typeof encounter !== "function") throw new TypeError("public encounter API requires encounter");
   if (typeof now !== "function") throw new TypeError("public encounter API requires now");
 
   return Object.freeze({
     async fetch(request) {
       const url = new URL(request.url);
-      const match = /^\/api\/threads\/([^/]+)\/(meet|encounter)$/.exec(url.pathname);
+      const match = /^\/api\/threads\/([^/]+)\/encounter$/.exec(url.pathname);
       if (!match) return null;
       if (request.headers.get("Origin") !== null && allowedOrigin(request, viewerOrigin) === false) {
         return json({ error: "origin_not_allowed" }, request, viewerOrigin, 403);
@@ -62,8 +58,7 @@ export function createPublicEncounterApi({
         return json({ error: "invalid_encounter", detail: error.message }, request, viewerOrigin, 400);
       }
 
-      if (match[2] === "meet") {
-        let body;
+      let body;
         try {
           body = await request.json();
           if (body === null || typeof body !== "object" || Array.isArray(body)) {
