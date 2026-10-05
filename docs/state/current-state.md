@@ -83,6 +83,7 @@ N4 is closed in deployment. N5 is now closed live on the accepted insight that *
 See:
 
 - [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
+- [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md)
 - [Current priorities](current-priorities.md)
 - [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md)
 
@@ -275,95 +276,44 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 ## Immediate next action
 
-E0-E5 are complete and N5 is closed live. The immediate target is N6: turn the proven insidefibre.com visitor-work path into a rich public lived encounter without moving authority into the Viewer. The site should surface genuinely available Threads, enter their already-lived scene, let the encounter occur through the proven Encounter Story/Experience path, and later reveal that life continued.
+N5/E0-E5 are closed live. The immediate target is **N6 — Rich Public Lived Encounter**.
 
-Reusable Genesis place IDs are Thread-world context, not shared live place authority. Earlier controlled work correctly rejected false physical co-presence among independently born Threads that happened to reuse the same Genesis WorldSpec place identifiers. Physical meeting compatibility now requires the same explicitly admitted live `wpl_*` authority (or matching mediated context).
-
-Fibre Commons remains a valid bounded shared-presence affordance, but it is no longer the organizing mechanism for social life. The later staging run showed that a cohort overwhelmingly sleeping or winding down can coherently choose `stay_out`; unanimous refusal in that context is not itself evidence that Threads need stronger social motivation. The live intrinsic-regulation bridge remains useful substrate, but Fibre must not infer loneliness or social deficit from absence of recorded encounters.
-
-The accepted repair is [Interior cognition](../architecture/interior-cognition.md): genome stays private causal substrate; regulation produces pressure; interoception reaches Thread-authored semantic feeling/need; developed self/history mediates that state; then private deliberation may produce a plan, social request, refusal or other domain-specific thought. Do not expose raw genome directly to Flight Plan or Commons cognition.
-
-The read-only Interior Baseline has now completed against staging. It found a clear split: all 15 inspected Threads had neutral published shells and zero semantic state, while all 15 already had autobiographical memory with durable remembered meaning and life relationships; all 15 memory and relationship fingerprints were distinct. The evidence therefore points first to a **live cognition integration gap** rather than a need to manufacture more developmental biography. It also surfaced one separate identity/update anomaly: Luka Mzechabuki's published self-model still named Luka Beridze after an Admin `set-name`. The `set-name` path is now repaired so a neutral name-derived self-model follows an explicit rename, a richer developed self-model is never overwritten, and repeating the current name can repair an already-stale neutral name-model. The existing staging Thread remains stale until that repaired operation is deployed and applied. See [Interior Cognition staging baseline](../validation/interior-cognition-baseline.md).
-
-The compact reusable Interior Cognition core is now green. It proves the shared private-mind boundary can select bounded authoritative developed-self evidence under Fibre authority and make remembered meaning causally available to a domain-specific private judgment without exposing raw genome or owning domain state.
-
-The first real live Interior Cognition path is now proven in deployed present life. **Lived Planning is CLOSED live**: the controlled proof shows persisted remembered meaning can causally bend an otherwise equivalent ordinary plan, and staging run `lived-planning-mud30hs6` on exact SHA `83cd269cb42105be0ea51c45aa5acd506aa76353` inspected 12 current personal plans with 12/12 history attribution, 12 distinct history fingerprints and 12 distinct current moments. One deployment-time Durable Object reset and two fetch failures were skipped; no inspected Thread failed the semantic proof. Private cognition evidence is now retained under the plan cognition witness rather than misclassified as World/situated evidence.
-
-**Commons Entry Interior Cognition is now CLOSED live.** Deployed staging on SHA `1490c32a99754324d8d9bfd6b23ae2301ac75742` observed genuine voluntary divergence under the shared profile: the first six considered Threads all stayed out while a later six split three entered / three stayed out. The decisions preserved each Thread's physical life and produced distinct cognition contexts; several cited developed-life evidence, while others were adequately explained by the current plan itself. Commons therefore works as an affordance rather than a manufactured motive.
-
-**Social Initiation Interior Cognition is now live-wired.** Deployed staging on SHA `10ca8dc9e60ef59b005f981d25a45e53e647e530` reached six compatible social attempts through `interior-cognition-single-episode`; every attempt independently chose `not_initiate`, with several decisions citing developed-life evidence. The harness correctly counted this as voluntary refusal and still failed because no accepted social story existed. Fibre must not respond by making the prompt more sociable.
-
-The **live organismic motive bridge is implemented but still lacks a deployed positive transition witness**. Sparse authoritative LivedNow transitions now reach the accepted intrinsic-regulation/interoception path without inventing missing physiology. Initial observation, unchanged presence and retrying the same present remain zero-call. Commons runs the pulse only after an admitted entry, so it cannot be used to manufacture a reason to enter.
-
-Staging run `lived-encounters-mudbwfmb` on SHA `0ceda832a0f99c5d73c90c11cca05bf5bb711513` refreshed a cohort whose lives were overwhelmingly sleeping or winding down. All had empty semantic state before Commons and all 15 voluntarily stayed out. The harness therefore stopped before social meeting. This is a valid time/context outcome. Do not infer loneliness from absence of social-event records; Fibre does not yet observe every ordinary social contact.
-
-The social-first framing is now superseded by the accepted [Situated perception and salience](../architecture/situated-perception-and-salience.md) architecture. Reciprocal outward social history is implemented as one evidence source, but Fibre should not attempt to make Threads more agreeable merely to obtain an accepted meeting.
-
-The active implementation target is **Situated Percept**: one small ephemeral exterior projection derived from authoritative LivedNow/World facts. It should contain the actual setting, the Thread's own current activity, observable counterpart identity/activity where genuinely present, and bounded admitted recent interaction. It is not a new store and may never expose the other Thread's private state.
-
-The next causal sequence is:
+The hard visitor-work/meeting machinery is already accepted:
 
 ```text
-World / LivedNow
-  -> Situated Percept
-  -> cheap Salience Gate
-  -> Interior Cognition when material
-  -> action or no action
-  -> Encounter Story if something observably happens
-  -> personal Experience / consequence
+prior voluntary visitor-work acceptance
+  -> durable commitment
+  -> Flight Plan revision
+  -> enacted mediated availability
+  -> public Meet
+  -> exact situation-bound visitor encounter
+  -> Encounter Story
+  -> Thread Experience
+  -> selective aftermath
+  -> exactly-once Fibre Credit compensation
 ```
 
-Direct social requests remain special only in that being explicitly addressed already warrants appraisal; politeness/cultural pressure belongs in the developed person and current setting, never in a global acceptance score. Boredom/curiosity should later enter through grounded exploration regulation. Small randomness, if useful, belongs only as replayable near-threshold salience variation, never as a `no -> 10% yes` decision flip.
-
-The reciprocal-history seam and **W1 Situated Percept are validated**. Social initiation no longer receives an ad-hoc social packet; one compact ephemeral projection derives the actual setting, observer activity, genuinely co-present Thread identity/activity, bounded reciprocal request/response history, prior admitted Encounter Story facts and source refs. The projection does not persist and does not expose counterpart private state or genome. The W1 proof is structural rather than prose-driven: same people/private evidence, changed stable setting fact, changed initiation judgment.
-
-**W2 direct social response through Interior Cognition is validated.** The remaining legacy `accept | decline | defer` persona path is gone. The recipient receives the concrete outward request + Situated Percept + remaining Flight Plan as exterior context; the shared Interior Cognition component selects her private developed-self evidence. Politeness, reciprocity, culture and relationship expectations may matter only insofar as grounded life evidence makes them matter; none is an acceptance rule. Proposed defer times remain checked mechanically against the real plan horizon.
-
-**W3 cheap general Salience Gate is validated.** One compact pure gate now runs before social-initiation cognition. It does not score attraction, sociability or willingness and does not call a model. Compatible ambient co-presence with no grounded anchor remains background, `initiation:null`, spends zero model calls and creates neither private refusal nor shared history.
-
-**W4 ordinary World opportunities and W5 grounded exploration/curiosity pressure are validated.** Situated Percept now derives exterior opportunities from current life, and the regulator can use repeated authoritative sameness to create moderate exploration pressure that widens attention without authoring a semantic feeling or social action.
-
-**W6 salience microvariation is deferred.** Fibre has not yet demonstrated that deterministic salience is unnaturally rigid, so randomness should not be added pre-emptively.
-
-**W7a natural scene / co-presence discovery is validated.** The production social path no longer accepts caller-selected counterparties. It discovers compatible co-present Threads from World-current situations, refreshes/re-checks them, and projects one actor-specific opportunity per discovered Thread. The controlled proof also demonstrates that one café interval can admit two separate encounters at the same lived time.
-
-**W7p shared live World-place + local-time authority is implemented pending repository validation.** The first natural W7b staging run inspected fifteen initiator scenes and discovered zero actor opportunities. The debug evidence showed current place refs remained private `genesis_created` situated-life revisions; repository audit confirmed there was no production path creating the former `world_recorded` shared-place authority. The run also showed many Tbilisi/Jerusalem Threads sleeping or winding down during their local morning because planning received absolute UTC horizons without the Genesis World's IANA time zone.
-
-W7p fixes the missing World seam without treating reusable Genesis place IDs as live truth. Fibre now materializes a distinct immutable `live_world_place_records` record under `live-world-place-admission-v1`. Genesis WorldSpec + historical-envelope `placeKind` are provenance/source material only. The first admission policy creates only bounded `library_or_learning` live venues; home and broad commerce remain excluded. Flight Plans can choose the resulting `wpl_*` ref, LivedNow can enact it, Situated Percept can describe it, and physical co-presence requires that explicit live authority (or the already accepted mediated path).
-
-Flight Planning also receives a structured `localHorizon` derived from the same historical-envelope IANA time-zone authority. This changes factual planning context, not personality or desire.
-
-**W7b natural lived encounter staging acceptance is now implemented pending deployment/run.** The staging harness has been rewritten around the W7a result shape. It no longer constructs participant pairs, no longer sends `participantThreadIds`, no longer nominates a witness, and no longer invokes Fibre Commons as a fallback when natural shared presence is absent.
-
-The runner may still choose which live Threads to inspect; that is observation, not authorship. For each selected initiator it submits only `initiatorThreadId` and records the World-discovered actors and independent attempts. Acceptance requires real evidence of selective attention/agency (background or refusal), salient cognition, natural refusal, and a naturally accepted encounter. The accepted encounter must preserve participant-specific experiences, at least two distinct journals, asymmetric autobiographical retention, durable observatory state, stable Admin journal presentation, and admitted visualization lineage through a generated still.
-
-Silent-witness behavior is not required in live W7b because naming a witness would reintroduce exogenous scene membership. E3 remains the controlled proof of witness asymmetry until incidental witness discovery is endogenous.
-
-The staging evidence contract is now `fibre-lived-encounters-staging-acceptance-v0.2` and records natural-scene counts including initiators considered, discovered actors, opportunities, background/salient outcomes, accepted stories, and naturally observed multi-encounter scenes.
-
-Fibre still lacks the authoritative scene facts needed to ground contextual anomalies such as unusual clothing/body state or abrupt movement.
-
-After W7p validation/deployment, rerun **W7b natural lived encounter staging acceptance**:
-
-
+N6 therefore does **not** build another meeting engine. It must prove the public continuity loop:
 
 ```text
-environmental occurrence
-declined/deferred social request
-naturally accepted social story
-  -> different Thread Experiences / journals / memory outcomes
-  -> Admin inspection of story + journal authorities
-  -> one optional encounter render request from the admitted visualization lineage
+public visit
+  -> ensure selected Thread LivedNow(now)
+  -> bounded public current scene
+  -> Viewer displays the life already underway
+  -> optional committed meeting inside that exact situation
+  -> visitor leaves
+  -> time passes / life reconciles
+  -> later public visit
+  -> later current scene for the same Thread
 ```
 
-E4 is green in full CI. Admin remains read-only: it exposes World encounter/journal authority and the R2 journal presentation without becoming either authority. Encounter rendering remains optional; the E4 proof reaches the ordinary generated-asset job seam and preserves distinct canonical identity references and encounter-time ages, but generated bytes are never required for an Encounter Story to be complete.
+A public visit is not a meeting request. It must not create availability, Encounter Story, compensation, private cognition or Viewer-authored scene facts.
 
-W7b/E5 should deploy only the already-proven encounter semantics and verify them against real staging Threads. Do not add new encounter concepts, automatic witness discovery, memory shortcuts, or provider-specific video orchestration during acceptance.
+The Viewer remains a separate projection surface. World owns LivedNow; Presentation owns the bounded public projection; the Viewer owns display and interaction only.
 
-The E5 staging harness and the two required deployed acceptance seams are now on `main`. E5 uses Fibre's existing local operator path rather than a parallel CI deployment path: `npm run cloud:prepare:staging` reads the operator's local `.env`, provisions the declared staging resources including the private `THREAD_OBJECTS` R2 bucket, configures Worker secrets/runtime values, deploys the exact clean Git SHA, and deploys the staging apps. Then `npm run lived-encounters:staging` runs the acceptance harness against those deployed services. The harness refuses to synthesize co-presence, choose counterparties, invoke Commons fallback, manufacture refusal, or fake journal/memory divergence: it must observe those outcomes from real staging Threads and render one still from admitted Encounter Story visualization lineage. E5 remains open until that operator-run staging evidence passes.
+Natural Thread -> Thread social life remains a preserved follow-on. The accepted Situated Percept / Salience / Interior Cognition / natural actor-discovery machinery should eventually prove that independently lived Threads can become co-present and sometimes choose to interact without caller-selected counterparties, Commons fallback, paid scheduling or sociability bias. Historical W0-W7 labels are implementation evidence, not the current execution roadmap.
 
-Follow [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md). E5 is current.
-
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 aligns roadmap truth; N6.1 is the first runtime slice.
 
 ## Development discipline
 
