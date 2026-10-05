@@ -53,9 +53,19 @@ test("appearance calibration registry admits immutable contiguous versions",asyn
     "origin baseline was not preserved");
   assert.equal(history[0].versions[1].prior.noseBreadth,.12,"v2 baseline was not preserved");
   assert.equal(history[0].versions[2].prior.noseBreadth,.14,"v3 baseline was not preserved");
+  assert.equal(
+    history[0].versions[2].evidence.admissionObjectRef,
+    second.admission.objectRef,
+    "history lost immutable admission object provenance",
+  );
+  assert.equal(
+    history[0].versions[2].evidence.admissionDigest,
+    second.admission.digest,
+    "history lost immutable admission digest",
+  );
 });
 
-test("appearance calibration registry rejects stale, skipped, and duplicate admissions",async()=>{
+test("appearance calibration registry retries identical admissions and rejects stale or skipped versions",async()=>{
   const registry=createHumanAppearanceCalibrationRegistry(createMemoryInfraDriver());
   const first=approval();
   await registry.admit(first);
