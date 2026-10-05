@@ -45,6 +45,12 @@ export function populationLabHistoricalExperimentIds(groups=[]){
   return ids;
 }
 
+function changedValues(current,target){
+  return Object.freeze(Object.fromEntries(
+    Object.entries(target??{}).filter(([key,value])=>current?.[key]!==value),
+  ));
+}
+
 export function populationLabHistoryDraft(group,version){
   if(!group?.id||!version)throw new TypeError("calibration history version is required");
   return Object.freeze({
@@ -52,7 +58,21 @@ export function populationLabHistoryDraft(group,version){
     sourceVersion:Number(version.version),
     rationale:"",
     evidence:[],
-    values:Object.freeze({...version.values}),
-    variation:Object.freeze({...version.variation}),
+    values:Object.freeze({...version.prior}),
+    variation:Object.freeze({...version.effectiveVariation}),
+  });
+}
+
+export function populationLabHistoryShadowDraft(group,version){
+  if(!group?.id||!version)throw new TypeError("calibration history version is required");
+  const current=group.versions?.find(candidate=>candidate?.current===true);
+  if(!current)throw new TypeError("current calibration history version is required");
+  return Object.freeze({
+    referencePopulation:group.id,
+    sourceVersion:Number(version.version),
+    rationale:`Re-evaluate admitted historical baseline @${version.version} against current @${group.currentVersion}.`,
+    evidence:Object.freeze([`calibration-history:${group.id}@${version.version}`]),
+    values:changedValues(current.prior,version.prior),
+    variation:changedValues(current.effectiveVariation,version.effectiveVariation),
   });
 }
