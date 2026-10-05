@@ -122,7 +122,18 @@ export function createHumanAppearanceCalibrationRegistry(infra){
       }
 
       const key=versionKey(referencePopulation,admission.version);
-      if(await infra.catalog.get(key)!==null){
+      const priorRecord=await infra.catalog.get(key);
+      if(priorRecord!==null){
+        if(
+          priorRecord?.contract===HUMAN_APPEARANCE_CALIBRATION_ADMISSION_VERSION
+          &&priorRecord?.evidence?.approvalExperimentId===approval.experimentId
+        ){
+          return Object.freeze({
+            admission:Object.freeze(priorRecord),
+            current:currentModel.calibration(referencePopulation),
+            duplicate:true,
+          });
+        }
         throw new TypeError("calibration admission already exists");
       }
 
