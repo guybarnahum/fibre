@@ -53,7 +53,7 @@ Not yet accepted:
 
 The Viewer remains a separate deployment/repository and is projection-only. Fibre owns the public API and authority boundaries; Viewer owns presentation and interaction.
 
-## N6.0 — roadmap truth alignment — CLOSED
+## N6.0 — roadmap truth alignment — IMPLEMENTED; VALIDATION PENDING
 
 **Capability:** HEAD has one current execution plan.
 
