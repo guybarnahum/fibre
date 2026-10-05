@@ -301,6 +301,19 @@ Experiment objects are immutable while present: the same object reference cannot
 
 A1 does not persist experiments; its prepared experiment/research actions are control-plane specifications only. A2 introduces this artifact lifecycle without granting experiment output authority over Human Appearance.
 
+## Human Appearance calibration registry
+
+Admitted Human Appearance refinements also compose existing InfraDriver capabilities rather than introducing a calibration database service:
+
+```text
+infra.objects   immutable admission JSON for each local version
+infra.catalog   queryable admitted-version projection
+```
+
+The registry is append-only. A node advances one local version at a time; there is no mutable current/rollback pointer and no deletion path. Current authority is derived from the highest contiguous admitted version. The immutable object is the durable admission witness, while the catalog record is the efficient runtime projection consumed by World.
+
+On Cloudflare this reuses the existing R2 object store and D1 catalog bindings. World reads the compact catalog projection once for an appearance/migration request and injects the resulting calibration model into the pure Human Appearance domain; it does not perform storage I/O per Thread. Another provider may map the same object/catalog contracts differently without changing calibration semantics.
+
 ## What does not belong in `InfraDriver`
 
 The driver should be almost all-purpose infrastructure, not an abstraction for every external dependency.
