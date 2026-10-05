@@ -121,7 +121,9 @@ visit current life
   -> later life
 ```
 
-A public visit is not a meeting request. It must not create availability, an encounter, compensation or private cognition. World owns LivedNow, Presentation owns the bounded public projection, and the Viewer owns display/interaction only.
+N6.0 roadmap alignment is closed. N6.1 is implemented pending validation: `GET /api/threads/:threadId/present` first verifies the Thread is already public, then asks World to reconcile LivedNow at server time and returns the bounded current present. It does not require visitor-work availability and does not create a meeting, Encounter Story, compensation or private cognition. Caller-authored time/scene parameters are rejected.
+
+World owns LivedNow, Presentation owns the bounded public projection, and the Viewer owns display/interaction only.
 
 A bounded public scene may show current embodiment, place or transit, current activity, appropriate public companions/context and existing scene media when available. A later visit should find a later `situationId` for the same Thread rather than resume the old encounter.
 
