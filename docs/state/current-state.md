@@ -278,29 +278,27 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 N5/E0-E5 are closed live. The immediate target is **N6 — Rich Public Lived Encounter**.
 
-The hard visitor-work/meeting machinery is already accepted:
+The relevant lived-person machinery is already accepted:
 
 ```text
-prior voluntary visitor-work acceptance
-  -> durable commitment
-  -> Flight Plan revision
-  -> enacted mediated availability
-  -> public Meet
-  -> exact situation-bound visitor encounter
-  -> Encounter Story
-  -> Thread Experience
+Thread-authored Flight Plan
+  -> World-enacted CurrentSituation
+  -> bounded public present
+  -> Interior Cognition for voluntary social stance
+  -> Encounter Story / Thread Experience when an encounter actually occurs
   -> selective aftermath
-  -> exactly-once Fibre Credit compensation
 ```
 
-N6 therefore does **not** build another meeting engine. It must prove the public continuity loop:
+N6 must prove the public continuity loop without rearranging life for the visitor:
 
 ```text
 public visit
   -> ensure selected Thread LivedNow(now)
-  -> bounded public current scene
+  -> bounded ordinary current scene
   -> Viewer displays the life already underway
-  -> optional committed meeting inside that exact situation
+  -> visitor approaches and speaks
+  -> Thread accept | decline | defer from that lived context
+  -> accepted encounter only
   -> visitor leaves
   -> time passes / life reconciles
   -> later public visit
