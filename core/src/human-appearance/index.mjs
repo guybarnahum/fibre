@@ -8,6 +8,8 @@ import {
 import {phenotypeFromPhysicalGenome} from "../human-phenotype/phenotype.mjs";
 import {physicalPhenotypeRenderingProjection} from "../human-phenotype/rendering-projection.mjs";
 import {
+  createReferencePopulationModel,
+  referencePopulationBaseCalibration,
   referencePopulationCalibration,
   referencePopulationCalibrationHistory,
   referencePopulationCalibrations,
@@ -48,6 +50,7 @@ export function resolveHumanPhysicalInheritance({
   maternal,
   paternal,
   conceptionSeed,
+  calibrationModel=null,
 }={}){
   if(conceptionSeed===undefined||conceptionSeed===null||String(conceptionSeed).length===0){
     throw new TypeError("conceptionSeed is required");
@@ -60,6 +63,10 @@ export function resolveHumanPhysicalInheritance({
     maternalAncestry:mother.ancestry,
     paternalAncestry:father.ancestry,
     seed:conceptionSeed,
+    ...(calibrationModel===null?{}:{
+      priorFor:calibrationModel.prior,
+      variationFor:calibrationModel.variation,
+    }),
   });
   return Object.freeze({
     version:HUMAN_APPEARANCE_MODEL_VERSION,
@@ -101,6 +108,8 @@ export {
   physicalGenomeLoci,
   recombinePhysicalGenomes,
   phenotypeFromPhysicalGenome,
+  createReferencePopulationModel,
+  referencePopulationBaseCalibration,
   referencePopulationCalibration,
   referencePopulationCalibrationHistory,
   referencePopulationCalibrations,
