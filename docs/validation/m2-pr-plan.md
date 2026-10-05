@@ -248,7 +248,7 @@ public visit
 
 A public visit is not a meeting request. Meeting availability remains governed by prior voluntary accepted work. The Viewer remains projection-only and must not author the Thread's scene, private state or continuity.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 is accepted in staging: one public visit reconciles an already-public Thread to server-time LivedNow and returns current Presentation without creating visitor availability or an encounter. N6.2 is current and moves that bounded present into the Viewer as the primary lived-moment experience.
+Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 is accepted in staging. N6.2 is implemented in the separate Viewer repository pending validation: page entry consumes the public visit/current-present seam, renders that lived moment before identity/history detail, and does not cross into meeting authority. N6.3 follows after Viewer staging proof.
 
 ## Experience and memory invariant
 
