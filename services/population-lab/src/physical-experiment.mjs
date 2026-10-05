@@ -61,17 +61,26 @@ export function normalizePhysicalExperimentRequest(raw={}){
 
 export function buildPhysicalExperimentEvidence(rawRequest){
   const request=normalizePhysicalExperimentRequest(rawRequest);
+  const sourceCalibration=request.source?.calibration;
+  const baselineCalibration=
+    sourceCalibration?.id===request.referencePopulation
+    &&sourceCalibration?.prior
+    &&sourceCalibration?.variation
+      ?sourceCalibration
+      :null;
   const people=[...generatePhysicalCalibrationCohort({
     referencePopulations:request.referencePopulations,
     count:request.count,
     seed:request.seed,
     shadowCalibration:request.shadowCalibration,
+    baselineCalibration,
   })];
   const diagnostics=physicalCalibrationDiagnostics({
     people,
     referencePopulations:request.referencePopulations,
     seed:request.seed,
     shadowCalibration:request.shadowCalibration,
+    baselineCalibration,
   });
   return Object.freeze({
     request,
