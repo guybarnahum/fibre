@@ -37,7 +37,13 @@ test("local Cloudflare runtime and Admin configs share one derived Activity Log 
   assert.equal(bindings[0].database_name, "fibre-activity-log-local");
   assert.equal(configs.status.d1_databases, undefined);
   assert.equal(activityBinding(configs.presentation).binding, "ACTIVITY_LOG");
-  assert.equal((configs.presentation.d1_databases ?? []).find((database) => database.binding === "PRESENTATION_CATALOG").database_name, "fibre-presentation-local");
+  const presentationCatalog=(configs.presentation.d1_databases ?? []).find((database) => database.binding === "PRESENTATION_CATALOG");
+  const worldCatalog=(configs.world.d1_databases ?? []).find((database) => database.binding === "PRESENTATION_CATALOG");
+  assert.equal(presentationCatalog.database_name, "fibre-presentation-local");
+  assert.equal(worldCatalog.database_name,presentationCatalog.database_name,
+    "World does not share the local calibration catalog");
+  assert.equal(worldCatalog.database_id,presentationCatalog.database_id,
+    "World does not share the local calibration catalog identity");
 });
 
 test("local Status bindings target the exact local runtime Worker names", async () => {
