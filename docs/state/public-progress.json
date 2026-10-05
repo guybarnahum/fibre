@@ -245,22 +245,22 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Meet a Thread where they already are in ordinary life; the visitor approaches and the Thread decides whether to engage.",
-      "currentStep": "N6.3a is implementing the cleanup: remove public meeting admission and keep the Meet button local-only until the visitor actually speaks.",
+      "currentStep": "N6.3a is implemented pending validation: public meeting admission is removed, the Viewer Meet action is local-only, and no public social mutation is exposed yet.",
       "nextSteps": [
-        "Finish N6.3a cleanup and validate both Fibre and Viewer.",
-        "N6.3b: validate that the displayed Flight Plan segment still applies when the visitor speaks.",
+        "Validate N6.3a in Fibre and Viewer.",
+        "N6.3b: validate that the displayed ordinary Flight Plan segment still applies when the visitor speaks.",
         "N6.3c: reuse Interior Cognition for accept, decline or defer.",
-        "N6.3d/e: make /encounter the only public social boundary and run accepted interaction inside ordinary life."
+        "N6.3d/e: restore /encounter as the only public social boundary and run accepted interaction inside ordinary life."
       ]
     },
     "detail": {
       "summary": "N6.3 no longer treats a paid Inside Fibre visitor-work shift as the definition of meeting. Ordinary meeting intersects a Thread's existing Flight Plan and CurrentSituation.",
-      "currentStep": "N6.3a removes GET /api/threads/meet selection, public POST /meet admission, public livedScene availability wrapping, and Viewer loadMeetingThread. Paid work machinery remains separate and intact.",
+      "currentStep": "N6.3a cleanup is implemented: GET /api/threads/meet selection, public POST /meet admission, public livedScene availability wrapping, Viewer loadMeetingThread, and the old public visitor-work encounter adapter are gone. The Viewer retains only the displayed situation witness locally after Meet is clicked.",
       "nextSteps": [
-        "Validate the scene-first public API has no meeting-admission route.",
-        "Keep the Viewer Meet action local-only with zero World mutation.",
-        "Add lightweight same-Flight-Plan-segment validation.",
-        "Add voluntary participation cognition before any accepted visitor encounter."
+        "Run focused Fibre/Viewer tests and full local validation.",
+        "Keep public interaction disabled until same-scene validation and participation cognition exist.",
+        "Implement N6.3b and N6.3c without adding a session or second scene authority.",
+        "Restore POST /encounter only with the new participation-first contract."
       ]
     },
     "finalLifeCognitionAuthorized": true
