@@ -44,7 +44,11 @@ test("calibration adoption follows admitted authority and affected World workset
   assert.deepEqual([...populationLabAffectedThreadIds([affected])],["thr_b"]);
 
   const converged=populationLabAdoptionState(experiment,{
-    model:[{id:"middle_east.egypt",version:2}],
+    model:[{
+      id:"middle_east.egypt",
+      version:2,
+      admissionEvidence:{approvalExperimentId:"shadow_egypt"},
+    }],
     migrationCandidates:[{threadId:"thr_other"}],
   });
   assert.equal(converged.state,"converged","completed adoption did not converge");
@@ -52,7 +56,7 @@ test("calibration adoption follows admitted authority and affected World workset
 
 
 test("superseded approval is retained but cannot be admitted again",()=>{
-  const state=populationLabAdoptionState(experiment(),{
+  const state=populationLabAdoptionState(experiment,{
     model:[{
       id:"middle_east.egypt",
       version:3,
@@ -64,6 +68,11 @@ test("superseded approval is retained but cannot be admitted again",()=>{
   assert.equal(state.state,"superseded","superseded approval remained actionable");
   assert.equal(populationLabExperimentAdmitted(state),false,
     "superseded approval looked like the current exact admission");
+  assert.deepEqual(
+    [...populationLabAffectedThreadIds([state])],
+    [],
+    "superseded approval contributed migration work",
+  );
 });
 
 test("experiment is admitted only when registry provenance names that exact experiment",()=>{
