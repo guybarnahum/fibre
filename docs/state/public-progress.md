@@ -1,7 +1,7 @@
 ---
 id: fibre-public-progress
 status: accepted
-last-reviewed: 2026-09-23
+last-reviewed: 2026-10-05
 canonical: true
 machine-source: public-progress.json
 ---
@@ -12,7 +12,7 @@ The canonical machine-readable source is [`public-progress.json`](public-progres
 
 ## In one sentence
 
-**Fibre now carries canonical Threads through continuous LivedNow, selective salience and natural scene discovery; W7p is adding explicit shared live-place and local-time authority before W7b acceptance resumes.**
+**Fibre has closed the N5 encounter lifecycle; N6 now focuses on making a Thread's current life visible to public visitors and proving that same life continues later.**
 
 ## What is done
 
@@ -77,37 +77,23 @@ The quiet-gap proof deliberately does not invent an encounter or memory just to 
 
 ### Meet a Thread — Done
 
-N4 is closed in staging: public meeting entry asks World to ensure LivedNow at server time, publishes that exact bounded present, and only then exposes the scene. A subsequent live encounter succeeded against the exact returned `situationId`, so the visitor entered an already-existing life rather than creating one.
+A deployed public meeting can enter a freshly reconciled Thread life and speak into that exact World-owned situation. The visitor cannot choose the Thread's pre-existing place, activity, plan, companions, private memory or feelings.
 
-The visitor may request an encounter, but cannot choose the Thread's pre-existing place, activity, plan, companions, private memory or feelings. A lived Thread is always physically somewhere in World — at a place or in transit between places — even when exact public location is coarsened.
+N5 also proved reliable website availability without click-time coercion: a Thread may voluntarily accept bounded paid visitor-work in advance, that commitment bends Flight Plan, World later enacts the matching mediated presence, and a visitor encounter can occur inside the exact admitted scene. The resulting Encounter Story/Thread Experience and compensation are ordinary Fibre consequence, not chat-session state.
 
-N4 proved the current automatic-entry path. The next refinement is Thread-owned participation:
-
-```text
-select Thread
-  -> ensure LivedNow(now)
-  -> Thread chooses accept / decline / defer
-      -> accept: enter exact scene and encounter
-      -> decline/defer: optional explanation or later suggestion
-```
-
-That choice should reflect what the Thread is doing, her near-term Flight Plan, needs/feelings/intentions, and relevant relationship/history. Someone she likes may receive more accommodation, but no single relationship label mechanically decides the outcome.
+The remaining public gap is different: insidefibre.com does not yet show the current life richly before interaction or prove that a later revisit reaches a later life.
 
 ### Selective experience internalization — Shown working
 
-A bounded encounter can become objective history, private reflection and autobiographical memory—or be forgotten.
+A bounded encounter can become Thread-specific experience and selective private consequence—or remain unremembered. N5 accepted this authority separation in a real staging visitor-work encounter.
 
-Human encounters do not automatically become memory.
-
-Retrospective catch-up receives no special memory shortcut; future salient catch-up events and reciprocal Thread meetings must reuse this same authority.
+Human encounters do not automatically become memory. Future natural social and richer elapsed-life encounters must reuse the same authority rather than infer retention from occurrence.
 
 ## What comes next
 
-### General lived encounters — Working on it
+### N5 encounter lifecycle — Done at the accepted boundary
 
-N5 has been broadened before deployment.
-
-The new primitive is:
+N5 is closed live. Fibre now has one general encounter seam:
 
 ```text
 World occurrence
@@ -117,37 +103,29 @@ World occurrence
   -> selective consequence
 ```
 
-A meeting is one voluntary social form of encounter. It keeps the `accept | decline | defer` participation gate. But a Thread can also encounter a flower, bee, cloud, sound, place, accident or witnessed social behavior without that occurrence being a “meeting.”
+Environmental noticing, voluntary social meeting, silent-witness asymmetry, journal/memory separation and objective visualization lineage are all demonstrated. The live closure also proved prior voluntary visitor-work availability -> revised Flight Plan -> active mediated presence -> public Meet -> Encounter Story -> Thread Experience -> exactly-once Fibre Credit settlement.
 
-The same objective story may affect different Threads differently. A silent witness may be changed by how one Thread treats another, while another nearby Thread may fail to notice the event at all.
+### N6 rich public lived encounter — Working on it
 
-E0 has now reconciled that spike into a green foundation: Encounter Story / Thread Experience own the general persistence vocabulary, social meeting is a wrapper rather than the history authority, participation cognition is separate from social story cognition, and the obsolete dyadic code/tests are gone.
+The site should feel like entering a life, not opening a chatbot.
 
-E1 is now done: an unscheduled bee/flower occurrence becomes an objective Encounter Story with a durable rich visualization prompt, enters one Thread's attention, becomes personal experience and may be retained; a separate admitted cloud occurrence remains `not_noticed` and creates no Thread Experience or private aftermath.
+The current proof target is:
 
-E2 is now done: independently current Threads may be incompatible, may decline, or may mutually participate. Incompatibility or decline creates no Encounter Story; mutual acceptance creates one objective story and distinct first-person Thread Experiences through the same E1 authority.
+```text
+visit current life
+  -> bounded public current scene
+  -> optional committed meeting inside that exact situation
+  -> ordinary consequence
+  -> visitor leaves
+  -> later visit
+  -> later life
+```
 
-E3 is now done: one genuinely co-present Thread can remain outside the invitation and dialogue, notice the same objective social story, and form her own private experience, journal and selective memory. The story is still recorded once, and no relationship is automatically rewritten.
+A public visit is not a meeting request. It must not create availability, an encounter, compensation or private cognition. World owns LivedNow, Presentation owns the bounded public projection, and the Viewer owns display/interaction only.
 
-E4 is now done: Admin can inspect objective Encounter Story/visualization provenance, this Thread's attention, World journal-entry provenance and the private journal book as distinct layers. The same admitted objective prompt can enter the existing image/video generation pipeline with each depicted Thread's own canonical visual reference and encounter-time age; missing likeness authority defers rather than invents. Generated media remains optional representation, never evidence.
+A bounded public scene may show current embodiment, place or transit, current activity, appropriate public companions/context and existing scene media when available. A later visit should find a later `situationId` for the same Thread rather than resume the old encounter.
 
-W7a is validated: the caller selects only an initiator and World discovers actor opportunities from current life. The first W7b staging run then exposed a missing World primitive: live Threads had no explicit shared physical-place authority, so all inspected scenes discovered zero actors. W7p is current: admit a bounded immutable live public venue, expose authoritative local civil time to planning, then rerun W7b without caller-selected counterparties or Commons fallback.
-
-### Rich insidefibre.com meeting
-
-The site should feel like entering a moment, not opening a chatbot.
-
-A bounded public scene may show:
-
-- current embodiment;
-- place or transit;
-- current activity;
-- temporal texture such as arriving, waiting or preparing;
-- appropriate public companions/context;
-- bounded near-term intention;
-- scene-consistent imagery.
-
-A later visit should find later life.
+Natural Thread-to-Thread social life remains a preserved follow-on. Fibre already has Situated Percept, salience, Interior Cognition, shared live-place authority and natural actor discovery; the later acceptance proof must not use caller-selected counterparties, Commons fallback, paid scheduling or sociability bias to manufacture an encounter.
 
 ## Genesis to LivedNow — Done at the current boundary
 
@@ -189,7 +167,8 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- validate W7p shared live-place/local-time authority and complete W7b live staging acceptance of naturally discovered social opportunities;
+- complete N6 public current-life presentation and later-revisit continuity;
+- validate a naturally occurring Thread-to-Thread encounter from independently lived plans without manufacturing co-presence or willingness;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
 - support society-scale institutions and reproduction among live Threads.
@@ -215,6 +194,7 @@ See:
 - [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
 - [Encounter stories and Thread experience](../architecture/encounters-and-experience.md)
 - [N5 encounter-story slices](../validation/n5-encounter-slices.md)
+- [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md)
 - [The Lived World of Fibre](../vision/lived-world.md)
 - [Current priorities](current-priorities.md)
 - [M2 continuation plan](../validation/m2-pr-plan.md)
