@@ -11,6 +11,7 @@ import {
   populationLabAffectedThreadIds,
   populationLabExperimentAdmitted,
 } from "./population-lab-adoption.js";
+import { showActionError, showAdminNotice } from "./admin-notices.js";
 import { bindPortraitPreview } from "./portrait-preview.js";
 import { bindCopyAction, copyWithFeedback, decorateCopyAction } from "./copy-action.js";
 import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
@@ -738,6 +739,8 @@ async function admitCalibration(experiment,button){
     busyLabel:"Admitting",
     busyTooltip:"Writing immutable calibration authority",
   });
+
+  let admitted;
   try{
     const response=await fetch(
       "/api/appearance/experiments/"+encodeURIComponent(experiment.experimentId)+"/admission",
@@ -745,13 +748,53 @@ async function admitCalibration(experiment,button){
     );
     const payload=await response.json().catch(()=>null);
     if(!response.ok)throw new Error(payload?.detail??payload?.error??("HTTP "+response.status));
-    await loadAppearanceCoverage({quiet:true});
-    await loadAppearanceExperiments();
+    admitted=payload?.current??null;
+    if(!admitted?.id||!Number.isSafeInteger(Number(admitted.version))){
+      throw new Error("Admission response did not include current calibration authority");
+    }
+    showAdminNotice({
+      tone:"success",
+      title:payload?.duplicate?"Calibration already admitted":"Calibration admitted",
+      message:admitted.id+" @"+admitted.version+" is in the runtime registry. Verifying World…",
+      sticky:false,
+    });
   }catch(error){
     setBlockingButtonState(button,false,{
       label:"Admit",
       tooltip:error instanceof Error?error.message:String(error),
     });
+    showActionError(error,"Calibration admission failed");
+    return;
+  }
+
+  try{
+    const coverage=await fetchAppearanceCoverage();
+    renderAppearanceCoverage(coverage);
+    const observed=(coverage.model??[]).find(entry=>entry?.id===admitted.id)??null;
+    const observedExperiment=observed?.admissionEvidence?.approvalExperimentId??null;
+    if(
+      Number(observed?.version)!==Number(admitted.version)
+      ||observedExperiment!==experiment.experimentId
+    ){
+      throw new Error(
+        "Registry has "+admitted.id+" @"+admitted.version
+        +", but World reports @"+(observed?.version??"—")
+        +(observedExperiment?" from "+observedExperiment:"")
+      );
+    }
+    await loadAppearanceExperiments();
+    showAdminNotice({
+      tone:"success",
+      title:"Calibration live",
+      message:admitted.id+" @"+admitted.version+" is current in World.",
+      sticky:false,
+    });
+  }catch(error){
+    setBlockingButtonState(button,false,{
+      label:"Admitted @"+admitted.version,
+      tooltip:error instanceof Error?error.message:String(error),
+    });
+    showActionError(error,"Admission recorded; World has not observed it");
   }
 }
 
@@ -2896,14 +2939,22 @@ function setScanBusy(busy){
   });
 }
 
+async function fetchAppearanceCoverage(){
+  const response=await fetch("/api/appearance/coverage",{
+    headers:{Accept:"application/json"},
+    cache:"no-store",
+  });
+  const payload=await response.json().catch(()=>null);
+  if(!response.ok)throw new Error(payload?.detail??payload?.error??`HTTP ${response.status}`);
+  return payload;
+}
+
 export async function loadAppearanceCoverage({quiet=false}={}){
   if(loadPromise)return loadPromise;
   loadPromise=(async()=>{
     if(!quiet)setScanBusy(true);
     try{
-      const response=await fetch("/api/appearance/coverage",{headers:{Accept:"application/json"},cache:"no-store"});
-      const payload=await response.json().catch(()=>null);
-      if(!response.ok)throw new Error(payload?.detail??payload?.error??`HTTP ${response.status}`);
+      const payload=await fetchAppearanceCoverage();
       renderAppearanceCoverage(payload);
       void loadAppearanceExperiments().catch(()=>{});
       return payload;
