@@ -266,7 +266,7 @@ public visit
 
 A **visit is not a meeting request**. It must not create availability, an encounter, compensation or private cognition. The Viewer remains projection-only.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 is accepted in staging: `GET /api/threads/:threadId/present` reconciles one already-public Thread to server-time LivedNow and returns the bounded current present without creating a meeting. N6.2 is current: make the Viewer present that bounded lived moment before any meeting interaction.
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 is accepted in staging. N6.2 is implemented in the separate Viewer repository pending validation: opening `/meet` now visits current life first, renders the bounded public moment as the primary scene, and does not start a meeting. N6.3 remains the next implementation slice after Viewer validation.
 
 ## Current causal loop
 
