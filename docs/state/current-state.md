@@ -122,7 +122,8 @@ Fibre still lacks:
 
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
 - richer shared-world convergence beyond the bounded Fibre Commons mediated-presence proof;
-- a rich public scene driven by that continuous present.
+- Thread-owned public visitor participation from an ordinary displayed scene;
+- the later-revisit proof after an accepted public encounter.
 
 Encounter Story is now visualizable by construction: its durable rich prompt is objective/evidence-bound and separate from any later subjective memory reconstruction. Actual image/video rendering remains optional and uses the existing generated-asset pipeline rather than becoming World authority.
 
