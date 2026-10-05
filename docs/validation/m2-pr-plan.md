@@ -248,7 +248,7 @@ public visit
 
 A public visit is not a meeting request. Meeting availability remains governed by prior voluntary accepted work. The Viewer remains projection-only and must not author the Thread's scene, private state or continuity.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: one explicit Viewer action may cross from passive visit into the already-accepted committed meeting path, and only for the exact displayed situation.
+Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: meet the Thread in the ordinary displayed scene. N6.3a removes public meeting admission; later N6.3 slices add scene-valid participation cognition and make `/encounter` the only public social boundary.
 
 ## Experience and memory invariant
 
