@@ -245,9 +245,9 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Meet a Thread where they already are in ordinary life; the visitor approaches and the Thread decides whether to engage.",
-      "currentStep": "N6.3a is accepted. N6.3b is current: validate that the displayed ordinary Flight Plan segment still applies when the visitor speaks.",
+      "currentStep": "N6.3a is accepted. N6.3b is current: validate that the displayed World-enacted situation still applies when the visitor speaks; Flight Plan intent only triggers reconciliation when actual life may be stale.",
       "nextSteps": [
-        "N6.3b: validate same ordinary lived segment without re-authoring a new scene.",
+        "N6.3b: validate continuity of the displayed enacted scene without treating the Flight Plan as reality.",
         "N6.3c: reuse Interior Cognition for accept, decline or defer from current life.",
         "N6.3d: restore POST /encounter as the only public social boundary.",
         "N6.3e: run accepted conversation inside ordinary life, then proceed to later-life continuity."
@@ -255,11 +255,11 @@
     },
     "detail": {
       "summary": "N6.3 no longer treats a paid Inside Fibre visitor-work shift as the definition of meeting. Ordinary meeting intersects a Thread's existing Flight Plan and CurrentSituation.",
-      "currentStep": "N6.3a cleanup is accepted. Public GET /api/threads/meet selection, POST /meet admission, visitor-work livedScene wrapping, Viewer loadMeetingThread and the old public encounter adapter are gone. Public interaction remains intentionally disabled while N6.3b proves same-segment validity.",
+      "currentStep": "N6.3a cleanup is accepted. Public GET /api/threads/meet selection, POST /meet admission, visitor-work livedScene wrapping, Viewer loadMeetingThread and the old public encounter adapter are gone. Public interaction remains intentionally disabled while N6.3b proves continuity of the actual World-enacted scene.",
       "nextSteps": [
-        "Implement one lightweight same-Flight-Plan-segment validator in World.",
-        "Do not call ensure-LivedNow merely because the visitor clicks or speaks if that would re-author the scene.",
-        "If the displayed segment no longer governs, return encounter_scene_changed with zero participation work.",
+        "Implement one lightweight displayed-CurrentSituation validator in World.",
+        "Use Flight Plan boundaries only to decide when the enacted observation may need one ordinary LivedNow reconciliation; never treat the plan itself as scene truth.",
+        "If enacted life has materially changed from the displayed situation, return encounter_scene_changed with zero participation work.",
         "Only after that add Thread-owned participation cognition and restore /encounter."
       ]
     },
