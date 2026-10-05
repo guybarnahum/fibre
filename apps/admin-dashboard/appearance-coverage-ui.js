@@ -1644,12 +1644,12 @@ function threadLabel(threadId){
 
 function adoptionTone(state){
   if(state==="converged")return "good";
-  if(state==="affected"||state==="release_required")return "warn";
+  if(state==="affected"||state==="admission_required")return "warn";
   return "neutral";
 }
 
 function adoptionLabel(state){
-  if(state==="release_required")return "Admission required";
+  if(state==="admission_required")return "Admission required";
   if(state==="affected")return "Affected";
   if(state==="converged")return "A5 complete";
   return human(state);
@@ -1717,16 +1717,16 @@ function renderCalibrationAdoptions(){
     steps.append(
       adoptionStep("Approved",{done:true,detail:"human authority"}),
       adoptionStep("Admitted",{
-        done:adoption.released,
-        active:!adoption.released,
-        detail:adoption.released
+        done:adoption.admitted,
+        active:!adoption.admitted,
+        detail:adoption.admitted
           ? "@"+adoption.currentVersion+(adoption.superseded?" current":" live")
           : "registry @"+(adoption.currentVersion??"—"),
       }),
       adoptionStep("Affected",{
-        done:adoption.released&&adoption.remainingThreadCount===0,
+        done:adoption.admitted&&adoption.remainingThreadCount===0,
         active:adoption.state==="affected",
-        detail:adoption.released
+        detail:adoption.admitted
           ? adoption.remainingThreadCount+" remaining / "+adoption.projectedThreadCount+" projected"
           : adoption.projectedThreadCount+" projected",
       }),
@@ -1759,7 +1759,7 @@ function renderCalibrationAdoptions(){
     }
 
     const note=el("p","appearance-adoption-note");
-    if(adoption.state==="release_required"){
+    if(adoption.state==="admission_required"){
       note.textContent="Approval is complete. Admit this calibration to append the next runtime-authority version. No code deployment is required.";
     }else if(adoption.state==="affected"){
       note.textContent="The reviewed calibration is live. Only the marked Threads below remain stale against that deployed dependency.";
@@ -1773,7 +1773,7 @@ function renderCalibrationAdoptions(){
     compare.addEventListener("click",()=>void openExperimentComparison(experiment));
     actions.append(compare);
 
-    if(adoption.state==="release_required"){
+    if(adoption.state==="admission_required"){
       const admit=el("button","primary","Admit");
       admit.type="button";
       admit.addEventListener("click",()=>void admitCalibration(experiment,admit));
