@@ -1,7 +1,7 @@
 ---
 id: validation-prototype-roadmap
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-10-05
 canonical: true
 ---
 
@@ -110,9 +110,9 @@ Genesis
 
 The deployed meeting now enters a scene produced by continuous LivedNow rather than by a meeting fixture, and the subsequent encounter remains bound to the exact returned `situationId`.
 
-### M2-N5 — Encounter Story -> Thread Experience — ACTIVE (E0-E4 CLOSED, E5 CURRENT)
+### M2-N5 — Encounter Story -> Thread Experience — CLOSED LIVE
 
-N5 has been broadened before deployment. The durable primitive is no longer “Thread A meets Thread B.” It is:
+N5 is closed. The accepted general seam is:
 
 ```text
 World occurrence
@@ -122,31 +122,29 @@ World occurrence
   -> selective consequence
 ```
 
-A social meeting is one voluntary form of encounter and retains the `accept | decline | defer` participation gate. Environmental occurrences and witnessed behavior do not require permission to exist; they require a credible opportunity to perceive and a Thread-specific noticing/experience step before private consequence.
+Environmental noticing, voluntary social meeting, silent-witness asymmetry, journal/memory separation, objective visualization lineage and the combined visitor-work path are accepted. The live closure proved prior voluntary availability -> revised Flight Plan -> active mediated work presence -> public Meet -> Encounter Story -> Thread Experience -> exactly-once Fibre Credit settlement.
 
-E0 has now reconciled the first implementation spike into one green foundation: Encounter Story / Thread Experience own the general persistence vocabulary; social meeting is a wrapper; participation cognition is separate from social story cognition; obsolete dyadic code/tests are removed; journal/R2/Admin work and selective memory remain available.
+Historical natural-social W0-W7 work remains useful evidence and a preserved follow-on, but it is not the current M2 roadmap.
 
-E1 is closed. Its environmental proof admits an unscheduled occurrence, records a durable objective visualization prompt, persists retry-stable Thread attention, creates Thread Experience only when noticed, and keeps journal/memory selective.
+### M2-N6 — Rich Public Lived Encounter — ACTIVE
 
-E2 is also closed. Independently current Threads may be incompatible, decline, or mutually participate; only the mutually accepted compatible case creates one Encounter Story, and accepted participants form distinct Thread Experiences through the E1 authority.
+insidefibre.com should expose a bounded current life before interaction, allow a committed visitor encounter inside that exact scene, and later show the same Thread living a later moment.
 
-E3 is closed. One explicitly known third Thread can be independently current and genuinely co-present without joining the voluntary meeting: she receives no meeting stance and no story turn, but may notice the shared Encounter Story through the E1 attention authority and form her own private experience, journal and selective memory.
+The current sequence is:
 
-E4 is closed. Admin can inspect Encounter Story truth/visualization lineage, Thread-specific attention, World journal-entry provenance and the private journal book as distinct layers, while autobiographical memory remains independently selective. The same admitted objective visualization prompt can feed the ordinary generated-asset demand path for image or video with each depicted Thread's own canonical reference and encounter-time age; absent likeness authority defers rather than invents.
+```text
+visit current life
+  -> enter exact lived scene
+  -> optional committed meeting
+  -> ordinary consequence
+  -> leave
+  -> later visit
+  -> later life
+```
 
-E5 staging acceptance is the remaining N5 boundary. Actual encounter rendering remains optional and generated media remains replaceable representation rather than evidence.
+N6 deliberately reuses the accepted meeting/work/encounter machinery. It does not introduce a conversation session or second current-life authority.
 
-Follow [N5 encounter-story implementation slices](n5-encounter-slices.md). N5 closes only after those semantics are green and accepted in staging.
-
-Existing presentation R2 objects are not migrated; the additive private Thread-artifact bucket remains the correct home for `journals/<threadId>/journal.md`.
-
-### M2-N6 — rich public meeting — NEXT
-
-insidefibre.com should expose a bounded lived scene—embodiment, place/transit, activity, public context and near-term intention—then allow the visitor to enter it.
-
-A later visit should find later life.
-
-The detailed architecture is [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md).
+Follow [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md).
 
 ## After M2
 
