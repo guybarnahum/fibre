@@ -128,7 +128,7 @@ N6.3 is current and now uses the simpler rule: **meet the Thread where they alre
 
 N6.3a is accepted. The obsolete public meeting-admission layer, visitor-work scene wrapper, pre-scene Meet selector and old public visitor-work encounter adapter are gone. Clicking Meet only preserves the displayed situation witness in local Viewer state; no public social mutation is currently exposed.
 
-N6.3b is current: validate that the displayed ordinary Flight Plan segment still governs the Thread's life when the visitor speaks, without re-authoring the scene. N6.3c then adds Thread-owned accept/decline/defer; N6.3d restores `POST /encounter` as the only public social boundary.
+N6.3b is current: validate that the displayed World-enacted situation still applies when the visitor speaks. Flight Plan intent may trigger one ordinary reconciliation when actual life may be stale, but it is never scene authority. N6.3c then adds Thread-owned accept/decline/defer; N6.3d restores `POST /encounter` as the only public social boundary.
 
 Paid visitor-work remains a separate optional work/economy capability, not the definition of ordinary meeting.
 
