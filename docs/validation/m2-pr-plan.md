@@ -1,7 +1,7 @@
 ---
 id: validation-m2-continuation-plan
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-10-05
 canonical: false
 ---
 
@@ -22,6 +22,7 @@ Canonical architecture:
 - [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
 - [Encounter stories and Thread experience](../architecture/encounters-and-experience.md)
 - [N5 encounter-story implementation slices](n5-encounter-slices.md)
+- [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md)
 - [The Lived World of Fibre](../vision/lived-world.md)
 - [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md)
 
@@ -209,15 +210,9 @@ The visitor chooses the utterance and causes the encounter. The visitor does not
 
 The first real deployed `/meet` is accepted only after N1-N3 are real.
 
-## N5 — Encounter Story -> Thread Experience — E0-E4 CLOSED / E5 CURRENT
+## N5 — Encounter Story -> Thread Experience — CLOSED LIVE
 
-### Capability
-
-E0 is closed: Fibre has one coherent general Encounter Story / Thread Experience persistence vocabulary, with social meeting implemented as a wrapper rather than as history authority. E1 proves environmental attention and durable objective visualization lineage; E2 proves voluntary social meeting; E3 proves silent-witness asymmetry. E4 is also closed: Admin now inspects Encounter Story, visualization provenance, personal attention, World journal-entry provenance and the private journal book without conflating them with memory, and the admitted objective prompt can enter ordinary image/video asset demand with distinct canonical visual references and encounter-time ages. E5 staging acceptance is current.
-
-One general encounter seam can turn an objective World occurrence into different personal lived experiences without requiring separate engines for conversation, witnessing and environmental moments.
-
-The accepted causal shape is:
+N5 is closed. E0-E5 established one general encounter seam:
 
 ```text
 World occurrence
@@ -227,64 +222,33 @@ World occurrence
   -> selective consequence
 ```
 
-A social meeting adds a voluntary participation gate before the social story exists:
+The staging closure proved the combined visitor-work path against a real Thread: prior voluntary accepted availability revised Flight Plan, LivedNow enacted that mediated presence, public Meet entered the exact scene, a visitor utterance produced Encounter Story + Thread Experience, and Fibre Credit compensation settled exactly once.
+
+Natural Thread -> Thread scene discovery remains a valuable later society/lived-world proof, but it is no longer an N5 closure gate or the current roadmap. Historical W0-W7 coordinates remain in the N5 plan as implementation evidence.
+
+## N6 — Rich Public Lived Encounter — CURRENT
+
+N6 is the current M2 execution boundary.
+
+The missing proof is no longer a meeting engine. Fibre already has committed visitor availability, exact situation-bound Meet/encounter, Encounter Story/Experience and compensation. N6 must make that continuing life visible to the public and prove the same person is living later.
+
+The accepted sequence is:
 
 ```text
-exact LivedNow
-  -> accept | decline | defer
-  -> if participation requirements pass:
-       Encounter Story
-       -> Thread Experience(s)
+public visit
+  -> ensure selected Thread LivedNow(now)
+  -> bounded public current scene
+  -> optional committed visitor meeting inside that exact scene
+  -> ordinary Encounter Story / Thread Experience consequence
+  -> visitor leaves
+  -> time passes / life reconciles
+  -> later public visit
+  -> later current scene for the same Thread
 ```
 
-Physical/mediated compatibility remains required for social encounter without teleportation or silent replanning.
+A public visit is not a meeting request. Meeting availability remains governed by prior voluntary accepted work. The Viewer remains projection-only and must not author the Thread's scene, private state or continuity.
 
-### What the first N5 spike contributed
-
-The first implementation spike correctly explored:
-
-- independent LivedNow reconciliation;
-- shared place identity across Thread-specific evidence;
-- meeting stance;
-- n-ary shared-story persistence;
-- witness-aware aftermath;
-- Thread-specific journals;
-- selective memory;
-- private R2 journal presentation.
-
-E0 removed the obsolete dyadic authority and E1 supplied the missing general environmental noticing seam. The remaining social meeting code is now treated only as an E2 wrapper over the general encounter model.
-
-### Required acceptance proofs
-
-N5 closes only when one coherent seam proves:
-
-1. **voluntary meeting — proven E2** — compatible social presence does not force participation;
-2. **silent witness — proven E3** — a third Thread can witness how A treats B, remain silent, and form a different private experience/consequence;
-3. **journal != memory — proven E4** — private journal expression and autobiographical retention remain independently selective;
-4. **continuity** — persisted consequence can bend later cognition while unnoticed/unremembered content does not leak.
-
-Detailed execution is governed by [N5 encounter-story implementation slices](n5-encounter-slices.md).
-
-E5's deployment/acceptance harness is implemented. Live staging acceptance is intentionally an operator-run validation using Fibre's existing deployment scripts and local `.env`: run `npm run cloud:prepare:staging` to provision/configure/deploy the exact clean source SHA, then run `npm run lived-encounters:staging`. N5 remains open until that evidence passes; the next action is validation, not more encounter semantics.
-
-
-## N6 — rich insidefibre.com meeting
-
-The public scene should feel like entering a moment.
-
-Useful bounded exterior information may include:
-
-- current visual embodiment;
-- place or transit;
-- activity;
-- arriving/waiting/moving/preparing texture;
-- appropriate public companions/context;
-- bounded near-term intention;
-- scene-consistent imagery.
-
-The Viewer remains projection-only.
-
-A later revisit should show that life continued.
+Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 aligns roadmap truth only; N6.1 is the first runtime slice.
 
 ## Experience and memory invariant
 
