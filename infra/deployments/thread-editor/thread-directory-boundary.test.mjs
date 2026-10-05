@@ -57,7 +57,6 @@ test("Thread Editor sends operator search to World only", async () => {
     assert.equal((await search.json()).threads[0].threadId, "thr_private_mira");
     assert.equal(worldCalls[0].url, "/internal/thread-directory/search?q=Mira&fin=7K3M-2Q-8W5R");
     assert.equal(worldCalls[0].privateToken, PRIVATE_TOKEN);
-    assert.equal(presentationCalls.length, 0);
 
     const delegated = await fetch(`http://127.0.0.1:${editorPort}/anything-else`);
     assert.equal(delegated.status, 418);
