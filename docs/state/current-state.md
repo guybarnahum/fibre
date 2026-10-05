@@ -313,7 +313,7 @@ The Viewer remains a separate projection surface. World owns LivedNow; Presentat
 
 Natural Thread -> Thread social life remains a preserved follow-on. The accepted Situated Percept / Salience / Interior Cognition / natural actor-discovery machinery should eventually prove that independently lived Threads can become co-present and sometimes choose to interact without caller-selected counterparties, Commons fallback, paid scheduling or sociability bias. Historical W0-W7 labels are implementation evidence, not the current execution roadmap.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 is accepted in staging. N6.2 is implemented in the separate Viewer repository pending validation: `/meet` opens by visiting and rendering the bounded current life, keeps missing public place detail missing, and does not start a meeting or show encounter input on page entry. N6.3 is next after Viewer validation.
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: the Viewer should expose an explicit meeting action that asks Fibre to enter the exact displayed `situationId` through the existing voluntary visitor-work path. Initial page load remains a read-only visit.
 
 ## Development discipline
 
