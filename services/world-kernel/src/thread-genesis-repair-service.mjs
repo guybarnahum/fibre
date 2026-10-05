@@ -520,6 +520,7 @@ export function createThreadGenesisRepairService({
   genesisAuthority,
   identityUpdater,
   activityRecorder = null,
+  calibrationModelProvider = null,
 } = {}) {
   requireMethod("worldReader", worldReader, "getThread");
   requireMethod("civilRegistry", civilRegistry, "getCivilRegistrationByThreadId");
@@ -540,6 +541,9 @@ export function createThreadGenesisRepairService({
   requireMethod("genesisAuthority", genesisAuthority, "getRaisedLanguagesForThread");
   requireMethod("genesisAuthority", genesisAuthority, "correctRaisedLanguages");
   requireMethod("identityUpdater", identityUpdater, "update");
+  if(calibrationModelProvider!==null&&typeof calibrationModelProvider!=="function"){
+    throw new TypeError("calibrationModelProvider must be a function or null");
+  }
   const activity = optionalActivity(activityRecorder);
 
   async function diagnose(threadId) {
@@ -570,8 +574,9 @@ export function createThreadGenesisRepairService({
     const priorPhysicalEvidence=physicalGenomeMigrator===null
       ? null
       : latestPhysicalEvidence(physicalGenomeMigrator,threadId);
+    const calibrationModel=calibrationModelProvider?.()??null;
     const currentCalibrationDependencies=priorPhysicalEvidence?.physicalAncestry
-      ? appearanceCalibrationDependencies(priorPhysicalEvidence.physicalAncestry)
+      ? appearanceCalibrationDependencies(priorPhysicalEvidence.physicalAncestry,{calibrationModel})
       : null;
     const calibrationPlan=currentCalibrationDependencies===null
       ? null
