@@ -4,7 +4,6 @@ import {
   threadPresentationChannelId,
 } from "#services/thread-presentation/src/index.mjs";
 import {
-  chooseThreadDirectoryEntry,
   matchesThreadDirectoryEntry,
   publicThreadDirectoryEntry,
 } from "#services/thread-presentation/src/thread-directory.mjs";
@@ -15,7 +14,6 @@ const PRESENTATION_CHANNEL_PREFIX = "presentation:";
 const CURRENT_PRESENT_CATALOG_PREFIX = "current-present:";
 const DISCOVERY_SCAN_PAGE_SIZE = 100;
 const DIRECTORY_SCAN_LIMIT = 5000;
-const MEET_POLICY_VERSION = "thread-meet-v0.1";
 
 function assertId(name, value) {
   if (typeof value !== "string" || !ID_PATTERN.test(value)) throw new TypeError(`${name} is invalid`);
@@ -94,7 +92,6 @@ function publicIdentityCredentialAllowed(snapshot) {
 
 function route(pathname) {
   if (pathname === "/api/threads/search") return { kind: "search" };
-  if (pathname === "/api/threads/meet") return { kind: "meet" };
   if (pathname === "/api/threads") return { kind: "threads" };
   const asset = pathname.match(/^\/api\/assets\/([^/]+)$/);
   if (asset) return { kind: "asset", objectRef: decodeURIComponent(asset[1]) };
@@ -130,27 +127,20 @@ function boundedParameter(url, name, maxLength) {
   return value.trim();
 }
 
-function directoryRequest(url, { meet = false } = {}) {
-  const allowed = new Set(meet
-    ? ["q", "fin", "language", "seed", "exclude"]
-    : ["q", "fin", "language", "limit"]);
+function directoryRequest(url) {
+  const allowed = new Set(["q", "fin", "language", "limit"]);
   for (const key of url.searchParams.keys()) {
     if (!allowed.has(key)) throw new TypeError(`unsupported Thread directory parameter ${key}`);
   }
-  const limitText = meet ? null : (url.searchParams.get("limit") ?? "50");
-  const limit = meet ? 1 : Number(limitText);
-  if (!meet && (!/^\d+$/.test(limitText) || !Number.isSafeInteger(limit) || limit < 1 || limit > 200)) {
+  const limitText = url.searchParams.get("limit") ?? "50";
+  const limit = Number(limitText);
+  if (!/^\d+$/.test(limitText) || !Number.isSafeInteger(limit) || limit < 1 || limit > 200) {
     throw new TypeError("Thread directory limit is invalid");
   }
-  const excludeThreadIds = meet ? url.searchParams.getAll("exclude") : [];
-  if (excludeThreadIds.length > 100) throw new TypeError("too many excluded Threads");
-  for (const threadId of excludeThreadIds) assertId("excluded threadId", threadId);
   return {
     query: boundedParameter(url, "q", 240),
     fin: boundedParameter(url, "fin", 64),
     language: boundedParameter(url, "language", 80),
-    seed: meet ? boundedParameter(url, "seed", 200) : null,
-    excludeThreadIds,
     limit,
   };
 }
@@ -261,23 +251,6 @@ async function searchPublicDirectory({ infra, presentationServer, url }) {
   return { threads };
 }
 
-async function meetPublicThread({ infra, presentationServer, url }) {
-  const request = directoryRequest(url, { meet: true });
-  const excluded = new Set(request.excludeThreadIds);
-  const eligible = (await scanPublicDirectory({ infra, presentationServer }))
-    .filter((entry) => entry.lifecycleStatus !== "genesis_candidate")
-    .filter((entry) => !excluded.has(entry.threadId))
-    .filter((entry) => matchesThreadDirectoryEntry(entry, request));
-  return {
-    thread: chooseThreadDirectoryEntry(eligible, { seed: request.seed }),
-    selection: {
-      policyVersion: MEET_POLICY_VERSION,
-      seed: request.seed,
-      eligibleCount: eligible.length,
-    },
-  };
-}
-
 export function createPresentationReadApi({
   infra,
   presentationServer,
@@ -342,12 +315,6 @@ export function createPresentationReadApi({
             headers: { ...cors, "Cache-Control": "no-cache" },
           });
         }
-        if (matched.kind === "meet") {
-          return json(await meetPublicThread({ infra, presentationServer, url }), {
-            headers: { ...cors, "Cache-Control": "no-store" },
-          });
-        }
-
         if (matched.kind === "asset") {
           assertId("objectRef", matched.objectRef);
           return await serveAsset(matched.objectRef, cors);
