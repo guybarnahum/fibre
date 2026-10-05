@@ -128,7 +128,7 @@ Staging acceptance evidence on 2026-10-05:
 
 The local semantic test separately proves caller-authored query parameters are rejected before World reconciliation.
 
-## N6.2 — enter the moment — IMPLEMENTED; VALIDATION PENDING
+## N6.2 — enter the moment — ACCEPTED IN STAGING 2026-10-05
 
 **Capability:** insidefibre.com presents the current life as a lived moment rather than a chatbot shell.
 
@@ -144,6 +144,19 @@ Implemented in the separate `guybarnahum/insidefibre.com` Viewer repository:
 - the Viewer cross-repo contract now consumes Fibre's real public current-life API shape before replaying Presentation.
 
 Explicit meeting entry is intentionally deferred to N6.3. N6.2 does not add a Viewer-side meeting/session authority.
+
+Staging acceptance evidence on 2026-10-05:
+
+- Viewer test suite passed, including the semantic page-entry boundary and Fibre cross-repo contract;
+- staging build and Cloudflare validation passed;
+- staging Viewer deployment succeeded;
+- opening `/meet` presented the current lived moment before identity/history detail;
+- page entry did not start a meeting and did not render encounter input;
+- missing public place detail remained unnamed rather than inferred;
+- current scene media remained optional rather than a prerequisite for current life;
+- Fibre and Viewer stayed on separate authority boundaries: World owns LivedNow, Presentation owns bounded public projection, Viewer owns rendering only.
+
+
 
 
 
