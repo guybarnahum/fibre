@@ -1548,6 +1548,12 @@ function renderComparisonActions(experiment){
         tone:"good",
         active:false,
       }));
+    }else if(adoption?.superseded){
+      compareActions.append(experimentStatusPill({
+        label:"Superseded @"+adoption.currentVersion,
+        tone:"",
+        active:false,
+      }));
     }else{
       const admit=el("button","primary");
       admit.type="button";
@@ -1645,12 +1651,14 @@ function threadLabel(threadId){
 function adoptionTone(state){
   if(state==="converged")return "good";
   if(state==="affected"||state==="admission_required")return "warn";
+  if(state==="superseded")return "neutral";
   return "neutral";
 }
 
 function adoptionLabel(state){
   if(state==="admission_required")return "Admission required";
   if(state==="affected")return "Affected";
+  if(state==="superseded")return "Superseded";
   if(state==="converged")return "A5 complete";
   return human(state);
 }
@@ -1733,7 +1741,11 @@ function renderCalibrationAdoptions(){
       adoptionStep("Converged",{
         done:adoption.state==="converged",
         active:false,
-        detail:adoption.state==="converged"?"World current":"pending",
+        detail:adoption.state==="converged"
+          ?"World current"
+          :adoption.state==="superseded"
+            ?"superseded"
+            :"pending",
       }),
     );
 
@@ -1763,6 +1775,8 @@ function renderCalibrationAdoptions(){
       note.textContent="Approval is complete. Admit this calibration to append the next runtime-authority version. No code deployment is required.";
     }else if(adoption.state==="affected"){
       note.textContent="The admitted calibration is live. Only the marked Threads below remain stale against that calibration dependency.";
+    }else if(adoption.state==="superseded"){
+      note.textContent="A newer or different admitted calibration is already current. This approval remains evidence and cannot be admitted now.";
     }else{
       note.textContent="The admitted calibration is live and every projected affected Thread has converged to current World appearance authority.";
     }
@@ -1794,7 +1808,7 @@ function renderCalibrationAdoptions(){
       });
       if(!migrate.disabled)migrate.addEventListener("click",()=>void migrateAffectedThreads(targetIds));
       actions.append(migrate);
-    }else if(adoption.state==="converged"){
+    }else if(adoption.state==="converged"||adoption.state==="superseded"){
       const copy=el("button","secondary","Copy evidence");
       copy.type="button";
       bindCopyAction(copy,{
