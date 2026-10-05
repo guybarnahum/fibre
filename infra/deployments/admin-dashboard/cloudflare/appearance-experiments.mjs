@@ -180,10 +180,18 @@ export function adminPopulationLabShadowBaseCalibration(baseManifest,currentCali
   const current=currentCalibration??referencePopulationCalibration(baseManifest.referencePopulation);
   const admittedExperimentId=current?.admissionEvidence?.approvalExperimentId??null;
   const priorVersion=Number(baseManifest.shadowCalibration?.baseCalibration?.version);
+  const priorChain=baseManifest.shadowCalibration?.baseCalibration?.dependencyChain;
+  const expectedChain=Array.isArray(priorChain)
+    ?priorChain.map(entry=>entry?.id===baseManifest.referencePopulation
+      ?{...entry,version:Number(entry.version)+1}
+      :entry)
+    :null;
+  const currentChain=Array.isArray(current?.dependencyChain)?current.dependencyChain:null;
   if(
     admittedExperimentId!==baseManifest.experimentId
     ||!Number.isSafeInteger(priorVersion)
     ||Number(current?.version)!==priorVersion+1
+    ||(expectedChain!==null&&JSON.stringify(expectedChain)!==JSON.stringify(currentChain))
   ){
     throw new TypeError("shadow experiments must start from current admitted calibration evidence");
   }
