@@ -121,7 +121,9 @@ visit current life
   -> later life
 ```
 
-N6.0 roadmap alignment is closed. N6.1 is implemented pending validation: `GET /api/threads/:threadId/present` first verifies the Thread is already public, then asks World to reconcile LivedNow at server time and returns the bounded current present. It does not require visitor-work availability and does not create a meeting, Encounter Story, compensation or private cognition. Caller-authored time/scene parameters are rejected.
+N6.0 roadmap alignment is closed. N6.1 is accepted in staging. N6.2 is implemented in the separate Viewer repository pending validation: opening `/meet` now performs the public current-life visit first, loads the matching Presentation snapshot/events, and renders that bounded moment as the primary experience before identity/history detail.
+
+Initial page entry does not call `POST /meet`, does not render encounter input and does not consume visitor-work availability. Missing public place detail remains unnamed rather than being inferred from home, identity or other context. Existing scene media is used when available but is not required for current life to exist.
 
 World owns LivedNow, Presentation owns the bounded public projection, and the Viewer owns display/interaction only.
 
