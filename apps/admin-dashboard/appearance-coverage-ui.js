@@ -1826,8 +1826,13 @@ function renderCalibrationAdoptions(){
     }
 
     const actions=el("div","appearance-adoption-actions");
-    const compare=el("button","secondary","Compare");
+    const compare=el("button","secondary appearance-compare-action");
     compare.type="button";
+    decorateActionButton(compare,{
+      icon:"wrench",
+      label:"Compare",
+      tooltip:"Review baseline vs refinement evidence",
+    });
     compare.addEventListener("click",()=>void openExperimentComparison(experiment));
     actions.append(compare);
 
@@ -2009,6 +2014,13 @@ function renderCalibrationHistory(){
 
       const changes=historyChanges(version);
       const changeRow=el("div","appearance-history-changes");
+      if(!version.origin){
+        changeRow.append(el(
+          "span",
+          "appearance-history-compared",
+          "Compared with @"+(Number(version.version)-1),
+        ));
+      }
       if(version.origin){
         changeRow.append(el(
           "span",
