@@ -7,6 +7,7 @@ import baseWorker, {
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
 import { readAdminAppearanceCoverage } from "./appearance-coverage.mjs";
 import {
+  admitAdminPopulationLabCalibration,
   approveAdminPopulationLabCalibration,
   createAdminPopulationLabCalibrationCandidate,
   deleteAdminPopulationLabComparisonAlignment,
@@ -66,6 +67,7 @@ const APPEARANCE_EXPERIMENT_RERUN_ROUTE = /^\/api\/appearance\/experiments\/([^/
 const APPEARANCE_EXPERIMENT_SHADOW_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/shadow$/u;
 const APPEARANCE_EXPERIMENT_CANDIDATE_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/candidate$/u;
 const APPEARANCE_EXPERIMENT_APPROVAL_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/approval$/u;
+const APPEARANCE_EXPERIMENT_ADMISSION_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/admission$/u;
 const THREAD_LABELS_ROUTE = "/api/threads/labels";
 const THREAD_POPULATION_ENTRY_ROUTE = /^\/api\/threads\/([^/]+)\/population$/u;
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
@@ -518,6 +520,7 @@ export default {
     const appearanceExperimentShadowMatch = APPEARANCE_EXPERIMENT_SHADOW_ROUTE.exec(url.pathname);
     const appearanceExperimentCandidateMatch = APPEARANCE_EXPERIMENT_CANDIDATE_ROUTE.exec(url.pathname);
     const appearanceExperimentApprovalMatch = APPEARANCE_EXPERIMENT_APPROVAL_ROUTE.exec(url.pathname);
+    const appearanceExperimentAdmissionMatch = APPEARANCE_EXPERIMENT_ADMISSION_ROUTE.exec(url.pathname);
     const threadLabels = url.pathname === THREAD_LABELS_ROUTE;
     const threadPopulationEntryMatch = THREAD_POPULATION_ENTRY_ROUTE.exec(url.pathname);
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
@@ -528,7 +531,7 @@ export default {
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
     const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch);
+    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
     const adminDelete = request.method === "DELETE" && (appearanceExperimentMatch || appearanceExperimentAlignmentMatch);
     if (adminGet || adminPost || adminDelete) {
       const gate = await adminPrincipal(request, env);
@@ -711,6 +714,14 @@ export default {
           return json(201,{
             contract:"fibre-admin-population-lab-approval-v0.1",
             approval,
+          });
+        }
+        if(appearanceExperimentAdmissionMatch){
+          const experimentId=id("experimentId",decodeURIComponent(appearanceExperimentAdmissionMatch[1]));
+          const result=await admitAdminPopulationLabCalibration(env,experimentId);
+          return json(result.duplicate?200:201,{
+            contract:"fibre-admin-population-lab-admission-v0.1",
+            ...result,
           });
         }
         if(appearanceExperimentCompareMatch){
