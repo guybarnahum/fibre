@@ -58,8 +58,8 @@ export function populationLabHistoryDraft(group,version){
     sourceVersion:Number(version.version),
     rationale:"",
     evidence:[],
-    values:Object.freeze({...version.prior}),
-    variation:Object.freeze({...version.effectiveVariation}),
+    values:Object.freeze({...version.values}),
+    variation:Object.freeze({...version.variation}),
   });
 }
 
