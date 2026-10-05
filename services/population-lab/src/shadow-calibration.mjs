@@ -1,6 +1,5 @@
 import {
   physicalGenomeLoci,
-  referencePopulationCalibration,
   referencePopulationPrior,
   referencePopulationVariation,
 } from "../../../core/src/human-appearance/index.mjs";
@@ -38,13 +37,17 @@ function sources(value){
 export function normalizePopulationLabShadowCalibration(raw={}){
   object("shadow calibration",raw);
   const referencePopulation=nonEmpty("referencePopulation",raw.referencePopulation);
-  const calibration=referencePopulationCalibration(referencePopulation);
   const base=object("baseCalibration",raw.baseCalibration);
   if(base.id!==referencePopulation)throw new TypeError("shadow calibration base does not match reference population");
-  if(Number(base.version)!==calibration.version)throw new TypeError("shadow calibration base is no longer current");
-
-  const currentPrior=referencePopulationPrior(referencePopulation);
-  const currentVariation=referencePopulationVariation(referencePopulation);
+  const baseVersion=Number(base.version);
+  if(!Number.isSafeInteger(baseVersion)||baseVersion<1)throw new TypeError("shadow calibration base version is invalid");
+  const currentPrior=object("baseCalibration.prior",base.prior);
+  const currentVariation=object("baseCalibration.variation",base.variation);
+  for(const locus of physicalGenomeLoci){
+    if(!Number.isFinite(Number(currentPrior[locus]))){
+      throw new TypeError("baseCalibration.prior is missing "+locus);
+    }
+  }
   const rawValues=raw.values??{};
   const rawVariation=raw.variation??{};
   object("shadow calibration values",rawValues);
@@ -76,9 +79,9 @@ export function normalizePopulationLabShadowCalibration(raw={}){
     contract:POPULATION_LAB_SHADOW_CALIBRATION_VERSION,
     referencePopulation,
     baseCalibration:Object.freeze({
-      id:calibration.id,
-      version:calibration.version,
-      dependencyChain:calibration.dependencyChain,
+      id:referencePopulation,
+      version:baseVersion,
+      dependencyChain:Object.freeze(structuredClone(base.dependencyChain??[])),
       prior:Object.freeze({...currentPrior}),
       variation:Object.freeze({...currentVariation}),
     }),
@@ -92,8 +95,8 @@ export function normalizePopulationLabShadowCalibration(raw={}){
 export function populationLabShadowCalibrationResolvers(rawShadow){
   const shadow=normalizePopulationLabShadowCalibration(rawShadow);
   const target=shadow.referencePopulation;
-  const targetPrior=Object.freeze({...referencePopulationPrior(target),...shadow.values});
-  const targetVariation=Object.freeze({...referencePopulationVariation(target),...shadow.variation});
+  const targetPrior=Object.freeze({...shadow.baseCalibration.prior,...shadow.values});
+  const targetVariation=Object.freeze({...shadow.baseCalibration.variation,...shadow.variation});
   return Object.freeze({
     shadow,
     priorFor:id=>id===target?targetPrior:referencePopulationPrior(id),
