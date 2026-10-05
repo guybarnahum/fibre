@@ -1,3 +1,4 @@
+import {referencePopulationCalibration} from "#core/src/human-appearance/index.mjs";
 import {createCloudflareInfraDriver} from "#infra/providers/cloudflare";
 import {
   createPopulationLabExperimentStore,
@@ -164,6 +165,31 @@ export function adminPopulationLabRerunRequest(manifest,{
   });
 }
 
+export function adminPopulationLabShadowBaseCalibration(baseManifest,currentCalibration=null){
+  if(!baseManifest||typeof baseManifest!=="object"||Array.isArray(baseManifest)){
+    throw new TypeError("base experiment manifest is required");
+  }
+  if(!baseManifest.shadowCalibration){
+    const calibration=baseManifest.source?.calibration;
+    if(!calibration||typeof calibration!=="object"||Array.isArray(calibration)){
+      throw new TypeError("base experiment calibration snapshot is required");
+    }
+    return calibration;
+  }
+
+  const current=currentCalibration??referencePopulationCalibration(baseManifest.referencePopulation);
+  const admittedExperimentId=current?.admissionEvidence?.approvalExperimentId??null;
+  const priorVersion=Number(baseManifest.shadowCalibration?.baseCalibration?.version);
+  if(
+    admittedExperimentId!==baseManifest.experimentId
+    ||!Number.isSafeInteger(priorVersion)
+    ||Number(current?.version)!==priorVersion+1
+  ){
+    throw new TypeError("shadow experiments must start from current admitted calibration evidence");
+  }
+  return current;
+}
+
 export function adminPopulationLabShadowExperimentRequest(baseManifest,proposal,{
   experimentId=newExperimentId(),
   requestedAt=new Date().toISOString(),
@@ -171,11 +197,7 @@ export function adminPopulationLabShadowExperimentRequest(baseManifest,proposal,
   if(!baseManifest||typeof baseManifest!=="object"||Array.isArray(baseManifest)){
     throw new TypeError("base experiment manifest is required");
   }
-  if(baseManifest.shadowCalibration)throw new TypeError("shadow experiments must start from a current-model baseline");
-  const calibration=baseManifest.source?.calibration;
-  if(!calibration||typeof calibration!=="object"||Array.isArray(calibration)){
-    throw new TypeError("base experiment calibration snapshot is required");
-  }
+  const calibration=adminPopulationLabShadowBaseCalibration(baseManifest);
   if(!proposal||typeof proposal!=="object"||Array.isArray(proposal)){
     throw new TypeError("shadow calibration proposal is required");
   }
