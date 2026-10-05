@@ -48,7 +48,7 @@ test("history exports a reusable refinement starting point",()=>{
       sourceVersion:3,
       rationale:"",
       evidence:[],
-      values:{noseBreadth:.14,faceBreadth:-.02},
+      values:{noseBreadth:.14},
       variation:{familyFactorMultiplier:1.04},
     },
     "history export stopped representing the selected baseline",
