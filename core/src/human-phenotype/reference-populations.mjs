@@ -158,12 +158,16 @@ export function referencePopulationCalibrationHistory(id){
   let version=Number(base.version);
   let values={...(base.values??{})};
   let variation={...(base.variation??{})};
+  const basePrior=resolvedPrior(BASE_DEFINITIONS,key);
+  const baseVariation=resolvedVariation(BASE_DEFINITIONS,key);
   const history=[Object.freeze({
     id:key,
     version,
     origin:true,
     values:Object.freeze({...values}),
     variation:Object.freeze({...variation}),
+    prior:basePrior,
+    effectiveVariation:baseVariation,
     changes:Object.freeze({values:Object.freeze({...values}),variation:Object.freeze({...variation})}),
     evidence:null,
   })];
@@ -183,6 +187,8 @@ export function referencePopulationCalibrationHistory(id){
       origin:false,
       values:Object.freeze({...values}),
       variation:Object.freeze({...variation}),
+      prior:Object.freeze({...admission.resolvedPrior}),
+      effectiveVariation:Object.freeze({...admission.resolvedVariation}),
       changes:Object.freeze({
         values:Object.freeze({...admission.values}),
         variation:Object.freeze({...admission.variation}),
@@ -209,6 +215,8 @@ export function referencePopulationCalibration(id){
     admissionEvidence:definition.admissionEvidence??null,
     fallbackDepth:dependencyChain.length-1,
     dependencyChain,
+    prior:referencePopulationPrior(key),
+    variation:referencePopulationVariation(key),
   });
 }
 
@@ -225,6 +233,32 @@ export function referencePopulationForPopulationId(populationId, fallback=null){
   }
   if(fallback===null||fallback===undefined)return null;
   return definitionFor(fallback)[0];
+}
+
+function resolvedPrior(definitions,id,cache=new Map()){
+  if(cache.has(id))return cache.get(id);
+  const definition=definitions[id];
+  if(!definition)throw Error(`unknown physical reference population: ${id}`);
+  const inherited=definition.parent===null?{}:resolvedPrior(definitions,definition.parent,cache);
+  const prior={...inherited,...definition.values};
+  for(const locus of physicalGenomeLoci){
+    if(!Number.isFinite(prior[locus]))throw Error(`${id} has no physical prior for ${locus}`);
+  }
+  const resolved=Object.freeze(Object.fromEntries(physicalGenomeLoci.map(locus=>[locus,prior[locus]])));
+  cache.set(id,resolved);
+  return resolved;
+}
+
+function resolvedVariation(definitions,id,cache=new Map()){
+  if(cache.has(id))return cache.get(id);
+  const definition=definitions[id];
+  if(!definition)throw Error(`unknown physical reference population: ${id}`);
+  const inherited=definition.parent===null||definition.parent===undefined
+    ? DEFAULT_VARIATION
+    : resolvedVariation(definitions,definition.parent,cache);
+  const resolved=Object.freeze({...inherited,...definition.variation});
+  cache.set(id,resolved);
+  return resolved;
 }
 
 const DEFAULT_VARIATION=Object.freeze({
