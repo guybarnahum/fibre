@@ -100,6 +100,8 @@ export function buildPopulationLabCalibrationCandidate({
       id:calibration.id,
       version:calibration.version,
       dependencyChain:calibration.dependencyChain,
+      prior:Object.freeze({...prior}),
+      variation:Object.freeze({...currentVariation}),
     }),
     proposedCalibration:Object.freeze({
       id:calibration.id,
