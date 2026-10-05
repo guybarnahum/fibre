@@ -313,7 +313,7 @@ The Viewer remains a separate projection surface. World owns LivedNow; Presentat
 
 Natural Thread -> Thread social life remains a preserved follow-on. The accepted Situated Percept / Salience / Interior Cognition / natural actor-discovery machinery should eventually prove that independently lived Threads can become co-present and sometimes choose to interact without caller-selected counterparties, Commons fallback, paid scheduling or sociability bias. Historical W0-W7 labels are implementation evidence, not the current execution roadmap.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 aligns roadmap truth; N6.1 is the first runtime slice.
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 is implemented pending validation: a public visit now has a distinct read-only path to reconcile an already-public Thread to server-time LivedNow without creating a meeting.
 
 ## Development discipline
 
