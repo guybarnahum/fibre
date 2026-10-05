@@ -245,22 +245,22 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Show a Thread's current life to a visitor, let a committed meeting happen inside that exact moment, then return later and find later life.",
-      "currentStep": "N6.1 is accepted in staging. N6.2 is current: present the bounded current life in the Viewer before any meeting interaction.",
+      "currentStep": "N6.2 is implemented in the Viewer pending validation: opening /meet now visits current life first and does not start a meeting.",
       "nextSteps": [
-        "Have the Viewer call GET /api/threads/:threadId/present for the selected public Thread.",
-        "Render the authoritative current phase, activity, bounded location/participants and existing depiction media without inventing missing place detail.",
-        "Keep meeting entry separate and optional; a visit must remain side-effect free.",
-        "Validate the lived-moment presentation against a real staging Thread."
+        "Run the Viewer test/build/check suite locally.",
+        "Deploy the Viewer to staging.",
+        "Verify the current scene appears before any meeting action and handles unnamed public location honestly.",
+        "Then begin N6.3: explicit meeting entry inside that exact scene."
       ]
     },
     "detail": {
-      "summary": "N5 is closed live and N6.1 is accepted. The public visit seam now proves Fibre can reconcile and expose one current public present without creating a meeting.",
-      "currentStep": "N6.2 should consume that bounded present in the separate Viewer repository. A null public place remains null; the Viewer must not infer private location from identity or other context.",
+      "summary": "N6.1 is accepted in staging and N6.2 is implemented across the separate insidefibre.com Viewer repository.",
+      "currentStep": "Viewer page entry now calls GET /api/threads/:threadId/present, then loads public Presentation. It renders current present as the primary scene, keeps identity/history secondary, and does not POST /meet or render encounter input on initial load.",
       "nextSteps": [
-        "Implement the Viewer lived-moment projection over currentPresent.payload.",
-        "Use depictionMediaId when media exists but do not make image readiness a life-availability requirement.",
-        "Preserve exact situationId so the later committed Meet path can enter the same scene.",
-        "Validate Viewer behavior separately, then proceed to N6.3."
+        "Validate Viewer semantic tests including the visit-before-meeting boundary and Fibre cross-repo contract.",
+        "Deploy Viewer staging and inspect one real current-life scene.",
+        "Confirm location.place=null remains unnamed rather than inferred.",
+        "Proceed to N6.3 only after this public presentation is accepted."
       ]
     },
     "finalLifeCognitionAuthorized": true
