@@ -55,6 +55,39 @@ test("calibration adoption follows admitted authority and affected World workset
 });
 
 
+test("admission observation distinguishes registry write from World convergence",()=>{
+  const current={
+    id:"middle_east.egypt",
+    version:2,
+  };
+  const stale=populationLabAdmissionObservation({
+    experimentId:"shadow_egypt",
+    current,
+    coverage:{
+      model:[{
+        id:"middle_east.egypt",
+        version:1,
+        admissionEvidence:null,
+      }],
+    },
+  });
+  assert.equal(stale.observed,false,"stale World projection looked converged");
+  assert.equal(stale.observedVersion,1,"stale World version was lost");
+
+  const currentWorld=populationLabAdmissionObservation({
+    experimentId:"shadow_egypt",
+    current,
+    coverage:{
+      model:[{
+        id:"middle_east.egypt",
+        version:2,
+        admissionEvidence:{approvalExperimentId:"shadow_egypt"},
+      }],
+    },
+  });
+  assert.equal(currentWorld.observed,true,"World did not recognize exact admitted authority");
+});
+
 test("superseded approval is retained but cannot be admitted again",()=>{
   const state=populationLabAdoptionState(experiment,{
     model:[{
