@@ -319,7 +319,7 @@ export function createPopulationLabExperimentStore(infra){
       await indexArtifact(experimentId,write,{artifacts:{calibrationCandidate:write.artifact}});
       return candidate;
     },
-    async putCalibrationApproval(experimentId,{approvedBy,impact,approvedAt}={}){
+    async putCalibrationApproval(experimentId,{approvedBy,impact,currentCalibration,approvedAt}={}){
       const key=populationLabExperimentCatalogKey(experimentId);
       const current=await infra.catalog.get(key);
       if(current===null)throw new Error("experiment not found");
@@ -344,6 +344,7 @@ export function createPopulationLabExperimentStore(infra){
         reviewArtifact,
         approvedBy,
         impact,
+        currentCalibration,
         approvedAt,
       });
       const write=await put(experimentId,"calibration:approval",jsonBytes(approval),{mediaType:"application/json"});
