@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
+import { createHumanAppearanceCalibrationRegistry } from "#services/population-lab/src/calibration-registry.mjs";
 import { createAppearanceCoverageService } from "#services/world-kernel/src/appearance-coverage-service.mjs";
 import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
@@ -199,15 +200,34 @@ export class FibreWorldDurableObject extends DurableObject {
     this.health = this.infraDriver.health;
     this.threadDirectoryStore = null;
     this.threadDirectory = null;
+    this.calibrationRegistry = null;
+    this.calibrationModel = null;
     this.appearanceCoverage = null;
     this.threadMigrationSummary = null;
     this.threadHealthProjectionStore = null;
     this.threadHealthProjection = null;
   }
 
+  calibrationRegistryForRequest() {
+    if(this.calibrationRegistry===null){
+      const infra=createCloudflareInfraDriver({catalogDatabase:this.env?.PRESENTATION_CATALOG});
+      this.calibrationRegistry=createHumanAppearanceCalibrationRegistry(infra);
+    }
+    return this.calibrationRegistry;
+  }
+
+  async refreshCalibrationModel() {
+    this.calibrationModel=await this.calibrationRegistryForRequest().model();
+    return this.calibrationModel;
+  }
+
   runtimeForRequest() {
     if (this.runtime === null) {
-      this.runtime = createWorldCloudflareRuntime({ storage: this.ctx.storage, env: this.env });
+      this.runtime = createWorldCloudflareRuntime({
+        storage:this.ctx.storage,
+        env:this.env,
+        calibrationModelProvider:()=>this.calibrationModel,
+      });
     }
     return this.runtime;
   }
@@ -229,6 +249,7 @@ export class FibreWorldDurableObject extends DurableObject {
       this.appearanceCoverage = createAppearanceCoverageService({
         directoryStore:this.threadDirectoryStore,
         physicalGenomeMigrationStore:this.runtimeForRequest().threadPhysicalGenomeMigrationStore,
+        calibrationModelProvider:()=>this.calibrationModel,
       });
     }
     return this.appearanceCoverage;
@@ -333,6 +354,7 @@ export class FibreWorldDurableObject extends DurableObject {
       if (!privateOperatorAuthorized(request, this.env)) {
         return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
       }
+      await this.refreshCalibrationModel();
       return Response.json(this.appearanceCoverageForRequest().scan());
     }
     if (url.pathname === THREAD_MIGRATIONS_ROUTE) {
@@ -341,6 +363,7 @@ export class FibreWorldDurableObject extends DurableObject {
       if (!privateOperatorAuthorized(request, this.env)) {
         return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
       }
+      await this.refreshCalibrationModel();
       return Response.json(this.migrationSummaryForRequest().scan());
     }
     const migrationEntryMatch=THREAD_MIGRATION_ENTRY_ROUTE.exec(url.pathname);
@@ -350,6 +373,7 @@ export class FibreWorldDurableObject extends DurableObject {
       if (!privateOperatorAuthorized(request, this.env)) {
         return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
       }
+      await this.refreshCalibrationModel();
       const migration=this.migrationSummaryForRequest().inspect(decodeURIComponent(migrationEntryMatch[1]));
       if(migration===null)return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
@@ -464,6 +488,7 @@ export class FibreWorldDurableObject extends DurableObject {
       }
       const threadId = decodeURIComponent(repairMatch[1]);
       try {
+        await this.refreshCalibrationModel();
         const health = await this.healthProjectionForRequest().inspect(threadId);
         return repairJson(health.diagnosis.exists ? 200 : 404, {
           contract:THREAD_REPAIR_CONTRACT,
@@ -498,6 +523,7 @@ export class FibreWorldDurableObject extends DurableObject {
         }
       }
     }
+    if(THREAD_REPAIR_ROUTE.test(url.pathname))await this.refreshCalibrationModel();
     const runtime = this.runtimeForRequest();
     if (url.pathname === "/internal/reconciliation/stop" || url.pathname === "/internal/reconciliation/wake") {
       if (url.search !== "") return Response.json({ error: { code: "QUERY_NOT_SUPPORTED" } }, { status: 400 });
