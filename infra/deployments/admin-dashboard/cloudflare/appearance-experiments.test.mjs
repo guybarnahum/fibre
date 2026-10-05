@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   adminPopulationLabExperimentRequest,
   adminPopulationLabRerunRequest,
+  adminPopulationLabShadowBaseCalibration,
   adminPopulationLabShadowExperimentRequest,
   populationLabComparisonBaselineId,
   populationLabComparisonChanges,
@@ -140,6 +141,45 @@ test("Admin shadow experiment preserves the baseline cohort seed and source",()=
   assert.equal(shadow.source.shadowOfExperimentId,baseline.experimentId,"shadow experiment lost baseline provenance");
   assert.deepEqual(shadow.source.calibration,baseline.source.calibration,"shadow experiment changed base calibration snapshot");
   assert.equal(shadow.shadowCalibration.values.faceBreadth,.18,"shadow experiment lost proposed calibration");
+});
+
+
+test("Admin permits the exact admitted refinement to seed the next shadow",()=>{
+  const baseManifest={
+    experimentId:"plexp_admitted_v2",
+    referencePopulation:"middle_east.egypt",
+    count:24,
+    seed:"appearance:egypt",
+    source:{calibration:{id:"middle_east.egypt",version:1}},
+    shadowCalibration:{
+      referencePopulation:"middle_east.egypt",
+      baseCalibration:{id:"middle_east.egypt",version:1},
+      values:{noseBreadth:.12},
+      variation:{},
+      rationale:"Admitted v2",
+      evidence:[{source:"fixture",note:null}],
+    },
+  };
+  const current={
+    id:"middle_east.egypt",
+    version:2,
+    dependencyChain:[{id:"middle_east.egypt",version:2}],
+    admissionEvidence:{approvalExperimentId:"plexp_admitted_v2"},
+  };
+
+  assert.equal(
+    adminPopulationLabShadowBaseCalibration(baseManifest,current),
+    current,
+    "exact admitted refinement could not seed the next shadow",
+  );
+  assert.throws(
+    ()=>adminPopulationLabShadowBaseCalibration(baseManifest,{
+      ...current,
+      admissionEvidence:{approvalExperimentId:"plexp_other"},
+    }),
+    /current admitted calibration evidence/u,
+    "unadmitted refinement was allowed to seed another shadow",
+  );
 });
 
 
