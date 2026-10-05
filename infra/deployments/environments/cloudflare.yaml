@@ -12,6 +12,7 @@ infra:
     capabilities:
       - state
       - scheduler
+      - catalog
   birth-cloudflare:
     provider: cloudflare
     driver: cloudflare-v1
