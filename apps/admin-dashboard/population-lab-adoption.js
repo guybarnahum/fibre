@@ -85,3 +85,21 @@ export function populationLabAffectedThreadIds(adoptions){
     .filter(adoption=>adoption?.state==="affected")
     .flatMap(adoption=>adoption.remainingThreadIds??[]));
 }
+
+export function populationLabAdmissionObservation({experimentId,current,coverage}={}){
+  const referencePopulation=typeof current?.id==="string"?current.id:null;
+  const expectedVersion=Number(current?.version);
+  if(referencePopulation===null||!Number.isSafeInteger(expectedVersion)){
+    throw new TypeError("admitted calibration is required");
+  }
+  const observed=(coverage?.model??[]).find(entry=>entry?.id===referencePopulation)??null;
+  const observedVersion=Number(observed?.version);
+  const observedExperimentId=observed?.admissionEvidence?.approvalExperimentId??null;
+  return Object.freeze({
+    referencePopulation,
+    expectedVersion,
+    observedVersion:Number.isSafeInteger(observedVersion)?observedVersion:null,
+    observedExperimentId,
+    observed:observedVersion===expectedVersion&&observedExperimentId===experimentId,
+  });
+}
