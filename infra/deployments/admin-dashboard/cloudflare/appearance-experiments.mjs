@@ -134,6 +134,18 @@ export function adminPopulationLabExperimentRequest(spec,{
   if(typeof spec.referencePopulation!=="string"||spec.referencePopulation.trim()===""){
     throw new TypeError("coverage hole must have a reference population before an experiment can run");
   }
+  const calibration=spec.calibration;
+  if(
+    !calibration
+    ||typeof calibration!=="object"
+    ||Array.isArray(calibration)
+    ||calibration.id!==spec.referencePopulation
+    ||!Number.isSafeInteger(Number(calibration.version))
+    ||!calibration.prior
+    ||!calibration.variation
+  ){
+    throw new TypeError("experiment requires the current admitted calibration snapshot");
+  }
   return normalizePhysicalExperimentRequest({
     experimentId,
     referencePopulation:spec.referencePopulation,
@@ -146,7 +158,7 @@ export function adminPopulationLabExperimentRequest(spec,{
       populations:Array.isArray(spec.populations)?spec.populations:[],
       threadIds:Array.isArray(spec.threadIds)?spec.threadIds:[],
       places:Array.isArray(spec.places)?spec.places:[],
-      calibration:spec.calibration??null,
+      calibration,
     },
   });
 }
