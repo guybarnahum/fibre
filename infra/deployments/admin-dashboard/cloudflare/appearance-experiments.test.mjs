@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import {referencePopulationCalibration} from "#core/src/human-appearance/index.mjs";
 import {
   adminPopulationLabExperimentRequest,
   adminPopulationLabRerunRequest,
@@ -14,6 +15,17 @@ import {
   withExperimentLifecycleHints,
 } from "./appearance-experiments.mjs";
 
+function calibration(id,version=referencePopulationCalibration(id).version){
+  const base=referencePopulationCalibration(id);
+  return Object.freeze({
+    ...base,
+    version,
+    dependencyChain:Object.freeze(base.dependencyChain.map(entry=>Object.freeze(
+      entry.id===id?{...entry,version}:entry
+    ))),
+  });
+}
+
 test("Admin launches reproducible physical experiments only from resolved ancestry coverage",()=>{
   const request=adminPopulationLabExperimentRequest({
     action:"experiment",
@@ -23,7 +35,7 @@ test("Admin launches reproducible physical experiments only from resolved ancest
     populations:["Korean"],
     threadIds:["thr_one"],
     places:[{displayName:"Seoul, South Korea"}],
-    calibration:{id:"east_asia.korean",version:2},
+    calibration:calibration("east_asia.korean",2),
     count:24,
   },{
     experimentId:"plexp_test_001",
@@ -88,7 +100,7 @@ test("rejected experiment rerun preserves source and cohort seed under a new ide
     populations:["Korean"],
     threadIds:["thr_one"],
     places:[{displayName:"Seoul, South Korea"}],
-    calibration:{id:"east_asia.korean",version:2},
+    calibration:calibration("east_asia.korean",2),
     count:24,
   },{
     experimentId:"plexp_original",
@@ -115,7 +127,7 @@ test("Admin shadow experiment preserves the baseline cohort seed and source",()=
     populations:["Japanese"],
     threadIds:["thr_one"],
     places:[{displayName:"Tokyo, Japan"}],
-    calibration:{id:"east_asia.japanese",version:1},
+    calibration:calibration("east_asia.japanese",1),
     count:24,
   },{
     experimentId:"plexp_shadow_base",
@@ -150,10 +162,10 @@ test("Admin permits the exact admitted refinement to seed the next shadow",()=>{
     referencePopulation:"middle_east.egypt",
     count:24,
     seed:"appearance:egypt",
-    source:{calibration:{id:"middle_east.egypt",version:1}},
+    source:{calibration:calibration("middle_east.egypt",1)},
     shadowCalibration:{
       referencePopulation:"middle_east.egypt",
-      baseCalibration:{id:"middle_east.egypt",version:1},
+      baseCalibration:calibration("middle_east.egypt",1),
       values:{noseBreadth:.12},
       variation:{},
       rationale:"Admitted v2",
@@ -161,9 +173,7 @@ test("Admin permits the exact admitted refinement to seed the next shadow",()=>{
     },
   };
   const current={
-    id:"middle_east.egypt",
-    version:2,
-    dependencyChain:[{id:"middle_east.egypt",version:2}],
+    ...calibration("middle_east.egypt",2),
     admissionEvidence:{approvalExperimentId:"plexp_admitted_v2"},
   };
 
@@ -189,7 +199,7 @@ test("rejected shadow rerun preserves the exact shadow proposal",()=>{
     coverageKey:"reference:east_asia.japanese",
     referencePopulation:"east_asia.japanese",
     coverage:"partial",
-    calibration:{id:"east_asia.japanese",version:1},
+    calibration:calibration("east_asia.japanese",1),
     count:24,
   },{
     experimentId:"plexp_shadow_rerun_base",
