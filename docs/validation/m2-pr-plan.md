@@ -230,23 +230,25 @@ Natural Thread -> Thread scene discovery remains a valuable later society/lived-
 
 N6 is the current M2 execution boundary.
 
-The missing proof is no longer a meeting engine. Fibre already has committed visitor availability, exact situation-bound Meet/encounter, Encounter Story/Experience and compensation. N6 must make that continuing life visible to the public and prove the same person is living later.
+The missing proof is no longer a meeting engine. Fibre already has ordinary Flight Plans, World CurrentSituation, Interior Cognition social stance, and Encounter Story/Experience. N6 must compose those authorities into a public encounter without scheduling or rearranging the Thread for the visitor.
 
 The accepted sequence is:
 
 ```text
 public visit
   -> ensure selected Thread LivedNow(now)
-  -> bounded public current scene
-  -> optional committed visitor meeting inside that exact scene
-  -> ordinary Encounter Story / Thread Experience consequence
+  -> bounded ordinary current scene
+  -> visitor approaches
+  -> first utterance becomes a concrete social request
+  -> Thread accept | decline | defer from current life
+  -> accepted encounter only
   -> visitor leaves
   -> time passes / life reconciles
   -> later public visit
   -> later current scene for the same Thread
 ```
 
-A public visit is not a meeting request. Meeting availability remains governed by prior voluntary accepted work. The Viewer remains projection-only and must not author the Thread's scene, private state or continuity.
+A public visit and local Meet action are not meeting authority. The Viewer remains projection-only and must not author the Thread's scene, private state or continuity.
 
 Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: meet the Thread in the ordinary displayed scene. N6.3a is implemented pending validation: public meeting admission is removed and the Viewer Meet action is local-only. Later N6.3 slices add scene-valid participation cognition and then restore `/encounter` as the only public social boundary.
 
