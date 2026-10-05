@@ -40,7 +40,7 @@ export function selectBirthNameParts({ requestId, material }) {
   });
 }
 
-export function composeBirthSubjectIdentity({ requestId, material }) {
+export function composeBirthSubjectIdentity({ requestId, material, calibrationModel = null }) {
   if (!material || typeof material !== "object") throw new TypeError("birth material is required");
   if (!Array.isArray(material.languages) || material.languages.length === 0) throw new TypeError("birth requires eventual spoken languages");
   if (!Array.isArray(material.raisedLanguages) || material.raisedLanguages.length === 0) throw new TypeError("birth requires raised languages");
@@ -51,6 +51,7 @@ export function composeBirthSubjectIdentity({ requestId, material }) {
     paternal:{physicalLineage:material.physicalAncestry.paternal},
     // Historical deterministic namespace: keep stable unless birth material is intentionally reseeded.
     conceptionSeed:`modern-birth:${requestId}`,
+    calibrationModel,
   });
   return Object.freeze({
     femaleName: fullName(femaleGiven, family, material.nameOrder),
