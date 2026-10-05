@@ -245,22 +245,22 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Show a Thread's current life to a visitor, let a committed meeting happen inside that exact moment, then return later and find later life.",
-      "currentStep": "N6.0 is closed. N6.1 is implemented pending validation: a public visit asks World for the selected public Thread's current life without creating a meeting.",
+      "currentStep": "N6.1 is accepted in staging. N6.2 is current: present the bounded current life in the Viewer before any meeting interaction.",
       "nextSteps": [
-        "Validate the new public current-life visit endpoint and full Fibre slice locally.",
-        "Deploy Thread Presentation and prove a real public visit returns a freshly reconciled current situation.",
-        "Move to N6.2: render that bounded current life in the Viewer without inventing private or Viewer-authored scene facts.",
-        "Reuse the existing committed Meet path inside that exact scene."
+        "Have the Viewer call GET /api/threads/:threadId/present for the selected public Thread.",
+        "Render the authoritative current phase, activity, bounded location/participants and existing depiction media without inventing missing place detail.",
+        "Keep meeting entry separate and optional; a visit must remain side-effect free.",
+        "Validate the lived-moment presentation against a real staging Thread."
       ]
     },
     "detail": {
-      "summary": "N5 is closed live. N6 reuses the accepted visitor-work, LivedNow, Meet, Encounter Story/Experience and compensation machinery; it does not build another meeting engine.",
-      "currentStep": "N6.1 adds GET /api/threads/:threadId/present. Thread Presentation verifies public visibility, calls World ensure-LivedNow at server time, and returns only the bounded current present. Query parameters are rejected so the visitor cannot author time or scene.",
+      "summary": "N5 is closed live and N6.1 is accepted. The public visit seam now proves Fibre can reconcile and expose one current public present without creating a meeting.",
+      "currentStep": "N6.2 should consume that bounded present in the separate Viewer repository. A null public place remains null; the Viewer must not infer private location from identity or other context.",
       "nextSteps": [
-        "Run focused N6.1 tests and npm run slice:validate.",
-        "Deploy thread-presentation to staging.",
-        "Verify the public visit endpoint against a real public Thread and confirm it does not require visitor-work availability.",
-        "Begin N6.2 Viewer lived-moment presentation."
+        "Implement the Viewer lived-moment projection over currentPresent.payload.",
+        "Use depictionMediaId when media exists but do not make image readiness a life-availability requirement.",
+        "Preserve exact situationId so the later committed Meet path can enter the same scene.",
+        "Validate Viewer behavior separately, then proceed to N6.3."
       ]
     },
     "finalLifeCognitionAuthorized": true
