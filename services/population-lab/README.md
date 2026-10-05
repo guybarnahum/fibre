@@ -8,7 +8,7 @@ The portable experiment-artifact store in `src/experiment-artifacts.mjs` owns on
 - mutable experiment status/index metadata;
 - explicit whole-experiment cleanup.
 
-It does not own Human Appearance calibration authority, Thread identity, World state, research evidence or migration. A3 remains the human-reviewed calibration approval boundary.
+Experiment artifacts do not own Human Appearance calibration authority, Thread identity, World state or migration. The adjacent append-only calibration registry in `src/calibration-registry.mjs` is the explicit post-approval authority boundary over the same generic InfraDriver object/catalog capabilities.
 
 The CLI runners under `tools/population-lab/` and Admin Appearance consume this same store. Provider adapters decide whether objects/catalog live on local disk, R2/D1, or another implementation.
 
@@ -48,6 +48,13 @@ A candidate:
 - may propose explicit physical-locus values and the existing variation multipliers;
 - records the experiment-owned evidence artifacts/images used for review;
 - is immutable and limited to one candidate per experiment;
-- is rejected when the experiment's calibration snapshot is no longer current.
+- carries the exact frozen admitted prior/variation snapshot used by the experiment; approval later checks that this base is still World-current.
 
-Candidate creation does **not** mutate the Human Appearance registry, active physical priors, Thread state, or migration state. Human-reviewed source-registry admission remains the later authority hinge; A3.1 does not implement approval.
+Candidate creation does **not** mutate the Human Appearance registry, active physical priors, Thread state, or migration state. Human approval remains evidence; the separate append-only **Admit** operation is the authority hinge.
+
+
+## Runtime calibration registry
+
+`src/calibration-registry.mjs` stores admitted Human Appearance refinements as provider-neutral data. Each local calibration version is written once through `InfraDriver.objects` and indexed through `InfraDriver.catalog`. Current authority is derived from the highest contiguous admitted version; there is no mutable rollback pointer, overwrite, or delete operation.
+
+Cloudflare currently maps this to the existing Population Lab R2 object store and D1 catalog. World consumes the catalog projection as the current calibration model for appearance coverage, dependency comparison and physical migration. Population Lab freezes the exact admitted prior/variation snapshot into each experiment manifest so later admissions cannot reinterpret historical evidence.
