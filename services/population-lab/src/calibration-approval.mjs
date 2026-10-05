@@ -1,4 +1,3 @@
-import {referencePopulationCalibration} from "../../../core/src/human-appearance/index.mjs";
 import {POPULATION_LAB_CALIBRATION_CANDIDATE_VERSION} from "./calibration-candidate.mjs";
 
 export const POPULATION_LAB_CALIBRATION_APPROVAL_VERSION="fibre-population-lab-calibration-approval-v0.1";
@@ -67,6 +66,7 @@ export function buildPopulationLabCalibrationApproval({
   reviewArtifact,
   approvedBy,
   impact,
+  currentCalibration,
   approvedAt=new Date().toISOString(),
 }={}){
   if(!experiment||typeof experiment!=="object"||Array.isArray(experiment)){
@@ -81,17 +81,28 @@ export function buildPopulationLabCalibrationApproval({
   if(candidate.experimentId!==experiment.experimentId){
     throw new TypeError("calibration candidate does not belong to experiment");
   }
-  const current=referencePopulationCalibration(candidate.referencePopulation);
-  if(current.version!==candidate.baseCalibration.version){
+  if(!currentCalibration||typeof currentCalibration!=="object"||Array.isArray(currentCalibration)){
+    throw new TypeError("current calibration is required");
+  }
+  if(currentCalibration.id!==candidate.referencePopulation){
+    throw new TypeError("current calibration target changed");
+  }
+  if(Number(currentCalibration.version)!==candidate.baseCalibration.version){
     throw new TypeError("calibration candidate base is no longer current");
   }
-  if(candidate.proposedCalibration.version!==current.version+1){
+  if(
+    JSON.stringify(currentCalibration.dependencyChain??[])
+    !==JSON.stringify(candidate.baseCalibration.dependencyChain??[])
+  ){
+    throw new TypeError("calibration candidate dependency chain is no longer current");
+  }
+  if(candidate.proposedCalibration.version!==Number(currentCalibration.version)+1){
     throw new TypeError("calibration candidate does not advance one local version");
   }
   if(!impact||impact.referencePopulation!==candidate.referencePopulation){
     throw new TypeError("calibration impact preview is required");
   }
-  if(Number(impact.fromVersion)!==current.version||Number(impact.toVersion)!==candidate.proposedCalibration.version){
+  if(Number(impact.fromVersion)!==Number(currentCalibration.version)||Number(impact.toVersion)!==candidate.proposedCalibration.version){
     throw new TypeError("calibration impact preview version changed");
   }
 
