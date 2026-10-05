@@ -4,6 +4,7 @@ import {
   populationLabCalibrationHistoryGroups,
   populationLabHistoricalExperimentIds,
   populationLabHistoryDraft,
+  populationLabHistoryShadowDraft,
 } from "./population-lab-history.js";
 import {
   populationLabAdoptions,
@@ -1808,6 +1809,26 @@ function historyChanges(version){
   return [...values,...variation];
 }
 
+function currentHistoryBaselineExperiment(group){
+  const current=group?.versions?.find(version=>version?.current===true)??null;
+  if(current===null)return null;
+  const experimentId=current.admissionExperimentId??current.reportExperimentId??null;
+  return experimentId?experimentById(experimentId):null;
+}
+
+function openHistoricalShadow(group,version){
+  const baseline=currentHistoryBaselineExperiment(group);
+  if(baseline===null)throw new Error("Current admitted calibration evidence is unavailable");
+  const draft=populationLabHistoryShadowDraft(group,version);
+  if(Object.keys(draft.values).length===0&&Object.keys(draft.variation).length===0){
+    throw new Error("Historical baseline is equivalent to the current calibration");
+  }
+  openShadowCalibrationDialog(baseline);
+  applyImportedShadowProposal(draft);
+  if(shadowContext)shadowContext.textContent=
+    group.id+" · current @"+group.currentVersion+" → historical @"+version.version+" as shadow";
+}
+
 function renderCalibrationHistory(){
   if(!calibrationHistory)return;
   calibrationHistory.replaceChildren();
@@ -1882,6 +1903,21 @@ function renderCalibrationHistory(){
         report.title="Open retained Population Lab evidence for this baseline";
         report.addEventListener("click",()=>openExperimentReport(reportExperiment));
         actions.append(report);
+      }
+
+      if(!version.current){
+        const shadow=el("button","secondary");
+        shadow.type="button";
+        decorateActionButton(shadow,{
+          icon:"wrench",
+          label:"Try as shadow",
+          tooltip:"Use this historical baseline as a proposed new calibration against current authority",
+        });
+        shadow.addEventListener("click",()=>{
+          try{openHistoricalShadow(group,version)}
+          catch(error){shadow.title=error instanceof Error?error.message:String(error)}
+        });
+        actions.append(shadow);
       }
 
       const copy=el("button","secondary");
