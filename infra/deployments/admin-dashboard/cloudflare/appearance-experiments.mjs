@@ -638,8 +638,16 @@ export async function approveAdminPopulationLabCalibration(env,experimentId,{app
   if(experiment===null)throw new TypeError("experiment not found");
   const candidate=await readJsonArtifact(store,experiment.artifacts?.calibrationCandidate?.objectRef);
   if(candidate===null)throw new TypeError("calibration approval requires candidate evidence");
+  const currentCalibration=(coverage?.model??[]).find(
+    calibration=>calibration?.id===candidate.referencePopulation
+  )??null;
+  if(currentCalibration===null)throw new TypeError("current calibration is unavailable");
   const impact=projectCalibrationCandidateImpact({candidate,coverage});
-  const approval=await store.putCalibrationApproval(experimentId,{approvedBy,impact});
+  const approval=await store.putCalibrationApproval(experimentId,{
+    approvedBy,
+    impact,
+    currentCalibration,
+  });
   await publishExperimentHint(env,experimentId,"approval");
   return approval;
 }
