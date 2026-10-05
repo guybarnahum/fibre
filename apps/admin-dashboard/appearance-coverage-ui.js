@@ -1762,9 +1762,9 @@ function renderCalibrationAdoptions(){
     if(adoption.state==="admission_required"){
       note.textContent="Approval is complete. Admit this calibration to append the next runtime-authority version. No code deployment is required.";
     }else if(adoption.state==="affected"){
-      note.textContent="The reviewed calibration is live. Only the marked Threads below remain stale against that deployed dependency.";
+      note.textContent="The admitted calibration is live. Only the marked Threads below remain stale against that calibration dependency.";
     }else{
-      note.textContent="The reviewed calibration is live and every projected affected Thread has converged to current World appearance authority.";
+      note.textContent="The admitted calibration is live and every projected affected Thread has converged to current World appearance authority.";
     }
 
     const actions=el("div","appearance-adoption-actions");
