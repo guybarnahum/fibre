@@ -251,28 +251,34 @@ This temporary no-public-interaction state is intentional. N6.3d will restore `P
 
 Accepted locally on 2026-10-05 after Guy ran the focused N6.3a suite and full `npm run slice:validate` successfully. The Viewer test/build/Cloudflare validation path had already passed for the scene-first UI before this cleanup; N6.3a leaves public interaction intentionally disabled until N6.3b/c are implemented.
 
-### N6.3b — validate that the displayed lived segment still applies — CURRENT
+### N6.3b — validate that the displayed enacted situation still applies — CURRENT
 
 The visitor supplies the `situationId` they saw.
 
-World must not blindly re-author a new situation merely because the visitor clicked or spoke. Validate whether the displayed ordinary Flight Plan segment still governs the present:
+The Flight Plan is intention; `CurrentSituation` is World-owned enacted life. A plan may be delayed, interrupted or otherwise frustrated by reality, so plan identity is never the authority for whether the visitor is still in the same lived moment.
 
-For `at_place`:
+Validation uses the displayed `CurrentSituation` as the witness:
 
-- same governing personal plan / same planned stop;
-- same physical place;
+1. resolve the displayed situation from World history;
+2. compare it with the latest enacted `CurrentSituation`;
+3. if actual life has already changed materially, the displayed scene is stale;
+4. if actual life is still compatible and no relevant plan/authority boundary has been crossed since that enacted observation, accept it without writing anything;
+5. if the plan or governing authority indicates that the enacted observation may now be stale, run ordinary LivedNow reconciliation once and compare the resulting **actual** `CurrentSituation` with the displayed scene.
+
+The Flight Plan therefore acts only as a cheap reconciliation trigger/prior. It never substitutes for enacted reality.
+
+Material scene continuity is intentionally small:
+
+- same `at_place` physical place, or same `in_transit` from -> to;
 - same activity;
 - same mediated context, if any;
-- same planned participants relevant to the public scene.
+- same relevant participants.
 
-For `in_transit`:
+Transit progress may naturally advance. A different `situationId` alone does not mean the scene changed.
 
-- same governing plan / same transit leg;
-- same from -> to;
-- same activity/context;
-- transit progress may naturally advance.
+A later World observation may explicitly preserve the same scene even after the plan expected a transition. That is valid plan frustration: `observedDivergence` remains inspectable, and the later enacted situation outranks the itinerary.
 
-If the life has moved to a different segment, return `409 encounter_scene_changed`. No retry loop and no frozen old scene; Viewer refreshes `GET /present`.
+If enacted life has materially changed, N6.3d returns `409 encounter_scene_changed`. No retry loop and no frozen old scene; Viewer refreshes `GET /present`.
 
 ### N6.3c — reuse Interior Cognition for visitor participation
 
