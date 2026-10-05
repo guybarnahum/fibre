@@ -84,22 +84,22 @@ test("calibration candidate is durable evidence, not appearance authority",async
   assert.equal(deleted.artifactCount,5,"candidate evidence escaped whole-experiment cleanup");
 });
 
-test("stale experiment evidence cannot define the next calibration candidate",async()=>{
+test("candidate requires the experiment's complete admitted calibration snapshot",async()=>{
   const infra=createMemoryInfraDriver();
   const store=createPopulationLabExperimentStore(infra);
-  const experimentId="exp_candidate_stale";
-  const stale={
+  const experimentId="exp_candidate_incomplete";
+  const incomplete={
     ...referencePopulationCalibration("afr_north.morocco"),
-    version:0,
+    prior:null,
   };
-  await completedMoroccoExperiment(store,experimentId,stale);
+  await completedMoroccoExperiment(store,experimentId,incomplete);
 
   await assert.rejects(
     ()=>store.putCalibrationCandidate(experimentId,{
       values:{faceBreadth:.12},
-      rationale:"stale evidence must not advance current authority",
+      rationale:"incomplete evidence must not define a calibration candidate",
     }),
-    /no longer current/u,
-    "stale experiment proposed a current calibration candidate",
+    /prior snapshot is required/u,
+    "candidate accepted incomplete calibration authority",
   );
 });
