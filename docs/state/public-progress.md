@@ -121,11 +121,11 @@ visit current life
   -> later life
 ```
 
-N6.0 roadmap alignment is closed. N6.1 is accepted in staging. N6.2 is implemented in the separate Viewer repository pending validation: opening `/meet` now performs the public current-life visit first, loads the matching Presentation snapshot/events, and renders that bounded moment as the primary experience before identity/history detail.
+N6.0 is closed. N6.1 and N6.2 are accepted in staging. The public site now opens on the Thread's bounded current lived moment before any interaction, keeps missing public place detail unnamed, and does not consume visitor-work availability on page entry.
 
-Initial page entry does not call `POST /meet`, does not render encounter input and does not consume visitor-work availability. Missing public place detail remains unnamed rather than being inferred from home, identity or other context. Existing scene media is used when available but is not required for current life to exist.
+N6.3 is current: the visitor must explicitly choose to meet. That action may cross into the already-accepted committed visitor-work path only for the exact `situationId` already displayed. If life moved first, the site should refresh the present rather than preserve a stale chat session.
 
-World owns LivedNow, Presentation owns the bounded public projection, and the Viewer owns display/interaction only.
+World owns LivedNow, Presentation owns the bounded public projection and meeting authority, and the Viewer owns display/interaction only.
 
 A bounded public scene may show current embodiment, place or transit, current activity, appropriate public companions/context and existing scene media when available. A later visit should find a later `situationId` for the same Thread rather than resume the old encounter.
 
