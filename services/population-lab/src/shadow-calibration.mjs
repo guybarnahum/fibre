@@ -79,6 +79,8 @@ export function normalizePopulationLabShadowCalibration(raw={}){
       id:calibration.id,
       version:calibration.version,
       dependencyChain:calibration.dependencyChain,
+      prior:Object.freeze({...currentPrior}),
+      variation:Object.freeze({...currentVariation}),
     }),
     values:Object.freeze(values),
     variation:Object.freeze(variation),
