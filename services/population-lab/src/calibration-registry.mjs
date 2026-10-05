@@ -107,21 +107,8 @@ export function createHumanAppearanceCalibrationRegistry(infra){
 
       const existing=await admissions();
       const currentModel=createReferencePopulationModel(existing);
-      const current=currentModel.calibration(referencePopulation);
-      if(current.version!==Number(approval.baseCalibration?.version)){
-        throw new TypeError("calibration approval base is no longer current");
-      }
-      if(
-        Array.isArray(approval.baseCalibration?.dependencyChain)
-        &&!same(approval.baseCalibration.dependencyChain,current.dependencyChain)
-      ){
-        throw new TypeError("calibration approval dependency chain is no longer current");
-      }
-      if(version(admission.version)!==current.version+1){
-        throw new TypeError("calibration admission must advance exactly one local version");
-      }
-
-      const key=versionKey(referencePopulation,admission.version);
+      const requestedVersion=version(admission.version);
+      const key=versionKey(referencePopulation,requestedVersion);
       const priorRecord=await infra.catalog.get(key);
       if(priorRecord!==null){
         if(
@@ -135,6 +122,20 @@ export function createHumanAppearanceCalibrationRegistry(infra){
           });
         }
         throw new TypeError("calibration admission already exists");
+      }
+
+      const current=currentModel.calibration(referencePopulation);
+      if(current.version!==Number(approval.baseCalibration?.version)){
+        throw new TypeError("calibration approval base is no longer current");
+      }
+      if(
+        Array.isArray(approval.baseCalibration?.dependencyChain)
+        &&!same(approval.baseCalibration.dependencyChain,current.dependencyChain)
+      ){
+        throw new TypeError("calibration approval dependency chain is no longer current");
+      }
+      if(requestedVersion!==current.version+1){
+        throw new TypeError("calibration admission must advance exactly one local version");
       }
 
       const evidence=Object.freeze({
