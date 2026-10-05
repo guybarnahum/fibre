@@ -266,7 +266,7 @@ public visit
 
 A **visit is not a meeting request**. It must not create availability, an encounter, compensation or private cognition. The Viewer remains projection-only.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current. N6.3a is accepted. N6.3b is active: validate that the displayed ordinary Flight Plan segment still governs the Thread's life when the visitor speaks, without re-authoring the scene.
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current. N6.3a is accepted. N6.3b is active: validate that the displayed World-enacted situation still applies when the visitor speaks. The Flight Plan is only a lightweight signal that actual life may need reconciliation; it is not scene authority.
 
 ## Current causal loop
 
