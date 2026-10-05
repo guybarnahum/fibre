@@ -1,9 +1,4 @@
-import {
-  physicalGenomeLoci,
-  referencePopulationCalibration,
-  referencePopulationPrior,
-  referencePopulationVariation,
-} from "../../../core/src/human-appearance/index.mjs";
+import {physicalGenomeLoci} from "../../../core/src/human-appearance/index.mjs";
 
 export const POPULATION_LAB_CALIBRATION_CANDIDATE_VERSION="fibre-population-lab-calibration-candidate-v0.1";
 
@@ -54,9 +49,13 @@ export function buildPopulationLabCalibrationCandidate({
     throw new TypeError("experiment calibration snapshot does not match reference population");
   }
 
-  const calibration=referencePopulationCalibration(referencePopulation);
-  if(Number(snapshot.version)!==calibration.version){
-    throw new TypeError("experiment calibration is no longer current");
+  const version=Number(snapshot.version);
+  if(!Number.isSafeInteger(version)||version<1)throw new TypeError("experiment calibration version is invalid");
+  if(!snapshot.prior||typeof snapshot.prior!=="object"||Array.isArray(snapshot.prior)){
+    throw new TypeError("experiment calibration prior snapshot is required");
+  }
+  if(!snapshot.variation||typeof snapshot.variation!=="object"||Array.isArray(snapshot.variation)){
+    throw new TypeError("experiment calibration variation snapshot is required");
   }
 
   if(!values||typeof values!=="object"||Array.isArray(values)){
@@ -65,7 +64,7 @@ export function buildPopulationLabCalibrationCandidate({
   if(!variation||typeof variation!=="object"||Array.isArray(variation)){
     throw new TypeError("candidate variation must be an object");
   }
-  const prior=referencePopulationPrior(referencePopulation);
+  const prior=snapshot.prior;
   const valueChanges=[];
   for(const [locus,rawValue] of Object.entries(values).sort(([left],[right])=>left.localeCompare(right))){
     if(!LOCI.has(locus))throw new TypeError(`unknown physical calibration locus: ${locus}`);
@@ -77,7 +76,7 @@ export function buildPopulationLabCalibrationCandidate({
     valueChanges.push(Object.freeze({locus,from:prior[locus],to:value}));
   }
 
-  const currentVariation=referencePopulationVariation(referencePopulation);
+  const currentVariation=snapshot.variation;
   const variationChanges=[];
   for(const [parameter,rawValue] of Object.entries(variation).sort(([left],[right])=>left.localeCompare(right))){
     if(!(parameter in currentVariation))throw new TypeError(`unknown physical variation parameter: ${parameter}`);
@@ -97,15 +96,15 @@ export function buildPopulationLabCalibrationCandidate({
     experimentId:nonEmpty("experimentId",experiment.experimentId),
     referencePopulation,
     baseCalibration:Object.freeze({
-      id:calibration.id,
-      version:calibration.version,
-      dependencyChain:calibration.dependencyChain,
+      id:referencePopulation,
+      version,
+      dependencyChain:Object.freeze(structuredClone(snapshot.dependencyChain??[])),
       prior:Object.freeze({...prior}),
       variation:Object.freeze({...currentVariation}),
     }),
     proposedCalibration:Object.freeze({
-      id:calibration.id,
-      version:calibration.version+1,
+      id:referencePopulation,
+      version:version+1,
       values:Object.freeze(valueChanges),
       variation:Object.freeze(variationChanges),
     }),
