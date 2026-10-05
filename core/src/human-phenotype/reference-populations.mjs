@@ -1,6 +1,5 @@
 import {physicalGenomeLoci} from "./physical-genome.mjs";
 import {applyReferencePopulationAdmissions} from "./reference-population-admission.mjs";
-import {referencePopulationAdmissions} from "./reference-population-admissions.mjs";
 
 /*
  * Root priors are deliberately complete: every physical locus is named even
@@ -319,9 +318,7 @@ export function createReferencePopulationModel(rawAdmissions=[]){
 }
 
 const BASE_MODEL=createReferencePopulationModel([]);
-const DEFAULT_MODEL=referencePopulationAdmissions.length===0
-  ?BASE_MODEL
-  :createReferencePopulationModel(referencePopulationAdmissions);
+const DEFAULT_MODEL=BASE_MODEL;
 
 export const referencePopulationIds=DEFAULT_MODEL.ids;
 
