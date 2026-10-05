@@ -70,7 +70,7 @@ No runtime or Viewer code belongs in N6.0.
 
 **Acceptance:** current state, priorities, M2 plan, prototype roadmap and public-progress contract all point to N6 and do not contradict N5 closure.
 
-## N6.1 — visit a current life — IMPLEMENTED; VALIDATION PENDING
+## N6.1 — visit a current life — ACCEPTED IN STAGING 2026-10-05
 
 **Capability:** a public visitor can observe a selected public Thread's current bounded life without requesting a meeting.
 
@@ -116,6 +116,17 @@ A visit must not:
 Reuse the existing LivedNow/current-present publication authority. Do not add a new store.
 
 **High-value proof:** two visits at different lived times can return different authoritative `situationId` values, while caller input cannot author the scene.
+
+Staging acceptance evidence on 2026-10-05:
+
+- public Thread `thr_23cea3246a752a403adabda88a7c89d47f5a59c9` returned HTTP 200 from `GET /api/threads/:threadId/present`;
+- request latency was 3.66s;
+- World established a fresh present at `2026-10-05T18:28:38.788Z`;
+- the response carried authoritative `situationId=sit_120fe471ff5c14a041cb3708aa90f04b079dd1e22158149f83c41e809378ead8`;
+- the bounded public present exposed phase, activity, participants and depiction media without visitor-work, encounter or compensation payload;
+- `phase=at_place` with `location.place=null` is retained as truthful bounded public projection rather than filled from private World state or Viewer inference.
+
+The local semantic test separately proves caller-authored query parameters are rejected before World reconciliation.
 
 ## N6.2 — enter the moment
 
