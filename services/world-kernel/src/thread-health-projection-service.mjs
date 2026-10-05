@@ -1,6 +1,6 @@
 import { THREAD_REPAIR_CONTRACT } from "./thread-genesis-repair-api.mjs";
 
-const THREAD_HEALTH_PROJECTION_VERSION = "thread-health-v0.6";
+const THREAD_HEALTH_PROJECTION_VERSION = "thread-health-v0.7";
 
 function requireMethod(name, value, method) {
   if (!value || typeof value[method] !== "function") {
@@ -12,6 +12,7 @@ export function createThreadHealthProjectionService({
   projectionStore,
   presentationWitnessReader,
   diagnose,
+  authorityWitness = null,
   now = () => new Date().toISOString(),
 } = {}) {
   requireMethod("Thread health projection store", projectionStore, "worldWitness");
@@ -19,6 +20,9 @@ export function createThreadHealthProjectionService({
   requireMethod("Thread health projection store", projectionStore, "put");
   requireMethod("Presentation witness reader", presentationWitnessReader, "getSnapshotDigest");
   if (typeof diagnose !== "function") throw new TypeError("Thread health projection requires diagnose()");
+  if (authorityWitness !== null && typeof authorityWitness !== "function") {
+    throw new TypeError("Thread health projection authorityWitness must be a function or null");
+  }
   if (typeof now !== "function") throw new TypeError("Thread health projection now must be a function");
 
   async function currentWitness(threadId) {
@@ -41,6 +45,7 @@ export function createThreadHealthProjectionService({
         diagnosisContract:THREAD_REPAIR_CONTRACT,
         world:world.diagnosis,
         presentationSnapshotDigest:presentationSnapshotDigest ?? null,
+        authority:authorityWitness?.() ?? null,
       }),
     });
   }
