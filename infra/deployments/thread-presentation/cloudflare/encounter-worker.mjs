@@ -56,35 +56,6 @@ async function callWorldCurrentPresent(env, threadId) {
   return body.result;
 }
 
-async function callWorldMeetingEntry(env, threadId, expectedSituationId = null) {
-  const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/inside-fibre/meeting-entry", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-fibre-private-token": env.FIBRE_PRIVATE_TOKEN,
-    },
-    body: JSON.stringify(expectedSituationId === null ? { threadId } : { threadId, expectedSituationId }),
-  }));
-  let body = null;
-  try { body = await response.json(); } catch {}
-  if (!response.ok) {
-    const error = new Error(body?.detail ?? body?.error ?? `World LivedNow failed with HTTP ${response.status}`);
-    error.status = response.status;
-    error.body = body;
-    if (typeof body?.code === "string") error.code = body.code;
-    if (response.status === 409 && ["thread_meeting_unavailable", "thread_meeting_changed"].includes(body?.error)) {
-      error.code = body.error === "thread_meeting_changed" ? "THREAD_MEETING_CHANGED" : "THREAD_MEETING_UNAVAILABLE";
-      error.activityCategory = "conflict";
-      error.retryable = true;
-    }
-    throw error;
-  }
-  if (body?.result?.present?.situationId !== body?.result?.situationId) {
-    throw new Error("World LivedNow returned an inconsistent present");
-  }
-  return body.result;
-}
-
 function expectedWorldConflict(error, worldError) {
   return error?.status === 409 && error?.body?.error === worldError;
 }
@@ -114,19 +85,6 @@ function worldCurrentPresent(env, activityRecorder, threadId) {
     },
     () => callWorldCurrentPresent(env, threadId),
     (error) => expectedWorldConflict(error, "lived_now_unavailable"),
-  );
-}
-
-function worldMeetingEntry(env, activityRecorder, threadId, expectedSituationId = null) {
-  return runWorldStage(
-    activityRecorder,
-    {
-      threadId,
-      ...(expectedSituationId === null ? {} : { correlationId:expectedSituationId }),
-      stage: "presentation.meet.admission",
-    },
-    () => callWorldMeetingEntry(env, threadId, expectedSituationId),
-    (error) => error?.status === 409,
   );
 }
 
@@ -210,9 +168,6 @@ export default {
 
     const encounterApi = createPublicEncounterApi({
       viewerOrigin: env.VIEWER_ORIGIN ?? null,
-      ensurePublicPresent(threadId, expectedSituationId) {
-        return worldMeetingEntry(env, activityRecorder, threadId, expectedSituationId);
-      },
       async readPublicPresent(threadId, originalRequest) {
         const response = await baseWorker.fetch(snapshotRequest(originalRequest, threadId), env, ctx);
         if (!response.ok) return null;
