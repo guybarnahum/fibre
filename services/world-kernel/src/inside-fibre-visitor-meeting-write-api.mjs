@@ -63,8 +63,14 @@ export function createInsideFibreVisitorMeetingWriteApi({
         body = await request.json();
         assertPlainObject("Inside Fibre meeting request", body);
         if (entry) {
-          assertExactKeys("Inside Fibre meeting entry", body, ["threadId"]);
+          const keys = Object.hasOwn(body, "expectedSituationId")
+            ? ["threadId", "expectedSituationId"]
+            : ["threadId"];
+          assertExactKeys("Inside Fibre meeting entry", body, keys);
           assertId("Inside Fibre meeting entry.threadId", body.threadId);
+          if (Object.hasOwn(body, "expectedSituationId")) {
+            assertId("Inside Fibre meeting entry.expectedSituationId", body.expectedSituationId);
+          }
         } else {
           assertExactKeys("Inside Fibre visitor encounter", body, [
             "threadId",
@@ -82,11 +88,17 @@ export function createInsideFibreVisitorMeetingWriteApi({
       }
 
       if (entry) {
+        const expectedSituationId = body.expectedSituationId ?? null;
         const admitted = await meetingService.enter({
           threadId:body.threadId,
           at:now(),
+          expectedSituationId,
         });
-        if (admitted === null) return json({ error:"thread_meeting_unavailable" }, 409);
+        if (admitted === null) {
+          return json({
+            error:expectedSituationId === null ? "thread_meeting_unavailable" : "thread_meeting_changed",
+          }, 409);
+        }
         const published = await publication.publishCurrentSituation(admitted.situation);
         return json({
           ok:true,
