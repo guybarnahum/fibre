@@ -21,7 +21,6 @@ export async function startThreadEditorDirectoryFromEnvironment(environment = pr
   const host = environment.FIBRE_EDITOR_HOST ?? "127.0.0.1";
   const port = parsePort(environment.FIBRE_EDITOR_PORT ?? "4173");
   const worldKernelUrl = environment.FIBRE_WORLD_URL ?? "http://127.0.0.1:8787";
-  const presentationBaseUrl = environment.FIBRE_THREAD_PRESENTATION_URL ?? "http://127.0.0.1:8788";
   const privateToken = environment.FIBRE_PRIVATE_TOKEN ?? null;
   const accessToken = environment.FIBRE_EDITOR_ACCESS_TOKEN ?? undefined;
   const report = (event) => (error, context) => {
@@ -43,7 +42,6 @@ export async function startThreadEditorDirectoryFromEnvironment(environment = pr
   });
   const directory = attachThreadDirectoryBoundary(server, {
     worldKernelBaseUrl: worldKernelUrl,
-    presentationBaseUrl,
     privateToken,
     onError: report("thread-editor-directory-failed"),
   });
@@ -53,7 +51,6 @@ export async function startThreadEditorDirectoryFromEnvironment(environment = pr
     server,
     address,
     worldKernelUrl: directory.worldKernelBaseUrl,
-    presentationBaseUrl: directory.presentationBaseUrl,
     accessToken: server.editorAccessToken,
     privateInspection: privateToken !== null,
     fidOperations: fidService !== null,
@@ -73,7 +70,6 @@ async function main() {
     host: runtime.address.host,
     port: runtime.address.port,
     worldKernelUrl: runtime.worldKernelUrl,
-    presentationBaseUrl: runtime.presentationBaseUrl,
     mode: "inspection+directory",
     privateInspection: runtime.privateInspection,
     fidOperations: runtime.fidOperations,
