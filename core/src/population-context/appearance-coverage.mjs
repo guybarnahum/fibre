@@ -55,16 +55,18 @@ function physicalOrigins(physicalAncestry){
   });
 }
 
-function lineageEntry({thread,side,lineage}){
+function lineageEntry({thread,side,lineage,calibrationModel=null}){
   const recordedReferencePopulation=clean(lineage?.referencePopulation);
   const populationId=clean(lineage?.populationId);
   const population=clean(lineage?.population)??"Recorded family";
   const share=Number(lineage?.share);
-  const referencePopulation=referencePopulationForPopulationId(
+  const populationForPopulationId=calibrationModel?.populationForPopulationId??referencePopulationForPopulationId;
+  const calibrationFor=calibrationModel?.calibration??referencePopulationCalibration;
+  const referencePopulation=populationForPopulationId(
     populationId,
     recordedReferencePopulation,
   );
-  const calibration=referencePopulation===null?null:referencePopulationCalibration(referencePopulation);
+  const calibration=referencePopulation===null?null:calibrationFor(referencePopulation);
   const state=calibration===null?"missing":coverageState(calibration);
   return Object.freeze({
     threadId:thread.threadId,
@@ -146,7 +148,7 @@ function summarizeHoles(entries){
   })).sort((a,b)=>b.priority-a.priority||b.threadCount-a.threadCount||a.key.localeCompare(b.key)));
 }
 
-export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
+export function analyzeAppearanceCoverage({threads,ancestryEvidence,calibrationModel=null}={}){
   const normalizedThreads=Array.isArray(threads)?threads:[];
   const evidenceByThread=new Map((Array.isArray(ancestryEvidence)?ancestryEvidence:[]).map((entry)=>[entry.threadId,entry]));
   const entries=[];
@@ -174,7 +176,7 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
       addMigrationCandidate(thread,"physical_model_outdated",[],evidence);
     }
     if(evidence!==null){
-      const currentDependencies=appearanceCalibrationDependencies(evidence.physicalAncestry);
+      const currentDependencies=appearanceCalibrationDependencies(evidence.physicalAncestry,{calibrationModel});
       const migration=planAppearanceCalibrationMigration({
         storedDependencies:evidence.calibrationDependencies??null,
         currentDependencies,
@@ -196,7 +198,7 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
     for(const side of ["maternal","paternal"]){
       const lineage=evidence.physicalAncestry?.[side];
       if(!Array.isArray(lineage))continue;
-      for(const item of lineage)entries.push(lineageEntry({thread,side,lineage:item}));
+      for(const item of lineage)entries.push(lineageEntry({thread,side,lineage:item,calibrationModel}));
     }
   }
   for(const thread of missing){
@@ -231,6 +233,6 @@ export function analyzeAppearanceCoverage({threads,ancestryEvidence}={}){
       (a.threadName??a.threadId).localeCompare(b.threadName??b.threadId)
     )),
     lineages:Object.freeze(entries),
-    model:Object.freeze(referencePopulationCalibrations()),
+    model:Object.freeze(calibrationModel?.calibrations?.()??referencePopulationCalibrations()),
   });
 }
