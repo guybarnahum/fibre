@@ -266,7 +266,7 @@ public visit
 
 A **visit is not a meeting request**. It must not create availability, an encounter, compensation or private cognition. The Viewer remains projection-only.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 is accepted in staging. N6.2 is implemented in the separate Viewer repository pending validation: opening `/meet` now visits current life first, renders the bounded public moment as the primary scene, and does not start a meeting. N6.3 remains the next implementation slice after Viewer validation.
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: add one explicit meeting action that enters the exact displayed `situationId` through the already-accepted committed visitor-work path. Page entry remains a side-effect-free visit.
 
 ## Current causal loop
 
