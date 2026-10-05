@@ -211,7 +211,7 @@ ordinary Flight Plan
 
 There is no special meeting scene and no public meeting-session authority.
 
-### N6.3a — remove obsolete public meeting admission semantics — IMPLEMENTED; VALIDATION PENDING
+### N6.3a — remove obsolete public meeting admission semantics — ACCEPTED 2026-10-05
 
 Keep:
 
@@ -249,7 +249,9 @@ This temporary no-public-interaction state is intentional. N6.3d will restore `P
 
 **N6.3a acceptance:** opening the page or clicking Meet cannot call a public meeting-admission endpoint or any public social mutation. The only authoritative scene remains the ordinary public `currentPresent`.
 
-### N6.3b — validate that the displayed lived segment still applies
+Accepted locally on 2026-10-05 after Guy ran the focused N6.3a suite and full `npm run slice:validate` successfully. The Viewer test/build/Cloudflare validation path had already passed for the scene-first UI before this cleanup; N6.3a leaves public interaction intentionally disabled until N6.3b/c are implemented.
+
+### N6.3b — validate that the displayed lived segment still applies — CURRENT
 
 The visitor supplies the `situationId` they saw.
 
