@@ -155,10 +155,19 @@ export function repairReconciliationDisposition(result) {
   return "none";
 }
 
-export function createWorldCloudflareRuntime({ storage, env, now = () => new Date().toISOString(), nowMs = Date.now } = {}) {
+export function createWorldCloudflareRuntime({
+  storage,
+  env,
+  now = () => new Date().toISOString(),
+  nowMs = Date.now,
+  calibrationModelProvider = null,
+} = {}) {
   if (!storage || typeof storage !== "object") throw new TypeError("Cloudflare World runtime requires Durable Object storage");
   if (typeof now !== "function") throw new TypeError("Cloudflare World runtime now must be a function");
   if (typeof nowMs !== "function") throw new TypeError("Cloudflare World runtime nowMs must be a function");
+  if(calibrationModelProvider!==null&&typeof calibrationModelProvider!=="function"){
+    throw new TypeError("calibrationModelProvider must be a function or null");
+  }
 
   const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", env?.FIBRE_PRIVATE_TOKEN);
   const presentationBinding = serviceBinding(env, "THREAD_PRESENTATION");
@@ -198,7 +207,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     genesisBirthSexEvidence = new GenesisBirthSexEvidence(worldStorage);
     genesisSexMigrationStore = new GenesisSexMigrationStore(worldStorage);
     threadIdentityUpdateStore = new ThreadIdentityUpdateStore(worldStorage);
-    threadPhysicalGenomeMigrationStore = new ThreadPhysicalGenomeMigrationStore(worldStorage);
+    threadPhysicalGenomeMigrationStore = new ThreadPhysicalGenomeMigrationStore(worldStorage,{calibrationModelProvider});
   } catch (error) {
     closeAll([threadPhysicalGenomeMigrationStore, threadIdentityUpdateStore, genesisSexMigrationStore, genesisBirthSexEvidence, visualPublicationWorkset, presentationOutboxStore, civilRegistryStore, symbolicGenomeStore, genesisStore, embodimentStore, identityStore, worldStore]);
     throw error;
@@ -263,6 +272,7 @@ export function createWorldCloudflareRuntime({ storage, env, now = () => new Dat
     genesisAuthority:genesisStore,
     identityUpdater:threadIdentityUpdateStore,
     activityRecorder,
+    calibrationModelProvider,
   });
   const identityService = createThreadIdentityCommandService({
     worldReader:worldStore,
