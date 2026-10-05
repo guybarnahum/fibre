@@ -166,17 +166,17 @@ test("physical migration consumes the admitted runtime calibration model",()=>{
       [2,2],
       "physical migration ignored admitted calibration version",
     );
-    const ancestryDigest=sha256(canonicalJson(physicalAncestry));
+    const ancestryDigest=sha256(canonicalJson(result.physicalAncestry));
     const conceptionSeed=`legacy-physical-embodiment:${seeded.threadId}:${ancestryDigest}`;
     const expected=resolveHumanPhysicalInheritance({
-      maternal:{physicalLineage:physicalAncestry.maternal},
-      paternal:{physicalLineage:physicalAncestry.paternal},
+      maternal:{physicalLineage:result.physicalAncestry.maternal},
+      paternal:{physicalLineage:result.physicalAncestry.paternal},
       conceptionSeed,
       calibrationModel:model,
     }).physicalGenome;
     const base=resolveHumanPhysicalInheritance({
-      maternal:{physicalLineage:physicalAncestry.maternal},
-      paternal:{physicalLineage:physicalAncestry.paternal},
+      maternal:{physicalLineage:result.physicalAncestry.maternal},
+      paternal:{physicalLineage:result.physicalAncestry.paternal},
       conceptionSeed,
     }).physicalGenome;
     assert.deepEqual(result.physicalGenome,expected,
