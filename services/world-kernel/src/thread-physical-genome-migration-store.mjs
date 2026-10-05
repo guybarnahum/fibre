@@ -39,20 +39,26 @@ function eventId(threadId,operationKey){
   });
 }
 
-function resultGenome(threadId,physicalAncestry){
+function resultGenome(threadId,physicalAncestry,calibrationModel=null){
   const ancestryDigest=sha256(canonicalJson(physicalAncestry));
   return resolveHumanPhysicalInheritance({
     maternal:{physicalLineage:physicalAncestry.maternal},
     paternal:{physicalLineage:physicalAncestry.paternal},
     conceptionSeed:`legacy-physical-embodiment:${threadId}:${ancestryDigest}`,
+    calibrationModel,
   }).physicalGenome;
 }
 
 export class ThreadPhysicalGenomeMigrationStore{
   #database;
+  #calibrationModelProvider;
 
-  constructor(storage){
+  constructor(storage,{calibrationModelProvider=null}={}){
+    if(calibrationModelProvider!==null&&typeof calibrationModelProvider!=="function"){
+      throw new TypeError("calibrationModelProvider must be a function or null");
+    }
     this.#database=openWorldStateDatabase(storage,{storeName:"ThreadPhysicalGenomeMigrationStore"});
+    this.#calibrationModelProvider=calibrationModelProvider;
   }
 
   close(){this.#database.close();}
@@ -129,14 +135,15 @@ export class ThreadPhysicalGenomeMigrationStore{
     validateThreadSnapshot(thread);
     const key=normalizeOperationKey(operationKey);
     const ancestry=normalizePhysicalAncestry(physicalAncestry);
-    const calibrationDependencies=appearanceCalibrationDependencies(ancestry);
+    const calibrationModel=this.#calibrationModelProvider?.()??null;
+    const calibrationDependencies=appearanceCalibrationDependencies(ancestry,{calibrationModel});
     const previousEvidence=this.latestEvidence(thread.threadId);
     const previousCalibrationDependencies=previousEvidence?.calibrationDependencies??null;
     const calibrationPlan=planAppearanceCalibrationMigration({
       storedDependencies:previousCalibrationDependencies,
       currentDependencies:calibrationDependencies,
     });
-    const genome=resultGenome(thread.threadId,ancestry);
+    const genome=resultGenome(thread.threadId,ancestry,calibrationModel);
     expressInheritedAppearance({physicalGenome:genome,sex:thread.identity?.sex});
 
     const migrationEventId=eventId(thread.threadId,key);
