@@ -231,6 +231,81 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
     lived.close();
   }));
 
+test("N6.3b keeps the displayed scene valid when enacted life frustrates the Flight Plan", async () =>
+  withDatabase(async (databasePath) => {
+    const life = seedLife(databasePath);
+    const lived = openLivedNowStore(localWorldStateStorage(databasePath));
+    lived.recordPlan(personalPlan(life));
+    const service = createLivedNowService({ livedNowStore:lived });
+
+    const displayed = await service.ensure({
+      threadId:life.thread.threadId,
+      at:"2026-09-10T05:10:00Z",
+    });
+    const delayed = lived.enactCurrentSituation({
+      threadId:life.thread.threadId,
+      situationId:livedSituationId({
+        kind:"n6_plan_frustrated",
+        threadId:life.thread.threadId,
+        at:"2026-09-10T05:20:00Z",
+      }),
+      establishedAt:"2026-09-10T05:20:00Z",
+      observation:{
+        phase:"at_place",
+        location:{ kind:"place", placeRef:life.homeRef },
+        mediatedContext:null,
+        activity:displayed.activity,
+        reason:"World evidence shows Maya is still finishing the fox sketch after the planned departure.",
+        participantRefs:[],
+        evidenceRefs:[life.sourceEvent],
+      },
+    });
+    assert.equal(delayed.resolution.observedDivergence, true,
+      "frustrated plan should remain visible as actual-life divergence");
+
+    const validation = await service.validateDisplayedSituation({
+      threadId:life.thread.threadId,
+      situationId:displayed.situationId,
+      at:"2026-09-10T05:21:00Z",
+    });
+
+    assert.equal(validation.applies, true,
+      "actual continued life should outrank the Flight Plan");
+    assert.equal(validation.currentSituation.situationId, delayed.situationId,
+      "scene validation should not replace established actual life");
+    assert.deepEqual(lived.getCurrentSituation(life.thread.threadId), delayed,
+      "scene validation should not re-author established reality");
+
+    lived.close();
+  }));
+
+test("N6.3b rejects the displayed scene after World enacts materially different life", async () =>
+  withDatabase(async (databasePath) => {
+    const life = seedLife(databasePath);
+    const lived = openLivedNowStore(localWorldStateStorage(databasePath));
+    lived.recordPlan(personalPlan(life));
+    const service = createLivedNowService({ livedNowStore:lived });
+
+    const displayed = await service.ensure({
+      threadId:life.thread.threadId,
+      at:"2026-09-10T05:10:00Z",
+    });
+    const validation = await service.validateDisplayedSituation({
+      threadId:life.thread.threadId,
+      situationId:displayed.situationId,
+      at:"2026-09-10T05:20:00Z",
+    });
+
+    assert.equal(validation.applies, false,
+      "visitor must not remain in a scene after actual life changed");
+    assert.equal(validation.currentSituation.phase, "in_transit",
+      "World reconciliation should establish actual life before rejecting the scene");
+    assert.notEqual(validation.currentSituation.situationId, displayed.situationId,
+      "changed actual life should have its own situation witness");
+
+    lived.close();
+  }));
+
 test("a real LivedNow transition can become current interior state exactly once", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
