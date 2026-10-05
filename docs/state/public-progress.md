@@ -121,11 +121,13 @@ visit current life
   -> later life
 ```
 
-N6.0 is closed. N6.1 and N6.2 are accepted in staging. The public site now opens on the Thread's bounded current lived moment before any interaction, keeps missing public place detail unnamed, and does not consume visitor-work availability on page entry.
+N6.0 is closed. N6.1 and N6.2 are accepted in staging. The public site opens on the Thread's bounded current lived moment before any interaction.
 
-N6.3 is current: the visitor must explicitly choose to meet. That action may cross into the already-accepted committed visitor-work path only for the exact `situationId` already displayed. If life moved first, the site should refresh the present rather than preserve a stale chat session.
+N6.3 is current and now uses the simpler rule: **meet the Thread where they already are**. The scene comes from the Thread's ordinary Flight Plan and World-owned CurrentSituation. Clicking Meet is local Viewer state only; it does not schedule, pay, move, admit, or otherwise mutate the Thread's life. The visitor's first utterance will be the actual social request, and the Thread will decide whether to accept, decline, or defer from that lived context.
 
-World owns LivedNow, Presentation owns the bounded public projection and meeting authority, and the Viewer owns display/interaction only.
+N6.3a removes the obsolete public meeting-admission layer and visitor-work scene wrapper. Paid visitor-work remains a separate optional work/economy capability, not the definition of ordinary meeting.
+
+World owns LivedNow and participation, Presentation owns the bounded public API, and the Viewer owns display/interaction only.
 
 A bounded public scene may show current embodiment, place or transit, current activity, appropriate public companions/context and existing scene media when available. A later visit should find a later `situationId` for the same Thread rather than resume the old encounter.
 
