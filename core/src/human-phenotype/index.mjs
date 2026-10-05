@@ -6,4 +6,4 @@ export {sampleFounderPhysicalGenome} from "./founder-genome.mjs";
 export {resolveBirthPhysicalInheritance} from "./birth-inheritance.mjs";
 export {physicalPhenotypeRenderingProjection} from "./rendering-projection.mjs";
 
-export {referencePopulationIds,referencePopulationPrior,referencePopulationVariation} from "./reference-populations.mjs";
+export {createReferencePopulationModel,referencePopulationBaseCalibration,referencePopulationIds,referencePopulationPrior,referencePopulationVariation} from "./reference-populations.mjs";
