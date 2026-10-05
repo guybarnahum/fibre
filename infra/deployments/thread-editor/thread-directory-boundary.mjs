@@ -21,10 +21,6 @@ function normalizeLocalServiceUrl(value, name) {
   return new URL(`${url.protocol}//${url.host}`);
 }
 
-export function normalizeThreadPresentationUrl(value = "http://127.0.0.1:8788") {
-  return normalizeLocalServiceUrl(value, "FIBRE_THREAD_PRESENTATION_URL");
-}
-
 export function normalizeWorldKernelUrl(value = "http://127.0.0.1:8787") {
   return normalizeLocalServiceUrl(value, "FIBRE_WORLD_URL");
 }
@@ -52,7 +48,6 @@ async function upstreamJson(response, maxBytes, label) {
 
 export function attachThreadDirectoryBoundary(server, {
   worldKernelBaseUrl = "http://127.0.0.1:8787",
-  presentationBaseUrl = "http://127.0.0.1:8788",
   privateToken = null,
   fetchImpl = globalThis.fetch,
   maxUpstreamBytes = 512 * 1024,
@@ -63,7 +58,6 @@ export function attachThreadDirectoryBoundary(server, {
     throw new TypeError("Thread directory privateToken must be null or at least 16 characters");
   }
   const world = normalizeWorldKernelUrl(worldKernelBaseUrl);
-  const presentation = normalizeThreadPresentationUrl(presentationBaseUrl);
   const handlers = server.listeners("request");
   if (handlers.length !== 1) throw new Error("Thread Editor must expose exactly one request handler before directory composition");
   const [editorHandler] = handlers;
@@ -80,8 +74,7 @@ export function attachThreadDirectoryBoundary(server, {
     catch { return editorHandler(request, response); }
 
     const isSearch = url.pathname === "/api/editor/directory/search";
-    const isMeet = url.pathname === "/api/editor/directory/meet";
-    if (!isSearch && !isMeet) return editorHandler(request, response);
+    if (!isSearch) return editorHandler(request, response);
 
     try {
       if (request.method !== "GET") {
@@ -92,25 +85,24 @@ export function attachThreadDirectoryBoundary(server, {
           error: { code: "EDITOR_TOKEN_REQUIRED", message: "A valid per-run editor access token is required" },
         });
       }
-      if (isSearch && privateToken === null) {
+      if (privateToken === null) {
         return writeJson(response, 503, {
           error: {
             code: "EDITOR_PRIVATE_ACCESS_DISABLED",
-            message: "Operator Thread search requires FIBRE_PRIVATE_TOKEN; Meet a Thread remains available from public Presentation",
+            message: "Operator Thread search requires FIBRE_PRIVATE_TOKEN",
           },
         });
       }
 
-      const upstreamUrl = new URL(
-        isSearch ? "/internal/thread-directory/search" : "/api/threads/meet",
-        isSearch ? world : presentation,
-      );
+      const upstreamUrl = new URL("/internal/thread-directory/search", world);
       const params = new URLSearchParams(url.search);
-      if (isSearch) params.delete("language");
+      params.delete("language");
       upstreamUrl.search = params.toString();
 
-      const headers = { accept: "application/json" };
-      if (isSearch) headers["x-fibre-private-token"] = privateToken;
+      const headers = {
+        accept:"application/json",
+        "x-fibre-private-token":privateToken,
+      };
 
       let upstream;
       try {
@@ -121,14 +113,12 @@ export function attachThreadDirectoryBoundary(server, {
       } catch {
         return writeJson(response, 502, {
           error: {
-            code: isSearch ? "WORLD_THREAD_DIRECTORY_UNAVAILABLE" : "THREAD_PRESENTATION_UNAVAILABLE",
-            message: isSearch
-              ? "World Thread directory is unavailable"
-              : "Thread Presentation Meet service is unavailable",
+            code:"WORLD_THREAD_DIRECTORY_UNAVAILABLE",
+            message:"World Thread directory is unavailable",
           },
         });
       }
-      const label = isSearch ? "World Thread directory" : "Thread Presentation Meet service";
+      const label = "World Thread directory";
       const payload = await upstreamJson(upstream, maxUpstreamBytes, label);
       if (!upstream.ok) {
         return writeJson(response, upstream.status, {
@@ -150,6 +140,5 @@ export function attachThreadDirectoryBoundary(server, {
 
   return Object.freeze({
     worldKernelBaseUrl: world.href.replace(/\/$/, ""),
-    presentationBaseUrl: presentation.href.replace(/\/$/, ""),
   });
 }
