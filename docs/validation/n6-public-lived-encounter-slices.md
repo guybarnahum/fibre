@@ -128,9 +128,24 @@ Staging acceptance evidence on 2026-10-05:
 
 The local semantic test separately proves caller-authored query parameters are rejected before World reconciliation.
 
-## N6.2 — enter the moment
+## N6.2 — enter the moment — IMPLEMENTED; VALIDATION PENDING
 
 **Capability:** insidefibre.com presents the current life as a lived moment rather than a chatbot shell.
+
+Implemented in the separate `guybarnahum/insidefibre.com` Viewer repository:
+
+- opening `/meet` now performs `GET /api/threads/:threadId/present` before loading the public snapshot/events;
+- initial page entry does **not** call `POST /meet` and does not render encounter input;
+- the current public present, not visitor-work `livedScene`, drives the primary scene;
+- current activity, phase, bounded place/transit, participants, scene age and existing depiction media are rendered from Fibre public authority only;
+- `location.place=null` renders as an unnamed current place rather than being inferred from home, identity or other context;
+- identity/history remain secondary below the current scene;
+- a small `loadMeetPageVisit` boundary has a semantic test proving page entry can only use the visit capability;
+- the Viewer cross-repo contract now consumes Fibre's real public current-life API shape before replaying Presentation.
+
+Explicit meeting entry is intentionally deferred to N6.3. N6.2 does not add a Viewer-side meeting/session authority.
+
+
 
 Use existing public authority first:
 
