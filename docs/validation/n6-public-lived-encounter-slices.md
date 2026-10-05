@@ -7,51 +7,58 @@ canonical: true
 
 # N6 — Rich Public Lived Encounter
 
-N6 turns the already-proven lived-person and visitor-work machinery into one convincing public experience:
+N6 proves a simple public Fibre truth:
 
-> **A visitor meets a person who was already living before the page opened, then later returns and finds the same person living a later moment.**
+> **You do not summon a Thread into a meeting. You find them living, approach them where they already are, and they decide what happens next.**
 
-N6 is not a new meeting engine. N5 already proved the hard authority path in staging:
+The scene comes from the Thread's ordinary life:
 
 ```text
-prior voluntary visitor-work acceptance
-  -> durable commitment
-  -> Flight Plan revision
-  -> enacted Inside Fibre mediated presence
-  -> public Meet
-  -> exact situation-bound visitor encounter
-  -> Encounter Story
-  -> Thread Experience
-  -> selective aftermath
-  -> exactly-once Fibre Credit compensation
+Thread-owned Flight Plan
+  -> World-enacted CurrentSituation
+       at a place
+       or in transit between places
+  -> bounded public present
+  -> visitor observes that life
+  -> visitor approaches
+  -> Thread appraises whether to engage from that lived context
 ```
 
-N6 reuses that path. Its missing proof is public lived presence and later-life continuity.
+A meeting is one voluntary social event inside continuing life. It does not create the scene, rewrite the Flight Plan, establish a special visitor shift, or trap the Thread in a browser session.
+
+N5 already proved the general Encounter Story -> Thread Experience -> selective aftermath machinery. N6 reuses that authority after the Thread actually chooses to engage.
 
 ## Current boundary
 
 Already accepted and reusable:
 
 - continuous World-owned LivedNow across bounded dormancy;
-- Genesis -> continuing lived life;
+- Thread-authored rolling Flight Plans;
+- World-owned CurrentSituation at a physical place or in transit;
 - public current-present projection;
-- voluntary paid Inside Fibre availability through Interior Cognition;
-- accepted work bending Flight Plan;
-- LivedNow-derived visitor availability;
-- committed Thread discovery;
-- `livedScene` projection with exact `situationId`;
-- visitor encounter bound to that exact situation;
+- N6.1 public visit: `GET /api/threads/:threadId/present`;
+- N6.2 Viewer scene-first presentation;
+- Interior Cognition as the reusable private person-level deliberation seam;
+- social `accept | decline | defer` cognition grounded in current life;
+- situation-bound lived encounter response;
 - Encounter Story -> Thread Experience -> journal/memory consequence;
-- exactly-once Fibre Credit settlement;
-- canonical public identity/embodiment and scene media projection.
+- canonical public identity/embodiment and optional scene media.
+
+Accepted but **not a prerequisite for ordinary N6 meeting**:
+
+- bounded paid Inside Fibre visitor-work commitments;
+- visitor-work-mediated presence;
+- Fibre Credit work compensation.
+
+Those remain separate work/economy capabilities. N6.3 does not schedule or pay a Thread merely so a visitor can approach them.
 
 Not yet accepted:
 
-- a public **visit** that reconciles a selected Thread to now without requesting a meeting;
-- a Viewer experience that visibly presents the bounded lived moment rather than feeling like a chat entry point;
-- a later revisit proving the same Thread's life continued beyond the previous encounter.
+- a public visitor request appraised by the Thread from the ordinary displayed scene;
+- accepted/declined/deferred public participation over that exact lived context;
+- later public continuity after an accepted encounter.
 
-The Viewer remains a separate deployment/repository and is projection-only. Fibre owns the public API and authority boundaries; Viewer owns presentation and interaction.
+The Viewer remains projection-only. World owns LivedNow and participation; Presentation owns the bounded public API; Viewer owns display and interaction.
 
 ## N6.0 — roadmap truth alignment — CLOSED
 
@@ -178,26 +185,168 @@ Scene imagery is optional. Slow or absent generation must not make current life 
 
 **Acceptance:** what the Visitor sees corresponds to the exact published present and contains no Viewer-authored life facts.
 
-## N6.3 — meet inside that moment
+## N6.3 — meet the Thread where they are — CURRENT
 
-**Capability:** a visitor interaction happens inside the already-visible life.
+**Capability:** the visitor approaches a Thread in the ordinary scene her Flight Plan already produced, and the Thread decides whether to engage from that lived context.
 
-Reuse the accepted public Meet/encounter APIs:
+Canonical causal path:
 
 ```text
-visible lived scene
-  -> accepted visitor-work availability
-  -> visitor speaks into exact situationId
-  -> World verifies that situation is still current/admissible
-  -> response
-  -> Encounter Story / Thread Experience
+ordinary Flight Plan
+  -> World CurrentSituation
+  -> GET /present
+  -> Viewer shows bounded current life
+  -> visitor chooses Meet locally
+  -> visitor sends first utterance/request
+  -> World validates that ordinary scene still applies
+  -> Thread participation cognition
+       -> accept
+       -> decline
+       -> defer
+  -> only accepted participation becomes a lived visitor encounter
 ```
 
-If life moved between display and interaction, surface that as the scene having changed. Do not preserve the old scene to behave like a chat session.
+There is no special meeting scene and no public meeting-session authority.
 
-No conversation/session database.
+### N6.3a — remove obsolete public meeting admission semantics — IMPLEMENTING
 
-**Acceptance:** visitor speech cannot author or freeze the Thread's pre-existing situation; the encounter remains bound to the admitted `situationId`.
+Keep:
+
+- scene-first public visit from N6.1;
+- scene-first Viewer from N6.2;
+- exact displayed `situationId` as the visitor's scene witness;
+- explicit Viewer action before the composer becomes available;
+- removal of pre-scene `GET /api/threads/meet` candidate selection.
+
+Remove from the ordinary public meeting path:
+
+- public `POST /api/threads/:threadId/meet`;
+- Viewer `loadMeetingThread()`;
+- public `livedScene` visitor-work projection;
+- visitor-work availability as a prerequisite for meeting;
+- work commitment / Fibre Credit settlement as the meaning of ordinary meeting.
+
+The Meet button becomes **local Viewer state only**: it reveals the approach/composer UI but performs no World mutation and runs no cognition.
+
+Do not delete the separate accepted Inside Fibre work/economy capability merely because N6 no longer uses it for ordinary meeting.
+
+**N6.3a acceptance:** opening the page or clicking Meet cannot call a public meeting-admission endpoint. The only authoritative scene remains the ordinary public `currentPresent`.
+
+### N6.3b — validate that the displayed lived segment still applies
+
+The visitor supplies the `situationId` they saw.
+
+World must not blindly re-author a new situation merely because the visitor clicked or spoke. Validate whether the displayed ordinary Flight Plan segment still governs the present:
+
+For `at_place`:
+
+- same governing personal plan / same planned stop;
+- same physical place;
+- same activity;
+- same mediated context, if any;
+- same planned participants relevant to the public scene.
+
+For `in_transit`:
+
+- same governing plan / same transit leg;
+- same from -> to;
+- same activity/context;
+- transit progress may naturally advance.
+
+If the life has moved to a different segment, return `409 encounter_scene_changed`. No retry loop and no frozen old scene; Viewer refreshes `GET /present`.
+
+### N6.3c — reuse Interior Cognition for visitor participation
+
+A visitor's first utterance is the concrete social request.
+
+Reuse the existing social-response cognition semantics:
+
+```text
+current ordinary situation
++ remaining Flight Plan
++ current needs / feelings / unresolved intentions
++ bounded developed-self evidence
++ relevant relationship/history when real
+  -> accept | decline | defer
+```
+
+The visitor does not become a fake Thread and does not supply private context.
+
+Private reason/evidence remains private. Public output may include only an appropriate outward expression and, for defer, an explicitly suggested later time if cognition produced one.
+
+### N6.3d — make /encounter the only public social boundary
+
+Canonical public interaction:
+
+```http
+POST /api/threads/:threadId/encounter
+
+{
+  "situationId": "...",
+  "utterance": "Hi — do you have a minute?"
+}
+```
+
+World sequence:
+
+```text
+validate displayed ordinary scene
+  -> participation cognition
+  -> decline/defer: public expression only, no Encounter Story
+  -> accept: run ordinary lived encounter response
+```
+
+Public outcomes:
+
+- `accepted`;
+- `declined`;
+- `deferred`;
+- `409 encounter_scene_changed`.
+
+Do not expose private cognition, Flight Plan internals, memory IDs, needs/feelings or evidence refs.
+
+### N6.3e — accepted conversation stays inside ordinary life
+
+Only after `accept` should the existing lived-encounter response machinery run.
+
+Accepted flow:
+
+```text
+visitor utterance
+  -> accepted participation
+  -> Thread response grounded in the same ordinary CurrentSituation
+  -> Encounter Story
+  -> Thread Experience
+```
+
+There is no conversation/session store. Each later visitor turn remains situation-bound. If life moves, the interaction ends and the Viewer returns to the Thread's new present.
+
+### N6.3 high-value tests
+
+Keep the suite small:
+
+1. **ordinary life is not rearranged** — visitor request cannot change place/activity/Flight Plan;
+2. **Thread retains agency** — decline/defer creates no accepted Encounter Story;
+3. **accepted visitor meets existing life** — accepted encounter cites the displayed ordinary situation;
+4. **life moved** — stale scene returns `encounter_scene_changed` with zero participation/encounter work;
+5. **Viewer authority** — opening the page and clicking Meet perform no public mutation; only Send crosses the public social boundary.
+
+Short failures; no DOM snapshots or transport matrix.
+
+### N6.3 staging acceptance
+
+Use real ordinary Thread life: studying, eating, working, relaxing, walking, traveling, or another Flight Plan activity.
+
+A real decline/defer is valid agency evidence, not a failed system test. To close N6.3, additionally observe at least one naturally accepted visitor request without altering prompts, scheduling the Thread for the test, paying for availability, or brute-forcing acceptance.
+
+For the accepted case prove:
+
+- the ordinary scene existed before the visitor request;
+- visitor did not create or move the scene;
+- Thread chose to engage;
+- response remained grounded in that scene;
+- no visitor-work commitment or compensation was required;
+- no session object was created.
 
 ## N6.4 — consequence, not session state
 
@@ -214,7 +363,7 @@ Reuse existing authorities only:
 
 N6 adds no public-meeting-specific memory rule and no conversation persistence authority.
 
-**Acceptance:** retry cannot duplicate the Encounter Story, private consequence or Fibre Credit settlement; later cognition sees only admitted retained consequence through normal authorities.
+**Acceptance:** retry cannot duplicate the Encounter Story or private consequence; later cognition sees only admitted retained consequence through normal authorities.
 
 ## N6.5 — return later
 
@@ -245,15 +394,14 @@ Run one real staging path through the actual Viewer, public API, World and Prese
 Required evidence:
 
 1. a selected Thread has a bounded current public scene before the visitor speaks;
-2. the Thread's visitor availability comes from prior voluntary accepted work;
-3. the visitor enters the exact published situation;
-4. one objective Encounter Story and Thread Experience are admitted;
-5. compensation settles exactly once;
-6. the visitor leaves;
-7. a later visit reconciles and displays a different current situation for the same Thread;
-8. the old encounter is not resumed as a chat session;
-9. retry is idempotent;
-10. Fibre `npm run slice:validate` passes, while Viewer validation remains owned by the Viewer repository.
+2. the visitor approaches that ordinary scene without scheduling or rearranging the Thread's life;
+3. the Thread independently accepts, declines or defers from current life context;
+4. for an accepted case, one objective Encounter Story and Thread Experience are admitted in that displayed situation;
+5. the visitor leaves;
+6. a later visit reconciles and displays a different current situation for the same Thread;
+7. the old encounter is not resumed as a chat session;
+8. retry is idempotent;
+9. Fibre `npm run slice:validate` passes, while Viewer validation remains owned by the Viewer repository.
 
 ## Natural Thread -> Thread life after N6
 
