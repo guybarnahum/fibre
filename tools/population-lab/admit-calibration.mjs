@@ -4,6 +4,8 @@ import {fileURLToPath} from "node:url";
 
 import {
   referencePopulationCalibration,
+  referencePopulationPrior,
+  referencePopulationVariation,
 } from "../../core/src/human-appearance/index.mjs";
 import {
   referencePopulationAdmissions,
@@ -58,6 +60,11 @@ if(referencePopulationAdmissions.some(entry=>entry.id===admission.id&&entry.vers
   throw new TypeError("calibration admission already exists");
 }
 
+const basePrior=approval.baseCalibration?.prior??referencePopulationPrior(admission.id);
+const baseVariation=approval.baseCalibration?.variation??referencePopulationVariation(admission.id);
+const resolvedPrior={...basePrior,...(admission.values??{})};
+const resolvedVariation={...baseVariation,...(admission.variation??{})};
+
 const next=[
   ...referencePopulationAdmissions,
   {
@@ -65,6 +72,10 @@ const next=[
     version:admission.version,
     values:{...(admission.values??{})},
     variation:{...(admission.variation??{})},
+    basePrior,
+    baseVariation,
+    resolvedPrior,
+    resolvedVariation,
     evidence:{
       ...(admission.evidence??{}),
       approvalExperimentId:approval.experimentId,
