@@ -51,9 +51,21 @@ function serviceBase(record, serviceId) {
   return required(`${serviceId} baseUrl`, matches[0].baseUrl).replace(/\/$/u, "");
 }
 
-function birthRequest({ requestId, requestedAt, cohort, selection, sexSelection, canonicalPlace = null }) {
+function birthRequest({
+  requestId,
+  requestedAt,
+  cohort,
+  selection,
+  sexSelection,
+  calibrationModel,
+  canonicalPlace = null,
+}) {
   const genome = fixture(selection.genomePath);
-  const composedIdentity = composeBirthSubjectIdentity({ requestId, material: selection.material });
+  const composedIdentity = composeBirthSubjectIdentity({
+    requestId,
+    material:selection.material,
+    calibrationModel,
+  });
   const subjectIdentity = Object.freeze({
     ...composedIdentity,
     ...(sexSelection === null ? {} : { sex: sexSelection }),
@@ -86,6 +98,33 @@ async function json(response, label) {
   if (payload === null) throw new Error(`${label} returned non-JSON HTTP ${response.status}`);
   if (!response.ok) throw new Error(`${label} failed: HTTP ${response.status} ${JSON.stringify(payload)}`);
   return payload;
+}
+
+function calibrationModelFromSnapshot(payload) {
+  if(payload?.contract!=="fibre-human-appearance-calibration-model-v0.1"||!Array.isArray(payload.model)){
+    throw new Error("World appearance calibration model is invalid");
+  }
+  const byId=new Map(payload.model.map(entry=>[entry?.id,entry]));
+  const calibration=(id)=>{
+    const entry=byId.get(id);
+    if(!entry?.prior||!entry?.variation)throw new Error(`World appearance calibration ${id} is unavailable`);
+    return entry;
+  };
+  return Object.freeze({
+    prior:id=>calibration(id).prior,
+    variation:id=>calibration(id).variation,
+  });
+}
+
+async function readAppearanceCalibrationModel({baseUrl,privateToken,timeoutMs}) {
+  const payload=await json(await fetch(
+    `${baseUrl}/internal/appearance/calibrations`,
+    {
+      headers:{Accept:"application/json","x-fibre-private-token":privateToken},
+      signal:AbortSignal.timeout(timeoutMs),
+    },
+  ),"World appearance calibration");
+  return calibrationModelFromSnapshot(payload);
 }
 
 async function submit({ baseUrl, privateToken, body, timeoutMs }) {
@@ -217,6 +256,11 @@ async function main() {
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   const viewerOrigin = required("staging viewer origin", deployed.externalViewerOrigin);
   const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
+  const calibrationModel=await readAppearanceCalibrationModel({
+    baseUrl:worldKernel,
+    privateToken,
+    timeoutMs,
+  });
 
   const explicitRequestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || null;
   const requestId = explicitRequestId ?? `genesis-birth-${Date.now().toString(36)}`;
@@ -259,6 +303,7 @@ async function main() {
     cohort,
     selection,
     sexSelection: options.sex,
+    calibrationModel,
     canonicalPlace,
   });
   const plan = buildGenesisDevelopmentPlan(body);
