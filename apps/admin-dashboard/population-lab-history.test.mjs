@@ -5,6 +5,7 @@ import {
   populationLabCalibrationHistoryGroups,
   populationLabHistoricalExperimentIds,
   populationLabHistoryDraft,
+  populationLabHistoryShadowDraft,
 } from "./population-lab-history.js";
 
 const experiments=[
@@ -18,9 +19,9 @@ const history=[{
   id:"middle_east.egypt",
   currentVersion:3,
   versions:[
-    {id:"middle_east.egypt",version:1,origin:true,values:{},variation:{},evidence:null},
-    {id:"middle_east.egypt",version:2,origin:false,values:{noseBreadth:.12},variation:{},evidence:{approvalExperimentId:"admit_v2"}},
-    {id:"middle_east.egypt",version:3,origin:false,values:{noseBreadth:.14},variation:{familyFactorMultiplier:1.04},evidence:{approvalExperimentId:"admit_v3"}},
+    {id:"middle_east.egypt",version:1,origin:true,values:{},variation:{},prior:{noseBreadth:-.04,faceBreadth:-.02},effectiveVariation:{familyFactorMultiplier:1},evidence:null},
+    {id:"middle_east.egypt",version:2,origin:false,values:{noseBreadth:.12},variation:{},prior:{noseBreadth:.12,faceBreadth:-.02},effectiveVariation:{familyFactorMultiplier:1},evidence:{approvalExperimentId:"admit_v2"}},
+    {id:"middle_east.egypt",version:3,origin:false,values:{noseBreadth:.14},variation:{familyFactorMultiplier:1.04},prior:{noseBreadth:.14,faceBreadth:-.02},effectiveVariation:{familyFactorMultiplier:1.04},evidence:{approvalExperimentId:"admit_v3"}},
   ],
 }];
 
@@ -47,9 +48,25 @@ test("history exports a reusable refinement starting point",()=>{
       sourceVersion:3,
       rationale:"",
       evidence:[],
-      values:{noseBreadth:.14},
+      values:{noseBreadth:.14,faceBreadth:-.02},
       variation:{familyFactorMultiplier:1.04},
     },
     "history export stopped representing the selected baseline",
+  );
+});
+
+test("history can replay an older admitted baseline as a new shadow target",()=>{
+  const [group]=populationLabCalibrationHistoryGroups(history,experiments);
+  assert.deepEqual(
+    populationLabHistoryShadowDraft(group,group.versions[0]),
+    {
+      referencePopulation:"middle_east.egypt",
+      sourceVersion:1,
+      rationale:"Re-evaluate admitted historical baseline @1 against current @3.",
+      evidence:["calibration-history:middle_east.egypt@1"],
+      values:{noseBreadth:-.04},
+      variation:{familyFactorMultiplier:1},
+    },
+    "historical baseline did not become an exact delta from current",
   );
 });
