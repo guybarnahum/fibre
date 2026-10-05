@@ -211,7 +211,7 @@ ordinary Flight Plan
 
 There is no special meeting scene and no public meeting-session authority.
 
-### N6.3a — remove obsolete public meeting admission semantics — IMPLEMENTING
+### N6.3a — remove obsolete public meeting admission semantics — IMPLEMENTED; VALIDATION PENDING
 
 Keep:
 
@@ -233,7 +233,21 @@ The Meet button becomes **local Viewer state only**: it reveals the approach/com
 
 Do not delete the separate accepted Inside Fibre work/economy capability merely because N6 no longer uses it for ordinary meeting.
 
-**N6.3a acceptance:** opening the page or clicking Meet cannot call a public meeting-admission endpoint. The only authoritative scene remains the ordinary public `currentPresent`.
+Implemented shape:
+
+- removed pre-scene `GET /api/threads/meet` selection and its committed-selection helper;
+- removed public `POST /api/threads/:threadId/meet`;
+- removed the public visitor-work `livedScene` / availability wrapper;
+- removed Viewer `loadMeetingThread()`;
+- opening `/meet` still performs the accepted N6.1 visit and renders ordinary `currentPresent`;
+- clicking **Meet this moment** only stores the displayed `situationId` in local Viewer state;
+- removed the old Viewer encounter component and the obsolete paid visitor-work public staging harness;
+- temporarily removed the public `/encounter` adapter rather than leave the old work-availability/compensation semantics reachable;
+- retained the internal paid work/economy capability as a separate feature.
+
+This temporary no-public-interaction state is intentional. N6.3d will restore `POST /encounter` only after N6.3b scene-validity and N6.3c participation cognition exist.
+
+**N6.3a acceptance:** opening the page or clicking Meet cannot call a public meeting-admission endpoint or any public social mutation. The only authoritative scene remains the ordinary public `currentPresent`.
 
 ### N6.3b — validate that the displayed lived segment still applies
 
