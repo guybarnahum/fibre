@@ -103,12 +103,16 @@ public visit
   -> public response
 ```
 
-This is deliberately distinct from:
+This is deliberately distinct from a meeting request:
 
 ```text
-meeting request
-  -> accepted visitor-work availability required
-  -> encounter
+public visit
+  -> observe ordinary current life
+
+visitor request
+  -> Thread participation cognition
+  -> accept | decline | defer
+  -> accepted encounter only
 ```
 
 A visit must not:
@@ -175,7 +179,6 @@ Use existing public authority first:
 - current activity;
 - appropriate public participants/context;
 - existing scene media when available;
-- bounded availability when the Thread is working an accepted visitor window.
 
 Do not expose private Flight Plan details, private memory, semantic state, cognition reasons or operator evidence.
 
