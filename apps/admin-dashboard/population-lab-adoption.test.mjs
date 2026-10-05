@@ -24,12 +24,12 @@ const experiment={
   },
 };
 
-test("calibration adoption follows deployed authority and affected World workset",()=>{
+test("calibration adoption follows admitted authority and affected World workset",()=>{
   const waiting=populationLabAdoptionState(experiment,{
     model:[{id:"middle_east.egypt",version:1}],
     migrationCandidates:[],
   });
-  assert.equal(waiting.state,"release_required","unreleased approval looked live");
+  assert.equal(waiting.state,"admission_required","unadmitted approval looked live");
 
   const affected=populationLabAdoptionState(experiment,{
     model:[{
@@ -39,7 +39,7 @@ test("calibration adoption follows deployed authority and affected World workset
     }],
     migrationCandidates:[{threadId:"thr_b"},{threadId:"thr_other"}],
   });
-  assert.equal(affected.state,"affected","live calibration lost its affected workset");
+  assert.equal(affected.state,"affected","admitted calibration lost its affected workset");
   assert.deepEqual(affected.remainingThreadIds,["thr_b"]);
   assert.deepEqual([...populationLabAffectedThreadIds([affected])],["thr_b"]);
 
@@ -51,20 +51,20 @@ test("calibration adoption follows deployed authority and affected World workset
 });
 
 
-test("experiment is admitted only when deployed provenance names that exact experiment",()=>{
+test("experiment is admitted only when registry provenance names that exact experiment",()=>{
   assert.equal(
-    populationLabExperimentAdmitted({released:true,exactAdmission:true}),
+    populationLabExperimentAdmitted({admitted:true,exactAdmission:true}),
     true,
-    "exact deployed admission was not recognized",
+    "exact registry admission was not recognized",
   );
   assert.equal(
-    populationLabExperimentAdmitted({released:true,exactAdmission:false}),
+    populationLabExperimentAdmitted({admitted:true,exactAdmission:false}),
     false,
     "version movement falsely admitted a different experiment",
   );
   assert.equal(
-    populationLabExperimentAdmitted({released:false,exactAdmission:true}),
+    populationLabExperimentAdmitted({admitted:false,exactAdmission:true}),
     false,
-    "undeployed admission evidence looked live",
+    "unadmitted approval evidence looked live",
   );
 });
