@@ -51,6 +51,21 @@ test("calibration adoption follows admitted authority and affected World workset
 });
 
 
+test("superseded approval is retained but cannot be admitted again",()=>{
+  const state=populationLabAdoptionState(experiment(),{
+    model:[{
+      id:"middle_east.egypt",
+      version:3,
+      admissionEvidence:{approvalExperimentId:"plexp_newer"},
+    }],
+    migrationCandidates:[],
+  });
+  assert.equal(state.superseded,true,"superseded approval was not recognized");
+  assert.equal(state.state,"superseded","superseded approval remained actionable");
+  assert.equal(populationLabExperimentAdmitted(state),false,
+    "superseded approval looked like the current exact admission");
+});
+
 test("experiment is admitted only when registry provenance names that exact experiment",()=>{
   assert.equal(
     populationLabExperimentAdmitted({admitted:true,exactAdmission:true}),
