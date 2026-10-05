@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   populationLabAdoptionState,
   populationLabAffectedThreadIds,
+  populationLabAdmissionObservation,
   populationLabExperimentAdmitted,
 } from "./population-lab-adoption.js";
 
