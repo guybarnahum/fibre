@@ -2,10 +2,10 @@
   "$schema": "./public-progress.schema.json",
   "contract": "fibre-public-progress",
   "canonical": true,
-  "asOf": "2026-09-23",
+  "asOf": "2026-10-05",
   "title": "Where Fibre is today",
-  "headline": "Fibre carries canonical Threads through continuous LivedNow and natural scene discovery; W7p shared live-place/local-time authority is current before W7b resumes.",
-  "summary": "N1-N4 are closed. N5 includes validated Situated Percept, salience, grounded exploration, and natural scene discovery. The first W7b staging run exposed that physical live co-presence had no explicit World authority, so W7p now adds bounded immutable shared live-place identity plus local civil-time planning context before W7b reruns.",
+  "headline": "Fibre has closed the N5 encounter lifecycle; N6 now focuses on making a Thread's current life visible to public visitors and proving that same life continues later.",
+  "summary": "N1-N5 are closed at the accepted boundary. Fibre can reconcile LivedNow, admit voluntary visitor-work availability, enter an exact current scene, form Encounter Story and Thread Experience, preserve selective aftermath, and settle Fibre Credit compensation exactly once. N6 is current: show a bounded public present without making a meeting request, let a committed encounter happen inside that exact scene, then revisit the same Thread later and find later life rather than a resumed chat session.",
   "statusDefinitions": [
     {
       "id": "achieved",
@@ -172,12 +172,12 @@
       "label": "Meet a Thread in her current life",
       "status": "achieved",
       "simple": {
-        "claim": "A deployed public meeting can enter a freshly reconciled Thread life and speak into that exact World-owned situation.",
-        "limitation": "The accepted N4 path proves entry into real LivedNow, but it does not yet let the Thread decline or defer a meeting request based on her current life."
+        "claim": "A public visitor can meet a Thread inside a World-owned current situation that the visitor did not create.",
+        "limitation": "Reliable meeting availability is proven through prior voluntary visitor-work commitment; the public site does not yet show that current life richly before interaction or prove a later revisit reaches later life."
       },
       "detail": {
-        "claim": "Staging acceptance exercised POST /api/threads/:threadId/meet through World ensure-LivedNow and exact present publication, then completed the subsequent encounter against the same situationId without visitor-authored scene state.",
-        "limitation": "Meeting participation is the next refinement: exact LivedNow plus Thread-owned relationship/interior context should produce accept, decline or defer before an encounter begins."
+        "claim": "N4/N5 staging proved exact LivedNow meeting entry plus a prior voluntary paid availability commitment that revised Flight Plan, was enacted by World, admitted a situation-bound visitor encounter, formed Encounter Story and Thread Experience, and settled compensation exactly once.",
+        "limitation": "N6 must add a non-meeting public visit/current-life projection and the later-revisit continuity proof without moving life authority into the Viewer."
       },
       "evidence": [
         "docs/architecture/lived-now-and-meetings.md",
@@ -191,12 +191,12 @@
       "label": "Selective experience internalization",
       "status": "demonstrated",
       "simple": {
-        "claim": "A bounded encounter can become private reflection and selective autobiographical memory—or be forgotten.",
-        "limitation": "The authority separation is proven through E4; live N5 staging acceptance remains."
+        "claim": "A bounded encounter can become Thread-specific experience and selective private consequence—or remain unremembered.",
+        "limitation": "This has been accepted in a real staging visitor-work encounter, not across every future encounter type."
       },
       "detail": {
-        "claim": "B1/B2 and N5 E1-E4 preserve objective Encounter Story, Thread Experience, World journal-entry provenance, private journal presentation, selective autobiographical retention or not_remembered, and separate generated reconstruction lineage.",
-        "limitation": "E5 must exercise the combined encounter path against real staging Threads."
+        "claim": "N5 E1-E5 preserve objective Encounter Story, Thread-specific attention/experience, World journal-entry provenance, private journal presentation, selective autobiographical retention or not_remembered, separate generated reconstruction lineage, and live staging consequence.",
+        "limitation": "The accepted evidence is bounded; future natural social and richer elapsed-life encounters must reuse the same authority separation rather than infer retention automatically."
       },
       "evidence": [
         "docs/state/current-state.md",
@@ -210,12 +210,12 @@
       "label": "General lived encounters and reciprocal meetings",
       "status": "in_progress",
       "simple": {
-        "claim": "Fibre now supports environmental encounters, voluntary social meetings, silent witnesses, distinct private journals, and objective encounter visualization lineage over one Encounter Story / Thread Experience seam.",
-        "limitation": "Natural scene discovery is green, but the first W7b run found zero actor opportunities because live physical shared-place authority was missing. W7p is the current prerequisite."
+        "claim": "Fibre has the machinery for environmental encounters, voluntary social meetings, silent witnesses, natural actor discovery and distinct private aftermath over one Encounter Story / Thread Experience seam.",
+        "limitation": "A naturally occurring Thread-to-Thread encounter from independently lived plans remains a follow-on proof; it is not the current N6 blocker."
       },
       "detail": {
-        "claim": "E2 proves voluntary meeting; E3 proves a co-present silent witness can form different private consequence; E4 keeps objective story, personal attention, World journal authority, R2 journal presentation and autobiographical memory distinct in Admin, while the same objective prompt can feed ordinary image/video asset generation with canonical identity and chronology.",
-        "limitation": "W7p shared live-place/local-time authority must validate and deploy before W7b live staging acceptance can resume."
+        "claim": "Situated Percept, salience, Interior Cognition, explicit shared live-place authority, voluntary meeting and witness asymmetry are retained foundations for natural social life.",
+        "limitation": "Natural reciprocal acceptance must not use caller-selected counterparties, Commons fallback, paid scheduling or sociability bias. It resumes after the public N6 continuity proof."
       },
       "evidence": [
         "docs/architecture/encounters-and-experience.md",
@@ -242,24 +242,25 @@
     }
   ],
   "currentWork": {
-    "milestone": "Continuous LivedNow + Encounters",
+    "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
-      "summary": "Validate W7p, then rerun W7b natural encounter acceptance.",
-      "currentStep": "Add one explicit immutable live public-place authority and authoritative local civil-time context without promoting Genesis place IDs into live truth.",
+      "summary": "Show a Thread's current life to a visitor, let a committed meeting happen inside that exact moment, then return later and find later life.",
+      "currentStep": "N6.0 aligns roadmap truth; N6.1 adds a public visit seam that reconciles a selected public Thread to now without creating a meeting.",
       "nextSteps": [
-        "Validate the exact W7p source with focused organism tests and slice:validate.",
-        "Deploy the exact clean W7p SHA to staging.",
-        "Rerun lived-encounters:staging and inspect admitted worldPlaces, actual current/plan place refs, local-time-aware activities, and natural actor discovery.",
-        "Do not restore Commons fallback or caller-selected counterparties if natural discovery still fails."
+        "Add one public visit/current-life seam over existing World ensure-LivedNow and Presentation current-present authority.",
+        "Have the Viewer render the bounded lived scene without exposing private plan, memory or cognition state.",
+        "Reuse the accepted committed Meet/encounter path inside that exact situation.",
+        "Prove a later visit reaches a different current situation for the same Thread rather than resuming a chat session."
       ]
     },
     "detail": {
-      "summary": "N5 was deliberately replanned before deployment. Meeting is a gated social special case of a more general encounter primitive.",
-      "currentStep": "W7a is validated; W7b correctly exposed a missing live World-place authority. W7p is implemented pending local validation.",
+      "summary": "N5 is closed live. N6 reuses the accepted visitor-work, LivedNow, Meet, Encounter Story/Experience and compensation machinery; it does not build another meeting engine.",
+      "currentStep": "N6.0 truth alignment is active/closing in-repo. N6.1 is the first runtime slice: public visit != meeting request.",
       "nextSteps": [
-        "Validate and deploy W7p.",
-        "Rerun W7b against naturally admitted shared venues and local-time-aware Flight Planning.",
-        "Close N5 only after natural opportunity discovery plus durable reciprocal/private consequence semantics pass live staging."
+        "Complete N6.0 repository truth alignment and validation.",
+        "Implement N6.1 public current-life visit without availability/encounter side effects.",
+        "Implement Viewer lived-moment presentation against existing bounded public authority.",
+        "Close N6 with one staging visitor flight that returns later to a later life."
       ]
     },
     "finalLifeCognitionAuthorized": true
