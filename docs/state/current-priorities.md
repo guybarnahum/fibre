@@ -236,30 +236,30 @@ Historical W0-W7 and S coordinates remain useful implementation archaeology only
 
 The concrete public goal is:
 
-> **A visitor can see a persistent Thread's current life, meet her inside that exact moment when she has voluntarily chosen to be available, then later return and find the same person living a later moment.**
+> **A visitor can see a persistent Thread's ordinary current life, approach her inside that exact moment, let her decide whether to engage, then later return and find the same person living a later moment.**
 
-Most of the meeting machinery is already accepted:
+N6 composes existing lived-person authorities:
 
 ```text
-visitor-work offer
-  -> Thread accept | decline through Interior Cognition
-  -> accepted commitment bends Flight Plan
-  -> LivedNow enacts mediated availability
-  -> Directory/Meet selects an actually available Thread
-  -> exact situation-bound visitor encounter
+Thread-authored Flight Plan
+  -> World CurrentSituation
+  -> bounded public current scene
+  -> visitor social request
+  -> Interior Cognition accept | decline | defer
+  -> accepted encounter only
   -> Encounter Story / Thread Experience
   -> selective aftermath
-  -> exactly-once Fibre Credit compensation
 ```
 
-N6 therefore focuses on the public life seam:
+The public life seam is:
 
 ```text
 public visit
   -> ensure selected Thread LivedNow(now)
-  -> publish bounded current scene
+  -> publish bounded ordinary current scene
   -> Viewer shows that life
-  -> optional committed meeting inside the same situation
+  -> visitor approaches without mutating World
+  -> later social request may intersect that same lived segment
   -> later visit
   -> later current scene
 ```
