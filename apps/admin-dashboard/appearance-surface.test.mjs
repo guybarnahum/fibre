@@ -72,6 +72,8 @@ test("Appearance keeps admitted baselines in immutable calibration history",()=>
     "historical baselines lost comparison");
   assert.match(renderer,/label:"Copy JSON"/u,
     "historical baselines lost reusable JSON export");
+  assert.match(renderer,/label:"Try as shadow"/u,
+    "historical baselines cannot seed a new shadow refinement");
   assert.match(css,/\.appearance-compare-action[^\n]*white-space:nowrap/u,
     "Compare button can wrap icon and label");
 });
