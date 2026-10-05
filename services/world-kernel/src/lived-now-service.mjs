@@ -3,6 +3,7 @@ import {
   assertId,
   assertIsoTimestamp,
   assertPlainObject,
+  canonicalJson,
 } from "./persistence-common.mjs";
 import { formPersonalLivedPlan } from "./lived-plan-cognition.mjs";
 import { runLivedNowRegulationPulse } from "./lived-now-regulation.mjs";
@@ -75,6 +76,64 @@ function planForEnactment(personalPlan, carePlan, at) {
 
 function planCovers(plan, at) {
   return plan !== null && plannedPositionAt(plan, at) !== null;
+}
+
+function sceneFacts(situation) {
+  return {
+    phase:situation.phase,
+    location:situation.phase === "in_transit"
+      ? {
+          kind:"transit",
+          fromPlaceRef:situation.location.fromPlaceRef,
+          toPlaceRef:situation.location.toPlaceRef,
+        }
+      : structuredClone(situation.location),
+    mediatedContext:situation.mediatedContext,
+    activity:situation.activity,
+    participantRefs:[...situation.participantRefs].sort(),
+  };
+}
+
+function sameEnactedScene(left, right) {
+  return canonicalJson(sceneFacts(left)) === canonicalJson(sceneFacts(right));
+}
+
+function plannedScene(position) {
+  return {
+    phase:position.kind,
+    location:structuredClone(position.location),
+    mediatedContext:position.mediatedContext,
+    activity:position.activity,
+    participantRefs:[...position.participantRefs].sort(),
+  };
+}
+
+function samePlannedScene(left, right) {
+  return canonicalJson(plannedScene(left)) === canonicalJson(plannedScene(right));
+}
+
+function currentSituationNeedsReconciliation(livedNowStore, situation, at) {
+  if (at === situation.establishedAt) return false;
+
+  const personalPlan = livedNowStore.latestPlan(situation.threadId, "personal", { at });
+  if (personalPlan === null) return true;
+  const carePlan = livedNowStore.latestPlan(situation.threadId, "care", { at });
+  const carePosition = carePlan === null ? null : plannedPositionAt(carePlan, at);
+  const sourcePlanRefs = carePosition === null
+    ? [personalPlan.planId]
+    : [personalPlan.planId, carePlan.planId];
+  if (canonicalJson(sourcePlanRefs) !== canonicalJson(situation.sourcePlanRefs)) return true;
+
+  const governingPlan = situation.resolution.governingPlanRef === personalPlan.planId
+    ? personalPlan
+    : carePlan?.planId === situation.resolution.governingPlanRef
+      ? carePlan
+      : null;
+  if (governingPlan === null) return true;
+
+  const before = plannedPositionAt(governingPlan, situation.establishedAt);
+  const now = plannedPositionAt(governingPlan, at);
+  return before === null || now === null || !samePlannedScene(before, now);
 }
 
 function enact(livedNowStore, threadId, at, { materialization = null } = {}) {
@@ -458,6 +517,7 @@ export function createLivedNowService({
   situatedLifeStore = null,
   modelAdapter = null,
 } = {}) {
+  requireMethod(livedNowStore, "getSituation");
   requireMethod(livedNowStore, "getCurrentSituation");
   requireMethod(livedNowStore, "latestPlan");
   requireMethod(livedNowStore, "listPlans");
@@ -485,7 +545,7 @@ export function createLivedNowService({
     return currentSituation;
   }
 
-  return Object.freeze({
+  const api = {
     async ensure(input) {
       assertPlainObject("ensure LivedNow input", input);
       assertExactKeys("ensure LivedNow input", input, ["threadId", "at"]);
@@ -555,5 +615,44 @@ export function createLivedNowService({
         enact(livedNowStore, input.threadId, input.at),
       );
     },
-  });
+
+    async validateDisplayedSituation(input) {
+      assertPlainObject("displayed situation validation input", input);
+      assertExactKeys("displayed situation validation input", input, ["threadId", "situationId", "at"]);
+      assertId("displayed situation validation input.threadId", input.threadId);
+      assertId("displayed situation validation input.situationId", input.situationId);
+      assertIsoTimestamp("displayed situation validation input.at", input.at);
+
+      const displayed = livedNowStore.getSituation(input.situationId, { required:false });
+      if (displayed === null || displayed.threadId !== input.threadId) {
+        throw new LivedNowCoverageError("Displayed situation is not part of this Thread's lived history");
+      }
+      if (Date.parse(input.at) < Date.parse(displayed.establishedAt)) {
+        throw new LivedNowCoverageError("Displayed situation cannot be validated before it was established");
+      }
+
+      let current = livedNowStore.getCurrentSituation(input.threadId);
+      if (current === null) {
+        throw new LivedNowCoverageError("Displayed situation has no authoritative current life");
+      }
+      if (Date.parse(current.establishedAt) > Date.parse(input.at)) {
+        throw new LivedNowCoverageError("Displayed situation cannot be validated behind the authoritative present");
+      }
+
+      if (!sameEnactedScene(displayed, current)) {
+        return Object.freeze({ applies:false, currentSituation:current });
+      }
+
+      if (currentSituationNeedsReconciliation(livedNowStore, current, input.at)) {
+        current = await api.ensure({ threadId:input.threadId, at:input.at });
+      }
+
+      return Object.freeze({
+        applies:sameEnactedScene(displayed, current),
+        currentSituation:current,
+      });
+    },
+  };
+
+  return Object.freeze(api);
 }
