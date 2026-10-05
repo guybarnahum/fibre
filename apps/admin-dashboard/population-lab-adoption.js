@@ -25,7 +25,7 @@ export function populationLabAdoptionState(experiment,{model=[],migrationCandida
   if(impact===null)return null;
   const calibration=(Array.isArray(model)?model:[]).find(item=>item?.id===impact.referencePopulation)??null;
   const currentVersion=number(calibration?.version);
-  const released=currentVersion!==null&&currentVersion>=impact.toVersion;
+  const admitted=currentVersion!==null&&currentVersion>=impact.toVersion;
   const projected=new Set(impact.threadIds);
   const remaining=(Array.isArray(migrationCandidates)?migrationCandidates:[])
     .filter(candidate=>projected.has(candidate?.threadId))
@@ -45,11 +45,11 @@ export function populationLabAdoptionState(experiment,{model=[],migrationCandida
     lineageCount:impact.lineageCount,
     remainingThreadIds:Object.freeze([...new Set(remaining)].sort()),
     remainingThreadCount:new Set(remaining).size,
-    released,
+    admitted,
     exactAdmission,
-    superseded:released&&currentVersion>impact.toVersion,
-    state:!released
-      ?"release_required"
+    superseded:admitted&&currentVersion>impact.toVersion,
+    state:!admitted
+      ?"admission_required"
       :remaining.length>0
         ?"affected"
         :"converged",
@@ -74,11 +74,11 @@ export function populationLabAdoptions(experiments,context={}){
 }
 
 export function populationLabExperimentAdmitted(adoption){
-  return Boolean(adoption?.released&&adoption?.exactAdmission);
+  return Boolean(adoption?.admitted&&adoption?.exactAdmission);
 }
 
 export function populationLabAffectedThreadIds(adoptions){
   return new Set((Array.isArray(adoptions)?adoptions:[])
-    .filter(adoption=>adoption?.released&&adoption?.state!=="converged")
+    .filter(adoption=>adoption?.admitted&&adoption?.state!=="converged")
     .flatMap(adoption=>adoption.remainingThreadIds??[]));
 }
