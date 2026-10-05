@@ -63,8 +63,8 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
   const order = [];
   const api = createPublicEncounterApi({
     viewerOrigin: "https://insidefibre.com",
-    ensurePublicPresent: async (threadId) => {
-      order.push(`ensure:${threadId}`);
+    ensurePublicPresent: async (threadId, expectedSituationId) => {
+      order.push(`ensure:${threadId}:${expectedSituationId}`);
       return {
         present:{
           situationId: "sit_reconciled_now",
@@ -101,11 +101,13 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
     `https://api.insidefibre.com/api/threads/${THREAD_ID}/meet`,
     {
       method: "POST",
-      headers: { Origin: "https://insidefibre.com" },
+      headers: { "content-type":"application/json", Origin: "https://insidefibre.com" },
+      body:JSON.stringify({ situationId:"sit_reconciled_now" }),
     },
   ));
   assert.equal(response.status, 200);
-  assert.deepEqual(order, [`ensure:${THREAD_ID}`]);
+  assert.deepEqual(order, [`ensure:${THREAD_ID}:sit_reconciled_now`],
+    "meeting entry must be bound to the displayed situation");
   const body = await response.json();
   assert.deepEqual(body.currentPresent, {
     payload: {
@@ -150,6 +152,35 @@ test("N4 meeting entry reconciles LivedNow before exposing the scene", async () 
 
 
 
+test("meeting entry treats a moved displayed scene as life having moved", async () => {
+  const api=createPublicEncounterApi({
+    viewerOrigin:"https://insidefibre.com",
+    ensurePublicPresent:async (_threadId, expectedSituationId)=>{
+      assert.equal(expectedSituationId,"sit_seen_before_click");
+      const error=new Error("thread_meeting_changed");
+      error.status=409;
+      error.body={ error:"thread_meeting_changed" };
+      throw error;
+    },
+    readPublicPresent:async()=>null,
+    encounter:async()=>{ throw new Error("encounter must not run"); },
+  });
+
+  const response=await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/meet`,
+    {
+      method:"POST",
+      headers:{ "content-type":"application/json",Origin:"https://insidefibre.com" },
+      body:JSON.stringify({ situationId:"sit_seen_before_click" }),
+    },
+  ));
+
+  assert.equal(response.status,409);
+  assert.equal((await response.json()).error,"encounter_scene_changed",
+    "moved life must not be admitted as the stale displayed meeting");
+});
+
+
 test("meeting entry preserves visitor unavailability instead of calling it a LivedNow failure", async () => {
   const api = createPublicEncounterApi({
     viewerOrigin:"https://insidefibre.com",
@@ -165,7 +196,11 @@ test("meeting entry preserves visitor unavailability instead of calling it a Liv
 
   const response = await api.fetch(new Request(
     `https://api.insidefibre.com/api/threads/${THREAD_ID}/meet`,
-    { method:"POST", headers:{ Origin:"https://insidefibre.com" } },
+    {
+      method:"POST",
+      headers:{ "content-type":"application/json", Origin:"https://insidefibre.com" },
+      body:JSON.stringify({ situationId:SITUATION_ID }),
+    },
   ));
   assert.equal(response.status, 409);
   assert.deepEqual(await response.json(), { error:"thread_meeting_unavailable" },
