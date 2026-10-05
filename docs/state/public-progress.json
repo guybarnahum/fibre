@@ -245,22 +245,22 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Meet a Thread where they already are in ordinary life; the visitor approaches and the Thread decides whether to engage.",
-      "currentStep": "N6.3a is implemented pending validation: public meeting admission is removed, the Viewer Meet action is local-only, and no public social mutation is exposed yet.",
+      "currentStep": "N6.3a is accepted. N6.3b is current: validate that the displayed ordinary Flight Plan segment still applies when the visitor speaks.",
       "nextSteps": [
-        "Validate N6.3a in Fibre and Viewer.",
-        "N6.3b: validate that the displayed ordinary Flight Plan segment still applies when the visitor speaks.",
-        "N6.3c: reuse Interior Cognition for accept, decline or defer.",
-        "N6.3d/e: restore /encounter as the only public social boundary and run accepted interaction inside ordinary life."
+        "N6.3b: validate same ordinary lived segment without re-authoring a new scene.",
+        "N6.3c: reuse Interior Cognition for accept, decline or defer from current life.",
+        "N6.3d: restore POST /encounter as the only public social boundary.",
+        "N6.3e: run accepted conversation inside ordinary life, then proceed to later-life continuity."
       ]
     },
     "detail": {
       "summary": "N6.3 no longer treats a paid Inside Fibre visitor-work shift as the definition of meeting. Ordinary meeting intersects a Thread's existing Flight Plan and CurrentSituation.",
-      "currentStep": "N6.3a cleanup is implemented: GET /api/threads/meet selection, public POST /meet admission, public livedScene availability wrapping, Viewer loadMeetingThread, and the old public visitor-work encounter adapter are gone. The Viewer retains only the displayed situation witness locally after Meet is clicked.",
+      "currentStep": "N6.3a cleanup is accepted. Public GET /api/threads/meet selection, POST /meet admission, visitor-work livedScene wrapping, Viewer loadMeetingThread and the old public encounter adapter are gone. Public interaction remains intentionally disabled while N6.3b proves same-segment validity.",
       "nextSteps": [
-        "Run focused Fibre/Viewer tests and full local validation.",
-        "Keep public interaction disabled until same-scene validation and participation cognition exist.",
-        "Implement N6.3b and N6.3c without adding a session or second scene authority.",
-        "Restore POST /encounter only with the new participation-first contract."
+        "Implement one lightweight same-Flight-Plan-segment validator in World.",
+        "Do not call ensure-LivedNow merely because the visitor clicks or speaks if that would re-author the scene.",
+        "If the displayed segment no longer governs, return encounter_scene_changed with zero participation work.",
+        "Only after that add Thread-owned participation cognition and restore /encounter."
       ]
     },
     "finalLifeCognitionAuthorized": true
