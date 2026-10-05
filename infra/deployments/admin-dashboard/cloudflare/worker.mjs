@@ -150,6 +150,7 @@ export async function authenticateAccessRequest(request, env, { fetchImpl = glob
 
 function secureAsset(response) {
   const headers = new Headers(response.headers);
+  headers.set("Cache-Control","no-store");
   headers.set("X-Content-Type-Options","nosniff"); headers.set("Referrer-Policy","no-referrer"); headers.set("X-Frame-Options","DENY");
   headers.set("Content-Security-Policy","default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
   return new Response(response.body, { status:response.status, statusText:response.statusText, headers });
