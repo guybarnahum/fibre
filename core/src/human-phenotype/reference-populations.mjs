@@ -130,110 +130,11 @@ const BASE_DEFINITIONS=Object.freeze({
   "east_asia.tibetan":{version:1,parent:"east_asia",values:{}},
 });
 
-const DEFINITIONS=applyReferencePopulationAdmissions(BASE_DEFINITIONS,referencePopulationAdmissions);
-
-export const referencePopulationIds=Object.freeze(Object.keys(DEFINITIONS));
-
-export function referencePopulationDependencyChain(id){
-  const [key]=definitionFor(id);
-  const chain=[];
-  let cursor=key;
-  while(cursor!==null){
-    const definition=DEFINITIONS[cursor];
-    const version=Number(definition.version);
-    if(!Number.isSafeInteger(version)||version<1){
-      throw new Error(`${cursor} has invalid calibration version`);
-    }
-    chain.unshift(Object.freeze({id:cursor,version}));
-    cursor=definition.parent??null;
-  }
-  return Object.freeze(chain);
-}
-
-export function referencePopulationCalibrationHistory(id){
-  const key=String(id??"").trim();
-  const base=BASE_DEFINITIONS[key];
-  if(!base)throw Error(`unknown physical reference population: ${key||"<empty>"}`);
-
-  let version=Number(base.version);
-  let values={...(base.values??{})};
-  let variation={...(base.variation??{})};
-  const basePrior=resolvedPrior(BASE_DEFINITIONS,key);
-  const baseVariation=resolvedVariation(BASE_DEFINITIONS,key);
-  const history=[Object.freeze({
-    id:key,
-    version,
-    origin:true,
-    values:Object.freeze({...values}),
-    variation:Object.freeze({...variation}),
-    prior:basePrior,
-    effectiveVariation:baseVariation,
-    changes:Object.freeze({values:Object.freeze({...values}),variation:Object.freeze({...variation})}),
-    evidence:null,
-  })];
-
-  for(const admission of referencePopulationAdmissions
-    .filter(entry=>entry.id===key)
-    .sort((left,right)=>Number(left.version)-Number(right.version))){
-    if(Number(admission.version)!==version+1){
-      throw new Error(`${key} admission history must advance exactly one local version`);
-    }
-    version=Number(admission.version);
-    values={...values,...(admission.values??{})};
-    variation={...variation,...(admission.variation??{})};
-    history.push(Object.freeze({
-      id:key,
-      version,
-      origin:false,
-      values:Object.freeze({...values}),
-      variation:Object.freeze({...variation}),
-      prior:Object.freeze({...admission.resolvedPrior}),
-      effectiveVariation:Object.freeze({...admission.resolvedVariation}),
-      changes:Object.freeze({
-        values:Object.freeze({...admission.values}),
-        variation:Object.freeze({...admission.variation}),
-      }),
-      evidence:Object.freeze({...admission.evidence}),
-    }));
-  }
-
-  return Object.freeze(history);
-}
-
-export function referencePopulationCalibration(id){
-  const [key,definition]=definitionFor(id);
-  const ownAxes=Object.freeze(Object.keys(definition.values??{}).sort());
-  const dependencyChain=referencePopulationDependencyChain(key);
-  return Object.freeze({
-    id:key,
-    version:Number(definition.version),
-    parent:definition.parent??null,
-    status:ownAxes.length===0 ? "fallback" : definition.parent===null ? "explicit" : "partial",
-    granularity:key.includes(".") ? "specific" : "broad",
-    ownAxes,
-    populationIds:Object.freeze([...(definition.populationIds??[])]),
-    admissionEvidence:definition.admissionEvidence??null,
-    fallbackDepth:dependencyChain.length-1,
-    dependencyChain,
-    prior:referencePopulationPrior(key),
-    variation:referencePopulationVariation(key),
-  });
-}
-
-export function referencePopulationCalibrations(){
-  return Object.freeze(referencePopulationIds.map(referencePopulationCalibration));
-}
-
-export function referencePopulationForPopulationId(populationId, fallback=null){
-  const key=String(populationId??"").trim();
-  if(key!==""){
-    const matches=referencePopulationIds.filter((id)=>DEFINITIONS[id].populationIds?.includes(key));
-    if(matches.length>1)throw new Error(`populationId ${key} maps to multiple physical references`);
-    if(matches.length===1)return matches[0];
-  }
-  if(fallback===null||fallback===undefined)return null;
-  return definitionFor(fallback)[0];
-}
+const DEFAULT_VARIATION=Object.freeze({
+  familyFactorMultiplier:1,
+  structuralResidualMultiplier:1,
+  generalResidualMultiplier:1,
+});
 
 function resolvedPrior(definitions,id,cache=new Map()){
   if(cache.has(id))return cache.get(id);
@@ -261,43 +162,197 @@ function resolvedVariation(definitions,id,cache=new Map()){
   return resolved;
 }
 
-const DEFAULT_VARIATION=Object.freeze({
-  familyFactorMultiplier:1,
-  structuralResidualMultiplier:1,
-  generalResidualMultiplier:1,
-});
-const PRIOR_CACHE=new Map();
-const VARIATION_CACHE=new Map();
+export function createReferencePopulationModel(rawAdmissions=[]){
+  const admissions=Object.freeze([...rawAdmissions].sort(
+    (left,right)=>left.id.localeCompare(right.id)||Number(left.version)-Number(right.version),
+  ));
+  const definitions=applyReferencePopulationAdmissions(BASE_DEFINITIONS,admissions);
+  const ids=Object.freeze(Object.keys(definitions));
+  const priorCache=new Map();
+  const variationCache=new Map();
 
-function definitionFor(id){
-  const key=String(id??"").trim();
-  const definition=DEFINITIONS[key];
-  if(!definition)throw Error(`unknown physical reference population: ${key||"<empty>"}`);
-  return [key,definition];
+  const definitionFor=id=>{
+    const key=String(id??"").trim();
+    const definition=definitions[key];
+    if(!definition)throw Error(`unknown physical reference population: ${key||"<empty>"}`);
+    return [key,definition];
+  };
+
+  const prior=id=>{
+    const [key]=definitionFor(id);
+    const cached=priorCache.get(key);
+    if(cached)return cached;
+    const value=resolvedPrior(definitions,key,priorCache);
+    priorCache.set(key,value);
+    return value;
+  };
+
+  const variation=id=>{
+    const [key]=definitionFor(id);
+    const cached=variationCache.get(key);
+    if(cached)return cached;
+    const value=resolvedVariation(definitions,key,variationCache);
+    variationCache.set(key,value);
+    return value;
+  };
+
+  const dependencyChain=id=>{
+    const [key]=definitionFor(id);
+    const chain=[];
+    let cursor=key;
+    while(cursor!==null){
+      const definition=definitions[cursor];
+      const version=Number(definition.version);
+      if(!Number.isSafeInteger(version)||version<1){
+        throw new Error(`${cursor} has invalid calibration version`);
+      }
+      chain.unshift(Object.freeze({id:cursor,version}));
+      cursor=definition.parent??null;
+    }
+    return Object.freeze(chain);
+  };
+
+  const calibration=id=>{
+    const [key,definition]=definitionFor(id);
+    const ownAxes=Object.freeze(Object.keys(definition.values??{}).sort());
+    const chain=dependencyChain(key);
+    return Object.freeze({
+      id:key,
+      version:Number(definition.version),
+      parent:definition.parent??null,
+      status:ownAxes.length===0 ? "fallback" : definition.parent===null ? "explicit" : "partial",
+      granularity:key.includes(".") ? "specific" : "broad",
+      ownAxes,
+      populationIds:Object.freeze([...(definition.populationIds??[])]),
+      admissionEvidence:definition.admissionEvidence??null,
+      fallbackDepth:chain.length-1,
+      dependencyChain:chain,
+      prior:prior(key),
+      variation:variation(key),
+    });
+  };
+
+  const history=id=>{
+    const key=String(id??"").trim();
+    const base=BASE_DEFINITIONS[key];
+    if(!base)throw Error(`unknown physical reference population: ${key||"<empty>"}`);
+
+    let version=Number(base.version);
+    let values={...(base.values??{})};
+    let localVariation={...(base.variation??{})};
+    let effectivePrior=resolvedPrior(BASE_DEFINITIONS,key);
+    let effectiveVariation=resolvedVariation(BASE_DEFINITIONS,key);
+    const versions=[Object.freeze({
+      id:key,
+      version,
+      origin:true,
+      values:Object.freeze({...values}),
+      variation:Object.freeze({...localVariation}),
+      prior:effectivePrior,
+      effectiveVariation,
+      changes:Object.freeze({
+        values:Object.freeze({...values}),
+        variation:Object.freeze({...localVariation}),
+      }),
+      evidence:null,
+    })];
+
+    for(const admission of admissions.filter(entry=>entry.id===key)){
+      if(Number(admission.version)!==version+1){
+        throw new Error(`${key} admission history must advance exactly one local version`);
+      }
+      version=Number(admission.version);
+      values={...values,...(admission.values??{})};
+      localVariation={...localVariation,...(admission.variation??{})};
+      const basePrior=admission.basePrior??effectivePrior;
+      const baseVariation=admission.baseVariation??effectiveVariation;
+      effectivePrior=Object.freeze({
+        ...basePrior,
+        ...(admission.values??{}),
+        ...(admission.resolvedPrior??{}),
+      });
+      effectiveVariation=Object.freeze({
+        ...baseVariation,
+        ...(admission.variation??{}),
+        ...(admission.resolvedVariation??{}),
+      });
+      versions.push(Object.freeze({
+        id:key,
+        version,
+        origin:false,
+        values:Object.freeze({...values}),
+        variation:Object.freeze({...localVariation}),
+        prior:effectivePrior,
+        effectiveVariation,
+        changes:Object.freeze({
+          values:Object.freeze({...admission.values}),
+          variation:Object.freeze({...admission.variation}),
+        }),
+        evidence:Object.freeze({...admission.evidence}),
+      }));
+    }
+    return Object.freeze(versions);
+  };
+
+  const populationForPopulationId=(populationId,fallback=null)=>{
+    const key=String(populationId??"").trim();
+    if(key!==""){
+      const matches=ids.filter(id=>definitions[id].populationIds?.includes(key));
+      if(matches.length>1)throw new Error(`populationId ${key} maps to multiple physical references`);
+      if(matches.length===1)return matches[0];
+    }
+    if(fallback===null||fallback===undefined)return null;
+    return definitionFor(fallback)[0];
+  };
+
+  return Object.freeze({
+    admissions,
+    ids,
+    prior,
+    variation,
+    dependencyChain,
+    calibration,
+    calibrations:()=>Object.freeze(ids.map(calibration)),
+    history,
+    populationForPopulationId,
+  });
+}
+
+const BASE_MODEL=createReferencePopulationModel([]);
+const DEFAULT_MODEL=referencePopulationAdmissions.length===0
+  ?BASE_MODEL
+  :createReferencePopulationModel(referencePopulationAdmissions);
+
+export const referencePopulationIds=DEFAULT_MODEL.ids;
+
+export function referencePopulationDependencyChain(id){
+  return DEFAULT_MODEL.dependencyChain(id);
+}
+
+export function referencePopulationCalibrationHistory(id){
+  return DEFAULT_MODEL.history(id);
+}
+
+export function referencePopulationCalibration(id){
+  return DEFAULT_MODEL.calibration(id);
+}
+
+export function referencePopulationCalibrations(){
+  return DEFAULT_MODEL.calibrations();
+}
+
+export function referencePopulationForPopulationId(populationId,fallback=null){
+  return DEFAULT_MODEL.populationForPopulationId(populationId,fallback);
 }
 
 export function referencePopulationPrior(id){
-  const [key,definition]=definitionFor(id);
-  const cached=PRIOR_CACHE.get(key);
-  if(cached)return cached;
-  const inherited=definition.parent===null?{}:referencePopulationPrior(definition.parent);
-  const prior={...inherited,...definition.values};
-  for(const locus of physicalGenomeLoci){
-    if(!Number.isFinite(prior[locus]))throw Error(`${key} has no physical prior for ${locus}`);
-  }
-  const resolved=Object.freeze(Object.fromEntries(physicalGenomeLoci.map(locus=>[locus,prior[locus]])));
-  PRIOR_CACHE.set(key,resolved);
-  return resolved;
+  return DEFAULT_MODEL.prior(id);
 }
 
 export function referencePopulationVariation(id){
-  const [key,definition]=definitionFor(id);
-  const cached=VARIATION_CACHE.get(key);
-  if(cached)return cached;
-  const inherited=definition.parent===null||definition.parent===undefined
-    ? DEFAULT_VARIATION
-    : referencePopulationVariation(definition.parent);
-  const resolved=Object.freeze({...inherited,...definition.variation});
-  VARIATION_CACHE.set(key,resolved);
-  return resolved;
+  return DEFAULT_MODEL.variation(id);
+}
+
+export function referencePopulationBaseCalibration(id){
+  return BASE_MODEL.calibration(id);
 }
