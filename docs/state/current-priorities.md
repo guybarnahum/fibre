@@ -266,7 +266,7 @@ public visit
 
 A **visit is not a meeting request**. It must not create availability, an encounter, compensation or private cognition. The Viewer remains projection-only.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is roadmap truth alignment; N6.1 is the first runtime slice.
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 is implemented pending validation: `GET /api/threads/:threadId/present` reconciles one already-public Thread to server-time LivedNow and returns the bounded current present without creating a meeting.
 
 ## Current causal loop
 
