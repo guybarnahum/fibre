@@ -245,22 +245,22 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Show a Thread's current life to a visitor, let a committed meeting happen inside that exact moment, then return later and find later life.",
-      "currentStep": "N6.2 is implemented in the Viewer pending validation: opening /meet now visits current life first and does not start a meeting.",
+      "currentStep": "N6.1 and N6.2 are accepted in staging. N6.3 is current: add an explicit meeting action inside the exact displayed current scene.",
       "nextSteps": [
-        "Run the Viewer test/build/check suite locally.",
-        "Deploy the Viewer to staging.",
-        "Verify the current scene appears before any meeting action and handles unnamed public location honestly.",
-        "Then begin N6.3: explicit meeting entry inside that exact scene."
+        "Add one explicit Viewer meeting action; initial page load must remain a passive visit.",
+        "Send the displayed situationId as the precondition for meeting entry.",
+        "If Fibre reports the scene moved, refresh the lived moment instead of preserving a chat session.",
+        "Reuse the existing committed visitor-work, encounter and compensation path unchanged."
       ]
     },
     "detail": {
-      "summary": "N6.1 is accepted in staging and N6.2 is implemented across the separate insidefibre.com Viewer repository.",
-      "currentStep": "Viewer page entry now calls GET /api/threads/:threadId/present, then loads public Presentation. It renders current present as the primary scene, keeps identity/history secondary, and does not POST /meet or render encounter input on initial load.",
+      "summary": "The public site now opens on a real current lived moment without starting a meeting. N6.3 is the controlled transition from observation into interaction.",
+      "currentStep": "Meeting entry must cross authority only on explicit visitor action and only for the exact current situation already displayed. No Viewer-authored scene or conversation session is allowed.",
       "nextSteps": [
-        "Validate Viewer semantic tests including the visit-before-meeting boundary and Fibre cross-repo contract.",
-        "Deploy Viewer staging and inspect one real current-life scene.",
-        "Confirm location.place=null remains unnamed rather than inferred.",
-        "Proceed to N6.3 only after this public presentation is accepted."
+        "Implement the explicit Meet action in the Viewer.",
+        "Bind it to the displayed situationId and existing POST /meet semantics.",
+        "Handle scene-changed/unavailable as life having moved, then refresh.",
+        "Validate staging before moving to N6.4 consequence continuity."
       ]
     },
     "finalLifeCognitionAuthorized": true
