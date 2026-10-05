@@ -55,3 +55,18 @@ test("A5 public encounter rejects visitor-authored life and stale public scenes"
   assert.equal((await stale.json()).error, "encounter_scene_changed");
   assert.equal(calls, 0);
 });
+
+test("public API has no meeting-admission route", async () => {
+  const api=createPublicEncounterApi({
+    viewerOrigin:"https://insidefibre.com",
+    readPublicPresent:async()=>({ situationId:SITUATION_ID }),
+    encounter:async()=>({ situationId:SITUATION_ID,responseText:"unused" }),
+  });
+
+  const response=await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/meet`,
+    { method:"POST",headers:{ Origin:"https://insidefibre.com" } },
+  ));
+
+  assert.equal(response,null,"public meeting admission route still exists");
+});
