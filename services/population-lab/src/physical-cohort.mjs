@@ -24,15 +24,28 @@ const ancestry=referencePopulation=>[{
   referencePopulation,
 }];
 
-function calibrationResolvers(shadowCalibration){
-  if(shadowCalibration===null||shadowCalibration===undefined){
+function calibrationResolvers(shadowCalibration,baselineCalibration=null){
+  if(shadowCalibration!==null&&shadowCalibration!==undefined){
+    return populationLabShadowCalibrationResolvers(shadowCalibration);
+  }
+  if(baselineCalibration!==null){
+    const target=baselineCalibration.id;
+    const prior=baselineCalibration.prior;
+    const variation=baselineCalibration.variation;
+    if(typeof target!=="string"||!prior||!variation){
+      throw new TypeError("physical calibration baseline snapshot is invalid");
+    }
     return Object.freeze({
       shadow:null,
-      priorFor:referencePopulationPrior,
-      variationFor:referencePopulationVariation,
+      priorFor:id=>id===target?prior:referencePopulationPrior(id),
+      variationFor:id=>id===target?variation:referencePopulationVariation(id),
     });
   }
-  return populationLabShadowCalibrationResolvers(shadowCalibration);
+  return Object.freeze({
+    shadow:null,
+    priorFor:referencePopulationPrior,
+    variationFor:referencePopulationVariation,
+  });
 }
 
 function founderGenome(referencePopulation,seed,{priorFor,variationFor}){
@@ -178,6 +191,7 @@ export function generatePhysicalCalibrationCohort({
   count,
   seed="physical-calibration-v1",
   shadowCalibration=null,
+  baselineCalibration=null,
 }={}){
   if(!Array.isArray(referencePopulations)||referencePopulations.length===0){
     throw new TypeError("physical calibration requires reference populations");
@@ -185,7 +199,7 @@ export function generatePhysicalCalibrationCohort({
   if(!Number.isInteger(count)||count<referencePopulations.length){
     throw new TypeError("physical calibration count must cover every reference population");
   }
-  const resolvers=calibrationResolvers(shadowCalibration);
+  const resolvers=calibrationResolvers(shadowCalibration,baselineCalibration);
   for(const referencePopulation of referencePopulations)resolvers.priorFor(referencePopulation);
 
   const people=[];
@@ -234,11 +248,12 @@ export function physicalCalibrationDiagnostics({
   referencePopulations,
   seed="physical-calibration-v1",
   shadowCalibration=null,
+  baselineCalibration=null,
 }={}){
   if(!Array.isArray(people)||people.length===0)throw new TypeError("physical calibration people are required");
   const byPopulation={};
   const warnings=[];
-  const resolvers=calibrationResolvers(shadowCalibration);
+  const resolvers=calibrationResolvers(shadowCalibration,baselineCalibration);
 
   for(const referencePopulation of referencePopulations){
     const group=people.filter(person=>person.referencePopulation===referencePopulation);
