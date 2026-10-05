@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  referencePopulationPrior,
+  referencePopulationVariation,
+} from "#core/src/human-appearance/index.mjs";
+import {
   composeBirthSubjectIdentity,
   freshBirthParticipants,
   selectBirthSlot,
@@ -69,6 +73,33 @@ test("birth creates a deterministic heritable physical genome before rendering",
   assert.notDeepEqual(first.physicalGenome,sibling.physicalGenome,"different births collapsed to one physical genome");
 });
 
+
+test("birth physical inheritance consumes the current calibration model", () => {
+  const appearanceMaterial=birthMaterial(1);
+  const basePrior=referencePopulationPrior("afr_east");
+  const calibrationModel=Object.freeze({
+    prior:id=>id==="afr_east"
+      ?Object.freeze({...basePrior,noseBreadth:Math.min(1,basePrior.noseBreadth+.2)})
+      :referencePopulationPrior(id),
+    variation:referencePopulationVariation,
+  });
+
+  const baseline=composeBirthSubjectIdentity({
+    requestId:"calibrated-birth-001",
+    material:appearanceMaterial,
+  });
+  const calibrated=composeBirthSubjectIdentity({
+    requestId:"calibrated-birth-001",
+    material:appearanceMaterial,
+    calibrationModel,
+  });
+
+  assert.notDeepEqual(
+    calibrated.physicalGenome,
+    baseline.physicalGenome,
+    "birth ignored current Human Appearance calibration",
+  );
+});
 
 test("birth names are deterministic without six-person family-name cycles", () => {
   const naming={...birthMaterial(1),femaleGivenNames:Array.from({length:24},(_,i)=>`F${i}`),maleGivenNames:Array.from({length:24},(_,i)=>`M${i}`),familyNames:Array.from({length:24},(_,i)=>`L${i}`)};
