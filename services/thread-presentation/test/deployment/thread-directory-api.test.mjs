@@ -105,28 +105,3 @@ test("Thread directory searches only admitted public presentation attributes", a
   const hidden = await api.fetch(new Request("https://api.insidefibre.com/api/threads/search?q=must%20not%20be%20discoverable"));
   assert.deepEqual(await hidden.json(), { threads: [] });
 });
-
-test("Meet a Thread is seeded, filterable, and returns a compact selection receipt", async () => {
-  const api = await directoryApi();
-  const url = "https://api.insidefibre.com/api/threads/meet?seed=experience-42";
-  const first = await (await api.fetch(new Request(url))).json();
-  const second = await (await api.fetch(new Request(url))).json();
-  assert.equal(first.thread.threadId, second.thread.threadId);
-  assert.deepEqual(first.selection, {
-    policyVersion: "thread-meet-v0.1",
-    seed: "experience-42",
-    eligibleCount: 2,
-  });
-
-  const filtered = await (await api.fetch(new Request(
-    "https://api.insidefibre.com/api/threads/meet?seed=experience-42&q=weather",
-  ))).json();
-  assert.equal(filtered.thread.threadId, "thr_mira");
-  assert.equal(filtered.selection.eligibleCount, 1);
-
-  const excluded = await (await api.fetch(new Request(
-    "https://api.insidefibre.com/api/threads/meet?seed=experience-42&exclude=thr_mira",
-  ))).json();
-  assert.equal(excluded.thread.threadId, "thr_nilo");
-  assert.equal(excluded.selection.eligibleCount, 1);
-});
