@@ -58,6 +58,17 @@ test("Appearance explains the calibration workflow in the operator surface",()=>
 });
 
 
+test("Appearance admits approved calibrations directly from Admin",()=>{
+  assert.match(appearanceUi,/label:"Admit"/u,
+    "approved calibration lost its Admit action");
+  assert.doesNotMatch(appearanceUi,/Prepare admission/u,
+    "legacy source-admission handoff remains in Admin");
+  assert.doesNotMatch(appearanceUi,/Git-owned registry/u,
+    "Admin still describes Git as calibration authority");
+  assert.match(appearanceUi,/No code deployment is required/u,
+    "Admin does not explain runtime calibration admission");
+});
+
 test("Appearance keeps admitted baselines in immutable calibration history",()=>{
   assert.match(html,/id="appearance-calibration-history"/u,
     "Appearance lost admitted calibration history");
