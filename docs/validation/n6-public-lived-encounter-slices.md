@@ -53,7 +53,7 @@ Not yet accepted:
 
 The Viewer remains a separate deployment/repository and is projection-only. Fibre owns the public API and authority boundaries; Viewer owns presentation and interaction.
 
-## N6.0 — roadmap truth alignment — IMPLEMENTED; VALIDATION PENDING
+## N6.0 — roadmap truth alignment — CLOSED
 
 **Capability:** HEAD has one current execution plan.
 
@@ -70,9 +70,21 @@ No runtime or Viewer code belongs in N6.0.
 
 **Acceptance:** current state, priorities, M2 plan, prototype roadmap and public-progress contract all point to N6 and do not contradict N5 closure.
 
-## N6.1 — visit a current life
+## N6.1 — visit a current life — IMPLEMENTED; VALIDATION PENDING
 
 **Capability:** a public visitor can observe a selected public Thread's current bounded life without requesting a meeting.
+
+Implemented shape:
+
+- `GET /api/threads/:threadId/present` is public/read-only;
+- Thread Presentation first confirms the selected Thread is already publicly visible;
+- Presentation then asks World `/internal/lived-now/ensure` for server-time now;
+- World reconciles and publishes the bounded current present through the existing authority;
+- the public response contains only `currentPresent.payload`;
+- query parameters are rejected, so callers cannot choose `at`, place, activity, participants or another scene fact;
+- no visitor-work availability, meeting request, Encounter Story, cognition or compensation is created by the visit.
+
+
 
 The smallest seam is:
 
