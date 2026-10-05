@@ -266,7 +266,7 @@ public visit
 
 A **visit is not a meeting request**. It must not create availability, an encounter, compensation or private cognition. The Viewer remains projection-only.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current. N6.3a removes the obsolete public meeting-admission layer: the Viewer only observes ordinary current life, and its Meet button is local UI until the visitor actually speaks.
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current. N6.3a is implemented pending validation: public meeting admission is gone, the Viewer only observes ordinary current life, and its Meet button is local UI. Public interaction remains deliberately disabled until N6.3b/c establish scene validity and participation cognition.
 
 ## Current causal loop
 
