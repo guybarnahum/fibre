@@ -34,6 +34,7 @@ export function populationLabAdoptionState(experiment,{model=[],migrationCandida
     calibration?.admissionEvidence?.approvalExperimentId===experiment.experimentId
   );
 
+  const superseded=admitted&&!exactAdmission;
   return Object.freeze({
     experimentId:experiment.experimentId,
     referencePopulation:impact.referencePopulation,
@@ -47,12 +48,14 @@ export function populationLabAdoptionState(experiment,{model=[],migrationCandida
     remainingThreadCount:new Set(remaining).size,
     admitted,
     exactAdmission,
-    superseded:admitted&&currentVersion>impact.toVersion,
+    superseded,
     state:!admitted
       ?"admission_required"
-      :remaining.length>0
-        ?"affected"
-        :"converged",
+      :superseded
+        ?"superseded"
+        :remaining.length>0
+          ?"affected"
+          :"converged",
   });
 }
 
