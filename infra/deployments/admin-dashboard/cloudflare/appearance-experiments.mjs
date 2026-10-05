@@ -1,9 +1,9 @@
-import {referencePopulationCalibration} from "#core/src/human-appearance/index.mjs";
 import {createCloudflareInfraDriver} from "#infra/providers/cloudflare";
 import {
   createPopulationLabExperimentStore,
   populationLabExperimentRef,
 } from "#services/population-lab/src/experiment-artifacts.mjs";
+import {createHumanAppearanceCalibrationRegistry} from "#services/population-lab/src/calibration-registry.mjs";
 import {
   projectCalibrationCandidateImpact,
 } from "#services/population-lab/src/calibration-approval.mjs";
@@ -37,6 +37,10 @@ function experimentInfra(env,{workflow=false,services=false,realtime=false}={}){
 
 function experimentStore(env){
   return createPopulationLabExperimentStore(experimentInfra(env));
+}
+
+function calibrationRegistry(env){
+  return createHumanAppearanceCalibrationRegistry(experimentInfra(env));
 }
 
 export function withExperimentLifecycleHints(store,publish){
@@ -174,10 +178,18 @@ export function adminPopulationLabShadowBaseCalibration(baseManifest,currentCali
     if(!calibration||typeof calibration!=="object"||Array.isArray(calibration)){
       throw new TypeError("base experiment calibration snapshot is required");
     }
+    if(currentCalibration!==null){
+      const sameVersion=Number(calibration.version)===Number(currentCalibration.version);
+      const sameChain=JSON.stringify(calibration.dependencyChain??null)===JSON.stringify(currentCalibration.dependencyChain??null);
+      if(!sameVersion||!sameChain)throw new TypeError("baseline experiment calibration is no longer current");
+    }
     return calibration;
   }
 
-  const current=currentCalibration??referencePopulationCalibration(baseManifest.referencePopulation);
+  if(currentCalibration===null){
+    throw new TypeError("current admitted calibration is required for admitted refinement branching");
+  }
+  const current=currentCalibration;
   const admittedExperimentId=current?.admissionEvidence?.approvalExperimentId??null;
   const priorVersion=Number(baseManifest.shadowCalibration?.baseCalibration?.version);
   const priorChain=baseManifest.shadowCalibration?.baseCalibration?.dependencyChain;
@@ -201,11 +213,12 @@ export function adminPopulationLabShadowBaseCalibration(baseManifest,currentCali
 export function adminPopulationLabShadowExperimentRequest(baseManifest,proposal,{
   experimentId=newExperimentId(),
   requestedAt=new Date().toISOString(),
+  currentCalibration=null,
 }={}){
   if(!baseManifest||typeof baseManifest!=="object"||Array.isArray(baseManifest)){
     throw new TypeError("base experiment manifest is required");
   }
-  const calibration=adminPopulationLabShadowBaseCalibration(baseManifest);
+  const calibration=adminPopulationLabShadowBaseCalibration(baseManifest,currentCalibration);
   if(!proposal||typeof proposal!=="object"||Array.isArray(proposal)){
     throw new TypeError("shadow calibration proposal is required");
   }
@@ -258,7 +271,13 @@ export async function launchAdminPopulationLabShadowExperiment(env,baseExperimen
   if(base.status!=="completed")throw new TypeError("shadow calibration requires a completed baseline experiment");
   const manifest=await readJsonArtifact(store,base.artifacts?.manifest?.objectRef);
   if(manifest===null)throw new Error("base experiment manifest is missing");
-  return launchPopulationLabRequest(env,adminPopulationLabShadowExperimentRequest(manifest,proposal));
+  const model=await calibrationRegistry(env).model();
+  const currentCalibration=model.calibration(manifest.referencePopulation);
+  return launchPopulationLabRequest(env,adminPopulationLabShadowExperimentRequest(
+    manifest,
+    proposal,
+    {currentCalibration},
+  ));
 }
 
 export async function runAdminPopulationLabExperimentWorkflow(env,rawRequest){
@@ -611,6 +630,14 @@ export async function approveAdminPopulationLabCalibration(env,experimentId,{app
   const approval=await store.putCalibrationApproval(experimentId,{approvedBy,impact});
   await publishExperimentHint(env,experimentId,"approval");
   return approval;
+}
+
+export async function admitAdminPopulationLabCalibration(env,experimentId){
+  const state=await readAdminPopulationLabCalibrationApproval(env,experimentId);
+  if(state.approval===null)throw new TypeError("calibration admission requires approval");
+  const result=await calibrationRegistry(env).admit(state.approval);
+  await publishExperimentHint(env,experimentId,"admission");
+  return result;
 }
 
 export async function readAdminPopulationLabVisualReview(env,experimentId){
