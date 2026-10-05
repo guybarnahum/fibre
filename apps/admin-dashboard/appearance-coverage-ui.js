@@ -9,6 +9,7 @@ import {
 import {
   populationLabAdoptions,
   populationLabAffectedThreadIds,
+  populationLabAdmissionObservation,
   populationLabExperimentAdmitted,
 } from "./population-lab-adoption.js";
 import { showActionError, showAdminNotice } from "./admin-notices.js";
@@ -770,16 +771,16 @@ async function admitCalibration(experiment,button){
   try{
     const coverage=await fetchAppearanceCoverage();
     renderAppearanceCoverage(coverage);
-    const observed=(coverage.model??[]).find(entry=>entry?.id===admitted.id)??null;
-    const observedExperiment=observed?.admissionEvidence?.approvalExperimentId??null;
-    if(
-      Number(observed?.version)!==Number(admitted.version)
-      ||observedExperiment!==experiment.experimentId
-    ){
+    const observation=populationLabAdmissionObservation({
+      experimentId:experiment.experimentId,
+      current:admitted,
+      coverage,
+    });
+    if(!observation.observed){
       throw new Error(
-        "Registry has "+admitted.id+" @"+admitted.version
-        +", but World reports @"+(observed?.version??"—")
-        +(observedExperiment?" from "+observedExperiment:"")
+        "Registry has "+observation.referencePopulation+" @"+observation.expectedVersion
+        +", but World reports @"+(observation.observedVersion??"—")
+        +(observation.observedExperimentId?" from "+observation.observedExperimentId:"")
       );
     }
     await loadAppearanceExperiments();
