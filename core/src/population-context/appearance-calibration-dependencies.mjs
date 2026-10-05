@@ -4,9 +4,11 @@ import {
   referencePopulationForPopulationId,
 } from "../human-appearance/index.mjs";
 
-function normalizeSide(side, ancestry) {
+function normalizeSide(side, ancestry, calibrationModel=null) {
+  const populationForPopulationId=calibrationModel?.populationForPopulationId??referencePopulationForPopulationId;
+  const dependencyChain=calibrationModel?.dependencyChain??referencePopulationDependencyChain;
   return normalizeAncestry(ancestry, `${side} physical ancestry`).map((item) => {
-    const resolved = referencePopulationForPopulationId(
+    const resolved = populationForPopulationId(
       item.populationId ?? null,
       item.referencePopulation ?? null,
     );
@@ -20,18 +22,18 @@ function normalizeSide(side, ancestry) {
       share:item.share,
       requestedReferencePopulation:item.referencePopulation ?? null,
       resolvedReferencePopulation:resolved,
-      dependencyChain:referencePopulationDependencyChain(resolved),
+      dependencyChain:dependencyChain(resolved),
     });
   });
 }
 
-export function appearanceCalibrationDependencies(physicalAncestry) {
+export function appearanceCalibrationDependencies(physicalAncestry,{calibrationModel=null}={}) {
   if (!physicalAncestry || typeof physicalAncestry !== "object" || Array.isArray(physicalAncestry)) {
     throw new TypeError("physicalAncestry is required");
   }
   return Object.freeze([
-    ...normalizeSide("maternal", physicalAncestry.maternal),
-    ...normalizeSide("paternal", physicalAncestry.paternal),
+    ...normalizeSide("maternal", physicalAncestry.maternal,calibrationModel),
+    ...normalizeSide("paternal", physicalAncestry.paternal,calibrationModel),
   ]);
 }
 
