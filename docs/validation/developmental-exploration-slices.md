@@ -560,32 +560,41 @@ History is not memory.
 
 X4 adds no new production authority.
 
-The existing planning differential test now composes the accepted authorities end to end:
+The existing planning differential test now composes the accepted authorities end to end through the real private-aftermath path:
 
 ```text
-Encounter Story
-  -> Thread Experience
-  -> existing encounter-memory retention
+one objective Encounter Story
+  -> Thread-specific Experience
+  -> optional subjective Journal
+      -> may disagree with objective truth
+      -> may be null when nothing felt worth writing
+  -> existing selective autobiographical retention
       -> retained autobiographical meaning
       -> not_remembered
   -> existing Interior Cognition evidence selection
   -> existing lived_planning
 ```
 
-One objective exploratory workshop pattern is exercised across three otherwise equivalent later planning conditions:
+One neutral exploratory workshop Encounter Story is shared by three otherwise equivalent Threads.
 
-- retained enriching meaning;
-- retained aversive meaning;
-- `not_remembered`.
+Their private aftermath differs:
+
+- one journal interprets the encounter as unexpectedly enriching and retains an enriching autobiographical meaning;
+- one journal interprets the same neutral event as patronizing/intrusive and retains an aversive autobiographical meaning;
+- one writes no journal entry and returns `not_remembered`.
+
+The journal is explicitly **not** a second World-history authority. The aversive journal may contain a subjective interpretation absent from the objective Encounter Story.
 
 The later World planning context and offered places are identical.
 
 The proof requires:
 
+- the same objective story can produce different private journal truths;
+- a trivial/unimportant experience can legally produce no journal entry;
 - enriching retained meaning can bend later life toward another bounded unfamiliar opportunity;
 - aversive retained meaning can bend later life toward protected quiet;
 - `not_remembered` leaves objective Encounter Story / Thread Experience history intact but contributes no memory evidence to later planning;
-- Encounter Story / Experience refs cannot bypass autobiographical-memory authority and enter `lived_planning` directly.
+- neither Journal nor Encounter Story / Experience refs may bypass autobiographical-memory authority and enter `lived_planning` directly.
 
 No reward score, exploration-memory type, new semantic-state writer, planner or model call was added.
 
