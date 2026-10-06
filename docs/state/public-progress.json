@@ -115,14 +115,14 @@
       "id": "developmental_exploration",
       "group": "development",
       "label": "Self-directed developmental exploration",
-      "status": "not_yet",
+      "status": "demonstrated",
       "simple": {
-        "claim": "Threads can now let grounded exploration pressure influence ordinary self-directed Flight Planning through the existing interoception and Interior Cognition stack.",
-        "limitation": "X4 is implemented pending local validation. After X4, Fibre still needs autonomous environmental-occurrence and incidental-witness production/discovery before richer Person/social extensions."
+        "claim": "A Thread's own low-novelty life can push her to choose a different ordinary plan, and what she later experiences can selectively change future planning.",
+        "limitation": "The core developmental loop is proven, but autonomous environmental-event and incidental-witness production is still being validated before richer social discovery."
       },
       "detail": {
-        "claim": "X0-X3 are accepted: sustained low-novelty enacted life can ground exploration pressure; existing interoception carries it into the existing lived_planning concern; planning resolves opportunity meaning from World/situated authority; and two real staging Threads produced materially different valid Flight Plans under grounded exploration without a new service, score, store, social bias, second planning engine or resampling.",
-        "limitation": "X4 must close the lived-outcome -> retained Thread-owned meaning -> later-planning return path. Then E6 must remove caller-authored environmental event text and caller-selected silent witnesses before X5+ rich Person/social discoverability."
+        "claim": "X0-X4 are accepted: grounded exploration pressure reaches ordinary one-call lived planning; real staging Threads changed valid Flight Plans under that pressure; an admitted exploratory Encounter Story can become divergent subjective Journal accounts, retained autobiographical meaning or not_remembered; and only retained Thread-owned meaning can causally bend an otherwise-equivalent later planning episode.",
+        "limitation": "E6 is current: environmental occurrence prose is now World-authored from exterior CurrentSituation/place evidence and incidental witnesses are derived from authoritative co-presence, but that autonomy path still needs local/full validation and live staging evidence before X5+."
       },
       "evidence": [
         "docs/architecture/developmental-exploration.md",
@@ -230,12 +230,12 @@
       "label": "General lived encounters and reciprocal meetings",
       "status": "in_progress",
       "simple": {
-        "claim": "Fibre has the machinery for environmental encounters, voluntary social meetings, silent witnesses, natural actor discovery and distinct private aftermath over one Encounter Story / Thread Experience seam.",
-        "limitation": "Encounter semantics cover environmental events, voluntary meetings and silent witnesses, but environmental event text and incidental witness selection are not yet fully autonomous."
+        "claim": "Fibre has one general Encounter Story/Thread Experience seam for environmental moments, voluntary meetings and silent witnesses, with natural actor discovery.",
+        "limitation": "E6 now removes caller-selected witnesses and caller-written environmental events, but the new autonomous production/discovery path still needs validation before it is accepted."
       },
       "detail": {
-        "claim": "Situated Percept, salience, Interior Cognition, explicit shared live-place authority, voluntary meeting and witness asymmetry are retained foundations for natural social life.",
-        "limitation": "E6 is scheduled after X4: World-owned bounded environmental occurrence production plus incidental-witness derivation from authoritative co-presence, with no event quota, ticking or caller-selected witnesses."
+        "claim": "Social counterparties are discovered from authoritative co-presence; accepted stories can now derive additional co-present Threads as incidental witness candidates; environmental encounters can be authored from exterior current-scene context; all cases reuse noticed/not_noticed, Thread Experience, subjective Journal and selective autobiographical Memory.",
+        "limitation": "The E6 implementation is pending focused/full validation and live staging evidence. Natural reciprocal social acceptance must still remain voluntary and must not use paid scheduling, Commons fallback or sociability bias."
       },
       "evidence": [
         "docs/architecture/encounters-and-experience.md",
