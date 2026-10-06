@@ -113,6 +113,46 @@ Encounter Story, Thread Experience, journal, memory and semantic-state mechanism
 
 Developmental exploration should close that loop rather than add a scalar reward such as `social_acceptance += 0.1`.
 
+## Implementation discipline
+
+Developmental exploration must be implemented **reuse-first**.
+
+The default question for every slice is:
+
+> Which existing Fibre authority already owns this meaning or transition?
+
+The preferred path is:
+
+```text
+existing regulator
+  -> existing interoception
+  -> existing Interior Cognition
+  -> existing personal Flight Planning
+  -> existing World enactment
+  -> existing Encounter Story / Thread Experience
+  -> existing memory / semantic-state consequence
+  -> later existing planning
+```
+
+Add a new service, durable authority, score, scheduler or model call only when the existing stack demonstrably cannot express the required Fibre meaning without violating an authority boundary.
+
+Specific engineering constraints for this proposal:
+
+- minimal boilerplate;
+- no generic exploration framework;
+- no compatibility wrapper for obsolete exploration/meeting behavior;
+- no legacy/backward-compatibility path unless a real live authority still depends on it;
+- no unrelated security/compliance/hardening work;
+- no brute-force population scans or repeated model calls where bounded existing evidence is enough;
+- no high-frequency ticking to manufacture motivation;
+- no duplicated private-context selection outside Interior Cognition;
+- no second planning engine;
+- no new persistence merely to make an intermediate value inspectable.
+
+Runtime work should remain event/lazily driven: recompute only when lived state, regulation, planning horizon, opportunity set or meaningful consequence changes enough to matter.
+
+Tests must be few, semantic and high-value. A test should fail because Fibre lost endogenous motivation, Thread-owned planning, history-bends-future, authority separation or voluntary participation—not because helper order, prompt prose, JSON key order or transport plumbing changed.
+
 ## Smallest credible first architecture
 
 The first proof should add **no new service and no new durable exploration-intention store**.
