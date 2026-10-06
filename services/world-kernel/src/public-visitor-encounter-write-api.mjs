@@ -56,14 +56,16 @@ export function createPublicVisitorEncounterWriteApi({
       try {
         body = await request.json();
         assertPlainObject("public visitor encounter request", body);
-        assertExactKeys("public visitor encounter request", body, [
-          "threadId",
-          "expectedSituationId",
-          "utterance",
-        ]);
+        const keys = Object.hasOwn(body, "priorEncounterStoryId")
+          ? ["threadId", "expectedSituationId", "utterance", "priorEncounterStoryId"]
+          : ["threadId", "expectedSituationId", "utterance"];
+        assertExactKeys("public visitor encounter request", body, keys);
         assertId("public visitor encounter request.threadId", body.threadId);
         assertId("public visitor encounter request.expectedSituationId", body.expectedSituationId);
         assertNonEmpty("public visitor encounter request.utterance", body.utterance);
+        if (Object.hasOwn(body, "priorEncounterStoryId")) {
+          assertId("public visitor encounter request.priorEncounterStoryId", body.priorEncounterStoryId);
+        }
       } catch (error) {
         return json({ error:"invalid_public_encounter", detail:error.message }, 400);
       }
@@ -72,6 +74,9 @@ export function createPublicVisitorEncounterWriteApi({
         threadId:body.threadId,
         expectedSituationId:body.expectedSituationId,
         utterance:body.utterance,
+        ...(body.priorEncounterStoryId === undefined
+          ? {}
+          : { priorEncounterStoryId:body.priorEncounterStoryId }),
         at:now(),
       });
       if (result.outcome === "scene_changed") {
