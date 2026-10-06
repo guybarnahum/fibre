@@ -870,16 +870,25 @@ test("one lived scene can produce multiple independent actor encounters", async 
     "each actual outward request/response should have its own reciprocal history");
 });
 
-test("E3 one social story may affect a silent co-present witness", async () => {
-  const f = fixture({ rude:true, selaPresent:true });
+test("E6b one social story discovers a silent co-present witness", async () => {
+  const f = fixture({
+    rude:true,
+    selaPresent:true,
+    initiationFor:(_name,_evidence,external) =>
+      external.situatedPercept.observed[0]?.name === "Noor" ? "initiate" : "not_initiate",
+  });
   const result = await f.meeting.meet({
     initiatorThreadId:mina.threadId,
-    witnessThreadIds:[sela.threadId],
     at:AT,
   });
   const attempt = attemptFor(result, noor.threadId);
 
   assert.equal(attempt.outcome, "met", "meeting should form");
+  assert.deepEqual(
+    new Set(result.discoveredThreadIds),
+    new Set([noor.threadId,sela.threadId]),
+    "World should derive the incidental witness from co-presence",
+  );
   assert.equal(
     new Set(f.ensured.map((entry) => entry.threadId)).size >= 3,
     true,
