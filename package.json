@@ -117,7 +117,8 @@
     "appearance:correct": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/appearance/appearance.mjs",
     "identity:country-codes:migrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/migrations/thread-country-codes.mjs",
     "inside-fibre": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs",
-    "population:lab:experiments": "node --disable-warning=ExperimentalWarning tools/population-lab/experiments.mjs"
+    "population:lab:experiments": "node --disable-warning=ExperimentalWarning tools/population-lab/experiments.mjs",
+    "inside-fibre:meet": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs meet"
   },
   "engines": {
     "node": ">=22.13"
