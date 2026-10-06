@@ -61,9 +61,15 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
   const modelCalls=[];
   const experienceStore={
     recordEncounterStory(candidate){
-      const record={ encounterId:"story_n6_public",...structuredClone(candidate) };
+      const record={ encounterId:`story_n6_public_${stories.length+1}`,...structuredClone(candidate) };
       stories.push(structuredClone(record));
       return record;
+    },
+    getEncounterStory(encounterId,{ required=true }={}){
+      const record=stories.find((item)=>item.encounterId===encounterId)??null;
+      if(record!==null)return structuredClone(record);
+      if(required)throw new TypeError(`Encounter Story ${encounterId} was not found`);
+      return null;
     },
     recordThreadEncounterAttention(candidate){
       return {
@@ -117,7 +123,11 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
       }
       if(call.clientRequestId.startsWith("lived-encounter_")){
         return {
-          output:{ responseText:"Sure — what did you want to ask?" },
+          output:{
+            responseText:call.input.recentEncounterStories?.length
+              ?"I meant I can talk while I finish this page."
+              :"Sure — what did you want to ask?",
+          },
           provenance:{
             provider:"fixture",
             modelId:"fixture-n6-public",
@@ -180,11 +190,15 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
   return { service,stories,modelCalls };
 }
 
-function request(expectedSituationId="sit_displayed"){
+function request(expectedSituationId="sit_displayed",{
+  utterance="Hi — do you have a minute?",
+  priorEncounterStoryId=null,
+}={}){
   return {
     threadId:THREAD_ID,
     expectedSituationId,
-    utterance:"Hi — do you have a minute?",
+    utterance,
+    ...(priorEncounterStoryId===null?{}:{ priorEncounterStoryId }),
     at:AT,
   };
 }
@@ -232,4 +246,43 @@ test("N6.3d accepted visitor request becomes one Encounter Story in revalidated 
     "Hi — do you have a minute?",
     "visitor request should be the first observable beat",
   );
+});
+
+
+test("N6.3e later accepted turns use admitted Encounter Story history instead of session state",async()=>{
+  const actual=situation("sit_n6_continuing_actual");
+  const f=fixture({ decision:"accept",actualSituation:actual });
+
+  const first=await f.service.encounter(request("sit_displayed_first"));
+  const second=await f.service.encounter(request(first.situationId,{
+    utterance:"What do you mean by that?",
+    priorEncounterStoryId:first.encounterStoryId,
+  }));
+
+  assert.equal(second.outcome,"accepted");
+  assert.equal(second.responseText,"I meant I can talk while I finish this page.");
+  assert.equal(f.stories.length,2,
+    "two accepted turns should be two objective encounters");
+  assert.equal(
+    f.stories[1].story.continuationOfEncounterRef,
+    first.encounterStoryId,
+    "continued encounter lost its causal predecessor",
+  );
+
+  const participationCalls=f.modelCalls.filter((call)=>call.clientRequestId.startsWith("interior_"));
+  const responseCalls=f.modelCalls.filter((call)=>call.clientRequestId.startsWith("lived-encounter_"));
+  assert.equal(participationCalls.length,2);
+  assert.equal(responseCalls.length,2);
+  assert.equal(
+    participationCalls[1].input.concern.externalContext.recentEncounterStories[0].encounterId,
+    first.encounterStoryId,
+    "later participation did not see immediate lived history",
+  );
+  assert.equal(
+    responseCalls[1].input.recentEncounterStories[0].encounterId,
+    first.encounterStoryId,
+    "later reply did not see immediate lived history",
+  );
+  assert.equal(Object.hasOwn(second,"sessionId"),false,
+    "continued encounter invented session authority");
 });
