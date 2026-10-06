@@ -19,16 +19,37 @@ function sameParticipants(left = [], right = []) {
   return a.every((value, index) => value === b[index]);
 }
 
-function sustainedLivedSameness(previousSituation, currentSituation) {
-  if (previousSituation === null || currentSituation === null) return false;
-  if (previousSituation.location?.kind !== "place" || currentSituation.location?.kind !== "place") return false;
+export function classifyExplorationContinuity(previousSituation, currentSituation) {
+  if (previousSituation === null || currentSituation === null) {
+    return Object.freeze({ grounded:false, reason:"missing_situation" });
+  }
+  if (previousSituation.location?.kind !== "place" || currentSituation.location?.kind !== "place") {
+    return Object.freeze({ grounded:false, reason:"not_at_place" });
+  }
   const elapsedMs = Date.parse(currentSituation.establishedAt) - Date.parse(previousSituation.establishedAt);
-  if (!Number.isFinite(elapsedMs) || elapsedMs < MIN_SUSTAINED_SAMENESS_MS) return false;
+  if (!Number.isFinite(elapsedMs)) {
+    return Object.freeze({ grounded:false, reason:"invalid_elapsed_time" });
+  }
+  if (elapsedMs < MIN_SUSTAINED_SAMENESS_MS) {
+    return Object.freeze({ grounded:false, reason:"elapsed_too_short", elapsedMs });
+  }
+  if (previousSituation.location.placeRef !== currentSituation.location.placeRef) {
+    return Object.freeze({ grounded:false, reason:"place_changed", elapsedMs });
+  }
+  if ((previousSituation.mediatedContext ?? null) !== (currentSituation.mediatedContext ?? null)) {
+    return Object.freeze({ grounded:false, reason:"mediated_context_changed", elapsedMs });
+  }
+  if (previousSituation.activity !== currentSituation.activity) {
+    return Object.freeze({ grounded:false, reason:"activity_changed", elapsedMs });
+  }
+  if (!sameParticipants(previousSituation.participantRefs ?? [], currentSituation.participantRefs ?? [])) {
+    return Object.freeze({ grounded:false, reason:"participants_changed", elapsedMs });
+  }
+  return Object.freeze({ grounded:true, reason:"sustained_sameness", elapsedMs });
+}
 
-  return previousSituation.location.placeRef === currentSituation.location.placeRef
-    && (previousSituation.mediatedContext ?? null) === (currentSituation.mediatedContext ?? null)
-    && previousSituation.activity === currentSituation.activity
-    && sameParticipants(previousSituation.participantRefs ?? [], currentSituation.participantRefs ?? []);
+function sustainedLivedSameness(previousSituation, currentSituation) {
+  return classifyExplorationContinuity(previousSituation, currentSituation).grounded;
 }
 
 export function explorationRegulationForLivedContinuity({
