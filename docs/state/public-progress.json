@@ -173,7 +173,7 @@
       "status": "achieved",
       "simple": {
         "claim": "A public visitor can see a Thread's ordinary current life and approach them there without creating or rearranging the scene.",
-        "limitation": "N6.4 is proving that public encounter retry is exactly-once at the lived-effect boundary without becoming conversation/session authority."
+        "limitation": "N6.6 still needs live acceptance in capability order: direct World CLI first, then client-neutral public endpoints, then insidefibre.com."
       },
       "detail": {
         "claim": "N6.1/N6.2 prove the Viewer can reconcile and render a World-owned current situation produced by the Thread's ordinary Flight Plan before any interaction.",
@@ -245,22 +245,22 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Meet a Thread where they already are in ordinary life; the visitor approaches and the Thread decides whether to engage.",
-      "currentStep": "N6.3a-N6.3e are accepted. N6.4 is current: one stable per-Send request identity and durable World receipt make completed /encounter retry replay the same outcome without repeating cognition or consequence.",
+      "currentStep": "N6.3a-N6.5 are accepted. N6.6 is current: first demonstrate meet/encounter directly against World from the Fibre CLI, then validate /present + /encounter as the reusable public client contract, then demonstrate insidefibre.com.",
       "nextSteps": [
-        "N6.4: validate completed public encounter retry is exactly-once.",
-        "N6.5: prove a later visit finds later life rather than resuming the old encounter.",
-        "N6.5: prove the old situation witness no longer accepts new turns.",
+        "N6.6a: demonstrate a real ordinary encounter directly from the Fibre CLI against World.",
+        "N6.6b: demonstrate the same capability through the client-neutral public /present + /encounter endpoints.",
+        "N6.6c: demonstrate insidefibre.com as one client of those endpoints.",
         "N6.6: close the live public acceptance path."
       ]
     },
     "detail": {
       "summary": "N6.3 no longer treats a paid Inside Fibre visitor-work shift as the definition of meeting. Ordinary meeting intersects a Thread's existing Flight Plan and CurrentSituation.",
-      "currentStep": "N6.3a-N6.3e are accepted. N6.4 now adds only durable idempotence metadata: completed retries replay one stored outward result before scene validation or cognition, while different content cannot reuse the request identity.",
+      "currentStep": "N6.3a-N6.5 are accepted. N6.6 now proves the same authority chain layer by layer: World capability first, public endpoint second, Viewer/client last.",
       "nextSteps": [
-        "Validate the same requestId and request digest replay one stored result with zero extra model calls or Encounter Stories.",
-        "Validate the same requestId cannot bind different request content.",
-        "Keep the retry receipt append-only and outside conversation/memory authority.",
-        "Then run the already-staged N6.5 later-visit continuity proof."
+        "Deploy only the current World worker required for the direct CLI proof.",
+        "Run the CLI meet command against one existing staging Thread and capture actual-scene + participation evidence.",
+        "After CLI acceptance, deploy/validate the public Presentation endpoint contract.",
+        "Only then use insidefibre.com for client-level acceptance."
       ]
     },
     "finalLifeCognitionAuthorized": true
