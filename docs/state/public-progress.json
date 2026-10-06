@@ -2,7 +2,7 @@
   "$schema": "./public-progress.schema.json",
   "contract": "fibre-public-progress",
   "canonical": true,
-  "asOf": "2026-10-05",
+  "asOf": "2026-10-06",
   "title": "Where Fibre is today",
   "headline": "Fibre has closed the N5 encounter lifecycle; N6 now focuses on making a Thread's current life visible to public visitors and proving that same life continues later.",
   "summary": "N1-N5 are closed at the accepted boundary. Fibre can reconcile LivedNow, admit voluntary visitor-work availability, enter an exact current scene, form Encounter Story and Thread Experience, preserve selective aftermath, and settle Fibre Credit compensation exactly once. N6 is current: show a bounded public present without making a meeting request, let a committed encounter happen inside that exact scene, then revisit the same Thread later and find later life rather than a resumed chat session.",
@@ -109,6 +109,26 @@
       "evidence": [
         "docs/history/milestones/pr40.md",
         "docs/state/current-state.md"
+      ]
+    },
+    {
+      "id": "developmental_exploration",
+      "group": "development",
+      "label": "Self-directed developmental exploration",
+      "status": "not_yet",
+      "simple": {
+        "claim": "Threads should be able to notice when their lives have become narrow or repetitive and choose experiences that may help them learn, connect or grow.",
+        "limitation": "Fibre has grounded exploration pressure and self-directed Flight Planning, but the causal bridge between them is only proposed."
+      },
+      "detail": {
+        "claim": "The proposed developmental-exploration loop connects existing exploration/information/play regulation through bounded interoception into the existing lived_planning Interior Cognition, then closes consequence through ordinary Encounter Story, Thread Experience, selective memory/semantic meaning and later planning.",
+        "limitation": "No production path yet lets grounded exploration pressure change a Flight Plan. Rich Person presence and discovery of socially porous current lives are later proposed slices, not current capabilities."
+      },
+      "evidence": [
+        "docs/architecture/developmental-exploration.md",
+        "docs/validation/developmental-exploration-slices.md",
+        "docs/architecture/intrinsic-regulation.md",
+        "docs/state/current-priorities.md"
       ]
     },
     {
