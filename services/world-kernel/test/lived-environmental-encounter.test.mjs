@@ -52,7 +52,7 @@ function parkEpisode() {
   };
 }
 
-test("E1 an unscheduled World occurrence may enter lived attention or pass unnoticed", async () => {
+test("E6a World may author a bounded occurrence that enters attention or remains absent", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-e1-environment-"));
   const storage = {
     infraDriver:createSqliteStateInfraDriver({ scopes:{ world:join(directory, "world.sqlite") } }),
@@ -83,9 +83,32 @@ test("E1 an unscheduled World occurrence may enter lived attention or pass unnot
     const modelAdapter = {
       async invoke(request) {
         invocations.push(structuredClone(request));
+        if (request.clientRequestId.startsWith("world-occurrence_")) {
+          assert.equal(Object.hasOwn(request.input, "thread"), false,
+            "World occurrence authoring received Thread-private context");
+          assert.equal(request.input.currentSituation.activity, situation.activity,
+            "World occurrence authoring lost the enacted scene");
+          if (request.input.occurredAt === AT) {
+            return {
+              output:{
+                occurrenceText:"A bee settles onto a small yellow flower beside the path and moves deliberately around its center.",
+              },
+              provenance:{ provider:"fixture", modelId:"fixture-e6-world" },
+            };
+          }
+          if (request.input.occurredAt === "2026-09-21T18:02:00.000Z") {
+            return {
+              output:{ occurrenceText:"A thin cloud briefly softens the sunlight over the park." },
+              provenance:{ provider:"fixture", modelId:"fixture-e6-world" },
+            };
+          }
+          return {
+            output:{ occurrenceText:null },
+            provenance:{ provider:"fixture", modelId:"fixture-e6-world" },
+          };
+        }
         if (request.clientRequestId.startsWith("encounter-attention_")) {
-          const occurrence = request.input.encounterStory.story.beats[0].text;
-          return occurrence.includes("bee")
+          return request.input.encounterStory.occurredAt === AT
             ? {
                 output:{
                   outcome:"noticed",
@@ -126,7 +149,10 @@ test("E1 an unscheduled World occurrence may enter lived attention or pass unnot
     const service = createEnvironmentalEncounterService({
       worldReader:{ getThread:() => structuredClone(activeThread) },
       livedNow:{ ensure:async () => structuredClone(situation) },
-      livedNowStore:{ getCurrentSituation:() => structuredClone(situation) },
+      livedNowStore:{
+        getCurrentSituation:() => structuredClone(situation),
+        getWorldPlace:() => null,
+      },
       situatedLifeStore:{ listCurrentPlaceEpisodes:() => [structuredClone(place)] },
       semanticStateStore:{ listCurrentState:() => [] },
       memoryStore:{
@@ -143,18 +169,14 @@ test("E1 an unscheduled World occurrence may enter lived attention or pass unnot
     const noticed = await service.encounter({
       threadId:activeThread.threadId,
       at:AT,
-      occurrence:{
-        occurrenceRef:"occ_e1_bee",
-        description:"A bee settles onto a small yellow flower beside the path and moves deliberately around its center.",
-      },
     });
     const missed = await service.encounter({
       threadId:activeThread.threadId,
       at:"2026-09-21T18:02:00.000Z",
-      occurrence:{
-        occurrenceRef:"occ_e1_cloud",
-        description:"A thin cloud briefly softens the sunlight over the park.",
-      },
+    });
+    const quiet = await service.encounter({
+      threadId:activeThread.threadId,
+      at:"2026-09-21T18:04:00.000Z",
     });
 
     assert.equal(noticed.attention.outcome, "noticed", "bee should enter lived attention");
@@ -173,6 +195,13 @@ test("E1 an unscheduled World occurrence may enter lived attention or pass unnot
     assert.equal(missed.attention.experience, null, "unnoticed occurrence must not fabricate Thread Experience");
     assert.equal(missed.aftermath, null, "unnoticed occurrence must not create private aftermath");
     assert.equal(retained.length, 1, "unnoticed occurrence must not create memory");
+    assert.equal(quiet.outcome, "no_occurrence", "ordinary scene may yield no World occurrence");
+    assert.equal(quiet.encounterStory, null, "no occurrence must not fabricate World history");
+    assert.equal(
+      invocations.filter((request) => request.clientRequestId.startsWith("world-occurrence_")).length,
+      3,
+      "each explicit scene boundary should author at most one occurrence candidate",
+    );
   } finally {
     experienceStore?.close();
     rmSync(directory, { recursive:true, force:true });
