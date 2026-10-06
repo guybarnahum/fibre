@@ -185,20 +185,13 @@ function dormantWindows(from, to) {
   return windows;
 }
 
-function knownPlacesAt(livedNowStore, situatedLifeStore, threadId, at) {
+function knownPlaceRefsAt(livedNowStore, situatedLifeStore, threadId, at) {
   const instant = Date.parse(at);
   const situated = situatedLifeStore.listCurrentPlaceEpisodes(threadId)
     .filter((episode) => Date.parse(episode.startAt) <= instant)
-    .map((episode) => ({
-      ref:placeEpisodeRevisionRef(episode),
-      displayName:episode.place.displayName,
-    }));
-  const shared = livedNowStore.ensureWorldPlaces(threadId)
-    .map((place) => ({
-      ref:place.ref,
-      displayName:place.displayName,
-    }));
-  return [...situated, ...shared];
+    .map(placeEpisodeRevisionRef);
+  const shared = livedNowStore.ensureWorldPlaces(threadId).map((place) => place.ref);
+  return [...new Set([...situated, ...shared])];
 }
 
 function latestGroundedPlaceRef(situatedLifeStore, threadId, at) {
@@ -363,11 +356,11 @@ async function formPlan({
     : retrospectivePlan(livedNowStore, threadId, startAt, endAt, materializedAt);
   if (existing !== null) return existing;
 
-  const places = knownPlacesAt(livedNowStore, situatedLifeStore, threadId, startAt);
-  if (places.length === 0) {
+  const placeRefs = knownPlaceRefsAt(livedNowStore, situatedLifeStore, threadId, startAt);
+  if (placeRefs.length === 0) {
     throw new LivedNowCoverageError("Dormant catch-up has no grounded place available at the lived time");
   }
-  if (!places.some((place) => place.ref === startingPlace)) {
+  if (!placeRefs.includes(startingPlace)) {
     throw new LivedNowCoverageError("Dormant catch-up cannot continue from an ungrounded prior place");
   }
 
@@ -382,7 +375,7 @@ async function formPlan({
     threadId,
     authoredAt: startAt,
     horizonEnd: endAt,
-    availablePlaces: places,
+    availablePlaceRefs: placeRefs,
     sourceReferences: [latestEventRefAt(worldStore, threadId, startAt)],
     sourceStores:{
       worldStore,
@@ -390,6 +383,7 @@ async function formPlan({
       semanticStateStore,
       memoryStore,
       situatedLifeStore,
+      livedNowStore,
     },
     modelAdapter,
     startingPlaceRef: startingPlace,
