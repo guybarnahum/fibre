@@ -266,7 +266,7 @@ public visit
 
 A **visit is not a meeting request**. It must not create availability, an encounter, compensation or private cognition. The Viewer remains projection-only.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current. N6.3a-N6.3d are accepted. N6.3e is current: keep accepted conversation inside ordinary life by reusing `/encounter` for every later turn, advancing the scene witness after each accepted response, with no server-side conversation/session state.
+Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current. N6.3a-N6.3d are accepted. N6.3e is current: reuse `/encounter` for every later turn, advance the actual situation witness, and carry immediate conversational context only through a bounded `continuationOfEncounterRef` chain of admitted Encounter Stories—never a server-side conversation/session.
 
 ## Current causal loop
 
