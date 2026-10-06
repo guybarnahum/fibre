@@ -9,9 +9,9 @@ import {
   autobiographicalMemoryId,
 } from "../src/autobiographical-memory-domain.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
-import { formEncounterStoryMemory } from "../src/lived-encounter-memory.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
+import { internalizeThreadEncounterExperience } from "../src/lived-thread-experience-aftermath.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
 import { explorationInteroceptionForLivedContinuity } from "../src/lived-now-regulation.mjs";
@@ -210,127 +210,155 @@ function x4PlanningModel() {
   };
 }
 
-async function x4EncounterMemory({
-  thread,
-  outcome,
-  rememberedMeaning,
+async function x4Afters({
+  threads,
   experienceStore,
   memoryStore,
 }) {
-  const situationId=`sit_x4_${thread.threadId}`;
-  const story=experienceStore.recordEncounterStory({
-    occurredAt:"2026-09-21T15:00:00.000Z",
-    threadPresence:[{ threadId:thread.threadId,situationId }],
-    story:{
-      beats:[
-        {
-          actorThreadId:null,
-          kind:"occurrence",
-          text:"At an open community workshop, another attendee demonstrates an unfamiliar way to solve the same practical problem.",
-        },
-        {
-          actorThreadId:thread.threadId,
-          kind:"action",
-          text:"The Thread tries the unfamiliar approach and spends a while comparing it with the familiar method.",
-        },
-      ],
+  const occurredAt="2026-09-21T15:00:00.000Z";
+  const situationIds=Object.fromEntries(
+    threads.map((thread)=>[thread.threadId,`sit_x4_${thread.threadId}`]),
+  );
+  const storyBeats=[
+    {
+      actorThreadId:null,
+      kind:"occurrence",
+      text:"At an open community workshop, a visiting attendee demonstrates an unfamiliar way to solve the same practical problem.",
     },
+    {
+      actorThreadId:null,
+      kind:"occurrence",
+      text:"The demonstration ends and the shared tables return to ordinary workshop activity.",
+    },
+  ];
+  const story=experienceStore.recordEncounterStory({
+    occurredAt,
+    threadPresence:threads.map((thread)=>({
+      threadId:thread.threadId,
+      situationId:situationIds[thread.threadId],
+    })),
+    story:{ beats:storyBeats },
     visualization:createEncounterVisualization({
-      occurredAt:"2026-09-21T15:00:00.000Z",
-      story:{
-        beats:[
-          {
-            actorThreadId:null,
-            kind:"occurrence",
-            text:"Another attendee demonstrates an unfamiliar practical method.",
-          },
-          {
-            actorThreadId:thread.threadId,
-            kind:"action",
-            text:"The Thread tries it and compares it with the familiar method.",
-          },
-        ],
-      },
+      occurredAt,
+      story:{ beats:storyBeats },
       scene:"An open community workshop with shared tables.",
-      sourceReferences:[situationId],
+      sourceReferences:Object.values(situationIds),
       depictedThreadRefs:[],
     }),
   });
-  const experience=experienceStore.recordThreadExperience({
-    threadId:thread.threadId,
-    encounterRef:story.encounterId,
-    situationId,
-    occurredAt:story.occurredAt,
-    experienceText:outcome==="not_remembered"
-      ?"The unfamiliar demonstration was noticed in the moment but did not become a lasting personal takeaway."
-      :rememberedMeaning,
-  });
-  const livedContext={
-    thread,
-    situation:{
-      situationId,
-      threadId:thread.threadId,
-      establishedAt:story.occurredAt,
-      phase:"at_place",
-      location:{ kind:"place",placeRef:"place_x4_workshop" },
-      mediatedContext:null,
-      activity:"Try an unfamiliar practical method at an open workshop.",
-      participantRefs:[],
-    },
-    semanticStates:[],
-    memories:[],
-  };
-  return {
-    story,
-    experience,
-    memory:await formEncounterStoryMemory({
-      livedContext,
-      experienceRecord:experience,
-      encounterStory:story,
-      journalEntry:null,
-      memoryStore,
-      modelAdapter:{
-        async invoke(){
+
+  const adapter={
+    async invoke(request){
+      if(request.clientRequestId.startsWith("encounter-reflection_")){
+        const situationId=request.input.currentSituation.situationId;
+        if(situationId===situationIds.thr_x4_enriching){
           return {
-            output:outcome==="not_remembered"
-              ?{
-                outcome:"not_remembered",
-                rememberedContent:null,
-                rememberedMeaning:null,
-                confidence:null,
-                salience:null,
-                uncertainty:[],
-              }
-              :{
-                outcome:"retained",
-                rememberedContent:"I remember trying an unfamiliar approach at the workshop.",
-                rememberedMeaning,
-                confidence:0.9,
-                salience:0.85,
-                uncertainty:[],
-              },
+            output:{
+              journalEntry:"I went in expecting another forgettable demonstration, but the unfamiliar method actually shook me out of my usual groove. I liked being surprised by someone else's way of seeing the problem.",
+            },
+            provenance:{ provider:"fixture",modelId:"fixture-x4-journal" },
+          };
+        }
+        if(situationId===situationIds.thr_x4_aversive){
+          return {
+            output:{
+              journalEntry:"I felt patronized. Maybe they meant to be helpful, but I experienced the demonstration as someone intruding on work I was already handling perfectly well.",
+            },
+            provenance:{ provider:"fixture",modelId:"fixture-x4-journal" },
+          };
+        }
+        return {
+          output:{ journalEntry:null },
+          provenance:{ provider:"fixture",modelId:"fixture-x4-journal" },
+        };
+      }
+      if(request.clientRequestId.startsWith("lived-memory_")){
+        const situationId=request.input.experience.situationId;
+        if(situationId===situationIds.thr_x4_enriching){
+          return {
+            output:{
+              outcome:"retained",
+              rememberedContent:"I remember an unfamiliar workshop demonstration changing how I approached the problem.",
+              rememberedMeaning:"Meeting unfamiliar people can broaden my thinking without taking over the whole day.",
+              confidence:0.9,
+              salience:0.85,
+              uncertainty:[],
+            },
             provenance:{ provider:"fixture",modelId:"fixture-x4-memory" },
           };
-        },
-      },
-    }),
+        }
+        if(situationId===situationIds.thr_x4_aversive){
+          return {
+            output:{
+              outcome:"retained",
+              rememberedContent:"I remember feeling interrupted and talked down to during a workshop demonstration.",
+              rememberedMeaning:"An unstructured interruption made me protective of quiet when I want to focus.",
+              confidence:0.9,
+              salience:0.85,
+              uncertainty:["I may have read more condescension into it than was objectively there."],
+            },
+            provenance:{ provider:"fixture",modelId:"fixture-x4-memory" },
+          };
+        }
+        return {
+          output:{
+            outcome:"not_remembered",
+            rememberedContent:null,
+            rememberedMeaning:null,
+            confidence:null,
+            salience:null,
+            uncertainty:[],
+          },
+          provenance:{ provider:"fixture",modelId:"fixture-x4-memory" },
+        };
+      }
+      throw new Error("unexpected X4 aftermath cognition");
+    },
   };
+
+  const results={ story };
+  for(const thread of threads){
+    const situationId=situationIds[thread.threadId];
+    results[thread.threadId]=await internalizeThreadEncounterExperience({
+      livedContext:{
+        thread,
+        situation:{
+          situationId,
+          threadId:thread.threadId,
+          establishedAt:occurredAt,
+          phase:"at_place",
+          location:{ kind:"place",placeRef:"place_x4_workshop" },
+          mediatedContext:null,
+          activity:"Take part in an open community workshop.",
+          participantRefs:[],
+        },
+        semanticStates:[],
+        memories:[],
+      },
+      encounterStory:story,
+      presentThreadSummaries:[],
+      experienceStore,
+      memoryStore,
+      modelAdapter:adapter,
+    });
+  }
+  return results;
 }
 
-test("X4 retained lived outcome bends later planning while not_remembered history does not", async () =>
+test("X4 subjective aftermath bends later planning while forgotten history stays only history", async () =>
   withDatabase(async (databasePath) => {
     const storage=localWorldStateStorage(databasePath);
     const worldStore=openWorldStore(storage);
     const events=new Map();
-    for(const [threadId,name] of [
-      ["thr_x4_enriching","Mira Vale"],
-      ["thr_x4_aversive","Mira Vale"],
-      ["thr_x4_forgotten","Mira Vale"],
+    for(const threadId of [
+      "thr_x4_enriching",
+      "thr_x4_aversive",
+      "thr_x4_forgotten",
     ]){
       events.set(threadId,seedThread(
         worldStore,
         threadId,
-        name,
+        "Mira Vale",
         "2026-09-20T08:00:00.000Z",
       ));
     }
@@ -341,27 +369,53 @@ test("X4 retained lived outcome bends later planning while not_remembered histor
     const situatedLifeStore=openSituatedLifeStore(storage);
     const experienceStore=openLivedExperienceStore(storage);
 
-    const enriching=await x4EncounterMemory({
-      thread:worldStore.getThread("thr_x4_enriching"),
-      outcome:"retained",
-      rememberedMeaning:"Meeting unfamiliar people can broaden my thinking without taking over the whole day.",
+    const threads=[
+      worldStore.getThread("thr_x4_enriching"),
+      worldStore.getThread("thr_x4_aversive"),
+      worldStore.getThread("thr_x4_forgotten"),
+    ];
+    const aftermath=await x4Afters({
+      threads,
       experienceStore,
       memoryStore,
     });
-    const aversive=await x4EncounterMemory({
-      thread:worldStore.getThread("thr_x4_aversive"),
-      outcome:"retained",
-      rememberedMeaning:"An unstructured interruption made me protective of quiet when I want to focus.",
-      experienceStore,
-      memoryStore,
-    });
-    const forgotten=await x4EncounterMemory({
-      thread:worldStore.getThread("thr_x4_forgotten"),
-      outcome:"not_remembered",
-      rememberedMeaning:null,
-      experienceStore,
-      memoryStore,
-    });
+    const enriching=aftermath.thr_x4_enriching;
+    const aversive=aftermath.thr_x4_aversive;
+    const forgotten=aftermath.thr_x4_forgotten;
+
+    assert.equal(
+      enriching.experienceRecord.encounterRef,
+      aftermath.story.encounterId,
+      "enriching experience lost shared objective story",
+    );
+    assert.equal(
+      aversive.experienceRecord.encounterRef,
+      aftermath.story.encounterId,
+      "aversive experience lost shared objective story",
+    );
+    assert.equal(
+      forgotten.experienceRecord.encounterRef,
+      aftermath.story.encounterId,
+      "forgotten experience lost shared objective story",
+    );
+    assert.ok(enriching.journalEntry,"meaningful enriching experience did not reach private journal");
+    assert.ok(aversive.journalEntry,"meaningful aversive experience did not reach private journal");
+    assert.equal(forgotten.journalEntry,null,"trivial experience was forced into the journal");
+    assert.notEqual(
+      enriching.journalEntry.entryText,
+      aversive.journalEntry.entryText,
+      "one objective story collapsed into one subjective journal truth",
+    );
+    assert.equal(
+      JSON.stringify(aftermath.story.story).includes("patronized"),
+      false,
+      "objective story was contaminated by private interpretation",
+    );
+    assert.match(
+      aversive.journalEntry.entryText,
+      /patronized/u,
+      "private journal could not disagree with objective history",
+    );
 
     assert.equal(enriching.memory.outcome,"retained");
     assert.equal(aversive.memory.outcome,"retained");
@@ -438,7 +492,19 @@ test("X4 retained lived outcome bends later planning while not_remembered histor
       "different retained outcomes did not bend later life differently",
     );
 
+    const enrichingEvidence=observedEvidence.get("thr_x4_enriching");
+    const aversiveEvidence=observedEvidence.get("thr_x4_aversive");
     const forgottenEvidence=observedEvidence.get("thr_x4_forgotten");
+    assert.equal(
+      enrichingEvidence.some((item)=>item.ref===enriching.journalEntry.journalEntryId),
+      false,
+      "journal bypassed memory authority in later planning",
+    );
+    assert.equal(
+      aversiveEvidence.some((item)=>item.ref===aversive.journalEntry.journalEntryId),
+      false,
+      "journal bypassed memory authority in later planning",
+    );
     assert.equal(
       forgottenEvidence.some((item)=>item.kind==="memory"),
       false,
@@ -446,8 +512,8 @@ test("X4 retained lived outcome bends later planning while not_remembered histor
     );
     assert.equal(
       forgottenEvidence.some((item)=>
-        item.ref===forgotten.story.encounterId
-        || item.ref===forgotten.experience.experienceId),
+        item.ref===aftermath.story.encounterId
+        || item.ref===forgotten.experienceRecord.experienceId),
       false,
       "World encounter history bypassed memory authority",
     );
