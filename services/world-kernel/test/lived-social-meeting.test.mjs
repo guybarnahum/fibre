@@ -393,14 +393,26 @@ function fixture({
         if (place === null && required) throw new Error(`missing fixture World place ${ref}`);
         return place;
       },
-      getPreviousSituation(threadId) {
+      getPreviousSituation(threadId, before) {
         if (!sustainedSameness) return null;
-        const current = situations.get(threadId);
-        return {
-          ...structuredClone(current),
-          situationId:`sit_previous_${threadId}`,
-          establishedAt:new Date(Date.parse(current.establishedAt) - (30 * 60 * 1000)).toISOString(),
-        };
+        const current=structuredClone(situations.get(threadId));
+        const recentAt=new Date(Date.parse(current.establishedAt)-(10*60*1000)).toISOString();
+        const olderAt=new Date(Date.parse(current.establishedAt)-(30*60*1000)).toISOString();
+        if(Date.parse(before)>Date.parse(recentAt)){
+          return {
+            ...current,
+            situationId:`sit_recent_${threadId}`,
+            establishedAt:recentAt,
+          };
+        }
+        if(Date.parse(before)>Date.parse(olderAt)){
+          return {
+            ...current,
+            situationId:`sit_older_${threadId}`,
+            establishedAt:olderAt,
+          };
+        }
+        return null;
       },
       latestPlan(threadId) { return structuredClone(plan(threadId)); },
     },
@@ -675,7 +687,7 @@ test("background co-presence costs no cognition and creates no private refusal",
     "background opportunity must create no Encounter Story");
 });
 
-test("grounded sustained sameness can raise exploration salience without forcing engagement", async () => {
+test("contiguous enacted sameness can accumulate across short snapshots without forcing engagement", async () => {
   const ordinary = fixture({
     plannedCompanions:false,
     sustainedSameness:false,
@@ -704,7 +716,7 @@ test("grounded sustained sameness can raise exploration salience without forcing
     "background ambient opportunity should remain zero-cognition");
 
   assert.equal(lowNoveltyAttempt.salience.outcome, "salient",
-    "sustained enacted sameness should make an otherwise-background opportunity material");
+    "cumulative enacted sameness should make an otherwise-background opportunity material");
   assert.equal(lowNoveltyAttempt.salience.anchors.includes("exploration_pressure"), true,
     "salience should expose exploration pressure as the materiality reason");
   assert.equal(lowNoveltyAttempt.initiation.decision, "not_initiate",
