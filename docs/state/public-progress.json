@@ -245,9 +245,9 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Meet a Thread where they already are in ordinary life; the visitor approaches and the Thread decides whether to engage.",
-      "currentStep": "N6.3a is accepted. N6.3b is current: validate that the displayed World-enacted situation still applies when the visitor speaks; Flight Plan intent only triggers reconciliation when actual life may be stale.",
+      "currentStep": "N6.3a and N6.3b are accepted. N6.3c is current: reuse the existing social-response Interior Cognition seam for a Person visitor's first utterance from the revalidated World-enacted situation.",
       "nextSteps": [
-        "N6.3b: validate continuity of the displayed enacted scene without treating the Flight Plan as reality.",
+        "N6.3c: let the Thread accept, decline or defer the Person visitor request through existing Interior Cognition.",
         "N6.3c: reuse Interior Cognition for accept, decline or defer from current life.",
         "N6.3d: restore POST /encounter as the only public social boundary.",
         "N6.3e: run accepted conversation inside ordinary life, then proceed to later-life continuity."
@@ -255,9 +255,9 @@
     },
     "detail": {
       "summary": "N6.3 no longer treats a paid Inside Fibre visitor-work shift as the definition of meeting. Ordinary meeting intersects a Thread's existing Flight Plan and CurrentSituation.",
-      "currentStep": "N6.3a cleanup is accepted. Public GET /api/threads/meet selection, POST /meet admission, visitor-work livedScene wrapping, Viewer loadMeetingThread and the old public encounter adapter are gone. Public interaction remains intentionally disabled while N6.3b proves continuity of the actual World-enacted scene.",
+      "currentStep": "N6.3a cleanup and N6.3b actual-scene validation are accepted. Public interaction remains intentionally disabled while N6.3c reuses existing social-response Interior Cognition for Person visitor participation.",
       "nextSteps": [
-        "Validate the lightweight displayed-CurrentSituation validator in World.",
+        "Reuse the existing social-response Interior Cognition adapter for Person visitor participation.",
         "Use Flight Plan boundaries only to decide when the enacted observation may need one ordinary LivedNow reconciliation; never treat the plan itself as scene truth.",
         "If enacted life has materially changed from the displayed situation, return encounter_scene_changed with zero participation work.",
         "Only after that add Thread-owned participation cognition and restore /encounter."
