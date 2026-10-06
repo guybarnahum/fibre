@@ -53,6 +53,7 @@ async function callWorldVisitorEncounter(env, threadId, input) {
       "x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN,
     },
     body:JSON.stringify({
+      requestId:input.requestId,
       threadId,
       expectedSituationId:input.situationId,
       utterance:input.utterance,
