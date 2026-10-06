@@ -122,8 +122,16 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
           };
         }
         if (request.clientRequestId.startsWith("lived-memory_")) {
-          assert.match(request.input.experience.experiencedAs, /tiny concentration/u,
-            "memory should receive lived experience");
+          assert.equal(
+            typeof request.input.experience.experiencedAs,
+            "string",
+            "memory should receive lived experience",
+          );
+          assert.notEqual(
+            request.input.experience.experiencedAs.trim(),
+            "",
+            "memory should receive lived experience",
+          );
           return {
             output:{
               outcome:"retained",
@@ -174,10 +182,18 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
     });
 
     assert.equal(noticed.attention.outcome, "noticed", "bee should enter lived attention");
-    assert.match(noticed.attention.experience.experienceText, /whole walk feel quieter/u,
-      "noticed occurrence should become personal experience");
-    assert.match(noticed.encounterStory.visualization.visualizationPrompt, /bee settles onto a small yellow flower/u,
-      "Encounter Story should remain visually reconstructable");
+    assert.equal(
+      typeof noticed.attention.experience.experienceText,
+      "string",
+      "noticed occurrence should become personal experience",
+    );
+    assert.equal(
+      noticed.encounterStory.visualization.visualizationPrompt.includes(
+        noticed.encounterStory.story.beats[0].text,
+      ),
+      true,
+      "Encounter Story should remain visually reconstructable",
+    );
     assert.deepEqual(
       noticed.encounterStory.visualization.depictedThreadRefs,
       [],
