@@ -9,6 +9,9 @@ import {
   autobiographicalMemoryId,
 } from "../src/autobiographical-memory-domain.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
+import { formEncounterStoryMemory } from "../src/lived-encounter-memory.mjs";
+import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
+import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
 import { explorationInteroceptionForLivedContinuity } from "../src/lived-now-regulation.mjs";
@@ -155,116 +158,299 @@ function fixturePlanningModel() {
   };
 }
 
-test("persisted lived meaning bends an otherwise equivalent personal Flight Plan", async () =>
+function x4PlanningModel() {
+  return {
+    provider:"fixture",
+    modelId:"fixture-x4-planning",
+    async invoke(call) {
+      const external=call.input.concern.externalContext;
+      const memory=call.input.developedSelfEvidence.find((item)=>item.kind==="memory")??null;
+      const meaning=memory?.text??"";
+      const enriching=/unfamiliar people can broaden my thinking/u.test(meaning);
+      const aversive=/unstructured interruption made me protective of quiet/u.test(meaning);
+      return {
+        output:{
+          result:{
+            stops:[{
+              startAt:external.horizon.startAt,
+              endAt:external.horizon.endAt,
+              physicalPlaceRef:enriching?"place_x4_library":"place_x4_home",
+              presenceMode:"physical",
+              mediatedContext:"",
+              activity:enriching
+                ?"Spend the afternoon at the library and leave room for an unfamiliar workshop or conversation."
+                :aversive
+                  ?"Work alone at home and protect a quiet uninterrupted afternoon."
+                  :"Continue an ordinary quiet afternoon at home.",
+              purpose:enriching
+                ?"A retained experience made unfamiliar perspectives feel worth seeking again."
+                :aversive
+                  ?"A retained experience made unstructured social interruption feel costly."
+                  :"Follow the ordinary day without reconstructing meaning from old history.",
+              travelFromPrevious:"",
+            }],
+          },
+          evidenceRefs:memory===null?[]:[memory.ref],
+          conflictingMotives:[],
+          uncertainty:null,
+        },
+        provenance:{
+          provider:"fixture",
+          modelId:"fixture-x4-planning",
+          providerRequestId:call.clientRequestId,
+        },
+      };
+    },
+  };
+}
+
+async function x4EncounterMemory({
+  thread,
+  outcome,
+  rememberedMeaning,
+  experienceStore,
+  memoryStore,
+}) {
+  const situationId=`sit_x4_${thread.threadId}`;
+  const story=experienceStore.recordEncounterStory({
+    occurredAt:"2026-09-21T15:00:00.000Z",
+    threadPresence:[{ threadId:thread.threadId,situationId }],
+    story:{
+      beats:[
+        {
+          actorThreadId:null,
+          kind:"occurrence",
+          text:"At an open community workshop, another attendee demonstrates an unfamiliar way to solve the same practical problem.",
+        },
+        {
+          actorThreadId:thread.threadId,
+          kind:"action",
+          text:"The Thread tries the unfamiliar approach and spends a while comparing it with the familiar method.",
+        },
+      ],
+    },
+    visualization:createEncounterVisualization({
+      occurredAt:"2026-09-21T15:00:00.000Z",
+      story:{
+        beats:[
+          {
+            actorThreadId:null,
+            kind:"occurrence",
+            text:"Another attendee demonstrates an unfamiliar practical method.",
+          },
+          {
+            actorThreadId:thread.threadId,
+            kind:"action",
+            text:"The Thread tries it and compares it with the familiar method.",
+          },
+        ],
+      },
+      scene:"An open community workshop with shared tables.",
+      sourceReferences:[situationId],
+      depictedThreadRefs:[],
+    }),
+  });
+  const experience=experienceStore.recordThreadExperience({
+    threadId:thread.threadId,
+    encounterRef:story.encounterId,
+    situationId,
+    occurredAt:story.occurredAt,
+    experienceText:outcome==="not_remembered"
+      ?"The unfamiliar demonstration was noticed in the moment but did not become a lasting personal takeaway."
+      :rememberedMeaning,
+  });
+  const livedContext={
+    thread,
+    situation:{
+      situationId,
+      threadId:thread.threadId,
+      establishedAt:story.occurredAt,
+      phase:"at_place",
+      location:{ kind:"place",placeRef:"place_x4_workshop" },
+      mediatedContext:null,
+      activity:"Try an unfamiliar practical method at an open workshop.",
+      participantRefs:[],
+    },
+    semanticStates:[],
+    memories:[],
+  };
+  return {
+    story,
+    experience,
+    memory:await formEncounterStoryMemory({
+      livedContext,
+      experienceRecord:experience,
+      encounterStory:story,
+      journalEntry:null,
+      memoryStore,
+      modelAdapter:{
+        async invoke(){
+          return {
+            output:outcome==="not_remembered"
+              ?{
+                outcome:"not_remembered",
+                rememberedContent:null,
+                rememberedMeaning:null,
+                confidence:null,
+                salience:null,
+                uncertainty:[],
+              }
+              :{
+                outcome:"retained",
+                rememberedContent:"I remember trying an unfamiliar approach at the workshop.",
+                rememberedMeaning,
+                confidence:0.9,
+                salience:0.85,
+                uncertainty:[],
+              },
+            provenance:{ provider:"fixture",modelId:"fixture-x4-memory" },
+          };
+        },
+      },
+    }),
+  };
+}
+
+test("X4 retained lived outcome bends later planning while not_remembered history does not", async () =>
   withDatabase(async (databasePath) => {
-    const storage = localWorldStateStorage(databasePath);
-    const worldStore = openWorldStore(storage);
-    const firstEvent = seedThread(
-      worldStore,
-      "thr_lived_plan_a",
-      "Ada Vale",
-      "2026-09-20T08:00:00.000Z",
-    );
-    const secondEvent = seedThread(
-      worldStore,
-      "thr_lived_plan_b",
-      "Ben Vale",
-      "2026-09-20T08:00:00.000Z",
-    );
+    const storage=localWorldStateStorage(databasePath);
+    const worldStore=openWorldStore(storage);
+    const events=new Map();
+    for(const [threadId,name] of [
+      ["thr_x4_enriching","Mira Vale"],
+      ["thr_x4_aversive","Mira Vale"],
+      ["thr_x4_forgotten","Mira Vale"],
+    ]){
+      events.set(threadId,seedThread(
+        worldStore,
+        threadId,
+        name,
+        "2026-09-20T08:00:00.000Z",
+      ));
+    }
 
-    const identityStore = openIdentityStore(storage);
-    const semanticStateStore = openSemanticStateStore(storage);
-    const memoryStore = openAutobiographicalMemoryStore(storage);
-    const situatedLifeStore = openSituatedLifeStore(storage);
+    const identityStore=openIdentityStore(storage);
+    const semanticStateStore=openSemanticStateStore(storage);
+    const memoryStore=openAutobiographicalMemoryStore(storage);
+    const situatedLifeStore=openSituatedLifeStore(storage);
+    const experienceStore=openLivedExperienceStore(storage);
 
-    const memoryA = recordMeaning(memoryStore, {
-      threadId:"thr_lived_plan_a",
-      event:firstEvent,
-      rememberedMeaning:"After a long solitary stretch, quiet company restored me without disrupting my work.",
-      recordedAt:"2026-09-21T12:00:00.000Z",
+    const enriching=await x4EncounterMemory({
+      thread:worldStore.getThread("thr_x4_enriching"),
+      outcome:"retained",
+      rememberedMeaning:"Meeting unfamiliar people can broaden my thinking without taking over the whole day.",
+      experienceStore,
+      memoryStore,
     });
-    const memoryB = recordMeaning(memoryStore, {
-      threadId:"thr_lived_plan_b",
-      event:secondEvent,
-      rememberedMeaning:"When I kept background social presence around while concentrating, I became tense and protected solitude afterward.",
-      recordedAt:"2026-09-21T12:00:00.000Z",
+    const aversive=await x4EncounterMemory({
+      thread:worldStore.getThread("thr_x4_aversive"),
+      outcome:"retained",
+      rememberedMeaning:"An unstructured interruption made me protective of quiet when I want to focus.",
+      experienceStore,
+      memoryStore,
+    });
+    const forgotten=await x4EncounterMemory({
+      thread:worldStore.getThread("thr_x4_forgotten"),
+      outcome:"not_remembered",
+      rememberedMeaning:null,
+      experienceStore,
+      memoryStore,
     });
 
-    const sourceStores = {
+    assert.equal(enriching.memory.outcome,"retained");
+    assert.equal(aversive.memory.outcome,"retained");
+    assert.equal(forgotten.memory.outcome,"not_remembered");
+    assert.equal(forgotten.memory.memory,null,"not_remembered created autobiographical residue");
+    assert.equal(
+      experienceStore.listEncounterStories("thr_x4_forgotten").length,
+      1,
+      "forgotten exploration lost objective history",
+    );
+
+    const sourceStores={
       worldStore,
       identityStore,
       semanticStateStore,
       memoryStore,
       situatedLifeStore,
-      livedNowStore:planningPlaceAuthority([{
-        ref:"place_shared_reading_room",
-        placeKind:"library_or_learning",
-        displayName:"A shared reading room with desks, books and other readers.",
-      }]),
+      livedNowStore:planningPlaceAuthority([
+        { ref:"place_x4_home",placeKind:"residence",displayName:"Home" },
+        { ref:"place_x4_library",placeKind:"library_or_learning",displayName:"Neighborhood library with public programs" },
+      ]),
     };
-    const modelAdapter = fixturePlanningModel();
-    const planInput = {
-      authoredAt:"2026-09-22T09:00:00.000Z",
-      horizonEnd:"2026-09-22T13:00:00.000Z",
-      availablePlaceRefs:["place_shared_reading_room"],
-      startingPlaceRef:"place_shared_reading_room",
-      modelAdapter,
+    const plans={};
+    const observedEvidence=new Map();
+    const base={
+      authoredAt:"2026-09-22T13:00:00.000Z",
+      horizonEnd:"2026-09-22T17:00:00.000Z",
+      availablePlaceRefs:["place_x4_home","place_x4_library"],
+      startingPlaceRef:null,
+      sourceStores,
+      modelAdapter:{
+        ...x4PlanningModel(),
+        async invoke(call){
+          observedEvidence.set(
+            call.input.thread.threadId,
+            structuredClone(call.input.developedSelfEvidence),
+          );
+          return x4PlanningModel().invoke(call);
+        },
+      },
     };
 
-    const [planA, planB] = await Promise.all([
-      formPersonalLivedPlan({
-        ...planInput,
-        threadId:"thr_lived_plan_a",
-        sourceReferences:[firstEvent.eventId],
-        sourceStores,
-      }),
-      formPersonalLivedPlan({
-        ...planInput,
-        threadId:"thr_lived_plan_b",
-        sourceReferences:[secondEvent.eventId],
-        sourceStores,
-      }),
-    ]);
+    for(const threadId of [
+      "thr_x4_enriching",
+      "thr_x4_aversive",
+      "thr_x4_forgotten",
+    ]){
+      plans[threadId]=await formPersonalLivedPlan({
+        ...base,
+        threadId,
+        sourceReferences:[events.get(threadId).eventId],
+      });
+    }
 
-    assert.notEqual(
-      planA.stops[0].activity,
-      planB.stops[0].activity,
-      "different lives should bend equivalent ordinary planning",
+    assert.equal(
+      plans.thr_x4_enriching.stops[0].physicalPlaceRef,
+      "place_x4_library",
+      "enriching lived meaning did not bend later exploration",
     );
     assert.equal(
-      planA.sourceReferences.includes(memoryA),
-      false,
-      "private memory evidence must not become World/situated plan evidence",
+      plans.thr_x4_aversive.stops[0].physicalPlaceRef,
+      "place_x4_home",
+      "aversive lived meaning did not protect later quiet",
     );
     assert.equal(
-      planB.sourceReferences.includes(memoryB),
-      false,
-      "private memory evidence must not become World/situated plan evidence",
-    );
-    assert.ok(
-      planA.cognition.selectedEvidenceRefs.includes(memoryA),
-      "Ada's memory should remain in the private cognition witness",
-    );
-    assert.ok(
-      planB.cognition.selectedEvidenceRefs.includes(memoryB),
-      "Ben's memory should remain in the private cognition witness",
-    );
-    assert.deepEqual(
-      planA.cognition.evidenceRefs,
-      [memoryA],
-      "Ada's cited causal memory should remain inspectable",
-    );
-    assert.deepEqual(
-      planB.cognition.evidenceRefs,
-      [memoryB],
-      "Ben's cited causal memory should remain inspectable",
+      plans.thr_x4_forgotten.stops[0].physicalPlaceRef,
+      "place_x4_home",
+      "forgotten history reconstructed exploratory meaning",
     );
     assert.notEqual(
-      planA.cognition.contextDigest,
-      planB.cognition.contextDigest,
-      "different developed lives should bind different cognition contexts",
+      plans.thr_x4_enriching.stops[0].activity,
+      plans.thr_x4_aversive.stops[0].activity,
+      "different retained outcomes did not bend later life differently",
     );
 
+    const forgottenEvidence=observedEvidence.get("thr_x4_forgotten");
+    assert.equal(
+      forgottenEvidence.some((item)=>item.kind==="memory"),
+      false,
+      "not_remembered history reached later planning as memory",
+    );
+    assert.equal(
+      forgottenEvidence.some((item)=>
+        item.ref===forgotten.story.encounterId
+        || item.ref===forgotten.experience.experienceId),
+      false,
+      "World encounter history bypassed memory authority",
+    );
+    assert.equal(
+      plans.thr_x4_forgotten.cognition.evidenceRefs.length,
+      0,
+      "forgotten encounter became private causal planning evidence",
+    );
+
+    experienceStore.close();
     situatedLifeStore.close();
     memoryStore.close();
     semanticStateStore.close();
