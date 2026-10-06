@@ -142,6 +142,9 @@ function threadObservatory(runtime, threadId) {
       attention:structuredClone(experience.getThreadEncounterAttention(threadId, story.encounterId)),
     }));
     const currentSituation = livedNow.getCurrentSituation(threadId);
+    const previousSituation = currentSituation === null
+      ? null
+      : livedNow.getPreviousSituation(threadId, currentSituation.establishedAt);
     const currentPlanRefs = new Set(currentSituation?.sourcePlanRefs ?? []);
     const currentPersonalPlan = currentSituation === null
       ? null
@@ -170,6 +173,7 @@ function threadObservatory(runtime, threadId) {
       lifeRelations:structuredClone(situatedLife.listCurrentLifeRelations(threadId)),
       livedNow:Object.freeze({
         currentSituation:structuredClone(currentSituation),
+        previousSituation:structuredClone(previousSituation),
         currentPersonalPlan:currentPersonalPlanWitness,
         worldContext:structuredClone(livedNow.getWorldContext(threadId, { required:false })),
         worldPlaces:structuredClone(livedNow.listWorldPlaces(threadId)),
