@@ -79,7 +79,7 @@ Approachability is therefore a possible consequence of self-directed life, never
 
 The accepted intrinsic regulator already contains an `exploration / information / play` family.
 
-The first grounded live input is repeated authoritative sameness:
+The first grounded live input is repeated authoritative sameness. Because Fibre is sparse/event-driven, this is evaluated over a **contiguous run of enacted CurrentSituations**, not by requiring any one adjacent observation pair to be 20 minutes apart:
 
 ```text
 two distinct enacted CurrentSituations
