@@ -118,11 +118,11 @@
       "status": "not_yet",
       "simple": {
         "claim": "Threads can now let grounded exploration pressure influence ordinary self-directed Flight Planning through the existing interoception and Interior Cognition stack.",
-        "limitation": "The forward planning half is accepted through X3, but Fibre has not yet proved that a lived exploratory outcome can return through retained Thread-owned meaning and bend later planning."
+        "limitation": "X4 is implemented pending local validation. After X4, Fibre still needs autonomous environmental-occurrence and incidental-witness production/discovery before richer Person/social extensions."
       },
       "detail": {
         "claim": "X0-X3 are accepted: sustained low-novelty enacted life can ground exploration pressure; existing interoception carries it into the existing lived_planning concern; planning resolves opportunity meaning from World/situated authority; and two real staging Threads produced materially different valid Flight Plans under grounded exploration without a new service, score, store, social bias, second planning engine or resampling.",
-        "limitation": "X4 remains: an actual lived exploratory outcome must pass through ordinary Encounter Story / Thread Experience / selective memory or semantic consequence and causally affect a later planning episode. Rich Person presence and socially porous discovery remain later extension slices."
+        "limitation": "X4 must close the lived-outcome -> retained Thread-owned meaning -> later-planning return path. Then E6 must remove caller-authored environmental event text and caller-selected silent witnesses before X5+ rich Person/social discoverability."
       },
       "evidence": [
         "docs/architecture/developmental-exploration.md",
@@ -231,11 +231,11 @@
       "status": "in_progress",
       "simple": {
         "claim": "Fibre has the machinery for environmental encounters, voluntary social meetings, silent witnesses, natural actor discovery and distinct private aftermath over one Encounter Story / Thread Experience seam.",
-        "limitation": "A naturally occurring Thread-to-Thread encounter from independently lived plans remains a follow-on proof; it is not the current N6 blocker."
+        "limitation": "Encounter semantics cover environmental events, voluntary meetings and silent witnesses, but environmental event text and incidental witness selection are not yet fully autonomous."
       },
       "detail": {
         "claim": "Situated Percept, salience, Interior Cognition, explicit shared live-place authority, voluntary meeting and witness asymmetry are retained foundations for natural social life.",
-        "limitation": "Natural reciprocal acceptance must not use caller-selected counterparties, Commons fallback, paid scheduling or sociability bias. It resumes after the public N6 continuity proof."
+        "limitation": "E6 is scheduled after X4: World-owned bounded environmental occurrence production plus incidental-witness derivation from authoritative co-presence, with no event quota, ticking or caller-selected witnesses."
       },
       "evidence": [
         "docs/architecture/encounters-and-experience.md",
@@ -297,7 +297,7 @@
     "A conversation is an encounter in a continuing life, not automatically an autobiographical memory.",
     "Memory may form only from admitted lived evidence through the memory authority; do not inject virtual memories directly.",
     "Infrastructure and tests enter the critical path only when they enable the active lived-person capability or protect a demonstrated invariant.",
-    "Encounter is the general lived primitive; meeting is one voluntary social form of encounter.",
+    "Encounter is a bounded textual World occurrence that may enter a Thread's attention; conversation is only one producer, and meeting is one voluntary social form.",
     "Co-presence does not automatically create Thread experience; a Thread may notice only part of an occurrence or nothing at all.",
     "Objective Encounter Story, private Thread Experience, Journal, and autobiographical Memory are distinct authorities.",
     "An objective Encounter Story may exist without Thread Experience; not_noticed occurrences must not leak into autobiographical recollection."
