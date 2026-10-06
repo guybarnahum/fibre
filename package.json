@@ -119,7 +119,8 @@
     "population:lab:experiments": "node --disable-warning=ExperimentalWarning tools/population-lab/experiments.mjs",
     "inside-fibre:meet": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs meet",
     "developmental-exploration:x3:staging": "node tools/deployment/run-with-progress.mjs developmental-exploration:x3:staging node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-planning-staging.mjs --exploration",
-    "lived-encounters:validate": "node tools/deployment/run-with-progress.mjs lived-encounters:validate node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-encounters-validation.mjs"
+    "lived-encounters:validate": "node tools/deployment/run-with-progress.mjs lived-encounters:validate node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-encounters-validation.mjs",
+    "encounter-autonomy:probe": "node tools/deployment/run-with-progress.mjs encounter-autonomy:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/encounter-autonomy-probe.mjs"
   },
   "engines": {
     "node": ">=22.13"
