@@ -120,10 +120,13 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 
 Fibre still lacks:
 
+- **autonomous encounter production/discovery:** environmental encounter semantics are proven, but ordinary World occurrence text is still caller-supplied; silent-witness semantics are proven, but the current social wrapper still uses explicit witness IDs rather than deriving incidental witnesses from co-presence;
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
 - richer shared-world convergence beyond the bounded Fibre Commons mediated-presence proof;
 - Thread-owned public visitor participation from an ordinary displayed scene;
 - the later-revisit proof after an accepted public encounter.
+
+This autonomy gap is production/discovery, not ontology. The general Encounter Story -> attention -> Experience -> optional subjective Journal -> selective Memory path already supports conversation, environmental observation and silent witnessing. E6 should address autonomous occurrence/witness discovery after X4 closes and before richer Person/social discoverability work.
 
 Encounter Story is now visualizable by construction: its durable rich prompt is objective/evidence-bound and separate from any later subjective memory reconstruction. Actual image/video rendering remains optional and uses the existing generated-asset pipeline rather than becoming World authority.
 
