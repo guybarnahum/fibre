@@ -178,6 +178,7 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
+- autonomously produce ordinary environmental Encounter Stories from current World context or automatically derive incidental silent witnesses for an admitted encounter; the general attention/Experience/Journal/Memory aftermath already works once the occurrence/presence is supplied;
 - complete N6 public current-life presentation and later-revisit continuity;
 - validate a naturally occurring Thread-to-Thread encounter from independently lived plans without manufacturing co-presence or willingness;
 - turn grounded exploration/novelty pressure into self-directed ordinary planning that seeks richer experiences and lets those experiences bend later planning;
@@ -192,7 +193,7 @@ A Thread may have admitted history it does not remember.
 - Retrospective life must preserve that it was materialized later.
 - insidefibre.com is a projection surface, not a parallel World.
 - A meeting enters an already-existing life; it does not manufacture that life.
-- Encounter is the general lived primitive; meeting is one voluntary social special case.
+- Encounter is the general lived primitive: a bounded textual World occurrence that may enter a Thread's attention; conversation is only one producer, and meeting is one voluntary social special case.
 - Co-presence does not automatically create experience; noticing is Thread-specific.
 - Shared event does not imply shared private meaning.
 - A journal is not automatically autobiographical memory.
