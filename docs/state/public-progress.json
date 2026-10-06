@@ -173,7 +173,7 @@
       "status": "achieved",
       "simple": {
         "claim": "A public visitor can see a Thread's ordinary current life and approach them there without creating or rearranging the scene.",
-        "limitation": "The current N6.3 work is accepted conversation continuity inside ordinary life, without turning the interaction into a session authority."
+        "limitation": "N6.4 is proving that public encounter retry is exactly-once at the lived-effect boundary without becoming conversation/session authority."
       },
       "detail": {
         "claim": "N6.1/N6.2 prove the Viewer can reconcile and render a World-owned current situation produced by the Thread's ordinary Flight Plan before any interaction.",
@@ -245,22 +245,22 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Meet a Thread where they already are in ordinary life; the visitor approaches and the Thread decides whether to engage.",
-      "currentStep": "N6.3a-N6.3d are accepted. N6.3e is current: repeated turns reuse the same situation-bound /encounter boundary, advancing actual life and carrying immediate context only through a bounded causal chain of admitted Encounter Stories, with no session store.",
+      "currentStep": "N6.3a-N6.3e are accepted. N6.4 is current: one stable per-Send request identity and durable World receipt make completed /encounter retry replay the same outcome without repeating cognition or consequence.",
       "nextSteps": [
-        "N6.3e: keep accepted conversation grounded in ordinary life with no session store.",
-        "N6.3e: advance the Viewer witness to each accepted turn's returned actual situationId.",
+        "N6.4: validate completed public encounter retry is exactly-once.",
         "N6.5: prove a later visit finds later life rather than resuming the old encounter.",
+        "N6.5: prove the old situation witness no longer accepts new turns.",
         "N6.6: close the live public acceptance path."
       ]
     },
     "detail": {
       "summary": "N6.3 no longer treats a paid Inside Fibre visitor-work shift as the definition of meeting. Ordinary meeting intersects a Thread's existing Flight Plan and CurrentSituation.",
-      "currentStep": "N6.3a-N6.3d are accepted. N6.3e now proves that later accepted turns remain independent situation-bound encounters in continuing life rather than a server-side conversation session.",
+      "currentStep": "N6.3a-N6.3e are accepted. N6.4 now adds only durable idempotence metadata: completed retries replay one stored outward result before scene validation or cognition, while different content cannot reuse the request identity.",
       "nextSteps": [
-        "Keep the composer open only after an accepted turn, advance to the returned actual situationId, and cite only the immediately prior admitted Encounter Story.",
-        "Run every later turn through the same /encounter validation and participation path.",
-        "End the interaction on decline/defer or scene_changed rather than preserving a conversation session.",
-        "Keep any transcript as ephemeral Viewer state only."
+        "Validate the same requestId and request digest replay one stored result with zero extra model calls or Encounter Stories.",
+        "Validate the same requestId cannot bind different request content.",
+        "Keep the retry receipt append-only and outside conversation/memory authority.",
+        "Then run the already-staged N6.5 later-visit continuity proof."
       ]
     },
     "finalLifeCognitionAuthorized": true
