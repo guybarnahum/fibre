@@ -283,7 +283,7 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
       threadId: life.thread.threadId,
       authoredAt: "2026-09-10T05:03:00Z",
       horizonEnd: "2026-09-10T06:00:00Z",
-      availablePlaces: [{ ref: life.homeRef, displayName: "Home in Haifa" }],
+      availablePlaceRefs: [life.homeRef],
       sourceReferences: [life.sourceEvent],
       sourceStores:{
         worldStore,
@@ -291,6 +291,7 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
+        livedNowStore:openLivedNowStore(storage),
       },
       modelAdapter: planner.adapter,
     });
