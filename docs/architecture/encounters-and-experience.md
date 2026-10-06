@@ -73,6 +73,8 @@ rain begins
 a bee lands on the flower
 ```
 
+When one admitted social encounter directly continues another, the later Encounter Story may carry `continuationOfEncounterRef` to the immediately preceding story. This is objective event lineage, not a chat session or transcript authority. Consumers that need immediate conversational context may follow a small bounded chain of these admitted stories; durable autobiographical recollection still comes only through the ordinary memory authority.
+
 Silence is not an observable beat that must be fabricated. It is enough that a Thread was present and later may or may not have noticed what occurred.
 
 ### Thread experience
