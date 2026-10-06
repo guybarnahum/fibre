@@ -10,7 +10,10 @@ import {
   resolveServiceDeployment,
 } from "../../infra/deployments/manifest.mjs";
 import { formPersonalLivedPlan } from "../../services/world-kernel/src/lived-plan-cognition.mjs";
-import { explorationInteroceptionForLivedContinuity } from "../../services/world-kernel/src/lived-now-regulation.mjs";
+import {
+  classifyExplorationContinuity,
+  explorationInteroceptionForLivedContinuity,
+} from "../../services/world-kernel/src/lived-now-regulation.mjs";
 import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -564,6 +567,13 @@ export async function runDevelopmentalExplorationX3Staging({
         reason="no comparable enacted at-place continuity";
       }
 
+      const continuity=reason===null
+        ?classifyExplorationContinuity(previous,current)
+        :null;
+      if(reason===null&&continuity?.grounded!==true){
+        reason=`exploration continuity: ${continuity?.reason??"unknown"}`;
+      }
+
       const interoception=reason===null
         ?explorationInteroceptionForLivedContinuity({
           thread:observatory.thread,
@@ -571,9 +581,6 @@ export async function runDevelopmentalExplorationX3Staging({
           currentSituation:current,
         })
         :null;
-      if(reason===null&&interoception===null){
-        reason="current enacted life does not ground exploration pressure";
-      }
 
       const refs=reason===null?availablePlaceRefs(observatory,current):[];
       if(reason===null&&refs.length<2){
