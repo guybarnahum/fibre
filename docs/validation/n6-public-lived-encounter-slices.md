@@ -362,7 +362,11 @@ visitor utterance
 
 There is no conversation/session store. Each later visitor turn remains situation-bound and crosses the same `POST /encounter` boundary again: actual life is revalidated, the Thread may accept/decline/defer again, and only an accepted turn becomes another Encounter Story.
 
-The Viewer may keep an ephemeral transcript solely for the page the visitor is currently looking at. After each accepted turn it must advance its witness to the returned actual `situationId`; it must not persist that transcript as Fibre authority. If life moves, the next turn returns `encounter_scene_changed`, the interaction ends, and the Viewer refreshes to the Thread's new present.
+The Viewer may keep an ephemeral transcript solely for the page the visitor is currently looking at. After each accepted turn it must advance its witness to the returned actual `situationId`; it must not persist that transcript as Fibre authority.
+
+For conversational coherence, a later turn may additionally cite only the immediately prior admitted `encounterStoryId`. World validates that story against the Thread and the supplied situation witness, follows at most six `continuationOfEncounterRef` links, and gives that compact admitted history to participation and live-response cognition. Each accepted new Encounter Story records its own `continuationOfEncounterRef`. This is causal lived history, not a server-side conversation/session record.
+
+If life moves, the next turn returns `encounter_scene_changed`, the interaction ends, and the Viewer refreshes to the Thread's new present.
 
 ### N6.3 high-value tests
 
