@@ -320,7 +320,7 @@ test("personal Flight Plan admission keeps private cognition evidence separate f
       threadId:"thr_lived_plan_admission",
       authoredAt:"2026-09-22T09:00:00.000Z",
       horizonEnd:"2026-09-22T13:00:00.000Z",
-      availablePlaces:[{ ref:placeRef, displayName:"Reading room" }],
+      availablePlaceRefs:[placeRef],
       startingPlaceRef:placeRef,
       sourceReferences:[event.eventId],
       sourceStores:{
@@ -595,6 +595,135 @@ test("X1 grounded exploration reaches the existing planning mind without becomin
       "planning exploration lost its lived grounding",
     );
 
+    situatedLifeStore.close();
+    memoryStore.close();
+    semanticStateStore.close();
+    identityStore.close();
+    worldStore.close();
+  }));
+
+
+test("X2 planning place meaning comes from World/situated authority, not caller decoration", async () =>
+  withDatabase(async (databasePath) => {
+    const storage=localWorldStateStorage(databasePath);
+    const worldStore=openWorldStore(storage);
+    const event=seedThread(
+      worldStore,
+      "thr_x2_places",
+      "Lina Vale",
+      "2026-09-20T08:00:00.000Z",
+    );
+    const identityStore=openIdentityStore(storage);
+    const semanticStateStore=openSemanticStateStore(storage);
+    const memoryStore=openAutobiographicalMemoryStore(storage);
+    const situatedLifeStore=openSituatedLifeStore(storage);
+    const livedNowStore=openLivedNowStore(storage);
+
+    const place=(label,episodeKind,displayName)=>{
+      const record=situatedLifeStore.recordPlaceEpisode({
+        episodeId:placeEpisodeId({ threadId:"thr_x2_places",label }),
+        revision:1,
+        threadId:"thr_x2_places",
+        episodeKind,
+        place:{
+          placeId:`place.x2.${label}`,
+          displayName,
+          countryCode:"US",
+          region:"Arizona",
+          locality:"Tucson",
+          precision:"locality",
+        },
+        startAt:"2026-09-20T08:00:00.000Z",
+        endAt:null,
+        sourceReferences:[event.eventId],
+        visibility:"private",
+        provenance:"thread_history",
+        recordedAt:"2026-09-20T08:01:00.000Z",
+      });
+      return placeEpisodeRevisionRef(record);
+    };
+    const homeRef=place("home","residence","Home");
+    const libraryRef=place("library","study","Neighborhood library");
+
+    let observedPlaces=null;
+    const modelAdapter={
+      provider:"fixture",
+      modelId:"fixture-x2-planning",
+      async invoke(call){
+        observedPlaces=structuredClone(call.input.concern.externalContext.availablePlaces);
+        const library=observedPlaces.find((candidate)=>candidate.placeKind==="study");
+        assert.ok(library,"planning lost admitted place meaning");
+        return {
+          output:{
+            result:{
+              stops:[{
+                startAt:call.input.concern.externalContext.horizon.startAt,
+                endAt:call.input.concern.externalContext.horizon.endAt,
+                physicalPlaceRef:library.ref,
+                presenceMode:"physical",
+                mediatedContext:"",
+                activity:"Read somewhere already known as a place of study.",
+                purpose:"Use the real alternatives available in my world.",
+                travelFromPrevious:"",
+              }],
+            },
+            evidenceRefs:[],
+            conflictingMotives:[],
+            uncertainty:null,
+          },
+          provenance:{
+            provider:"fixture",
+            modelId:"fixture-x2-planning",
+            providerRequestId:call.clientRequestId,
+          },
+        };
+      },
+    };
+
+    const plan=await formPersonalLivedPlan({
+      threadId:"thr_x2_places",
+      authoredAt:"2026-09-22T09:00:00.000Z",
+      horizonEnd:"2026-09-22T13:00:00.000Z",
+      availablePlaceRefs:[homeRef,libraryRef],
+      // Deliberately ignored: callers no longer own place meaning.
+      availablePlaces:[{
+        ref:libraryRef,
+        displayName:"Exclusive nightclub with guaranteed exciting strangers",
+      }],
+      sourceReferences:[event.eventId],
+      sourceStores:{
+        worldStore,
+        identityStore,
+        semanticStateStore,
+        memoryStore,
+        situatedLifeStore,
+        livedNowStore,
+      },
+      modelAdapter,
+    });
+
+    assert.deepEqual(observedPlaces,[
+      {
+        ref:homeRef,
+        displayName:"Home",
+        placeKind:"residence",
+        location:{ countryCode:"US",region:"Arizona",locality:"Tucson" },
+      },
+      {
+        ref:libraryRef,
+        displayName:"Neighborhood library",
+        placeKind:"study",
+        location:{ countryCode:"US",region:"Arizona",locality:"Tucson" },
+      },
+    ],"planning place meaning did not come from authority");
+    assert.equal(
+      JSON.stringify(observedPlaces).includes("nightclub"),
+      false,
+      "caller decoration reached planning",
+    );
+    assert.equal(plan.stops[0].physicalPlaceRef,libraryRef);
+
+    livedNowStore.close();
     situatedLifeStore.close();
     memoryStore.close();
     semanticStateStore.close();
