@@ -10,6 +10,7 @@ import {
   resolveServiceDeployment,
 } from "../../infra/deployments/manifest.mjs";
 import { formPersonalLivedPlan } from "../../services/world-kernel/src/lived-plan-cognition.mjs";
+import { plannedPositionAt } from "../../services/world-kernel/src/lived-now.mjs";
 
 import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
 
@@ -18,6 +19,7 @@ const REQUEST_TIMEOUT_MS = 120_000;
 const MAX_THREADS = 18;
 const X3_SCAN_LIMIT = 50;
 const X3_MAX_ELIGIBLE = 3;
+const X3_MAX_CURRENTIZATIONS = 3;
 const MIN_CURRENT_THREADS = 3;
 const MIN_HISTORY_ATTRIBUTED = 2;
 const GIT_SHA = /^[0-9a-f]{40}$/u;
@@ -302,6 +304,26 @@ function sourceStoresFromObservatory(observatory) {
   });
 }
 
+function sameScene(position,situation){
+  if(position?.kind!=="at_place"||situation?.location?.kind!=="place")return false;
+  return position.location.placeRef===situation.location.placeRef
+    && (position.mediatedContext??null)===(situation.mediatedContext??null)
+    && position.activity===situation.activity
+    && JSON.stringify([...(position.participantRefs??[])].sort())
+      ===JSON.stringify([...(situation.participantRefs??[])].sort());
+}
+
+function cheapCurrentizationCandidate(observatory,now){
+  const current=observatory?.livedNow?.currentSituation??null;
+  const plan=observatory?.livedNow?.currentPersonalPlan??null;
+  if(current===null||plan===null||current.location?.kind!=="place")return null;
+  const position=plannedPositionAt(plan,now);
+  if(!sameScene(position,current))return null;
+  const elapsedMs=Date.parse(now)-Date.parse(current.establishedAt);
+  if(!Number.isFinite(elapsedMs)||elapsedMs<20*60*1000)return null;
+  return Object.freeze({ elapsedMs,planId:plan.planId });
+}
+
 function availablePlaceRefs(observatory,currentSituation){
   const refs=[];
   for(const episode of observatory.livedNow?.placeEpisodes ?? []){
@@ -536,7 +558,9 @@ export async function runDevelopmentalExplorationX3Staging({
   const rows=[];
   const skipped=[];
   const candidates=[];
+  const currentizable=[];
   let inspectedThreadCount=0;
+  const scanNow=new Date().toISOString();
 
   for(const threadCard of ordered.slice(0,X3_SCAN_LIMIT)){
     if(candidates.length>=X3_MAX_ELIGIBLE)break;
@@ -567,7 +591,16 @@ export async function runDevelopmentalExplorationX3Staging({
       if(current===null||current.location?.kind!=="place"){
         reason="no enacted at-place current situation";
       }else if(continuity?.grounded!==true){
-        reason=`exploration continuity: ${continuity?.reason??"unknown"}`;
+        const refresh=cheapCurrentizationCandidate(observatory,scanNow);
+        if(refresh!==null){
+          currentizable.push(Object.freeze({
+            threadCard:structuredClone(threadCard),
+            refresh,
+          }));
+          reason="awaiting cheap currentization";
+        }else{
+          reason=`exploration continuity: ${continuity?.reason??"unknown"}`;
+        }
       }else if(interoception===null){
         reason="grounded exploration continuity has no interoception";
       }
@@ -640,6 +673,75 @@ export async function runDevelopmentalExplorationX3Staging({
     }
   }
 
+  for(const pending of currentizable.slice(0,X3_MAX_CURRENTIZATIONS)){
+    if(candidates.length>=X3_MAX_ELIGIBLE)break;
+    emit({
+      event:"developmental-x3-currentize",
+      threadId:pending.threadCard.threadId,
+      elapsedMinutes:Math.round(pending.refresh.elapsedMs/60000),
+      planId:pending.refresh.planId,
+    });
+    await privatePost(
+      worldBaseUrl,
+      "/internal/lived-now/ensure",
+      privateToken,
+      { threadId:pending.threadCard.threadId },
+      `LivedNow ${pending.threadCard.threadId}`,
+    );
+    const refreshedPayload=await privateGet(
+      worldBaseUrl,
+      `/internal/threads/${encodeURIComponent(pending.threadCard.threadId)}/observatory`,
+      privateToken,
+      `World Observatory ${pending.threadCard.threadId}`,
+    );
+    const observatory=refreshedPayload?.observatory;
+    const current=observatory?.livedNow?.currentSituation??null;
+    const previous=observatory?.livedNow?.previousSituation??null;
+    const continuity=observatory?.livedNow?.explorationContinuity??null;
+    const interoception=observatory?.livedNow?.explorationInteroception??null;
+    const refs=availablePlaceRefs(observatory,current);
+    const sourceReferences=observatory?.livedNow?.currentPersonalPlan?.sourceReferences??[];
+
+    if(
+      refreshedPayload?.contract!=="fibre-world-thread-observatory-v0.8"
+      || continuity?.grounded!==true
+      || interoception===null
+      || current?.location?.kind!=="place"
+      || refs.length<2
+      || !refs.includes(current.location.placeRef)
+      || sourceReferences.length===0
+    ){
+      emit({
+        event:"developmental-x3-currentize-skipped",
+        threadId:pending.threadCard.threadId,
+        continuity:continuity?.reason??null,
+        opportunityCount:refs.length,
+      });
+      continue;
+    }
+
+    candidates.push(Object.freeze({
+      threadCard:structuredClone(pending.threadCard),
+      payload:structuredClone(refreshedPayload),
+      observatory:structuredClone(observatory),
+      current:structuredClone(current),
+      previous:structuredClone(previous),
+      interoception:structuredClone(interoception),
+      refs:Object.freeze([...refs]),
+      startingPlaceRef:current.location.placeRef,
+      sourceReferences:Object.freeze([...sourceReferences]),
+    }));
+    emit({
+      event:"developmental-x3-candidate",
+      threadId:pending.threadCard.threadId,
+      displayName:pending.threadCard.displayName??observatory.thread?.identity?.name??null,
+      previousSituationId:previous?.situationId??null,
+      currentSituationId:current.situationId,
+      opportunityCount:refs.length,
+      via:"cheap_currentization",
+    });
+  }
+
   const skipReasonCounts=Object.freeze(Object.fromEntries(
     [...new Set(skipped.map((entry)=>entry.reason))]
       .sort()
@@ -687,6 +789,8 @@ export async function runDevelopmentalExplorationX3Staging({
     discoveredThreadCount:discovered.length,
     inspectedThreadCount,
     candidateCount:candidates.length,
+    cheapCurrentizationCount:currentizable.length,
+    attemptedCurrentizationCount:Math.min(currentizable.length,X3_MAX_CURRENTIZATIONS),
     skipReasonCounts,
     activityChangedTiming,
     activityChangedLongCases,
