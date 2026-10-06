@@ -96,14 +96,28 @@ export function createPublicCurrentLifeApi({
           body=await request.json();
           if(!body||typeof body!=="object"||Array.isArray(body))throw new TypeError("encounter body must be an object");
           const keys=Object.keys(body).sort();
-          if(keys.length!==2||keys[0]!=="situationId"||keys[1]!=="utterance"){
-            throw new TypeError("encounter body must contain only situationId and utterance");
+          const firstTurn=keys.length===2&&keys[0]==="situationId"&&keys[1]==="utterance";
+          const continuation=keys.length===3
+            &&keys[0]==="priorEncounterStoryId"
+            &&keys[1]==="situationId"
+            &&keys[2]==="utterance";
+          if(!firstTurn&&!continuation){
+            throw new TypeError("encounter body must contain situationId, utterance and optional priorEncounterStoryId");
           }
           id("situationId",body.situationId);
           if(typeof body.utterance!=="string"||body.utterance.trim()===""){
             throw new TypeError("utterance is required");
           }
-          body={ situationId:body.situationId,utterance:body.utterance.trim() };
+          if(body.priorEncounterStoryId!==undefined){
+            id("priorEncounterStoryId",body.priorEncounterStoryId);
+          }
+          body={
+            situationId:body.situationId,
+            utterance:body.utterance.trim(),
+            ...(body.priorEncounterStoryId===undefined
+              ?{}
+              :{ priorEncounterStoryId:body.priorEncounterStoryId }),
+          };
         }catch(error){
           return json({ error:"invalid_public_encounter",detail:error.message },request,viewerOrigin,400);
         }
