@@ -10,7 +10,6 @@ import {
   resolveServiceDeployment,
 } from "../../infra/deployments/manifest.mjs";
 import { formPersonalLivedPlan } from "../../services/world-kernel/src/lived-plan-cognition.mjs";
-import { plannedPositionAt } from "../../services/world-kernel/src/lived-now.mjs";
 
 import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
 
@@ -304,6 +303,26 @@ function sourceStoresFromObservatory(observatory) {
   });
 }
 
+function plannedStopWitnessAt(plan,at){
+  if(plan===null||!Array.isArray(plan.stops))return null;
+  const instant=Date.parse(at);
+  if(!Number.isFinite(instant))return null;
+  for(const stop of plan.stops){
+    const start=Date.parse(stop.startAt);
+    const end=Date.parse(stop.endAt);
+    if(Number.isFinite(start)&&Number.isFinite(end)&&start<=instant&&instant<end){
+      return Object.freeze({
+        kind:"at_place",
+        location:Object.freeze({ kind:"place",placeRef:stop.physicalPlaceRef }),
+        mediatedContext:stop.mediatedContext??null,
+        activity:stop.activity,
+        participantRefs:Object.freeze([...(stop.companionRefs??[])]),
+      });
+    }
+  }
+  return null;
+}
+
 function sameScene(position,situation){
   if(position?.kind!=="at_place"||situation?.location?.kind!=="place")return false;
   return position.location.placeRef===situation.location.placeRef
@@ -317,7 +336,7 @@ function cheapCurrentizationCandidate(observatory,now){
   const current=observatory?.livedNow?.currentSituation??null;
   const plan=observatory?.livedNow?.currentPersonalPlan??null;
   if(current===null||plan===null||current.location?.kind!=="place")return null;
-  const position=plannedPositionAt(plan,now);
+  const position=plannedStopWitnessAt(plan,now);
   if(!sameScene(position,current))return null;
   const elapsedMs=Date.parse(now)-Date.parse(current.establishedAt);
   if(!Number.isFinite(elapsedMs)||elapsedMs<20*60*1000)return null;
@@ -597,10 +616,9 @@ export async function runDevelopmentalExplorationX3Staging({
             threadCard:structuredClone(threadCard),
             refresh,
           }));
-          reason="awaiting cheap currentization";
-        }else{
-          reason=`exploration continuity: ${continuity?.reason??"unknown"}`;
+          continue;
         }
+        reason=`exploration continuity: ${continuity?.reason??"unknown"}`;
       }else if(interoception===null){
         reason="grounded exploration continuity has no interoception";
       }
@@ -681,67 +699,74 @@ export async function runDevelopmentalExplorationX3Staging({
       elapsedMinutes:Math.round(pending.refresh.elapsedMs/60000),
       planId:pending.refresh.planId,
     });
-    await privatePost(
-      worldBaseUrl,
-      "/internal/lived-now/ensure",
-      privateToken,
-      { threadId:pending.threadCard.threadId },
-      `LivedNow ${pending.threadCard.threadId}`,
-    );
-    const refreshedPayload=await privateGet(
-      worldBaseUrl,
-      `/internal/threads/${encodeURIComponent(pending.threadCard.threadId)}/observatory`,
-      privateToken,
-      `World Observatory ${pending.threadCard.threadId}`,
-    );
-    const observatory=refreshedPayload?.observatory;
-    const current=observatory?.livedNow?.currentSituation??null;
-    const previous=observatory?.livedNow?.previousSituation??null;
-    const continuity=observatory?.livedNow?.explorationContinuity??null;
-    const interoception=observatory?.livedNow?.explorationInteroception??null;
-    const refs=availablePlaceRefs(observatory,current);
-    const sourceReferences=observatory?.livedNow?.currentPersonalPlan?.sourceReferences??[];
+    try{
+      await privatePost(
+        worldBaseUrl,
+        "/internal/lived-now/ensure",
+        privateToken,
+        { threadId:pending.threadCard.threadId },
+        `LivedNow ${pending.threadCard.threadId}`,
+      );
+      const refreshedPayload=await privateGet(
+        worldBaseUrl,
+        `/internal/threads/${encodeURIComponent(pending.threadCard.threadId)}/observatory`,
+        privateToken,
+        `World Observatory ${pending.threadCard.threadId}`,
+      );
+      const observatory=refreshedPayload?.observatory;
+      const current=observatory?.livedNow?.currentSituation??null;
+      const previous=observatory?.livedNow?.previousSituation??null;
+      const continuity=observatory?.livedNow?.explorationContinuity??null;
+      const interoception=observatory?.livedNow?.explorationInteroception??null;
+      const refs=availablePlaceRefs(observatory,current);
+      const sourceReferences=observatory?.livedNow?.currentPersonalPlan?.sourceReferences??[];
 
-    if(
-      refreshedPayload?.contract!=="fibre-world-thread-observatory-v0.8"
-      || continuity?.grounded!==true
-      || interoception===null
-      || current?.location?.kind!=="place"
-      || refs.length<2
-      || !refs.includes(current.location.placeRef)
-      || sourceReferences.length===0
-    ){
+      if(
+        refreshedPayload?.contract!=="fibre-world-thread-observatory-v0.8"
+        || continuity?.grounded!==true
+        || interoception===null
+        || current?.location?.kind!=="place"
+        || refs.length<2
+        || !refs.includes(current.location.placeRef)
+        || sourceReferences.length===0
+      ){
+        emit({
+          event:"developmental-x3-currentize-skipped",
+          threadId:pending.threadCard.threadId,
+          continuity:continuity?.reason??null,
+          opportunityCount:refs.length,
+        });
+        continue;
+      }
+
+      candidates.push(Object.freeze({
+        threadCard:structuredClone(pending.threadCard),
+        payload:structuredClone(refreshedPayload),
+        observatory:structuredClone(observatory),
+        current:structuredClone(current),
+        previous:structuredClone(previous),
+        interoception:structuredClone(interoception),
+        refs:Object.freeze([...refs]),
+        startingPlaceRef:current.location.placeRef,
+        sourceReferences:Object.freeze([...sourceReferences]),
+      }));
+      emit({
+        event:"developmental-x3-candidate",
+        threadId:pending.threadCard.threadId,
+        displayName:pending.threadCard.displayName??observatory.thread?.identity?.name??null,
+        previousSituationId:previous?.situationId??null,
+        currentSituationId:current.situationId,
+        opportunityCount:refs.length,
+        via:"cheap_currentization",
+      });
+    }catch(error){
       emit({
         event:"developmental-x3-currentize-skipped",
         threadId:pending.threadCard.threadId,
-        continuity:continuity?.reason??null,
-        opportunityCount:refs.length,
+        reason:String(error?.message??error).slice(0,1200),
       });
-      continue;
     }
-
-    candidates.push(Object.freeze({
-      threadCard:structuredClone(pending.threadCard),
-      payload:structuredClone(refreshedPayload),
-      observatory:structuredClone(observatory),
-      current:structuredClone(current),
-      previous:structuredClone(previous),
-      interoception:structuredClone(interoception),
-      refs:Object.freeze([...refs]),
-      startingPlaceRef:current.location.placeRef,
-      sourceReferences:Object.freeze([...sourceReferences]),
-    }));
-    emit({
-      event:"developmental-x3-candidate",
-      threadId:pending.threadCard.threadId,
-      displayName:pending.threadCard.displayName??observatory.thread?.identity?.name??null,
-      previousSituationId:previous?.situationId??null,
-      currentSituationId:current.situationId,
-      opportunityCount:refs.length,
-      via:"cheap_currentization",
-    });
   }
-
   const skipReasonCounts=Object.freeze(Object.fromEntries(
     [...new Set(skipped.map((entry)=>entry.reason))]
       .sort()
