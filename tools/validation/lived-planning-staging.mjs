@@ -445,6 +445,7 @@ export async function runLivedPlanningStagingProof({
       personalPlanThreadCount:personalRows.length,
       skippedThreadCount:skipped.length,
       skipReasonCounts,
+      activityChangedTiming,
       developedEvidenceAttributedCount:attributed.length,
       historyEvidenceAttributedCount:historyAttributed.length,
       distinctHistoryEvidenceCount:distinctHistoryEvidence,
@@ -588,7 +589,13 @@ export async function runDevelopmentalExplorationX3Staging({
       }
 
       if(reason!==null){
-        skipped.push(Object.freeze({ threadId:threadCard.threadId,reason }));
+        skipped.push(Object.freeze({
+          threadId:threadCard.threadId,
+          reason,
+          elapsedMs:previous===null||current===null
+            ?null
+            :Date.parse(current.establishedAt)-Date.parse(previous.establishedAt),
+        }));
         continue;
       }
 
@@ -625,12 +632,29 @@ export async function runDevelopmentalExplorationX3Staging({
         skipped.filter((entry)=>entry.reason===reason).length,
       ]),
   ));
+  const activityChangedElapsedMs=skipped
+    .filter((entry)=>entry.reason==="exploration continuity: activity_changed")
+    .map((entry)=>entry.elapsedMs)
+    .filter(Number.isFinite)
+    .sort((left,right)=>left-right);
+  const activityChangedTiming=activityChangedElapsedMs.length===0
+    ?null
+    :Object.freeze({
+      count:activityChangedElapsedMs.length,
+      minMinutes:Math.round(activityChangedElapsedMs[0]/60000),
+      medianMinutes:Math.round(
+        activityChangedElapsedMs[Math.floor(activityChangedElapsedMs.length/2)]/60000,
+      ),
+      maxMinutes:Math.round(activityChangedElapsedMs.at(-1)/60000),
+      atLeast20Minutes:activityChangedElapsedMs.filter((value)=>value>=20*60*1000).length,
+    });
   emit({
     event:"developmental-x3-scan",
     discoveredThreadCount:discovered.length,
     inspectedThreadCount,
     candidateCount:candidates.length,
     skipReasonCounts,
+    activityChangedTiming,
   });
 
   for(const candidate of candidates){
