@@ -111,7 +111,27 @@ This is the accepted consumer of developmental exploration. The implementation e
 
 Encounter Story, Thread Experience, journal, memory and semantic-state mechanisms already provide the return path through which an enriching, disappointing, exhausting, frightening or surprising experience may change later cognition.
 
+An encounter is broader than conversation: environmental observations, overheard social events and direct participation all use the same textual Encounter Story -> attention -> Experience -> optional Journal -> selective Memory path.
+
 Developmental exploration should close that loop rather than add a scalar reward such as `social_acceptance += 0.1`.
+
+### Encounter-opportunity parity
+
+After X4 closes the developmental return loop, Fibre must address the current **autonomous encounter production/discovery gap** before adding richer Person/social discoverability.
+
+Today the aftermath semantics are general, but environmental occurrences still require caller-supplied event text and silent witnesses still require explicit proof scaffolding in the social wrapper.
+
+This matters because developmental exploration must not become accidentally social-biased merely because people are easier for runtime code to discover than weather, animals, objects, overheard interactions or other ordinary World events.
+
+The next prerequisite is therefore [E6 in Encounter stories and Thread experience](encounters-and-experience.md#e6--autonomous-encounter-productiondiscovery):
+
+```text
+X4 closes history -> future development
+  -> E6 makes environmental/witness encounters arise autonomously
+  -> X5+ may then enrich Person/social opportunity discovery
+```
+
+E6 is a World/encounter capability, not a new developmental-motivation authority.
 
 ## Implementation discipline
 
