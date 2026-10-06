@@ -280,7 +280,7 @@ A later World observation may explicitly preserve the same scene even after the 
 
 If enacted life has materially changed, N6.3d returns `409 encounter_scene_changed`. No retry loop and no frozen old scene; Viewer refreshes `GET /present`.
 
-### N6.3c — reuse Interior Cognition for visitor participation — CURRENT
+### N6.3c — reuse Interior Cognition for visitor participation — ACCEPTED
 
 A visitor's first utterance is the concrete social request.
 
@@ -301,7 +301,7 @@ The visitor does not become a fake Thread and does not supply private context.
 
 Private reason/evidence remains private. Public output may include only an appropriate outward expression and, for defer, an explicitly suggested later time if cognition produced one.
 
-### N6.3d — make /encounter the only public social boundary
+### N6.3d — make /encounter the only public social boundary — CURRENT
 
 Canonical public interaction:
 
@@ -322,6 +322,20 @@ validate displayed ordinary scene
   -> decline/defer: public expression only, no Encounter Story
   -> accept: run ordinary lived encounter response
 ```
+
+Implemented shape:
+
+- Presentation exposes only `POST /api/threads/:threadId/encounter`;
+- the browser supplies only `situationId` and `utterance`; World owns encounter time;
+- Presentation verifies the Thread is public and forwards through the private World binding;
+- World runs N6.3b `validateDisplayedSituation()` before any participation cognition;
+- World reuses N6.3c `formVisitorMeetingStance()`;
+- stale life returns `409 encounter_scene_changed` before cognition;
+- decline/defer returns only outward expression and optional suggested time, with no Encounter Story;
+- accept reuses ordinary lived-encounter response plus the N5 Encounter Story -> Thread Experience -> selective aftermath machinery;
+- the public response strips private reason, evidence, memories, semantic state and Flight Plan detail;
+- paid visitor-work availability and Fibre Credit settlement remain separate and are not consulted.
+
 
 Public outcomes:
 
