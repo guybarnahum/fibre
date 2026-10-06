@@ -9,6 +9,7 @@ import {
   assertStringArray,
 } from "./persistence-common.mjs";
 import { runInteriorCognition } from "./interior-cognition.mjs";
+import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {
   livedPlanId,
   normalizeLivedPlan,
@@ -101,15 +102,62 @@ function normalizeTimeZone(value) {
   return value;
 }
 
-function normalizePlaces(value) {
-  if (!Array.isArray(value) || value.length === 0) {
+function planningPlaceFromEpisode(reference, episode) {
+  const location = Object.fromEntries(
+    Object.entries({
+      countryCode:episode.place.countryCode,
+      region:episode.place.region,
+      locality:episode.place.locality,
+    }).filter(([, value]) => value !== null),
+  );
+  return Object.freeze({
+    ref:reference,
+    displayName:episode.place.displayName,
+    placeKind:episode.episodeKind,
+    ...(Object.keys(location).length === 0 ? {} : { location:Object.freeze(location) }),
+  });
+}
+
+function planningPlaceFromWorld(reference, place) {
+  return Object.freeze({
+    ref:reference,
+    displayName:place.displayName,
+    placeKind:place.placeKind,
+    description:place.displayName,
+  });
+}
+
+function resolvePlaces(threadId, references, sourceStores) {
+  assertStringArray("personal plan availablePlaceRefs", references);
+  if (references.length === 0) {
     throw new TypeError("personal plan cognition requires at least one available place");
   }
-  return value.map((item, index) => {
-    assertPlainObject(`availablePlaces[${index}]`, item);
-    assertId(`availablePlaces[${index}].ref`, item.ref);
-    assertNonEmpty(`availablePlaces[${index}].displayName`, item.displayName);
-    return { ref: item.ref, displayName: item.displayName };
+  if (new Set(references).size !== references.length) {
+    throw new TypeError("personal plan availablePlaceRefs must be unique");
+  }
+  references.forEach((reference, index) =>
+    assertId(`personal plan availablePlaceRefs[${index}]`, reference));
+
+  const situatedLifeStore = sourceStores?.situatedLifeStore;
+  if (!situatedLifeStore || typeof situatedLifeStore.listCurrentPlaceEpisodes !== "function") {
+    throw new TypeError("personal plan sourceStores.situatedLifeStore must expose listCurrentPlaceEpisodes()");
+  }
+  const livedNowStore = sourceStores?.livedNowStore;
+  if (!livedNowStore || typeof livedNowStore.getWorldPlace !== "function") {
+    throw new TypeError("personal plan sourceStores.livedNowStore must expose getWorldPlace()");
+  }
+
+  const situated = new Map(
+    situatedLifeStore.listCurrentPlaceEpisodes(threadId)
+      .map((episode) => [placeEpisodeRevisionRef(episode), episode]),
+  );
+
+  return references.map((reference) => {
+    const episode = situated.get(reference);
+    if (episode !== undefined) return planningPlaceFromEpisode(reference, episode);
+    const worldPlace = livedNowStore.getWorldPlace(threadId, reference, { required:false });
+    if (worldPlace !== null) return planningPlaceFromWorld(reference, worldPlace);
+    throw new TypeError(`personal plan available place ${reference} lacks World/situated authority`);
   });
 }
 
@@ -215,7 +263,7 @@ export async function formPersonalLivedPlan({
   threadId,
   authoredAt,
   horizonEnd,
-  availablePlaces,
+  availablePlaceRefs,
   sourceReferences,
   sourceStores,
   modelAdapter,
@@ -237,7 +285,7 @@ export async function formPersonalLivedPlan({
       throw new TypeError("retrospective personal plan materializedAt cannot precede its lived horizon");
     }
   }
-  const places = normalizePlaces(availablePlaces);
+  const places = resolvePlaces(threadId, availablePlaceRefs, sourceStores);
   if (startingPlaceRef !== null) {
     assertId("personal plan startingPlaceRef", startingPlaceRef);
     if (!places.some((place) => place.ref === startingPlaceRef)) {
