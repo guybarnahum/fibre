@@ -219,7 +219,7 @@ Do not collapse public reliability and natural social life into one acceptance p
 
 **Natural Thread -> Thread life is retained follow-on work.** Ordinary Flight Plans, admitted shared World places, natural actor discovery, salience and voluntary social cognition remain the right mechanism. Do not pay, schedule, choose counterparties or bias cognition merely to manufacture a natural encounter proof.
 
-**Developmental exploration X0-X3 are accepted; X4 is current pending local validation.** X4 adds no production subsystem: the existing Encounter Story / Thread Experience / selective-memory path is now composed directly with existing Interior Cognition and `lived_planning`. The proof includes enriching retained meaning, aversive retained meaning and `not_remembered`, with identical later World opportunities. History must not bypass memory authority. N6.6 remains preserved and resumable.
+**Developmental exploration X0-X3 are accepted; X4 is current pending local validation.** X4 adds no production subsystem: the existing Encounter Story / Thread Experience / subjective Journal / selective-memory path is composed directly with existing Interior Cognition and `lived_planning`. After X4 acceptance, the next implementation priority is **E6 autonomous encounter production/discovery** before X5+: World-authored bounded environmental occurrences from current scene context, plus incidental-witness discovery from authoritative co-presence, both reusing the existing attention/aftermath stack. This ordering prevents developmental exploration from becoming accidentally social-biased merely because people are easier to discover than ordinary World events. N6.6 remains preserved and resumable.
 
 Both paths reuse:
 
