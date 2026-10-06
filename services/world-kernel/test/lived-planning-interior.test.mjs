@@ -94,6 +94,18 @@ function recordMeaning(memoryStore, { threadId, event, rememberedMeaning, record
   return memoryId;
 }
 
+function planningPlaceAuthority(records) {
+  const byRef=new Map(records.map((record)=>[record.ref,record]));
+  return {
+    getWorldPlace(_threadId,reference,{ required=true }={}){
+      const place=byRef.get(reference)??null;
+      if(place!==null)return structuredClone(place);
+      if(required)throw new TypeError(`missing planning place ${reference}`);
+      return null;
+    },
+  };
+}
+
 function fixturePlanningModel() {
   let sharedExternalContext = null;
   return {
@@ -184,12 +196,17 @@ test("persisted lived meaning bends an otherwise equivalent personal Flight Plan
       semanticStateStore,
       memoryStore,
       situatedLifeStore,
+      livedNowStore:planningPlaceAuthority([{
+        ref:"place_shared_reading_room",
+        placeKind:"library_or_learning",
+        displayName:"A shared reading room with desks, books and other readers.",
+      }]),
     };
     const modelAdapter = fixturePlanningModel();
     const planInput = {
       authoredAt:"2026-09-22T09:00:00.000Z",
       horizonEnd:"2026-09-22T13:00:00.000Z",
-      availablePlaces:[{ ref:"place_shared_reading_room", displayName:"Shared reading room" }],
+      availablePlaceRefs:["place_shared_reading_room"],
       startingPlaceRef:"place_shared_reading_room",
       modelAdapter,
     };
@@ -312,6 +329,7 @@ test("personal Flight Plan admission keeps private cognition evidence separate f
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
+        livedNowStore,
       },
       modelAdapter:fixturePlanningModel(),
     });
@@ -396,7 +414,7 @@ test("Flight Planning receives actual local civil time for a non-UTC World", asy
       threadId:"thr_lived_plan_local_time",
       authoredAt:"2026-09-23T04:30:00.000Z",
       horizonEnd:"2026-09-23T16:30:00.000Z",
-      availablePlaces:[{ ref:"place_current", displayName:"Current place" }],
+      availablePlaceRefs:["place_current"],
       startingPlaceRef:"place_current",
       sourceReferences:[event.eventId],
       sourceStores:{
@@ -405,6 +423,11 @@ test("Flight Planning receives actual local civil time for a non-UTC World", asy
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
+        livedNowStore:planningPlaceAuthority([{
+          ref:"place_current",
+          placeKind:"library_or_learning",
+          displayName:"Current place",
+        }]),
       },
       modelAdapter,
       worldTimeZone:"Asia/Tbilisi",
@@ -453,6 +476,10 @@ test("X1 grounded exploration reaches the existing planning mind without becomin
       semanticStateStore,
       memoryStore,
       situatedLifeStore,
+      livedNowStore:planningPlaceAuthority([
+        { ref:"place_x1_home",placeKind:"residence",displayName:"Home" },
+        { ref:"place_x1_library",placeKind:"library_or_learning",displayName:"Neighborhood library" },
+      ]),
     };
     const previousSituation = {
       situationId:"sit_x1_same_1",
@@ -519,10 +546,7 @@ test("X1 grounded exploration reaches the existing planning mind without becomin
       threadId:thread.threadId,
       authoredAt:"2026-09-22T09:00:00.000Z",
       horizonEnd:"2026-09-22T13:00:00.000Z",
-      availablePlaces:[
-        { ref:"place_x1_home", displayName:"Home" },
-        { ref:"place_x1_library", displayName:"Neighborhood library" },
-      ],
+      availablePlaceRefs:["place_x1_home","place_x1_library"],
       sourceReferences:[event.eventId],
       sourceStores,
       modelAdapter,
