@@ -534,15 +534,6 @@ async function environmentalProof({ worldBaseUrl, privateToken, candidate, runId
     },
     "environmental encounter",
   );
-  if (result?.outcome === "no_occurrence") {
-    return Object.freeze({
-      threadId:candidate.threadId,
-      encounterId:null,
-      attention:"no_occurrence",
-      journalOutcome:"none",
-      memoryOutcome:"none",
-    });
-  }
   if (!result?.encounterStory?.encounterId || !["noticed","not_noticed"].includes(result?.attention?.outcome)) {
     throw new Error("lived-encounters environmental encounter did not produce durable Encounter Story attention");
   }
