@@ -301,7 +301,7 @@ The visitor does not become a fake Thread and does not supply private context.
 
 Private reason/evidence remains private. Public output may include only an appropriate outward expression and, for defer, an explicitly suggested later time if cognition produced one.
 
-### N6.3d — make /encounter the only public social boundary — CURRENT
+### N6.3d — make /encounter the only public social boundary — ACCEPTED
 
 Canonical public interaction:
 
@@ -346,7 +346,7 @@ Public outcomes:
 
 Do not expose private cognition, Flight Plan internals, memory IDs, needs/feelings or evidence refs.
 
-### N6.3e — accepted conversation stays inside ordinary life
+### N6.3e — accepted conversation stays inside ordinary life — CURRENT
 
 Only after `accept` should the existing lived-encounter response machinery run.
 
@@ -360,7 +360,9 @@ visitor utterance
   -> Thread Experience
 ```
 
-There is no conversation/session store. Each later visitor turn remains situation-bound. If life moves, the interaction ends and the Viewer returns to the Thread's new present.
+There is no conversation/session store. Each later visitor turn remains situation-bound and crosses the same `POST /encounter` boundary again: actual life is revalidated, the Thread may accept/decline/defer again, and only an accepted turn becomes another Encounter Story.
+
+The Viewer may keep an ephemeral transcript solely for the page the visitor is currently looking at. After each accepted turn it must advance its witness to the returned actual `situationId`; it must not persist that transcript as Fibre authority. If life moves, the next turn returns `encounter_scene_changed`, the interaction ends, and the Viewer refreshes to the Thread's new present.
 
 ### N6.3 high-value tests
 
