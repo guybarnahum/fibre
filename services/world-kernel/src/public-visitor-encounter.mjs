@@ -43,7 +43,17 @@ function recentEncounterStories({
     if (depth === 0 && presence.situationId !== expectedSituationId) return null;
     if (Date.parse(record.occurredAt) > Date.parse(at)) return null;
 
-    stories.push(record);
+    stories.push({
+      encounterId:record.encounterId,
+      occurredAt:record.occurredAt,
+      story:{
+        storyVersion:record.story.storyVersion,
+        ...(record.story.continuationOfEncounterRef === undefined
+          ? {}
+          : { continuationOfEncounterRef:record.story.continuationOfEncounterRef }),
+        beats:structuredClone(record.story.beats),
+      },
+    });
     encounterId = record.story?.continuationOfEncounterRef ?? null;
   }
 
