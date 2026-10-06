@@ -441,7 +441,7 @@ Do not pre-build it.
 
 X3 adds no new production planning mechanism. X1 + X2 are the mechanism.
 
-The existing `lived-planning:staging` diagnostic now has an X3 mode:
+The existing `lived-planning:validate` diagnostic now has an X3 mode:
 
 ```bash
 npm run developmental-exploration:x3:staging
