@@ -219,7 +219,7 @@ Do not collapse public reliability and natural social life into one acceptance p
 
 **Natural Thread -> Thread life is retained follow-on work.** Ordinary Flight Plans, admitted shared World places, natural actor discovery, salience and voluntary social cognition remain the right mechanism. Do not pay, schedule, choose counterparties or bias cognition merely to manufacture a natural encounter proof.
 
-**Developmental exploration X0-X2 are accepted; X3 is current.** X3 adds no new production behavior: X1 motivation + X2 authoritative opportunity meaning are already the mechanism. The current task is a bounded real-model staging differential: one baseline and one grounded-exploration planning call per eligible Thread, no persistence, no resampling and no acceptance quota. N6.6 remains preserved and resumable after this exploration tranche.
+**Developmental exploration X0-X3 are accepted.** X3 closed in staging with two independent real Threads whose ordinary Flight Plans changed materially when grounded exploration interoception was added, while place, opportunities, model, developed-self context and late-night/rest constraints remained fixed. The existing one-call `lived_planning` concern is sufficient; do not add a durable developmental-intention authority. **X4 is next if this tranche continues:** prove that an actual lived exploratory outcome returns through ordinary Experience / memory / semantic consequence and bends later planning. N6.6 remains preserved and resumable.
 
 Both paths reuse:
 
