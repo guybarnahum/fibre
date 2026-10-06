@@ -96,14 +96,19 @@ export function createPublicCurrentLifeApi({
           body=await request.json();
           if(!body||typeof body!=="object"||Array.isArray(body))throw new TypeError("encounter body must be an object");
           const keys=Object.keys(body).sort();
-          const firstTurn=keys.length===2&&keys[0]==="situationId"&&keys[1]==="utterance";
-          const continuation=keys.length===3
-            &&keys[0]==="priorEncounterStoryId"
+          const firstTurn=keys.length===3
+            &&keys[0]==="requestId"
             &&keys[1]==="situationId"
             &&keys[2]==="utterance";
+          const continuation=keys.length===4
+            &&keys[0]==="priorEncounterStoryId"
+            &&keys[1]==="requestId"
+            &&keys[2]==="situationId"
+            &&keys[3]==="utterance";
           if(!firstTurn&&!continuation){
-            throw new TypeError("encounter body must contain situationId, utterance and optional priorEncounterStoryId");
+            throw new TypeError("encounter body must contain requestId, situationId, utterance and optional priorEncounterStoryId");
           }
+          id("requestId",body.requestId);
           id("situationId",body.situationId);
           if(typeof body.utterance!=="string"||body.utterance.trim()===""){
             throw new TypeError("utterance is required");
@@ -112,6 +117,7 @@ export function createPublicCurrentLifeApi({
             id("priorEncounterStoryId",body.priorEncounterStoryId);
           }
           body={
+            requestId:body.requestId,
             situationId:body.situationId,
             utterance:body.utterance.trim(),
             ...(body.priorEncounterStoryId===undefined
