@@ -159,11 +159,17 @@ function fixturePlanningModel() {
 }
 
 function x4PlanningModel() {
+  let sharedExternalContext=null;
   return {
     provider:"fixture",
     modelId:"fixture-x4-planning",
     async invoke(call) {
       const external=call.input.concern.externalContext;
+      if(sharedExternalContext===null){
+        sharedExternalContext=structuredClone(external);
+      }else{
+        assert.deepEqual(external,sharedExternalContext,"X4 planning World conditions changed");
+      }
       const memory=call.input.developedSelfEvidence.find((item)=>item.kind==="memory")??null;
       const meaning=memory?.text??"";
       const enriching=/unfamiliar people can broaden my thinking/u.test(meaning);
@@ -380,6 +386,7 @@ test("X4 retained lived outcome bends later planning while not_remembered histor
     };
     const plans={};
     const observedEvidence=new Map();
+    const planningModel=x4PlanningModel();
     const base={
       authoredAt:"2026-09-22T13:00:00.000Z",
       horizonEnd:"2026-09-22T17:00:00.000Z",
@@ -387,13 +394,13 @@ test("X4 retained lived outcome bends later planning while not_remembered histor
       startingPlaceRef:null,
       sourceStores,
       modelAdapter:{
-        ...x4PlanningModel(),
+        ...planningModel,
         async invoke(call){
           observedEvidence.set(
             call.input.thread.threadId,
             structuredClone(call.input.developedSelfEvidence),
           );
-          return x4PlanningModel().invoke(call);
+          return planningModel.invoke(call);
         },
       },
     };
