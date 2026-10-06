@@ -8,6 +8,10 @@ import { openAutobiographicalMemoryInspectionStore } from "#services/world-kerne
 import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import {
+  explorationContinuityForLivedHistory,
+  explorationInteroceptionForLivedHistory,
+} from "#services/world-kernel/src/lived-now-regulation.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openSituatedLifeInspectionStore } from "#services/world-kernel/src/situated-life-store.mjs";
 import { ThreadDirectoryStore } from "#services/world-kernel/src/thread-directory-store.mjs";
@@ -145,6 +149,19 @@ function threadObservatory(runtime, threadId) {
     const previousSituation = currentSituation === null
       ? null
       : livedNow.getPreviousSituation(threadId, currentSituation.establishedAt);
+    const explorationContinuity = currentSituation === null
+      ? Object.freeze({ grounded:false, reason:"missing_situation" })
+      : explorationContinuityForLivedHistory({
+          livedNowStore:livedNow,
+          currentSituation,
+        });
+    const explorationInteroception = currentSituation === null
+      ? null
+      : explorationInteroceptionForLivedHistory({
+          thread,
+          livedNowStore:livedNow,
+          currentSituation,
+        });
     const currentPlanRefs = new Set(currentSituation?.sourcePlanRefs ?? []);
     const currentPersonalPlan = currentSituation === null
       ? null
@@ -174,6 +191,8 @@ function threadObservatory(runtime, threadId) {
       livedNow:Object.freeze({
         currentSituation:structuredClone(currentSituation),
         previousSituation:structuredClone(previousSituation),
+        explorationContinuity:structuredClone(explorationContinuity),
+        explorationInteroception:structuredClone(explorationInteroception),
         currentPersonalPlan:currentPersonalPlanWitness,
         worldContext:structuredClone(livedNow.getWorldContext(threadId, { required:false })),
         worldPlaces:structuredClone(livedNow.listWorldPlaces(threadId)),
@@ -498,7 +517,7 @@ export class FibreWorldDurableObject extends DurableObject {
       const observatory = threadObservatory(this.runtimeForRequest(), threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
-        contract:"fibre-world-thread-observatory-v0.7",
+        contract:"fibre-world-thread-observatory-v0.8",
         deploymentGitSha:typeof this.env?.FIBRE_DEPLOYMENT_GIT_SHA==="string"
           ?this.env.FIBRE_DEPLOYMENT_GIT_SHA
           :null,
