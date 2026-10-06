@@ -357,7 +357,26 @@ The focused E6b proof requires a genuinely co-present C to become a silent witne
 
 Zero generated encounters remain valid across ordinary life because the producer is not a tick and is not invoked for every scene; zero noticed witnesses remains valid for any admitted story. Acceptance proves autonomous production/discovery, not encounter frequency.
 
-E6 remains pending local validation.
+E6 local semantics remain pending operator validation, and live evidence uses a dedicated bounded probe rather than the broader N5 encounter acceptance harness.
+
+Run:
+
+```bash
+npm run encounter-autonomy:probe -- --env staging
+```
+
+The live probe:
+
+- cheaply reads existing Observatory state without population-wide `LivedNow.ensure`;
+- proves E6a on one current Thread by sending only `threadId` to the environmental encounter API and verifying durable objective occurrence + selective attention;
+- attempts E6b only when **three Threads are already genuinely co-present**;
+- if no such scene exists, records `blocked_by_world_state` rather than waking or replanning unrelated Threads;
+- reports the next already-admitted three-Thread shared-`wpl_*` plan overlap when one exists, so a later rerun can catch a natural witness opportunity;
+- never samples repeatedly to force a meeting or witness.
+
+A probe may therefore finish successfully with `complete:false`. That means the probe itself succeeded while current World state did not expose a live E6b opportunity; it is not permission to mark E6 fully accepted.
+
+E6 remains pending live witness evidence.
 
 ---
 
