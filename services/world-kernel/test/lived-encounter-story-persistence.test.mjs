@@ -109,6 +109,38 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
         "Noor should resolve the shared story");
       assert.equal(mina.encounterRef, noor.encounterRef,
         "private experiences should cite one objective story");
+
+      const continued = store.recordEncounterStory({
+        occurredAt:"2026-09-21T18:01:00.000Z",
+        threadPresence:[
+          { threadId:"thr_e0_mina", situationId:"sit_e0_mina" },
+          { threadId:"thr_e0_noor", situationId:"sit_e0_noor" },
+        ],
+        story:{
+          continuationOfEncounterRef:story.encounterId,
+          beats:[
+            { actorThreadId:"thr_e0_noor", kind:"utterance", text:"Are you working on the same thing as yesterday?" },
+            { actorThreadId:"thr_e0_mina", kind:"utterance", text:"Mostly, yes." },
+          ],
+        },
+        visualization:createEncounterVisualization({
+          occurredAt:"2026-09-21T18:01:00.000Z",
+          story:{
+            beats:[
+              { actorThreadId:"thr_e0_noor", kind:"utterance", text:"Are you working on the same thing as yesterday?" },
+              { actorThreadId:"thr_e0_mina", kind:"utterance", text:"Mostly, yes." },
+            ],
+          },
+          scene:"The same quiet shared table, one moment later.",
+          sourceReferences:[story.encounterId],
+          depictedThreadRefs:[],
+        }),
+      });
+      assert.equal(
+        store.getEncounterStory(continued.encounterId).story.continuationOfEncounterRef,
+        story.encounterId,
+        "continued lived exchange lost its objective causal predecessor",
+      );
     } finally { store.close(); }
   } finally {
     rmSync(directory, { recursive:true, force:true });
