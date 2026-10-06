@@ -40,6 +40,24 @@ The first tranche must stay small:
 - add no sociability score;
 - add no durable intention authority until evidence proves it is needed.
 
+## Standing implementation rules
+
+These slices inherit Fibre's normal implementation discipline, with extra emphasis because motivation can easily become over-engineered:
+
+- **reuse before invention** — prefer one new causal edge between accepted authorities over a new subsystem;
+- **no legacy preservation by default** — delete or reshape obsolete exploratory scaffolding rather than compatibility-wrap it;
+- **one cognition path** — developmental planning goes through shared Interior Cognition, never a parallel persona prompt;
+- **one planning authority** — personal Flight Plan remains the ordinary-life intention authority;
+- **one consequence stack** — Encounter Story / Thread Experience / memory / semantic state remain the developmental return path;
+- **bounded runtime** — no whole-population waking, no minute-by-minute simulation, no repeated model sampling to force interesting outcomes;
+- **no quota behavior** — tests and runtime must not target a meeting/acceptance percentage;
+- **semantic tests only** — prefer one differential causal proof over many plumbing assertions;
+- **short failures** — test messages should say what Fibre property broke, for example `exploration did not bend planning` or `unremembered encounter bent later life`;
+- **no incidental contracts** — do not assert prompt wording, capitalization, helper order, field ordering, CSS, or exact prose unless that wording is itself the authority;
+- **stop when the causal loop works** — do not implement X5-X7 machinery while X1-X4 already prove the core developmental mechanism.
+
+A slice is not improved by adding more code. It is improved when the smallest change makes a previously inert Thread-owned difference change later life.
+
 ## Execution order
 
 ```text
