@@ -126,9 +126,9 @@ N6.0 is closed. N6.1 and N6.2 are accepted in staging. The public site opens on 
 
 N6.3 is current and now uses the simpler rule: **meet the Thread where they already are**. The scene comes from the Thread's ordinary Flight Plan and World-owned CurrentSituation. Clicking Meet is local Viewer state only; it does not schedule, pay, move, admit, or otherwise mutate the Thread's life. The visitor's first utterance will be the actual social request, and the Thread will decide whether to accept, decline, or defer from that lived context.
 
-N6.3a is accepted. The obsolete public meeting-admission layer, visitor-work scene wrapper, pre-scene Meet selector and old public visitor-work encounter adapter are gone. Clicking Meet only preserves the displayed situation witness in local Viewer state; no public social mutation is currently exposed.
+N6.3a is accepted. The obsolete public meeting-admission layer, visitor-work scene wrapper, pre-scene Meet selector and old public visitor-work encounter adapter are gone. Clicking Meet only preserves the displayed situation witness in local Viewer state; the only public social mutation is now the N6.3d `/encounter` boundary.
 
-N6.3b is accepted. N6.3c is current: reuse the existing social-response Interior Cognition seam so the Thread can accept, decline, or defer a Person visitor's first utterance from the revalidated World-enacted situation. N6.3d then restores `POST /encounter` as the only public social boundary.
+N6.3b and N6.3c are accepted. N6.3d is current: `POST /api/threads/:threadId/encounter` is the only public social boundary. It validates the displayed actual scene before participation cognition, returns decline/defer without an Encounter Story, and admits an Encounter Story only after acceptance.
 
 Paid visitor-work remains a separate optional work/economy capability, not the definition of ordinary meeting.
 
