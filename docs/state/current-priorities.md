@@ -219,6 +219,8 @@ Do not collapse public reliability and natural social life into one acceptance p
 
 **Natural Thread -> Thread life is retained follow-on work.** Ordinary Flight Plans, admitted shared World places, natural actor discovery, salience and voluntary social cognition remain the right mechanism. Do not pay, schedule, choose counterparties or bias cognition merely to manufacture a natural encounter proof.
 
+**Developmental exploration is now recorded as a proposed follow-on for owner review, not current implementation.** Fibre already has grounded exploration pressure, interoception, Interior Cognition, Flight Planning and encounter consequence, but the closed causal loop from exploration pressure -> self-directed ordinary planning -> enriching experience -> changed later planning is not yet implemented. The proposed architecture deliberately starts by connecting existing exploration interoception to the existing `lived_planning` concern rather than adding a new service, curiosity score or availability scheduler. See [Developmental exploration](../architecture/developmental-exploration.md) and [Developmental exploration slices](../validation/developmental-exploration-slices.md).
+
 Both paths reuse:
 
 ```text
