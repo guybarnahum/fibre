@@ -531,13 +531,18 @@ async function environmentalProof({ worldBaseUrl, privateToken, candidate, runId
     privateToken,
     {
       threadId:candidate.threadId,
-      occurrence:{
-        occurrenceRef:`occ_lived_encounter_${Date.now().toString(36)}`,
-        description:"A sudden sharp clatter sounds nearby, followed by a brief pause before ordinary activity resumes.",
-      },
     },
     "environmental encounter",
   );
+  if (result?.outcome === "no_occurrence") {
+    return Object.freeze({
+      threadId:candidate.threadId,
+      encounterId:null,
+      attention:"no_occurrence",
+      journalOutcome:"none",
+      memoryOutcome:"none",
+    });
+  }
   if (!result?.encounterStory?.encounterId || !["noticed","not_noticed"].includes(result?.attention?.outcome)) {
     throw new Error("lived-encounters environmental encounter did not produce durable Encounter Story attention");
   }
