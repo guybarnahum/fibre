@@ -57,9 +57,10 @@ export function createPublicVisitorEncounterWriteApi({
         body = await request.json();
         assertPlainObject("public visitor encounter request", body);
         const keys = Object.hasOwn(body, "priorEncounterStoryId")
-          ? ["threadId", "expectedSituationId", "utterance", "priorEncounterStoryId"]
-          : ["threadId", "expectedSituationId", "utterance"];
+          ? ["requestId", "threadId", "expectedSituationId", "utterance", "priorEncounterStoryId"]
+          : ["requestId", "threadId", "expectedSituationId", "utterance"];
         assertExactKeys("public visitor encounter request", body, keys);
+        assertId("public visitor encounter request.requestId", body.requestId);
         assertId("public visitor encounter request.threadId", body.threadId);
         assertId("public visitor encounter request.expectedSituationId", body.expectedSituationId);
         assertNonEmpty("public visitor encounter request.utterance", body.utterance);
@@ -71,6 +72,7 @@ export function createPublicVisitorEncounterWriteApi({
       }
 
       const result = await encounterService.encounter({
+        requestId:body.requestId,
         threadId:body.threadId,
         expectedSituationId:body.expectedSituationId,
         utterance:body.utterance,
