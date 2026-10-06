@@ -339,8 +339,8 @@ caller: threadId + time
   -> ensure LivedNow
   -> exterior current scene only
   -> one bounded World occurrence-generation call
-       occurrence text | null
-  -> if text: ordinary Encounter Story
+       -> one observable occurrence text
+  -> ordinary Encounter Story
   -> existing noticed | not_noticed
   -> existing Experience / Journal / Memory aftermath
 ```
@@ -351,11 +351,11 @@ E6b removes `witnessThreadIds` from the social service and private write API. Fo
 
 ### Acceptance
 
-The focused E6a proof requires a caller that supplies only Thread/time while World authors a bounded environmental occurrence; the same proof preserves `not_noticed` and a legal `no_occurrence` outcome.
+The focused E6a proof requires a caller that supplies only Thread/time while World authors a bounded environmental occurrence, proves retry reuses the admitted story rather than resampling it, and preserves `not_noticed` as a legal attention outcome. Ordinary scenes need not invoke occurrence production at all, so E6 creates no encounter quota.
 
 The focused E6b proof requires a genuinely co-present C to become a silent witness of A/B's story without the caller naming C, while C receives no social stance or story turn.
 
-Zero occurrence and zero noticed witness remain valid outcomes. Acceptance proves autonomous production/discovery, not encounter frequency.
+Zero generated encounters remain valid across ordinary life because the producer is not a tick and is not invoked for every scene; zero noticed witnesses remains valid for any admitted story. Acceptance proves autonomous production/discovery, not encounter frequency.
 
 E6 remains pending local validation.
 
