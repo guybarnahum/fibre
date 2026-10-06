@@ -12,11 +12,42 @@ import {
 } from "./persistence-common.mjs";
 
 const MEMORY_LIMIT = 6;
+const CONTINUATION_LIMIT = 6;
 
 function requireMethod(owner, name, method) {
   if (!owner || typeof owner[method] !== "function") {
     throw new TypeError(`${name} must expose ${method}()`);
   }
+}
+
+function recentEncounterStories({
+  experienceStore,
+  threadId,
+  priorEncounterStoryId,
+  expectedSituationId,
+  at,
+}) {
+  if (priorEncounterStoryId === null) return [];
+
+  const stories = [];
+  const seen = new Set();
+  let encounterId = priorEncounterStoryId;
+  for (let depth = 0; encounterId !== null && depth < CONTINUATION_LIMIT; depth += 1) {
+    if (seen.has(encounterId)) return null;
+    seen.add(encounterId);
+
+    const record = experienceStore.getEncounterStory(encounterId, { required:false });
+    if (record === null) return null;
+    const presence = record.threadPresence.find((item) => item.threadId === threadId);
+    if (presence === undefined) return null;
+    if (depth === 0 && presence.situationId !== expectedSituationId) return null;
+    if (Date.parse(record.occurredAt) > Date.parse(at)) return null;
+
+    stories.push(record);
+    encounterId = record.story?.continuationOfEncounterRef ?? null;
+  }
+
+  return stories.reverse();
 }
 
 function livedContext({ threadId, situation, worldReader, semanticStateStore, memoryStore }) {
@@ -59,6 +90,7 @@ export function createPublicVisitorEncounterService({
   requireMethod(memoryStore, "public visitor memoryStore", "listCurrentMemories");
   requireMethod(memoryStore, "public visitor memoryStore", "recordMemory");
   requireMethod(experienceStore, "public visitor experienceStore", "recordEncounterStory");
+  requireMethod(experienceStore, "public visitor experienceStore", "getEncounterStory");
   requireMethod(experienceStore, "public visitor experienceStore", "recordThreadEncounterAttention");
   requireMethod(experienceStore, "public visitor experienceStore", "recordThreadExperienceJournalEntry");
   requireMethod(modelAdapter, "public visitor modelAdapter", "invoke");
@@ -71,15 +103,16 @@ export function createPublicVisitorEncounterService({
   return Object.freeze({
     async encounter(input) {
       assertPlainObject("public visitor encounter", input);
-      assertExactKeys("public visitor encounter", input, [
-        "threadId",
-        "expectedSituationId",
-        "utterance",
-        "at",
-      ]);
+      const keys = Object.hasOwn(input, "priorEncounterStoryId")
+        ? ["threadId", "expectedSituationId", "utterance", "priorEncounterStoryId", "at"]
+        : ["threadId", "expectedSituationId", "utterance", "at"];
+      assertExactKeys("public visitor encounter", input, keys);
       assertId("public visitor encounter.threadId", input.threadId);
       assertId("public visitor encounter.expectedSituationId", input.expectedSituationId);
       assertNonEmpty("public visitor encounter.utterance", input.utterance);
+      if (Object.hasOwn(input, "priorEncounterStoryId")) {
+        assertId("public visitor encounter.priorEncounterStoryId", input.priorEncounterStoryId);
+      }
       assertIsoTimestamp("public visitor encounter.at", input.at);
 
       const validation = await livedNow.validateDisplayedSituation({
@@ -88,6 +121,20 @@ export function createPublicVisitorEncounterService({
         at:input.at,
       });
       if (!validation.applies) {
+        return Object.freeze({
+          outcome:"scene_changed",
+          currentSituationId:validation.currentSituation.situationId,
+        });
+      }
+
+      const immediateHistory = recentEncounterStories({
+        experienceStore,
+        threadId:input.threadId,
+        priorEncounterStoryId:input.priorEncounterStoryId ?? null,
+        expectedSituationId:input.expectedSituationId,
+        at:input.at,
+      });
+      if (immediateHistory === null) {
         return Object.freeze({
           outcome:"scene_changed",
           currentSituationId:validation.currentSituation.situationId,
@@ -115,6 +162,7 @@ export function createPublicVisitorEncounterService({
         plan,
         situation:context.situation,
         requestText:input.utterance,
+        recentEncounterStories:immediateHistory,
         sourceStores,
         modelAdapter,
       });
@@ -134,10 +182,14 @@ export function createPublicVisitorEncounterService({
           utterance:input.utterance,
           occurredAt:input.at,
         },
+        recentEncounterStories:immediateHistory,
         modelAdapter,
       });
       const story = {
         storyVersion:"encounter-story-v0.1",
+        ...(input.priorEncounterStoryId === undefined
+          ? {}
+          : { continuationOfEncounterRef:input.priorEncounterStoryId }),
         beats:[
           {
             actorThreadId:null,
@@ -154,6 +206,7 @@ export function createPublicVisitorEncounterService({
       const sourceReferences = [...new Set([
         input.expectedSituationId,
         context.situation.situationId,
+        ...(input.priorEncounterStoryId === undefined ? [] : [input.priorEncounterStoryId]),
       ])];
       const encounterStory = experienceStore.recordEncounterStory({
         occurredAt:input.at,
