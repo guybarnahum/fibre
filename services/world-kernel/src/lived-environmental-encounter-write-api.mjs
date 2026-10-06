@@ -1,7 +1,6 @@
 import {
   assertExactKeys,
   assertId,
-  assertNonEmpty,
   assertPlainObject,
 } from "./persistence-common.mjs";
 
@@ -49,19 +48,14 @@ export function createEnvironmentalEncounterWriteApi({
       try {
         body = await request.json();
         assertPlainObject("environmental encounter request", body);
-        assertExactKeys("environmental encounter request", body, ["threadId","occurrence"]);
+        assertExactKeys("environmental encounter request", body, ["threadId"]);
         assertId("environmental encounter threadId", body.threadId);
-        assertPlainObject("environmental encounter occurrence", body.occurrence);
-        assertExactKeys("environmental encounter occurrence", body.occurrence, ["occurrenceRef","description"]);
-        assertId("environmental encounter occurrenceRef", body.occurrence.occurrenceRef);
-        assertNonEmpty("environmental encounter description", body.occurrence.description);
       } catch (error) {
         return json({ error:"invalid_environmental_encounter", detail:error.message }, 400);
       }
 
       const result = await encounterService.encounter({
         threadId:body.threadId,
-        occurrence:body.occurrence,
         at:now(),
       });
       return json({ ok:true, result });
