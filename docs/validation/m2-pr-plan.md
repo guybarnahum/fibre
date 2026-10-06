@@ -250,7 +250,7 @@ public visit
 
 A public visit and local Meet action are not meeting authority. The Viewer remains projection-only and must not author the Thread's scene, private state or continuity.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: meet the Thread in the ordinary displayed scene. N6.3a-N6.3d are accepted. N6.3e is active: repeated accepted turns reuse the same situation-bound `/encounter` boundary, with actual-life revalidation and renewed participation on every turn and no conversation/session store.
+Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: meet the Thread in the ordinary displayed scene. N6.3a-N6.3e are accepted. N6.4 is active: completed public `/encounter` retry must replay one durable outcome without duplicating cognition, Encounter Story or private consequence. N6.5 return-later continuity follows.
 
 ## Experience and memory invariant
 
