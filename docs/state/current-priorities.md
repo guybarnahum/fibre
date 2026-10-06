@@ -219,7 +219,7 @@ Do not collapse public reliability and natural social life into one acceptance p
 
 **Natural Thread -> Thread life is retained follow-on work.** Ordinary Flight Plans, admitted shared World places, natural actor discovery, salience and voluntary social cognition remain the right mechanism. Do not pay, schedule, choose counterparties or bias cognition merely to manufacture a natural encounter proof.
 
-**Developmental exploration X1 is the current owner-selected execution focus; X0 is accepted.** X1 is implemented pending local validation: the existing sustained-sameness exploration RegulationFrame now reuses existing interoception and enters the existing `lived_planning` Interior Cognition concern as bounded private context. There is no new service, store, semantic-state minting, planning engine or model call. N6.6 remains preserved and resumable after this exploration tranche. See [Developmental exploration](../architecture/developmental-exploration.md), [X0 baseline](../validation/developmental-exploration-x0-baseline.md), and [Developmental exploration slices](../validation/developmental-exploration-slices.md).
+**Developmental exploration X1 is accepted; X2 is current pending local validation.** X2 removes caller-authored place descriptions from Flight Planning: callers provide only place refs, and the existing planning authority resolves meaning from Situated Life or admitted live-World place records. No recommendation engine, score, new store or extra model call is introduced. N6.6 remains preserved and resumable after this exploration tranche.
 
 Both paths reuse:
 
