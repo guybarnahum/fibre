@@ -460,7 +460,7 @@ It:
 9. persists neither counterfactual plan;
 10. performs no resampling if the two plans happen to be the same;
 11. makes at most six model calls total: two calls for each of at most three eligible Threads;
-12. writes paired plan evidence under `.fibre/developmental-exploration/x3/<run>/evidence.json`.
+12. writes paired plan evidence under `.fibre/developmental-exploration/x3/staging/<run>/evidence.json`.
 
 The diagnostic requires the current private World observatory contract (`v0.8`) and records the deployed World Git SHA as evidence.
 
