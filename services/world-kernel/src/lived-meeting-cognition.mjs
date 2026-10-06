@@ -132,32 +132,15 @@ export async function formSocialEncounterRequest({
   });
 }
 
-export async function formMeetingStance({
+async function formSocialResponse({
   threadId,
   at,
   plan,
-  request,
-  situatedPercept,
+  socialRequest,
+  observedContext,
   sourceStores,
   modelAdapter,
 }) {
-  assertId("meeting stance Thread.threadId", threadId);
-  assertIsoTimestamp("meeting stance at", at);
-  assertPlainObject("social encounter request", request);
-  assertId("social encounter request.initiatorThreadId", request.initiatorThreadId);
-  assertNonEmpty("social encounter request.text", request.text);
-  if (request.initiatorThreadId === threadId) {
-    throw new TypeError("meeting invitee cannot respond to their own request");
-  }
-  assertPlainObject("meeting stance Situated Percept", situatedPercept);
-  if (situatedPercept.observerThreadId !== threadId) {
-    throw new TypeError("meeting stance Situated Percept belongs to another Thread");
-  }
-  if (!Array.isArray(situatedPercept.observed)
-    || !situatedPercept.observed.some((candidate) => candidate.threadId === request.initiatorThreadId)) {
-    throw new TypeError("meeting stance must observe the requesting Thread");
-  }
-
   const cognition = await runInteriorCognition({
     threadId,
     at,
@@ -165,8 +148,8 @@ export async function formMeetingStance({
       kind:"social_response",
       question:"How do I want to respond to this concrete social request now?",
       externalContext:{
-        socialRequest:structuredClone(request),
-        situatedPercept:structuredClone(situatedPercept),
+        socialRequest:structuredClone(socialRequest),
+        ...structuredClone(observedContext),
         remainingFlightPlan:plan === null ? null : structuredClone(plan),
       },
     },
@@ -216,5 +199,76 @@ export async function formMeetingStance({
       evidenceRefs:Object.freeze([...cognition.evidenceRefs]),
       contextDigest:cognition.provenance.contextDigest,
     }),
+  });
+}
+
+export async function formMeetingStance({
+  threadId,
+  at,
+  plan,
+  request,
+  situatedPercept,
+  sourceStores,
+  modelAdapter,
+}) {
+  assertId("meeting stance Thread.threadId", threadId);
+  assertIsoTimestamp("meeting stance at", at);
+  assertPlainObject("social encounter request", request);
+  assertId("social encounter request.initiatorThreadId", request.initiatorThreadId);
+  assertNonEmpty("social encounter request.text", request.text);
+  if (request.initiatorThreadId === threadId) {
+    throw new TypeError("meeting invitee cannot respond to their own request");
+  }
+  assertPlainObject("meeting stance Situated Percept", situatedPercept);
+  if (situatedPercept.observerThreadId !== threadId) {
+    throw new TypeError("meeting stance Situated Percept belongs to another Thread");
+  }
+  if (!Array.isArray(situatedPercept.observed)
+    || !situatedPercept.observed.some((candidate) => candidate.threadId === request.initiatorThreadId)) {
+    throw new TypeError("meeting stance must observe the requesting Thread");
+  }
+
+  return formSocialResponse({
+    threadId,
+    at,
+    plan,
+    socialRequest:request,
+    observedContext:{ situatedPercept },
+    sourceStores,
+    modelAdapter,
+  });
+}
+
+export async function formVisitorMeetingStance({
+  threadId,
+  at,
+  plan,
+  situation,
+  requestText,
+  sourceStores,
+  modelAdapter,
+}) {
+  assertId("visitor meeting stance Thread.threadId", threadId);
+  assertIsoTimestamp("visitor meeting stance at", at);
+  assertPlainObject("visitor meeting current situation", situation);
+  assertId("visitor meeting current situation.situationId", situation.situationId);
+  if (situation.threadId !== threadId) {
+    throw new TypeError("visitor meeting current situation belongs to another Thread");
+  }
+  assertNonEmpty("visitor social request", requestText);
+
+  return formSocialResponse({
+    threadId,
+    at,
+    plan,
+    socialRequest:{
+      requesterKind:"person",
+      text:requestText.trim(),
+    },
+    observedContext:{
+      currentSituation:structuredClone(situation),
+    },
+    sourceStores,
+    modelAdapter,
   });
 }
