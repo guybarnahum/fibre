@@ -539,10 +539,13 @@ export async function runDevelopmentalExplorationX3Staging({
         privateToken,
         `World Observatory ${threadCard.threadId}`,
       );
-      if(payload?.deploymentGitSha!==sourceSha){
+      if(payload?.contract!=="fibre-world-thread-observatory-v0.7"){
         throw new Error(
-          `World deployment SHA ${payload?.deploymentGitSha??"unknown"} does not match checkout ${sourceSha}`,
+          `X3 requires World observatory v0.7; observed ${payload?.contract??"unknown"}`,
         );
+      }
+      if(typeof payload?.deploymentGitSha!=="string"||!GIT_SHA.test(payload.deploymentGitSha)){
+        throw new Error("X3 requires a deployed World Git SHA witness");
       }
       const observatory=payload?.observatory;
       const current=observatory?.livedNow?.currentSituation??null;
@@ -630,6 +633,7 @@ export async function runDevelopmentalExplorationX3Staging({
         displayName:threadCard.displayName ?? observatory.thread?.identity?.name ?? null,
         previousSituationId:previous.situationId,
         currentSituationId:current.situationId,
+        worldDeploymentGitSha:payload.deploymentGitSha,
         interoception:structuredClone(interoception),
         availablePlaceRefs:Object.freeze([...refs]),
         baseline:Object.freeze({
