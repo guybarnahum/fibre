@@ -128,7 +128,7 @@ N6.3 is current and now uses the simpler rule: **meet the Thread where they alre
 
 N6.3a is accepted. The obsolete public meeting-admission layer, visitor-work scene wrapper, pre-scene Meet selector and old public visitor-work encounter adapter are gone. Clicking Meet only preserves the displayed situation witness in local Viewer state; the only public social mutation is now the N6.3d `/encounter` boundary.
 
-N6.3b and N6.3c are accepted. N6.3d is current: `POST /api/threads/:threadId/encounter` is the only public social boundary. It validates the displayed actual scene before participation cognition, returns decline/defer without an Encounter Story, and admits an Encounter Story only after acceptance.
+N6.3b-N6.3d are accepted. N6.3e is current: accepted conversation continues as repeated situation-bound `/encounter` turns. Every turn revalidates actual life and voluntary participation; the Viewer may keep only ephemeral on-page history and advances to the returned actual `situationId`.
 
 Paid visitor-work remains a separate optional work/economy capability, not the definition of ordinary meeting.
 
