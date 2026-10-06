@@ -121,6 +121,8 @@ World occurrence
 
 A meeting begins when one Thread actually asks another for something socially meaningful—attention, company, help, information, conversation, shared activity, or another concrete engagement. After LivedNow is established, the recipient may `accept | decline | defer` based on current activity, remaining Flight Plan, needs/feelings/intentions and the totality of relevant relationship/history. Civility can create pressure to answer, especially inside an ongoing relationship, but it never creates consent or a duty to engage. A meeting request cannot author the pre-existing scene or force interruption.
 
+The proposed [Developmental exploration](developmental-exploration.md) extension addresses a different question: why a Thread may choose a life that creates richer opportunities before any visitor arrives. Exploration may make socially porous life more likely, but it never pre-authorizes a concrete meeting request.
+
 
 ## Compute dormancy is not necessarily life suspension
 
