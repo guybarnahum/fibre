@@ -6,7 +6,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  advanceCliMeetState,
   classifyInsideFibreRosterEntry,
+  parseInsideFibreArgs,
   selectPrepareWindow,
 } from "./inside-fibre.mjs";
 
@@ -206,4 +208,61 @@ test("Inside Fibre roster uses World identity and exposes a stale public name pr
   assert.equal(entry.displayName, "Luka Mzechabuki", "public projection overrode authoritative World name");
   assert.equal(entry.publicDisplayName, "Luka Beridze", "stale public projection was hidden");
   assert.equal(entry.nameProjectionStale, true, "name projection mismatch was not surfaced");
+});
+
+
+test("meet CLI requires an explicit Thread and carries no scheduling/work semantics", () => {
+  assert.deepEqual(
+    parseInsideFibreArgs(["meet","--thread","thr_cli_meet_001"]),
+    {
+      command:"meet",
+      limit:50,
+      target:3,
+      threadId:"thr_cli_meet_001",
+    },
+  );
+  assert.throws(
+    () => parseInsideFibreArgs(["meet"]),
+    /meet requires --thread THREAD_ID/,
+  );
+  assert.throws(
+    () => parseInsideFibreArgs(["meet","--target","3"]),
+    /unsupported meet argument/,
+    "meet CLI should not inherit visitor-work preparation controls",
+  );
+});
+
+test("meet CLI advances only from admitted actual encounter outcomes", () => {
+  const initial={
+    situationId:"sit_cli_001",
+    priorEncounterStoryId:null,
+    terminal:false,
+  };
+  const accepted=advanceCliMeetState(initial,{
+    outcome:"accepted",
+    situationId:"sit_cli_002",
+    encounterStoryId:"story_cli_001",
+  });
+  assert.deepEqual(accepted,{
+    situationId:"sit_cli_002",
+    priorEncounterStoryId:"story_cli_001",
+    terminal:false,
+  },"accepted CLI turn did not advance actual-life witness");
+
+  const declined=advanceCliMeetState(accepted,{
+    outcome:"decline",
+    situationId:"sit_cli_002",
+  });
+  assert.equal(declined.terminal,true,
+    "declined participation kept a CLI conversation session alive");
+
+  const moved=advanceCliMeetState(accepted,{
+    outcome:"scene_changed",
+    currentSituationId:"sit_cli_003",
+  });
+  assert.deepEqual(moved,{
+    situationId:"sit_cli_003",
+    priorEncounterStoryId:"story_cli_001",
+    terminal:true,
+  },"moved life did not terminate the entered scene");
 });
