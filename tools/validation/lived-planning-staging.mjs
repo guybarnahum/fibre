@@ -10,10 +10,7 @@ import {
   resolveServiceDeployment,
 } from "../../infra/deployments/manifest.mjs";
 import { formPersonalLivedPlan } from "../../services/world-kernel/src/lived-plan-cognition.mjs";
-import {
-  classifyExplorationContinuity,
-  explorationInteroceptionForLivedContinuity,
-} from "../../services/world-kernel/src/lived-now-regulation.mjs";
+
 import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -549,7 +546,7 @@ export async function runDevelopmentalExplorationX3Staging({
         privateToken,
         `World Observatory ${threadCard.threadId}`,
       );
-      if(payload?.contract!=="fibre-world-thread-observatory-v0.7"){
+      if(payload?.contract!=="fibre-world-thread-observatory-v0.8"){
         throw new Error(
           `X3 requires World observatory v0.7; observed ${payload?.contract??"unknown"}`,
         );
@@ -561,26 +558,17 @@ export async function runDevelopmentalExplorationX3Staging({
       const observatory=payload?.observatory;
       const current=observatory?.livedNow?.currentSituation??null;
       const previous=observatory?.livedNow?.previousSituation??null;
+      const continuity=observatory?.livedNow?.explorationContinuity??null;
+      const interoception=observatory?.livedNow?.explorationInteroception??null;
       let reason=null;
 
-      if(current===null||previous===null||current.location?.kind!=="place"){
-        reason="no comparable enacted at-place continuity";
-      }
-
-      const continuity=reason===null
-        ?classifyExplorationContinuity(previous,current)
-        :null;
-      if(reason===null&&continuity?.grounded!==true){
+      if(current===null||current.location?.kind!=="place"){
+        reason="no enacted at-place current situation";
+      }else if(continuity?.grounded!==true){
         reason=`exploration continuity: ${continuity?.reason??"unknown"}`;
+      }else if(interoception===null){
+        reason="grounded exploration continuity has no interoception";
       }
-
-      const interoception=reason===null
-        ?explorationInteroceptionForLivedContinuity({
-          thread:observatory.thread,
-          previousSituation:previous,
-          currentSituation:current,
-        })
-        :null;
 
       const refs=reason===null?availablePlaceRefs(observatory,current):[];
       if(reason===null&&refs.length<2){
