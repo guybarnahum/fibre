@@ -56,6 +56,9 @@ async function callWorldVisitorEncounter(env, threadId, input) {
       threadId,
       expectedSituationId:input.situationId,
       utterance:input.utterance,
+      ...(input.priorEncounterStoryId===undefined
+        ?{}
+        :{ priorEncounterStoryId:input.priorEncounterStoryId }),
     }),
   }));
   let body=null;
