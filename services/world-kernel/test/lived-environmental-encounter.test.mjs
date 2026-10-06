@@ -52,7 +52,7 @@ function parkEpisode() {
   };
 }
 
-test("E6a World may author a bounded occurrence that enters attention or remains absent", async () => {
+test("E6a World authors a bounded occurrence once and attention remains selective", async () => {
   const directory = mkdtempSync(join(tmpdir(), "fibre-e1-environment-"));
   const storage = {
     infraDriver:createSqliteStateInfraDriver({ scopes:{ world:join(directory, "world.sqlite") } }),
@@ -96,14 +96,8 @@ test("E6a World may author a bounded occurrence that enters attention or remains
               provenance:{ provider:"fixture", modelId:"fixture-e6-world" },
             };
           }
-          if (request.input.occurredAt === "2026-09-21T18:02:00.000Z") {
-            return {
-              output:{ occurrenceText:"A thin cloud briefly softens the sunlight over the park." },
-              provenance:{ provider:"fixture", modelId:"fixture-e6-world" },
-            };
-          }
           return {
-            output:{ occurrenceText:null },
+            output:{ occurrenceText:"A thin cloud briefly softens the sunlight over the park." },
             provenance:{ provider:"fixture", modelId:"fixture-e6-world" },
           };
         }
@@ -170,13 +164,13 @@ test("E6a World may author a bounded occurrence that enters attention or remains
       threadId:activeThread.threadId,
       at:AT,
     });
+    const replay = await service.encounter({
+      threadId:activeThread.threadId,
+      at:AT,
+    });
     const missed = await service.encounter({
       threadId:activeThread.threadId,
       at:"2026-09-21T18:02:00.000Z",
-    });
-    const quiet = await service.encounter({
-      threadId:activeThread.threadId,
-      at:"2026-09-21T18:04:00.000Z",
     });
 
     assert.equal(noticed.attention.outcome, "noticed", "bee should enter lived attention");
@@ -191,16 +185,20 @@ test("E6a World may author a bounded occurrence that enters attention or remains
     );
     assert.equal(retained.length, 1, "noticed occurrence may become autobiographical memory");
 
+    assert.equal(replay.reused, true, "retry should reuse admitted World occurrence");
+    assert.equal(
+      replay.encounterStory.encounterId,
+      noticed.encounterStory.encounterId,
+      "retry must not rewrite objective World occurrence",
+    );
     assert.equal(missed.attention.outcome, "not_noticed", "cloud may pass outside lived attention");
     assert.equal(missed.attention.experience, null, "unnoticed occurrence must not fabricate Thread Experience");
     assert.equal(missed.aftermath, null, "unnoticed occurrence must not create private aftermath");
     assert.equal(retained.length, 1, "unnoticed occurrence must not create memory");
-    assert.equal(quiet.outcome, "no_occurrence", "ordinary scene may yield no World occurrence");
-    assert.equal(quiet.encounterStory, null, "no occurrence must not fabricate World history");
     assert.equal(
       invocations.filter((request) => request.clientRequestId.startsWith("world-occurrence_")).length,
-      3,
-      "each explicit scene boundary should author at most one occurrence candidate",
+      2,
+      "retry must not resample an admitted World occurrence",
     );
   } finally {
     experienceStore?.close();
