@@ -533,13 +533,6 @@ export async function runDevelopmentalExplorationX3Staging({
   const skipped=[];
   for(const threadCard of ordered.slice(0,X3_MAX_THREADS)){
     try{
-      await privatePost(
-        worldBaseUrl,
-        "/internal/lived-now/ensure",
-        privateToken,
-        { threadId:threadCard.threadId },
-        `LivedNow ${threadCard.threadId}`,
-      );
       const payload=await privateGet(
         worldBaseUrl,
         `/internal/threads/${encodeURIComponent(threadCard.threadId)}/observatory`,
@@ -615,7 +608,18 @@ export async function runDevelopmentalExplorationX3Staging({
         worldTimeZone:observatory?.livedNow?.worldContext?.timeZone ?? null,
       };
 
+      emit({
+        event:"developmental-x3-planning",
+        threadId:threadCard.threadId,
+        condition:"baseline",
+      });
       const baseline=await formPersonalLivedPlan(common);
+
+      emit({
+        event:"developmental-x3-planning",
+        threadId:threadCard.threadId,
+        condition:"exploration",
+      });
       const exploratory=await formPersonalLivedPlan({
         ...common,
         interoception,
