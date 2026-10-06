@@ -45,6 +45,30 @@ async function callWorldCurrentPresent(env, threadId) {
   return body.result;
 }
 
+async function callWorldVisitorEncounter(env, threadId, input) {
+  const response=await binding(env,"WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/public-visitor-encounter",{
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN,
+    },
+    body:JSON.stringify({
+      threadId,
+      expectedSituationId:input.situationId,
+      utterance:input.utterance,
+    }),
+  }));
+  let body=null;
+  try{ body=await response.json(); }catch{}
+  if(!response.ok){
+    const error=new Error(body?.detail??body?.error??`World visitor encounter failed with HTTP ${response.status}`);
+    error.status=response.status;
+    error.body=body;
+    throw error;
+  }
+  return body.result;
+}
+
 function expectedWorldConflict(error, worldError) {
   return error?.status === 409 && error?.body?.error === worldError;
 }
@@ -74,6 +98,19 @@ function worldCurrentPresent(env, activityRecorder, threadId) {
     },
     () => callWorldCurrentPresent(env, threadId),
     (error) => expectedWorldConflict(error, "lived_now_unavailable"),
+  );
+}
+
+function worldVisitorEncounter(env, activityRecorder, threadId, input) {
+  return runWorldStage(
+    activityRecorder,
+    {
+      threadId,
+      correlationId:input.situationId,
+      stage:"presentation.encounter.submit",
+    },
+    () => callWorldVisitorEncounter(env, threadId, input),
+    (error) => expectedWorldConflict(error, "encounter_scene_changed"),
   );
 }
 
@@ -109,6 +146,9 @@ export default {
       },
       ensureCurrentPresent(threadId){
         return worldCurrentPresent(env,activityRecorder,threadId);
+      },
+      submitEncounter(threadId,input){
+        return worldVisitorEncounter(env,activityRecorder,threadId,input);
       },
     });
     const currentLifeResponse=await currentLifeApi.fetch(request);
