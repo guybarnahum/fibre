@@ -254,6 +254,73 @@ export class LivedExperienceStore {
     };
   }
 
+  getPublicEncounterReceipt(requestId, { required = false } = {}) {
+    assertId("public encounter receipt requestId", requestId);
+    const row = this.#database.prepare(
+      "SELECT request_id,thread_id,request_digest,result_json,recorded_at FROM public_encounter_receipts WHERE request_id=?",
+    ).get(requestId);
+    if (row === undefined) {
+      if (required) throw new TypeError(`public encounter receipt ${requestId} was not found`);
+      return null;
+    }
+    return {
+      requestId:row.request_id,
+      threadId:row.thread_id,
+      requestDigest:row.request_digest,
+      result:JSON.parse(row.result_json),
+      recordedAt:row.recorded_at,
+    };
+  }
+
+  recordPublicEncounterReceipt(candidate) {
+    assertId("public encounter receipt.requestId", candidate.requestId);
+    assertId("public encounter receipt.threadId", candidate.threadId);
+    assertNonEmpty("public encounter receipt.requestDigest", candidate.requestDigest);
+    if (!candidate.requestDigest.startsWith("sha256:")) {
+      throw new TypeError("public encounter receipt requestDigest is invalid");
+    }
+    assertIsoTimestamp("public encounter receipt.recordedAt", candidate.recordedAt);
+    if (candidate.result === null || typeof candidate.result !== "object" || Array.isArray(candidate.result)) {
+      throw new TypeError("public encounter receipt result must be an object");
+    }
+    const record = {
+      requestId:candidate.requestId,
+      threadId:candidate.threadId,
+      requestDigest:candidate.requestDigest,
+      result:structuredClone(candidate.result),
+      recordedAt:candidate.recordedAt,
+    };
+    try {
+      const thread = this.#database.prepare(
+        "SELECT 1 AS present FROM threads WHERE thread_id=?",
+      ).get(record.threadId);
+      if (thread === undefined) throw new TypeError(`Thread ${record.threadId} was not found`);
+
+      const prior = this.getPublicEncounterReceipt(record.requestId);
+      if (prior !== null) {
+        if (prior.threadId !== record.threadId
+          || prior.requestDigest !== record.requestDigest
+          || canonicalJson(prior.result) !== canonicalJson(record.result)) {
+          throw new TypeError(`public encounter receipt ${record.requestId} conflicts`);
+        }
+        return prior;
+      }
+
+      this.#database.prepare(`
+        INSERT INTO public_encounter_receipts(
+          request_id,thread_id,request_digest,result_json,recorded_at
+        ) VALUES (?,?,?,?,?)
+      `).run(
+        record.requestId,
+        record.threadId,
+        record.requestDigest,
+        canonicalJson(record.result),
+        record.recordedAt,
+      );
+      return record;
+    } catch (error) { throw translateStorageError(error); }
+  }
+
   recordSocialInteraction(candidate) {
     assertIsoTimestamp("social interaction.occurredAt", candidate.occurredAt);
     assertId("social interaction.initiatorThreadId", candidate.initiatorThreadId);
