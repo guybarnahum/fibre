@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { runInteriorCognition } from "../src/interior-cognition.mjs";
+import { formVisitorMeetingStance } from "../src/lived-meeting-cognition.mjs";
 
 const AT = "2026-09-22T16:10:00.000Z";
 const CONCERN = Object.freeze({
@@ -148,4 +149,93 @@ test("Interior Cognition lets different lived meaning bend the same private conc
   assert.deepEqual(ben.evidenceRefs, ["mem-person-b"]);
   assert.equal(ada.metrics.modelCalls, 1);
   assert.equal(ada.metrics.usage.totalTokens, 138);
+});
+
+
+test("N6.3c visitor participation is the Thread's existing social-response cognition in actual current life", async () => {
+  const threadId = "thr_person_a";
+  const situation = {
+    situationId:"sit_n6_public_current",
+    threadId,
+    establishedAt:AT,
+    phase:"at_place",
+    location:{ kind:"place", placeRef:"wpl_n6_library" },
+    mediatedContext:null,
+    activity:"Reading and making notes at a library table.",
+    reason:"This is the enacted World situation.",
+    participantRefs:[],
+    evidenceRefs:["evt_n6_public_current"],
+    sourcePlanRefs:["lplan_n6_public"],
+    resolution:{
+      kind:"personal_plan",
+      conflict:false,
+      observedDivergence:false,
+      governingPlanRef:"lplan_n6_public",
+      constrainedPlanRef:null,
+      summary:"The current situation follows the personal Flight Plan.",
+    },
+    provenance:"world_enacted",
+  };
+  const plan = {
+    planId:"lplan_n6_public",
+    kind:"personal",
+    subjectThreadId:threadId,
+    horizonStart:"2026-09-22T15:00:00.000Z",
+    horizonEnd:"2026-09-22T20:00:00.000Z",
+    stops:[],
+  };
+
+  const stance = await formVisitorMeetingStance({
+    threadId,
+    at:AT,
+    plan,
+    situation,
+    requestText:"Could I talk with you for a minute?",
+    sourceStores:sourceStores({
+      threadId,
+      memoryId:"mem-person-a",
+      rememberedMeaning:"After a long solitary stretch, quiet company restored me without disrupting my work.",
+    }),
+    modelAdapter:{
+      provider:"fixture",
+      modelId:"fixture-public-participation",
+      async invoke(call) {
+        const context = call.input.concern.externalContext;
+        assert.equal(call.input.concern.kind, "social_response",
+          "visitor request must reuse social-response cognition");
+        assert.equal(context.currentSituation.situationId, situation.situationId,
+          "participation must see actual enacted life");
+        assert.equal(context.remainingFlightPlan.planId, plan.planId,
+          "participation may consider the remaining intention without treating it as reality");
+        assert.deepEqual(context.socialRequest, {
+          requesterKind:"person",
+          text:"Could I talk with you for a minute?",
+        });
+        assert.equal(Object.hasOwn(context, "situatedPercept"), false,
+          "a public visitor must not be fabricated as a Thread");
+        return {
+          output:{
+            result:{
+              decision:"decline",
+              expression:"Not right now, thanks.",
+              suggestedAt:null,
+              reason:"I want to finish what I am doing before taking on a conversation.",
+            },
+            evidenceRefs:[],
+            conflictingMotives:[],
+            uncertainty:null,
+          },
+          provenance:{
+            provider:"fixture",
+            modelId:"fixture-public-participation",
+            providerRequestId:"req_public_participation",
+          },
+        };
+      },
+    },
+  });
+
+  assert.equal(stance.decision, "decline",
+    "the Thread must retain agency over the visitor request");
+  assert.equal(stance.expression, "Not right now, thanks.");
 });
