@@ -129,7 +129,7 @@ Do not add production behavior in X0.
 
 ---
 
-# X1 — grounded exploration reaches ordinary Flight Planning — CURRENT
+# X1 — grounded exploration reaches ordinary Flight Planning — ACCEPTED
 
 ## Claim
 
@@ -239,7 +239,7 @@ One existing planning concern consumes grounded interoception. No new store/serv
 
 ---
 
-# X2 — planning sees meaningful World opportunities
+# X2 — planning sees meaningful World opportunities — CURRENT
 
 ## Claim
 
@@ -292,6 +292,49 @@ Give one Thread two admitted World opportunities whose meaning differs in existi
 Require the planning cognition to receive those real differences while caller code supplies only the refs/context needed to resolve them.
 
 A test must fail if a caller can decorate the same place with arbitrary "interesting" metadata and thereby manufacture exploration.
+
+## Implemented shape
+
+X2 removes caller-authored place meaning from the planning seam.
+
+Callers now provide only:
+
+```text
+availablePlaceRefs[]
+```
+
+The existing planning authority resolves each ref from:
+
+- current Situated Life place episodes; or
+- admitted live-World places.
+
+The model-facing `availablePlaces` projection is then built inside Fibre from those authorities.
+
+For situated places it can include:
+
+```text
+ref
+displayName
+placeKind      <- existing episode kind
+location       <- existing country / region / locality facts when present
+```
+
+For live-World places it can include:
+
+```text
+ref
+displayName
+placeKind
+description    <- admitted World description
+```
+
+No new place store, recommendation service, affordance score or model call was added.
+
+### Current acceptance proof
+
+One authority test gives a Thread two admitted situated places with materially different meanings and also supplies a contradictory caller-authored decoration.
+
+The planning cognition must see the situated records' real meaning and must not see the caller decoration.
 
 ## Stop condition
 
