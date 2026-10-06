@@ -498,7 +498,10 @@ export class FibreWorldDurableObject extends DurableObject {
       const observatory = threadObservatory(this.runtimeForRequest(), threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
-        contract:"fibre-world-thread-observatory-v0.6",
+        contract:"fibre-world-thread-observatory-v0.7",
+        deploymentGitSha:typeof this.env?.FIBRE_DEPLOYMENT_GIT_SHA==="string"
+          ?this.env.FIBRE_DEPLOYMENT_GIT_SHA
+          :null,
         observatory,
       });
     }
