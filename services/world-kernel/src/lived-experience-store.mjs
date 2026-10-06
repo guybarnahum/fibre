@@ -100,8 +100,13 @@ function normalizeStory(candidate, participantIds) {
   if (!Array.isArray(candidate.beats) || candidate.beats.length < 1) {
     throw new TypeError("encounter story requires at least one beat");
   }
+  const continuationOfEncounterRef = candidate.continuationOfEncounterRef ?? null;
+  if (continuationOfEncounterRef !== null) {
+    assertId("encounter story.continuationOfEncounterRef", continuationOfEncounterRef);
+  }
   return {
     storyVersion:candidate.storyVersion ?? "encounter-story-v0.1",
+    ...(continuationOfEncounterRef === null ? {} : { continuationOfEncounterRef }),
     beats:candidate.beats.map((beat) => {
       if (beat === null || typeof beat !== "object" || Array.isArray(beat)) {
         throw new TypeError("encounter story beat must be an object");
