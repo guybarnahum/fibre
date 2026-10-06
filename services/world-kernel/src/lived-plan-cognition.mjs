@@ -3,6 +3,7 @@ import {
   assertExactKeys,
   assertId,
   assertIsoTimestamp,
+  assertJsonValue,
   assertNonEmpty,
   assertPlainObject,
   assertStringArray,
@@ -58,6 +59,7 @@ const FLIGHT_PLAN_ADAPTER = Object.freeze({
 The concern's externalContext is primarily World-provided planning reality: the lived horizon, local civil time when known, the physical places currently available, and optionally the physical place where the Thread must begin. It may also include a bounded dailyRhythm projection from the Thread's inherited organismic baselines. Treat World facts as constraint/opportunity and dailyRhythm as a soft physiological tendency, never personality or destiny.
 When localHorizon is supplied, plan ordinary life for that local civil time rather than treating UTC clock time as the Thread's local day.
 When dailyRhythm is supplied, let sleep/wake timing usually reflect it while allowing developed habits, current life and real commitments to override it. Do not default every Thread to the same conventional bedtime, wake time or morning routine.
+When interoception is supplied, it is bounded subsemantic organismic state grounded in recent lived evidence. Interpret what it means for this Thread alongside developed self/history and current commitments. Exploration pressure is not a command, does not mean boredom, and does not imply social activity; staying put, learning, play, solitude, physical exploration or social exposure may all be valid depending on the Thread.
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
 When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place.
@@ -109,6 +111,19 @@ function normalizePlaces(value) {
     assertNonEmpty(`availablePlaces[${index}].displayName`, item.displayName);
     return { ref: item.ref, displayName: item.displayName };
   });
+}
+
+function normalizePlanningInteroception(value) {
+  if (value === null) return null;
+  assertPlainObject("personal plan interoception", value);
+  assertIsoTimestamp("personal plan interoception.asOf", value.asOf);
+  if (!Array.isArray(value.drives)) {
+    throw new TypeError("personal plan interoception.drives must be an array");
+  }
+  assertPlainObject("personal plan interoception.affect", value.affect);
+  assertStringArray("personal plan interoception.evidenceRefs", value.evidenceRefs);
+  assertJsonValue("personal plan interoception", value);
+  return structuredClone(value);
 }
 
 function normalizeRequiredWorkCommitments(value, threadId, horizonStart, horizonEnd) {
@@ -208,6 +223,7 @@ export async function formPersonalLivedPlan({
   startingPlaceRef = null,
   worldTimeZone = null,
   requiredWorkCommitments = [],
+  interoception = null,
 }) {
   assertId("personal plan threadId", threadId);
   assertIsoTimestamp("personal plan authoredAt", authoredAt);
@@ -236,6 +252,7 @@ export async function formPersonalLivedPlan({
     authoredAt,
     horizonEnd,
   );
+  const planningInteroception = normalizePlanningInteroception(interoception);
   const timeZone = normalizeTimeZone(worldTimeZone);
   const localHorizon = timeZone === null
     ? null
@@ -262,6 +279,7 @@ export async function formPersonalLivedPlan({
         horizon:{ startAt:authoredAt, endAt:horizonEnd },
         ...(localHorizon === null ? {} : { localHorizon }),
         ...(dailyRhythm === null ? {} : { dailyRhythm:structuredClone(dailyRhythm) }),
+        ...(planningInteroception === null ? {} : { interoception:planningInteroception }),
         availablePlaces:places,
         ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
         ...(workCommitments.length === 0 ? {} : {
