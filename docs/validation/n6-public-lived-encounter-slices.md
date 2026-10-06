@@ -346,7 +346,7 @@ Public outcomes:
 
 Do not expose private cognition, Flight Plan internals, memory IDs, needs/feelings or evidence refs.
 
-### N6.3e — accepted conversation stays inside ordinary life — CURRENT
+### N6.3e — accepted conversation stays inside ordinary life — ACCEPTED
 
 Only after `accept` should the existing lived-encounter response machinery run.
 
@@ -395,7 +395,7 @@ For the accepted case prove:
 - no visitor-work commitment or compensation was required;
 - no session object was created.
 
-## N6.4 — consequence, not session state
+## N6.4 — consequence, not session state — CURRENT
 
 **Capability:** what happens may matter after the public interaction ends.
 
@@ -409,6 +409,15 @@ Reuse existing authorities only:
 - exactly-once visitor-work compensation.
 
 N6 adds no public-meeting-specific memory rule and no conversation persistence authority.
+
+Public retry identity is deliberately narrow:
+
+- each Viewer Send carries one opaque `requestId`;
+- World binds that ID to the immutable encounter request digest, excluding server-owned time;
+- after a completed outcome, World stores one append-only public encounter receipt in the existing LivedExperience authority;
+- a repeated request with the same ID and digest returns the stored outward result before scene validation or cognition;
+- reusing the ID for different request content is rejected;
+- the receipt is idempotence metadata only, not conversation/session state and not autobiographical memory.
 
 **Acceptance:** retry cannot duplicate the Encounter Story or private consequence; later cognition sees only admitted retained consequence through normal authorities.
 
