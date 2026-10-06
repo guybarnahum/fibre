@@ -451,7 +451,27 @@ It:
 11. makes at most six model calls total: two calls for each of at most three eligible Threads;
 12. writes paired plan evidence under `.fibre/developmental-exploration/x3/<run>/evidence.json`.
 
-The diagnostic requires the current private World observatory contract (`v0.7`) and records the deployed World Git SHA as evidence. Tool-only diagnostic changes therefore do not force an unrelated World redeploy.
+The diagnostic requires the current private World observatory contract (`v0.8`) and records the deployed World Git SHA as evidence.
+
+### X3 grounding correction discovered on staging
+
+The first live scan found zero eligible Threads across 41 lives: 23 failed only because the immediately previous snapshot was less than 20 minutes old, 6 had changed activity and 12 lacked comparable at-place continuity.
+
+That exposed a real semantic bug in the original grounding implementation. Fibre is event/request driven, so repeated authoritative snapshots may be 5-10 minutes apart even when the Thread has remained in the same scene for much longer. Requiring one adjacent snapshot pair to span 20 minutes therefore creates false negatives.
+
+The corrected production rule is:
+
+```text
+current enacted situation
+  -> walk backward through authoritative previous CurrentSituations
+  -> continue only while place + mediated context + activity + participants are unchanged
+  -> stop immediately on a scene change
+  -> exploration is grounded once the contiguous enacted run spans >= 20 minutes
+```
+
+This uses actual World history, not Flight Plan intention, and requires no periodic ticking. The walk is bounded and only occurs when exploration context is requested.
+
+The existing social-salience proof now exercises several short identical snapshots whose cumulative run exceeds 20 minutes. Flight Planning and social salience consume the same cumulative-history regulator, and the private observatory exposes that same derived production continuity/interoception for X3 diagnosis.
 
 The observatory also exposes the immediately previous enacted situation as operator inspection evidence. This does not change World life or planning authority.
 
