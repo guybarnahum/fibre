@@ -173,7 +173,7 @@
       "status": "achieved",
       "simple": {
         "claim": "A public visitor can see a Thread's ordinary current life and approach them there without creating or rearranging the scene.",
-        "limitation": "Thread-owned accept/decline/defer for the visitor's actual request is the current N6.3 work."
+        "limitation": "The current N6.3 work is the single public /encounter boundary and accepted conversation continuity inside ordinary life."
       },
       "detail": {
         "claim": "N6.1/N6.2 prove the Viewer can reconcile and render a World-owned current situation produced by the Thread's ordinary Flight Plan before any interaction.",
@@ -245,22 +245,22 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Meet a Thread where they already are in ordinary life; the visitor approaches and the Thread decides whether to engage.",
-      "currentStep": "N6.3a and N6.3b are accepted. N6.3c is current: reuse the existing social-response Interior Cognition seam for a Person visitor's first utterance from the revalidated World-enacted situation.",
+      "currentStep": "N6.3a, N6.3b and N6.3c are accepted. N6.3d is current: POST /api/threads/:threadId/encounter is the only public social boundary, validating actual life before participation and creating an Encounter Story only after acceptance.",
       "nextSteps": [
-        "N6.3c: let the Thread accept, decline or defer the Person visitor request through existing Interior Cognition.",
-        "N6.3c: reuse Interior Cognition for accept, decline or defer from current life.",
-        "N6.3d: restore POST /encounter as the only public social boundary.",
-        "N6.3e: run accepted conversation inside ordinary life, then proceed to later-life continuity."
+        "N6.3d: validate the single public POST /encounter boundary locally and in staging.",
+        "N6.3e: keep accepted conversation grounded in the same ordinary life with no session store.",
+        "N6.5: prove a later visit finds later life rather than resuming the old encounter.",
+        "N6.6: close the live public acceptance path."
       ]
     },
     "detail": {
       "summary": "N6.3 no longer treats a paid Inside Fibre visitor-work shift as the definition of meeting. Ordinary meeting intersects a Thread's existing Flight Plan and CurrentSituation.",
-      "currentStep": "N6.3a cleanup and N6.3b actual-scene validation are accepted. Public interaction remains intentionally disabled while N6.3c reuses existing social-response Interior Cognition for Person visitor participation.",
+      "currentStep": "N6.3a cleanup, N6.3b actual-scene validation and N6.3c visitor participation cognition are accepted. N6.3d now composes them behind one public /encounter mutation with accepted-only Encounter Story creation.",
       "nextSteps": [
-        "Reuse the existing social-response Interior Cognition adapter for Person visitor participation.",
-        "Use Flight Plan boundaries only to decide when the enacted observation may need one ordinary LivedNow reconciliation; never treat the plan itself as scene truth.",
-        "If enacted life has materially changed from the displayed situation, return encounter_scene_changed with zero participation work.",
-        "Only after that add Thread-owned participation cognition and restore /encounter."
+        "Validate that stale scene returns encounter_scene_changed before any participation cognition.",
+        "Validate that decline/defer returns only outward-safe response and creates no Encounter Story.",
+        "Validate that accept creates one Encounter Story grounded in the revalidated actual CurrentSituation.",
+        "Then proceed to accepted conversation continuity without adding session state."
       ]
     },
     "finalLifeCognitionAuthorized": true
