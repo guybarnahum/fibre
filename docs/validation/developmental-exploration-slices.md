@@ -439,7 +439,7 @@ npm run developmental-exploration:x3:staging
 It:
 
 1. inspects a bounded cohort of at most eight real staging Threads;
-2. reconciles ordinary LivedNow first;
+2. reads existing enacted life without waking/replanning Threads merely for the diagnostic;
 3. uses the real previous/current enacted situations;
 4. admits only Threads whose situations already satisfy the existing exploration-grounding rule;
 5. requires at least two authoritative planning opportunities;
@@ -449,7 +449,7 @@ It:
 9. performs no resampling if the two plans happen to be the same;
 10. writes paired plan evidence under `.fibre/developmental-exploration/x3/<run>/evidence.json`.
 
-The diagnostic verifies the deployed World worker's exact Git SHA through the private observatory response, so only World needs deployment for this proof.
+The diagnostic requires the current private World observatory contract (`v0.7`) and records the deployed World Git SHA as evidence. Tool-only diagnostic changes therefore do not force an unrelated World redeploy.
 
 The observatory also exposes the immediately previous enacted situation as operator inspection evidence. This does not change World life or planning authority.
 
