@@ -66,6 +66,7 @@ X1  let grounded exploration interoception reach Flight Planning
 X2  give planning meaningful World opportunity texture
 X3  prove self-directed exploration can bend ordinary Flight Plan
 X4  prove lived outcome bends later exploration/planning
+E6  autonomous environmental-event + incidental-witness production/discovery prerequisite
 X5  add bounded rich Person presence
 X6  derive discoverable socially porous life without pre-consent
 X7  live mixed frozen/live demonstration
@@ -73,9 +74,19 @@ X7  live mixed frozen/live demonstration
 
 X1-X4 are the **core developmental loop**.
 
+E6 belongs to the general Encounter architecture rather than the X numbering, but it is a **required bridge before X5-X7** so autonomous developmental opportunity does not become social-biased.
+
 X5-X7 are the **human encounter / discoverability extension**.
 
 Do not implement X5 merely to make the current N6 demo easier. N6 public encounter acceptance remains a separate capability and should not require a new human-profile subsystem.
+
+After X4 acceptance, implement the bounded E6 encounter-autonomy gap first:
+
+- environmental occurrence text must be World-authored from existing scene/place context rather than caller-authored;
+- incidental witnesses must be derived from authoritative co-presence rather than caller-selected;
+- both reuse the existing attention / Experience / Journal / Memory stack;
+- zero occurrence / zero noticed witness remains legal;
+- no ticking, encounter quota, event bus or sample-until-interesting loop.
 
 ---
 
