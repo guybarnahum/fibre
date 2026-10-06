@@ -296,20 +296,18 @@ she initiated toward me twice this week and I enjoyed both encounters
 without collapsing any of them into a permanent relationship label.
 
 
-Automatic incidental-witness discovery is a later extension of the same model: World can derive candidate witnesses from compatible LivedNow presence, then each Thread independently notices or does not notice the occurrence.
+Automatic incidental-witness discovery uses the same model: World derives candidate witnesses from compatible authoritative LivedNow presence, then each Thread independently notices or does not notice the occurrence.
 
-## Current autonomy gap
+## Current autonomy status
 
-The **encounter semantics and aftermath are already general**. Fibre can persist environmental occurrences, social dialogue, n-ary stories, silent-witness attention, subjective journal entries and selective memory through one authority stack.
+The **encounter semantics and aftermath are general**. Fibre can persist environmental occurrences, social dialogue, n-ary stories, silent-witness attention, subjective journal entries and selective memory through one authority stack.
 
-The remaining gap is **how ordinary encounters arise without a caller already naming them**.
+E6 has removed the caller-orchestration gap in implementation:
 
-Two cases are still only partially autonomous:
+1. **Environmental occurrence production (E6a)** — callers supply Thread/time only; World authors one bounded observable occurrence from exterior CurrentSituation/place evidence, admits the Encounter Story, and runs ordinary selective attention/aftermath. Focused proof is green and staging is live-proven.
+2. **Incidental witness discovery (E6b)** — accepted social stories derive incidental witness candidates from authoritative co-presence; callers do not supply witness IDs, witnesses get no social stance or fabricated story beat, and each independently notices or does not notice. Focused proof is green.
 
-1. **Environmental occurrence production** — the environmental encounter service can admit a textual World occurrence and run the full attention/aftermath path, but today an external caller still supplies the occurrence description. World does not yet autonomously author ordinary bounded events from the Thread's current place, activity and local scene.
-2. **Incidental witness discovery** — social counterparties can be discovered from authoritative co-presence, and E3 proves the silent-witness aftermath semantics, but the current social proof still accepts explicit `witnessThreadIds`. World does not yet automatically derive all plausible incidental witnesses for an admitted Encounter Story.
-
-This is a production/discovery gap, **not an ontology gap**. Do not answer it by adding separate environmental-memory, overheard-conversation or witness subsystems.
+E6 overall remains current because the E6b path has not yet been observed in a genuine live three-Thread co-present scene. A bounded probe reports `blocked_by_world_state` rather than manufacturing that scene. This is an acceptance/evidence gap, **not an ontology or implementation gap**. Do not answer it by adding separate environmental-memory, overheard-conversation or witness subsystems.
 
 ## E6 — Autonomous encounter production/discovery
 
