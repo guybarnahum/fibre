@@ -1,6 +1,8 @@
 import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { createInterface } from "node:readline/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { projectDailyRhythm } from "../../services/world-kernel/src/daily-rhythm.mjs";
@@ -491,23 +493,29 @@ function parsePositiveInt(name, value, { minimum = 1, maximum = 200 } = {}) {
   return number;
 }
 
-function parseArgs(argv) {
+export function parseInsideFibreArgs(argv) {
   const [command = "scan", ...rest] = argv;
-  if (!["scan", "prepare"].includes(command)) {
+  if (!["scan", "prepare", "meet"].includes(command)) {
     throw new TypeError(`unsupported inside-fibre command ${command}`);
   }
   let limit = 50;
   let target = 3;
+  let threadId = null;
   for (let index = 0; index < rest.length; index += 1) {
-    if (rest[index] === "--limit") {
+    if (rest[index] === "--limit" && command !== "meet") {
       limit = parsePositiveInt("--limit", rest[++index]);
     } else if (rest[index] === "--target" && command === "prepare") {
       target = parsePositiveInt("--target", rest[++index], { maximum:20 });
+    } else if (rest[index] === "--thread" && command === "meet") {
+      threadId = nonEmpty("--thread", rest[++index]);
     } else {
       throw new TypeError(`unsupported ${command} argument ${rest[index]}`);
     }
   }
-  return Object.freeze({ command, limit, target });
+  if (command === "meet" && threadId === null) {
+    throw new TypeError("meet requires --thread THREAD_ID");
+  }
+  return Object.freeze({ command, limit, target, threadId });
 }
 
 function stagingContext(environment, { requireExactDeployment = false } = {}) {
@@ -570,11 +578,180 @@ async function discoverEligiblePublicThreads(context, limit) {
     .filter((thread) => !["genesis_candidate", "retired"].includes(thread?.lifecycleStatus));
 }
 
+function worldPresentText(present) {
+  const location = present?.location ?? null;
+  let place = "unknown place";
+  if (location?.kind === "place") {
+    place = location.place?.displayName ?? location.placeRef ?? "unnamed place";
+  } else if (location?.kind === "transit") {
+    const from = location.from?.displayName ?? location.fromPlaceRef ?? "somewhere";
+    const to = location.to?.displayName ?? location.toPlaceRef ?? "somewhere";
+    place = `in transit from ${from} to ${to}`;
+  }
+  return Object.freeze({
+    situationId:present?.situationId ?? null,
+    establishedAt:present?.establishedAt ?? null,
+    phase:present?.phase ?? null,
+    place,
+    activity:present?.activity ?? null,
+  });
+}
+
+function printWorldPresent(present) {
+  const scene = worldPresentText(present);
+  process.stdout.write(
+    `\nCURRENT LIFE\n`
+    + `  situation: ${scene.situationId ?? "unknown"}\n`
+    + `  established: ${scene.establishedAt ?? "unknown"}\n`
+    + `  place: ${scene.place}\n`
+    + `  activity: ${scene.activity ?? "unknown"}\n`,
+  );
+  return scene;
+}
+
+async function ensureWorldPresent(context, threadId) {
+  const result = await privatePost(
+    context.worldBaseUrl,
+    "/internal/lived-now/ensure",
+    context.privateToken,
+    { threadId },
+    `LivedNow ${threadId}`,
+  );
+  if (result?.present?.situationId !== result?.situationId) {
+    throw new Error("World returned an inconsistent current present");
+  }
+  return result.present;
+}
+
+async function worldEncounter(context, {
+  threadId,
+  situationId,
+  utterance,
+  priorEncounterStoryId,
+  requestId,
+}) {
+  const response = await fetch(endpoint(context.worldBaseUrl, "/internal/public-visitor-encounter"), {
+    method:"POST",
+    headers:{
+      Accept:"application/json",
+      "content-type":"application/json",
+      "x-fibre-private-token":context.privateToken,
+    },
+    body:JSON.stringify({
+      requestId,
+      threadId,
+      expectedSituationId:situationId,
+      utterance,
+      ...(priorEncounterStoryId === null ? {} : { priorEncounterStoryId }),
+    }),
+    signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  const payload = await response.json().catch(() => null);
+  if (response.status === 409 && payload?.error === "encounter_scene_changed") {
+    return Object.freeze({
+      outcome:"scene_changed",
+      currentSituationId:payload.currentSituationId ?? null,
+    });
+  }
+  if (!response.ok || payload?.ok !== true || payload?.result === undefined) {
+    throw new Error(
+      `World encounter failed HTTP ${response.status}: ${payload?.error ?? "unknown"} ${payload?.detail ?? ""}`.trim(),
+    );
+  }
+  return Object.freeze(structuredClone(payload.result));
+}
+
+export function advanceCliMeetState(state, result) {
+  if (result.outcome === "accepted") {
+    return Object.freeze({
+      situationId:result.situationId,
+      priorEncounterStoryId:result.encounterStoryId,
+      terminal:false,
+    });
+  }
+  if (["decline", "defer", "scene_changed"].includes(result.outcome)) {
+    return Object.freeze({
+      situationId:result.situationId ?? result.currentSituationId ?? state.situationId,
+      priorEncounterStoryId:state.priorEncounterStoryId,
+      terminal:true,
+    });
+  }
+  throw new TypeError(`unsupported meet outcome ${result.outcome}`);
+}
+
+export async function meetInsideFibre({
+  environment = process.env,
+  argv = process.argv.slice(2),
+  input = process.stdin,
+  output = process.stdout,
+} = {}) {
+  const { threadId } = parseInsideFibreArgs(argv);
+  const context = stagingContext(environment);
+  const present = await ensureWorldPresent(context, threadId);
+  const scene = printWorldPresent(present);
+  let state = Object.freeze({
+    situationId:scene.situationId,
+    priorEncounterStoryId:null,
+    terminal:false,
+  });
+
+  output.write(
+    "\nMeet this Thread in the life already underway.\n"
+    + "Commands: /present refreshes actual life · /leave exits\n",
+  );
+  const terminal = createInterface({ input, output, terminal:Boolean(output.isTTY) });
+  try {
+    while (!state.terminal) {
+      const raw = await terminal.question("\nYou> ");
+      const utterance = raw.trim();
+      if (utterance === "") continue;
+      if (utterance === "/leave") break;
+      if (utterance === "/present") {
+        const refreshed = await ensureWorldPresent(context, threadId);
+        const refreshedScene = printWorldPresent(refreshed);
+        state = Object.freeze({
+          situationId:refreshedScene.situationId,
+          priorEncounterStoryId:null,
+          terminal:false,
+        });
+        continue;
+      }
+
+      const result = await worldEncounter(context, {
+        threadId,
+        situationId:state.situationId,
+        utterance,
+        priorEncounterStoryId:state.priorEncounterStoryId,
+        requestId:`cli_enc_${randomUUID()}`,
+      });
+
+      if (result.outcome === "accepted") {
+        output.write(`Thread> ${result.responseText}\n`);
+        output.write(`  accepted · situation ${result.situationId} · story ${result.encounterStoryId}\n`);
+      } else if (result.outcome === "decline") {
+        output.write(`Thread> ${result.expression ?? "Not right now."}\n  declined\n`);
+      } else if (result.outcome === "defer") {
+        output.write(`Thread> ${result.expression ?? "Later."}\n  deferred · ${result.suggestedAt}\n`);
+      } else if (result.outcome === "scene_changed") {
+        output.write("\nThe Thread's life moved before your utterance entered it.\n");
+        const refreshed = await ensureWorldPresent(context, threadId);
+        printWorldPresent(refreshed);
+      }
+
+      state = advanceCliMeetState(state, result);
+    }
+  } finally {
+    terminal.close();
+  }
+  output.write("\nLeft the encounter. Fibre keeps the Thread's life; the CLI keeps no session.\n");
+  return state;
+}
+
 export async function scanInsideFibre({
   environment = process.env,
   argv = process.argv.slice(2),
 } = {}) {
-  const { limit } = parseArgs(argv);
+  const { limit } = parseInsideFibreArgs(argv);
   const context = stagingContext(environment);
   const at = new Date().toISOString();
   const discovered = await discoverEligiblePublicThreads(context, limit);
@@ -628,7 +805,7 @@ export async function prepareInsideFibre({
   environment = process.env,
   argv = process.argv.slice(2),
 } = {}) {
-  const { limit, target } = parseArgs(argv);
+  const { limit, target } = parseInsideFibreArgs(argv);
   const context = stagingContext(environment, { requireExactDeployment:true });
   const at = new Date().toISOString();
   const discovered = await discoverEligiblePublicThreads(context, limit);
@@ -740,8 +917,9 @@ export async function prepareInsideFibre({
 }
 
 async function main() {
-  const { command } = parseArgs(process.argv.slice(2));
+  const { command } = parseInsideFibreArgs(process.argv.slice(2));
   if (command === "prepare") return prepareInsideFibre();
+  if (command === "meet") return meetInsideFibre();
   return scanInsideFibre();
 }
 
