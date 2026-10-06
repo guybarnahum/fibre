@@ -410,6 +410,8 @@ The regulator outputs only an `exploration` drive. It does not author `I am bore
 
 The Salience Gate may use active exploration pressure as a mechanical reason to admit an otherwise-background opportunity to cognition. Interior Cognition still decides whether the opportunity is interesting, social, useful, annoying, irrelevant, or worth acting on.
 
+A proposed next bridge is [Developmental exploration](developmental-exploration.md): let this same grounded exploration/interoceptive pressure influence the existing personal Flight Planning concern so a Thread may sometimes seek a different experience rather than only notice an opportunity already nearby. That proposal is not yet accepted implementation and must not be read as an automatic mapping from exploration pressure to social behavior or `need:novelty_growth`.
+
 ### Sparse live evidence
 
 A live regulator pulse must operate on **only the channels Fibre actually knows at that moment**.
