@@ -120,13 +120,13 @@ For a canonical Genesis-born Thread, the World-owned seam can now create the fir
 
 Fibre still lacks:
 
-- **autonomous encounter production/discovery:** environmental encounter semantics are proven, but ordinary World occurrence text is still caller-supplied; silent-witness semantics are proven, but the current social wrapper still uses explicit witness IDs rather than deriving incidental witnesses from co-presence;
+- **autonomous encounter production/discovery:** E6a World-authored environmental occurrences are live-proven; E6b derives incidental witnesses from authoritative co-presence in focused proof, but live staging witness evidence remains pending a genuine three-Thread co-present scene;
 - richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
 - richer shared-world convergence beyond the bounded Fibre Commons mediated-presence proof;
 - Thread-owned public visitor participation from an ordinary displayed scene;
 - the later-revisit proof after an accepted public encounter.
 
-This autonomy gap is production/discovery, not ontology. X4 is now accepted: the general Encounter Story -> attention -> Experience -> optional subjective Journal -> selective Memory path can bend later planning without history or Journal bypassing memory authority. E6 is implemented pending local validation: environmental occurrence prose is authored from exterior current-scene evidence without caller event text, and accepted social stories derive incidental witness candidates from authoritative co-presence without caller witness IDs.
+This autonomy gap is production/discovery, not ontology. X4 is accepted: the general Encounter Story -> attention -> Experience -> optional subjective Journal -> selective Memory path can bend later planning without history or Journal bypassing memory authority. E6 implementation and focused proof are green, and E6a is live-proven. E6 remains current until a genuine live E6b witness scene shows that an accepted social story derives an incidental co-present witness without caller witness IDs.
 
 Encounter Story is now visualizable by construction: its durable rich prompt is objective/evidence-bound and separate from any later subjective memory reconstruction. Actual image/video rendering remains optional and uses the existing generated-asset pipeline rather than becoming World authority.
 
