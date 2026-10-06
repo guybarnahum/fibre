@@ -118,7 +118,8 @@
     "identity:country-codes:migrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/migrations/thread-country-codes.mjs",
     "inside-fibre": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs",
     "population:lab:experiments": "node --disable-warning=ExperimentalWarning tools/population-lab/experiments.mjs",
-    "inside-fibre:meet": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs meet"
+    "inside-fibre:meet": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs meet",
+    "developmental-exploration:x3:staging": "node tools/deployment/run-with-progress.mjs developmental-exploration:x3:staging node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-planning-staging.mjs --exploration"
   },
   "engines": {
     "node": ">=22.13"
