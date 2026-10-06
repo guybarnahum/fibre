@@ -117,12 +117,12 @@
       "label": "Self-directed developmental exploration",
       "status": "not_yet",
       "simple": {
-        "claim": "Threads should be able to notice when their lives have become narrow or repetitive and choose experiences that may help them learn, connect or grow.",
-        "limitation": "Fibre has grounded exploration pressure and self-directed Flight Planning, but the causal bridge between them is only proposed."
+        "claim": "Threads can now let grounded exploration pressure influence ordinary self-directed Flight Planning through the existing interoception and Interior Cognition stack.",
+        "limitation": "The forward planning half is accepted through X3, but Fibre has not yet proved that a lived exploratory outcome can return through retained Thread-owned meaning and bend later planning."
       },
       "detail": {
-        "claim": "The proposed developmental-exploration loop connects existing exploration/information/play regulation through bounded interoception into the existing lived_planning Interior Cognition, then closes consequence through ordinary Encounter Story, Thread Experience, selective memory/semantic meaning and later planning.",
-        "limitation": "No production path yet lets grounded exploration pressure change a Flight Plan. Rich Person presence and discovery of socially porous current lives are later proposed slices, not current capabilities."
+        "claim": "X0-X3 are accepted: sustained low-novelty enacted life can ground exploration pressure; existing interoception carries it into the existing lived_planning concern; planning resolves opportunity meaning from World/situated authority; and two real staging Threads produced materially different valid Flight Plans under grounded exploration without a new service, score, store, social bias, second planning engine or resampling.",
+        "limitation": "X4 remains: an actual lived exploratory outcome must pass through ordinary Encounter Story / Thread Experience / selective memory or semantic consequence and causally affect a later planning episode. Rich Person presence and socially porous discovery remain later extension slices."
       },
       "evidence": [
         "docs/architecture/developmental-exploration.md",
