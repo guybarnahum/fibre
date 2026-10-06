@@ -245,6 +245,7 @@ export async function formVisitorMeetingStance({
   plan,
   situation,
   requestText,
+  recentEncounterStories = [],
   sourceStores,
   modelAdapter,
 }) {
@@ -256,6 +257,9 @@ export async function formVisitorMeetingStance({
     throw new TypeError("visitor meeting current situation belongs to another Thread");
   }
   assertNonEmpty("visitor social request", requestText);
+  if (!Array.isArray(recentEncounterStories)) {
+    throw new TypeError("visitor meeting recent Encounter Stories must be an array");
+  }
 
   return formSocialResponse({
     threadId,
@@ -267,6 +271,7 @@ export async function formVisitorMeetingStance({
     },
     observedContext:{
       currentSituation:structuredClone(situation),
+      recentEncounterStories:structuredClone(recentEncounterStories),
     },
     sourceStores,
     modelAdapter,
