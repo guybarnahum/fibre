@@ -239,7 +239,7 @@ One existing planning concern consumes grounded interoception. No new store/serv
 
 ---
 
-# X2 — planning sees meaningful World opportunities — CURRENT
+# X2 — planning sees meaningful World opportunities — ACCEPTED
 
 ## Claim
 
@@ -342,7 +342,7 @@ Planning can distinguish meaningful offered opportunities from World evidence wi
 
 ---
 
-# X3 — exploration bends an ordinary Flight Plan
+# X3 — exploration bends an ordinary Flight Plan — CURRENT
 
 ## Claim
 
@@ -425,6 +425,43 @@ If yes, stop.
 Only if repeated evidence shows that a developmental intention needs to persist independently across planning horizons should Fibre propose a separate durable developmental-intention authority.
 
 Do not pre-build it.
+
+## Implemented live diagnostic
+
+X3 adds no new production planning mechanism. X1 + X2 are the mechanism.
+
+The existing `lived-planning:staging` diagnostic now has an X3 mode:
+
+```bash
+npm run developmental-exploration:x3:staging
+```
+
+It:
+
+1. inspects a bounded cohort of at most eight real staging Threads;
+2. reconciles ordinary LivedNow first;
+3. uses the real previous/current enacted situations;
+4. admits only Threads whose situations already satisfy the existing exploration-grounding rule;
+5. requires at least two authoritative planning opportunities;
+6. constructs one baseline and one exploration planning call using the same Thread, horizon, places, history and commitments;
+7. uses the exact reasoning integration selected for staging World `livedNow`;
+8. persists neither counterfactual plan;
+9. performs no resampling if the two plans happen to be the same;
+10. writes paired plan evidence under `.fibre/developmental-exploration/x3/<run>/evidence.json`.
+
+The diagnostic verifies the deployed World worker's exact Git SHA through the private observatory response, so only World needs deployment for this proof.
+
+The observatory also exposes the immediately previous enacted situation as operator inspection evidence. This does not change World life or planning authority.
+
+### Acceptance remains human-reviewed
+
+There is deliberately no automatic `changedCount >= N` gate.
+
+A materially different plan is evidence only when the difference is plausibly connected to the grounded exploration signal and remains consistent with the Thread's developed self and real opportunities.
+
+No difference is also legitimate for a particular Thread.
+
+X3 closes when at least one real-model pair demonstrates a meaningful self-directed change without prompt tuning, resampling, caller-authored novelty or a social requirement.
 
 ## Stop condition
 
