@@ -129,7 +129,7 @@ Do not add production behavior in X0.
 
 ---
 
-# X1 — grounded exploration reaches ordinary Flight Planning
+# X1 — grounded exploration reaches ordinary Flight Planning — CURRENT
 
 ## Claim
 
@@ -194,6 +194,44 @@ Require the planning cognition input/provenance to differ through the interocept
 - private exploration evidence does not leak into `plan.sourceReferences`.
 
 A controlled fixture may author different plan outputs to prove the causal wire, but this test is **wiring evidence**, not a claim that live model quality is accepted.
+
+## Implemented shape
+
+X1 now reuses the existing stack exactly as proposed:
+
+```text
+explorationRegulationForLivedContinuity(...)
+  -> existing projectInteroception(...)
+  -> optional bounded interoception on existing lived_planning externalContext
+  -> existing runInteriorCognition(...)
+  -> existing personal Flight Plan
+```
+
+There is still:
+
+- one planning model call;
+- no exploration service;
+- no new persistence;
+- no mechanically minted semantic state;
+- no meeting/acceptance bias;
+- no new planning authority.
+
+The LivedNow planning path supplies this capsule only when an authoritative current situation and its immediately preceding enacted situation actually satisfy the existing sustained-sameness grounding rule.
+
+Private interoceptive evidence remains planning context and does not enter `plan.sourceReferences`.
+
+### Current acceptance proof
+
+One differential test holds Thread, horizon, places and developed-self authorities constant and changes only the grounded exploration interoception.
+
+It requires:
+
+- the existing planning cognition to receive that signal;
+- the same existing planning call to be capable of choosing a materially different plan;
+- zero semantic-state minting;
+- the grounding situation refs to stay out of World plan evidence.
+
+This is a causal-wiring proof, not yet X3's claim that live model behavior has been quality-accepted.
 
 ## Stop condition
 
