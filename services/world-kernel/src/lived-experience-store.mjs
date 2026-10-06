@@ -171,6 +171,17 @@ export class LivedExperienceStore {
 
     try {
       return this.#database.transaction(() => {
+        if (story.continuationOfEncounterRef !== undefined) {
+          const prior = this.#database.prepare(
+            "SELECT occurred_at FROM encounter_story_records WHERE encounter_id=?",
+          ).get(story.continuationOfEncounterRef);
+          if (prior === undefined) {
+            throw new TypeError(`continued Encounter Story ${story.continuationOfEncounterRef} was not found`);
+          }
+          if (Date.parse(prior.occurred_at) > Date.parse(normalized.occurredAt)) {
+            throw new TypeError("Encounter Story continuation cannot point forward in time");
+          }
+        }
         for (const participant of threadPresence) {
           const thread = this.#database.prepare(
             "SELECT 1 AS present FROM threads WHERE thread_id=?",
