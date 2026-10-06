@@ -10,18 +10,8 @@ function requireMethod(owner, name, method) {
   }
 }
 
-function existingPlanPlaces(plan) {
-  const seen = new Set();
-  const places = [];
-  for (const stop of plan.stops) {
-    if (seen.has(stop.physicalPlaceRef)) continue;
-    seen.add(stop.physicalPlaceRef);
-    places.push({
-      ref:stop.physicalPlaceRef,
-      displayName:stop.physicalPlaceRef,
-    });
-  }
-  return places;
+function existingPlanPlaceRefs(plan) {
+  return [...new Set(plan.stops.map((stop) => stop.physicalPlaceRef))];
 }
 
 export async function replanForAcceptedInsideFibreWork({
@@ -76,7 +66,7 @@ export async function replanForAcceptedInsideFibreWork({
     threadId:commitment.threadId,
     authoredAt:commitment.acceptedAt,
     horizonEnd,
-    availablePlaces:existingPlanPlaces(priorPlan),
+    availablePlaceRefs:existingPlanPlaceRefs(priorPlan),
     startingPlaceRef:position.location.placeRef,
     sourceReferences:[...priorPlan.sourceReferences],
     sourceStores:{
@@ -85,6 +75,7 @@ export async function replanForAcceptedInsideFibreWork({
       semanticStateStore,
       memoryStore,
       situatedLifeStore,
+      livedNowStore,
     },
     modelAdapter,
     worldTimeZone:livedNowStore.getWorldContext(
