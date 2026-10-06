@@ -191,7 +191,7 @@ For staging, the existing one-shot preparation command is the shortest path:
 git switch main
 git pull --ff-only origin main
 npm run slice:validate
-npm run cloud:prepare:staging
+npm run cloud:prepare -- --env staging
 ```
 
 For production, provision and configure explicitly, then deploy the runtime stack and operator apps:
