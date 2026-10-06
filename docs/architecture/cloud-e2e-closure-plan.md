@@ -17,7 +17,7 @@ This is infrastructure acceptance work. It does not create a new semantic author
 
 The cloud runtime/infradriver work is integrated. Staging provisioning, secret/configuration handling, four-service deployment, health acceptance, exact-SHA deployment evidence, and service-only deployment are working against live Cloudflare staging.
 
-A substantial staging E2E harness already exists in `tools/genesis/genesis-development-e2e.mjs` plus `genesis-development-e2e-staging.mjs`. It already proves:
+A substantial staging E2E harness already exists in `tools/genesis/genesis-development-e2e.mjs` plus `genesis-development-e2e-validation.mjs`. It already proves:
 
 - fresh request identity is absent before the run;
 - the deployed Cloudflare Birth Center performs genuine Genesis development;
