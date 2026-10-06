@@ -250,7 +250,7 @@ public visit
 
 A public visit and local Meet action are not meeting authority. The Viewer remains projection-only and must not author the Thread's scene, private state or continuity.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: meet the Thread in the ordinary displayed scene. N6.3a and N6.3b are accepted. N6.3c is active: reuse the existing social-response Interior Cognition seam for a Person visitor's first utterance from the revalidated actual situation; N6.3d then restores `/encounter` as the only public social boundary.
+Detailed execution is governed by [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: meet the Thread in the ordinary displayed scene. N6.3a, N6.3b and N6.3c are accepted. N6.3d is active: restore `/encounter` as the only public social boundary, with actual-scene validation before participation and accepted-only Encounter Story creation.
 
 ## Experience and memory invariant
 
