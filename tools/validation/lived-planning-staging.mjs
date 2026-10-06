@@ -43,6 +43,14 @@ function sourceGitSha() {
   return value;
 }
 
+function requireCleanCheckout() {
+  const value=execFileSync("git",["status","--porcelain","--untracked-files=all"],{
+    cwd:REPO_ROOT,
+    encoding:"utf8",
+  }).trim();
+  if(value!=="")throw new Error("developmental X3 requires a clean checkout");
+}
+
 function deploymentByService(record, serviceId) {
   const matches = (record.deployments ?? []).filter((entry) => entry?.serviceId === serviceId);
   if (matches.length !== 1) throw new Error(`deployment evidence must contain exactly one ${serviceId}`);
@@ -489,14 +497,11 @@ export async function runDevelopmentalExplorationX3Staging({
 }={}){
   const privateToken=nonEmpty("FIBRE_PRIVATE_TOKEN",environment.FIBRE_PRIVATE_TOKEN);
   const sourceSha=sourceGitSha();
+  requireCleanCheckout();
   const deploymentPath=resolve(REPO_ROOT,".fibre","cloudflare","staging","deployment.json");
   const deployment=jsonFile(deploymentPath);
-  if(
-    deployment.environment!=="staging"
-    || deployment.sourceGitSha!==sourceSha
-    || deployment.sourceTreeClean!==true
-  ){
-    throw new Error("X3 requires staging deployment evidence for the exact clean checkout SHA");
+  if(deployment.environment!=="staging"){
+    throw new Error("X3 requires staging deployment evidence for endpoint discovery");
   }
 
   const worldBaseUrl=remoteBase(
@@ -541,6 +546,11 @@ export async function runDevelopmentalExplorationX3Staging({
         privateToken,
         `World Observatory ${threadCard.threadId}`,
       );
+      if(payload?.deploymentGitSha!==sourceSha){
+        throw new Error(
+          `World deployment SHA ${payload?.deploymentGitSha??"unknown"} does not match checkout ${sourceSha}`,
+        );
+      }
       const observatory=payload?.observatory;
       const current=observatory?.livedNow?.currentSituation??null;
       const previous=observatory?.livedNow?.previousSituation??null;
