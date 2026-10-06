@@ -150,7 +150,26 @@ test("public encounter exposes only outward participation and accepted encounter
     responseText:"Sure — what did you want to ask?",
     encounterStoryId:"story_public_encounter",
   });
-  assert.equal(submitted.length,2);
+
+  const continued=await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/encounter`,
+    {
+      method:"POST",
+      headers:{ Origin:"https://insidefibre.com","content-type":"application/json" },
+      body:JSON.stringify({
+        situationId:"sit_public_encounter",
+        utterance:"What do you mean?",
+        priorEncounterStoryId:"story_public_encounter",
+      }),
+    },
+  ));
+  assert.equal(continued.status,200);
+  assert.deepEqual(submitted[2].input,{
+    situationId:"sit_public_encounter",
+    utterance:"What do you mean?",
+    priorEncounterStoryId:"story_public_encounter",
+  },"Presentation should forward only the causal continuation reference");
+  assert.equal(submitted.length,3);
 });
 
 test("public encounter preserves scene-changed as the only expected conflict",async()=>{
