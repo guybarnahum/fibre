@@ -9,7 +9,7 @@ canonical: true
 
 ## Status
 
-**Accepted architecture. The regulator -> interoception -> ordinary Flight Planning half of the loop is implemented and accepted through X3; the lived-outcome -> later-planning return path remains X4.**
+**Accepted architecture. X0-X4 now close the core developmental loop from grounded exploration pressure through ordinary Flight Planning, lived experience, selective subjective aftermath and retained meaning back into later planning. E6 is the next prerequisite before richer Person/social discovery.**
 
 This document records the architectural hypothesis that a mature Thread should be capable of seeking experiences that can enlarge or change her life, rather than relying only on externally presented opportunities.
 
@@ -117,7 +117,7 @@ Developmental exploration should close that loop rather than add a scalar reward
 
 ### Encounter-opportunity parity
 
-After X4 closes the developmental return loop, Fibre must address the current **autonomous encounter production/discovery gap** before adding richer Person/social discoverability.
+With X4 closed, Fibre must now address the current **autonomous encounter production/discovery gap** before adding richer Person/social discoverability.
 
 Today the aftermath semantics are general, but environmental occurrences still require caller-supplied event text and silent witnesses still require explicit proof scaffolding in the social wrapper.
 
@@ -126,8 +126,8 @@ This matters because developmental exploration must not become accidentally soci
 The next prerequisite is therefore [E6 in Encounter stories and Thread experience](encounters-and-experience.md#e6--autonomous-encounter-productiondiscovery):
 
 ```text
-X4 closes history -> future development
-  -> E6 makes environmental/witness encounters arise autonomously
+X4 closed history -> future development
+  -> E6 now makes environmental/witness encounters arise autonomously
   -> X5+ may then enrich Person/social opportunity discovery
 ```
 
