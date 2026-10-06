@@ -687,7 +687,7 @@ async function journalAndAdminProof({ worldBaseUrl, privateToken, accepted, apps
   const first = firstPayload.journal;
   const second = secondPayload.journal;
   if (!first?.profile || !second?.profile || JSON.stringify(first.profile) !== JSON.stringify(second.profile)) {
-    throw new Error("lived-encounters journal profile is not stable across staging reads");
+    throw new Error("lived-encounters journal profile is not stable across repeated reads");
   }
   const observatoryPayload = await privateGet(
     worldBaseUrl,
