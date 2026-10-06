@@ -31,7 +31,7 @@ function jsonFile(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-function sourceGitSha() {
+function validationGitSha() {
   const value = execFileSync("git", ["rev-parse", "HEAD"], {
     cwd:REPO_ROOT,
     encoding:"utf8",
@@ -44,6 +44,23 @@ function sourceGitSha() {
   if (status !== "") throw new Error("lived-encounters validation requires a clean checkout");
   if (!GIT_SHA.test(value)) throw new Error("lived-encounters validation requires an exact Git SHA");
   return value;
+}
+
+function requireRuntimeAncestor(runtimeGitSha, validatorGitSha) {
+  if (!GIT_SHA.test(runtimeGitSha ?? "")) {
+    throw new Error("deployed world-kernel did not expose an exact Git SHA");
+  }
+  try {
+    execFileSync(
+      "git",
+      ["merge-base", "--is-ancestor", runtimeGitSha, validatorGitSha],
+      { cwd:REPO_ROOT, stdio:"ignore" },
+    );
+  } catch {
+    throw new Error(
+      `deployed world-kernel ${runtimeGitSha} is not in validator checkout history ${validatorGitSha}`,
+    );
+  }
 }
 
 function validationEnvironment(value) {
@@ -181,7 +198,7 @@ async function refreshThreads({
   presentationBaseUrl,
   viewerOrigin,
   privateToken,
-  expectedWorldGitSha,
+  validatorGitSha,
   emit,
 }) {
   const discovered = await publicThreads(presentationBaseUrl, viewerOrigin);
@@ -196,11 +213,8 @@ async function refreshThreads({
     privateToken,
     "World deployment probe",
   );
-  if (deploymentProbe?.deploymentGitSha !== expectedWorldGitSha) {
-    throw new Error(
-      `deployed world-kernel ${deploymentProbe?.deploymentGitSha ?? "unknown"} does not match current checkout ${expectedWorldGitSha}`,
-    );
-  }
+  const worldKernelGitSha = deploymentProbe?.deploymentGitSha ?? null;
+  requireRuntimeAncestor(worldKernelGitSha, validatorGitSha);
 
   const refreshed = [];
   for (const thread of ordered.slice(0, MAX_REFRESHED_THREADS)) {
@@ -313,7 +327,10 @@ async function refreshThreads({
     }
   }
   if (refreshed.length < 3) throw new Error("lived-encounters validation needs at least three live public Threads with current LivedNow");
-  return refreshed;
+  return Object.freeze({
+    threads:Object.freeze(refreshed),
+    worldKernelGitSha,
+  });
 }
 
 function orderedSocialInitiators(refreshed) {
@@ -783,7 +800,7 @@ export async function runLivedEncountersValidation({
 } = {}) {
   const validationEnv = validationEnvironment(targetEnvironment);
   const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", environment.FIBRE_PRIVATE_TOKEN);
-  const sourceSha = sourceGitSha();
+  const validatorSha = validationGitSha();
   const deploymentPath = resolve(REPO_ROOT, ".fibre", "cloudflare", validationEnv, "deployment.json");
   const appsPath = resolve(REPO_ROOT, ".fibre", "cloudflare", validationEnv, "apps-deployment.json");
   const deployment = jsonFile(deploymentPath);
@@ -805,16 +822,17 @@ export async function runLivedEncountersValidation({
     event:"lived-encounters-validation-start",
     environment:validationEnv,
     runId,
-    sourceGitSha:sourceSha,
+    validatorGitSha:validatorSha,
   });
-  const refreshed = await refreshThreads({
+  const refreshedResult = await refreshThreads({
     worldBaseUrl,
     presentationBaseUrl,
     viewerOrigin,
     privateToken,
-    expectedWorldGitSha:sourceSha,
+    validatorGitSha:validatorSha,
     emit,
   });
+  const refreshed = refreshedResult.threads;
   const environmental = await environmentalProof({
     worldBaseUrl,
     privateToken,
@@ -855,9 +873,9 @@ export async function runLivedEncountersValidation({
     contract:"fibre-lived-encounters-validation-v0.3",
     environment:validationEnv,
     runId,
-    sourceGitSha:sourceSha,
+    validatorGitSha:validatorSha,
     runtimeBinding:Object.freeze({
-      worldKernelGitSha:sourceSha,
+      worldKernelGitSha:refreshedResult.worldKernelGitSha,
       topologyEvidenceGitSha:deployment.sourceGitSha ?? null,
       appTopologyEvidenceGitSha:appsEvidence.sourceGitSha ?? null,
     }),
@@ -906,7 +924,7 @@ export async function runLivedEncountersValidation({
   emit({
     event:"lived-encounters-validation-complete",
     runId,
-    sourceGitSha:sourceSha,
+    validatorGitSha:validatorSha,
     environmentalEncounterId:environmental.encounterId,
     socialEncounterId:acceptedStory.encounterId,
     discoveredActorCount:social.discoveredActorCount,
