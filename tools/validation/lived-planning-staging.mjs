@@ -446,6 +446,7 @@ export async function runLivedPlanningStagingProof({
       skippedThreadCount:skipped.length,
       skipReasonCounts,
       activityChangedTiming,
+      activityChangedLongCases,
       developedEvidenceAttributedCount:attributed.length,
       historyEvidenceAttributedCount:historyAttributed.length,
       distinctHistoryEvidenceCount:distinctHistoryEvidence,
@@ -591,10 +592,25 @@ export async function runDevelopmentalExplorationX3Staging({
       if(reason!==null){
         skipped.push(Object.freeze({
           threadId:threadCard.threadId,
+          displayName:threadCard.displayName??observatory?.thread?.identity?.name??null,
           reason,
           elapsedMs:previous===null||current===null
             ?null
             :Date.parse(current.establishedAt)-Date.parse(previous.establishedAt),
+          previous:previous===null?null:Object.freeze({
+            establishedAt:previous.establishedAt,
+            placeRef:previous.location?.kind==="place"?previous.location.placeRef:null,
+            mediatedContext:previous.mediatedContext??null,
+            activity:previous.activity??null,
+            participantRefs:Object.freeze([...(previous.participantRefs??[])]),
+          }),
+          current:current===null?null:Object.freeze({
+            establishedAt:current.establishedAt,
+            placeRef:current.location?.kind==="place"?current.location.placeRef:null,
+            mediatedContext:current.mediatedContext??null,
+            activity:current.activity??null,
+            participantRefs:Object.freeze([...(current.participantRefs??[])]),
+          }),
         }));
         continue;
       }
@@ -648,6 +664,24 @@ export async function runDevelopmentalExplorationX3Staging({
       maxMinutes:Math.round(activityChangedElapsedMs.at(-1)/60000),
       atLeast20Minutes:activityChangedElapsedMs.filter((value)=>value>=20*60*1000).length,
     });
+  const activityChangedLongCases=Object.freeze(
+    skipped
+      .filter((entry)=>
+        entry.reason==="exploration continuity: activity_changed"
+        && Number.isFinite(entry.elapsedMs)
+        && entry.elapsedMs>=20*60*1000)
+      .sort((left,right)=>right.elapsedMs-left.elapsedMs)
+      .map((entry)=>Object.freeze({
+        threadId:entry.threadId,
+        displayName:entry.displayName,
+        elapsedMinutes:Math.round(entry.elapsedMs/60000),
+        placeRef:entry.current?.placeRef??null,
+        previousActivity:entry.previous?.activity??null,
+        currentActivity:entry.current?.activity??null,
+        sameMediatedContext:(entry.previous?.mediatedContext??null)===(entry.current?.mediatedContext??null),
+        sameParticipants:JSON.stringify(entry.previous?.participantRefs??[])===JSON.stringify(entry.current?.participantRefs??[]),
+      })),
+  );
   emit({
     event:"developmental-x3-scan",
     discoveredThreadCount:discovered.length,
@@ -655,6 +689,7 @@ export async function runDevelopmentalExplorationX3Staging({
     candidateCount:candidates.length,
     skipReasonCounts,
     activityChangedTiming,
+    activityChangedLongCases,
   });
 
   for(const candidate of candidates){
