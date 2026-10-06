@@ -46,6 +46,7 @@ test("public visit observes the Thread's reconciled current life rather than cre
       assert.equal(threadId,THREAD_ID);
       return { present:situations[ensureCalls++] };
     },
+    submitEncounter:async()=>{ throw new Error("must not run"); },
   });
 
   const first=await api.fetch(visit());
@@ -67,6 +68,7 @@ test("public visit cannot author life or reconcile a non-public Thread",async()=
       ensureCalls+=1;
       throw new Error("must not run");
     },
+    submitEncounter:async()=>{ throw new Error("must not run"); },
   });
 
   const authored=await api.fetch(visit(
@@ -81,4 +83,103 @@ test("public visit cannot author life or reconcile a non-public Thread",async()=
   ));
   assert.equal(hidden.status,404);
   assert.equal(ensureCalls,0,"non-public visit reconciled private Thread life");
+});
+
+
+test("public encounter exposes only outward participation and accepted encounter fields",async()=>{
+  const submitted=[];
+  const api=createPublicCurrentLifeApi({
+    viewerOrigin:"https://insidefibre.com",
+    isPublicThread:async threadId=>threadId===THREAD_ID,
+    ensureCurrentPresent:async()=>{ throw new Error("must not visit"); },
+    async submitEncounter(threadId,input){
+      submitted.push({ threadId,input:structuredClone(input) });
+      if(input.utterance==="Not now?"){
+        return {
+          outcome:"decline",
+          situationId:"sit_public_encounter",
+          expression:"Not right now, thanks.",
+          suggestedAt:null,
+          reason:"private reason must never cross Presentation",
+          cognition:{ evidenceRefs:["mem_private"] },
+        };
+      }
+      return {
+        outcome:"accepted",
+        situationId:"sit_public_encounter",
+        responseText:"Sure — what did you want to ask?",
+        encounterStoryId:"story_public_encounter",
+        reason:"private reason must never cross Presentation",
+      };
+    },
+  });
+
+  const decline=await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/encounter`,
+    {
+      method:"POST",
+      headers:{ Origin:"https://insidefibre.com","content-type":"application/json" },
+      body:JSON.stringify({
+        situationId:"sit_public_encounter",
+        utterance:"Not now?",
+      }),
+    },
+  ));
+  assert.equal(decline.status,200);
+  assert.deepEqual(await decline.json(),{
+    outcome:"declined",
+    situationId:"sit_public_encounter",
+    expression:"Not right now, thanks.",
+  });
+
+  const accepted=await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/encounter`,
+    {
+      method:"POST",
+      headers:{ Origin:"https://insidefibre.com","content-type":"application/json" },
+      body:JSON.stringify({
+        situationId:"sit_public_encounter",
+        utterance:"Hi — do you have a minute?",
+      }),
+    },
+  ));
+  assert.equal(accepted.status,200);
+  assert.deepEqual(await accepted.json(),{
+    outcome:"accepted",
+    situationId:"sit_public_encounter",
+    responseText:"Sure — what did you want to ask?",
+    encounterStoryId:"story_public_encounter",
+  });
+  assert.equal(submitted.length,2);
+});
+
+test("public encounter preserves scene-changed as the only expected conflict",async()=>{
+  const api=createPublicCurrentLifeApi({
+    viewerOrigin:"https://insidefibre.com",
+    isPublicThread:async()=>true,
+    ensureCurrentPresent:async()=>{ throw new Error("must not visit"); },
+    async submitEncounter(){
+      const error=new Error("scene changed");
+      error.status=409;
+      error.body={ error:"encounter_scene_changed",currentSituationId:"sit_new_scene" };
+      throw error;
+    },
+  });
+
+  const response=await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/encounter`,
+    {
+      method:"POST",
+      headers:{ Origin:"https://insidefibre.com","content-type":"application/json" },
+      body:JSON.stringify({
+        situationId:"sit_old_scene",
+        utterance:"Hello",
+      }),
+    },
+  ));
+  assert.equal(response.status,409);
+  assert.deepEqual(await response.json(),{
+    error:"encounter_scene_changed",
+    currentSituationId:"sit_new_scene",
+  });
 });
