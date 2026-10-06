@@ -120,6 +120,7 @@ test("public encounter exposes only outward participation and accepted encounter
       method:"POST",
       headers:{ Origin:"https://insidefibre.com","content-type":"application/json" },
       body:JSON.stringify({
+        requestId:"req_public_decline",
         situationId:"sit_public_encounter",
         utterance:"Not now?",
       }),
@@ -138,6 +139,7 @@ test("public encounter exposes only outward participation and accepted encounter
       method:"POST",
       headers:{ Origin:"https://insidefibre.com","content-type":"application/json" },
       body:JSON.stringify({
+        requestId:"req_public_accept",
         situationId:"sit_public_encounter",
         utterance:"Hi — do you have a minute?",
       }),
@@ -157,6 +159,7 @@ test("public encounter exposes only outward participation and accepted encounter
       method:"POST",
       headers:{ Origin:"https://insidefibre.com","content-type":"application/json" },
       body:JSON.stringify({
+        requestId:"req_public_continue",
         situationId:"sit_public_encounter",
         utterance:"What do you mean?",
         priorEncounterStoryId:"story_public_encounter",
@@ -165,6 +168,7 @@ test("public encounter exposes only outward participation and accepted encounter
   ));
   assert.equal(continued.status,200);
   assert.deepEqual(submitted[2].input,{
+    requestId:"req_public_continue",
     situationId:"sit_public_encounter",
     utterance:"What do you mean?",
     priorEncounterStoryId:"story_public_encounter",
@@ -191,6 +195,7 @@ test("public encounter preserves scene-changed as the only expected conflict",as
       method:"POST",
       headers:{ Origin:"https://insidefibre.com","content-type":"application/json" },
       body:JSON.stringify({
+        requestId:"req_public_stale",
         situationId:"sit_old_scene",
         utterance:"Hello",
       }),
