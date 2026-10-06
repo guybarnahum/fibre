@@ -9,7 +9,7 @@ canonical: true
 
 ## Status
 
-**Accepted execution roadmap. X0-X3 are closed; X4 is next if the developmental-exploration tranche continues.**
+**Accepted execution roadmap. X0-X4 are closed; E6 autonomous encounter production/discovery is current before X5+.**
 
 Architecture: [Developmental exploration](../architecture/developmental-exploration.md).
 
@@ -80,7 +80,7 @@ X5-X7 are the **human encounter / discoverability extension**.
 
 Do not implement X5 merely to make the current N6 demo easier. N6 public encounter acceptance remains a separate capability and should not require a new human-profile subsystem.
 
-After X4 acceptance, implement the bounded E6 encounter-autonomy gap first:
+With X4 accepted, implement the bounded E6 encounter-autonomy gap first:
 
 - environmental occurrence text must be World-authored from existing scene/place context rather than caller-authored;
 - incidental witnesses must be derived from authoritative co-presence rather than caller-selected;
@@ -520,7 +520,7 @@ At least one meaningful behavioral path exists from grounded exploration pressur
 
 ---
 
-# X4 — experience closes the developmental loop — CURRENT
+# X4 — experience closes the developmental loop — ACCEPTED
 
 ## Claim
 
@@ -609,7 +609,7 @@ The proof requires:
 
 No reward score, exploration-memory type, new semantic-state writer, planner or model call was added.
 
-X4 remains pending local validation.
+X4 is accepted after the focused aftermath/planning proofs and full `npm run slice:validate` passed on 2026-10-06.
 
 ## Stop condition
 
