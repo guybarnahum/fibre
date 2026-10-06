@@ -274,6 +274,72 @@ The first implementation commit exposed one prohibited private cross-owner Asset
 
 No existing presentation R2 objects were migrated. No encounter render is required for Encounter Story completion, and E4 does not require a live provider-generated image/video; that remains optional staging evidence.
 
+## Slice E6 — Autonomous encounter production/discovery — PLANNED AFTER X4
+
+**Goal:** remove the remaining caller orchestration from environmental and silent-witness encounters without changing the accepted Encounter Story / attention / aftermath ontology.
+
+The general encounter seam is already proven for:
+
+- environmental occurrence;
+- voluntary social participation;
+- n-ary shared story;
+- silent witness;
+- `noticed | not_noticed`;
+- subjective Journal;
+- selective Memory / `not_remembered`.
+
+The missing capability is narrower:
+
+```text
+environmental:
+caller currently supplies occurrence text
+  -> E6: World authors bounded occurrence from current scene
+
+silent witness:
+caller currently supplies witnessThreadIds
+  -> E6: World derives candidate witnesses from authoritative co-presence
+```
+
+E6 is intentionally scheduled **after developmental-exploration X4 acceptance and before X5+ rich-Person/social-discovery work**.
+
+That ordering prevents a subtle architectural bias: if Fibre can autonomously discover people but cannot autonomously discover ordinary World events, developmental exploration will become disproportionately social simply because social opportunities are easier for runtime code to produce.
+
+### E6a — bounded environmental occurrence production
+
+At a meaningful LivedNow boundary, Fibre may produce zero or one bounded textual occurrence from existing World/place/current-scene meaning.
+
+The trigger supplies Thread/time/current scene. It does not supply the event prose or a label such as `interesting`.
+
+Any admitted occurrence becomes an ordinary objective Encounter Story and then uses the existing attention / Experience / Journal / Memory path.
+
+Do not add periodic simulation, an event quota, a universal event bus, or repeated model sampling until something salient appears.
+
+### E6b — incidental witness discovery
+
+For any admitted Encounter Story, inspect authoritative CurrentSituations for genuinely compatible co-presence.
+
+Derived candidates are not invitees, speakers or participants. Each independently receives the existing attention appraisal:
+
+```text
+co-present candidate
+  -> noticed | not_noticed
+  -> if noticed: Thread Experience
+       -> optional Journal
+       -> selective Memory
+```
+
+The caller does not choose witness IDs.
+
+### Acceptance
+
+One environmental organism proof must create an Encounter Story when the caller supplied only Thread/time and World already supplied the scene.
+
+One witness organism proof must let a genuinely co-present C become a candidate witness of A/B's story without C being named by the caller.
+
+Zero occurrence and zero noticed witness remain valid outcomes. Acceptance proves autonomous production/discovery, not encounter frequency.
+
+---
+
 ## Slice E5 — Natural lived encounter acceptance — CURRENT
 
 E5 remains the roadmap label, but its forcing model has changed.
