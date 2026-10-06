@@ -438,16 +438,18 @@ npm run developmental-exploration:x3:staging
 
 It:
 
-1. inspects a bounded cohort of at most eight real staging Threads;
+1. cheaply inspects up to 50 real staging Threads through the existing private observatory, stopping as soon as three eligible candidates are found;
 2. reads existing enacted life without waking/replanning Threads merely for the diagnostic;
-3. uses the real previous/current enacted situations;
-4. admits only Threads whose situations already satisfy the existing exploration-grounding rule;
-5. requires at least two authoritative planning opportunities;
-6. constructs one baseline and one exploration planning call using the same Thread, horizon, places, history and commitments;
-7. uses the exact reasoning integration selected for staging World `livedNow`;
-8. persists neither counterfactual plan;
-9. performs no resampling if the two plans happen to be the same;
-10. writes paired plan evidence under `.fibre/developmental-exploration/x3/<run>/evidence.json`.
+3. reports compact skip-reason counts before spending any model calls;
+4. uses the real previous/current enacted situations;
+5. admits only Threads whose situations already satisfy the existing exploration-grounding rule;
+6. requires at least two authoritative planning opportunities;
+7. constructs one baseline and one exploration planning call using the same Thread, horizon, places, history and commitments;
+8. uses the exact reasoning integration selected for staging World `livedNow`;
+9. persists neither counterfactual plan;
+10. performs no resampling if the two plans happen to be the same;
+11. makes at most six model calls total: two calls for each of at most three eligible Threads;
+12. writes paired plan evidence under `.fibre/developmental-exploration/x3/<run>/evidence.json`.
 
 The diagnostic requires the current private World observatory contract (`v0.7`) and records the deployed World Git SHA as evidence. Tool-only diagnostic changes therefore do not force an unrelated World redeploy.
 
