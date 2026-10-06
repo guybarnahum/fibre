@@ -79,7 +79,7 @@ Do not implement X5 merely to make the current N6 demo easier. N6 public encount
 
 ---
 
-# X0 — causal gap baseline
+# X0 — causal gap baseline — ACCEPTED
 
 ## Claim
 
@@ -109,6 +109,19 @@ A reviewer can point to the exact current source boundary and answer:
 - where it is currently consumed;
 - why Flight Planning does not yet receive it;
 - why adding a social-acceptance bias would solve the wrong problem.
+
+## Accepted evidence
+
+See [X0 developmental exploration causal-gap baseline](developmental-exploration-x0-baseline.md).
+
+The baseline confirms:
+
+- sustained enacted sameness already creates a grounded exploration RegulationFrame;
+- that frame is currently consumed by natural social salience;
+- generic interoception can already project an exploration drive;
+- ordinary LivedNow regulation does not currently merge this sameness-derived exploration frame into semantic interpretation;
+- `lived_planning` receives neither the frame nor its projected interoception;
+- retained semantic/memory meaning can already influence planning, so X1 should add only the missing current grounded interoceptive edge.
 
 ## Stop condition
 
