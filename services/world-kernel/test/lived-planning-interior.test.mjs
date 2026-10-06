@@ -500,7 +500,7 @@ test("X1 grounded exploration reaches the existing planning mind without becomin
                 purpose:exploring
                   ? "I want some variety and a chance to run into ideas outside this morning's groove."
                   : "I want to keep following the work already in front of me.",
-                travelFromPrevious:exploring ? "Walk to the library." : "",
+                travelFromPrevious:"",
               }],
             },
             evidenceRefs:[],
