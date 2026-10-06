@@ -395,7 +395,7 @@ For the accepted case prove:
 - no visitor-work commitment or compensation was required;
 - no session object was created.
 
-## N6.4 — consequence, not session state — CURRENT
+## N6.4 — consequence, not session state — ACCEPTED
 
 **Capability:** what happens may matter after the public interaction ends.
 
@@ -421,7 +421,7 @@ Public retry identity is deliberately narrow:
 
 **Acceptance:** retry cannot duplicate the Encounter Story or private consequence; later cognition sees only admitted retained consequence through normal authorities.
 
-## N6.5 — return later
+## N6.5 — return later — ACCEPTED
 
 **Capability:** the strongest public continuity proof: the same person is living later.
 
@@ -443,21 +443,87 @@ The later visit does not resume the previous encounter. It asks for the person's
 - the encounter transcript is not a session state source;
 - any remembered consequence appears only if ordinary memory authority retained it.
 
-## N6.6 — live public acceptance
+## N6.6 — live public acceptance — CURRENT
 
-Run one real staging path through the actual Viewer, public API, World and Presentation.
+Close N6 in capability order, not UI order.
+
+### N6.6a — direct World CLI proof
+
+First demonstrate the encounter primitive from Fibre's own operator CLI with no public Presentation or Viewer dependency.
+
+```text
+operator selects one existing Thread
+  -> World reconciles actual LivedNow
+  -> CLI prints the actual current scene
+  -> visitor utterance enters /internal/public-visitor-encounter
+  -> Thread accept | decline | defer
+  -> accepted turn becomes ordinary Encounter Story + Thread Experience
+  -> later accepted turn cites prior admitted Encounter Story only
+  -> decline/defer or scene_changed ends the CLI interaction
+```
+
+The command is:
+
+```bash
+npm run inside-fibre -- meet --thread THREAD_ID
+```
+
+The CLI is intentionally not a second meeting engine. It calls the same World authorities used by clients, keeps no durable transcript/session state, does not schedule visitor work, and does not use the public Presentation API.
+
+**CLI acceptance evidence:**
+
+1. current scene exists before the first utterance;
+2. the visitor does not author place/activity;
+3. the Thread independently accepts, declines or defers;
+4. accepted response is grounded in actual current life;
+5. accepted continuation advances by returned `situationId` and prior admitted `encounterStoryId`;
+6. a moved scene terminates the entered interaction rather than freezing old life;
+7. no work commitment, compensation or conversation session is created.
+
+A real decline/defer is valid Thread-agency evidence. To close N6.6a, also demonstrate at least one naturally accepted turn without altering the Thread's plan or retrying until it accepts.
+
+### N6.6b — public endpoint proof
+
+After the CLI proof, demonstrate the same capability through the public client-neutral contract:
+
+```text
+GET  /api/threads/:threadId/present
+POST /api/threads/:threadId/encounter
+```
 
 Required evidence:
 
-1. a selected Thread has a bounded current public scene before the visitor speaks;
-2. the visitor approaches that ordinary scene without scheduling or rearranging the Thread's life;
-3. the Thread independently accepts, declines or defers from current life context;
-4. for an accepted case, one objective Encounter Story and Thread Experience are admitted in that displayed situation;
-5. the visitor leaves;
-6. a later visit reconciles and displays a different current situation for the same Thread;
-7. the old encounter is not resumed as a chat session;
-8. retry is idempotent;
-9. Fibre `npm run slice:validate` passes, while Viewer validation remains owned by the Viewer repository.
+- public `present` matches the World-owned current situation boundary;
+- first Send supplies only `requestId + situationId + utterance`;
+- later accepted Send may additionally cite only the prior admitted `encounterStoryId`;
+- stale scene returns `409 encounter_scene_changed`;
+- completed retry with the same request ID replays one result exactly once;
+- private plan, memories, stance reason and cognition provenance do not cross the public response.
+
+This endpoint is the reusable client contract. insidefibre.com is one renderer; future CLI, mobile, voice or other clients should use the same public boundary rather than receive client-specific social authority.
+
+### N6.6c — insidefibre.com proof
+
+Only after CLI and endpoint acceptance, demonstrate the actual Viewer:
+
+1. open one Thread and observe current life before interaction;
+2. click **Meet this moment** with no mutation;
+3. Send one real visitor utterance through the public endpoint;
+4. observe accept/decline/defer;
+5. for an accepted case, continue at least one turn without session state;
+6. leave;
+7. revisit after life advances and observe later current life;
+8. verify the old encounter is not resumed.
+
+N6 closes only after all three layers show the same authority chain:
+
+```text
+World capability
+  -> client-neutral public endpoint
+  -> insidefibre.com
+```
+
+The UI is evidence that a client can use Fibre; it is not the proof that Fibre possesses the capability.
 
 ## Natural Thread -> Thread life after N6
 
