@@ -251,7 +251,7 @@ This temporary no-public-interaction state is intentional. N6.3d will restore `P
 
 Accepted locally on 2026-10-05 after Guy ran the focused N6.3a suite and full `npm run slice:validate` successfully. The Viewer test/build/Cloudflare validation path had already passed for the scene-first UI before this cleanup; N6.3a leaves public interaction intentionally disabled until N6.3b/c are implemented.
 
-### N6.3b — validate that the displayed enacted situation still applies — CURRENT
+### N6.3b — validate that the displayed enacted situation still applies — ACCEPTED
 
 The visitor supplies the `situationId` they saw.
 
@@ -280,9 +280,11 @@ A later World observation may explicitly preserve the same scene even after the 
 
 If enacted life has materially changed, N6.3d returns `409 encounter_scene_changed`. No retry loop and no frozen old scene; Viewer refreshes `GET /present`.
 
-### N6.3c — reuse Interior Cognition for visitor participation
+### N6.3c — reuse Interior Cognition for visitor participation — CURRENT
 
 A visitor's first utterance is the concrete social request.
+
+Reuse the existing `social-response` Interior Cognition adapter rather than creating a public-meeting decision model. The visitor is a Person request, not a fake Thread. The displayed/revalidated World-owned `CurrentSituation` is supplied directly as observable context.
 
 Reuse the existing social-response cognition semantics:
 
