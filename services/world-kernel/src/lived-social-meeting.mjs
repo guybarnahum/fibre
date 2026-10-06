@@ -439,7 +439,8 @@ export function createSocialMeetingService({
 
       for (const pending of accepted) {
         const witnesses = discovered.filter((context) =>
-          context.thread.threadId !== pending.counterparty.thread.threadId);
+          context.thread.threadId !== pending.counterparty.thread.threadId
+          && compatible(pending.counterparty, context, livedNowStore));
         attemptByActor.set(
           pending.counterparty.thread.threadId,
           await formAcceptedEncounter({
