@@ -4,6 +4,8 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
+
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REQUEST_TIMEOUT_MS = 120_000;
 const MAX_THREADS = 18;
@@ -24,6 +26,15 @@ function fingerprint(value) {
 
 function jsonFile(path) {
   return JSON.parse(readFileSync(path, "utf8"));
+}
+
+function parseArgs(argv){
+  let environment=null;
+  for(let index=0;index<argv.length;index+=1){
+    if(argv[index]==="--env")environment=argv[++index]??null;
+    else throw new TypeError(`unsupported argument ${argv[index]}`);
+  }
+  return Object.freeze({environment:normalizeCloudflareEnvironment(environment)});
 }
 
 function sourceGitSha() {
@@ -48,7 +59,7 @@ function remoteBase(name, value) {
     || ["localhost", "127.0.0.1", "::1"].includes(url.hostname)
     || url.hostname.endsWith(".local")
   ) {
-    throw new Error(name + " must be a remote HTTPS staging endpoint");
+    throw new Error(name + " must be a remote HTTPS endpoint");
   }
   return url.toString().replace(/\/$/u, "");
 }
@@ -281,37 +292,39 @@ function summary(rows, skipped) {
   });
 }
 
-function writeReport(runId, report) {
-  const path = resolve(REPO_ROOT, ".fibre", "interior-cognition", "baseline", runId, "report.json");
+function writeReport(environment, runId, report) {
+  const path = resolve(REPO_ROOT, ".fibre", "interior-cognition", "baseline", environment, runId, "report.json");
   mkdirSync(dirname(path), { recursive:true, mode:0o700 });
   writeFileSync(path, JSON.stringify(report, null, 2) + "\n", { mode:0o600 });
   return path;
 }
 
-export async function runInteriorCognitionStagingBaseline({
+export async function runInteriorCognitionBaseline({
+  targetEnvironment,
   environment = process.env,
   emit = (event) => process.stdout.write(JSON.stringify(event) + "\n"),
 } = {}) {
   const privateToken = required("FIBRE_PRIVATE_TOKEN", environment.FIBRE_PRIVATE_TOKEN);
   const sourceSha = sourceGitSha();
-  const deployment = jsonFile(resolve(REPO_ROOT, ".fibre", "cloudflare", "staging", "deployment.json"));
+  const target=normalizeCloudflareEnvironment(targetEnvironment);
+  const deployment = jsonFile(resolve(REPO_ROOT, ".fibre", "cloudflare", target, "deployment.json"));
   if (
-    deployment.environment !== "staging"
+    deployment.environment !== target
     || deployment.sourceGitSha !== sourceSha
     || deployment.sourceTreeClean !== true
   ) {
-    throw new Error("interior baseline requires staging deployment evidence for the exact clean checkout SHA");
+    throw new Error("interior baseline requires deployment evidence for the exact clean checkout SHA");
   }
 
   const worldBaseUrl = remoteBase(
-    "staging World",
+    `${target} World`,
     deploymentByService(deployment, "world-kernel").baseUrl,
   );
   const presentationBaseUrl = remoteBase(
-    "staging Thread Presentation",
+    `${target} Thread Presentation`,
     deploymentByService(deployment, "thread-presentation").baseUrl,
   );
-  const viewerOrigin = remoteBase("staging Viewer", deployment.externalViewerOrigin);
+  const viewerOrigin = remoteBase(`${target} Viewer`, deployment.externalViewerOrigin);
   const runId = "interior-baseline-" + Date.now().toString(36);
 
   emit({ event:"interior-baseline-start", runId, sourceGitSha:sourceSha });
@@ -359,12 +372,12 @@ export async function runInteriorCognitionStagingBaseline({
     }
   }
 
-  if (rows.length === 0) throw new Error("interior baseline found no inspectable staging Threads");
+  if (rows.length === 0) throw new Error("interior baseline found no inspectable Threads");
 
   const cohortSummary = summary(rows, skipped);
   const report = Object.freeze({
-    contract:"fibre-interior-cognition-staging-baseline-v0.1",
-    environment:"staging",
+    contract:"fibre-interior-cognition-baseline-v0.1",
+    environment:target,
     runId,
     sourceGitSha:sourceSha,
     observedAt:new Date().toISOString(),
@@ -373,7 +386,7 @@ export async function runInteriorCognitionStagingBaseline({
     threads:Object.freeze(rows),
     skipped:Object.freeze(skipped),
   });
-  const reportPath = writeReport(runId, report);
+  const reportPath = writeReport(target, runId, report);
   emit({
     event:"interior-baseline-complete",
     runId,
@@ -385,12 +398,16 @@ export async function runInteriorCognitionStagingBaseline({
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  runInteriorCognitionStagingBaseline().catch((error) => {
-    process.stderr.write(JSON.stringify({
-      event:"interior-baseline-failed",
-      errorName:error?.constructor?.name ?? "Error",
-      message:String(error?.message ?? error).slice(0, 1200),
-    }) + "\n");
-    process.exitCode = 1;
-  });
+  let args;
+  try{args=parseArgs(process.argv.slice(2));}
+  catch(error){
+    process.stderr.write(JSON.stringify({event:"interior-baseline-failed",errorName:error?.constructor?.name??"Error",message:String(error?.message??error).slice(0,1200)})+"\n");
+    process.exitCode=1;
+  }
+  if(args!==undefined){
+    runInteriorCognitionBaseline({targetEnvironment:args.environment}).catch((error)=>{
+      process.stderr.write(JSON.stringify({event:"interior-baseline-failed",errorName:error?.constructor?.name??"Error",message:String(error?.message??error).slice(0,1200)})+"\n");
+      process.exitCode=1;
+    });
+  }
 }

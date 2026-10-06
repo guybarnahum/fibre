@@ -5,6 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 import { resolveGeoNamesPlace } from "#integrations/geography/geonames.mjs";
+import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
 import { genesisSexForThread } from "#services/birth-center/src/genesis-sex.mjs";
 import {
   GENESIS_DEVELOPMENT_REQUEST_VERSION,
@@ -34,13 +35,14 @@ function fixture(path) {
   return JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"));
 }
 
-function deployment(repoRoot) {
-  const path = resolve(repoRoot, ".fibre", "cloudflare", "staging", "deployment.json");
+function deployment(repoRoot, environment) {
+  const target=normalizeCloudflareEnvironment(environment);
+  const path = resolve(repoRoot, ".fibre", "cloudflare", target, "deployment.json");
   const record = JSON.parse(readFileSync(path, "utf8"));
-  if (record?.environment !== "staging") throw new Error("deployment evidence is not staging");
+  if (record?.environment !== target) throw new Error("deployment evidence environment mismatch");
   const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).trim();
   if (record.sourceGitSha !== head) {
-    throw new Error(`staging deployment ${record.sourceGitSha} does not match current checkout ${head}`);
+    throw new Error(`${target} deployment ${record.sourceGitSha} does not match current checkout ${head}`);
   }
   return record;
 }
@@ -218,11 +220,11 @@ function assertGenesisReference({ body, plan, world, presentation }) {
 
 function usage() {
   return [
-    "Genesis staging birth",
+    "Genesis remote birth",
     "",
-    "  npm run genesis:birth:staging -- --sex=female --place=Israel/Jerusalem --heritage=\"Yemeni Jewish\"",
-    "  npm run genesis:birth:staging -- --sex=male --place=Germany/Berlin --heritage=Turkish",
-    "  npm run genesis:birth:staging -- --new-world --sex=female --place=Brazil/Recife",
+    "  npm run genesis:birth -- --env staging --sex=female --place=Israel/Jerusalem --heritage=\"Yemeni Jewish\"",
+    "  npm run genesis:birth -- --env staging --sex=male --place=Germany/Berlin --heritage=Turkish",
+    "  npm run genesis:birth -- --env staging --new-world --sex=female --place=Brazil/Recife",
     "",
     "Keys: --sex=female|male, --place=Country/City, --heritage=Family Heritage.",
     "Legacy shorthand --female/--male and --Country/City remains accepted.",
@@ -235,8 +237,19 @@ function usage() {
   ].join("\n");
 }
 
+function parseRemoteArgs(argv){
+  let environment=null;
+  const genesisArgs=[];
+  for(let index=0;index<argv.length;index+=1){
+    if(argv[index]==="--env")environment=argv[++index]??null;
+    else genesisArgs.push(argv[index]);
+  }
+  return Object.freeze({environment:normalizeCloudflareEnvironment(environment),options:parseGenesisArgs(genesisArgs)});
+}
 async function main() {
-  const options = parseGenesisArgs(process.argv.slice(2));
+  const remote=parseRemoteArgs(process.argv.slice(2));
+  const targetEnvironment=remote.environment;
+  const options=remote.options;
   if (options.help) {
     process.stdout.write(`${usage()}\n`);
     return;
@@ -249,12 +262,12 @@ async function main() {
     throw new TypeError("FIBRE_GENESIS_E2E_SLOT must be a positive integer");
   }
 
-  const deployed = deployment(REPO_ROOT);
+  const deployed = deployment(REPO_ROOT,targetEnvironment);
   const timeoutMs = Number.parseInt(process.env.FIBRE_GENESIS_E2E_CONVERGENCE_WAIT_MS ?? String(DEFAULT_TIMEOUT_MS), 10);
   const birthCenter = serviceBase(deployed, "birth-center");
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
-  const viewerOrigin = required("staging viewer origin", deployed.externalViewerOrigin);
+  const viewerOrigin = required(`${targetEnvironment} viewer origin`, deployed.externalViewerOrigin);
   const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
   const calibrationModel=await readAppearanceCalibrationModel({
     baseUrl:worldKernel,

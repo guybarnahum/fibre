@@ -2,7 +2,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { runStagingGenesisDevelopmentE2EWithActivity } from "../genesis/genesis-development-e2e-staging.mjs";
+import { runGenesisDevelopmentE2EValidation } from "../genesis/genesis-development-e2e-validation.mjs";
+import { normalizeCloudflareEnvironment } from "./cloudflare-operator.mjs";
 import { verifySliceGPublicClosure } from "./cloudflare-e2e-slice-g.mjs";
 
 const SUPPORTED_ENVIRONMENTS = Object.freeze(new Set(["staging"]));
@@ -14,7 +15,7 @@ function nonEmpty(name, value) {
 }
 
 export function normalizeCloudE2EEnvironment(value) {
-  const environment = nonEmpty("environment", value);
+  const environment = normalizeCloudflareEnvironment(nonEmpty("environment", value));
   if (!SUPPORTED_ENVIRONMENTS.has(environment)) {
     throw new TypeError(`unsupported Cloudflare E2E environment ${environment}; expected staging`);
   }
@@ -33,7 +34,7 @@ export function parseCloudE2EArgs(argv) {
 
 export function cloudE2EProgress(event) {
   switch (event?.event) {
-    case "genesis-development-staging-activity-writer-ready":
+    case "genesis-development-e2e-validation-activity-writer-ready":
       return "preflighting staging and Activity evidence";
     case "genesis-development-e2e-start":
       return "running Genesis development";
@@ -41,9 +42,9 @@ export function cloudE2EProgress(event) {
       return event.status === "published"
         ? "Genesis published; verifying idempotent replay"
         : "Genesis generated; waiting for authoritative birth publication";
-    case "genesis-development-staging-activity-inspected":
+    case "genesis-development-e2e-validation-activity-inspected":
       return "collecting Activity evidence";
-    case "genesis-development-staging-e2e-complete":
+    case "genesis-development-e2e-validation-complete":
       return "verifying Identity Card and official photo";
     case "cloudflare-e2e-slice-g-progress": {
       const elapsed = Number.isFinite(event.elapsedMs) ? `${Math.round(event.elapsedMs / 1000)}s` : "";
@@ -112,21 +113,22 @@ function retainSliceGClosure(result, verified) {
 
 export async function runCloudflareE2E({
   environment,
-  runStaging = runStagingGenesisDevelopmentE2EWithActivity,
+  runValidation = runGenesisDevelopmentE2EValidation,
   verifySliceG = verifySliceGPublicClosure,
   fetchImpl = globalThis.fetch,
   emit = (event) => process.stdout.write(`${JSON.stringify(event)}\n`),
 } = {}) {
   const env = normalizeCloudE2EEnvironment(environment);
-  if (typeof runStaging !== "function") throw new TypeError("runStaging must be a function");
+  if (typeof runValidation !== "function") throw new TypeError("runValidation must be a function");
   if (typeof verifySliceG !== "function") throw new TypeError("verifySliceG must be a function");
   if (typeof emit !== "function") throw new TypeError("emit must be a function");
   const emitWithProgress = (event) => {
     const progress = cloudE2EProgress(event);
     emit(progress === null ? event : { ...event, progress });
   };
-  emitWithProgress({ event: "cloudflare-e2e-preflight", progress: "preflighting deployed staging services" });
-  const result = await runStaging({
+  emitWithProgress({ event: "cloudflare-e2e-preflight", progress: `preflighting deployed ${env} services` });
+  const result = await runValidation({
+    targetEnvironment:env,
     fetchImpl: createCloudE2EFetch({ fetchImpl }),
     emit: emitWithProgress,
   });

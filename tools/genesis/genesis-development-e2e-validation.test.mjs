@@ -6,10 +6,10 @@ import { resolve } from "node:path";
 
 import {
   E2E_ACTIVITY_REFERENCE_VERSION,
-  runStagingGenesisDevelopmentE2EWithActivity,
+  runGenesisDevelopmentE2EValidation,
   terminalRuntimeFailure,
   terminalWorldFailure,
-} from "./genesis-development-e2e-staging.mjs";
+} from "./genesis-development-e2e-validation.mjs";
 
 const REQUEST_ID = "genesis-staging-wrapper-test";
 const GENESIS_ID = "gen_wrapper_test";
@@ -124,7 +124,8 @@ test("staging wrapper fails fast when active Thread has terminal World reconcili
   };
 
   await assert.rejects(
-    runStagingGenesisDevelopmentE2EWithActivity({
+    runGenesisDevelopmentE2EValidation({
+      targetEnvironment:"staging",
       repoRoot: directory,
       environment: {},
       activityReader: {},
@@ -152,7 +153,8 @@ test("staging wrapper fails fast on terminal Presentation activity for the activ
   const directory = mkdtempSync(resolve(tmpdir(), "fibre-staging-presentation-fast-fail-"));
   let underlyingSleeps = 0;
   await assert.rejects(
-    runStagingGenesisDevelopmentE2EWithActivity({
+    runGenesisDevelopmentE2EValidation({
+      targetEnvironment:"staging",
       repoRoot: directory,
       environment: {},
       activityReader: {},
@@ -214,7 +216,8 @@ test("staging wrapper retains request/genesis/thread Activity references without
     };
   };
 
-  const result = await runStagingGenesisDevelopmentE2EWithActivity({
+  const result = await runGenesisDevelopmentE2EValidation({
+    targetEnvironment:"staging",
     repoRoot: directory,
     environment: {},
     runCore: async () => core,
@@ -244,7 +247,8 @@ test("staging wrapper retains request/genesis/thread Activity references without
 test("Activity inspection failure is retained diagnostically and cannot suppress successful semantic E2E", async () => {
   const directory = mkdtempSync(resolve(tmpdir(), "fibre-staging-activity-fail-open-"));
   const core = coreResult(directory);
-  const result = await runStagingGenesisDevelopmentE2EWithActivity({
+  const result = await runGenesisDevelopmentE2EValidation({
+    targetEnvironment:"staging",
     repoRoot: directory,
     environment: {},
     runCore: async () => core,

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
 import { runGenesisDevelopmentE2E } from "./genesis-development-e2e.mjs";
 import {
   createWranglerActivityReader,
@@ -18,6 +19,20 @@ const TERMINAL_RUNTIME_SERVICES = new Set([
   "thread-presentation",
   "asset-generator",
 ]);
+
+function validationEnvironment(value){
+  const environment=normalizeCloudflareEnvironment(value);
+  if(environment==="production")throw new TypeError("Genesis development E2E validation creates test World state and is not permitted against production");
+  return environment;
+}
+function parseArgs(argv){
+  let environment=null;
+  for(let index=0;index<argv.length;index+=1){
+    if(argv[index]==="--env")environment=argv[++index]??null;
+    else throw new TypeError(`unsupported argument ${argv[index]}`);
+  }
+  return Object.freeze({environment:validationEnvironment(environment)});
+}
 
 function safeError(error) {
   return Object.freeze({
@@ -87,6 +102,7 @@ function failFastSleep({
   repoRoot,
   emit,
   activeIdentity,
+  targetEnvironment,
   nowMs = Date.now,
   probeIntervalMs = TERMINAL_FAILURE_PROBE_INTERVAL_MS,
 }) {
@@ -102,7 +118,7 @@ function failFastSleep({
     try {
       const result = await inspect({
         repoRoot,
-        environment: "staging",
+        environment: targetEnvironment,
         selector: { kind: "threadId", value: threadId },
         reader,
       });
@@ -119,7 +135,7 @@ function failFastSleep({
       if (!activityUnavailableReported) {
         activityUnavailableReported = true;
         emit({
-          event: "genesis-development-staging-terminal-failure-probe-unavailable",
+          event: "genesis-development-e2e-validation-terminal-failure-probe-unavailable",
           errorName: error?.constructor?.name ?? "Error",
           message: String(error?.message ?? error).slice(0, 512),
         });
@@ -142,11 +158,12 @@ export async function attachActivityLogEvidence({
   activityReader,
   inspect = inspectRuntimeActivity,
   emit = () => {},
+  targetEnvironment,
 } = {}) {
   const requestId = e2eResult?.evidence?.request?.requestId;
   const genesisId = e2eResult?.evidence?.request?.developmentPlanGenesisId;
   const threadId = e2eResult?.evidence?.request?.developmentPlanThreadId;
-  if (!requestId || !genesisId || !threadId) throw new TypeError("staging E2E evidence lacks request/genesis/thread identity");
+  if (!requestId || !genesisId || !threadId) throw new TypeError("Genesis E2E evidence lacks request/genesis/thread identity");
 
   const selectors = Object.freeze({
     request: Object.freeze({ kind: "requestId", value: requestId }),
@@ -156,9 +173,9 @@ export async function attachActivityLogEvidence({
 
   let activityLog;
   try {
-    const request = await inspect({ repoRoot, environment: "staging", selector: selectors.request, reader: activityReader });
-    const genesis = await inspect({ repoRoot, environment: "staging", selector: selectors.genesis, reader: activityReader });
-    const thread = await inspect({ repoRoot, environment: "staging", selector: selectors.thread, reader: activityReader });
+    const request = await inspect({ repoRoot, environment: targetEnvironment, selector: selectors.request, reader: activityReader });
+    const genesis = await inspect({ repoRoot, environment: targetEnvironment, selector: selectors.genesis, reader: activityReader });
+    const thread = await inspect({ repoRoot, environment: targetEnvironment, selector: selectors.thread, reader: activityReader });
     activityLog = Object.freeze({
       contract: E2E_ACTIVITY_REFERENCE_VERSION,
       available: true,
@@ -168,7 +185,7 @@ export async function attachActivityLogEvidence({
       failuresAndRetries: failures(request.records),
     });
     emit({
-      event: "genesis-development-staging-activity-inspected",
+      event: "genesis-development-e2e-validation-activity-inspected",
       requestId,
       genesisId,
       threadId,
@@ -184,7 +201,7 @@ export async function attachActivityLogEvidence({
       error: safeError(error),
     });
     emit({
-      event: "genesis-development-staging-activity-inspection-failed",
+      event: "genesis-development-e2e-validation-activity-inspection-failed",
       requestId,
       errorName: activityLog.error.name,
       message: activityLog.error.message,
@@ -200,7 +217,8 @@ export async function attachActivityLogEvidence({
   });
 }
 
-export async function runStagingGenesisDevelopmentE2EWithActivity({
+export async function runGenesisDevelopmentE2EValidation({
+  targetEnvironment,
   environment = process.env,
   fetchImpl = globalThis.fetch,
   sleep,
@@ -211,6 +229,7 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
   activityReader = null,
   inspect = inspectRuntimeActivity,
 } = {}) {
+  const target=validationEnvironment(targetEnvironment);
   const reader = activityReader ?? createWranglerActivityReader({ cwd: repoRoot });
   const activeIdentity = { requestId: null, genesisId: null, threadId: null };
   const emitWithIdentity = (event) => {
@@ -226,10 +245,11 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
     repoRoot,
     emit: emitWithIdentity,
     activeIdentity,
+    targetEnvironment:target,
   });
 
   const core = await runCore({
-    mode: "staging",
+    mode: target,
     environment,
     fetchImpl,
     sleep: wrappedSleep,
@@ -243,6 +263,7 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
     activityReader: reader,
     inspect,
     emit: emitWithIdentity,
+    targetEnvironment:target,
   });
   return Object.freeze({
     ...attached,
@@ -250,14 +271,15 @@ export async function runStagingGenesisDevelopmentE2EWithActivity({
   });
 }
 
-async function main() {
-  await runStagingGenesisDevelopmentE2EWithActivity();
+async function main(argv) {
+  const args=parseArgs(argv);
+  await runGenesisDevelopmentE2EValidation({targetEnvironment:args.environment});
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  main().catch((error) => {
+  main(process.argv.slice(2)).catch((error) => {
     process.stderr.write(`${JSON.stringify({
-      event: "genesis-development-staging-e2e-failed",
+      event: "genesis-development-e2e-validation-failed",
       errorName: error?.constructor?.name ?? "Error",
       message: error?.message ?? String(error),
     })}\n`);

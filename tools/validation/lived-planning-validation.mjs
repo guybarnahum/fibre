@@ -4,6 +4,8 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
+
 import { selectReasoningIntegration } from "../../infra/deployments/integration-selection.mjs";
 import {
   parseDeploymentManifest,
@@ -36,12 +38,25 @@ function jsonFile(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+function parseValidationArgs(argv) {
+  let environment=null;
+  let exploration=false;
+  for(let index=0;index<argv.length;index+=1){
+    if(argv[index]==="--env")environment=argv[++index]??null;
+    else if(argv[index]==="--exploration")exploration=true;
+    else throw new TypeError(`unsupported argument ${argv[index]}`);
+  }
+  const targetEnvironment=normalizeCloudflareEnvironment(environment);
+  if(targetEnvironment==="production")throw new TypeError("lived-planning validation is not permitted against production");
+  return Object.freeze({targetEnvironment,exploration});
+}
+
 function sourceGitSha() {
   const value = execFileSync("git", ["rev-parse", "HEAD"], {
     cwd:REPO_ROOT,
     encoding:"utf8",
   }).trim().toLowerCase();
-  if (!GIT_SHA.test(value)) throw new Error("lived-planning staging proof requires an exact Git SHA");
+  if (!GIT_SHA.test(value)) throw new Error("lived-planning validation requires an exact Git SHA");
   return value;
 }
 
@@ -368,7 +383,7 @@ function planFingerprint(plan){
   return sha256(JSON.stringify(planSummary(plan)));
 }
 
-function stagingReasoningAdapter(environment){
+function validationReasoningAdapter(environment){
   const manifest=parseDeploymentManifest(
     readFileSync(resolve(REPO_ROOT,"infra/deployments/environments/cloudflare.yaml"),"utf8"),
   );
@@ -376,12 +391,13 @@ function stagingReasoningAdapter(environment){
   return selectReasoningIntegration(world.integrations.livedNow,{ environment });
 }
 
-function writeX3Evidence(runId,evidence){
+function writeX3Evidence(environment,runId,evidence){
   const path=resolve(
     REPO_ROOT,
     ".fibre",
     "developmental-exploration",
     "x3",
+    environment,
     runId,
     "evidence.json",
   );
@@ -390,36 +406,39 @@ function writeX3Evidence(runId,evidence){
   return path;
 }
 
-function writeEvidence(runId, evidence) {
-  const path = resolve(REPO_ROOT, ".fibre", "interior-cognition", "lived-planning", runId, "evidence.json");
+function writeEvidence(environment, runId, evidence) {
+  const path = resolve(REPO_ROOT, ".fibre", "interior-cognition", "lived-planning", environment, runId, "evidence.json");
   mkdirSync(dirname(path), { recursive:true, mode:0o700 });
   writeFileSync(path, `${JSON.stringify(evidence, null, 2)}\n`, { mode:0o600 });
   return path;
 }
 
-export async function runLivedPlanningStagingProof({
+export async function runLivedPlanningValidation({
+  targetEnvironment,
   environment = process.env,
   emit = (event) => process.stdout.write(`${JSON.stringify(event)}\n`),
 } = {}) {
   const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", environment.FIBRE_PRIVATE_TOKEN);
   const sourceSha = sourceGitSha();
-  const deploymentPath = resolve(REPO_ROOT, ".fibre", "cloudflare", "staging", "deployment.json");
+  const target=normalizeCloudflareEnvironment(targetEnvironment);
+  if(target==="production")throw new TypeError("lived-planning validation is not permitted against production");
+  const deploymentPath = resolve(REPO_ROOT, ".fibre", "cloudflare", target, "deployment.json");
   const deployment = jsonFile(deploymentPath);
   if (
-    deployment.environment !== "staging"
+    deployment.environment !== target
     || deployment.sourceGitSha !== sourceSha
     || deployment.sourceTreeClean !== true
   ) {
-    throw new Error("lived-planning proof requires staging deployment evidence for the exact clean checkout SHA");
+    throw new Error("lived-planning validation requires deployment evidence for the exact clean checkout SHA");
   }
 
-  const worldBaseUrl = remoteBase("staging World", deploymentByService(deployment, "world-kernel").baseUrl);
-  const presentationBaseUrl = remoteBase("staging Thread Presentation", deploymentByService(deployment, "thread-presentation").baseUrl);
-  const viewerOrigin = remoteBase("staging Viewer", deployment.externalViewerOrigin);
+  const worldBaseUrl = remoteBase(`${target} World`, deploymentByService(deployment, "world-kernel").baseUrl);
+  const presentationBaseUrl = remoteBase(`${target} Thread Presentation`, deploymentByService(deployment, "thread-presentation").baseUrl);
+  const viewerOrigin = remoteBase(`${target} Viewer`, deployment.externalViewerOrigin);
   const runId = `lived-planning-${Date.now().toString(36)}`;
 
   emit({
-    event:"lived-planning-staging-start",
+    event:"lived-planning-validation-start",
     runId,
     sourceGitSha:sourceSha,
     deploymentRecordedAt:deployment.recordedAt ?? null,
@@ -474,8 +493,8 @@ export async function runLivedPlanningStagingProof({
   const distinctCurrentMoments = new Set(historyAttributed.map((row) => row.currentMomentFingerprint)).size;
 
   const evidence = Object.freeze({
-    contract:"fibre-lived-planning-staging-proof-v0.1",
-    environment:"staging",
+    contract:"fibre-lived-planning-validation-v0.1",
+    environment:target,
     runId,
     sourceGitSha:sourceSha,
     deploymentRecordedAt:deployment.recordedAt ?? null,
@@ -496,10 +515,10 @@ export async function runLivedPlanningStagingProof({
     threads:Object.freeze(rows),
     skipped:Object.freeze(skipped),
   });
-  const evidencePath = writeEvidence(runId, evidence);
+  const evidencePath = writeEvidence(target, runId, evidence);
 
   emit({
-    event:"lived-planning-staging-summary",
+    event:"lived-planning-validation-summary",
     inspectedThreadCount:rows.length,
     personalPlanThreadCount:personalRows.length,
     historyEvidenceAttributedCount:historyAttributed.length,
@@ -524,7 +543,7 @@ export async function runLivedPlanningStagingProof({
   }
 
   emit({
-    event:"lived-planning-staging-complete",
+    event:"lived-planning-validation-complete",
     runId,
     sourceGitSha:sourceSha,
     inspectedThreadCount:rows.length,
@@ -536,29 +555,32 @@ export async function runLivedPlanningStagingProof({
   return Object.freeze({ evidence, evidencePath });
 }
 
-export async function runDevelopmentalExplorationX3Staging({
+export async function runDevelopmentalExplorationX3Validation({
+  targetEnvironment,
   environment=process.env,
   emit=(event)=>process.stdout.write(`${JSON.stringify(event)}\n`),
 }={}){
   const privateToken=nonEmpty("FIBRE_PRIVATE_TOKEN",environment.FIBRE_PRIVATE_TOKEN);
   const sourceSha=sourceGitSha();
   requireCleanCheckout();
-  const deploymentPath=resolve(REPO_ROOT,".fibre","cloudflare","staging","deployment.json");
+  const target=normalizeCloudflareEnvironment(targetEnvironment);
+  if(target==="production")throw new TypeError("developmental exploration validation is not permitted against production");
+  const deploymentPath=resolve(REPO_ROOT,".fibre","cloudflare",target,"deployment.json");
   const deployment=jsonFile(deploymentPath);
-  if(deployment.environment!=="staging"){
-    throw new Error("X3 requires staging deployment evidence for endpoint discovery");
+  if(deployment.environment!==target){
+    throw new Error("X3 deployment evidence environment mismatch");
   }
 
   const worldBaseUrl=remoteBase(
-    "staging World",
+    `${target} World`,
     deploymentByService(deployment,"world-kernel").baseUrl,
   );
   const presentationBaseUrl=remoteBase(
-    "staging Thread Presentation",
+    `${target} Thread Presentation`,
     deploymentByService(deployment,"thread-presentation").baseUrl,
   );
-  const viewerOrigin=remoteBase("staging Viewer",deployment.externalViewerOrigin);
-  const modelAdapter=stagingReasoningAdapter(environment);
+  const viewerOrigin=remoteBase(`${target} Viewer`,deployment.externalViewerOrigin);
+  const modelAdapter=validationReasoningAdapter(environment);
   const runId=`developmental-x3-${Date.now().toString(36)}`;
 
   emit({
@@ -899,7 +921,7 @@ export async function runDevelopmentalExplorationX3Staging({
   }
   const evidence=Object.freeze({
     contract:"fibre-developmental-exploration-x3-live-v0.1",
-    environment:"staging",
+    environment:target,
     runId,
     sourceGitSha:sourceSha,
     completedAt:new Date().toISOString(),
@@ -918,7 +940,7 @@ export async function runDevelopmentalExplorationX3Staging({
     threads:Object.freeze(rows),
     skipped:Object.freeze(skipped),
   });
-  const evidencePath=writeX3Evidence(runId,evidence);
+  const evidencePath=writeX3Evidence(target,runId,evidence);
 
   emit({
     event:"developmental-x3-summary",
@@ -928,7 +950,7 @@ export async function runDevelopmentalExplorationX3Staging({
 
   if(rows.length===0){
     throw new Error(
-      `X3 found no currently eligible staging Thread with grounded exploration pressure and two authoritative opportunities; evidence: ${evidencePath}`,
+      `X3 found no currently eligible Thread with grounded exploration pressure and two authoritative opportunities; evidence: ${evidencePath}`,
     );
   }
 
@@ -943,16 +965,17 @@ export async function runDevelopmentalExplorationX3Staging({
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const developmental=process.argv.slice(2).includes("--exploration");
-  const run=developmental
-    ? runDevelopmentalExplorationX3Staging
-    : runLivedPlanningStagingProof;
-  run().catch((error) => {
-    process.stderr.write(`${JSON.stringify({
-      event:developmental?"developmental-x3-failed":"lived-planning-staging-failed",
-      errorName:error?.constructor?.name ?? "Error",
-      message:String(error?.message ?? error).slice(0,1200),
-    })}\n`);
+  let args;
+  try{args=parseValidationArgs(process.argv.slice(2));}
+  catch(error){
+    process.stderr.write(`${JSON.stringify({event:"lived-planning-validation-failed",errorName:error?.constructor?.name??"Error",message:String(error?.message??error).slice(0,1200)})}\n`);
     process.exitCode=1;
-  });
+  }
+  if(args!==undefined){
+    const run=args.exploration?runDevelopmentalExplorationX3Validation:runLivedPlanningValidation;
+    run({targetEnvironment:args.targetEnvironment}).catch((error)=>{
+      process.stderr.write(`${JSON.stringify({event:args.exploration?"developmental-x3-failed":"lived-planning-validation-failed",errorName:error?.constructor?.name??"Error",message:String(error?.message??error).slice(0,1200)})}\n`);
+      process.exitCode=1;
+    });
+  }
 }
