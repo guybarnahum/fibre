@@ -12,7 +12,7 @@ import {
 test("Cloudflare E2E accepts staging only", () => {
   assert.equal(normalizeCloudE2EEnvironment("staging"), "staging");
   assert.throws(() => normalizeCloudE2EEnvironment("production"), /unsupported Cloudflare E2E environment/);
-  assert.throws(() => normalizeCloudE2EEnvironment("local"), /unsupported Cloudflare E2E environment/);
+  assert.throws(() => normalizeCloudE2EEnvironment("local"), /unsupported Cloudflare environment local/);
 });
 
 test("Cloudflare E2E CLI requires an explicit environment", () => {
@@ -82,7 +82,8 @@ test("Cloudflare E2E dispatches to staging and carries fail-fast probe into Slic
   const result = await runCloudflareE2E({
     environment: "staging",
     emit(event) { emitted.push(event); },
-    async runStaging({ emit }) {
+    async runValidation({ targetEnvironment, emit }) {
+      assert.equal(targetEnvironment, "staging");
       stagingCalls += 1;
       emit({ event: "genesis-development-e2e-start" });
       return Object.freeze({
