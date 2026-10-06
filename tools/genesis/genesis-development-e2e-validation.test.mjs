@@ -262,3 +262,20 @@ test("Activity inspection failure is retained diagnostically and cannot suppress
   assert.equal(result.evidence.closureAssertions.length, 13);
   assert.ok(result.evidence.closureAssertions.every((item) => item.passed === true));
 });
+
+
+test("Genesis E2E validation refuses production before creating test state", async () => {
+  let ranCore=false;
+  await assert.rejects(
+    runGenesisDevelopmentE2EValidation({
+      targetEnvironment:"production",
+      runCore:async () => {
+        ranCore=true;
+        throw new Error("production validation must not run");
+      },
+      emit:() => {},
+    }),
+    /not permitted against production/,
+  );
+  assert.equal(ranCore,false);
+});
