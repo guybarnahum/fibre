@@ -11,6 +11,7 @@ import {
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
+import { explorationInteroceptionForLivedContinuity } from "../src/lived-now-regulation.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { placeEpisodeId } from "../src/situated-life-domain.mjs";
@@ -421,6 +422,153 @@ test("Flight Planning receives actual local civil time for a non-UTC World", asy
         || "regulatorRestSensitivity" in observedDailyRhythm,
       false,
       "planning should receive a derived rhythm cue rather than raw genome baselines",
+    );
+
+    situatedLifeStore.close();
+    memoryStore.close();
+    semanticStateStore.close();
+    identityStore.close();
+    worldStore.close();
+  }));
+
+
+test("X1 grounded exploration reaches the existing planning mind without becoming World authority", async () =>
+  withDatabase(async (databasePath) => {
+    const storage = localWorldStateStorage(databasePath);
+    const worldStore = openWorldStore(storage);
+    const event = seedThread(
+      worldStore,
+      "thr_x1_exploration",
+      "Mira Vale",
+      "2026-09-20T08:00:00.000Z",
+    );
+    const thread = worldStore.getThread("thr_x1_exploration");
+    const identityStore = openIdentityStore(storage);
+    const semanticStateStore = openSemanticStateStore(storage);
+    const memoryStore = openAutobiographicalMemoryStore(storage);
+    const situatedLifeStore = openSituatedLifeStore(storage);
+    const sourceStores = {
+      worldStore,
+      identityStore,
+      semanticStateStore,
+      memoryStore,
+      situatedLifeStore,
+    };
+    const previousSituation = {
+      situationId:"sit_x1_same_1",
+      threadId:thread.threadId,
+      establishedAt:"2026-09-22T08:00:00.000Z",
+      phase:"at_place",
+      location:{ kind:"place", placeRef:"place_x1_home" },
+      mediatedContext:null,
+      activity:"Reading technical notes at home.",
+      participantRefs:[],
+    };
+    const currentSituation = {
+      ...previousSituation,
+      situationId:"sit_x1_same_2",
+      establishedAt:"2026-09-22T08:30:00.000Z",
+    };
+    const interoception = explorationInteroceptionForLivedContinuity({
+      thread,
+      previousSituation,
+      currentSituation,
+    });
+    assert.ok(interoception, "sustained sameness did not produce planning interoception");
+
+    const calls = [];
+    const modelAdapter = {
+      provider:"fixture",
+      modelId:"fixture-x1-planning",
+      async invoke(call) {
+        calls.push(structuredClone(call));
+        const external = call.input.concern.externalContext;
+        const exploring = external.interoception?.drives.some((drive) =>
+          drive.family === "exploration" && drive.pressure > 0) ?? false;
+        return {
+          output:{
+            result:{
+              stops:[{
+                startAt:external.horizon.startAt,
+                endAt:external.horizon.endAt,
+                physicalPlaceRef:exploring ? "place_x1_library" : "place_x1_home",
+                presenceMode:"physical",
+                mediatedContext:"",
+                activity:exploring
+                  ? "Spend the afternoon somewhere different and browse unfamiliar material."
+                  : "Keep reading technical notes at home.",
+                purpose:exploring
+                  ? "I want some variety and a chance to run into ideas outside this morning's groove."
+                  : "I want to keep following the work already in front of me.",
+                travelFromPrevious:exploring ? "Walk to the library." : "",
+              }],
+            },
+            evidenceRefs:[],
+            conflictingMotives:[],
+            uncertainty:null,
+          },
+          provenance:{
+            provider:"fixture",
+            modelId:"fixture-x1-planning",
+            providerRequestId:call.clientRequestId,
+          },
+        };
+      },
+    };
+    const base = {
+      threadId:thread.threadId,
+      authoredAt:"2026-09-22T09:00:00.000Z",
+      horizonEnd:"2026-09-22T13:00:00.000Z",
+      availablePlaces:[
+        { ref:"place_x1_home", displayName:"Home" },
+        { ref:"place_x1_library", displayName:"Neighborhood library" },
+      ],
+      sourceReferences:[event.eventId],
+      sourceStores,
+      modelAdapter,
+    };
+
+    const ordinary = await formPersonalLivedPlan({
+      ...base,
+      startingPlaceRef:null,
+    });
+    const exploratory = await formPersonalLivedPlan({
+      ...base,
+      startingPlaceRef:null,
+      interoception,
+    });
+
+    assert.equal(calls.length, 2, "X1 added more than the existing planning call");
+    assert.equal(
+      calls[0].input.concern.externalContext.interoception,
+      undefined,
+      "ordinary planning invented exploration",
+    );
+    assert.deepEqual(
+      calls[1].input.concern.externalContext.interoception,
+      interoception,
+      "grounded exploration did not reach planning",
+    );
+    assert.notEqual(
+      ordinary.stops[0].physicalPlaceRef,
+      exploratory.stops[0].physicalPlaceRef,
+      "exploration did not bend planning",
+    );
+    assert.deepEqual(
+      semanticStateStore.listCurrentState(thread.threadId),
+      [],
+      "X1 minted semantic state instead of reusing planning",
+    );
+    assert.equal(
+      exploratory.sourceReferences.includes(previousSituation.situationId)
+        || exploratory.sourceReferences.includes(currentSituation.situationId),
+      false,
+      "private exploration evidence became World plan authority",
+    );
+    assert.deepEqual(
+      interoception.evidenceRefs.sort(),
+      [previousSituation.situationId, currentSituation.situationId].sort(),
+      "planning exploration lost its lived grounding",
     );
 
     situatedLifeStore.close();
