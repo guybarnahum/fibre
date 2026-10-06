@@ -4,7 +4,10 @@ import {
   assessFlightPlanPresence,
   observationFromCurrentSituation,
 } from "./flight-plan-regulation.mjs";
-import { interpretIntrinsicRegulation } from "./interoceptive-cognition.mjs";
+import {
+  interpretIntrinsicRegulation,
+  projectInteroception,
+} from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 
 const MIN_SUSTAINED_SAMENESS_MS = 20 * 60 * 1000;
@@ -52,6 +55,11 @@ export function explorationRegulationForLivedContinuity({
     },
     runtimeBaselines:thread.genome?.runtimeBaselines ?? {},
   });
+}
+
+export function explorationInteroceptionForLivedContinuity(input) {
+  const frame = explorationRegulationForLivedContinuity(input);
+  return frame === null ? null : projectInteroception(frame);
 }
 
 function requireMethod(owner, name) {
