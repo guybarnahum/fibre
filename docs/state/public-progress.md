@@ -128,7 +128,7 @@ N6.3 is current and now uses the simpler rule: **meet the Thread where they alre
 
 N6.3a is accepted. The obsolete public meeting-admission layer, visitor-work scene wrapper, pre-scene Meet selector and old public visitor-work encounter adapter are gone. Clicking Meet only preserves the displayed situation witness in local Viewer state; the only public social mutation is now the N6.3d `/encounter` boundary.
 
-N6.3b-N6.3d are accepted. N6.3e is current: accepted conversation continues as repeated situation-bound `/encounter` turns. Every turn revalidates actual life and voluntary participation; the Viewer may keep only ephemeral on-page history and advances to the returned actual `situationId`.
+N6.3b-N6.3e are accepted. N6.4 is current: a completed public encounter retry must replay the same World outcome without repeating cognition, Encounter Story creation or private aftermath. The durable retry receipt is idempotence metadata only, not a conversation/session authority.
 
 Paid visitor-work remains a separate optional work/economy capability, not the definition of ordinary meeting.
 
