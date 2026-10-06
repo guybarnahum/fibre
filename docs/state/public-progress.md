@@ -178,10 +178,10 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- autonomously produce ordinary environmental Encounter Stories from current World context or automatically derive incidental silent witnesses for an admitted encounter; the general attention/Experience/Journal/Memory aftermath already works once the occurrence/presence is supplied;
+- validate the new autonomous encounter-production path end to end in staging: World can now author bounded environmental occurrence prose from current scene context and derive incidental silent witnesses from authoritative co-presence, but E6 is not yet accepted until local/full validation and live evidence close it;
 - complete N6 public current-life presentation and later-revisit continuity;
 - validate a naturally occurring Thread-to-Thread encounter from independently lived plans without manufacturing co-presence or willingness;
-- turn grounded exploration/novelty pressure into self-directed ordinary planning that seeks richer experiences and lets those experiences bend later planning;
+- extend the now-proven self-directed developmental loop into richer Person/social discoverability without biasing life toward social encounters;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
 - support society-scale institutions and reproduction among live Threads.
