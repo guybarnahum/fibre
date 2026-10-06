@@ -141,6 +141,24 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
         story.encounterId,
         "continued lived exchange lost its objective causal predecessor",
       );
+
+      const receipt=store.recordPublicEncounterReceipt({
+        requestId:"req_e0_public_retry",
+        threadId:"thr_e0_mina",
+        requestDigest:`sha256:${"a".repeat(64)}`,
+        result:{
+          outcome:"accepted",
+          situationId:"sit_e0_mina",
+          responseText:"Mostly, yes.",
+          encounterStoryId:continued.encounterId,
+        },
+        recordedAt:"2026-09-21T18:01:00.000Z",
+      });
+      assert.deepEqual(
+        store.getPublicEncounterReceipt(receipt.requestId),
+        receipt,
+        "public encounter retry receipt did not persist",
+      );
     } finally { store.close(); }
   } finally {
     rmSync(directory, { recursive:true, force:true });
