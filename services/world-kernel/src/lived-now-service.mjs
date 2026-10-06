@@ -7,7 +7,7 @@ import {
 } from "./persistence-common.mjs";
 import { formPersonalLivedPlan } from "./lived-plan-cognition.mjs";
 import {
-  explorationInteroceptionForLivedContinuity,
+  explorationInteroceptionForLivedHistory,
   runLivedNowRegulationPulse,
 } from "./lived-now-regulation.mjs";
 import {
@@ -326,13 +326,11 @@ function planningInteroception({
 }) {
   const current = livedNowStore.getCurrentSituation(threadId);
   if (current === null || current.establishedAt !== startAt) return null;
-  const previous = livedNowStore.getPreviousSituation(threadId, startAt);
-  if (previous === null) return null;
   const thread = worldStore.getThread(threadId, { required:false });
   if (thread === null) return null;
-  return explorationInteroceptionForLivedContinuity({
+  return explorationInteroceptionForLivedHistory({
     thread,
-    previousSituation:previous,
+    livedNowStore,
     currentSituation:current,
   });
 }
