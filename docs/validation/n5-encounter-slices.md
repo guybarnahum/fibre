@@ -274,7 +274,7 @@ The first implementation commit exposed one prohibited private cross-owner Asset
 
 No existing presentation R2 objects were migrated. No encounter render is required for Encounter Story completion, and E4 does not require a live provider-generated image/video; that remains optional staging evidence.
 
-## Slice E6 — Autonomous encounter production/discovery — PLANNED AFTER X4
+## Slice E6 — Autonomous encounter production/discovery — CURRENT
 
 **Goal:** remove the remaining caller orchestration from environmental and silent-witness encounters without changing the accepted Encounter Story / attention / aftermath ontology.
 
@@ -330,13 +330,34 @@ co-present candidate
 
 The caller does not choose witness IDs.
 
+### Implemented shape
+
+E6a now removes caller-authored environmental prose from the production seam:
+
+```text
+caller: threadId + time
+  -> ensure LivedNow
+  -> exterior current scene only
+  -> one bounded World occurrence-generation call
+       occurrence text | null
+  -> if text: ordinary Encounter Story
+  -> existing noticed | not_noticed
+  -> existing Experience / Journal / Memory aftermath
+```
+
+The occurrence author receives no Thread-private identity, memories, traits, needs or developmental pressure. It sees only the exterior CurrentSituation and admitted place meaning. Encounter Story remains the first durable World-event authority; no occurrence table or generic event bus was added.
+
+E6b removes `witnessThreadIds` from the social service and private write API. For each accepted story, already-current compatible co-present Threads other than the two speakers become incidental witness candidates automatically. They are not invitees, speakers or participants in the voluntary request; each independently receives the existing attention appraisal and aftermath only if noticed.
+
 ### Acceptance
 
-One environmental organism proof must create an Encounter Story when the caller supplied only Thread/time and World already supplied the scene.
+The focused E6a proof requires a caller that supplies only Thread/time while World authors a bounded environmental occurrence; the same proof preserves `not_noticed` and a legal `no_occurrence` outcome.
 
-One witness organism proof must let a genuinely co-present C become a candidate witness of A/B's story without C being named by the caller.
+The focused E6b proof requires a genuinely co-present C to become a silent witness of A/B's story without the caller naming C, while C receives no social stance or story turn.
 
 Zero occurrence and zero noticed witness remain valid outcomes. Acceptance proves autonomous production/discovery, not encounter frequency.
+
+E6 remains pending local validation.
 
 ---
 
