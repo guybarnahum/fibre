@@ -47,28 +47,14 @@ export function createSocialMeetingWriteApi({
       try {
         body = await request.json();
         assertPlainObject("social meeting request", body);
-        const hasWitnesses = Object.hasOwn(body, "witnessThreadIds");
-        assertExactKeys(
-          "social meeting request",
-          body,
-          hasWitnesses
-            ? ["initiatorThreadId","witnessThreadIds"]
-            : ["initiatorThreadId"],
-        );
+        assertExactKeys("social meeting request", body, ["initiatorThreadId"]);
         assertId("social meeting initiatorThreadId", body.initiatorThreadId);
-        if (hasWitnesses && !Array.isArray(body.witnessThreadIds)) {
-          throw new TypeError("social meeting witnessThreadIds must be an array");
-        }
-        for (const threadId of body.witnessThreadIds ?? []) {
-          assertId("social meeting witnessThreadId", threadId);
-        }
       } catch (error) {
         return json({ error:"invalid_social_meeting", detail:error.message }, 400);
       }
 
       const result = await meetingService.meet({
         initiatorThreadId:body.initiatorThreadId,
-        witnessThreadIds:body.witnessThreadIds ?? [],
         at:now(),
       });
       return json({ ok:true, result });
