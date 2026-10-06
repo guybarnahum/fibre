@@ -11,9 +11,10 @@ import { reconcilePresentationAssets } from "../../services/world-kernel/src/pre
 import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
-const REQUEST_TIMEOUT_MS = 120_000;
-const MAX_REFRESHED_THREADS = 18;
-const MAX_SOCIAL_INITIATORS = 18;
+const REQUEST_TIMEOUT_MS = 30_000;
+const OBSERVATORY_SCAN_LIMIT = 40;
+const MAX_TARGETED_CURRENTIZATIONS = 3;
+const MAX_SOCIAL_INITIATORS = 3;
 const RENDER_WAIT_MS = 600_000;
 const RENDER_POLL_MS = 5_000;
 const GIT_SHA = /^[0-9a-f]{40}$/u;
@@ -193,6 +194,38 @@ function establishedAt(thread) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function plannedSharedPlaceNow(observatory, at) {
+  const plan = observatory?.livedNow?.currentPersonalPlan;
+  if (!Array.isArray(plan?.stops)) return null;
+  const instant = Date.parse(at);
+  if (!Number.isFinite(instant)) return null;
+  for (const stop of plan.stops) {
+    const startAt = Date.parse(stop.startAt);
+    const endAt = Date.parse(stop.endAt);
+    if (!Number.isFinite(startAt) || !Number.isFinite(endAt)) continue;
+    if (
+      startAt <= instant
+      && instant < endAt
+      && typeof stop.physicalPlaceRef === "string"
+      && stop.physicalPlaceRef.startsWith("wpl_")
+    ) {
+      return stop.physicalPlaceRef;
+    }
+  }
+  return null;
+}
+
+function coPresentGroups(threads) {
+  const byPresence = new Map();
+  for (const thread of threads) {
+    for (const key of thread.presenceKeys) {
+      if (!byPresence.has(key)) byPresence.set(key, []);
+      byPresence.get(key).push(thread);
+    }
+  }
+  return [...byPresence.values()].filter((group) => group.length >= 2);
+}
+
 async function refreshThreads({
   worldBaseUrl,
   presentationBaseUrl,
@@ -204,131 +237,124 @@ async function refreshThreads({
   const discovered = await publicThreads(presentationBaseUrl, viewerOrigin);
   const ordered = [...discovered]
     .filter((thread) => !["genesis_candidate","retired"].includes(thread?.lifecycleStatus))
-    .sort((left, right) => establishedAt(right) - establishedAt(left));
-  if (ordered.length === 0) throw new Error("lived-encounters validation found no live public Threads");
+    .sort((left, right) => establishedAt(right) - establishedAt(left))
+    .slice(0, OBSERVATORY_SCAN_LIMIT);
+  if (ordered.length === 0) {
+    throw new Error("lived-encounters validation found no live public Threads");
+  }
 
-  const deploymentProbe = await privateGet(
-    worldBaseUrl,
-    `/internal/threads/${encodeURIComponent(ordered[0].threadId)}/observatory`,
-    privateToken,
-    "World deployment probe",
-  );
-  const worldKernelGitSha = deploymentProbe?.deploymentGitSha ?? null;
-  requireRuntimeAncestor(worldKernelGitSha, validatorGitSha);
+  const now = new Date().toISOString();
+  const scanned = [];
+  let worldKernelGitSha = null;
 
-  const refreshed = [];
-  for (const thread of ordered.slice(0, MAX_REFRESHED_THREADS)) {
+  for (const thread of ordered) {
     try {
-      const result = await privatePost(
-        worldBaseUrl,
-        "/internal/lived-now/ensure",
-        privateToken,
-        { threadId:thread.threadId },
-        `LivedNow ${thread.threadId}`,
-      );
-      const observatoryPayload = await privateGet(
+      const payload = await privateGet(
         worldBaseUrl,
         `/internal/threads/${encodeURIComponent(thread.threadId)}/observatory`,
         privateToken,
         `World Observatory ${thread.threadId}`,
       );
-      const observatory = observatoryPayload?.observatory;
-      const currentSituation = observatory?.livedNow?.currentSituation;
-      if (!currentSituation || currentSituation.situationId !== result.situationId) {
-        throw new Error(`World Observatory current situation disagrees with LivedNow for ${thread.threadId}`);
+      if (worldKernelGitSha === null) {
+        worldKernelGitSha = payload?.deploymentGitSha ?? null;
+        requireRuntimeAncestor(worldKernelGitSha, validatorGitSha);
       }
-      const presenceKeys = worldPresenceKeys(observatory);
-      const currentPlaceRef = currentSituation.location?.kind === "place"
-        ? currentSituation.location.placeRef
-        : null;
-      const currentPlaceEpisode = currentPlaceRef === null
-        ? null
-        : (observatory?.livedNow?.placeEpisodes ?? []).find(
-            (candidate) => placeEpisodeRevisionRef(candidate) === currentPlaceRef,
-          ) ?? null;
-      process.stderr.write(`DEBUG lived-place ${JSON.stringify({
-        threadId:thread.threadId,
-        name:observatory?.thread?.identity?.name ?? thread.displayName ?? null,
-        birthCity:observatory?.thread?.identity?.birthCity ?? null,
-        currentPlaceRef,
-        currentWorldPlace:(observatory?.livedNow?.worldPlaces ?? [])
-          .find((candidate) => candidate.ref === currentPlaceRef) ?? null,
-        availableWorldPlaces:observatory?.livedNow?.worldPlaces ?? [],
-        currentPlaceEpisode:currentPlaceEpisode === null ? null : {
-          placeId:currentPlaceEpisode.place?.placeId ?? null,
-          displayName:currentPlaceEpisode.place?.displayName ?? null,
-          provenance:currentPlaceEpisode.provenance ?? null,
-          countryCode:currentPlaceEpisode.place?.countryCode ?? null,
-          region:currentPlaceEpisode.place?.region ?? null,
-          locality:currentPlaceEpisode.place?.locality ?? null,
-        },
-        currentPlanPlaceRefs:(observatory?.livedNow?.currentPersonalPlan?.stops ?? [])
-          .map((stop) => stop.physicalPlaceRef),
-        allPlaceEpisodes:(observatory?.livedNow?.placeEpisodes ?? []).map((episode) => ({
-          ref:placeEpisodeRevisionRef(episode),
-          placeId:episode.place?.placeId ?? null,
-          displayName:episode.place?.displayName ?? null,
-          provenance:episode.provenance ?? null,
-          locality:episode.place?.locality ?? null,
-        })),
-      })}\n`);
-      process.stderr.write(`DEBUG interior-context ${JSON.stringify({
-        threadId:thread.threadId,
-        name:observatory?.thread?.identity?.name ?? thread.displayName ?? null,
-        currentActivity:currentSituation.activity,
-        currentReason:currentSituation.reason,
-        genomeLoci:(observatory?.symbolicGenomes ?? [])
-          .flatMap((bundle) => bundle?.loci ?? [])
-          .sort((left, right) => (left.ordinal ?? 0) - (right.ordinal ?? 0))
-          .slice(0, 12)
-          .map((locus) => locus.value),
-        identityAssertions:(observatory?.identityView?.assertions ?? [])
-          .filter((assertion) => assertion?.isCurrentRevision !== false)
-          .slice(0, 12)
-          .map((assertion) => ({
-            domain:assertion.domain,
-            kind:assertion.kind,
-            meaning:assertion.meaning,
-            behavioralStatus:assertion.behavioralStatus,
-          })),
-        semanticStates:(observatory?.semanticStates ?? []).slice(0, 12).map((state) => ({
-          domain:state.domain,
-          dimension:state.dimension,
-          state:state.state,
-          target:state.target?.displayName ?? null,
-        })),
-        memories:(observatory?.memories ?? []).slice(0, 6).map((memory) => ({
-          rememberedContent:memory.rememberedContent ?? null,
-          rememberedMeaning:memory.rememberedMeaning ?? null,
-          salience:memory.salience ?? null,
-          accessibility:memory.accessibility ?? null,
-        })),
-        lifeRelations:(observatory?.lifeRelations ?? []).slice(0, 12).map((relation) => ({
-          displayName:relation.relatedParty?.displayName ?? null,
-          relationKind:relation.relationKind,
-          relationshipFacts:relation.relationshipFacts ?? [],
-        })),
-      })}\n`);
-      refreshed.push(Object.freeze({
+      const observatory = payload?.observatory;
+      const currentSituation = observatory?.livedNow?.currentSituation ?? null;
+      if (currentSituation === null) continue;
+      scanned.push(Object.freeze({
         threadId:thread.threadId,
         displayName:observatory?.thread?.identity?.name ?? thread.displayName ?? null,
-        situationId:result.situationId,
-        present:result.present,
-        presenceKeys,
+        situationId:currentSituation.situationId,
+        presenceKeys:worldPresenceKeys(observatory),
+        plannedSharedPlaceRef:plannedSharedPlaceNow(observatory, now),
       }));
-      emit({
-        event:"lived-encounters-thread-current",
-        threadId:thread.threadId,
-        physicalState:currentSituation.location?.kind ?? null,
-        sharedPresenceModes:presenceKeys.map((key) => key.startsWith("mediated:") ? "mediated" : "physical"),
-      });
     } catch (error) {
-      emit({ event:"lived-encounters-thread-skipped", threadId:thread.threadId, reason:error.message.slice(0, 240) });
+      emit({
+        event:"lived-encounters-thread-skipped",
+        threadId:thread.threadId,
+        reason:String(error?.message ?? error).slice(0,240),
+      });
     }
   }
-  if (refreshed.length < 3) throw new Error("lived-encounters validation needs at least three live public Threads with current LivedNow");
+
+  if (worldKernelGitSha === null) {
+    throw new Error("lived-encounters validation could not read deployed World runtime evidence");
+  }
+  if (scanned.length === 0) {
+    throw new Error("lived-encounters validation found no enacted current life");
+  }
+
+  let usable = [...scanned];
+  let groups = coPresentGroups(usable);
+  let targetedCurrentizationCount = 0;
+
+  if (groups.length === 0) {
+    const byPlannedPlace = new Map();
+    for (const thread of scanned) {
+      if (thread.plannedSharedPlaceRef === null) continue;
+      if (!byPlannedPlace.has(thread.plannedSharedPlaceRef)) {
+        byPlannedPlace.set(thread.plannedSharedPlaceRef, []);
+      }
+      byPlannedPlace.get(thread.plannedSharedPlaceRef).push(thread);
+    }
+    const plannedGroup = [...byPlannedPlace.values()]
+      .find((group) => group.length >= 2) ?? null;
+
+    if (plannedGroup !== null) {
+      const refreshed = [];
+      for (const thread of plannedGroup.slice(0,MAX_TARGETED_CURRENTIZATIONS)) {
+        targetedCurrentizationCount += 1;
+        const result = await privatePost(
+          worldBaseUrl,
+          "/internal/lived-now/ensure",
+          privateToken,
+          { threadId:thread.threadId },
+          `LivedNow ${thread.threadId}`,
+        );
+        const payload = await privateGet(
+          worldBaseUrl,
+          `/internal/threads/${encodeURIComponent(thread.threadId)}/observatory`,
+          privateToken,
+          `World Observatory ${thread.threadId}`,
+        );
+        const observatory = payload?.observatory;
+        const currentSituation = observatory?.livedNow?.currentSituation;
+        if (!currentSituation || currentSituation.situationId !== result.situationId) continue;
+        refreshed.push(Object.freeze({
+          threadId:thread.threadId,
+          displayName:observatory?.thread?.identity?.name ?? thread.displayName ?? null,
+          situationId:result.situationId,
+          presenceKeys:worldPresenceKeys(observatory),
+          plannedSharedPlaceRef:plannedSharedPlaceNow(observatory,new Date().toISOString()),
+        }));
+      }
+      const refreshedIds = new Set(refreshed.map((thread)=>thread.threadId));
+      usable = [
+        ...scanned.filter((thread)=>!refreshedIds.has(thread.threadId)),
+        ...refreshed,
+      ];
+      groups = coPresentGroups(usable);
+    }
+  }
+
+  emit({
+    event:"lived-encounters-presence-scan",
+    scannedThreadCount:scanned.length,
+    coPresentGroupCount:groups.length,
+    targetedCurrentizationCount,
+  });
+
+  if (groups.length === 0) {
+    throw new Error(
+      `lived-encounters validation found no naturally co-present Threads among ${scanned.length} enacted lives and no already-admitted shared-place plan to currentize`,
+    );
+  }
+
+  const selectedIds = new Set(groups.flatMap((group)=>group.map((thread)=>thread.threadId)));
+  const selected = usable.filter((thread)=>selectedIds.has(thread.threadId));
   return Object.freeze({
-    threads:Object.freeze(refreshed),
+    threads:Object.freeze(selected),
     worldKernelGitSha,
   });
 }
