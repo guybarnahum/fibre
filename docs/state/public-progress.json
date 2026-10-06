@@ -245,7 +245,7 @@
     "milestone": "N6 — Rich Public Lived Encounter",
     "simple": {
       "summary": "Meet a Thread where they already are in ordinary life; the visitor approaches and the Thread decides whether to engage.",
-      "currentStep": "N6.3a-N6.3d are accepted. N6.3e is current: repeated accepted turns reuse the same situation-bound /encounter boundary, with actual-life revalidation and renewed participation on every turn and no session store.",
+      "currentStep": "N6.3a-N6.3d are accepted. N6.3e is current: repeated turns reuse the same situation-bound /encounter boundary, advancing actual life and carrying immediate context only through a bounded causal chain of admitted Encounter Stories, with no session store.",
       "nextSteps": [
         "N6.3e: keep accepted conversation grounded in ordinary life with no session store.",
         "N6.3e: advance the Viewer witness to each accepted turn's returned actual situationId.",
@@ -257,7 +257,7 @@
       "summary": "N6.3 no longer treats a paid Inside Fibre visitor-work shift as the definition of meeting. Ordinary meeting intersects a Thread's existing Flight Plan and CurrentSituation.",
       "currentStep": "N6.3a-N6.3d are accepted. N6.3e now proves that later accepted turns remain independent situation-bound encounters in continuing life rather than a server-side conversation session.",
       "nextSteps": [
-        "Keep the composer open only after an accepted turn and advance to the returned actual situationId.",
+        "Keep the composer open only after an accepted turn, advance to the returned actual situationId, and cite only the immediately prior admitted Encounter Story.",
         "Run every later turn through the same /encounter validation and participation path.",
         "End the interaction on decline/defer or scene_changed rather than preserving a conversation session.",
         "Keep any transcript as ephemeral Viewer state only."
