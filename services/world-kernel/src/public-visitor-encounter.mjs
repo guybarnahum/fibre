@@ -9,6 +9,8 @@ import {
   assertIsoTimestamp,
   assertNonEmpty,
   assertPlainObject,
+  canonicalJson,
+  sha256,
 } from "./persistence-common.mjs";
 
 const MEMORY_LIMIT = 6;
@@ -60,6 +62,15 @@ function recentEncounterStories({
   return stories.reverse();
 }
 
+function publicEncounterRequestDigest(input) {
+  return `sha256:${sha256(canonicalJson({
+    threadId:input.threadId,
+    expectedSituationId:input.expectedSituationId,
+    utterance:input.utterance,
+    priorEncounterStoryId:input.priorEncounterStoryId ?? null,
+  }))}`;
+}
+
 function livedContext({ threadId, situation, worldReader, semanticStateStore, memoryStore }) {
   const thread = worldReader.getThread(threadId, { required:false });
   if (thread === null) throw new TypeError(`Thread ${threadId} was not found`);
@@ -101,6 +112,8 @@ export function createPublicVisitorEncounterService({
   requireMethod(memoryStore, "public visitor memoryStore", "recordMemory");
   requireMethod(experienceStore, "public visitor experienceStore", "recordEncounterStory");
   requireMethod(experienceStore, "public visitor experienceStore", "getEncounterStory");
+  requireMethod(experienceStore, "public visitor experienceStore", "getPublicEncounterReceipt");
+  requireMethod(experienceStore, "public visitor experienceStore", "recordPublicEncounterReceipt");
   requireMethod(experienceStore, "public visitor experienceStore", "recordThreadEncounterAttention");
   requireMethod(experienceStore, "public visitor experienceStore", "recordThreadExperienceJournalEntry");
   requireMethod(modelAdapter, "public visitor modelAdapter", "invoke");
@@ -114,9 +127,10 @@ export function createPublicVisitorEncounterService({
     async encounter(input) {
       assertPlainObject("public visitor encounter", input);
       const keys = Object.hasOwn(input, "priorEncounterStoryId")
-        ? ["threadId", "expectedSituationId", "utterance", "priorEncounterStoryId", "at"]
-        : ["threadId", "expectedSituationId", "utterance", "at"];
+        ? ["requestId", "threadId", "expectedSituationId", "utterance", "priorEncounterStoryId", "at"]
+        : ["requestId", "threadId", "expectedSituationId", "utterance", "at"];
       assertExactKeys("public visitor encounter", input, keys);
+      assertId("public visitor encounter.requestId", input.requestId);
       assertId("public visitor encounter.threadId", input.threadId);
       assertId("public visitor encounter.expectedSituationId", input.expectedSituationId);
       assertNonEmpty("public visitor encounter.utterance", input.utterance);
@@ -125,13 +139,33 @@ export function createPublicVisitorEncounterService({
       }
       assertIsoTimestamp("public visitor encounter.at", input.at);
 
+      const requestDigest=publicEncounterRequestDigest(input);
+      const priorReceipt=experienceStore.getPublicEncounterReceipt(input.requestId);
+      if(priorReceipt!==null){
+        if(priorReceipt.threadId!==input.threadId||priorReceipt.requestDigest!==requestDigest){
+          throw new TypeError(`public encounter request ${input.requestId} conflicts with its existing receipt`);
+        }
+        return Object.freeze(structuredClone(priorReceipt.result));
+      }
+      const complete=(result)=>{
+        const frozen=Object.freeze(structuredClone(result));
+        experienceStore.recordPublicEncounterReceipt({
+          requestId:input.requestId,
+          threadId:input.threadId,
+          requestDigest,
+          result:frozen,
+          recordedAt:input.at,
+        });
+        return frozen;
+      };
+
       const validation = await livedNow.validateDisplayedSituation({
         threadId:input.threadId,
         situationId:input.expectedSituationId,
         at:input.at,
       });
       if (!validation.applies) {
-        return Object.freeze({
+        return complete({
           outcome:"scene_changed",
           currentSituationId:validation.currentSituation.situationId,
         });
@@ -145,7 +179,7 @@ export function createPublicVisitorEncounterService({
         at:input.at,
       });
       if (immediateHistory === null) {
-        return Object.freeze({
+        return complete({
           outcome:"scene_changed",
           currentSituationId:validation.currentSituation.situationId,
         });
@@ -178,7 +212,7 @@ export function createPublicVisitorEncounterService({
       });
 
       if (stance.decision !== "accept") {
-        return Object.freeze({
+        return complete({
           outcome:stance.decision,
           situationId:context.situation.situationId,
           expression:stance.expression,
@@ -266,7 +300,7 @@ export function createPublicVisitorEncounterService({
         activityRecorder,
       });
 
-      return Object.freeze({
+      return complete({
         outcome:"accepted",
         situationId:context.situation.situationId,
         responseText:response.responseText,
