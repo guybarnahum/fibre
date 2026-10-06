@@ -180,6 +180,7 @@ A Thread may have admitted history it does not remember.
 
 - complete N6 public current-life presentation and later-revisit continuity;
 - validate a naturally occurring Thread-to-Thread encounter from independently lived plans without manufacturing co-presence or willingness;
+- turn grounded exploration/novelty pressure into self-directed ordinary planning that seeks richer experiences and lets those experiences bend later planning;
 - keep mature shared relationships evolving through repeated reciprocal life;
 - run a meaningful economy of work, reputation and material consequence;
 - support society-scale institutions and reproduction among live Threads.
