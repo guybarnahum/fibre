@@ -1,7 +1,7 @@
 ---
 id: architecture-encounters-and-experience-v0-1
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-10-06
 canonical: false
 ---
 
@@ -28,6 +28,43 @@ World occurrence
 ```
 
 This distinction is foundational. Shared facts must remain shared; meaning remains personal.
+
+## Fundamental encounter invariant
+
+> **An encounter is a bounded textual World occurrence that may enter a Thread's lived attention. Conversation is only one way such an occurrence can arise.**
+
+The general semantic object is not a chat message or meeting transcript. It is an objective Encounter Story made from observable textual beats:
+
+```text
+utterance   someone says something
+action      someone does something observable
+occurrence  something happens in the environment
+```
+
+That one vocabulary must cover:
+
+- a Thread conversing with another Thread or Person;
+- a Thread hearing a conversation without joining it;
+- a Thread seeing another person's behavior;
+- a Thread noticing weather, an animal, music, an accident, an object or another environmental change;
+- a Thread being present while something happens but not noticing it.
+
+The shared path is always:
+
+```text
+textual World occurrence
+  -> objective Encounter Story
+  -> Thread-specific attention
+       not_noticed
+       noticed -> Thread Experience
+                   -> optional subjective Journal
+                   -> selective Memory | not_remembered
+                   -> ordinary later consequence
+```
+
+Conversation-specific participation gates belong only to voluntary social meetings. They must never become prerequisites for environmental or witness encounters.
+
+Likewise, a silent witness is not a special kind of social participant. She is simply a genuinely present Thread for whom the same Encounter Story may or may not enter attention.
 
 ## Core terms
 
@@ -260,6 +297,83 @@ without collapsing any of them into a permanent relationship label.
 
 
 Automatic incidental-witness discovery is a later extension of the same model: World can derive candidate witnesses from compatible LivedNow presence, then each Thread independently notices or does not notice the occurrence.
+
+## Current autonomy gap
+
+The **encounter semantics and aftermath are already general**. Fibre can persist environmental occurrences, social dialogue, n-ary stories, silent-witness attention, subjective journal entries and selective memory through one authority stack.
+
+The remaining gap is **how ordinary encounters arise without a caller already naming them**.
+
+Two cases are still only partially autonomous:
+
+1. **Environmental occurrence production** — the environmental encounter service can admit a textual World occurrence and run the full attention/aftermath path, but today an external caller still supplies the occurrence description. World does not yet autonomously author ordinary bounded events from the Thread's current place, activity and local scene.
+2. **Incidental witness discovery** — social counterparties can be discovered from authoritative co-presence, and E3 proves the silent-witness aftermath semantics, but the current social proof still accepts explicit `witnessThreadIds`. World does not yet automatically derive all plausible incidental witnesses for an admitted Encounter Story.
+
+This is a production/discovery gap, **not an ontology gap**. Do not answer it by adding separate environmental-memory, overheard-conversation or witness subsystems.
+
+## E6 — Autonomous encounter production/discovery
+
+Address this gap **after developmental-exploration X4 is accepted and before the X5+ rich-Person/social-discoverability extensions**.
+
+Why this ordering matters:
+
+- X4 first closes the internal developmental loop using already-supported encounter semantics.
+- E6 then makes ordinary non-social life and incidental witnessing arise without caller orchestration.
+- Only after that should Fibre enrich Person presence/social discoverability, otherwise the easiest autonomously discoverable opportunities will be people and conversations and developmental life will become accidentally social-biased.
+
+E6 should remain bounded and event-driven:
+
+```text
+meaningful LivedNow boundary / current scene
+  -> bounded World-owned occurrence opportunity
+  -> zero or one admitted textual environmental Encounter Story
+  -> ordinary attention / aftermath
+
+any admitted Encounter Story
+  + authoritative co-present CurrentSituations
+  -> derive candidate incidental witnesses
+  -> each independently noticed | not_noticed
+  -> ordinary aftermath only when noticed
+```
+
+The caller may identify the Thread/time or trigger the ordinary World reconciliation seam. It must **not** supply the environmental event text, choose the witnesses, or label an occurrence as interesting.
+
+Do not build:
+
+- a universal event bus;
+- a minute-by-minute simulator;
+- a physics/sensory engine;
+- a global object ontology;
+- a quota of encounters per day;
+- a model loop that samples until something interesting happens;
+- automatic memory or journal writing merely because an event was generated.
+
+A small stable World-authoring policy may use existing place/scene meaning and bounded generation to create an occurrence. Once admitted, that occurrence is ordinary World history and all later attention/experience semantics remain unchanged.
+
+### E6 acceptance
+
+One environmental proof:
+
+```text
+caller supplies Thread + time only
+  -> World/LivedNow supplies current scene
+  -> Fibre authors one bounded textual occurrence from that scene
+  -> Encounter Story is admitted
+  -> Thread independently notices or does not notice
+```
+
+One witness proof:
+
+```text
+A/B Encounter Story occurs
+  + C is independently co-present
+  + caller never names C
+  -> World derives C as a candidate witness
+  -> C independently noticed | not_noticed
+  -> if noticed, ordinary Experience / Journal / Memory aftermath
+```
+
+The stop condition is **autonomous opportunity production, not encounter frequency**. Zero generated environmental encounters and zero noticed witnesses must remain valid for a particular scene.
 
 ## Presence and place
 
