@@ -324,9 +324,9 @@ Why this ordering matters:
 E6 should remain bounded and event-driven:
 
 ```text
-meaningful LivedNow boundary / current scene
-  -> bounded World-owned occurrence opportunity
-  -> zero or one admitted textual environmental Encounter Story
+explicit bounded occurrence-production boundary / current scene
+  -> one World-authored observable occurrence
+  -> one admitted textual environmental Encounter Story
   -> ordinary attention / aftermath
 
 any admitted Encounter Story
@@ -336,7 +336,7 @@ any admitted Encounter Story
   -> ordinary aftermath only when noticed
 ```
 
-The caller may identify the Thread/time or trigger the ordinary World reconciliation seam. It must **not** supply the environmental event text, choose the witnesses, or label an occurrence as interesting.
+The caller may identify the Thread/time or trigger the ordinary World reconciliation seam. It must **not** supply the environmental event text, choose the witnesses, or label an occurrence as interesting. Invoking the producer means authoring one bounded occurrence; ordinary life is not required to invoke the producer at every scene boundary, so zero environmental encounters remains a valid life outcome without persisting negative "nothing happened" records.
 
 Do not build:
 
@@ -373,7 +373,7 @@ A/B Encounter Story occurs
   -> if noticed, ordinary Experience / Journal / Memory aftermath
 ```
 
-The stop condition is **autonomous opportunity production, not encounter frequency**. Zero generated environmental encounters and zero noticed witnesses must remain valid for a particular scene.
+The stop condition is **autonomous opportunity production, not encounter frequency**. A scene may have zero generated environmental encounters because no production boundary was invoked; a produced encounter may still be `not_noticed`. Zero noticed witnesses also remains valid.
 
 ## Presence and place
 
