@@ -119,7 +119,7 @@ Developmental exploration should close that loop rather than add a scalar reward
 
 With X4 closed, Fibre must now address the current **autonomous encounter production/discovery gap** before adding richer Person/social discoverability.
 
-Today the aftermath semantics are general, but environmental occurrences still require caller-supplied event text and silent witnesses still require explicit proof scaffolding in the social wrapper.
+E6a now authors bounded environmental occurrences from exterior current-scene evidence without caller event text. E6b now derives incidental witness candidates from authoritative co-presence without caller witness IDs in focused proof; the remaining acceptance gap is observing that witness path in genuine live World state.
 
 This matters because developmental exploration must not become accidentally social-biased merely because people are easier for runtime code to discover than weather, animals, objects, overheard interactions or other ordinary World events.
 
@@ -318,7 +318,7 @@ A Thread who intentionally sought novelty may still decline this particular pers
 
 ## Experience must bend future exploration
 
-The developmental loop is incomplete unless lived outcomes can change later exploration.
+X4 closed the developmental loop by proving that lived outcomes can change later exploration.
 
 Valid examples:
 
@@ -430,7 +430,7 @@ grounded lived difference
 
 The mechanism fails the Fibre ambition test if it merely adds "curiosity" to a prompt, stores a novelty label, or produces an availability list without changing self-directed life.
 
-X3 staging acceptance demonstrated the first half of this chain with two independent real Threads: grounded exploration interoception materially changed ordinary one-call Flight Planning while preserving current place and rest constraints, without requiring social behavior or a new developmental-intention authority. The loop is not complete until X4 proves that an actual lived exploratory outcome can return through ordinary Thread Experience / memory / semantic consequence and bend later planning.
+X3 staging acceptance demonstrated the first half of this chain with two independent real Threads: grounded exploration interoception materially changed ordinary one-call Flight Planning while preserving current place and rest constraints, without requiring social behavior or a new developmental-intention authority. X4 then closed the return path: an actual lived exploratory outcome can pass through ordinary Thread Experience, subjective aftermath and selective memory/semantic consequence and bend later planning.
 
 ## Preserved extension paths
 
