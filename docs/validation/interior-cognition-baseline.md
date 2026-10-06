@@ -27,7 +27,7 @@ environment  staging
 The operator command was:
 
 ```text
-npm run interior-cognition:baseline:staging
+npm run interior-cognition:baseline -- --env staging
 ```
 
 ## Factual result
