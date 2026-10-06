@@ -1,6 +1,6 @@
 ---
 id: validation-developmental-exploration-slices
-status: proposed
+status: accepted
 last-reviewed: 2026-10-06
 canonical: true
 ---
@@ -9,7 +9,7 @@ canonical: true
 
 ## Status
 
-**Proposed for owner review. Do not implement these slices until the architecture and ordering are accepted.**
+**Accepted execution roadmap. X0-X3 are closed; X4 is next if the developmental-exploration tranche continues.**
 
 Architecture: [Developmental exploration](../architecture/developmental-exploration.md).
 
@@ -216,7 +216,7 @@ There is still:
 - no meeting/acceptance bias;
 - no new planning authority.
 
-The LivedNow planning path supplies this capsule only when an authoritative current situation and its immediately preceding enacted situation actually satisfy the existing sustained-sameness grounding rule.
+The LivedNow planning path supplies this capsule only when authoritative enacted history establishes a contiguous same-scene run long enough to ground the existing exploration rule.
 
 Private interoceptive evidence remains planning context and does not enter `plan.sourceReferences`.
 
@@ -342,7 +342,7 @@ Planning can distinguish meaningful offered opportunities from World evidence wi
 
 ---
 
-# X3 — exploration bends an ordinary Flight Plan — CURRENT
+# X3 — exploration bends an ordinary Flight Plan — ACCEPTED
 
 ## Claim
 
@@ -475,6 +475,26 @@ The existing social-salience proof now exercises several short identical snapsho
 
 The observatory also exposes the immediately previous enacted situation as operator inspection evidence. This does not change World life or planning authority.
 
+### Accepted staging evidence
+
+X3 closed on staging with two real Threads that became eligible through ordinary cheap currentization of already-covered life:
+
+- **Irakli Maisuradze** — the baseline kept a conventional late-night wind-down sequence; the exploration condition moved a bounded mildly challenging reading/work episode earlier while still protecting sleep.
+- **Faith Achieng Odhiambo** — the baseline moved directly from a small outstanding task toward sleep; the exploration condition inserted a brief unfamiliar reading/computer-practice episode while still protecting the preferred sleep window.
+
+Both pairs:
+
+- used the same Thread, horizon, model, World opportunity set and developed-self authorities;
+- differed only by the grounded exploration interoception;
+- stayed in the same physical place;
+- did not require social activity;
+- produced materially different valid Flight Plans;
+- used one baseline and one exploration call only;
+- persisted neither counterfactual plan;
+- used no prompt retuning, resampling, caller-authored novelty or acceptance quota.
+
+This also answers the X3 review question: the existing one-call `lived_planning` concern is expressive enough for the first developmental-exploration proof. Do **not** add a separate durable developmental-intention authority on X3 evidence.
+
 ### Acceptance remains human-reviewed
 
 There is deliberately no automatic `changedCount >= N` gate.
@@ -483,11 +503,9 @@ A materially different plan is evidence only when the difference is plausibly co
 
 No difference is also legitimate for a particular Thread.
 
-X3 closes when at least one real-model pair demonstrates a meaningful self-directed change without prompt tuning, resampling, caller-authored novelty or a social requirement.
-
 ## Stop condition
 
-At least one meaningful behavioral path exists from grounded exploration pressure to an admitted ordinary Flight Plan.
+At least one meaningful behavioral path exists from grounded exploration pressure to an admitted ordinary Flight Plan. **Accepted in staging with two independent real-model examples.**
 
 ---
 
