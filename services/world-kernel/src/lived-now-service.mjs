@@ -6,7 +6,10 @@ import {
   canonicalJson,
 } from "./persistence-common.mjs";
 import { formPersonalLivedPlan } from "./lived-plan-cognition.mjs";
-import { runLivedNowRegulationPulse } from "./lived-now-regulation.mjs";
+import {
+  explorationInteroceptionForLivedContinuity,
+  runLivedNowRegulationPulse,
+} from "./lived-now-regulation.mjs";
 import {
   livedSituationId,
   plannedPositionAt,
@@ -322,6 +325,25 @@ function requireCatchUpDependencies({
   requireMethod(modelAdapter, "invoke");
 }
 
+function planningInteroception({
+  livedNowStore,
+  worldStore,
+  threadId,
+  startAt,
+}) {
+  const current = livedNowStore.getCurrentSituation(threadId);
+  if (current === null || current.establishedAt !== startAt) return null;
+  const previous = livedNowStore.getPreviousSituation(threadId, startAt);
+  if (previous === null) return null;
+  const thread = worldStore.getThread(threadId, { required:false });
+  if (thread === null) return null;
+  return explorationInteroceptionForLivedContinuity({
+    thread,
+    previousSituation:previous,
+    currentSituation:current,
+  });
+}
+
 async function formPlan({
   livedNowStore,
   worldStore,
@@ -350,6 +372,12 @@ async function formPlan({
   }
 
   const worldContext = livedNowStore.getWorldContext(threadId, { required:false });
+  const interoception = planningInteroception({
+    livedNowStore,
+    worldStore,
+    threadId,
+    startAt,
+  });
   const plan = await formPersonalLivedPlan({
     threadId,
     authoredAt: startAt,
@@ -366,6 +394,7 @@ async function formPlan({
     modelAdapter,
     startingPlaceRef: startingPlace,
     worldTimeZone:worldContext?.timeZone ?? null,
+    ...(interoception === null ? {} : { interoception }),
     ...(materializedAt === null ? {} : { materializedAt }),
   });
   return livedNowStore.recordPlan(plan);
