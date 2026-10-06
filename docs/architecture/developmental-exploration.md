@@ -1,6 +1,6 @@
 ---
 id: architecture-developmental-exploration
-status: proposed
+status: accepted
 last-reviewed: 2026-10-06
 canonical: true
 ---
@@ -9,7 +9,7 @@ canonical: true
 
 ## Status
 
-**Proposed for owner review. Not yet an implemented Fibre capability.**
+**Accepted architecture. The regulator -> interoception -> ordinary Flight Planning half of the loop is implemented and accepted through X3; the lived-outcome -> later-planning return path remains X4.**
 
 This document records the architectural hypothesis that a mature Thread should be capable of seeking experiences that can enlarge or change her life, rather than relying only on externally presented opportunities.
 
@@ -29,7 +29,7 @@ World / lived repetition
 
 That loop is still primarily reactive.
 
-The missing developmental loop is:
+The developmental loop is:
 
 ```text
 lived experience over time
@@ -105,7 +105,7 @@ The existing personal Flight Plan is already formed through shared Interior Cogn
 
 Planning currently receives developed-self evidence, current Thread state, World horizon/place constraints, local civil time, ordinary commitments, and unresolved intentions.
 
-This is the preferred first consumer of developmental exploration. The first implementation should extend the existing planning concern rather than create a second planning engine.
+This is the accepted consumer of developmental exploration. The implementation extends the existing planning concern rather than creating a second planning engine.
 
 ### Encounter consequence
 
@@ -409,6 +409,8 @@ grounded lived difference
 ```
 
 The mechanism fails the Fibre ambition test if it merely adds "curiosity" to a prompt, stores a novelty label, or produces an availability list without changing self-directed life.
+
+X3 staging acceptance demonstrated the first half of this chain with two independent real Threads: grounded exploration interoception materially changed ordinary one-call Flight Planning while preserving current place and rest constraints, without requiring social behavior or a new developmental-intention authority. The loop is not complete until X4 proves that an actual lived exploratory outcome can return through ordinary Thread Experience / memory / semantic consequence and bend later planning.
 
 ## Preserved extension paths
 
