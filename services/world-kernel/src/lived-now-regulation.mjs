@@ -11,6 +11,7 @@ import {
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 
 const MIN_SUSTAINED_SAMENESS_MS = 20 * 60 * 1000;
+const MAX_CONTINUITY_WITNESSES = 64;
 
 function sameParticipants(left = [], right = []) {
   if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
@@ -26,6 +27,19 @@ export function classifyExplorationContinuity(previousSituation, currentSituatio
   if (previousSituation.location?.kind !== "place" || currentSituation.location?.kind !== "place") {
     return Object.freeze({ grounded:false, reason:"not_at_place" });
   }
+  if (previousSituation.location.placeRef !== currentSituation.location.placeRef) {
+    return Object.freeze({ grounded:false, reason:"place_changed" });
+  }
+  if ((previousSituation.mediatedContext ?? null) !== (currentSituation.mediatedContext ?? null)) {
+    return Object.freeze({ grounded:false, reason:"mediated_context_changed" });
+  }
+  if (previousSituation.activity !== currentSituation.activity) {
+    return Object.freeze({ grounded:false, reason:"activity_changed" });
+  }
+  if (!sameParticipants(previousSituation.participantRefs ?? [], currentSituation.participantRefs ?? [])) {
+    return Object.freeze({ grounded:false, reason:"participants_changed" });
+  }
+
   const elapsedMs = Date.parse(currentSituation.establishedAt) - Date.parse(previousSituation.establishedAt);
   if (!Number.isFinite(elapsedMs)) {
     return Object.freeze({ grounded:false, reason:"invalid_elapsed_time" });
@@ -33,19 +47,48 @@ export function classifyExplorationContinuity(previousSituation, currentSituatio
   if (elapsedMs < MIN_SUSTAINED_SAMENESS_MS) {
     return Object.freeze({ grounded:false, reason:"elapsed_too_short", elapsedMs });
   }
-  if (previousSituation.location.placeRef !== currentSituation.location.placeRef) {
-    return Object.freeze({ grounded:false, reason:"place_changed", elapsedMs });
+  return Object.freeze({
+    grounded:true,
+    reason:"sustained_sameness",
+    elapsedMs,
+    evidenceRefs:Object.freeze([
+      previousSituation.situationId,
+      currentSituation.situationId,
+    ]),
+  });
+}
+
+export function explorationContinuityForLivedHistory({
+  livedNowStore,
+  currentSituation,
+  maxWitnesses=MAX_CONTINUITY_WITNESSES,
+}) {
+  if (!livedNowStore || typeof livedNowStore.getPreviousSituation !== "function") {
+    throw new TypeError("exploration continuity requires livedNowStore.getPreviousSituation()");
   }
-  if ((previousSituation.mediatedContext ?? null) !== (currentSituation.mediatedContext ?? null)) {
-    return Object.freeze({ grounded:false, reason:"mediated_context_changed", elapsedMs });
+  if (currentSituation === null) {
+    return Object.freeze({ grounded:false, reason:"missing_situation" });
   }
-  if (previousSituation.activity !== currentSituation.activity) {
-    return Object.freeze({ grounded:false, reason:"activity_changed", elapsedMs });
+  if (!Number.isSafeInteger(maxWitnesses) || maxWitnesses < 1) {
+    throw new TypeError("exploration continuity maxWitnesses must be positive");
   }
-  if (!sameParticipants(previousSituation.participantRefs ?? [], currentSituation.participantRefs ?? [])) {
-    return Object.freeze({ grounded:false, reason:"participants_changed", elapsedMs });
+
+  let before=currentSituation.establishedAt;
+  let last=Object.freeze({ grounded:false,reason:"missing_situation" });
+  for(let index=0;index<maxWitnesses;index+=1){
+    const previous=livedNowStore.getPreviousSituation(currentSituation.threadId,before);
+    if(previous===null){
+      return last.reason==="elapsed_too_short"
+        ?Object.freeze({ ...last, reason:"history_exhausted" })
+        :last;
+    }
+    const classified=classifyExplorationContinuity(previous,currentSituation);
+    if(classified.grounded)return classified;
+    if(classified.reason!=="elapsed_too_short")return classified;
+    last=classified;
+    before=previous.establishedAt;
   }
-  return Object.freeze({ grounded:true, reason:"sustained_sameness", elapsedMs });
+  return Object.freeze({ ...last,grounded:false,reason:"history_limit" });
 }
 
 function sustainedLivedSameness(previousSituation, currentSituation) {
@@ -81,6 +124,31 @@ export function explorationRegulationForLivedContinuity({
 export function explorationInteroceptionForLivedContinuity(input) {
   const frame = explorationRegulationForLivedContinuity(input);
   return frame === null ? null : projectInteroception(frame);
+}
+
+export function explorationRegulationForLivedHistory({
+  thread,
+  livedNowStore,
+  currentSituation,
+}) {
+  const continuity=explorationContinuityForLivedHistory({
+    livedNowStore,
+    currentSituation,
+  });
+  if(!continuity.grounded)return null;
+  return evaluateIntrinsicRegulation({
+    perceptFrame:{
+      asOf:currentSituation.establishedAt,
+      exploration:{ novelty:0 },
+      evidenceRefs:[...continuity.evidenceRefs],
+    },
+    runtimeBaselines:thread.genome?.runtimeBaselines ?? {},
+  });
+}
+
+export function explorationInteroceptionForLivedHistory(input) {
+  const frame=explorationRegulationForLivedHistory(input);
+  return frame===null?null:projectInteroception(frame);
 }
 
 function requireMethod(owner, name) {
