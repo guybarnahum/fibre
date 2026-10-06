@@ -31,6 +31,15 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS public_encounter_receipts (
+      request_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      request_digest TEXT NOT NULL CHECK (request_digest LIKE 'sha256:%'),
+      result_json TEXT NOT NULL CHECK (json_valid(result_json)),
+      recorded_at TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS social_interaction_records (
       interaction_id TEXT PRIMARY KEY,
       occurred_at TEXT NOT NULL,
@@ -104,6 +113,8 @@ export function createLivedExperienceTables(database) {
       ON encounter_story_records(occurred_at, encounter_id);
     CREATE INDEX IF NOT EXISTS idx_encounter_story_presence
       ON encounter_story_thread_presence(thread_id, encounter_ref);
+    CREATE INDEX IF NOT EXISTS idx_public_encounter_receipt_thread
+      ON public_encounter_receipts(thread_id, request_id);
     CREATE INDEX IF NOT EXISTS idx_social_interaction_initiator_time
       ON social_interaction_records(initiator_thread_id, occurred_at, interaction_id);
     CREATE INDEX IF NOT EXISTS idx_social_interaction_recipient_time
@@ -138,6 +149,14 @@ export function createLivedExperienceTables(database) {
     CREATE TRIGGER IF NOT EXISTS encounter_story_thread_presence_no_delete
       BEFORE DELETE ON encounter_story_thread_presence BEGIN
         SELECT RAISE(ABORT, 'encounter_story_thread_presence is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS public_encounter_receipts_no_update
+      BEFORE UPDATE ON public_encounter_receipts BEGIN
+        SELECT RAISE(ABORT, 'public_encounter_receipts is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS public_encounter_receipts_no_delete
+      BEFORE DELETE ON public_encounter_receipts BEGIN
+        SELECT RAISE(ABORT, 'public_encounter_receipts is append-only');
       END;
     CREATE TRIGGER IF NOT EXISTS social_interaction_records_no_update
       BEFORE UPDATE ON social_interaction_records BEGIN
