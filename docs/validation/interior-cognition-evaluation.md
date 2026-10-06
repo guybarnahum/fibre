@@ -65,7 +65,7 @@ Before implementing Interior Cognition behavior, inspect the real staging cohort
 Run:
 
 ```bash
-npm run interior-cognition:baseline:staging
+npm run interior-cognition:baseline -- --env staging
 ```
 
 The baseline performs only GETs against the already-deployed staging World/Presentation surfaces. It does **not** ensure LivedNow, invoke a model, enter Commons, create encounters, or mutate Thread/World state.
