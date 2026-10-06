@@ -279,11 +279,22 @@ function fixture({
         };
       }
       if (call.clientRequestId.startsWith("encounter-attention_")) {
-        assert.equal(call.input.thread.name, "Sela", "only witness should need attention appraisal");
+        const actors = new Set(
+          call.input.encounterStory.story.beats
+            .map((beat) => beat.actorThreadId)
+            .filter((threadId) => threadId !== null),
+        );
+        assert.equal(
+          actors.has(call.input.thread.threadId),
+          false,
+          "only a silent co-present Thread should need witness attention",
+        );
         return {
           output:{
             outcome:"noticed",
-            experienceText:"I stayed quiet, but my shoulders tightened when Mina spoke to Noor that way. I felt protective of Noor and wary of Mina.",
+            experienceText:rude && call.input.thread.name === "Sela"
+              ? "I stayed quiet, but my shoulders tightened when Mina spoke to Noor that way. I felt protective of Noor and wary of Mina."
+              : "I noticed the nearby exchange without joining it and kept listening from where I was.",
           },
           provenance:{ provider:"fixture", modelId:"fixture-e3" },
         };
