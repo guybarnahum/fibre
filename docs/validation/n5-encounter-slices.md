@@ -190,7 +190,7 @@ A + B independently current
        -> ordinary private journal / selective memory aftermath
 ```
 
-E3 deliberately does not add a witness subsystem. Explicit `witnessThreadIds` remain proof scaffolding, while ordinary social counterparties are discovered from World-current co-presence rather than supplied by the caller. Encounter Story remains the single n-ary authority, and every admitted Thread must independently have compatible World-owned presence.
+E3 deliberately did not add a witness subsystem. Its original proof used explicit witness IDs only as temporary scaffolding. **E6 subsequently removed that scaffolding:** incidental witness candidates are now derived from authoritative co-presence for each accepted Encounter Story. Encounter Story remains the single n-ary authority, and every admitted Thread must independently have compatible World-owned presence.
 
 Witnesses:
 
@@ -570,7 +570,7 @@ A café may therefore create several independent opportunities in the same lived
 
 Group conversation remains a preserved extension path: several actor opportunities may later converge into one n-ary Encounter Story when an actual shared event does so. W7a does not add group-selection machinery pre-emptively.
 
-Explicit `witnessThreadIds` remain controlled E3 scaffolding only. They may affect witness attention for an accepted story but never choose the initiating Thread's counterparties. Automatic incidental-witness discovery remains deferred.
+E6 subsequently removed the explicit E3 witness scaffolding. Callers no longer choose incidental witnesses: after an Encounter Story forms, Fibre derives compatible co-present candidate witnesses and gives each the ordinary `noticed | not_noticed` attention path.
 
 Human/person interaction uses the same future exterior seam:
 
