@@ -58,6 +58,7 @@ const plan={
 
 function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual") }={}){
   const stories=[];
+  const receipts=new Map();
   const modelCalls=[];
   const experienceStore={
     recordEncounterStory(candidate){
@@ -70,6 +71,21 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
       if(record!==null)return structuredClone(record);
       if(required)throw new TypeError(`Encounter Story ${encounterId} was not found`);
       return null;
+    },
+    getPublicEncounterReceipt(requestId,{ required=false }={}){
+      const record=receipts.get(requestId)??null;
+      if(record!==null)return structuredClone(record);
+      if(required)throw new TypeError(`public encounter receipt ${requestId} was not found`);
+      return null;
+    },
+    recordPublicEncounterReceipt(candidate){
+      const prior=receipts.get(candidate.requestId)??null;
+      if(prior!==null){
+        assert.deepEqual(prior,candidate);
+        return structuredClone(prior);
+      }
+      receipts.set(candidate.requestId,structuredClone(candidate));
+      return structuredClone(candidate);
     },
     recordThreadEncounterAttention(candidate){
       return {
@@ -187,19 +203,22 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
     modelAdapter,
   });
 
-  return { service,stories,modelCalls };
+  return { service,stories,receipts,modelCalls };
 }
 
 function request(expectedSituationId="sit_displayed",{
+  requestId="req_n6_public_001",
   utterance="Hi — do you have a minute?",
   priorEncounterStoryId=null,
+  at=AT,
 }={}){
   return {
+    requestId,
     threadId:THREAD_ID,
     expectedSituationId,
     utterance,
     ...(priorEncounterStoryId===null?{}:{ priorEncounterStoryId }),
-    at:AT,
+    at,
   };
 }
 
@@ -255,6 +274,7 @@ test("N6.3e later accepted turns use admitted Encounter Story history instead of
 
   const first=await f.service.encounter(request("sit_displayed_first"));
   const second=await f.service.encounter(request(first.situationId,{
+    requestId:"req_n6_public_002",
     utterance:"What do you mean by that?",
     priorEncounterStoryId:first.encounterStoryId,
   }));
@@ -285,4 +305,46 @@ test("N6.3e later accepted turns use admitted Encounter Story history instead of
   );
   assert.equal(Object.hasOwn(second,"sessionId"),false,
     "continued encounter invented session authority");
+});
+
+
+test("N6.4 completed retry replays one admitted outcome without repeating private consequence",async()=>{
+  const actual=situation("sit_n6_retry_actual");
+  const f=fixture({ decision:"accept",actualSituation:actual });
+  const firstInput=request("sit_retry_displayed",{
+    requestId:"req_n6_retry_once",
+  });
+  const first=await f.service.encounter(firstInput);
+  const callsAfterFirst=f.modelCalls.length;
+  const storiesAfterFirst=f.stories.length;
+
+  const retry=await f.service.encounter({
+    ...firstInput,
+    at:"2026-10-06T02:46:00.000Z",
+  });
+
+  assert.deepEqual(retry,first,
+    "retry changed the admitted encounter outcome");
+  assert.equal(f.modelCalls.length,callsAfterFirst,
+    "retry repeated cognition or private consequence");
+  assert.equal(f.stories.length,storiesAfterFirst,
+    "retry duplicated the Encounter Story");
+  assert.equal(f.receipts.size,1,
+    "retry created more than one durable receipt");
+});
+
+test("N6.4 request identity cannot be reused for a different encounter",async()=>{
+  const f=fixture({ decision:"decline" });
+  await f.service.encounter(request("sit_retry_binding",{
+    requestId:"req_n6_retry_conflict",
+    utterance:"Hello",
+  }));
+
+  await assert.rejects(
+    f.service.encounter(request("sit_retry_binding",{
+      requestId:"req_n6_retry_conflict",
+      utterance:"Different words",
+    })),
+    /conflicts with its existing receipt/,
+  );
 });
