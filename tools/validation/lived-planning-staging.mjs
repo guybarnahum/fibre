@@ -548,7 +548,7 @@ export async function runDevelopmentalExplorationX3Staging({
       );
       if(payload?.contract!=="fibre-world-thread-observatory-v0.8"){
         throw new Error(
-          `X3 requires World observatory v0.7; observed ${payload?.contract??"unknown"}`,
+          `X3 requires World observatory v0.8; observed ${payload?.contract??"unknown"}`,
         );
       }
       if(typeof payload?.deploymentGitSha!=="string"||!GIT_SHA.test(payload.deploymentGitSha)){
