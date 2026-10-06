@@ -509,7 +509,7 @@ At least one meaningful behavioral path exists from grounded exploration pressur
 
 ---
 
-# X4 — experience closes the developmental loop
+# X4 — experience closes the developmental loop — CURRENT
 
 ## Claim
 
@@ -555,6 +555,41 @@ Do not inject a caller-authored "prefer social" flag.
 If an earlier encounter was `not_remembered` and produced no durable semantic consequence, later planning may not reconstruct its enriching/aversive meaning merely because Encounter Story history still exists.
 
 History is not memory.
+
+## Implemented proof
+
+X4 adds no new production authority.
+
+The existing planning differential test now composes the accepted authorities end to end:
+
+```text
+Encounter Story
+  -> Thread Experience
+  -> existing encounter-memory retention
+      -> retained autobiographical meaning
+      -> not_remembered
+  -> existing Interior Cognition evidence selection
+  -> existing lived_planning
+```
+
+One objective exploratory workshop pattern is exercised across three otherwise equivalent later planning conditions:
+
+- retained enriching meaning;
+- retained aversive meaning;
+- `not_remembered`.
+
+The later World planning context and offered places are identical.
+
+The proof requires:
+
+- enriching retained meaning can bend later life toward another bounded unfamiliar opportunity;
+- aversive retained meaning can bend later life toward protected quiet;
+- `not_remembered` leaves objective Encounter Story / Thread Experience history intact but contributes no memory evidence to later planning;
+- Encounter Story / Experience refs cannot bypass autobiographical-memory authority and enter `lived_planning` directly.
+
+No reward score, exploration-memory type, new semantic-state writer, planner or model call was added.
+
+X4 remains pending local validation.
 
 ## Stop condition
 
