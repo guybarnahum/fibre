@@ -126,7 +126,7 @@ Fibre still lacks:
 - Thread-owned public visitor participation from an ordinary displayed scene;
 - the later-revisit proof after an accepted public encounter.
 
-This autonomy gap is production/discovery, not ontology. The general Encounter Story -> attention -> Experience -> optional subjective Journal -> selective Memory path already supports conversation, environmental observation and silent witnessing. E6 should address autonomous occurrence/witness discovery after X4 closes and before richer Person/social discoverability work.
+This autonomy gap is production/discovery, not ontology. X4 is now accepted: the general Encounter Story -> attention -> Experience -> optional subjective Journal -> selective Memory path can bend later planning without history or Journal bypassing memory authority. E6 is implemented pending local validation: environmental occurrence prose is authored from exterior current-scene evidence without caller event text, and accepted social stories derive incidental witness candidates from authoritative co-presence without caller witness IDs.
 
 Encounter Story is now visualizable by construction: its durable rich prompt is objective/evidence-bound and separate from any later subjective memory reconstruction. Actual image/video rendering remains optional and uses the existing generated-asset pipeline rather than becoming World authority.
 
