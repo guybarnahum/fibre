@@ -100,7 +100,7 @@ async function authorOccurrence({ threadId, at, situation, situatedLifeStore, li
   const invocation = await modelAdapter.invoke({
     systemPrompt:`You author one bounded observable occurrence in Fibre's World.
 Use only the supplied exterior scene. Do not use or infer the Thread's private thoughts, personality, memories, needs, preferences or future goals.
-Return either one concise externally observable occurrence that could naturally happen in this scene at this time, or null when no concrete occurrence should be admitted at this boundary.
+Return one concise externally observable occurrence that could naturally happen in this scene at this time.
 The occurrence may involve environment, weather, sound, an animal, an object, an anonymous person's observable action, or another ordinary local happening.
 Do not turn it into a conversation with the Thread, do not make it important or interesting on purpose, and do not describe what the Thread notices, thinks or feels.
 Write observable World fact only.`,
@@ -110,19 +110,13 @@ Write observable World fact only.`,
       additionalProperties:false,
       required:["occurrenceText"],
       properties:{
-        occurrenceText:{
-          anyOf:[
-            { type:"string", minLength:1, maxLength:800 },
-            { type:"null" },
-          ],
-        },
+        occurrenceText:{ type:"string", minLength:1, maxLength:800 },
       },
     },
     clientRequestId:`world-occurrence_${sha256(canonicalJson(input))}`,
   });
   assertPlainObject("environmental occurrence output", invocation.output);
   assertExactKeys("environmental occurrence output", invocation.output, ["occurrenceText"]);
-  if (invocation.output.occurrenceText === null) return null;
   assertNonEmpty("environmental occurrence text", invocation.output.occurrenceText);
   return invocation.output.occurrenceText.trim();
 }
@@ -198,16 +192,6 @@ export function createEnvironmentalEncounterService({
           livedNowStore,
           modelAdapter,
         });
-        if (occurrenceText === null) {
-          return Object.freeze({
-            outcome:"no_occurrence",
-            encounterStory:null,
-            attention:null,
-            aftermath:null,
-            reused:false,
-          });
-        }
-
         const story = {
           storyVersion:"encounter-story-v0.1",
           beats:[{
