@@ -137,19 +137,6 @@ export function createSocialMeetingService({
     return Object.freeze(discovered);
   }
 
-  async function witnessContexts(witnessThreadIds, initiator, counterparty, at) {
-    const contexts = [];
-    for (const threadId of witnessThreadIds) {
-      if (threadId === initiator.thread.threadId || threadId === counterparty.thread.threadId) continue;
-      const witness = await currentContext(threadId, at);
-      if (compatible(initiator, witness, livedNowStore)
-        && compatible(counterparty, witness, livedNowStore)) {
-        contexts.push(witness);
-      }
-    }
-    return Object.freeze(contexts);
-  }
-
   async function formAcceptedEncounter({
     initiator,
     counterparty,
@@ -297,24 +284,9 @@ export function createSocialMeetingService({
   return Object.freeze({
     async meet(input) {
       assertPlainObject("social meeting input", input);
-      const hasWitnesses = Object.hasOwn(input, "witnessThreadIds");
-      assertExactKeys(
-        "social meeting input",
-        input,
-        hasWitnesses
-          ? ["initiatorThreadId","witnessThreadIds","at"]
-          : ["initiatorThreadId","at"],
-      );
+      assertExactKeys("social meeting input", input, ["initiatorThreadId","at"]);
       assertId("social meeting initiatorThreadId", input.initiatorThreadId);
       assertIsoTimestamp("social meeting at", input.at);
-      const explicitWitnessIds = input.witnessThreadIds ?? [];
-      if (!Array.isArray(explicitWitnessIds)) {
-        throw new TypeError("social meeting witnessThreadIds must be an array");
-      }
-      for (const threadId of explicitWitnessIds) assertId("social meeting witnessThreadId", threadId);
-      if (new Set(explicitWitnessIds).size !== explicitWitnessIds.length) {
-        throw new TypeError("social meeting witnessThreadIds must be unique");
-      }
 
       const initiator = await currentContext(input.initiatorThreadId, input.at);
       const discovered = await discoverCoPresent(initiator, input.at);
@@ -466,12 +438,8 @@ export function createSocialMeetingService({
       }
 
       for (const pending of accepted) {
-        const witnesses = await witnessContexts(
-          explicitWitnessIds,
-          initiator,
-          pending.counterparty,
-          input.at,
-        );
+        const witnesses = discovered.filter((context) =>
+          context.thread.threadId !== pending.counterparty.thread.threadId);
         attemptByActor.set(
           pending.counterparty.thread.threadId,
           await formAcceptedEncounter({
