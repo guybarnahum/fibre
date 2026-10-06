@@ -16,7 +16,7 @@ function cors(request, viewerOrigin) {
   if (!origin) return {};
   return {
     "Access-Control-Allow-Origin":origin,
-    "Access-Control-Allow-Methods":"GET, OPTIONS",
+    "Access-Control-Allow-Methods":"GET, POST, OPTIONS",
     "Access-Control-Allow-Headers":"Content-Type",
     "Vary":"Origin",
   };
@@ -37,26 +37,35 @@ function safeDetail(error) {
 export function createPublicCurrentLifeApi({
   isPublicThread,
   ensureCurrentPresent,
+  submitEncounter,
   viewerOrigin = null,
 } = {}) {
   if (typeof isPublicThread !== "function") throw new TypeError("public current-life API requires isPublicThread");
   if (typeof ensureCurrentPresent !== "function") throw new TypeError("public current-life API requires ensureCurrentPresent");
+  if (typeof submitEncounter !== "function") throw new TypeError("public current-life API requires submitEncounter");
 
   return Object.freeze({
     async fetch(request) {
       const url=new URL(request.url);
-      const match=/^\/api\/threads\/([^/]+)\/present$/.exec(url.pathname);
-      if(match===null)return null;
+      const presentMatch=/^\/api\/threads\/([^/]+)\/present$/.exec(url.pathname);
+      const encounterMatch=/^\/api\/threads\/([^/]+)\/encounter$/.exec(url.pathname);
+      if(presentMatch===null&&encounterMatch===null)return null;
+      const encounter=encounterMatch!==null;
+      const match=encounterMatch??presentMatch;
 
       if(request.headers.get("Origin")!==null&&allowedOrigin(request,viewerOrigin)===false){
         return json({ error:"origin_not_allowed" },request,viewerOrigin,403);
       }
       if(request.method==="OPTIONS")return new Response(null,{ status:204,headers:cors(request,viewerOrigin) });
-      if(request.method!=="GET")return json({ error:"method_not_allowed" },request,viewerOrigin,405);
+      if(request.method!==(encounter?"POST":"GET")){
+        return json({ error:"method_not_allowed" },request,viewerOrigin,405);
+      }
       if(url.search!==""){
         return json({
-          error:"invalid_public_visit",
-          detail:"public visit does not accept caller-authored time or scene parameters",
+          error:encounter?"invalid_public_encounter":"invalid_public_visit",
+          detail:encounter
+            ?"public encounter does not accept caller-authored time or scene parameters"
+            :"public visit does not accept caller-authored time or scene parameters",
         },request,viewerOrigin,400);
       }
 
@@ -64,7 +73,10 @@ export function createPublicCurrentLifeApi({
       try{
         threadId=id("threadId",decodeURIComponent(match[1]));
       }catch(error){
-        return json({ error:"invalid_public_visit",detail:error.message },request,viewerOrigin,400);
+        return json({
+          error:encounter?"invalid_public_encounter":"invalid_public_visit",
+          detail:error.message,
+        },request,viewerOrigin,400);
       }
 
       let visible;
@@ -77,6 +89,68 @@ export function createPublicCurrentLifeApi({
         },request,viewerOrigin,503);
       }
       if(visible!==true)return json({ error:"not_found" },request,viewerOrigin,404);
+
+      if(encounter){
+        let body;
+        try{
+          body=await request.json();
+          if(!body||typeof body!=="object"||Array.isArray(body))throw new TypeError("encounter body must be an object");
+          const keys=Object.keys(body).sort();
+          if(keys.length!==2||keys[0]!=="situationId"||keys[1]!=="utterance"){
+            throw new TypeError("encounter body must contain only situationId and utterance");
+          }
+          id("situationId",body.situationId);
+          if(typeof body.utterance!=="string"||body.utterance.trim()===""){
+            throw new TypeError("utterance is required");
+          }
+          body={ situationId:body.situationId,utterance:body.utterance.trim() };
+        }catch(error){
+          return json({ error:"invalid_public_encounter",detail:error.message },request,viewerOrigin,400);
+        }
+
+        let result;
+        try{
+          result=await submitEncounter(threadId,body,request);
+        }catch(error){
+          const detail=safeDetail(error);
+          if(error?.status===409&&error?.body?.error==="encounter_scene_changed"){
+            return json({
+              error:"encounter_scene_changed",
+              ...(typeof error.body.currentSituationId==="string"
+                ?{ currentSituationId:error.body.currentSituationId }
+                :{}),
+            },request,viewerOrigin,409);
+          }
+          return json({
+            error:"public_encounter_unavailable",
+            ...(detail===null?{}:{ detail }),
+          },request,viewerOrigin,503);
+        }
+
+        if(result?.outcome==="accepted"
+          && typeof result.situationId==="string"
+          && typeof result.responseText==="string"
+          && typeof result.encounterStoryId==="string"){
+          return json({
+            outcome:"accepted",
+            situationId:result.situationId,
+            responseText:result.responseText,
+            encounterStoryId:result.encounterStoryId,
+          },request,viewerOrigin);
+        }
+        if((result?.outcome==="decline"||result?.outcome==="defer")
+          && typeof result.situationId==="string"){
+          return json({
+            outcome:result.outcome==="decline"?"declined":"deferred",
+            situationId:result.situationId,
+            expression:typeof result.expression==="string"?result.expression:null,
+            ...(result.outcome==="defer"&&typeof result.suggestedAt==="string"
+              ?{ suggestedAt:result.suggestedAt }
+              :{}),
+          },request,viewerOrigin);
+        }
+        return json({ error:"public_encounter_unavailable" },request,viewerOrigin,503);
+      }
 
       let admitted;
       try{
