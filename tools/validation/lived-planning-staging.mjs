@@ -16,7 +16,8 @@ import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situate
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REQUEST_TIMEOUT_MS = 120_000;
 const MAX_THREADS = 18;
-const X3_MAX_THREADS = 8;
+const X3_SCAN_LIMIT = 50;
+const X3_MAX_ELIGIBLE = 3;
 const MIN_CURRENT_THREADS = 3;
 const MIN_HISTORY_ATTRIBUTED = 2;
 const GIT_SHA = /^[0-9a-f]{40}$/u;
@@ -443,6 +444,7 @@ export async function runLivedPlanningStagingProof({
       inspectedThreadCount:rows.length,
       personalPlanThreadCount:personalRows.length,
       skippedThreadCount:skipped.length,
+      skipReasonCounts,
       developedEvidenceAttributedCount:attributed.length,
       historyEvidenceAttributedCount:historyAttributed.length,
       distinctHistoryEvidenceCount:distinctHistoryEvidence,
@@ -531,7 +533,12 @@ export async function runDevelopmentalExplorationX3Staging({
 
   const rows=[];
   const skipped=[];
-  for(const threadCard of ordered.slice(0,X3_MAX_THREADS)){
+  const candidates=[];
+  let inspectedThreadCount=0;
+
+  for(const threadCard of ordered.slice(0,X3_SCAN_LIMIT)){
+    if(candidates.length>=X3_MAX_ELIGIBLE)break;
+    inspectedThreadCount+=1;
     try{
       const payload=await privateGet(
         worldBaseUrl,
@@ -547,123 +554,166 @@ export async function runDevelopmentalExplorationX3Staging({
       if(typeof payload?.deploymentGitSha!=="string"||!GIT_SHA.test(payload.deploymentGitSha)){
         throw new Error("X3 requires a deployed World Git SHA witness");
       }
+
       const observatory=payload?.observatory;
       const current=observatory?.livedNow?.currentSituation??null;
       const previous=observatory?.livedNow?.previousSituation??null;
+      let reason=null;
+
       if(current===null||previous===null||current.location?.kind!=="place"){
-        skipped.push(Object.freeze({
-          threadId:threadCard.threadId,
-          reason:"no comparable enacted at-place continuity",
-        }));
+        reason="no comparable enacted at-place continuity";
+      }
+
+      const interoception=reason===null
+        ?explorationInteroceptionForLivedContinuity({
+          thread:observatory.thread,
+          previousSituation:previous,
+          currentSituation:current,
+        })
+        :null;
+      if(reason===null&&interoception===null){
+        reason="current enacted life does not ground exploration pressure";
+      }
+
+      const refs=reason===null?availablePlaceRefs(observatory,current):[];
+      if(reason===null&&refs.length<2){
+        reason="fewer than two authoritative planning opportunities";
+      }
+
+      const startingPlaceRef=reason===null?current.location.placeRef:null;
+      if(reason===null&&!refs.includes(startingPlaceRef)){
+        reason="current place is absent from authoritative planning opportunities";
+      }
+
+      const sourceReferences=reason===null
+        ?(observatory?.livedNow?.currentPersonalPlan?.sourceReferences??[])
+        :[];
+      if(reason===null&&sourceReferences.length===0){
+        reason="current plan has no reusable World evidence";
+      }
+
+      if(reason!==null){
+        skipped.push(Object.freeze({ threadId:threadCard.threadId,reason }));
         continue;
       }
 
-      const interoception=explorationInteroceptionForLivedContinuity({
-        thread:observatory.thread,
-        previousSituation:previous,
-        currentSituation:current,
-      });
-      if(interoception===null){
-        skipped.push(Object.freeze({
-          threadId:threadCard.threadId,
-          reason:"current enacted life does not ground exploration pressure",
-        }));
-        continue;
-      }
-
-      const refs=availablePlaceRefs(observatory,current);
-      if(refs.length<2){
-        skipped.push(Object.freeze({
-          threadId:threadCard.threadId,
-          reason:"fewer than two authoritative planning opportunities",
-        }));
-        continue;
-      }
-      const startingPlaceRef=current.location.placeRef;
-      if(!refs.includes(startingPlaceRef)){
-        skipped.push(Object.freeze({
-          threadId:threadCard.threadId,
-          reason:"current place is absent from authoritative planning opportunities",
-        }));
-        continue;
-      }
-
-      const authoredAt=current.establishedAt;
-      const horizonEnd=new Date(Date.parse(authoredAt)+(4*60*60*1000)).toISOString();
-      const sourceReferences=observatory?.livedNow?.currentPersonalPlan?.sourceReferences ?? [];
-      if(sourceReferences.length===0){
-        skipped.push(Object.freeze({
-          threadId:threadCard.threadId,
-          reason:"current plan has no reusable World evidence",
-        }));
-        continue;
-      }
-      const sourceStores=sourceStoresFromObservatory(observatory);
-      const common={
-        threadId:threadCard.threadId,
-        authoredAt,
-        horizonEnd,
-        availablePlaceRefs:refs,
+      candidates.push(Object.freeze({
+        threadCard:structuredClone(threadCard),
+        payload:structuredClone(payload),
+        observatory:structuredClone(observatory),
+        current:structuredClone(current),
+        previous:structuredClone(previous),
+        interoception:structuredClone(interoception),
+        refs:Object.freeze([...refs]),
         startingPlaceRef,
-        sourceReferences,
-        sourceStores,
-        modelAdapter,
-        worldTimeZone:observatory?.livedNow?.worldContext?.timeZone ?? null,
-      };
-
+        sourceReferences:Object.freeze([...sourceReferences]),
+      }));
       emit({
-        event:"developmental-x3-planning",
+        event:"developmental-x3-candidate",
         threadId:threadCard.threadId,
-        condition:"baseline",
-      });
-      const baseline=await formPersonalLivedPlan(common);
-
-      emit({
-        event:"developmental-x3-planning",
-        threadId:threadCard.threadId,
-        condition:"exploration",
-      });
-      const exploratory=await formPersonalLivedPlan({
-        ...common,
-        interoception,
-      });
-      const changed=planFingerprint(baseline)!==planFingerprint(exploratory);
-      const row=Object.freeze({
-        threadId:threadCard.threadId,
-        displayName:threadCard.displayName ?? observatory.thread?.identity?.name ?? null,
+        displayName:threadCard.displayName??observatory.thread?.identity?.name??null,
         previousSituationId:previous.situationId,
         currentSituationId:current.situationId,
-        worldDeploymentGitSha:payload.deploymentGitSha,
-        interoception:structuredClone(interoception),
-        availablePlaceRefs:Object.freeze([...refs]),
-        baseline:Object.freeze({
-          plan:planSummary(baseline),
-          provider:baseline.cognition.provider,
-          modelId:baseline.cognition.modelId,
-        }),
-        exploratory:Object.freeze({
-          plan:planSummary(exploratory),
-          provider:exploratory.cognition.provider,
-          modelId:exploratory.cognition.modelId,
-        }),
-        materiallyDifferent:changed,
-      });
-      rows.push(row);
-      emit({
-        event:"developmental-x3-thread",
-        threadId:row.threadId,
-        displayName:row.displayName,
-        materiallyDifferent:changed,
-        baseline:row.baseline.plan,
-        exploratory:row.exploratory.plan,
+        opportunityCount:refs.length,
       });
     }catch(error){
       const reason=String(error?.message??error).slice(0,1200);
       skipped.push(Object.freeze({ threadId:threadCard.threadId,reason }));
-      emit({ event:"developmental-x3-thread-skipped",threadId:threadCard.threadId,reason });
     }
   }
 
+  const skipReasonCounts=Object.freeze(Object.fromEntries(
+    [...new Set(skipped.map((entry)=>entry.reason))]
+      .sort()
+      .map((reason)=>[
+        reason,
+        skipped.filter((entry)=>entry.reason===reason).length,
+      ]),
+  ));
+  emit({
+    event:"developmental-x3-scan",
+    discoveredThreadCount:discovered.length,
+    inspectedThreadCount,
+    candidateCount:candidates.length,
+    skipReasonCounts,
+  });
+
+  for(const candidate of candidates){
+    const {
+      threadCard,
+      payload,
+      observatory,
+      current,
+      previous,
+      interoception,
+      refs,
+      startingPlaceRef,
+      sourceReferences,
+    }=candidate;
+
+    const authoredAt=current.establishedAt;
+    const horizonEnd=new Date(Date.parse(authoredAt)+(4*60*60*1000)).toISOString();
+    const sourceStores=sourceStoresFromObservatory(observatory);
+    const common={
+      threadId:threadCard.threadId,
+      authoredAt,
+      horizonEnd,
+      availablePlaceRefs:refs,
+      startingPlaceRef,
+      sourceReferences,
+      sourceStores,
+      modelAdapter,
+      worldTimeZone:observatory?.livedNow?.worldContext?.timeZone??null,
+    };
+
+    emit({
+      event:"developmental-x3-planning",
+      threadId:threadCard.threadId,
+      condition:"baseline",
+    });
+    const baseline=await formPersonalLivedPlan(common);
+
+    emit({
+      event:"developmental-x3-planning",
+      threadId:threadCard.threadId,
+      condition:"exploration",
+    });
+    const exploratory=await formPersonalLivedPlan({
+      ...common,
+      interoception,
+    });
+
+    const changed=planFingerprint(baseline)!==planFingerprint(exploratory);
+    const row=Object.freeze({
+      threadId:threadCard.threadId,
+      displayName:threadCard.displayName??observatory.thread?.identity?.name??null,
+      previousSituationId:previous.situationId,
+      currentSituationId:current.situationId,
+      worldDeploymentGitSha:payload.deploymentGitSha,
+      interoception:structuredClone(interoception),
+      availablePlaceRefs:Object.freeze([...refs]),
+      baseline:Object.freeze({
+        plan:planSummary(baseline),
+        provider:baseline.cognition.provider,
+        modelId:baseline.cognition.modelId,
+      }),
+      exploratory:Object.freeze({
+        plan:planSummary(exploratory),
+        provider:exploratory.cognition.provider,
+        modelId:exploratory.cognition.modelId,
+      }),
+      materiallyDifferent:changed,
+    });
+    rows.push(row);
+    emit({
+      event:"developmental-x3-thread",
+      threadId:row.threadId,
+      displayName:row.displayName,
+      materiallyDifferent:changed,
+      baseline:row.baseline.plan,
+      exploratory:row.exploratory.plan,
+    });
+  }
   const evidence=Object.freeze({
     contract:"fibre-developmental-exploration-x3-live-v0.1",
     environment:"staging",
@@ -677,7 +727,7 @@ export async function runDevelopmentalExplorationX3Staging({
     rule:"One baseline and one exploration planning call per eligible Thread; no persistence and no resampling.",
     summary:Object.freeze({
       discoveredThreadCount:discovered.length,
-      inspectedThreadCount:Math.min(ordered.length,X3_MAX_THREADS),
+      inspectedThreadCount,
       eligibleThreadCount:rows.length,
       materiallyDifferentCount:rows.filter((row)=>row.materiallyDifferent).length,
       skippedThreadCount:skipped.length,
