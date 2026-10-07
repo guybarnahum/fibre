@@ -681,9 +681,12 @@ export class LivedExperienceStore {
     assertIsoTimestamp("consolidation queue queuedAt", queuedAt);
     try {
       const experience=this.#database.prepare(`
-        SELECT thread_id FROM thread_encounter_experiences WHERE experience_id=?
+        SELECT thread_id,occurred_at FROM thread_encounter_experiences WHERE experience_id=?
       `).get(experienceId);
       if(experience===undefined)throw new TypeError(`Thread experience ${experienceId} was not found`);
+      if(Date.parse(queuedAt)<Date.parse(experience.occurred_at)){
+        throw new TypeError("consolidation queue cannot predate its Thread experience");
+      }
       const record={
         experienceId,
         threadId:experience.thread_id,
@@ -754,13 +757,16 @@ export class LivedExperienceStore {
     try{
       for(const ref of refs){
         const row=this.#database.prepare(`
-          SELECT e.thread_id,q.experience_id AS queued_experience_id
+          SELECT e.thread_id,e.occurred_at,q.experience_id AS queued_experience_id
           FROM thread_encounter_experiences e
           LEFT JOIN thread_experience_consolidation_queue q ON q.experience_id=e.experience_id
           WHERE e.experience_id=?
         `).get(ref);
         if(row===undefined||row.thread_id!==threadId)throw new TypeError("consolidation experience belongs to another Thread");
         if(row.queued_experience_id===null)throw new TypeError("consolidation experience was not queued");
+        if(Date.parse(startedAt)<Date.parse(row.occurred_at)){
+          throw new TypeError("experience consolidation cannot predate its lived evidence");
+        }
       }
       const prior=this.#database.prepare(`
         SELECT thread_id,started_at,experience_refs_json,record_digest
