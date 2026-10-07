@@ -52,19 +52,36 @@ function visualNeedsRetry(entry) {
   ));
 }
 
+function experienceConsolidationNeedsRetry(entry) {
+  if (entry?.enabled !== true) return false;
+  if (entry.ok !== true) return true;
+  const result = entry.result;
+  if (!result || typeof result !== "object") return false;
+  if (Number.isSafeInteger(result.failed) && result.failed > 0) return true;
+  return result.hasPending === true;
+}
+
 export function worldReconciliationNeedsRetry(result) {
   if (!result || typeof result !== "object") return true;
   if (result.skipped === true) return result.reason === "already_running";
-  return presentationNeedsRetry(result.presentation) || visualNeedsRetry(result.visualPublication);
+  return presentationNeedsRetry(result.presentation)
+    || visualNeedsRetry(result.visualPublication)
+    || experienceConsolidationNeedsRetry(result.experienceConsolidation);
 }
 
 export function createWorldReconciliationProcess({
   presentationDelivery = null,
   visualPublicationProcess = null,
+  experienceConsolidationProcess = null,
   onError = null,
 } = {}) {
   const delivery = optionalMethod("presentationDelivery", presentationDelivery, "deliverPending");
   let visual = optionalMethod("visualPublicationProcess", visualPublicationProcess, "runOnce");
+  let consolidation = optionalMethod(
+    "experienceConsolidationProcess",
+    experienceConsolidationProcess,
+    "runOnce",
+  );
   if (onError !== null && typeof onError !== "function") {
     throw new TypeError("World reconciliation onError must be a function or null");
   }
@@ -90,6 +107,10 @@ export function createWorldReconciliationProcess({
       visual = optionalMethod("visualPublicationProcess", process, "runOnce");
     },
 
+    setExperienceConsolidationProcess(process) {
+      consolidation = optionalMethod("experienceConsolidationProcess", process, "runOnce");
+    },
+
     async runOnce() {
       if (running) return Object.freeze({ skipped: true, reason: "already_running" });
       running = true;
@@ -102,11 +123,16 @@ export function createWorldReconciliationProcess({
           "thread_visual_publication",
           visual === null ? null : () => visual.runOnce(),
         );
+        const experienceConsolidation = await isolated(
+          "experience_consolidation",
+          consolidation === null ? null : () => consolidation.runOnce(),
+        );
         return Object.freeze({
           skipped: false,
           reason: null,
           presentation,
           visualPublication,
+          experienceConsolidation,
         });
       } finally {
         running = false;
