@@ -525,7 +525,10 @@ export function parseInsideFibreArgs(argv) {
   return Object.freeze({ command, limit, target, threadId, targetEnvironment });
 }
 
-function cloudContext(environment, targetEnvironment, { requireExactDeployment = false } = {}) {
+function cloudContext(environment, targetEnvironment, {
+  requireExactDeployment = false,
+  includePublicDiscovery = false,
+} = {}) {
   const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", environment.FIBRE_PRIVATE_TOKEN);
   const deployment = deploymentEvidence(targetEnvironment);
   if (deployment.environment !== targetEnvironment) {
@@ -540,7 +543,7 @@ function cloudContext(environment, targetEnvironment, { requireExactDeployment =
       throw new Error(`Inside Fibre prepare requires this exact clean checkout deployed to ${targetEnvironment}`);
     }
   }
-  return Object.freeze({
+  const base = {
     privateToken,
     deployment,
     targetEnvironment,
@@ -548,6 +551,10 @@ function cloudContext(environment, targetEnvironment, { requireExactDeployment =
       `${targetEnvironment} World`,
       deploymentByService(deployment, "world-kernel").baseUrl,
     ),
+  };
+  if (!includePublicDiscovery) return Object.freeze(base);
+  return Object.freeze({
+    ...base,
     presentationBaseUrl:remoteBase(
       `${targetEnvironment} Thread Presentation`,
       deploymentByService(deployment, "thread-presentation").baseUrl,
@@ -762,7 +769,7 @@ export async function scanInsideFibre({
   argv = process.argv.slice(2),
 } = {}) {
   const { limit, targetEnvironment } = parseInsideFibreArgs(argv);
-  const context = cloudContext(environment, targetEnvironment);
+  const context = cloudContext(environment, targetEnvironment, { includePublicDiscovery:true });
   const at = new Date().toISOString();
   const discovered = await discoverEligiblePublicThreads(context, limit);
 
@@ -816,7 +823,10 @@ export async function prepareInsideFibre({
   argv = process.argv.slice(2),
 } = {}) {
   const { limit, target, targetEnvironment } = parseInsideFibreArgs(argv);
-  const context = cloudContext(environment, targetEnvironment, { requireExactDeployment:true });
+  const context = cloudContext(environment, targetEnvironment, {
+    requireExactDeployment:true,
+    includePublicDiscovery:true,
+  });
   const at = new Date().toISOString();
   const discovered = await discoverEligiblePublicThreads(context, limit);
   const records = [];
