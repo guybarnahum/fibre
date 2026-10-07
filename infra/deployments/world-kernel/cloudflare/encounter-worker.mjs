@@ -146,7 +146,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore: openAutobiographicalMemoryStore(runtime.worldStorage),
         modelAdapter: selectReasoningIntegration(deployment.integrations.encounter, { environment: this.env }),
         activityRecorder: createCloudflareActivityRecorder({ env: this.env, service: "world-kernel" }),
-        journalBook:this.journalBookForRequest(),
+        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
         privateToken: this.env.FIBRE_PRIVATE_TOKEN,
       });
     }
