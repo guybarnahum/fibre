@@ -58,7 +58,7 @@ Requirements:
 
 Accepted after focused model/runtime tests and full `npm run slice:validate` passed locally. OpenAI and Google now expose the same `expression_delta* -> expression_complete` Fibre vocabulary; caller cancellation after an observed prefix cannot leak later buffered output.
 
-## N7.2 — duplex encounter event stream — CURRENT
+## N7.2 — duplex encounter event stream — ACCEPTED 2026-10-07
 
 **Capability:** inbound and outbound outward events coexist; there is no turn manager.
 
@@ -83,7 +83,9 @@ Implemented foundation:
 
 **High-value proof:** one participant can continue speaking across an unused opportunity; another can begin speaking at a later pause while the first remains active, with no turn-transfer record. A separate boundary proof verifies sentence, pause and end opportunities and proves batched speech cannot expose post-boundary text before the boundary opportunity.
 
-## N7.3 — interruption and audible-prefix truth
+Accepted after the focused Live Encounter/streaming suite and full `npm run slice:validate` passed locally.
+
+## N7.3 — interruption and audible-prefix truth — CURRENT
 
 **Capability:** new material evidence may redirect active expression.
 
@@ -92,6 +94,16 @@ Implemented foundation:
 - mark an incomplete audible expression as interrupted;
 - restart cognition from committed encounter history + spoken prefix + interrupting event + current World state;
 - never resurrect the abandoned unseen completion.
+
+Implemented foundation:
+
+- Live Encounter now distinguishes normal speech completion from interruption;
+- `streamExpressionIntoLiveEncounter()` feeds provider deltas directly into the duplex encounter and uses caller cancellation as an interruption boundary;
+- only deltas already exposed through Live Encounter contribute to the returned audible text;
+- interrupted audible speech becomes an objective Encounter Story utterance with `completion:"interrupted"`; unseen provider output is discarded;
+- streamed lived-response cognition reuses the same Thread identity/current-situation/semantic-state/memory/admitted-history grounding as the accepted N6 response path;
+- after interruption, restarted cognition additionally receives the exact prior spoken prefix plus current `heardSoFar`, so new speech can redirect rather than mechanically resume the abandoned completion;
+- provider failure after audible output closes that speech as interrupted rather than leaving a phantom active speaker.
 
 **High-value proof:** interrupted and uninterrupted runs share the same prefix, but only the uninterrupted run contains the later generated suffix.
 
