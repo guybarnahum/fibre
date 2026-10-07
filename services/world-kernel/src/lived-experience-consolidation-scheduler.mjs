@@ -17,16 +17,18 @@ export function createExperienceConsolidationWakeScheduler({
     throw new TypeError("experience consolidation onScheduled must be a function or null");
   }
 
-  return async function scheduleExperienceConsolidation(queued){
-    if(!queued||typeof queued!=="object"||Array.isArray(queued)){
-      throw new TypeError("queued consolidation must be an object");
+  return async function scheduleExperienceConsolidation(queued=null){
+    if(queued!==null){
+      if(typeof queued!=="object"||Array.isArray(queued)){
+        throw new TypeError("queued consolidation must be an object or null");
+      }
+      assertId("queued consolidation experienceId",queued.experienceId);
+      assertId("queued consolidation threadId",queued.threadId);
     }
-    assertId("queued consolidation experienceId",queued.experienceId);
-    assertId("queued consolidation threadId",queued.threadId);
 
     const wake=await reconciliationRuntime.requestWakeAfter(delayMs);
     await onScheduled?.(Object.freeze({
-      queued:Object.freeze(structuredClone(queued)),
+      queued:queued===null?null:Object.freeze(structuredClone(queued)),
       wake:Object.freeze(structuredClone(wake)),
       delayMs,
     }));
