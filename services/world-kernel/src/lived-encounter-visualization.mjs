@@ -24,7 +24,7 @@ export function createEncounterVisualization({
   for (const ref of depictedThreadRefs) assertId("encounter visualization depictedThreadRef", ref);
 
   const progression = story.beats
-    .map((beat, index) => `${index + 1}. ${beat.text}`)
+    .map((beat, index) => `${index + 1}. ${beat.text}${beat.completion==="interrupted"?" [speech interrupted]":""}`)
     .join(" ");
 
   const prompt = [
