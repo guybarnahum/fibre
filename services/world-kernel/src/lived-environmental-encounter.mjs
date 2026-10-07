@@ -1,6 +1,6 @@
 import { appraiseEncounterAttention } from "./lived-encounter-attention.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
-import { internalizeThreadEncounterExperience } from "./lived-thread-experience-aftermath.mjs";
+import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -141,8 +141,8 @@ export function createEnvironmentalEncounterService({
   semanticStateStore,
   memoryStore,
   experienceStore,
-  journalBook = null,
   modelAdapter,
+  onExperienceQueued = null,
 }) {
   requireMethod("worldReader", worldReader, "getThread");
   requireMethod("livedNow", livedNow, "ensure");
@@ -151,13 +151,15 @@ export function createEnvironmentalEncounterService({
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentPlaceEpisodes");
   requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
   requireMethod("memoryStore", memoryStore, "listCurrentMemories");
-  requireMethod("memoryStore", memoryStore, "recordMemory");
   requireMethod("experienceStore", experienceStore, "recordEncounterStory");
   requireMethod("experienceStore", experienceStore, "listEncounterStories");
   requireMethod("experienceStore", experienceStore, "getThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
-  requireMethod("experienceStore", experienceStore, "recordThreadExperienceJournalEntry");
+  requireMethod("experienceStore", experienceStore, "queueThreadExperienceConsolidation");
   requireMethod("modelAdapter", modelAdapter, "invoke");
+  if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
+    throw new TypeError("environmental encounter onExperienceQueued must be a function or null");
+  }
 
   return Object.freeze({
     async encounter(input) {
@@ -232,6 +234,14 @@ export function createEnvironmentalEncounterService({
         encounterStory.encounterId,
       );
       if (existing !== null) {
+        if(existing.outcome==="noticed"){
+          await queueThreadExperienceConsolidation({
+            experienceStore,
+            experienceRecord:existing.experience,
+            queuedAt:existing.occurredAt,
+            onQueued:onExperienceQueued,
+          });
+        }
         return Object.freeze({
           outcome:"encounter",
           encounterStory,
@@ -268,26 +278,18 @@ export function createEnvironmentalEncounterService({
         });
       }
 
-      const aftermath = await internalizeThreadEncounterExperience({
-        livedContext:context,
-        encounterStory,
-        presentThreadSummaries:[{
-          threadId:context.thread.threadId,
-          name:context.thread.identity?.name ?? null,
-          selfDescription:context.thread.identity?.selfDescription ?? "",
-        }],
-        experienceRecord:attention.experience,
+      await queueThreadExperienceConsolidation({
         experienceStore,
-        memoryStore,
-        journalBook,
-        modelAdapter,
+        experienceRecord:attention.experience,
+        queuedAt:input.at,
+        onQueued:onExperienceQueued,
       });
 
       return Object.freeze({
         outcome:"encounter",
         encounterStory,
         attention,
-        aftermath,
+        aftermath:null,
         reused,
       });
     },
