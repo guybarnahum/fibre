@@ -14,7 +14,6 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
-import { formThreadJournalProfile } from "./thread-journal-book.mjs";
 
 const DEFAULT_BATCH_LIMIT=4;
 const DEFAULT_GROUP_LIMIT=8;
@@ -276,7 +275,6 @@ export function createExperienceConsolidationProcess({
   semanticStateStore,
   memoryStore,
   experienceStore,
-  journalBook=null,
   modelAdapter,
   now=()=>new Date().toISOString(),
   batchLimit=DEFAULT_BATCH_LIMIT,
@@ -300,10 +298,6 @@ export function createExperienceConsolidationProcess({
   requireMethod("experienceStore",experienceStore,"getThreadExperienceConsolidationJournal");
   requireMethod("experienceStore",experienceStore,"hasPendingExperienceConsolidation");
   requireMethod("modelAdapter",modelAdapter,"invoke");
-  if(journalBook!==null){
-    requireMethod("journalBook",journalBook,"getProfile");
-    requireMethod("journalBook",journalBook,"append");
-  }
   if(!Number.isSafeInteger(batchLimit)||batchLimit<1||batchLimit>16){
     throw new TypeError("experience consolidation batchLimit must be 1-16");
   }
@@ -425,19 +419,6 @@ export function createExperienceConsolidationProcess({
         afterthoughtCount:decision.afterthoughts.length,
       },
     });
-
-    if(journalBook!==null&&journalEntry!==null){
-      try{
-        const profile=await journalBook.getProfile(consolidation.threadId)
-          ??await formThreadJournalProfile({thread,modelAdapter});
-        await journalBook.append({
-          threadId:consolidation.threadId,
-          profile,
-          writtenAt:journalEntry.writtenAt,
-          entryText:journalEntry.entryText,
-        });
-      }catch{}
-    }
 
     return Object.freeze({
       consolidationId:consolidation.consolidationId,
