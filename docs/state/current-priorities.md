@@ -290,7 +290,7 @@ no turn owner
   -> later social/relationship consequence when warranted
 ```
 
-N7.0-N7.3 are accepted. N7.4 is current: admitted World occurrences can interleave with ongoing speech without freezing it; existing attention decides which events enter Thread cognition; and material LivedNow movement is surfaced through `scene_changed` from authoritative current life.
+N7.0-N7.4 are accepted. N7.5 is current: immediate encounter paths now stop at durable Thread Experience, queue bounded delayed consolidation onto the existing World reconciliation scheduler, cluster nearby same-scene experience rather than interpreting every turn independently, and persist one retry-stable private decision that may yield Journal, selective Memory, or delayed insight/question/intention residue.
 
 ## Current causal loop
 
