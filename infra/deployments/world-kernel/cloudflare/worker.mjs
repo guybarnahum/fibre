@@ -141,10 +141,16 @@ function threadObservatory(runtime, threadId) {
   const semanticState = openSemanticStateStore(runtime.worldStorage);
   const situatedLife = openSituatedLifeInspectionStore(runtime.worldStorage);
   try {
-    const encounterStories = experience.listEncounterStories(threadId).map((story) => Object.freeze({
-      ...structuredClone(story),
-      attention:structuredClone(experience.getThreadEncounterAttention(threadId, story.encounterId)),
-    }));
+    const encounterStories = experience.listEncounterStories(threadId).map((story) => {
+      const presence=(story.threadPresence??[]).find((item)=>item.threadId===threadId)??null;
+      return Object.freeze({
+        ...structuredClone(story),
+        situation:presence===null
+          ?null
+          :structuredClone(livedNow.getSituation(presence.situationId,{required:false})),
+        attention:structuredClone(experience.getThreadEncounterAttention(threadId, story.encounterId)),
+      });
+    });
     const currentSituation = livedNow.getCurrentSituation(threadId);
     const previousSituation = currentSituation === null
       ? null
@@ -205,6 +211,9 @@ function threadObservatory(runtime, threadId) {
       })),
       encounterStories:Object.freeze(encounterStories),
       experienceJournalEntries:structuredClone(experience.listThreadExperienceJournal(threadId)),
+      experienceConsolidation:structuredClone(
+        experience.inspectThreadExperienceConsolidation(threadId,{limit:200}),
+      ),
     });
   } finally {
     situatedLife.close();
@@ -517,7 +526,7 @@ export class FibreWorldDurableObject extends DurableObject {
       const observatory = threadObservatory(this.runtimeForRequest(), threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
-        contract:"fibre-world-thread-observatory-v0.8",
+        contract:"fibre-world-thread-observatory-v0.9",
         deploymentGitSha:typeof this.env?.FIBRE_DEPLOYMENT_GIT_SHA==="string"
           ?this.env.FIBRE_DEPLOYMENT_GIT_SHA
           :null,
