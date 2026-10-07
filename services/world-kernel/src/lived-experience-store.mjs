@@ -932,6 +932,22 @@ export class LivedExperienceStore {
     }catch(error){throw translateStorageError(error);}
   }
 
+  getThreadExperienceConsolidationJournal(consolidationId) {
+    assertId("consolidation journal consolidationId",consolidationId);
+    const row=this.#database.prepare(`
+      SELECT journal_entry_id,consolidation_id,thread_id,written_at,entry_text
+      FROM thread_experience_consolidation_journal_entries
+      WHERE consolidation_id=?
+    `).get(consolidationId);
+    return row===undefined?null:{
+      journalEntryId:row.journal_entry_id,
+      consolidationId:row.consolidation_id,
+      threadId:row.thread_id,
+      writtenAt:row.written_at,
+      entryText:row.entry_text,
+    };
+  }
+
   hasPendingExperienceConsolidation() {
     const incomplete=this.#database.prepare(`
       SELECT 1 AS pending
