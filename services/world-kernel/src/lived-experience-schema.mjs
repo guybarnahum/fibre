@@ -113,7 +113,7 @@ export function createLivedExperienceTables(database) {
 
     CREATE TABLE IF NOT EXISTS thread_experience_consolidation_stages (
       consolidation_id TEXT NOT NULL,
-      stage TEXT NOT NULL CHECK (stage IN ('journal','memory','complete')),
+      stage TEXT NOT NULL CHECK (stage IN ('decision','complete')),
       recorded_at TEXT NOT NULL,
       payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
       record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
