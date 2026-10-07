@@ -57,7 +57,11 @@ export function createLiveEncounter({
   }
 
   function emitAll(event){
-    for(const id of ids)emit(id,event);
+    const frozen=freezeEvent(++sequence,event);
+    for(const id of ids){
+      for(const listener of listeners.get(id))listener(frozen);
+    }
+    return frozen;
   }
 
   function start(actorId){
