@@ -142,6 +142,42 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
         "continued lived exchange lost its objective causal predecessor",
       );
 
+      const interrupted = store.recordEncounterStory({
+        occurredAt:"2026-09-21T18:01:30.000Z",
+        threadPresence:[
+          { threadId:"thr_e0_mina", situationId:"sit_e0_mina" },
+          { threadId:"thr_e0_noor", situationId:"sit_e0_noor" },
+        ],
+        story:{
+          continuationOfEncounterRef:continued.encounterId,
+          beats:[{
+            actorThreadId:"thr_e0_mina",
+            kind:"utterance",
+            text:"I was going to say—",
+            completion:"interrupted",
+          }],
+        },
+        visualization:createEncounterVisualization({
+          occurredAt:"2026-09-21T18:01:30.000Z",
+          story:{
+            beats:[{
+              actorThreadId:"thr_e0_mina",
+              kind:"utterance",
+              text:"I was going to say—",
+              completion:"interrupted",
+            }],
+          },
+          scene:"The same shared table as Noor begins speaking over Mina.",
+          sourceReferences:[continued.encounterId],
+          depictedThreadRefs:[],
+        }),
+      });
+      assert.equal(
+        store.getEncounterStory(interrupted.encounterId).story.beats[0].completion,
+        "interrupted",
+        "objective history lost audible interruption",
+      );
+
       const receipt=store.recordPublicEncounterReceipt({
         requestId:"req_e0_public_retry",
         threadId:"thr_e0_mina",
