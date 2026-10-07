@@ -530,8 +530,8 @@ test("Social analytics stay windowed, causal-observational, and score-free", () 
   assert.equal(model.responsiveness.answeredEpisodes,2,"answered external episodes were not observed");
   assert.equal(model.responsiveness.accepted,1,"incoming acceptance count drifted");
   assert.equal(model.responsiveness.declined,1,"incoming decline count drifted");
-  assert.equal(model.breadth.knownCounterparties,3,
-    "breadth should include known witnessed Threads without inventing visitor identity");
+  assert.equal(model.breadth.knownCounterparties,2,
+    "unnoticed witness-only Threads should not become social breadth");
   assert.equal(model.breadth.anonymousVisitorEpisodes,1,
     "anonymous visitor exposure should remain separate from known breadth");
   assert.deepEqual(model.reciprocity,{
