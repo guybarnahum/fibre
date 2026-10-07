@@ -490,6 +490,27 @@ export class LivedExperienceStore {
     } catch (error) { throw translateStorageError(error); }
   }
 
+  getThreadExperience(experienceId,{required=true}={}) {
+    assertId("Thread experienceId",experienceId);
+    const row=this.#database.prepare(`
+      SELECT experience_id,thread_id,encounter_ref,situation_id,occurred_at,experience_text
+      FROM thread_encounter_experiences
+      WHERE experience_id=?
+    `).get(experienceId);
+    if(row===undefined){
+      if(!required)return null;
+      throw new TypeError(`Thread experience ${experienceId} was not found`);
+    }
+    return {
+      experienceId:row.experience_id,
+      threadId:row.thread_id,
+      encounterRef:row.encounter_ref,
+      situationId:row.situation_id,
+      occurredAt:row.occurred_at,
+      experienceText:row.experience_text,
+    };
+  }
+
   getThreadEncounterAttention(threadId, encounterRef) {
     assertId("attention threadId", threadId);
     assertId("attention encounterRef", encounterRef);
