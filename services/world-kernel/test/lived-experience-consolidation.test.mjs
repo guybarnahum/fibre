@@ -232,6 +232,22 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
     assert.equal(memoryStore.listCurrentMemories(thread.threadId).length,1,
       "not_remembered cluster fabricated a memory");
 
+    const inspection=experienceStore.inspectThreadExperienceConsolidation(thread.threadId);
+    assert.equal(inspection.queued.length,0,
+      "completed consolidation left experience at the frontier");
+    assert.equal(inspection.consolidations.length,2,
+      "Observatory inspection lost a completed consolidation cluster");
+    assert.equal(
+      inspection.consolidations.every((item)=>item.decision!==null&&item.complete!==null),
+      true,
+      "Observatory inspection hid consolidation stages",
+    );
+    assert.equal(
+      inspection.consolidations.some((item)=>item.journal!==null),
+      true,
+      "Observatory inspection lost delayed Journal authority",
+    );
+
     const idle=await process.runOnce();
     assert.equal(idle.attempted,0,"completed experience reentered consolidation");
     assert.equal(calls.length,2,"quiescent consolidation resampled cognition");
