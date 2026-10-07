@@ -121,6 +121,15 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (consolidation_id) REFERENCES thread_experience_consolidations(consolidation_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS thread_experience_consolidation_members (
+      experience_id TEXT PRIMARY KEY,
+      consolidation_id TEXT NOT NULL,
+      ordinal INTEGER NOT NULL CHECK (ordinal >= 0),
+      FOREIGN KEY (experience_id) REFERENCES thread_encounter_experiences(experience_id),
+      FOREIGN KEY (consolidation_id) REFERENCES thread_experience_consolidations(consolidation_id),
+      UNIQUE (consolidation_id, ordinal)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS thread_experience_consolidation_journal_entries (
       journal_entry_id TEXT PRIMARY KEY,
       consolidation_id TEXT NOT NULL UNIQUE,
@@ -171,6 +180,9 @@ export function createLivedExperienceTables(database) {
       ON thread_experience_consolidations(thread_id, started_at, consolidation_id);
     CREATE INDEX IF NOT EXISTS idx_experience_consolidation_stage
       ON thread_experience_consolidation_stages(stage, recorded_at, consolidation_id);
+
+    CREATE INDEX IF NOT EXISTS idx_experience_consolidation_members
+      ON thread_experience_consolidation_members(consolidation_id, ordinal);
 
     CREATE TRIGGER IF NOT EXISTS lived_encounter_records_no_update
       BEFORE UPDATE ON lived_encounter_records BEGIN
@@ -260,6 +272,15 @@ export function createLivedExperienceTables(database) {
     CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_stages_no_delete
       BEFORE DELETE ON thread_experience_consolidation_stages BEGIN
         SELECT RAISE(ABORT, 'thread_experience_consolidation_stages is append-only');
+      END;
+
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_members_no_update
+      BEFORE UPDATE ON thread_experience_consolidation_members BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidation_members is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_members_no_delete
+      BEFORE DELETE ON thread_experience_consolidation_members BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidation_members is append-only');
       END;
     CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_journal_entries_no_update
       BEFORE UPDATE ON thread_experience_consolidation_journal_entries BEGIN
