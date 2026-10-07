@@ -862,8 +862,16 @@ export class LivedExperienceStore {
     const record={consolidationId,stage,recordedAt,payload:structuredClone(payload)};
     const recordDigest=digest(record);
     try{
-      if(this.getThreadExperienceConsolidation(consolidationId,{required:false})===null){
+      const consolidation=this.getThreadExperienceConsolidation(consolidationId,{required:false});
+      if(consolidation===null){
         throw new TypeError(`experience consolidation ${consolidationId} was not found`);
+      }
+      if(Date.parse(recordedAt)<Date.parse(consolidation.startedAt)){
+        throw new TypeError("experience consolidation stage cannot predate its claim");
+      }
+      if(stage==="complete"
+        &&this.getThreadExperienceConsolidationStage(consolidationId,"decision")===null){
+        throw new TypeError("experience consolidation cannot complete before its decision");
       }
       const prior=this.#database.prepare(`
         SELECT recorded_at,payload_json,record_digest
@@ -929,6 +937,9 @@ export class LivedExperienceStore {
     try{
       const consolidation=this.getThreadExperienceConsolidation(consolidationId);
       if(consolidation.threadId!==threadId)throw new TypeError("consolidation journal belongs to another Thread");
+      if(Date.parse(writtenAt)<Date.parse(consolidation.startedAt)){
+        throw new TypeError("consolidation journal cannot predate its claim");
+      }
       const prior=this.#database.prepare(`
         SELECT journal_entry_id,written_at,entry_text,record_digest
         FROM thread_experience_consolidation_journal_entries
