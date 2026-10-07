@@ -197,6 +197,7 @@ function consolidationMemoryRecord({
   threadId,
   experiences,
   decision,
+  recordedAt,
 }){
   const first=experiences[0];
   const last=experiences.at(-1);
@@ -222,7 +223,7 @@ function consolidationMemoryRecord({
       meaningPartId:autobiographicalMeaningPartId({memoryId,ordinal:1}),
       meaning:decision.rememberedMeaning,
     }]:[],
-    asOf:consolidation.startedAt,
+    asOf:recordedAt,
     confidence:decision.confidence,
     uncertainty:[...decision.uncertainty],
     salience:decision.salience,
@@ -237,7 +238,7 @@ function consolidationMemoryRecord({
     contradictingEvidenceRefs:[],
     visibility:"private",
     status:"current",
-    recordedAt:consolidation.startedAt,
+    recordedAt,
   };
 }
 
@@ -268,6 +269,7 @@ export function createExperienceConsolidationProcess({
   requireMethod("experienceStore",experienceStore,"getThreadExperienceConsolidationStage");
   requireMethod("experienceStore",experienceStore,"recordThreadExperienceConsolidationStage");
   requireMethod("experienceStore",experienceStore,"recordThreadExperienceConsolidationJournal");
+  requireMethod("experienceStore",experienceStore,"getThreadExperienceConsolidationJournal");
   requireMethod("experienceStore",experienceStore,"hasPendingExperienceConsolidation");
   requireMethod("modelAdapter",modelAdapter,"invoke");
   if(journalBook!==null){
@@ -343,30 +345,45 @@ export function createExperienceConsolidationProcess({
     }
     const decision=normalizeDecision(decisionStage.payload);
 
-    let journalEntry=null;
-    if(decision.journalEntry!==null){
+    let journalEntry=experienceStore.getThreadExperienceConsolidationJournal(
+      consolidation.consolidationId,
+    );
+    if(decision.journalEntry!==null&&journalEntry===null){
+      const writtenAt=now();
       journalEntry=experienceStore.recordThreadExperienceConsolidationJournal({
         consolidationId:consolidation.consolidationId,
         threadId:consolidation.threadId,
-        writtenAt:consolidation.startedAt,
+        writtenAt,
         entryText:decision.journalEntry,
       });
     }
 
     let memory=null;
     if(decision.memory.outcome==="retained"){
-      const candidate=consolidationMemoryRecord({
-        consolidation,
+      const slot=`experience-consolidation-${consolidation.consolidationId.slice(-16)}`;
+      const memoryId=autobiographicalMemoryId({
         threadId:consolidation.threadId,
-        experiences,
-        decision:decision.memory,
+        originReference:experiences[0].experienceId,
+        slot,
       });
       const history=memoryStore.memoryHistory(
         consolidation.threadId,
-        candidate.memoryId,
+        memoryId,
         {required:false},
       );
-      memory=history[0]??memoryStore.recordMemory(candidate);
+      if(history.length>0){
+        memory=history[0];
+      }else{
+        const recordedAt=now();
+        const candidate=consolidationMemoryRecord({
+          consolidation,
+          threadId:consolidation.threadId,
+          experiences,
+          decision:decision.memory,
+          recordedAt,
+        });
+        memory=memoryStore.recordMemory(candidate);
+      }
     }
 
     const completion=experienceStore.recordThreadExperienceConsolidationStage({
