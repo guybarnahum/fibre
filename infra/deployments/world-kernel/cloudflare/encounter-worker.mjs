@@ -24,6 +24,7 @@ import { createInsideFibreVisitorMeetingService } from "#services/world-kernel/s
 import { createInsideFibreVisitorMeetingWriteApi } from "#services/world-kernel/src/inside-fibre-visitor-meeting-write-api.mjs";
 import { createPublicVisitorEncounterService } from "#services/world-kernel/src/public-visitor-encounter.mjs";
 import { createPublicVisitorEncounterWriteApi } from "#services/world-kernel/src/public-visitor-encounter-write-api.mjs";
+import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
@@ -44,6 +45,8 @@ const INSIDE_FIBRE_MEETING_ENTRY_ROUTE = "/internal/inside-fibre/meeting-entry";
 const INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE = "/internal/inside-fibre/visitor-encounter";
 const PUBLIC_VISITOR_ENCOUNTER_ROUTE = "/internal/public-visitor-encounter";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
+const EXPERIENCE_CONSOLIDATION_DELAY_MS = 30_000;
+const EXPERIENCE_CONSOLIDATION_CONTINUE_MS = 1_000;
 
 function bindingFetch(binding) {
   return (input, init) => binding.fetch(input instanceof Request ? input : new Request(input, init));
@@ -83,6 +86,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.publicVisitorEncounterApi = null;
     this.threadJournalApi = null;
     this.threadJournalBook = null;
+    this.experienceConsolidationProcess = null;
   }
 
   journalBookForRequest() {
@@ -92,6 +96,40 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       });
     }
     return this.threadJournalBook;
+  }
+
+  async scheduleExperienceConsolidation(queued) {
+    const wake=await this.runtimeForRequest().reconciliationRuntime.requestWakeAfter(
+      EXPERIENCE_CONSOLIDATION_DELAY_MS,
+    );
+    console.log(JSON.stringify({
+      event:"experience-consolidation-wake-requested",
+      threadId:queued.threadId,
+      experienceId:queued.experienceId,
+      scheduledTimeMs:wake.scheduledTimeMs,
+      reusedExistingAlarm:wake.existing===true,
+    }));
+    return wake;
+  }
+
+  experienceConsolidationProcessForRequest() {
+    if(this.experienceConsolidationProcess===null){
+      const runtime=this.runtimeForRequest();
+      const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
+      this.experienceConsolidationProcess=createExperienceConsolidationProcess({
+        worldReader:runtime.worldStore,
+        livedNowStore:openLivedNowStore(runtime.worldStorage),
+        semanticStateStore:openSemanticStateStore(runtime.worldStorage),
+        memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
+        journalBook:this.journalBookForRequest(),
+        modelAdapter:selectReasoningIntegration(
+          deployment.integrations.encounter,
+          {environment:this.env},
+        ),
+      });
+    }
+    return this.experienceConsolidationProcess;
   }
 
   encounterApiForRequest() {
@@ -139,8 +177,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         experienceStore,
-        journalBook:this.journalBookForRequest(),
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
+        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
       });
       this.environmentalEncounterApi = createEnvironmentalEncounterWriteApi({
         encounterService,
@@ -178,9 +216,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         experienceStore,
-        journalBook:this.journalBookForRequest(),
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
-        activityRecorder:createCloudflareActivityRecorder({ env:this.env, service:"world-kernel" }),
+        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
       });
       this.socialMeetingApi = createSocialMeetingWriteApi({
         meetingService,
@@ -297,9 +334,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         experienceStore,
         workStore,
         fibreCreditStore,
-        journalBook:this.journalBookForRequest(),
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
-        activityRecorder:createCloudflareActivityRecorder({ env:this.env, service:"world-kernel" }),
+        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
       });
       const publication = createLivedNowPublicationService({
         livedNowStore,
@@ -349,8 +385,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore,
         modelAdapter,
-        journalBook:this.journalBookForRequest(),
-        activityRecorder:createCloudflareActivityRecorder({ env:this.env, service:"world-kernel" }),
+        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
       });
       this.publicVisitorEncounterApi = createPublicVisitorEncounterWriteApi({
         encounterService,
@@ -443,7 +478,28 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   }
 
   async alarm(alarmInfo) {
-    return super.alarm(alarmInfo);
+    let consolidation;
+    try {
+      consolidation=await this.experienceConsolidationProcessForRequest().runOnce();
+    } catch (error) {
+      await super.alarm(alarmInfo);
+      throw error;
+    }
+
+    const reconciliation=await super.alarm(alarmInfo);
+    if(consolidation.failed>0){
+      throw new Error(`experience consolidation failed for ${consolidation.failed} cluster(s)`);
+    }
+    if(consolidation.hasPending){
+      await this.runtimeForRequest().reconciliationRuntime.requestWakeAfter(
+        EXPERIENCE_CONSOLIDATION_CONTINUE_MS,
+      );
+    }
+    return Object.freeze({
+      ...reconciliation,
+      experienceConsolidation:consolidation,
+      reconciliationPending:reconciliation.reconciliationPending||consolidation.hasPending,
+    });
   }
 }
 
