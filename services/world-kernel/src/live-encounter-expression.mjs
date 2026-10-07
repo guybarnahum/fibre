@@ -36,25 +36,30 @@ export async function streamExpressionIntoLiveEncounter({
   let provenance=null;
   let completed=false;
 
-  for await(const event of modelAdapter.streamExpression({
-    systemPrompt,
-    input,
-    clientRequestId,
-    signal,
-  })){
-    if(event?.type==="expression_delta"){
-      assertNonEmpty("live expression delta",event.text);
-      text+=event.text;
-      encounter.pushSpeechDelta({actorId,text:event.text});
-      continue;
-    }
-    if(event?.type==="expression_complete"){
-      if(event.provenance!==null&&event.provenance!==undefined){
-        assertPlainObject("live expression provenance",event.provenance);
-        provenance=structuredClone(event.provenance);
+  try{
+    for await(const event of modelAdapter.streamExpression({
+      systemPrompt,
+      input,
+      clientRequestId,
+      signal,
+    })){
+      if(event?.type==="expression_delta"){
+        assertNonEmpty("live expression delta",event.text);
+        text+=event.text;
+        encounter.pushSpeechDelta({actorId,text:event.text});
+        continue;
       }
-      completed=true;
+      if(event?.type==="expression_complete"){
+        if(event.provenance!==null&&event.provenance!==undefined){
+          assertPlainObject("live expression provenance",event.provenance);
+          provenance=structuredClone(event.provenance);
+        }
+        completed=true;
+      }
     }
+  }catch(error){
+    if(text!=="")encounter.interruptSpeech({actorId});
+    throw error;
   }
 
   if(signal?.aborted){
