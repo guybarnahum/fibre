@@ -244,16 +244,20 @@ function parseRemoteArgs(argv){
     if(argv[index]==="--env")environment=argv[++index]??null;
     else genesisArgs.push(argv[index]);
   }
-  return Object.freeze({environment:normalizeCloudflareEnvironment(environment),options:parseGenesisArgs(genesisArgs)});
+  const options=parseGenesisArgs(genesisArgs);
+  return Object.freeze({
+    environment:options.help?null:normalizeCloudflareEnvironment(environment),
+    options,
+  });
 }
 async function main() {
   const remote=parseRemoteArgs(process.argv.slice(2));
-  const targetEnvironment=remote.environment;
   const options=remote.options;
   if (options.help) {
     process.stdout.write(`${usage()}\n`);
     return;
   }
+  const targetEnvironment=remote.environment;
 
   const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
   const rawExplicitSlot = process.env.FIBRE_GENESIS_E2E_SLOT?.trim() || null;
