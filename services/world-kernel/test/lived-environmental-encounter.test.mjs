@@ -6,6 +6,9 @@ import test from "node:test";
 
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { createEnvironmentalEncounterService } from "../src/lived-environmental-encounter.mjs";
+import { createLiveEncounter } from "../src/live-encounter.mjs";
+import { observeAdmittedWorldEncounter } from "../src/live-encounter-world.mjs";
+import { streamLivedEncounterResponse } from "../src/lived-encounter-cognition.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { placeEpisodeRevisionRef } from "../src/situated-life-evidence.mjs";
@@ -215,6 +218,89 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
       invocations.filter((request) => request.clientRequestId.startsWith("world-occurrence_")).length,
       2,
       "retry must not resample an admitted World occurrence",
+    );
+
+    const live=createLiveEncounter({
+      participantIds:["person_guy",activeThread.threadId],
+    });
+    const personEvents=[];
+    live.subscribe("person_guy",(event)=>personEvents.push(event));
+
+    observeAdmittedWorldEncounter({
+      liveEncounter:live,
+      experienceStore,
+      encounterId:noticed.encounterStory.encounterId,
+    });
+    observeAdmittedWorldEncounter({
+      liveEncounter:live,
+      experienceStore,
+      encounterId:missed.encounterStory.encounterId,
+    });
+
+    assert.equal(
+      personEvents.filter((event)=>event.type==="world_event").length,
+      2,
+      "objective live encounter should expose both admitted World occurrences",
+    );
+    assert.deepEqual(
+      live.perceivedWorldEvents(activeThread.threadId).map((event)=>event.eventRef),
+      [noticed.encounterStory.encounterId],
+      "Thread cognition bypassed selective World attention",
+    );
+
+    live.pushSpeechDelta({
+      actorId:"person_guy",
+      text:"Did you notice that?",
+    });
+    live.endSpeech({actorId:"person_guy"});
+
+    let liveInput=null;
+    const liveAdapter={
+      provider:"fixture",
+      modelId:"fixture-live-world",
+      configuration:{transport:"fixture"},
+      async invoke(){
+        throw new Error("structured cognition should not run in live World interleaving proof");
+      },
+      async *streamExpression(call){
+        liveInput=structuredClone(call.input);
+        yield {type:"expression_delta",text:"Yes, I saw the bee settle on the flower."};
+        yield {
+          type:"expression_complete",
+          provenance:{
+            provider:"fixture",
+            modelId:"fixture-live-world",
+            providerRequestId:"fixture_live_world_1",
+          },
+        };
+      },
+    };
+    await streamLivedEncounterResponse({
+      livedContext:{
+        thread:structuredClone(activeThread),
+        situation:structuredClone(situation),
+        semanticStates:[],
+        memories:[],
+      },
+      encounter:{
+        utterance:"Did you notice that?",
+        occurredAt:"2026-09-21T18:03:00.000Z",
+      },
+      recentEncounterStories:[],
+      liveEncounter:live,
+      participantId:activeThread.threadId,
+      modelAdapter:liveAdapter,
+    });
+
+    assert.equal(
+      liveInput.liveInteraction.perceivedWorldEvents.length,
+      1,
+      "live cognition received an unnoticed World occurrence",
+    );
+    assert.equal(
+      liveInput.liveInteraction.perceivedWorldEvents[0].beats[0].text,
+      noticed.encounterStory.story.beats[0].text,
+      "live cognition lost the admitted World occurrence",
     );
   } finally {
     experienceStore?.close();
