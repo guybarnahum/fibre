@@ -2,7 +2,7 @@ import { formVisitorMeetingStance } from "./lived-meeting-cognition.mjs";
 import { respondToLivedEncounter } from "./lived-encounter-cognition.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
-import { internalizeThreadEncounterExperience } from "./lived-thread-experience-aftermath.mjs";
+import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -99,8 +99,7 @@ export function createPublicVisitorEncounterService({
   memoryStore,
   experienceStore,
   modelAdapter,
-  journalBook = null,
-  activityRecorder = null,
+  onExperienceQueued = null,
 }) {
   requireMethod(worldReader, "public visitor worldReader", "getThread");
   requireMethod(livedNow, "public visitor livedNow", "validateDisplayedSituation");
@@ -109,19 +108,16 @@ export function createPublicVisitorEncounterService({
   requireMethod(situatedLifeStore, "public visitor situatedLifeStore", "listCurrentLifeRelations");
   requireMethod(semanticStateStore, "public visitor semanticStateStore", "listCurrentState");
   requireMethod(memoryStore, "public visitor memoryStore", "listCurrentMemories");
-  requireMethod(memoryStore, "public visitor memoryStore", "recordMemory");
   requireMethod(experienceStore, "public visitor experienceStore", "recordEncounterStory");
   requireMethod(experienceStore, "public visitor experienceStore", "getEncounterStory");
   requireMethod(experienceStore, "public visitor experienceStore", "getPublicEncounterReceipt");
   requireMethod(experienceStore, "public visitor experienceStore", "recordPublicEncounterReceipt");
   requireMethod(experienceStore, "public visitor experienceStore", "recordThreadEncounterAttention");
-  requireMethod(experienceStore, "public visitor experienceStore", "recordThreadExperienceJournalEntry");
+  requireMethod(experienceStore, "public visitor experienceStore", "queueThreadExperienceConsolidation");
   requireMethod(modelAdapter, "public visitor modelAdapter", "invoke");
-  if (journalBook !== null) {
-    requireMethod(journalBook, "public visitor journalBook", "getProfile");
-    requireMethod(journalBook, "public visitor journalBook", "append");
+  if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
+    throw new TypeError("public visitor onExperienceQueued must be a function or null");
   }
-  if (activityRecorder !== null) requireMethod(activityRecorder, "public visitor activityRecorder", "runStage");
 
   return Object.freeze({
     async encounter(input) {
@@ -284,20 +280,11 @@ export function createPublicVisitorEncounterService({
         outcome:"noticed",
         experienceText,
       });
-      await internalizeThreadEncounterExperience({
-        livedContext:context,
-        encounterStory,
-        presentThreadSummaries:[{
-          threadId:context.thread.threadId,
-          name:context.thread.identity?.name ?? null,
-          selfDescription:context.thread.identity?.selfDescription ?? "",
-        }],
-        experienceRecord:attention.experience,
+      await queueThreadExperienceConsolidation({
         experienceStore,
-        memoryStore,
-        journalBook,
-        modelAdapter,
-        activityRecorder,
+        experienceRecord:attention.experience,
+        queuedAt:input.at,
+        onQueued:onExperienceQueued,
       });
 
       return complete({
