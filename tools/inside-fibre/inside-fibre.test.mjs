@@ -211,22 +211,27 @@ test("Inside Fibre roster uses World identity and exposes a stale public name pr
 });
 
 
-test("meet CLI requires an explicit Thread and carries no scheduling/work semantics", () => {
+test("meet CLI requires explicit environment and Thread without scheduling/work semantics", () => {
   assert.deepEqual(
-    parseInsideFibreArgs(["meet","--thread","thr_cli_meet_001"]),
+    parseInsideFibreArgs(["meet","--env","staging","--thread","thr_cli_meet_001"]),
     {
       command:"meet",
       limit:50,
       target:3,
       threadId:"thr_cli_meet_001",
+      targetEnvironment:"staging",
     },
   );
   assert.throws(
-    () => parseInsideFibreArgs(["meet"]),
+    () => parseInsideFibreArgs(["meet","--thread","thr_cli_meet_001"]),
+    /--env <staging\|production> is required/,
+  );
+  assert.throws(
+    () => parseInsideFibreArgs(["meet","--env","staging"]),
     /meet requires --thread THREAD_ID/,
   );
   assert.throws(
-    () => parseInsideFibreArgs(["meet","--target","3"]),
+    () => parseInsideFibreArgs(["meet","--env","staging","--target","3"]),
     /unsupported meet argument/,
     "meet CLI should not inherit visitor-work preparation controls",
   );
