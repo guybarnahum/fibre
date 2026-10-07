@@ -290,7 +290,7 @@ no turn owner
   -> later social/relationship consequence when warranted
 ```
 
-N7.0-N7.4 are accepted. N7.5 is current: immediate encounter paths now stop at durable Thread Experience, queue bounded delayed consolidation onto the existing World reconciliation scheduler, cluster nearby same-scene experience rather than interpreting every turn independently, and persist one retry-stable private decision that may yield Journal, selective Memory, or delayed insight/question/intention residue.
+N7.0-N7.4 are accepted. N7.5 is current: immediate encounter paths now stop at durable Thread Experience, queue bounded delayed consolidation onto the shared World reconciliation runtime backed by `infraDriver.scheduler`, cluster nearby same-scene experience rather than interpreting every turn independently, and persist one retry-stable private decision that may yield Journal, selective Memory, or delayed insight/question/intention residue. Local and Cloudflare now share the same delayed-wake semantics; future providers inherit them by implementing the InfraDriver scheduler contract.
 
 ## Current causal loop
 
