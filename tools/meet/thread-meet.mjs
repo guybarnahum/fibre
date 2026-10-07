@@ -146,6 +146,18 @@ export function selectMeetingThread(entries,randomIndex=(length)=>randomInt(leng
   return Object.freeze(structuredClone(eligible[index]));
 }
 
+async function threadEntry(ctx,threadId,trace){
+  const payload=await privateGet(
+    ctx.worldBaseUrl,
+    `/internal/thread-directory/entry/${encodeURIComponent(threadId)}`,
+    ctx.privateToken,
+    {},
+    `World Thread directory ${threadId}`,
+    trace,
+  );
+  return payload?.thread??null;
+}
+
 async function randomThread(ctx,trace){
   trace.log(1,"Selecting a Thread from the World directory");
   const payload=await privateGet(
@@ -282,12 +294,13 @@ export async function meetThread({
   const {targetEnvironment,threadId:requestedThreadId,verbosity}=parseThreadMeetArgs(argv);
   const trace=createTrace(output,verbosity);
   const ctx=context(environment,targetEnvironment);
-  const selected=requestedThreadId===null?await randomThread(ctx,trace):null;
+  const selected=requestedThreadId===null
+    ?await randomThread(ctx,trace)
+    :await threadEntry(ctx,requestedThreadId,trace);
   const threadId=requestedThreadId??selected.threadId;
+  const threadName=selected?.displayName??threadId;
 
-  if(selected!==null){
-    output.write(`Selected ${selected.displayName??threadId} · ${threadId}\n`);
-  }
+  output.write(`${requestedThreadId===null?"Selected":"Meeting"} ${threadName} · ${threadId}\n`);
 
   const present=await ensureWorldPresent(ctx,threadId,trace);
   const scene=printWorldPresent(output,present);
@@ -327,12 +340,12 @@ export async function meetThread({
       },trace);
 
       if(result.outcome==="accepted"){
-        output.write(`Thread> ${result.responseText}\n`);
+        output.write(`${threadName}> ${result.responseText}\n`);
         output.write(`  accepted · situation ${result.situationId} · story ${result.encounterStoryId}\n`);
       }else if(result.outcome==="decline"){
-        output.write(`Thread> ${result.expression??"Not right now."}\n  declined\n`);
+        output.write(`${threadName}> ${result.expression??"Not right now."}\n  declined\n`);
       }else if(result.outcome==="defer"){
-        output.write(`Thread> ${result.expression??"Later."}\n  deferred${result.suggestedAt?` · ${result.suggestedAt}`:""}\n`);
+        output.write(`${threadName}> ${result.expression??"Later."}\n  deferred${result.suggestedAt?` · ${result.suggestedAt}`:""}\n`);
       }else if(result.outcome==="scene_changed"){
         output.write("\nThe Thread's life moved before your utterance entered it.\n");
         printWorldPresent(output,await ensureWorldPresent(ctx,threadId,trace));
