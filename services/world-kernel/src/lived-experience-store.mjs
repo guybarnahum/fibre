@@ -58,6 +58,14 @@ function journalEntryId({ threadId, aboutEventRef, writtenAt, entryText }) {
   return `journal_${sha256(canonicalJson({ threadId, aboutEventRef, writtenAt, entryText })).slice(0, 48)}`;
 }
 
+function experienceConsolidationId({ threadId, experienceRefs }) {
+  return `consolidation_${sha256(canonicalJson({ threadId, experienceRefs })).slice(0, 48)}`;
+}
+
+function consolidationJournalEntryId({ consolidationId, threadId, writtenAt, entryText }) {
+  return `journal_${sha256(canonicalJson({ consolidationId, threadId, writtenAt, entryText })).slice(0, 48)}`;
+}
+
 function normalizeVisualization(candidate, participantIds) {
   if (candidate === null || typeof candidate !== "object" || Array.isArray(candidate)) {
     throw new TypeError("encounter visualization is required");
@@ -645,6 +653,279 @@ export class LivedExperienceStore {
       );
       return record;
     } catch (error) { throw translateStorageError(error); }
+  }
+
+  queueThreadExperienceConsolidation({ experienceId, queuedAt }) {
+    assertId("consolidation queue experienceId", experienceId);
+    assertIsoTimestamp("consolidation queue queuedAt", queuedAt);
+    try {
+      const experience=this.#database.prepare(`
+        SELECT thread_id FROM thread_encounter_experiences WHERE experience_id=?
+      `).get(experienceId);
+      if(experience===undefined)throw new TypeError(`Thread experience ${experienceId} was not found`);
+      const record={
+        experienceId,
+        threadId:experience.thread_id,
+        queuedAt,
+      };
+      const recordDigest=digest(record);
+      const prior=this.#database.prepare(`
+        SELECT thread_id,queued_at,record_digest
+        FROM thread_experience_consolidation_queue
+        WHERE experience_id=?
+      `).get(experienceId);
+      if(prior!==undefined){
+        if(prior.thread_id!==record.threadId
+          ||prior.queued_at!==record.queuedAt
+          ||prior.record_digest!==recordDigest){
+          throw new TypeError(`consolidation queue ${experienceId} conflicts`);
+        }
+        return record;
+      }
+      this.#database.prepare(`
+        INSERT INTO thread_experience_consolidation_queue(
+          experience_id,thread_id,queued_at,record_digest
+        ) VALUES (?,?,?,?)
+      `).run(experienceId,record.threadId,queuedAt,recordDigest);
+      return record;
+    }catch(error){throw translateStorageError(error);}
+  }
+
+  listUnclaimedExperienceConsolidationCandidates({ limit=32 }={}) {
+    if(!Number.isSafeInteger(limit)||limit<1||limit>128){
+      throw new TypeError("consolidation candidate limit must be 1-128");
+    }
+    return this.#database.prepare(`
+      SELECT q.experience_id,q.thread_id,q.queued_at,
+        e.encounter_ref,e.situation_id,e.occurred_at,e.experience_text
+      FROM thread_experience_consolidation_queue q
+      JOIN thread_encounter_experiences e ON e.experience_id=q.experience_id
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM thread_experience_consolidations c, json_each(c.experience_refs_json) refs
+        WHERE refs.value=q.experience_id
+      )
+      ORDER BY e.occurred_at,q.experience_id
+      LIMIT ?
+    `).all(limit).map((row)=>({
+      experienceId:row.experience_id,
+      threadId:row.thread_id,
+      queuedAt:row.queued_at,
+      encounterRef:row.encounter_ref,
+      situationId:row.situation_id,
+      occurredAt:row.occurred_at,
+      experienceText:row.experience_text,
+    }));
+  }
+
+  createThreadExperienceConsolidation({ threadId, experienceRefs, startedAt }) {
+    assertId("experience consolidation threadId",threadId);
+    assertIsoTimestamp("experience consolidation startedAt",startedAt);
+    if(!Array.isArray(experienceRefs)||experienceRefs.length<1){
+      throw new TypeError("experience consolidation requires experienceRefs");
+    }
+    const refs=[...new Set(experienceRefs)];
+    if(refs.length!==experienceRefs.length)throw new TypeError("experience consolidation experienceRefs must be unique");
+    for(const ref of refs)assertId("experience consolidation experienceRef",ref);
+    const consolidationId=experienceConsolidationId({threadId,experienceRefs:refs});
+    const record={consolidationId,threadId,startedAt,experienceRefs:refs};
+    const recordDigest=digest(record);
+    try{
+      for(const ref of refs){
+        const row=this.#database.prepare(`
+          SELECT e.thread_id,q.experience_id
+          FROM thread_encounter_experiences e
+          LEFT JOIN thread_experience_consolidation_queue q ON q.experience_id=e.experience_id
+          WHERE e.experience_id=?
+        `).get(ref);
+        if(row===undefined||row.thread_id!==threadId)throw new TypeError("consolidation experience belongs to another Thread");
+        if(row.experience_id===null)throw new TypeError("consolidation experience was not queued");
+      }
+      const prior=this.#database.prepare(`
+        SELECT thread_id,started_at,experience_refs_json,record_digest
+        FROM thread_experience_consolidations WHERE consolidation_id=?
+      `).get(consolidationId);
+      if(prior!==undefined){
+        if(prior.thread_id!==threadId||prior.started_at!==startedAt
+          ||prior.experience_refs_json!==canonicalJson(refs)||prior.record_digest!==recordDigest){
+          throw new TypeError(`experience consolidation ${consolidationId} conflicts`);
+        }
+        return record;
+      }
+      this.#database.prepare(`
+        INSERT INTO thread_experience_consolidations(
+          consolidation_id,thread_id,started_at,experience_refs_json,record_digest
+        ) VALUES (?,?,?,?,?)
+      `).run(consolidationId,threadId,startedAt,canonicalJson(refs),recordDigest);
+      return record;
+    }catch(error){throw translateStorageError(error);}
+  }
+
+  getThreadExperienceConsolidation(consolidationId,{required=true}={}) {
+    assertId("experience consolidationId",consolidationId);
+    const row=this.#database.prepare(`
+      SELECT consolidation_id,thread_id,started_at,experience_refs_json
+      FROM thread_experience_consolidations WHERE consolidation_id=?
+    `).get(consolidationId);
+    if(row===undefined){
+      if(!required)return null;
+      throw new TypeError(`experience consolidation ${consolidationId} was not found`);
+    }
+    return {
+      consolidationId:row.consolidation_id,
+      threadId:row.thread_id,
+      startedAt:row.started_at,
+      experienceRefs:JSON.parse(row.experience_refs_json),
+    };
+  }
+
+  listPendingThreadExperienceConsolidations({limit=4}={}) {
+    if(!Number.isSafeInteger(limit)||limit<1||limit>32){
+      throw new TypeError("pending consolidation limit must be 1-32");
+    }
+    return this.#database.prepare(`
+      SELECT c.consolidation_id,c.thread_id,c.started_at,c.experience_refs_json
+      FROM thread_experience_consolidations c
+      WHERE NOT EXISTS (
+        SELECT 1 FROM thread_experience_consolidation_stages s
+        WHERE s.consolidation_id=c.consolidation_id AND s.stage='complete'
+      )
+      ORDER BY c.started_at,c.consolidation_id
+      LIMIT ?
+    `).all(limit).map((row)=>({
+      consolidationId:row.consolidation_id,
+      threadId:row.thread_id,
+      startedAt:row.started_at,
+      experienceRefs:JSON.parse(row.experience_refs_json),
+    }));
+  }
+
+  recordThreadExperienceConsolidationStage({
+    consolidationId,
+    stage,
+    recordedAt,
+    payload,
+  }) {
+    assertId("experience consolidation stage consolidationId",consolidationId);
+    if(!["journal","memory","complete"].includes(stage)){
+      throw new TypeError("experience consolidation stage is invalid");
+    }
+    assertIsoTimestamp("experience consolidation stage recordedAt",recordedAt);
+    if(payload===null||typeof payload!=="object"||Array.isArray(payload)){
+      throw new TypeError("experience consolidation stage payload must be an object");
+    }
+    const record={consolidationId,stage,recordedAt,payload:structuredClone(payload)};
+    const recordDigest=digest(record);
+    try{
+      if(this.getThreadExperienceConsolidation(consolidationId,{required:false})===null){
+        throw new TypeError(`experience consolidation ${consolidationId} was not found`);
+      }
+      const prior=this.#database.prepare(`
+        SELECT recorded_at,payload_json,record_digest
+        FROM thread_experience_consolidation_stages
+        WHERE consolidation_id=? AND stage=?
+      `).get(consolidationId,stage);
+      if(prior!==undefined){
+        if(prior.recorded_at!==recordedAt
+          ||prior.payload_json!==canonicalJson(record.payload)
+          ||prior.record_digest!==recordDigest){
+          throw new TypeError(`experience consolidation ${consolidationId} stage ${stage} conflicts`);
+        }
+        return record;
+      }
+      this.#database.prepare(`
+        INSERT INTO thread_experience_consolidation_stages(
+          consolidation_id,stage,recorded_at,payload_json,record_digest
+        ) VALUES (?,?,?,?,?)
+      `).run(consolidationId,stage,recordedAt,canonicalJson(record.payload),recordDigest);
+      return record;
+    }catch(error){throw translateStorageError(error);}
+  }
+
+  getThreadExperienceConsolidationStage(consolidationId,stage) {
+    assertId("experience consolidation stage consolidationId",consolidationId);
+    if(!["journal","memory","complete"].includes(stage)){
+      throw new TypeError("experience consolidation stage is invalid");
+    }
+    const row=this.#database.prepare(`
+      SELECT recorded_at,payload_json
+      FROM thread_experience_consolidation_stages
+      WHERE consolidation_id=? AND stage=?
+    `).get(consolidationId,stage);
+    return row===undefined?null:{
+      consolidationId,
+      stage,
+      recordedAt:row.recorded_at,
+      payload:JSON.parse(row.payload_json),
+    };
+  }
+
+  recordThreadExperienceConsolidationJournal({
+    consolidationId,
+    threadId,
+    writtenAt,
+    entryText,
+  }) {
+    assertId("consolidation journal consolidationId",consolidationId);
+    assertId("consolidation journal threadId",threadId);
+    assertIsoTimestamp("consolidation journal writtenAt",writtenAt);
+    assertNonEmpty("consolidation journal entryText",entryText);
+    const journalEntryIdValue=consolidationJournalEntryId({
+      consolidationId,threadId,writtenAt,entryText,
+    });
+    const record={
+      journalEntryId:journalEntryIdValue,
+      consolidationId,
+      threadId,
+      writtenAt,
+      entryText,
+    };
+    const recordDigest=digest(record);
+    try{
+      const consolidation=this.getThreadExperienceConsolidation(consolidationId);
+      if(consolidation.threadId!==threadId)throw new TypeError("consolidation journal belongs to another Thread");
+      const prior=this.#database.prepare(`
+        SELECT journal_entry_id,written_at,entry_text,record_digest
+        FROM thread_experience_consolidation_journal_entries
+        WHERE consolidation_id=?
+      `).get(consolidationId);
+      if(prior!==undefined){
+        if(prior.journal_entry_id!==journalEntryIdValue||prior.written_at!==writtenAt
+          ||prior.entry_text!==entryText||prior.record_digest!==recordDigest){
+          throw new TypeError(`experience consolidation ${consolidationId} already has a different journal entry`);
+        }
+        return record;
+      }
+      this.#database.prepare(`
+        INSERT INTO thread_experience_consolidation_journal_entries(
+          journal_entry_id,consolidation_id,thread_id,written_at,entry_text,record_digest
+        ) VALUES (?,?,?,?,?,?)
+      `).run(journalEntryIdValue,consolidationId,threadId,writtenAt,entryText,recordDigest);
+      return record;
+    }catch(error){throw translateStorageError(error);}
+  }
+
+  hasPendingExperienceConsolidation() {
+    const incomplete=this.#database.prepare(`
+      SELECT 1 AS pending
+      FROM thread_experience_consolidations c
+      WHERE NOT EXISTS (
+        SELECT 1 FROM thread_experience_consolidation_stages s
+        WHERE s.consolidation_id=c.consolidation_id AND s.stage='complete'
+      )
+      LIMIT 1
+    `).get();
+    if(incomplete!==undefined)return true;
+    return this.#database.prepare(`
+      SELECT 1 AS pending
+      FROM thread_experience_consolidation_queue q
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM thread_experience_consolidations c, json_each(c.experience_refs_json) refs
+        WHERE refs.value=q.experience_id
+      )
+      LIMIT 1
+    `).get()!==undefined;
   }
 
   recordEncounter(candidate) {
