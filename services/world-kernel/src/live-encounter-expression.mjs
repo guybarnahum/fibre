@@ -58,6 +58,15 @@ export async function streamExpressionIntoLiveEncounter({
       }
     }
   }catch(error){
+    if(signal?.aborted){
+      const interrupted=text===""?null:encounter.interruptSpeech({actorId});
+      return Object.freeze({
+        text,
+        completion:"interrupted",
+        speechRef:interrupted?.speechRef??null,
+        provenance:null,
+      });
+    }
     if(text!=="")encounter.interruptSpeech({actorId});
     throw error;
   }
