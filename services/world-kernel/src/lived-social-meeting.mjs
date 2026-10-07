@@ -7,7 +7,7 @@ import {
   continueSocialEncounterStory,
 } from "./lived-social-encounter-cognition.mjs";
 import { appraiseEncounterAttention } from "./lived-encounter-attention.mjs";
-import { internalizeThreadEncounterExperience } from "./lived-thread-experience-aftermath.mjs";
+import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import {
@@ -51,14 +51,6 @@ function compatible(left, right, livedNowStore) {
   });
 }
 
-function participantSummary(context) {
-  return Object.freeze({
-    threadId:context.thread.threadId,
-    name:context.thread.identity?.name ?? null,
-    selfDescription:context.thread.identity?.selfDescription ?? "",
-  });
-}
-
 function observedThread(context) {
   return Object.freeze({
     threadId:context.thread.threadId,
@@ -76,9 +68,8 @@ export function createSocialMeetingService({
   semanticStateStore,
   memoryStore,
   experienceStore,
-  journalBook = null,
   modelAdapter,
-  activityRecorder = null,
+  onExperienceQueued = null,
 }) {
   requireMethod("worldReader", worldReader, "getThread");
   requireMethod("livedNow", livedNow, "ensure");
@@ -92,16 +83,17 @@ export function createSocialMeetingService({
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentPlaceEpisodes");
   requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
   requireMethod("memoryStore", memoryStore, "listCurrentMemories");
-  requireMethod("memoryStore", memoryStore, "recordMemory");
   requireMethod("experienceStore", experienceStore, "recordEncounterStory");
   requireMethod("experienceStore", experienceStore, "listEncounterStories");
   requireMethod("experienceStore", experienceStore, "recordSocialInteraction");
   requireMethod("experienceStore", experienceStore, "listSocialInteractions");
   requireMethod("experienceStore", experienceStore, "getThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
-  requireMethod("experienceStore", experienceStore, "recordThreadExperienceJournalEntry");
+  requireMethod("experienceStore", experienceStore, "queueThreadExperienceConsolidation");
   requireMethod("modelAdapter", modelAdapter, "invoke");
-  if (activityRecorder !== null) requireMethod("activityRecorder", activityRecorder, "runStage");
+  if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
+    throw new TypeError("social meeting onExperienceQueued must be a function or null");
+  }
 
   async function currentContext(threadId, at) {
     await livedNow.ensure({ threadId, at });
@@ -196,7 +188,6 @@ export function createSocialMeetingService({
       }),
     });
 
-    const presentThreadSummaries = allContexts.map(participantSummary);
     const aftermath = {};
     for (const context of participantContexts) {
       const experienceText = await formThreadEncounterExperience({
@@ -215,17 +206,13 @@ export function createSocialMeetingService({
         outcome:"noticed",
         experienceText,
       });
-      aftermath[context.thread.threadId] = await internalizeThreadEncounterExperience({
-        livedContext:context,
-        encounterStory,
-        presentThreadSummaries,
-        experienceRecord:attention.experience,
+      await queueThreadExperienceConsolidation({
         experienceStore,
-        memoryStore,
-        journalBook,
-        modelAdapter,
-        activityRecorder,
+        experienceRecord:attention.experience,
+        queuedAt:encounterStory.occurredAt,
+        onQueued:onExperienceQueued,
       });
+      aftermath[context.thread.threadId] = null;
     }
 
     for (const context of witnesses) {
@@ -234,6 +221,14 @@ export function createSocialMeetingService({
         encounterStory.encounterId,
       );
       if (existing !== null) {
+        if(existing.outcome==="noticed"){
+          await queueThreadExperienceConsolidation({
+            experienceStore,
+            experienceRecord:existing.experience,
+            queuedAt:existing.occurredAt,
+            onQueued:onExperienceQueued,
+          });
+        }
         aftermath[context.thread.threadId] = null;
         continue;
       }
@@ -254,19 +249,15 @@ export function createSocialMeetingService({
         outcome:appraisal.outcome,
         experienceText:appraisal.experienceText,
       });
-      aftermath[context.thread.threadId] = attention.outcome === "noticed"
-        ? await internalizeThreadEncounterExperience({
-            livedContext:context,
-            encounterStory,
-            presentThreadSummaries,
-            experienceRecord:attention.experience,
-            experienceStore,
-            memoryStore,
-            journalBook,
-            modelAdapter,
-            activityRecorder,
-          })
-        : null;
+      if(attention.outcome==="noticed"){
+        await queueThreadExperienceConsolidation({
+          experienceStore,
+          experienceRecord:attention.experience,
+          queuedAt:encounterStory.occurredAt,
+          onQueued:onExperienceQueued,
+        });
+      }
+      aftermath[context.thread.threadId] = null;
     }
 
     return Object.freeze({
