@@ -136,7 +136,7 @@ Implemented foundation:
 
 Accepted after the focused World-interleaving suite and full `npm run slice:validate` passed locally.
 
-## N7.5 — GC-style consolidation — CURRENT
+## N7.5 — GC-style consolidation — ACCEPTED 2026-10-07
 
 **Capability:** immediate conversational latency no longer requires full Journal/Memory work.
 
@@ -157,7 +157,9 @@ Accepted after the focused World-interleaving suite and full `npm run slice:vali
 
 **Infra parity proof:** one shared consolidation wake scheduler is backed by the World reconciliation runtime, whose scheduler authority is `infraDriver.scheduler`. Contract coverage runs the same earliest-alarm-wins/delayed-wake behavior against both Local and Cloudflare InfraDrivers. Local startup also re-arms durable pending consolidation work without requiring model credentials until the wake actually needs cognition.
 
-## N7.6 — Observatory causal encounter view
+Accepted after the focused consolidation/runtime suite and full `npm run slice:validate` passed locally, including restart continuity where queued Experience survives reopening, consolidates later, and only retained autobiography reaches a subsequent encounter.
+
+## N7.6 — Observatory causal encounter view — CURRENT
 
 **Capability:** Admin makes the causal path inspectable without collapsing authorities.
 
@@ -170,6 +172,19 @@ Derive Encounter Episodes from causal continuation/history and show:
 - links to Journal, memories and semantic/relationship consequences.
 
 Journal and Memories remain standalone authorities.
+
+Implemented foundation:
+
+- World Observatory resolves each Encounter Story's historical `CurrentSituation` for this Thread rather than showing today's scene;
+- one bounded inspection projection exposes unclaimed consolidation frontier plus claimed decision/complete/Journal records from existing authorities;
+- Encounter Episode is **derived only** from `continuationOfEncounterRef`; no episode/session table is added;
+- an episode joins this Thread's noticed Experience, consolidation state, delayed Journal, autobiographical Memory, and private afterthought residue by authoritative references;
+- semantic-state or life-relationship consequence appears only when the existing record explicitly cites encounter-derived evidence; Admin does not infer relationship change from conversation;
+- interrupted utterance remains visible as objective outward history;
+- Journal view includes both older per-Experience authority and delayed consolidation Journal authority, while the private book remains a presentation that may lag World records;
+- Observatory contract advances to `fibre-world-thread-observatory-v0.9`.
+
+**High-value proof:** two continued Encounter Stories become one derived episode in causal order; the episode resolves one completed consolidation, delayed Journal, retained Memory, delayed question, and explicitly evidenced semantic/relationship consequences while those records remain separately inspectable authorities.
 
 ## N7.7 — social analytics, not a sociability score
 
