@@ -419,6 +419,23 @@ test("Social analytics stay windowed, causal-observational, and score-free", () 
       },
     },
     {
+      encounterId:"story_social_witness",
+      occurredAt:"2026-10-04T18:00:00.000Z",
+      threadPresence:[
+        {threadId,situationId:"sit_social_home"},
+        {threadId:"thr_mina",situationId:"sit_mina_cafe"},
+        {threadId:"thr_sela",situationId:"sit_sela_cafe"},
+      ],
+      story:{beats:[
+        {actorThreadId:"thr_mina",kind:"utterance",text:"That was unexpected."},
+        {actorThreadId:"thr_sela",kind:"utterance",text:"I know."},
+      ]},
+      attention:{
+        outcome:"not_noticed",
+        experience:null,
+      },
+    },
+    {
       encounterId:"story_social_visitor",
       occurredAt:"2026-10-06T18:00:00.000Z",
       threadPresence:[{threadId,situationId:"sit_social_home"}],
@@ -504,15 +521,17 @@ test("Social analytics stay windowed, causal-observational, and score-free", () 
     windowDays:30,
   });
 
-  assert.equal(model.exposure.episodes,3,"social exposure counted stale or non-social history");
+  assert.equal(model.exposure.episodes,4,"social exposure counted stale or non-social history");
+  assert.equal(model.exposure.noticedEpisodes,3,
+    "silent social presence was incorrectly treated as noticed experience");
   assert.equal(model.initiative.openedEpisodes,1,"Thread-opened episode count drifted");
   assert.equal(model.initiative.outgoingOvertures,1,"outgoing overture count drifted");
   assert.equal(model.responsiveness.externallyOpenedEpisodes,2,"external openings were not distinguished");
   assert.equal(model.responsiveness.answeredEpisodes,2,"answered external episodes were not observed");
   assert.equal(model.responsiveness.accepted,1,"incoming acceptance count drifted");
   assert.equal(model.responsiveness.declined,1,"incoming decline count drifted");
-  assert.equal(model.breadth.knownCounterparties,2,
-    "breadth should count known Thread counterparties without inventing visitor identity");
+  assert.equal(model.breadth.knownCounterparties,3,
+    "breadth should include known witnessed Threads without inventing visitor identity");
   assert.equal(model.breadth.anonymousVisitorEpisodes,1,
     "anonymous visitor exposure should remain separate from known breadth");
   assert.deepEqual(model.reciprocity,{
