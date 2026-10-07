@@ -94,12 +94,13 @@ test("A5 Activity Log exposes encounter causality without copying private speech
     "operator telemetry should identify the lived encounter without becoming a copy of it");
 });
 
-test("one lived encounter keeps one bounded causal present through cognition, reflection, and memory", async () => {
+test("one lived encounter keeps one bounded causal present through response and Experience", async () => {
   let situationReads = 0;
   let semanticReads = 0;
   let memoryReads = 0;
   let memoryQuery = null;
   const modelCalls = [];
+  const queued = [];
   const memory = {
     memoryId: "mem_prior_context",
     recordedAt: "2026-09-10T23:00:00Z",
@@ -132,17 +133,34 @@ test("one lived encounter keeps one bounded causal present through cognition, re
       },
     },
     experienceStore: {
-      recordEncounter(input) {
+      recordEncounterStory(input) {
         return {
-          eventId: "evt_lived_context",
-          threadId: input.threadId,
-          situationId: input.situationId,
-          occurredAt: input.occurredAt,
-          visitorUtterance: input.visitorUtterance,
-          responseText: input.responseText,
+          encounterId:"story_lived_context",
+          ...structuredClone(input),
         };
       },
-      recordJournalEntry() { throw new Error("journal should not be written"); },
+      recordThreadEncounterAttention(input) {
+        return {
+          ...structuredClone(input),
+          experience:{
+            experienceId:"exp_lived_context",
+            threadId:input.threadId,
+            encounterRef:input.encounterRef,
+            situationId:input.situationId,
+            occurredAt:input.occurredAt,
+            experienceText:input.experienceText,
+          },
+        };
+      },
+      queueThreadExperienceConsolidation(input) {
+        const record={
+          experienceId:input.experienceId,
+          threadId:thread.threadId,
+          queuedAt:input.queuedAt,
+        };
+        queued.push(structuredClone(record));
+        return record;
+      },
     },
     memoryStore: {
       listCurrentMemories(_threadId, options) {
@@ -150,7 +168,6 @@ test("one lived encounter keeps one bounded causal present through cognition, re
         memoryQuery = structuredClone(options);
         return [{ ...memory, rememberedContent: `${memory.rememberedContent} ${memoryReads}` }];
       },
-      recordMemory() { throw new Error("memory should not be retained"); },
     },
     modelAdapter: {
       async invoke(call) {
@@ -161,23 +178,13 @@ test("one lived encounter keeps one bounded causal present through cognition, re
             provenance: { provider: "fixture", modelId: "fixture-a5" },
           };
         }
-        if (call.clientRequestId.startsWith("lived-reflection_")) {
-          return { output: { journalEntry: null }, provenance: { provider: "fixture", modelId: "fixture-a5" } };
-        }
-        if (call.clientRequestId.startsWith("lived-memory_")) {
+        if (call.clientRequestId.startsWith("encounter-experience_")) {
           return {
-            output: {
-              outcome: "not_remembered",
-              rememberedContent: null,
-              rememberedMeaning: null,
-              confidence: null,
-              salience: null,
-              uncertainty: [],
-            },
-            provenance: { provider: "fixture", modelId: "fixture-a5" },
+            output:{ experienceText:"I shifted my attention toward the visitor." },
+            provenance:{ provider:"fixture",modelId:"fixture-a5" },
           };
         }
-        throw new Error("unexpected cognition stage");
+        throw new Error("unexpected hot-path cognition stage");
       },
     },
   });
@@ -193,67 +200,94 @@ test("one lived encounter keeps one bounded causal present through cognition, re
   assert.equal(situationReads, 1, "one encounter must have one current situation");
   assert.equal(semanticReads, 1, "one encounter must have one semantic present");
   assert.equal(memoryReads, 1, "one encounter must have one prior-memory present");
-  assert.deepEqual(memoryQuery, { limit:6, newestFirst:true }, "encounter memory must remain bounded as a life grows");
-  assert.equal(modelCalls.length, 3);
+  assert.deepEqual(memoryQuery, { limit:6, newestFirst:true },
+    "encounter memory context must remain bounded as a life grows");
+  assert.equal(modelCalls.length, 2,
+    "hot path should stop after response plus immediate Experience cognition");
   assert.equal(modelCalls[0].input.semanticStates[0].state, "state-1");
   assert.equal(modelCalls[1].input.semanticStates[0].state, "state-1");
-  assert.equal(modelCalls[2].input.semanticStates[0].state, "state-1");
   assert.equal(modelCalls[0].input.autobiographicalMemories[0].rememberedContent, "A prior moment. 1");
-  assert.equal(modelCalls[2].input.priorMemories[0].rememberedContent, "A prior moment. 1");
+  assert.equal(modelCalls[1].input.autobiographicalMemories[0].rememberedContent, "A prior moment. 1");
+  assert.deepEqual(queued,[{
+    experienceId:"exp_lived_context",
+    threadId:thread.threadId,
+    queuedAt:"2026-09-11T00:05:00Z",
+  }],"immediate Experience did not become durable consolidation work");
 });
 
-
-test("objective encounter survives failed private aftermath", async () => {
-  let historyWrites = 0;
-  let memoryCalls = 0;
-  const livedApi = createLivedEncounterWriteApi({
-    privateToken: "private-token-a5-bridge",
-    worldReader: { getThread: () => structuredClone(thread) },
-    livedNowStore: { getCurrentSituation: () => structuredClone(situation) },
-    semanticStateStore: { listCurrentState: () => [] },
-    experienceStore: {
-      recordEncounter(input) {
-        historyWrites += 1;
+test("durable Story and Experience survive consolidation scheduling failure", async () => {
+  let storyWrites=0;
+  let experienceWrites=0;
+  let queueWrites=0;
+  let modelCalls=0;
+  const livedApi=createLivedEncounterWriteApi({
+    privateToken:"private-token-a5-bridge",
+    worldReader:{getThread:()=>structuredClone(thread)},
+    livedNowStore:{getCurrentSituation:()=>structuredClone(situation)},
+    semanticStateStore:{listCurrentState:()=>[]},
+    experienceStore:{
+      recordEncounterStory(input){
+        storyWrites+=1;
+        return {encounterId:"story_scheduler_failure",...structuredClone(input)};
+      },
+      recordThreadEncounterAttention(input){
+        experienceWrites+=1;
         return {
-          eventId: "evt_aftermath_failure",
-          threadId: input.threadId,
-          situationId: input.situationId,
-          occurredAt: input.occurredAt,
-          visitorUtterance: input.visitorUtterance,
-          responseText: input.responseText,
+          ...structuredClone(input),
+          experience:{
+            experienceId:"exp_scheduler_failure",
+            threadId:input.threadId,
+            encounterRef:input.encounterRef,
+            situationId:input.situationId,
+            occurredAt:input.occurredAt,
+            experienceText:input.experienceText,
+          },
         };
       },
-      recordJournalEntry() { throw new Error("not reached"); },
+      queueThreadExperienceConsolidation(input){
+        queueWrites+=1;
+        return {
+          experienceId:input.experienceId,
+          threadId:thread.threadId,
+          queuedAt:input.queuedAt,
+        };
+      },
     },
-    memoryStore: {
-      listCurrentMemories: () => [],
-      recordMemory() { memoryCalls += 1; throw new Error("not reached"); },
-    },
-    modelAdapter: {
-      async invoke(call) {
-        if (call.clientRequestId.startsWith("lived-encounter_")) {
+    modelAdapter:{
+      async invoke(call){
+        modelCalls+=1;
+        if(call.clientRequestId.startsWith("lived-encounter_")){
           return {
-            output: { responseText: "I’m drawing right now." },
-            provenance: { provider: "fixture", modelId: "fixture-a5" },
+            output:{responseText:"I’m drawing right now."},
+            provenance:{provider:"fixture",modelId:"fixture-a5"},
           };
         }
-        if (call.clientRequestId.startsWith("lived-reflection_")) {
-          throw new Error("private reflection unavailable");
+        if(call.clientRequestId.startsWith("encounter-experience_")){
+          return {
+            output:{experienceText:"I noticed the question while I was drawing."},
+            provenance:{provider:"fixture",modelId:"fixture-a5"},
+          };
         }
-        memoryCalls += 1;
-        throw new Error("memory must wait for completed private reflection");
+        throw new Error("unexpected cognition");
       },
+    },
+    async onExperienceQueued(){
+      throw new Error("simulated scheduler failure");
     },
   });
 
-  const response = await livedApi.fetch(request({
-    threadId: thread.threadId,
-    expectedSituationId: situation.situationId,
-    utterance: "What are you doing right now?",
-    occurredAt: "2026-09-11T00:05:00Z",
-  }));
+  await assert.rejects(
+    livedApi.fetch(request({
+      threadId:thread.threadId,
+      expectedSituationId:situation.situationId,
+      utterance:"What are you doing right now?",
+      occurredAt:"2026-09-11T00:05:00Z",
+    })),
+    /simulated scheduler failure/,
+  );
 
-  assert.equal(response.status, 200, "private aftermath must not erase a lived encounter");
-  assert.equal(historyWrites, 1, "the encounter must remain objective history");
-  assert.equal(memoryCalls, 0, "memory must not run after incomplete reflection");
+  assert.equal(storyWrites,1,"scheduler failure erased objective encounter admission");
+  assert.equal(experienceWrites,1,"scheduler failure erased immediate Thread Experience");
+  assert.equal(queueWrites,1,"scheduler failure happened before durable consolidation queueing");
+  assert.equal(modelCalls,2,"scheduler failure triggered Journal/Memory cognition on the hot path");
 });
