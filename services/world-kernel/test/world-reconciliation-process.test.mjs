@@ -165,6 +165,108 @@ test("World reconciliation requestWake schedules immediate work without periodic
   }
 });
 
+test("delayed World wake keeps the earliest consolidation deadline", async () => {
+  let clock=10_000;
+  const process=createWorldReconciliationProcess();
+  const {infraDriver,runtime}=createRuntimeFixture({
+    process,
+    now:()=>clock,
+  });
+  try{
+    const first=await runtime.requestWakeAfter(30_000);
+    assert.equal(first.scheduledTimeMs,40_000,
+      "first delayed consolidation wake was not scheduled");
+
+    clock=12_000;
+    const later=await runtime.requestWakeAfter(30_000);
+    assert.equal(later.scheduledTimeMs,40_000,
+      "later experience pushed the consolidation frontier back");
+    assert.equal(later.existing,true,
+      "later experience should reuse the earlier alarm");
+
+    clock=13_000;
+    const urgent=await runtime.requestWakeAfter(5_000);
+    assert.equal(urgent.scheduledTimeMs,18_000,
+      "earlier authoritative work did not pull reconciliation forward");
+    assert.equal(await infraDriver.scheduler.get("world"),18_000);
+  }finally{
+    await runtime.stop();
+  }
+});
+
+test("experience consolidation participates in World retry and quiescence", async () => {
+  let pending=true;
+  let runs=0;
+  const process=createWorldReconciliationProcess({
+    experienceConsolidationProcess:{
+      async runOnce(){
+        runs+=1;
+        return {
+          attempted:pending?1:0,
+          completed:pending?1:0,
+          failed:0,
+          hasPending:pending,
+          results:[],
+        };
+      },
+    },
+  });
+  const {infraDriver,runtime}=createRuntimeFixture({
+    process,
+    intervalMs:100,
+    maxRetryMs:800,
+  });
+  try{
+    await runtime.requestWake();
+    const first=await runtime.handleWake();
+    assert.equal(runs,1);
+    assert.equal(first.experienceConsolidation.enabled,true);
+    assert.equal(first.reconciliationPending,true,
+      "pending consolidation did not keep World reconciliation alive");
+    assert.equal(first.retryDelayMs,100);
+    assert.equal(await infraDriver.scheduler.get("world"),1_100);
+
+    pending=false;
+    const second=await runtime.handleWake();
+    assert.equal(runs,2);
+    assert.equal(second.reconciliationPending,false,
+      "completed consolidation did not return World to quiescence");
+    assert.equal(await infraDriver.scheduler.get("world"),null);
+  }finally{
+    await runtime.stop();
+  }
+});
+
+test("failed experience consolidation uses World backoff", async () => {
+  const process=createWorldReconciliationProcess({
+    experienceConsolidationProcess:{
+      async runOnce(){
+        return {
+          attempted:1,
+          completed:0,
+          failed:1,
+          hasPending:true,
+          results:[],
+        };
+      },
+    },
+  });
+  const {runtime}=createRuntimeFixture({
+    process,
+    intervalMs:100,
+    maxRetryMs:800,
+  });
+  try{
+    await runtime.requestWake();
+    const result=await runtime.handleWake();
+    assert.equal(result.reconciliationPending,true);
+    assert.equal(result.retryDelayMs,100,
+      "failed consolidation bypassed World retry backoff");
+  }finally{
+    await runtime.stop();
+  }
+});
+
 test("World reconciliation requestWake replaces an overdue alarm", async () => {
   let clock = 5_000;
   const process = createWorldReconciliationProcess();
