@@ -93,6 +93,45 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (about_experience_ref) REFERENCES thread_encounter_experiences(experience_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS thread_experience_consolidation_queue (
+      experience_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      queued_at TEXT NOT NULL,
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      FOREIGN KEY (experience_id) REFERENCES thread_encounter_experiences(experience_id),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS thread_experience_consolidations (
+      consolidation_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      started_at TEXT NOT NULL,
+      experience_refs_json TEXT NOT NULL CHECK (json_valid(experience_refs_json)),
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS thread_experience_consolidation_stages (
+      consolidation_id TEXT NOT NULL,
+      stage TEXT NOT NULL CHECK (stage IN ('journal','memory','complete')),
+      recorded_at TEXT NOT NULL,
+      payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      PRIMARY KEY (consolidation_id, stage),
+      FOREIGN KEY (consolidation_id) REFERENCES thread_experience_consolidations(consolidation_id)
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS thread_experience_consolidation_journal_entries (
+      journal_entry_id TEXT PRIMARY KEY,
+      consolidation_id TEXT NOT NULL UNIQUE,
+      thread_id TEXT NOT NULL,
+      written_at TEXT NOT NULL,
+      entry_text TEXT NOT NULL,
+      record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+      FOREIGN KEY (consolidation_id) REFERENCES thread_experience_consolidations(consolidation_id),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS thread_journal_entries (
       journal_entry_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL,
@@ -125,6 +164,13 @@ export function createLivedExperienceTables(database) {
       ON thread_encounter_experiences(thread_id, occurred_at, experience_id);
     CREATE INDEX IF NOT EXISTS idx_encounter_journal_time
       ON thread_encounter_journal_entries(thread_id, written_at, journal_entry_id);
+
+    CREATE INDEX IF NOT EXISTS idx_experience_consolidation_queue_thread
+      ON thread_experience_consolidation_queue(thread_id, queued_at, experience_id);
+    CREATE INDEX IF NOT EXISTS idx_experience_consolidation_thread
+      ON thread_experience_consolidations(thread_id, started_at, consolidation_id);
+    CREATE INDEX IF NOT EXISTS idx_experience_consolidation_stage
+      ON thread_experience_consolidation_stages(stage, recorded_at, consolidation_id);
 
     CREATE TRIGGER IF NOT EXISTS lived_encounter_records_no_update
       BEFORE UPDATE ON lived_encounter_records BEGIN
@@ -189,6 +235,39 @@ export function createLivedExperienceTables(database) {
     CREATE TRIGGER IF NOT EXISTS thread_encounter_journal_entries_no_delete
       BEFORE DELETE ON thread_encounter_journal_entries BEGIN
         SELECT RAISE(ABORT, 'thread_encounter_journal_entries is append-only');
+      END;
+
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_queue_no_update
+      BEFORE UPDATE ON thread_experience_consolidation_queue BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidation_queue is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_queue_no_delete
+      BEFORE DELETE ON thread_experience_consolidation_queue BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidation_queue is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidations_no_update
+      BEFORE UPDATE ON thread_experience_consolidations BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidations is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidations_no_delete
+      BEFORE DELETE ON thread_experience_consolidations BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidations is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_stages_no_update
+      BEFORE UPDATE ON thread_experience_consolidation_stages BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidation_stages is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_stages_no_delete
+      BEFORE DELETE ON thread_experience_consolidation_stages BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidation_stages is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_journal_entries_no_update
+      BEFORE UPDATE ON thread_experience_consolidation_journal_entries BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidation_journal_entries is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_consolidation_journal_entries_no_delete
+      BEFORE DELETE ON thread_experience_consolidation_journal_entries BEGIN
+        SELECT RAISE(ABORT, 'thread_experience_consolidation_journal_entries is append-only');
       END;
     CREATE TRIGGER IF NOT EXISTS thread_journal_entries_no_update
       BEFORE UPDATE ON thread_journal_entries BEGIN
