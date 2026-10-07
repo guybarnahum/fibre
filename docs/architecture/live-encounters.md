@@ -202,6 +202,8 @@ material place/activity/mediated-context change
 
 A scene change is not itself a forced conversational ending or synthetic farewell.
 
+If the affected Thread is actively expressing, however, that model invocation is grounded in a stale `CurrentSituation` and is therefore cancelled. Already exposed speech remains objective interrupted expression; unseen output is discarded. A subsequent cognition opportunity must use the new authoritative situation.
+
 ## Experience and consolidation
 
 The hot live path should preserve only what must be durable immediately:
