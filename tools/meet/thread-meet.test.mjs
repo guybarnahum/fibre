@@ -13,12 +13,12 @@ import {
 
 test("thread:meet allows explicit or random Thread selection with explicit environment", () => {
   assert.deepEqual(
-    parseThreadMeetArgs(["--env","staging","--thread","thr_meet_001"]),
-    { targetEnvironment:"staging", threadId:"thr_meet_001" },
+    parseThreadMeetArgs(["--env","staging","--thread","thr_meet_001","-vv"]),
+    { targetEnvironment:"staging", threadId:"thr_meet_001", verbosity:2 },
   );
   assert.deepEqual(
-    parseThreadMeetArgs(["--env","staging"]),
-    { targetEnvironment:"staging", threadId:null },
+    parseThreadMeetArgs(["--env","staging","-vvv"]),
+    { targetEnvironment:"staging", threadId:null, verbosity:3 },
   );
   assert.throws(
     () => parseThreadMeetArgs(["--thread","thr_meet_001"]),
