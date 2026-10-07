@@ -938,13 +938,14 @@ test("E6b one social story discovers a silent co-present witness", async () => {
   assert.equal(typeof witnessExperience?.experienceText, "string",
     "witness should have a personal experience");
   assert.equal(
-    f.journals.some((entry) => entry.threadId === sela.threadId),
+    f.queued.some((entry) =>
+      entry.threadId === sela.threadId
+      && entry.experienceId === witnessExperience.experienceId),
     true,
-    "witness may privately journal what she experienced",
+    "noticed witness Experience did not reach delayed consolidation",
   );
-  assert.equal(
-    f.memories.some((memory) => memory.threadId === sela.threadId),
-    true,
-    "witness may selectively retain the experience",
-  );
+  assert.equal(f.journals.length,0,
+    "witness journaling still ran on the social-meeting hot path");
+  assert.equal(f.memories.length,0,
+    "witness memory still formed on the social-meeting hot path");
 });
