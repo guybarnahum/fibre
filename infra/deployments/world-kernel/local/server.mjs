@@ -16,6 +16,9 @@ import { openExpressionStore } from "#services/world-kernel/src/expression-store
 import { openCausalContextStore } from "#services/world-kernel/src/causal-context-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
+import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
+import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
 import { projectCurrentLife } from "#services/world-kernel/src/current-life-projection.mjs";
 import { openGuardianCognitionStore } from "#services/world-kernel/src/guardian-cognition-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
@@ -148,6 +151,7 @@ export async function startWorldKernelFromEnvironment(
   let causalContextStore;
   let semanticStateStore;
   let livedNowStore;
+  let livedExperienceStore;
   let guardianCognitionStore;
   let identityStore;
   let autobiographicalMemoryStore;
@@ -168,6 +172,7 @@ export async function startWorldKernelFromEnvironment(
     causalContextStore = openCausalContextStore(worldStorage);
     semanticStateStore = openSemanticStateStore(worldStorage);
     livedNowStore = openLivedNowStore(worldStorage);
+    livedExperienceStore = openLivedExperienceStore(worldStorage);
     guardianCognitionStore = openGuardianCognitionStore(worldStorage);
     identityStore = openIdentityStore(worldStorage);
     autobiographicalMemoryStore = openAutobiographicalMemoryStore(worldStorage);
@@ -193,6 +198,7 @@ export async function startWorldKernelFromEnvironment(
     autobiographicalMemoryStore?.close();
     identityStore?.close();
     guardianCognitionStore?.close();
+    livedExperienceStore?.close();
     livedNowStore?.close();
     semanticStateStore?.close();
     causalContextStore?.close();
@@ -258,14 +264,26 @@ export async function startWorldKernelFromEnvironment(
     })}\n`);
   }
 
+  const experienceConsolidationProcess = createExperienceConsolidationProcess({
+    worldReader:store,
+    livedNowStore,
+    semanticStateStore,
+    memoryStore:autobiographicalMemoryStore,
+    experienceStore:livedExperienceStore,
+    modelAdapter:selectReasoningIntegration(DEPLOYMENT.integrations.encounter,{ environment }),
+  });
   const reconciliationProcess = createWorldReconciliationProcess({
     presentationDelivery,
+    experienceConsolidationProcess,
     onError: reportReconciliationError,
   });
   const reconciliationRuntime = createWorldReconciliationRuntime({
     infraDriver,
     process: reconciliationProcess,
     intervalMs: reconciliationIntervalMs,
+  });
+  const experienceConsolidationWakeScheduler=createExperienceConsolidationWakeScheduler({
+    reconciliationRuntime,
   });
   reconciliationWake = () => reconciliationRuntime.handleWake();
 
@@ -313,6 +331,12 @@ export async function startWorldKernelFromEnvironment(
   try {
     const address = await listenWorldKernelHttpServer(server, { host, port });
     await reconciliationRuntime.ensureScheduled();
+    if (livedExperienceStore.hasPendingExperienceConsolidation()) {
+      await experienceConsolidationWakeScheduler({
+        experienceId:"exp_recovery_pending",
+        threadId:"thr_recovery_pending",
+      });
+    }
     if (presentationDelivery !== null) await reconciliationRuntime.requestWake();
     let closed = false;
     const close = async () => {
@@ -334,6 +358,7 @@ export async function startWorldKernelFromEnvironment(
         autobiographicalMemoryStore.close();
         identityStore.close();
         guardianCognitionStore.close();
+        livedExperienceStore.close();
         livedNowStore.close();
         semanticStateStore.close();
         causalContextStore.close();
@@ -357,6 +382,7 @@ export async function startWorldKernelFromEnvironment(
       causalContextStore,
       semanticStateStore,
       livedNowStore,
+      livedExperienceStore,
       guardianCognitionStore,
       identityStore,
       autobiographicalMemoryStore,
@@ -378,6 +404,8 @@ export async function startWorldKernelFromEnvironment(
       reconciliationIntervalMs,
       reconciliationProcess,
       reconciliationRuntime,
+      experienceConsolidationProcess,
+      experienceConsolidationWakeScheduler,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
       genesisBirthPublicationEnabled: true,
@@ -405,6 +433,7 @@ export async function startWorldKernelFromEnvironment(
     autobiographicalMemoryStore.close();
     identityStore.close();
     guardianCognitionStore.close();
+    livedExperienceStore.close();
     livedNowStore.close();
     semanticStateStore.close();
     causalContextStore.close();
