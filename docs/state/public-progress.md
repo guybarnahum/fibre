@@ -178,7 +178,7 @@ A Thread may have admitted history it does not remember.
 
 ## What Fibre cannot do yet
 
-- validate the new autonomous encounter-production path end to end in staging: World can now author bounded environmental occurrence prose from current scene context and derive incidental silent witnesses from authoritative co-presence, but E6 is not yet accepted until local/full validation and live evidence close it;
+- complete the remaining E6b live witness proof: focused/full validation is green and E6a is live-proven; E6 remains open only until a genuine three-Thread co-present scene demonstrates incidental witness discovery without caller witness IDs;
 - complete N6 public current-life presentation and later-revisit continuity;
 - validate a naturally occurring Thread-to-Thread encounter from independently lived plans without manufacturing co-presence or willingness;
 - extend the now-proven self-directed developmental loop into richer Person/social discoverability without biasing life toward social encounters;
