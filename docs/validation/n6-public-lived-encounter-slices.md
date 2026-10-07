@@ -452,7 +452,7 @@ Close N6 in capability order, not UI order.
 First demonstrate the encounter primitive from Fibre's own operator CLI with no public Presentation or Viewer dependency.
 
 ```text
-operator selects one existing Thread
+operator selects one existing Thread, or CLI randomly chooses one bounded World-directory candidate
   -> World reconciles actual LivedNow
   -> CLI prints the actual current scene
   -> visitor utterance enters /internal/public-visitor-encounter
@@ -465,10 +465,10 @@ operator selects one existing Thread
 The command is:
 
 ```bash
-npm run inside-fibre:meet -- --env staging --thread THREAD_ID
+npm run thread:meet -- --env staging [--thread THREAD_ID]
 ```
 
-The CLI is intentionally not a second meeting engine. It calls the same World authorities used by clients, keeps no durable transcript/session state, does not schedule visitor work, and does not use the public Presentation API.
+The CLI is intentionally not a second meeting engine. It calls the same World authorities used by clients, keeps no durable transcript/session state, does not schedule visitor work, and does not use the public Presentation API. When `--thread` is omitted, it performs one bounded World Thread-directory read and chooses one eligible Thread uniformly from that set; it does not probe candidates or retry for a more convenient outcome.
 
 **CLI acceptance evidence:**
 
