@@ -1,7 +1,7 @@
 import { respondToLivedEncounter } from "./lived-encounter-cognition.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
-import { internalizeThreadEncounterExperience } from "./lived-thread-experience-aftermath.mjs";
+import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -48,8 +48,7 @@ export function createInsideFibreVisitorMeetingService({
   workStore,
   fibreCreditStore,
   modelAdapter,
-  journalBook = null,
-  activityRecorder = null,
+  onExperienceQueued = null,
 }) {
   requireMethod(availability, "Inside Fibre availability", "current");
   requireMethod(availability, "Inside Fibre availability", "currentFromSituation");
@@ -57,19 +56,16 @@ export function createInsideFibreVisitorMeetingService({
   requireMethod(livedNowStore, "Inside Fibre livedNowStore", "getCurrentSituation");
   requireMethod(semanticStateStore, "Inside Fibre semanticStateStore", "listCurrentState");
   requireMethod(memoryStore, "Inside Fibre memoryStore", "listCurrentMemories");
-  requireMethod(memoryStore, "Inside Fibre memoryStore", "recordMemory");
   requireMethod(experienceStore, "Inside Fibre experienceStore", "recordEncounterStory");
   requireMethod(experienceStore, "Inside Fibre experienceStore", "getThreadEncounterAttention");
   requireMethod(experienceStore, "Inside Fibre experienceStore", "recordThreadEncounterAttention");
-  requireMethod(experienceStore, "Inside Fibre experienceStore", "recordThreadExperienceJournalEntry");
+  requireMethod(experienceStore, "Inside Fibre experienceStore", "queueThreadExperienceConsolidation");
   requireMethod(workStore, "Inside Fibre workStore", "getCommitment");
   requireMethod(fibreCreditStore, "Inside Fibre fibreCreditStore", "recordWorkCompensation");
   requireMethod(modelAdapter, "Inside Fibre modelAdapter", "invoke");
-  if (journalBook !== null) {
-    requireMethod(journalBook, "Inside Fibre journalBook", "getProfile");
-    requireMethod(journalBook, "Inside Fibre journalBook", "append");
+  if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
+    throw new TypeError("Inside Fibre onExperienceQueued must be a function or null");
   }
-  if (activityRecorder !== null) requireMethod(activityRecorder, "Inside Fibre activityRecorder", "runStage");
 
   return Object.freeze({
     async enter({ threadId, at, expectedSituationId = null }) {
@@ -177,6 +173,14 @@ export function createInsideFibreVisitorMeetingService({
         encounterStory.encounterId,
       );
       if (existing !== null) {
+        if(existing.outcome==="noticed"){
+          await queueThreadExperienceConsolidation({
+            experienceStore,
+            experienceRecord:existing.experience,
+            queuedAt:existing.occurredAt,
+            onQueued:onExperienceQueued,
+          });
+        }
         return Object.freeze({
           availability:currentAvailability,
           situationId:context.situation.situationId,
@@ -206,20 +210,11 @@ export function createInsideFibreVisitorMeetingService({
         experienceText,
       });
       const settlement = settle();
-      const aftermath = await internalizeThreadEncounterExperience({
-        livedContext:context,
-        encounterStory,
-        presentThreadSummaries:[{
-          threadId:context.thread.threadId,
-          name:context.thread.identity?.name ?? null,
-          selfDescription:context.thread.identity?.selfDescription ?? "",
-        }],
-        experienceRecord:attention.experience,
+      await queueThreadExperienceConsolidation({
         experienceStore,
-        memoryStore,
-        journalBook,
-        modelAdapter,
-        activityRecorder,
+        experienceRecord:attention.experience,
+        queuedAt:input.at,
+        onQueued:onExperienceQueued,
       });
 
       return Object.freeze({
@@ -228,7 +223,7 @@ export function createInsideFibreVisitorMeetingService({
         responseText:response.responseText,
         encounterStory,
         attention,
-        aftermath,
+        aftermath:null,
         settlement,
         reused:false,
       });
