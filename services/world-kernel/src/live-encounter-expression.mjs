@@ -23,6 +23,7 @@ export async function streamExpressionIntoLiveEncounter({
   liveEncounterMethod(encounter,"pushSpeechDelta");
   liveEncounterMethod(encounter,"endSpeech");
   liveEncounterMethod(encounter,"interruptSpeech");
+  liveEncounterMethod(encounter,"subscribe");
   assertId("live expression actorId",actorId);
   assertExpressionModelAdapter(modelAdapter);
   assertNonEmpty("live expression systemPrompt",systemPrompt);
@@ -35,13 +36,22 @@ export async function streamExpressionIntoLiveEncounter({
   let text="";
   let provenance=null;
   let completed=false;
+  const controller=new AbortController();
+  const relayAbort=()=>controller.abort(signal?.reason);
+  if(signal?.aborted)controller.abort(signal.reason);
+  else signal?.addEventListener?.("abort",relayAbort,{once:true});
+  const unsubscribe=encounter.subscribe(actorId,(event)=>{
+    if(event.type==="scene_changed"&&event.participantId===actorId){
+      controller.abort("scene_changed");
+    }
+  });
 
   try{
     for await(const event of modelAdapter.streamExpression({
       systemPrompt,
       input,
       clientRequestId,
-      signal,
+      signal:controller.signal,
     })){
       if(event?.type==="expression_delta"){
         assertNonEmpty("live expression delta",event.text);
@@ -58,7 +68,7 @@ export async function streamExpressionIntoLiveEncounter({
       }
     }
   }catch(error){
-    if(signal?.aborted){
+    if(controller.signal.aborted){
       const interrupted=text===""?null:encounter.interruptSpeech({actorId});
       return Object.freeze({
         text,
@@ -69,9 +79,12 @@ export async function streamExpressionIntoLiveEncounter({
     }
     if(text!=="")encounter.interruptSpeech({actorId});
     throw error;
+  }finally{
+    unsubscribe();
+    signal?.removeEventListener?.("abort",relayAbort);
   }
 
-  if(signal?.aborted){
+  if(controller.signal.aborted){
     const interrupted=text===""?null:encounter.interruptSpeech({actorId});
     return Object.freeze({
       text,
