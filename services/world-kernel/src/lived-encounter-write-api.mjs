@@ -6,8 +6,9 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 import { respondToLivedEncounter } from "./lived-encounter-cognition.mjs";
-import { internalizeLivedEncounter } from "./lived-encounter-reflection.mjs";
-import { formLivedEncounterMemory } from "./lived-encounter-memory.mjs";
+import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
+import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
+import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 
 const TOKEN_ENCODER = new TextEncoder();
 const ENCOUNTER_MEMORY_LIMIT = 6;
@@ -63,7 +64,7 @@ export function createLivedEncounterWriteApi({
   experienceStore = null,
   memoryStore = null,
   activityRecorder = null,
-  journalBook = null,
+  onExperienceQueued = null,
   privateToken,
 }) {
   requireDependency("worldReader", worldReader, "getThread");
@@ -71,18 +72,16 @@ export function createLivedEncounterWriteApi({
   requireDependency("semanticStateStore", semanticStateStore, "listCurrentState");
   requireDependency("modelAdapter", modelAdapter, "invoke");
   if (experienceStore !== null) {
-    requireDependency("experienceStore", experienceStore, "recordEncounter");
-    requireDependency("experienceStore", experienceStore, "recordJournalEntry");
+    requireDependency("experienceStore", experienceStore, "recordEncounterStory");
+    requireDependency("experienceStore", experienceStore, "recordThreadEncounterAttention");
+    requireDependency("experienceStore", experienceStore, "queueThreadExperienceConsolidation");
   }
   if (memoryStore !== null) {
-    if (experienceStore === null) throw new TypeError("memoryStore requires experienceStore");
     requireDependency("memoryStore", memoryStore, "listCurrentMemories");
-    requireDependency("memoryStore", memoryStore, "recordMemory");
   }
   if (activityRecorder !== null) requireDependency("activityRecorder", activityRecorder, "runStage");
-  if (journalBook !== null) {
-    requireDependency("journalBook", journalBook, "getProfile");
-    requireDependency("journalBook", journalBook, "append");
+  if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
+    throw new TypeError("onExperienceQueued must be a function or null");
   }
   assertNonEmpty("privateToken", privateToken);
 
@@ -145,30 +144,50 @@ export function createLivedEncounterWriteApi({
       }
 
       if (experienceStore !== null) {
-        const internalized = await internalizeLivedEncounter({
-          livedContext,
-          encounter,
-          encounterResult: result,
-          experienceStore,
-          modelAdapter,
-          activityRecorder,
-          journalBook,
+        const story={
+          storyVersion:"encounter-story-v0.1",
+          beats:[
+            { actorThreadId:null,kind:"utterance",text:body.utterance },
+            { actorThreadId:body.threadId,kind:"utterance",text:result.responseText },
+          ],
+        };
+        const encounterStory=experienceStore.recordEncounterStory({
+          occurredAt:body.occurredAt,
+          threadPresence:[{
+            threadId:body.threadId,
+            situationId:situation.situationId,
+          }],
+          story,
+          visualization:createEncounterVisualization({
+            occurredAt:body.occurredAt,
+            story,
+            scene:"A visitor speaks with a Thread in the World-owned life already underway.",
+            sourceReferences:[situation.situationId],
+            depictedThreadRefs:[body.threadId],
+          }),
         });
-        if (memoryStore !== null && internalized.privateAftermathComplete) {
-          try {
-            await runActivityStage(activityRecorder, {
-              ...activity,
-              stage: "encounter.memory.retain",
-              evidence: { eventId: internalized.historyEvent.eventId },
-            }, () => formLivedEncounterMemory({
-              livedContext,
-              historyEvent: internalized.historyEvent,
-              journalEntry: internalized.journalEntry,
-              memoryStore,
-              modelAdapter,
-            }));
-          } catch {}
-        }
+        const experienceText=await formThreadEncounterExperience({
+          thread:livedContext.thread,
+          situation:livedContext.situation,
+          encounterStory,
+          semanticStates:livedContext.semanticStates,
+          memories:livedContext.memories,
+          modelAdapter,
+        });
+        const attention=experienceStore.recordThreadEncounterAttention({
+          threadId:body.threadId,
+          encounterRef:encounterStory.encounterId,
+          situationId:situation.situationId,
+          occurredAt:body.occurredAt,
+          outcome:"noticed",
+          experienceText,
+        });
+        await queueThreadExperienceConsolidation({
+          experienceStore,
+          experienceRecord:attention.experience,
+          queuedAt:body.occurredAt,
+          onQueued:onExperienceQueued,
+        });
       }
       return json({ ok: true, result });
     },
