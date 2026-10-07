@@ -1,4 +1,5 @@
 const DEFAULT_PAUSE_THRESHOLD_MS=650;
+const WORLD_EVENT_LIMIT=12;
 const SENTENCE_END=/[.!?]+(?=\s|$)/gu;
 
 function participantId(value){
@@ -42,6 +43,7 @@ export function createLiveEncounter({
     lastPauseOffset:-1,
     ended:false,
   }]));
+  const perceivedWorld=new Map(ids.map((id)=>[id,[]]));
   let sequence=0;
 
   function requireParticipant(value){
@@ -207,6 +209,90 @@ export function createLiveEncounter({
         ...result,
       });
       return result;
+    },
+
+    pushWorldEvent({
+      eventRef,
+      occurredAt,
+      beats,
+      perceivedBy=[],
+    }={}){
+      if(typeof eventRef!=="string"||eventRef.trim()==="")throw new TypeError("live World eventRef is required");
+      if(typeof occurredAt!=="string"||Number.isNaN(Date.parse(occurredAt))){
+        throw new TypeError("live World occurredAt must be an ISO timestamp");
+      }
+      if(!Array.isArray(beats)||beats.length<1)throw new TypeError("live World event requires beats");
+      if(!Array.isArray(perceivedBy))throw new TypeError("live World perceivedBy must be an array");
+      const perceivers=perceivedBy.map(requireParticipant);
+      const worldEvent=Object.freeze({
+        eventRef:eventRef.trim(),
+        occurredAt,
+        beats:Object.freeze(beats.map((beat)=>{
+          if(!beat||typeof beat!=="object"||Array.isArray(beat))throw new TypeError("live World beat must be an object");
+          if(!["utterance","action","occurrence"].includes(beat.kind))throw new TypeError("live World beat kind is invalid");
+          if(typeof beat.text!=="string"||beat.text.trim()==="")throw new TypeError("live World beat text is required");
+          return Object.freeze({
+            actorThreadId:beat.actorThreadId??null,
+            kind:beat.kind,
+            text:beat.text,
+            ...(beat.completion==="interrupted"?{completion:"interrupted"}:{}),
+          });
+        })),
+      });
+      emitAll({type:"world_event",...worldEvent});
+      for(const participant of perceivers){
+        const recent=perceivedWorld.get(participant);
+        recent.push(worldEvent);
+        if(recent.length>WORLD_EVENT_LIMIT)recent.splice(0,recent.length-WORLD_EVENT_LIMIT);
+        emit(participant,{
+          type:"speaking_opportunity",
+          participantId:participant,
+          sourceActorId:null,
+          speechRef:null,
+          reason:"world_event",
+          heardText:null,
+          worldEventRef:worldEvent.eventRef,
+        });
+      }
+      return worldEvent;
+    },
+
+    pushSceneChange({
+      participantId,
+      previousSituationId,
+      currentSituation,
+    }={}){
+      const participant=requireParticipant(participantId);
+      if(typeof previousSituationId!=="string"||previousSituationId.trim()===""){
+        throw new TypeError("previous live situation id is required");
+      }
+      if(!currentSituation||typeof currentSituation!=="object"||Array.isArray(currentSituation)){
+        throw new TypeError("current live situation is required");
+      }
+      if(typeof currentSituation.situationId!=="string"||currentSituation.situationId.trim()===""){
+        throw new TypeError("current live situation id is required");
+      }
+      const event=emitAll({
+        type:"scene_changed",
+        participantId:participant,
+        previousSituationId:previousSituationId.trim(),
+        currentSituation:structuredClone(currentSituation),
+      });
+      emit(participant,{
+        type:"speaking_opportunity",
+        participantId:participant,
+        sourceActorId:null,
+        speechRef:null,
+        reason:"scene_changed",
+        heardText:null,
+        currentSituationId:currentSituation.situationId,
+      });
+      return event;
+    },
+
+    perceivedWorldEvents(participant){
+      const id=requireParticipant(participant);
+      return Object.freeze(perceivedWorld.get(id).map((event)=>structuredClone(event)));
     },
 
     heardSoFar(participant){
