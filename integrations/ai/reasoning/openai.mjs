@@ -330,6 +330,7 @@ export function createOpenAIModelAdapter({
 
         const headerRequestId = response.headers?.get?.("x-request-id") ?? null;
         for await (const event of streamSseJson(response.body)) {
+          if (signal?.aborted) return;
           if (event?.type === "response.output_text.delta" && typeof event.delta === "string" && event.delta !== "") {
             yield Object.freeze({ type:"expression_delta", text:event.delta });
             continue;
