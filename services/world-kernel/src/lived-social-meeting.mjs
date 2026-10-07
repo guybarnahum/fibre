@@ -3,9 +3,7 @@ import {
   formMeetingStance,
   meetingPresenceCompatible,
 } from "./lived-meeting-cognition.mjs";
-import {
-  continueSocialEncounterStory,
-} from "./lived-social-encounter-cognition.mjs";
+import { runThreadLiveSocialEncounter } from "./lived-social-live-encounter.mjs";
 import { appraiseEncounterAttention } from "./lived-encounter-attention.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
@@ -91,6 +89,7 @@ export function createSocialMeetingService({
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "queueThreadExperienceConsolidation");
   requireMethod("modelAdapter", modelAdapter, "invoke");
+  requireMethod("modelAdapter", modelAdapter, "streamExpression");
   if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
     throw new TypeError("social meeting onExperienceQueued must be a function or null");
   }
@@ -141,32 +140,14 @@ export function createSocialMeetingService({
   }) {
     const participantContexts = [initiator, counterparty];
     const allContexts = [...participantContexts, ...witnesses];
-    const story = {
-      storyVersion:"encounter-story-v0.1",
-      beats:[{
-        actorThreadId:initiator.thread.threadId,
-        kind:"utterance",
-        text:request.text,
-      }],
-    };
-
-    const reply = await continueSocialEncounterStory({
-      thread:counterparty.thread,
-      situation:counterparty.situation,
-      counterparties:[initiator.thread],
-      story,
+    const liveResult=await runThreadLiveSocialEncounter({
+      initiator,
+      counterparty,
+      request,
+      stance,
       modelAdapter,
     });
-    if (reply !== null) story.beats.push(reply);
-
-    const closingBeat = await continueSocialEncounterStory({
-      thread:initiator.thread,
-      situation:initiator.situation,
-      counterparties:[counterparty.thread],
-      story,
-      modelAdapter,
-    });
-    if (closingBeat !== null) story.beats.push(closingBeat);
+    const story=liveResult.story;
 
     const threadPresence = allContexts.map((context) => ({
       threadId:context.thread.threadId,
@@ -268,6 +249,7 @@ export function createSocialMeetingService({
       request,
       stance,
       encounterStory,
+      live:liveResult.live,
       aftermath:Object.freeze(aftermath),
     });
   }
