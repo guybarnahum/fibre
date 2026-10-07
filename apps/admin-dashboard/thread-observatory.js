@@ -611,51 +611,251 @@ function journalSection(journal, journalError = null, authorityEntries = []) {
   return wrap;
 }
 
-function encounterStorySection(encounterStories, encounterError = null) {
-  const stories = Array.isArray(encounterStories) ? encounterStories : [];
-  const wrap = section(
-    "Encounter stories",
-    stories.length ? `${stories.length} objective ${stories.length === 1 ? "story" : "stories"} · shared facts, personal attention` : null,
+
+function continuationRoot(storyById, encounterId) {
+  let current=encounterId;
+  const seen=new Set();
+  while(!seen.has(current)){
+    seen.add(current);
+    const story=storyById.get(current);
+    const parent=story?.story?.continuationOfEncounterRef??null;
+    if(typeof parent!=="string"||!storyById.has(parent))return current;
+    current=parent;
+  }
+  return encounterId;
+}
+
+function hasAnyRef(values,refs){
+  return (Array.isArray(values)?values:[]).some((value)=>refs.has(value));
+}
+
+export function buildEncounterEpisodes({
+  encounterStories=[],
+  experienceConsolidation=null,
+  experienceJournalEntries=[],
+  memories=[],
+}={}){
+  const stories=(Array.isArray(encounterStories)?encounterStories:[])
+    .map((story)=>structuredClone(story));
+  const storyById=new Map(stories.map((story)=>[story.encounterId,story]));
+  const groups=new Map();
+
+  for(const story of stories){
+    const root=continuationRoot(storyById,story.encounterId);
+    if(!groups.has(root))groups.set(root,[]);
+    groups.get(root).push(story);
+  }
+
+  const queued=Array.isArray(experienceConsolidation?.queued)
+    ?experienceConsolidation.queued:[];
+  const consolidations=Array.isArray(experienceConsolidation?.consolidations)
+    ?experienceConsolidation.consolidations:[];
+  const legacyJournal=Array.isArray(experienceJournalEntries)
+    ?experienceJournalEntries:[];
+  const memoryRecords=Array.isArray(memories)?memories:[];
+
+  return Object.freeze([...groups.entries()].map(([episodeId,episodeStories])=>{
+    const ordered=[...episodeStories].sort((left,right)=>
+      Date.parse(left.occurredAt)-Date.parse(right.occurredAt)
+      ||String(left.encounterId).localeCompare(String(right.encounterId)));
+    const experiences=ordered
+      .map((story)=>story.attention?.experience??null)
+      .filter(Boolean);
+    const experienceRefs=new Set(experiences.map((item)=>item.experienceId));
+    const linkedConsolidations=consolidations.filter((item)=>
+      hasAnyRef(item.experienceRefs,experienceRefs));
+    const queuedRefs=queued.filter((item)=>experienceRefs.has(item.experienceId));
+    const journals=[
+      ...legacyJournal.filter((entry)=>experienceRefs.has(entry.aboutExperienceRef)),
+      ...linkedConsolidations.map((item)=>item.journal).filter(Boolean),
+    ];
+    const linkedMemories=memoryRecords.filter((memory)=>hasAnyRef(memory.eventRefs,experienceRefs));
+    const afterthoughts=linkedConsolidations.flatMap((item)=>
+      Array.isArray(item.decision?.payload?.afterthoughts)
+        ?item.decision.payload.afterthoughts.map((thought)=>({
+            consolidationId:item.consolidationId,
+            ...structuredClone(thought),
+          }))
+        :[]);
+
+    const hasIncomplete=linkedConsolidations.some((item)=>item.complete===null);
+    const consolidationStatus=hasIncomplete
+      ?"consolidating"
+      :queuedRefs.length>0
+        ?"pending"
+        :linkedConsolidations.length>0
+          ?"complete"
+          :experiences.length>0
+            ?"unqueued"
+            :"none";
+
+    return Object.freeze({
+      episodeId,
+      startedAt:ordered[0]?.occurredAt??null,
+      endedAt:ordered.at(-1)?.occurredAt??null,
+      stories:Object.freeze(ordered),
+      experiences:Object.freeze(experiences.map((item)=>structuredClone(item))),
+      consolidation:Object.freeze({
+        status:consolidationStatus,
+        queued:Object.freeze(queuedRefs.map((item)=>structuredClone(item))),
+        records:Object.freeze(linkedConsolidations.map((item)=>structuredClone(item))),
+      }),
+      journals:Object.freeze(journals.map((item)=>structuredClone(item))),
+      memories:Object.freeze(linkedMemories.map((item)=>structuredClone(item))),
+      afterthoughts:Object.freeze(afterthoughts),
+    });
+  }).sort((left,right)=>Date.parse(right.startedAt)-Date.parse(left.startedAt)));
+}
+
+function situationLabel(situation){
+  if(!situation)return "World scene unavailable";
+  const activity=firstText(situation.activity);
+  const location=situation.location??null;
+  let place=null;
+  if(location?.kind==="place")place=location.placeRef??null;
+  else if(location?.kind==="transit"){
+    place=[location.fromPlaceRef,location.toPlaceRef].filter(Boolean).join(" → ");
+  }
+  return [activity,place].filter(Boolean).join(" · ")||"World scene";
+}
+
+function episodeSpeaker(beat,threadId,name){
+  if(beat.actorThreadId===null)return "Visitor";
+  if(beat.actorThreadId===threadId)return name??"This Thread";
+  return beat.actorThreadId??"World";
+}
+
+function encounterEpisodeSection({
+  identity,
+  threadId,
+  encounterStories,
+  encounterError=null,
+  experienceConsolidation=null,
+  experienceJournalEntries=[],
+  memories=[],
+}={}){
+  const episodes=buildEncounterEpisodes({
+    encounterStories,
+    experienceConsolidation,
+    experienceJournalEntries,
+    memories,
+  });
+  const wrap=section(
+    "Encounter episodes",
+    episodes.length?(String(episodes.length)+" derived "+(episodes.length===1?"episode":"episodes")+" · objective history → private consequence"):null,
   );
-  if (encounterError) {
-    wrap.append(el("p", "thread-empty-note", `Encounter view unavailable · ${encounterError}`));
+  if(encounterError){
+    wrap.append(el("p","thread-empty-note","Encounter view unavailable · "+encounterError));
     return wrap;
   }
-  if (stories.length === 0) {
-    wrap.append(el("p", "thread-empty-note", "No Encounter Stories are recorded for this Thread."));
+  if(episodes.length===0){
+    wrap.append(el("p","thread-empty-note","No Encounter Stories are recorded for this Thread."));
     return wrap;
   }
 
-  const ordered = [...stories].sort((left, right) => Date.parse(right.occurredAt) - Date.parse(left.occurredAt));
-  for (const encounter of ordered) {
-    const firstBeat = encounter.story?.beats?.[0]?.text ?? encounter.encounterId ?? "Encounter";
-    const article = el("article", "thread-encounter-inspection");
-    article.append(disclosure(
-      `${prettyDate(encounter.occurredAt) ?? encounter.occurredAt} · ${firstBeat}`,
-      {
-        encounterId:encounter.encounterId,
-        occurredAt:encounter.occurredAt,
-        threadPresence:encounter.threadPresence ?? [],
-        story:encounter.story ?? null,
-      },
-    ));
-    if (encounter.visualization?.visualizationPrompt) {
-      article.append(
-        disclosure("Objective visualization prompt", encounter.visualization.visualizationPrompt, { prose:true }),
-        disclosure("Visualization provenance", {
-          visualizationPromptDigest:encounter.visualization.visualizationPromptDigest,
-          visualizationSourceReferences:encounter.visualization.visualizationSourceReferences ?? [],
-          depictedThreadRefs:encounter.visualization.depictedThreadRefs ?? [],
-        }),
-      );
+  const name=threadName(identity);
+  for(const episode of episodes){
+    const article=el("article","thread-encounter-episode");
+    const head=el("header","thread-encounter-episode-head");
+    const firstStory=episode.stories[0];
+    const firstBeat=firstStory?.story?.beats?.[0]?.text??"Encounter";
+    const heading=el("div");
+    heading.append(
+      el("strong",null,prettyDate(episode.startedAt)??episode.startedAt??"Encounter"),
+      el("p",null,firstBeat),
+    );
+    head.append(
+      heading,
+      el("span","thread-encounter-status "+episode.consolidation.status,human(episode.consolidation.status)),
+    );
+    article.append(head);
+
+    const scene=el("div","thread-encounter-scene");
+    const distinctSituations=[];
+    const seenSituations=new Set();
+    for(const story of episode.stories){
+      const situation=story.situation??null;
+      const id=situation?.situationId??null;
+      if(id!==null&&!seenSituations.has(id)){
+        seenSituations.add(id);
+        distinctSituations.push(situation);
+      }
     }
-    if (encounter.attention) article.append(disclosure("This Thread\'s attention / experience", encounter.attention));
+    scene.append(el("span","thread-encounter-kicker","World"));
+    if(distinctSituations.length===0){
+      scene.append(el("p",null,"Historical World scene unavailable."));
+    }else{
+      for(const situation of distinctSituations){
+        scene.append(el("p",null,situationLabel(situation)));
+      }
+    }
+    article.append(scene);
+
+    const stream=el("div","thread-encounter-stream");
+    stream.append(el("span","thread-encounter-kicker","Outward encounter"));
+    for(const story of episode.stories){
+      for(const beat of story.story?.beats??[]){
+        const row=el("div","thread-encounter-beat beat-"+(beat.kind??"event"));
+        row.append(
+          el("strong",null,episodeSpeaker(beat,threadId,name)),
+          el("p",null,beat.text??""),
+        );
+        if(beat.completion==="interrupted"){
+          row.append(el("span","thread-encounter-interrupted","interrupted"));
+        }
+        stream.append(row);
+      }
+    }
+    article.append(stream);
+
+    const causal=el("div","thread-encounter-causal");
+    const experienceBlock=el("div","thread-encounter-causal-step");
+    experienceBlock.append(
+      el("span","thread-encounter-kicker","This Thread's experience"),
+      el("strong",null,episode.experiences.length
+        ?String(episode.experiences.length)+" noticed "+(episode.experiences.length===1?"experience":"experiences")
+        :"No noticed experience"),
+    );
+    for(const experience of episode.experiences){
+      if(experience.experienceText){
+        experienceBlock.append(el("p",null,experience.experienceText));
+      }
+    }
+
+    const consequenceBlock=el("div","thread-encounter-causal-step");
+    consequenceBlock.append(
+      el("span","thread-encounter-kicker","Consolidation / consequence"),
+      el("strong",null,human(episode.consolidation.status)),
+    );
+    const consequenceBits=[
+      episode.journals.length?String(episode.journals.length)+" journal "+(episode.journals.length===1?"entry":"entries"):null,
+      episode.memories.length?String(episode.memories.length)+" retained "+(episode.memories.length===1?"memory":"memories"):null,
+      episode.afterthoughts.length?String(episode.afterthoughts.length)+" delayed "+(episode.afterthoughts.length===1?"thought":"thoughts"):null,
+    ].filter(Boolean);
+    consequenceBlock.append(el(
+      "p",
+      null,
+      consequenceBits.length?consequenceBits.join(" · "):"No durable Journal, Memory, or delayed thought linked yet.",
+    ));
+    for(const thought of episode.afterthoughts){
+      consequenceBlock.append(el("p","thread-encounter-afterthought",human(thought.kind)+" · "+thought.text));
+    }
+    causal.append(experienceBlock,consequenceBlock);
+    article.append(causal);
+
+    article.append(disclosure("Objective Encounter Story records",episode.stories));
+    if(episode.consolidation.records.length){
+      article.append(disclosure("Consolidation authority",episode.consolidation.records));
+    }
+    if(episode.journals.length)article.append(disclosure("Linked Journal authority",episode.journals));
+    if(episode.memories.length)article.append(disclosure("Linked autobiographical memory",episode.memories));
     wrap.append(article);
   }
+
   wrap.append(el(
     "p",
     "thread-journal-note",
-    "Encounter Story is objective World history. Its visualization prompt is a reconstruction lineage; generated media is replaceable representation, never evidence or private experience authority.",
+    "Encounter Episode is an Observatory projection derived from Encounter Story continuation. Encounter Story, Thread Experience, consolidation, Journal and autobiographical Memory remain separate authorities.",
   ));
   return wrap;
 }
@@ -1020,6 +1220,7 @@ export async function fetchThreadObservatory(threadId) {
   let encounterStories = [];
   let encounterError = null;
   let experienceJournalEntries = [];
+  let experienceConsolidation = Object.freeze({ queued:Object.freeze([]), consolidations:Object.freeze([]) });
   let journal = null;
   let journalError = null;
   let deepWorld = null;
@@ -1034,6 +1235,10 @@ export async function fetchThreadObservatory(threadId) {
     experienceJournalEntries = Array.isArray(observatory.experienceJournalEntries)
       ? observatory.experienceJournalEntries
       : [];
+    experienceConsolidation = observatory.experienceConsolidation
+      && typeof observatory.experienceConsolidation === "object"
+      ? structuredClone(observatory.experienceConsolidation)
+      : { queued:[], consolidations:[] };
     deepWorld = {
       thread:observatory.thread ?? null,
       civilRegistration:observatory.civilRegistration ?? null,
@@ -1063,6 +1268,10 @@ export async function fetchThreadObservatory(threadId) {
     encounterStories:Object.freeze(encounterStories),
     encounterError,
     experienceJournalEntries:Object.freeze(experienceJournalEntries),
+    experienceConsolidation:Object.freeze({
+      queued:Object.freeze([...(experienceConsolidation.queued??[])]),
+      consolidations:Object.freeze([...(experienceConsolidation.consolidations??[])]),
+    }),
     journal,
     journalError,
   });
@@ -1076,6 +1285,7 @@ export function renderThreadObservatory({
   encounterStories = [],
   encounterError = null,
   experienceJournalEntries = [],
+  experienceConsolidation = null,
   journal = null,
   journalError = null,
 } = {}) {
@@ -1086,8 +1296,25 @@ export function renderThreadObservatory({
     identitySection(identity, threadId),
     renderFidSection(identity, threadId),
     nowSection(identity),
-    journalSection(journal, journalError, experienceJournalEntries),
-    encounterStorySection(encounterStories, encounterError),
+    journalSection(
+      journal,
+      journalError,
+      [
+        ...experienceJournalEntries,
+        ...((experienceConsolidation?.consolidations??[])
+          .map((item)=>item.journal)
+          .filter(Boolean)),
+      ],
+    ),
+    encounterEpisodeSection({
+      identity,
+      threadId,
+      encounterStories,
+      encounterError,
+      experienceConsolidation,
+      experienceJournalEntries,
+      memories,
+    }),
     memoriesSection(memories, firstText(identity.birthDate, identity.world?.thread?.identity?.birthDate), memoryError),
   );
   const who = whoSection(identity); if (who) view.append(who);
