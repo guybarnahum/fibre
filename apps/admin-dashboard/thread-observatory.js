@@ -581,7 +581,14 @@ function journalSection(journal, journalError = null, authorityEntries = []) {
     return wrap;
   }
   if (journal === null || profile === null) {
-    wrap.append(el("p", "thread-empty-note", "This Thread has not started a journal yet."));
+    wrap.append(el(
+      "p",
+      "thread-empty-note",
+      authorityCount > 0
+        ? "World journal authority exists; no private book projection is available yet."
+        : "This Thread has not started a journal yet.",
+    ));
+    if (authorityCount > 0) wrap.append(disclosure("World journal-entry authority", model.authorityEntries));
     return wrap;
   }
 
@@ -605,7 +612,7 @@ function journalSection(journal, journalError = null, authorityEntries = []) {
   book.append(pages);
   wrap.append(
     book,
-    el("p", "thread-journal-note", "The book above is the private R2 presentation of journal authority. World journal-entry records remain authoritative provenance, and neither one becomes autobiographical memory unless Fibre separately retains the experience."),
+    el("p", "thread-journal-note", "The book above is a private presentation of Journal authority and may lag newly consolidated World entries. World journal-entry records remain authoritative, and neither presentation nor Journal becomes autobiographical memory unless Fibre separately retains the experience."),
   );
   if (authorityCount > 0) wrap.append(disclosure("World journal-entry authority", model.authorityEntries));
   return wrap;
