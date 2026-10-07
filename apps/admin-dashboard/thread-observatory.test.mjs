@@ -324,6 +324,20 @@ test("Encounter Episodes derive continuation and consequence without becoming au
       eventRefs:["exp_ep_1","exp_ep_2"],
       rememberedContent:"I remember revising what I thought Guy meant.",
     }],
+    semanticStates:[{
+      stateId:"sem_ep_1",
+      evidenceRefs:["mem_ep_1"],
+      domain:"belief",
+      dimension:"attention",
+      state:"drawing can change what I notice",
+    }],
+    lifeRelations:[{
+      relationId:"rel_ep_1",
+      relatedParty:{partyId:"person_guy",displayName:"Guy"},
+      relationKind:"social_contact",
+      relationshipFacts:["Guy is someone I have talked with about art."],
+      sourceReferences:["exp_ep_2"],
+    }],
   });
 
   assert.equal(episodes.length,1,"continuation chain split into separate episodes");
@@ -340,6 +354,10 @@ test("Encounter Episodes derive continuation and consequence without becoming au
     ["question"],
     "episode lost delayed private residue",
   );
+  assert.equal(episodes[0].semanticStates[0].stateId,"sem_ep_1",
+    "episode lost explicitly evidenced semantic consequence");
+  assert.equal(episodes[0].lifeRelations[0].relationId,"rel_ep_1",
+    "episode lost explicitly evidenced relationship consequence");
 });
 
 test("Thread Observatory keeps Encounter Story, journal authority, and memory separate", async () => {
