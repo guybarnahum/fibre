@@ -264,13 +264,22 @@ export async function startWorldKernelFromEnvironment(
     })}\n`);
   }
 
+  let consolidationModelAdapter=null;
   const experienceConsolidationProcess = createExperienceConsolidationProcess({
     worldReader:store,
     livedNowStore,
     semanticStateStore,
     memoryStore:autobiographicalMemoryStore,
     experienceStore:livedExperienceStore,
-    modelAdapter:selectReasoningIntegration(DEPLOYMENT.integrations.encounter,{ environment }),
+    modelAdapter:{
+      async invoke(request){
+        consolidationModelAdapter??=selectReasoningIntegration(
+          DEPLOYMENT.integrations.encounter,
+          { environment },
+        );
+        return consolidationModelAdapter.invoke(request);
+      },
+    },
   });
   const reconciliationProcess = createWorldReconciliationProcess({
     presentationDelivery,
@@ -332,10 +341,7 @@ export async function startWorldKernelFromEnvironment(
     const address = await listenWorldKernelHttpServer(server, { host, port });
     await reconciliationRuntime.ensureScheduled();
     if (livedExperienceStore.hasPendingExperienceConsolidation()) {
-      await experienceConsolidationWakeScheduler({
-        experienceId:"exp_recovery_pending",
-        threadId:"thr_recovery_pending",
-      });
+      await experienceConsolidationWakeScheduler();
     }
     if (presentationDelivery !== null) await reconciliationRuntime.requestWake();
     let closed = false;
