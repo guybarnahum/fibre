@@ -85,7 +85,7 @@ Implemented foundation:
 
 Accepted after the focused Live Encounter/streaming suite and full `npm run slice:validate` passed locally.
 
-## N7.3 — interruption and audible-prefix truth — CURRENT
+## N7.3 — interruption and audible-prefix truth — ACCEPTED 2026-10-07
 
 **Capability:** new material evidence may redirect active expression.
 
@@ -107,7 +107,9 @@ Implemented foundation:
 
 **High-value proof:** interrupted and uninterrupted runs share the same prefix, but only the uninterrupted run contains the later generated suffix.
 
-## N7.4 — World interleaving
+Accepted after the focused interruption/cognition/story-persistence suite and full `npm run slice:validate` passed locally.
+
+## N7.4 — World interleaving — CURRENT
 
 **Capability:** conversation no longer freezes ordinary life.
 
@@ -116,7 +118,20 @@ Implemented foundation:
 - participant movement/plan boundaries may redirect or end the encounter;
 - zero background occurrence remains valid.
 
+Implemented foundation:
+
+- Live Encounter can receive bounded objective `world_event` records while participant speech remains active;
+- the bridge accepts an `encounterId`, reloads the admitted Encounter Story from `experienceStore`, and never accepts caller-authored occurrence prose as World truth;
+- objective World events are visible to the live encounter regardless of whether a Thread noticed them;
+- participant-specific `perceivedWorldEvents` contains only events whose existing Thread attention record is `noticed`; `not_noticed` occurrences do not enter cognition;
+- noticed World events create a speaking opportunity but never force speech;
+- perceived World events are bounded to the most recent 12 per live participant;
+- LivedNow scene reconciliation reuses `validateDisplayedSituation()`; compatible life remains in the encounter, while a materially changed scene emits `scene_changed` carrying the authoritative current situation;
+- scene change does not invent a turn or synthetic goodbye; later orchestration may redirect or end the encounter according to the new life.
+
 **High-value proof:** a genuine World event admitted during an encounter becomes available to cognition without being authored by the client.
+
+**Additional proof:** an unnoticed admitted event remains objective live history but is absent from Thread cognition, and a LivedNow transition is forwarded from the authoritative validation seam rather than fabricated by the client.
 
 ## N7.5 — GC-style consolidation
 
