@@ -216,6 +216,10 @@ export function createWorldReconciliationRuntime({
       throw new TypeError("World reconciliation delayMs must be an integer from 0 through 3600000");
     }
     await setRetryStreak(0);
+    const current=await infra.scheduler.get(scopeId);
+    if(current!==null&&current<=now()){
+      return infra.scheduler.schedule(scopeId,now());
+    }
     return scheduleAt(now() + delayMs);
   }
 
