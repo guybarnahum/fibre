@@ -223,7 +223,13 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
       [],
       "visualization should not invent an unbound likeness",
     );
-    assert.equal(retained.length, 1, "noticed occurrence may become autobiographical memory");
+    assert.equal(retained.length, 0, "environmental encounter still formed memory on the hot path");
+    assert.deepEqual(
+      experienceStore.listUnclaimedExperienceConsolidationCandidates({limit:8})
+        .map((entry)=>entry.experienceId),
+      [noticed.attention.experience.experienceId],
+      "noticed occurrence was not queued for later consolidation",
+    );
 
     assert.equal(replay.reused, true, "retry should reuse admitted World occurrence");
     assert.equal(
@@ -234,7 +240,7 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
     assert.equal(missed.attention.outcome, "not_noticed", "cloud may pass outside lived attention");
     assert.equal(missed.attention.experience, null, "unnoticed occurrence must not fabricate Thread Experience");
     assert.equal(missed.aftermath, null, "unnoticed occurrence must not create private aftermath");
-    assert.equal(retained.length, 1, "unnoticed occurrence must not create memory");
+    assert.equal(retained.length, 0, "unnoticed occurrence must not create memory");
     assert.equal(
       invocations.filter((request) => request.clientRequestId.startsWith("world-occurrence_")).length,
       2,
