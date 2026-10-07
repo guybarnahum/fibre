@@ -728,6 +728,269 @@ export function buildEncounterEpisodes({
   }).sort((left,right)=>Date.parse(right.startedAt)-Date.parse(left.startedAt)));
 }
 
+
+function socialEpisodeProfile(episode,threadId){
+  const counterparties=new Set();
+  const socialBeats=[];
+  let anonymousVisitor=false;
+
+  for(const story of episode.stories){
+    for(const presence of story.threadPresence??[]){
+      if(presence.threadId!==threadId)counterparties.add(presence.threadId);
+    }
+    for(const beat of story.story?.beats??[]){
+      if(!["utterance","action"].includes(beat.kind))continue;
+      socialBeats.push(beat);
+      if(beat.actorThreadId===null)anonymousVisitor=true;
+      else if(beat.actorThreadId!==threadId)counterparties.add(beat.actorThreadId);
+    }
+  }
+
+  const social=counterparties.size>0||anonymousVisitor;
+  const firstActor=socialBeats[0]?.actorThreadId??null;
+  const openedByThread=social&&firstActor===threadId;
+  const openedExternally=social&&!openedByThread;
+  const responded=openedExternally&&socialBeats.slice(1).some((beat)=>beat.actorThreadId===threadId);
+
+  return Object.freeze({
+    episode,
+    social,
+    counterparties:Object.freeze([...counterparties]),
+    anonymousVisitor,
+    openedByThread,
+    openedExternally,
+    responded,
+  });
+}
+
+function socialWindowIncludes(value,startMs,endMs){
+  const time=Date.parse(value??"");
+  return Number.isFinite(time)&&time>=startMs&&time<=endMs;
+}
+
+export function buildSocialAnalytics({
+  threadId,
+  encounterStories=[],
+  socialInteractions=[],
+  experienceConsolidation=null,
+  experienceJournalEntries=[],
+  memories=[],
+  semanticStates=[],
+  lifeRelations=[],
+  asOf=new Date().toISOString(),
+  windowDays=30,
+}={}){
+  if(typeof threadId!=="string"||threadId.trim()===""){
+    throw new TypeError("social analytics requires threadId");
+  }
+  if(!Number.isSafeInteger(windowDays)||windowDays<1||windowDays>3650){
+    throw new TypeError("social analytics windowDays must be 1-3650");
+  }
+  const endMs=Date.parse(asOf);
+  if(!Number.isFinite(endMs))throw new TypeError("social analytics asOf must be an ISO timestamp");
+  const startMs=endMs-windowDays*24*60*60*1000;
+
+  const episodes=buildEncounterEpisodes({
+    encounterStories,
+    experienceConsolidation,
+    experienceJournalEntries,
+    memories,
+    semanticStates,
+    lifeRelations,
+  }).filter((episode)=>socialWindowIncludes(episode.startedAt,startMs,endMs))
+    .map((episode)=>socialEpisodeProfile(episode,threadId))
+    .filter((profile)=>profile.social);
+
+  const interactions=(Array.isArray(socialInteractions)?socialInteractions:[])
+    .filter((record)=>socialWindowIncludes(record.occurredAt,startMs,endMs));
+
+  const knownCounterparties=new Set();
+  const episodeCountByCounterparty=new Map();
+  for(const profile of episodes){
+    for(const counterparty of profile.counterparties){
+      knownCounterparties.add(counterparty);
+      episodeCountByCounterparty.set(
+        counterparty,
+        (episodeCountByCounterparty.get(counterparty)??0)+1,
+      );
+    }
+  }
+
+  const directionByCounterparty=new Map();
+  for(const interaction of interactions){
+    const outgoing=interaction.initiatorThreadId===threadId;
+    const incoming=interaction.recipientThreadId===threadId;
+    if(!outgoing&&!incoming)continue;
+    const counterparty=outgoing?interaction.recipientThreadId:interaction.initiatorThreadId;
+    knownCounterparties.add(counterparty);
+    const direction=directionByCounterparty.get(counterparty)??{outgoing:false,incoming:false};
+    if(outgoing)direction.outgoing=true;
+    if(incoming)direction.incoming=true;
+    directionByCounterparty.set(counterparty,direction);
+  }
+
+  const outgoing=interactions.filter((record)=>record.initiatorThreadId===threadId);
+  const incoming=interactions.filter((record)=>record.recipientThreadId===threadId);
+  const responseDecision=(decision)=>incoming.filter((record)=>record.responseDecision===decision).length;
+  const reciprocal=[...directionByCounterparty.values()].filter((direction)=>
+    direction.outgoing&&direction.incoming).length;
+  const recurring=[...episodeCountByCounterparty.values()].filter((count)=>count>=2).length;
+  const continued=episodes.filter((profile)=>profile.episode.stories.length>1);
+  const consequenceEpisodes=episodes.filter(({episode})=>
+    episode.journals.length>0
+    ||episode.memories.length>0
+    ||episode.afterthoughts.length>0
+    ||episode.semanticStates.length>0
+    ||episode.lifeRelations.length>0);
+
+  return Object.freeze({
+    windowDays,
+    startAt:new Date(startMs).toISOString(),
+    endAt:new Date(endMs).toISOString(),
+    exposure:Object.freeze({
+      episodes:episodes.length,
+      noticedEpisodes:episodes.filter(({episode})=>episode.experiences.length>0).length,
+      anonymousVisitorEpisodes:episodes.filter(({anonymousVisitor})=>anonymousVisitor).length,
+    }),
+    initiative:Object.freeze({
+      openedEpisodes:episodes.filter(({openedByThread})=>openedByThread).length,
+      outgoingOvertures:outgoing.length,
+    }),
+    responsiveness:Object.freeze({
+      externallyOpenedEpisodes:episodes.filter(({openedExternally})=>openedExternally).length,
+      answeredEpisodes:episodes.filter(({responded})=>responded).length,
+      incomingOvertures:incoming.length,
+      accepted:responseDecision("accept"),
+      declined:responseDecision("decline"),
+      deferred:responseDecision("defer"),
+    }),
+    breadth:Object.freeze({
+      knownCounterparties:knownCounterparties.size,
+      anonymousVisitorEpisodes:episodes.filter(({anonymousVisitor})=>anonymousVisitor).length,
+    }),
+    reciprocity:Object.freeze({
+      bidirectionalCounterparties:reciprocal,
+      directionalCounterparties:directionByCounterparty.size,
+    }),
+    depth:Object.freeze({
+      continuedEpisodes:continued.length,
+      maxStoryCount:episodes.reduce((max,{episode})=>Math.max(max,episode.stories.length),0),
+    }),
+    continuity:Object.freeze({
+      recurringCounterparties:recurring,
+      knownCounterpartiesWithEpisodes:episodeCountByCounterparty.size,
+    }),
+    consequence:Object.freeze({
+      episodes:consequenceEpisodes.length,
+      journalEpisodes:episodes.filter(({episode})=>episode.journals.length>0).length,
+      memoryEpisodes:episodes.filter(({episode})=>episode.memories.length>0).length,
+      afterthoughtEpisodes:episodes.filter(({episode})=>episode.afterthoughts.length>0).length,
+      semanticEpisodes:episodes.filter(({episode})=>episode.semanticStates.length>0).length,
+      relationshipEpisodes:episodes.filter(({episode})=>episode.lifeRelations.length>0).length,
+    }),
+  });
+}
+
+function socialMetric(label,value,note){
+  const card=el("article","thread-social-metric");
+  card.append(
+    el("span","thread-encounter-kicker",label),
+    el("strong",null,value),
+    el("p",null,note),
+  );
+  return card;
+}
+
+function socialAnalyticsSection({
+  threadId,
+  encounterStories,
+  socialInteractions,
+  experienceConsolidation,
+  experienceJournalEntries,
+  memories,
+  semanticStates,
+  lifeRelations,
+}={}){
+  const wrap=section("Social life","derived analytics · never cognition authority");
+  const controls=el("div","thread-social-window");
+  const metrics=el("div","thread-social-grid");
+  const explanation=el(
+    "p",
+    "thread-journal-note",
+    "No sociability score is computed. These are bounded observational measures over recorded social history; anonymous visitors are not treated as distinct known people, and none of these values feeds Thread cognition.",
+  );
+
+  const render=(windowDays)=>{
+    const model=buildSocialAnalytics({
+      threadId,
+      encounterStories,
+      socialInteractions,
+      experienceConsolidation,
+      experienceJournalEntries,
+      memories,
+      semanticStates,
+      lifeRelations,
+      windowDays,
+    });
+    for(const button of controls.querySelectorAll("button")){
+      button.classList.toggle("active",Number(button.dataset.days)===windowDays);
+    }
+    metrics.replaceChildren(
+      socialMetric(
+        "Exposure",
+        String(model.exposure.episodes),
+        String(model.exposure.noticedEpisodes)+" noticed · "+String(model.exposure.anonymousVisitorEpisodes)+" anonymous-visitor episodes",
+      ),
+      socialMetric(
+        "Initiative",
+        String(model.initiative.openedEpisodes),
+        String(model.initiative.outgoingOvertures)+" explicit Thread→Thread overtures",
+      ),
+      socialMetric(
+        "Responsiveness",
+        String(model.responsiveness.answeredEpisodes)+"/"+String(model.responsiveness.externallyOpenedEpisodes),
+        String(model.responsiveness.incomingOvertures)+" incoming · "+String(model.responsiveness.accepted)+" accepted · "+String(model.responsiveness.declined)+" declined · "+String(model.responsiveness.deferred)+" deferred",
+      ),
+      socialMetric(
+        "Breadth",
+        String(model.breadth.knownCounterparties),
+        "known counterparties · "+String(model.breadth.anonymousVisitorEpisodes)+" anonymous-visitor episodes",
+      ),
+      socialMetric(
+        "Reciprocity",
+        String(model.reciprocity.bidirectionalCounterparties)+"/"+String(model.reciprocity.directionalCounterparties),
+        "known counterparties with both incoming and outgoing overtures",
+      ),
+      socialMetric(
+        "Depth",
+        String(model.depth.continuedEpisodes),
+        "continued episodes · max "+String(model.depth.maxStoryCount)+" Encounter Stories in one episode",
+      ),
+      socialMetric(
+        "Continuity",
+        String(model.continuity.recurringCounterparties),
+        "known counterparties appearing in 2+ distinct social episodes",
+      ),
+      socialMetric(
+        "Consequence",
+        String(model.consequence.episodes),
+        String(model.consequence.memoryEpisodes)+" memory · "+String(model.consequence.journalEpisodes)+" journal · "+String(model.consequence.afterthoughtEpisodes)+" afterthought",
+      ),
+    );
+  };
+
+  for(const days of [7,30,90]){
+    const button=el("button","secondary",days+"d");
+    button.type="button";
+    button.dataset.days=String(days);
+    button.addEventListener("click",()=>render(days));
+    controls.append(button);
+  }
+  wrap.append(controls,metrics,explanation);
+  render(30);
+  return wrap;
+}
+
 function situationLabel(situation){
   if(!situation)return "World scene unavailable";
   const activity=firstText(situation.activity);
@@ -1249,6 +1512,7 @@ export async function fetchThreadObservatory(threadId) {
   let encounterStories = [];
   let encounterError = null;
   let experienceJournalEntries = [];
+  let socialInteractions = [];
   let experienceConsolidation = Object.freeze({ queued:Object.freeze([]), consolidations:Object.freeze([]) });
   let semanticStates = [];
   let lifeRelations = [];
@@ -1263,6 +1527,7 @@ export async function fetchThreadObservatory(threadId) {
     if (!observatory || observatory.threadId !== threadId) throw new Error("World Observatory returned mismatched Thread");
     memories = Array.isArray(observatory.memories) ? observatory.memories : [];
     encounterStories = Array.isArray(observatory.encounterStories) ? observatory.encounterStories : [];
+    socialInteractions = Array.isArray(observatory.socialInteractions) ? observatory.socialInteractions : [];
     experienceJournalEntries = Array.isArray(observatory.experienceJournalEntries)
       ? observatory.experienceJournalEntries
       : [];
@@ -1299,6 +1564,7 @@ export async function fetchThreadObservatory(threadId) {
     memories:Object.freeze(memories),
     memoryError,
     encounterStories:Object.freeze(encounterStories),
+    socialInteractions:Object.freeze(socialInteractions),
     encounterError,
     experienceJournalEntries:Object.freeze(experienceJournalEntries),
     experienceConsolidation:Object.freeze({
@@ -1318,6 +1584,7 @@ export function renderThreadObservatory({
   memories = [],
   memoryError = null,
   encounterStories = [],
+  socialInteractions = [],
   encounterError = null,
   experienceJournalEntries = [],
   experienceConsolidation = null,
@@ -1348,6 +1615,16 @@ export function renderThreadObservatory({
       threadId,
       encounterStories,
       encounterError,
+      experienceConsolidation,
+      experienceJournalEntries,
+      memories,
+      semanticStates,
+      lifeRelations,
+    }),
+    socialAnalyticsSection({
+      threadId,
+      encounterStories,
+      socialInteractions,
       experienceConsolidation,
       experienceJournalEntries,
       memories,
