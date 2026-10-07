@@ -125,9 +125,10 @@ function socialEpisodeProfile(episode,threadId){
   }
 
   const social=counterparties.size>0||anonymousVisitor;
+  const participated=socialBeats.some((beat)=>beat.actorThreadId===threadId);
   const firstActor=socialBeats[0]?.actorThreadId??null;
   const openedByThread=social&&firstActor===threadId;
-  const openedExternally=social&&!openedByThread;
+  const openedExternally=social&&participated&&!openedByThread;
   const responded=openedExternally&&socialBeats.slice(1).some((beat)=>beat.actorThreadId===threadId);
 
   return Object.freeze({
@@ -135,6 +136,7 @@ function socialEpisodeProfile(episode,threadId){
     social,
     counterparties:Object.freeze([...counterparties]),
     anonymousVisitor,
+    participated,
     openedByThread,
     openedExternally,
     responded,
