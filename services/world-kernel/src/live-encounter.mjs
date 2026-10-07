@@ -166,7 +166,7 @@ export function createLiveEncounter({
       const actor=requireParticipant(actorId);
       const speaker=speakers.get(actor);
       if(!speaker.active)return false;
-      opportunity(actor,"end");
+      opportunity(actor,"end",{completion:"complete"});
       speaker.active=false;
       speaker.ended=true;
       for(const listenerId of ids){
@@ -179,8 +179,34 @@ export function createLiveEncounter({
         actorId:actor,
         speechRef:speaker.speechRef,
         text:speaker.text,
+        completion:"complete",
       });
       return true;
+    },
+
+    interruptSpeech({actorId}={}){
+      const actor=requireParticipant(actorId);
+      const speaker=speakers.get(actor);
+      if(!speaker.active)return null;
+      opportunity(actor,"end",{completion:"interrupted"});
+      speaker.active=false;
+      speaker.ended=true;
+      for(const listenerId of ids){
+        if(listenerId===actor)continue;
+        const prior=heard.get(listenerId).get(actor);
+        heard.get(listenerId).set(actor,{...prior,active:false});
+      }
+      const result=Object.freeze({
+        speechRef:speaker.speechRef,
+        text:speaker.text,
+        completion:"interrupted",
+      });
+      emitAll({
+        type:"speech_end",
+        actorId:actor,
+        ...result,
+      });
+      return result;
     },
 
     heardSoFar(participant){
