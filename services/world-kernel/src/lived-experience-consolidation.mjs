@@ -54,6 +54,17 @@ function normalizeDecision(output){
   assertPlainObject("experience consolidation decision",output);
   const journalEntry=output.journalEntry??null;
   if(journalEntry!==null)assertNonEmpty("experience consolidation journalEntry",journalEntry);
+  if(!Array.isArray(output.afterthoughts)||output.afterthoughts.length>3){
+    throw new TypeError("experience consolidation afterthoughts must contain at most 3 items");
+  }
+  const afterthoughts=output.afterthoughts.map((item,index)=>{
+    assertPlainObject(`experience consolidation afterthoughts[${index}]`,item);
+    if(!["insight","question","intention"].includes(item.kind)){
+      throw new TypeError("experience consolidation afterthought kind is invalid");
+    }
+    assertNonEmpty(`experience consolidation afterthoughts[${index}].text`,item.text);
+    return Object.freeze({kind:item.kind,text:item.text.trim()});
+  });
 
   assertPlainObject("experience consolidation memory",output.memory);
   const memory=output.memory;
@@ -64,6 +75,7 @@ function normalizeDecision(output){
   if(memory.outcome==="not_remembered"){
     return Object.freeze({
       journalEntry,
+      afterthoughts:Object.freeze(afterthoughts),
       memory:Object.freeze({
         outcome:"not_remembered",
         rememberedContent:null,
@@ -86,6 +98,7 @@ function normalizeDecision(output){
   }
   return Object.freeze({
     journalEntry,
+    afterthoughts:Object.freeze(afterthoughts),
     memory:Object.freeze({
       outcome:"retained",
       rememberedContent:memory.rememberedContent,
@@ -141,22 +154,37 @@ async function formDecision({
 These experiences already happened and are durable evidence. They may include conversation, witnessed behavior, environmental occurrences, or several closely related moments from one continuing situation.
 Treat the cluster as one reflective opportunity rather than one mandatory interpretation per experience.
 
-Return two distinct private outcomes:
-1. journalEntry: a first-person private journal reflection, or null. It may integrate several experiences when they belong together. It is subjective, contemporaneous reflection formed now, not objective history.
+Return three distinct private outcomes:
+1. journalEntry: a first-person private journal reflection, or null. It may integrate several experiences when they belong together. It is subjective reflection formed now, not objective history.
 2. memory: decide whether anything from this bounded cluster is retained autobiographically. not_remembered is normal. If retained, write a selective first-person recollection of what mattered rather than a transcript.
+3. afterthoughts: zero to three concise private residues that genuinely emerged only after considering the cluster. Each is an insight, question, or intention. Empty is normal. These are thoughts, not commitments, relationship authority, semantic-state authority, or automatic future actions.
 
 Do not invent events, dialogue, relationships, obligations, or lasting meaning absent from the supplied evidence.
 Do not force significance merely because multiple experiences were supplied.
 rememberedMeaning may be null even when rememberedContent is retained.
-Journal and memory are separate outcomes: either may exist without the other.
+Journal, memory and afterthoughts are separate outcomes: any may exist without the others.
+Do not manufacture an afterthought merely to make the experience consequential.
 Do not describe this consolidation process, record IDs, system state, or hidden policy.`,
     input,
     responseSchema:{
       type:"object",
       additionalProperties:false,
-      required:["journalEntry","memory"],
+      required:["journalEntry","memory","afterthoughts"],
       properties:{
         journalEntry:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
+        afterthoughts:{
+          type:"array",
+          maxItems:3,
+          items:{
+            type:"object",
+            additionalProperties:false,
+            required:["kind","text"],
+            properties:{
+              kind:{type:"string",enum:["insight","question","intention"]},
+              text:{type:"string",minLength:1,maxLength:500},
+            },
+          },
+        },
         memory:{
           type:"object",
           additionalProperties:false,
@@ -394,6 +422,7 @@ export function createExperienceConsolidationProcess({
         journalEntryId:journalEntry?.journalEntryId??null,
         memoryOutcome:decision.memory.outcome,
         memoryId:memory?.memoryId??null,
+        afterthoughtCount:decision.afterthoughts.length,
       },
     });
 
@@ -417,6 +446,7 @@ export function createExperienceConsolidationProcess({
       journalEntryId:completion.payload.journalEntryId,
       memoryOutcome:completion.payload.memoryOutcome,
       memoryId:completion.payload.memoryId,
+      afterthoughts:decision.afterthoughts,
     });
   }
 
