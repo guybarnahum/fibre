@@ -194,6 +194,24 @@ test("delayed World wake keeps the earliest consolidation deadline", async () =>
   }
 });
 
+test("delayed World wake never postpones overdue work", async () => {
+  let clock=10_000;
+  const process=createWorldReconciliationProcess();
+  const {infraDriver,runtime}=createRuntimeFixture({
+    process,
+    now:()=>clock,
+  });
+  try{
+    await infraDriver.scheduler.schedule("world",9_000);
+    const wake=await runtime.requestWakeAfter(30_000);
+    assert.equal(wake.scheduledTimeMs,10_000,
+      "new consolidation work postponed an already-due World alarm");
+    assert.equal(await infraDriver.scheduler.get("world"),10_000);
+  }finally{
+    await runtime.stop();
+  }
+});
+
 test("experience consolidation participates in World retry and quiescence", async () => {
   let pending=true;
   let runs=0;
