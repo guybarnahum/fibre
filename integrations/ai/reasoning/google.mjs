@@ -218,6 +218,7 @@ export function createGoogleModelAdapter({
           ?? null;
 
         for await (const chunk of streamSseJson(response.body)) {
+          if (signal?.aborted) return;
           if (typeof chunk?.modelVersion === "string" && chunk.modelVersion.trim() !== "") {
             resolvedModelId = chunk.modelVersion;
           }
