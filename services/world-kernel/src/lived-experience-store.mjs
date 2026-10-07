@@ -807,7 +807,7 @@ export class LivedExperienceStore {
     payload,
   }) {
     assertId("experience consolidation stage consolidationId",consolidationId);
-    if(!["journal","memory","complete"].includes(stage)){
+    if(!["decision","complete"].includes(stage)){
       throw new TypeError("experience consolidation stage is invalid");
     }
     assertIsoTimestamp("experience consolidation stage recordedAt",recordedAt);
@@ -844,7 +844,7 @@ export class LivedExperienceStore {
 
   getThreadExperienceConsolidationStage(consolidationId,stage) {
     assertId("experience consolidation stage consolidationId",consolidationId);
-    if(!["journal","memory","complete"].includes(stage)){
+    if(!["decision","complete"].includes(stage)){
       throw new TypeError("experience consolidation stage is invalid");
     }
     const row=this.#database.prepare(`
