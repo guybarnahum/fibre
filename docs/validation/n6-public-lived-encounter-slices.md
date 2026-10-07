@@ -465,7 +465,7 @@ operator selects one existing Thread
 The command is:
 
 ```bash
-npm run inside-fibre:meet -- --thread THREAD_ID
+npm run inside-fibre:meet -- --env staging --thread THREAD_ID
 ```
 
 The CLI is intentionally not a second meeting engine. It calls the same World authorities used by clients, keeps no durable transcript/session state, does not schedule visitor work, and does not use the public Presentation API.
