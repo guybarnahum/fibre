@@ -211,6 +211,29 @@ export function createLiveEncounter({
       return result;
     },
 
+    pushAction({actorId,text}={}){
+      const actor=requireParticipant(actorId);
+      if(typeof text!=="string"||text.trim()==="")throw new TypeError("live action text is required");
+      const action=emitAll({
+        type:"participant_action",
+        actorId:actor,
+        text:text.trim(),
+      });
+      for(const listenerId of ids){
+        if(listenerId===actor)continue;
+        emit(listenerId,{
+          type:"speaking_opportunity",
+          participantId:listenerId,
+          sourceActorId:actor,
+          speechRef:null,
+          reason:"action",
+          heardText:null,
+          actionText:text.trim(),
+        });
+      }
+      return action;
+    },
+
     pushWorldEvent({
       eventRef,
       occurredAt,
