@@ -229,6 +229,20 @@ unconsolidated lived Experience
 ```
 
 No whole-population scan, minute-by-minute worker or required memory quota is implied.
+
+Scheduling is infrastructure-neutral:
+
+```text
+durable Experience queue
+  -> shared World consolidation wake policy
+  -> World reconciliation runtime
+  -> infraDriver.scheduler
+       local      -> local scheduler port
+       Cloudflare -> Durable Object alarm scheduler port
+       future AWS -> AWS scheduler port with the same InfraDriver contract
+```
+
+Provider deployments must not implement their own consolidation timing semantics. The shared policy requests a delayed wake and preserves any earlier already-scheduled World work rather than postponing it.
 The first implementation uses the existing World reconciliation scheduler as a GC-like wake mechanism:
 
 ```text
