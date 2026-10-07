@@ -1,4 +1,5 @@
 import { recoverModelOutput } from "#integrations/ai/reasoning/output-recovery.mjs";
+import { streamSseJson } from "#integrations/ai/reasoning/sse.mjs";
 
 import { GuardianModelError } from "../guardian-model-adapter.mjs";
 import {
@@ -261,12 +262,120 @@ export function createOpenAIModelAdapter({
     retryDelayMs,
     structuredOutput: "json_schema_strict",
   });
+  const expressionConfiguration = Object.freeze({
+    transport:"responses_stream",
+    endpoint,
+    maxOutputTokens:maxOutputTokens === null ? "auto" : maxOutputTokens,
+    temperature,
+    topP,
+    reasoningEffort,
+  });
   let terminalFailure = null;
 
   return Object.freeze({
     provider: "openai",
     modelId,
     configuration,
+    async *streamExpression({ systemPrompt, input, clientRequestId, signal = null }) {
+      assertNonEmpty("expression systemPrompt", systemPrompt);
+      assertPlainObject("expression input", input);
+      assertId("expression clientRequestId", clientRequestId);
+      if (signal !== null && typeof signal?.addEventListener !== "function") {
+        throw new TypeError("expression signal must be an AbortSignal");
+      }
+      if (terminalFailure !== null) throw terminalFailure;
+      if (signal?.aborted) return;
+
+      const controller = new AbortController();
+      const onAbort = () => controller.abort(signal?.reason);
+      signal?.addEventListener("abort", onAbort, { once:true });
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      let completed = false;
+
+      try {
+        let response;
+        try {
+          response = await fetchImpl(endpoint, {
+            method:"POST",
+            headers:{
+              authorization:`Bearer ${key}`,
+              "content-type":"application/json",
+              accept:"text/event-stream",
+              "x-client-request-id":clientRequestId,
+            },
+            body:JSON.stringify({
+              model:modelId,
+              store:false,
+              stream:true,
+              ...(maxOutputTokens === null ? {} : { max_output_tokens:maxOutputTokens }),
+              temperature,
+              top_p:topP,
+              reasoning:{ effort:reasoningEffort },
+              input:[
+                { role:"developer", content:[{ type:"input_text", text:systemPrompt }] },
+                { role:"user", content:[{ type:"input_text", text:JSON.stringify(input) }] },
+              ],
+            }),
+            signal:controller.signal,
+          });
+        } catch (error) {
+          if (signal?.aborted) return;
+          throw normalizeError(error);
+        }
+
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw classifyHttpFailure(response, body);
+        }
+
+        const headerRequestId = response.headers?.get?.("x-request-id") ?? null;
+        for await (const event of streamSseJson(response.body)) {
+          if (event?.type === "response.output_text.delta" && typeof event.delta === "string" && event.delta !== "") {
+            yield Object.freeze({ type:"expression_delta", text:event.delta });
+            continue;
+          }
+          if (event?.type === "error") {
+            throw new GuardianModelError(`OpenAI expression stream failed: ${event.message ?? "unknown error"}`, {
+              code:"MODEL_STREAM_ERROR",
+              retryable:false,
+              providerErrorCode:event.code ?? null,
+            });
+          }
+          if (event?.type === "response.failed" || event?.type === "response.incomplete") {
+            throw new GuardianModelError(`OpenAI expression stream did not complete: ${event.type}`, {
+              code:"MODEL_INCOMPLETE_RESPONSE",
+              retryable:false,
+            });
+          }
+          if (event?.type === "response.completed") {
+            const body = event.response ?? {};
+            const provenance = Object.freeze({
+              provider:"openai",
+              transport:"responses_stream",
+              modelId:body.model ?? modelId,
+              providerRequestId:headerRequestId ?? body.id ?? null,
+              configuration:{ ...expressionConfiguration },
+              usage:usageFromBody(body),
+            });
+            completed = true;
+            yield Object.freeze({ type:"expression_complete", provenance });
+          }
+        }
+
+        if (!completed && !signal?.aborted) {
+          throw new GuardianModelError("OpenAI expression stream ended before completion", {
+            code:"MODEL_STREAM_INCOMPLETE",
+            retryable:false,
+          });
+        }
+      } catch (error) {
+        if (signal?.aborted) return;
+        throw normalizeError(error);
+      } finally {
+        clearTimeout(timer);
+        signal?.removeEventListener?.("abort", onAbort);
+      }
+    },
     async invoke({ systemPrompt, input, responseSchema, clientRequestId }) {
       assertNonEmpty("model systemPrompt", systemPrompt);
       assertPlainObject("model input", input);
