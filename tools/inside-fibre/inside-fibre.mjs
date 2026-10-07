@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { projectDailyRhythm } from "../../services/world-kernel/src/daily-rhythm.mjs";
 import { INSIDE_FIBRE_VISITOR_WORK } from "../../services/world-kernel/src/inside-fibre-work.mjs";
+import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REQUEST_TIMEOUT_MS = 180_000;
@@ -61,14 +62,14 @@ function remoteBase(name, value) {
     || ["localhost", "127.0.0.1", "::1"].includes(url.hostname)
     || url.hostname.endsWith(".local")
   ) {
-    throw new Error(`${name} must be a remote HTTPS staging endpoint`);
+    throw new Error(`${name} must be a remote HTTPS endpoint`);
   }
   return url.toString().replace(/\/$/u, "");
 }
 
-function deploymentEvidence() {
+function deploymentEvidence(environment) {
   return JSON.parse(readFileSync(
-    resolve(REPO_ROOT, ".fibre", "cloudflare", "staging", "deployment.json"),
+    resolve(REPO_ROOT, ".fibre", "cloudflare", environment, "deployment.json"),
     "utf8",
   ));
 }
@@ -501,8 +502,11 @@ export function parseInsideFibreArgs(argv) {
   let limit = 50;
   let target = 3;
   let threadId = null;
+  let targetEnvironment = null;
   for (let index = 0; index < rest.length; index += 1) {
-    if (rest[index] === "--limit" && command !== "meet") {
+    if (rest[index] === "--env") {
+      targetEnvironment = normalizeCloudflareEnvironment(rest[++index] ?? null);
+    } else if (rest[index] === "--limit" && command !== "meet") {
       limit = parsePositiveInt("--limit", rest[++index]);
     } else if (rest[index] === "--target" && command === "prepare") {
       target = parsePositiveInt("--target", rest[++index], { maximum:20 });
@@ -512,37 +516,43 @@ export function parseInsideFibreArgs(argv) {
       throw new TypeError(`unsupported ${command} argument ${rest[index]}`);
     }
   }
+  if (targetEnvironment === null) {
+    throw new TypeError("--env <staging|production> is required");
+  }
   if (command === "meet" && threadId === null) {
     throw new TypeError("meet requires --thread THREAD_ID");
   }
-  return Object.freeze({ command, limit, target, threadId });
+  return Object.freeze({ command, limit, target, threadId, targetEnvironment });
 }
 
-function stagingContext(environment, { requireExactDeployment = false } = {}) {
+function cloudContext(environment, targetEnvironment, { requireExactDeployment = false } = {}) {
   const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", environment.FIBRE_PRIVATE_TOKEN);
-  const deployment = deploymentEvidence();
+  const deployment = deploymentEvidence(targetEnvironment);
+  if (deployment.environment !== targetEnvironment) {
+    throw new Error("Inside Fibre deployment evidence environment mismatch");
+  }
   if (requireExactDeployment) {
     const sha = cleanLocalSource();
     if (
-      deployment.environment !== "staging"
-      || deployment.sourceGitSha !== sha
+      deployment.sourceGitSha !== sha
       || deployment.sourceTreeClean !== true
     ) {
-      throw new Error("Inside Fibre prepare requires this exact clean checkout deployed to staging");
+      throw new Error(`Inside Fibre prepare requires this exact clean checkout deployed to ${targetEnvironment}`);
     }
   }
   return Object.freeze({
     privateToken,
     deployment,
+    targetEnvironment,
     worldBaseUrl:remoteBase(
-      "staging World",
+      `${targetEnvironment} World`,
       deploymentByService(deployment, "world-kernel").baseUrl,
     ),
     presentationBaseUrl:remoteBase(
-      "staging Thread Presentation",
+      `${targetEnvironment} Thread Presentation`,
       deploymentByService(deployment, "thread-presentation").baseUrl,
     ),
-    viewerOrigin:remoteBase("staging Viewer", deployment.externalViewerOrigin),
+    viewerOrigin:remoteBase(`${targetEnvironment} Viewer`, deployment.externalViewerOrigin),
   });
 }
 
@@ -685,8 +695,8 @@ export async function meetInsideFibre({
   input = process.stdin,
   output = process.stdout,
 } = {}) {
-  const { threadId } = parseInsideFibreArgs(argv);
-  const context = stagingContext(environment);
+  const { threadId, targetEnvironment } = parseInsideFibreArgs(argv);
+  const context = cloudContext(environment, targetEnvironment);
   const present = await ensureWorldPresent(context, threadId);
   const scene = printWorldPresent(present);
   let state = Object.freeze({
@@ -751,8 +761,8 @@ export async function scanInsideFibre({
   environment = process.env,
   argv = process.argv.slice(2),
 } = {}) {
-  const { limit } = parseInsideFibreArgs(argv);
-  const context = stagingContext(environment);
+  const { limit, targetEnvironment } = parseInsideFibreArgs(argv);
+  const context = cloudContext(environment, targetEnvironment);
   const at = new Date().toISOString();
   const discovered = await discoverEligiblePublicThreads(context, limit);
 
@@ -786,7 +796,7 @@ export async function scanInsideFibre({
   );
 
   process.stdout.write(
-    `Inside Fibre · staging · operator ${formatOperatorTime(at)} · deployed ${context.deployment.sourceGitSha?.slice(0, 8) ?? "unknown"}\n`,
+    `Inside Fibre · ${targetEnvironment} · operator ${formatOperatorTime(at)} · deployed ${context.deployment.sourceGitSha?.slice(0, 8) ?? "unknown"}\n`,
   );
   printSection("AVAILABLE NOW", available, (entry) => entry.available, at);
   printSection("SCHEDULED", scheduled, (entry) => entry.scheduled, at);
@@ -805,8 +815,8 @@ export async function prepareInsideFibre({
   environment = process.env,
   argv = process.argv.slice(2),
 } = {}) {
-  const { limit, target } = parseInsideFibreArgs(argv);
-  const context = stagingContext(environment, { requireExactDeployment:true });
+  const { limit, target, targetEnvironment } = parseInsideFibreArgs(argv);
+  const context = cloudContext(environment, targetEnvironment, { requireExactDeployment:true });
   const at = new Date().toISOString();
   const discovered = await discoverEligiblePublicThreads(context, limit);
   const records = [];
