@@ -286,6 +286,26 @@ These are private cognitive residue only. They are not automatic speech, commitm
 
 Direct relationship or semantic-state mutation is deliberately not part of this consolidation writer; remembered meaning/afterthoughts may later become evidence for those separate authorities.
 
+## Observatory causal projection
+
+Admin may derive an **Encounter Episode** for inspection by following Encounter Story `continuationOfEncounterRef` links.
+
+This is not a session authority.
+
+```text
+historical CurrentSituation
+  -> Encounter Story beat(s)
+  -> this Thread's Attention / Experience
+  -> consolidation frontier / decision / completion
+  -> Journal / Memory / delayed residue
+  -> later semantic / relationship state only when that authority cites this evidence
+```
+
+The projection must preserve absence honestly: unnoticed occurrence, pending consolidation, `not_remembered`, no Journal, and no later relationship/semantic consequence are all valid.
+
+A retained memory is linked through its existing Experience event refs. A semantic state or life relation is linked only through its own evidence/source references; Admin never infers that conversation created closeness, trust, resentment, belief or intention.
+
+Journal and autobiographical Memory remain standalone views and authorities. A private journal-book object is presentation, not the Journal authority, and may lag newly consolidated World journal records.
 ## Thread-to-Thread convergence
 
 The current social meeting machinery already provides the correct admission path:
