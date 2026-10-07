@@ -323,7 +323,7 @@ N6 execution remains recorded in [N6 rich public lived encounter slices](../vali
 
 N7 is governed by [Live encounters](../architecture/live-encounters.md), [ADR-0024](../decisions/ADR-0024-live-encounters.md), and [N7 live encounter slices](../validation/n7-live-encounter-slices.md). It removes the turn/request-response constraint without weakening existing authority: Live Encounter coordination is ephemeral; exposed outward acts become Encounter Story truth; structured cognition remains distinct from interruptible expression; ordinary World life continues; consolidation becomes bounded later work rather than a required synchronous step after every conversational beat.
 
-N7.0-N7.4 are accepted locally. N7.5 is current: synchronous Journal/Memory aftermath has been removed from ordinary encounter admission; newly admitted Thread Experiences enter an append-only consolidation frontier; the existing World reconciliation scheduler batches/retries bounded same-scene clusters; and one durable delayed decision can selectively produce Journal, Memory/meaning, or private insight/question/intention residue without directly mutating relationship or semantic-state authority.
+N7.0-N7.4 are accepted locally. N7.5 is current: delayed consolidation is now a durable bounded queue/claim/decision/complete pipeline. Its wake policy is provider-neutral through the shared World reconciliation runtime and `infraDriver.scheduler`; Local and Cloudflare therefore share timing/recovery semantics rather than carrying deployment-specific background behavior.
 
 ## Development discipline
 
