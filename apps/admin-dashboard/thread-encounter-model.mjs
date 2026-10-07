@@ -187,6 +187,8 @@ export function buildSocialAnalytics({
   const knownCounterparties=new Set();
   const episodeCountByCounterparty=new Map();
   for(const profile of episodes){
+    const sociallyExperienced=profile.participated||profile.episode.experiences.length>0;
+    if(!sociallyExperienced)continue;
     for(const counterparty of profile.counterparties){
       knownCounterparties.add(counterparty);
       episodeCountByCounterparty.set(
