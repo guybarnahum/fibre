@@ -128,6 +128,12 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
     const decisions=[
       {
         journalEntry:"Guy's point about drawing stayed with me more than the fish themselves. I liked having to revise what I thought he meant.",
+        afterthoughts:[
+          {
+            kind:"question",
+            text:"Would drawing something myself change what I notice about it?",
+          },
+        ],
         memory:{
           outcome:"retained",
           rememberedContent:"I remember talking with Guy over breakfast about drawing fish, and realizing he cared more about how drawing changes attention than about fish themselves.",
@@ -139,6 +145,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       },
       {
         journalEntry:null,
+        afterthoughts:[],
         memory:{
           outcome:"not_remembered",
           rememberedContent:null,
@@ -197,6 +204,10 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       "nearby conversational experiences were not consolidated together");
     assert.equal(firstRun.hasPending,true,"later experience should remain pending");
     assert.equal(calls.length,1,"one consolidation cluster used more than one cognition call");
+    assert.deepEqual(firstRun.results[0].afterthoughts,[{
+      kind:"question",
+      text:"Would drawing something myself change what I notice about it?",
+    }],"delayed consolidation lost its private afterthought");
     assert.deepEqual(
       calls[0].experiences.map((item)=>item.experienceId),
       [first.experienceId,second.experienceId],
@@ -267,6 +278,7 @@ test("N7.5 retry reuses the durable consolidation decision",async()=>{
         return {
           output:{
             journalEntry:null,
+            afterthoughts:[],
             memory:{
               outcome:"retained",
               rememberedContent:"I remember one conversation landing more strongly than I expected.",
