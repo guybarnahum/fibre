@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildEncounterEpisodes,
   fetchThreadObservatory,
   identityWithFidPublication,
   mergeObservatoryWorldIdentity,
@@ -254,6 +255,93 @@ test("Thread Observatory copy payload carries person state and current repair di
   assert.equal(payload.repairError, null);
 });
 
+
+test("Encounter Episodes derive continuation and consequence without becoming authority", () => {
+  const first={
+    encounterId:"story_ep_1",
+    occurredAt:"2026-10-07T18:00:00.000Z",
+    situation:{ situationId:"sit_ep_1", activity:"Eating breakfast.", location:{kind:"place",placeRef:"place_home"} },
+    story:{
+      beats:[
+        {actorThreadId:null,kind:"utterance",text:"I like drawing fish."},
+        {actorThreadId:"thr_ep",kind:"utterance",text:"What do you like about it?"},
+      ],
+    },
+    attention:{
+      outcome:"noticed",
+      experience:{experienceId:"exp_ep_1",experienceText:"I was curious about the distinction."},
+    },
+  };
+  const second={
+    encounterId:"story_ep_2",
+    occurredAt:"2026-10-07T18:02:00.000Z",
+    situation:{ situationId:"sit_ep_1", activity:"Eating breakfast.", location:{kind:"place",placeRef:"place_home"} },
+    story:{
+      continuationOfEncounterRef:"story_ep_1",
+      beats:[
+        {actorThreadId:null,kind:"utterance",text:"The act of drawing changes how I see."},
+        {actorThreadId:"thr_ep",kind:"utterance",text:"Oh—that is different.",completion:"interrupted"},
+      ],
+    },
+    attention:{
+      outcome:"noticed",
+      experience:{experienceId:"exp_ep_2",experienceText:"The correction changed what I thought he meant."},
+    },
+  };
+  const consolidation={
+    queued:[],
+    consolidations:[{
+      consolidationId:"con_ep_1",
+      threadId:"thr_ep",
+      startedAt:"2026-10-07T18:05:00.000Z",
+      experienceRefs:["exp_ep_1","exp_ep_2"],
+      decision:{
+        stage:"decision",
+        payload:{
+          journalEntry:"The correction stayed with me.",
+          afterthoughts:[{kind:"question",text:"Would drawing something change what I notice?"}],
+          memory:{outcome:"retained"},
+        },
+      },
+      complete:{
+        stage:"complete",
+        payload:{memoryOutcome:"retained",memoryId:"mem_ep_1",journalEntryId:"journal_ep_1",afterthoughtCount:1},
+      },
+      journal:{
+        journalEntryId:"journal_ep_1",
+        consolidationId:"con_ep_1",
+        threadId:"thr_ep",
+        writtenAt:"2026-10-07T18:05:01.000Z",
+        entryText:"The correction stayed with me.",
+      },
+    }],
+  };
+  const episodes=buildEncounterEpisodes({
+    encounterStories:[second,first],
+    experienceConsolidation:consolidation,
+    memories:[{
+      memoryId:"mem_ep_1",
+      eventRefs:["exp_ep_1","exp_ep_2"],
+      rememberedContent:"I remember revising what I thought Guy meant.",
+    }],
+  });
+
+  assert.equal(episodes.length,1,"continuation chain split into separate episodes");
+  assert.deepEqual(
+    episodes[0].stories.map((story)=>story.encounterId),
+    ["story_ep_1","story_ep_2"],
+    "episode lost causal story order",
+  );
+  assert.equal(episodes[0].consolidation.status,"complete","episode lost consolidation completion");
+  assert.equal(episodes[0].journals.length,1,"episode lost linked Journal authority");
+  assert.equal(episodes[0].memories[0].memoryId,"mem_ep_1","episode lost retained autobiographical memory");
+  assert.deepEqual(
+    episodes[0].afterthoughts.map((item)=>item.kind),
+    ["question"],
+    "episode lost delayed private residue",
+  );
+});
+
 test("Thread Observatory keeps Encounter Story, journal authority, and memory separate", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url) => {
@@ -297,6 +385,18 @@ test("Thread Observatory keeps Encounter Story, journal authority, and memory se
             writtenAt:"2026-09-21T18:00:00.000Z",
             entryText:"I stayed quiet, but it changed the room for me.",
           }],
+          experienceConsolidation:{
+            queued:[],
+            consolidations:[{
+              consolidationId:"con_e4_admin",
+              threadId:"thr_e4_admin",
+              startedAt:"2026-09-21T18:01:00.000Z",
+              experienceRefs:["exp_e4_admin"],
+              decision:{stage:"decision",payload:{afterthoughts:[],memory:{outcome:"not_remembered"},journalEntry:null}},
+              complete:{stage:"complete",payload:{memoryOutcome:"not_remembered",memoryId:null,journalEntryId:null,afterthoughtCount:0}},
+              journal:null,
+            }],
+          },
         },
       });
     }
@@ -325,6 +425,8 @@ test("Thread Observatory keeps Encounter Story, journal authority, and memory se
       "Admin should receive World journal-entry provenance separately from the R2 book");
     assert.equal(result.journal.profile.title, "Margins",
       "Admin should retain the stable Thread-owned journal presentation");
+    assert.equal(result.experienceConsolidation.consolidations[0].consolidationId,"con_e4_admin",
+      "Admin should receive consolidation authority separately from Encounter Story");
     assert.equal(result.memories.length, 0,
       "journal presence must not imply autobiographical retention");
   } finally {
