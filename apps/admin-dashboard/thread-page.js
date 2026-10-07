@@ -141,6 +141,7 @@ export async function renderThreadPage(threadId) {
       encounterStories:payload.encounterStories,
       encounterError:payload.encounterError,
       experienceJournalEntries:payload.experienceJournalEntries,
+      experienceConsolidation:payload.experienceConsolidation,
       journal:payload.journal,
       journalError:payload.journalError,
     });
