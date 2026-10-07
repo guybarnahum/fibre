@@ -1,3 +1,4 @@
+import { streamExpressionIntoLiveEncounter } from "./live-encounter-expression.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -19,6 +20,16 @@ When recentEncounterStories are supplied, they are admitted objective events fro
 Respond naturally from the life already underway. Do not report private semantic-state records, memory records, evidence identifiers, hidden reasons, plans, obligations, or care authority.
 Do not invent a relationship with the visitor merely because they spoke.
 Return only what the Thread says in response.`;
+
+const STREAM_SYSTEM_PROMPT = `You are temporary cognition for one persistent Fibre Thread speaking during an asynchronous live encounter.
+The supplied currentSituation is World-owned enacted reality. Never rewrite it or treat another participant's claims as situation facts.
+Use the Thread's identity, current semantic state, bounded autobiographical memories and admitted recent Encounter Stories as private grounding.
+liveInteraction.heardSoFar is only outward speech actually heard in this live encounter. If priorExpression is supplied, it is the exact prefix this Thread already spoke before being interrupted.
+Respond from the latest evidence naturally. Do not mechanically resume abandoned wording after an interruption; reconsider what was just heard.
+The Thread may disagree, redirect, acknowledge the interruption, or continue its earlier thought when that remains natural.
+Do not narrate private thoughts, memory records, semantic-state records, evidence identifiers, hidden reasons, plans or system state.
+Do not invent a relationship merely because conversation is underway.
+Produce only outward speech for this Thread.`;
 
 function requestId(input) {
   return `lived-encounter_${sha256(canonicalJson(input))}`;
@@ -105,23 +116,20 @@ function contextState({ livedContext, thread, livedNowStore, semanticStateStore,
   };
 }
 
-export async function respondToLivedEncounter({
-  livedContext = null,
-  thread = null,
+function livedEncounterResponseInput({
+  livedContext,
+  thread,
   encounter,
-  livedNowStore = null,
-  semanticStateStore = null,
-  memoryStore = null,
-  recentEncounterStories = [],
-  modelAdapter,
+  livedNowStore,
+  semanticStateStore,
+  memoryStore,
+  recentEncounterStories,
+  liveInteraction=null,
 }) {
   assertPlainObject("lived encounter", encounter);
   assertExactKeys("lived encounter", encounter, ["utterance", "occurredAt"]);
   assertNonEmpty("lived encounter.utterance", encounter.utterance);
   assertIsoTimestamp("lived encounter.occurredAt", encounter.occurredAt);
-  if (modelAdapter === null || typeof modelAdapter !== "object" || typeof modelAdapter.invoke !== "function") {
-    throw new TypeError("lived encounter cognition requires a model adapter");
-  }
 
   const state = contextState({ livedContext, thread, livedNowStore, semanticStateStore, memoryStore });
   const activeThread = state.thread;
@@ -152,7 +160,44 @@ export async function respondToLivedEncounter({
     recentEncounterStories:immediateEncounterHistory,
     visitorUtterance: encounter.utterance,
     occurredAt: encounter.occurredAt,
+    ...(liveInteraction===null?{}:{liveInteraction:structuredClone(liveInteraction)}),
   };
+  return Object.freeze({
+    input,
+    currentSituation,
+    semanticStates,
+    autobiographicalMemories,
+  });
+}
+
+export async function respondToLivedEncounter({
+  livedContext = null,
+  thread = null,
+  encounter,
+  livedNowStore = null,
+  semanticStateStore = null,
+  memoryStore = null,
+  recentEncounterStories = [],
+  modelAdapter,
+}) {
+  if (modelAdapter === null || typeof modelAdapter !== "object" || typeof modelAdapter.invoke !== "function") {
+    throw new TypeError("lived encounter cognition requires a model adapter");
+  }
+
+  const {
+    input,
+    currentSituation,
+    semanticStates,
+    autobiographicalMemories,
+  } = livedEncounterResponseInput({
+    livedContext,
+    thread,
+    encounter,
+    livedNowStore,
+    semanticStateStore,
+    memoryStore,
+    recentEncounterStories,
+  });
 
   const invocation = await modelAdapter.invoke({
     systemPrompt: SYSTEM_PROMPT,
@@ -188,4 +233,75 @@ export async function respondToLivedEncounter({
       providerRequestId: invocation.provenance.providerRequestId ?? null,
     },
   };
+}
+
+export async function streamLivedEncounterResponse({
+  livedContext = null,
+  thread = null,
+  encounter,
+  livedNowStore = null,
+  semanticStateStore = null,
+  memoryStore = null,
+  recentEncounterStories = [],
+  liveEncounter,
+  participantId,
+  priorExpression = null,
+  modelAdapter,
+  signal = null,
+}) {
+  if(!liveEncounter||typeof liveEncounter.heardSoFar!=="function"){
+    throw new TypeError("streamed lived encounter requires a live encounter");
+  }
+  assertId("streamed lived encounter participantId",participantId);
+  if(priorExpression!==null){
+    assertPlainObject("streamed lived encounter priorExpression",priorExpression);
+    assertNonEmpty("streamed lived encounter priorExpression.text",priorExpression.text);
+    if(priorExpression.completion!=="interrupted"){
+      throw new TypeError("prior live expression must be interrupted");
+    }
+  }
+
+  const liveInteraction={
+    heardSoFar:liveEncounter.heardSoFar(participantId),
+    ...(priorExpression===null?{}:{
+      priorExpression:{
+        text:priorExpression.text,
+        completion:"interrupted",
+      },
+    }),
+  };
+  const {
+    input,
+    currentSituation,
+    semanticStates,
+    autobiographicalMemories,
+  }=livedEncounterResponseInput({
+    livedContext,
+    thread,
+    encounter,
+    livedNowStore,
+    semanticStateStore,
+    memoryStore,
+    recentEncounterStories,
+    liveInteraction,
+  });
+
+  const expression=await streamExpressionIntoLiveEncounter({
+    encounter:liveEncounter,
+    actorId:participantId,
+    modelAdapter,
+    systemPrompt:STREAM_SYSTEM_PROMPT,
+    input,
+    clientRequestId:`lived-encounter-expression_${sha256(canonicalJson(input))}`,
+    signal,
+  });
+
+  return Object.freeze({
+    ...expression,
+    grounding:Object.freeze({
+      situationId:currentSituation.situationId,
+      semanticStateIds:Object.freeze(semanticStates.map((state)=>state.stateId)),
+      memoryIds:Object.freeze(autobiographicalMemories.map((memory)=>memory.memoryId)),
+    }),
+  });
 }
