@@ -79,6 +79,20 @@ Guy:   "Wait, not the drawing. The act of drawing."
 
 the emitted Kaleo prefix remains objective history and is marked interrupted. The abandoned unseen completion is discarded.
 
+Objective utterance beats therefore may carry `completion:"interrupted"`. Normal completed utterances need no completion marker. This attribute describes an observable fact about the outward act; it is not an inference about motive or private cognition.
+
+A restarted expression must be grounded in:
+
+```text
+admitted recent Encounter Stories
++ exact interrupted spoken prefix
++ outward speech/events heard since
++ current World situation
++ ordinary Thread-owned private grounding
+```
+
+The abandoned unspoken suffix is never supplied as history or context.
+
 ## Speaking opportunities
 
 A participant does not receive a turn. Instead, incoming outward speech can create a **speaking opportunity**.
