@@ -35,3 +35,11 @@ export function assertGuardianModelAdapter(adapter) {
   if (typeof adapter.invoke !== "function") throw new TypeError("Guardian model adapter.invoke must be a function");
   return adapter;
 }
+
+export function assertExpressionModelAdapter(adapter) {
+  assertGuardianModelAdapter(adapter);
+  if (typeof adapter.streamExpression !== "function") {
+    throw new TypeError("Expression model adapter.streamExpression must be a function");
+  }
+  return adapter;
+}
