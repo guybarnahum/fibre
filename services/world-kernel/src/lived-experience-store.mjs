@@ -977,6 +977,55 @@ export class LivedExperienceStore {
     };
   }
 
+  inspectThreadExperienceConsolidation(threadId,{limit=100}={}) {
+    assertId("threadId",threadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>500){
+      throw new TypeError("experience consolidation inspection limit must be 1-500");
+    }
+
+    const queued=this.#database.prepare(`
+      SELECT q.experience_id,q.queued_at,
+        e.encounter_ref,e.situation_id,e.occurred_at,e.experience_text
+      FROM thread_experience_consolidation_queue q
+      JOIN thread_encounter_experiences e ON e.experience_id=q.experience_id
+      LEFT JOIN thread_experience_consolidation_members m ON m.experience_id=q.experience_id
+      WHERE q.thread_id=? AND m.experience_id IS NULL
+      ORDER BY e.occurred_at,q.experience_id
+      LIMIT ?
+    `).all(threadId,limit).map((row)=>({
+      experienceId:row.experience_id,
+      queuedAt:row.queued_at,
+      encounterRef:row.encounter_ref,
+      situationId:row.situation_id,
+      occurredAt:row.occurred_at,
+      experienceText:row.experience_text,
+    }));
+
+    const consolidations=this.#database.prepare(`
+      SELECT consolidation_id,started_at,experience_refs_json
+      FROM thread_experience_consolidations
+      WHERE thread_id=?
+      ORDER BY started_at DESC,consolidation_id DESC
+      LIMIT ?
+    `).all(threadId,limit).map((row)=>{
+      const consolidationId=row.consolidation_id;
+      return {
+        consolidationId,
+        threadId,
+        startedAt:row.started_at,
+        experienceRefs:JSON.parse(row.experience_refs_json),
+        decision:this.getThreadExperienceConsolidationStage(consolidationId,"decision"),
+        complete:this.getThreadExperienceConsolidationStage(consolidationId,"complete"),
+        journal:this.getThreadExperienceConsolidationJournal(consolidationId),
+      };
+    });
+
+    return Object.freeze({
+      queued:Object.freeze(queued),
+      consolidations:Object.freeze(consolidations),
+    });
+  }
+
   hasPendingExperienceConsolidation() {
     const incomplete=this.#database.prepare(`
       SELECT 1 AS pending
