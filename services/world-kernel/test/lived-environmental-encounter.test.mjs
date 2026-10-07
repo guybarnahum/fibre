@@ -171,10 +171,26 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
       modelAdapter,
     });
 
+    const live=createLiveEncounter({
+      participantIds:["person_guy",activeThread.threadId],
+    });
+    const personEvents=[];
+    live.subscribe("person_guy",(event)=>personEvents.push(event));
+    live.pushSpeechDelta({
+      actorId:"person_guy",
+      text:"I was thinking about drawing when",
+    });
+
     const noticed = await service.encounter({
       threadId:activeThread.threadId,
       at:AT,
     });
+    observeAdmittedWorldEncounter({
+      liveEncounter:live,
+      experienceStore,
+      encounterId:noticed.encounterStory.encounterId,
+    });
+
     const replay = await service.encounter({
       threadId:activeThread.threadId,
       at:AT,
@@ -182,6 +198,11 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
     const missed = await service.encounter({
       threadId:activeThread.threadId,
       at:"2026-09-21T18:02:00.000Z",
+    });
+    observeAdmittedWorldEncounter({
+      liveEncounter:live,
+      experienceStore,
+      encounterId:missed.encounterStory.encounterId,
     });
 
     assert.equal(noticed.attention.outcome, "noticed", "bee should enter lived attention");
@@ -220,23 +241,6 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
       "retry must not resample an admitted World occurrence",
     );
 
-    const live=createLiveEncounter({
-      participantIds:["person_guy",activeThread.threadId],
-    });
-    const personEvents=[];
-    live.subscribe("person_guy",(event)=>personEvents.push(event));
-
-    observeAdmittedWorldEncounter({
-      liveEncounter:live,
-      experienceStore,
-      encounterId:noticed.encounterStory.encounterId,
-    });
-    observeAdmittedWorldEncounter({
-      liveEncounter:live,
-      experienceStore,
-      encounterId:missed.encounterStory.encounterId,
-    });
-
     assert.equal(
       personEvents.filter((event)=>event.type==="world_event").length,
       2,
@@ -248,9 +252,14 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
       "Thread cognition bypassed selective World attention",
     );
 
+    assert.deepEqual(
+      live.snapshot().activeSpeakers,
+      ["person_guy"],
+      "World occurrence froze the ongoing conversation",
+    );
     live.pushSpeechDelta({
       actorId:"person_guy",
-      text:"Did you notice that?",
+      text:"—did you notice that?",
     });
     live.endSpeech({actorId:"person_guy"});
 
@@ -283,7 +292,7 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
         memories:[],
       },
       encounter:{
-        utterance:"Did you notice that?",
+        utterance:"I was thinking about drawing when—did you notice that?",
         occurredAt:"2026-09-21T18:03:00.000Z",
       },
       recentEncounterStories:[],
