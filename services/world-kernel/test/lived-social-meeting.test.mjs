@@ -155,6 +155,7 @@ function fixture({
   const journals = [];
   const bookWrites = [];
   const memories = [];
+  const queued = [];
   const ensured = [];
   const socialInteractions = structuredClone(recentSocialInteractions);
   let modelCalls = 0;
@@ -504,12 +505,18 @@ function fixture({
         attentions.push(structuredClone(attention));
         return attention;
       },
-      recordThreadExperienceJournalEntry(candidate) {
-        journals.push(structuredClone(candidate));
-        return {
-          journalEntryId:`journal_${candidate.threadId}_${candidate.aboutExperienceRef}`,
-          ...structuredClone(candidate),
+      queueThreadExperienceConsolidation(candidate) {
+        const experience=experiences.find((item)=>item.experienceId===candidate.experienceId);
+        if(experience===undefined)throw new Error("fixture queued unknown experience");
+        const record={
+          experienceId:candidate.experienceId,
+          threadId:experience.threadId,
+          queuedAt:candidate.queuedAt,
         };
+        if(!queued.some((item)=>item.experienceId===record.experienceId)){
+          queued.push(structuredClone(record));
+        }
+        return record;
       },
     },
     journalBook:{
@@ -539,6 +546,7 @@ function fixture({
     journals,
     bookWrites,
     memories,
+    queued,
     ensured,
     socialInteractions,
     initiationNames,
@@ -602,11 +610,14 @@ test("E2 accepted meeting is one Encounter Story with distinct Thread Experience
     [`sit_${mina.threadId}`, `sit_${noor.threadId}`].sort(),
     "meeting must use the lives already underway",
   );
-  assert.equal(f.journals.length, 2, "private reflection should stay per Thread");
-  assert.notEqual(f.journals[0].entryText, f.journals[1].entryText,
-    "private accounts should remain personal");
-  assert.equal(f.bookWrites.length, 2, "both journal books should receive their private entry");
-  assert.equal(f.memories.length, 1, "journal must not imply autobiographical retention");
+  assert.equal(f.queued.length,2,
+    "participant Experiences were not queued for delayed consolidation");
+  assert.equal(f.journals.length,0,
+    "social meeting still wrote Journal entries on the hot path");
+  assert.equal(f.bookWrites.length,0,
+    "social meeting still wrote the private journal book on the hot path");
+  assert.equal(f.memories.length,0,
+    "social meeting still formed autobiographical memory on the hot path");
   assert.equal(f.socialInteractions.length, 1, "an actual accepted overture should become shared social history");
   assert.equal(f.socialInteractions[0].responseDecision, "accept");
 });
