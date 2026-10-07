@@ -47,7 +47,7 @@ Operators use `appearance:diagnose`, `appearance:migrate`, `appearance:rerender`
 
 ## Current milestone posture
 
-The current north star is **continuous LivedNow + encounters**.
+The current north star is **continuous LivedNow + asynchronous Live Encounters**.
 
 Existing M2 work has already proven the bounded primitives needed for that goal:
 
@@ -84,6 +84,8 @@ See:
 
 - [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
 - [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md)
+- [Live encounters](../architecture/live-encounters.md)
+- [N7 live encounter slices](../validation/n7-live-encounter-slices.md)
 - [Current priorities](current-priorities.md)
 - [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md)
 
@@ -280,7 +282,7 @@ Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
 ## Immediate next action
 
-N5/E0-E5 are closed live. The immediate target is **N6 — Rich Public Lived Encounter**.
+N5/E0-E5 are closed live. N6 established ordinary public-lived encounter semantics and the first sustained direct World conversation. That conversation exposed the remaining chatbot-shaped constraint: complete request/response turns. The immediate target is now **N7 — Live Encounters and social consequence**; N6.6 endpoint/Viewer proof remains preserved and resumable.
 
 The relevant lived-person machinery is already accepted:
 
@@ -317,7 +319,9 @@ Natural Thread -> Thread social life remains a preserved follow-on. The accepted
 
 Developmental-exploration X0-X4 are accepted. X4 closed the core developmental loop without adding production authority: one objective Encounter Story can become different Thread-subjective Journal accounts, including an emotionally unfair interpretation not present in World truth, or no journal entry at all when the experience is trivial. Selective memory may retain autobiographical meaning or return `not_remembered`; later Interior Cognition sees only retained Thread-owned evidence, and the same existing `lived_planning` concern can bend future life accordingly. Journal and objective Encounter Story / Experience history cannot bypass memory authority. E6 is current pending live witness evidence and removes the remaining encounter-orchestration gap: environmental occurrence prose is World-authored from exterior current-scene evidence, and incidental witnesses are derived from authoritative co-presence rather than caller-selected IDs.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current: a visitor approaches the Thread in the ordinary scene already produced by Flight Plan/LivedNow, and the Thread will decide whether to engage from that context. N6.3a-N6.5 are accepted. N6.6 is current and closes in capability order: first demonstrate meet/encounter directly from Fibre's World CLI, then prove the client-neutral public endpoints, then demonstrate insidefibre.com as one client of that endpoint.
+N6 execution remains recorded in [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.1-N6.5 are accepted; direct World CLI bring-up has now demonstrated a naturally accepted sustained conversation grounded in ordinary LivedNow. The remaining N6.6 public endpoint/Viewer proof is preserved.
+
+N7 is governed by [Live encounters](../architecture/live-encounters.md), [ADR-0024](../decisions/ADR-0024-live-encounters.md), and [N7 live encounter slices](../validation/n7-live-encounter-slices.md). It removes the turn/request-response constraint without weakening existing authority: Live Encounter coordination is ephemeral; exposed outward acts become Encounter Story truth; structured cognition remains distinct from interruptible expression; ordinary World life continues; consolidation becomes bounded later work rather than a required synchronous step after every conversational beat.
 
 ## Development discipline
 
