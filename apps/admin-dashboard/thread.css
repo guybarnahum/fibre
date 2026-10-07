@@ -116,3 +116,26 @@
 .thread-journal-book.journal-minimal .thread-journal-cover{background:var(--surface);padding-left:0;padding-right:0}
 .thread-journal-book.journal-minimal .thread-journal-entry{padding-left:0;padding-right:0}
 @media(max-width:650px){.thread-journal-cover,.thread-journal-entry{padding:17px}.thread-journal-cover h4{font-size:21px}.thread-journal-book.journal-literary .thread-journal-entry{padding-inline:17px}}
+.thread-encounter-episode{display:grid;gap:10px;border:1px solid var(--border);border-radius:12px;padding:13px;background:var(--surface-subtle);margin-top:10px}
+.thread-encounter-episode-head{display:flex;align-items:start;justify-content:space-between;gap:14px}
+.thread-encounter-episode-head strong{font-size:11px}
+.thread-encounter-episode-head p{margin:4px 0 0;font-size:11px;line-height:1.45;color:var(--muted)}
+.thread-encounter-status{flex:0 0 auto;border:1px solid var(--border);border-radius:999px;padding:4px 7px;font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--surface)}
+.thread-encounter-status.complete{color:var(--text)}
+.thread-encounter-status.pending,.thread-encounter-status.consolidating{font-style:italic}
+.thread-encounter-scene,.thread-encounter-stream,.thread-encounter-causal-step{border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:10px}
+.thread-encounter-kicker{display:block;margin-bottom:6px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.thread-encounter-scene p,.thread-encounter-causal-step p{margin:0;font-size:11px;line-height:1.5}
+.thread-encounter-scene p+p{margin-top:5px}
+.thread-encounter-stream{display:grid;gap:6px}
+.thread-encounter-beat{display:grid;grid-template-columns:minmax(70px,110px) minmax(0,1fr) auto;gap:8px;align-items:baseline;padding-top:6px;border-top:1px solid var(--border)}
+.thread-encounter-beat:first-of-type{padding-top:0;border-top:0}
+.thread-encounter-beat strong{font-size:9px;color:var(--muted);overflow-wrap:anywhere}
+.thread-encounter-beat p{margin:0;font-size:11px;line-height:1.5;white-space:pre-wrap}
+.thread-encounter-beat.beat-occurrence p,.thread-encounter-beat.beat-action p{font-style:italic}
+.thread-encounter-interrupted{font-size:8px;color:var(--muted);font-style:italic}
+.thread-encounter-causal{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.thread-encounter-causal-step{display:grid;gap:5px}
+.thread-encounter-causal-step>strong{font-size:10px}
+.thread-encounter-afterthought{padding-left:8px;border-left:2px solid var(--border-strong);font-style:italic}
+@media(max-width:650px){.thread-encounter-causal{grid-template-columns:1fr}.thread-encounter-beat{grid-template-columns:72px minmax(0,1fr)}.thread-encounter-interrupted{grid-column:2}}
