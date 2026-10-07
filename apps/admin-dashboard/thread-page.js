@@ -139,6 +139,7 @@ export async function renderThreadPage(threadId) {
       memories:payload.memories,
       memoryError:payload.memoryError,
       encounterStories:payload.encounterStories,
+      socialInteractions:payload.socialInteractions,
       encounterError:payload.encounterError,
       experienceJournalEntries:payload.experienceJournalEntries,
       experienceConsolidation:payload.experienceConsolidation,
