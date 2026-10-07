@@ -634,6 +634,8 @@ export function buildEncounterEpisodes({
   experienceConsolidation=null,
   experienceJournalEntries=[],
   memories=[],
+  semanticStates=[],
+  lifeRelations=[],
 }={}){
   const stories=(Array.isArray(encounterStories)?encounterStories:[])
     .map((story)=>structuredClone(story));
@@ -670,6 +672,16 @@ export function buildEncounterEpisodes({
       ...linkedConsolidations.map((item)=>item.journal).filter(Boolean),
     ];
     const linkedMemories=memoryRecords.filter((memory)=>hasAnyRef(memory.eventRefs,experienceRefs));
+    const causalRefs=new Set([
+      ...experienceRefs,
+      ...ordered.map((story)=>story.encounterId),
+      ...linkedConsolidations.map((item)=>item.consolidationId),
+      ...linkedMemories.map((memory)=>memory.memoryId),
+    ]);
+    const linkedSemanticStates=(Array.isArray(semanticStates)?semanticStates:[]).filter((state)=>
+      hasAnyRef(state.evidenceRefs??state.sourceReferences,causalRefs));
+    const linkedLifeRelations=(Array.isArray(lifeRelations)?lifeRelations:[]).filter((relation)=>
+      hasAnyRef(relation.sourceReferences,causalRefs));
     const afterthoughts=linkedConsolidations.flatMap((item)=>
       Array.isArray(item.decision?.payload?.afterthoughts)
         ?item.decision.payload.afterthoughts.map((thought)=>({
@@ -702,6 +714,8 @@ export function buildEncounterEpisodes({
       }),
       journals:Object.freeze(journals.map((item)=>structuredClone(item))),
       memories:Object.freeze(linkedMemories.map((item)=>structuredClone(item))),
+      semanticStates:Object.freeze(linkedSemanticStates.map((item)=>structuredClone(item))),
+      lifeRelations:Object.freeze(linkedLifeRelations.map((item)=>structuredClone(item))),
       afterthoughts:Object.freeze(afterthoughts),
     });
   }).sort((left,right)=>Date.parse(right.startedAt)-Date.parse(left.startedAt)));
@@ -733,12 +747,16 @@ function encounterEpisodeSection({
   experienceConsolidation=null,
   experienceJournalEntries=[],
   memories=[],
+  semanticStates=[],
+  lifeRelations=[],
 }={}){
   const episodes=buildEncounterEpisodes({
     encounterStories,
     experienceConsolidation,
     experienceJournalEntries,
     memories,
+    semanticStates,
+    lifeRelations,
   });
   const wrap=section(
     "Encounter episodes",
@@ -831,6 +849,8 @@ function encounterEpisodeSection({
       episode.journals.length?String(episode.journals.length)+" journal "+(episode.journals.length===1?"entry":"entries"):null,
       episode.memories.length?String(episode.memories.length)+" retained "+(episode.memories.length===1?"memory":"memories"):null,
       episode.afterthoughts.length?String(episode.afterthoughts.length)+" delayed "+(episode.afterthoughts.length===1?"thought":"thoughts"):null,
+      episode.semanticStates.length?String(episode.semanticStates.length)+" semantic consequence":null,
+      episode.lifeRelations.length?String(episode.lifeRelations.length)+" relationship consequence":null,
     ].filter(Boolean);
     consequenceBlock.append(el(
       "p",
@@ -849,6 +869,8 @@ function encounterEpisodeSection({
     }
     if(episode.journals.length)article.append(disclosure("Linked Journal authority",episode.journals));
     if(episode.memories.length)article.append(disclosure("Linked autobiographical memory",episode.memories));
+    if(episode.semanticStates.length)article.append(disclosure("Linked semantic-state consequence",episode.semanticStates));
+    if(episode.lifeRelations.length)article.append(disclosure("Linked relationship consequence",episode.lifeRelations));
     wrap.append(article);
   }
 
@@ -1221,6 +1243,8 @@ export async function fetchThreadObservatory(threadId) {
   let encounterError = null;
   let experienceJournalEntries = [];
   let experienceConsolidation = Object.freeze({ queued:Object.freeze([]), consolidations:Object.freeze([]) });
+  let semanticStates = [];
+  let lifeRelations = [];
   let journal = null;
   let journalError = null;
   let deepWorld = null;
@@ -1239,6 +1263,8 @@ export async function fetchThreadObservatory(threadId) {
       && typeof observatory.experienceConsolidation === "object"
       ? structuredClone(observatory.experienceConsolidation)
       : { queued:[], consolidations:[] };
+    semanticStates = Array.isArray(observatory.semanticStates) ? observatory.semanticStates : [];
+    lifeRelations = Array.isArray(observatory.lifeRelations) ? observatory.lifeRelations : [];
     deepWorld = {
       thread:observatory.thread ?? null,
       civilRegistration:observatory.civilRegistration ?? null,
@@ -1272,6 +1298,8 @@ export async function fetchThreadObservatory(threadId) {
       queued:Object.freeze([...(experienceConsolidation.queued??[])]),
       consolidations:Object.freeze([...(experienceConsolidation.consolidations??[])]),
     }),
+    semanticStates:Object.freeze([...semanticStates]),
+    lifeRelations:Object.freeze([...lifeRelations]),
     journal,
     journalError,
   });
@@ -1286,6 +1314,8 @@ export function renderThreadObservatory({
   encounterError = null,
   experienceJournalEntries = [],
   experienceConsolidation = null,
+  semanticStates = [],
+  lifeRelations = [],
   journal = null,
   journalError = null,
 } = {}) {
@@ -1314,6 +1344,8 @@ export function renderThreadObservatory({
       experienceConsolidation,
       experienceJournalEntries,
       memories,
+      semanticStates,
+      lifeRelations,
     }),
     memoriesSection(memories, firstText(identity.birthDate, identity.world?.thread?.identity?.birthDate), memoryError),
   );
