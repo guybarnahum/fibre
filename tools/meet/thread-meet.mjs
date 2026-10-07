@@ -66,17 +66,43 @@ async function responseJson(response,label){
   return payload;
 }
 
-async function privateGet(baseUrl,pathname,privateToken,query,label){
+function createTrace(output,verbosity){
+  function log(level,message){
+    if(verbosity>=level)output.write(`[meet:v${level}] ${message}\n`);
+  }
+
+  async function request(url,init={},summary=null){
+    const method=init.method??"GET";
+    const started=Date.now();
+    log(2,`-> ${method} ${url.pathname}${url.search}`);
+    if(summary!==null)log(3,`request ${summary}`);
+    const heartbeat=verbosity>=3
+      ?setInterval(()=>log(3,`waiting ${method} ${url.pathname} · ${Math.round((Date.now()-started)/1000)}s`),10_000)
+      :null;
+    heartbeat?.unref?.();
+    try{
+      const response=await fetch(url,init);
+      log(2,`<- ${response.status} ${method} ${url.pathname} · ${Date.now()-started}ms`);
+      return response;
+    }finally{
+      if(heartbeat!==null)clearInterval(heartbeat);
+    }
+  }
+
+  return Object.freeze({log,request});
+}
+
+async function privateGet(baseUrl,pathname,privateToken,query,label,trace){
   const url=endpoint(baseUrl,pathname);
   for(const [key,value] of Object.entries(query??{}))url.searchParams.set(key,String(value));
-  return responseJson(await fetch(url,{
+  return responseJson(await trace.request(url,{
     headers:{Accept:"application/json","x-fibre-private-token":privateToken},
     signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   }),label);
 }
 
-async function privatePost(baseUrl,pathname,privateToken,body,label){
-  return responseJson(await fetch(endpoint(baseUrl,pathname),{
+async function privatePost(baseUrl,pathname,privateToken,body,label,trace,summary=null){
+  return responseJson(await trace.request(endpoint(baseUrl,pathname),{
     method:"POST",
     headers:{
       Accept:"application/json",
@@ -85,23 +111,26 @@ async function privatePost(baseUrl,pathname,privateToken,body,label){
     },
     body:JSON.stringify(body),
     signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  }),label);
+  },summary),label);
 }
 
 export function parseThreadMeetArgs(argv){
   let targetEnvironment=null;
   let threadId=null;
+  let verbosity=0;
   for(let index=0;index<argv.length;index+=1){
     if(argv[index]==="--env"){
       targetEnvironment=normalizeCloudflareEnvironment(argv[++index]??null);
     }else if(argv[index]==="--thread"){
       threadId=nonEmpty("--thread",argv[++index]);
+    }else if(/^-v{1,3}$/u.test(argv[index])){
+      verbosity=Math.max(verbosity,argv[index].length-1);
     }else{
       throw new TypeError(`unsupported thread:meet argument ${argv[index]}`);
     }
   }
   if(targetEnvironment===null)throw new TypeError("--env <staging|production> is required");
-  return Object.freeze({targetEnvironment,threadId});
+  return Object.freeze({targetEnvironment,threadId,verbosity});
 }
 
 export function selectMeetingThread(entries,randomIndex=(length)=>randomInt(length)){
@@ -117,16 +146,20 @@ export function selectMeetingThread(entries,randomIndex=(length)=>randomInt(leng
   return Object.freeze(structuredClone(eligible[index]));
 }
 
-async function randomThread(ctx){
+async function randomThread(ctx,trace){
+  trace.log(1,"Selecting a Thread from the World directory");
   const payload=await privateGet(
     ctx.worldBaseUrl,
     "/internal/thread-directory/search",
     ctx.privateToken,
     {limit:DIRECTORY_LIMIT},
     "World Thread directory",
+    trace,
   );
   if(!Array.isArray(payload?.threads))throw new Error("World Thread directory returned no Threads");
-  return selectMeetingThread(payload.threads);
+  const selected=selectMeetingThread(payload.threads);
+  trace.log(3,`directory returned ${payload.threads.length} Threads · selected ${selected.threadId}`);
+  return selected;
 }
 
 function worldPresentText(present){
@@ -159,39 +192,54 @@ function printWorldPresent(output,present){
   return scene;
 }
 
-async function ensureWorldPresent(ctx,threadId){
+async function ensureWorldPresent(ctx,threadId,trace){
+  const started=Date.now();
+  trace.log(1,`Reconciling current life for ${threadId}`);
   const payload=await privatePost(
     ctx.worldBaseUrl,
     "/internal/lived-now/ensure",
     ctx.privateToken,
     {threadId},
     `LivedNow ${threadId}`,
+    trace,
+    `thread=${threadId}`,
   );
   if(payload?.ok!==true||payload?.result?.present?.situationId!==payload?.result?.situationId){
     throw new Error("World returned an inconsistent current present");
   }
+  trace.log(1,`Current life ready · ${Date.now()-started}ms`);
+  trace.log(3,`situation=${payload.result.situationId}`);
   return payload.result.present;
 }
 
-async function worldEncounter(ctx,{threadId,situationId,utterance,priorEncounterStoryId}){
-  const response=await fetch(endpoint(ctx.worldBaseUrl,"/internal/public-visitor-encounter"),{
-    method:"POST",
-    headers:{
-      Accept:"application/json",
-      "content-type":"application/json",
-      "x-fibre-private-token":ctx.privateToken,
+async function worldEncounter(ctx,{threadId,situationId,utterance,priorEncounterStoryId},trace){
+  const started=Date.now();
+  const requestId=`cli_enc_${randomUUID()}`;
+  trace.log(1,`Submitting encounter · situation ${situationId}`);
+  const response=await trace.request(
+    endpoint(ctx.worldBaseUrl,"/internal/public-visitor-encounter"),
+    {
+      method:"POST",
+      headers:{
+        Accept:"application/json",
+        "content-type":"application/json",
+        "x-fibre-private-token":ctx.privateToken,
+      },
+      body:JSON.stringify({
+        requestId,
+        threadId,
+        expectedSituationId:situationId,
+        utterance,
+        ...(priorEncounterStoryId===null?{}:{priorEncounterStoryId}),
+      }),
+      signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     },
-    body:JSON.stringify({
-      requestId:`cli_enc_${randomUUID()}`,
-      threadId,
-      expectedSituationId:situationId,
-      utterance,
-      ...(priorEncounterStoryId===null?{}:{priorEncounterStoryId}),
-    }),
-    signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
+    `thread=${threadId} situation=${situationId} priorStory=${priorEncounterStoryId??"none"} utteranceChars=${utterance.length}`,
+  );
   const payload=await response.json().catch(()=>null);
   if(response.status===409&&payload?.error==="encounter_scene_changed"){
+    trace.log(1,`Encounter scene changed · ${Date.now()-started}ms`);
+    trace.log(3,`currentSituation=${payload.currentSituationId??"unknown"}`);
     return Object.freeze({
       outcome:"scene_changed",
       currentSituationId:payload.currentSituationId??null,
@@ -202,6 +250,8 @@ async function worldEncounter(ctx,{threadId,situationId,utterance,priorEncounter
       `World encounter failed HTTP ${response.status}: ${payload?.error??"unknown"} ${payload?.detail??""}`.trim(),
     );
   }
+  trace.log(1,`Encounter ${payload.result.outcome} · ${Date.now()-started}ms`);
+  trace.log(3,`result situation=${payload.result.situationId??"unknown"} story=${payload.result.encounterStoryId??"none"}`);
   return Object.freeze(structuredClone(payload.result));
 }
 
@@ -229,16 +279,17 @@ export async function meetThread({
   input=process.stdin,
   output=process.stdout,
 }={}){
-  const {targetEnvironment,threadId:requestedThreadId}=parseThreadMeetArgs(argv);
+  const {targetEnvironment,threadId:requestedThreadId,verbosity}=parseThreadMeetArgs(argv);
+  const trace=createTrace(output,verbosity);
   const ctx=context(environment,targetEnvironment);
-  const selected=requestedThreadId===null?await randomThread(ctx):null;
+  const selected=requestedThreadId===null?await randomThread(ctx,trace):null;
   const threadId=requestedThreadId??selected.threadId;
 
   if(selected!==null){
     output.write(`Selected ${selected.displayName??threadId} · ${threadId}\n`);
   }
 
-  const present=await ensureWorldPresent(ctx,threadId);
+  const present=await ensureWorldPresent(ctx,threadId,trace);
   const scene=printWorldPresent(output,present);
   let state=Object.freeze({
     situationId:scene.situationId,
@@ -258,7 +309,7 @@ export async function meetThread({
       if(utterance==="")continue;
       if(utterance==="/leave")break;
       if(utterance==="/present"){
-        const refreshed=await ensureWorldPresent(ctx,threadId);
+        const refreshed=await ensureWorldPresent(ctx,threadId,trace);
         const refreshedScene=printWorldPresent(output,refreshed);
         state=Object.freeze({
           situationId:refreshedScene.situationId,
@@ -273,7 +324,7 @@ export async function meetThread({
         situationId:state.situationId,
         utterance,
         priorEncounterStoryId:state.priorEncounterStoryId,
-      });
+      },trace);
 
       if(result.outcome==="accepted"){
         output.write(`Thread> ${result.responseText}\n`);
@@ -284,7 +335,7 @@ export async function meetThread({
         output.write(`Thread> ${result.expression??"Later."}\n  deferred${result.suggestedAt?` · ${result.suggestedAt}`:""}\n`);
       }else if(result.outcome==="scene_changed"){
         output.write("\nThe Thread's life moved before your utterance entered it.\n");
-        printWorldPresent(output,await ensureWorldPresent(ctx,threadId));
+        printWorldPresent(output,await ensureWorldPresent(ctx,threadId,trace));
       }
 
       state=advanceThreadMeetState(state,result);
