@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildEncounterEpisodes,
+  buildSocialAnalytics,
   fetchThreadObservatory,
   identityWithFidPublication,
   mergeObservatoryWorldIdentity,
@@ -358,6 +359,171 @@ test("Encounter Episodes derive continuation and consequence without becoming au
     "episode lost explicitly evidenced semantic consequence");
   assert.equal(episodes[0].lifeRelations[0].relationId,"rel_ep_1",
     "episode lost explicitly evidenced relationship consequence");
+});
+
+
+test("Social analytics stay windowed, causal-observational, and score-free", () => {
+  const threadId="thr_social_analytics";
+  const stories=[
+    {
+      encounterId:"story_social_outgoing",
+      occurredAt:"2026-10-01T18:00:00.000Z",
+      threadPresence:[
+        {threadId,situationId:"sit_social_home"},
+        {threadId:"thr_noor",situationId:"sit_noor_cafe"},
+      ],
+      story:{beats:[
+        {actorThreadId:threadId,kind:"utterance",text:"Want to sit for a bit?"},
+        {actorThreadId:"thr_noor",kind:"utterance",text:"Sure."},
+      ]},
+      attention:{
+        outcome:"noticed",
+        experience:{experienceId:"exp_social_outgoing",experienceText:"I enjoyed asking Noor to stay."},
+      },
+    },
+    {
+      encounterId:"story_social_incoming_1",
+      occurredAt:"2026-10-03T18:00:00.000Z",
+      threadPresence:[
+        {threadId,situationId:"sit_social_home"},
+        {threadId:"thr_noor",situationId:"sit_noor_cafe"},
+      ],
+      story:{beats:[
+        {actorThreadId:"thr_noor",kind:"utterance",text:"Can I ask you something?"},
+        {actorThreadId:threadId,kind:"utterance",text:"Yes."},
+      ]},
+      attention:{
+        outcome:"noticed",
+        experience:{experienceId:"exp_social_incoming_1",experienceText:"Noor's question caught my attention."},
+      },
+    },
+    {
+      encounterId:"story_social_incoming_2",
+      occurredAt:"2026-10-03T18:02:00.000Z",
+      threadPresence:[
+        {threadId,situationId:"sit_social_home"},
+        {threadId:"thr_noor",situationId:"sit_noor_cafe"},
+      ],
+      story:{
+        continuationOfEncounterRef:"story_social_incoming_1",
+        beats:[
+          {actorThreadId:"thr_noor",kind:"utterance",text:"It is about the sketch."},
+          {actorThreadId:threadId,kind:"utterance",text:"Go ahead."},
+        ],
+      },
+      attention:{
+        outcome:"noticed",
+        experience:{experienceId:"exp_social_incoming_2",experienceText:"The conversation became more specific."},
+      },
+    },
+    {
+      encounterId:"story_social_visitor",
+      occurredAt:"2026-10-06T18:00:00.000Z",
+      threadPresence:[{threadId,situationId:"sit_social_home"}],
+      story:{beats:[
+        {actorThreadId:null,kind:"utterance",text:"Hi, I'm visiting."},
+        {actorThreadId:threadId,kind:"utterance",text:"Hi."},
+      ]},
+      attention:{
+        outcome:"noticed",
+        experience:{experienceId:"exp_social_visitor",experienceText:"A visitor stopped to talk."},
+      },
+    },
+    {
+      encounterId:"story_social_old",
+      occurredAt:"2026-08-01T18:00:00.000Z",
+      threadPresence:[
+        {threadId,situationId:"sit_old"},
+        {threadId:"thr_old_friend",situationId:"sit_old_friend"},
+      ],
+      story:{beats:[
+        {actorThreadId:"thr_old_friend",kind:"utterance",text:"Long ago."},
+        {actorThreadId:threadId,kind:"utterance",text:"Yes."},
+      ]},
+      attention:{
+        outcome:"noticed",
+        experience:{experienceId:"exp_social_old",experienceText:"An old conversation."},
+      },
+    },
+  ];
+  const interactions=[
+    {
+      interactionId:"social_out",
+      occurredAt:"2026-10-01T18:00:00.000Z",
+      initiatorThreadId:threadId,
+      recipientThreadId:"thr_noor",
+      responseDecision:"accept",
+    },
+    {
+      interactionId:"social_in",
+      occurredAt:"2026-10-03T18:00:00.000Z",
+      initiatorThreadId:"thr_noor",
+      recipientThreadId:threadId,
+      responseDecision:"accept",
+    },
+    {
+      interactionId:"social_decline",
+      occurredAt:"2026-10-05T18:00:00.000Z",
+      initiatorThreadId:"thr_sela",
+      recipientThreadId:threadId,
+      responseDecision:"decline",
+    },
+    {
+      interactionId:"social_old",
+      occurredAt:"2026-08-01T18:00:00.000Z",
+      initiatorThreadId:"thr_old_friend",
+      recipientThreadId:threadId,
+      responseDecision:"accept",
+    },
+  ];
+  const experienceConsolidation={
+    queued:[],
+    consolidations:[{
+      consolidationId:"con_social",
+      threadId,
+      startedAt:"2026-10-04T18:00:00.000Z",
+      experienceRefs:["exp_social_incoming_1","exp_social_incoming_2"],
+      decision:{stage:"decision",payload:{afterthoughts:[],memory:{outcome:"retained"},journalEntry:null}},
+      complete:{stage:"complete",payload:{memoryOutcome:"retained",memoryId:"mem_social",journalEntryId:null,afterthoughtCount:0}},
+      journal:null,
+    }],
+  };
+  const model=buildSocialAnalytics({
+    threadId,
+    encounterStories:stories,
+    socialInteractions:interactions,
+    experienceConsolidation,
+    memories:[{
+      memoryId:"mem_social",
+      eventRefs:["exp_social_incoming_1","exp_social_incoming_2"],
+      rememberedContent:"I remember Noor asking about the sketch.",
+    }],
+    asOf:"2026-10-07T18:00:00.000Z",
+    windowDays:30,
+  });
+
+  assert.equal(model.exposure.episodes,3,"social exposure counted stale or non-social history");
+  assert.equal(model.initiative.openedEpisodes,1,"Thread-opened episode count drifted");
+  assert.equal(model.initiative.outgoingOvertures,1,"outgoing overture count drifted");
+  assert.equal(model.responsiveness.externallyOpenedEpisodes,2,"external openings were not distinguished");
+  assert.equal(model.responsiveness.answeredEpisodes,2,"answered external episodes were not observed");
+  assert.equal(model.responsiveness.accepted,1,"incoming acceptance count drifted");
+  assert.equal(model.responsiveness.declined,1,"incoming decline count drifted");
+  assert.equal(model.breadth.knownCounterparties,2,
+    "breadth should count known Thread counterparties without inventing visitor identity");
+  assert.equal(model.breadth.anonymousVisitorEpisodes,1,
+    "anonymous visitor exposure should remain separate from known breadth");
+  assert.deepEqual(model.reciprocity,{
+    bidirectionalCounterparties:1,
+    directionalCounterparties:2,
+  },"reciprocity should require both overture directions with the same known Thread");
+  assert.equal(model.depth.continuedEpisodes,1,"continued social episode was not recognized");
+  assert.equal(model.depth.maxStoryCount,2,"episode depth should use admitted continuation, not word count");
+  assert.equal(model.continuity.recurringCounterparties,1,
+    "repeat contact across distinct episodes was not recognized");
+  assert.equal(model.consequence.episodes,1,
+    "durable consequence should attach only to the linked social episode");
+  assert.equal("score" in model,false,"social analytics introduced a causal-looking sociability score");
 });
 
 test("Thread Observatory keeps Encounter Story, journal authority, and memory separate", async () => {
