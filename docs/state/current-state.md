@@ -323,6 +323,8 @@ N6 execution remains recorded in [N6 rich public lived encounter slices](../vali
 
 N7 is governed by [Live encounters](../architecture/live-encounters.md), [ADR-0024](../decisions/ADR-0024-live-encounters.md), and [N7 live encounter slices](../validation/n7-live-encounter-slices.md). It removes the turn/request-response constraint without weakening existing authority: Live Encounter coordination is ephemeral; exposed outward acts become Encounter Story truth; structured cognition remains distinct from interruptible expression; ordinary World life continues; consolidation becomes bounded later work rather than a required synchronous step after every conversational beat.
 
+N7.0-N7.2 are accepted locally. N7.3 is current: streamed lived-response cognition now shares the N6 grounding path, interruption preserves only exposed speech, Encounter Story can record an interrupted utterance explicitly, and restarted cognition receives admitted history plus the exact spoken prefix and newly heard speech rather than any abandoned model completion.
+
 ## Development discipline
 
 Build the smallest organism-level capability with a concrete beneficiary and stop condition.
