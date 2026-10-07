@@ -142,7 +142,7 @@ Accepted after the focused World-interleaving suite and full `npm run slice:vali
 
 - durable Experience establishes the consolidation frontier;
 - newly admitted Experiences explicitly enter an append-only queue; deployment does not sweep/reconsolidate historical population data;
-- the first queued Experience asks the existing World reconciliation scheduler for a delayed wake (~30s); later Experiences reuse an earlier alarm rather than pushing it back;
+- the first queued Experience asks the existing World reconciliation runtime for a delayed wake (~30s); that runtime schedules exclusively through `infraDriver.scheduler`, so Local, Cloudflare and future providers share the same semantics; later Experiences reuse an earlier alarm rather than pushing it back;
 - one consolidation claim groups only one Thread + one enacted situation, max 8 Experiences, within a 15-minute lived-time window;
 - one World wake processes at most 4 clusters and uses the existing reconciliation retry/backoff/quiescence policy;
 - pending durable claims resume before fresh work;
@@ -154,6 +154,8 @@ Accepted after the focused World-interleaving suite and full `npm run slice:vali
 - Journal/Memory formation time is distinct from Experience time; retries reuse the durable decision while materializing artifacts at a later valid time if necessary.
 
 **High-value proof:** several nearby conversational Experiences consolidate as one episode; a later separated Experience becomes another cluster; `not_remembered`/no-Journal is a valid result; a persistence failure retries without resampling the Thread's decision; and an idle frontier costs zero cognition.
+
+**Infra parity proof:** one shared consolidation wake scheduler is backed by the World reconciliation runtime, whose scheduler authority is `infraDriver.scheduler`. Contract coverage runs the same earliest-alarm-wins/delayed-wake behavior against both Local and Cloudflare InfraDrivers. Local startup also re-arms durable pending consolidation work without requiring model credentials until the wake actually needs cognition.
 
 ## N7.6 — Observatory causal encounter view
 
