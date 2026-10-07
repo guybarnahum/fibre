@@ -229,6 +229,48 @@ unconsolidated lived Experience
 ```
 
 No whole-population scan, minute-by-minute worker or required memory quota is implied.
+The first implementation uses the existing World reconciliation scheduler as a GC-like wake mechanism:
+
+```text
+noticed Thread Experience
+  -> append-only consolidation queue
+  -> first pending item requests delayed World wake (~30s)
+  -> nearby later Experiences reuse that earlier alarm
+  -> bounded consolidation claim
+       same Thread
+       same enacted situation
+       <= 8 Experiences
+       <= 15 minutes lived-time span
+  -> one durable consolidation decision
+  -> materialize selected artifacts
+  -> complete frontier
+```
+
+A World wake processes at most four clusters. Remaining or failed work stays in the same reconciliation retry/backoff loop; an empty frontier returns to quiescence. There is no Thread-population scan.
+
+The consolidation decision is append-only and replayable. A retry after storage failure reuses the decision rather than asking the model to reinterpret the same lived evidence.
+
+Time has two meanings and must remain separate:
+
+```text
+Experience.occurredAt / memory.subjectPeriod
+    when life happened
+
+consolidation decision / Journal / Memory recordedAt
+    when delayed reflection became durable
+```
+
+A failed artifact write may be retried later with a later valid formation timestamp while preserving the same already-recorded consolidation decision.
+
+Consolidation may also leave up to three private delayed afterthoughts:
+
+```text
+insight | question | intention
+```
+
+These are private cognitive residue only. They are not automatic speech, commitments, semantic state, relationship authority, or World action. Later slices may let Interior Cognition act on them through the ordinary owning authorities.
+
+Direct relationship or semantic-state mutation is deliberately not part of this consolidation writer; remembered meaning/afterthoughts may later become evidence for those separate authorities.
 
 ## Thread-to-Thread convergence
 
