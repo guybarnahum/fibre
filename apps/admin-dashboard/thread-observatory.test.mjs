@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   buildEncounterEpisodes,
   buildSocialAnalytics,
+} from "./thread-encounter-model.mjs";
+import {
   fetchThreadObservatory,
   identityWithFidPublication,
   mergeObservatoryWorldIdentity,
