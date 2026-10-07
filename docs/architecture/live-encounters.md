@@ -306,6 +306,22 @@ The projection must preserve absence honestly: unnoticed occurrence, pending con
 A retained memory is linked through its existing Experience event refs. A semantic state or life relation is linked only through its own evidence/source references; Admin never infers that conversation created closeness, trust, resentment, belief or intention.
 
 Journal and autobiographical Memory remain standalone views and authorities. A private journal-book object is presentation, not the Journal authority, and may lag newly consolidated World journal records.
+## Social analytics are observation, not personality
+
+Admin may derive a time-windowed social profile from existing admitted history. This profile is deliberately multi-dimensional rather than a scalar `sociability` score:
+
+- exposure — objective social episodes, with noticed exposure distinguished from mere presence;
+- initiative — Thread-opened episodes and outgoing overtures;
+- responsiveness — answered external openings plus incoming accept/decline/defer outcomes;
+- breadth — distinct known counterparties, with anonymous visitors kept separate;
+- reciprocity — counterparties with both incoming and outgoing overtures;
+- depth — admitted continuation across Encounter Stories, not prose length;
+- continuity — counterparties recurring across distinct episodes;
+- consequence — episodes that later link to Journal, Memory, delayed residue, semantic state or relationship authority.
+
+These values are **Observatory analytics only**. They are not semantic state, personality, regulation targets, rewards, labels or cognition context. A quiet period does not mean introversion; a high count does not mean sociability; a refusal does not count as social failure. The authoritative lived records remain underneath the projection.
+
+Anonymous Person encounters must never be counted as multiple known relationships merely because they occurred on different dates. Stable Person identity can improve breadth/continuity later when N7 adds that authority.
 ## Thread-to-Thread convergence
 
 The current social meeting machinery already provides the correct admission path:
