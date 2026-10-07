@@ -185,6 +185,14 @@ export function createWorldReconciliationRuntime({
     return scheduleAt(now());
   }
 
+  async function requestWakeAfter(delayMs) {
+    if (!Number.isSafeInteger(delayMs) || delayMs < 0 || delayMs > 3_600_000) {
+      throw new TypeError("World reconciliation delayMs must be an integer from 0 through 3600000");
+    }
+    await setRetryStreak(0);
+    return scheduleAt(now() + delayMs);
+  }
+
   async function runAndSettle() {
     let result;
     try {
@@ -216,6 +224,7 @@ export function createWorldReconciliationRuntime({
     scopeId,
     ensureScheduled,
     requestWake,
+    requestWakeAfter,
     runNow: runAndSettle,
     handleWake: runAndSettle,
     stop: async () => {
