@@ -290,7 +290,7 @@ no turn owner
   -> later social/relationship consequence when warranted
 ```
 
-N7.0-N7.5 are accepted. N7.6 is current: Thread Observatory now derives causal Encounter Episodes from Encounter Story continuation and joins historical World scene, this Thread's Experience, consolidation frontier/result, delayed Journal, retained Memory, afterthoughts, and only explicitly evidenced semantic/relationship consequences. Episode is inspection-only; no chat/session or episode authority is added.
+N7.0-N7.5 are accepted. N7.6 is implemented and awaits the next local validation pass. N7.7 is current: Admin derives score-free 7/30/90-day social analytics from existing social history and causal encounter consequence, exposing exposure, initiative, responsiveness, breadth, reciprocity, depth, continuity and consequence without creating Thread state or feeding an aggregate back into cognition.
 
 ## Current causal loop
 
