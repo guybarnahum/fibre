@@ -109,7 +109,7 @@ Implemented foundation:
 
 Accepted after the focused interruption/cognition/story-persistence suite and full `npm run slice:validate` passed locally.
 
-## N7.4 — World interleaving — CURRENT
+## N7.4 — World interleaving — ACCEPTED 2026-10-07
 
 **Capability:** conversation no longer freezes ordinary life.
 
@@ -134,17 +134,26 @@ Implemented foundation:
 
 **Additional proof:** an unnoticed admitted event remains objective live history but is absent from Thread cognition, and a LivedNow transition is forwarded from the authoritative validation seam rather than fabricated by the client.
 
-## N7.5 — GC-style consolidation
+Accepted after the focused World-interleaving suite and full `npm run slice:validate` passed locally.
+
+## N7.5 — GC-style consolidation — CURRENT
 
 **Capability:** immediate conversational latency no longer requires full Journal/Memory work.
 
 - durable Experience establishes the consolidation frontier;
-- ordinary World reconciliation/alarm processes bounded unconsolidated evidence;
-- no population scan and no high-frequency daemon;
-- conversation end is one possible trigger, not a prerequisite;
-- selective outcomes: none, Journal, memory/meaning, relationship/semantic consequence, insight, question, intention.
+- newly admitted Experiences explicitly enter an append-only queue; deployment does not sweep/reconsolidate historical population data;
+- the first queued Experience asks the existing World reconciliation scheduler for a delayed wake (~30s); later Experiences reuse an earlier alarm rather than pushing it back;
+- one consolidation claim groups only one Thread + one enacted situation, max 8 Experiences, within a 15-minute lived-time window;
+- one World wake processes at most 4 clusters and uses the existing reconciliation retry/backoff/quiescence policy;
+- pending durable claims resume before fresh work;
+- one bounded model decision covers the whole cluster rather than one Journal/Memory call per conversational beat;
+- the decision may yield no consequence, Journal, selective autobiographical memory/meaning, and up to 3 private delayed afterthoughts (`insight`, `question`, `intention`);
+- afterthoughts are residue for later N7.9 cognition, not automatic speech/action or semantic/relationship authority;
+- actual relationship/semantic mutation remains downstream through its owning authority rather than being written directly by consolidation;
+- conversation end is not required and is not the only trigger;
+- Journal/Memory formation time is distinct from Experience time; retries reuse the durable decision while materializing artifacts at a later valid time if necessary.
 
-**High-value proof:** a completed encounter survives before consolidation, later consolidation advances exactly once, and a no-consequence result is valid.
+**High-value proof:** several nearby conversational Experiences consolidate as one episode; a later separated Experience becomes another cluster; `not_remembered`/no-Journal is a valid result; a persistence failure retries without resampling the Thread's decision; and an idle frontier costs zero cognition.
 
 ## N7.6 — Observatory causal encounter view
 
