@@ -7,6 +7,7 @@ import test from "node:test";
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { createLivedEncounterWriteApi } from "../src/lived-encounter-write-api.mjs";
+import { createExperienceConsolidationProcess } from "../src/lived-experience-consolidation.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { livedPlanId, livedSituationId } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
@@ -162,35 +163,42 @@ function cognitionAdapter({ secondEncounter }) {
           provenance: { provider: "fixture", modelId: "fixture-b2-encounter" },
         };
       }
-      if (request.clientRequestId.startsWith("lived-reflection_")) {
+      if (request.clientRequestId.startsWith("encounter-experience_")) {
         return {
-          output: {
-            journalEntry: request.input.encounter.visitorUtterance.includes("remember")
-              ? null
-              : "They noticed the expression instead of just saying the drawing was nice. I liked that.",
+          output:{
+            experienceText:request.input.encounterStory.story.beats[0].text.includes("great expression")
+              ? "I liked that the visitor noticed the fox's expression instead of giving generic praise."
+              : "I noticed the visitor asking whether I remembered our earlier conversation.",
           },
-          provenance: { provider: "fixture", modelId: "fixture-b2-reflection" },
+          provenance:{ provider:"fixture",modelId:"fixture-b2-experience" },
         };
       }
-      if (request.clientRequestId.startsWith("lived-memory_")) {
-        const first = request.input.experience.visitorUtterance.includes("expression");
+      if (request.clientRequestId.startsWith("experience-consolidation_")) {
+        const first=request.input.experiences.some((experience) =>
+          experience.experiencedAs.includes("fox's expression"));
         return {
-          output: first ? {
-            outcome: "retained",
-            rememberedContent: "I remember someone really looking at the expression in my fox drawing.",
-            rememberedMeaning: "Specific attention to my work felt more meaningful than generic praise.",
-            confidence: 0.8,
-            salience: 0.72,
-            uncertainty: [],
-          } : {
-            outcome: "not_remembered",
-            rememberedContent: null,
-            rememberedMeaning: null,
-            confidence: null,
-            salience: null,
-            uncertainty: [],
+          output:{
+            journalEntry:first
+              ? "They noticed the expression instead of just saying the drawing was nice. I liked that."
+              : null,
+            afterthoughts:[],
+            memory:first ? {
+              outcome:"retained",
+              rememberedContent:"I remember someone really looking at the expression in my fox drawing.",
+              rememberedMeaning:"Specific attention to my work felt more meaningful than generic praise.",
+              confidence:0.8,
+              salience:0.72,
+              uncertainty:[],
+            } : {
+              outcome:"not_remembered",
+              rememberedContent:null,
+              rememberedMeaning:null,
+              confidence:null,
+              salience:null,
+              uncertainty:[],
+            },
           },
-          provenance: { provider: "fixture", modelId: "fixture-b2-memory" },
+          provenance:{ provider:"fixture",modelId:"fixture-b2-consolidation" },
         };
       }
       throw new Error("unexpected B2 cognition pass");
@@ -220,6 +228,39 @@ function encounterApi(storage, modelAdapter) {
   };
 }
 
+async function consolidateQueuedExperience(storage, modelAdapter) {
+  const stores={
+    world:openWorldStore(storage),
+    livedNow:openLivedNowStore(storage),
+    semantic:openSemanticStateStore(storage),
+    experience:openLivedExperienceStore(storage),
+    memory:openAutobiographicalMemoryStore(storage),
+  };
+  try{
+    const process=createExperienceConsolidationProcess({
+      worldReader:stores.world,
+      livedNowStore:stores.livedNow,
+      semanticStateStore:stores.semantic,
+      experienceStore:stores.experience,
+      memoryStore:stores.memory,
+      modelAdapter,
+      now:(()=>{
+        const times=[
+          "2026-09-10T17:50:00Z",
+          "2026-09-10T17:50:01Z",
+          "2026-09-10T17:50:02Z",
+          "2026-09-10T17:50:03Z",
+        ];
+        return ()=>times.shift();
+      })(),
+      batchLimit:1,
+    });
+    return await process.runOnce();
+  }finally{
+    Object.values(stores).forEach((store)=>store.close());
+  }
+}
+
 test("B2 life moves on after the visitor, survives restart, and only retained experience reaches the next meeting", async () => {
   await withWorld(async (storage) => {
     const life = seedLife(storage);
@@ -235,6 +276,20 @@ test("B2 life moves on after the visitor, survives restart, and only retained ex
     ));
     assert.equal(first.status, 200, "the first meeting should enter Maya's lived moment");
     runtime.close();
+
+    const queuedAfterRestart=openLivedExperienceStore(storage);
+    assert.equal(
+      queuedAfterRestart.listUnclaimedExperienceConsolidationCandidates({limit:8}).length,
+      1,
+      "first encounter Experience did not survive restart at the consolidation frontier",
+    );
+    queuedAfterRestart.close();
+
+    const consolidated=await consolidateQueuedExperience(storage,modelAdapter);
+    assert.equal(consolidated.completed,1,
+      "delayed consolidation did not complete after restart");
+    assert.equal(consolidated.results[0].memoryOutcome,"retained",
+      "first lived encounter was not selectively retained");
 
     const livedNow = openLivedNowStore(storage);
     const laterSituation = livedNow.enactCurrentSituation({
