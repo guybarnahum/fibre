@@ -290,7 +290,7 @@ no turn owner
   -> later social/relationship consequence when warranted
 ```
 
-N7.0-N7.2 are accepted. N7.3 is current: streamed Thread expression now enters the same duplex Live Encounter, caller-selected interruption aborts only the unseen continuation, the audible prefix can persist as `completion:"interrupted"`, and restarted cognition is grounded in admitted history + that spoken prefix + newly heard speech + current World life.
+N7.0-N7.3 are accepted. N7.4 is current: admitted World occurrences can interleave with ongoing speech without freezing it; existing attention decides which events enter Thread cognition; and material LivedNow movement is surfaced through `scene_changed` from authoritative current life.
 
 ## Current causal loop
 
