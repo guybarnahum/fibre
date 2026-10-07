@@ -60,6 +60,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
   const stories=[];
   const receipts=new Map();
   const modelCalls=[];
+  const queued=[];
   const experienceStore={
     recordEncounterStory(candidate){
       const record={ encounterId:`story_n6_public_${stories.length+1}`,...structuredClone(candidate) };
@@ -104,8 +105,14 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
         },
       };
     },
-    recordThreadExperienceJournalEntry(candidate){
-      return { journalEntryId:"journal_n6_public",...structuredClone(candidate) };
+    queueThreadExperienceConsolidation(candidate){
+      const record={
+        experienceId:candidate.experienceId,
+        threadId:THREAD_ID,
+        queuedAt:candidate.queuedAt,
+      };
+      queued.push(structuredClone(record));
+      return record;
     },
   };
   const memoryStore={
@@ -203,7 +210,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
     modelAdapter,
   });
 
-  return { service,stories,receipts,modelCalls };
+  return { service,stories,receipts,modelCalls,queued };
 }
 
 function request(expectedSituationId="sit_displayed",{
@@ -264,6 +271,15 @@ test("N6.3d accepted visitor request becomes one Encounter Story in revalidated 
     f.stories[0].story.beats[0].text,
     "Hi — do you have a minute?",
     "visitor request should be the first observable beat",
+  );
+  assert.equal(f.queued.length,1,
+    "accepted lived experience was not queued for later consolidation");
+  assert.equal(
+    f.modelCalls.some((call)=>
+      call.clientRequestId.startsWith("encounter-reflection_")
+      ||call.clientRequestId.startsWith("lived-memory_")),
+    false,
+    "public encounter still performs Journal/Memory consolidation on the hot path",
   );
 });
 
@@ -331,6 +347,8 @@ test("N6.4 completed retry replays one admitted outcome without repeating privat
     "retry duplicated the Encounter Story");
   assert.equal(f.receipts.size,1,
     "retry created more than one durable receipt");
+  assert.equal(f.queued.length,1,
+    "completed retry requeued already-admitted experience");
 });
 
 test("N6.4 request identity cannot be reused for a different encounter",async()=>{
