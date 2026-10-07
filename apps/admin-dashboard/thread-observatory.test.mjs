@@ -565,6 +565,13 @@ test("Thread Observatory keeps Encounter Story, journal authority, and memory se
           embodiments:[],
           symbolicGenomes:[],
           memories:[],
+          socialInteractions:[{
+            interactionId:"social_e4_admin",
+            occurredAt:"2026-09-21T18:00:00.000Z",
+            initiatorThreadId:"thr_other",
+            recipientThreadId:"thr_e4_admin",
+            responseDecision:"accept",
+          }],
           encounterStories:[{
             encounterId:"story_e4_admin",
             occurredAt:"2026-09-21T18:00:00.000Z",
@@ -626,6 +633,8 @@ test("Thread Observatory keeps Encounter Story, journal authority, and memory se
     const result = await fetchThreadObservatory("thr_e4_admin");
     assert.equal(result.encounterStories[0].encounterId, "story_e4_admin",
       "Admin should receive objective Encounter Story authority");
+    assert.equal(result.socialInteractions[0].interactionId,"social_e4_admin",
+      "Admin should receive social-interaction authority for derived analytics");
     assert.equal(result.experienceJournalEntries[0].aboutExperienceRef, "exp_e4_admin",
       "Admin should receive World journal-entry provenance separately from the R2 book");
     assert.equal(result.journal.profile.title, "Margins",
