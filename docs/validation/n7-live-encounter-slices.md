@@ -215,7 +215,7 @@ Implemented foundation:
 - **consequence** counts social episodes that later link to Journal, Memory, afterthought, semantic-state or relationship authority;
 - no weighted composite, normalized score, personality label or cognition input is produced.
 
-**High-value proof:** a bounded 30-day history containing outgoing and incoming Thread contact, a silent un-noticed witnessed conversation, an anonymous visitor, one continued episode, one declined overture, one durable consequence and one stale out-of-window encounter yields the expected eight-dimensional profile while exposing no `score` field. The witness increases exposure/breadth but does not become a responsiveness failure.
+**High-value proof:** a bounded 30-day history containing outgoing and incoming Thread contact, a silent un-noticed witnessed conversation, an anonymous visitor, one continued episode, one declined overture, one durable consequence and one stale out-of-window encounter yields the expected eight-dimensional profile while exposing no `score` field. The witness increases objective exposure but does not become breadth or a responsiveness failure when the Thread never noticed or joined it.
 
 ## N7.8 — rich Thread -> Thread Live Encounter
 
