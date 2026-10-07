@@ -159,7 +159,7 @@ Accepted after the focused World-interleaving suite and full `npm run slice:vali
 
 Accepted after the focused consolidation/runtime suite and full `npm run slice:validate` passed locally, including restart continuity where queued Experience survives reopening, consolidates later, and only retained autobiography reaches a subsequent encounter.
 
-## N7.6 — Observatory causal encounter view — CURRENT
+## N7.6 — Observatory causal encounter view — IMPLEMENTED, VALIDATION PENDING
 
 **Capability:** Admin makes the causal path inspectable without collapsing authorities.
 
@@ -186,7 +186,7 @@ Implemented foundation:
 
 **High-value proof:** two continued Encounter Stories become one derived episode in causal order; the episode resolves one completed consolidation, delayed Journal, retained Memory, delayed question, and explicitly evidenced semantic/relationship consequences while those records remain separately inspectable authorities.
 
-## N7.7 — social analytics, not a sociability score
+## N7.7 — social analytics, not a sociability score — CURRENT
 
 Expose derived, non-causal time-windowed analytics:
 
@@ -200,6 +200,22 @@ Expose derived, non-causal time-windowed analytics:
 - consequence.
 
 Do not feed an aggregate social score back into cognition.
+
+Implemented foundation:
+
+- analytics are a pure Admin projection over existing Encounter Story, social-interaction and consequence authorities; no World state or persistence is added;
+- operator can switch among 7-day, 30-day and 90-day windows without refetching or model work;
+- **exposure** counts objective social episodes and separately reports noticed and anonymous-visitor episodes;
+- **initiative** counts episodes opened by this Thread plus explicit outgoing Thread-to-Thread overtures;
+- **responsiveness** counts externally opened episodes actually answered and separately reports incoming accept/decline/defer outcomes;
+- **breadth** counts distinct known Thread counterparties while anonymous visitors remain an explicit separate count rather than fabricated identities;
+- **reciprocity** counts known counterparties with both incoming and outgoing overtures;
+- **depth** uses admitted continuation (continued episode count and maximum Encounter Story chain), never word/token volume;
+- **continuity** counts known counterparties appearing across two or more distinct social episodes;
+- **consequence** counts social episodes that later link to Journal, Memory, afterthought, semantic-state or relationship authority;
+- no weighted composite, normalized score, personality label or cognition input is produced.
+
+**High-value proof:** a bounded 30-day history containing outgoing and incoming Thread contact, an anonymous visitor, one continued episode, one declined overture, one durable consequence and one stale out-of-window encounter yields the expected eight-dimensional profile while exposing no `score` field.
 
 ## N7.8 — rich Thread -> Thread Live Encounter
 
