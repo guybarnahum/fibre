@@ -16,6 +16,7 @@ export function observeAdmittedWorldEncounter({
   encounterId,
 }={}){
   requireMethod(liveEncounter,"live encounter","pushWorldEvent");
+  requireMethod(liveEncounter,"live encounter","snapshot");
   requireMethod(experienceStore,"experienceStore","getEncounterStory");
   requireMethod(experienceStore,"experienceStore","getThreadEncounterAttention");
   assertId("admitted World encounterId",encounterId);
@@ -27,8 +28,10 @@ export function observeAdmittedWorldEncounter({
     throw new TypeError("admitted World encounter is incomplete");
   }
 
+  const liveParticipants=new Set(liveEncounter.snapshot().participantIds);
   const perceivedBy=[];
   for(const presence of story.threadPresence){
+    if(!liveParticipants.has(presence.threadId))continue;
     const attention=experienceStore.getThreadEncounterAttention(
       presence.threadId,
       story.encounterId,
