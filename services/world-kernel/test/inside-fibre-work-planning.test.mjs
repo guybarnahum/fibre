@@ -799,6 +799,12 @@ test("a committed website visitor enters the existing lived scene and becomes an
     assert.equal(result.attention.outcome, "noticed",
       "direct participation should become a real Thread Experience");
     assert.equal(result.attention.experience.encounterRef, result.encounterStory.encounterId);
+    assert.deepEqual(
+      experienceStore.listUnclaimedExperienceConsolidationCandidates({limit:8})
+        .map((entry)=>entry.experienceId),
+      [result.attention.experience.experienceId],
+      "visitor Experience was not queued for delayed consolidation",
+    );
     assert.equal(
       experienceStore.listEncounterStories(state.accepted.threadId)
         .some((story) => story.encounterId === result.encounterStory.encounterId),
@@ -824,6 +830,11 @@ test("a committed website visitor enters the existing lived scene and becomes an
       "one accepted work commitment should have one compensation entry");
     assert.equal(state.fibreCreditStore.balance(state.accepted.threadId), 37,
       "continuing the conversation should not mint more Fibre Credits");
+    assert.equal(
+      experienceStore.listUnclaimedExperienceConsolidationCandidates({limit:8}).length,
+      2,
+      "continued conversation should accumulate unconsolidated Experience rather than memory per turn",
+    );
 
     let resourcesSeen = null;
     const laterWork = createInsideFibreWorkService({
