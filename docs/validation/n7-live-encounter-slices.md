@@ -28,7 +28,7 @@ Accepted by the project owner on 2026-10-07 and recorded in ADR-0024.
 - consolidation is later/bounded and does not have to run after every conversational beat;
 - Person -> Thread and Thread -> Thread converge on the same live-encounter primitive.
 
-## N7.1 — provider-neutral streamed expression — CURRENT
+## N7.1 — provider-neutral streamed expression — ACCEPTED 2026-10-07
 
 **Capability:** Fibre can stream outward language incrementally and cancel it without converting transport deltas into World authority.
 
@@ -56,7 +56,9 @@ Requirements:
 
 **High-value proof:** the same consumer can stream expression from two provider adapters and cancellation leaves only the already-observed prefix.
 
-## N7.2 — duplex encounter event stream
+Accepted after focused model/runtime tests and full `npm run slice:validate` passed locally. OpenAI and Google now expose the same `expression_delta* -> expression_complete` Fibre vocabulary; caller cancellation after an observed prefix cannot leak later buffered output.
+
+## N7.2 — duplex encounter event stream — CURRENT
 
 **Capability:** inbound and outbound outward events coexist; there is no turn manager.
 
@@ -67,7 +69,19 @@ Requirements:
 - both participants may express concurrently;
 - no durable conversation/session object.
 
-**High-value proof:** one participant can continue speaking across an unused opportunity; another can begin speaking at a later pause without any turn transfer record.
+Implemented foundation:
+
+- `services/world-kernel/src/live-encounter.mjs` is an ephemeral coordinator only;
+- each participant has independent speech state and listener-specific heard-so-far buffers;
+- token/word-sized deltas may arrive incrementally;
+- batched deltas are split at sentence punctuation before later text is exposed;
+- sentence boundaries, meaningful pauses and end-of-stream create speaking opportunities;
+- punctuation and a later pause at the same text position are separate opportunities;
+- a pause is emitted at most once per unchanged speech position;
+- multiple participants may remain active speakers simultaneously;
+- no turn/session authority is created.
+
+**High-value proof:** one participant can continue speaking across an unused opportunity; another can begin speaking at a later pause while the first remains active, with no turn-transfer record. A separate boundary proof verifies sentence, pause and end opportunities and proves batched speech cannot expose post-boundary text before the boundary opportunity.
 
 ## N7.3 — interruption and audible-prefix truth
 
