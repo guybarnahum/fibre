@@ -46,7 +46,6 @@ const INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE = "/internal/inside-fibre/visitor-enc
 const PUBLIC_VISITOR_ENCOUNTER_ROUTE = "/internal/public-visitor-encounter";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
 const EXPERIENCE_CONSOLIDATION_DELAY_MS = 30_000;
-const EXPERIENCE_CONSOLIDATION_CONTINUE_MS = 1_000;
 
 function bindingFetch(binding) {
   return (input, init) => binding.fetch(input instanceof Request ? input : new Request(input, init));
@@ -128,6 +127,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
           {environment:this.env},
         ),
       });
+      runtime.reconciliationProcess.setExperienceConsolidationProcess(
+        this.experienceConsolidationProcess,
+      );
     }
     return this.experienceConsolidationProcess;
   }
@@ -478,28 +480,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   }
 
   async alarm(alarmInfo) {
-    let consolidation;
-    try {
-      consolidation=await this.experienceConsolidationProcessForRequest().runOnce();
-    } catch (error) {
-      await super.alarm(alarmInfo);
-      throw error;
-    }
-
-    const reconciliation=await super.alarm(alarmInfo);
-    if(consolidation.failed>0){
-      throw new Error(`experience consolidation failed for ${consolidation.failed} cluster(s)`);
-    }
-    if(consolidation.hasPending){
-      await this.runtimeForRequest().reconciliationRuntime.requestWakeAfter(
-        EXPERIENCE_CONSOLIDATION_CONTINUE_MS,
-      );
-    }
-    return Object.freeze({
-      ...reconciliation,
-      experienceConsolidation:consolidation,
-      reconciliationPending:reconciliation.reconciliationPending||consolidation.hasPending,
-    });
+    this.experienceConsolidationProcessForRequest();
+    return super.alarm(alarmInfo);
   }
 }
 
