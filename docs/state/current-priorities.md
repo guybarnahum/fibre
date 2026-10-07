@@ -290,7 +290,7 @@ no turn owner
   -> later social/relationship consequence when warranted
 ```
 
-N7.0 is accepted. N7.1 is current: establish one provider-neutral streamed-expression seam beside structured cognition, with caller cancellation preserving only the already-observed prefix.
+N7.0 and N7.1 are accepted. N7.2 is current: the new ephemeral Live Encounter coordinator accepts independent incremental speech streams, exposes sentence/pause/end speaking opportunities, maintains participant-specific heard-so-far state, and allows overlapping active speakers without any turn-transfer authority.
 
 ## Current causal loop
 
