@@ -9,7 +9,7 @@ canonical: true
 
 Fibre's active north star is now **continuous LivedNow + encounters**.
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 builds on the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E5 are now closed live. The active north-star slice is N6: a rich insidefibre.com encounter over the already-proven lived/work/encounter authorities.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 established the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. N6 then proved a sustained ordinary Person -> Thread conversation directly against World and exposed the next architectural constraint: the conversation engine is still request/response shaped. **N7 is now the active north-star tranche: asynchronous Live Encounters with no turn owner, interruptible streamed expression, continuing World life, bounded later consolidation, and the same primitive for Person -> Thread and Thread -> Thread.** N6.6 public-endpoint/Viewer proof remains preserved and resumable rather than being erased by the refactor.
 
 Canonical architecture:
 
@@ -17,6 +17,8 @@ Canonical architecture:
 - [Encounter stories and Thread experience](../architecture/encounters-and-experience.md)
 - [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md)
 - [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md)
+- [Live encounters](../architecture/live-encounters.md)
+- [N7 live encounter slices](../validation/n7-live-encounter-slices.md)
 - [The Lived World of Fibre](../vision/lived-world.md)
 - [ADR-0023: Retrospective lived continuity across compute dormancy](../decisions/ADR-0023-retrospective-lived-continuity.md)
 
@@ -56,7 +58,8 @@ N2  dormant/frozen interval catch-up                      CLOSED
 N3  Genesis -> first LivedNow -> multi-day continuity     CLOSED
 N4  Person -> Thread /meet over real LivedNow             CLOSED
 N5  Encounter Story -> Thread Experience                  CLOSED LIVE
-N6  rich insidefibre.com lived encounter                  CURRENT
+N6  rich insidefibre.com lived encounter                  PRESERVED / RESUMABLE
+N7  asynchronous Live Encounter                           CURRENT
 ```
 
 Keep these slices narrow. Reuse the existing Flight Plan, CurrentSituation, encounter, memory, relationship, Presentation and canonical embodiment authorities.
@@ -268,7 +271,26 @@ public visit
 
 A **visit is not a meeting request**. It must not create availability, an encounter, compensation or private cognition. The Viewer remains projection-only.
 
-Detailed execution is governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.0 is closed. N6.1 and N6.2 are accepted in staging. N6.3 is current. N6.3a-N6.5 are accepted. N6.6 is current: prove encounter/meet directly against World from the CLI first; only then validate `/present` + `/encounter` as the client-neutral public contract and insidefibre.com as one renderer.
+Detailed public proof remains governed by [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.1-N6.5 are accepted; the direct World CLI conversation now supplies the N6.6a bring-up evidence. The remaining client-neutral endpoint/Viewer proof is preserved and resumable.
+
+## N7 — Live encounters and social consequence — CURRENT
+
+N7 is governed by [Live encounters](../architecture/live-encounters.md), [ADR-0024](../decisions/ADR-0024-live-encounters.md), and [N7 live encounter slices](../validation/n7-live-encounter-slices.md).
+
+The accepted correction is architectural rather than cosmetic:
+
+```text
+no turn owner
+  -> asynchronous inbound/outbound speech
+  -> punctuation / pause / end-of-stream create speaking opportunities
+  -> streamed expression may be interrupted
+  -> only exposed speech becomes objective history
+  -> World life continues during conversation
+  -> bounded later consolidation
+  -> later social/relationship consequence when warranted
+```
+
+N7.0 is accepted. N7.1 is current: establish one provider-neutral streamed-expression seam beside structured cognition, with caller cancellation preserving only the already-observed prefix.
 
 ## Current causal loop
 
