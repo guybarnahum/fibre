@@ -121,10 +121,17 @@ function normalizeStory(candidate, participantIds) {
         }
       }
       assertNonEmpty("encounter story beat.text", beat.text);
+      const completion=beat.completion??null;
+      if(completion!==null){
+        if(beat.kind!=="utterance"||completion!=="interrupted"){
+          throw new TypeError("encounter story beat completion is invalid");
+        }
+      }
       return {
         actorThreadId:beat.actorThreadId ?? null,
         kind:beat.kind,
         text:beat.text,
+        ...(completion===null?{}:{completion}),
       };
     }),
   };
