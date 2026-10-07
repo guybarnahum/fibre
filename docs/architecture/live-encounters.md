@@ -177,6 +177,31 @@ The encounter must not freeze the current scene merely because a client connecti
 
 A materially changed scene may naturally end or redirect the encounter.
 
+World interleaving preserves the existing attention boundary:
+
+```text
+admitted Encounter Story occurrence
+  -> objective live world_event
+  -> Thread-specific attention
+       noticed     -> participant perceivedWorldEvents -> cognition opportunity
+       not_noticed -> remains objective history only
+```
+
+A live client cannot inject background prose and call it World truth. The bridge reloads the admitted Encounter Story from the experience authority before exposing it to Live Encounter.
+
+Scene movement uses the existing `validateDisplayedSituation()` authority:
+
+```text
+displayed/current scene still compatible
+  -> continue live encounter
+
+material place/activity/mediated-context change
+  -> scene_changed(currentSituation)
+  -> encounter may redirect or end
+```
+
+A scene change is not itself a forced conversational ending or synthetic farewell.
+
 ## Experience and consolidation
 
 The hot live path should preserve only what must be durable immediately:
