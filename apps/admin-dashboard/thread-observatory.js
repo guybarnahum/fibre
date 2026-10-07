@@ -620,6 +620,112 @@ function journalSection(journal, journalError = null, authorityEntries = []) {
 }
 
 
+function socialMetric(label,value,note){
+  const card=el("article","thread-social-metric");
+  card.append(
+    el("span","thread-encounter-kicker",label),
+    el("strong",null,value),
+    el("p",null,note),
+  );
+  return card;
+}
+
+function socialAnalyticsSection({
+  threadId,
+  encounterStories,
+  socialInteractions,
+  experienceConsolidation,
+  experienceJournalEntries,
+  memories,
+  semanticStates,
+  lifeRelations,
+}={}){
+  const wrap=section("Social life","derived analytics · never cognition authority");
+  const controls=el("div","thread-social-window");
+  const metrics=el("div","thread-social-grid");
+  const explanation=el(
+    "p",
+    "thread-journal-note",
+    "No sociability score is computed. These are bounded observational measures over recorded social history; anonymous visitors are not treated as distinct known people, and none of these values feeds Thread cognition.",
+  );
+
+  const render=(windowDays)=>{
+    const model=buildSocialAnalytics({
+      threadId,
+      encounterStories,
+      socialInteractions,
+      experienceConsolidation,
+      experienceJournalEntries,
+      memories,
+      semanticStates,
+      lifeRelations,
+      windowDays,
+    });
+    for(const button of controls.querySelectorAll("button")){
+      button.classList.toggle("active",Number(button.dataset.days)===windowDays);
+    }
+    metrics.replaceChildren(
+      socialMetric(
+        "Exposure",
+        String(model.exposure.episodes),
+        String(model.exposure.noticedEpisodes)+" noticed · "+String(model.exposure.anonymousVisitorEpisodes)+" anonymous-visitor episodes",
+      ),
+      socialMetric(
+        "Initiative",
+        String(model.initiative.openedEpisodes),
+        String(model.initiative.outgoingOvertures)+" explicit Thread→Thread overtures",
+      ),
+      socialMetric(
+        "Responsiveness",
+        String(model.responsiveness.answeredEpisodes)+"/"+String(model.responsiveness.externallyOpenedEpisodes),
+        String(model.responsiveness.incomingOvertures)+" incoming · "+String(model.responsiveness.accepted)+" accepted · "+String(model.responsiveness.declined)+" declined · "+String(model.responsiveness.deferred)+" deferred",
+      ),
+      socialMetric(
+        "Breadth",
+        String(model.breadth.knownCounterparties),
+        "known counterparties · "+String(model.breadth.anonymousVisitorEpisodes)+" anonymous-visitor episodes",
+      ),
+      socialMetric(
+        "Reciprocity",
+        String(model.reciprocity.bidirectionalCounterparties)+"/"+String(model.reciprocity.directionalCounterparties),
+        "known counterparties with both incoming and outgoing overtures",
+      ),
+      socialMetric(
+        "Depth",
+        String(model.depth.continuedEpisodes),
+        "continued episodes · max "+String(model.depth.maxStoryCount)+" Encounter Stories in one episode",
+      ),
+      socialMetric(
+        "Continuity",
+        String(model.continuity.recurringCounterparties),
+        "known counterparties appearing in 2+ distinct social episodes",
+      ),
+      socialMetric(
+        "Consequence",
+        String(model.consequence.episodes),
+        [
+          String(model.consequence.memoryEpisodes)+" memory",
+          String(model.consequence.journalEpisodes)+" journal",
+          String(model.consequence.afterthoughtEpisodes)+" afterthought",
+          String(model.consequence.semanticEpisodes)+" semantic",
+          String(model.consequence.relationshipEpisodes)+" relationship",
+        ].join(" · "),
+      ),
+    );
+  };
+
+  for(const days of [7,30,90]){
+    const button=el("button","secondary",days+"d");
+    button.type="button";
+    button.dataset.days=String(days);
+    button.addEventListener("click",()=>render(days));
+    controls.append(button);
+  }
+  wrap.append(controls,metrics,explanation);
+  render(30);
+  return wrap;
+}
+
 function situationLabel(situation){
   if(!situation)return "World scene unavailable";
   const activity=firstText(situation.activity);
