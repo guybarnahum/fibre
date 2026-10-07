@@ -25,6 +25,7 @@ import { createInsideFibreVisitorMeetingWriteApi } from "#services/world-kernel/
 import { createPublicVisitorEncounterService } from "#services/world-kernel/src/public-visitor-encounter.mjs";
 import { createPublicVisitorEncounterWriteApi } from "#services/world-kernel/src/public-visitor-encounter-write-api.mjs";
 import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
+import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
@@ -45,7 +46,6 @@ const INSIDE_FIBRE_MEETING_ENTRY_ROUTE = "/internal/inside-fibre/meeting-entry";
 const INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE = "/internal/inside-fibre/visitor-encounter";
 const PUBLIC_VISITOR_ENCOUNTER_ROUTE = "/internal/public-visitor-encounter";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
-const EXPERIENCE_CONSOLIDATION_DELAY_MS = 30_000;
 
 function bindingFetch(binding) {
   return (input, init) => binding.fetch(input instanceof Request ? input : new Request(input, init));
@@ -86,6 +86,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.threadJournalApi = null;
     this.threadJournalBook = null;
     this.experienceConsolidationProcess = null;
+    this.experienceConsolidationWakeScheduler = null;
   }
 
   journalBookForRequest() {
@@ -97,18 +98,22 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.threadJournalBook;
   }
 
-  async scheduleExperienceConsolidation(queued) {
-    const wake=await this.runtimeForRequest().reconciliationRuntime.requestWakeAfter(
-      EXPERIENCE_CONSOLIDATION_DELAY_MS,
-    );
-    console.log(JSON.stringify({
-      event:"experience-consolidation-wake-requested",
-      threadId:queued.threadId,
-      experienceId:queued.experienceId,
-      scheduledTimeMs:wake.scheduledTimeMs,
-      reusedExistingAlarm:wake.existing===true,
-    }));
-    return wake;
+  experienceConsolidationWakeSchedulerForRequest() {
+    if(this.experienceConsolidationWakeScheduler===null){
+      this.experienceConsolidationWakeScheduler=createExperienceConsolidationWakeScheduler({
+        reconciliationRuntime:this.runtimeForRequest().reconciliationRuntime,
+        onScheduled:({queued,wake})=>{
+          console.log(JSON.stringify({
+            event:"experience-consolidation-wake-requested",
+            threadId:queued.threadId,
+            experienceId:queued.experienceId,
+            scheduledTimeMs:wake.scheduledTimeMs,
+            reusedExistingAlarm:wake.existing===true,
+          }));
+        },
+      });
+    }
+    return this.experienceConsolidationWakeScheduler;
   }
 
   experienceConsolidationProcessForRequest() {
@@ -145,7 +150,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore: openAutobiographicalMemoryStore(runtime.worldStorage),
         modelAdapter: selectReasoningIntegration(deployment.integrations.encounter, { environment: this.env }),
         activityRecorder: createCloudflareActivityRecorder({ env: this.env, service: "world-kernel" }),
-        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
+        onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
         privateToken: this.env.FIBRE_PRIVATE_TOKEN,
       });
     }
@@ -179,7 +184,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
-        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
+        onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       this.environmentalEncounterApi = createEnvironmentalEncounterWriteApi({
         encounterService,
@@ -218,7 +223,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
-        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
+        onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       this.socialMeetingApi = createSocialMeetingWriteApi({
         meetingService,
@@ -336,7 +341,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         workStore,
         fibreCreditStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
-        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
+        onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       const publication = createLivedNowPublicationService({
         livedNowStore,
@@ -386,7 +391,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore,
         modelAdapter,
-        onExperienceQueued:(queued)=>this.scheduleExperienceConsolidation(queued),
+        onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       this.publicVisitorEncounterApi = createPublicVisitorEncounterWriteApi({
         encounterService,
