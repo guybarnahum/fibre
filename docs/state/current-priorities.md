@@ -290,7 +290,7 @@ no turn owner
   -> later social/relationship consequence when warranted
 ```
 
-N7.0 and N7.1 are accepted. N7.2 is current: the new ephemeral Live Encounter coordinator accepts independent incremental speech streams, exposes sentence/pause/end speaking opportunities, maintains participant-specific heard-so-far state, and allows overlapping active speakers without any turn-transfer authority.
+N7.0-N7.2 are accepted. N7.3 is current: streamed Thread expression now enters the same duplex Live Encounter, caller-selected interruption aborts only the unseen continuation, the audible prefix can persist as `completion:"interrupted"`, and restarted cognition is grounded in admitted history + that spoken prefix + newly heard speech + current World life.
 
 ## Current causal loop
 
