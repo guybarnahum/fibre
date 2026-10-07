@@ -1,4 +1,5 @@
 import { GuardianModelError } from "../guardian-model-adapter.mjs";
+import { streamSseJson } from "./sse.mjs";
 import {
   assertId,
   assertNonEmpty,
@@ -147,6 +148,7 @@ export function createGoogleModelAdapter({
   if (typeof fetchImpl !== "function") throw new TypeError("Google model fetchImpl must be a function");
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateContent`;
+  const streamEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:streamGenerateContent?alt=sse`;
   const configuration = Object.freeze({
     transport: "generateContent",
     endpoint,
@@ -155,12 +157,120 @@ export function createGoogleModelAdapter({
     retryDelayMs,
     structuredOutput: "json_schema",
   });
+  const expressionConfiguration = Object.freeze({
+    transport:"streamGenerateContent",
+    endpoint:streamEndpoint,
+    maxOutputTokens,
+  });
   let terminalFailure = null;
 
   return Object.freeze({
     provider: "google",
     modelId,
     configuration,
+    async *streamExpression({ systemPrompt, input, clientRequestId, signal = null }) {
+      assertNonEmpty("expression systemPrompt", systemPrompt);
+      assertPlainObject("expression input", input);
+      assertId("expression clientRequestId", clientRequestId);
+      if (signal !== null && typeof signal?.addEventListener !== "function") {
+        throw new TypeError("expression signal must be an AbortSignal");
+      }
+      if (terminalFailure !== null) throw terminalFailure;
+      if (signal?.aborted) return;
+
+      const controller = new AbortController();
+      const onAbort = () => controller.abort(signal?.reason);
+      signal?.addEventListener("abort", onAbort, { once:true });
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      let completed = false;
+      let usage = { inputTokens:0, outputTokens:0, totalTokens:0 };
+      let resolvedModelId = modelId;
+
+      try {
+        let response;
+        try {
+          response = await fetchImpl(streamEndpoint, {
+            method:"POST",
+            headers:{
+              "content-type":"application/json",
+              accept:"text/event-stream",
+              "x-goog-api-key":key,
+            },
+            body:JSON.stringify({
+              systemInstruction:{ parts:[{ text:systemPrompt }] },
+              contents:[{ role:"user", parts:[{ text:JSON.stringify(input) }] }],
+              generationConfig:{ maxOutputTokens },
+            }),
+            signal:controller.signal,
+          });
+        } catch (error) {
+          if (signal?.aborted) return;
+          throw normalizeError(error);
+        }
+
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw classifyHttpFailure(response, body);
+        }
+
+        const providerRequestId = response.headers?.get?.("x-request-id")
+          ?? response.headers?.get?.("x-goog-request-id")
+          ?? null;
+
+        for await (const chunk of streamSseJson(response.body)) {
+          if (typeof chunk?.modelVersion === "string" && chunk.modelVersion.trim() !== "") {
+            resolvedModelId = chunk.modelVersion;
+          }
+          if (chunk?.usageMetadata) {
+            usage = {
+              inputTokens:Number(chunk.usageMetadata.promptTokenCount ?? usage.inputTokens),
+              outputTokens:Number(chunk.usageMetadata.candidatesTokenCount ?? usage.outputTokens),
+              totalTokens:Number(chunk.usageMetadata.totalTokenCount ?? usage.totalTokens),
+            };
+          }
+
+          for (const part of chunk?.candidates?.[0]?.content?.parts ?? []) {
+            if (typeof part?.text === "string" && part.text !== "") {
+              yield Object.freeze({ type:"expression_delta", text:part.text });
+            }
+          }
+
+          const finishReason = chunk?.candidates?.[0]?.finishReason ?? null;
+          if (finishReason !== null && finishReason !== "") {
+            if (finishReason !== "STOP") {
+              throw new GuardianModelError(`Google expression stream did not complete: ${finishReason}`, {
+                code:"MODEL_INCOMPLETE_RESPONSE",
+                retryable:false,
+                providerErrorCode:String(finishReason),
+              });
+            }
+            const provenance = Object.freeze({
+              provider:"google",
+              transport:"streamGenerateContent",
+              modelId:resolvedModelId,
+              providerRequestId,
+              configuration:{ ...expressionConfiguration },
+              usage:{ ...usage },
+            });
+            completed = true;
+            yield Object.freeze({ type:"expression_complete", provenance });
+          }
+        }
+
+        if (!completed && !signal?.aborted) {
+          throw new GuardianModelError("Google expression stream ended before completion", {
+            code:"MODEL_STREAM_INCOMPLETE",
+            retryable:false,
+          });
+        }
+      } catch (error) {
+        if (signal?.aborted) return;
+        throw normalizeError(error);
+      } finally {
+        clearTimeout(timer);
+        signal?.removeEventListener?.("abort", onAbort);
+      }
+    },
     async invoke({ systemPrompt, input, responseSchema, clientRequestId }) {
       assertNonEmpty("model systemPrompt", systemPrompt);
       assertPlainObject("model input", input);
