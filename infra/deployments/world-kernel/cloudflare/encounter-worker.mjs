@@ -121,7 +121,6 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore:openSemanticStateStore(runtime.worldStorage),
         memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        journalBook:this.journalBookForRequest(),
         modelAdapter:selectReasoningIntegration(
           deployment.integrations.encounter,
           {environment:this.env},
