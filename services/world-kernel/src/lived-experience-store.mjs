@@ -724,11 +724,8 @@ export class LivedExperienceStore {
         e.encounter_ref,e.situation_id,e.occurred_at,e.experience_text
       FROM thread_experience_consolidation_queue q
       JOIN thread_encounter_experiences e ON e.experience_id=q.experience_id
-      WHERE NOT EXISTS (
-        SELECT 1
-        FROM thread_experience_consolidations c, json_each(c.experience_refs_json) refs
-        WHERE refs.value=q.experience_id
-      )
+      LEFT JOIN thread_experience_consolidation_members m ON m.experience_id=q.experience_id
+      WHERE m.experience_id IS NULL
       ORDER BY e.occurred_at,q.experience_id
       LIMIT ?
     `).all(limit).map((row)=>({
@@ -754,37 +751,58 @@ export class LivedExperienceStore {
     const consolidationId=experienceConsolidationId({threadId,experienceRefs:refs});
     const record={consolidationId,threadId,startedAt,experienceRefs:refs};
     const recordDigest=digest(record);
+
     try{
-      for(const ref of refs){
-        const row=this.#database.prepare(`
-          SELECT e.thread_id,e.occurred_at,q.experience_id AS queued_experience_id
-          FROM thread_encounter_experiences e
-          LEFT JOIN thread_experience_consolidation_queue q ON q.experience_id=e.experience_id
-          WHERE e.experience_id=?
-        `).get(ref);
-        if(row===undefined||row.thread_id!==threadId)throw new TypeError("consolidation experience belongs to another Thread");
-        if(row.queued_experience_id===null)throw new TypeError("consolidation experience was not queued");
-        if(Date.parse(startedAt)<Date.parse(row.occurred_at)){
-          throw new TypeError("experience consolidation cannot predate its lived evidence");
+      return this.#database.transaction(()=>{
+        for(const ref of refs){
+          const row=this.#database.prepare(`
+            SELECT e.thread_id,e.occurred_at,q.experience_id AS queued_experience_id,
+              m.consolidation_id AS claimed_by
+            FROM thread_encounter_experiences e
+            LEFT JOIN thread_experience_consolidation_queue q ON q.experience_id=e.experience_id
+            LEFT JOIN thread_experience_consolidation_members m ON m.experience_id=e.experience_id
+            WHERE e.experience_id=?
+          `).get(ref);
+          if(row===undefined||row.thread_id!==threadId){
+            throw new TypeError("consolidation experience belongs to another Thread");
+          }
+          if(row.queued_experience_id===null){
+            throw new TypeError("consolidation experience was not queued");
+          }
+          if(Date.parse(startedAt)<Date.parse(row.occurred_at)){
+            throw new TypeError("experience consolidation cannot predate its lived evidence");
+          }
+          if(row.claimed_by!==null&&row.claimed_by!==consolidationId){
+            throw new TypeError(`Thread experience ${ref} already belongs to another consolidation`);
+          }
         }
-      }
-      const prior=this.#database.prepare(`
-        SELECT thread_id,started_at,experience_refs_json,record_digest
-        FROM thread_experience_consolidations WHERE consolidation_id=?
-      `).get(consolidationId);
-      if(prior!==undefined){
-        if(prior.thread_id!==threadId||prior.started_at!==startedAt
-          ||prior.experience_refs_json!==canonicalJson(refs)||prior.record_digest!==recordDigest){
-          throw new TypeError(`experience consolidation ${consolidationId} conflicts`);
+
+        const prior=this.#database.prepare(`
+          SELECT thread_id,started_at,experience_refs_json,record_digest
+          FROM thread_experience_consolidations WHERE consolidation_id=?
+        `).get(consolidationId);
+        if(prior!==undefined){
+          if(prior.thread_id!==threadId||prior.started_at!==startedAt
+            ||prior.experience_refs_json!==canonicalJson(refs)||prior.record_digest!==recordDigest){
+            throw new TypeError(`experience consolidation ${consolidationId} conflicts`);
+          }
+          return record;
         }
+
+        this.#database.prepare(`
+          INSERT INTO thread_experience_consolidations(
+            consolidation_id,thread_id,started_at,experience_refs_json,record_digest
+          ) VALUES (?,?,?,?,?)
+        `).run(consolidationId,threadId,startedAt,canonicalJson(refs),recordDigest);
+
+        const insertMember=this.#database.prepare(`
+          INSERT INTO thread_experience_consolidation_members(
+            experience_id,consolidation_id,ordinal
+          ) VALUES (?,?,?)
+        `);
+        refs.forEach((ref,ordinal)=>insertMember.run(ref,consolidationId,ordinal));
         return record;
-      }
-      this.#database.prepare(`
-        INSERT INTO thread_experience_consolidations(
-          consolidation_id,thread_id,started_at,experience_refs_json,record_digest
-        ) VALUES (?,?,?,?,?)
-      `).run(consolidationId,threadId,startedAt,canonicalJson(refs),recordDigest);
-      return record;
+      });
     }catch(error){throw translateStorageError(error);}
   }
 
@@ -962,11 +980,8 @@ export class LivedExperienceStore {
     return this.#database.prepare(`
       SELECT 1 AS pending
       FROM thread_experience_consolidation_queue q
-      WHERE NOT EXISTS (
-        SELECT 1
-        FROM thread_experience_consolidations c, json_each(c.experience_refs_json) refs
-        WHERE refs.value=q.experience_id
-      )
+      LEFT JOIN thread_experience_consolidation_members m ON m.experience_id=q.experience_id
+      WHERE m.experience_id IS NULL
       LIMIT 1
     `).get()!==undefined;
   }
