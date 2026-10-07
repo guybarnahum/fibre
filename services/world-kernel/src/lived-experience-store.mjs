@@ -733,13 +733,13 @@ export class LivedExperienceStore {
     try{
       for(const ref of refs){
         const row=this.#database.prepare(`
-          SELECT e.thread_id,q.experience_id
+          SELECT e.thread_id,q.experience_id AS queued_experience_id
           FROM thread_encounter_experiences e
           LEFT JOIN thread_experience_consolidation_queue q ON q.experience_id=e.experience_id
           WHERE e.experience_id=?
         `).get(ref);
         if(row===undefined||row.thread_id!==threadId)throw new TypeError("consolidation experience belongs to another Thread");
-        if(row.experience_id===null)throw new TypeError("consolidation experience was not queued");
+        if(row.queued_experience_id===null)throw new TypeError("consolidation experience was not queued");
       }
       const prior=this.#database.prepare(`
         SELECT thread_id,started_at,experience_refs_json,record_digest
