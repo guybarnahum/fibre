@@ -144,7 +144,26 @@ visit current life
 
 N6 deliberately reuses the accepted meeting/work/encounter machinery. It does not introduce a conversation session or second current-life authority.
 
-Follow [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md).
+Follow [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). The remaining N6.6 public endpoint/Viewer proof is preserved and resumable.
+
+### M2-N7 — Live encounters and social consequence — ACTIVE
+
+The first sustained direct World conversation showed that N6's causal authorities are sound but its interaction transport is still turn-shaped. N7 removes that implementation constraint:
+
+```text
+continuing World life
+  + asynchronous participant speech/actions
+  -> speaking opportunities at punctuation / pause / end-of-stream
+  -> interruptible streamed expression
+  -> only exposed speech becomes Encounter Story truth
+  -> participant-specific Experience
+  -> bounded later consolidation
+  -> relationship / memory / question / intention consequence when warranted
+```
+
+N7 deliberately converges Person -> Thread and Thread -> Thread on one Live Encounter primitive. It introduces no durable chat session, no turn manager, no token-by-token cognition and no causal sociability score.
+
+Follow [N7 live encounter slices](n7-live-encounter-slices.md) and [Live encounters](../architecture/live-encounters.md).
 
 ## After M2
 
