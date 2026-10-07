@@ -117,7 +117,7 @@
     "identity:country-codes:migrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/migrations/thread-country-codes.mjs",
     "inside-fibre": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs",
     "population:lab:experiments": "node --disable-warning=ExperimentalWarning tools/population-lab/experiments.mjs",
-    "inside-fibre:meet": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/inside-fibre/inside-fibre.mjs meet",
+    "thread:meet": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/meet/thread-meet.mjs",
     "developmental-exploration:x3:validate": "node tools/deployment/run-with-progress.mjs developmental-exploration:x3:validate node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-planning-validation.mjs --exploration",
     "lived-encounters:validate": "node tools/deployment/run-with-progress.mjs lived-encounters:validate node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-encounters-validation.mjs",
     "encounter-autonomy:probe": "node tools/deployment/run-with-progress.mjs encounter-autonomy:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/encounter-autonomy-probe.mjs"
