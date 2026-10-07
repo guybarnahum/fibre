@@ -465,8 +465,10 @@ operator selects one existing Thread, or CLI randomly chooses one bounded World-
 The command is:
 
 ```bash
-npm run thread:meet -- --env staging [--thread THREAD_ID]
+npm run thread:meet -- --env staging [--thread THREAD_ID] [-v|-vv|-vvv]
 ```
+
+For bring-up, `-v` shows major meeting stages, `-vv` adds World request/status/timing boundaries, and `-vvv` adds bounded request/result summaries plus a heartbeat while slow World work is still pending. Diagnostics never dump private cognition or internal state.
 
 The CLI is intentionally not a second meeting engine. It calls the same World authorities used by clients, keeps no durable transcript/session state, does not schedule visitor work, and does not use the public Presentation API. When `--thread` is omitted, it performs one bounded World Thread-directory read and chooses one eligible Thread uniformly from that set; it does not probe candidates or retry for a more convenient outcome.
 
