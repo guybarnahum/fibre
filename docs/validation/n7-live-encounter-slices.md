@@ -128,6 +128,7 @@ Implemented foundation:
 - perceived World events are bounded to the most recent 12 per live participant;
 - LivedNow scene reconciliation reuses `validateDisplayedSituation()`; compatible life remains in the encounter, while a materially changed scene emits `scene_changed` carrying the authoritative current situation;
 - scene change does not invent a turn or synthetic goodbye; later orchestration may redirect or end the encounter according to the new life.
+- if the Thread is actively expressing when its material scene changes, the expression stream is aborted as stale-scene cognition and only its already-audible prefix survives.
 
 **High-value proof:** a genuine World event admitted during an encounter becomes available to cognition without being authored by the client.
 
