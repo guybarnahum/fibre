@@ -179,8 +179,99 @@ export class LivedExperienceStore {
     return row===undefined?null:this.getEncounterStory(row.encounter_id);
   }
 
-  recordEncounterStory(candidate,{uniquePlaceOccurrenceRef=null}={}) {
+  nextEnvironmentalFollowupAt() {
+    const row=this.#database.prepare(`
+      SELECT due_at FROM world_environment_followups
+      WHERE completed_at IS NULL ORDER BY due_at LIMIT 1
+    `).get();
+    return row?.due_at??null;
+  }
+
+  listDueEnvironmentalFollowups({at,limit=2}) {
+    assertIsoTimestamp("World follow-up at",at);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>8){
+      throw new TypeError("World follow-up limit must be 1-8");
+    }
+    return this.#database.prepare(`
+      SELECT source_encounter_ref,place_ref,due_at,decision_json
+      FROM world_environment_followups
+      WHERE completed_at IS NULL AND due_at<=?
+      ORDER BY due_at,source_encounter_ref LIMIT ?
+    `).all(at,limit).map((row)=>Object.freeze({
+      sourceEncounterRef:row.source_encounter_ref,
+      placeRef:row.place_ref,
+      dueAt:row.due_at,
+      decision:row.decision_json===null?null:JSON.parse(row.decision_json),
+    }));
+  }
+
+  recordEnvironmentalFollowupDecision({sourceEncounterRef,decision}) {
+    assertId("World follow-up source",sourceEncounterRef);
+    if(decision?.outcome!=="no_change"&&decision?.outcome!=="changed"){
+      throw new TypeError("World follow-up outcome is invalid");
+    }
+    if((decision.outcome==="changed")!==(
+      typeof decision.occurrenceText==="string"&&decision.occurrenceText.trim()!==""
+    )){
+      throw new TypeError("World follow-up occurrence is inconsistent");
+    }
+    const body=canonicalJson({
+      outcome:decision.outcome,
+      occurrenceText:decision.outcome==="changed"?decision.occurrenceText.trim():null,
+    });
+    try{
+      this.#database.prepare(`
+        UPDATE world_environment_followups SET decision_json=?
+        WHERE source_encounter_ref=? AND decision_json IS NULL AND completed_at IS NULL
+      `).run(body,sourceEncounterRef);
+      const row=this.#database.prepare(`
+        SELECT decision_json FROM world_environment_followups WHERE source_encounter_ref=?
+      `).get(sourceEncounterRef);
+      if(row===undefined||row.decision_json!==body){
+        throw new TypeError("World follow-up decision conflicts");
+      }
+      return Object.freeze(JSON.parse(body));
+    }catch(error){throw translateStorageError(error);}
+  }
+
+  completeEnvironmentalFollowup({sourceEncounterRef,resultEncounterRef=null,completedAt}) {
+    assertId("World follow-up source",sourceEncounterRef);
+    if(resultEncounterRef!==null)assertId("World follow-up result",resultEncounterRef);
+    assertIsoTimestamp("World follow-up completedAt",completedAt);
+    try{
+      const row=this.#database.prepare(`
+        SELECT decision_json,result_encounter_ref,completed_at FROM world_environment_followups
+        WHERE source_encounter_ref=?
+      `).get(sourceEncounterRef);
+      if(row===undefined||row.decision_json===null){
+        throw new TypeError("World follow-up must be decided before completion");
+      }
+      const decision=JSON.parse(row.decision_json);
+      if((decision.outcome==="changed")!==(resultEncounterRef!==null)){
+        throw new TypeError("World follow-up result contradicts decision");
+      }
+      if(row.completed_at!==null){
+        if(row.result_encounter_ref!==resultEncounterRef){
+          throw new TypeError("World follow-up completion conflicts");
+        }
+        return Object.freeze({sourceEncounterRef,resultEncounterRef,completedAt:row.completed_at});
+      }
+      this.#database.prepare(`
+        UPDATE world_environment_followups SET result_encounter_ref=?,completed_at=?
+        WHERE source_encounter_ref=? AND completed_at IS NULL
+      `).run(resultEncounterRef,completedAt,sourceEncounterRef);
+      return Object.freeze({sourceEncounterRef,resultEncounterRef,completedAt});
+    }catch(error){throw translateStorageError(error);}
+  }
+
+  recordEncounterStory(candidate,{uniquePlaceOccurrenceRef=null,followupAfterMs=null}={}) {
     assertIsoTimestamp("encounter story.occurredAt", candidate.occurredAt);
+    if(followupAfterMs!==null&&(
+      uniquePlaceOccurrenceRef===null||!Number.isSafeInteger(followupAfterMs)
+      ||followupAfterMs<60_000||followupAfterMs>3_600_000
+    )){
+      throw new TypeError("World follow-up requires shared place and 1-60 minute delay");
+    }
     if(uniquePlaceOccurrenceRef!==null){
       assertId("shared occurrence placeRef",uniquePlaceOccurrenceRef);
       if(candidate.story?.beats?.length!==1
@@ -190,8 +281,11 @@ export class LivedExperienceStore {
         throw new TypeError("shared occurrence must be one place-grounded objective beat");
       }
     }
-    if (!Array.isArray(candidate.threadPresence) || candidate.threadPresence.length < 1) {
-      throw new TypeError("encounter story requires at least one Thread presence");
+    if (!Array.isArray(candidate.threadPresence)
+      ||(candidate.threadPresence.length<1&&(
+        uniquePlaceOccurrenceRef===null||candidate.story?.continuationOfEncounterRef===undefined
+      ))){
+      throw new TypeError("encounter story requires Thread presence unless World continues an admitted place occurrence");
     }
     const participantIds = new Set();
     const threadPresence = candidate.threadPresence.map((participant) => {
@@ -264,6 +358,13 @@ export class LivedExperienceStore {
         `);
         for (const participant of threadPresence) {
           insertPresence.run(encounterId,participant.threadId,participant.situationId);
+        }
+        if(followupAfterMs!==null){
+          const dueAt=new Date(Date.parse(normalized.occurredAt)+followupAfterMs).toISOString();
+          this.#database.prepare(`
+            INSERT INTO world_environment_followups(source_encounter_ref,place_ref,due_at)
+            VALUES (?,?,?)
+          `).run(encounterId,uniquePlaceOccurrenceRef,dueAt);
         }
         return record;
       });
