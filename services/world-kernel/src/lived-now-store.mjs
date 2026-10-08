@@ -96,6 +96,7 @@ function createTables(database) {
       situation_id TEXT NOT NULL,
       due_at TEXT,
       blocked_reason TEXT,
+      failed_attempts INTEGER NOT NULL DEFAULT 0 CHECK(failed_attempts>=0),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
       FOREIGN KEY (situation_id) REFERENCES current_situation_records(situation_id)
     ) STRICT;
@@ -455,12 +456,13 @@ export class LivedNowStore {
       return {scheduled:false,stale:false};
     }
     this.#database.prepare(`
-      INSERT INTO lived_now_next_boundaries(thread_id,situation_id,due_at,blocked_reason)
-      VALUES(?,?,?,NULL)
+      INSERT INTO lived_now_next_boundaries(thread_id,situation_id,due_at,blocked_reason,failed_attempts)
+      VALUES(?,?,?,NULL,0)
       ON CONFLICT(thread_id) DO UPDATE SET
         situation_id=excluded.situation_id,
         due_at=excluded.due_at,
-        blocked_reason=NULL
+        blocked_reason=NULL,
+        failed_attempts=0
     `).run(threadId,situationId,dueAt);
     return {scheduled:dueAt!==null,stale:false};
   }
@@ -484,6 +486,42 @@ export class LivedNowStore {
     `).all(at,limit).map((row)=>Object.freeze({
       threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
     }));
+  }
+
+  failLivedBoundary({threadId,situationId,dueAt,message}){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only lived-now store cannot fail");
+    assertId("failed lived boundary threadId",threadId);
+    assertId("failed lived boundary situationId",situationId);
+    assertIsoTimestamp("failed lived boundary dueAt",dueAt);
+    if(typeof message!=="string"||!message||message.length>180){
+      throw new TypeError("failed lived boundary needs short error");
+    }
+    // Bounded transients: after three unsuccessful wakes, stop until a new
+    // authoritative LivedNow update re-arms the frontier.
+    this.#database.prepare(`
+      UPDATE lived_now_next_boundaries
+      SET failed_attempts=failed_attempts+1,
+        blocked_reason=CASE WHEN failed_attempts>=2 THEN ? ELSE NULL END,
+        due_at=CASE WHEN failed_attempts>=2 THEN NULL ELSE due_at END
+      WHERE thread_id=? AND situation_id=? AND due_at=?
+    `).run(message,threadId,situationId,dueAt);
+    const row=this.#database.prepare(`
+      SELECT due_at,failed_attempts
+      FROM lived_now_next_boundaries WHERE thread_id=?
+    `).get(threadId);
+    return {blocked:row?.due_at===null,attempts:row?.failed_attempts??0};
+  }
+
+  inspectLivedBoundary(threadId){
+    this.#requireThread(threadId);
+    const row=this.#database.prepare(`
+      SELECT situation_id,due_at,blocked_reason,failed_attempts
+      FROM lived_now_next_boundaries WHERE thread_id=?
+    `).get(threadId);
+    return row===undefined?null:Object.freeze({
+      situationId:row.situation_id,dueAt:row.due_at,
+      blockedReason:row.blocked_reason,failedAttempts:row.failed_attempts,
+    });
   }
 
   settleLivedBoundary({threadId,situationId,dueAt,blockedReason=null}){
