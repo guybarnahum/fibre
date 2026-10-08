@@ -537,6 +537,7 @@ export function createLivedNowService({
   memoryStore = null,
   situatedLifeStore = null,
   modelAdapter = null,
+  onSituationEnacted = null,
 } = {}) {
   requireMethod(livedNowStore, "getSituation");
   requireMethod(livedNowStore, "getCurrentSituation");
@@ -547,22 +548,30 @@ export function createLivedNowService({
   requireMethod(livedNowStore, "ensureWorldPlaces");
   requireMethod(livedNowStore, "getWorldContext");
 
+  if(onSituationEnacted!==null&&typeof onSituationEnacted!=="function"){
+    throw new TypeError("LivedNow onSituationEnacted must be a function");
+  }
+
   const regulationReady = worldStore !== null &&
     semanticStateStore !== null &&
     modelAdapter !== null &&
     typeof semanticStateStore.recordState === "function";
 
   async function finalizePresent(previousSituation, currentSituation) {
-    if (!regulationReady) return currentSituation;
-    await runLivedNowRegulationPulse({
-      threadId:currentSituation.threadId,
-      previousSituation,
-      currentSituation,
-      worldStore,
-      livedNowStore,
-      semanticStateStore,
-      modelAdapter,
-    });
+    if(regulationReady){
+      await runLivedNowRegulationPulse({
+        threadId:currentSituation.threadId,
+        previousSituation,
+        currentSituation,
+        worldStore,
+        livedNowStore,
+        semanticStateStore,
+        modelAdapter,
+      });
+    }
+    if(previousSituation?.situationId!==currentSituation.situationId){
+      await onSituationEnacted?.(currentSituation);
+    }
     return currentSituation;
   }
 
