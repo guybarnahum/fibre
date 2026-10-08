@@ -685,3 +685,31 @@ test("an absolute Flight Plan wake cannot postpone overdue World work",async()=>
     assert.equal(await infraDriver.scheduler.get("world"),20_000);
   }finally{await runtime.stop();}
 });
+
+test("multiple due Flight Plan boundaries progress without exponential error backoff",async()=>{
+  let remaining=2;
+  const process=createWorldReconciliationProcess({
+    livedBoundaryProcess:{
+      async runOnce(){
+        remaining--;
+        return {
+          attempted:1,failed:0,hasDue:remaining>0,
+          nextDueAt:remaining>0?new Date(1_000).toISOString():null,
+        };
+      },
+    },
+  });
+  const {infraDriver,runtime}=createRuntimeFixture({process,now:()=>1_000});
+  try{
+    await runtime.requestWake();
+    const first=await runtime.handleWake();
+    assert.equal(first.retryDelayMs,null,
+      "ordinary Flight Plan backlog triggered exponential failure backoff");
+    assert.equal(await infraDriver.scheduler.get("world"),1_000,
+      "a second already-due Thread was postponed");
+    const second=await runtime.handleWake();
+    assert.equal(second.reconciliationPending,false);
+    assert.equal(await infraDriver.scheduler.get("world"),null,
+      "settled lives kept the World alarm alive");
+  }finally{await runtime.stop();}
+});
