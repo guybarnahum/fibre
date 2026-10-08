@@ -24,6 +24,7 @@ import {
 } from "./situated-life-domain.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {
+  bindLivePhysicalVenue,
   createLiveWorldPlaceTables,
   ensureLiveWorldPlaces,
   liveWorldContext,
@@ -394,6 +395,11 @@ export class LivedNowStore {
   listWorldPlaces(threadId) {
     this.#requireThread(threadId);
     return listLiveWorldPlaces(this.#database, threadId);
+  }
+
+  bindPhysicalVenue(candidate){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot attest a physical venue");
+    return this.#database.transaction(()=>bindLivePhysicalVenue(this.#database,candidate));
   }
 
   getWorldPlace(threadId, reference, { required = true } = {}) {
