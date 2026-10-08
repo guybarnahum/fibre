@@ -110,6 +110,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.experienceConsolidationWakeScheduler = null;
     this.contactOutreachProcess = null;
     this.livedBoundaryProcess = null;
+    this.livedBoundaryModelAdapter = null;
     this.liveEncounterRegistry = createLiveEncounterRegistry();
   }
 
@@ -590,9 +591,14 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore:openSemanticStateStore(runtime.worldStorage),
         memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
         situatedLifeStore:openSituatedLifeStore(runtime.worldStorage),
-        modelAdapter:selectReasoningIntegration(
-          deployment.integrations.livedNow,{environment:this.env},
-        ),
+        modelAdapter:{
+          invoke:async(request)=>{
+            this.livedBoundaryModelAdapter??=selectReasoningIntegration(
+              deployment.integrations.livedNow,{environment:this.env},
+            );
+            return this.livedBoundaryModelAdapter.invoke(request);
+          },
+        },
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
       });
