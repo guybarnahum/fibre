@@ -67,6 +67,7 @@ export function createSocialMeetingService({
   memoryStore,
   experienceStore,
   modelAdapter,
+  liveEncounterRegistry = null,
   onExperienceQueued = null,
 }) {
   requireMethod("worldReader", worldReader, "getThread");
@@ -90,6 +91,12 @@ export function createSocialMeetingService({
   requireMethod("experienceStore", experienceStore, "queueThreadExperienceConsolidation");
   requireMethod("modelAdapter", modelAdapter, "invoke");
   requireMethod("modelAdapter", modelAdapter, "streamExpression");
+  if (liveEncounterRegistry !== null && (
+    typeof liveEncounterRegistry.register !== "function"
+    || typeof liveEncounterRegistry.publishAfterthoughts !== "function"
+  )) {
+    throw new TypeError("social meeting liveEncounterRegistry must be null or expose register() and publishAfterthoughts()");
+  }
   if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
     throw new TypeError("social meeting onExperienceQueued must be a function or null");
   }
@@ -177,6 +184,7 @@ export function createSocialMeetingService({
       request,
       stance,
       modelAdapter,
+      liveEncounterRegistry,
     });
     const story=liveResult.story;
 
