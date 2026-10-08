@@ -51,6 +51,23 @@ export function createContactTables(database){
       FOREIGN KEY (source_consolidation_id) REFERENCES thread_experience_consolidations(consolidation_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS thread_contact_receptions (
+      message_id TEXT PRIMARY KEY,
+      recipient_thread_id TEXT NOT NULL,
+      due_at TEXT NOT NULL,
+      situation_id TEXT,
+      perceived_at TEXT,
+      completed_at TEXT,
+      blocked_reason TEXT,
+      failed_attempts INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY (message_id) REFERENCES thread_contact_messages(message_id),
+      FOREIGN KEY (recipient_thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_thread_contact_receptions_due
+      ON thread_contact_receptions(due_at)
+      WHERE completed_at IS NULL AND blocked_reason IS NULL;
+
     CREATE INDEX IF NOT EXISTS idx_person_contact_capabilities_party
       ON person_contact_capabilities(party_id,registered_at,capability_id);
     CREATE INDEX IF NOT EXISTS idx_thread_contact_attempts_thread
