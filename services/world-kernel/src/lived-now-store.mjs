@@ -514,6 +514,12 @@ export class LivedNowStore {
 
   inspectLivedBoundary(threadId){
     this.#requireThread(threadId);
+    // An existing World may be inspected before its first post-upgrade
+    // writable LivedNow session creates this optional frontier.
+    if(this.#readOnly&&!this.#database.prepare(`
+      SELECT 1 FROM sqlite_master
+      WHERE type='table' AND name='lived_now_next_boundaries'
+    `).get())return null;
     const row=this.#database.prepare(`
       SELECT situation_id,due_at,blocked_reason,failed_attempts
       FROM lived_now_next_boundaries WHERE thread_id=?
