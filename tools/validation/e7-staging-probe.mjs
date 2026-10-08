@@ -90,10 +90,13 @@ export async function runE7StagingProbe({
   }
   if(deployedSha===null)throw new Error("no readable World Observatory or deployed Git SHA");
   const currentScenes=[];
+  const lifeBoundaries=[];
   const ambient=[];
   const sources=new Map();
   for(const [threadId,observatory] of observatories){
     currentScenes.push(...naturalScenes(observatory,threadId));
+    const boundary=observatory.livedNow?.nextAutonomousBoundary??null;
+    if(boundary!==null)lifeBoundaries.push({threadId,...boundary});
     for(const opportunity of observatory.environmentalOpportunities??[]){
       ambient.push({threadId,...opportunity});
     }
@@ -162,6 +165,7 @@ export async function runE7StagingProbe({
     observedThreadCount:observatories.size,
     unavailableThreadCount:unavailable,
     currentSharedPlaceScenes:currentScenes.slice(0,12),
+    lifeBoundaries:lifeBoundaries.slice(0,40),
     ambientOpportunities:ambient
       .sort((a,b)=>b.dueAt.localeCompare(a.dueAt)).slice(0,24),
     sources:history,
@@ -176,6 +180,8 @@ export async function runE7StagingProbe({
     currentSharedPlaceScenes:evidence.currentSharedPlaceScenes,
     sourceCount:sources.size,
     ambientOpportunityCount:ambient.length,
+    scheduledLifeBoundaryCount:lifeBoundaries.filter((item)=>item.dueAt!==null).length,
+    blockedLifeBoundaryCount:lifeBoundaries.filter((item)=>item.blockedReason!==null).length,
     ambientSourceCount:ambient.filter((item)=>
       item.outcome==="changed"&&item.encounterId).length,
     continuationCount:history.filter((item)=>item.continuationEncounterId).length,
