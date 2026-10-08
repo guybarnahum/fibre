@@ -44,6 +44,12 @@ For public progress, milestone summaries, website status, or claims about what F
 - A test earns its place when its failure would reveal a meaningful break in Thread identity, history, agency, continuity, authority, recovery, or another named Fibre capability. Keep failure messages short and semantic.
 - `validate-repo.mjs --generated` means normal repository validation plus verification that generated AI context packs exist and exactly match their canonical sources.
 
+## Naming for commands, tools and runtime files
+
+Name active scripts, commands, executable files and tests for their **stable Fibre capability or observable behavior**, not the development stage that introduced them. Do not encode roadmap labels (`E7`, `N5`, `S` slice, `x3`, etc.), implementation phases or numbered development passes in new active names.
+
+Deployment environment is an explicit argument such as `--env staging`, **never part of the command or tool filename**. For example, use `world-environment:probe -- --env staging`, not `e7:staging:probe`. Keep the same thematic command across supported environments. Environment-scoped evidence directories and historical milestone/validation documents may still accurately retain their provenance. Rename actively used chronological exceptions when touching them; avoid unrelated bulk renames or compatibility aliases.
+
 ## Non-negotiable invariants
 
 - A Thread is a persistent person, not a temporary task role.
