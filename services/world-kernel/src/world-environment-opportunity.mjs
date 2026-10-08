@@ -79,11 +79,12 @@ export function createWorldEnvironmentOpportunity({
             });
             if(!eligible||!candidateScenes.some((item)=>item.threadId===opportunity.threadId)){
               decision={
-                outcome:"not_observable",occurrenceText:null,presence:[],occurredAt:at,
+                outcome:"not_observable",occurrenceText:null,presence:[],
+                occurredAt:opportunity.dueAt,
               };
             }else{
               const input={
-                occurrenceAt:at,
+                occurrenceAt:opportunity.dueAt,
                 initiatingSituation:{
                   situationId:situation.situationId,
                   activity:situation.activity??null,
@@ -147,7 +148,7 @@ Do not invent Thread actions, inner life, conversation, emotions, or another per
               decision={
                 outcome:output.outcome,
                 occurrenceText:output.outcome==="changed"?output.occurrenceText.trim():null,
-                presence:selected,occurredAt:at,
+                presence:selected,occurredAt:opportunity.dueAt,
               };
             }
             decision=experienceStore.recordEnvironmentalOpportunityDecision({
