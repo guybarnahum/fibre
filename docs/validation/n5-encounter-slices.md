@@ -383,7 +383,7 @@ E6 remains pending live witness evidence.
 
 ---
 
-## Slice E7 — Shared place-scoped environmental occurrences — IMPLEMENTED / VALIDATION PENDING
+## Slice E7 — Shared place-scoped environmental occurrences — ACTIVE
 
 **Goal:** one observable environmental happening belongs to the World, never to the particular Thread that triggered its authoring. E7 extends E6a, not the encounter ontology.
 
@@ -409,16 +409,46 @@ The existing Encounter Story store now atomically reuses an already-admitted sin
 
 **Focused acceptance proof:** two genuinely co-present Threads share the same place/time-scoped objective event; one notices and forms Experience, the other does not; an unrelated Thread at another location is absent; the second Thread's independent invocation does not generate a second rainstorm; a competing newly proposed description cannot rewrite the admitted event. Retry may not duplicate attention or consolidation.
 
-**Implementation validation remains pending operator CLI and, subsequently, a real staging case with at least two Threads already current at the same admitted `wpl_*`.** A lack of co-presence is `blocked_by_world_state`, not grounds to teleport Threads or weaken the acceptance proof.
+**E7.1 local focused validation passed (Guy, 2026-10-08).** Production/staging evidence of two naturally co-present Threads at an admitted `wpl_*` remains pending. A lack of co-presence is `blocked_by_world_state`, not grounds to teleport Threads or weaken the acceptance proof.
+
+### E7.2 — One earned World continuation — IMPLEMENTED / VALIDATION PENDING
+
+Once an admitted shared-place E7.1 environmental occurrence exists, it may earn **one** later World follow-up. The implementation currently uses a fixed 30-minute delay as a provisional scheduling policy, not a claim about weather duration or a required rate of environmental change.
+
+```text
+shared objective occurrence at place/time
+  -> one durable future opportunity (same World authority)
+  -> existing InfraDriver World alarm (no separate timer)
+  -> prior objective occurrence + place + elapsed lived time
+  -> replaceable World cognition: changed | no_change
+       no_change -> completed work, no new World event
+       changed   -> one new objective Encounter Story
+                    with continuationOfEncounterRef
+  -> quiescent (no further chained alarms)
+```
+
+The model does not see a particular Thread's genome, private memories, goals, scene activity or personal sensations. The World validates and persists the candidate decision before attempting to materialize a changed occurrence. A retry reuses that durable decision; the admitted occurrence is still deduplicated by exact place/time through E7.1. The due timestamp is the intended *lived* event opportunity; `completedAt` records when the follow-up was actually reconciled.
+
+The follow-up can be **World history with zero Thread witnesses**. An unattended change of weather is still an objective event, but it does not generate invented attention, personal Experience, Journal or Memory. Its absence from a person's autobiography is not evidence that the event never happened. Physical presence or recipient notice must be proven by the normal World/perception authorities before any later subjective consequence can be claimed.
+
+The durable `world_environment_followups` rows are bounded scheduler/decision bookkeeping, **not** a second World occurrence authority. Initial objective events and later changed objective events are Encounter Stories, not synthetic conversation messages. An idle World makes zero provider calls. One admitted initial shared occurrence earns at most one additional provider consideration and cannot recursively schedule a weather loop. Existing Local and Cloudflare World reconcilers consume the same domain process.
+
+**Focused acceptance:** one rain event earns one due opportunity; early World wakes do zero cognition; `changed` admits a second causally linked objective event without inventing participants; `no_change` admits no event; a storage failure after deciding retries without reauthoring; an unrelated World wake preserves the due alarm; completed work returns to quiescence. Local semantic tests and the full slice validation remain pending Guy's CLI evidence.
+
+**Deployment acceptance still deferred:** show an actual staging shared-place E7.1 occurrence, one delayed E7.2 follow-up, and retained due-time/retry evidence without forcing co-presence or declaring world-wide weather realism.
+
+### E7.3 — Natural shared-place acceptance — NOT STARTED
+
+When the World supplies natural overlap, demonstrate multiple independently different attention/Experience outcomes for one E7.1 occurrence. E7.2's unattended follow-up must remain World truth, not retroactively claimed personal experience. The future step for a later present Thread to *notice a recent unattended event* requires an explicit bounded World-at-place perception window, not fabricated historical presence.
 
 ### Explicitly deferred
 
 - A continuously evolving external weather system or meteorological feed (deferred, no current authority).
-- Independently scheduled future place-events without an actual bounded lived/reconciliation trigger (deferred; extend the existing World wake policy when a concrete causal requirement justifies it).
+- Independently seeding new place-events without a prior admitted environmental occurrence (deferred: E7.2 only earns one delayed follow-up after an E7.1 event).
 - Scalable background attention fanout across very crowded places (deferred; the currently admitted presence set is larger than the bounded immediate cognition cohort).
 - Physically fine-grained sight/hearing/occlusion within the same World place (deferred; co-presence only establishes *potential* observability, not guaranteed noticing).
 - In-progress live-conversation exposure of third-party speech fragments (separate N7/E6 integration proof).
-- Cross-time event continuity (rain beginning and later stopping are distinct World facts until a real local-world continuity mechanism is justified).
+- Longer-lived environmental state, cross-event causal simulation and repeated weather progression beyond E7.2's single linked follow-up (deferred).
 
 No global ticking, quota of interesting events, simulation framework, event-interest score, new memory subsystem, or mandatory Journal/Memory production.
 
