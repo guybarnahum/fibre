@@ -366,6 +366,20 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
       [second],
       "World should expose one latest current situation per Thread for scene discovery",
     );
+    assert.deepEqual(
+      lived.listRecentCurrentSituations({
+        at:second.establishedAt,since:"2026-09-10T05:05:00Z",limit:2,
+      }),
+      [second],
+      "bounded World noticeability read lost the latest enacted situation",
+    );
+    assert.deepEqual(
+      lived.listRecentCurrentSituations({
+        at:second.establishedAt,since:"2026-09-10T05:07:00Z",limit:2,
+      }),
+      [],
+      "World noticeability must not infer presence from a stale situation",
+    );
     const locationSnapshot = lived.listCurrentLocationEvidence({ at:second.establishedAt });
     const mayaNow = locationSnapshot.find((entry) => entry.threadId === life.thread.threadId);
     assert.equal(mayaNow.currentSituation.situationId, second.situationId, "live map lost the current situation");
