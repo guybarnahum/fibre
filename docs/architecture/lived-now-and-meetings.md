@@ -64,6 +64,8 @@ For a Thread participating in continuous LivedNow, this is a **rolling lived-lif
 
 A Flight Plan is intention, not World truth. Retrospective plan realization therefore records what the Thread is admitted to have intended during the elapsed interval; World history separately records what was enacted.
 
+**E7.5 event-driven continuous life:** after World establishes a genuine CurrentSituation, it derives the next boundary directly from the admitted personal/care Flight Plan stops or renewal horizon. One indexed per-Thread frontier drives the existing `InfraDriver.scheduler` World reconciliation alarm; an eligible wake calls the *same* LivedNow authority at actual wall-clock time, preserving required-care constraints and bounded N2 catch-up. After a successful advancement the next boundary replaces the old one; no all-Thread scan, periodic wall-clock tick, extra planner or repeated synthesis of unchanged life. Unknown/ungrounded plan renewal blocks rather than fabricating lived history. Repeated transient failures are capped at three attempts and remain inspectable. A dormant Thread without an established current plan is **not** silently assigned a synthetic life merely to schedule work. An externally requested real `ensure` may first establish or re-arm the frontier. This applies via the provider-neutral World InfraDriver to local, Cloudflare and any future backend implementing the same state and scheduler ports.
+
 ### CurrentSituation
 
 The World-owned enacted truth for the Thread at a particular time: at a physical place or in transit between physical places, possibly also participating in a mediated context, doing something, with relevant participants and evidence.
