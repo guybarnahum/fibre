@@ -19,6 +19,7 @@ import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mj
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
+import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-encounter-registry.mjs";
 import { projectCurrentLife } from "#services/world-kernel/src/current-life-projection.mjs";
 import { openGuardianCognitionStore } from "#services/world-kernel/src/guardian-cognition-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
@@ -264,6 +265,7 @@ export async function startWorldKernelFromEnvironment(
     })}\n`);
   }
 
+  const liveEncounterRegistry=createLiveEncounterRegistry();
   let consolidationModelAdapter=null;
   const experienceConsolidationProcess = createExperienceConsolidationProcess({
     worldReader:store,
@@ -280,6 +282,7 @@ export async function startWorldKernelFromEnvironment(
         return consolidationModelAdapter.invoke(request);
       },
     },
+    onAfterthoughts:(event)=>liveEncounterRegistry.publishAfterthoughts(event),
   });
   const reconciliationProcess = createWorldReconciliationProcess({
     presentationDelivery,
@@ -412,6 +415,7 @@ export async function startWorldKernelFromEnvironment(
       reconciliationRuntime,
       experienceConsolidationProcess,
       experienceConsolidationWakeScheduler,
+      liveEncounterRegistry,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
       genesisBirthPublicationEnabled: true,
