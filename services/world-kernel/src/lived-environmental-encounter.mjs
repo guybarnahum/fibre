@@ -59,6 +59,8 @@ function sceneDescription(threadId, situation, situatedLifeStore, livedNowStore)
   const place = placeForSituation(threadId, situation, situatedLifeStore, livedNowStore);
   if (place === null) return `The Thread is at the current admitted physical place${activity}.`;
   const locality = [place.location?.locality, place.location?.region].filter(Boolean).join(", ");
+  // A shared-place occurrence must not be about the initiating observer's activity.
+  if (place.ref.startsWith("wpl_")) return `At ${place.displayName}.`;
   return `At ${place.displayName}${locality ? ` in ${locality}` : ""}${activity}.`;
 }
 
@@ -83,6 +85,11 @@ function livedContext({ threadId, worldReader, livedNowStore, semanticStateStore
 }
 
 function occurrenceInput({ threadId, at, situation, situatedLifeStore, livedNowStore }) {
+  const place=placeForSituation(threadId, situation, situatedLifeStore, livedNowStore);
+  if(place?.ref.startsWith("wpl_")){
+    // World authors a local fact, not a personalized stimulus for any observer.
+    return Object.freeze({occurredAt:at,place});
+  }
   return Object.freeze({
     occurredAt:at,
     currentSituation:Object.freeze({
@@ -91,7 +98,7 @@ function occurrenceInput({ threadId, at, situation, situatedLifeStore, livedNowS
       mediatedContext:situation.mediatedContext ?? null,
       activity:situation.activity ?? null,
     }),
-    place:placeForSituation(threadId, situation, situatedLifeStore, livedNowStore),
+    place,
   });
 }
 
@@ -121,16 +128,38 @@ Write observable World fact only.`,
   return invocation.output.occurrenceText.trim();
 }
 
-function existingEnvironmentalStory(experienceStore, threadId, situation, at) {
+function existingEnvironmentalStory(experienceStore, threadId, situation, at, sharedPlaceRef) {
   return experienceStore.listEncounterStories(threadId).find((story) =>
     story.occurredAt === at
-    && story.threadPresence.length === 1
-    && story.threadPresence[0].threadId === threadId
-    && story.threadPresence[0].situationId === situation.situationId
+    && story.threadPresence.some((presence) =>
+      presence.threadId === threadId && presence.situationId === situation.situationId)
+    && (sharedPlaceRef === null
+      ? story.threadPresence.length === 1
+      : story.visualization?.visualizationSourceReferences?.includes(sharedPlaceRef))
     && story.story?.beats?.length === 1
     && story.story.beats[0].actorThreadId === null
     && story.story.beats[0].kind === "occurrence"
   ) ?? null;
+}
+
+function sharedObservers(context, at, livedNowStore) {
+  const ref=context.situation.location?.placeRef;
+  if(context.situation.location?.kind!=="place"||!ref?.startsWith("wpl_")
+    ||livedNowStore.getWorldPlace(context.thread.threadId,ref,{required:false})===null){
+    return null;
+  }
+  const others=livedNowStore.listCurrentSituations({at,livingOnly:true})
+    .filter((situation)=>situation.threadId!==context.thread.threadId
+      && situation.location?.kind==="place"&&situation.location.placeRef===ref
+      && livedNowStore.getWorldPlace(situation.threadId,ref,{required:false})!==null);
+  return Object.freeze({
+    placeRef:ref,
+    presence:Object.freeze([
+      {threadId:context.thread.threadId,situationId:context.situation.situationId},
+      ...others.map((situation)=>({threadId:situation.threadId,situationId:situation.situationId})),
+    ].sort((a,b)=>a.threadId.localeCompare(b.threadId))),
+    situations:new Map(others.map((situation)=>[situation.threadId,situation])),
+  });
 }
 
 export function createEnvironmentalEncounterService({
@@ -148,6 +177,7 @@ export function createEnvironmentalEncounterService({
   requireMethod("livedNow", livedNow, "ensure");
   requireMethod("livedNowStore", livedNowStore, "getCurrentSituation");
   requireMethod("livedNowStore", livedNowStore, "getWorldPlace");
+  requireMethod("livedNowStore", livedNowStore, "listCurrentSituations");
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentPlaceEpisodes");
   requireMethod("semanticStateStore", semanticStateStore, "listCurrentState");
   requireMethod("memoryStore", memoryStore, "listCurrentMemories");
@@ -177,11 +207,13 @@ export function createEnvironmentalEncounterService({
         memoryStore,
       });
 
+      const shared=sharedObservers(context,input.at,livedNowStore);
       let encounterStory = existingEnvironmentalStory(
         experienceStore,
         input.threadId,
         context.situation,
         input.at,
+        shared?.placeRef??null,
       );
       let reused = encounterStory !== null;
 
@@ -211,15 +243,14 @@ export function createEnvironmentalEncounterService({
             situatedLifeStore,
             livedNowStore,
           ),
-          sourceReferences:[
-            context.situation.situationId,
-            ...(context.situation.evidenceRefs ?? []),
-          ],
+          sourceReferences:shared
+            ?[shared.placeRef]
+            :[context.situation.situationId,...(context.situation.evidenceRefs??[])],
           depictedThreadRefs:[],
         });
         encounterStory = experienceStore.recordEncounterStory({
           occurredAt:input.at,
-          threadPresence:[{
+          threadPresence:shared?.presence??[{
             threadId:input.threadId,
             situationId:context.situation.situationId,
           }],
@@ -229,66 +260,69 @@ export function createEnvironmentalEncounterService({
         reused = false;
       }
 
-      const existing = experienceStore.getThreadEncounterAttention(
-        input.threadId,
-        encounterStory.encounterId,
-      );
-      if (existing !== null) {
-        if(existing.outcome==="noticed"){
+      // The objective story belongs to the World; subjective attention belongs
+      // to each present Thread. One trigger appraises a bounded local cohort.
+      // Remaining co-present observers can independently encounter the same
+      // admitted story later, without regenerating the occurrence.
+      const observers=[context];
+      if(shared!==null){
+        for(const presence of encounterStory.threadPresence){
+          if(observers.length>=4)break;
+          if(presence.threadId===input.threadId)continue;
+          const situation=shared.situations.get(presence.threadId);
+          if(situation===undefined||situation.situationId!==presence.situationId)continue;
+          const otherThread=worldReader.getThread(presence.threadId,{required:false});
+          if(otherThread===null||otherThread.status==="retired")continue;
+          observers.push({
+            thread:structuredClone(otherThread),
+            situation:structuredClone(situation),
+            semanticStates:semanticStateStore.listCurrentState(presence.threadId),
+            memories:memoryStore.listCurrentMemories(presence.threadId,{
+              limit:MEMORY_LIMIT,newestFirst:true,
+            }),
+          });
+        }
+      }
+      let attention=null;
+      const observed=[];
+      for(const observer of observers){
+        let received=experienceStore.getThreadEncounterAttention(
+          observer.thread.threadId,encounterStory.encounterId,
+        );
+        if(received===null){
+          const appraisal=await appraiseEncounterAttention({
+            thread:observer.thread,
+            situation:observer.situation,
+            encounterStory,
+            semanticStates:observer.semanticStates,
+            memories:observer.memories,
+            modelAdapter,
+          });
+          received=experienceStore.recordThreadEncounterAttention({
+            threadId:observer.thread.threadId,
+            encounterRef:encounterStory.encounterId,
+            situationId:observer.situation.situationId,
+            occurredAt:input.at,
+            outcome:appraisal.outcome,
+            experienceText:appraisal.experienceText,
+          });
+        }
+        if(received.outcome==="noticed"){
           await queueThreadExperienceConsolidation({
             experienceStore,
-            experienceRecord:existing.experience,
-            queuedAt:existing.occurredAt,
+            experienceRecord:received.experience,
+            queuedAt:received.occurredAt,
             onQueued:onExperienceQueued,
           });
         }
-        return Object.freeze({
-          outcome:"encounter",
-          encounterStory,
-          attention:existing,
-          aftermath:null,
-          reused:true,
-        });
+        if(observer.thread.threadId===input.threadId)attention=received;
+        observed.push({threadId:observer.thread.threadId,outcome:received.outcome});
       }
-
-      const appraisal = await appraiseEncounterAttention({
-        thread:context.thread,
-        situation:context.situation,
-        encounterStory,
-        semanticStates:context.semanticStates,
-        memories:context.memories,
-        modelAdapter,
-      });
-      const attention = experienceStore.recordThreadEncounterAttention({
-        threadId:input.threadId,
-        encounterRef:encounterStory.encounterId,
-        situationId:context.situation.situationId,
-        occurredAt:input.at,
-        outcome:appraisal.outcome,
-        experienceText:appraisal.experienceText,
-      });
-
-      if (attention.outcome === "not_noticed") {
-        return Object.freeze({
-          outcome:"encounter",
-          encounterStory,
-          attention,
-          aftermath:null,
-          reused,
-        });
-      }
-
-      await queueThreadExperienceConsolidation({
-        experienceStore,
-        experienceRecord:attention.experience,
-        queuedAt:input.at,
-        onQueued:onExperienceQueued,
-      });
-
       return Object.freeze({
         outcome:"encounter",
         encounterStory,
         attention,
+        observers:Object.freeze(observed),
         aftermath:null,
         reused,
       });
