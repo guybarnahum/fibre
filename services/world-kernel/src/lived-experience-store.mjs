@@ -225,7 +225,7 @@ export class LivedExperienceStore {
 
   recordEnvironmentalFollowupDecision({sourceEncounterRef,decision}) {
     assertId("World follow-up source",sourceEncounterRef);
-    if(decision?.outcome!=="no_change"&&decision?.outcome!=="changed"){
+    if(!["not_observable","no_change","changed"].includes(decision?.outcome)){
       throw new TypeError("World follow-up outcome is invalid");
     }
     if((decision.outcome==="changed")!==(
@@ -233,9 +233,22 @@ export class LivedExperienceStore {
     )){
       throw new TypeError("World follow-up occurrence is inconsistent");
     }
+    if(!Array.isArray(decision.potentialObservers)||decision.potentialObservers.length>4
+      ||(decision.outcome==="changed"&&decision.potentialObservers.length===0)
+      ||(decision.outcome!=="changed"&&decision.potentialObservers.length!==0)){
+      throw new TypeError("World change requires potential observers");
+    }
+    const ids=new Set();
+    for(const observer of decision.potentialObservers){
+      assertId("World observer Thread",observer.threadId);
+      assertId("World observer situation",observer.situationId);
+      if(ids.has(observer.threadId))throw new TypeError("World observer is duplicated");
+      ids.add(observer.threadId);
+    }
     const body=canonicalJson({
       outcome:decision.outcome,
       occurrenceText:decision.outcome==="changed"?decision.occurrenceText.trim():null,
+      potentialObservers:decision.potentialObservers,
     });
     try{
       this.#database.prepare(`
