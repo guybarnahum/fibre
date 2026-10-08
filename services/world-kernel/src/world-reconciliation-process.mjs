@@ -95,6 +95,7 @@ export function worldReconciliationNeedsRetry(result) {
     || visualNeedsRetry(result.visualPublication)
     || experienceConsolidationNeedsRetry(result.experienceConsolidation)
     || contactOutreachNeedsRetry(result.contactOutreach)
+    || livedBoundaryNeedsRetry(result.contactReception)
     || environmentNeedsRetry(result.environmentEvolution)
     || livedBoundaryNeedsRetry(result.livedBoundary);
 }
@@ -104,6 +105,7 @@ export function createWorldReconciliationProcess({
   visualPublicationProcess = null,
   experienceConsolidationProcess = null,
   contactOutreachProcess = null,
+  contactReceptionProcess = null,
   environmentEvolutionProcess = null,
   livedBoundaryProcess = null,
   onError = null,
@@ -119,6 +121,9 @@ export function createWorldReconciliationProcess({
     "contactOutreachProcess",
     contactOutreachProcess,
     "runOnce",
+  );
+  let contactReception=optionalMethod(
+    "contactReceptionProcess",contactReceptionProcess,"runOnce",
   );
   let environmentEvolution=optionalMethod(
     "environmentEvolutionProcess",environmentEvolutionProcess,"runOnce",
@@ -157,6 +162,10 @@ export function createWorldReconciliationProcess({
       contactOutreach = optionalMethod("contactOutreachProcess", process, "runOnce");
     },
 
+    setContactReceptionProcess(process){
+      contactReception=optionalMethod("contactReceptionProcess",process,"runOnce");
+    },
+
     setEnvironmentEvolutionProcess(process){
       environmentEvolution=optionalMethod("environmentEvolutionProcess",process,"runOnce");
     },
@@ -185,6 +194,10 @@ export function createWorldReconciliationProcess({
           "thread_contact_outreach",
           contactOutreach === null ? null : () => contactOutreach.runOnce(),
         );
+        const contactReceptionResult=await isolated(
+          "thread_contact_perception",
+          contactReception===null?null:()=>contactReception.runOnce(),
+        );
         const livedBoundaryResult=await isolated(
           "lived_boundary_advance",
           livedBoundary===null?null:()=>livedBoundary.runOnce(),
@@ -210,6 +223,7 @@ export function createWorldReconciliationProcess({
           visualPublication,
           experienceConsolidation,
           contactOutreach:contactOutreachResult,
+          contactReception:contactReceptionResult,
           environmentEvolution:environmentResult,
           livedBoundary:livedBoundaryResult,
         });
@@ -321,6 +335,7 @@ export function createWorldReconciliationRuntime({
     const dueAt=[
       result.environmentEvolution?.result?.nextDueAt,
       result.livedBoundary?.result?.nextDueAt,
+      result.contactReception?.result?.nextDueAt,
     ].filter(Boolean).sort()[0]??null;
     if(dueAt!==null){
       const timestamp=Date.parse(dueAt);
