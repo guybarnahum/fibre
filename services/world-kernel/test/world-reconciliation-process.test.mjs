@@ -634,3 +634,40 @@ test("partial ambient failure reports through World reconciliation's shared erro
   assert.equal(worldReconciliationNeedsRetry(result),true,
     "unsettled ambient work must remain retryable");
 });
+
+test("E7.5 World alarm follows the earliest lived boundary and then returns to quiescence",async()=>{
+  let clock=10_000;
+  let pending=true;
+  const dueAt=new Date(30_000).toISOString();
+  const process=createWorldReconciliationProcess({
+    livedBoundaryProcess:{
+      async runOnce(){
+        if(pending)return {attempted:0,failed:0,nextDueAt:dueAt,hasDue:false};
+        return {attempted:1,failed:0,nextDueAt:null,hasDue:false};
+      },
+    },
+    environmentEvolutionProcess:{
+      async runOnce(){
+        return {
+          attempted:0,failed:0,noticed:0,
+          nextDueAt:new Date(60_000).toISOString(),hasDue:false,
+        };
+      },
+    },
+  });
+  const {runtime,infraDriver}=createRuntimeFixture({process,now:()=>clock});
+  try{
+    await runtime.requestWake();
+    const first=await runtime.handleWake();
+    assert.equal(first.livedBoundary.enabled,true);
+    assert.equal(await infraDriver.scheduler.get("world"),30_000,
+      "World missed the earliest Flight Plan boundary");
+    clock=30_000;
+    pending=false;
+    await runtime.handleWake();
+    assert.equal(await infraDriver.scheduler.get("world"),60_000,
+      "environmental work was lost when lived advancement completed");
+  }finally{
+    await runtime.stop();
+  }
+});
