@@ -351,6 +351,32 @@ export class ContactStore {
     }));
   }
 
+  inspectThreadContact(threadId,{limit=100}={}){
+    assertId("contact inspection threadId",threadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>500){
+      throw new TypeError("contact inspection limit must be 1-500");
+    }
+    const attempts=this.#database.prepare(`
+      SELECT contact_attempt_id,thread_id,consolidation_id,started_at
+      FROM thread_contact_attempts
+      WHERE thread_id=?
+      ORDER BY started_at DESC,contact_attempt_id DESC
+      LIMIT ?
+    `).all(threadId,limit).map((row)=>({
+      contactAttemptId:row.contact_attempt_id,
+      threadId:row.thread_id,
+      consolidationId:row.consolidation_id,
+      startedAt:row.started_at,
+      decision:this.getStage(row.contact_attempt_id,"decision"),
+      expression:this.getStage(row.contact_attempt_id,"expression"),
+      complete:this.getStage(row.contact_attempt_id,"complete"),
+    }));
+    return Object.freeze({
+      attempts:Object.freeze(attempts),
+      sent:Object.freeze(this.listSent(threadId,{limit})),
+    });
+  }
+
   listSent(threadId,{limit=100}={}){
     assertId("contact sent threadId",threadId);
     if(!Number.isSafeInteger(limit)||limit<1||limit>500){
