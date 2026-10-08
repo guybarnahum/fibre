@@ -322,6 +322,27 @@ Admin may derive a time-windowed social profile from existing admitted history. 
 These values are **Observatory analytics only**. They are not semantic state, personality, regulation targets, rewards, labels or cognition context. A quiet period does not mean introversion; a high count does not mean sociability; a refusal does not count as social failure. The authoritative lived records remain underneath the projection.
 
 Anonymous Person encounters must never be counted as multiple known relationships merely because they occurred on different dates. Stable Person identity can improve breadth/continuity later when N7 adds that authority.
+## Delayed private residue can reopen expression
+
+Experience consolidation may produce private `insight`, `question` or `intention` residue. That residue is durable because it belongs to the consolidation decision, not because it is spoken.
+
+When a Thread is currently inside an ephemeral Live Encounter, World may offer newly completed residue through a short-lived registry:
+
+```text
+durable consolidation decision
+  -> best-effort active-encounter publication
+  -> private Thread-only opportunity
+  -> speak | act | silent
+  -> only outward result enters Encounter Story
+```
+
+The registry is not a session store. Registration exists only while the live encounter invocation exists. It contains no transcript, memory authority or relationship state.
+
+Publication is deliberately non-consuming. Silence does not erase an insight or question, and absence of an active encounter does not mark it handled. This keeps an extension path open for later contact or other future action.
+
+The private opportunity must never be broadcast to other encounter participants. The other participant can observe only the resulting utterance/action if the Thread chooses one.
+
+Current limitation: a Thread-to-Thread Live Encounter is admitted to Encounter Story/Experience authority when that live invocation closes, so this mechanism currently surfaces residue from already-admitted prior Experience. Same-encounter mid-stream consolidation is deferred until Fibre has a bounded checkpoint mechanism that preserves objective event truth without reintroducing turns or a durable chat session.
 ## Thread-to-Thread convergence
 
 The current social meeting machinery already provides the correct admission path:
