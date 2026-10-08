@@ -1,6 +1,5 @@
-import { appraiseEncounterAttention } from "./lived-encounter-attention.mjs";
+import { admitEncounterAttention } from "./lived-encounter-attention.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
-import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -316,35 +315,16 @@ export function createEnvironmentalEncounterService({
       let attention=null;
       const observed=[];
       for(const observer of observers){
-        let received=experienceStore.getThreadEncounterAttention(
-          observer.thread.threadId,encounterStory.encounterId,
-        );
-        if(received===null){
-          const appraisal=await appraiseEncounterAttention({
-            thread:observer.thread,
-            situation:observer.situation,
-            encounterStory,
-            semanticStates:observer.semanticStates,
-            memories:observer.memories,
-            modelAdapter,
-          });
-          received=experienceStore.recordThreadEncounterAttention({
-            threadId:observer.thread.threadId,
-            encounterRef:encounterStory.encounterId,
-            situationId:observer.situation.situationId,
-            occurredAt:input.at,
-            outcome:appraisal.outcome,
-            experienceText:appraisal.experienceText,
-          });
-        }
-        if(received.outcome==="noticed"){
-          await queueThreadExperienceConsolidation({
-            experienceStore,
-            experienceRecord:received.experience,
-            queuedAt:received.occurredAt,
-            onQueued:onExperienceQueued,
-          });
-        }
+        const received=await admitEncounterAttention({
+          thread:observer.thread,
+          situation:observer.situation,
+          encounterStory,
+          semanticStates:observer.semanticStates,
+          memories:observer.memories,
+          experienceStore,
+          modelAdapter,
+          onExperienceQueued,
+        });
         if(observer.thread.threadId===input.threadId)attention=received;
         observed.push({threadId:observer.thread.threadId,outcome:received.outcome});
       }
