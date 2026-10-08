@@ -1,4 +1,5 @@
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
+import { admitEncounterAttention } from "./lived-encounter-attention.mjs";
 import {
   assertExactKeys,
   assertNonEmpty,
@@ -43,7 +44,11 @@ function currentObservers(livedNowStore,at){
 export function createWorldEnvironmentEvolution({
   experienceStore,
   livedNowStore,
+  worldReader,
+  semanticStateStore,
+  memoryStore,
   modelAdapter,
+  onExperienceQueued=null,
   now=()=>new Date().toISOString(),
   batchLimit=2,
 }={}){
@@ -51,15 +56,25 @@ export function createWorldEnvironmentEvolution({
     "listDueEnvironmentalFollowups","nextEnvironmentalFollowupAt",
     "getEncounterStory","recordEnvironmentalFollowupDecision",
     "recordEncounterStory","completeEnvironmentalFollowup",
+    "getThreadEncounterAttention","recordThreadEncounterAttention",
+    "queueThreadExperienceConsolidation",
   ]){
     if(typeof experienceStore?.[method]!=="function"){
       throw new TypeError(`World environmental evolution requires ${method}()`);
     }
   }
-  for(const method of ["listRecentCurrentSituations","getWorldPlace"]){
+  for(const method of ["listRecentCurrentSituations","getWorldPlace","getSituation"]){
     if(typeof livedNowStore?.[method]!=="function"){
       throw new TypeError(`World environmental evolution requires ${method}()`);
     }
+  }
+  if(typeof worldReader?.getThread!=="function"
+    ||typeof semanticStateStore?.listCurrentState!=="function"
+    ||typeof memoryStore?.listCurrentMemories!=="function"){
+    throw new TypeError("World environmental evolution requires Thread perception authorities");
+  }
+  if(onExperienceQueued!==null&&typeof onExperienceQueued!=="function"){
+    throw new TypeError("World environmental evolution onExperienceQueued must be a function or null");
   }
   if(typeof modelAdapter?.invoke!=="function")throw new TypeError("World environmental evolution requires cognition");
   if(!Number.isSafeInteger(batchLimit)||batchLimit<1||batchLimit>4){
@@ -71,6 +86,7 @@ export function createWorldEnvironmentEvolution({
       const at=now();
       const due=experienceStore.listDueEnvironmentalFollowups({at,limit:batchLimit});
       let failed=0;
+      let noticed=0;
       const results=[];
       for(const opportunity of due){
         try{
@@ -189,6 +205,35 @@ Do not author events to excite or engage any observer. Do not invent participant
               }),
             },{uniquePlaceOccurrenceRef:opportunity.placeRef});
             encounterId=recorded.encounterId;
+            // Perceptibility is not attention. Each admitted possible observer
+            // independently considers the same objective story. Complete the
+            // World follow-up only once every decision is durable; retry must
+            // resume partial attention without rerolling the occurrence.
+            for(const presence of recorded.threadPresence){
+              const situation=livedNowStore.getSituation(presence.situationId,{required:false});
+              const thread=worldReader.getThread(presence.threadId,{required:false});
+              if(situation?.threadId!==presence.threadId||thread===null){
+                throw new TypeError("World observer lacks the admitted lived situation");
+              }
+              const already=experienceStore.getThreadEncounterAttention(
+                presence.threadId,recorded.encounterId,
+              );
+              const attention=await admitEncounterAttention({
+                thread,
+                situation,
+                encounterStory:recorded,
+                semanticStates:already===null
+                  ?semanticStateStore.listCurrentState(presence.threadId):[],
+                memories:already===null
+                  ?memoryStore.listCurrentMemories(presence.threadId,{
+                    limit:6,newestFirst:true,
+                  }):[],
+                experienceStore,
+                modelAdapter,
+                onExperienceQueued,
+              });
+              if(attention.outcome==="noticed")noticed+=1;
+            }
           }
           experienceStore.completeEnvironmentalFollowup({
             sourceEncounterRef:opportunity.sourceEncounterRef,
@@ -214,6 +259,7 @@ Do not author events to excite or engage any observer. Do not invent participant
         attempted:due.length,
         completed:due.length-failed,
         failed,
+        noticed,
         nextDueAt,
         hasDue:nextDueAt!==null&&Date.parse(nextDueAt)<=Date.parse(at),
         results:Object.freeze(results),
