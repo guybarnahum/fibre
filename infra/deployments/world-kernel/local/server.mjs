@@ -16,6 +16,7 @@ import { openExpressionStore } from "#services/world-kernel/src/expression-store
 import { openCausalContextStore } from "#services/world-kernel/src/causal-context-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { createLivedNowService } from "#services/world-kernel/src/lived-now-service.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
@@ -309,10 +310,28 @@ export async function startWorldKernelFromEnvironment(
     },
     onAfterthoughts:(event)=>liveEncounterRegistry.publishAfterthoughts(event),
   });
+  let contactLivedNowModelAdapter=null;
+  const contactLivedNow=createLivedNowService({
+    livedNowStore,
+    worldStore:store,
+    identityStore,
+    semanticStateStore,
+    memoryStore:autobiographicalMemoryStore,
+    situatedLifeStore,
+    modelAdapter:{
+      async invoke(request){
+        contactLivedNowModelAdapter??=selectReasoningIntegration(
+          DEPLOYMENT.integrations.livedNow,
+          { environment },
+        );
+        return contactLivedNowModelAdapter.invoke(request);
+      },
+    },
+  });
   let contactModelAdapter=null;
   const contactOutreachProcess=createThreadContactProcess({
     worldReader:store,
-    livedNowStore,
+    livedNow:contactLivedNow,
     situatedLifeStore,
     semanticStateStore,
     memoryStore:autobiographicalMemoryStore,
