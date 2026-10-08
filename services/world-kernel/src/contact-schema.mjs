@@ -57,6 +57,7 @@ export function createContactTables(database){
       due_at TEXT NOT NULL,
       situation_id TEXT,
       perceived_at TEXT,
+      sender_name TEXT,
       completed_at TEXT,
       blocked_reason TEXT,
       failed_attempts INTEGER NOT NULL DEFAULT 0,
