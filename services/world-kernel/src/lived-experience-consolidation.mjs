@@ -276,6 +276,7 @@ export function createExperienceConsolidationProcess({
   memoryStore,
   experienceStore,
   modelAdapter,
+  onAfterthoughts=null,
   now=()=>new Date().toISOString(),
   batchLimit=DEFAULT_BATCH_LIMIT,
   groupLimit=DEFAULT_GROUP_LIMIT,
@@ -298,6 +299,9 @@ export function createExperienceConsolidationProcess({
   requireMethod("experienceStore",experienceStore,"getThreadExperienceConsolidationJournal");
   requireMethod("experienceStore",experienceStore,"hasPendingExperienceConsolidation");
   requireMethod("modelAdapter",modelAdapter,"invoke");
+  if(onAfterthoughts!==null&&typeof onAfterthoughts!=="function"){
+    throw new TypeError("experience consolidation onAfterthoughts must be a function or null");
+  }
   if(!Number.isSafeInteger(batchLimit)||batchLimit<1||batchLimit>16){
     throw new TypeError("experience consolidation batchLimit must be 1-16");
   }
@@ -420,6 +424,30 @@ export function createExperienceConsolidationProcess({
       },
     });
 
+    let afterthoughtDelivery=Object.freeze({attempted:false,ok:true,result:null});
+    if(decision.afterthoughts.length>0&&onAfterthoughts!==null){
+      try{
+        const result=await onAfterthoughts(Object.freeze({
+          threadId:consolidation.threadId,
+          consolidationId:consolidation.consolidationId,
+          afterthoughts:decision.afterthoughts,
+        }));
+        afterthoughtDelivery=Object.freeze({
+          attempted:true,
+          ok:true,
+          result:result===undefined?null:structuredClone(result),
+        });
+      }catch(error){
+        afterthoughtDelivery=Object.freeze({
+          attempted:true,
+          ok:false,
+          result:null,
+          errorName:error?.constructor?.name??"Error",
+          message:String(error?.message??error).slice(0,300),
+        });
+      }
+    }
+
     return Object.freeze({
       consolidationId:consolidation.consolidationId,
       threadId:consolidation.threadId,
@@ -428,6 +456,7 @@ export function createExperienceConsolidationProcess({
       memoryOutcome:completion.payload.memoryOutcome,
       memoryId:completion.payload.memoryId,
       afterthoughts:decision.afterthoughts,
+      afterthoughtDelivery,
     });
   }
 
