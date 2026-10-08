@@ -569,7 +569,14 @@ export function createLivedNowService({
         modelAdapter,
       });
     }
-    if(previousSituation?.situationId!==currentSituation.situationId){
+    const sameJourney=previousSituation?.location?.kind==="transit"
+      &&currentSituation.location?.kind==="transit"
+      &&previousSituation.location.fromPlaceRef===currentSituation.location.fromPlaceRef
+      &&previousSituation.location.toPlaceRef===currentSituation.location.toPlaceRef;
+    // Refreshed timestamps and movement progress do not earn another
+    // environmental model call in an otherwise continuous scene.
+    if(previousSituation===null
+      ||(!sameJourney&&!sameEnactedScene(previousSituation,currentSituation))){
       await onSituationEnacted?.(currentSituation);
     }
     return currentSituation;
