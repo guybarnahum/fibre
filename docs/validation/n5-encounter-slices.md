@@ -368,9 +368,10 @@ npm run encounter-autonomy:probe -- --env staging
 The live probe:
 
 - cheaply reads existing Observatory state without population-wide `LivedNow.ensure`;
-- proves E6a on one current Thread by sending only `threadId` to the environmental encounter API and verifying durable objective occurrence + selective attention;
 - attempts E6b only when **three Threads are already genuinely co-present**;
 - if no such scene exists, records `blocked_by_world_state` rather than waking or replanning unrelated Threads;
+- leaves independently live-proven E6a untouched while E6b remains unproven; it reports environmental `not_run` instead of making an unnecessary paid model call;
+- only when E6b is proven does the combined probe re-prove E6a on one current Thread by supplying `threadId` and checking durable objective occurrence + selective attention;
 - reports the next already-admitted three-Thread shared-`wpl_*` plan overlap when one exists, so a later rerun can catch a natural witness opportunity;
 - never samples repeatedly to force a meeting or witness.
 
