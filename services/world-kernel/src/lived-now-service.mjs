@@ -538,6 +538,7 @@ export function createLivedNowService({
   situatedLifeStore = null,
   modelAdapter = null,
   onSituationEnacted = null,
+  onSituationResolved = null,
 } = {}) {
   requireMethod(livedNowStore, "getSituation");
   requireMethod(livedNowStore, "getCurrentSituation");
@@ -550,6 +551,9 @@ export function createLivedNowService({
 
   if(onSituationEnacted!==null&&typeof onSituationEnacted!=="function"){
     throw new TypeError("LivedNow onSituationEnacted must be a function");
+  }
+  if(onSituationResolved!==null&&typeof onSituationResolved!=="function"){
+    throw new TypeError("LivedNow onSituationResolved must be a function");
   }
 
   const regulationReady = worldStore !== null &&
@@ -582,6 +586,9 @@ export function createLivedNowService({
       ||(!sameJourney&&!sameEnactedScene(previousSituation,currentSituation))){
       await onSituationEnacted?.(currentSituation);
     }
+    // Even a plan stop whose outward activity did not change can have a
+    // meaningful next boundary. Re-arm from the admitted plan, never a tick.
+    await onSituationResolved?.(currentSituation);
     return currentSituation;
   }
 
