@@ -573,3 +573,93 @@ test("unroutable delayed residue drains without cognition or frontier starvation
   }
 });
 
+
+test("delivered private contact may remain unnoticed and never become memory",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-contact-reception-"));
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
+    stateScopeId:"world",
+  };
+  const world=openWorldStore(storage);
+  const experienceStore=openLivedExperienceStore(storage);
+  const contactStore=openContactStore(storage);
+  const semanticStateStore=openSemanticStateStore(storage);
+  const memoryStore=openAutobiographicalMemoryStore(storage);
+  try{
+    const sender=thread("thr_contact_quiet_sender","Sender","evt_contact_quiet_sender");
+    const recipient=thread("thr_contact_quiet_recipient","Recipient","evt_contact_quiet_recipient");
+    world.seedThread(sender);
+    world.seedThread(recipient);
+    const source=completeAfterthought(experienceStore,{
+      threadId:sender.threadId,situationId:"sit_contact_quiet_source",
+      occurredAt:"2026-10-07T18:20:00.000Z",
+      startedAt:"2026-10-07T18:21:00.000Z",
+      completedAt:"2026-10-07T18:22:00.000Z",
+      text:"I might check in with my friend.",
+    });
+    const attempt=contactStore.claimAttempt({
+      threadId:sender.threadId,consolidationId:source.consolidationId,
+      startedAt:"2026-10-07T18:24:00.000Z",
+    });
+    const message=contactStore.recordMessage({
+      contactAttemptId:attempt.contactAttemptId,
+      senderThreadId:sender.threadId,recipientPartyId:recipient.threadId,
+      recipientKind:"thread",sentAt:"2026-10-07T18:25:00.000Z",
+      messageText:"Hello, would you like to talk when you are free?",
+      sourceConsolidationId:source.consolidationId,
+    });
+    assert.equal(contactStore.listInbox(recipient.threadId).length,1);
+    assert.equal(experienceStore.listEncounterStories(recipient.threadId).length,0,
+      "delivery silently counted as an experience");
+    const situated={
+      threadId:recipient.threadId,situationId:"sit_contact_quiet_lived",
+      establishedAt:"2026-10-07T18:26:00.000Z",
+      phase:"at_place",location:{kind:"place",placeRef:"place_contact_quiet"},
+      activity:"Sleeping.",reason:"Rest.",mediatedContext:null,
+      participantRefs:[],sourcePlanRefs:[],
+    };
+    let appraisals=0;
+    const process=createThreadContactPerception({
+      contactStore,worldReader:world,semanticStateStore,memoryStore,experienceStore,
+      livedNow:{async ensure({threadId}) {
+        assert.equal(threadId,recipient.threadId);
+        return situated;
+      }},
+      livedNowStore:{getSituation:()=>situated},
+      now:()=>"2026-10-07T18:26:00.000Z",
+      modelAdapter:{async invoke(){
+        appraisals++;
+        return {
+          output:{outcome:"not_noticed",experienceText:null},
+          provenance:{provider:"fixture",modelId:"recipient-quiet-test"},
+        };
+      }},
+    });
+    const result=await process.runOnce();
+    assert.equal(result.failed,0);
+    assert.equal(result.noticed,0,"unnoticed delivery was treated as noticed");
+    assert.equal(result.results[0].experienceId,null);
+    const story=experienceStore.getEncounterStory(result.results[0].encounterId);
+    assert.deepEqual(story.threadPresence,
+      [{threadId:recipient.threadId,situationId:situated.situationId}],
+      "private message gained an unintended witness");
+    assert.equal(story.visualization.visualizationPrompt.includes(message.messageText),false,
+      "private message leaked into visual reconstruction instructions");
+    const attention=experienceStore.getThreadEncounterAttention(
+      recipient.threadId,story.encounterId,
+    );
+    assert.equal(attention.outcome,"not_noticed");
+    assert.equal(attention.experience,null,"unnoticed delivery created Experience");
+    assert.equal(experienceStore.hasPendingExperienceConsolidation(),false,
+      "unnoticed delivery entered memory consolidation");
+    assert.equal((await process.runOnce()).attempted,0);
+    assert.equal(appraisals,1,"quiet delivery was reappraised");
+  }finally{
+    contactStore.close();
+    experienceStore.close();
+    semanticStateStore.close();
+    memoryStore.close();
+    world.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
