@@ -5,6 +5,7 @@ import { createHumanAppearanceCalibrationRegistry } from "#services/population-l
 import { createAppearanceCoverageService } from "#services/world-kernel/src/appearance-coverage-service.mjs";
 import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
+import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
@@ -137,6 +138,7 @@ function threadObservatory(runtime, threadId) {
   const symbolicGenomes = runtime.symbolicGenomeStore.listThreadGenomes(threadId);
   const memory = openAutobiographicalMemoryInspectionStore(runtime.worldStorage);
   const experience = openLivedExperienceStore(runtime.worldStorage);
+  const contact = openContactStore(runtime.worldStorage);
   const livedNow = openLivedNowInspectionStore(runtime.worldStorage);
   const semanticState = openSemanticStateStore(runtime.worldStorage);
   const situatedLife = openSituatedLifeInspectionStore(runtime.worldStorage);
@@ -214,11 +216,15 @@ function threadObservatory(runtime, threadId) {
       experienceConsolidation:structuredClone(
         experience.inspectThreadExperienceConsolidation(threadId,{limit:200}),
       ),
+      contactOutreach:structuredClone(
+        contact.inspectThreadContact(threadId,{limit:200}),
+      ),
     });
   } finally {
     situatedLife.close();
     semanticState.close();
     livedNow.close();
+    contact.close();
     experience.close();
     memory.close();
   }
@@ -526,7 +532,7 @@ export class FibreWorldDurableObject extends DurableObject {
       const observatory = threadObservatory(this.runtimeForRequest(), threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
-        contract:"fibre-world-thread-observatory-v0.9",
+        contract:"fibre-world-thread-observatory-v0.10",
         deploymentGitSha:typeof this.env?.FIBRE_DEPLOYMENT_GIT_SHA==="string"
           ?this.env.FIBRE_DEPLOYMENT_GIT_SHA
           :null,
