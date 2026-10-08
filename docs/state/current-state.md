@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-10-05
+last-reviewed: 2026-10-08
 canonical: true
 ---
 
@@ -323,7 +323,7 @@ N6 execution remains recorded in [N6 rich public lived encounter slices](../vali
 
 N7 is governed by [Live encounters](../architecture/live-encounters.md), [ADR-0024](../decisions/ADR-0024-live-encounters.md), and [N7 live encounter slices](../validation/n7-live-encounter-slices.md). It removes the turn/request-response constraint without weakening existing authority: Live Encounter coordination is ephemeral; exposed outward acts become Encounter Story truth; structured cognition remains distinct from interruptible expression; ordinary World life continues; consolidation becomes bounded later work rather than a required synchronous step after every conversational beat.
 
-N7.0-N7.9 are accepted locally. N7.10 is implemented pending local validation: completed delayed residue can enter one bounded later-contact consideration from the Thread's freshly ensured current life. Current routable relationships are evidence, not compulsion; Interior Cognition may contact one known Person/Thread or keep the thought private. Person routing is explicit/revocable, routing identity does not fabricate autobiographical recognition, and persisted contact decisions/expressions survive retry without resampling. Thread-addressed delivery is durable routing authority only; recipient lived perception/Experience remains for N7.11.
+N7.0-N7.10 are accepted locally (Guy reported N7.10 validation green on 2026-10-08). Completed delayed residue can enter one bounded later-contact consideration from the Thread's freshly ensured current life. Current routable relationships are evidence, not compulsion; Interior Cognition may contact one known Person/Thread or keep the thought private. Person routing is explicit/revocable, routing identity does not fabricate autobiographical recognition, and persisted contact decisions/expressions survive retry without resampling. **N7.11 is current, validation-first**: Thread-addressed delivery remains routing authority only until recipient-side lived perception is admitted through existing World/Experience boundaries, selective consequence is tested, and retained history demonstrably changes a later choice. See the three acceptance gates in the N7 validation plan.
 
 ## Development discipline
 
