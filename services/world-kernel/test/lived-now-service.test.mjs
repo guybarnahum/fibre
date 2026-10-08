@@ -225,8 +225,13 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
       at: "2026-09-10T05:45:00Z",
     });
     assert.deepEqual(retry, constrained, "ensuring the same present should be idempotent");
+    const refreshed=await service.ensure({
+      threadId:life.thread.threadId,at:"2026-09-10T05:46:00Z",
+    });
+    assert.equal(refreshed.location.placeRef,constrained.location.placeRef,
+      "same ordinary scene should remain the present");
     assert.deepEqual(earned,[moving.situationId,constrained.situationId],
-      "one enacted transition should earn one opportunity, not one per ensure");
+      "World opportunities must follow genuine scene transitions, not refreshed timestamps");
 
     await assert.rejects(() => service.ensure({
       threadId: life.thread.threadId,
