@@ -630,6 +630,86 @@ function socialMetric(label,value,note){
   return card;
 }
 
+function laterContactSection(contactOutreach){
+  const attempts=Array.isArray(contactOutreach?.attempts)?contactOutreach.attempts:[];
+  const sent=Array.isArray(contactOutreach?.sent)?contactOutreach.sent:[];
+  const sentById=new Map(sent.map((message)=>[message.messageId,message]));
+  const wrap=section(
+    "Later contact",
+    attempts.length
+      ? String(attempts.length)+" delayed "+(attempts.length===1?"consideration":"considerations")
+      : null,
+  );
+
+  if(attempts.length===0){
+    wrap.append(el(
+      "p",
+      "thread-empty-note",
+      "No delayed private thought has become a later contact consideration.",
+    ));
+    return wrap;
+  }
+
+  for(const attempt of attempts){
+    const decision=attempt.decision?.payload??null;
+    const complete=attempt.complete?.payload??null;
+    const expression=attempt.expression?.payload??null;
+    const outcome=complete?.outcome??(decision===null?"pending":"considering");
+    const card=el("article","thread-contact-card");
+    const head=el("header","thread-contact-head");
+    head.append(
+      el("strong",null,prettyDate(attempt.startedAt)??attempt.startedAt??"Contact"),
+      el("span","thread-encounter-status "+outcome,human(outcome)),
+    );
+    card.append(head);
+
+    const recipient=complete?.recipientPartyId??decision?.recipientPartyId??null;
+    if(recipient!==null){
+      card.append(fact("Recipient route",recipient,{mono:true}));
+    }
+
+    const message=complete?.messageId===null||complete?.messageId===undefined
+      ?null
+      :sentById.get(complete.messageId)??null;
+    if(message!==null){
+      const outward=el("div","thread-contact-message");
+      outward.append(
+        el("span","thread-encounter-kicker","Outward message"),
+        el("p",null,message.messageText),
+      );
+      card.append(outward);
+    }else if(outcome==="kept_private"){
+      card.append(el(
+        "p",
+        "thread-empty-note",
+        "The Thread considered contact and chose to keep the thought private.",
+      ));
+    }else if(outcome==="route_unavailable"){
+      card.append(el(
+        "p",
+        "thread-empty-note",
+        "The Thread chose contact, but that route was no longer available before delivery.",
+      ));
+    }
+
+    if(attempt.decision!==null){
+      card.append(disclosure("Private contact decision",attempt.decision));
+    }
+    if(attempt.expression!==null){
+      card.append(disclosure("Outward expression authority",attempt.expression));
+    }
+    card.append(disclosure("Contact completion",attempt.complete));
+    wrap.append(card);
+  }
+
+  wrap.append(el(
+    "p",
+    "thread-journal-note",
+    "Routing capability says World can deliver to a party; it does not prove autobiographical recognition. Private contact judgment, outward wording and delivery remain separate authorities.",
+  ));
+  return wrap;
+}
+
 function socialAnalyticsSection({
   threadId,
   encounterStories,
@@ -1249,6 +1329,7 @@ export async function fetchThreadObservatory(threadId) {
   let experienceJournalEntries = [];
   let socialInteractions = [];
   let experienceConsolidation = Object.freeze({ queued:Object.freeze([]), consolidations:Object.freeze([]) });
+  let contactOutreach = Object.freeze({ attempts:Object.freeze([]), sent:Object.freeze([]) });
   let semanticStates = [];
   let lifeRelations = [];
   let journal = null;
@@ -1270,6 +1351,10 @@ export async function fetchThreadObservatory(threadId) {
       && typeof observatory.experienceConsolidation === "object"
       ? structuredClone(observatory.experienceConsolidation)
       : { queued:[], consolidations:[] };
+    contactOutreach = observatory.contactOutreach
+      && typeof observatory.contactOutreach === "object"
+      ? structuredClone(observatory.contactOutreach)
+      : { attempts:[], sent:[] };
     semanticStates = Array.isArray(observatory.semanticStates) ? observatory.semanticStates : [];
     lifeRelations = Array.isArray(observatory.lifeRelations) ? observatory.lifeRelations : [];
     deepWorld = {
@@ -1306,6 +1391,10 @@ export async function fetchThreadObservatory(threadId) {
       queued:Object.freeze([...(experienceConsolidation.queued??[])]),
       consolidations:Object.freeze([...(experienceConsolidation.consolidations??[])]),
     }),
+    contactOutreach:Object.freeze({
+      attempts:Object.freeze([...(contactOutreach.attempts??[])]),
+      sent:Object.freeze([...(contactOutreach.sent??[])]),
+    }),
     semanticStates:Object.freeze([...semanticStates]),
     lifeRelations:Object.freeze([...lifeRelations]),
     journal,
@@ -1323,6 +1412,7 @@ export function renderThreadObservatory({
   encounterError = null,
   experienceJournalEntries = [],
   experienceConsolidation = null,
+  contactOutreach = null,
   semanticStates = [],
   lifeRelations = [],
   journal = null,
@@ -1366,6 +1456,7 @@ export function renderThreadObservatory({
       semanticStates,
       lifeRelations,
     }),
+    laterContactSection(contactOutreach),
     memoriesSection(memories, firstText(identity.birthDate, identity.world?.thread?.identity?.birthDate), memoryError),
   );
   const who = whoSection(identity); if (who) view.append(who);
