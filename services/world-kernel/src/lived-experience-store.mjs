@@ -323,6 +323,13 @@ export class LivedExperienceStore {
           if (Date.parse(prior.occurred_at) > Date.parse(normalized.occurredAt)) {
             throw new TypeError("Encounter Story continuation cannot point forward in time");
           }
+          if(threadPresence.length===0){
+            const source=this.getEncounterStory(story.continuationOfEncounterRef);
+            if(source.story.beats.length!==1||source.story.beats[0].kind!=="occurrence"
+              ||!source.visualization.visualizationSourceReferences.includes(uniquePlaceOccurrenceRef)){
+              throw new TypeError("unobserved World continuation requires prior occurrence at the same place");
+            }
+          }
         }
         for (const participant of threadPresence) {
           const thread = this.#database.prepare(
