@@ -1,3 +1,4 @@
+import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -103,4 +104,42 @@ Do not add objective facts absent from the Encounter Story. Do not claim lasting
       providerRequestId:invocation.provenance.providerRequestId ?? null,
     }),
   });
+}
+
+/** Admit one observer's attention to an already-admitted objective World story. */
+export async function admitEncounterAttention({
+  thread,
+  situation,
+  encounterStory,
+  semanticStates=[],
+  memories=[],
+  experienceStore,
+  modelAdapter,
+  onExperienceQueued=null,
+}){
+  let attention=experienceStore.getThreadEncounterAttention(
+    thread.threadId,encounterStory.encounterId,
+  );
+  if(attention===null){
+    const appraisal=await appraiseEncounterAttention({
+      thread,situation,encounterStory,semanticStates,memories,modelAdapter,
+    });
+    attention=experienceStore.recordThreadEncounterAttention({
+      threadId:thread.threadId,
+      encounterRef:encounterStory.encounterId,
+      situationId:situation.situationId,
+      occurredAt:encounterStory.occurredAt,
+      outcome:appraisal.outcome,
+      experienceText:appraisal.experienceText,
+    });
+  }
+  if(attention.outcome==="noticed"){
+    await queueThreadExperienceConsolidation({
+      experienceStore,
+      experienceRecord:attention.experience,
+      queuedAt:attention.occurredAt,
+      onQueued:onExperienceQueued,
+    });
+  }
+  return attention;
 }
