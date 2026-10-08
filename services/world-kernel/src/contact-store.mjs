@@ -176,8 +176,8 @@ export class ContactStore {
   }
 
   listUnconsideredAfterthoughtSources({limit=4}={}){
-    if(!Number.isSafeInteger(limit)||limit<1||limit>32){
-      throw new TypeError("contact source limit must be 1-32");
+    if(!Number.isSafeInteger(limit)||limit<1||limit>256){
+      throw new TypeError("contact source limit must be 1-256");
     }
     return this.#database.prepare(`
       SELECT c.consolidation_id,c.thread_id,complete.recorded_at AS completed_at
