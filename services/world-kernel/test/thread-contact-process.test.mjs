@@ -306,3 +306,88 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
     rmSync(directory,{recursive:true,force:true});
   }
 });
+
+test("unroutable delayed residue drains without cognition or frontier starvation",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-n710-no-route-"));
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
+    stateScopeId:"world",
+  };
+  const world=openWorldStore(storage);
+  const experienceStore=openLivedExperienceStore(storage);
+  const contactStore=openContactStore(storage);
+  const livedNowStore=openLivedNowStore(storage);
+  const semanticStateStore=openSemanticStateStore(storage);
+  const memoryStore=openAutobiographicalMemoryStore(storage);
+  const situatedLifeStore=openSituatedLifeStore(storage);
+  try{
+    const kaleo=thread("thr_n710_no_route","Kaleo","evt_n710_no_route_seed");
+    world.seedThread(kaleo);
+
+    for(let index=0;index<5;index+=1){
+      completeAfterthought(experienceStore,{
+        threadId:kaleo.threadId,
+        situationId:`sit_n710_no_route_${index}`,
+        occurredAt:`2026-10-07T18:2${index}:00.000Z`,
+        startedAt:`2026-10-07T18:3${index}:00.000Z`,
+        completedAt:`2026-10-07T18:3${index}:01.000Z`,
+        text:`Private delayed question ${index}.`,
+      });
+    }
+
+    let modelCalls=0;
+    const adapter={
+      async invoke(){
+        modelCalls+=1;
+        throw new Error("unroutable contact should not invoke cognition");
+      },
+    };
+    let tick=0;
+    const process=createThreadContactProcess({
+      worldReader:world,
+      livedNowStore,
+      situatedLifeStore,
+      semanticStateStore,
+      memoryStore,
+      experienceStore,
+      contactStore,
+      modelAdapter:adapter,
+      now:()=>new Date(Date.parse("2026-10-07T19:00:00.000Z")+(tick++*1000)).toISOString(),
+      batchLimit:2,
+      sourceScanLimit:2,
+    });
+
+    const first=await process.runOnce();
+    const second=await process.runOnce();
+    const third=await process.runOnce();
+    const idle=await process.runOnce();
+
+    assert.deepEqual(
+      [first.attempted,second.attempted,third.attempted,idle.attempted],
+      [2,2,1,0],
+      "bounded no-route frontier did not make forward progress",
+    );
+    assert.equal(
+      [...first.results,...second.results,...third.results]
+        .every((item)=>item.outcome==="no_route"&&item.completed===true),
+      true,
+      "unroutable residue did not settle as no_route",
+    );
+    assert.equal(modelCalls,0,
+      "route absence triggered unnecessary cognition");
+    assert.equal(contactStore.hasPendingAttempts(),false,
+      "no-route contact left an incomplete attempt");
+    assert.equal(process.hasPending(),false,
+      "drained no-route residue kept World reconciliation alive");
+  }finally{
+    situatedLifeStore.close();
+    memoryStore.close();
+    semanticStateStore.close();
+    livedNowStore.close();
+    contactStore.close();
+    experienceStore.close();
+    world.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
+
