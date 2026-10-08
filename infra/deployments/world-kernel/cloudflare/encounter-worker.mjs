@@ -187,7 +187,6 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
-        liveEncounterRegistry:this.liveEncounterRegistry,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       this.environmentalEncounterApi = createEnvironmentalEncounterWriteApi({
@@ -227,6 +226,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
+        liveEncounterRegistry:this.liveEncounterRegistry,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       this.socialMeetingApi = createSocialMeetingWriteApi({
