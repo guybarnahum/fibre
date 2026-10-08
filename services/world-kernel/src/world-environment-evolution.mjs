@@ -34,7 +34,8 @@ function currentObservers(livedNowStore,at){
         threadId:situation.threadId,
         situationId:situation.situationId,
         physicalPlaceRef:situation.location.placeRef,
-        placeName:place?.displayName??null,
+        placeName:place?.physicalVenue?.displayName??place?.displayName??null,
+        physicalVenueRef:place?.physicalVenue?.ref??null,
         activity:situation.activity??null,
         establishedAt:situation.establishedAt,
       });
@@ -104,10 +105,16 @@ export function createWorldEnvironmentEvolution({
               });
             }else{
               const sourcePlace=source.threadPresence
-                .map((presence)=>livedNowStore.getWorldPlace(
-                  presence.threadId,opportunity.placeRef,{required:false},
-                ))
-                .find((place)=>place!==null)??null;
+                .map((presence)=>{
+                  const situation=livedNowStore.getSituation(presence.situationId,{
+                    required:false,
+                  });
+                  if(situation?.location?.kind!=="place")return null;
+                  return livedNowStore.getWorldPlace(
+                    presence.threadId,situation.location.placeRef,{required:false},
+                  )?.physicalVenue??null;
+                })
+                .find((place)=>place?.ref===opportunity.placeRef)??null;
               const input={
                 placeRef:opportunity.placeRef,
                 sourcePlace:sourcePlace===null?null:{
