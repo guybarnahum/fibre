@@ -174,6 +174,16 @@ export function createWorldReconciliationProcess({
           "world_environment_evolution",
           environmentEvolution===null?null:()=>environmentEvolution.runOnce(),
         );
+        // Partial per-opportunity failures stay retryable and report through
+        // the same injected boundary as other reconciliation failures.
+        for(const failure of environmentResult.result?.results??[]){
+          if(failure.outcome!=="failed")continue;
+          const detail=errorRecord(new Error(failure.message));
+          await onError?.({
+            kind:"world_environment_opportunity",
+            ...detail,
+          },new Error(failure.message));
+        }
         return Object.freeze({
           skipped: false,
           reason: null,
