@@ -201,6 +201,14 @@ export function bindLivePhysicalVenue(database,{
     identity:venueIdentity.trim(),
     country:country.trim(),
   }))}`;
+  const sameVenue=database.prepare(`
+    SELECT display_name,locality,country
+    FROM live_physical_venue_bindings WHERE venue_ref=? LIMIT 1
+  `).get(venueRef);
+  if(sameVenue!==undefined&&(sameVenue.display_name!==displayName.trim()
+    ||sameVenue.locality!==locality.trim()||sameVenue.country!==country.trim())){
+    throw new IntegrityError("physical venue identity contradicts admitted locality or name");
+  }
   const row=database.prepare(`
     SELECT venue_ref,display_name,locality,country,evidence_ref
     FROM live_physical_venue_bindings WHERE context_place_ref=?
