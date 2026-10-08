@@ -671,3 +671,17 @@ test("E7.5 World alarm follows the earliest lived boundary and then returns to q
     await runtime.stop();
   }
 });
+
+test("an absolute Flight Plan wake cannot postpone overdue World work",async()=>{
+  const process=createWorldReconciliationProcess();
+  const {runtime,infraDriver}=createRuntimeFixture({
+    process,now:()=>20_000,
+  });
+  try{
+    await infraDriver.scheduler.schedule("world",19_000);
+    const result=await runtime.requestWakeAt(60_000);
+    assert.equal(result.scheduledTimeMs,20_000,
+      "later Flight Plan boundary postponed earlier World work");
+    assert.equal(await infraDriver.scheduler.get("world"),20_000);
+  }finally{await runtime.stop();}
+});
