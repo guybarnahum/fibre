@@ -558,3 +558,40 @@ test("environmental noticing reaches delayed consolidation before World becomes 
       "settled environmental Experience left an unnecessary alarm");
   }finally{await runtime.stop();}
 });
+
+test("an in-flight World sweep cannot erase a newly earned environmental wake",async()=>{
+  let beginSweep;
+  let finishSweep;
+  const started=new Promise((resolve)=>{beginSweep=resolve;});
+  const finish=new Promise((resolve)=>{finishSweep=resolve;});
+  const process=createWorldReconciliationProcess({
+    presentationDelivery:{
+      async deliverPending(){
+        beginSweep();
+        await finish;
+        return {attempted:0,delivered:0,failed:0,results:[]};
+      },
+    },
+  });
+  const {runtime,infraDriver}=createRuntimeFixture({process,now:()=>1_000});
+  try{
+    await runtime.requestWake();
+    // The previous alarm is consumed as the Cloudflare handler begins.
+    await infraDriver.scheduler.cancel("world");
+    const inFlight=runtime.handleWake();
+    await started;
+    await runtime.requestWakeAfter(60_000);
+    finishSweep();
+    const settled=await inFlight;
+    assert.equal(settled.reconciliationPending,true,
+      "old World sweep erased a new environmental opportunity");
+    assert.equal(await infraDriver.scheduler.get("world"),61_000,
+      "the earned future wake was cancelled");
+    const next=await runtime.handleWake();
+    assert.equal(next.reconciliationPending,false,
+      "settled World work never returned to quiescence");
+  }finally{
+    finishSweep?.();
+    await runtime.stop();
+  }
+});
