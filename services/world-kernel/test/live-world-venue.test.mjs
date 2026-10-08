@@ -22,6 +22,7 @@ test("E7.4 Genesis learning contexts cannot impersonate a common physical venue"
       {threadId:"thr_home_study",sourceWorldRef:"genesis_context_one",sourcePlaceId:"learn_one"},
       {threadId:"thr_public_library",sourceWorldRef:"genesis_context_two",sourcePlaceId:"learn_two"},
       {threadId:"thr_other_public_library",sourceWorldRef:"genesis_context_three",sourcePlaceId:"learn_three"},
+      {threadId:"thr_reused_genesis_library",sourceWorldRef:"genesis_context_two",sourcePlaceId:"learn_two"},
     ];
     for(const context of contexts){
       db.prepare("INSERT INTO fibre_civil_registrations(thread_id,world_ref) VALUES (?,?)")
@@ -35,7 +36,7 @@ test("E7.4 Genesis learning contexts cannot impersonate a common physical venue"
           ?"Studying at home on a bed":"Reading at the neighborhood library",
         authority:"live-world-place-admission-v1",
       };
-      db.prepare(`INSERT INTO live_world_place_records(
+      db.prepare(`INSERT OR IGNORE INTO live_world_place_records(
         place_ref,live_world_ref,source_world_ref,source_place_id,place_kind,
         record_json,record_digest
       ) VALUES (?,?,?,?,?,?,?)`).run(
@@ -73,6 +74,11 @@ test("E7.4 Genesis learning contexts cannot impersonate a common physical venue"
         rightWorldPlaces:listLiveWorldPlaces(db,other.threadId),
       },
     ),true,"explicitly attested common venue did not permit co-presence");
+    assert.equal(
+      listLiveWorldPlaces(db,"thr_reused_genesis_library")[0].physicalVenue,
+      undefined,
+      "another Thread inherited a public venue merely by sharing Genesis context",
+    );
     assert.equal(meetingPresenceCompatible(
       situation(home),situation(library),{
         leftWorldPlaces:listLiveWorldPlaces(db,home.threadId),
