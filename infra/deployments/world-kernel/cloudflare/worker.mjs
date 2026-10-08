@@ -151,6 +151,9 @@ function threadObservatory(runtime, threadId) {
           ?null
           :structuredClone(livedNow.getSituation(presence.situationId,{required:false})),
         attention:structuredClone(experience.getThreadEncounterAttention(threadId, story.encounterId)),
+        worldEnvironmentFollowup:structuredClone(
+          experience.inspectEnvironmentalFollowup(story.encounterId),
+        ),
       });
     });
     const currentSituation = livedNow.getCurrentSituation(threadId);
