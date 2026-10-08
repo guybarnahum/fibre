@@ -139,3 +139,66 @@ test("Thread-to-Thread Live Encounter allows one Thread to cut into another with
   assert.equal(Object.hasOwn(result.live,"turnOwner"),false,
     "live social encounter introduced turn ownership");
 });
+
+test("Thread live encounter can contribute an outward action without forcing speech", async () => {
+  const mina=context("thr_action_mina","Mina");
+  const noor=context("thr_action_noor","Noor");
+  const choices=new Map();
+
+  const modelAdapter={
+    provider:"fixture",
+    modelId:"fixture-live-action",
+    configuration:{transport:"fixture"},
+    async invoke(call){
+      const name=call.input.thread.name;
+      const count=(choices.get(name)??0)+1;
+      choices.set(name,count);
+      if(name==="Noor"&&count===1){
+        return {
+          output:{decision:"act",actionText:"Noor slides the sketchbook slightly toward Mina."},
+          provenance:{provider:"fixture",modelId:"fixture-live-action-choice"},
+        };
+      }
+      return {
+        output:{decision:"silent",actionText:null},
+        provenance:{provider:"fixture",modelId:"fixture-live-action-choice"},
+      };
+    },
+    async *streamExpression(){
+      throw new Error("action-only proof should not stream speech");
+    },
+  };
+
+  const result=await runThreadLiveSocialEncounter({
+    initiator:mina,
+    counterparty:noor,
+    request:{
+      initiatorThreadId:mina.thread.threadId,
+      text:"Can I see what you're working on?",
+    },
+    stance:{
+      decision:"accept",
+      expression:null,
+      suggestedAt:null,
+      reason:"I am comfortable showing it.",
+    },
+    modelAdapter,
+  });
+
+  assert.deepEqual(
+    result.story.beats.map((beat)=>beat.kind),
+    ["utterance","action"],
+    "outward action did not become live encounter history",
+  );
+  assert.equal(
+    result.story.beats[1].actorThreadId,
+    noor.thread.threadId,
+    "live action lost its actor",
+  );
+  assert.equal(
+    result.story.beats[1].text,
+    "Noor slides the sketchbook slightly toward Mina.",
+    "live action lost its observable content",
+  );
+});
+
