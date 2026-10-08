@@ -196,7 +196,11 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
     const lived = openLivedNowStore(localWorldStateStorage(databasePath));
     lived.recordPlan(personalPlan(life));
 
-    const service = createLivedNowService({ livedNowStore: lived });
+    const earned=[];
+    const service = createLivedNowService({
+      livedNowStore:lived,
+      onSituationEnacted:(situation)=>earned.push(situation.situationId),
+    });
     const moving = await service.ensure({
       threadId: life.thread.threadId,
       at: "2026-09-10T05:20:00Z",
@@ -221,6 +225,8 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
       at: "2026-09-10T05:45:00Z",
     });
     assert.deepEqual(retry, constrained, "ensuring the same present should be idempotent");
+    assert.deepEqual(earned,[moving.situationId,constrained.situationId],
+      "one enacted transition should earn one opportunity, not one per ensure");
 
     await assert.rejects(() => service.ensure({
       threadId: life.thread.threadId,
