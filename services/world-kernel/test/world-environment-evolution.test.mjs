@@ -280,3 +280,80 @@ test("E7.2 with present but unexposed Threads admits no change",async()=>{
     assert.equal(calls,1,"World reevaluated an already rejected opportunity");
   }finally{f.close();}
 });
+
+test("E7.3 one observable World event yields distinct lives without coerced memory",async()=>{
+  const f=fixture();
+  try{
+    const source=f.source("wpl_horizon","Storm clouds approach the northern horizon.");
+    f.setCurrent([
+      f.situation(f.local,"wpl_horizon"),
+      f.situation(f.distant,"wpl_faraway_hill"),
+    ]);
+    const queued=[];
+    const calls=[];
+    const process=createWorldEnvironmentEvolution({
+      experienceStore:f.experiences,livedNowStore:f.livedNowStore,
+      worldReader:f.worldReader,semanticStateStore:f.semanticStateStore,
+      memoryStore:f.memoryStore,
+      onExperienceQueued:async(item)=>queued.push(item.experienceId),
+      modelAdapter:{
+        async invoke(request){
+          calls.push(request.clientRequestId);
+          if(request.clientRequestId.startsWith("world-environment-followup_"))return {
+            output:{
+              outcome:"changed",
+              occurrenceText:"A broad lightning flash lights the horizon.",
+              potentialObserverThreadIds:[f.local.threadId,f.distant.threadId],
+            },
+          };
+          if(request.clientRequestId.startsWith("encounter-attention_")){
+            const local=request.input.thread.threadId===f.local.threadId;
+            return {
+              output:{
+                outcome:local?"noticed":"not_noticed",
+                experienceText:local?"I look up in surprise as the sky flashes.":null,
+              },
+              provenance:{provider:"fixture",modelId:"e7-attention"},
+            };
+          }
+          throw new Error("unexpected cognition");
+        },
+      },
+      now:()=>DUE,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.failed,0,"genuine environmental observation failed");
+    assert.equal(result.noticed,1,"World attention must preserve individual noticing");
+    const story=f.experiences.getSharedEnvironmentalStory({
+      occurredAt:DUE,placeRef:"wpl_horizon",
+    });
+    assert.equal(story.story.continuationOfEncounterRef,source.encounterId,
+      "shared perception lost the event's objective lineage");
+    assert.deepEqual(new Set(story.threadPresence.map((p)=>p.threadId)),
+      new Set([f.local.threadId,f.distant.threadId]),
+      "two places did not share the same potentially visible event");
+    const noticed=f.experiences.getThreadEncounterAttention(
+      f.local.threadId,story.encounterId,
+    );
+    const missed=f.experiences.getThreadEncounterAttention(
+      f.distant.threadId,story.encounterId,
+    );
+    assert.equal(noticed.outcome,"noticed","local witness did not form lived attention");
+    assert.equal(typeof noticed.experience.experienceText,"string",
+      "noticed World event did not become personal Experience");
+    assert.equal(missed.outcome,"not_noticed","distant witness was forced to notice");
+    assert.equal(missed.experience,null,"unnoticed event fabricated personal Experience");
+    assert.deepEqual(f.experiences.listUnclaimedExperienceConsolidationCandidates({
+      limit:8,
+    }).map((item)=>item.experienceId),[noticed.experience.experienceId],
+    "only lived Experience may enter delayed memory consideration");
+    assert.deepEqual(queued,[noticed.experience.experienceId],
+      "World did not wake selective consolidation for real Experience");
+
+    await process.runOnce();
+    assert.equal(calls.filter((id)=>id.startsWith("world-environment-followup_")).length,1,
+      "World reauthored an admitted objective change");
+    assert.equal(calls.filter((id)=>id.startsWith("encounter-attention_")).length,2,
+      "retry reappraised an admitted subjective decision");
+  }finally{f.close();}
+});
