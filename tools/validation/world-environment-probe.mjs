@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdirSync,writeFileSync } from "node:fs";
 import { dirname,resolve } from "node:path";
 import { fileURLToPath,pathToFileURL } from "node:url";
@@ -13,6 +14,30 @@ import {
 
 const ROOT=fileURLToPath(new URL("../../",import.meta.url));
 const SCAN_LIMIT=40;
+
+// A read-only probe may be newer than the runtime after operator-doc or
+// probe-command edits. Fail closed on every other code/dependency change.
+function runtimeSourceMatches(deployedSha,checkoutSha){
+  if(deployedSha===checkoutSha)return true;
+  const git=(args)=>execFileSync("git",args,{cwd:ROOT,encoding:"utf8"}).trim();
+  const files=git(["diff","--name-only",deployedSha,checkoutSha]).split("\n");
+  const probePaths=new Set([
+    "tools/validation/e7-staging-probe.mjs",
+    "tools/validation/world-environment-probe.mjs",
+  ]);
+  if(files.some((path)=>path!=="package.json"
+    &&path!=="AGENTS.md"
+    &&!path.startsWith("docs/")
+    &&!probePaths.has(path)))return false;
+  if(files.includes("package.json")){
+    const before=JSON.parse(git(["show",`${deployedSha}:package.json`]));
+    const after=JSON.parse(git(["show",`${checkoutSha}:package.json`]));
+    delete before.scripts["e7:staging:probe"];
+    delete after.scripts["world-environment:probe"];
+    if(JSON.stringify(before)!==JSON.stringify(after))return false;
+  }
+  return true;
+}
 
 function parseArgs(args){
   if(args.length!==2||args[0]!=="--env"){
@@ -144,7 +169,8 @@ export async function runWorldEnvironmentProbe({
     const outcomes=new Set(item.observers.map((observer)=>observer.attention));
     return item.observers.length>=2&&outcomes.has("noticed")&&outcomes.has("not_noticed");
   })??null;
-  const status=deployedSha!==head?"deployment_outdated"
+  const runtimeMatches=runtimeSourceMatches(deployedSha,head);
+  const status=!runtimeMatches?"deployment_outdated"
     :contrasting!==null?"contrasting_attention_proven"
       :valid.length>0?"independent_attention_proven"
         :history.some((item)=>item.status==="pending")?"pending_world_followup"
@@ -160,6 +186,7 @@ export async function runWorldEnvironmentProbe({
     environment:target,
     validatorGitSha:head,
     deployedGitSha:deployedSha,
+    runtimeSourceMatches:runtimeMatches,
     checkedAt:new Date().toISOString(),
     scannedThreadCount:cards.length,
     observedThreadCount:observatories.size,
@@ -189,7 +216,8 @@ export async function runWorldEnvironmentProbe({
   });
   emit({
     event:"world-environment-probe-complete",status,complete:evidence.complete,
-    deployedGitSha:deployedSha,unavailableThreadCount:unavailable,evidencePath,
+    deployedGitSha:deployedSha,runtimeSourceMatches:runtimeMatches,
+    unavailableThreadCount:unavailable,evidencePath,
   });
   return Object.freeze({evidence,evidencePath});
 }
