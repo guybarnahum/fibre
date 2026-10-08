@@ -318,6 +318,8 @@ Implemented foundation:
 
 **Explicit delivery boundary:** a delivered Person message is readable from the opted-in Person inbox. A delivered Thread message is currently durable recipient-addressed contact authority, but N7.10 does **not** claim the recipient Thread has noticed, experienced, remembered, or answered it merely because the row exists. Turning Thread inbox delivery into recipient lived perception/Experience is preserved for the N7.11 causal north-star proof, where receipt must become causally observable without inventing co-presence or a chat-session authority.
 
+**Person identity boundary:** N7.10 can contact an already-authoritative `human_source` relation. Ordinary public `/meet` visitors are still intentionally anonymous/thin and cannot become future contact identity merely by supplying a name. “Kaleo met Guy through public Meet and later chose to contact Guy” therefore remains unclaimed until Fibre admits a minimal stable Person participant-identity witness.
+
 ## N7.11 — causal north-star proof
 
 Prove:
