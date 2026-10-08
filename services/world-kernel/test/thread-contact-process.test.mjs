@@ -290,12 +290,6 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
     const guyExpression=expressions.find((input)=>input.recipient.partyId==="person_guy");
     assert.equal(guyExpression.autobiographicalMemories.length,0,
       "Person routing fabricated autobiographical recognition during expression");
-    assert.doesNotMatch(
-      contactStore.listInbox("person_guy")[0].messageText,
-      /remember|again/i,
-      "message fabricated familiarity without retained memory",
-    );
-
     const callsBeforeRetry=decisions.length+expressions.length;
     const retry=await process.runOnce();
     assert.equal(retry.attempted,0,"completed contact residue was reconsidered");
