@@ -202,6 +202,7 @@ function threadObservatory(runtime, threadId) {
       livedNow:Object.freeze({
         currentSituation:structuredClone(currentSituation),
         previousSituation:structuredClone(previousSituation),
+        nextAutonomousBoundary:structuredClone(livedNow.inspectLivedBoundary(threadId)),
         explorationContinuity:structuredClone(explorationContinuity),
         explorationInteroception:structuredClone(explorationInteroception),
         currentPersonalPlan:currentPersonalPlanWitness,
