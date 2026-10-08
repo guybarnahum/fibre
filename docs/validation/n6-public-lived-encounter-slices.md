@@ -527,6 +527,8 @@ World capability
 
 The UI is evidence that a client can use Fibre; it is not the proof that Fibre possesses the capability.
 
+**Deferred run-path audit (2026-10-08):** [Meet / Encounter runtime audit](meet-encounter-run-path-audit.md) compares the accepted N6 public request/response authority to N7 interruptible Live Encounter, documents unproven partial-retry and slow-inference scene risks, and prioritizes cheaper, less duplicated implementation. The public N6.6 CLI/endpoint/Viewer acceptance gates above remain open; auditing them did not close them.
+
 ## Natural Thread -> Thread life after N6
 
 Natural social life remains important but is not an N6 blocker.
