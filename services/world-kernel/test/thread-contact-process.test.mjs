@@ -619,22 +619,29 @@ test("delivered private contact may remain unnoticed and never become memory",as
       participantRefs:[],sourcePlanRefs:[],
     };
     let appraisals=0;
+    let ensured=0;
     const process=createThreadContactPerception({
       contactStore,worldReader:world,semanticStateStore,memoryStore,experienceStore,
       livedNow:{async ensure({threadId}) {
         assert.equal(threadId,recipient.threadId);
+        ensured++;
         return situated;
       }},
       livedNowStore:{getSituation:()=>situated},
       now:()=>"2026-10-07T18:26:00.000Z",
       modelAdapter:{async invoke(){
         appraisals++;
+        if(appraisals===1)throw new Error("temporary attention provider failure");
         return {
           output:{outcome:"not_noticed",experienceText:null},
           provenance:{provider:"fixture",modelId:"recipient-quiet-test"},
         };
       }},
     });
+    const interrupted=await process.runOnce();
+    assert.equal(interrupted.failed,1,"temporary failure was silently counted as notice");
+    assert.equal(contactStore.inspectContactReceptions(recipient.threadId)[0].situationId,
+      situated.situationId,"partial attention lost its lived witness");
     const result=await process.runOnce();
     assert.equal(result.failed,0);
     assert.equal(result.noticed,0,"unnoticed delivery was treated as noticed");
@@ -653,7 +660,10 @@ test("delivered private contact may remain unnoticed and never become memory",as
     assert.equal(experienceStore.hasPendingExperienceConsolidation(),false,
       "unnoticed delivery entered memory consolidation");
     assert.equal((await process.runOnce()).attempted,0);
-    assert.equal(appraisals,1,"quiet delivery was reappraised");
+    assert.equal(appraisals,2,"partial attention was not retried exactly once");
+    assert.equal(ensured,1,"partial attention re-authored the recipient's life");
+    assert.equal(experienceStore.listEncounterStories(recipient.threadId).length,1,
+      "attention retry duplicated the objective addressed message");
   }finally{
     contactStore.close();
     experienceStore.close();
