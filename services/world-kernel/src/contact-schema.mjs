@@ -2,7 +2,7 @@ export function createContactTables(database){
   database.exec(`
     CREATE TABLE IF NOT EXISTS person_contact_capabilities (
       capability_id TEXT PRIMARY KEY,
-      party_id TEXT NOT NULL UNIQUE,
+      party_id TEXT NOT NULL,
       display_name TEXT NOT NULL,
       registered_at TEXT NOT NULL,
       record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%')
@@ -51,6 +51,8 @@ export function createContactTables(database){
       FOREIGN KEY (source_consolidation_id) REFERENCES thread_experience_consolidations(consolidation_id)
     ) STRICT;
 
+    CREATE INDEX IF NOT EXISTS idx_person_contact_capabilities_party
+      ON person_contact_capabilities(party_id,registered_at,capability_id);
     CREATE INDEX IF NOT EXISTS idx_thread_contact_attempts_thread
       ON thread_contact_attempts(thread_id,started_at,contact_attempt_id);
     CREATE INDEX IF NOT EXISTS idx_thread_contact_messages_recipient
