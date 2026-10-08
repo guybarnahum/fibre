@@ -9,7 +9,6 @@ import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-
 import { openContactStore } from "../src/contact-store.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
-import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { lifeRelationId } from "../src/situated-life-domain.mjs";
@@ -51,6 +50,26 @@ function relation({threadId,partyId,kind,displayName,sourceEvent,role}){
     provenance:"world_recorded",
     recordedAt:"2026-10-07T18:10:00.000Z",
   };
+}
+
+function livedNowFixture(calls){
+  return Object.freeze({
+    async ensure({threadId,at}){
+      calls.push(Object.freeze({threadId,at}));
+      return Object.freeze({
+        situationId:`sit_contact_now_${calls.length}`,
+        threadId,
+        establishedAt:at,
+        phase:"at_place",
+        location:Object.freeze({kind:"place",placeRef:"place_contact_now"}),
+        mediatedContext:null,
+        activity:"Continuing the day when a delayed thought becomes relevant again.",
+        reason:"World reconciled actual life before fresh contact cognition.",
+        participantRefs:Object.freeze([]),
+        sourcePlanRefs:Object.freeze([]),
+      });
+    },
+  });
 }
 
 function completeAfterthought(experienceStore,{
@@ -134,10 +153,11 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
   const world=openWorldStore(storage);
   const experienceStore=openLivedExperienceStore(storage);
   const contactStore=openContactStore(storage);
-  const livedNowStore=openLivedNowStore(storage);
   const semanticStateStore=openSemanticStateStore(storage);
   const memoryStore=openAutobiographicalMemoryStore(storage);
   const situatedLifeStore=openSituatedLifeStore(storage);
+  const ensured=[];
+  const livedNow=livedNowFixture(ensured);
   try{
     const kaleo=thread("thr_n710_kaleo","Kaleo","evt_n710_kaleo_seed");
     const noor=thread("thr_n710_noor","Noor","evt_n710_noor_seed");
@@ -198,6 +218,8 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
       async invoke(call){
         if(call.clientRequestId.startsWith("later-contact-decision_")){
           decisions.push(structuredClone(call.input));
+          assert.equal(call.input.currentSituation?.threadId,kaleo.threadId,
+            "contact decision did not receive ensured lived context");
           const residue=call.input.delayedPrivateResidue[0].text;
           assert.equal(call.input.autobiographicalMemories.length,0,
             "routing identity was silently converted into autobiographical recognition");
@@ -237,6 +259,8 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
         }
         if(call.clientRequestId.startsWith("later-contact-expression_")){
           expressions.push(structuredClone(call.input));
+          assert.equal(call.input.currentSituation?.threadId,kaleo.threadId,
+            "contact expression did not receive ensured lived context");
           const recipient=call.input.recipient.partyId;
           return {
             output:{
@@ -258,7 +282,7 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
     ];
     const process=createThreadContactProcess({
       worldReader:world,
-      livedNowStore,
+      livedNow,
       situatedLifeStore,
       semanticStateStore,
       memoryStore,
@@ -286,6 +310,8 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
       "keep_private incorrectly became outward contact");
     assert.equal(expressions.length,2,
       "outward expression did not remain separate from private contact judgment");
+    assert.equal(ensured.length,decisions.length+expressions.length,
+      "fresh contact cognition escaped canonical LivedNow");
 
     const guyExpression=expressions.find((input)=>input.recipient.partyId==="person_guy");
     assert.equal(guyExpression.autobiographicalMemories.length,0,
@@ -299,7 +325,6 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
     situatedLifeStore.close();
     memoryStore.close();
     semanticStateStore.close();
-    livedNowStore.close();
     contactStore.close();
     experienceStore.close();
     world.close();
@@ -316,10 +341,11 @@ test("unroutable delayed residue drains without cognition or frontier starvation
   const world=openWorldStore(storage);
   const experienceStore=openLivedExperienceStore(storage);
   const contactStore=openContactStore(storage);
-  const livedNowStore=openLivedNowStore(storage);
   const semanticStateStore=openSemanticStateStore(storage);
   const memoryStore=openAutobiographicalMemoryStore(storage);
   const situatedLifeStore=openSituatedLifeStore(storage);
+  const ensured=[];
+  const livedNow=livedNowFixture(ensured);
   try{
     const kaleo=thread("thr_n710_no_route","Kaleo","evt_n710_no_route_seed");
     world.seedThread(kaleo);
@@ -345,7 +371,7 @@ test("unroutable delayed residue drains without cognition or frontier starvation
     let tick=0;
     const process=createThreadContactProcess({
       worldReader:world,
-      livedNowStore,
+      livedNow,
       situatedLifeStore,
       semanticStateStore,
       memoryStore,
@@ -374,6 +400,8 @@ test("unroutable delayed residue drains without cognition or frontier starvation
     );
     assert.equal(modelCalls,0,
       "route absence triggered unnecessary cognition");
+    assert.equal(ensured.length,0,
+      "route absence unnecessarily reconciled LivedNow");
     assert.equal(contactStore.hasPendingAttempts(),false,
       "no-route contact left an incomplete attempt");
     assert.equal(process.hasPending(),false,
@@ -382,7 +410,6 @@ test("unroutable delayed residue drains without cognition or frontier starvation
     situatedLifeStore.close();
     memoryStore.close();
     semanticStateStore.close();
-    livedNowStore.close();
     contactStore.close();
     experienceStore.close();
     world.close();
