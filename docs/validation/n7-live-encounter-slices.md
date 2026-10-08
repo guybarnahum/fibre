@@ -159,7 +159,7 @@ Accepted after the focused World-interleaving suite and full `npm run slice:vali
 
 Accepted after the focused consolidation/runtime suite and full `npm run slice:validate` passed locally, including restart continuity where queued Experience survives reopening, consolidates later, and only retained autobiography reaches a subsequent encounter.
 
-## N7.6 — Observatory causal encounter view — IMPLEMENTED, VALIDATION PENDING
+## N7.6 — Observatory causal encounter view — ACCEPTED 2026-10-07
 
 **Capability:** Admin makes the causal path inspectable without collapsing authorities.
 
@@ -186,7 +186,9 @@ Implemented foundation:
 
 **High-value proof:** two continued Encounter Stories become one derived episode in causal order; the episode resolves one completed consolidation, delayed Journal, retained Memory, delayed question, and explicitly evidenced semantic/relationship consequences while those records remain separately inspectable authorities.
 
-## N7.7 — social analytics, not a sociability score — CURRENT
+Accepted after focused Observatory/consolidation validation and full `npm run slice:validate` passed locally.
+
+## N7.7 — social analytics, not a sociability score — ACCEPTED 2026-10-07
 
 Expose derived, non-causal time-windowed analytics:
 
@@ -217,7 +219,9 @@ Implemented foundation:
 
 **High-value proof:** a bounded 30-day history containing outgoing and incoming Thread contact, a silent un-noticed witnessed conversation, an anonymous visitor, one continued episode, one declined overture, one durable consequence and one stale out-of-window encounter yields the expected eight-dimensional profile while exposing no `score` field. The witness increases objective exposure but does not become breadth or a responsiveness failure when the Thread never noticed or joined it.
 
-## N7.8 — rich Thread -> Thread Live Encounter
+Accepted in the same green focused/full validation pass as N7.6.
+
+## N7.8 — rich Thread -> Thread Live Encounter — CURRENT
 
 Replace the accepted social meeting's fixed opener -> reply -> closing generation with the same duplex engine.
 
@@ -231,6 +235,23 @@ Preserve:
 - no caller-selected counterparty or manufactured availability.
 
 Conversation may remain brief or never begin after admission if lived context changes.
+
+Implemented foundation:
+
+- World discovery, Situated Percept, cheap salience, initiator `initiate | not_initiate`, and recipient `accept | decline | defer` remain unchanged admission authorities;
+- immediately before an accepted encounter begins, both authoritative `CurrentSituation` witnesses are re-read; if either changed or co-presence no longer holds, the accepted social intention remains recorded but no stale-scene Encounter Story or Live Encounter is manufactured;
+- accepted request and any outward acceptance expression seed the same `createLiveEncounter()` primitive used by Person -> Thread work;
+- subsequent sentence/action/end opportunities are dispatched independently to each Thread; each opportunity runs a Thread-owned `speak | act | silent` choice;
+- `speak` uses provider-neutral `streamExpression()` into Live Encounter, so one Thread may begin speaking at a sentence boundary and interrupt the other's active expression;
+- interrupted speech preserves only its audible prefix with `completion:"interrupted"`; unseen provider suffix is discarded;
+- `act` becomes a participant action event and an objective Encounter Story action beat; it may create a new opportunity for the other Thread without forcing speech;
+- a silent choice produces no beat and no private refusal record;
+- once no participant wants another contribution, the bounded runtime becomes quiescent; there is no fixed opener -> reply -> closing script and no turn owner;
+- a temporary `maxOpportunityAppraisals=8` compute-burst guard prevents runaway autonomous model loops. Hitting it yields `endedBy:"bounded"`; this is explicitly a runtime bound, not a social quota, successful-conversation target, or semantic ending.
+
+**High-value proof:** Noor begins a multi-part live expression; Mina takes a sentence-boundary opportunity and starts speaking; Noor is interrupted and only her audible prefix survives in the objective story. A second proof shows a Thread can contribute an outward action without being forced to speak. Existing social-meeting proof now verifies the initiator can remain silent after the recipient replies rather than receiving a canned closing.
+
+**Life-over-chat proof:** if a recipient accepts and then either participant's authoritative CurrentSituation changes before the live encounter starts, no Encounter Story/Experience is manufactured from the stale accepted intention.
 
 ## N7.9 — delayed thought and spontaneous expression
 
