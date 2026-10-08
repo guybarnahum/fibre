@@ -314,6 +314,8 @@ Implemented foundation:
 
 **Bounded-frontier proof:** five unroutable delayed residues drain in batches `2,2,1` with zero model calls and zero LivedNow reconciliation, then World returns to quiescence rather than rescanning them indefinitely.
 
+**Route-authority proof:** if a Person revokes Fibre contact after the Thread has already made a durable private `contact` decision but before expression/delivery, the persisted desire does not override routing authority: no expression cognition runs, no message is sent, and the attempt settles as `route_unavailable`.
+
 **Explicit delivery boundary:** a delivered Person message is readable from the opted-in Person inbox. A delivered Thread message is currently durable recipient-addressed contact authority, but N7.10 does **not** claim the recipient Thread has noticed, experienced, remembered, or answered it merely because the row exists. Turning Thread inbox delivery into recipient lived perception/Experience is preserved for the N7.11 causal north-star proof, where receipt must become causally observable without inventing co-presence or a chat-session authority.
 
 ## N7.11 — causal north-star proof
