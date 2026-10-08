@@ -9,6 +9,7 @@ import { openIdentityStore } from "../src/identity-store.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { createLivedNowService, LivedNowCoverageError } from "../src/lived-now-service.mjs";
+import { createLivedBoundaryProcess, nextLivedBoundary } from "../src/lived-now-boundary.mjs";
 import { livedPlanId, livedSituationId } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import {
@@ -540,5 +541,42 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
     semantic.close();
     identity.close();
     world.close();
+    lived.close();
+  }));
+
+test("E7.5 admitted Flight Plan boundaries advance life without polling",async()=>
+  withDatabase(async(databasePath)=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    lived.recordPlan(personalPlan(life));
+    const enacted=[];
+    const livedNow=createLivedNowService({
+      livedNowStore:lived,
+      onSituationEnacted:(situation)=>enacted.push(situation.phase),
+      onSituationResolved:(situation)=>{
+        lived.scheduleNextLivedBoundary({
+          threadId:situation.threadId,situationId:situation.situationId,
+          dueAt:nextLivedBoundary(lived,situation),
+        });
+      },
+    });
+    const at="2026-09-10T05:05:00Z";
+    const initial=await livedNow.ensure({threadId:life.thread.threadId,at});
+    assert.equal(initial.phase,"at_place");
+    assert.equal(lived.nextLivedBoundaryAt(),"2026-09-10T05:15:00.000Z");
+    assert.deepEqual(await livedNow.ensure({threadId:life.thread.threadId,at}),initial);
+    const boundary=createLivedBoundaryProcess({
+      livedNowStore:lived,livedNow,now:()=>"2026-09-10T05:15:00.000Z",
+    });
+    const advanced=await boundary.runOnce();
+    assert.equal(advanced.failed,0,"Flight Plan advancement failed");
+    assert.equal(advanced.attempted,1,"World advanced too many lives");
+    assert.equal(lived.getCurrentSituation(life.thread.threadId).phase,"in_transit",
+      "World did not enact the planned departure");
+    assert.equal(advanced.nextDueAt,"2026-09-10T05:30:00.000Z",
+      "World did not schedule the next arrival");
+    assert.deepEqual(enacted,["at_place","in_transit"]);
+    assert.equal((await boundary.runOnce()).attempted,0,
+      "same Flight Plan boundary was replayed");
     lived.close();
   }));
