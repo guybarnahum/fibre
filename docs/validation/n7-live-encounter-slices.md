@@ -221,7 +221,7 @@ Implemented foundation:
 
 Accepted in the same green focused/full validation pass as N7.6.
 
-## N7.8 — rich Thread -> Thread Live Encounter — CURRENT
+## N7.8 — rich Thread -> Thread Live Encounter — ACCEPTED 2026-10-07
 
 Replace the accepted social meeting's fixed opener -> reply -> closing generation with the same duplex engine.
 
@@ -253,11 +253,31 @@ Implemented foundation:
 
 **Life-over-chat proof:** if a recipient accepts and then either participant's authoritative CurrentSituation changes before the live encounter starts, no Encounter Story/Experience is manufactured from the stale accepted intention.
 
-## N7.9 — delayed thought and spontaneous expression
+Accepted after focused Live Encounter/social-meeting validation and full `npm run slice:validate` passed locally.
+
+## N7.9 — delayed thought and spontaneous expression — CURRENT
 
 A Thread may form a later insight/question/intention from consolidation and may choose to speak during a live encounter without first being addressed.
 
 No required follow-up and no response quota.
+
+Implemented foundation:
+
+- consolidation keeps `insight | question | intention` as durable private residue in the existing decision stage; no new thought/session authority is added;
+- after consolidation is durably complete, non-empty afterthought residue is offered best-effort to an ephemeral World live-encounter registry;
+- Local and Cloudflare World runtimes instantiate the same domain registry; consolidation scheduling remains provider-neutral through the existing `infraDriver.scheduler` reconciliation path;
+- a currently active Thread encounter registers only for its own lifetime; after close it is removed and later residue is not delivered into a dead conversation;
+- live delivery becomes a **private** `afterthought` speaking opportunity visible only to the owning Thread; the other participant never receives the thought, source, or private context;
+- the Thread still independently chooses `speak | act | silent`; delayed thought is not an automatic utterance;
+- if the Thread speaks or acts, only that outward expression becomes objective Encounter Story history; the private residue remains separately durable;
+- live delivery does not consume, clear or mark the afterthought handled. If no encounter is active, the durable residue simply remains available for later-life/contact logic;
+- live-delivery failure cannot invalidate an already-completed consolidation; ephemeral opportunity delivery is not persistence authority.
+
+**High-value proof:** Mina first receives an ordinary sentence-boundary opportunity while Noor is speaking and chooses silence. A durable delayed question is then published through the active registry; Mina receives a private `afterthought` opportunity, independently chooses to speak, interrupts Noor, and only the resulting outward speech becomes shared history. A separate proof shows another participant receives none of Mina's private opportunity.
+
+**Durability proof:** consolidation publishes the exact durable residue to the registry, empty residue creates no opportunity, and Observatory inspection still sees the same afterthought afterward.
+
+**Explicit deferred extension:** the current live Thread-to-Thread invocation admits its Encounter Story/Experiences when that invocation closes. N7.9 therefore proves a delayed thought from already-admitted prior Experience can surface spontaneously during a later/current live encounter. Mid-stream consolidation of the *same still-running encounter* remains deferred; enabling it will require admitting bounded live Encounter Story/Experience checkpoints without introducing a turn manager or durable chat session.
 
 ## N7.10 — Thread-initiated later contact
 
