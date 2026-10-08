@@ -441,7 +441,7 @@ The World model sees no Thread Genome, private memory, intentions or feelings. I
 
 ### E7.3 — Natural shared-place acceptance — NOT STARTED
 
-When the World supplies natural overlap, demonstrate multiple independently different attention/Experience outcomes for one E7.1 occurrence. E7.2's unattended follow-up must remain World truth, not retroactively claimed personal experience. The future step from grounded potential perception to actual independent `noticed | not_noticed` at the event time must reuse the existing attention/Experience authority. An eligible distant observer is not automatically a conversation participant.
+When the World supplies natural overlap, demonstrate multiple independently different attention/Experience outcomes for one E7.1 occurrence. E7.2 admits a follow-up only when potentially perceptible, but that does not retroactively grant anyone personal Experience. The future step from grounded potential perception to actual independent `noticed | not_noticed` at the event time must reuse the existing attention/Experience authority. An eligible distant observer is not automatically a conversation participant.
 
 ### Explicitly deferred
 
