@@ -977,6 +977,40 @@ export class LivedExperienceStore {
     };
   }
 
+  listCompletedAfterthoughtConsolidations({limit=64}={}) {
+    if(!Number.isSafeInteger(limit)||limit<1||limit>256){
+      throw new TypeError("completed afterthought consolidation limit must be 1-256");
+    }
+    return this.#database.prepare(`
+      SELECT c.consolidation_id,c.thread_id,c.started_at,c.experience_refs_json,
+        decision.recorded_at AS decision_recorded_at,
+        decision.payload_json AS decision_payload_json,
+        complete.recorded_at AS completed_at
+      FROM thread_experience_consolidations c
+      JOIN thread_experience_consolidation_stages decision
+        ON decision.consolidation_id=c.consolidation_id AND decision.stage='decision'
+      JOIN thread_experience_consolidation_stages complete
+        ON complete.consolidation_id=c.consolidation_id AND complete.stage='complete'
+      ORDER BY complete.recorded_at DESC,c.consolidation_id DESC
+      LIMIT ?
+    `).all(limit).map((row)=>{
+      const payload=JSON.parse(row.decision_payload_json);
+      return Object.freeze({
+        consolidationId:row.consolidation_id,
+        threadId:row.thread_id,
+        startedAt:row.started_at,
+        completedAt:row.completed_at,
+        decisionRecordedAt:row.decision_recorded_at,
+        experienceRefs:Object.freeze(JSON.parse(row.experience_refs_json)),
+        afterthoughts:Object.freeze(
+          Array.isArray(payload.afterthoughts)
+            ?payload.afterthoughts.map((item)=>Object.freeze(structuredClone(item)))
+            :[],
+        ),
+      });
+    }).filter((item)=>item.afterthoughts.length>0);
+  }
+
   inspectThreadExperienceConsolidation(threadId,{limit=100}={}) {
     assertId("threadId",threadId);
     if(!Number.isSafeInteger(limit)||limit<1||limit>500){
