@@ -61,18 +61,29 @@ function experienceConsolidationNeedsRetry(entry) {
   return result.hasPending === true;
 }
 
+function contactOutreachNeedsRetry(entry) {
+  if (entry?.enabled !== true) return false;
+  if (entry.ok !== true) return true;
+  const result = entry.result;
+  if (!result || typeof result !== "object") return false;
+  if (Number.isSafeInteger(result.failed) && result.failed > 0) return true;
+  return result.hasPending === true;
+}
+
 export function worldReconciliationNeedsRetry(result) {
   if (!result || typeof result !== "object") return true;
   if (result.skipped === true) return result.reason === "already_running";
   return presentationNeedsRetry(result.presentation)
     || visualNeedsRetry(result.visualPublication)
-    || experienceConsolidationNeedsRetry(result.experienceConsolidation);
+    || experienceConsolidationNeedsRetry(result.experienceConsolidation)
+    || contactOutreachNeedsRetry(result.contactOutreach);
 }
 
 export function createWorldReconciliationProcess({
   presentationDelivery = null,
   visualPublicationProcess = null,
   experienceConsolidationProcess = null,
+  contactOutreachProcess = null,
   onError = null,
 } = {}) {
   const delivery = optionalMethod("presentationDelivery", presentationDelivery, "deliverPending");
@@ -80,6 +91,11 @@ export function createWorldReconciliationProcess({
   let consolidation = optionalMethod(
     "experienceConsolidationProcess",
     experienceConsolidationProcess,
+    "runOnce",
+  );
+  let contactOutreach = optionalMethod(
+    "contactOutreachProcess",
+    contactOutreachProcess,
     "runOnce",
   );
   if (onError !== null && typeof onError !== "function") {
@@ -111,6 +127,10 @@ export function createWorldReconciliationProcess({
       consolidation = optionalMethod("experienceConsolidationProcess", process, "runOnce");
     },
 
+    setContactOutreachProcess(process) {
+      contactOutreach = optionalMethod("contactOutreachProcess", process, "runOnce");
+    },
+
     async runOnce() {
       if (running) return Object.freeze({ skipped: true, reason: "already_running" });
       running = true;
@@ -127,12 +147,17 @@ export function createWorldReconciliationProcess({
           "experience_consolidation",
           consolidation === null ? null : () => consolidation.runOnce(),
         );
+        const contactOutreach = await isolated(
+          "thread_contact_outreach",
+          contactOutreach === null ? null : () => contactOutreach.runOnce(),
+        );
         return Object.freeze({
           skipped: false,
           reason: null,
           presentation,
           visualPublication,
           experienceConsolidation,
+          contactOutreach,
         });
       } finally {
         running = false;
