@@ -147,7 +147,7 @@ export function createWorldReconciliationProcess({
           "experience_consolidation",
           consolidation === null ? null : () => consolidation.runOnce(),
         );
-        const contactOutreach = await isolated(
+        const contactOutreachResult = await isolated(
           "thread_contact_outreach",
           contactOutreach === null ? null : () => contactOutreach.runOnce(),
         );
@@ -157,7 +157,7 @@ export function createWorldReconciliationProcess({
           presentation,
           visualPublication,
           experienceConsolidation,
-          contactOutreach,
+          contactOutreach:contactOutreachResult,
         });
       } finally {
         running = false;
