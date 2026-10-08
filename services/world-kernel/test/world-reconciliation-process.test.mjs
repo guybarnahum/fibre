@@ -479,3 +479,45 @@ test("later contact participates in World retry and quiescence", async () => {
   }
 });
 
+
+test("environmental due time survives unrelated World work and settles without polling",async()=>{
+  let clock=10_000;
+  const dueAt=new Date(40_000).toISOString();
+  let pending=true;
+  const process=createWorldReconciliationProcess({
+    presentationDelivery:{
+      async deliverPending(){return {attempted:0,delivered:0,failed:0,results:[]};},
+    },
+    environmentEvolutionProcess:{
+      async runOnce(){
+        return {
+          attempted:pending?0:1,
+          completed:pending?0:1,
+          failed:0,
+          hasDue:false,
+          nextDueAt:pending?dueAt:null,
+          results:[],
+        };
+      },
+    },
+  });
+  const {infraDriver,runtime}=createRuntimeFixture({process,now:()=>clock});
+  try{
+    await runtime.requestWake();
+    const before=await runtime.handleWake();
+    assert.equal(before.environmentEvolution.enabled,true,
+      "World environmental continuation was not executed");
+    assert.equal(await infraDriver.scheduler.get("world"),40_000,
+      "unrelated World reconciliation canceled the earned environmental due time");
+
+    clock=40_000;
+    pending=false;
+    const after=await runtime.handleWake();
+    assert.equal(after.reconciliationPending,false,
+      "completed environmental continuation left a persistent wake");
+    assert.equal(await infraDriver.scheduler.get("world"),null,
+      "World did not return to quiescence after one environmental follow-up");
+  }finally{
+    await runtime.stop();
+  }
+});
