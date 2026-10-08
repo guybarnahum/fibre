@@ -179,6 +179,24 @@ export class LivedExperienceStore {
     return row===undefined?null:this.getEncounterStory(row.encounter_id);
   }
 
+  inspectEnvironmentalFollowup(sourceEncounterRef) {
+    assertId("World follow-up source",sourceEncounterRef);
+    const row=this.#database.prepare(`
+      SELECT place_ref,due_at,decision_json,result_encounter_ref,completed_at
+      FROM world_environment_followups WHERE source_encounter_ref=?
+    `).get(sourceEncounterRef);
+    if(row===undefined)return null;
+    return Object.freeze({
+      sourceEncounterRef,
+      placeRef:row.place_ref,
+      dueAt:row.due_at,
+      outcome:row.decision_json===null?"pending":JSON.parse(row.decision_json).outcome,
+      completedAt:row.completed_at,
+      continuation:row.result_encounter_ref===null
+        ?null:this.getEncounterStory(row.result_encounter_ref),
+    });
+  }
+
   nextEnvironmentalFollowupAt() {
     const row=this.#database.prepare(`
       SELECT due_at FROM world_environment_followups
