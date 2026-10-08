@@ -107,7 +107,6 @@ export function createThreadContactProcess({
   modelAdapter,
   now=()=>new Date().toISOString(),
   batchLimit=4,
-  sourceScanLimit=64,
 }={}){
   requireMethod("contact worldReader",worldReader,"getThread");
   requireMethod("contact livedNowStore",livedNowStore,"getCurrentSituation");
@@ -130,10 +129,6 @@ export function createThreadContactProcess({
   if(!Number.isSafeInteger(batchLimit)||batchLimit<1||batchLimit>16){
     throw new TypeError("contact batchLimit must be 1-16");
   }
-  if(!Number.isSafeInteger(sourceScanLimit)||sourceScanLimit<batchLimit||sourceScanLimit>256){
-    throw new TypeError("contact sourceScanLimit must be batchLimit-256");
-  }
-
   function currentCandidates(threadId){
     return routeCandidates({
       threadId,
@@ -143,13 +138,12 @@ export function createThreadContactProcess({
     });
   }
 
-  function unconsideredSources(){
-    return contactStore.listUnconsideredAfterthoughtSources({
-      limit:sourceScanLimit,
-    }).map((source)=>Object.freeze({
-      source,
-      candidates:currentCandidates(source.threadId),
-    }));
+  function unconsideredSources(limit){
+    return contactStore.listUnconsideredAfterthoughtSources({limit})
+      .map((source)=>Object.freeze({
+        source,
+        candidates:currentCandidates(source.threadId),
+      }));
   }
 
   async function runAttempt(attempt,cachedCandidates=null){
@@ -361,7 +355,7 @@ export function createThreadContactProcess({
 
       const remaining=batchLimit-attempted;
       if(remaining>0){
-        const sources=unconsideredSources().slice(0,remaining);
+        const sources=unconsideredSources(remaining);
         for(const {source,candidates} of sources){
           attempted+=1;
           let attempt=null;
