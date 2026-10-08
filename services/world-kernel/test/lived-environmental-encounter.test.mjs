@@ -6,6 +6,7 @@ import test from "node:test";
 
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { createEnvironmentalEncounterService } from "../src/lived-environmental-encounter.mjs";
+import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { createLiveEncounter } from "../src/live-encounter.mjs";
 import { observeAdmittedWorldEncounter } from "../src/live-encounter-world.mjs";
 import { streamLivedEncounterResponse } from "../src/lived-encounter-cognition.mjs";
@@ -407,7 +408,22 @@ test("shared World occurrence belongs to one place and different observers notic
 
     const lived=await service.encounter({threadId:first.threadId,at:AT});
     const replay=await service.encounter({threadId:second.threadId,at:AT});
+    const rivalStory={
+      storyVersion:"encounter-story-v0.1",
+      beats:[{actorThreadId:null,kind:"occurrence",text:"An unrelated sound echoes over the same park."}],
+    };
+    const rival=experienceStore.recordEncounterStory({
+      occurredAt:AT,
+      threadPresence:lived.encounterStory.threadPresence,
+      story:rivalStory,
+      visualization:createEncounterVisualization({
+        occurredAt:AT,story:rivalStory,scene:"At Shared Park.",
+        sourceReferences:[placeRef],depictedThreadRefs:[],
+      }),
+    },{uniquePlaceOccurrenceRef:placeRef});
 
+    assert.equal(rival.encounterId,lived.encounterStory.encounterId,
+      "competing World authors cannot replace an admitted place/time event");
     assert.equal(lived.encounterStory.threadPresence.length,2,
       "one shared occurrence should have two real co-present observers");
     assert.deepEqual(new Set(lived.encounterStory.threadPresence.map((p)=>p.threadId)),
