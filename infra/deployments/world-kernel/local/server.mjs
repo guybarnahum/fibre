@@ -28,6 +28,7 @@ import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-enc
 import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { createContactWriteApi } from "#services/world-kernel/src/contact-write-api.mjs";
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
+import { createThreadContactPerception } from "#services/world-kernel/src/thread-contact-perception.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
 import {
   combineWorldEnvironmentProcesses,
@@ -375,6 +376,21 @@ export async function startWorldKernelFromEnvironment(
       },
     },
   });
+  const contactReceptionProcess=createThreadContactPerception({
+    contactStore,livedNow:contactLivedNow,livedNowStore,
+    worldReader:store,semanticStateStore,
+    memoryStore:autobiographicalMemoryStore,
+    experienceStore:livedExperienceStore,
+    onExperienceQueued:(queued)=>experienceConsolidationWakeScheduler(queued),
+    modelAdapter:{
+      async invoke(request){
+        contactModelAdapter??=selectReasoningIntegration(
+          DEPLOYMENT.integrations.encounter,{environment},
+        );
+        return contactModelAdapter.invoke(request);
+      },
+    },
+  });
   const environmentInputs={
     experienceStore:livedExperienceStore,
     livedNowStore,
@@ -403,6 +419,7 @@ export async function startWorldKernelFromEnvironment(
     presentationDelivery,
     experienceConsolidationProcess,
     contactOutreachProcess,
+    contactReceptionProcess,
     environmentEvolutionProcess,
     onError: reportReconciliationError,
   });
@@ -470,6 +487,7 @@ export async function startWorldKernelFromEnvironment(
       await experienceConsolidationWakeScheduler();
     }
     if (contactOutreachProcess.hasPending()
+      ||contactStore.nextContactReceptionAt()!==null
       ||livedExperienceStore.nextEnvironmentalOpportunityAt()!==null
       ||livedNowStore.nextLivedBoundaryAt()!==null) {
       await reconciliationRuntime.requestWake();
