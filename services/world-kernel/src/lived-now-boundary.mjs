@@ -27,7 +27,8 @@ export function createLivedBoundaryProcess({
   livedNowStore,livedNow,now=()=>new Date().toISOString(),
 }={}){
   for(const key of [
-    "listDueLivedBoundaries","nextLivedBoundaryAt","settleLivedBoundary",
+    "listDueLivedBoundaries","nextLivedBoundaryAt",
+    "settleLivedBoundary","failLivedBoundary",
   ]){
     if(typeof livedNowStore?.[key]!=="function")
       throw new TypeError(`Lived boundary process requires ${key}()`);
@@ -63,8 +64,13 @@ export function createLivedBoundaryProcess({
             livedNowStore.settleLivedBoundary({...item,blockedReason:message});
             results.push({threadId:item.threadId,outcome:"blocked",message});
           }else{
-            failed+=1;
-            results.push({threadId:item.threadId,outcome:"failed",message});
+            const failure=livedNowStore.failLivedBoundary({...item,message});
+            if(!failure.blocked)failed+=1;
+            results.push({
+              threadId:item.threadId,
+              outcome:failure.blocked?"blocked":"failed",
+              message,
+            });
           }
         }
       }
