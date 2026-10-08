@@ -261,6 +261,8 @@ The plan remains Thread-authored cognition. World may constrain or observe it, b
 
 A new plan can be generated during thaw/catch-up. That is part of re-establishing a credible present before interaction.
 
+**Future efficiency and scale:** A horizon-boundary wake should renew intentional future life without accidentally paying to author a negligible retrospective interval. The suspected boundary-gap inference cost requires measurement, not a shortcut around real multi-day catch-up. See the separate proposed plans for [World cost accounting](world-cost-accounting.md), [World compute optimization](world-compute-optimization.md) and [World reconciliation scaling](world-reconciliation-scaling.md). They preserve independent Thread agency and one authoritative shared World event; none is part of today's accepted life semantics.
+
 ## Meeting a Person
 
 A Person -> Thread meeting must begin from a World-owned current situation.
