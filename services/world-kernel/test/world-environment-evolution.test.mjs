@@ -215,3 +215,34 @@ test("E7.2 retries a persisted perceptible change without rerolling cognition",a
     "retry lost the objective causal lineage");
   }finally{f.close();}
 });
+
+test("E7.2 with present but unexposed Threads admits no change",async()=>{
+  const f=fixture();
+  try{
+    f.source("wpl_behind_wall","A small animal moves behind a closed courtyard wall.");
+    f.setCurrent([f.situation(f.distant,"wpl_interior_room")]);
+    let calls=0;
+    const process=createWorldEnvironmentEvolution({
+      experienceStore:f.experiences,livedNowStore:f.livedNowStore,
+      modelAdapter:{async invoke(){
+        calls++;
+        return {output:{
+          outcome:"not_observable",
+          occurrenceText:null,
+          potentialObserverThreadIds:[],
+        }};
+      }},
+      now:()=>DUE,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.failed,0,"World perceptibility gate failed");
+    assert.equal(result.results[0].outcome,"not_observable",
+      "World invented a change behind an unobservable boundary");
+    assert.equal(f.experiences.getSharedEnvironmentalStory({
+      occurredAt:DUE,placeRef:"wpl_behind_wall",
+    }),null,"non-perceptible event entered objective history");
+    assert.equal(calls,1,"World should evaluate perceptibility only once");
+    await process.runOnce();
+    assert.equal(calls,1,"World reevaluated an already rejected opportunity");
+  }finally{f.close();}
+});
