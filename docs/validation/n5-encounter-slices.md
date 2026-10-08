@@ -411,35 +411,37 @@ The existing Encounter Story store now atomically reuses an already-admitted sin
 
 **E7.1 local focused validation passed (Guy, 2026-10-08).** Production/staging evidence of two naturally co-present Threads at an admitted `wpl_*` remains pending. A lack of co-presence is `blocked_by_world_state`, not grounds to teleport Threads or weaken the acceptance proof.
 
-### E7.2 — One earned World continuation — IMPLEMENTED / VALIDATION PENDING
+### E7.2 — One earned, **potentially noticeable** World continuation — IMPLEMENTED / VALIDATION PENDING
 
-Once an admitted shared-place E7.1 environmental occurrence exists, it may earn **one** later World follow-up. The implementation currently uses a fixed 30-minute delay as a provisional scheduling policy, not a claim about weather duration or a required rate of environmental change.
+An E7.1 shared-place objective environmental occurrence may earn **one** follow-up opportunity, currently 30 minutes later. This is a provisional timing policy, not a weather duration, frequency target, or continuous simulation.
 
 ```text
-shared objective occurrence at place/time
-  -> one durable future opportunity (same World authority)
-  -> existing InfraDriver World alarm (no separate timer)
-  -> prior objective occurrence + place + elapsed lived time
-  -> replaceable World cognition: changed | no_change
-       no_change -> completed work, no new World event
-       changed   -> one new objective Encounter Story
-                    with continuationOfEncounterRef
-  -> quiescent (no further chained alarms)
+admitted World occurrence
+  -> one durable future opportunity
+  -> existing World reconciliation alarm
+  -> read already-enacted exterior CurrentSituations (no waking Threads)
+  -> if zero plausible candidate observers: not_observable, no cognition/event
+  -> otherwise one bounded World decision:
+       not_observable -> no new occurrence
+       no_change      -> no new occurrence
+       changed        -> one continued objective Encounter Story
+                         with grounded potentially perceiving Thread situations
+  -> quiescent (no recurring weather chain)
 ```
 
-The model does not see a particular Thread's genome, private memories, goals, scene activity or personal sensations. The World validates and persists the candidate decision before attempting to materialize a changed occurrence. A retry reuses that durable decision; the admitted occurrence is still deduplicated by exact place/time through E7.1. The due timestamp is the intended *lived* event opportunity; `completedAt` records when the follow-up was actually reconciled.
+**Noticeability is the admission optimization.** A change should be authored only where and when a Thread could potentially see, hear or otherwise perceive it. This is **not a geographic-distance rule**. An observable remote flash, cloud formation or sound may reach a Thread in another World place when the exterior scene and event plausibly support it. The candidate pool is a bounded projection of already-enacted recent physical situations (currently at most eight; no `LivedNow.ensure` and no whole-population waking). A model judges actual physical perceptibility from the source occurrence and the candidates' exterior physical place/activity, not from proximity alone. Lack of evidence is not a license to invent perceptibility.
 
-The follow-up can be **World history with zero Thread witnesses**. An unattended change of weather is still an objective event, but it does not generate invented attention, personal Experience, Journal or Memory. Its absence from a person's autobiography is not evidence that the event never happened. Physical presence or recipient notice must be proven by the normal World/perception authorities before any later subjective consequence can be claimed.
+An admitted `changed` event names one or two grounded potential observers with their own authentic CurrentSituation references, even if they occupy different physical places. **Potential perception is not `noticed`**: no automatic Thread Experience, Journal, Memory, forced dialogue, or relationship change. Further participant-specific attention uses the existing Encounter/Experience boundary. Without potential observers, the work ends as `not_observable` and there is neither an objective new event nor a model invocation when the candidate set is empty.
 
-The durable `world_environment_followups` rows are bounded scheduler/decision bookkeeping, **not** a second World occurrence authority. Initial objective events and later changed objective events are Encounter Stories, not synthetic conversation messages. An idle World makes zero provider calls. One admitted initial shared occurrence earns at most one additional provider consideration and cannot recursively schedule a weather loop. Existing Local and Cloudflare World reconcilers consume the same domain process.
+The World model sees no Thread Genome, private memory, intentions or feelings. Its `changed | no_change | not_observable` decision and grounded potential observers are persisted *before* objective event admission so retry never rerolls an already-decided change. The resulting Encounter Story cites `continuationOfEncounterRef` and still uses E7.1's exact-place/time atomic deduplication. `world_environment_followups` is scheduling and decision bookkeeping, never a competing event authority. No changed event schedules another follow-up.
 
-**Focused acceptance:** one rain event earns one due opportunity; early World wakes do zero cognition; `changed` admits a second causally linked objective event without inventing participants; `no_change` admits no event; a storage failure after deciding retries without reauthoring; an unrelated World wake preserves the due alarm; completed work returns to quiescence. Local semantic tests and the full slice validation remain pending Guy's CLI evidence.
+**Focused acceptance:** early reconciliation causes no model work; no eligible current observers yields zero cognition and no event; a Thread in a different place may plausibly perceive an event regardless of distance; `changed` admits one causally continued story with that Thread's real situation but no fabricated attention; `no_change` produces no event; a persistence failure retries the same durable judgment; another reconciliation wake preserves the due alarm; resolved work returns to quiescence. Guy's operator validation is pending.
 
-**Deployment acceptance still deferred:** show an actual staging shared-place E7.1 occurrence, one delayed E7.2 follow-up, and retained due-time/retry evidence without forcing co-presence or declaring world-wide weather realism.
+**Staging acceptance deferred:** one naturally available observable shared-place event with legitimate observer evidence, one delayed continuation or valid non-event, and provenance. Never create artificial co-presence, nor claim that an approximate place name proves a distant event visible.
 
 ### E7.3 — Natural shared-place acceptance — NOT STARTED
 
-When the World supplies natural overlap, demonstrate multiple independently different attention/Experience outcomes for one E7.1 occurrence. E7.2's unattended follow-up must remain World truth, not retroactively claimed personal experience. The future step for a later present Thread to *notice a recent unattended event* requires an explicit bounded World-at-place perception window, not fabricated historical presence.
+When the World supplies natural overlap, demonstrate multiple independently different attention/Experience outcomes for one E7.1 occurrence. E7.2's unattended follow-up must remain World truth, not retroactively claimed personal experience. The future step from grounded potential perception to actual independent `noticed | not_noticed` at the event time must reuse the existing attention/Experience authority. An eligible distant observer is not automatically a conversation participant.
 
 ### Explicitly deferred
 
