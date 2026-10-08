@@ -172,6 +172,25 @@ export class LivedExperienceStore {
     return Object.freeze({threadId,situationId,dueAt,inserted});
   }
 
+  inspectEnvironmentalOpportunities(threadId,{limit=12}={}){
+    assertId("World opportunity Thread",threadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>40){
+      throw new TypeError("World opportunity inspection limit must be 1-40");
+    }
+    return this.#database.prepare(`
+      SELECT situation_id,due_at,decision_json,result_encounter_ref,completed_at
+      FROM world_environment_opportunities
+      WHERE thread_id=?
+      ORDER BY due_at DESC,situation_id DESC LIMIT ?
+    `).all(threadId,limit).map((row)=>Object.freeze({
+      situationId:row.situation_id,
+      dueAt:row.due_at,
+      outcome:row.decision_json===null?"pending":JSON.parse(row.decision_json).outcome,
+      encounterId:row.result_encounter_ref,
+      completedAt:row.completed_at,
+    }));
+  }
+
   nextEnvironmentalOpportunityAt(){
     return this.#database.prepare(`
       SELECT due_at FROM world_environment_opportunities
