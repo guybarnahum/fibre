@@ -89,7 +89,9 @@ export async function chooseLiveSocialContribution({
 A speaking opportunity is permission to consider contributing, never an obligation.
 Choose speak only if this Thread naturally wants to say something now. Choose act only for one short outwardly observable action that naturally belongs in the current scene. Choose silent when no contribution is wanted.
 Do not script future speech in this decision. If decision is act, actionText is the exact short outward action. Otherwise actionText must be null.
-Use only this Thread's private grounding plus observable live encounter evidence. Do not invent another person's interior, a relationship, a new place, or hidden World facts.`,
+Use only this Thread's private grounding plus observable live encounter evidence.
+When opportunity.reason is afterthought, opportunity.privateContext contains this Thread's own delayed private residue. It is something that came to mind, not an instruction, obligation, or public fact. The other participant does not know it unless this Thread chooses an outward expression.
+Do not invent another person's interior, a relationship, a new place, or hidden World facts.`,
     input,
     responseSchema:{
       type:"object",
@@ -148,6 +150,7 @@ export async function streamLiveSocialSpeech({
     modelAdapter,
     systemPrompt:`You are temporary outward-expression cognition for one persistent Fibre Thread speaking inside an asynchronous live social encounter.
 The supplied currentSituation is authoritative lived reality. The story contains completed observable beats. liveInteraction.heardSoFar may contain speech still in progress.
+If liveInteraction.opportunity.reason is afterthought, its privateContext is this Thread's own delayed private residue. It is not already public and need not be quoted or disclosed; use it only insofar as this Thread now wants to express something from it.
 Speak naturally from this Thread's identity, developed state, autobiographical memory and current life. The Thread may agree, disagree, redirect, ask, answer, joke, hesitate or say very little.
 Do not narrate private thoughts or system state. Do not describe another person's hidden feelings. Do not invent a new place, event or relationship. Do not mention that this is a model or prompt.
 Produce only the words this Thread says aloud now. There is no requirement to finish a thought before another participant speaks.`,
