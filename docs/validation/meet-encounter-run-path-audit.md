@@ -1,0 +1,105 @@
+---
+id: validation-meet-encounter-run-path-audit
+status: proposed
+last-reviewed: 2026-10-08
+canonical: true
+---
+
+# Meet / Encounter runtime audit — findings and deferred work
+
+**Status:** source-level audit, **not** a code fix or accepted behavior change. Inspected `main` on 2026-10-08 after recipient-contact Gate 1 and the World operating-economics plans. No new tests, CLI validation or staging deployment were performed as part of this audit. Source-level risks require the specific proofs below before being called live defects.
+
+## The real paths — do not conflate them
+
+1. **Visitor views a Thread's actual present**: the Viewer/route `/meet?thread=...` is a UI entry (the Viewer implementation itself is not in the inspected World files); the client-neutral public surface is `GET /api/threads/:threadId/present`. `services/thread-presentation/src/http/current-life-api.mjs` gates a public Thread; `infra/deployments/thread-presentation/cloudflare/encounter-worker.mjs` requests `/internal/lived-now/ensure`; World resolves LivedNow and publishes the current projection. Viewing is **not consent or a conversation**.
+2. **Visitor addresses that moment**: `POST /api/threads/:threadId/encounter` takes `requestId`, displayed `situationId`, `utterance`, and optionally a prior accepted `encounterStoryId`. Presentation forwards to World `/internal/public-visitor-encounter`; World `public-visitor-encounter.mjs` checks a completed request receipt, validates the displayed scene, loads bounded immediate encounter history and private Thread context, asks **Interior Cognition** for an `accept | decline | defer` stance, and—only for accepted speech—asks for a complete response, records one objective Encounter Story, asks for a personal Experience, queues delayed consolidation, then records the completed receipt. No paid work, forced response for refusal or caller-authored place/activity is required.
+3. **Different, narrower/funded path**: `/internal/inside-fibre/meeting-entry` and `/internal/inside-fibre/visitor-encounter` use `inside-fibre-visitor-meeting.mjs`, work availability and Fibre Credit compensation. This is *not* the public `/meet` path; preserve real compensated-work meaning but do not perpetuate duplicate generic encounter semantics for compatibility.
+4. **N7 Live Encounter capability**: `live-encounter.mjs`, `lived-social-live-encounter.mjs` and the N7 social meeting flow support streamed, interruptible expression and independently owned World interleaving for the Thread-to-Thread route. The above **public** `/encounter` service still uses the older **complete-request/complete-response** `respondToLivedEncounter` path. The N7 live primitive is not yet a general public-person live ingress/duplex transport; do **not** describe the public Viewer as having gained N7 streaming merely because the primitive exists.
+5. **CLI proof**: `npm run thread:meet -- --env staging [--thread THREAD_ID]` uses the same World `ensure` and public-visitor encounter authority directly, bypassing Presentation/Viewer. See `docs/validation/n6-public-lived-encounter-slices.md`; N6.6a CLI, N6.6b client-neutral endpoint and N6.6c Viewer have distinct acceptance evidence requirements. Source implementation alone does not close them.
+
+## Findings, ranked by Fibre impact
+
+### 1. High — public interaction is still turn-shaped, not an interruptible lived encounter
+
+**Evidence:** `services/world-kernel/src/public-visitor-encounter.mjs` (~lines 199–295) calls `formVisitorMeetingStance`, waits for `respondToLivedEncounter` (complete `responseText`), then writes the Story and Experience; `services/thread-presentation/src/http/current-life-api.mjs` (~lines 93–173) returns one complete accepted response. N7 streaming currently runs in `lived-social-live-encounter.mjs`, not the public caller route.
+
+**Missing behavior:** a visitor's interruption, overlapping speech, naturally chosen silence or new World event cannot be applied to the public path *during* response generation with N7 audible-prefix truth. The synchronous World request can keep a Durable Object waiting for model calls. This is the largest remaining difference between the public `/meet` vision and a life that continues through communication.
+
+**Future work:** preserve existing public scene and consent authority, adapt its outward exchange to the existing N7 ephemeral coordinator and provider-neutral `streamExpression`—**not** a new meeting engine, chat-session store or turn manager. Keep objective history at audible/exposed boundaries, not at generated-but-unheard text. The initial acceptance should be one genuinely interrupted public utterance plus a mid-encounter scene change, each with correct World chronology and no duplicated private aftermath. Decide the minimum public transport when doing the N6.6b/c proof; don't build SSE machinery for its own sake.
+
+### 2. High — completed-receipt idempotence does not yet cover interruptions before the receipt
+
+**Evidence:** `public-visitor-encounter.mjs` (~lines 138–156) replays only an existing **completed** `getPublicEncounterReceipt`; the accepting branch generates cognition and persists a Story, personal Experience and consolidation opportunity before `complete(...)` writes the receipt (~lines 219–295). The proven test `services/world-kernel/test/public-visitor-encounter.test.mjs` (~lines 327–352) covers **retry after a completed receipt**, not a failure between Story admission and completion. `lived-experience-store.mjs` derives the Story ID partly from `occurredAt` and content; a fresh request timestamp may yield a different Story after a partial failure.
+
+**Risk to prove, not yet an observed production failure:** if Experience formation or wake scheduling fails after the Story was written, a client retry under the same request ID can re-run private stance/response, cost more inference, and potentially create another objective Story or personal Experience.
+
+**Future work:** use the smallest durable **progress/claim** boundary keyed by public request identity and actual admitted scene/utterance to resume an in-flight exchange without re-authoring committed facts. Prefer the already-existing Encounter/Experience stages and receipt authority over creating another session log. Only make outwardly exposed speech authoritative; after a genuine completed decision reuse its outcome. A single fault-injection test should prove “interrupted accepted encounter does not invent a second life event or repeat already-admitted cognition.” No brittle exact transcript assertions.
+
+### 3. High — three sequential model decisions on every accepted public utterance
+
+**Evidence:** `public-visitor-encounter.mjs` (~lines 199–208, 219–227, 267–288) separately calls visitor stance (Interior Cognition), response (`respondToLivedEncounter`), and first-person Experience (`formThreadEncounterExperience`), before later delayed consolidation (additional cognition only if warranted). `formVisitorMeetingStance` resolves its own private context through Interior Cognition despite `public-visitor-encounter.mjs` separately loading recent state/memory for response/Experience. This can be roughly three sequential inference round trips for one accepted public Send, **plus** a real LivedNow plan/renewal when required; actual token and latency data has not been collected.
+
+**Issue:** there is a principled reason to keep *participation stance*, *audible expression*, and *subjective Experience* as separate **authorities**, but those authority distinctions do not automatically justify duplicating large context retrieval/prompt construction or requiring an Experience-model call for **every** small spoken beat. N7.5 already batches delayed consolidation by lived episode; batching there does not remove the immediate three-model path.
+
+**Future work:** first instrument *per semantic operation* with [World cost accounting](../architecture/world-cost-accounting.md). Keep independent consent; examine whether admitted/stable utterances can become objective beats cheaply and a **bounded episode-level** personal Experience can be authored once at a meaningful natural boundary, without compulsory reflection after every response. Share a single immutable bounded lived snapshot across the stance/expression/Experience chain where correct, without promoting private context to public authority or suppressing materially new evidence. Compare actual call count/latency/token use to baseline. Do **not** collapse all cognition into one model verdict that simultaneously self-authorizes, speaks and remembers.
+
+### 4. High — long model waits create a scene-interleaving truth question
+
+**Evidence:** `validateDisplayedSituation` runs **before** participation and response calls (~lines 158–168); the public service does not clearly revalidate scene immediately before the Story/Experience write (~lines 228–290). N7's newer live-social path separately recognizes scene changes and can abort stale ongoing speech; the public synchronous path uses the original `at` for the entire sequence.
+
+**Risk to validate:** when a Flight Plan boundary or a second World action changes LivedNow during slow inference, the resulting complete response may be written as though the Thread were still speaking in the old moment. Conversely, a compatible scene with a new situation ID can legitimately remain continuous; do not reject merely because an ID changed.
+
+**Future work:** use the already accepted scene-fact comparison and World authority at the **speech admission** boundary, not a second arbitrary time or plan. If the scene materially moves, terminate/redirect only the remaining expression, preserve what was actually heard and keep the timing honest. One controlled scene-change-while-speaking proof is more valuable than many route-error tests.
+
+### 5. Medium — two visitor implementation paths duplicate Encounter/Experience orchestration
+
+**Evidence:** `public-visitor-encounter.mjs` (~299 lines) and `inside-fibre-visitor-meeting.mjs` (~233 lines) both resolve lived context, generate complete response, construct Story and visualization, synthesize immediate Experience and enqueue consolidation. The latter has genuine **work-commitment availability and settlement** logic absent from ordinary visitor interaction; its internal API also supplies an explicit `occurredAt`, unlike public World-owned time.
+
+**Concern:** two routes to the same durable social concepts increase maintenance and inconsistent future N7 migration. Do not remove the compensated-work authority just to reduce line count.
+
+**Future work:** converge only the genuinely common `admitted outward event → one Story → individualized Experience/queue` domain step; leave financial settlement and prior work authorization behind their owning authority. Before deleting an old path, check its actual callers/deployment and accepted paid-visitor contracts. Do not keep wrappers merely for backwards compatibility if a path is obsolete.
+
+### 6. Medium — situational refresh and candidate discovery need cost evidence, not a rewrite
+
+**Evidence:** a public `GET .../present` makes a real `/internal/lived-now/ensure` call and may perform legitimate plan renewal, regulation and publication. `livedNow.validateDisplayedSituation` avoids full reconciliation when the prior and current planned scenes still match, but may call `ensure` if scene or plan coverage requires it. For natural Thread-to-Thread contact, `lived-social-meeting.mjs` `discoverCoPresent` enumerates `listCurrentSituations({at})`, filters and refreshes candidates. These are **different paths**; do not misattribute the candidate scan to the public `/meet` route.
+
+**Opportunity:** measure rows, token calls and wait time before introducing another cache or scheduler. The existing deterministic scene validation is useful. If naturally co-present discovery grows costly, prefer an indexed physical venue/time candidate set over scanning unrelated Threads. Preserve grounded physical presence, no distance-radius shortcut, no quota-driven social events. Also inspect the separate [Flight Plan renewal hypothesis](../architecture/world-compute-optimization.md); do not modify it before the current E7.5 alarm proof.
+
+### 7. Medium — tests prove mostly stage boundaries, not full public organism behavior
+
+**Evidence:** `public-visitor-encounter.test.mjs` fixtures supply stance and response, and its existing idempotence check covers a completed retry only. `docs/validation/n6-public-lived-encounter-slices.md` correctly retains separate direct-World, public endpoint and real Viewer acceptance. N7 Thread-to-Thread live tests do not automatically prove human Visitor → Thread public streaming or interruption.
+
+**Future work:** retain lean focused semantic tests: (a) genuine decline does not create history; (b) interrupted accepted public interaction preserves exactly the audible portion without duplicate history, (c) genuine scene movement ends or redirects speech without a frozen life, and (d) later visit reflects an autonomously advanced Thread. Limit operator/runbook proofs to one meaningful naturally accepted instance and one valid refusal; do not generate repeated model calls just to force a pleasing response.
+
+## Recommended implementation order (after the current staging experiment)
+
+1. **Preserve E7.5 evidence first.** World Kernel already scheduled Thread `thr_bd945d68e3e2b0da31a9a612e603065bf09e2b34` for `2026-10-09T02:00:00.000Z`. Guy can inspect its recorded history after the deadline; no need to be present at the instant. No World redeployment or manual `/ensure`/`/reconciliation/wake` for that Thread until evidence is captured.
+2. **Bound and measure the existing public `/encounter` chain** using [cost attribution](../architecture/world-cost-accounting.md), real state-cost counters and model usage/elapsed time already carried in provenance. No new model calls for metrics.
+3. **Fix causal acceptance holes, if reproduced:** partial-progress retry, stale-scene/waiting-expression truth. Keep exact existing World/Experience records, not a duplicate durable chat session.
+4. **Converge public expression on the N7 live boundary** with the smallest client-neutral transport and controlled interruption. Keep `accept | decline | defer` dignity and support real quiet choices.
+5. **Reduce demonstrated redundant inference** (not personhood). Prefer bounded episode Experience rather than one cognitive “experience” per spoken sentence/turn if its semantic value and evidence justify the change.
+6. **Only then consider merging overlapping generic public/paid visitor domain composition**, retaining actual paid work/settlement semantics and removing obsolete code without aliases.
+7. **Resume N6.6a → N6.6b → N6.6c live evidence** and N7.11 selective consequence/social development; neither is accepted from this source review alone.
+
+## Hard constraints and proof discipline
+
+- **No second LivedNow, chat session, meeting engine, population clock or universal scheduler.** Use `InfraDriver` and the current World/Encounter/Experience/consolidation authorities.
+- **No security/hardening scope drift**; this is a lived-person fidelity/efficiency audit, not an auth/CORS review.
+- No backwards compatibility or legacy adapters for obsolete active paths.
+- Theme active command/file/event names by capability, **never milestone coordinates or deployment environment**. Use `--env staging` as an argument.
+- Test only semantic failure modes with short, meaningful assertions; let Guy run local focused validation and the one full `npm run slice:validate` at implementation closure. No assistant claims of executed code/tests or deployment without Guy's output.
+- Track whether each future change makes a Thread's **private choice, lived chronology, real expression or later consequences** more causal—not merely more complex or better documented.
+
+### Suggested verification when implementation begins
+
+```bash
+git pull --ff-only origin main
+npm run test:focused -- \
+  services/world-kernel/test/public-visitor-encounter.test.mjs \
+  services/thread-presentation/test/public-current-life-api.test.mjs \
+  services/world-kernel/test/live-encounter-interruption.test.mjs \
+  services/world-kernel/test/live-encounter-world.test.mjs
+npm run slice:validate
+```
+
+These are **future validation commands**, not a request to run them before the E7.5 staging evidence or a claim that a new implementation exists.
