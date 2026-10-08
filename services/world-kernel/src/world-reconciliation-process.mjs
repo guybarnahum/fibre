@@ -71,6 +71,14 @@ function environmentNeedsRetry(entry) {
     ||entry.result?.noticed>0;
 }
 
+function livedBoundaryNeedsRetry(entry){
+  if(entry?.enabled!==true)return false;
+  if(entry.ok!==true)return true;
+  // An indexed queue with more genuinely due lives is earned work, not an
+  // error streak. Normal due deadlines are handled by nextDueAt.
+  return entry.result?.failed>0;
+}
+
 function contactOutreachNeedsRetry(entry) {
   if (entry?.enabled !== true) return false;
   if (entry.ok !== true) return true;
@@ -88,7 +96,7 @@ export function worldReconciliationNeedsRetry(result) {
     || experienceConsolidationNeedsRetry(result.experienceConsolidation)
     || contactOutreachNeedsRetry(result.contactOutreach)
     || environmentNeedsRetry(result.environmentEvolution)
-    || environmentNeedsRetry(result.livedBoundary);
+    || livedBoundaryNeedsRetry(result.livedBoundary);
 }
 
 export function createWorldReconciliationProcess({
