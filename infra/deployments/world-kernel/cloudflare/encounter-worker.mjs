@@ -39,6 +39,7 @@ import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-enc
 import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { createContactWriteApi } from "#services/world-kernel/src/contact-write-api.mjs";
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
+import { createThreadContactPerception } from "#services/world-kernel/src/thread-contact-perception.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { createWorldVenueWriteApi } from "#services/world-kernel/src/live-world-venue-write-api.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
@@ -109,6 +110,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.experienceConsolidationProcess = null;
     this.experienceConsolidationWakeScheduler = null;
     this.contactOutreachProcess = null;
+    this.contactReceptionProcess = null;
     this.livedBoundaryProcess = null;
     this.livedBoundaryModelAdapter = null;
     this.liveEncounterRegistry = createLiveEncounterRegistry();
@@ -204,6 +206,39 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       );
     }
     return this.contactOutreachProcess;
+  }
+
+  contactReceptionProcessForRequest(){
+    if(this.contactReceptionProcess===null){
+      const runtime=this.runtimeForRequest();
+      const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
+      const livedNowStore=openLivedNowStore(runtime.worldStorage);
+      const semanticStateStore=openSemanticStateStore(runtime.worldStorage);
+      const memoryStore=openAutobiographicalMemoryStore(runtime.worldStorage);
+      const livedNow=createLivedNowService({
+        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
+        livedNowStore,worldStore:runtime.worldStore,
+        identityStore:openIdentityStore(runtime.worldStorage),
+        semanticStateStore,memoryStore,
+        situatedLifeStore:openSituatedLifeStore(runtime.worldStorage),
+        modelAdapter:selectReasoningIntegration(
+          deployment.integrations.livedNow,{environment:this.env},
+        ),
+      });
+      this.contactReceptionProcess=createThreadContactPerception({
+        contactStore:openContactStore(runtime.worldStorage),
+        livedNow,livedNowStore,worldReader:runtime.worldStore,
+        semanticStateStore,memoryStore,
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
+        modelAdapter:selectReasoningIntegration(
+          deployment.integrations.encounter,{environment:this.env},
+        ),
+        onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
+      });
+      runtime.reconciliationProcess.setContactReceptionProcess(this.contactReceptionProcess);
+    }
+    return this.contactReceptionProcess;
   }
 
   encounterApiForRequest() {
@@ -685,6 +720,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   async alarm(alarmInfo) {
     this.experienceConsolidationProcessForRequest();
     this.contactOutreachProcessForRequest();
+    this.contactReceptionProcessForRequest();
     this.livedBoundaryProcessForRequest();
     this.worldEnvironmentEvolutionProcessForRequest();
     return super.alarm(alarmInfo);
