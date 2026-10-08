@@ -167,6 +167,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const semanticStateStore=openSemanticStateStore(runtime.worldStorage);
       const memoryStore=openAutobiographicalMemoryStore(runtime.worldStorage);
       const livedNow=createLivedNowService({
+        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
         identityStore:openIdentityStore(runtime.worldStorage),
@@ -253,6 +254,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
         identityStore:openIdentityStore(runtime.worldStorage),
@@ -295,6 +297,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
         identityStore,
@@ -334,6 +337,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
         identityStore,
@@ -409,6 +413,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         worldReader:runtime.worldStore,
       });
       const livedNow = createLivedNowService({
+        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
         identityStore,
@@ -464,6 +469,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
       const modelAdapter = selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env });
       const livedNow = createLivedNowService({
+        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
         identityStore,
@@ -521,6 +527,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNowStore = openLivedNowStore(runtime.worldStorage);
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         livedNowStore,
         worldStore: runtime.worldStore,
         identityStore: openIdentityStore(runtime.worldStorage),
@@ -528,18 +535,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore: openAutobiographicalMemoryStore(runtime.worldStorage),
         situatedLifeStore,
         modelAdapter: selectReasoningIntegration(deployment.integrations.livedNow, { environment: this.env }),
-        onSituationEnacted:async(situation)=>{
-          const queue=openLivedExperienceStore(runtime.worldStorage);
-          const dueAt=new Date(Date.parse(situation.establishedAt)+60_000).toISOString();
-          const earned=queue.enqueueEnvironmentalOpportunity({
-            threadId:situation.threadId,
-            situationId:situation.situationId,
-            dueAt,
-          });
-          if(earned.inserted){
-            await runtime.reconciliationRuntime.requestWakeAfter(60_000);
-          }
-        },
+
       });
       const presentation = createLivedNowPublicationService({
         livedNowStore,
@@ -557,6 +553,17 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       });
     }
     return this.livedNowApi;
+  }
+
+  async enqueueWorldOpportunity(situation){
+    const store=openLivedExperienceStore(this.runtimeForRequest().worldStorage);
+    const earned=store.enqueueEnvironmentalOpportunity({
+      threadId:situation.threadId,situationId:situation.situationId,
+      dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
+    });
+    if(earned.inserted){
+      await this.runtimeForRequest().reconciliationRuntime.requestWakeAfter(60_000);
+    }
   }
 
   worldVenueApiForRequest(){
