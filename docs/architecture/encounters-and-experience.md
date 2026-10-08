@@ -249,6 +249,10 @@ The Flight Plan creates opportunity by putting the Thread somewhere. It does not
 
 This is important for Fibre's ambition: life should accumulate from what happens **while following plans**, not only from executing the plans themselves.
 
+When an environmental occurrence is produced at an admitted **shared physical World place**, E7 gives it one place/time-scoped objective Encounter Story rather than generating separate weather for each observer. The author sees exterior place/time only; present Threads may notice the same rain differently or miss it altogether. Real World place authority and compatible historical CurrentSituations establish who *could* observe it; attention and Experience remain individual.
+
+Place/time-scoped occurrence uniqueness is enforced inside existing Encounter Story persistence, not by a new event store. The initial bounded producer can appraise only a few already-current witnesses per trigger; other co-present Threads may encounter the same admitted occurrence later, but a Thread who was absent cannot retroactively become a historical witness. Physical spatial detail inside one place (actual sight lines, acoustic range, occlusion) and cross-time environmental evolution remain deferred. Do not interpret this implementation as a constantly ticking weather simulation.
+
 ## Social and group encounters
 
 An encounter story is naturally n-ary.
