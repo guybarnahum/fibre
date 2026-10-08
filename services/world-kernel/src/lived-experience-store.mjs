@@ -161,8 +161,35 @@ export class LivedExperienceStore {
 
   close() { this.#database.close(); }
 
-  recordEncounterStory(candidate) {
+  getSharedEnvironmentalStory({occurredAt,placeRef}) {
+    assertIsoTimestamp("shared occurrence occurredAt",occurredAt);
+    assertId("shared occurrence placeRef",placeRef);
+    const row=this.#database.prepare(`
+      SELECT encounter_id FROM encounter_story_records
+      WHERE occurred_at=?
+        AND json_array_length(json_extract(story_json,'$.beats'))=1
+        AND json_extract(story_json,'$.beats[0].kind')='occurrence'
+        AND json_extract(story_json,'$.beats[0].actorThreadId') IS NULL
+        AND EXISTS (
+          SELECT 1 FROM json_each(visualization_source_refs_json)
+          WHERE value=?
+        )
+      ORDER BY encounter_id LIMIT 1
+    `).get(occurredAt,placeRef);
+    return row===undefined?null:this.getEncounterStory(row.encounter_id);
+  }
+
+  recordEncounterStory(candidate,{uniquePlaceOccurrenceRef=null}={}) {
     assertIsoTimestamp("encounter story.occurredAt", candidate.occurredAt);
+    if(uniquePlaceOccurrenceRef!==null){
+      assertId("shared occurrence placeRef",uniquePlaceOccurrenceRef);
+      if(candidate.story?.beats?.length!==1
+        ||candidate.story.beats[0]?.kind!=="occurrence"
+        ||candidate.story.beats[0]?.actorThreadId!==null
+        ||!candidate.visualization?.visualizationSourceReferences?.includes(uniquePlaceOccurrenceRef)){
+        throw new TypeError("shared occurrence must be one place-grounded objective beat");
+      }
+    }
     if (!Array.isArray(candidate.threadPresence) || candidate.threadPresence.length < 1) {
       throw new TypeError("encounter story requires at least one Thread presence");
     }
@@ -186,6 +213,12 @@ export class LivedExperienceStore {
 
     try {
       return this.#database.transaction(() => {
+        if(uniquePlaceOccurrenceRef!==null){
+          const admitted=this.getSharedEnvironmentalStory({
+            occurredAt:normalized.occurredAt,placeRef:uniquePlaceOccurrenceRef,
+          });
+          if(admitted!==null)return admitted;
+        }
         if (story.continuationOfEncounterRef !== undefined) {
           const prior = this.#database.prepare(
             "SELECT occurred_at FROM encounter_story_records WHERE encounter_id=?",
