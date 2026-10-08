@@ -90,9 +90,13 @@ export async function runE7StagingProbe({
   }
   if(deployedSha===null)throw new Error("no readable World Observatory or deployed Git SHA");
   const currentScenes=[];
+  const ambient=[];
   const sources=new Map();
   for(const [threadId,observatory] of observatories){
     currentScenes.push(...naturalScenes(observatory,threadId));
+    for(const opportunity of observatory.environmentalOpportunities??[]){
+      ambient.push({threadId,...opportunity});
+    }
     for(const source of sourceCandidates(observatory)){
       sources.set(source.sourceEncounterId,source);
     }
@@ -142,7 +146,10 @@ export async function runE7StagingProbe({
       :valid.length>0?"independent_attention_proven"
         :history.some((item)=>item.status==="pending")?"pending_world_followup"
           :history.length>0?"no_lived_continuation_observed"
-            :"no_source_in_bounded_scan";
+            :ambient.some((item)=>item.outcome==="changed"&&item.encounterId)
+              ?"ambient_source_observed"
+              :ambient.length>0?"ambient_opportunity_observed"
+                :"no_source_in_bounded_scan";
 
   const evidence={
     contract:"fibre-e7-natural-staging-v0.1",
@@ -155,6 +162,8 @@ export async function runE7StagingProbe({
     observedThreadCount:observatories.size,
     unavailableThreadCount:unavailable,
     currentSharedPlaceScenes:currentScenes.slice(0,12),
+    ambientOpportunities:ambient
+      .sort((a,b)=>b.dueAt.localeCompare(a.dueAt)).slice(0,24),
     sources:history,
     status,
     complete:status==="contrasting_attention_proven",
@@ -166,6 +175,9 @@ export async function runE7StagingProbe({
     event:"e7-world-evidence",
     currentSharedPlaceScenes:evidence.currentSharedPlaceScenes,
     sourceCount:sources.size,
+    ambientOpportunityCount:ambient.length,
+    ambientSourceCount:ambient.filter((item)=>
+      item.outcome==="changed"&&item.encounterId).length,
     continuationCount:history.filter((item)=>item.continuationEncounterId).length,
     verifiedObserverEventCount:valid.length,
   });
