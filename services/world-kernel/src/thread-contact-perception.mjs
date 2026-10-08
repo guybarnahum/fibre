@@ -37,8 +37,11 @@ export function createThreadContactPerception({
       const results=[];
       for(const message of due){
         try{
+          const sender=worldReader.getThread(message.senderThreadId,{required:false});
+          if(sender===null)throw new TypeError("addressed message sender no longer exists");
           let claim={
             situationId:message.situationId,perceivedAt:message.perceivedAt,
+            senderName:message.senderName,
           };
           if(claim.situationId===null){
             const situation=await livedNow.ensure({
@@ -48,19 +51,19 @@ export function createThreadContactPerception({
               messageId:message.messageId,
               threadId:message.recipientThreadId,
               situationId:situation.situationId,perceivedAt:at,
+              senderName:sender.identity?.name??message.senderThreadId,
             });
           }
           const recipient=worldReader.getThread(message.recipientThreadId,{required:false});
-          const sender=worldReader.getThread(message.senderThreadId,{required:false});
           const situation=livedNowStore.getSituation(claim.situationId,{required:false});
-          if(recipient===null||sender===null||situation?.threadId!==message.recipientThreadId){
+          if(recipient===null||situation?.threadId!==message.recipientThreadId){
             throw new TypeError("addressed contact lost its lived sender/recipient authority");
           }
           const story={
             storyVersion:"encounter-story-v0.1",
             beats:[{
               actorThreadId:null,kind:"occurrence",
-              text:`A private addressed message from ${sender.identity?.name??message.senderThreadId} becomes available: ${message.messageText}`,
+              text:`A private addressed message from ${claim.senderName} becomes available: ${message.messageText}`,
             }],
           };
           // An addressed message has no objective image, public place, or
