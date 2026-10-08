@@ -332,6 +332,7 @@ export async function startWorldKernelFromEnvironment(
   const contactLivedNow=createLivedNowService({
     onSituationResolved:scheduleNextLivedBoundary,
     onSituationEnacted:async(situation)=>{
+      if(situation.location?.kind!=="place")return;
       const earned=livedExperienceStore.enqueueEnvironmentalOpportunity({
         threadId:situation.threadId,
         situationId:situation.situationId,
