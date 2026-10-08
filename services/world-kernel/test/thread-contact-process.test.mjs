@@ -14,6 +14,7 @@ import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { lifeRelationId } from "../src/situated-life-domain.mjs";
 import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
 import { createThreadContactProcess } from "../src/thread-contact-process.mjs";
+import { createThreadContactPerception } from "../src/thread-contact-perception.mjs";
 
 const seed=JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8"),
@@ -321,6 +322,57 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
     assert.equal(retry.attempted,0,"completed contact residue was reconsidered");
     assert.equal(decisions.length+expressions.length,callsBeforeRetry,
       "retry resampled completed contact cognition");
+    assert.equal(contactStore.listDueContactReceptions({
+      at:"2026-10-07T18:31:00.000Z",limit:1,
+    }).length,1,"delivered Thread contact did not earn recipient opportunity");
+    assert.equal(experienceStore.listEncounterStories(noor.threadId).length,0,
+      "delivery itself fabricated recipient experience");
+    let cognition=0;
+    let receivedSituation=null;
+    const recipientProcess=createThreadContactPerception({
+      contactStore,worldReader:world,semanticStateStore,memoryStore,experienceStore,
+      livedNow:{
+        async ensure({threadId,at}){
+          assert.equal(threadId,noor.threadId);
+          receivedSituation={
+            threadId,situationId:"sit_noor_receiving",establishedAt:at,
+            phase:"at_place",location:{kind:"place",placeRef:"place_noor_home"},
+            activity:"Quietly sketching.",reason:"Personal activity.",
+            mediatedContext:null,participantRefs:[],sourcePlanRefs:[],
+          };
+          return receivedSituation;
+        },
+      },
+      livedNowStore:{getSituation:()=>receivedSituation},
+      now:()=>"2026-10-07T18:31:00.000Z",
+      modelAdapter:{
+        async invoke(call){
+          cognition++;
+          assert.equal(call.input.thread.threadId,noor.threadId,
+            "sender's mind was substituted for recipient's attention");
+          assert.match(call.input.encounterStory.story.beats[0].text,/compare sketches/,
+            "recipient did not encounter the actual addressed message");
+          return {
+            output:{outcome:"noticed",experienceText:"I saw Kaleo asking about our sketches."},
+            provenance:{provider:"fixture",modelId:"recipient-test"},
+          };
+        },
+      },
+    });
+    const reception=await recipientProcess.runOnce();
+    assert.equal(reception.failed,0,"recipient attention admission failed");
+    assert.equal(reception.noticed,1,"recipient did not independently notice");
+    assert.equal(reception.results[0].experienceId?.startsWith("exp_"),true,
+      "noticed contact did not become a personal Experience");
+    assert.equal(contactStore.inspectContactReceptions(noor.threadId)[0].completedAt!==null,true);
+    const admitted=experienceStore.listEncounterStories(noor.threadId);
+    assert.equal(admitted.length,1,"recipient contact was not admitted once");
+    assert.deepEqual(admitted[0].threadPresence,
+      [{threadId:noor.threadId,situationId:"sit_noor_receiving"}],
+      "private contact invented physically co-present witnesses");
+    assert.equal((await recipientProcess.runOnce()).attempted,0,
+      "recipient notice was duplicated after retry");
+    assert.equal(cognition,1,"completed contact resampled recipient attention");
   }finally{
     situatedLifeStore.close();
     memoryStore.close();
