@@ -6,7 +6,8 @@ function futurePlanBoundaries(plan,after){
   // End-of-plan is inclusive for LivedNow; the next millisecond
   // requires renewal or bounded historical continuation.
   candidates.push(new Date(Date.parse(plan.horizonEnd)+1).toISOString());
-  return candidates.filter((at)=>Date.parse(at)>Date.parse(after));
+  return candidates.filter((at)=>Date.parse(at)>Date.parse(after))
+    .map((at)=>new Date(Date.parse(at)).toISOString());
 }
 
 // Derive a single wake from a Thread's own admitted Flight Plan, not a
