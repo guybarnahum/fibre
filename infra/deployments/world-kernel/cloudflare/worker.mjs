@@ -215,6 +215,9 @@ function threadObservatory(runtime, threadId) {
         limit:100,
       })),
       encounterStories:Object.freeze(encounterStories),
+      environmentalOpportunities:structuredClone(
+        experience.inspectEnvironmentalOpportunities(threadId,{limit:12}),
+      ),
       experienceJournalEntries:structuredClone(experience.listThreadExperienceJournal(threadId)),
       experienceConsolidation:structuredClone(
         experience.inspectThreadExperienceConsolidation(threadId,{limit:200}),
