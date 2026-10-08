@@ -26,6 +26,7 @@ import { createPublicVisitorEncounterService } from "#services/world-kernel/src/
 import { createPublicVisitorEncounterWriteApi } from "#services/world-kernel/src/public-visitor-encounter-write-api.mjs";
 import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
+import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-encounter-registry.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
@@ -87,6 +88,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.threadJournalBook = null;
     this.experienceConsolidationProcess = null;
     this.experienceConsolidationWakeScheduler = null;
+    this.liveEncounterRegistry = createLiveEncounterRegistry();
   }
 
   journalBookForRequest() {
@@ -130,6 +132,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
           deployment.integrations.encounter,
           {environment:this.env},
         ),
+        onAfterthoughts:(event)=>this.liveEncounterRegistry.publishAfterthoughts(event),
       });
       runtime.reconciliationProcess.setExperienceConsolidationProcess(
         this.experienceConsolidationProcess,
@@ -184,6 +187,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
+        liveEncounterRegistry:this.liveEncounterRegistry,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       this.environmentalEncounterApi = createEnvironmentalEncounterWriteApi({
