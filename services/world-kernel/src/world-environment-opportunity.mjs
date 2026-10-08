@@ -217,8 +217,15 @@ Do not invent Thread actions, inner life, conversation, emotions, or another per
             outcome:decision.outcome,encounterId});
         }catch(error){
           failed+=1;
+          const message=String(error?.message??error).slice(0,180);
+          console.error(JSON.stringify({
+            event:"world-environment-opportunity-failed",
+            situationId:opportunity.situationId,
+            errorName:error?.constructor?.name??"Error",
+            message,
+          }));
           results.push({situationId:opportunity.situationId,outcome:"failed",
-            message:String(error?.message??error).slice(0,180)});
+            message});
         }
       }
       const nextDueAt=experienceStore.nextEnvironmentalOpportunityAt();
