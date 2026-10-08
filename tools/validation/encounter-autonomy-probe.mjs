@@ -381,19 +381,28 @@ export async function runEncounterAutonomyProbe({
     nextThreeWaySharedPlanWindow:nextWindow,
   });
 
-  const environmental=await environmentalProbe({
-    worldBaseUrl:deployment.worldBaseUrl,
-    privateToken,
-    candidate:scan.threads[0],
-  });
-  emit({event:"encounter-autonomy-environmental-proven",...environmental});
-
   const witness=await witnessProbe({
     worldBaseUrl:deployment.worldBaseUrl,
     privateToken,
     group:groups[0]??null,
   });
   emit({event:"encounter-autonomy-witness-result",...witness});
+
+  // E6a is independently proven. Re-prove it only when a live witness
+  // makes full E6 closure possible; an unavailable witness scene is read-only.
+  const environmental=witness.status==="proven"
+    ?await environmentalProbe({
+      worldBaseUrl:deployment.worldBaseUrl,
+      privateToken,
+      candidate:scan.threads[0],
+    })
+    :Object.freeze({status:"not_run",reason:"witness_not_proven"});
+  emit({
+    event:environmental.status==="proven"
+      ?"encounter-autonomy-environmental-proven"
+      :"encounter-autonomy-environmental-skipped",
+    ...environmental,
+  });
 
   const complete=environmental.status==="proven"&&witness.status==="proven";
   const evidence=Object.freeze({
