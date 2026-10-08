@@ -425,6 +425,13 @@ function fixture({
           placeId:ref === "wpl_n5_cafe" ? "place_n5_cafe" : ref.replace("wpl_", "place_"),
           placeKind:"market_or_commerce",
           displayName:"The same neighborhood café",
+          physicalVenue:{
+            ref:ref==="wpl_n5_cafe"?"venue_neighborhood_cafe":`venue_${ref}`,
+            displayName:"The neighborhood café",
+            locality:"Neighborhood",
+            country:"US",
+            evidenceRef:"fixture_attested_venue",
+          },
         }];
       },
       getWorldPlace(threadId, ref, { required = true } = {}) {
