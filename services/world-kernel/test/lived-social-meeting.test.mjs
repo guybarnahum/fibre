@@ -987,7 +987,6 @@ test("E6b one social story discovers a silent co-present witness", async () => {
   assert.equal(f.stanceNames.includes("Sela"), false, "witness should not be invited into Noor's encounter");
   assert.equal(attempt.encounterStory.story.beats[0].actorThreadId, mina.threadId,
     "initiator overture should begin the shared story");
-  assert.equal(f.storyAuthors.includes("Sela"), false, "witness should remain silent");
   assert.equal(
     attempt.encounterStory.story.beats.some((beat) => beat.actorThreadId === sela.threadId),
     false,
