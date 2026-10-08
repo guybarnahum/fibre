@@ -609,6 +609,17 @@ test("E2 accepted meeting is one Encounter Story with distinct Thread Experience
   assert.deepEqual(f.stanceNames, ["Noor"], "only the addressed Thread should decide whether to accept");
   assert.equal(attempt.encounterStory.story.beats[0].text, attempt.request.text,
     "accepted request must become the first objective story beat");
+  assert.deepEqual(
+    attempt.encounterStory.story.beats.map((beat)=>beat.actorThreadId),
+    [mina.threadId,noor.threadId],
+    "accepted meeting fell back to a fixed opener/reply/closing script",
+  );
+  assert.equal(f.liveContributionNames[0],"Noor",
+    "accepted request did not become Noor's live speaking opportunity");
+  assert.deepEqual(f.liveExpressionNames,["Noor"],
+    "silent initiator was forced into a canned closing");
+  assert.equal(attempt.live.endedBy,"quiescent",
+    "live meeting should end when no participant wants another contribution");
   assert.equal(f.stories.length, 1, "meeting should create one Encounter Story");
   assert.equal(f.experiences.length, 2, "each participant should own an experience");
   assert.equal(
