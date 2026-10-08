@@ -106,3 +106,32 @@ test("sentence, pause and end are independent speaking opportunities", () => {
     "batched speech crossed a sentence opportunity before being heard",
   );
 });
+
+test("private opportunity reaches only the owning participant", () => {
+  const encounter=createLiveEncounter({participantIds:["mina","noor"]});
+  const minaEvents=[];
+  const noorEvents=[];
+  encounter.subscribe("mina",(event)=>minaEvents.push(event));
+  encounter.subscribe("noor",(event)=>noorEvents.push(event));
+
+  encounter.pushPrivateOpportunity({
+    participantId:"mina",
+    reason:"afterthought",
+    sourceRef:"con_private_thought",
+    privateContext:{
+      afterthoughts:[{
+        kind:"question",
+        text:"I wonder whether I misunderstood Noor.",
+      }],
+    },
+  });
+
+  const opportunity=minaEvents.find((event)=>event.type==="speaking_opportunity");
+  assert.equal(opportunity?.reason,"afterthought",
+    "private thought did not become Mina's speaking opportunity");
+  assert.equal(opportunity?.privateContext?.afterthoughts?.[0]?.kind,"question",
+    "private thought lost its kind");
+  assert.equal(noorEvents.length,0,
+    "private thought leaked to another participant");
+});
+
