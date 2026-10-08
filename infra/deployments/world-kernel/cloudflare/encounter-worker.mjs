@@ -605,6 +605,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   }
 
   async enqueueWorldOpportunity(situation){
+    // E7.4's initial author currently admits at-place scenes only.
+    if(situation.location?.kind!=="place")return;
     const store=openLivedExperienceStore(this.runtimeForRequest().worldStorage);
     const earned=store.enqueueEnvironmentalOpportunity({
       threadId:situation.threadId,situationId:situation.situationId,
