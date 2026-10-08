@@ -61,7 +61,12 @@ export function createWorldEnvironmentOpportunity({
                 opportunity.threadId,situation.location.placeRef,{required:false},
               ):null;
             const physicalVenue=origin?.physicalVenue??null;
-            const candidateScenes=candidates.map((item)=>{
+            // Without grounded physical venue geography we can authorize a
+            // private local opportunity, not conjecture distant sight lines.
+            const observableCandidates=physicalVenue===null
+              ?candidates.filter((item)=>item.threadId===opportunity.threadId)
+              :candidates;
+            const candidateScenes=observableCandidates.map((item)=>{
               const place=livedNowStore.getWorldPlace(
                 item.threadId,item.location.placeRef,{required:false},
               );
