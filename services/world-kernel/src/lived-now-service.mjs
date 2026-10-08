@@ -573,9 +573,12 @@ export function createLivedNowService({
       &&currentSituation.location?.kind==="transit"
       &&previousSituation.location.fromPlaceRef===currentSituation.location.fromPlaceRef
       &&previousSituation.location.toPlaceRef===currentSituation.location.toPlaceRef;
-    // Refreshed timestamps and movement progress do not earn another
-    // environmental model call in an otherwise continuous scene.
-    if(previousSituation===null
+    // A new governing plan is a new lived opportunity even if the person
+    // remains in a familiar place; refreshing the same plan's timestamp is not.
+    const newPlan=previousSituation!==null
+      &&canonicalJson(previousSituation.sourcePlanRefs)
+        !==canonicalJson(currentSituation.sourcePlanRefs);
+    if(previousSituation===null||newPlan
       ||(!sameJourney&&!sameEnactedScene(previousSituation,currentSituation))){
       await onSituationEnacted?.(currentSituation);
     }
