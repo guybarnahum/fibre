@@ -281,7 +281,7 @@ Implemented foundation:
 
 Accepted after the focused N7.9 suite and full `npm run slice:validate` passed locally.
 
-## N7.10 — Thread-initiated later contact — CURRENT, IMPLEMENTED / VALIDATION PENDING
+## N7.10 — Thread-initiated later contact — ACCEPTED 2026-10-08
 
 A known Person/Thread may become a later contact opportunity because of grounded relationship/history/question/need.
 
@@ -320,7 +320,9 @@ Implemented foundation:
 
 **Person identity boundary:** N7.10 can contact an already-authoritative `human_source` relation. Ordinary public `/meet` visitors are still intentionally anonymous/thin and cannot become future contact identity merely by supplying a name. “Kaleo met Guy through public Meet and later chose to contact Guy” therefore remains unclaimed until Fibre admits a minimal stable Person participant-identity witness.
 
-## N7.11 — causal north-star proof
+**Acceptance evidence:** Guy reported the completed N7.10 focused/full validation green on 2026-10-08 at `b3f54d4048c9c943afc3e613e0560cef4dfd4bc5`. N7.10 ends at durable addressed delivery; it does not assert recipient perception or later behavior.
+
+## N7.11 — causal north-star proof — CURRENT / VALIDATION-FIRST
 
 Prove:
 
@@ -332,9 +334,33 @@ shared lived encounter
   -> later perception / planning / relationship / contact choice changes
 ```
 
-The proof must also include a valid encounter that produces no durable consequence.
+Prove a valid encounter can also leave **no** durable consequence. The tranche closes on causal social development, not chat length, message count or model call count.
 
-The tranche closes on causal social development, not on chat length, message count or model call count.
+### Gate 1 — addressed contact enters recipient life (open)
+
+Today a delivered Thread-addressed contact message is immutable delivery authority **only**. The recipient does not yet notice or experience it. The next mechanism must use the existing World/LivedNow and situated direct-social-act or mediated-perception boundaries, not declare `listInbox()` an Experience.
+
+- One delivered message may become a bounded exterior opportunity for its actual recipient, grounded in the recipient's current life. The sender is **not** invented as physically co-present.
+- Delivery, availability for perception, attention, Experience, Journal, and Memory stay distinct. `not_noticed`, silence, and no lasting memory remain legitimate.
+- Preserve the private addressed nature of contact: do not expose the message as an overheard public utterance simply because other Threads share the recipient's physical place.
+- Admission/retry must be causally idempotent; a delivered message cannot regenerate new history or duplicate Experience on every reconciliation.
+- Use a bounded recipient-message frontier and existing World reconciliation scheduling; no population scan, artificial chat session, response quota, or polling loop.
+
+**Early semantic proof:** sender delivery alone creates zero recipient Experience; one real recipient admission can produce `noticed` or `not_noticed`, each using the existing Encounter/Experience authority, with the retry producing no duplicate. Do not certify this gate using fixture-authored attention as if it were endogenous agency.
+
+### Gate 2 — selective long-term consequence (open)
+
+A recipient's noticed Experience may enter the existing delayed consolidation frontier and may yield a Journal, retained autobiography, private afterthought, or nothing. No contact delivery row, objective Encounter Story, or Journal may bypass the ordinary ownership/retention boundary to become private Memory.
+
+**Early semantic proof:** the same addressed occurrence has a valid no-memory outcome, and a retained-outcome path becomes retrievable as the Thread's own bounded autobiographical evidence at a genuinely later opportunity.
+
+### Gate 3 — past experience changes a later choice (open)
+
+Under comparable later World conditions, a retained earlier consequence must produce an **attributable difference** in a later Thread-owned appraisal, perception, planning, relationship, or contact decision relative to an otherwise matched no-consequence case. Fibre/Thread-owned retrieval must supply the evidence; callers may not secretly select private memories, provide the decisive judgment, or force a favorable contact outcome.
+
+**Closure proof:** a real shared Encounter Story yields participant-specific Experiences; selective consolidation retains an attributable consequence for one path but legitimately not for the other; a later *Fibre-owned* decision differs because of that history. Prompt inclusion alone is Context-only, not acceptance.
+
+Keep the proof to one or two organism-level tests, plus a narrow retry/absence proof only if indispensable. Give Guy focused CLI validation before the single full `npm run slice:validate` at closure. Record the milestone causal-status register and drift scorecard only when actual acceptance evidence exists.
 
 ## Standing implementation discipline
 
