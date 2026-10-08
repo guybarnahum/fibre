@@ -351,6 +351,10 @@ export async function startWorldKernelFromEnvironment(
   const environmentEvolutionProcess=createWorldEnvironmentEvolution({
     experienceStore:livedExperienceStore,
     livedNowStore,
+    worldReader:store,
+    semanticStateStore,
+    memoryStore:autobiographicalMemoryStore,
+    onExperienceQueued:(queued)=>experienceConsolidationWakeScheduler(queued),
     modelAdapter:{
       async invoke(request){
         contactModelAdapter??=selectReasoningIntegration(
