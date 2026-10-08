@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { createLiveEncounterRegistry } from "../src/live-encounter-registry.mjs";
 import { runThreadLiveSocialEncounter } from "../src/lived-social-live-encounter.mjs";
 
 function context(threadId,name){
@@ -200,5 +201,110 @@ test("Thread live encounter can contribute an outward action without forcing spe
     "Noor slides the sketchbook slightly toward Mina.",
     "live action lost its observable content",
   );
+});
+
+test("delayed private thought can originate speech during an active encounter", async () => {
+  const mina=context("thr_afterthought_mina","Mina");
+  const noor=context("thr_afterthought_noor","Noor");
+  const registry=createLiveEncounterRegistry();
+  const minaOpportunities=[];
+  let minaSpoke;
+  const minaSpeech=new Promise((resolve)=>{minaSpoke=resolve;});
+  let published=false;
+
+  const modelAdapter={
+    provider:"fixture",
+    modelId:"fixture-live-afterthought",
+    configuration:{transport:"fixture"},
+    async invoke(call){
+      const name=call.input.thread.name;
+      const opportunity=call.input.liveInteraction.opportunity;
+      if(name==="Mina")minaOpportunities.push(structuredClone(opportunity));
+      const speak=name==="Noor"
+        ? opportunity.reason==="end"
+        : opportunity.reason==="afterthought";
+      return {
+        output:{decision:speak?"speak":"silent",actionText:null},
+        provenance:{provider:"fixture",modelId:"fixture-live-afterthought-choice"},
+      };
+    },
+    async *streamExpression(call){
+      if(call.input.thread.name==="Noor"){
+        yield {type:"expression_delta",text:"I thought the sketch needed more contrast."};
+        published=true;
+        const delivery=registry.publishAfterthoughts({
+          threadId:mina.thread.threadId,
+          consolidationId:"con_afterthought_live",
+          afterthoughts:[{
+            kind:"question",
+            text:"Did I assume Noor wanted critique when she wanted company?",
+          }],
+        });
+        assert.equal(delivery.activeEncounters,1,
+          "delayed thought did not find Mina's active encounter");
+        await minaSpeech;
+        if(call.signal?.aborted)return;
+        yield {type:"expression_delta",text:" I was going to keep explaining."};
+      }else{
+        yield {type:"expression_delta",text:"Actually—did you want critique, or just company?"};
+        minaSpoke();
+      }
+      if(call.signal?.aborted)return;
+      yield {
+        type:"expression_complete",
+        provenance:{
+          provider:"fixture",
+          modelId:"fixture-live-afterthought-expression",
+          providerRequestId:"fixture-live-afterthought",
+        },
+      };
+    },
+  };
+
+  const result=await runThreadLiveSocialEncounter({
+    initiator:mina,
+    counterparty:noor,
+    request:{
+      initiatorThreadId:mina.thread.threadId,
+      text:"What were you changing in the sketch?",
+    },
+    stance:{
+      decision:"accept",
+      expression:null,
+      suggestedAt:null,
+      reason:"I am happy to answer.",
+    },
+    modelAdapter,
+    liveEncounterRegistry:registry,
+  });
+
+  assert.equal(published,true,"delayed thought was never published");
+  assert.equal(
+    minaOpportunities.some((opportunity)=>opportunity.reason==="sentence"),
+    true,
+    "ordinary speech boundary was not offered to Mina",
+  );
+  const delayed=minaOpportunities.find((opportunity)=>opportunity.reason==="afterthought");
+  assert.equal(delayed?.sourceRef,"con_afterthought_live",
+    "spontaneous opportunity lost its durable consolidation source");
+  assert.equal(
+    delayed?.privateContext?.afterthoughts?.[0]?.kind,
+    "question",
+    "spontaneous opportunity lost the private delayed thought",
+  );
+  assert.equal(
+    result.story.beats.some((beat)=>
+      beat.actorThreadId===mina.thread.threadId
+      && beat.text==="Actually—did you want critique, or just company?"),
+    true,
+    "Thread did not originate outward speech from its delayed thought",
+  );
+  assert.equal(
+    result.story.beats.some((beat)=>beat.text.includes("keep explaining")),
+    false,
+    "spontaneous speech failed to interrupt the prior audible speaker",
+  );
+  assert.equal(registry.activeCount(mina.thread.threadId),0,
+    "finished encounter remained registered as live");
 });
 
