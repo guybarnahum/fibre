@@ -16,8 +16,8 @@ function digest(value){
   return `sha256:${sha256(canonicalJson(value))}`;
 }
 
-function capabilityIdFor(partyId){
-  return `pcap_${sha256(canonicalJson({partyId}))}`;
+function capabilityIdFor({partyId,registeredAt}){
+  return `pcap_${sha256(canonicalJson({partyId,registeredAt}))}`;
 }
 
 function attemptIdFor({threadId,consolidationId}){
@@ -51,7 +51,7 @@ export class ContactStore {
     }
     assertNonEmpty("person contact displayName",displayName);
     assertIsoTimestamp("person contact registeredAt",registeredAt);
-    const capabilityId=capabilityIdFor(partyId);
+    const capabilityId=capabilityIdFor({partyId,registeredAt});
     const record={capabilityId,partyId,displayName:displayName.trim(),registeredAt};
     const recordDigest=digest(record);
     try{
@@ -115,6 +115,8 @@ export class ContactStore {
       LEFT JOIN person_contact_capability_revocations r
         ON r.capability_id=c.capability_id
       WHERE c.party_id=?
+      ORDER BY c.registered_at DESC,c.capability_id DESC
+      LIMIT 1
     `).get(partyId);
     if(row===undefined){
       if(required)throw new TypeError(`person contact capability for ${partyId} was not found`);
