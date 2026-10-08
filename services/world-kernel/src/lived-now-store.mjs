@@ -538,7 +538,9 @@ export class LivedNowStore {
       return Object.freeze({
         threadId:currentSituation.threadId,
         currentSituation,
-        worldPlaces:Object.freeze(evidence.map((item) => item.worldPlace).filter(Boolean)),
+        worldPlaces:Object.freeze(observedPlaceRefs(currentSituation)
+          .map((ref)=>this.getWorldPlace(currentSituation.threadId,ref,{required:false}))
+          .filter(Boolean)),
         placeEpisodes:Object.freeze(evidence.map((item) => item.placeEpisode).filter(Boolean)),
       });
     });
