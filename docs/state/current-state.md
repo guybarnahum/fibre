@@ -331,6 +331,12 @@ N7.0-N7.10 are accepted locally (Guy reported N7.10 validation green on 2026-10-
 
 **Recipient-side Thread contact — local validation passed, staging pending (Guy, 2026-10-08, `0880f1d9`: 27 focused and 1,564 full tests green):** real Thread-to-Thread delivery now earns an indexed, one-recipient World perception opportunity, which is processed through ordinary LivedNow and existing selective attention/Experience and delayed-consolidation authorities, with bounded retry and no bystander co-presence. No private inbox scan or forced answer. This change has passed Guy's focused/full local validation but has not been deployed to staging and cannot yet demonstrate real provider appraisal, retained memory or later developmental causality; N7.11 remains open. The staged E7.5 flight-boundary observation due 2026-10-09T02:00:00Z remains untouched; do not redeploy World Kernel before capturing its autonomous alarm evidence.
 
+## Meet / Encounter source audit — work deferred
+
+A [source-only audit of public `/meet` and `/encounter`](../validation/meet-encounter-run-path-audit.md) was recorded on 2026-10-08. Public display and World entrance already use LivedNow, accepted contact passes independent stance, objective Story and personal Experience/queued consolidation, and completed requests have a durable replay receipt. The public response remains a complete turn rather than N7's interruptible streaming expression; each accepted public turn invokes separate stance, response and immediate Experience cognition. Interrupted *incomplete* requests and scene movement during slow inference remain **risks to validate**, not proven live failures. The separate compensated-work encounter path must retain its actual agreement/settlement semantics while common social-event composition is reconsidered.
+
+This adds no new runtime code, endpoint or accepted personhood claim. Resume after capturing the independently scheduled E7.5 alarm evidence, guided by the [current priorities](current-priorities.md).
+
 ## World operating cost and capacity — future work, not yet measured
 
 Current World execution is indexed and event-driven, not a continuous population simulator. It uses a shared World Durable Object/InfraDriver reconciliation scope, which keeps authority coherent but serial model-backed work may create a capacity bottleneck. OpenAI invocation provenance already carries token counts; World requests/alarms already expose SQL-row cost counters. **Neither a production per-Thread/per-physical-site cost report nor the saturation point is yet established.**
