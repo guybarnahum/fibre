@@ -79,6 +79,9 @@ function createTables(database) {
     CREATE INDEX IF NOT EXISTS idx_current_situations_thread_time
       ON current_situation_records(thread_id,established_at,situation_id);
 
+    CREATE INDEX IF NOT EXISTS idx_current_situations_recent
+      ON current_situation_records(established_at DESC);
+
     CREATE TRIGGER IF NOT EXISTS current_situations_no_update
       BEFORE UPDATE ON current_situation_records
       BEGIN SELECT RAISE(ABORT,'current_situation_records is append-only'); END;
@@ -453,6 +456,29 @@ export class LivedNowStore {
       WHERE rn=1
       ORDER BY thread_id
     `).all(at);
+    return rows.map(situationFromRow);
+  }
+
+  listRecentCurrentSituations({at,since,limit=8}={}){
+    assertIsoTimestamp("recent situations at",at);
+    assertIsoTimestamp("recent situations since",since);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>32){
+      throw new TypeError("recent situations limit must be 1-32");
+    }
+    const rows=this.#database.prepare(`
+      WITH ranked AS (
+        SELECT *,ROW_NUMBER() OVER (
+          PARTITION BY thread_id ORDER BY established_at DESC,situation_id DESC
+        ) AS rn
+        FROM current_situation_records
+        WHERE established_at BETWEEN ? AND ?
+          AND thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')
+      )
+      SELECT situation_id,thread_id,established_at,record_json,record_digest
+      FROM ranked WHERE rn=1
+      ORDER BY established_at DESC,situation_id DESC
+      LIMIT ?
+    `).all(since,at,limit);
     return rows.map(situationFromRow);
   }
 
