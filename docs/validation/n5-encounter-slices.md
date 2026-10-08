@@ -457,6 +457,22 @@ First verify that the deployed World has a real E7.1 source occurrence with an e
 
 This closes the *mechanism* after operator test acceptance. It does not imply autonomous initial weather seeding, automatic long-range realism, delayed autobiographical retention for every noticing, or N7.11's later-behavior consequence proof.
 
+### 2026-10-08 live-situation evidence — venue identity blocker
+
+Guy performed **one** ordinary `POST /internal/lived-now/ensure` against staging for the Thread surfaced by the E7 read-only scan. World returned a fresh `CurrentSituation` (`sit_6f91107d2668153c755a07cf8e5fc8bd6e1c076d4bd7dac4818675006c9b88f7`, established `2026-10-08T17:24:41.143Z`), `phase:at_place`, with activity `Wind down at the study space, put away books, and prepare for sleep.` It carries `wpl_75bdbaeade0d3c17b55111c8bedcc77e22af50746481abc1c287cd83848fe1dc` and `placeKind:library_or_learning`. The admitted WorldPlace description, however, describes homework **at a dining table or on a bed**, family assistance, tutoring and coaching centres. Public Present has `location.place:null`.
+
+**Finding:** the Thread's present is freshly enacted and credible as its *own* situation; the `wpl_*` classification is **not** sufficient evidence that the setting is a uniquely identifiable shared public venue. `live-world-place.mjs` currently derives `wpl_*` from Genesis `sourceWorldRef/sourcePlaceId/placeKind` and admits by `library_or_learning` kind, using `place.description` as `displayName`. An admissible historical learning *context* can therefore masquerade as an exact physical public place. Equal identifiers based on shared source material are also not independent evidence that two Threads visited the same real venue.
+
+**Do not call environmental-encounter on this situation as a shared-place acceptance proof**, force another Thread into it, or treat its descriptive text as a venue name. Do not fix the error with fragile keyword classification, longer prompt instructions or a new periodic simulator. Keep E7.1–E7.3 local acceptance intact and E7 live acceptance open.
+
+### Proposed E7.4 — Physical place identity before ambient opportunity — NEXT / NOT IMPLEMENTED
+
+Establish the minimum independent **current World-place identity** necessary to say that two situations refer to the *same bounded physical venue*. Genesis WorldSpec places remain provenance and cultural/historical context, not automatic shared-space identities; a Thread's home study area remains an ordinary personal scene. An explicitly admitted real venue (or a credible synthetic one with bounded identity and locality) may be referenced by multiple Threads without coercing their plans or contact. This should build toward the existing `PlaceSpec -> WorldSlice -> ThreadWorldContext` direction without introducing that entire schema prematurely.
+
+Once the World can resolve genuine venue identity, an ordinary LivedNow/Flight Plan transition may earn **one sparse environmental opportunity**, authoring only when some currently situated Thread could plausibly notice it. No fixed distance radius, population-wide waking, repetitive model sampling, extra scheduler, brute-force exploration or synthetic forced meeting. E7.1 shared story, E7.2 one-shot continuation, and E7.3 independent attention should remain the existing downstream authorities.
+
+**Acceptance:** a credible public venue shared by two genuinely independently enacted CurrentSituations yields one World source and distinct attention; a home/private study scene does not become a shared venue merely because its Genesis place has the kind `library_or_learning`; repeated World reconciliation is quiescent without earned work. Actual operator staging evidence, not a fixture or venue-name heuristic, closes E7 live acceptance.
+
 ### Explicitly deferred
 
 - A continuously evolving external weather system or meteorological feed (deferred, no current authority).
