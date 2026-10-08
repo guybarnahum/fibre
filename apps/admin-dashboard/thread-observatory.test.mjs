@@ -609,6 +609,32 @@ test("Thread Observatory keeps Encounter Story, journal authority, and memory se
               journal:null,
             }],
           },
+          contactOutreach:{
+            attempts:[{
+              contactAttemptId:"cat_e4_admin",
+              threadId:"thr_e4_admin",
+              consolidationId:"con_contact_e4_admin",
+              startedAt:"2026-09-21T19:00:00.000Z",
+              decision:{
+                stage:"decision",
+                payload:{
+                  decision:"keep_private",
+                  recipientPartyId:null,
+                  reason:"I want to sit with it.",
+                },
+              },
+              expression:null,
+              complete:{
+                stage:"complete",
+                payload:{
+                  outcome:"kept_private",
+                  recipientPartyId:null,
+                  messageId:null,
+                },
+              },
+            }],
+            sent:[],
+          },
         },
       });
     }
@@ -641,6 +667,8 @@ test("Thread Observatory keeps Encounter Story, journal authority, and memory se
       "Admin should retain the stable Thread-owned journal presentation");
     assert.equal(result.experienceConsolidation.consolidations[0].consolidationId,"con_e4_admin",
       "Admin should receive consolidation authority separately from Encounter Story");
+    assert.equal(result.contactOutreach.attempts[0].complete.payload.outcome,"kept_private",
+      "Admin should receive later-contact authority separately from outward messages");
     assert.equal(result.memories.length, 0,
       "journal presence must not imply autobiographical retention");
   } finally {
