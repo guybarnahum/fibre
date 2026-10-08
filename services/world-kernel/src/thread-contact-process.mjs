@@ -119,6 +119,7 @@ export function createThreadContactProcess({
   requireMethod("contact experienceStore",experienceStore,"getThreadExperienceConsolidationStage");
   requireMethod("contact contactStore",contactStore,"getAttemptByConsolidation");
   requireMethod("contact contactStore",contactStore,"claimAttempt");
+  requireMethod("contact contactStore",contactStore,"listUnconsideredAfterthoughtSources");
   requireMethod("contact contactStore",contactStore,"listPendingAttempts");
   requireMethod("contact contactStore",contactStore,"recordStage");
   requireMethod("contact contactStore",contactStore,"getStage");
@@ -143,19 +144,13 @@ export function createThreadContactProcess({
     });
   }
 
-  function unconsideredRoutableSources(){
-    const sources=experienceStore.listCompletedAfterthoughtConsolidations({
+  function unconsideredSources(){
+    return contactStore.listUnconsideredAfterthoughtSources({
       limit:sourceScanLimit,
-    });
-    const routable=[];
-    for(const source of sources){
-      if(contactStore.getAttemptByConsolidation(source.consolidationId)!==null)continue;
-      const candidates=currentCandidates(source.threadId);
-      if(candidates.length===0)continue;
-      routable.push(Object.freeze({source,candidates}));
-      if(routable.length>=batchLimit)break;
-    }
-    return routable;
+    }).map((source)=>Object.freeze({
+      source,
+      candidates:currentCandidates(source.threadId),
+    }));
   }
 
   async function runAttempt(attempt,cachedCandidates=null){
@@ -176,11 +171,22 @@ export function createThreadContactProcess({
 
     if(decisionStage===null){
       if(candidates.length===0){
+        const complete=contactStore.getStage(attempt.contactAttemptId,"complete")
+          ??contactStore.recordStage({
+            contactAttemptId:attempt.contactAttemptId,
+            stage:"complete",
+            recordedAt:now(),
+            payload:{
+              outcome:"no_route",
+              recipientPartyId:null,
+              messageId:null,
+            },
+          });
         return Object.freeze({
           contactAttemptId:attempt.contactAttemptId,
           consolidationId:attempt.consolidationId,
-          outcome:"route_unavailable_before_decision",
-          completed:false,
+          outcome:complete.payload.outcome,
+          completed:true,
         });
       }
       const decision=await decideLaterContact({
@@ -325,7 +331,7 @@ export function createThreadContactProcess({
 
   function hasPending(){
     if(contactStore.hasPendingAttempts())return true;
-    return unconsideredRoutableSources().length>0;
+    return contactStore.listUnconsideredAfterthoughtSources({limit:1}).length>0;
   }
 
   return Object.freeze({
@@ -356,7 +362,7 @@ export function createThreadContactProcess({
 
       const remaining=batchLimit-attempted;
       if(remaining>0){
-        const sources=unconsideredRoutableSources().slice(0,remaining);
+        const sources=unconsideredSources().slice(0,remaining);
         for(const {source,candidates} of sources){
           attempted+=1;
           let attempt=null;
