@@ -13,6 +13,7 @@ import {
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 
 const MEMORY_LIMIT = 6;
+const SHARED_WORLD_FOLLOWUP_DELAY_MS = 30 * 60_000;
 
 function requireMethod(name, value, method) {
   if (value === null || typeof value !== "object" || typeof value[method] !== "function") {
@@ -170,6 +171,7 @@ export function createEnvironmentalEncounterService({
   experienceStore,
   modelAdapter,
   onExperienceQueued = null,
+  onWorldFollowupQueued = null,
 }) {
   requireMethod("worldReader", worldReader, "getThread");
   requireMethod("livedNow", livedNow, "ensure");
@@ -182,12 +184,16 @@ export function createEnvironmentalEncounterService({
   requireMethod("experienceStore", experienceStore, "recordEncounterStory");
   requireMethod("experienceStore", experienceStore, "listEncounterStories");
   requireMethod("experienceStore", experienceStore, "getSharedEnvironmentalStory");
+  requireMethod("experienceStore", experienceStore, "nextEnvironmentalFollowupAt");
   requireMethod("experienceStore", experienceStore, "getThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "queueThreadExperienceConsolidation");
   requireMethod("modelAdapter", modelAdapter, "invoke");
   if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
     throw new TypeError("environmental encounter onExperienceQueued must be a function or null");
+  }
+  if(onWorldFollowupQueued!==null&&typeof onWorldFollowupQueued!=="function"){
+    throw new TypeError("environmental encounter onWorldFollowupQueued must be a function or null");
   }
 
   return Object.freeze({
@@ -255,8 +261,19 @@ export function createEnvironmentalEncounterService({
           }],
           story,
           visualization,
-        },{uniquePlaceOccurrenceRef:shared?.placeRef??null});
+        },{
+          uniquePlaceOccurrenceRef:shared?.placeRef??null,
+          followupAfterMs:shared!==null&&onWorldFollowupQueued!==null
+            ?SHARED_WORLD_FOLLOWUP_DELAY_MS:null,
+        });
         reused = false;
+      }
+
+      if(shared!==null&&onWorldFollowupQueued!==null){
+        // E7.2 earns one delayed World consideration only after an admitted
+        // shared occurrence, and re-arms it on retry if scheduling failed.
+        const nextDueAt=experienceStore.nextEnvironmentalFollowupAt();
+        if(nextDueAt!==null)await onWorldFollowupQueued({dueAt:nextDueAt});
       }
 
       if(!encounterStory.threadPresence.some((presence)=>
