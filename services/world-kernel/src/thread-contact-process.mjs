@@ -98,7 +98,7 @@ function sourceFromConsolidation(experienceStore,consolidationId){
 
 export function createThreadContactProcess({
   worldReader,
-  livedNowStore,
+  livedNow,
   situatedLifeStore,
   semanticStateStore,
   memoryStore,
@@ -109,7 +109,7 @@ export function createThreadContactProcess({
   batchLimit=4,
 }={}){
   requireMethod("contact worldReader",worldReader,"getThread");
-  requireMethod("contact livedNowStore",livedNowStore,"getCurrentSituation");
+  requireMethod("contact livedNow",livedNow,"ensure");
   requireMethod("contact situatedLifeStore",situatedLifeStore,"listCurrentLifeRelations");
   requireMethod("contact semanticStateStore",semanticStateStore,"listCurrentState");
   requireMethod("contact memoryStore",memoryStore,"listCurrentMemories");
@@ -153,12 +153,6 @@ export function createThreadContactProcess({
     );
     const thread=worldReader.getThread(attempt.threadId,{required:false});
     if(thread===null)throw new TypeError(`contact Thread ${attempt.threadId} was not found`);
-    const currentSituation=livedNowStore.getCurrentSituation(attempt.threadId);
-    const semanticStates=semanticStateStore.listCurrentState(attempt.threadId);
-    const memories=memoryStore.listCurrentMemories(attempt.threadId,{
-      limit:8,
-      newestFirst:true,
-    });
     const candidates=cachedCandidates??currentCandidates(attempt.threadId);
     let decisionStage=contactStore.getStage(attempt.contactAttemptId,"decision");
 
@@ -182,6 +176,16 @@ export function createThreadContactProcess({
           completed:true,
         });
       }
+      const contactAt=now();
+      const currentSituation=await livedNow.ensure({
+        threadId:attempt.threadId,
+        at:contactAt,
+      });
+      const semanticStates=semanticStateStore.listCurrentState(attempt.threadId);
+      const memories=memoryStore.listCurrentMemories(attempt.threadId,{
+        limit:8,
+        newestFirst:true,
+      });
       const decision=await decideLaterContact({
         thread,
         afterthoughts,
@@ -194,7 +198,7 @@ export function createThreadContactProcess({
       decisionStage=contactStore.recordStage({
         contactAttemptId:attempt.contactAttemptId,
         stage:"decision",
-        recordedAt:now(),
+        recordedAt:contactAt,
         payload:{
           decision:decision.decision,
           recipientPartyId:decision.recipientPartyId,
@@ -248,6 +252,16 @@ export function createThreadContactProcess({
 
     let expressionStage=contactStore.getStage(attempt.contactAttemptId,"expression");
     if(expressionStage===null){
+      const contactAt=now();
+      const currentSituation=await livedNow.ensure({
+        threadId:attempt.threadId,
+        at:contactAt,
+      });
+      const semanticStates=semanticStateStore.listCurrentState(attempt.threadId);
+      const memories=memoryStore.listCurrentMemories(attempt.threadId,{
+        limit:8,
+        newestFirst:true,
+      });
       const expression=await expressLaterContact({
         thread,
         afterthoughts,
@@ -261,7 +275,7 @@ export function createThreadContactProcess({
       expressionStage=contactStore.recordStage({
         contactAttemptId:attempt.contactAttemptId,
         stage:"expression",
-        recordedAt:now(),
+        recordedAt:contactAt,
         payload:{
           recipientPartyId,
           recipientKind:candidate.recipientKind,
