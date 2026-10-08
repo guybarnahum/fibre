@@ -328,6 +328,7 @@ export class ContactStore {
     };
     const recordDigest=digest(record);
     try{
+      return this.#database.transaction(() => {
       const prior=this.#database.prepare(`
         SELECT message_id,sender_thread_id,recipient_party_id,recipient_kind,
           sent_at,message_text,source_consolidation_id,record_digest
@@ -351,9 +352,105 @@ export class ContactStore {
         messageId,contactAttemptId,senderThreadId,recipientPartyId,
         recipientKind,sentAt,record.messageText,sourceConsolidationId,recordDigest,
       );
+      if(recipientKind==="thread"){
+        this.#database.prepare(`
+          INSERT OR IGNORE INTO thread_contact_receptions(
+            message_id,recipient_thread_id,due_at
+          ) VALUES (?,?,?)
+        `).run(messageId,recipientPartyId,sentAt);
+      }
       return Object.freeze(record);
+      });
     }catch(error){ throw translateStorageError(error); }
   }
+
+  nextContactReceptionAt(){
+    return this.#database.prepare(`
+      SELECT due_at FROM thread_contact_receptions
+      WHERE completed_at IS NULL AND blocked_reason IS NULL
+      ORDER BY due_at,message_id LIMIT 1
+    `).get()?.due_at??null;
+  }
+
+  listDueContactReceptions({at,limit=1}={}){
+    assertIsoTimestamp("contact reception at",at);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>4)
+      throw new TypeError("contact reception limit must be 1-4");
+    return this.#database.prepare(`
+      SELECT m.message_id,m.sender_thread_id,m.recipient_party_id,
+        m.sent_at,m.message_text,r.situation_id,r.perceived_at
+      FROM thread_contact_receptions r
+      JOIN thread_contact_messages m ON m.message_id=r.message_id
+      WHERE r.completed_at IS NULL AND r.blocked_reason IS NULL AND r.due_at<=?
+      ORDER BY r.due_at,r.message_id LIMIT ?
+    `).all(at,limit).map((row)=>Object.freeze({
+      messageId:row.message_id,senderThreadId:row.sender_thread_id,
+      recipientThreadId:row.recipient_party_id,sentAt:row.sent_at,
+      messageText:row.message_text,situationId:row.situation_id,
+      perceivedAt:row.perceived_at,
+    }));
+  }
+
+  claimContactReception({messageId,threadId,situationId,perceivedAt}){
+    assertId("contact reception messageId",messageId);
+    assertId("contact reception threadId",threadId);
+    assertId("contact reception situationId",situationId);
+    assertIsoTimestamp("contact reception perceivedAt",perceivedAt);
+    this.#database.prepare(`
+      UPDATE thread_contact_receptions
+      SET situation_id=?,perceived_at=?
+      WHERE message_id=? AND recipient_thread_id=? AND situation_id IS NULL
+        AND completed_at IS NULL
+    `).run(situationId,perceivedAt,messageId,threadId);
+    const row=this.#database.prepare(`
+      SELECT situation_id,perceived_at FROM thread_contact_receptions
+      WHERE message_id=? AND recipient_thread_id=?
+    `).get(messageId,threadId);
+    if(row===undefined)throw new TypeError("recipient contact reception was not found");
+    return Object.freeze({situationId:row.situation_id,perceivedAt:row.perceived_at});
+  }
+
+  settleContactReception({messageId,completedAt}){
+    assertId("contact reception messageId",messageId);
+    assertIsoTimestamp("contact reception completedAt",completedAt);
+    this.#database.prepare(`
+      UPDATE thread_contact_receptions SET completed_at=?
+      WHERE message_id=? AND completed_at IS NULL
+    `).run(completedAt,messageId);
+  }
+
+  failContactReception({messageId,reason}){
+    assertId("contact reception messageId",messageId);
+    assertNonEmpty("contact reception failure",reason);
+    this.#database.prepare(`
+      UPDATE thread_contact_receptions
+      SET failed_attempts=failed_attempts+1,
+        blocked_reason=CASE WHEN failed_attempts>=2 THEN ? ELSE NULL END
+      WHERE message_id=? AND completed_at IS NULL AND blocked_reason IS NULL
+    `).run(reason.slice(0,180),messageId);
+    return this.#database.prepare(`
+      SELECT blocked_reason IS NOT NULL AS blocked
+      FROM thread_contact_receptions WHERE message_id=?
+    `).get(messageId)?.blocked===1;
+  }
+
+  inspectContactReceptions(threadId,{limit=12}={}){
+    assertId("contact reception threadId",threadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>40)
+      throw new TypeError("contact reception inspection limit must be 1-40");
+    return this.#database.prepare(`
+      SELECT message_id,due_at,situation_id,perceived_at,completed_at,
+        blocked_reason,failed_attempts FROM thread_contact_receptions
+      WHERE recipient_thread_id=?
+      ORDER BY due_at DESC,message_id DESC LIMIT ?
+    `).all(threadId,limit).map((row)=>Object.freeze({
+      messageId:row.message_id,dueAt:row.due_at,
+      situationId:row.situation_id,perceivedAt:row.perceived_at,
+      completedAt:row.completed_at,blockedReason:row.blocked_reason,
+      failedAttempts:row.failed_attempts,
+    }));
+  }
+
 
   listInbox(partyId,{limit=100}={}){
     assertId("contact inbox partyId",partyId);
