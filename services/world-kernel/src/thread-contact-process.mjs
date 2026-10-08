@@ -114,7 +114,6 @@ export function createThreadContactProcess({
   requireMethod("contact situatedLifeStore",situatedLifeStore,"listCurrentLifeRelations");
   requireMethod("contact semanticStateStore",semanticStateStore,"listCurrentState");
   requireMethod("contact memoryStore",memoryStore,"listCurrentMemories");
-  requireMethod("contact experienceStore",experienceStore,"listCompletedAfterthoughtConsolidations");
   requireMethod("contact experienceStore",experienceStore,"getThreadExperienceConsolidation");
   requireMethod("contact experienceStore",experienceStore,"getThreadExperienceConsolidationStage");
   requireMethod("contact contactStore",contactStore,"getAttemptByConsolidation");
