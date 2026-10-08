@@ -128,14 +128,12 @@ Write observable World fact only.`,
   return invocation.output.occurrenceText.trim();
 }
 
-function existingEnvironmentalStory(experienceStore, threadId, situation, at, sharedPlaceRef) {
+function existingEnvironmentalStory(experienceStore, threadId, situation, at) {
   return experienceStore.listEncounterStories(threadId).find((story) =>
     story.occurredAt === at
     && story.threadPresence.some((presence) =>
       presence.threadId === threadId && presence.situationId === situation.situationId)
-    && (sharedPlaceRef === null
-      ? story.threadPresence.length === 1
-      : story.visualization?.visualizationSourceReferences?.includes(sharedPlaceRef))
+    && story.threadPresence.length === 1
     && story.story?.beats?.length === 1
     && story.story.beats[0].actorThreadId === null
     && story.story.beats[0].kind === "occurrence"
@@ -214,7 +212,7 @@ export function createEnvironmentalEncounterService({
           occurredAt:input.at,placeRef:shared.placeRef,
         })
         :existingEnvironmentalStory(
-          experienceStore,input.threadId,context.situation,input.at,null,
+          experienceStore,input.threadId,context.situation,input.at,
         );
       let reused = encounterStory !== null;
 
