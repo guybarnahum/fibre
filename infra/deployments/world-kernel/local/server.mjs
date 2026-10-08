@@ -25,6 +25,10 @@ import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { createContactWriteApi } from "#services/world-kernel/src/contact-write-api.mjs";
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
+import {
+  combineWorldEnvironmentProcesses,
+  createWorldEnvironmentOpportunity,
+} from "#services/world-kernel/src/world-environment-opportunity.mjs";
 import { projectCurrentLife } from "#services/world-kernel/src/current-life-projection.mjs";
 import { openGuardianCognitionStore } from "#services/world-kernel/src/guardian-cognition-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
@@ -313,6 +317,14 @@ export async function startWorldKernelFromEnvironment(
   });
   let contactLivedNowModelAdapter=null;
   const contactLivedNow=createLivedNowService({
+    onSituationEnacted:async(situation)=>{
+      const earned=livedExperienceStore.enqueueEnvironmentalOpportunity({
+        threadId:situation.threadId,
+        situationId:situation.situationId,
+        dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
+      });
+      if(earned.inserted)await reconciliationRuntime.requestWakeAfter(60_000);
+    },
     livedNowStore,
     worldStore:store,
     identityStore,
@@ -348,7 +360,7 @@ export async function startWorldKernelFromEnvironment(
       },
     },
   });
-  const environmentEvolutionProcess=createWorldEnvironmentEvolution({
+  const environmentInputs={
     experienceStore:livedExperienceStore,
     livedNowStore,
     worldReader:store,
@@ -363,7 +375,11 @@ export async function startWorldKernelFromEnvironment(
         return contactModelAdapter.invoke(request);
       },
     },
-  });
+  };
+  const environmentEvolutionProcess=combineWorldEnvironmentProcesses(
+    createWorldEnvironmentOpportunity(environmentInputs),
+    createWorldEnvironmentEvolution(environmentInputs),
+  );
   const reconciliationProcess = createWorldReconciliationProcess({
     presentationDelivery,
     experienceConsolidationProcess,
@@ -434,7 +450,8 @@ export async function startWorldKernelFromEnvironment(
     if (livedExperienceStore.hasPendingExperienceConsolidation()) {
       await experienceConsolidationWakeScheduler();
     }
-    if (contactOutreachProcess.hasPending()) {
+    if (contactOutreachProcess.hasPending()
+      ||livedExperienceStore.nextEnvironmentalOpportunityAt()!==null) {
       await reconciliationRuntime.requestWake();
     }
     if (presentationDelivery !== null) await reconciliationRuntime.requestWake();
