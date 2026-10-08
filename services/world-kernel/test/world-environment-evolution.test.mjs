@@ -67,11 +67,21 @@ function fixture(){
   return {
     local,distant,experiences,source,situation,
     setCurrent(value){current=value;},
+    worldReader:{
+      getThread:(threadId)=>structuredClone(
+        [local,distant].find((thread)=>thread.threadId===threadId)??null,
+      ),
+    },
+    semanticStateStore:{listCurrentState:()=>[]},
+    memoryStore:{listCurrentMemories:()=>[]},
     livedNowStore:{
       listRecentCurrentSituations:({at,since,limit})=>structuredClone(current
         .filter((item)=>item.establishedAt>=since&&item.establishedAt<=at)
         .slice(0,limit)),
       getWorldPlace:(_threadId,ref)=>({ref,displayName:ref}),
+      getSituation:(situationId)=>structuredClone(
+        current.find((item)=>item.situationId===situationId)??null,
+      ),
     },
     close(){
       experiences.close();
@@ -93,6 +103,12 @@ test("E7.2 makes a distant but perceivable World change and lets no_change stay 
     const modelAdapter={
       async invoke(request){
         calls.push(structuredClone(request));
+        if(request.clientRequestId.startsWith("encounter-attention_")){
+          return {
+            output:{outcome:"not_noticed",experienceText:null},
+            provenance:{provider:"fixture",modelId:"attention"},
+          };
+        }
         assert.equal(Object.hasOwn(request.input,"thread"),false,
           "World cannot read private Thread identity");
         assert.equal(request.input.potentialObservers.length,2,
@@ -115,6 +131,9 @@ test("E7.2 makes a distant but perceivable World change and lets no_change stay 
     const process=createWorldEnvironmentEvolution({
       experienceStore:f.experiences,
       livedNowStore:f.livedNowStore,
+      worldReader:f.worldReader,
+      semanticStateStore:f.semanticStateStore,
+      memoryStore:f.memoryStore,
       modelAdapter,
       now:()=>clock,
     });
@@ -139,12 +158,17 @@ test("E7.2 makes a distant but perceivable World change and lets no_change stay 
     }],"distant potential observer should be admitted without distance cutoff");
     assert.equal(f.experiences.getThreadEncounterAttention(
       f.distant.threadId,flashResult.encounterId,
-    ),null,"potential perception must not become automatic noticing");
+    )?.outcome,"not_noticed","potential perception must permit an independent miss");
+    assert.equal(f.experiences.getThreadEncounterAttention(
+      f.distant.threadId,flashResult.encounterId,
+    )?.experience,null,"unnoticed change invented private Experience");
     assert.equal(f.experiences.getSharedEnvironmentalStory({
       occurredAt:DUE,placeRef:"wpl_quiet_source",
     }),null,"no_change must not create an event");
     await process.runOnce();
-    assert.equal(calls.length,2,"completed work re-invoked cognition");
+    assert.equal(calls.filter((call)=>
+      call.clientRequestId.startsWith("world-environment-followup_")
+    ).length,2,"completed work rerolled World change");
     assert.notEqual(flashResult.encounterId,quiet.encounterId,
       "unrelated objective events should remain separate");
   }finally{f.close();}
@@ -158,6 +182,8 @@ test("E7.2 consumes zero model calls when nobody could notice the change",async(
     let calls=0;
     const process=createWorldEnvironmentEvolution({
       experienceStore:f.experiences,livedNowStore:f.livedNowStore,
+      worldReader:f.worldReader,semanticStateStore:f.semanticStateStore,
+      memoryStore:f.memoryStore,
       modelAdapter:{async invoke(){calls++;throw new Error("unneeded cognition");}},
       now:()=>DUE,
     });
@@ -194,7 +220,13 @@ test("E7.2 retries a persisted perceptible change without rerolling cognition",a
     };
     const process=createWorldEnvironmentEvolution({
       experienceStore:store,livedNowStore:f.livedNowStore,
-      modelAdapter:{async invoke(){
+      worldReader:f.worldReader,semanticStateStore:f.semanticStateStore,
+      memoryStore:f.memoryStore,
+      modelAdapter:{async invoke(request){
+        if(request.clientRequestId.startsWith("encounter-attention_"))return {
+          output:{outcome:"not_noticed",experienceText:null},
+          provenance:{provider:"fixture",modelId:"attention"},
+        };
         calls++;
         return {output:{
           outcome:"changed",
@@ -224,6 +256,8 @@ test("E7.2 with present but unexposed Threads admits no change",async()=>{
     let calls=0;
     const process=createWorldEnvironmentEvolution({
       experienceStore:f.experiences,livedNowStore:f.livedNowStore,
+      worldReader:f.worldReader,semanticStateStore:f.semanticStateStore,
+      memoryStore:f.memoryStore,
       modelAdapter:{async invoke(){
         calls++;
         return {output:{
