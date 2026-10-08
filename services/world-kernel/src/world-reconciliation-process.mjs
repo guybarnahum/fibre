@@ -273,6 +273,9 @@ export function createWorldReconciliationRuntime({
   }
 
   async function runAndSettle() {
+    // A separate LivedNow request can earn new World work while this pass
+    // awaits cognition. Never cancel an alarm scheduled after this pass began.
+    const alarmBefore=await infra.scheduler.get(scopeId);
     let result;
     try {
       result = await process.runOnce();
@@ -291,6 +294,13 @@ export function createWorldReconciliationRuntime({
       if(!Number.isFinite(timestamp))throw new TypeError("World environment next due time is invalid");
       await scheduleAt(Math.max(now(),timestamp));
     }else{
+      const alarmAfter=await infra.scheduler.get(scopeId);
+      if(alarmAfter!==null&&alarmAfter!==alarmBefore){
+        return Object.freeze({
+          ...result,reconciliationPending:true,retryDelayMs:null,
+          nextWakeAt:new Date(alarmAfter).toISOString(),
+        });
+      }
       await infra.scheduler.cancel(scopeId);
     }
     return Object.freeze({
