@@ -6,6 +6,10 @@ import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import { createLivedEncounterWriteApi } from "#services/world-kernel/src/lived-encounter-write-api.mjs";
 import { createEnvironmentalEncounterService } from "#services/world-kernel/src/lived-environmental-encounter.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
+import {
+  combineWorldEnvironmentProcesses,
+  createWorldEnvironmentOpportunity,
+} from "#services/world-kernel/src/world-environment-opportunity.mjs";
 import { createEnvironmentalEncounterWriteApi } from "#services/world-kernel/src/lived-environmental-encounter-write-api.mjs";
 import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
 import { createSocialMeetingWriteApi } from "#services/world-kernel/src/lived-social-meeting-write-api.mjs";
@@ -214,7 +218,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     if(this.worldEnvironmentEvolutionProcess===null){
       const runtime=this.runtimeForRequest();
       const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
-      this.worldEnvironmentEvolutionProcess=createWorldEnvironmentEvolution({
+      const shared={
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         livedNowStore:openLivedNowStore(runtime.worldStorage),
         worldReader:runtime.worldStore,
@@ -224,7 +228,11 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
           deployment.integrations.encounter,{environment:this.env},
         ),
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
-      });
+      };
+      this.worldEnvironmentEvolutionProcess=combineWorldEnvironmentProcesses(
+        createWorldEnvironmentOpportunity(shared),
+        createWorldEnvironmentEvolution(shared),
+      );
       runtime.reconciliationProcess.setEnvironmentEvolutionProcess(
         this.worldEnvironmentEvolutionProcess,
       );
@@ -517,6 +525,18 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore: openAutobiographicalMemoryStore(runtime.worldStorage),
         situatedLifeStore,
         modelAdapter: selectReasoningIntegration(deployment.integrations.livedNow, { environment: this.env }),
+        onSituationEnacted:async(situation)=>{
+          const queue=openLivedExperienceStore(runtime.worldStorage);
+          const dueAt=new Date(Date.parse(situation.establishedAt)+60_000).toISOString();
+          const earned=queue.enqueueEnvironmentalOpportunity({
+            threadId:situation.threadId,
+            situationId:situation.situationId,
+            dueAt,
+          });
+          if(earned.inserted){
+            await runtime.reconciliationRuntime.requestWakeAfter(60_000);
+          }
+        },
       });
       const presentation = createLivedNowPublicationService({
         livedNowStore,
