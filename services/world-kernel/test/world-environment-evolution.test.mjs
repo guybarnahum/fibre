@@ -217,6 +217,10 @@ test("E7.2 retries a persisted perceptible change without rerolling cognition",a
         return f.experiences.recordEncounterStory(...args);
       },
       completeEnvironmentalFollowup:(args)=>f.experiences.completeEnvironmentalFollowup(args),
+      getThreadEncounterAttention:(...args)=>f.experiences.getThreadEncounterAttention(...args),
+      recordThreadEncounterAttention:(args)=>f.experiences.recordThreadEncounterAttention(args),
+      queueThreadExperienceConsolidation:(args)=>
+        f.experiences.queueThreadExperienceConsolidation(args),
     };
     const process=createWorldEnvironmentEvolution({
       experienceStore:store,livedNowStore:f.livedNowStore,
