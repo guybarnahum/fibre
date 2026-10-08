@@ -312,11 +312,8 @@ export class LivedExperienceStore {
         throw new TypeError("shared occurrence must be one place-grounded objective beat");
       }
     }
-    if (!Array.isArray(candidate.threadPresence)
-      ||(candidate.threadPresence.length<1&&(
-        uniquePlaceOccurrenceRef===null||candidate.story?.continuationOfEncounterRef===undefined
-      ))){
-      throw new TypeError("encounter story requires Thread presence unless World continues an admitted place occurrence");
+    if (!Array.isArray(candidate.threadPresence)||candidate.threadPresence.length<1){
+      throw new TypeError("encounter story requires a potentially perceiving Thread");
     }
     const participantIds = new Set();
     const threadPresence = candidate.threadPresence.map((participant) => {
@@ -354,11 +351,11 @@ export class LivedExperienceStore {
           if (Date.parse(prior.occurred_at) > Date.parse(normalized.occurredAt)) {
             throw new TypeError("Encounter Story continuation cannot point forward in time");
           }
-          if(threadPresence.length===0){
+          if(uniquePlaceOccurrenceRef!==null){
             const source=this.getEncounterStory(story.continuationOfEncounterRef);
             if(source.story.beats.length!==1||source.story.beats[0].kind!=="occurrence"
               ||!source.visualization.visualizationSourceReferences.includes(uniquePlaceOccurrenceRef)){
-              throw new TypeError("unobserved World continuation requires prior occurrence at the same place");
+              throw new TypeError("World continuation requires an objective prior occurrence at the same place");
             }
           }
         }
