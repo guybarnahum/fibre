@@ -343,6 +343,59 @@ Publication is deliberately non-consuming. Silence does not erase an insight or 
 The private opportunity must never be broadcast to other encounter participants. The other participant can observe only the resulting utterance/action if the Thread chooses one.
 
 Current limitation: a Thread-to-Thread Live Encounter is admitted to Encounter Story/Experience authority when that live invocation closes, so this mechanism currently surfaces residue from already-admitted prior Experience. Same-encounter mid-stream consolidation is deferred until Fibre has a bounded checkpoint mechanism that preserves objective event truth without reintroducing turns or a durable chat session.
+## Later contact is a fresh action, not automatic afterthought discharge
+
+A delayed private afterthought may eventually motivate outreach, but the existence of an insight, question or intention is not itself permission or desire to contact somebody.
+
+The first later-contact path is:
+
+```text
+completed consolidation with private residue
+  -> bounded Contact frontier
+  -> current routable relationship candidates
+  -> ensure current LivedNow
+  -> fresh private contact judgment
+       keep_private
+       contact one candidate
+  -> if contact:
+       separate outward-expression cognition
+       recheck route
+       durable addressed Contact Message
+```
+
+Contact authority is deliberately distinct from relationship and memory authority.
+
+```text
+Life Relation
+  = who this party is in the Thread's life
+
+Person Contact Capability
+  = whether Fibre may route an outbound message to that Person
+
+autobiographical Memory
+  = whether the Thread remembers prior experience with that party
+
+Contact Decision
+  = whether the Thread now wants to reach out
+
+Contact Message
+  = what the Thread actually sent
+```
+
+A Person capability is explicit and revocable. A route may therefore exist even when the Thread has no autobiographical recognition of the Person; cognition must not convert routing identity into remembered familiarity.
+
+A live Thread needs no external Person capability: Fibre can route to the Thread when a current life relation names that Thread and the recipient still exists as a non-retired Thread. This routing fact still creates no obligation to contact and no claim that the recipient noticed the message.
+
+No-route residue is settled without cognition so an old unroutable frontier cannot keep World awake forever. Once a private contact decision or expression has been persisted, retry reuses that authority rather than resampling it.
+
+Current delivery semantics are intentionally narrow:
+
+- Person delivery means an addressed immutable message is available through that Person's explicitly enabled Fibre inbox;
+- Thread delivery means an addressed immutable message exists for that Thread;
+- delivery alone is **not** recipient attention, Experience, memory, relationship change or response.
+
+Recipient-side lived admission of a Thread-addressed contact is therefore a preserved next causal step, not something Contact storage is allowed to imply.
+
 ## Thread-to-Thread convergence
 
 The current social meeting machinery already provides the correct admission path:
