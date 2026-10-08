@@ -51,15 +51,16 @@ export function createThreadContactPerception({
             });
           }
           const recipient=worldReader.getThread(message.recipientThreadId,{required:false});
+          const sender=worldReader.getThread(message.senderThreadId,{required:false});
           const situation=livedNowStore.getSituation(claim.situationId,{required:false});
-          if(recipient===null||situation?.threadId!==message.recipientThreadId){
-            throw new TypeError("addressed contact lost its recipient's lived authority");
+          if(recipient===null||sender===null||situation?.threadId!==message.recipientThreadId){
+            throw new TypeError("addressed contact lost its lived sender/recipient authority");
           }
           const story={
             storyVersion:"encounter-story-v0.1",
             beats:[{
               actorThreadId:null,kind:"occurrence",
-              text:`A private addressed message from Thread ${message.senderThreadId} becomes available: ${message.messageText}`,
+              text:`A private addressed message from ${sender.identity?.name??message.senderThreadId} becomes available: ${message.messageText}`,
             }],
           };
           // An addressed message has no objective image, public place, or
