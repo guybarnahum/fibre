@@ -131,7 +131,9 @@ function worldPresenceKeys(observatory){
   }
   if(situation.location?.kind==="place"){
     const worldPlace=(livedNow.worldPlaces??[]).find((candidate)=>candidate.ref===situation.location.placeRef);
-    if(worldPlace)keys.push(`world-place:${worldPlace.ref}`);
+    if(worldPlace?.physicalVenue?.ref){
+      keys.push(`world-venue:${worldPlace.physicalVenue.ref}`);
+    }
   }
   return Object.freeze(keys);
 }
@@ -143,10 +145,13 @@ function sharedPlanStops(observatory){
     const ref=stop?.physicalPlaceRef;
     const start=Date.parse(stop?.startAt??"");
     const end=Date.parse(stop?.endAt??"");
-    if(typeof ref!=="string"||!ref.startsWith("wpl_")||!Number.isFinite(start)||!Number.isFinite(end)||end<=start){
+    const place=(observatory?.livedNow?.worldPlaces??[])
+      .find((candidate)=>candidate.ref===ref);
+    const venueRef=place?.physicalVenue?.ref;
+    if(typeof venueRef!=="string"||!Number.isFinite(start)||!Number.isFinite(end)||end<=start){
       return [];
     }
-    return [Object.freeze({placeRef:ref,start,end})];
+    return [Object.freeze({placeRef:venueRef,start,end})];
   }));
 }
 
