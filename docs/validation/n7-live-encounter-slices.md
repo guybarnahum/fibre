@@ -255,7 +255,7 @@ Implemented foundation:
 
 Accepted after focused Live Encounter/social-meeting validation and full `npm run slice:validate` passed locally.
 
-## N7.9 — delayed thought and spontaneous expression — CURRENT
+## N7.9 — delayed thought and spontaneous expression — ACCEPTED 2026-10-07
 
 A Thread may form a later insight/question/intention from consolidation and may choose to speak during a live encounter without first being addressed.
 
@@ -279,13 +279,42 @@ Implemented foundation:
 
 **Explicit deferred extension:** the current live Thread-to-Thread invocation admits its Encounter Story/Experiences when that invocation closes. N7.9 therefore proves a delayed thought from already-admitted prior Experience can surface spontaneously during a later/current live encounter. Mid-stream consolidation of the *same still-running encounter* remains deferred; enabling it will require admitting bounded live Encounter Story/Experience checkpoints without introducing a turn manager or durable chat session.
 
-## N7.10 — Thread-initiated later contact
+Accepted after the focused N7.9 suite and full `npm run slice:validate` passed locally.
+
+## N7.10 — Thread-initiated later contact — CURRENT, IMPLEMENTED / VALIDATION PENDING
 
 A known Person/Thread may become a later contact opportunity because of grounded relationship/history/question/need.
 
 Interior Cognition still decides whether to contact.
 
 World routing identity must remain distinct from the Thread's autobiographical recognition of that person.
+
+Implemented foundation:
+
+- completed Experience consolidation with non-empty private `insight | question | intention` residue is the bounded source frontier; there is no whole-population scan and no generic periodic social prompt;
+- Contact owns a separate append-only authority: Person routing capability, contact attempt, private decision, outward expression, completion, and delivered message;
+- Person reachability requires an explicit active Fibre contact capability; revocation removes the route and a later explicit grant can restore it;
+- live Threads are routable through Fibre itself when a current Situated Life relation names that Thread and the recipient is not retired;
+- only grounded current life relations with contact-capable relationship kinds become candidates;
+- before each fresh decision or expression cognition, World runs canonical `LivedNow.ensure(...)` so outreach occurs from the Thread's actual present life rather than from the historical encounter scene;
+- private contact judgment receives delayed residue, current life, current semantic state, bounded autobiographical memory, and current routable relationship evidence;
+- `keep_private` is a normal durable outcome; route availability never forces outreach;
+- when contact is chosen, outward expression is a separate cognition act and cannot expose the private rationale;
+- routing identity and autobiography stay distinct: Fibre may know how to route `person_guy` while the Thread has no retained autobiographical recognition of Guy; expression is explicitly told not to fake familiarity;
+- retries reuse persisted decision/expression stages and cannot resample already-made private judgment or rewrite an already-authored message;
+- an unavailable route before any meaningful candidate exists is drained as `no_route` without model cognition or LivedNow work, preventing an unroutable historical frontier from starving newer work;
+- if a chosen route disappears before delivery, the attempt completes as `route_unavailable`; Fibre does not send through revoked Person capability or a no-longer-routable Thread;
+- World reconciliation runs bounded later-contact work after consolidation and uses the same `infraDriver.scheduler` semantics in Local and Cloudflare;
+- explicit Person contact capability / revocation / inbox routes are mounted in both Local and Cloudflare World;
+- Thread Observatory exposes later-contact consideration, private-vs-contact outcome, and any outward sent message separately from Encounter Story, Memory, and relationship authority.
+
+**High-value agency proof:** three delayed private residues from the same Thread are considered under the same current routable relationship set. Fibre independently chooses to contact a known Person, contact a known Thread, and keep one thought private. Only the two contact decisions produce outward expression/messages.
+
+**Identity/memory proof:** the Person route is available from World routing authority while autobiographical memory is empty; both private decision and outward expression receive no fabricated recollection.
+
+**Bounded-frontier proof:** five unroutable delayed residues drain in batches `2,2,1` with zero model calls and zero LivedNow reconciliation, then World returns to quiescence rather than rescanning them indefinitely.
+
+**Explicit delivery boundary:** a delivered Person message is readable from the opted-in Person inbox. A delivered Thread message is currently durable recipient-addressed contact authority, but N7.10 does **not** claim the recipient Thread has noticed, experienced, remembered, or answered it merely because the row exists. Turning Thread inbox delivery into recipient lived perception/Experience is preserved for the N7.11 causal north-star proof, where receipt must become causally observable without inventing co-presence or a chat-session authority.
 
 ## N7.11 — causal north-star proof
 
