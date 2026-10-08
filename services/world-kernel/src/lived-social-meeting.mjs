@@ -138,11 +138,42 @@ export function createSocialMeetingService({
     request,
     stance,
   }) {
-    const participantContexts = [initiator, counterparty];
+    const latestInitiator=contextFor({
+      threadId:initiator.thread.threadId,
+      worldReader,
+      livedNowStore,
+      semanticStateStore,
+      memoryStore,
+    });
+    const latestCounterparty=contextFor({
+      threadId:counterparty.thread.threadId,
+      worldReader,
+      livedNowStore,
+      semanticStateStore,
+      memoryStore,
+    });
+    const sceneMoved=latestInitiator.situation.situationId!==initiator.situation.situationId
+      ||latestCounterparty.situation.situationId!==counterparty.situation.situationId
+      ||!compatible(latestInitiator,latestCounterparty,livedNowStore);
+    if(sceneMoved){
+      return Object.freeze({
+        counterpartyThreadId:counterparty.thread.threadId,
+        outcome:"scene_changed",
+        salience,
+        initiation,
+        request,
+        stance,
+        encounterStory:null,
+        live:null,
+        aftermath:null,
+      });
+    }
+
+    const participantContexts = [latestInitiator, latestCounterparty];
     const allContexts = [...participantContexts, ...witnesses];
     const liveResult=await runThreadLiveSocialEncounter({
-      initiator,
-      counterparty,
+      initiator:latestInitiator,
+      counterparty:latestCounterparty,
       request,
       stance,
       modelAdapter,
