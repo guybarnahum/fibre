@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createLocalInfraDriver } from "#infra/providers/local";
+import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import {
   WORLD_RECONCILIATION_SCOPE_ID,
   createWorldReconciliationProcess,
@@ -559,39 +560,77 @@ test("environmental noticing reaches delayed consolidation before World becomes 
   }finally{await runtime.stop();}
 });
 
-test("an in-flight World sweep cannot erase a newly earned environmental wake",async()=>{
-  let beginSweep;
-  let finishSweep;
-  const started=new Promise((resolve)=>{beginSweep=resolve;});
-  const finish=new Promise((resolve)=>{finishSweep=resolve;});
+test("an in-flight World sweep preserves new ambient work through both InfraDrivers",async()=>{
+  for(const provider of ["local","cloudflare"]){
+    let beginSweep;
+    let finishSweep;
+    const started=new Promise((resolve)=>{beginSweep=resolve;});
+    const finish=new Promise((resolve)=>{finishSweep=resolve;});
+    let alarm=null;
+    const infraDriver=provider==="local"
+      ?createLocalInfraDriver({
+        schedulerScopes:{world:{onWake(){}}},
+      })
+      :createCloudflareInfraDriver({
+        schedulerScopes:{world:{
+          async getAlarm(){return alarm;},
+          async setAlarm(value){alarm=value;},
+          async deleteAlarm(){alarm=null;},
+        }},
+      });
+    const process=createWorldReconciliationProcess({
+      presentationDelivery:{
+        async deliverPending(){
+          beginSweep();
+          await finish;
+          return {attempted:0,delivered:0,failed:0,results:[]};
+        },
+      },
+    });
+    const runtime=createWorldReconciliationRuntime({
+      infraDriver,process,now:()=>1_000,intervalMs:100,maxRetryMs:800,
+    });
+    try{
+      await runtime.requestWake();
+      // An InfraDriver consumes the due alarm before invoking its wake handler.
+      await infraDriver.scheduler.cancel("world");
+      const inFlight=runtime.handleWake();
+      await started;
+      await runtime.requestWakeAfter(60_000);
+      finishSweep();
+      const settled=await inFlight;
+      assert.equal(settled.reconciliationPending,true,
+        `${provider}: a prior World sweep erased new ambient work`);
+      assert.equal(await infraDriver.scheduler.get("world"),61_000,
+        `${provider}: the new wake was cancelled`);
+    }finally{
+      finishSweep();
+      await runtime.stop();
+    }
+  }
+});
+
+test("partial ambient failure reports through World reconciliation's shared error boundary",async()=>{
+  const failures=[];
   const process=createWorldReconciliationProcess({
-    presentationDelivery:{
-      async deliverPending(){
-        beginSweep();
-        await finish;
-        return {attempted:0,delivered:0,failed:0,results:[]};
+    environmentEvolutionProcess:{
+      async runOnce(){
+        return {
+          attempted:1,failed:1,noticed:0,hasDue:true,nextDueAt:null,
+          results:[{situationId:"sit_failure",outcome:"failed",
+            message:"environmental decision not admitted"}],
+        };
       },
     },
+    onError:(entry)=>failures.push(entry),
   });
-  const {runtime,infraDriver}=createRuntimeFixture({process,now:()=>1_000});
-  try{
-    await runtime.requestWake();
-    // The previous alarm is consumed as the Cloudflare handler begins.
-    await infraDriver.scheduler.cancel("world");
-    const inFlight=runtime.handleWake();
-    await started;
-    await runtime.requestWakeAfter(60_000);
-    finishSweep();
-    const settled=await inFlight;
-    assert.equal(settled.reconciliationPending,true,
-      "old World sweep erased a new environmental opportunity");
-    assert.equal(await infraDriver.scheduler.get("world"),61_000,
-      "the earned future wake was cancelled");
-    const next=await runtime.handleWake();
-    assert.equal(next.reconciliationPending,false,
-      "settled World work never returned to quiescence");
-  }finally{
-    finishSweep?.();
-    await runtime.stop();
-  }
+  const result=await process.runOnce();
+  assert.deepEqual(failures.map((failure)=>({
+    kind:failure.kind,message:failure.message,
+  })),[{
+    kind:"world_environment_opportunity",
+    message:"environmental decision not admitted",
+  }],"an ambient error bypassed the existing reconciliation diagnostics");
+  assert.equal(worldReconciliationNeedsRetry(result),true,
+    "unsettled ambient work must remain retryable");
 });
