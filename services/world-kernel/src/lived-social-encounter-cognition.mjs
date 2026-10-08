@@ -53,7 +53,6 @@ function socialLiveInput({
     counterparties:counterparties.map((counterparty)=>({
       threadId:counterparty.threadId,
       name:counterparty.identity?.name??null,
-      selfDescription:counterparty.identity?.selfDescription??"",
     })),
     story:structuredClone(story),
     liveInteraction:{
