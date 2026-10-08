@@ -24,6 +24,7 @@ import { createEmbodimentTables } from "./embodiment-schema.mjs";
 import { ensureEmbodimentIntegrity } from "./embodiment-integrity.mjs";
 import { createAutobiographicalMemoryTables } from "./autobiographical-memory-schema.mjs";
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
+import { createContactTables } from "./contact-schema.mjs";
 import { worldStateInitialization } from "./world-state-storage.mjs";
 
 export function translateStorageError(error) {
@@ -215,6 +216,7 @@ function createSchema(database) {
   createEmbodimentTables(database);
   createAutobiographicalMemoryTables(database);
   createLivedExperienceTables(database);
+  createContactTables(database);
 }
 
 function createAndRepairSchema(database) {
