@@ -216,6 +216,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
       this.worldEnvironmentEvolutionProcess=createWorldEnvironmentEvolution({
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
+        livedNowStore:openLivedNowStore(runtime.worldStorage),
         modelAdapter:selectReasoningIntegration(
           deployment.integrations.encounter,{environment:this.env},
         ),
