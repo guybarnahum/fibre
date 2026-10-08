@@ -208,6 +208,7 @@ test("delayed private thought can originate speech during an active encounter", 
   const noor=context("thr_afterthought_noor","Noor");
   const registry=createLiveEncounterRegistry();
   const minaOpportunities=[];
+  let noorContributionCount=0;
   let minaSpoke;
   const minaSpeech=new Promise((resolve)=>{minaSpoke=resolve;});
   let published=false;
@@ -221,7 +222,7 @@ test("delayed private thought can originate speech during an active encounter", 
       const opportunity=call.input.liveInteraction.opportunity;
       if(name==="Mina")minaOpportunities.push(structuredClone(opportunity));
       const speak=name==="Noor"
-        ? opportunity.reason==="end"
+        ? opportunity.reason==="end"&&++noorContributionCount===1
         : opportunity.reason==="afterthought";
       return {
         output:{decision:speak?"speak":"silent",actionText:null},
@@ -299,10 +300,13 @@ test("delayed private thought can originate speech during an active encounter", 
     true,
     "Thread did not originate outward speech from its delayed thought",
   );
+  const interruptedNoor=result.story.beats.find((beat)=>
+    beat.actorThreadId===noor.thread.threadId
+    && beat.completion==="interrupted");
   assert.equal(
-    result.story.beats.some((beat)=>beat.text.includes("keep explaining")),
-    false,
-    "spontaneous speech failed to interrupt the prior audible speaker",
+    interruptedNoor?.text,
+    "I thought the sketch needed more contrast.",
+    "spontaneous speech did not preserve only Noor's audible interrupted prefix",
   );
   assert.equal(registry.activeCount(mina.thread.threadId),0,
     "finished encounter remained registered as live");
