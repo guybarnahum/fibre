@@ -290,7 +290,7 @@ no turn owner
   -> later social/relationship consequence when warranted
 ```
 
-N7.0-N7.5 are accepted. N7.6 is implemented and awaits the next local validation pass. N7.7 is current: Admin derives score-free 7/30/90-day social analytics from existing social history and causal encounter consequence, exposing exposure, initiative, responsiveness, breadth, reciprocity, depth, continuity and consequence without creating Thread state or feeding an aggregate back into cognition.
+N7.0-N7.7 are accepted. N7.8 is current: the proven Thread-to-Thread admission path now hands accepted encounters to the same asynchronous Live Encounter primitive, where each speaking/action opportunity can independently produce speech, action or silence; streamed speech can be interrupted at sentence boundaries, and stale lived context cancels admission before a conversation is fabricated.
 
 ## Current causal loop
 
