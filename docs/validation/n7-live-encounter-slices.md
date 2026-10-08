@@ -348,6 +348,22 @@ Today a delivered Thread-addressed contact message is immutable delivery authori
 
 **Early semantic proof:** sender delivery alone creates zero recipient Experience; one real recipient admission can produce `noticed` or `not_noticed`, each using the existing Encounter/Experience authority, with the retry producing no duplicate. Do not certify this gate using fixture-authored attention as if it were endogenous agency.
 
+**Recipient contact implementation — operator validation pending (2026-10-08).** Existing sender-owned `ContactStore.recordMessage` now inserts one indexed `thread_contact_receptions` opportunity **atomically with a delivered Thread-addressed message**. Person delivery does not earn Thread perception. In the same already-scheduled World reconciliation pass, `thread-contact-perception.mjs` processes at most one due message: it calls the recipient's existing `LivedNow.ensure`, pins a durable situation/time for retries, admits one recipient-only objective Encounter Story of *message availability*, and invokes the existing Thread-owned `noticed | not_noticed` appraisal. The sender's current World identity grounds the event, but the sender is **never listed as physically present**, and no bystanders are automatically admitted. The visual reconstruction prompt deliberately excludes the message contents. A noticed message earns an ordinary Experience and existing delayed consolidation queue; `not_noticed` earns neither Experience nor consolidation; neither outcome forces an answer. `ContactStore` bounds failed attempts to three, retaining a brief inspectable blocked reason. The same InfraDriver World scheduler chooses the earliest due environmental, life, or recipient-contact work; there is no population inbox scan or polling.
+
+**Proof boundary:** focused tests assert delivery alone has zero recipient Experience; the same real delivered message can become one recipient Experience only after appraised attention; private presence excludes the sender; an unavailable attention provider resumes against the same pinned lived situation and immutable story; a legitimate `not_noticed` outcome leaves no Experience, Journal or Memory queue. Test model outputs are **fixture-authored**, so these tests prove authority, plumbing and idempotence, **not** the real model's independent noticing or causal long-term individuality. No local suite or staging evidence has been supplied yet. Keep N7.11 Gate 1 open until Guy's validation and a genuine live provider admission; Gate 2/3 remain open.
+
+**Causal-status register (this implementation):**
+
+| Mechanism | Status | Author / meaning | Proven or required consequence |
+|---|---|---|---|
+| Addressed message delivery and recipient frontier | **Behaviorally/future-state causal (local implementation)** | Sender-owned contact decision/expression and durable World delivery; not an incoming subjective experience | May trigger exactly one future recipient appraisal without a poll |
+| Objective addressed message availability | **Behaviorally/future-state causal (local implementation)** | World uses the authenticated stored message plus current recipient situation; sender is not co-present | An immutable one-recipient event becomes eligible for private attention |
+| Recipient's noticed / not_noticed judgment | **Context-only until live validation** | Recipient cognition receives a real authored message and its own private state; the user/test cannot choose production outcomes | Fixture proof distinguishes Experience/no Experience; genuine provider choice remains unverified |
+| Personal Experience and delayed retention | **Behaviorally/future-state causal (existing authority)** | Existing Thread Experience and selective consolidation, not message receipt | Noticed enters delayed appraisal; no claim yet of retained memory or later behavior |
+| Later choices / social development | **Named-only for this gate** | Future recipient-owned cognition must select genuine consequences | N7.11 Gates 2/3 require attributable changes from retained personal history |
+
+The drift-scorecard checkpoint must be recorded **on acceptance**, not scored from unexecuted tests or source code alone.
+
 ### Gate 2 — selective long-term consequence (open)
 
 A recipient's noticed Experience may enter the existing delayed consolidation frontier and may yield a Journal, retained autobiography, private afterthought, or nothing. No contact delivery row, objective Encounter Story, or Journal may bypass the ordinary ownership/retention boundary to become private Memory.
