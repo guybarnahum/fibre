@@ -334,7 +334,36 @@ actual co-presence
   -> recipient accept | decline | defer
 ```
 
-After acceptance, Thread -> Thread must use the same Live Encounter primitive as Person -> Thread rather than a special fixed opener/reply/closing script.
+After acceptance, Thread -> Thread uses the same Live Encounter primitive as Person -> Thread rather than a special fixed opener/reply/closing script.
+
+The current bounded execution is event-driven:
+
+```text
+accepted outward request
+  + optional outward acceptance expression
+  -> Live Encounter
+
+sentence | pause | end | action | material World event
+  -> participant-specific opportunity
+  -> speak | act | silent
+
+speak
+  -> streamed outward expression
+  -> another participant may begin speaking
+  -> active prior expression is interrupted
+  -> audible prefix only becomes history
+
+act
+  -> observable participant action
+  -> possible opportunity for others
+
+silent
+  -> no beat
+```
+
+There is no active-speaker ownership transfer. A temporary bounded compute-burst guard limits the number of opportunity appraisals in one synchronous autonomous World invocation; it is not a target for conversation length or number of replies, and `endedBy:"bounded"` must remain distinguishable from natural quiescence.
+
+Acceptance also does not reserve the scene. Immediately before the live encounter begins, World re-reads both participants' authoritative CurrentSituation witnesses. If either changed or co-presence ceased, the prior request/acceptance history remains real but no stale-scene conversation is fabricated.
 
 The reason to interact should come from lived salience, relationship/history, current need, curiosity, shared task or other grounded context. Conversation length is not a proxy for value.
 
