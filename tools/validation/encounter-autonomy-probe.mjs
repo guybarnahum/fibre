@@ -29,7 +29,7 @@ function parseArgs(argv){
   return Object.freeze({environment:env});
 }
 
-function validatorGitSha(){
+export function validatorGitSha(){
   const sha=execFileSync("git",["rev-parse","HEAD"],{cwd:REPO_ROOT,encoding:"utf8"}).trim().toLowerCase();
   const status=execFileSync("git",["status","--porcelain","--untracked-files=all"],{
     cwd:REPO_ROOT,encoding:"utf8",
@@ -39,7 +39,7 @@ function validatorGitSha(){
   return sha;
 }
 
-function requireRuntimeAncestor(runtimeSha,validatorSha){
+export function requireRuntimeAncestor(runtimeSha,validatorSha){
   if(!GIT_SHA.test(runtimeSha??""))throw new Error("deployed world-kernel did not expose an exact Git SHA");
   try{
     execFileSync("git",["merge-base","--is-ancestor",runtimeSha,validatorSha],{
@@ -50,7 +50,7 @@ function requireRuntimeAncestor(runtimeSha,validatorSha){
   }
 }
 
-function topology(environment){
+export function topology(environment){
   const path=resolve(REPO_ROOT,".fibre","cloudflare",environment,"deployment.json");
   const record=JSON.parse(readFileSync(path,"utf8"));
   if(record.environment!==environment)throw new Error("deployment topology environment mismatch");
@@ -81,7 +81,7 @@ async function json(response,label){
   return payload;
 }
 
-async function privateGet(base,path,token,label){
+export async function privateGet(base,path,token,label){
   const response=await fetch(endpoint(base,path),{
     headers:{Accept:"application/json","x-fibre-private-token":token},
     signal:AbortSignal.timeout(READ_TIMEOUT_MS),
@@ -109,7 +109,7 @@ async function privatePost(base,path,token,body,label){
   return payload.result;
 }
 
-async function publicThreads(base,origin){
+export async function publicThreads(base,origin){
   const url=endpoint(base,"/api/threads");
   url.searchParams.set("limit","200");
   const response=await fetch(url,{
