@@ -377,6 +377,8 @@ The live probe:
 
 A probe may therefore finish successfully with `complete:false`. That means the probe itself succeeded while current World state did not expose a live E6b opportunity; it is not permission to mark E6 fully accepted.
 
+**2026-10-08 operator staging check:** Guy validated `420984590bf0e82dbda3f4ebd0fab0fb1f8c0a49` with 11/11 focused E6 tests green, then ran the witness-first `encounter-autonomy:probe -- --env staging`. The bounded scan found 28 current Threads, zero three-way co-present groups, and no upcoming three-way shared-plan window in the scanned current plans. Witness result: `blocked_by_world_state`; environmental: `not_run` (the earlier E6a live proof remains valid); probe `complete:false` in 8.3 seconds. Evidence: local `.fibre/encounter-autonomy/staging/encounter-autonomy-muzqqfs9/evidence.json`. This validates efficient no-op behavior, **not** live E6b witnessing. No World life, plan, or counterparties should be artificially changed to satisfy the probe.
+
 E6 remains pending live witness evidence.
 
 ---
