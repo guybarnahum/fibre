@@ -439,7 +439,7 @@ The World model sees no Thread Genome, private memory, intentions or feelings. I
 
 **Staging acceptance deferred:** one naturally available observable shared-place event with legitimate observer evidence, one delayed continuation or valid non-event, and provenance. Never create artificial co-presence, nor claim that an approximate place name proves a distant event visible.
 
-### E7.3 — Independently lived environmental evolution — IMPLEMENTED / OPERATOR VALIDATION PENDING
+### E7.3 — Independently lived environmental evolution — LOCAL ACCEPTED / STAGING PENDING
 
 An E7.2 `changed` occurrence is already objective World history and carries 1–2 actual, historically grounded potential observer situation references. E7.3 now passes **that same admitted story** to the existing Thread attention authority separately for each candidate: `noticed | not_noticed`. A noticed outcome becomes one Thread-owned immediate Experience and enters the existing delayed, selective consolidation queue. A missed outcome creates neither Experience nor Memory. Nothing forces speech or implies the two observers are physically co-present: a distant witness can perceive a long-range phenomenon when World evidence supports it.
 
@@ -447,7 +447,11 @@ The single bounded World follow-up is not marked complete until all of its admit
 
 **E7.3 focused acceptance:** one coherent environmental event is perceivable by two genuinely distinct situated Threads (potentially in different places), one independently notices and has Experience, the other independently misses it, only the noticed Experience enters the consolidation frontier, and retry does not resample either World facts or personal attention. A second failure/retry proof interrupts consolidation scheduling after attention is durable. The World reconciliation process gives newly noticed environmental Experience a bounded additional pass so delayed consolidation cannot be orphaned.
 
-**Natural staging acceptance still pending:** first verify that the deployed World has a real E7.1 source occurrence with an earned E7.2 continuation and naturally situated candidate observers. If two candidates can genuinely perceive one event, observe their independently authored outcomes in each Thread's Observatory. A World-state block, a `no_change`, or two legitimate `not_noticed` decisions is not an implementation failure, but does not prove the full contrasting-attention demonstration. Do not teleport Threads, hand-pick their private attention judgments, broaden observability by assertion, or repeatedly generate events until a favorable outcome occurs.
+**Local acceptance (2026-10-08):** Guy reports the E7.3 focused suite and complete `npm run slice:validate` passing at `da0a55feaf04ea582f625da16cdfb677e6d233ce`. No staging E7.3 proof is claimed.
+
+**Natural staging acceptance still pending:** run the read-only `npm run e7:staging:probe -- --env staging` against an operator-deployed exact source Git SHA. It inspects at most 40 public Thread IDs via private World Observatory, discovers current naturally admitted `wpl_*` scenes, and correlates E7.1 source Story → one delayed E7.2 World follow-up → later Story → each potential observer's actual attention and Experience. It never calls cognition, triggers a new encounter, forces co-presence, or loops for better evidence. Structured evidence is stored under `.fibre/e7/staging/<runId>/evidence.json`; missing source/continuation is explicitly a World-state block rather than passing E7.3.
+
+First verify that the deployed World has a real E7.1 source occurrence with an earned E7.2 continuation and naturally situated candidate observers. If two candidates can genuinely perceive one event, observe their independently authored outcomes in each Thread's Observatory. A World-state block, a `no_change`, or two legitimate `not_noticed` decisions is not an implementation failure, but does not prove the full contrasting-attention demonstration. Do not teleport Threads, hand-pick their private attention judgments, broaden observability by assertion, or repeatedly generate events until a favorable outcome occurs.
 
 This closes the *mechanism* after operator test acceptance. It does not imply autonomous initial weather seeding, automatic long-range realism, delayed autobiographical retention for every noticing, or N7.11's later-behavior consequence proof.
 
