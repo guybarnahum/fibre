@@ -209,3 +209,25 @@ A1 makes actual durable physical-ancestry demand, calibration holes and exact ap
 
 Drift review: **pass for this checkpoint.** A1 preserves rather than narrows the ambitious path: geography remains non-causal for ancestry, World evidence remains authority, calibration approval remains human-governed in A3, and targeted Thread mutation remains deferred to A4. The checkpoint should not be cited as evidence that appearance calibration itself is correct merely because coverage/migration bookkeeping is inspectable.
 
+
+### Recipient-addressed lived contact — local acceptance checkpoint (2026-10-08)
+
+**Rubric v2: no score movement attributed to this gate.** The latest independently scored baseline remains **15 / 26**; this checkpoint does not retroactively rescore unrelated milestones after the August standing gate. Guy ran 27/27 focused and 1,564/1,564 full tests on `0880f1d9`, with build, repository, World seed and deployment manifest validation all passing. These tests prove the causal authority boundary from durable Thread-addressed delivery through World-owned recipient availability to separately chosen `noticed | not_noticed`, selective Experience/no Experience, and exactly-once retries. The appraisals were **fixture-authored**, not freely selected by a live model, and no later retained memory or behavior differential was demonstrated.
+
+| Dimension | Movement | Evidence basis |
+|---|---:|---|
+| Persistence | 0 | Durable message, reception frontier, Story and Experience reuse existing persistence; no new freeze/thaw standing proof |
+| Non-interchangeability | 0 | Recipient-specific admission exists, but no stable history-conditioned behavioral differential |
+| Natural-language identity | 0 | Canonical sender display identity is pinned, not a new proven meaning-bearing identity mechanism |
+| Dignity and consent | 0 | Contact and recipient attention remain distinct; fixture outcomes do not establish new autonomous refusal evidence |
+| Interiority and privacy | 0 | Recipient-only story, no fabricated public bystanders or forced answer; existing privacy score remains unchanged |
+| Authorization integrity | 0 | No broader request-bound authorization gate was changed |
+| Economic consequence | 0 | No cost or commitment consequences |
+| Social and relationship memory | 0 | Personal Experience can follow contact, but no remembered relationship changed a later choice |
+| Development | 0 | No later changed appraisal, disposition, or action from this delivery |
+| Model supervision | 0 | Existing provider-neutral model adapter and validation; no new independent stewardship proof |
+| Human inspectability | 0 | Reception and blocked reason inspectable in World Observatory, but not a broad new acceptance across personhood |
+| Institutional plurality | 0 | No new social order |
+| Cognition replaceability | 0 | Same provider-neutral contract; no model/runtime replacement continuity demonstrated |
+
+**Drift review:** deliberately narrow and consistent with Fibre's ambitious continuous-person vision: delivered social signals should become *opportunities*, not compulsory attention, memory or replies. Indexed one-recipient frontiers and shared `InfraDriver.scheduler` avoid population polling and high-frequency model use. Local acceptance is not N7.11 closure; genuine provider attention, selective retention and attributable later decisions remain required. The historical baseline remains below 75%, so the existing explicit drift discipline continues. No staging redeployment until the scheduled E7.5 autonomous alarm has been observed.
