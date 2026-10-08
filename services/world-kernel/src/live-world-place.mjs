@@ -58,6 +58,21 @@ export function createLiveWorldPlaceTables(database) {
     CREATE INDEX IF NOT EXISTS idx_live_world_places_world
       ON live_world_place_records(source_world_ref,place_kind,place_ref);
 
+    -- External, independently attested physical identity: Genesis kind is
+    -- historical context and is never a physical-venue admission decision.
+    CREATE TABLE IF NOT EXISTS live_physical_venue_bindings (
+      context_place_ref TEXT PRIMARY KEY,
+      venue_ref TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      locality TEXT NOT NULL,
+      country TEXT NOT NULL,
+      evidence_ref TEXT NOT NULL,
+      FOREIGN KEY (context_place_ref) REFERENCES live_world_place_records(place_ref)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_live_physical_venue_bindings_venue
+      ON live_physical_venue_bindings(venue_ref);
+
     CREATE TRIGGER IF NOT EXISTS live_world_place_records_no_update
       BEFORE UPDATE ON live_world_place_records
       BEGIN SELECT RAISE(ABORT,'live_world_place_records is immutable'); END;
@@ -167,6 +182,65 @@ export function ensureLiveWorldPlaces(database, threadId) {
   return listLiveWorldPlaces(database, threadId);
 }
 
+// A stable, externally grounded physical identity is explicit World authority.
+// A Genesis WorldSpec place kind, shared text, or matching source ID isn't one.
+export function bindLivePhysicalVenue(database,{
+  threadId,contextPlaceRef,venueIdentity,displayName,locality,country,evidenceRef,
+}){
+  const source=resolveLiveWorldPlace(database,threadId,contextPlaceRef);
+  if(source===null)throw new TypeError("physical venue requires an admitted context place");
+  for(const [name,value] of Object.entries({
+    venueIdentity,displayName,locality,country,evidenceRef,
+  })){
+    if(typeof value!=="string"||value.trim()===""){
+      throw new TypeError(`physical venue ${name} is required`);
+    }
+  }
+  // Identity must distinguish even same-named venues in one locality.
+  const venueRef=`venue_${sha256(canonicalJson({
+    identity:venueIdentity.trim(),
+    country:country.trim(),
+  }))}`;
+  const row=database.prepare(`
+    SELECT venue_ref,display_name,locality,country,evidence_ref
+    FROM live_physical_venue_bindings WHERE context_place_ref=?
+  `).get(contextPlaceRef);
+  const record={
+    venueRef,displayName:displayName.trim(),locality:locality.trim(),
+    country:country.trim(),evidenceRef:evidenceRef.trim(),
+  };
+  if(row!==undefined){
+    if(row.venue_ref!==record.venueRef||row.display_name!==record.displayName
+      ||row.locality!==record.locality||row.country!==record.country
+      ||row.evidence_ref!==record.evidenceRef){
+      throw new IntegrityError("physical venue already has different authority");
+    }
+  }else{
+    database.prepare(`
+      INSERT INTO live_physical_venue_bindings(
+        context_place_ref,venue_ref,display_name,locality,country,evidence_ref
+      ) VALUES (?,?,?,?,?,?)
+    `).run(contextPlaceRef,venueRef,record.displayName,record.locality,
+      record.country,record.evidenceRef);
+  }
+  return physicalVenueFor(database,contextPlaceRef);
+}
+
+function physicalVenueFor(database,contextPlaceRef){
+  if(!tableExists(database,"live_physical_venue_bindings"))return null;
+  const row=database.prepare(`
+    SELECT venue_ref,display_name,locality,country,evidence_ref
+    FROM live_physical_venue_bindings WHERE context_place_ref=?
+  `).get(contextPlaceRef);
+  return row===undefined?null:Object.freeze({
+    ref:row.venue_ref,
+    displayName:row.display_name,
+    locality:row.locality,
+    country:row.country,
+    evidenceRef:row.evidence_ref,
+  });
+}
+
 export function listLiveWorldPlaces(database, threadId) {
   const sourceWorldRef = worldRefForThread(database, threadId);
   if (sourceWorldRef === null || !tableExists(database, "live_world_place_records")) {
@@ -178,7 +252,11 @@ export function listLiveWorldPlaces(database, threadId) {
     WHERE source_world_ref=?
     ORDER BY place_kind,place_ref
   `).all(sourceWorldRef);
-  return Object.freeze(rows.map(recordFromRow));
+  return Object.freeze(rows.map((row)=>{
+    const record=recordFromRow(row);
+    const physicalVenue=physicalVenueFor(database,record.ref);
+    return physicalVenue===null?record:Object.freeze({...record,physicalVenue});
+  }));
 }
 
 export function resolveLiveWorldPlace(database, threadId, reference) {
