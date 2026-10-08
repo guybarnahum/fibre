@@ -157,6 +157,7 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
       livedNowStore:{
         getCurrentSituation:() => structuredClone(situation),
         getWorldPlace:() => null,
+        listCurrentSituations:() => [structuredClone(situation)],
       },
       situatedLifeStore:{ listCurrentPlaceEpisodes:() => [structuredClone(place)] },
       semanticStateStore:{ listCurrentState:() => [] },
@@ -320,5 +321,120 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
   } finally {
     experienceStore?.close();
     rmSync(directory, { recursive:true, force:true });
+  }
+});
+
+test("shared World occurrence belongs to one place and different observers notice differently",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-shared-environment-"));
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
+    stateScopeId:"world",
+  };
+  let experienceStore=null;
+  try{
+    const first=thread();
+    const second=structuredClone(first);
+    second.threadId="thr_e7_second";
+    second.identity.name="Second";
+    second.provenance.lastEventId="evt_seed_e7_second";
+    const away=structuredClone(first);
+    away.threadId="thr_e7_away";
+    away.identity.name="Away";
+    away.provenance.lastEventId="evt_seed_e7_away";
+    const world=openWorldStore(storage);
+    try{
+      for(const current of [first,second,away])world.seedThread(current);
+    }finally{world.close();}
+    experienceStore=openLivedExperienceStore(storage);
+
+    const placeRef="wpl_e7_shared_park";
+    const situations=new Map([first,second,away].map((item)=>[
+      item.threadId,{
+        situationId:`sit_${item.threadId}`,
+        threadId:item.threadId,
+        establishedAt:AT,
+        location:{kind:"place",placeRef:item.threadId===away.threadId?"wpl_e7_elsewhere":placeRef},
+        mediatedContext:null,
+        activity:item.threadId===first.threadId?"reading":"walking",
+        evidenceRefs:[],
+      },
+    ]));
+    const threads=new Map([first,second,away].map((item)=>[item.threadId,item]));
+    const events=[];
+    const modelAdapter={
+      async invoke(request){
+        events.push(structuredClone(request));
+        if(request.clientRequestId.startsWith("world-occurrence_")){
+          assert.equal(Object.hasOwn(request.input,"thread"),false,
+            "World occurrence must not see a Thread identity");
+          assert.equal(Object.hasOwn(request.input,"currentSituation"),false,
+            "shared occurrence must not depend on observer activity");
+          assert.equal(request.input.place.ref,placeRef,
+            "shared occurrence must be grounded in the real World place");
+          return {
+            output:{occurrenceText:"A rain shower begins over the park."},
+            provenance:{provider:"fixture",modelId:"world"},
+          };
+        }
+        if(request.clientRequestId.startsWith("encounter-attention_")){
+          const noticing=request.input.thread.threadId===first.threadId;
+          return {
+            output:{
+              outcome:noticing?"noticed":"not_noticed",
+              experienceText:noticing?"The first drops make me look up from my reading.":null,
+            },
+            provenance:{provider:"fixture",modelId:"attention"},
+          };
+        }
+        throw new Error("unexpected World cognition");
+      },
+    };
+    const service=createEnvironmentalEncounterService({
+      worldReader:{getThread:(id)=>structuredClone(threads.get(id)??null)},
+      livedNow:{ensure:async({threadId})=>structuredClone(situations.get(threadId))},
+      livedNowStore:{
+        getCurrentSituation:(id)=>structuredClone(situations.get(id)),
+        getWorldPlace:(id,ref)=>id!==away.threadId&&ref===placeRef
+          ?{ref,displayName:"Shared Park",placeKind:"public"}:null,
+        listCurrentSituations:()=>[...situations.values()].map((item)=>structuredClone(item)),
+      },
+      situatedLifeStore:{listCurrentPlaceEpisodes:()=>[]},
+      semanticStateStore:{listCurrentState:()=>[]},
+      memoryStore:{listCurrentMemories:()=>[]},
+      experienceStore,
+      modelAdapter,
+    });
+
+    const lived=await service.encounter({threadId:first.threadId,at:AT});
+    const replay=await service.encounter({threadId:second.threadId,at:AT});
+
+    assert.equal(lived.encounterStory.threadPresence.length,2,
+      "one shared occurrence should have two real co-present observers");
+    assert.deepEqual(new Set(lived.encounterStory.threadPresence.map((p)=>p.threadId)),
+      new Set([first.threadId,second.threadId]),
+      "a Thread elsewhere must not become a witness");
+    assert.equal(replay.encounterStory.encounterId,lived.encounterStory.encounterId,
+      "two observers must share the same objective occurrence");
+    assert.equal(replay.reused,true,
+      "second observer must not generate its own weather");
+    assert.equal(lived.attention.outcome,"noticed",
+      "first observer should independently notice the rain");
+    assert.equal(replay.attention.outcome,"not_noticed",
+      "second observer may miss the same rain");
+    assert.equal(replay.attention.experience,null,
+      "unnoticed shared occurrence must not fabricate Experience");
+    assert.deepEqual(
+      experienceStore.listUnclaimedExperienceConsolidationCandidates({limit:8})
+        .map((item)=>item.experienceId),
+      [lived.attention.experience.experienceId],
+      "only independently noticed experience can enter consolidation",
+    );
+    assert.equal(events.filter((item)=>item.clientRequestId.startsWith("world-occurrence_")).length,1,
+      "the World must author the shared rain only once");
+    assert.equal(events.filter((item)=>item.clientRequestId.startsWith("encounter-attention_")).length,2,
+      "retry must preserve both observers' private attention decisions");
+  }finally{
+    experienceStore?.close();
+    rmSync(directory,{recursive:true,force:true});
   }
 });
