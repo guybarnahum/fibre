@@ -7,8 +7,40 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 
+const MAX_CANDIDATES=8;
+const MAX_POTENTIAL_OBSERVERS=2;
+const MAX_SITUATION_AGE_MS=60*60_000;
+
+// One read of already-enacted situations. No LivedNow waking or geographic radius.
+// World cognition, not a distance heuristic, determines whether the external
+// event could actually be perceived from any of these independent scenes.
+function currentObservers(livedNowStore,at){
+  const due=Date.parse(at);
+  return livedNowStore.listCurrentSituations({at,livingOnly:true})
+    .filter((situation)=>situation.location?.kind==="place"
+      && Number.isFinite(Date.parse(situation.establishedAt))
+      && due-Date.parse(situation.establishedAt)>=0
+      && due-Date.parse(situation.establishedAt)<=MAX_SITUATION_AGE_MS)
+    .sort((a,b)=>Date.parse(b.establishedAt)-Date.parse(a.establishedAt))
+    .slice(0,MAX_CANDIDATES)
+    .map((situation)=>{
+      const place=livedNowStore.getWorldPlace(
+        situation.threadId,situation.location.placeRef,{required:false},
+      );
+      return Object.freeze({
+        threadId:situation.threadId,
+        situationId:situation.situationId,
+        physicalPlaceRef:situation.location.placeRef,
+        placeName:place?.displayName??null,
+        activity:situation.activity??null,
+        establishedAt:situation.establishedAt,
+      });
+    });
+}
+
 export function createWorldEnvironmentEvolution({
   experienceStore,
+  livedNowStore,
   modelAdapter,
   now=()=>new Date().toISOString(),
   batchLimit=2,
@@ -19,6 +51,11 @@ export function createWorldEnvironmentEvolution({
     "recordEncounterStory","completeEnvironmentalFollowup",
   ]){
     if(typeof experienceStore?.[method]!=="function"){
+      throw new TypeError(`World environmental evolution requires ${method}()`);
+    }
+  }
+  for(const method of ["listCurrentSituations","getWorldPlace"]){
+    if(typeof livedNowStore?.[method]!=="function"){
       throw new TypeError(`World environmental evolution requires ${method}()`);
     }
   }
@@ -38,44 +75,83 @@ export function createWorldEnvironmentEvolution({
           const source=experienceStore.getEncounterStory(opportunity.sourceEncounterRef);
           let decision=opportunity.decision;
           if(decision===null){
-            const input={
-              placeRef:opportunity.placeRef,
-              previousOccurrence:{
-                occurredAt:source.occurredAt,
-                text:source.story.beats[0].text,
-              },
-              considerationAt:opportunity.dueAt,
-            };
-            const invocation=await modelAdapter.invoke({
-              systemPrompt:`You author the next possible observable change in a physical place in Fibre's World.
-Only the objective previous occurrence, place reference and elapsed time are known. Do not invent a Thread's thoughts, perspective, attention, or actions.
-Choose no_change if there is no warranted meaningful new objective event; ordinary quiet continuity is valid.
-If there is a natural change, write only one concise observable event. Make it physically consistent with the earlier occurrence, without pretending to know precise unprovided weather, geography, or people.
-This is one bounded follow-up, not a repeating weather simulation.`,
-              input,
-              responseSchema:{
-                type:"object",
-                additionalProperties:false,
-                required:["outcome","occurrenceText"],
-                properties:{
-                  outcome:{type:"string",enum:["no_change","changed"]},
-                  occurrenceText:{anyOf:[{type:"string",minLength:1,maxLength:800},{type:"null"}]},
+            const candidates=currentObservers(livedNowStore,opportunity.dueAt);
+            if(candidates.length===0){
+              // No one could notice it: do not even invoke World event cognition.
+              decision=experienceStore.recordEnvironmentalFollowupDecision({
+                sourceEncounterRef:opportunity.sourceEncounterRef,
+                decision:{
+                  outcome:"not_observable",occurrenceText:null,potentialObservers:[],
                 },
-              },
-              clientRequestId:`world-environment-followup_${sha256(canonicalJson(input))}`,
-            });
-            assertPlainObject("World follow-up cognition",invocation.output);
-            assertExactKeys("World follow-up cognition",invocation.output,["outcome","occurrenceText"]);
-            if(invocation.output.outcome==="changed")assertNonEmpty(
-              "World follow-up change",invocation.output.occurrenceText,
-            );
-            else if(invocation.output.outcome!=="no_change"||invocation.output.occurrenceText!==null){
-              throw new TypeError("World follow-up must return a change or no_change");
+              });
+            }else{
+              const input={
+                placeRef:opportunity.placeRef,
+                previousOccurrence:{
+                  occurredAt:source.occurredAt,
+                  text:source.story.beats[0].text,
+                },
+                considerationAt:opportunity.dueAt,
+                potentialObservers:candidates,
+              };
+              const invocation=await modelAdapter.invoke({
+                systemPrompt:`You author at most one observable continuation in Fibre's World.
+First decide whether the described change could actually be noticed by any supplied Thread from its independently established physical scene at the consideration time.
+Perceptibility may span arbitrary distances: a distant visible flash, weather formation, sound or other observable phenomenon can be perceptible from elsewhere. Do not impose a distance radius. Equally, do not claim people can see or hear through unsupported obstructions, from unrelated places, or because they are in the same country.
+Use the exterior place/activity evidence and the prior occurrence only. You receive no private personalities, emotions, memories or goals.
+Return not_observable if none of these people could plausibly perceive a continuation. Return no_change if perceptibility exists but there is no warranted meaningful new observable event. Return changed only for one natural, physically consistent objective change, naming 1-2 candidate Thread IDs who could potentially perceive that actual change. Potential perception is not automatic noticing. No change is also normal.
+Do not author events to excite or engage any observer. Do not invent participants' actions. This is one bounded follow-up, not recurring simulation.`,
+                input,
+                responseSchema:{
+                  type:"object",
+                  additionalProperties:false,
+                  required:["outcome","occurrenceText","potentialObserverThreadIds"],
+                  properties:{
+                    outcome:{type:"string",enum:["not_observable","no_change","changed"]},
+                    occurrenceText:{anyOf:[{type:"string",minLength:1,maxLength:800},{type:"null"}]},
+                    potentialObserverThreadIds:{
+                      type:"array",items:{type:"string"},maxItems:MAX_POTENTIAL_OBSERVERS,
+                    },
+                  },
+                },
+                clientRequestId:`world-environment-followup_${sha256(canonicalJson(input))}`,
+              });
+              assertPlainObject("World follow-up cognition",invocation.output);
+              assertExactKeys("World follow-up cognition",invocation.output,[
+                "outcome","occurrenceText","potentialObserverThreadIds",
+              ]);
+              const output=invocation.output;
+              if(!["not_observable","no_change","changed"].includes(output.outcome)
+                ||!Array.isArray(output.potentialObserverThreadIds)){
+                throw new TypeError("World follow-up outcome is invalid");
+              }
+              if(output.outcome==="changed"){
+                assertNonEmpty("World follow-up change",output.occurrenceText);
+                if(output.potentialObserverThreadIds.length===0){
+                  throw new TypeError("World change requires a potentially perceiving Thread");
+                }
+              }else if(output.occurrenceText!==null
+                ||output.potentialObserverThreadIds.length!==0){
+                throw new TypeError("World non-event must not claim observers");
+              }
+              const byId=new Map(candidates.map((item)=>[item.threadId,item]));
+              const selected=output.potentialObserverThreadIds.map((threadId)=>{
+                const observer=byId.get(threadId);
+                if(observer===undefined)throw new TypeError("World selected an ungrounded observer");
+                return {threadId:observer.threadId,situationId:observer.situationId};
+              });
+              if(new Set(selected.map((item)=>item.threadId)).size!==selected.length){
+                throw new TypeError("World selected the same observer twice");
+              }
+              decision=experienceStore.recordEnvironmentalFollowupDecision({
+                sourceEncounterRef:opportunity.sourceEncounterRef,
+                decision:{
+                  outcome:output.outcome,
+                  occurrenceText:output.occurrenceText,
+                  potentialObservers:selected,
+                },
+              });
             }
-            decision=experienceStore.recordEnvironmentalFollowupDecision({
-              sourceEncounterRef:opportunity.sourceEncounterRef,
-              decision:invocation.output,
-            });
           }
 
           let encounterId=null;
@@ -89,7 +165,9 @@ This is one bounded follow-up, not a repeating weather simulation.`,
             };
             const recorded=experienceStore.recordEncounterStory({
               occurredAt:opportunity.dueAt,
-              threadPresence:[],
+              // Perceptible physical scenes need not be co-located. Presence
+              // identifies potential observers, never guaranteed attention.
+              threadPresence:decision.potentialObservers,
               story,
               visualization:createEncounterVisualization({
                 occurredAt:opportunity.dueAt,
