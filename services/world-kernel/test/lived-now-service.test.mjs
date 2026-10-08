@@ -580,3 +580,34 @@ test("E7.5 admitted Flight Plan boundaries advance life without polling",async()
       "same Flight Plan boundary was replayed");
     lived.close();
   }));
+
+test("E7.5 repeatedly unavailable cognition becomes a quiet, inspectable blocked frontier",async()=>
+  withDatabase(async(databasePath)=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    lived.recordPlan(personalPlan(life));
+    const situation=await createLivedNowService({livedNowStore:lived}).ensure({
+      threadId:life.thread.threadId,at:"2026-09-10T05:05:00Z",
+    });
+    const dueAt=nextLivedBoundary(lived,situation);
+    lived.scheduleNextLivedBoundary({
+      threadId:situation.threadId,situationId:situation.situationId,dueAt,
+    });
+    let attempts=0;
+    const process=createLivedBoundaryProcess({
+      livedNowStore:lived,
+      livedNow:{async ensure(){attempts++;throw new Error("provider temporarily unavailable");}},
+      now:()=>dueAt,
+    });
+    assert.equal((await process.runOnce()).failed,1);
+    assert.equal((await process.runOnce()).failed,1);
+    const blocked=await process.runOnce();
+    assert.equal(blocked.failed,0,"exhausted cognition kept its retry alarm");
+    assert.equal(blocked.results[0].outcome,"blocked");
+    assert.equal(blocked.nextDueAt,null,"blocked life kept a persistent wake");
+    assert.equal(lived.inspectLivedBoundary(life.thread.threadId)?.blockedReason,
+      "provider temporarily unavailable","operator lost the bounded failure reason");
+    assert.equal((await process.runOnce()).attempted,0);
+    assert.equal(attempts,3,"blocked life continued spending cognition");
+    lived.close();
+  }));
