@@ -7,6 +7,7 @@ import test from "node:test";
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { createExperienceConsolidationProcess } from "../src/lived-experience-consolidation.mjs";
+import { createLiveEncounterRegistry } from "../src/live-encounter-registry.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
@@ -165,6 +166,12 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
         };
       },
     };
+    const liveEncounterRegistry=createLiveEncounterRegistry();
+    const publishedAfterthoughts=[];
+    const unregisterAfterthought=liveEncounterRegistry.register(
+      thread.threadId,
+      (event)=>publishedAfterthoughts.push(structuredClone(event)),
+    );
     const times=[
       "2026-10-07T19:00:00.000Z",
       "2026-10-07T19:00:01.000Z",
@@ -192,6 +199,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       memoryStore,
       experienceStore,
       modelAdapter,
+      onAfterthoughts:(event)=>liveEncounterRegistry.publishAfterthoughts(event),
       now:()=>times.shift(),
       batchLimit:1,
       groupLimit:8,
@@ -208,6 +216,15 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       kind:"question",
       text:"Would drawing something myself change what I notice about it?",
     }],"delayed consolidation lost its private afterthought");
+    assert.equal(firstRun.results[0].afterthoughtDelivery.ok,true,
+      "durable afterthought was not offered to the live encounter registry");
+    assert.equal(firstRun.results[0].afterthoughtDelivery.result.activeEncounters,1,
+      "active Thread encounter was not discovered for delayed thought");
+    assert.deepEqual(
+      publishedAfterthoughts[0]?.afterthoughts,
+      firstRun.results[0].afterthoughts,
+      "live afterthought publication drifted from the durable consolidation decision",
+    );
     assert.deepEqual(
       calls[0].experiences.map((item)=>item.experienceId),
       [first.experienceId,second.experienceId],
@@ -231,6 +248,9 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
     assert.equal(calls.length,2,"later cluster did not get exactly one cognition opportunity");
     assert.equal(memoryStore.listCurrentMemories(thread.threadId).length,1,
       "not_remembered cluster fabricated a memory");
+    assert.equal(secondRun.results[0].afterthoughtDelivery.attempted,false,
+      "empty delayed residue manufactured a live opportunity");
+    unregisterAfterthought();
 
     const inspection=experienceStore.inspectThreadExperienceConsolidation(thread.threadId);
     assert.equal(inspection.queued.length,0,
