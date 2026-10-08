@@ -436,3 +436,46 @@ test("new authoritative wake resets World reconciliation backoff", async () => {
     await runtime.stop();
   }
 });
+
+test("later contact participates in World retry and quiescence", async () => {
+  let pending=true;
+  let runs=0;
+  const process=createWorldReconciliationProcess({
+    contactOutreachProcess:{
+      async runOnce(){
+        runs+=1;
+        return {
+          attempted:pending?1:0,
+          completed:pending?0:0,
+          failed:0,
+          hasPending:pending,
+          results:[],
+        };
+      },
+    },
+  });
+  const {infraDriver,runtime}=createRuntimeFixture({
+    process,
+    intervalMs:100,
+    maxRetryMs:800,
+  });
+  try{
+    await runtime.requestWake();
+    const first=await runtime.handleWake();
+    assert.equal(runs,1);
+    assert.equal(first.contactOutreach.enabled,true);
+    assert.equal(first.reconciliationPending,true,
+      "pending later contact did not keep World reconciliation alive");
+    assert.equal(await infraDriver.scheduler.get("world"),1_100);
+
+    pending=false;
+    const second=await runtime.handleWake();
+    assert.equal(runs,2);
+    assert.equal(second.reconciliationPending,false,
+      "settled later contact did not return World to quiescence");
+    assert.equal(await infraDriver.scheduler.get("world"),null);
+  }finally{
+    await runtime.stop();
+  }
+});
+
