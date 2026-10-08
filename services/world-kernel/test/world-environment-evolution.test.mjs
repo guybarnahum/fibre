@@ -10,38 +10,53 @@ import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { createWorldEnvironmentEvolution } from "../src/world-environment-evolution.mjs";
 
-const sourceThread=JSON.parse(readFileSync(
+const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
 ));
 const AT="2026-10-08T16:00:00.000Z";
 const DUE="2026-10-08T16:30:00.000Z";
 
-function worldFixture(){
+function fixture(){
   const directory=mkdtempSync(join(tmpdir(),"fibre-environment-evolution-"));
   const storage={
     infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
     stateScopeId:"world",
   };
+  const local=structuredClone(seed);
+  local.threadId="thr_environment_local";
+  local.provenance.lastEventId="evt_environment_local";
+  const distant=structuredClone(seed);
+  distant.threadId="thr_environment_distant";
+  distant.provenance.lastEventId="evt_environment_distant";
   const world=openWorldStore(storage);
-  const resident=structuredClone(sourceThread);
-  resident.threadId="thr_world_environment_evolution";
-  resident.provenance.lastEventId="evt_world_environment_evolution";
-  try{world.seedThread(resident);}finally{world.close();}
+  try{world.seedThread(local);world.seedThread(distant);}
+  finally{world.close();}
   const experiences=openLivedExperienceStore(storage);
+  let current=[];
 
-  function source(placeRef,at,description){
+  function situation(thread,placeRef){
+    return {
+      threadId:thread.threadId,
+      situationId:`sit_${thread.threadId}`,
+      establishedAt:AT,
+      location:{kind:"place",placeRef},
+      activity:"outdoors with a view of the sky",
+    };
+  }
+  function source(placeRef,description){
     const story={
       storyVersion:"encounter-story-v0.1",
       beats:[{actorThreadId:null,kind:"occurrence",text:description}],
     };
     return experiences.recordEncounterStory({
-      occurredAt:at,
+      occurredAt:AT,
       threadPresence:[{
-        threadId:resident.threadId,situationId:`sit_${resident.threadId}`,
+        threadId:local.threadId,
+        situationId:`sit_${local.threadId}`,
       }],
       story,
       visualization:createEncounterVisualization({
-        occurredAt:at,story,scene:`At shared World place ${placeRef}.`,
+        occurredAt:AT,story,scene:`At ${placeRef}.`,
         sourceReferences:[placeRef],depictedThreadRefs:[],
       }),
     },{
@@ -50,7 +65,12 @@ function worldFixture(){
     });
   }
   return {
-    experiences,source,
+    local,distant,experiences,source,situation,
+    setCurrent(value){current=value;},
+    livedNowStore:{
+      listCurrentSituations:()=>structuredClone(current),
+      getWorldPlace:(_threadId,ref)=>({ref,displayName:ref}),
+    },
     close(){
       experiences.close();
       rmSync(directory,{recursive:true,force:true});
@@ -58,71 +78,106 @@ function worldFixture(){
   };
 }
 
-test("World follows up shared rain once without forcing a change or waking observers",async()=>{
-  const f=worldFixture();
+test("E7.2 makes a distant but perceivable World change and lets no_change stay quiet",async()=>{
+  const f=fixture();
   try{
-    const rain=f.source("wpl_world_rain",AT,"Rain begins across the park.");
-    const bee=f.source("wpl_world_bee",AT,"A bee lands on a flower.");
+    const flash=f.source("wpl_flash_source","A towering storm cloud forms above the valley.");
+    const quiet=f.source("wpl_quiet_source","A bee lands on a flower.");
+    f.setCurrent([
+      f.situation(f.local,"wpl_flash_source"),
+      f.situation(f.distant,"wpl_distant_overlook"),
+    ]);
     const calls=[];
     const modelAdapter={
-      async invoke(input){
-        calls.push(structuredClone(input));
-        assert.equal(Object.hasOwn(input.input,"thread"),false,
-          "World evolution must not read a Thread's private identity");
-        assert.equal(Object.hasOwn(input.input,"currentSituation"),false,
-          "World evolution must not depend on a Thread's scene");
+      async invoke(request){
+        calls.push(structuredClone(request));
+        assert.equal(Object.hasOwn(request.input,"thread"),false,
+          "World cannot read private Thread identity");
+        assert.equal(request.input.potentialObservers.length,2,
+          "World did not receive bounded exterior observers");
         return {
-          output:input.input.placeRef==="wpl_world_rain"
-            ?{outcome:"changed",occurrenceText:"The rain stops and sunlight returns."}
-            :{outcome:"no_change",occurrenceText:null},
+          output:request.input.placeRef==="wpl_flash_source"
+            ?{
+              outcome:"changed",
+              occurrenceText:"A brilliant lightning flash illuminates the distant skyline.",
+              potentialObserverThreadIds:[f.distant.threadId],
+            }
+            :{
+              outcome:"no_change",occurrenceText:null,
+              potentialObserverThreadIds:[],
+            },
         };
       },
     };
-    let time="2026-10-08T16:10:00.000Z";
+    let clock="2026-10-08T16:10:00.000Z";
     const process=createWorldEnvironmentEvolution({
-      experienceStore:f.experiences,modelAdapter,now:()=>time,
+      experienceStore:f.experiences,
+      livedNowStore:f.livedNowStore,
+      modelAdapter,
+      now:()=>clock,
     });
     const early=await process.runOnce();
-    assert.equal(early.attempted,0,"World should not evaluate evolution before it is due");
-    assert.equal(early.nextDueAt,DUE,"World follow-up lost its due time");
-    assert.equal(calls.length,0,"an early wake spent a model call");
+    assert.equal(early.attempted,0,"early World wake should not run environmental cognition");
+    assert.equal(early.nextDueAt,DUE,"earned due time was lost");
+    assert.equal(calls.length,0,"early World wake spent model compute");
 
-    time=DUE;
-    const evolved=await process.runOnce();
-    assert.equal(evolved.failed,0,"World environmental continuation failed");
-    assert.equal(evolved.completed,2,"two earned opportunities should settle once");
-    assert.equal(evolved.nextDueAt,null,"settled World work should return to quiescence");
-    const next=f.experiences.getSharedEnvironmentalStory({
-      occurredAt:DUE,placeRef:"wpl_world_rain",
+    clock=DUE;
+    const result=await process.runOnce();
+    assert.equal(result.completed,2,"two due opportunities should settle");
+    assert.equal(result.failed,0,"World environment follow-up failed");
+    assert.equal(result.nextDueAt,null,"completed work should return World to quiescence");
+    const flashResult=f.experiences.getSharedEnvironmentalStory({
+      occurredAt:DUE,placeRef:"wpl_flash_source",
     });
-    assert.equal(next?.story.continuationOfEncounterRef,rain.encounterId,
-      "the later rain change should cite the earlier objective occurrence");
-    assert.deepEqual(next?.threadPresence,[],
-      "the World must not invent an observer for unobserved weather");
+    assert.equal(flashResult?.story.continuationOfEncounterRef,flash.encounterId,
+      "objective change must continue the admitted source");
+    assert.deepEqual(flashResult.threadPresence,[{
+      threadId:f.distant.threadId,
+      situationId:`sit_${f.distant.threadId}`,
+    }],"distant potential observer should be admitted without distance cutoff");
+    assert.equal(f.experiences.getThreadEncounterAttention(
+      f.distant.threadId,flashResult.encounterId,
+    ),null,"potential perception must not become automatic noticing");
     assert.equal(f.experiences.getSharedEnvironmentalStory({
-      occurredAt:DUE,placeRef:"wpl_world_bee",
-    }),null,"no_change must not become a fabricated objective event");
-
+      occurredAt:DUE,placeRef:"wpl_quiet_source",
+    }),null,"no_change must not create an event");
     await process.runOnce();
-    assert.equal(calls.length,2,"retry must not resample completed World events");
-    assert.equal(
-      f.experiences.getSharedEnvironmentalStory({
-        occurredAt:AT,placeRef:"wpl_world_rain",
-      }).encounterId,
-      rain.encounterId,
-      "World environmental history was rewritten",
-    );
-    assert.notEqual(next.encounterId,bee.encounterId,
-      "independent places should never share one environmental event");
+    assert.equal(calls.length,2,"completed work re-invoked cognition");
+    assert.notEqual(flashResult.encounterId,quiet.encounterId,
+      "unrelated objective events should remain separate");
   }finally{f.close();}
 });
 
-test("environmental continuation retries durable judgment instead of rerolling weather",async()=>{
-  const f=worldFixture();
+test("E7.2 consumes zero model calls when nobody could notice the change",async()=>{
+  const f=fixture();
   try{
-    const source=f.source("wpl_world_retry",AT,"Clouds gather over the park.");
+    f.source("wpl_unobserved","A passing cloud casts a shadow.");
+    f.setCurrent([]);
     let calls=0;
-    let failedOnce=false;
+    const process=createWorldEnvironmentEvolution({
+      experienceStore:f.experiences,livedNowStore:f.livedNowStore,
+      modelAdapter:{async invoke(){calls++;throw new Error("unneeded cognition");}},
+      now:()=>DUE,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.failed,0,"no-observer case should settle without error");
+    assert.equal(result.results[0].outcome,"not_observable",
+      "unobservable World event should not be generated");
+    assert.equal(result.nextDueAt,null,"unobservable event left a repeating alarm");
+    assert.equal(calls,0,"World wasted model compute without a potential observer");
+    assert.equal(f.experiences.getSharedEnvironmentalStory({
+      occurredAt:DUE,placeRef:"wpl_unobserved",
+    }),null,"World invented a new event nobody could notice");
+  }finally{f.close();}
+});
+
+test("E7.2 retries a persisted perceptible change without rerolling cognition",async()=>{
+  const f=fixture();
+  try{
+    const source=f.source("wpl_retry","Clouds gather across the horizon.");
+    f.setCurrent([f.situation(f.distant,"wpl_remote_hill")]);
+    let calls=0;
+    let fail=true;
     const store={
       listDueEnvironmentalFollowups:(args)=>f.experiences.listDueEnvironmentalFollowups(args),
       nextEnvironmentalFollowupAt:()=>f.experiences.nextEnvironmentalFollowupAt(),
@@ -130,31 +185,31 @@ test("environmental continuation retries durable judgment instead of rerolling w
       recordEnvironmentalFollowupDecision:(args)=>
         f.experiences.recordEnvironmentalFollowupDecision(args),
       recordEncounterStory:(...args)=>{
-        if(!failedOnce){failedOnce=true;throw new Error("transient storage failure");}
+        if(fail){fail=false;throw new Error("transient storage failure");}
         return f.experiences.recordEncounterStory(...args);
       },
-      completeEnvironmentalFollowup:(args)=>
-        f.experiences.completeEnvironmentalFollowup(args),
+      completeEnvironmentalFollowup:(args)=>f.experiences.completeEnvironmentalFollowup(args),
     };
     const process=createWorldEnvironmentEvolution({
-      experienceStore:store,
+      experienceStore:store,livedNowStore:f.livedNowStore,
       modelAdapter:{async invoke(){
         calls++;
         return {output:{
-          outcome:"changed",occurrenceText:"The clouds disperse.",
+          outcome:"changed",
+          occurrenceText:"The clouds disperse, exposing a bright mountain ridge.",
+          potentialObserverThreadIds:[f.distant.threadId],
         }};
       }},
       now:()=>DUE,
     });
     const first=await process.runOnce();
-    assert.equal(first.failed,1,"materialization failure should remain pending");
-    assert.equal(calls,1,"World should form only one private candidate decision");
+    assert.equal(first.failed,1,"storage failure should retain pending work");
     const retry=await process.runOnce();
-    assert.equal(retry.completed,1,"World should resume the durable decision");
-    assert.equal(calls,1,"retry rerolled the World continuation");
+    assert.equal(retry.completed,1,"replay should finish the admitted decision");
+    assert.equal(calls,1,"retry resampled objective World truth");
     assert.equal(f.experiences.getSharedEnvironmentalStory({
-      occurredAt:DUE,placeRef:"wpl_world_retry",
+      occurredAt:DUE,placeRef:"wpl_retry",
     })?.story.continuationOfEncounterRef,source.encounterId,
-    "retried continuation lost its objective history");
+    "retry lost the objective causal lineage");
   }finally{f.close();}
 });
