@@ -20,6 +20,8 @@ import { openLivedExperienceStore } from "#services/world-kernel/src/lived-exper
 import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
 import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-encounter-registry.mjs";
+import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
+import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { projectCurrentLife } from "#services/world-kernel/src/current-life-projection.mjs";
 import { openGuardianCognitionStore } from "#services/world-kernel/src/guardian-cognition-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
@@ -153,6 +155,7 @@ export async function startWorldKernelFromEnvironment(
   let semanticStateStore;
   let livedNowStore;
   let livedExperienceStore;
+  let contactStore;
   let guardianCognitionStore;
   let identityStore;
   let autobiographicalMemoryStore;
@@ -174,6 +177,7 @@ export async function startWorldKernelFromEnvironment(
     semanticStateStore = openSemanticStateStore(worldStorage);
     livedNowStore = openLivedNowStore(worldStorage);
     livedExperienceStore = openLivedExperienceStore(worldStorage);
+    contactStore = openContactStore(worldStorage);
     guardianCognitionStore = openGuardianCognitionStore(worldStorage);
     identityStore = openIdentityStore(worldStorage);
     autobiographicalMemoryStore = openAutobiographicalMemoryStore(worldStorage);
@@ -199,6 +203,7 @@ export async function startWorldKernelFromEnvironment(
     autobiographicalMemoryStore?.close();
     identityStore?.close();
     guardianCognitionStore?.close();
+    contactStore?.close();
     livedExperienceStore?.close();
     livedNowStore?.close();
     semanticStateStore?.close();
@@ -284,9 +289,29 @@ export async function startWorldKernelFromEnvironment(
     },
     onAfterthoughts:(event)=>liveEncounterRegistry.publishAfterthoughts(event),
   });
+  let contactModelAdapter=null;
+  const contactOutreachProcess=createThreadContactProcess({
+    worldReader:store,
+    livedNowStore,
+    situatedLifeStore,
+    semanticStateStore,
+    memoryStore:autobiographicalMemoryStore,
+    experienceStore:livedExperienceStore,
+    contactStore,
+    modelAdapter:{
+      async invoke(request){
+        contactModelAdapter??=selectReasoningIntegration(
+          DEPLOYMENT.integrations.encounter,
+          { environment },
+        );
+        return contactModelAdapter.invoke(request);
+      },
+    },
+  });
   const reconciliationProcess = createWorldReconciliationProcess({
     presentationDelivery,
     experienceConsolidationProcess,
+    contactOutreachProcess,
     onError: reportReconciliationError,
   });
   const reconciliationRuntime = createWorldReconciliationRuntime({
@@ -346,6 +371,9 @@ export async function startWorldKernelFromEnvironment(
     if (livedExperienceStore.hasPendingExperienceConsolidation()) {
       await experienceConsolidationWakeScheduler();
     }
+    if (contactOutreachProcess.hasPending()) {
+      await reconciliationRuntime.requestWake();
+    }
     if (presentationDelivery !== null) await reconciliationRuntime.requestWake();
     let closed = false;
     const close = async () => {
@@ -367,6 +395,7 @@ export async function startWorldKernelFromEnvironment(
         autobiographicalMemoryStore.close();
         identityStore.close();
         guardianCognitionStore.close();
+        contactStore.close();
         livedExperienceStore.close();
         livedNowStore.close();
         semanticStateStore.close();
@@ -392,6 +421,7 @@ export async function startWorldKernelFromEnvironment(
       semanticStateStore,
       livedNowStore,
       livedExperienceStore,
+      contactStore,
       guardianCognitionStore,
       identityStore,
       autobiographicalMemoryStore,
@@ -415,6 +445,7 @@ export async function startWorldKernelFromEnvironment(
       reconciliationRuntime,
       experienceConsolidationProcess,
       experienceConsolidationWakeScheduler,
+      contactOutreachProcess,
       liveEncounterRegistry,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
