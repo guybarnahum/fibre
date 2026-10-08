@@ -90,6 +90,19 @@ function createTables(database) {
     CREATE TRIGGER IF NOT EXISTS current_situations_no_delete
       BEFORE DELETE ON current_situation_records
       BEGIN SELECT RAISE(ABORT,'current_situation_records is append-only'); END;
+
+    CREATE TABLE IF NOT EXISTS lived_now_next_boundaries (
+      thread_id TEXT PRIMARY KEY,
+      situation_id TEXT NOT NULL,
+      due_at TEXT,
+      blocked_reason TEXT,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (situation_id) REFERENCES current_situation_records(situation_id)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_lived_now_next_boundaries_due
+      ON lived_now_next_boundaries(due_at)
+      WHERE due_at IS NOT NULL;
   `);
   createLiveWorldPlaceTables(database);
 }
@@ -426,6 +439,67 @@ export class LivedNowStore {
       throw new LivedNowNotFoundError(`current situation ${situationId} was not found`);
     }
     return situationFromRow(row);
+  }
+
+  scheduleNextLivedBoundary({threadId,situationId,dueAt}){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only lived-now store cannot schedule");
+    assertId("lived boundary threadId",threadId);
+    assertId("lived boundary situationId",situationId);
+    if(dueAt!==null)assertIsoTimestamp("lived boundary dueAt",dueAt);
+    const current=this.getCurrentSituation(threadId);
+    if(current?.situationId!==situationId)return {scheduled:false,stale:true};
+    const prior=this.#database.prepare(`
+      SELECT situation_id,due_at FROM lived_now_next_boundaries WHERE thread_id=?
+    `).get(threadId);
+    if(prior?.situation_id===situationId&&prior.due_at===dueAt){
+      return {scheduled:false,stale:false};
+    }
+    this.#database.prepare(`
+      INSERT INTO lived_now_next_boundaries(thread_id,situation_id,due_at,blocked_reason)
+      VALUES(?,?,?,NULL)
+      ON CONFLICT(thread_id) DO UPDATE SET
+        situation_id=excluded.situation_id,
+        due_at=excluded.due_at,
+        blocked_reason=NULL
+    `).run(threadId,situationId,dueAt);
+    return {scheduled:dueAt!==null,stale:false};
+  }
+
+  nextLivedBoundaryAt(){
+    return this.#database.prepare(`
+      SELECT due_at FROM lived_now_next_boundaries
+      WHERE due_at IS NOT NULL ORDER BY due_at LIMIT 1
+    `).get()?.due_at??null;
+  }
+
+  listDueLivedBoundaries({at,limit=1}){
+    assertIsoTimestamp("due lived boundaries at",at);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>4){
+      throw new TypeError("lived boundary limit must be 1-4");
+    }
+    return this.#database.prepare(`
+      SELECT thread_id,situation_id,due_at FROM lived_now_next_boundaries
+      WHERE due_at IS NOT NULL AND due_at<=?
+      ORDER BY due_at,thread_id LIMIT ?
+    `).all(at,limit).map((row)=>Object.freeze({
+      threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
+    }));
+  }
+
+  settleLivedBoundary({threadId,situationId,dueAt,blockedReason=null}){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only lived-now store cannot settle");
+    assertId("settled lived boundary threadId",threadId);
+    assertId("settled lived boundary situationId",situationId);
+    assertIsoTimestamp("settled lived boundary dueAt",dueAt);
+    if(blockedReason!==null&&(typeof blockedReason!=="string"
+      ||blockedReason.length===0||blockedReason.length>180)){
+      throw new TypeError("lived boundary reason must be short");
+    }
+    return this.#database.prepare(`
+      UPDATE lived_now_next_boundaries
+      SET due_at=NULL,blocked_reason=?
+      WHERE thread_id=? AND situation_id=? AND due_at=?
+    `).run(blockedReason,threadId,situationId,dueAt).changes===1;
   }
 
   getCurrentSituation(threadId) {
