@@ -285,7 +285,7 @@ export function createWorldReconciliationRuntime({
     if(dueAt!==null){
       const timestamp=Date.parse(dueAt);
       if(!Number.isFinite(timestamp))throw new TypeError("World environment next due time is invalid");
-      await infra.scheduler.schedule(scopeId,Math.max(now(),timestamp));
+      await scheduleAt(Math.max(now(),timestamp));
     }else{
       await infra.scheduler.cancel(scopeId);
     }
