@@ -2,9 +2,12 @@ import { LivedNowCoverageError } from "./lived-now-service.mjs";
 
 function futurePlanBoundaries(plan,after){
   if(plan===null)return [];
-  const candidates=[...plan.stops.flatMap((stop)=>[stop.startAt,stop.endAt])];
-  // End-of-plan is inclusive for LivedNow; the next millisecond
-  // requires renewal or bounded historical continuation.
+  const candidates=plan.stops.flatMap((stop)=>[
+    stop.startAt,
+    ...(stop.endAt===plan.horizonEnd?[]:[stop.endAt]),
+  ]);
+  // Avoid two alarms one millisecond apart at the final stop.
+  // End-of-plan is inclusive; the next millisecond needs renewal.
   candidates.push(new Date(Date.parse(plan.horizonEnd)+1).toISOString());
   return candidates.filter((at)=>Date.parse(at)>Date.parse(after))
     .map((at)=>new Date(Date.parse(at)).toISOString());
