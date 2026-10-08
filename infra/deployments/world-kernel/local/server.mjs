@@ -17,6 +17,10 @@ import { openCausalContextStore } from "#services/world-kernel/src/causal-contex
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { createLivedNowService } from "#services/world-kernel/src/lived-now-service.mjs";
+import {
+  nextLivedBoundary,
+  createLivedBoundaryProcess,
+} from "#services/world-kernel/src/lived-now-boundary.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
@@ -315,8 +319,18 @@ export async function startWorldKernelFromEnvironment(
     },
     onAfterthoughts:(event)=>liveEncounterRegistry.publishAfterthoughts(event),
   });
+  async function scheduleNextLivedBoundary(situation){
+    const dueAt=nextLivedBoundary(livedNowStore,situation);
+    const scheduled=livedNowStore.scheduleNextLivedBoundary({
+      threadId:situation.threadId,
+      situationId:situation.situationId,
+      dueAt,
+    });
+    if(scheduled.scheduled)await reconciliationRuntime.requestWakeAt(Date.parse(dueAt));
+  }
   let contactLivedNowModelAdapter=null;
   const contactLivedNow=createLivedNowService({
+    onSituationResolved:scheduleNextLivedBoundary,
     onSituationEnacted:async(situation)=>{
       const earned=livedExperienceStore.enqueueEnvironmentalOpportunity({
         threadId:situation.threadId,
@@ -380,7 +394,11 @@ export async function startWorldKernelFromEnvironment(
     createWorldEnvironmentOpportunity(environmentInputs),
     createWorldEnvironmentEvolution(environmentInputs),
   );
+  const livedBoundaryProcess=createLivedBoundaryProcess({
+    livedNowStore,livedNow:contactLivedNow,
+  });
   const reconciliationProcess = createWorldReconciliationProcess({
+    livedBoundaryProcess,
     presentationDelivery,
     experienceConsolidationProcess,
     contactOutreachProcess,
@@ -451,7 +469,8 @@ export async function startWorldKernelFromEnvironment(
       await experienceConsolidationWakeScheduler();
     }
     if (contactOutreachProcess.hasPending()
-      ||livedExperienceStore.nextEnvironmentalOpportunityAt()!==null) {
+      ||livedExperienceStore.nextEnvironmentalOpportunityAt()!==null
+      ||livedNowStore.nextLivedBoundaryAt()!==null) {
       await reconciliationRuntime.requestWake();
     }
     if (presentationDelivery !== null) await reconciliationRuntime.requestWake();
