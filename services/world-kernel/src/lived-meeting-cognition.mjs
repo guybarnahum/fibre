@@ -64,9 +64,12 @@ export function meetingPresenceCompatible(left, right, {
     && left.mediatedContext === right.mediatedContext) return true;
   if (left.location?.kind !== "place" || right.location?.kind !== "place") return false;
 
-  return left.location.placeRef === right.location.placeRef
-    && leftWorldPlaces.some((place) => place.ref === left.location.placeRef)
-    && rightWorldPlaces.some((place) => place.ref === right.location.placeRef);
+  const leftVenue=leftWorldPlaces.find((place)=>
+    place.ref===left.location.placeRef)?.physicalVenue?.ref;
+  const rightVenue=rightWorldPlaces.find((place)=>
+    place.ref===right.location.placeRef)?.physicalVenue?.ref;
+  // Historical place descriptions are not evidence of a physical meeting.
+  return typeof leftVenue==="string"&&leftVenue===rightVenue;
 }
 
 export async function formSocialEncounterRequest({
