@@ -87,7 +87,8 @@ export function worldReconciliationNeedsRetry(result) {
     || visualNeedsRetry(result.visualPublication)
     || experienceConsolidationNeedsRetry(result.experienceConsolidation)
     || contactOutreachNeedsRetry(result.contactOutreach)
-    || environmentNeedsRetry(result.environmentEvolution);
+    || environmentNeedsRetry(result.environmentEvolution)
+    || environmentNeedsRetry(result.livedBoundary);
 }
 
 export function createWorldReconciliationProcess({
@@ -96,6 +97,7 @@ export function createWorldReconciliationProcess({
   experienceConsolidationProcess = null,
   contactOutreachProcess = null,
   environmentEvolutionProcess = null,
+  livedBoundaryProcess = null,
   onError = null,
 } = {}) {
   const delivery = optionalMethod("presentationDelivery", presentationDelivery, "deliverPending");
@@ -113,6 +115,7 @@ export function createWorldReconciliationProcess({
   let environmentEvolution=optionalMethod(
     "environmentEvolutionProcess",environmentEvolutionProcess,"runOnce",
   );
+  let livedBoundary=optionalMethod("livedBoundaryProcess",livedBoundaryProcess,"runOnce");
   if (onError !== null && typeof onError !== "function") {
     throw new TypeError("World reconciliation onError must be a function or null");
   }
@@ -150,6 +153,10 @@ export function createWorldReconciliationProcess({
       environmentEvolution=optionalMethod("environmentEvolutionProcess",process,"runOnce");
     },
 
+    setLivedBoundaryProcess(process){
+      livedBoundary=optionalMethod("livedBoundaryProcess",process,"runOnce");
+    },
+
     async runOnce() {
       if (running) return Object.freeze({ skipped: true, reason: "already_running" });
       running = true;
@@ -169,6 +176,10 @@ export function createWorldReconciliationProcess({
         const contactOutreachResult = await isolated(
           "thread_contact_outreach",
           contactOutreach === null ? null : () => contactOutreach.runOnce(),
+        );
+        const livedBoundaryResult=await isolated(
+          "lived_boundary_advance",
+          livedBoundary===null?null:()=>livedBoundary.runOnce(),
         );
         const environmentResult=await isolated(
           "world_environment_evolution",
@@ -192,6 +203,7 @@ export function createWorldReconciliationProcess({
           experienceConsolidation,
           contactOutreach:contactOutreachResult,
           environmentEvolution:environmentResult,
+          livedBoundary:livedBoundaryResult,
         });
       } finally {
         running = false;
@@ -298,7 +310,10 @@ export function createWorldReconciliationRuntime({
       return Object.freeze({ ...result, reconciliationPending: true, retryDelayMs: delayMs });
     }
     await setRetryStreak(0);
-    const dueAt=result.environmentEvolution?.result?.nextDueAt??null;
+    const dueAt=[
+      result.environmentEvolution?.result?.nextDueAt,
+      result.livedBoundary?.result?.nextDueAt,
+    ].filter(Boolean).sort()[0]??null;
     if(dueAt!==null){
       const timestamp=Date.parse(dueAt);
       if(!Number.isFinite(timestamp))throw new TypeError("World environment next due time is invalid");
@@ -334,6 +349,11 @@ export function createWorldReconciliationRuntime({
     ensureScheduled,
     requestWake,
     requestWakeAfter,
+    requestWakeAt:async(scheduledTimeMs)=>{
+      if(!Number.isSafeInteger(scheduledTimeMs)||scheduledTimeMs<0)
+        throw new TypeError("World reconciliation scheduledTimeMs is invalid");
+      return scheduleAt(scheduledTimeMs);
+    },
     runNow: runAndSettle,
     handleWake: runAndSettle,
     stop: async () => {
