@@ -411,7 +411,7 @@ The existing Encounter Story store now atomically reuses an already-admitted sin
 
 **E7.1 local focused validation passed (Guy, 2026-10-08).** Production/staging evidence of two naturally co-present Threads at an admitted `wpl_*` remains pending. A lack of co-presence is `blocked_by_world_state`, not grounds to teleport Threads or weaken the acceptance proof.
 
-### E7.2 — One earned, **potentially noticeable** World continuation — IMPLEMENTED / VALIDATION PENDING
+### E7.2 — One earned, **potentially noticeable** World continuation — LOCAL ACCEPTED / STAGING PENDING
 
 An E7.1 shared-place objective environmental occurrence may earn **one** follow-up opportunity, currently 30 minutes later. This is a provisional timing policy, not a weather duration, frequency target, or continuous simulation.
 
@@ -489,7 +489,7 @@ A shared **attested** venue source may earn the existing E7.2 one-shot follow-up
 ### Explicitly deferred
 
 - A continuously evolving external weather system or meteorological feed (deferred, no current authority).
-- Independently seeding new place-events without a prior admitted environmental occurrence (deferred: E7.2 only earns one delayed follow-up after an E7.1 event).
+- Independently generating events outside a real earned LivedNow situation or prior environmental event (deferred: E7.4 seeds sparsely from genuine lived transitions, not from a freestanding perpetual World clock).
 - Scalable background attention fanout across very crowded places (deferred; the currently admitted presence set is larger than the bounded immediate cognition cohort).
 - Physically fine-grained sight/hearing/occlusion within the same World place (deferred; co-presence only establishes *potential* observability, not guaranteed noticing).
 - In-progress live-conversation exposure of third-party speech fragments (separate N7/E6 integration proof).
