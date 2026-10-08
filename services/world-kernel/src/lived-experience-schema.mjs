@@ -22,6 +22,9 @@ export function createLivedExperienceTables(database) {
       record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%')
     ) STRICT;
 
+    CREATE INDEX IF NOT EXISTS idx_encounter_story_occurred_at
+      ON encounter_story_records(occurred_at);
+
     CREATE TABLE IF NOT EXISTS encounter_story_thread_presence (
       encounter_ref TEXT NOT NULL,
       thread_id TEXT NOT NULL,
