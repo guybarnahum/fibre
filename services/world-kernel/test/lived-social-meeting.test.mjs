@@ -96,6 +96,7 @@ function fixture({
   plannedCompanionRefs = null,
   selaPresent = false,
   sustainedSameness = false,
+  moveAfterAcceptance = false,
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
@@ -240,6 +241,14 @@ function fixture({
           call.input.developedSelfEvidence,
           external,
         );
+        if(moveAfterAcceptance&&decision==="accept"){
+          const current=situations.get(noor.threadId);
+          situations.set(noor.threadId,{
+            ...structuredClone(current),
+            situationId:"sit_noor_moved_after_acceptance",
+            activity:"Leaving the café to continue the day.",
+          });
+        }
         const cited = call.input.developedSelfEvidence.find((item) =>
           item.kind === "relationship" || item.kind === "semantic_state" || item.kind === "memory");
         return {
@@ -706,6 +715,29 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
   assert.equal(declined.socialInteractions.length, 1,
     "an outward request plus decline should remain available as shared social history");
   assert.equal(declined.socialInteractions[0].responseDecision, "decline");
+});
+
+
+test("accepted social intention does not manufacture a stale-scene conversation", async () => {
+  const f=fixture({moveAfterAcceptance:true});
+  const result=await f.meeting.meet({
+    initiatorThreadId:mina.threadId,
+    at:AT,
+  });
+  const attempt=attemptFor(result);
+
+  assert.equal(attempt.stance.decision,"accept",
+    "recipient should genuinely accept before the scene changes");
+  assert.equal(attempt.outcome,"scene_changed",
+    "changed lived context should stop the admitted conversation before it starts");
+  assert.equal(attempt.encounterStory,null,
+    "stale accepted intention fabricated an Encounter Story");
+  assert.equal(attempt.live,null,
+    "stale accepted intention should not start Live Encounter runtime");
+  assert.equal(f.experiences.length,0,
+    "no lived encounter means no participant Experience");
+  assert.equal(f.socialInteractions.length,1,
+    "the outward request and accepted response decision should remain social history");
 });
 
 test("background co-presence costs no cognition and creates no private refusal", async () => {
