@@ -290,7 +290,7 @@ no turn owner
   -> later social/relationship consequence when warranted
 ```
 
-N7.0-N7.7 are accepted. N7.8 is current: the proven Thread-to-Thread admission path now hands accepted encounters to the same asynchronous Live Encounter primitive, where each speaking/action opportunity can independently produce speech, action or silence; streamed speech can be interrupted at sentence boundaries, and stale lived context cancels admission before a conversation is fabricated.
+N7.0-N7.8 are accepted. N7.9 is current: delayed consolidation residue (`insight | question | intention`) can be offered through an ephemeral World live-encounter registry as a private Thread-specific opportunity. The Thread may speak, act or stay silent; only outward expression becomes shared history, while the durable private residue remains separate and available for later-life logic.
 
 ## Current causal loop
 
