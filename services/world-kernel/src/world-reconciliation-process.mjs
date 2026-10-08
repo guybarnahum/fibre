@@ -352,6 +352,10 @@ export function createWorldReconciliationRuntime({
     requestWakeAt:async(scheduledTimeMs)=>{
       if(!Number.isSafeInteger(scheduledTimeMs)||scheduledTimeMs<0)
         throw new TypeError("World reconciliation scheduledTimeMs is invalid");
+      const existing=await infra.scheduler.get(scopeId);
+      if(existing!==null&&existing<=now()){
+        return infra.scheduler.schedule(scopeId,now());
+      }
       return scheduleAt(scheduledTimeMs);
     },
     runNow: runAndSettle,
