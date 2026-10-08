@@ -364,6 +364,11 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
     assert.equal(reception.noticed,1,"recipient did not independently notice");
     assert.equal(reception.results[0].experienceId?.startsWith("exp_"),true,
       "noticed contact did not become a personal Experience");
+    assert.equal(experienceStore.hasPendingExperienceConsolidation(),true,
+      "noticed recipient contact did not enter selective consolidation");
+    assert.equal(memoryStore.listCurrentMemories(noor.threadId,{
+      limit:6,newestFirst:true,
+    }).length,0,"recipient attention bypassed selective memory retention");
     assert.equal(contactStore.inspectContactReceptions(noor.threadId)[0].completedAt!==null,true);
     const admitted=experienceStore.listEncounterStories(noor.threadId);
     assert.equal(admitted.length,1,"recipient contact was not admitted once");
