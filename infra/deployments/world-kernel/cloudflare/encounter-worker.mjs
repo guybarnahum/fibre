@@ -5,6 +5,7 @@ import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifes
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import { createLivedEncounterWriteApi } from "#services/world-kernel/src/lived-encounter-write-api.mjs";
 import { createEnvironmentalEncounterService } from "#services/world-kernel/src/lived-environmental-encounter.mjs";
+import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
 import { createEnvironmentalEncounterWriteApi } from "#services/world-kernel/src/lived-environmental-encounter-write-api.mjs";
 import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
 import { createSocialMeetingWriteApi } from "#services/world-kernel/src/lived-social-meeting-write-api.mjs";
@@ -84,6 +85,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     super(ctx, env);
     this.livedEncounterApi = null;
     this.environmentalEncounterApi = null;
+    this.worldEnvironmentEvolutionProcess = null;
     this.livedNowApi = null;
     this.socialMeetingApi = null;
     this.livedCommonsApi = null;
@@ -208,6 +210,23 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.livedEncounterApi;
   }
 
+  worldEnvironmentEvolutionProcessForRequest(){
+    if(this.worldEnvironmentEvolutionProcess===null){
+      const runtime=this.runtimeForRequest();
+      const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
+      this.worldEnvironmentEvolutionProcess=createWorldEnvironmentEvolution({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
+        modelAdapter:selectReasoningIntegration(
+          deployment.integrations.encounter,{environment:this.env},
+        ),
+      });
+      runtime.reconciliationProcess.setEnvironmentEvolutionProcess(
+        this.worldEnvironmentEvolutionProcess,
+      );
+    }
+    return this.worldEnvironmentEvolutionProcess;
+  }
+
   environmentalEncounterApiForRequest() {
     if (this.environmentalEncounterApi === null) {
       const runtime = this.runtimeForRequest();
@@ -236,6 +255,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         experienceStore,
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
+        onWorldFollowupQueued:({dueAt})=>{
+          const delayMs=Math.max(0,Math.min(3_600_000,Date.parse(dueAt)-Date.now()));
+          return runtime.reconciliationRuntime.requestWakeAfter(delayMs);
+        },
       });
       this.environmentalEncounterApi = createEnvironmentalEncounterWriteApi({
         encounterService,
@@ -557,6 +580,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   async alarm(alarmInfo) {
     this.experienceConsolidationProcessForRequest();
     this.contactOutreachProcessForRequest();
+    this.worldEnvironmentEvolutionProcessForRequest();
     return super.alarm(alarmInfo);
   }
 }
