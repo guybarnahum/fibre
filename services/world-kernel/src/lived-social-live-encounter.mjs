@@ -42,6 +42,7 @@ export async function runThreadLiveSocialEncounter({
   request,
   stance,
   modelAdapter,
+  liveEncounterRegistry=null,
   maxOpportunityAppraisals=DEFAULT_OPPORTUNITY_BUDGET,
 }={}){
   const contexts=contextMap(initiator,counterparty);
@@ -58,6 +59,12 @@ export async function runThreadLiveSocialEncounter({
   if(!modelAdapter||typeof modelAdapter.invoke!=="function"
     ||typeof modelAdapter.streamExpression!=="function"){
     throw new TypeError("live social encounter requires structured and streaming model cognition");
+  }
+  if(liveEncounterRegistry!==null&&(
+    typeof liveEncounterRegistry.register!=="function"
+    ||typeof liveEncounterRegistry.publishAfterthoughts!=="function"
+  )){
+    throw new TypeError("live social encounter registry must be null or expose register() and publishAfterthoughts()");
   }
 
   const initiatorId=initiator.thread.threadId;
@@ -78,6 +85,7 @@ export async function runThreadLiveSocialEncounter({
   const activeControllers=new Map();
   const pending=new Set();
   const subscriptions=[];
+  const registryUnsubscribes=[];
   let bootstrapping=true;
   let stopped=false;
   let endedBy="quiescent";
@@ -198,6 +206,22 @@ export async function runThreadLiveSocialEncounter({
     pending.add(task);
   }
 
+  if(liveEncounterRegistry!==null){
+    for(const participantId of contexts.keys()){
+      registryUnsubscribes.push(liveEncounterRegistry.register(participantId,(residue)=>{
+        if(stopped)return;
+        liveEncounter.pushPrivateOpportunity({
+          participantId,
+          reason:"afterthought",
+          sourceRef:residue.consolidationId,
+          privateContext:{
+            afterthoughts:residue.afterthoughts,
+          },
+        });
+      }));
+    }
+  }
+
   for(const participantId of contexts.keys()){
     subscriptions.push(liveEncounter.subscribe(participantId,(event)=>{
       recordEvent(participantId,event);
@@ -243,6 +267,7 @@ export async function runThreadLiveSocialEncounter({
     }
   }finally{
     for(const unsubscribe of subscriptions)unsubscribe();
+    for(const unregister of registryUnsubscribes)unregister();
     for(const controller of activeControllers.values())controller.abort("encounter_closed");
   }
 
