@@ -383,6 +383,47 @@ E6 remains pending live witness evidence.
 
 ---
 
+## Slice E7 — Shared place-scoped environmental occurrences — IMPLEMENTED / VALIDATION PENDING
+
+**Goal:** one observable environmental happening belongs to the World, never to the particular Thread that triggered its authoring. E7 extends E6a, not the encounter ontology.
+
+### E7.1 — One shared objective happening, distinct lived attention
+
+For an already-admitted shared physical World place (`wpl_*`):
+
+```text
+one bounded environment encounter request: Thread + exact lived time
+  -> World ensures that Thread's real LivedNow
+  -> authentic shared World place + existing CurrentSituation witnesses at that time
+  -> World occurrence author sees place/time, not any observer's identity or activity
+  -> one Encounter Story with actual co-present Thread situations
+  -> each present Thread independently noticed | not_noticed
+  -> only noticed Experience enters existing delayed consolidation
+```
+
+The existing E6a one-Thread path remains for transit or non-shared physical locations. E7 does not conflate reusable Genesis place IDs with live physical co-presence, and it does not use a shared mediated context as evidence that a physical rainstorm occurred around every member.
+
+One triggered episode appraises the requesting Thread and at most three additional already-current witnesses. That is a model-compute burst bound, not a target for encounters or attention; the objective story may include more genuinely co-present Threads. Their optional later observation must reuse the same immutable event and their own attention authority.
+
+The existing Encounter Story store now atomically reuses an already-admitted single-beat environmental occurrence for the **exact same shared World-place reference and occurrence timestamp**, even if concurrent producers propose different descriptions. It uses an indexed occurrence-time query over the existing story/source evidence; no separate occurrence table, event bus or weather state was introduced. A Thread absent from the original admitted event's presence set cannot retroactively add itself to that event.
+
+**Focused acceptance proof:** two genuinely co-present Threads share the same place/time-scoped objective event; one notices and forms Experience, the other does not; an unrelated Thread at another location is absent; the second Thread's independent invocation does not generate a second rainstorm; a competing newly proposed description cannot rewrite the admitted event. Retry may not duplicate attention or consolidation.
+
+**Implementation validation remains pending operator CLI and, subsequently, a real staging case with at least two Threads already current at the same admitted `wpl_*`.** A lack of co-presence is `blocked_by_world_state`, not grounds to teleport Threads or weaken the acceptance proof.
+
+### Explicitly deferred
+
+- A continuously evolving external weather system or meteorological feed (deferred, no current authority).
+- Independently scheduled future place-events without an actual bounded lived/reconciliation trigger (deferred; extend the existing World wake policy when a concrete causal requirement justifies it).
+- Scalable background attention fanout across very crowded places (deferred; the currently admitted presence set is larger than the bounded immediate cognition cohort).
+- Physically fine-grained sight/hearing/occlusion within the same World place (deferred; co-presence only establishes *potential* observability, not guaranteed noticing).
+- In-progress live-conversation exposure of third-party speech fragments (separate N7/E6 integration proof).
+- Cross-time event continuity (rain beginning and later stopping are distinct World facts until a real local-world continuity mechanism is justified).
+
+No global ticking, quota of interesting events, simulation framework, event-interest score, new memory subsystem, or mandatory Journal/Memory production.
+
+---
+
 ## Slice E5 — Natural lived encounter acceptance — CURRENT
 
 E5 remains the roadmap label, but its forcing model has changed.
