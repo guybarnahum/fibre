@@ -61,12 +61,14 @@ export function createLiveWorldPlaceTables(database) {
     -- External, independently attested physical identity: Genesis kind is
     -- historical context and is never a physical-venue admission decision.
     CREATE TABLE IF NOT EXISTS live_physical_venue_bindings (
-      context_place_ref TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      context_place_ref TEXT NOT NULL,
       venue_ref TEXT NOT NULL,
       display_name TEXT NOT NULL,
       locality TEXT NOT NULL,
       country TEXT NOT NULL,
       evidence_ref TEXT NOT NULL,
+      PRIMARY KEY (thread_id,context_place_ref),
       FOREIGN KEY (context_place_ref) REFERENCES live_world_place_records(place_ref)
     ) STRICT;
 
@@ -211,8 +213,8 @@ export function bindLivePhysicalVenue(database,{
   }
   const row=database.prepare(`
     SELECT venue_ref,display_name,locality,country,evidence_ref
-    FROM live_physical_venue_bindings WHERE context_place_ref=?
-  `).get(contextPlaceRef);
+    FROM live_physical_venue_bindings WHERE thread_id=? AND context_place_ref=?
+  `).get(threadId,contextPlaceRef);
   const record={
     venueRef,displayName:displayName.trim(),locality:locality.trim(),
     country:country.trim(),evidenceRef:evidenceRef.trim(),
@@ -226,12 +228,12 @@ export function bindLivePhysicalVenue(database,{
   }else{
     database.prepare(`
       INSERT INTO live_physical_venue_bindings(
-        context_place_ref,venue_ref,display_name,locality,country,evidence_ref
-      ) VALUES (?,?,?,?,?,?)
-    `).run(contextPlaceRef,venueRef,record.displayName,record.locality,
+        thread_id,context_place_ref,venue_ref,display_name,locality,country,evidence_ref
+      ) VALUES (?,?,?,?,?,?,?)
+    `).run(threadId,contextPlaceRef,venueRef,record.displayName,record.locality,
       record.country,record.evidenceRef);
   }
-  return physicalVenueFor(database,contextPlaceRef);
+  return physicalVenueFor(database,threadId,contextPlaceRef);
 }
 
 export function resolveLivePhysicalVenue(database,venueRef){
@@ -247,12 +249,12 @@ export function resolveLivePhysicalVenue(database,venueRef){
   });
 }
 
-function physicalVenueFor(database,contextPlaceRef){
+function physicalVenueFor(database,threadId,contextPlaceRef){
   if(!tableExists(database,"live_physical_venue_bindings"))return null;
   const row=database.prepare(`
     SELECT venue_ref,display_name,locality,country,evidence_ref
-    FROM live_physical_venue_bindings WHERE context_place_ref=?
-  `).get(contextPlaceRef);
+    FROM live_physical_venue_bindings WHERE thread_id=? AND context_place_ref=?
+  `).get(threadId,contextPlaceRef);
   return row===undefined?null:Object.freeze({
     ref:row.venue_ref,
     displayName:row.display_name,
@@ -273,10 +275,23 @@ export function listLiveWorldPlaces(database, threadId) {
     WHERE source_world_ref=?
     ORDER BY place_kind,place_ref
   `).all(sourceWorldRef);
+  const venueRows=tableExists(database,"live_physical_venue_bindings")
+    ?database.prepare(`
+      SELECT b.context_place_ref,b.venue_ref,b.display_name,b.locality,
+        b.country,b.evidence_ref
+      FROM live_physical_venue_bindings b
+      JOIN live_world_place_records w ON w.place_ref=b.context_place_ref
+      WHERE b.thread_id=? AND w.source_world_ref=?
+    `).all(threadId,sourceWorldRef)
+    :[];
+  const venues=new Map(venueRows.map((row)=>[row.context_place_ref,Object.freeze({
+    ref:row.venue_ref,displayName:row.display_name,
+    locality:row.locality,country:row.country,evidenceRef:row.evidence_ref,
+  })]));
   return Object.freeze(rows.map((row)=>{
     const record=recordFromRow(row);
-    const physicalVenue=physicalVenueFor(database,record.ref);
-    return physicalVenue===null?record:Object.freeze({...record,physicalVenue});
+    const physicalVenue=venues.get(record.ref);
+    return physicalVenue===undefined?record:Object.freeze({...record,physicalVenue});
   }));
 }
 
