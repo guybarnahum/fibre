@@ -151,7 +151,9 @@ function fixture({
   const experiences = [];
   const initiationNames = [];
   const stanceNames = [];
-  const storyAuthors = [];
+  const liveContributionNames = [];
+  const liveExpressionNames = [];
+  const liveContributionCounts = new Map();
   const journals = [];
   const bookWrites = [];
   const memories = [];
@@ -255,28 +257,18 @@ function fixture({
           provenance:{ provider:"fixture", modelId:"fixture-social" },
         };
       }
-      if (call.clientRequestId.startsWith("social-encounter-story_")) {
-        storyAuthors.push(call.input.thread.name);
-        if (call.input.thread.name === "Noor") {
-          return {
-            output:{
-              beatKind:"utterance",
-              beatText:rude
-                ? "You could have asked without talking to me like that."
-                : "Sure. I’m in the middle of this sketch, but quiet company sounds nice.",
-            },
-            provenance:{ provider:"fixture", modelId:"fixture-e0" },
-          };
-        }
-        if (call.input.thread.name === "Sela") {
-          return {
-            output:{ beatKind:"utterance", beatText:"Sure, I can talk for a minute." },
-            provenance:{ provider:"fixture", modelId:"fixture-e0" },
-          };
-        }
+      if (call.clientRequestId.startsWith("social-live-contribution_")) {
+        const name=call.input.thread.name;
+        liveContributionNames.push(name);
+        const count=(liveContributionCounts.get(name)??0)+1;
+        liveContributionCounts.set(name,count);
+        const speak=(name==="Noor"||name==="Sela")&&count===1;
         return {
-          output:{ beatKind:null, beatText:null },
-          provenance:{ provider:"fixture", modelId:"fixture-e0" },
+          output:{
+            decision:speak?"speak":"silent",
+            actionText:null,
+          },
+          provenance:{ provider:"fixture", modelId:"fixture-live-social-choice" },
         };
       }
       if (call.clientRequestId.startsWith("encounter-attention_")) {
@@ -368,6 +360,29 @@ function fixture({
         };
       }
       throw new Error(`unexpected cognition ${call.clientRequestId}`);
+    },
+    async *streamExpression(call) {
+      modelCalls += 1;
+      liveExpressionNames.push(call.input.thread.name);
+      const name=call.input.thread.name;
+      const text=name==="Noor"
+        ? rude
+          ? "You could have asked without talking to me like that."
+          : "Sure. I’m in the middle of this sketch, but quiet company sounds nice."
+        : name==="Sela"
+          ? "Sure, I can talk for a minute."
+          : "That makes sense.";
+      if(call.signal?.aborted)return;
+      yield { type:"expression_delta", text };
+      if(call.signal?.aborted)return;
+      yield {
+        type:"expression_complete",
+        provenance:{
+          provider:"fixture",
+          modelId:"fixture-live-social-expression",
+          providerRequestId:`fixture_live_${liveExpressionNames.length}`,
+        },
+      };
     },
   };
 
@@ -551,7 +566,8 @@ function fixture({
     socialInteractions,
     initiationNames,
     stanceNames,
-    storyAuthors,
+    liveContributionNames,
+    liveExpressionNames,
     modelCallCount:() => modelCalls,
   };
 }
