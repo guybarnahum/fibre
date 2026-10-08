@@ -332,6 +332,110 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
   }
 });
 
+
+test("revoked Person route stops a persisted contact decision before expression",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-n710-revoked-route-"));
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
+    stateScopeId:"world",
+  };
+  const world=openWorldStore(storage);
+  const experienceStore=openLivedExperienceStore(storage);
+  const contactStore=openContactStore(storage);
+  const semanticStateStore=openSemanticStateStore(storage);
+  const memoryStore=openAutobiographicalMemoryStore(storage);
+  const situatedLifeStore=openSituatedLifeStore(storage);
+  const ensured=[];
+  const livedNow=livedNowFixture(ensured);
+  try{
+    const kaleo=thread("thr_n710_revoked","Kaleo","evt_n710_revoked_seed");
+    world.seedThread(kaleo);
+    const sourceEvent=world.getThread(kaleo.threadId).provenance.lastEventId;
+    situatedLifeStore.recordLifeRelation(relation({
+      threadId:kaleo.threadId,
+      partyId:"person_guy_revoked",
+      kind:"human_source",
+      displayName:"Guy",
+      sourceEvent,
+      role:"visitor",
+    }));
+    contactStore.registerPersonCapability({
+      partyId:"person_guy_revoked",
+      displayName:"Guy",
+      registeredAt:"2026-10-07T18:15:00.000Z",
+    });
+
+    const consolidation=completeAfterthought(experienceStore,{
+      threadId:kaleo.threadId,
+      situationId:"sit_n710_revoked",
+      occurredAt:"2026-10-07T18:20:00.000Z",
+      startedAt:"2026-10-07T18:21:00.000Z",
+      completedAt:"2026-10-07T18:21:01.000Z",
+      text:"I want to ask Guy one more thing.",
+    });
+    const attempt=contactStore.claimAttempt({
+      threadId:kaleo.threadId,
+      consolidationId:consolidation.consolidationId,
+      startedAt:"2026-10-07T18:30:00.000Z",
+    });
+    contactStore.recordStage({
+      contactAttemptId:attempt.contactAttemptId,
+      stage:"decision",
+      recordedAt:"2026-10-07T18:30:01.000Z",
+      payload:{
+        decision:"contact",
+        recipientPartyId:"person_guy_revoked",
+        reason:"I want to follow up.",
+        provenance:{provider:"fixture",modelId:"fixture-contact-decision"},
+      },
+    });
+    contactStore.revokePersonCapability({
+      partyId:"person_guy_revoked",
+      revokedAt:"2026-10-07T18:31:00.000Z",
+      reason:"Person disabled Fibre contact.",
+    });
+
+    let modelCalls=0;
+    const process=createThreadContactProcess({
+      worldReader:world,
+      livedNow,
+      situatedLifeStore,
+      semanticStateStore,
+      memoryStore,
+      experienceStore,
+      contactStore,
+      modelAdapter:{
+        async invoke(){
+          modelCalls+=1;
+          throw new Error("revoked route must stop before expression");
+        },
+      },
+      now:()=>"2026-10-07T18:32:00.000Z",
+    });
+
+    const result=await process.runOnce();
+    assert.equal(result.attempted,1,"persisted contact decision was not resumed");
+    assert.equal(result.results[0].outcome,"route_unavailable",
+      "revoked Person route still delivered contact");
+    assert.equal(contactStore.listInbox("person_guy_revoked").length,0,
+      "revoked Person capability received an outward message");
+    assert.equal(contactStore.listSent(kaleo.threadId).length,0,
+      "revoked route created sent contact history");
+    assert.equal(modelCalls,0,
+      "revoked route resampled or expressed contact cognition");
+    assert.equal(ensured.length,0,
+      "revoked route ran unnecessary LivedNow cognition");
+  }finally{
+    situatedLifeStore.close();
+    memoryStore.close();
+    semanticStateStore.close();
+    contactStore.close();
+    experienceStore.close();
+    world.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
+
 test("unroutable delayed residue drains without cognition or frontier starvation",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-n710-no-route-"));
   const storage={
