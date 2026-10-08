@@ -16,8 +16,10 @@ const MAX_SITUATION_AGE_MS=60*60_000;
 // event could actually be perceived from any of these independent scenes.
 function currentObservers(livedNowStore,at){
   const due=Date.parse(at);
-  return livedNowStore.listCurrentSituations({at,livingOnly:true})
-    .filter((situation)=>situation.location?.kind==="place"
+  return livedNowStore.listRecentCurrentSituations({
+    at,since:new Date(due-MAX_SITUATION_AGE_MS).toISOString(),
+    limit:MAX_CANDIDATES,
+  }).filter((situation)=>situation.location?.kind==="place"
       && Number.isFinite(Date.parse(situation.establishedAt))
       && due-Date.parse(situation.establishedAt)>=0
       && due-Date.parse(situation.establishedAt)<=MAX_SITUATION_AGE_MS)
@@ -54,7 +56,7 @@ export function createWorldEnvironmentEvolution({
       throw new TypeError(`World environmental evolution requires ${method}()`);
     }
   }
-  for(const method of ["listCurrentSituations","getWorldPlace"]){
+  for(const method of ["listRecentCurrentSituations","getWorldPlace"]){
     if(typeof livedNowStore?.[method]!=="function"){
       throw new TypeError(`World environmental evolution requires ${method}()`);
     }
