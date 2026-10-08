@@ -521,3 +521,40 @@ test("environmental due time survives unrelated World work and settles without p
     await runtime.stop();
   }
 });
+
+test("environmental noticing reaches delayed consolidation before World becomes quiet",async()=>{
+  let queued=false;
+  let consolidated=0;
+  let environmentRuns=0;
+  const process=createWorldReconciliationProcess({
+    experienceConsolidationProcess:{
+      async runOnce(){
+        if(queued){consolidated++;queued=false;}
+        return {attempted:consolidated,completed:consolidated,failed:0,hasPending:false};
+      },
+    },
+    environmentEvolutionProcess:{
+      async runOnce(){
+        environmentRuns++;
+        if(environmentRuns===1){
+          queued=true;
+          return {attempted:1,completed:1,failed:0,noticed:1,hasDue:false,nextDueAt:null};
+        }
+        return {attempted:0,completed:0,failed:0,noticed:0,hasDue:false,nextDueAt:null};
+      },
+    },
+  });
+  const {runtime,infraDriver}=createRuntimeFixture({process});
+  try{
+    await runtime.requestWake();
+    const first=await runtime.handleWake();
+    assert.equal(first.reconciliationPending,true,
+      "World dropped newly noticed Experience before consolidation");
+    const second=await runtime.handleWake();
+    assert.equal(consolidated,1,"environmental Experience never reached consolidation");
+    assert.equal(second.reconciliationPending,false,
+      "World continued polling after subjective consequence settled");
+    assert.equal(await infraDriver.scheduler.get("world"),null,
+      "settled environmental Experience left an unnecessary alarm");
+  }finally{await runtime.stop();}
+});
