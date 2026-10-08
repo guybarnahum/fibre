@@ -175,6 +175,30 @@ export class ContactStore {
     });
   }
 
+  listUnconsideredAfterthoughtSources({limit=4}={}){
+    if(!Number.isSafeInteger(limit)||limit<1||limit>32){
+      throw new TypeError("contact source limit must be 1-32");
+    }
+    return this.#database.prepare(`
+      SELECT c.consolidation_id,c.thread_id,complete.recorded_at AS completed_at
+      FROM thread_experience_consolidations c
+      JOIN thread_experience_consolidation_stages decision
+        ON decision.consolidation_id=c.consolidation_id AND decision.stage='decision'
+      JOIN thread_experience_consolidation_stages complete
+        ON complete.consolidation_id=c.consolidation_id AND complete.stage='complete'
+      LEFT JOIN thread_contact_attempts attempt
+        ON attempt.consolidation_id=c.consolidation_id
+      WHERE attempt.contact_attempt_id IS NULL
+        AND json_array_length(decision.payload_json,'$.afterthoughts') > 0
+      ORDER BY complete.recorded_at,c.consolidation_id
+      LIMIT ?
+    `).all(limit).map((row)=>Object.freeze({
+      consolidationId:row.consolidation_id,
+      threadId:row.thread_id,
+      completedAt:row.completed_at,
+    }));
+  }
+
   listPendingAttempts({limit=4}={}){
     if(!Number.isSafeInteger(limit)||limit<1||limit>32){
       throw new TypeError("contact pending limit must be 1-32");
@@ -215,7 +239,9 @@ export class ContactStore {
     if(stage==="expression"&&this.getStage(contactAttemptId,"decision")===null){
       throw new TypeError("contact expression cannot precede contact decision");
     }
-    if(stage==="complete"&&this.getStage(contactAttemptId,"decision")===null){
+    if(stage==="complete"
+      &&this.getStage(contactAttemptId,"decision")===null
+      &&payload.outcome!=="no_route"){
       throw new TypeError("contact completion cannot precede contact decision");
     }
     const record={contactAttemptId,stage,recordedAt,payload:structuredClone(payload)};
