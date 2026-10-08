@@ -64,7 +64,11 @@ function experienceConsolidationNeedsRetry(entry) {
 function environmentNeedsRetry(entry) {
   if(entry?.enabled!==true)return false;
   if(entry.ok!==true)return true;
-  return entry.result?.failed>0||entry.result?.hasDue===true;
+  // Environmental attention is admitted after this wake's consolidation pass;
+  // one more World pass must receive newly queued personal experience.
+  return entry.result?.failed>0
+    ||entry.result?.hasDue===true
+    ||entry.result?.noticed>0;
 }
 
 function contactOutreachNeedsRetry(entry) {
