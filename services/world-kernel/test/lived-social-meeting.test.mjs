@@ -164,6 +164,9 @@ function fixture({
   let modelCalls = 0;
 
   const modelAdapter = {
+    provider:"fixture",
+    modelId:"fixture-social",
+    configuration:{transport:"fixture"},
     async invoke(call) {
       modelCalls += 1;
       if (call.input?.concern?.kind === "social_initiation") {
