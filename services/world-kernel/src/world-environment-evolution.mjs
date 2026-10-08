@@ -204,6 +204,9 @@ Do not author events to excite or engage any observer. Do not invent participant
                 depictedThreadRefs:[],
               }),
             },{uniquePlaceOccurrenceRef:opportunity.placeRef});
+            if(recorded.story.continuationOfEncounterRef!==source.encounterId){
+              throw new TypeError("World place/time already belongs to a different occurrence");
+            }
             encounterId=recorded.encounterId;
             // Perceptibility is not attention. Each admitted possible observer
             // independently considers the same objective story. Complete the
