@@ -104,7 +104,8 @@ export function createWorldEnvironmentEvolution({
                 },
               });
             }else{
-              const sourcePlace=source.threadPresence
+              const sourcePlace=livedNowStore.getPhysicalVenue?.(opportunity.placeRef)
+                ??source.threadPresence
                 .map((presence)=>{
                   const situation=livedNowStore.getSituation(presence.situationId,{
                     required:false,
