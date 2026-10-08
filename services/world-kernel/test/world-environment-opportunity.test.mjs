@@ -110,9 +110,16 @@ test("E7.4 enacted life earns at most one observable event or an ordinary no_cha
       "a no-change decision fabricated objective history");
     assert.equal(experience.nextEnvironmentalOpportunityAt(),null,
       "completed World opportunity left a polling wake");
+    const noScene=experience.enqueueEnvironmentalOpportunity({
+      threadId:all[0].threadId,situationId:"sit_e7_nonexistent",dueAt:DUE,
+    });
+    assert.equal(noScene.inserted,true);
+    const rejected=await process.runOnce();
+    assert.equal(rejected.results[0].outcome,"not_observable",
+      "an absent lived scene became a World event");
     await process.runOnce();
     assert.equal(calls.filter((id)=>id.startsWith("world-initial-opportunity_")).length,2,
-      "retry resampled already-settled World opportunities");
+      "World spent cognition on a missing scene or resampled settled history");
     assert.equal(queued.length,1,
       "only independently noticed Experience may enter selective consolidation");
   }finally{
