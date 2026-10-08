@@ -111,6 +111,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.experienceConsolidationWakeScheduler = null;
     this.contactOutreachProcess = null;
     this.contactReceptionProcess = null;
+    this.contactReceptionModelAdapter = null;
     this.livedBoundaryProcess = null;
     this.livedBoundaryModelAdapter = null;
     this.liveEncounterRegistry = createLiveEncounterRegistry();
@@ -231,9 +232,14 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         livedNow,livedNowStore,worldReader:runtime.worldStore,
         semanticStateStore,memoryStore,
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        modelAdapter:selectReasoningIntegration(
-          deployment.integrations.encounter,{environment:this.env},
-        ),
+        modelAdapter:{
+          invoke:async(request)=>{
+            this.contactReceptionModelAdapter??=selectReasoningIntegration(
+              deployment.integrations.encounter,{environment:this.env},
+            );
+            return this.contactReceptionModelAdapter.invoke(request);
+          },
+        },
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       runtime.reconciliationProcess.setContactReceptionProcess(this.contactReceptionProcess);
