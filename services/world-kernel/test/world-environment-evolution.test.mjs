@@ -68,7 +68,9 @@ function fixture(){
     local,distant,experiences,source,situation,
     setCurrent(value){current=value;},
     livedNowStore:{
-      listCurrentSituations:()=>structuredClone(current),
+      listRecentCurrentSituations:({at,since,limit})=>structuredClone(current
+        .filter((item)=>item.establishedAt>=since&&item.establishedAt<=at)
+        .slice(0,limit)),
       getWorldPlace:(_threadId,ref)=>({ref,displayName:ref}),
     },
     close(){
