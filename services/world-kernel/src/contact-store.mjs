@@ -378,7 +378,7 @@ export class ContactStore {
       throw new TypeError("contact reception limit must be 1-4");
     return this.#database.prepare(`
       SELECT m.message_id,m.sender_thread_id,m.recipient_party_id,
-        m.sent_at,m.message_text,r.situation_id,r.perceived_at
+        m.sent_at,m.message_text,r.situation_id,r.perceived_at,r.sender_name
       FROM thread_contact_receptions r
       JOIN thread_contact_messages m ON m.message_id=r.message_id
       WHERE r.completed_at IS NULL AND r.blocked_reason IS NULL AND r.due_at<=?
@@ -387,27 +387,31 @@ export class ContactStore {
       messageId:row.message_id,senderThreadId:row.sender_thread_id,
       recipientThreadId:row.recipient_party_id,sentAt:row.sent_at,
       messageText:row.message_text,situationId:row.situation_id,
-      perceivedAt:row.perceived_at,
+      perceivedAt:row.perceived_at,senderName:row.sender_name,
     }));
   }
 
-  claimContactReception({messageId,threadId,situationId,perceivedAt}){
+  claimContactReception({messageId,threadId,situationId,perceivedAt,senderName}){
     assertId("contact reception messageId",messageId);
     assertId("contact reception threadId",threadId);
     assertId("contact reception situationId",situationId);
     assertIsoTimestamp("contact reception perceivedAt",perceivedAt);
+    assertNonEmpty("contact reception senderName",senderName);
     this.#database.prepare(`
       UPDATE thread_contact_receptions
-      SET situation_id=?,perceived_at=?
+      SET situation_id=?,perceived_at=?,sender_name=?
       WHERE message_id=? AND recipient_thread_id=? AND situation_id IS NULL
         AND completed_at IS NULL
-    `).run(situationId,perceivedAt,messageId,threadId);
+    `).run(situationId,perceivedAt,senderName,messageId,threadId);
     const row=this.#database.prepare(`
-      SELECT situation_id,perceived_at FROM thread_contact_receptions
+      SELECT situation_id,perceived_at,sender_name FROM thread_contact_receptions
       WHERE message_id=? AND recipient_thread_id=?
     `).get(messageId,threadId);
     if(row===undefined)throw new TypeError("recipient contact reception was not found");
-    return Object.freeze({situationId:row.situation_id,perceivedAt:row.perceived_at});
+    return Object.freeze({
+      situationId:row.situation_id,perceivedAt:row.perceived_at,
+      senderName:row.sender_name,
+    });
   }
 
   settleContactReception({messageId,completedAt}){
