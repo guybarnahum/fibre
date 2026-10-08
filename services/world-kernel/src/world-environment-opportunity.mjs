@@ -224,3 +224,25 @@ Do not invent Thread actions, inner life, conversation, emotions, or another per
     },
   });
 }
+
+/** Reuse the existing World reconciliation alarm for both earned event kinds. */
+export function combineWorldEnvironmentProcesses(initial,evolution){
+  if(typeof initial?.runOnce!=="function"||typeof evolution?.runOnce!=="function"){
+    throw new TypeError("World environment phases must expose runOnce()");
+  }
+  return Object.freeze({
+    async runOnce(){
+      const first=await initial.runOnce();
+      const later=await evolution.runOnce();
+      const due=[first.nextDueAt,later.nextDueAt].filter(Boolean).sort()[0]??null;
+      return Object.freeze({
+        attempted:first.attempted+later.attempted,
+        failed:first.failed+later.failed,
+        noticed:first.noticed+later.noticed,
+        hasDue:first.hasDue||later.hasDue,
+        nextDueAt:due,
+        results:Object.freeze([...first.results,...later.results]),
+      });
+    },
+  });
+}
