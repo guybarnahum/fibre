@@ -38,10 +38,12 @@ function naturalScenes(observatory,threadId){
   const ref=situation?.location?.placeRef;
   if(situation?.location?.kind!=="place"||!ref?.startsWith("wpl_"))return [];
   const place=(observatory.livedNow?.worldPlaces??[]).find((item)=>item.ref===ref);
-  return place===undefined?[]:[{
+  if(!place?.physicalVenue?.ref)return [];
+  return [{
     threadId,
-    placeRef:ref,
-    placeName:place.displayName,
+    contextPlaceRef:ref,
+    placeRef:place.physicalVenue.ref,
+    placeName:place.physicalVenue.displayName,
     establishedAt:situation.establishedAt,
   }];
 }
