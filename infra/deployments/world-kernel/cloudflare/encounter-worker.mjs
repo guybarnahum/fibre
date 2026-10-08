@@ -27,6 +27,8 @@ import { createPublicVisitorEncounterWriteApi } from "#services/world-kernel/src
 import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
 import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-encounter-registry.mjs";
+import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
+import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
@@ -88,6 +90,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.threadJournalBook = null;
     this.experienceConsolidationProcess = null;
     this.experienceConsolidationWakeScheduler = null;
+    this.contactOutreachProcess = null;
     this.liveEncounterRegistry = createLiveEncounterRegistry();
   }
 
@@ -139,6 +142,30 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       );
     }
     return this.experienceConsolidationProcess;
+  }
+
+  contactOutreachProcessForRequest() {
+    if(this.contactOutreachProcess===null){
+      const runtime=this.runtimeForRequest();
+      const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
+      this.contactOutreachProcess=createThreadContactProcess({
+        worldReader:runtime.worldStore,
+        livedNowStore:openLivedNowStore(runtime.worldStorage),
+        situatedLifeStore:openSituatedLifeStore(runtime.worldStorage),
+        semanticStateStore:openSemanticStateStore(runtime.worldStorage),
+        memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
+        contactStore:openContactStore(runtime.worldStorage),
+        modelAdapter:selectReasoningIntegration(
+          deployment.integrations.encounter,
+          {environment:this.env},
+        ),
+      });
+      runtime.reconciliationProcess.setContactOutreachProcess(
+        this.contactOutreachProcess,
+      );
+    }
+    return this.contactOutreachProcess;
   }
 
   encounterApiForRequest() {
@@ -489,6 +516,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
 
   async alarm(alarmInfo) {
     this.experienceConsolidationProcessForRequest();
+    this.contactOutreachProcessForRequest();
     return super.alarm(alarmInfo);
   }
 }
