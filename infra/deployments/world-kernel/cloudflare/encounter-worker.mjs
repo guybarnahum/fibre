@@ -28,6 +28,7 @@ import { createExperienceConsolidationProcess } from "#services/world-kernel/src
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
 import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-encounter-registry.mjs";
 import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
+import { createContactWriteApi } from "#services/world-kernel/src/contact-write-api.mjs";
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
@@ -48,6 +49,9 @@ const INSIDE_FIBRE_WORK_STATE_ROUTE = "/internal/inside-fibre/work-state";
 const INSIDE_FIBRE_MEETING_ENTRY_ROUTE = "/internal/inside-fibre/meeting-entry";
 const INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE = "/internal/inside-fibre/visitor-encounter";
 const PUBLIC_VISITOR_ENCOUNTER_ROUTE = "/internal/public-visitor-encounter";
+const PERSON_CONTACT_CAPABILITY_ROUTE = "/internal/contact/person-capability";
+const PERSON_CONTACT_REVOKE_ROUTE = "/internal/contact/person-capability/revoke";
+const PERSON_CONTACT_INBOX_ROUTE = "/internal/contact/inbox";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
 
 function bindingFetch(binding) {
@@ -86,6 +90,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.insideFibreWorkApi = null;
     this.insideFibreMeetingApi = null;
     this.publicVisitorEncounterApi = null;
+    this.contactApi = null;
     this.threadJournalApi = null;
     this.threadJournalBook = null;
     this.experienceConsolidationProcess = null;
@@ -432,6 +437,18 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.publicVisitorEncounterApi;
   }
 
+  contactApiForRequest() {
+    if(this.contactApi===null){
+      const runtime=this.runtimeForRequest();
+      this.contactApi=createContactWriteApi({
+        contactStore:openContactStore(runtime.worldStorage),
+        privateToken:this.env.FIBRE_PRIVATE_TOKEN,
+        onRouteChanged:()=>runtime.reconciliationRuntime.requestWake(),
+      });
+    }
+    return this.contactApi;
+  }
+
   journalApiForRequest() {
     if (this.threadJournalApi === null) {
       this.threadJournalApi = createThreadJournalReadApi({
@@ -487,6 +504,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       && url.pathname !== INSIDE_FIBRE_MEETING_ENTRY_ROUTE
       && url.pathname !== INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE
       && url.pathname !== PUBLIC_VISITOR_ENCOUNTER_ROUTE
+      && url.pathname !== PERSON_CONTACT_CAPABILITY_ROUTE
+      && url.pathname !== PERSON_CONTACT_REVOKE_ROUTE
+      && url.pathname !== PERSON_CONTACT_INBOX_ROUTE
       && !THREAD_JOURNAL_ROUTE.test(url.pathname)) {
       return super.fetch(request);
     }
@@ -510,7 +530,11 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
                   ? this.insideFibreMeetingApiForRequest().fetch(request)
                   : url.pathname === PUBLIC_VISITOR_ENCOUNTER_ROUTE
                     ? this.publicVisitorEncounterApiForRequest().fetch(request)
-                    : this.journalApiForRequest().fetch(request),
+                    : url.pathname === PERSON_CONTACT_CAPABILITY_ROUTE
+                      || url.pathname === PERSON_CONTACT_REVOKE_ROUTE
+                      || url.pathname === PERSON_CONTACT_INBOX_ROUTE
+                      ? this.contactApiForRequest().fetch(request)
+                      : this.journalApiForRequest().fetch(request),
     );
   }
 
