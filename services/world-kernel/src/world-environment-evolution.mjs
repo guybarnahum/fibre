@@ -85,8 +85,17 @@ export function createWorldEnvironmentEvolution({
                 },
               });
             }else{
+              const sourcePlace=source.threadPresence
+                .map((presence)=>livedNowStore.getWorldPlace(
+                  presence.threadId,opportunity.placeRef,{required:false},
+                ))
+                .find((place)=>place!==null)??null;
               const input={
                 placeRef:opportunity.placeRef,
+                sourcePlace:sourcePlace===null?null:{
+                  displayName:sourcePlace.displayName,
+                  placeKind:sourcePlace.placeKind??null,
+                },
                 previousOccurrence:{
                   occurredAt:source.occurredAt,
                   text:source.story.beats[0].text,
