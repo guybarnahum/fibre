@@ -183,6 +183,7 @@ export function createEnvironmentalEncounterService({
   requireMethod("memoryStore", memoryStore, "listCurrentMemories");
   requireMethod("experienceStore", experienceStore, "recordEncounterStory");
   requireMethod("experienceStore", experienceStore, "listEncounterStories");
+  requireMethod("experienceStore", experienceStore, "getSharedEnvironmentalStory");
   requireMethod("experienceStore", experienceStore, "getThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "queueThreadExperienceConsolidation");
@@ -208,13 +209,13 @@ export function createEnvironmentalEncounterService({
       });
 
       const shared=sharedObservers(context,input.at,livedNowStore);
-      let encounterStory = existingEnvironmentalStory(
-        experienceStore,
-        input.threadId,
-        context.situation,
-        input.at,
-        shared?.placeRef??null,
-      );
+      let encounterStory=shared!==null
+        ?experienceStore.getSharedEnvironmentalStory({
+          occurredAt:input.at,placeRef:shared.placeRef,
+        })
+        :existingEnvironmentalStory(
+          experienceStore,input.threadId,context.situation,input.at,null,
+        );
       let reused = encounterStory !== null;
 
       if (encounterStory === null) {
@@ -256,10 +257,24 @@ export function createEnvironmentalEncounterService({
           }],
           story,
           visualization,
-        });
+        },{uniquePlaceOccurrenceRef:shared?.placeRef??null});
         reused = false;
       }
 
+      if(!encounterStory.threadPresence.some((presence)=>
+        presence.threadId===input.threadId
+        && presence.situationId===context.situation.situationId)){
+        // A newly currentized Thread cannot retrospectively insert itself
+        // into an already admitted event's historical witness set.
+        return Object.freeze({
+          outcome:"not_present_in_recorded_scene",
+          encounterStory,
+          attention:null,
+          observers:Object.freeze([]),
+          aftermath:null,
+          reused:true,
+        });
+      }
       // The objective story belongs to the World; subjective attention belongs
       // to each present Thread. One trigger appraises a bounded local cohort.
       // Remaining co-present observers can independently encounter the same
