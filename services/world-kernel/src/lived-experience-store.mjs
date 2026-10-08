@@ -165,11 +165,11 @@ export class LivedExperienceStore {
     assertId("World opportunity threadId",threadId);
     assertId("World opportunity situationId",situationId);
     assertIsoTimestamp("World opportunity dueAt",dueAt);
-    this.#database.prepare(`
+    const inserted=this.#database.prepare(`
       INSERT OR IGNORE INTO world_environment_opportunities(situation_id,thread_id,due_at)
       VALUES(?,?,?)
-    `).run(situationId,threadId,dueAt);
-    return Object.freeze({threadId,situationId,dueAt});
+    `).run(situationId,threadId,dueAt).changes===1;
+    return Object.freeze({threadId,situationId,dueAt,inserted});
   }
 
   nextEnvironmentalOpportunityAt(){
