@@ -323,7 +323,7 @@ N6 execution remains recorded in [N6 rich public lived encounter slices](../vali
 
 N7 is governed by [Live encounters](../architecture/live-encounters.md), [ADR-0024](../decisions/ADR-0024-live-encounters.md), and [N7 live encounter slices](../validation/n7-live-encounter-slices.md). It removes the turn/request-response constraint without weakening existing authority: Live Encounter coordination is ephemeral; exposed outward acts become Encounter Story truth; structured cognition remains distinct from interruptible expression; ordinary World life continues; consolidation becomes bounded later work rather than a required synchronous step after every conversational beat.
 
-N7.0-N7.5 are accepted locally. N7.6 is implemented pending the next validation pass. N7.7 is current: the Thread Observatory derives non-causal social analytics over selectable 7/30/90-day windows from existing Encounter Story and social-interaction history. It deliberately exposes a vector of dimensions rather than a sociability score, and the derived values have no authority over Thread cognition or state.
+N7.0-N7.7 are accepted locally. N7.8 is current: accepted Thread-to-Thread meetings no longer use a fixed opener/reply/closing generator. They enter the same ephemeral asynchronous Live Encounter primitive as other live interaction, preserve Thread-owned silence/action/speech choices and audible interruption truth, and revalidate lived scene witnesses immediately before admission.
 
 ## Development discipline
 
