@@ -24,6 +24,7 @@ import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-enc
 import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { createContactWriteApi } from "#services/world-kernel/src/contact-write-api.mjs";
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
+import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
 import { projectCurrentLife } from "#services/world-kernel/src/current-life-projection.mjs";
 import { openGuardianCognitionStore } from "#services/world-kernel/src/guardian-cognition-store.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
@@ -347,10 +348,22 @@ export async function startWorldKernelFromEnvironment(
       },
     },
   });
+  const environmentEvolutionProcess=createWorldEnvironmentEvolution({
+    experienceStore:livedExperienceStore,
+    modelAdapter:{
+      async invoke(request){
+        contactModelAdapter??=selectReasoningIntegration(
+          DEPLOYMENT.integrations.encounter,{environment},
+        );
+        return contactModelAdapter.invoke(request);
+      },
+    },
+  });
   const reconciliationProcess = createWorldReconciliationProcess({
     presentationDelivery,
     experienceConsolidationProcess,
     contactOutreachProcess,
+    environmentEvolutionProcess,
     onError: reportReconciliationError,
   });
   const reconciliationRuntime = createWorldReconciliationRuntime({
