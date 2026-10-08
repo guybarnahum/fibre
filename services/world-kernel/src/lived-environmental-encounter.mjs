@@ -29,10 +29,14 @@ function placeForSituation(threadId, situation, situatedLifeStore, livedNowStore
   );
   if (live !== null) {
     return Object.freeze({
-      ref:live.ref,
-      displayName:live.displayName,
+      ref:live.physicalVenue?.ref??live.ref,
+      displayName:live.physicalVenue?.displayName??live.displayName,
       placeKind:live.placeKind ?? null,
-      location:null,
+      physicalVenue:live.physicalVenue??null,
+      location:live.physicalVenue===undefined?null:Object.freeze({
+        locality:live.physicalVenue.locality,
+        country:live.physicalVenue.country,
+      }),
     });
   }
   const episode = situatedLifeStore
@@ -60,7 +64,7 @@ function sceneDescription(threadId, situation, situatedLifeStore, livedNowStore)
   if (place === null) return `The Thread is at the current admitted physical place${activity}.`;
   const locality = [place.location?.locality, place.location?.region].filter(Boolean).join(", ");
   // A shared-place occurrence must not be about the initiating observer's activity.
-  if (place.ref.startsWith("wpl_")) return `At ${place.displayName}.`;
+  if (place.physicalVenue!==null&&place.physicalVenue!==undefined) return `At ${place.displayName}.`;
   return `At ${place.displayName}${locality ? ` in ${locality}` : ""}${activity}.`;
 }
 
@@ -86,7 +90,7 @@ function livedContext({ threadId, worldReader, livedNowStore, semanticStateStore
 
 function occurrenceInput({ threadId, at, situation, situatedLifeStore, livedNowStore }) {
   const place=placeForSituation(threadId, situation, situatedLifeStore, livedNowStore);
-  if(place?.ref.startsWith("wpl_")){
+  if(place?.physicalVenue!==null&&place?.physicalVenue!==undefined){
     // World authors a local fact, not a personalized stimulus for any observer.
     return Object.freeze({occurredAt:at,place});
   }
@@ -141,22 +145,26 @@ function existingEnvironmentalStory(experienceStore, threadId, situation, at) {
 }
 
 function sharedObservers(context, at, livedNowStore) {
-  const ref=context.situation.location?.placeRef;
-  if(context.situation.location?.kind!=="place"||!ref?.startsWith("wpl_")
-    ||livedNowStore.getWorldPlace(context.thread.threadId,ref,{required:false})===null){
-    return null;
-  }
+  const situation=context.situation;
+  if(situation.location?.kind!=="place")return null;
+  const place=livedNowStore.getWorldPlace(
+    context.thread.threadId,situation.location.placeRef,{required:false},
+  );
+  const venueRef=place?.physicalVenue?.ref;
+  if(typeof venueRef!=="string")return null;
   const others=livedNowStore.listCurrentSituations({at,livingOnly:true})
-    .filter((situation)=>situation.threadId!==context.thread.threadId
-      && situation.location?.kind==="place"&&situation.location.placeRef===ref
-      && livedNowStore.getWorldPlace(situation.threadId,ref,{required:false})!==null);
+    .filter((other)=>other.threadId!==context.thread.threadId
+      && other.location?.kind==="place"
+      && livedNowStore.getWorldPlace(
+        other.threadId,other.location.placeRef,{required:false},
+      )?.physicalVenue?.ref===venueRef);
   return Object.freeze({
-    placeRef:ref,
+    placeRef:venueRef,
     presence:Object.freeze([
-      {threadId:context.thread.threadId,situationId:context.situation.situationId},
-      ...others.map((situation)=>({threadId:situation.threadId,situationId:situation.situationId})),
+      {threadId:context.thread.threadId,situationId:situation.situationId},
+      ...others.map((other)=>({threadId:other.threadId,situationId:other.situationId})),
     ].sort((a,b)=>a.threadId.localeCompare(b.threadId))),
-    situations:new Map(others.map((situation)=>[situation.threadId,situation])),
+    situations:new Map(others.map((other)=>[other.threadId,other])),
   });
 }
 
