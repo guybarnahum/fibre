@@ -396,7 +396,11 @@ test("shared World occurrence belongs to one place and different observers notic
       livedNowStore:{
         getCurrentSituation:(id)=>structuredClone(situations.get(id)),
         getWorldPlace:(id,ref)=>id!==away.threadId&&ref===placeRef
-          ?{ref,displayName:"Shared Park",placeKind:"public"}:null,
+          ?{ref,displayName:"Shared Park",placeKind:"public",
+            physicalVenue:{ref:placeRef,displayName:"Shared Park",
+              locality:"Park District",country:"US",
+              evidenceRef:"fixture_attested_venue"},
+          }:null,
         listCurrentSituations:()=>[...situations.values()].map((item)=>structuredClone(item)),
       },
       situatedLifeStore:{listCurrentPlaceEpisodes:()=>[]},
