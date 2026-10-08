@@ -267,6 +267,12 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       true,
       "Observatory inspection lost delayed Journal authority",
     );
+    assert.equal(
+      inspection.consolidations.some((item)=>
+        item.decision?.payload?.afterthoughts?.some((thought)=>thought.kind==="question")),
+      true,
+      "live opportunity consumed the durable delayed thought",
+    );
 
     const idle=await process.runOnce();
     assert.equal(idle.attempted,0,"completed experience reentered consolidation");
