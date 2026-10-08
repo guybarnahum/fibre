@@ -217,9 +217,13 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       this.worldEnvironmentEvolutionProcess=createWorldEnvironmentEvolution({
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         livedNowStore:openLivedNowStore(runtime.worldStorage),
+        worldReader:runtime.worldStore,
+        semanticStateStore:openSemanticStateStore(runtime.worldStorage),
+        memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
         modelAdapter:selectReasoningIntegration(
           deployment.integrations.encounter,{environment:this.env},
         ),
+        onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       runtime.reconciliationProcess.setEnvironmentEvolutionProcess(
         this.worldEnvironmentEvolutionProcess,
