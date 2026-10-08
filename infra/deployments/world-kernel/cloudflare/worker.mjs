@@ -226,6 +226,9 @@ function threadObservatory(runtime, threadId) {
       contactOutreach:structuredClone(
         contact.inspectThreadContact(threadId,{limit:200}),
       ),
+      contactReceptions:structuredClone(
+        contact.inspectContactReceptions(threadId,{limit:12}),
+      ),
     });
   } finally {
     situatedLife.close();
