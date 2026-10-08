@@ -29,6 +29,7 @@ import {
   ensureLiveWorldPlaces,
   liveWorldContext,
   listLiveWorldPlaces,
+  resolveLivePhysicalVenue,
   resolveLiveWorldPlace,
 } from "./live-world-place.mjs";
 
@@ -400,6 +401,10 @@ export class LivedNowStore {
   bindPhysicalVenue(candidate){
     if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot attest a physical venue");
     return this.#database.transaction(()=>bindLivePhysicalVenue(this.#database,candidate));
+  }
+
+  getPhysicalVenue(reference){
+    return resolveLivePhysicalVenue(this.#database,reference);
   }
 
   getWorldPlace(threadId, reference, { required = true } = {}) {
