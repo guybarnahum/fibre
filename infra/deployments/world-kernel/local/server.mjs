@@ -350,6 +350,7 @@ export async function startWorldKernelFromEnvironment(
   });
   const environmentEvolutionProcess=createWorldEnvironmentEvolution({
     experienceStore:livedExperienceStore,
+    livedNowStore,
     modelAdapter:{
       async invoke(request){
         contactModelAdapter??=selectReasoningIntegration(
