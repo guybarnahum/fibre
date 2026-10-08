@@ -211,6 +211,34 @@ export function createLiveEncounter({
       return result;
     },
 
+    pushPrivateOpportunity({
+      participantId,
+      reason,
+      sourceRef,
+      privateContext,
+    }={}){
+      const participant=requireParticipant(participantId);
+      if(typeof reason!=="string"||reason.trim()===""){
+        throw new TypeError("private live opportunity reason is required");
+      }
+      if(typeof sourceRef!=="string"||sourceRef.trim()===""){
+        throw new TypeError("private live opportunity sourceRef is required");
+      }
+      if(!privateContext||typeof privateContext!=="object"||Array.isArray(privateContext)){
+        throw new TypeError("private live opportunity context must be an object");
+      }
+      return emit(participant,{
+        type:"speaking_opportunity",
+        participantId:participant,
+        sourceActorId:null,
+        speechRef:null,
+        reason:reason.trim(),
+        heardText:null,
+        sourceRef:sourceRef.trim(),
+        privateContext:structuredClone(privateContext),
+      });
+    },
+
     pushAction({actorId,text}={}){
       const actor=requireParticipant(actorId);
       if(typeof text!=="string"||text.trim()==="")throw new TypeError("live action text is required");
