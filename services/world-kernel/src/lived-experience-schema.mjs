@@ -25,6 +25,20 @@ export function createLivedExperienceTables(database) {
     CREATE INDEX IF NOT EXISTS idx_encounter_story_occurred_at
       ON encounter_story_records(occurred_at);
 
+    CREATE TABLE IF NOT EXISTS world_environment_followups (
+      source_encounter_ref TEXT PRIMARY KEY,
+      place_ref TEXT NOT NULL,
+      due_at TEXT NOT NULL,
+      decision_json TEXT CHECK (decision_json IS NULL OR json_valid(decision_json)),
+      result_encounter_ref TEXT,
+      completed_at TEXT,
+      FOREIGN KEY (source_encounter_ref) REFERENCES encounter_story_records(encounter_id)
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_world_environment_followups_due
+      ON world_environment_followups(due_at)
+      WHERE completed_at IS NULL;
+
     CREATE TABLE IF NOT EXISTS encounter_story_thread_presence (
       encounter_ref TEXT NOT NULL,
       thread_id TEXT NOT NULL,
