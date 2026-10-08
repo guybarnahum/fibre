@@ -226,6 +226,19 @@ export function bindLivePhysicalVenue(database,{
   return physicalVenueFor(database,contextPlaceRef);
 }
 
+export function resolveLivePhysicalVenue(database,venueRef){
+  if(typeof venueRef!=="string"||!venueRef.startsWith("venue_")
+    ||!tableExists(database,"live_physical_venue_bindings"))return null;
+  const row=database.prepare(`
+    SELECT venue_ref,display_name,locality,country,evidence_ref
+    FROM live_physical_venue_bindings WHERE venue_ref=? LIMIT 1
+  `).get(venueRef);
+  return row===undefined?null:Object.freeze({
+    ref:row.venue_ref,displayName:row.display_name,locality:row.locality,
+    country:row.country,evidenceRef:row.evidence_ref,
+  });
+}
+
 function physicalVenueFor(database,contextPlaceRef){
   if(!tableExists(database,"live_physical_venue_bindings"))return null;
   const row=database.prepare(`
