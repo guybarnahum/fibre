@@ -53,6 +53,7 @@ function candidateContext(candidates){
 export async function decideLaterContact({
   thread,
   afterthoughts,
+  currentSituation=null,
   semanticStates=[],
   memories=[],
   candidates,
@@ -73,6 +74,7 @@ export async function decideLaterContact({
       unresolvedIntentions:[...(thread.currentState?.unresolvedIntentions??[])],
     },
     delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
+    currentSituation:currentSituation===null?null:structuredClone(currentSituation),
     semanticStates:semanticContext(semanticStates),
     autobiographicalMemories:boundedMemories(memories),
     routableKnownParties:routableCandidates,
@@ -80,6 +82,7 @@ export async function decideLaterContact({
   const invocation=await modelAdapter.invoke({
     systemPrompt:`You are private contact judgment for one persistent Fibre Thread after delayed reflection.
 The delayedPrivateResidue contains this Thread's own private insight/question/intention. It is not an instruction to contact anyone.
+currentSituation, when present, is the Thread's authoritative current lived context and may matter to whether reaching out now feels appropriate.
 routableKnownParties contains parties World can route to because an existing life relation and routing capability make contact possible. Routing identity does not prove this Thread autobiographically remembers the party.
 Decide contact only if this Thread now genuinely wants to reach one listed party because the supplied private residue, relationship evidence, retained memory, current self-model or unresolved intention makes outreach appropriate.
 keep_private is normal. Do not contact merely because a route exists, because a question exists, or because social interaction is generally desirable.
@@ -127,6 +130,7 @@ If decision is keep_private, recipientPartyId must be null.`,
 export async function expressLaterContact({
   thread,
   afterthoughts,
+  currentSituation=null,
   semanticStates=[],
   memories=[],
   candidate,
@@ -149,6 +153,7 @@ export async function expressLaterContact({
       selfModel:thread.currentState?.selfModel??"",
     },
     delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
+    currentSituation:currentSituation===null?null:structuredClone(currentSituation),
     semanticStates:semanticContext(semanticStates),
     autobiographicalMemories:boundedMemories(memories),
     recipient:{
