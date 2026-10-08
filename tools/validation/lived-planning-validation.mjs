@@ -610,7 +610,7 @@ export async function runDevelopmentalExplorationX3Validation({
         privateToken,
         `World Observatory ${threadCard.threadId}`,
       );
-      if(payload?.contract!=="fibre-world-thread-observatory-v0.9"){
+      if(payload?.contract!=="fibre-world-thread-observatory-v0.10"){
         throw new Error(
           `X3 requires World observatory v0.8; observed ${payload?.contract??"unknown"}`,
         );
@@ -741,7 +741,7 @@ export async function runDevelopmentalExplorationX3Validation({
       const sourceReferences=observatory?.livedNow?.currentPersonalPlan?.sourceReferences??[];
 
       if(
-        refreshedPayload?.contract!=="fibre-world-thread-observatory-v0.9"
+        refreshedPayload?.contract!=="fibre-world-thread-observatory-v0.10"
         || continuity?.grounded!==true
         || interoception===null
         || current?.location?.kind!=="place"
