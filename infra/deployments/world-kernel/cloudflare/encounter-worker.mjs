@@ -153,12 +153,28 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     if(this.contactOutreachProcess===null){
       const runtime=this.runtimeForRequest();
       const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
+      const livedNowStore=openLivedNowStore(runtime.worldStorage);
+      const situatedLifeStore=openSituatedLifeStore(runtime.worldStorage);
+      const semanticStateStore=openSemanticStateStore(runtime.worldStorage);
+      const memoryStore=openAutobiographicalMemoryStore(runtime.worldStorage);
+      const livedNow=createLivedNowService({
+        livedNowStore,
+        worldStore:runtime.worldStore,
+        identityStore:openIdentityStore(runtime.worldStorage),
+        semanticStateStore,
+        memoryStore,
+        situatedLifeStore,
+        modelAdapter:selectReasoningIntegration(
+          deployment.integrations.livedNow,
+          {environment:this.env},
+        ),
+      });
       this.contactOutreachProcess=createThreadContactProcess({
         worldReader:runtime.worldStore,
-        livedNowStore:openLivedNowStore(runtime.worldStorage),
-        situatedLifeStore:openSituatedLifeStore(runtime.worldStorage),
-        semanticStateStore:openSemanticStateStore(runtime.worldStorage),
-        memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
+        livedNow,
+        situatedLifeStore,
+        semanticStateStore,
+        memoryStore,
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         contactStore:openContactStore(runtime.worldStorage),
         modelAdapter:selectReasoningIntegration(
