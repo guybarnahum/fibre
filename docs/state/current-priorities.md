@@ -290,7 +290,7 @@ no turn owner
   -> later social/relationship consequence when warranted
 ```
 
-N7.0-N7.8 are accepted. N7.9 is current: delayed consolidation residue (`insight | question | intention`) can be offered through an ephemeral World live-encounter registry as a private Thread-specific opportunity. The Thread may speak, act or stay silent; only outward expression becomes shared history, while the durable private residue remains separate and available for later-life logic.
+N7.0-N7.9 are accepted. N7.10 is implemented pending validation: delayed private residue may trigger one bounded fresh contact judgment from current LivedNow and current routable relationships. Contact can target an opted-in known Person or a known live Thread, or remain private; routing identity is explicitly separate from autobiographical recognition. Recipient-side lived admission of a Thread-addressed message remains the N7.11 causal continuation.
 
 ## Current causal loop
 
