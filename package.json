@@ -121,7 +121,7 @@
     "developmental-exploration:x3:validate": "node tools/deployment/run-with-progress.mjs developmental-exploration:x3:validate node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-planning-validation.mjs --exploration",
     "lived-encounters:validate": "node tools/deployment/run-with-progress.mjs lived-encounters:validate node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-encounters-validation.mjs",
     "encounter-autonomy:probe": "node tools/deployment/run-with-progress.mjs encounter-autonomy:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/encounter-autonomy-probe.mjs",
-    "e7:staging:probe": "node tools/deployment/run-with-progress.mjs e7:staging:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/e7-staging-probe.mjs"
+    "world-environment:probe": "node tools/deployment/run-with-progress.mjs world-environment:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/world-environment-probe.mjs"
   },
   "engines": {
     "node": ">=22.13"
