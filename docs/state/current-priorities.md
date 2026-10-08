@@ -237,7 +237,7 @@ authoritative presence
 
 Historical W0-W7 and S coordinates remain useful implementation archaeology only. They are not a second current roadmap.
 
-**E7 — shared environmental World (implemented, validation pending).** At an admitted shared live World place, a bounded E6a producer now authors one place/time objective occurrence, includes genuinely co-present Thread situations, and lets each Thread independently notice or miss it. Persistence atomically deduplicates competing same-place/time authoring without a new event table. A focused organism-level test awaits operator validation; live shared-place acceptance has not been claimed. This does not introduce constant environmental ticking, weather physics, or a simulation framework. E6b's three-way silent-witness staging proof remains pending natural World state.
+**E7 — shared environmental World.** E7.1's focused local proof passed (2026-10-08): one objectively admitted World occurrence belongs to the shared physical place/time while every co-present Thread independently notices or misses it. E7.2 is now implemented, **validation pending**: that occurrence may earn one delayed, provider-neutral World alarm. Bounded World cognition records `changed` or `no_change`; a change becomes a causally continued Encounter Story, even when nobody is observing. No further alarm is chained. Durable one-shot bookkeeping and existing reconciliation scheduling replace any new environmental simulator, hourly tick, or separate event authority. Live shared-place acceptance remains unclaimed; E6b's silent-witness staging proof still awaits natural three-way presence.
 
 ## N6 — Rich Public Lived Encounter — CURRENT
 
