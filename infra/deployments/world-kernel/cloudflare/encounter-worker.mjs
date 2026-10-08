@@ -36,6 +36,7 @@ import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { createContactWriteApi } from "#services/world-kernel/src/contact-write-api.mjs";
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { createWorldVenueWriteApi } from "#services/world-kernel/src/live-world-venue-write-api.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
@@ -47,6 +48,7 @@ const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
 const LIVED_ENCOUNTER_ROUTE = "/internal/lived-encounter";
 const ENVIRONMENTAL_ENCOUNTER_ROUTE = "/internal/environmental-encounter";
 const LIVED_NOW_ROUTE = "/internal/lived-now/ensure";
+const WORLD_VENUE_ROUTE = "/internal/world-venues/bind";
 const SOCIAL_MEETING_ROUTE = "/internal/social-meeting";
 const LIVED_COMMONS_ROUTE = "/internal/lived-commons";
 const INSIDE_FIBRE_WORK_OFFER_ROUTE = "/internal/inside-fibre/work-offer";
@@ -98,6 +100,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.publicVisitorEncounterApi = null;
     this.contactApi = null;
     this.threadJournalApi = null;
+    this.worldVenueApi = null;
     this.threadJournalBook = null;
     this.experienceConsolidationProcess = null;
     this.experienceConsolidationWakeScheduler = null;
@@ -556,11 +559,22 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.livedNowApi;
   }
 
+  worldVenueApiForRequest(){
+    if(this.worldVenueApi===null){
+      this.worldVenueApi=createWorldVenueWriteApi({
+        livedNowStore:openLivedNowStore(this.runtimeForRequest().worldStorage),
+        privateToken:this.env.FIBRE_PRIVATE_TOKEN,
+      });
+    }
+    return this.worldVenueApi;
+  }
+
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname !== LIVED_ENCOUNTER_ROUTE
       && url.pathname !== ENVIRONMENTAL_ENCOUNTER_ROUTE
       && url.pathname !== LIVED_NOW_ROUTE
+      && url.pathname !== WORLD_VENUE_ROUTE
       && url.pathname !== SOCIAL_MEETING_ROUTE
       && url.pathname !== LIVED_COMMONS_ROUTE
       && url.pathname !== INSIDE_FIBRE_WORK_OFFER_ROUTE
@@ -576,7 +590,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     }
     return this.withStateCost(
       { kind:"request", method:request.method, path:url.pathname },
-      () => url.pathname === LIVED_NOW_ROUTE
+      () => url.pathname === WORLD_VENUE_ROUTE
+        ? this.worldVenueApiForRequest().fetch(request)
+        : url.pathname === LIVED_NOW_ROUTE
         ? this.livedNowApiForRequest().fetch(request)
         : url.pathname === LIVED_ENCOUNTER_ROUTE
           ? this.encounterApiForRequest().fetch(request)
