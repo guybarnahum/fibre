@@ -354,7 +354,6 @@ test("unroutable delayed residue drains without cognition or frontier starvation
       modelAdapter:adapter,
       now:()=>new Date(Date.parse("2026-10-07T19:00:00.000Z")+(tick++*1000)).toISOString(),
       batchLimit:2,
-      sourceScanLimit:2,
     });
 
     const first=await process.runOnce();
