@@ -21,6 +21,7 @@ import { createExperienceConsolidationProcess } from "#services/world-kernel/src
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
 import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-encounter-registry.mjs";
 import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
+import { createContactWriteApi } from "#services/world-kernel/src/contact-write-api.mjs";
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { projectCurrentLife } from "#services/world-kernel/src/current-life-projection.mjs";
 import { openGuardianCognitionStore } from "#services/world-kernel/src/guardian-cognition-store.mjs";
@@ -72,6 +73,25 @@ function parseReconciliationIntervalMs(value) {
     throw new TypeError("FIBRE_WORLD_RECONCILIATION_MS must be an integer from 100 through 60000");
   }
   return intervalMs;
+}
+
+const CONTACT_ROUTES=new Set([
+  "/internal/contact/person-capability",
+  "/internal/contact/person-capability/revoke",
+  "/internal/contact/inbox",
+]);
+
+function attachContactApi(server,contactApi){
+  const handlers=server.listeners("request");
+  if(handlers.length!==1)throw new Error("contact API requires exactly one existing request handler");
+  const [baseHandler]=handlers;
+  const contactHandler=createNodeServiceHandler({service:contactApi});
+  server.removeAllListeners("request");
+  server.on("request",(request,response)=>{
+    const url=new URL(request.url??"/","http://fibre.local");
+    if(CONTACT_ROUTES.has(url.pathname))return contactHandler(request,response);
+    return baseHandler(request,response);
+  });
 }
 
 function attachOperationalService(server, kernelService, { repairEnabled }) {
@@ -361,6 +381,12 @@ export async function startWorldKernelFromEnvironment(
     privateToken,
     onError: onRequestError,
   });
+  const contactApi=privateToken===null?null:createContactWriteApi({
+    contactStore,
+    privateToken,
+    onRouteChanged:()=>reconciliationRuntime.requestWake(),
+  });
+  if(contactApi!==null)attachContactApi(server,contactApi);
   const operationalService = attachOperationalService(server, service, {
     repairEnabled: adminToken !== null,
   });
@@ -446,6 +472,7 @@ export async function startWorldKernelFromEnvironment(
       experienceConsolidationProcess,
       experienceConsolidationWakeScheduler,
       contactOutreachProcess,
+      contactApi,
       liveEncounterRegistry,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
