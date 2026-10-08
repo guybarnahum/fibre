@@ -357,3 +357,53 @@ test("E7.3 one observable World event yields distinct lives without coerced memo
       "retry reappraised an admitted subjective decision");
   }finally{f.close();}
 });
+
+test("E7.3 resumes admitted attention after interrupted consolidation scheduling",async()=>{
+  const f=fixture();
+  try{
+    f.source("wpl_retry_notice","An approaching storm darkens the sky.");
+    f.setCurrent([f.situation(f.local,"wpl_retry_notice")]);
+    let worldCalls=0;
+    let attentionCalls=0;
+    let failWake=true;
+    const process=createWorldEnvironmentEvolution({
+      experienceStore:f.experiences,livedNowStore:f.livedNowStore,
+      worldReader:f.worldReader,semanticStateStore:f.semanticStateStore,
+      memoryStore:f.memoryStore,
+      onExperienceQueued:async()=>{
+        if(failWake){failWake=false;throw new Error("interrupted wake scheduling");}
+      },
+      modelAdapter:{
+        async invoke(request){
+          if(request.clientRequestId.startsWith("world-environment-followup_")){
+            worldCalls++;
+            return {output:{
+              outcome:"changed",
+              occurrenceText:"A flash lights the approaching storm clouds.",
+              potentialObserverThreadIds:[f.local.threadId],
+            }};
+          }
+          if(request.clientRequestId.startsWith("encounter-attention_")){
+            attentionCalls++;
+            return {
+              output:{outcome:"noticed",experienceText:"I look up as the sky flashes."},
+              provenance:{provider:"fixture",modelId:"attention"},
+            };
+          }
+          throw new Error("unexpected cognition");
+        },
+      },
+      now:()=>DUE,
+    });
+    const first=await process.runOnce();
+    assert.equal(first.failed,1,"failed consolidation wake must preserve pending World work");
+    const second=await process.runOnce();
+    assert.equal(second.failed,0,"World continuation could not resume admitted attention");
+    assert.equal(worldCalls,1,"retry rerolled an admitted World event");
+    assert.equal(attentionCalls,1,"retry resampled an admitted personal perception");
+    assert.equal(f.experiences.listUnclaimedExperienceConsolidationCandidates({
+      limit:8,
+    }).length,1,"retry duplicated or lost subjective experience");
+    assert.equal(second.nextDueAt,null,"resumed World work did not settle");
+  }finally{f.close();}
+});
