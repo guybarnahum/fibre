@@ -161,6 +161,96 @@ export class LivedExperienceStore {
 
   close() { this.#database.close(); }
 
+  enqueueEnvironmentalOpportunity({threadId,situationId,dueAt}){
+    assertId("World opportunity threadId",threadId);
+    assertId("World opportunity situationId",situationId);
+    assertIsoTimestamp("World opportunity dueAt",dueAt);
+    this.#database.prepare(`
+      INSERT OR IGNORE INTO world_environment_opportunities(situation_id,thread_id,due_at)
+      VALUES(?,?,?)
+    `).run(situationId,threadId,dueAt);
+    return Object.freeze({threadId,situationId,dueAt});
+  }
+
+  nextEnvironmentalOpportunityAt(){
+    return this.#database.prepare(`
+      SELECT due_at FROM world_environment_opportunities
+      WHERE completed_at IS NULL ORDER BY due_at LIMIT 1
+    `).get()?.due_at??null;
+  }
+
+  listDueEnvironmentalOpportunities({at,limit=1}){
+    assertIsoTimestamp("World opportunity at",at);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>4){
+      throw new TypeError("World opportunity limit must be 1-4");
+    }
+    return this.#database.prepare(`
+      SELECT thread_id,situation_id,due_at,decision_json
+      FROM world_environment_opportunities
+      WHERE completed_at IS NULL AND due_at<=?
+      ORDER BY due_at,situation_id LIMIT ?
+    `).all(at,limit).map((row)=>Object.freeze({
+      threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
+      decision:row.decision_json===null?null:JSON.parse(row.decision_json),
+    }));
+  }
+
+  recordEnvironmentalOpportunityDecision({situationId,decision}){
+    assertId("World opportunity situationId",situationId);
+    if(!["no_change","changed","not_observable"].includes(decision?.outcome)
+      ||typeof decision.occurredAt!=="string"
+      ||(decision.outcome==="changed")!==
+        (typeof decision.occurrenceText==="string"&&decision.occurrenceText.trim().length>0)
+      ||!Array.isArray(decision.presence)
+      ||(decision.outcome==="changed")!==(decision.presence.length>0)
+      ||decision.presence.length>2){
+      throw new TypeError("World initial event decision is invalid");
+    }
+    assertIsoTimestamp("World initial occurredAt",decision.occurredAt);
+    for(const item of decision.presence){
+      assertId("World potential observer",item.threadId);
+      assertId("World observer situation",item.situationId);
+    }
+    if(new Set(decision.presence.map((item)=>item.threadId)).size!==decision.presence.length){
+      throw new TypeError("World initial observers must be distinct");
+    }
+    const body=canonicalJson(decision);
+    this.#database.prepare(`
+      UPDATE world_environment_opportunities SET decision_json=?
+      WHERE situation_id=? AND decision_json IS NULL AND completed_at IS NULL
+    `).run(body,situationId);
+    const recorded=this.#database.prepare(`
+      SELECT decision_json FROM world_environment_opportunities WHERE situation_id=?
+    `).get(situationId);
+    if(recorded?.decision_json!==body)throw new TypeError("World initial decision conflicts");
+    return Object.freeze(JSON.parse(body));
+  }
+
+  completeEnvironmentalOpportunity({situationId,resultEncounterRef=null,completedAt}){
+    assertId("World opportunity situationId",situationId);
+    if(resultEncounterRef!==null)assertId("World initial result",resultEncounterRef);
+    assertIsoTimestamp("World initial completedAt",completedAt);
+    const row=this.#database.prepare(`
+      SELECT decision_json,result_encounter_ref,completed_at
+      FROM world_environment_opportunities WHERE situation_id=?
+    `).get(situationId);
+    if(!row?.decision_json)throw new TypeError("World initial decision not recorded");
+    const decision=JSON.parse(row.decision_json);
+    if((decision.outcome==="changed")!==(resultEncounterRef!==null)){
+      throw new TypeError("World initial result conflicts with decision");
+    }
+    if(row.completed_at!==null){
+      if(row.result_encounter_ref!==resultEncounterRef){
+        throw new TypeError("World initial completion conflicts");
+      }
+      return;
+    }
+    this.#database.prepare(`
+      UPDATE world_environment_opportunities SET result_encounter_ref=?,completed_at=?
+      WHERE situation_id=? AND completed_at IS NULL
+    `).run(resultEncounterRef,completedAt,situationId);
+  }
+
   getSharedEnvironmentalStory({occurredAt,placeRef}) {
     assertIsoTimestamp("shared occurrence occurredAt",occurredAt);
     assertId("shared occurrence placeRef",placeRef);
