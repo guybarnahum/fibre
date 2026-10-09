@@ -404,7 +404,16 @@ export class LivedExperienceStore {
     }catch(error){throw translateStorageError(error);}
   }
 
-  recordEncounterStory(candidate,{uniquePlaceOccurrenceRef=null,followupAfterMs=null}={}) {
+  recordEncounterStory(candidate,{uniquePlaceOccurrenceRef=null,followupAfterMs=null,publicRequest=null}={}) {
+    if(publicRequest!==null){
+      assertId("public encounter requestId",publicRequest.requestId);
+      assertId("public encounter threadId",publicRequest.threadId);
+      assertNonEmpty("public encounter requestDigest",publicRequest.requestDigest);
+      if(!publicRequest.requestDigest.startsWith("sha256:"))throw new TypeError("public encounter request digest is invalid");
+      if(candidate.threadPresence?.length!==1||candidate.threadPresence[0].threadId!==publicRequest.threadId){
+        throw new TypeError("public encounter admission must name its participating Thread");
+      }
+    }
     assertIsoTimestamp("encounter story.occurredAt", candidate.occurredAt);
     if(followupAfterMs!==null&&(
       uniquePlaceOccurrenceRef===null||!Number.isSafeInteger(followupAfterMs)
@@ -444,6 +453,22 @@ export class LivedExperienceStore {
 
     try {
       return this.#database.transaction(() => {
+        if(publicRequest!==null){
+          const previous=this.getPublicEncounterAdmission(publicRequest.requestId);
+          if(previous!==null){
+            if(previous.threadId!==publicRequest.threadId||previous.requestDigest!==publicRequest.requestDigest){
+              throw new TypeError(`public encounter request ${publicRequest.requestId} conflicts with its existing admission`);
+            }
+            return this.getEncounterStory(previous.encounterRef);
+          }
+        }
+        const admitRequest=()=>{
+          if(publicRequest===null)return;
+          this.#database.prepare(`
+            INSERT INTO public_encounter_admissions(request_id,thread_id,request_digest,encounter_ref)
+            VALUES(?,?,?,?)
+          `).run(publicRequest.requestId,publicRequest.threadId,publicRequest.requestDigest,encounterId);
+        };
         if(uniquePlaceOccurrenceRef!==null){
           const admitted=this.getSharedEnvironmentalStory({
             occurredAt:normalized.occurredAt,placeRef:uniquePlaceOccurrenceRef,
@@ -479,6 +504,7 @@ export class LivedExperienceStore {
         ).get(encounterId);
         if (prior !== undefined) {
           if (prior.record_digest !== recordDigest) throw new TypeError(`encounter story ${encounterId} conflicts`);
+          admitRequest();
           return record;
         }
         this.#database.prepare(`
@@ -510,6 +536,7 @@ export class LivedExperienceStore {
             VALUES (?,?,?)
           `).run(encounterId,uniquePlaceOccurrenceRef,dueAt);
         }
+        admitRequest();
         return record;
       });
     } catch (error) { throw translateStorageError(error); }
@@ -544,6 +571,20 @@ export class LivedExperienceStore {
         visualizationSourceReferences:JSON.parse(row.visualization_source_refs_json),
         depictedThreadRefs:JSON.parse(row.depicted_thread_refs_json),
       },
+    };
+  }
+
+  getPublicEncounterAdmission(requestId) {
+    assertId("public encounter admission requestId",requestId);
+    const row=this.#database.prepare(`
+      SELECT request_id,thread_id,request_digest,encounter_ref
+      FROM public_encounter_admissions WHERE request_id=?
+    `).get(requestId);
+    return row===undefined?null:{
+      requestId:row.request_id,
+      threadId:row.thread_id,
+      requestDigest:row.request_digest,
+      encounterRef:row.encounter_ref,
     };
   }
 
