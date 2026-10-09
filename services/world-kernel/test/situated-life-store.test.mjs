@@ -87,12 +87,26 @@ test("situated life persists revision history and survives restart", () =>
     const store = openSituatedLifeStore(localWorldStateStorage(databasePath));
     store.recordLifeRelation(relation(sourceEvent, 1));
     store.recordLifeRelation(relation(sourceEvent, 2));
+    store.recordLifeRelation({
+      ...relation(sourceEvent, 1),
+      relationId:lifeRelationId({ child:fixture.threadId, parent:"synthetic_father" }),
+      relatedParty:{
+        partyId:"ancestor.synthetic.father",
+        kind:"synthetic_ancestor",
+        displayName:"Min-jun Park",
+      },
+    });
     store.recordPlaceEpisode(place(sourceEvent));
     assert.equal(store.lifeRelationHistory(fixture.threadId, relation(sourceEvent, 1).relationId).length, 2);
     store.close();
 
     const reopened = openSituatedLifeStore(localWorldStateStorage(databasePath));
-    assert.equal(reopened.listCurrentLifeRelations(fixture.threadId)[0].revision, 2);
+    const relations=reopened.listCurrentLifeRelations(fixture.threadId);
+    assert.equal(relations.length,2,"developed relationships must remain independently retrievable");
+    assert.equal(relations.find((item)=>item.relatedParty.partyId==="ancestor.synthetic.mother")?.revision,2,
+      "relationship revisions must retain the latest authored meaning");
+    assert.equal(relations.find((item)=>item.relatedParty.partyId==="ancestor.synthetic.father")?.revision,1,
+      "batched relationship history must not merge different people");
     assert.equal(reopened.listCurrentPlaceEpisodes(fixture.threadId)[0].place.placeId, "place.kr.seoul");
     reopened.close();
   }));
