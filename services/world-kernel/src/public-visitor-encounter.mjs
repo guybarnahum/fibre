@@ -1,5 +1,6 @@
 import { formVisitorMeetingStance } from "./lived-meeting-cognition.mjs";
-import { respondToLivedEncounter } from "./lived-encounter-cognition.mjs";
+import { respondToLivedEncounter, streamLivedEncounterResponse } from "./lived-encounter-cognition.mjs";
+import { createLiveEncounter } from "./live-encounter.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
@@ -100,6 +101,7 @@ export function createPublicVisitorEncounterService({
   experienceStore,
   modelAdapter,
   onExperienceQueued = null,
+  now = () => new Date().toISOString(),
 }) {
   requireMethod(worldReader, "public visitor worldReader", "getThread");
   requireMethod(livedNow, "public visitor livedNow", "validateDisplayedSituation");
@@ -119,12 +121,15 @@ export function createPublicVisitorEncounterService({
   requireMethod(experienceStore, "public visitor experienceStore", "recordThreadEncounterAttention");
   requireMethod(experienceStore, "public visitor experienceStore", "queueThreadExperienceConsolidation");
   requireMethod(modelAdapter, "public visitor modelAdapter", "invoke");
+  if(typeof now!=="function")throw new TypeError("public visitor now must be a function");
   if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
     throw new TypeError("public visitor onExperienceQueued must be a function or null");
   }
 
   return Object.freeze({
-    async encounter(input) {
+    async encounter(input,{onLiveEvent=null,signal=null}={}) {
+      if(onLiveEvent!==null&&typeof onLiveEvent!=="function")throw new TypeError("live event observer must be a function");
+      if(signal!==null&&onLiveEvent===null)throw new TypeError("live cancellation needs an event observer");
       assertPlainObject("public visitor encounter", input);
       const keys = Object.hasOwn(input, "priorEncounterStoryId")
         ? ["requestId", "threadId", "expectedSituationId", "utterance", "priorEncounterStoryId", "at"]
@@ -203,6 +208,7 @@ export function createPublicVisitorEncounterService({
           situationId,
           responseText,
           encounterStoryId:encounterStory.encounterId,
+          ...(encounterStory.story.beats.some((beat)=>beat.completion==="interrupted")?{completion:"interrupted"}:{}),
         });
       };
 
@@ -287,61 +293,98 @@ export function createPublicVisitorEncounterService({
         });
       }
 
-      const response = await respondToLivedEncounter({
+      const admitSpeech=(response,{occurredAt=input.at}={})=>{
+        const story={
+          storyVersion:"encounter-story-v0.1",
+          ...(input.priorEncounterStoryId===undefined
+            ?{}
+            :{continuationOfEncounterRef:input.priorEncounterStoryId}),
+          beats:[
+            {actorThreadId:null,kind:"utterance",text:input.utterance},
+            {
+              actorThreadId:input.threadId,
+              kind:"utterance",
+              text:response.responseText,
+              ...(response.completion==="interrupted"?{completion:"interrupted"}:{}),
+            },
+          ],
+        };
+        const sourceReferences=[...new Set([
+          input.expectedSituationId,
+          context.situation.situationId,
+          ...(input.priorEncounterStoryId===undefined?[]:[input.priorEncounterStoryId]),
+        ])];
+        return experienceStore.recordEncounterStory({
+          occurredAt,
+          threadPresence:[{
+            threadId:input.threadId,
+            situationId:context.situation.situationId,
+          }],
+          story,
+          visualization:createEncounterVisualization({
+            occurredAt,
+            story,
+            scene:"A website visitor approaches a Thread in the ordinary World-owned life already underway.",
+            sourceReferences,
+            depictedThreadRefs:[input.threadId],
+          }),
+        },{publicRequest:{
+          requestId:input.requestId,
+          threadId:input.threadId,
+          requestDigest,
+        }});
+      };
+
+      if(onLiveEvent!==null){
+        const visitorId=`visitor_${input.requestId}`;
+        const live=createLiveEncounter({participantIds:[visitorId,input.threadId]});
+        let admitted=null;
+        const unsubscribe=live.subscribe(visitorId,(event)=>{
+          onLiveEvent(event);
+          if(event.type==="speech_end"
+            &&event.actorId===input.threadId
+            &&typeof event.text==="string"
+            &&event.text.trim()!==""){
+            admitted=admitSpeech({
+              responseText:event.text,
+              completion:event.completion,
+            },{occurredAt:now()});
+          }
+        });
+        try{
+          live.pushSpeechDelta({actorId:visitorId,text:input.utterance});
+          live.endSpeech({actorId:visitorId});
+          await streamLivedEncounterResponse({
+            livedContext:context,
+            encounter:{utterance:input.utterance,occurredAt:input.at},
+            recentEncounterStories:immediateHistory,
+            liveEncounter:live,
+            participantId:input.threadId,
+            modelAdapter,
+            signal,
+          });
+        }finally{
+          unsubscribe();
+        }
+        if(admitted===null){
+          return complete({
+            outcome:"interrupted",
+            situationId:context.situation.situationId,
+          });
+        }
+        return finishAccepted(admitted,context);
+      }
+
+      const response=await respondToLivedEncounter({
         livedContext:context,
-        encounter:{
-          utterance:input.utterance,
-          occurredAt:input.at,
-        },
+        encounter:{utterance:input.utterance,occurredAt:input.at},
         recentEncounterStories:immediateHistory,
         modelAdapter,
       });
       const afterResponse=sceneChangeSince(context.situation.situationId);
       if(afterResponse!==null)return afterResponse;
 
-      const story = {
-        storyVersion:"encounter-story-v0.1",
-        ...(input.priorEncounterStoryId === undefined
-          ? {}
-          : { continuationOfEncounterRef:input.priorEncounterStoryId }),
-        beats:[
-          {
-            actorThreadId:null,
-            kind:"utterance",
-            text:input.utterance,
-          },
-          {
-            actorThreadId:input.threadId,
-            kind:"utterance",
-            text:response.responseText,
-          },
-        ],
-      };
-      const sourceReferences = [...new Set([
-        input.expectedSituationId,
-        context.situation.situationId,
-        ...(input.priorEncounterStoryId === undefined ? [] : [input.priorEncounterStoryId]),
-      ])];
-      const encounterStory = experienceStore.recordEncounterStory({
-        occurredAt:input.at,
-        threadPresence:[{
-          threadId:input.threadId,
-          situationId:context.situation.situationId,
-        }],
-        story,
-        visualization:createEncounterVisualization({
-          occurredAt:input.at,
-          story,
-          scene:"A website visitor approaches a Thread in the ordinary World-owned life already underway.",
-          sourceReferences,
-          depictedThreadRefs:[input.threadId],
-        }),
-      },{publicRequest:{
-        requestId:input.requestId,
-        threadId:input.threadId,
-        requestDigest,
-      }});
-
+      const encounterStory=admitSpeech(response);
       return finishAccepted(encounterStory,context);
     },
   });
