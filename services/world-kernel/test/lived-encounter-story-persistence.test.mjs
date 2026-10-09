@@ -257,3 +257,75 @@ test("interrupted public encounter admission survives a World restart without du
     }finally{reopened.close();}
   }finally{rmSync(directory,{recursive:true,force:true});}
 });
+
+test("stable public speech checkpoints remain a single linked history across a World restart",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-live-checkpoints-"));
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
+    stateScopeId:"world",
+  };
+  const threadId="thr_checkpoint";
+  const requestId="req_live_checkpoint_persisted";
+  const publicRequest={
+    requestId,
+    threadId,
+    requestDigest:`sha256:${"d".repeat(64)}`,
+  };
+  const situationId="sit_checkpoint";
+  const occurredAt="2026-09-21T18:00:00.000Z";
+  const candidate=(text,continuationOfEncounterRef=null)=>({
+    occurredAt,
+    threadPresence:[{threadId,situationId}],
+    story:{
+      ...(continuationOfEncounterRef===null?{}:{continuationOfEncounterRef}),
+      beats:[
+        ...(continuationOfEncounterRef===null
+          ?[{actorThreadId:null,kind:"utterance",text:"Tell me."}]
+          :[]),
+        {actorThreadId:threadId,kind:"utterance",text},
+      ],
+    },
+    visualization:createEncounterVisualization({
+      occurredAt,
+      story:{beats:[{actorThreadId:threadId,kind:"utterance",text}]},
+      scene:"A real encounter in continuing life.",
+      sourceReferences:[situationId,...(continuationOfEncounterRef===null?[]:[continuationOfEncounterRef])],
+      depictedThreadRefs:[threadId],
+    }),
+  });
+  try{
+    seedThread(storage,threadId,"Mina");
+    const store=openLivedExperienceStore(storage);
+    const first=store.recordEncounterStory(
+      candidate("The first sentence."),
+      {publicRequest,publicCheckpoint:{...publicRequest,position:0}},
+    );
+    store.close();
+
+    const reopened=openLivedExperienceStore(storage);
+    try{
+      assert.deepEqual(
+        reopened.listPublicEncounterCheckpointStories(requestId).map((story)=>story.encounterId),
+        [first.encounterId],
+        "World restart lost a spoken sentence",
+      );
+      const second=reopened.recordEncounterStory(
+        candidate(" And the next sentence.",first.encounterId),
+        {publicCheckpoint:{...publicRequest,position:1}},
+      );
+      assert.deepEqual(
+        reopened.listPublicEncounterCheckpointStories(requestId).map((story)=>story.encounterId),
+        [first.encounterId,second.encounterId],
+        "continued speech lost its original history",
+      );
+      const retry=reopened.recordEncounterStory(
+        candidate(" A different imagined ending.",first.encounterId),
+        {publicCheckpoint:{...publicRequest,position:1}},
+      );
+      assert.equal(retry.encounterId,second.encounterId,
+        "checkpoint retry invented a different spoken past");
+      assert.equal(reopened.listEncounterStories(threadId).length,2,
+        "checkpoint retry duplicated objective World speech");
+    }finally{reopened.close();}
+  }finally{rmSync(directory,{recursive:true,force:true});}
+});
