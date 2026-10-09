@@ -137,6 +137,7 @@ export function createLiveEncounter({
     pushSpeechDelta({actorId,text,signal=null}={}){
       const actor=requireParticipant(actorId);
       if(typeof text!=="string"||text==="")throw new TypeError("speech delta text is required");
+      if(signal?.aborted)return;
       const speaker=speakers.get(actor);
       if(!speaker.active)start(actor);
 
