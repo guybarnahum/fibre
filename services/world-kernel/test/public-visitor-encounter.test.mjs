@@ -56,7 +56,8 @@ const plan={
   stops:[],
 };
 
-function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false, failFirstExperience=false }={}){
+function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false, failFirstExperience=false, advanceDuring=null }={}){
+  let present=structuredClone(actualSituation);
   const stories=[];
   const receipts=new Map();
   const admissions=new Map();
@@ -148,6 +149,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
     async invoke(call){
       modelCalls.push(structuredClone(call));
       if(call.clientRequestId.startsWith("interior_")){
+        if(advanceDuring==="participation")present=situation("sit_world_advanced","Heading to a different place.");
         return {
           output:{
             result:{
@@ -168,6 +170,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
         };
       }
       if(call.clientRequestId.startsWith("lived-encounter_")){
+        if(advanceDuring==="expression")present=situation("sit_world_advanced","Heading to a different place.");
         return {
           output:{
             responseText:call.input.recentEncounterStories?.length
@@ -224,6 +227,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
     livedNowStore:{
       latestPlan:()=>structuredClone(plan),
       getSituation:()=>structuredClone(actualSituation),
+      getCurrentSituation:()=>structuredClone(present),
     },
     identityStore:{
       getCurrentIdentityView(){
@@ -315,6 +319,31 @@ test("N6.3d accepted visitor request becomes one Encounter Story in revalidated 
   );
 });
 
+
+test("World situation advances during cognition without inventing a stale encounter",async()=>{
+  for(const phase of ["participation","expression"]){
+    const f=fixture({
+      decision:"accept",
+      actualSituation:situation("sit_world_initial"),
+      advanceDuring:phase,
+    });
+    const result=await f.service.encounter(request("sit_world_displayed",{
+      requestId:`req_scene_advanced_${phase}`,
+    }));
+    assert.equal(result.outcome,"scene_changed",
+      "World change must interrupt the pending encounter");
+    assert.equal(result.currentSituationId,"sit_world_advanced",
+      "scene change must report the actual World present");
+    assert.equal(f.stories.length,0,
+      "unspoken response entered objective history after World moved");
+    assert.equal(f.queued.length,0,
+      "a stale encounter became personal Experience");
+    assert.equal(f.modelCalls.filter((call)=>
+      call.clientRequestId.startsWith("lived-encounter_")).length,
+      phase==="participation"?0:1,
+      "World change should not generate needless speech");
+  }
+});
 
 test("N6.3e later accepted turns use admitted Encounter Story history instead of session state",async()=>{
   const actual=situation("sit_n6_continuing_actual");
