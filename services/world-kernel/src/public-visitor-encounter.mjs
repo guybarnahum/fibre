@@ -28,7 +28,6 @@ function recentEncounterStories({
   experienceStore,
   threadId,
   priorEncounterStoryId,
-  expectedSituationId,
   at,
 }) {
   if (priorEncounterStoryId === null) return [];
@@ -44,7 +43,6 @@ function recentEncounterStories({
     if (record === null) return null;
     const presence = record.threadPresence.find((item) => item.threadId === threadId);
     if (presence === undefined) return null;
-    if (depth === 0 && presence.situationId !== expectedSituationId) return null;
     if (Date.parse(record.occurredAt) > Date.parse(at)) return null;
 
     stories.push({
@@ -262,7 +260,6 @@ export function createPublicVisitorEncounterService({
         experienceStore,
         threadId:input.threadId,
         priorEncounterStoryId:input.priorEncounterStoryId ?? null,
-        expectedSituationId:input.expectedSituationId,
         at:input.at,
       });
       if (immediateHistory === null) {
