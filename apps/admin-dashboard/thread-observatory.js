@@ -74,15 +74,29 @@ export function threadObservatoryCopyPayload({
   identity,
   memories = [],
   memoryError = null,
+  livedNow = null,
+  encounterStories = [],
+  experienceJournalEntries = [],
+  journal = null,
   repair = null,
   repairError = null,
 } = {}) {
   return Object.freeze({
-    contract:"fibre-thread-observatory-copy-v0.1",
+    contract:"fibre-thread-observatory-copy-v0.2",
     threadId:threadId ?? null,
     identity:identity ?? null,
     memories:Object.freeze(Array.isArray(memories) ? [...memories] : []),
     memoryError:memoryError ?? null,
+    worldEvents:buildThreadWorldEvents({livedNow,encounterStories}),
+    encounterStories:Object.freeze((encounterStories??[]).map((story)=>({
+      encounterId:story.encounterId,
+      occurredAt:story.occurredAt,
+      situation:story.situation??null,
+      beats:story.story?.beats??[],
+      attention:story.attention?.outcome??null,
+    }))),
+    experienceJournalEntries:Object.freeze([...(experienceJournalEntries??[])]),
+    journal:journal??null,
     repair:repair ?? null,
     repairError:repairError ?? null,
   });
@@ -100,7 +114,9 @@ async function fetchThreadRepairSnapshot(threadId) {
   return payload;
 }
 
-function observatoryCopyAction({ identity, threadId, memories, memoryError }) {
+function observatoryCopyAction({
+  identity,threadId,memories,memoryError,livedNow,encounterStories,experienceJournalEntries,journal,
+}) {
   const actions = el("div", "thread-observatory-actions");
   const button = el("button", "secondary thread-observatory-copy");
   button.type = "button";
@@ -115,12 +131,16 @@ function observatoryCopyAction({ identity, threadId, memories, memoryError }) {
         identity,
         memories,
         memoryError,
+        livedNow,
+        encounterStories,
+        experienceJournalEntries,
+        journal,
         repair,
         repairError,
       });
     },
     label:"Copy Thread Observatory",
-    tooltip:"Copy Thread Observatory with current repair diagnosis",
+    tooltip:"Copy Thread life, encounters, journal, memories and current repair diagnosis",
     copiedLabel:"Copied Thread Observatory",
     failedLabel:"Copy Thread Observatory failed",
     iconOnly:true,
@@ -436,6 +456,7 @@ function memoryCard(memory, birthDate) {
 function memoriesSection(memories, birthDate, memoryError = null) {
   const records = Array.isArray(memories) ? memories : [];
   const wrap = section("Memories", records.length ? `${records.length} current autobiographical ${records.length === 1 ? "memory" : "memories"}` : null);
+  wrap.id="thread-memories";
   if (memoryError) {
     wrap.append(el("p", "thread-empty-note", `Memory view unavailable · ${memoryError}`));
     return wrap;
@@ -577,6 +598,7 @@ function journalSection(journal, journalError = null, authorityEntries = []) {
       : null,
   );
   wrap.classList.add("thread-journal-section");
+  wrap.id="thread-journal";
   if (journalError) {
     wrap.append(el("p", "thread-empty-note", `Journal unavailable · ${journalError}`));
     return wrap;
@@ -818,11 +840,28 @@ function situationLabel(situation){
   return [activity,place].filter(Boolean).join(" · ")||"World scene";
 }
 
+function lifeRecordLinks(){
+  const nav=el("nav","thread-observatory-actions");
+  nav.setAttribute("aria-label","Thread life and history");
+  for(const [label,target] of [
+    ["World events","thread-world-events"],
+    ["Encounters","thread-encounters"],
+    ["Journal","thread-journal"],
+    ["Memories","thread-memories"],
+  ]){
+    const link=el("a","secondary",label);
+    link.href="#"+target;
+    nav.append(link);
+  }
+  return nav;
+}
+
 function worldEventsSection({livedNow=null,encounterStories=[],encounterError=null}={}){
   const events=buildThreadWorldEvents({livedNow,encounterStories});
   const wrap=section("World events",events.length
     ?`${events.length} enacted scene / objective occurrence records · newest first`
     :null);
+  wrap.id="thread-world-events";
   if(encounterError){
     wrap.append(el("p","thread-empty-note","World history unavailable · "+encounterError));
     return wrap;
@@ -835,7 +874,7 @@ function worldEventsSection({livedNow=null,encounterStories=[],encounterError=nu
   for(const event of events){
     const row=el("article","thread-encounter-beat");
     const label=event.kind==="scene"?"Enacted situation":"World occurrence";
-    row.append(el("strong",null,label+" · "+(prettyDate(event.occurredAt)??"time unknown")));
+    row.append(el("strong",null,label+" · "+(event.occurredAt??"time unknown")));
     if(event.kind==="scene"){
       row.append(el("p",null,situationLabel({
         activity:event.activity,
@@ -885,6 +924,7 @@ function encounterEpisodeSection({
     "Encounter episodes",
     episodes.length?(String(episodes.length)+" derived "+(episodes.length===1?"episode":"episodes")+" · objective history → private consequence"):null,
   );
+  wrap.id="thread-encounters";
   if(encounterError){
     wrap.append(el("p","thread-empty-note","Encounter view unavailable · "+encounterError));
     return wrap;
@@ -1462,8 +1502,11 @@ export function renderThreadObservatory({
 } = {}) {
   const view = el("div", "thread-person-view");
   view.append(
-    observatoryCopyAction({ identity, threadId, memories, memoryError }),
+    observatoryCopyAction({
+      identity,threadId,memories,memoryError,livedNow,encounterStories,experienceJournalEntries,journal,
+    }),
     hero(identity, threadId),
+    lifeRecordLinks(),
     identitySection(identity, threadId),
     renderFidSection(identity, threadId),
     nowSection(identity),
