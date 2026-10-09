@@ -97,7 +97,7 @@ function sceneFacts(situation) {
   };
 }
 
-function sameEnactedScene(left, right) {
+export function sameEnactedScene(left, right) {
   return canonicalJson(sceneFacts(left)) === canonicalJson(sceneFacts(right));
 }
 
