@@ -71,6 +71,15 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (encounter_ref) REFERENCES encounter_story_records(encounter_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS public_encounter_checkpoints (
+      request_id TEXT NOT NULL,
+      position INTEGER NOT NULL CHECK (position >= 0),
+      encounter_ref TEXT NOT NULL UNIQUE,
+      PRIMARY KEY (request_id,position),
+      FOREIGN KEY (request_id) REFERENCES public_encounter_admissions(request_id),
+      FOREIGN KEY (encounter_ref) REFERENCES encounter_story_records(encounter_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS public_encounter_receipts (
       request_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL,
@@ -255,6 +264,14 @@ export function createLivedExperienceTables(database) {
     CREATE TRIGGER IF NOT EXISTS public_encounter_admissions_no_delete
       BEFORE DELETE ON public_encounter_admissions BEGIN
         SELECT RAISE(ABORT, 'public_encounter_admissions is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS public_encounter_checkpoints_no_update
+      BEFORE UPDATE ON public_encounter_checkpoints BEGIN
+        SELECT RAISE(ABORT, 'public_encounter_checkpoints is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS public_encounter_checkpoints_no_delete
+      BEFORE DELETE ON public_encounter_checkpoints BEGIN
+        SELECT RAISE(ABORT, 'public_encounter_checkpoints is append-only');
       END;
     CREATE TRIGGER IF NOT EXISTS public_encounter_receipts_no_update
       BEFORE UPDATE ON public_encounter_receipts BEGIN
