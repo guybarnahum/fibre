@@ -132,3 +132,20 @@ Source inspection confirms that a completed receipt is appended **after** the ac
 
 No partial-retry fix, fault-injection result, or runtime validation is claimed yet.
 
+## Staging cost evidence and bounded read-path correction — 2026-10-08 Phoenix
+
+Guy's first natural `thread:meet` World log tail captured **one actual public participation appraisal**, plus the preceding explicit CLI `LivedNow.ensure` and directory lookup. The pasted evidence did not include the CLI outcome. It contains no public `expression` or `experience` model invocation, so it is a **one-stage participation sample**, not an accepted three-stage price/latency baseline. Do not manufacture another accepted response.
+
+| Observed World operation | Wall time | SQL queries | Rows read | Rows written |
+|---|---:|---:|---:|---:|
+| `GET /internal/thread-directory/entry/:threadId` | 107 ms (Durable Object) | 25 | 1,952 | 0 |
+| `POST /internal/lived-now/ensure` | 3,879 ms (Durable Object) | 705 | 13,040 | 9 |
+| `POST /internal/public-visitor-encounter` | 4,408 ms (Durable Object) | 655 | 4,402 | 6 |
+
+The public `participation` model invocation returned `completed` with **4,368 ms elapsed**, OpenAI `gpt-5.6-sol`, **1 provider attempt**, and provider-reported **3,964 input + 205 output = 4,169 total tokens**. A single sample does not establish typical cost, provider billing, or tokens for expression/Experience. `LivedNow.ensure` can perform separate planner work; its inference cost is not covered by the encounter-stage log.
+
+**Measured bottleneck and source explanation:** `SituatedLifeStore` accounts for 557/655 queries and 2,619/4,402 read rows in the public request; for the separate `LivedNow.ensure`, it accounts for 571/705 queries and 2,649/13,040 read rows. `listCurrentLifeRelations` previously fetched all relation IDs then called `lifeRelationHistory` for **each** relation, each doing a Thread existence read, ordered relation-history read and integrity-head read. This N+1 history verification, not any demonstrated requirement for hundreds of distinct database calls, explains the query concentration. The number of relations was not independently enumerated; do not report an inferred relation count as measured fact.
+
+**Minimal source correction committed on `main`, operator validation pending:** `SituatedLifeStore.listCurrentLifeRelations` now fetches all revisions for **only this Thread** and their matching integrity heads in two bounded SQL queries after checking the Thread. The existing canonical JSON, digest-chain, revision-order, supersession, temporal-order, stable identity and lineage-head checks are retained through a shared decoder; no plain “latest row” shortcut. An existing store test now covers two distinct relationships, including one multi-revision relation, after reopening. This affects existing read paths, not model calls, exposure, histories or authority. Its expected SQL reduction is a **source prediction**, not a measured post-change outcome or performance acceptance until Guy validates and deploys.
+
+**Next gate:** Guy runs focused situated-life + public-encounter tests, then the single full `npm run slice:validate` before deployment. Compare one naturally occurring future request's `SituatedLifeStore.queries` to this recorded baseline without chasing an exact 557-query threshold or generating new model calls solely for comparison. Then resume the public partial-retry fault reproduction already specified above; no additional telemetry framework.
