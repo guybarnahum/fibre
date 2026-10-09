@@ -62,6 +62,15 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    CREATE TABLE IF NOT EXISTS public_encounter_admissions (
+      request_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      request_digest TEXT NOT NULL CHECK (request_digest LIKE 'sha256:%'),
+      encounter_ref TEXT NOT NULL UNIQUE,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (encounter_ref) REFERENCES encounter_story_records(encounter_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS public_encounter_receipts (
       request_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL,
@@ -238,6 +247,14 @@ export function createLivedExperienceTables(database) {
     CREATE TRIGGER IF NOT EXISTS encounter_story_thread_presence_no_delete
       BEFORE DELETE ON encounter_story_thread_presence BEGIN
         SELECT RAISE(ABORT, 'encounter_story_thread_presence is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS public_encounter_admissions_no_update
+      BEFORE UPDATE ON public_encounter_admissions BEGIN
+        SELECT RAISE(ABORT, 'public_encounter_admissions is append-only');
+      END;
+    CREATE TRIGGER IF NOT EXISTS public_encounter_admissions_no_delete
+      BEFORE DELETE ON public_encounter_admissions BEGIN
+        SELECT RAISE(ABORT, 'public_encounter_admissions is append-only');
       END;
     CREATE TRIGGER IF NOT EXISTS public_encounter_receipts_no_update
       BEFORE UPDATE ON public_encounter_receipts BEGIN
