@@ -262,7 +262,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
       async validateDisplayedSituation(){
         return {
           applies,
-          currentSituation:structuredClone(actualSituation),
+          currentSituation:structuredClone(present),
         };
       },
     },
@@ -288,7 +288,9 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
     }:{}),
   });
 
-  return { service,stories,receipts,modelCalls,streamCalls,queued };
+  return { service,stories,receipts,modelCalls,streamCalls,queued,
+    advanceWorld:(next)=>{present=structuredClone(next);},
+  };
 }
 
 function request(expectedSituationId="sit_displayed",{
@@ -426,6 +428,27 @@ test("N6.3e later accepted turns use admitted Encounter Story history instead of
     "continued encounter invented session authority");
 });
 
+
+test("an enacted scene change retains admitted visitor dialogue while the Thread independently chooses the next reply",async()=>{
+  const f=fixture({decision:"accept",actualSituation:situation("sit_before_movement")});
+  const first=await f.service.encounter(request("sit_before_movement",{
+    requestId:"req_before_world_movement",
+  }));
+  f.advanceWorld(situation("sit_after_movement","Walking towards the market."));
+  const continued=await f.service.encounter(request("sit_after_movement",{
+    requestId:"req_after_world_movement",
+    utterance:"Are you still there?",
+    priorEncounterStoryId:first.encounterStoryId,
+  }));
+  assert.equal(continued.outcome,"accepted",
+    "World movement forced an already admitted conversation to end");
+  assert.equal(f.stories[1].threadPresence[0].situationId,"sit_after_movement",
+    "new speech did not belong to the Thread's actual new situation");
+  assert.equal(f.stories[1].story.continuationOfEncounterRef,first.encounterStoryId,
+    "the visitor's ongoing conversation forgot Faith after her World changed");
+  assert.equal(f.modelCalls.filter((call)=>call.clientRequestId.startsWith("interior_")).length,2,
+    "World movement bypassed the Thread's choice to keep participating");
+});
 
 test("an interrupted N7 public reply admits only spoken text and a retry cannot invent another life",async()=>{
   const f=fixture({decision:"accept"});
