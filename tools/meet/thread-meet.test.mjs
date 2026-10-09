@@ -4,9 +4,11 @@
 
 import assert from "node:assert/strict";
 import test from "node:test";
+import { PassThrough } from "node:stream";
 
 import {
   advanceThreadMeetState,
+  createMeetInputReader,
   parseThreadMeetArgs,
   readLiveEncounterEvents,
   selectMeetingThread,
@@ -100,4 +102,20 @@ test("live CLI preserves actual audible speech and a single World admission acro
     priorEncounterStoryId:"story_spoken",
     terminal:true,
   },"live CLI carried a departed scene into the next request");
+});
+
+test("a scripted visitor keeps every utterance across slow World replies and exits cleanly at EOF",async()=>{
+  const input=new PassThrough();
+  const output=new PassThrough();
+  const {terminal,next}=createMeetInputReader({input,output});
+
+  input.end("Hi there! Got a minute?\\nWhat are you doing now?\\n/leave\\n");
+  const first=await next();
+  assert.equal(first,"Hi there! Got a minute?","script lost its first visitor utterance");
+  await new Promise((resolve)=>setImmediate(resolve));
+  assert.equal(await next(),"What are you doing now?",
+    "script lost a queued utterance while the Thread was responding");
+  assert.equal(await next(),"/leave","script lost its voluntary exit");
+  assert.equal(await next(),null,"scripted encounter failed to finish on input EOF");
+  terminal.close();
 });
