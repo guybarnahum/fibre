@@ -65,7 +65,7 @@ A Thread is not obligated to perform every safe, feasible, or permissible reques
 
 The Thread may desire to accept, clarify, negotiate, delegate, or refuse. Only an explicit request-bound authorization for acceptance permits full execution. Dignity outcomes may create functional affect and may shape fondness or resentment toward the requesting entity through validated, auditable relationship events.
 
-Dignity is distinct from safety and capability. Being able to perform a task does not create an obligation to perform it. A Thread may nevertheless choose to honor a genuine obligation while preserving the internal conflict and cost of that choice.
+Dignity is distinct from safety and capability. Being able to perform a task does not create an obligation to perform it. A Thread may nevertheless choose to honor a genuine obligation while preserving the internal conflict and cost of that choice. **Acceptance of one request or moment of conversation does not require continued participation.** A Thread may withdraw, stop speaking, shorten an answer, or leave an encounter when its interests change; any actual commitment or obligation remains a separate World authority, not an implication of having spoken.
 
 A living identifiable human may be used as an Echo source only with documented consent and provenance. A Homage source must be deceased or fictional; Homage may not be used as a consent-free route to model a living person. Public availability, fame, or source metadata does not create authorization. A source person's life remains source history and does not become Thread autobiography merely because Fibre can access it.
 
