@@ -112,6 +112,10 @@ export function createPublicVisitorEncounterWriteApi({
                 if(event.actorId===body.threadId
                   &&(event.type==="speech_delta"||event.type==="speech_end")){
                   controller.enqueue(liveEvent(event.type,event));
+                }else if(event.type==="scene_changed"&&event.participantId===body.threadId){
+                  controller.enqueue(liveEvent("scene_changed",{
+                    currentSituationId:event.currentSituation.situationId,
+                  }));
                 }
               },
             }).then((result)=>{
