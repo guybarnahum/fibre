@@ -95,10 +95,12 @@ test("local HTTP delivers live World speech through Presentation before visitor 
           "content-type":"application/json",
         },
         body:JSON.stringify({requestId,situationId,utterance:"Tell me more."}),
-      });
+        signal:AbortSignal.timeout(10_000),
+      }).catch(()=>assert.fail("Local HTTP withheld live speech until encounter completion"));
   assert.equal(stream.status,200,"the public encounter did not open its live stream");
   const reader=stream.body.getReader();
-  const first=await reader.read();
+  const first=await reader.read().catch(()=>
+    assert.fail("Live speech did not reach the visitor before completion"));
   const spoken=new TextDecoder().decode(first.value);
   assert.match(spoken,/event: speech_delta/,"Thread speech was withheld until final completion");
   assert.match(spoken,/I was about to explain/,"the public visitor heard no Thread speech");
