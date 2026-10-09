@@ -463,13 +463,19 @@ test("a broken live listener cannot make unexposed generated speech part of Worl
   });
   let delivered="";
   let liveDeltas=0;
+  let ending=null;
   await assert.rejects(f.service.encounter(input,{
     onLiveEvent(event){
+      if(event.type==="speech_end"&&event.actorId===THREAD_ID){
+        ending=event;
+      }
       if(event.type!=="speech_delta"||event.actorId!==THREAD_ID)return;
       if(++liveDeltas===2)throw new Error("listener disconnected");
       delivered+=event.text;
     },
   }),/listener disconnected/);
+  assert.equal(ending?.text,delivered,
+    "live observer was told unexposed speech had been heard");
 
   assert.equal(f.stories.length,1,"listener failure erased already-spoken history");
   assert.equal(f.stories[0].story.beats[1].text,delivered,
