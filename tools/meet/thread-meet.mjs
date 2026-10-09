@@ -118,11 +118,14 @@ export function parseThreadMeetArgs(argv){
   let targetEnvironment=null;
   let threadId=null;
   let verbosity=0;
+  let live=false;
   for(let index=0;index<argv.length;index+=1){
     if(argv[index]==="--env"){
       targetEnvironment=normalizeCloudflareEnvironment(argv[++index]??null);
     }else if(argv[index]==="--thread"){
       threadId=nonEmpty("--thread",argv[++index]);
+    }else if(argv[index]==="--live"){
+      live=true;
     }else if(/^-v{1,3}$/u.test(argv[index])){
       verbosity=Math.max(verbosity,argv[index].length-1);
     }else{
@@ -130,7 +133,7 @@ export function parseThreadMeetArgs(argv){
     }
   }
   if(targetEnvironment===null)throw new TypeError("--env <staging|production> is required");
-  return Object.freeze({targetEnvironment,threadId,verbosity});
+  return Object.freeze({targetEnvironment,threadId,verbosity,live});
 }
 
 export function selectMeetingThread(entries,randomIndex=(length)=>randomInt(length)){
@@ -267,15 +270,110 @@ async function worldEncounter(ctx,{threadId,situationId,utterance,priorEncounter
   return Object.freeze(structuredClone(payload.result));
 }
 
+export async function readLiveEncounterEvents(body,onEvent){
+  if(!body)throw new Error("World returned no live encounter stream");
+  const decoder=new TextDecoder();
+  let buffer="";
+  let result=null;
+  const consume=(frame)=>{
+    const lines=frame.split("\n");
+    const kind=lines.find((line)=>line.startsWith("event:"))?.slice(6).trim()??"message";
+    const data=lines.filter((line)=>line.startsWith("data:"))
+      .map((line)=>line.slice(5).trimStart()).join("\n");
+    if(data==="")return;
+    const payload=JSON.parse(data);
+    onEvent(kind,payload);
+    if(kind==="error")throw new Error(`World live encounter failed: ${payload.error??"unknown"}`);
+    if(kind==="result")result=payload;
+  };
+  for await(const chunk of body){
+    buffer+=decoder.decode(chunk,{stream:true});
+    buffer=buffer.replace(/\r\n/gu,"\n");
+    let boundary;
+    while((boundary=buffer.indexOf("\n\n"))!==-1){
+      consume(buffer.slice(0,boundary));
+      buffer=buffer.slice(boundary+2);
+    }
+  }
+  buffer+=decoder.decode();
+  if(buffer.trim()!=="")consume(buffer);
+  if(result===null)throw new Error("World live encounter ended without a result");
+  return result;
+}
+
+async function worldLiveEncounter(ctx,{threadId,situationId,utterance,priorEncounterStoryId},trace,{
+  output,threadName,terminal,
+}){
+  const requestId=`cli_enc_${randomUUID()}`;
+  trace.log(1,`Streaming encounter · situation ${situationId}`);
+  const response=await trace.request(endpoint(ctx.worldBaseUrl,"/internal/public-visitor-encounter"),{
+    method:"POST",
+    headers:{
+      Accept:"text/event-stream",
+      "content-type":"application/json",
+      "x-fibre-private-token":ctx.privateToken,
+    },
+    body:JSON.stringify({
+      requestId,threadId,expectedSituationId:situationId,utterance,
+      ...(priorEncounterStoryId===null?{}:{priorEncounterStoryId}),
+    }),
+    signal:AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  },`thread=${threadId} situation=${situationId} priorStory=${priorEncounterStoryId??"none"} utteranceChars=${utterance.length}`);
+  if(!response.ok){
+    const failure=await response.json().catch(()=>null);
+    throw new Error(`World live encounter failed HTTP ${response.status}: ${failure?.error??"unknown"}`);
+  }
+  let spoken=false;
+  let speaking=false;
+  let interruptRequested=false;
+  const interrupt=()=>{
+    if(interruptRequested)return;
+    interruptRequested=true;
+    output.write("\n[Interrupting this speech in World…]\n");
+    void privatePost(ctx.worldBaseUrl,"/internal/public-visitor-encounter/interrupt",ctx.privateToken,
+      {threadId,requestId},"World encounter interruption",trace)
+      .then((reply)=>{
+        if(reply.interrupted!==true)trace.log(1,"World speech already ended");
+      })
+      .catch((error)=>output.write(`[Interrupt failed: ${error.message}]\n`));
+  };
+  terminal.on("SIGINT",interrupt);
+  process.on("SIGINT",interrupt);
+  try{
+    const result=await readLiveEncounterEvents(response.body,(kind,event)=>{
+      if(kind==="speech_delta"&&event.actorId===threadId){
+        if(!speaking){
+          output.write(`${threadName}> `);
+          speaking=true;
+        }
+        output.write(event.text);
+        spoken=true;
+      }else if(kind==="speech_end"&&event.actorId===threadId){
+        if(speaking)output.write("\n");
+        speaking=false;
+        if(event.completion==="interrupted")output.write("  speech interrupted\n");
+      }else if(kind==="scene_changed"){
+        output.write(`\n[World scene changed · ${event.currentSituationId}]\n`);
+      }
+    });
+    if(speaking)output.write("\n");
+    trace.log(1,`Encounter ${result.outcome}`);
+    return {result,spoken};
+  }finally{
+    terminal.off("SIGINT",interrupt);
+    process.off("SIGINT",interrupt);
+  }
+}
+
 export function advanceThreadMeetState(state,result){
   if(result.outcome==="accepted"){
     return Object.freeze({
       situationId:result.situationId,
       priorEncounterStoryId:result.encounterStoryId,
-      terminal:false,
+      terminal:typeof result.currentSituationId==="string",
     });
   }
-  if(["decline","defer","scene_changed"].includes(result.outcome)){
+  if(["decline","defer","scene_changed","interrupted"].includes(result.outcome)){
     return Object.freeze({
       situationId:result.situationId??result.currentSituationId??state.situationId,
       priorEncounterStoryId:state.priorEncounterStoryId,
@@ -291,7 +389,7 @@ export async function meetThread({
   input=process.stdin,
   output=process.stdout,
 }={}){
-  const {targetEnvironment,threadId:requestedThreadId,verbosity}=parseThreadMeetArgs(argv);
+  const {targetEnvironment,threadId:requestedThreadId,verbosity,live}=parseThreadMeetArgs(argv);
   const trace=createTrace(output,verbosity);
   const ctx=context(environment,targetEnvironment);
   const selected=requestedThreadId===null
@@ -312,7 +410,8 @@ export async function meetThread({
 
   output.write(
     "\nMeet this Thread in the life already underway.\n"
-    +"Commands: /present refreshes actual life · /leave exits\n",
+    +"Commands: /present refreshes actual life · /leave exits"
+    +(live?" · Ctrl-C interrupts active Thread speech":"")+"\n",
   );
 
   const terminal=createInterface({input,output,terminal:Boolean(output.isTTY)});
@@ -332,20 +431,27 @@ export async function meetThread({
         continue;
       }
 
-      const result=await worldEncounter(ctx,{
+      const request={
         threadId,
         situationId:state.situationId,
         utterance,
         priorEncounterStoryId:state.priorEncounterStoryId,
-      },trace);
+      };
+      const delivered=live
+        ?await worldLiveEncounter(ctx,request,trace,{output,threadName,terminal})
+        :null;
+      const result=delivered?.result??await worldEncounter(ctx,request,trace);
 
       if(result.outcome==="accepted"){
-        output.write(`${threadName}> ${result.responseText}\n`);
-        output.write(`  accepted · situation ${result.situationId} · story ${result.encounterStoryId}\n`);
+        if(!delivered?.spoken)output.write(`${threadName}> ${result.responseText}\n`);
+        output.write(`  accepted${result.completion==="interrupted"?" (speech interrupted)":""} · situation ${result.situationId} · story ${result.encounterStoryId}\n`);
+        if(result.currentSituationId)output.write(`  World moved · ${result.currentSituationId}\n`);
       }else if(result.outcome==="decline"){
         output.write(`${threadName}> ${result.expression??"Not right now."}\n  declined\n`);
       }else if(result.outcome==="defer"){
         output.write(`${threadName}> ${result.expression??"Later."}\n  deferred${result.suggestedAt?` · ${result.suggestedAt}`:""}\n`);
+      }else if(result.outcome==="interrupted"){
+        output.write("  encounter interrupted before outward speech\n");
       }else if(result.outcome==="scene_changed"){
         output.write("\nThe Thread's life moved before your utterance entered it.\n");
         printWorldPresent(output,await ensureWorldPresent(ctx,threadId,trace));
