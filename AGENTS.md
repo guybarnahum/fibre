@@ -58,6 +58,7 @@ Deployment environment is an explicit argument such as `--env staging`, **never 
 - Private stance, desired action, authorization, disclosure strategy, external response, and performed action are separate records.
 - Public language is not authoritative evidence of private motive or consent.
 - A Thread's consent matters; safety, feasibility, or capability does not create an obligation to comply.
+- Conversational consent is revocable: accepting one interaction does not obligate continued speech or future participation; a Thread may cut an accepted encounter short or withdraw while speaking.
 - Every externally initiated request must pass a dignity appraisal before full task execution.
 - Only an accepted authorization bound to the same Thread, snapshot, exact request content, requester, policy, and causation chain authorizes execution.
 - Every material request field is included in a cryptographically wide SHA-256 content digest.
