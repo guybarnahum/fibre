@@ -59,14 +59,28 @@ const plan={
 function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false }={}){
   const stories=[];
   const receipts=new Map();
+  const admissions=new Map();
+  const attentions=new Map();
   const modelCalls=[];
   const queued=[];
   let wakeAttempts=0;
   const experienceStore={
-    recordEncounterStory(candidate){
+    recordEncounterStory(candidate,{publicRequest=null}={}){
+      const prior=publicRequest===null?null:admissions.get(publicRequest.requestId)??null;
+      if(prior!==null){
+        assert.equal(prior.requestDigest,publicRequest.requestDigest);
+        assert.equal(prior.threadId,publicRequest.threadId);
+        return this.getEncounterStory(prior.encounterRef);
+      }
       const record={ encounterId:`story_n6_public_${stories.length+1}`,...structuredClone(candidate) };
       stories.push(structuredClone(record));
+      if(publicRequest!==null){
+        admissions.set(publicRequest.requestId,{...publicRequest,encounterRef:record.encounterId});
+      }
       return record;
+    },
+    getPublicEncounterAdmission(requestId){
+      return structuredClone(admissions.get(requestId)??null);
     },
     getEncounterStory(encounterId,{ required=true }={}){
       const record=stories.find((item)=>item.encounterId===encounterId)??null;
@@ -90,7 +104,9 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
       return structuredClone(candidate);
     },
     recordThreadEncounterAttention(candidate){
-      return {
+      const prior=attentions.get(candidate.encounterRef);
+      if(prior!==undefined)return structuredClone(prior);
+      const record={
         threadId:candidate.threadId,
         encounterRef:candidate.encounterRef,
         situationId:candidate.situationId,
@@ -105,6 +121,11 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
           experienceText:candidate.experienceText,
         },
       };
+      attentions.set(candidate.encounterRef,structuredClone(record));
+      return record;
+    },
+    getThreadEncounterAttention(threadId,encounterRef){
+      return structuredClone(attentions.get(encounterRef)??null);
     },
     queueThreadExperienceConsolidation(candidate){
       const record={
@@ -112,7 +133,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
         threadId:THREAD_ID,
         queuedAt:candidate.queuedAt,
       };
-      queued.push(structuredClone(record));
+      if(!queued.some((item)=>item.experienceId===record.experienceId))queued.push(structuredClone(record));
       return record;
     },
   };
@@ -198,7 +219,10 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
         };
       },
     },
-    livedNowStore:{ latestPlan:()=>structuredClone(plan) },
+    livedNowStore:{
+      latestPlan:()=>structuredClone(plan),
+      getSituation:()=>structuredClone(actualSituation),
+    },
     identityStore:{
       getCurrentIdentityView(){
         return { threadId:THREAD_ID,assertions:[] };
