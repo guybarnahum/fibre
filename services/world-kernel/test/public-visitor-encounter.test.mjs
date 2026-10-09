@@ -56,11 +56,12 @@ const plan={
   stops:[],
 };
 
-function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual") }={}){
+function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false }={}){
   const stories=[];
   const receipts=new Map();
   const modelCalls=[];
   const queued=[];
+  let wakeAttempts=0;
   const experienceStore={
     recordEncounterStory(candidate){
       const record={ encounterId:`story_n6_public_${stories.length+1}`,...structuredClone(candidate) };
@@ -208,6 +209,11 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
     memoryStore,
     experienceStore,
     modelAdapter,
+    ...(failFirstWake?{
+      onExperienceQueued:async()=>{
+        if(++wakeAttempts===1)throw new Error("simulated wake interruption");
+      },
+    }:{}),
   });
 
   return { service,stories,receipts,modelCalls,queued };
@@ -349,6 +355,25 @@ test("N6.4 completed retry replays one admitted outcome without repeating privat
     "retry created more than one durable receipt");
   assert.equal(f.queued.length,1,
     "completed retry requeued already-admitted experience");
+});
+
+test("an interrupted accepted encounter retry cannot repeat outward history or private experience",async()=>{
+  const f=fixture({ decision:"accept",failFirstWake:true });
+  const input=request("sit_retry_interrupted",{
+    requestId:"req_n6_partial_retry",
+  });
+  await assert.rejects(f.service.encounter(input),/simulated wake interruption/);
+  assert.equal(f.stories.length,1,"interruption must preserve the admitted encounter");
+  assert.equal(f.queued.length,1,"interruption must preserve the queued experience");
+
+  const retry=await f.service.encounter({
+    ...input,
+    at:"2026-10-06T02:46:00.000Z",
+  });
+  assert.equal(retry.outcome,"accepted");
+  assert.equal(f.stories.length,1,"retry duplicated an admitted encounter");
+  assert.equal(f.queued.length,1,"retry duplicated personal experience");
+  assert.equal(f.modelCalls.length,3,"retry repeated cognition after the encounter happened");
 });
 
 test("N6.4 request identity cannot be reused for a different encounter",async()=>{
