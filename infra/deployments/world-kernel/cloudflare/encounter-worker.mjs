@@ -61,6 +61,7 @@ const INSIDE_FIBRE_WORK_STATE_ROUTE = "/internal/inside-fibre/work-state";
 const INSIDE_FIBRE_MEETING_ENTRY_ROUTE = "/internal/inside-fibre/meeting-entry";
 const INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE = "/internal/inside-fibre/visitor-encounter";
 const PUBLIC_VISITOR_ENCOUNTER_ROUTE = "/internal/public-visitor-encounter";
+const PUBLIC_VISITOR_INTERRUPT_ROUTE = "/internal/public-visitor-encounter/interrupt";
 const PERSON_CONTACT_CAPABILITY_ROUTE = "/internal/contact/person-capability";
 const PERSON_CONTACT_REVOKE_ROUTE = "/internal/contact/person-capability/revoke";
 const PERSON_CONTACT_INBOX_ROUTE = "/internal/contact/inbox";
@@ -714,6 +715,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       && url.pathname !== INSIDE_FIBRE_MEETING_ENTRY_ROUTE
       && url.pathname !== INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE
       && url.pathname !== PUBLIC_VISITOR_ENCOUNTER_ROUTE
+      && url.pathname !== PUBLIC_VISITOR_INTERRUPT_ROUTE
       && url.pathname !== PERSON_CONTACT_CAPABILITY_ROUTE
       && url.pathname !== PERSON_CONTACT_REVOKE_ROUTE
       && url.pathname !== PERSON_CONTACT_INBOX_ROUTE
@@ -741,6 +743,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
                   || url.pathname === INSIDE_FIBRE_VISITOR_ENCOUNTER_ROUTE
                   ? this.insideFibreMeetingApiForRequest().fetch(request)
                   : url.pathname === PUBLIC_VISITOR_ENCOUNTER_ROUTE
+                  || url.pathname === PUBLIC_VISITOR_INTERRUPT_ROUTE
                     ? this.publicVisitorEncounterApiForRequest().fetch(request)
                     : url.pathname === PERSON_CONTACT_CAPABILITY_ROUTE
                       || url.pathname === PERSON_CONTACT_REVOKE_ROUTE
