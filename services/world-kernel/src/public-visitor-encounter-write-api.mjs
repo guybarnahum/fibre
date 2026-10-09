@@ -43,13 +43,32 @@ export function createPublicVisitorEncounterWriteApi({
   }
   if (typeof now !== "function") throw new TypeError("public visitor encounter API requires now()");
 
+  const active=new Map();
+  const encode=new TextEncoder();
+  const liveEvent=(type,value)=>encode.encode(`event: ${type}\ndata: ${JSON.stringify(value)}\n\n`);
+
   return Object.freeze({
     async fetch(request) {
       const url = new URL(request.url);
-      if (url.pathname !== "/internal/public-visitor-encounter") return null;
-      if (request.method !== "POST") return json({ error:"method_not_allowed" }, 405);
-      if (!constantTimeEqual(request.headers.get("x-fibre-private-token"), privateToken)) {
-        return json({ error:"private_token_required" }, 403);
+      const interrupt=url.pathname==="/internal/public-visitor-encounter/interrupt";
+      if(url.pathname!=="/internal/public-visitor-encounter"&&!interrupt)return null;
+      if(request.method!=="POST")return json({error:"method_not_allowed"},405);
+      if(!constantTimeEqual(request.headers.get("x-fibre-private-token"),privateToken)){
+        return json({error:"private_token_required"},403);
+      }
+      if(interrupt){
+        let input;
+        try{
+          input=await request.json();
+          assertPlainObject("public encounter interrupt",input);
+          assertExactKeys("public encounter interrupt",input,["requestId","threadId"]);
+          assertId("public encounter interrupt requestId",input.requestId);
+          assertId("public encounter interrupt threadId",input.threadId);
+        }catch(error){return json({error:"invalid_public_encounter",detail:error.message},400);}
+        const running=active.get(input.requestId);
+        if(running===undefined||running.threadId!==input.threadId)return json({interrupted:false});
+        running.abort.abort("visitor interrupted");
+        return json({interrupted:true});
       }
 
       let body;
@@ -71,16 +90,52 @@ export function createPublicVisitorEncounterWriteApi({
         return json({ error:"invalid_public_encounter", detail:error.message }, 400);
       }
 
-      const result = await encounterService.encounter({
+      const input={
         requestId:body.requestId,
         threadId:body.threadId,
         expectedSituationId:body.expectedSituationId,
         utterance:body.utterance,
-        ...(body.priorEncounterStoryId === undefined
-          ? {}
-          : { priorEncounterStoryId:body.priorEncounterStoryId }),
+        ...(body.priorEncounterStoryId===undefined?{}:{priorEncounterStoryId:body.priorEncounterStoryId}),
         at:now(),
-      });
+      };
+      if(request.headers.get("accept")?.includes("text/event-stream")){
+        if(active.has(body.requestId))return json({error:"encounter_already_live"},409);
+        const abort=new AbortController();
+        let cancelled=false;
+        const stream=new ReadableStream({
+          start(controller){
+            active.set(body.requestId,{threadId:body.threadId,abort});
+            void encounterService.encounter(input,{
+              signal:abort.signal,
+              onLiveEvent(event){
+                if(cancelled)return;
+                if(event.type==="speech_delta"||event.type==="speech_end"
+                  ||event.type==="scene_changed"||event.type==="participant_action"){
+                  controller.enqueue(liveEvent(event.type,event));
+                }
+              },
+            }).then((result)=>{
+              if(cancelled)return;
+              controller.enqueue(liveEvent("result",result));
+              controller.close();
+            }).catch((error)=>{
+              if(cancelled)return;
+              controller.enqueue(liveEvent("error",{message:error?.message??"encounter failed"}));
+              controller.close();
+            }).finally(()=>{
+              if(active.get(body.requestId)?.abort===abort)active.delete(body.requestId);
+            });
+          },
+          cancel(){
+            cancelled=true;
+            abort.abort("visitor disconnected");
+          },
+        });
+        return new Response(stream,{
+          headers:{"content-type":"text/event-stream; charset=utf-8","cache-control":"no-store"},
+        });
+      }
+      const result=await encounterService.encounter(input);
       if (result.outcome === "scene_changed") {
         return json({
           error:"encounter_scene_changed",
