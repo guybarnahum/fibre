@@ -104,6 +104,7 @@ export function createPublicVisitorEncounterService({
   requireMethod(worldReader, "public visitor worldReader", "getThread");
   requireMethod(livedNow, "public visitor livedNow", "validateDisplayedSituation");
   requireMethod(livedNowStore, "public visitor livedNowStore", "latestPlan");
+  requireMethod(livedNowStore, "public visitor livedNowStore", "getSituation");
   requireMethod(identityStore, "public visitor identityStore", "getCurrentIdentityView");
   requireMethod(situatedLifeStore, "public visitor situatedLifeStore", "listCurrentLifeRelations");
   requireMethod(semanticStateStore, "public visitor semanticStateStore", "listCurrentState");
@@ -111,6 +112,8 @@ export function createPublicVisitorEncounterService({
   requireMethod(experienceStore, "public visitor experienceStore", "recordEncounterStory");
   requireMethod(experienceStore, "public visitor experienceStore", "getEncounterStory");
   requireMethod(experienceStore, "public visitor experienceStore", "getPublicEncounterReceipt");
+  requireMethod(experienceStore, "public visitor experienceStore", "getPublicEncounterAdmission");
+  requireMethod(experienceStore, "public visitor experienceStore", "getThreadEncounterAttention");
   requireMethod(experienceStore, "public visitor experienceStore", "recordPublicEncounterReceipt");
   requireMethod(experienceStore, "public visitor experienceStore", "recordThreadEncounterAttention");
   requireMethod(experienceStore, "public visitor experienceStore", "queueThreadExperienceConsolidation");
@@ -154,6 +157,61 @@ export function createPublicVisitorEncounterService({
         });
         return frozen;
       };
+
+
+      const finishAccepted=async(encounterStory,priorContext=null)=>{
+        const situationId=encounterStory.threadPresence.find((item)=>item.threadId===input.threadId)?.situationId;
+        if(!situationId)throw new TypeError("admitted encounter has no participating Thread");
+        let attention=experienceStore.getThreadEncounterAttention(input.threadId,encounterStory.encounterId);
+        if(attention===null){
+          const originalSituation=priorContext?.situation ?? livedNowStore.getSituation(situationId);
+          const context=priorContext ?? livedContext({
+            threadId:input.threadId,
+            situation:originalSituation,
+            worldReader,
+            semanticStateStore,
+            memoryStore,
+          });
+          const experienceText=await formThreadEncounterExperience({
+            thread:context.thread,
+            situation:context.situation,
+            encounterStory,
+            semanticStates:context.semanticStates,
+            memories:context.memories,
+            modelAdapter,
+          });
+          attention=experienceStore.recordThreadEncounterAttention({
+            threadId:input.threadId,
+            encounterRef:encounterStory.encounterId,
+            situationId,
+            occurredAt:encounterStory.occurredAt,
+            outcome:"noticed",
+            experienceText,
+          });
+        }
+        await queueThreadExperienceConsolidation({
+          experienceStore,
+          experienceRecord:attention.experience,
+          queuedAt:encounterStory.occurredAt,
+          onQueued:onExperienceQueued,
+        });
+        const responseText=encounterStory.story.beats.findLast((beat)=>beat.actorThreadId===input.threadId)?.text;
+        if(!responseText)throw new TypeError("admitted encounter is missing outward expression");
+        return complete({
+          outcome:"accepted",
+          situationId,
+          responseText,
+          encounterStoryId:encounterStory.encounterId,
+        });
+      };
+
+      const admission=experienceStore.getPublicEncounterAdmission(input.requestId);
+      if(admission!==null){
+        if(admission.threadId!==input.threadId||admission.requestDigest!==requestDigest){
+          throw new TypeError(`public encounter request ${input.requestId} conflicts with its existing admission`);
+        }
+        return finishAccepted(experienceStore.getEncounterStory(admission.encounterRef));
+      }
 
       const validation = await livedNow.validateDisplayedSituation({
         threadId:input.threadId,
@@ -262,37 +320,13 @@ export function createPublicVisitorEncounterService({
           sourceReferences,
           depictedThreadRefs:[input.threadId],
         }),
-      });
-
-      const experienceText = await formThreadEncounterExperience({
-        thread:context.thread,
-        situation:context.situation,
-        encounterStory,
-        semanticStates:context.semanticStates,
-        memories:context.memories,
-        modelAdapter,
-      });
-      const attention = experienceStore.recordThreadEncounterAttention({
+      },{publicRequest:{
+        requestId:input.requestId,
         threadId:input.threadId,
-        encounterRef:encounterStory.encounterId,
-        situationId:context.situation.situationId,
-        occurredAt:input.at,
-        outcome:"noticed",
-        experienceText,
-      });
-      await queueThreadExperienceConsolidation({
-        experienceStore,
-        experienceRecord:attention.experience,
-        queuedAt:input.at,
-        onQueued:onExperienceQueued,
-      });
+        requestDigest,
+      }});
 
-      return complete({
-        outcome:"accepted",
-        situationId:context.situation.situationId,
-        responseText:response.responseText,
-        encounterStoryId:encounterStory.encounterId,
-      });
+      return finishAccepted(encounterStory,context);
     },
   });
 }
