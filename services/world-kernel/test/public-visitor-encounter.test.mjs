@@ -56,11 +56,12 @@ const plan={
   stops:[],
 };
 
-function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false, failFirstExperience=false, advanceDuring=null }={}){
+function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false, failFirstExperience=false, advanceDuring=null,failAfterFirstSentence=false }={}){
   let present=structuredClone(actualSituation);
   const stories=[];
   const receipts=new Map();
   const admissions=new Map();
+  const checkpoints=new Map();
   const attentions=new Map();
   const modelCalls=[];
   const streamCalls=[];
@@ -68,22 +69,38 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
   let wakeAttempts=0;
   let experienceAttempts=0;
   const experienceStore={
-    recordEncounterStory(candidate,{publicRequest=null}={}){
+    recordEncounterStory(candidate,{publicRequest=null,publicCheckpoint=null}={}){
       const prior=publicRequest===null?null:admissions.get(publicRequest.requestId)??null;
       if(prior!==null){
         assert.equal(prior.requestDigest,publicRequest.requestDigest);
         assert.equal(prior.threadId,publicRequest.threadId);
         return this.getEncounterStory(prior.encounterRef);
       }
+      if(publicCheckpoint?.position>0){
+        const entries=checkpoints.get(publicCheckpoint.requestId)??[];
+        const previous=entries.at(-1);
+        assert.equal(publicCheckpoint.position,entries.length,
+          "speech checkpoint skipped its causal predecessor");
+        assert.equal(candidate.story.continuationOfEncounterRef,previous,
+          "speech checkpoint lost its outward history");
+      }
       const record={ encounterId:`story_n6_public_${stories.length+1}`,...structuredClone(candidate) };
       stories.push(structuredClone(record));
       if(publicRequest!==null){
         admissions.set(publicRequest.requestId,{...publicRequest,encounterRef:record.encounterId});
       }
+      if(publicCheckpoint!==null){
+        const entries=checkpoints.get(publicCheckpoint.requestId)??[];
+        entries.push(record.encounterId);
+        checkpoints.set(publicCheckpoint.requestId,entries);
+      }
       return record;
     },
     getPublicEncounterAdmission(requestId){
       return structuredClone(admissions.get(requestId)??null);
+    },
+    listPublicEncounterCheckpointStories(requestId){
+      return (checkpoints.get(requestId)??[]).map((id)=>this.getEncounterStory(id));
     },
     getEncounterStory(encounterId,{ required=true }={}){
       const record=stories.find((item)=>item.encounterId===encounterId)??null;
@@ -150,9 +167,14 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
     configuration:{transport:"fixture"},
     async *streamExpression(call){
       streamCalls.push(structuredClone(call.input));
-      for(const text of ["I was thinking about this.", " But then I changed my mind."]){
+      for(const [index,text] of ["I was thinking about this.", " But then I changed my mind."].entries()){
         if(call.signal.aborted)return;
         yield {type:"expression_delta",text};
+        if(index===0&&failAfterFirstSentence){
+          assert.equal(stories.length,1,
+            "spoken sentence was not durable before the next model delta");
+          throw new Error("stream interrupted after sentence");
+        }
       }
       if(!call.signal.aborted)yield {type:"expression_complete",provenance:null};
     },
@@ -452,8 +474,8 @@ test("a broken live listener cannot make unexposed generated speech part of Worl
   assert.equal(f.stories.length,1,"listener failure erased already-spoken history");
   assert.equal(f.stories[0].story.beats[1].text,delivered,
     "unexposed model suffix entered World history");
-  assert.equal(f.stories[0].story.beats[1].completion,"interrupted",
-    "failed delivery was recorded as a complete utterance");
+  assert.equal(f.stories[0].story.beats[1].completion,undefined,
+    "completed sentence was rewritten as interrupted after a later disconnect");
   assert.equal(f.queued.length,0,"failed live request prematurely formed a personal Experience");
 
   const recovered=await f.service.encounter({...input,at:"2026-10-06T02:46:00.000Z"});
@@ -464,6 +486,43 @@ test("a broken live listener cannot make unexposed generated speech part of Worl
   assert.equal(f.stories.length,1,"recovery duplicated the outward event");
   assert.equal(f.queued.length,1,"recovery failed to form one personal Experience");
   assert.equal(f.streamCalls.length,1,"recovery re-generated already-exposed speech");
+});
+
+test("live speech commits linked sentence checkpoints before later provider output",async()=>{
+  const f=fixture({decision:"accept"});
+  const input=request("sit_live_sentences",{requestId:"req_live_sentences"});
+  const result=await f.service.encounter(input,{onLiveEvent(){}});
+  assert.equal(result.outcome,"accepted");
+  assert.equal(f.stories.length,2,"separate exposed sentences were not admitted");
+  assert.equal(f.stories[1].story.continuationOfEncounterRef,f.stories[0].encounterId,
+    "second sentence lost its first admitted predecessor");
+  assert.equal(f.stories[1].story.beats.length,1,
+    "second checkpoint repeated already-admitted visitor speech");
+  assert.equal(result.responseText,"I was thinking about this. But then I changed my mind.",
+    "response did not preserve the linked spoken progression");
+  assert.equal(result.encounterStoryId,f.stories[1].encounterId,
+    "continuation does not point to the last admitted speech");
+  assert.equal(f.queued.length,1,"one speech episode formed multiple personal Experiences");
+});
+
+test("an unfinished stream retains its stable World sentence after restart-style retry",async()=>{
+  const f=fixture({decision:"accept",failAfterFirstSentence:true});
+  const input=request("sit_live_checkpoint",{requestId:"req_live_checkpoint"});
+  await assert.rejects(f.service.encounter(input,{onLiveEvent(){}}),
+    /stream interrupted after sentence/);
+  assert.equal(f.stories.length,1,"an unfinished live utterance lost admitted speech");
+  assert.equal(f.queued.length,0,"unfinished live encounter prematurely formed Experience");
+
+  const recovered=await f.service.encounter({
+    ...input,at:"2026-10-06T02:46:00.000Z",
+  });
+  assert.equal(recovered.outcome,"accepted","durable speech was not recovered");
+  assert.equal(recovered.completion,"interrupted","lost stream was treated as finished speech");
+  assert.equal(recovered.responseText,"I was thinking about this.",
+    "recovery invented missing speech after the checkpoint");
+  assert.equal(f.stories.length,1,"recovery repeated a committed World event");
+  assert.equal(f.queued.length,1,"recovery failed to form one personal Experience");
+  assert.equal(f.streamCalls.length,1,"recovery repeated abandoned live inference");
 });
 
 test("N6.4 completed retry replays one admitted outcome without repeating private consequence",async()=>{
