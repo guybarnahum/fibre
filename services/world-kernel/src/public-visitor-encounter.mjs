@@ -340,6 +340,10 @@ export function createPublicVisitorEncounterService({
         const live=createLiveEncounter({participantIds:[visitorId,input.threadId]});
         let admitted=null;
         let exposedText="";
+        const expose=(event)=>{
+          const acknowledgment=onLiveEvent(event);
+          if(acknowledgment?.then)throw new TypeError("live observer must acknowledge synchronously");
+        };
         const unsubscribe=live.subscribe(visitorId,(event)=>{
           if(event.type==="speech_end"&&event.actorId===input.threadId){
             if(exposedText.trim()!==""){
@@ -348,10 +352,10 @@ export function createPublicVisitorEncounterService({
                 completion:exposedText===event.text?event.completion:"interrupted",
               },{occurredAt:now()});
             }
-            onLiveEvent(event);
+            expose(event);
             return;
           }
-          onLiveEvent(event);
+          expose(event);
           if(event.type==="speech_delta"&&event.actorId===input.threadId){
             exposedText+=event.text;
           }
