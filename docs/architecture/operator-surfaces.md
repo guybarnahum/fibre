@@ -1,7 +1,7 @@
 ---
 id: fibre-operator-surfaces
 status: accepted
-last-reviewed: 2026-09-30
+last-reviewed: 2026-10-09
 canonical: true
 ---
 
@@ -121,6 +121,16 @@ Admin presents approved refinements through **Calibration adoption** as `Approve
 A compound UI action such as **Fix & Recover** may sequence those operations but does not merge their authority. A Thread with unresolved `migration_required`, integrity conflict or operator-decision state remains quarantined rather than being retried merely because an operator opened the page.
 
 Dead-letter reconciliation state and its last failure should be visible in Thread Observatory and the population view. `dead_letter` is operational quarantine, not a Thread lifecycle or personhood state.
+
+### Per-Thread life and history in Admin
+
+A person is the entry point for inspection. On **Threads → [Thread]**, the existing World-backed Thread Observatory groups one person's **World events**, **Encounter episodes**, **Journal**, **Memories**, consolidation, social consequences and current identity. Faith Achieng Odhiambo is a normal Thread, not a special-cased UI or data model.
+
+The read-only World-events section derives enacted scene changes and admitted objective `occurrence` beats from the existing single `/api/threads/:id/observatory` read. Show Thread attention only when recorded; an objective occurrence can be `not_noticed`, must not automatically become Experience, and must not silently create Journal or autobiographical Memory. The existing Encounter Episode view separately resolves exact outward speech, historical scene and linked personal Experience and consequences. Journal authority and the person's presented private book remain distinct; a new public encounter does **not** require a diary entry. Memories remain selective autobiographical authority, not a transcript dump.
+
+Simple in-page World events / Encounters / Journal / Memories links keep those surfaces discoverable. **Copy Thread Observatory** includes a bounded World scene/occurrence view, outward Encounter Story beats, World journal-entry records, the existing journal projection and current Memories; copying is an explicit operator choice. No new World read API, persistence, polling, inference, timeline authority or requirement to journal. A public decline/defer without an Encounter Story may remain absent from this historical projection; use request receipts/Activity to inspect it without pretending the visitor's speech became an accepted historical encounter.
+
+**2026-10-09 source checkpoint:** this additive projection is committed on `main`, awaiting Guy's focused/full CLI validation and staging-only Admin deployment. The latest public Viewer staging observation involved a refusal and disappearance of an ephemeral transcript, not a proven World-history deletion. See [current priorities](../state/current-priorities.md) and the [Meet / Encounter audit](../validation/meet-encounter-run-path-audit.md).
 
 ## Public status
 
