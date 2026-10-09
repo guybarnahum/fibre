@@ -434,6 +434,38 @@ test("an interrupted N7 public reply admits only spoken text and a retry cannot 
   assert.equal(f.streamCalls.length,1,"retry repeated already-exposed expression");
 });
 
+test("a broken live listener cannot make unexposed generated speech part of World history",async()=>{
+  const f=fixture({decision:"accept"});
+  const input=request("sit_live_disconnected",{
+    requestId:"req_live_listener_interrupted",
+  });
+  let delivered="";
+  let liveDeltas=0;
+  await assert.rejects(f.service.encounter(input,{
+    onLiveEvent(event){
+      if(event.type!=="speech_delta"||event.actorId!==THREAD_ID)return;
+      if(++liveDeltas===2)throw new Error("listener disconnected");
+      delivered+=event.text;
+    },
+  }),/listener disconnected/);
+
+  assert.equal(f.stories.length,1,"listener failure erased already-spoken history");
+  assert.equal(f.stories[0].story.beats[1].text,delivered,
+    "unexposed model suffix entered World history");
+  assert.equal(f.stories[0].story.beats[1].completion,"interrupted",
+    "failed delivery was recorded as a complete utterance");
+  assert.equal(f.queued.length,0,"failed live request prematurely formed a personal Experience");
+
+  const recovered=await f.service.encounter({...input,at:"2026-10-06T02:46:00.000Z"});
+  assert.equal(recovered.responseText,delivered,
+    "recovery invented a new outward reply");
+  assert.equal(recovered.completion,"interrupted",
+    "recovery erased the audible interruption");
+  assert.equal(f.stories.length,1,"recovery duplicated the outward event");
+  assert.equal(f.queued.length,1,"recovery failed to form one personal Experience");
+  assert.equal(f.streamCalls.length,1,"recovery re-generated already-exposed speech");
+});
+
 test("N6.4 completed retry replays one admitted outcome without repeating private consequence",async()=>{
   const actual=situation("sit_n6_retry_actual");
   const f=fixture({ decision:"accept",actualSituation:actual });
