@@ -56,7 +56,7 @@ const plan={
   stops:[],
 };
 
-function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false, failFirstExperience=false, advanceDuring=null,failAfterFirstSentence=false }={}){
+function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false, failFirstExperience=false, advanceDuring=null,failAfterFirstSentence=false,batchLiveSpeech=false }={}){
   let present=structuredClone(actualSituation);
   const stories=[];
   const receipts=new Map();
@@ -167,7 +167,16 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
     configuration:{transport:"fixture"},
     async *streamExpression(call){
       streamCalls.push(structuredClone(call.input));
-      for(const [index,text] of ["I was thinking about this.", " But then I changed my mind."].entries()){
+      if(advanceDuring==="live_speech"){
+        present=situation("sit_world_departed","Heading home after leaving the library.");
+      }
+      if(advanceDuring==="same_scene_live_speech"){
+        present=situation("sit_world_same_scene");
+      }
+      const chunks=batchLiveSpeech
+        ?["I was thinking about this. But then I changed my mind."]
+        :["I was thinking about this.", " But then I changed my mind."];
+      for(const [index,text] of chunks.entries()){
         if(call.signal.aborted)return;
         yield {type:"expression_delta",text};
         if(index===0&&failAfterFirstSentence){
@@ -492,6 +501,54 @@ test("a broken live listener cannot make unexposed generated speech part of Worl
   assert.equal(f.stories.length,1,"recovery duplicated the outward event");
   assert.equal(f.queued.length,1,"recovery failed to form one personal Experience");
   assert.equal(f.streamCalls.length,1,"recovery re-generated already-exposed speech");
+});
+
+test("World movement interrupts live speech without discarding the spoken sentence or leaking the unseen suffix",async()=>{
+  const f=fixture({decision:"accept",advanceDuring:"live_speech",batchLiveSpeech:true});
+  const events=[];
+  const input=request("sit_scene_live",{requestId:"req_scene_live"});
+  const result=await f.service.encounter(input,{
+    onLiveEvent(event){events.push(event);},
+  });
+
+  assert.equal(result.outcome,"accepted","World movement erased real spoken history");
+  assert.equal(result.completion,"interrupted","Thread kept speaking after leaving the scene");
+  assert.equal(result.currentSituationId,"sit_world_departed",
+    "live result lost the real World movement");
+  assert.equal(result.responseText,"I was thinking about this.",
+    "the abandoned model suffix became outward speech");
+  assert.deepEqual(f.stories.map((story)=>story.story.beats.at(-1).text),
+    ["I was thinking about this."],
+    "the material scene change invented or lost World history");
+  assert.equal(f.stories[0].story.beats.at(-1).completion,undefined,
+    "fully spoken sentence was rewritten after a later interruption");
+  assert.equal(f.queued.length,1,"real interrupted speech lost its one personal Experience");
+  assert.equal(events.some((event)=>
+    event.type==="scene_changed"
+    &&event.currentSituation.situationId==="sit_world_departed"),true,
+    "moving World did not interrupt the active live encounter");
+  assert.equal(events.some((event)=>
+    event.type==="speech_delta"
+    &&event.text.includes("changed my mind")),false,
+    "live encounter exposed a suffix after World interrupted speech");
+
+  const replay=await f.service.encounter({...input,at:"2026-10-06T02:46:00.000Z"});
+  assert.deepEqual(replay,result,"scene-interrupted encounter changed on retry");
+  assert.equal(f.stories.length,1,"scene interruption duplicated objective history");
+  assert.equal(f.streamCalls.length,1,"retry regenerated a scene-interrupted utterance");
+});
+
+test("compatible World witness change does not end live participation",async()=>{
+  const f=fixture({decision:"accept",advanceDuring:"same_scene_live_speech",batchLiveSpeech:true});
+  const result=await f.service.encounter(
+    request("sit_same_scene_live",{requestId:"req_same_scene_live"}),
+    {onLiveEvent(){}},
+  );
+  assert.equal(result.outcome,"accepted","compatible new World witness ended speech");
+  assert.equal(result.completion,undefined,"same lived scene was treated as an interruption");
+  assert.equal(result.responseText,"I was thinking about this. But then I changed my mind.",
+    "same-scene conversation lost its spoken continuation");
+  assert.equal(f.stories.length,2,"stable speech checkpoints were not preserved");
 });
 
 test("live speech commits linked sentence checkpoints before later provider output",async()=>{
