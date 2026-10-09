@@ -368,7 +368,7 @@ async function worldLiveEncounter(ctx,{threadId,situationId,utterance,priorEncou
 export function advanceThreadMeetState(state,result){
   if(result.outcome==="accepted"){
     return Object.freeze({
-      situationId:result.situationId,
+      situationId:result.currentSituationId??result.situationId,
       priorEncounterStoryId:result.encounterStoryId,
       terminal:typeof result.currentSituationId==="string",
     });
