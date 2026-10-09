@@ -191,6 +191,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
       modelCalls.push(structuredClone(call));
       if(call.clientRequestId.startsWith("interior_")){
         if(advanceDuring==="participation")present=situation("sit_world_advanced","Heading to a different place.");
+        if(advanceDuring==="participation_compatible")present=situation("sit_same_life_new_witness");
         return {
           output:{
             result:{
@@ -536,6 +537,17 @@ test("World movement interrupts live speech without discarding the spoken senten
   assert.deepEqual(replay,result,"scene-interrupted encounter changed on retry");
   assert.equal(f.stories.length,1,"scene interruption duplicated objective history");
   assert.equal(f.streamCalls.length,1,"retry regenerated a scene-interrupted utterance");
+});
+
+test("a compatible situation reissue during private participation preserves the encounter",async()=>{
+  const f=fixture({decision:"accept",advanceDuring:"participation_compatible"});
+  const result=await f.service.encounter(
+    request("sit_private_scene_same",{requestId:"req_private_scene_same"}),
+  );
+  assert.equal(result.outcome,"accepted",
+    "a same-scene World witness cancelled voluntary participation");
+  assert.equal(f.stories.length,1,
+    "compatible present did not become one real encounter");
 });
 
 test("compatible World witness change does not end live participation",async()=>{
