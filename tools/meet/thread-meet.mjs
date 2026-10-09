@@ -383,6 +383,43 @@ export function advanceThreadMeetState(state,result){
   throw new TypeError(`unsupported meet outcome ${result.outcome}`);
 }
 
+export function createMeetInputReader({input,output}){
+  const interactive=Boolean(input.isTTY&&output.isTTY);
+  const terminal=createInterface({input,output,terminal:interactive});
+  if(interactive)return {terminal,next:()=>terminal.question("\nYou> ")};
+
+  const lines=[];
+  let waiting=null;
+  let closed=false;
+  terminal.on("line",(line)=>{
+    if(waiting!==null){
+      const resolve=waiting;
+      waiting=null;
+      resolve(line);
+    }else{
+      lines.push(line);
+    }
+  });
+  terminal.on("close",()=>{
+    closed=true;
+    if(waiting!==null){
+      waiting(null);
+      waiting=null;
+    }
+  });
+  return {
+    terminal,
+    async next(){
+      if(closed&&lines.length===0)return null;
+      const line=lines.length>0
+        ?lines.shift()
+        :await new Promise((resolve)=>{waiting=resolve;});
+      if(line!==null)output.write(`\nYou> ${line}\n`);
+      return line;
+    },
+  };
+}
+
 export async function meetThread({
   environment=process.env,
   argv=process.argv.slice(2),
@@ -414,10 +451,12 @@ export async function meetThread({
     +(live?" · Ctrl-C interrupts active Thread speech":"")+"\n",
   );
 
-  const terminal=createInterface({input,output,terminal:Boolean(output.isTTY)});
+  const {terminal,next}=createMeetInputReader({input,output});
   try{
     while(!state.terminal){
-      const utterance=(await terminal.question("\nYou> ")).trim();
+      const line=await next();
+      if(line===null)break;
+      const utterance=line.trim();
       if(utterance==="")continue;
       if(utterance==="/leave")break;
       if(utterance==="/present"){
