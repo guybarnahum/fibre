@@ -404,7 +404,7 @@ export class LivedExperienceStore {
     }catch(error){throw translateStorageError(error);}
   }
 
-  recordEncounterStory(candidate,{uniquePlaceOccurrenceRef=null,followupAfterMs=null,publicRequest=null}={}) {
+  recordEncounterStory(candidate,{uniquePlaceOccurrenceRef=null,followupAfterMs=null,publicRequest=null,publicCheckpoint=null}={}) {
     if(publicRequest!==null){
       assertId("public encounter requestId",publicRequest.requestId);
       assertId("public encounter threadId",publicRequest.threadId);
@@ -412,6 +412,24 @@ export class LivedExperienceStore {
       if(!publicRequest.requestDigest.startsWith("sha256:"))throw new TypeError("public encounter request digest is invalid");
       if(candidate.threadPresence?.length!==1||candidate.threadPresence[0].threadId!==publicRequest.threadId){
         throw new TypeError("public encounter admission must name its participating Thread");
+      }
+    }
+    if(publicCheckpoint!==null){
+      assertId("public checkpoint requestId",publicCheckpoint.requestId);
+      assertId("public checkpoint threadId",publicCheckpoint.threadId);
+      assertNonEmpty("public checkpoint requestDigest",publicCheckpoint.requestDigest);
+      if(!publicCheckpoint.requestDigest.startsWith("sha256:")
+        ||!Number.isSafeInteger(publicCheckpoint.position)
+        ||publicCheckpoint.position<0){
+        throw new TypeError("public encounter checkpoint identity is invalid");
+      }
+      if(candidate.threadPresence?.length!==1
+        ||candidate.threadPresence[0].threadId!==publicCheckpoint.threadId
+        ||(publicCheckpoint.position===0&&(
+          publicRequest?.requestId!==publicCheckpoint.requestId
+          ||publicRequest.requestDigest!==publicCheckpoint.requestDigest))
+        ||(publicCheckpoint.position>0&&publicRequest!==null)){
+        throw new TypeError("public checkpoint must continue its admitted request");
       }
     }
     assertIsoTimestamp("encounter story.occurredAt", candidate.occurredAt);
@@ -462,12 +480,44 @@ export class LivedExperienceStore {
             return this.getEncounterStory(previous.encounterRef);
           }
         }
+        if(publicCheckpoint!==null&&publicCheckpoint.position>0){
+          const admission=this.getPublicEncounterAdmission(publicCheckpoint.requestId);
+          if(admission===null
+            ||admission.threadId!==publicCheckpoint.threadId
+            ||admission.requestDigest!==publicCheckpoint.requestDigest){
+            throw new TypeError("public checkpoint has no matching admitted request");
+          }
+          const latest=this.#database.prepare(`
+            SELECT position,encounter_ref FROM public_encounter_checkpoints
+            WHERE request_id=? ORDER BY position DESC LIMIT 1
+          `).get(publicCheckpoint.requestId);
+          if(latest===undefined)throw new TypeError("public checkpoint lost its first Story");
+          if(latest.position>=publicCheckpoint.position){
+            const saved=this.#database.prepare(`
+              SELECT encounter_ref FROM public_encounter_checkpoints
+              WHERE request_id=? AND position=?
+            `).get(publicCheckpoint.requestId,publicCheckpoint.position);
+            if(saved===undefined)throw new TypeError("public checkpoints are not contiguous");
+            return this.getEncounterStory(saved.encounter_ref);
+          }
+          if(latest.position!==publicCheckpoint.position-1
+            ||story.continuationOfEncounterRef!==latest.encounter_ref){
+            throw new TypeError("public checkpoint must continue the last admitted Story");
+          }
+        }
         const admitRequest=()=>{
           if(publicRequest===null)return;
           this.#database.prepare(`
             INSERT INTO public_encounter_admissions(request_id,thread_id,request_digest,encounter_ref)
             VALUES(?,?,?,?)
           `).run(publicRequest.requestId,publicRequest.threadId,publicRequest.requestDigest,encounterId);
+        };
+        const admitCheckpoint=()=>{
+          if(publicCheckpoint===null)return;
+          this.#database.prepare(`
+            INSERT INTO public_encounter_checkpoints(request_id,position,encounter_ref)
+            VALUES(?,?,?)
+          `).run(publicCheckpoint.requestId,publicCheckpoint.position,encounterId);
         };
         if(uniquePlaceOccurrenceRef!==null){
           const admitted=this.getSharedEnvironmentalStory({
@@ -505,6 +555,7 @@ export class LivedExperienceStore {
         if (prior !== undefined) {
           if (prior.record_digest !== recordDigest) throw new TypeError(`encounter story ${encounterId} conflicts`);
           admitRequest();
+          admitCheckpoint();
           return record;
         }
         this.#database.prepare(`
@@ -537,6 +588,7 @@ export class LivedExperienceStore {
           `).run(encounterId,uniquePlaceOccurrenceRef,dueAt);
         }
         admitRequest();
+        admitCheckpoint();
         return record;
       });
     } catch (error) { throw translateStorageError(error); }
@@ -586,6 +638,14 @@ export class LivedExperienceStore {
       requestDigest:row.request_digest,
       encounterRef:row.encounter_ref,
     };
+  }
+
+  listPublicEncounterCheckpointStories(requestId) {
+    assertId("public checkpoint requestId",requestId);
+    return this.#database.prepare(`
+      SELECT encounter_ref FROM public_encounter_checkpoints
+      WHERE request_id=? ORDER BY position
+    `).all(requestId).map((row)=>this.getEncounterStory(row.encounter_ref));
   }
 
   getPublicEncounterReceipt(requestId, { required = false } = {}) {
