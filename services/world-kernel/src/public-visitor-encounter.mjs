@@ -105,6 +105,7 @@ export function createPublicVisitorEncounterService({
   requireMethod(livedNow, "public visitor livedNow", "validateDisplayedSituation");
   requireMethod(livedNowStore, "public visitor livedNowStore", "latestPlan");
   requireMethod(livedNowStore, "public visitor livedNowStore", "getSituation");
+  requireMethod(livedNowStore, "public visitor livedNowStore", "getCurrentSituation");
   requireMethod(identityStore, "public visitor identityStore", "getCurrentIdentityView");
   requireMethod(situatedLifeStore, "public visitor situatedLifeStore", "listCurrentLifeRelations");
   requireMethod(semanticStateStore, "public visitor semanticStateStore", "listCurrentState");
@@ -205,6 +206,15 @@ export function createPublicVisitorEncounterService({
         });
       };
 
+      const sceneChangeSince=(situationId)=>{
+        const current=livedNowStore.getCurrentSituation(input.threadId);
+        if(current===null)throw new TypeError("public encounter lost its World situation");
+        return current.situationId===situationId?null:complete({
+          outcome:"scene_changed",
+          currentSituationId:current.situationId,
+        });
+      };
+
       const admission=experienceStore.getPublicEncounterAdmission(input.requestId);
       if(admission!==null){
         if(admission.threadId!==input.threadId||admission.requestDigest!==requestDigest){
@@ -265,6 +275,9 @@ export function createPublicVisitorEncounterService({
         modelAdapter,
       });
 
+      const afterStance=sceneChangeSince(context.situation.situationId);
+      if(afterStance!==null)return afterStance;
+
       if (stance.decision !== "accept") {
         return complete({
           outcome:stance.decision,
@@ -283,6 +296,9 @@ export function createPublicVisitorEncounterService({
         recentEncounterStories:immediateHistory,
         modelAdapter,
       });
+      const afterResponse=sceneChangeSince(context.situation.situationId);
+      if(afterResponse!==null)return afterResponse;
+
       const story = {
         storyVersion:"encounter-story-v0.1",
         ...(input.priorEncounterStoryId === undefined
