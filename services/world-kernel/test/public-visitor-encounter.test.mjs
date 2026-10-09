@@ -56,7 +56,7 @@ const plan={
   stops:[],
 };
 
-function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false }={}){
+function fixture({ applies=true, decision="decline", actualSituation=situation("sit_actual"), failFirstWake=false, failFirstExperience=false }={}){
   const stories=[];
   const receipts=new Map();
   const admissions=new Map();
@@ -64,6 +64,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
   const modelCalls=[];
   const queued=[];
   let wakeAttempts=0;
+  let experienceAttempts=0;
   const experienceStore={
     recordEncounterStory(candidate,{publicRequest=null}={}){
       const prior=publicRequest===null?null:admissions.get(publicRequest.requestId)??null;
@@ -181,6 +182,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
         };
       }
       if(call.clientRequestId.startsWith("encounter-experience_")){
+        if(failFirstExperience&&++experienceAttempts===1)throw new Error("simulated experience interruption");
         return {
           output:{ experienceText:"I shifted my attention from the page to the visitor." },
           provenance:{ provider:"fixture",modelId:"fixture-n6-public" },
@@ -398,6 +400,24 @@ test("an interrupted accepted encounter retry cannot repeat outward history or p
   assert.equal(f.stories.length,1,"retry duplicated an admitted encounter");
   assert.equal(f.queued.length,1,"retry duplicated personal experience");
   assert.equal(f.modelCalls.length,3,"retry repeated cognition after the encounter happened");
+});
+
+test("a retry after Story admission resumes the original encounter without repeating speech",async()=>{
+  const f=fixture({decision:"accept",failFirstExperience:true});
+  const input=request("sit_retry_during_experience",{
+    requestId:"req_n6_experience_recovery",
+  });
+  await assert.rejects(f.service.encounter(input),/simulated experience interruption/);
+  assert.equal(f.stories.length,1,"interruption lost the admitted Story");
+
+  const result=await f.service.encounter({...input,at:"2026-10-06T02:46:00.000Z"});
+  assert.equal(result.outcome,"accepted");
+  assert.equal(f.stories.length,1,"retry repeated the Thread's outward encounter");
+  assert.equal(f.queued.length,1,"recovery failed to queue the original lived Experience");
+  assert.equal(f.modelCalls.filter((call)=>call.clientRequestId.startsWith("interior_")).length,1,
+    "recovery repeated Thread consent");
+  assert.equal(f.modelCalls.filter((call)=>call.clientRequestId.startsWith("lived-encounter_")).length,1,
+    "recovery repeated outward expression");
 });
 
 test("N6.4 request identity cannot be reused for a different encounter",async()=>{
