@@ -38,6 +38,8 @@ export function createPublicCurrentLifeApi({
   isPublicThread,
   ensureCurrentPresent,
   submitEncounter,
+  streamEncounter = null,
+  interruptEncounter = null,
   viewerOrigin = null,
 } = {}) {
   if (typeof isPublicThread !== "function") throw new TypeError("public current-life API requires isPublicThread");
@@ -49,21 +51,23 @@ export function createPublicCurrentLifeApi({
       const url=new URL(request.url);
       const presentMatch=/^\/api\/threads\/([^/]+)\/present$/.exec(url.pathname);
       const encounterMatch=/^\/api\/threads\/([^/]+)\/encounter$/.exec(url.pathname);
-      if(presentMatch===null&&encounterMatch===null)return null;
+      const interruptMatch=/^\/api\/threads\/([^/]+)\/encounter\/([^/]+)\/interrupt$/.exec(url.pathname);
+      if(presentMatch===null&&encounterMatch===null&&interruptMatch===null)return null;
       const encounter=encounterMatch!==null;
-      const match=encounterMatch??presentMatch;
+      const interrupt=interruptMatch!==null;
+      const match=encounterMatch??interruptMatch??presentMatch;
 
       if(request.headers.get("Origin")!==null&&allowedOrigin(request,viewerOrigin)===false){
         return json({ error:"origin_not_allowed" },request,viewerOrigin,403);
       }
       if(request.method==="OPTIONS")return new Response(null,{ status:204,headers:cors(request,viewerOrigin) });
-      if(request.method!==(encounter?"POST":"GET")){
+      if(request.method!==((encounter||interrupt)?"POST":"GET")){
         return json({ error:"method_not_allowed" },request,viewerOrigin,405);
       }
       if(url.search!==""){
         return json({
-          error:encounter?"invalid_public_encounter":"invalid_public_visit",
-          detail:encounter
+          error:(encounter||interrupt)?"invalid_public_encounter":"invalid_public_visit",
+          detail:(encounter||interrupt)
             ?"public encounter does not accept caller-authored time or scene parameters"
             :"public visit does not accept caller-authored time or scene parameters",
         },request,viewerOrigin,400);
@@ -74,7 +78,7 @@ export function createPublicCurrentLifeApi({
         threadId=id("threadId",decodeURIComponent(match[1]));
       }catch(error){
         return json({
-          error:encounter?"invalid_public_encounter":"invalid_public_visit",
+          error:(encounter||interrupt)?"invalid_public_encounter":"invalid_public_visit",
           detail:error.message,
         },request,viewerOrigin,400);
       }
@@ -89,6 +93,20 @@ export function createPublicCurrentLifeApi({
         },request,viewerOrigin,503);
       }
       if(visible!==true)return json({ error:"not_found" },request,viewerOrigin,404);
+
+      if(interrupt){
+        let requestId;
+        try{requestId=id("requestId",decodeURIComponent(interruptMatch[2]));}
+        catch(error){return json({error:"invalid_public_encounter",detail:error.message},request,viewerOrigin,400);}
+        if(typeof interruptEncounter!=="function"){
+          return json({error:"public_encounter_unavailable"},request,viewerOrigin,503);
+        }
+        try{
+          return json(await interruptEncounter(threadId,requestId,request),request,viewerOrigin);
+        }catch(error){
+          return json({error:"public_encounter_unavailable",detail:safeDetail(error)},request,viewerOrigin,503);
+        }
+      }
 
       if(encounter){
         let body;
@@ -126,6 +144,25 @@ export function createPublicCurrentLifeApi({
           };
         }catch(error){
           return json({ error:"invalid_public_encounter",detail:error.message },request,viewerOrigin,400);
+        }
+
+        const live=request.headers.get("accept")?.includes("text/event-stream");
+        if(live){
+          if(typeof streamEncounter!=="function")return json({error:"public_encounter_unavailable"},request,viewerOrigin,503);
+          try{
+            const response=await streamEncounter(threadId,body,request);
+            if(!response.ok)return json({error:"public_encounter_unavailable"},request,viewerOrigin,response.status);
+            return new Response(response.body,{
+              status:response.status,
+              headers:{
+                ...cors(request,viewerOrigin),
+                "content-type":"text/event-stream; charset=utf-8",
+                "cache-control":"no-store",
+              },
+            });
+          }catch(error){
+            return json({error:"public_encounter_unavailable",detail:safeDetail(error)},request,viewerOrigin,503);
+          }
         }
 
         let result;
