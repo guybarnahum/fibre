@@ -113,7 +113,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
         occurredAt:candidate.occurredAt,
         outcome:candidate.outcome,
         experience:{
-          experienceId:"exp_n6_public",
+          experienceId:`exp_${candidate.encounterRef}`,
           threadId:candidate.threadId,
           encounterRef:candidate.encounterRef,
           situationId:candidate.situationId,
