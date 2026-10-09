@@ -8,18 +8,20 @@ import test from "node:test";
 import {
   advanceThreadMeetState,
   parseThreadMeetArgs,
+  readLiveEncounterEvents,
   selectMeetingThread,
 } from "./thread-meet.mjs";
 
 test("thread:meet allows explicit or random Thread selection with explicit environment", () => {
   assert.deepEqual(
     parseThreadMeetArgs(["--env","staging","--thread","thr_meet_001","-vv"]),
-    { targetEnvironment:"staging", threadId:"thr_meet_001", verbosity:2 },
+    { targetEnvironment:"staging", threadId:"thr_meet_001", verbosity:2, live:false },
   );
   assert.deepEqual(
     parseThreadMeetArgs(["--env","staging","-vvv"]),
-    { targetEnvironment:"staging", threadId:null, verbosity:3 },
+    { targetEnvironment:"staging", threadId:null, verbosity:3, live:false },
   );
+  assert.equal(parseThreadMeetArgs(["--env","staging","--live"]).live,true);
   assert.throws(
     () => parseThreadMeetArgs(["--thread","thr_meet_001"]),
     /--env <staging\|production> is required/,
@@ -61,4 +63,41 @@ test("thread:meet continuation follows admitted encounter history and stops when
     situationId:"sit_002",
   });
   assert.equal(declined.terminal,true,"declined participation kept a meeting session alive");
+});
+
+test("live CLI preserves actual audible speech and a single World admission across fragmented transport",async()=>{
+  const frames=[
+    'event: speech_delta\ndata: {"actorId":"thr_meet_001","text":"I can help."}\n\n',
+    'event: scene_changed\ndata: {"currentSituationId":"sit_elsewhere"}\n\n',
+    'event: speech_end\ndata: {"actorId":"thr_meet_001","completion":"interrupted"}\n\n',
+    'event: result\ndata: {"outcome":"accepted","situationId":"sit_001","currentSituationId":"sit_elsewhere","encounterStoryId":"story_spoken","responseText":"I can help.","completion":"interrupted"}\n\n',
+  ].join("");
+  const encoder=new TextEncoder();
+  const encoded=encoder.encode(frames);
+  const stream=new ReadableStream({
+    start(controller){
+      for(let i=0;i<encoded.length;i+=7)controller.enqueue(encoded.slice(i,i+7));
+      controller.close();
+    },
+  });
+  const observed=[];
+  const result=await readLiveEncounterEvents(stream,(type,event)=>{
+    observed.push({type,event});
+  });
+  assert.deepEqual(observed.filter(({type})=>type==="speech_delta")
+    .map(({event})=>event.text),["I can help."],
+    "live transport lost an actually audible sentence");
+  assert.equal(observed.some(({type})=>type==="scene_changed"),true,
+    "World movement disappeared from the live visitor's perception");
+  assert.equal(result.encounterStoryId,"story_spoken",
+    "live CLI discarded the objective Story admitted by World");
+  assert.equal(result.completion,"interrupted",
+    "live CLI treated a World-interrupted person as an ordinary completed turn");
+  assert.deepEqual(advanceThreadMeetState({
+    situationId:"sit_001",priorEncounterStoryId:null,terminal:false,
+  },result),{
+    situationId:"sit_elsewhere",
+    priorEncounterStoryId:"story_spoken",
+    terminal:true,
+  },"live CLI carried a departed scene into the next request");
 });
