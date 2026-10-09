@@ -339,16 +339,21 @@ export function createPublicVisitorEncounterService({
         const visitorId=`visitor_${input.requestId}`;
         const live=createLiveEncounter({participantIds:[visitorId,input.threadId]});
         let admitted=null;
+        let exposedText="";
         const unsubscribe=live.subscribe(visitorId,(event)=>{
+          if(event.type==="speech_end"&&event.actorId===input.threadId){
+            if(exposedText.trim()!==""){
+              admitted=admitSpeech({
+                responseText:exposedText,
+                completion:exposedText===event.text?event.completion:"interrupted",
+              },{occurredAt:now()});
+            }
+            onLiveEvent(event);
+            return;
+          }
           onLiveEvent(event);
-          if(event.type==="speech_end"
-            &&event.actorId===input.threadId
-            &&typeof event.text==="string"
-            &&event.text.trim()!==""){
-            admitted=admitSpeech({
-              responseText:event.text,
-              completion:event.completion,
-            },{occurredAt:now()});
+          if(event.type==="speech_delta"&&event.actorId===input.threadId){
+            exposedText+=event.text;
           }
         });
         try{
