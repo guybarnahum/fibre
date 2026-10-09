@@ -147,6 +147,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
   const modelAdapter={
     provider:"fixture",
     modelId:"fixture-n6-public",
+    configuration:{transport:"fixture"},
     async *streamExpression(call){
       streamCalls.push(structuredClone(call.input));
       for(const text of ["I was thinking about this.", " But then I changed my mind."]){
