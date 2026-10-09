@@ -225,10 +225,10 @@ export function createPublicVisitorEncounterService({
         });
       };
 
-      const sceneChangeSince=(situationId)=>{
+      const sceneChangeSince=(situation)=>{
         const current=livedNowStore.getCurrentSituation(input.threadId);
         if(current===null)throw new TypeError("public encounter lost its World situation");
-        return current.situationId===situationId?null:complete({
+        return sameEnactedScene(situation,current)?null:complete({
           outcome:"scene_changed",
           currentSituationId:current.situationId,
         });
@@ -298,7 +298,7 @@ export function createPublicVisitorEncounterService({
         modelAdapter,
       });
 
-      const afterStance=sceneChangeSince(context.situation.situationId);
+      const afterStance=sceneChangeSince(context.situation);
       if(afterStance!==null)return afterStance;
 
       if (stance.decision !== "accept") {
@@ -460,7 +460,7 @@ export function createPublicVisitorEncounterService({
         recentEncounterStories:immediateHistory,
         modelAdapter,
       });
-      const afterResponse=sceneChangeSince(context.situation.situationId);
+      const afterResponse=sceneChangeSince(context.situation);
       if(afterResponse!==null)return afterResponse;
 
       const encounterStory=admitSpeech(response);
