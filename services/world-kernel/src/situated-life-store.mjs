@@ -63,8 +63,8 @@ function visibilityRank(value) {
   return { private: 0, restricted: 1, public: 2 }[value];
 }
 
-function verifyHeadRows(database, kind, lineageId, threadId, decoded) {
-  const heads = database.prepare(`
+function verifyHeadRows(database, kind, lineageId, threadId, decoded, suppliedHeads = null) {
+  const heads = suppliedHeads ?? database.prepare(`
     SELECT revision,thread_id,head_digest,recorded_at
     FROM situated_life_lineage_heads
     WHERE ledger_kind=? AND lineage_id=?
@@ -146,6 +146,34 @@ function placeFromRow(row, previousDigest) {
     throw new IntegrityError(`place episode ${record.episodeId} digest mismatch`);
   }
   return { record, digest };
+}
+
+function decodeLifeRelationHistory(database, threadId, relationId, rows, heads = null) {
+  const decoded = [];
+  let previousDigest = null;
+  for (let index = 0; index < rows.length; index += 1) {
+    const item = relationFromRow(rows[index], previousDigest);
+    const current = item.record;
+    if (current.revision !== index + 1) {
+      throw new IntegrityError(`life relation ${relationId} has non-contiguous revisions`);
+    }
+    if (index > 0) {
+      const previous = decoded[index - 1].record;
+      if (current.supersedesRevision !== previous.revision) {
+        throw new IntegrityError(`life relation ${relationId} does not supersede its predecessor`);
+      }
+      if (Date.parse(current.recordedAt) < Date.parse(previous.recordedAt)) {
+        throw new IntegrityError(`life relation ${relationId} recordedAt moves backwards`);
+      }
+      if (!sameRelationSlot(previous, current)) {
+        throw new IntegrityError(`life relation ${relationId} changes its stable identity slot`);
+      }
+    }
+    decoded.push(item);
+    previousDigest = item.digest;
+  }
+  verifyHeadRows(database, "life_relation", relationId, threadId, decoded, heads);
+  return decoded.map((item) => item.record);
 }
 
 export class SituatedLifeStore {
@@ -231,31 +259,7 @@ export class SituatedLifeStore {
       }
       return [];
     }
-    const decoded = [];
-    let previousDigest = null;
-    for (let index = 0; index < rows.length; index += 1) {
-      const item = relationFromRow(rows[index], previousDigest);
-      const current = item.record;
-      if (current.revision !== index + 1) {
-        throw new IntegrityError(`life relation ${relationId} has non-contiguous revisions`);
-      }
-      if (index > 0) {
-        const previous = decoded[index - 1].record;
-        if (current.supersedesRevision !== previous.revision) {
-          throw new IntegrityError(`life relation ${relationId} does not supersede its predecessor`);
-        }
-        if (Date.parse(current.recordedAt) < Date.parse(previous.recordedAt)) {
-          throw new IntegrityError(`life relation ${relationId} recordedAt moves backwards`);
-        }
-        if (!sameRelationSlot(previous, current)) {
-          throw new IntegrityError(`life relation ${relationId} changes its stable identity slot`);
-        }
-      }
-      decoded.push(item);
-      previousDigest = item.digest;
-    }
-    verifyHeadRows(this.#database, "life_relation", relationId, threadId, decoded);
-    return decoded.map((item) => item.record);
+    return decodeLifeRelationHistory(this.#database, threadId, relationId, rows);
   }
 
   placeEpisodeHistory(threadId, episodeId, { required = true } = {}) {
@@ -301,12 +305,38 @@ export class SituatedLifeStore {
 
   listCurrentLifeRelations(threadId) {
     this.#requireThread(threadId);
-    const ids = this.#database.prepare(
-      "SELECT DISTINCT relation_id FROM life_relation_records WHERE thread_id=? ORDER BY relation_id",
-    ).all(threadId);
-    return ids
-      .map(({ relation_id: id }) => this.lifeRelationHistory(threadId, id).at(-1))
-      .filter(situatedLifeRecordIsCurrent);
+    // Read all revisions and integrity heads for this Thread in two bounded queries,
+    // not three queries for each relationship in a developed person's life.
+    const rows = this.#database.prepare(`
+      SELECT relation_id,revision,thread_id,related_party_id,relation_kind,
+        genetic_contribution_role,visibility,provenance,recorded_at,
+        supersedes_revision,record_json,record_digest
+      FROM life_relation_records
+      WHERE thread_id=? ORDER BY relation_id,revision
+    `).all(threadId);
+    if (rows.length === 0) return [];
+    const heads = this.#database.prepare(`
+      SELECT h.lineage_id,h.revision,h.thread_id,h.head_digest,h.recorded_at
+      FROM situated_life_lineage_heads h
+      JOIN (SELECT DISTINCT relation_id FROM life_relation_records WHERE thread_id=?) r
+        ON h.lineage_id=r.relation_id
+      WHERE h.ledger_kind='life_relation'
+      ORDER BY h.lineage_id,h.revision
+    `).all(threadId);
+
+    const historyById = new Map();
+    const headsById = new Map();
+    for (const row of rows) {
+      if (!historyById.has(row.relation_id)) historyById.set(row.relation_id, []);
+      historyById.get(row.relation_id).push(row);
+    }
+    for (const head of heads) {
+      if (!headsById.has(head.lineage_id)) headsById.set(head.lineage_id, []);
+      headsById.get(head.lineage_id).push(head);
+    }
+    return [...historyById].map(([id, history]) =>
+      decodeLifeRelationHistory(this.#database, threadId, id, history, headsById.get(id) ?? []).at(-1),
+    ).filter(situatedLifeRecordIsCurrent);
   }
 
   listCurrentPlaceEpisodes(threadId) {
