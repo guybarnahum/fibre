@@ -490,6 +490,16 @@ A real decline/defer is valid Thread-agency evidence. To close N6.6a, also demon
 
 **Direct World live CLI extension committed, operator validation pending:** the existing `thread:meet` accepts optional `--live`, uses `Accept: text/event-stream` on the same private World encounter endpoint, renders only observed outward `speech_delta` as speech arrives, and sends Ctrl-C to the existing request-scoped World interruption endpoint. Only returned World `result` advances the Story continuation. Material World movement closes the current entered scene. This is source, not a demonstrated staging SSE or browser feature. The plain JSON CLI path remains the default.
 
+**Repeatable visitor-side QA, pending local validation:** the same CLI also accepts newline-delimited utterances on stdin, with a queued reader that retains input while World is evaluating an earlier utterance. A line becomes one ordinary visitor encounter; a later queued line is not submitted until the previous result has been received and World has independently allowed continuation. The script may end with `/leave`, or its EOF cleanly ends the CLI interaction. No new model, durable session, dialogue planner, outcome forcing, or transport is introduced. A short stable fixture lives at `tools/meet/scenarios/ordinary-meeting.txt`:
+
+```bash
+cat tools/meet/scenarios/ordinary-meeting.txt |
+  npm run thread:meet -- --env staging --thread THREAD_ID --live -vv
+```
+
+Any process that writes complete visitor utterances as UTF-8 newline-separated lines can replace `cat`. That **unidirectional** pipe fixes the visitor's words and order; it cannot itself choose a response from the Thread's output. A *responsive* visitor process would need to launch the CLI as a subprocess, read its results, and write each next utterance to stdin deliberately. Such a bidirectional QA protocol is not added here. Replaying the same utterances does **not** replay identical `CurrentSituation`, Thread choices, generation, or Story IDs: every actual run enters the currently unfolding life and each new request uses its own idempotency key. Judge the stable invariants (natural accept/decline/withdrawal, actual spoken-prefix truth, causal Story admission, voluntary stopping), not literal response strings. A scripted encounter is a genuine World mutation and should not be run in a high-frequency loop.
+
+
 ### N6.6b — public endpoint proof
 
 After the CLI proof, demonstrate the same capability through the public client-neutral contract:
