@@ -238,6 +238,15 @@ test("Thread Observatory copy payload carries person state and current repair di
       world:{ thread:{ version:12, status:"active" } },
     },
     memories:[{ memoryId:"mem_1", rememberedContent:"Worked in Copenhagen." }],
+    livedNow:{currentSituation:{situationId:"sit_maya_now",establishedAt:"2026-10-09T16:00:00Z",activity:"Reading"}},
+    encounterStories:[{
+      encounterId:"story_maya_guest",occurredAt:"2026-10-09T16:01:00Z",
+      story:{beats:[
+        {kind:"utterance",actorThreadId:null,text:"Which town do you live in?"},
+        {kind:"utterance",actorThreadId:"thr_observatory_copy_1",text:"I would rather not say."},
+      ]},
+    }],
+    experienceJournalEntries:[{journalEntryId:"journal_maya",entryText:"I valued keeping this private."}],
     repair:{
       diagnosis:{
         health:"operator_decision_required",
@@ -247,12 +256,18 @@ test("Thread Observatory copy payload carries person state and current repair di
     },
   });
 
-  assert.equal(payload.contract, "fibre-thread-observatory-copy-v0.1");
+  assert.equal(payload.contract, "fibre-thread-observatory-copy-v0.2");
   assert.equal(payload.threadId, "thr_observatory_copy_1");
   assert.deepEqual(payload.identity.raisedAs.languages, ["Hebrew"]);
   assert.deepEqual(payload.identity.languages, ["Hebrew", "Danish"]);
   assert.equal(payload.identity.world.thread.version, 12);
   assert.equal(payload.memories[0].memoryId, "mem_1");
+  assert.equal(payload.worldEvents[0].situationId,"sit_maya_now",
+    "one person's World scene was lost from their copied Observatory");
+  assert.equal(payload.encounterStories[0].beats[1].text,"I would rather not say.",
+    "an admitted outward conversation disappeared from the copied Thread history");
+  assert.equal(payload.experienceJournalEntries[0].journalEntryId,"journal_maya",
+    "private journal authority was omitted from the person's copy");
   assert.equal(payload.repair.diagnosis.health, "operator_decision_required");
   assert.equal(payload.repair.reconciliation.state, "pending");
   assert.equal(payload.memoryError, null);
