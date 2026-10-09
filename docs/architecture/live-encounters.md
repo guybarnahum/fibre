@@ -156,6 +156,16 @@ Both may begin expression. Overlap is allowed.
 
 No mutex or `whoseTurn` property belongs in the canonical model.
 
+### Participation may end at the Thread's discretion
+
+An initial `accept` permits entry into this bounded encounter; it does not grant the visitor a claim on the Thread's future time, attention, or speech. A Thread may decline the next utterance, end its own answer early, change its stance while a response is underway, or withdraw from the encounter altogether without waiting for a World scene change or visitor interruption. It need not invent a reason, apology, farewell, or replacement answer. A short answer is not automatically withdrawal.
+
+A **Thread-originated withdrawal** must be distinguishable from a visitor interrupt, provider failure, or World scene movement. If speech was already exposed, preserve that exact prefix as outward Encounter Story; generated but unexposed continuation did not happen. Ending future participation does not erase the encounter or any real past obligations. The observer records what happened, not whether the withdrawal was convenient for the visitor.
+
+Likewise, public speech may be candid, evasive, or deceptive. The observer must not validate a Thread's honesty by demanding that the utterance equal World-owned facts. World truth, the Thread's private belief, and what the Thread chooses to tell an audience are distinct.
+
+**Implementation gap:** current N7 public World speech supports new `accept | decline | defer` appraisal on the next visitor request and interruption for visitor/World movement; a mid-expression, Thread-initiated change of consent has not yet been proven across the public stream. Keep it as a causal capability target, not a reason to introduce a durable conversation manager or force a model to finish.
+
 ## World interleaving
 
 A live encounter is subordinate to ordinary life:
