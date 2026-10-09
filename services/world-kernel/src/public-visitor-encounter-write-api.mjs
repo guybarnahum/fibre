@@ -120,7 +120,7 @@ export function createPublicVisitorEncounterWriteApi({
               controller.close();
             }).catch((error)=>{
               if(cancelled)return;
-              controller.enqueue(liveEvent("error",{message:error?.message??"encounter failed"}));
+              controller.enqueue(liveEvent("error",{error:"public_encounter_unavailable"}));
               controller.close();
             }).finally(()=>{
               if(active.get(body.requestId)?.abort===abort)active.delete(body.requestId);
