@@ -134,7 +134,7 @@ export function createLiveEncounter({
       return ()=>listeners.get(id).delete(listener);
     },
 
-    pushSpeechDelta({actorId,text}={}){
+    pushSpeechDelta({actorId,text,signal=null}={}){
       const actor=requireParticipant(actorId);
       if(typeof text!=="string"||text==="")throw new TypeError("speech delta text is required");
       const speaker=speakers.get(actor);
@@ -145,12 +145,15 @@ export function createLiveEncounter({
       for(const match of text.matchAll(SENTENCE_END)){
         const end=match.index+match[0].length;
         const segment=text.slice(offset,end);
+        if(signal?.aborted)return;
         if(segment!=="")append(actor,segment);
+        if(signal?.aborted)return;
         opportunity(actor,"sentence");
+        if(signal?.aborted)return;
         offset=end;
       }
       const tail=text.slice(offset);
-      if(tail!=="")append(actor,tail);
+      if(tail!==""&&!signal?.aborted)append(actor,tail);
     },
 
     pauseSpeech({actorId,durationMs}={}){
