@@ -3,7 +3,7 @@ import { humanAppearanceKey, parseCanonicalAppearancePresentation } from "./appe
 import { decorateActionButton, faIcon, setWaitingContent } from "./fa-icons.js";
 import { createFibreFinCard } from "./fibre-fin-card.js";
 import { threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
-import { buildEncounterEpisodes, buildSocialAnalytics } from "./thread-encounter-model.mjs";
+import { buildEncounterEpisodes, buildSocialAnalytics, buildThreadWorldEvents } from "./thread-encounter-model.mjs";
 import { openThreadActionDialog } from "./thread-action-dialog.js";
 
 function el(tag, className = null, text = null) {
@@ -818,6 +818,44 @@ function situationLabel(situation){
   return [activity,place].filter(Boolean).join(" · ")||"World scene";
 }
 
+function worldEventsSection({livedNow=null,encounterStories=[],encounterError=null}={}){
+  const events=buildThreadWorldEvents({livedNow,encounterStories});
+  const wrap=section("World events",events.length
+    ?`${events.length} enacted scene / objective occurrence records · newest first`
+    :null);
+  if(encounterError){
+    wrap.append(el("p","thread-empty-note","World history unavailable · "+encounterError));
+    return wrap;
+  }
+  if(events.length===0){
+    wrap.append(el("p","thread-empty-note","No enacted scene or World occurrence history is available."));
+    return wrap;
+  }
+  const list=el("div","thread-encounter-stream");
+  for(const event of events){
+    const row=el("article","thread-encounter-beat");
+    const label=event.kind==="scene"?"Enacted situation":"World occurrence";
+    row.append(el("strong",null,label+" · "+(prettyDate(event.occurredAt)??"time unknown")));
+    if(event.kind==="scene"){
+      row.append(el("p",null,situationLabel({
+        activity:event.activity,
+        location:event.location,
+      })));
+      row.append(el("small","mono",event.situationId));
+    }else{
+      row.append(el("p",null,event.text??"An occurrence was admitted without prose."));
+      row.append(el("small",null,
+        "Attention: "+(event.attention==="noticed"?"noticed"
+          :event.attention==="not_noticed"?"not noticed"
+            :"not established")+" · "+event.encounterId));
+    }
+    list.append(row);
+  }
+  wrap.append(list,el("p","thread-journal-note",
+    "Only enacted situations and admitted objective occurrences appear here. An event is not automatically noticed, journaled, or remembered. Outward conversation and its personal aftermath remain in Encounter episodes, Journal, and Memories."));
+  return wrap;
+}
+
 function episodeSpeaker(beat,threadId,name){
   if(beat.actorThreadId===null)return "Visitor";
   if(beat.actorThreadId===threadId)return name??"This Thread";
@@ -1325,6 +1363,7 @@ export async function fetchThreadObservatory(threadId) {
   let memories = [];
   let memoryError = null;
   let encounterStories = [];
+  let livedNow = null;
   let encounterError = null;
   let experienceJournalEntries = [];
   let socialInteractions = [];
@@ -1343,6 +1382,7 @@ export async function fetchThreadObservatory(threadId) {
     if (!observatory || observatory.threadId !== threadId) throw new Error("World Observatory returned mismatched Thread");
     memories = Array.isArray(observatory.memories) ? observatory.memories : [];
     encounterStories = Array.isArray(observatory.encounterStories) ? observatory.encounterStories : [];
+    livedNow = observatory.livedNow??null;
     socialInteractions = Array.isArray(observatory.socialInteractions) ? observatory.socialInteractions : [];
     experienceJournalEntries = Array.isArray(observatory.experienceJournalEntries)
       ? observatory.experienceJournalEntries
@@ -1384,6 +1424,7 @@ export async function fetchThreadObservatory(threadId) {
     memories:Object.freeze(memories),
     memoryError,
     encounterStories:Object.freeze(encounterStories),
+    livedNow,
     socialInteractions:Object.freeze(socialInteractions),
     encounterError,
     experienceJournalEntries:Object.freeze(experienceJournalEntries),
@@ -1408,6 +1449,7 @@ export function renderThreadObservatory({
   memories = [],
   memoryError = null,
   encounterStories = [],
+  livedNow = null,
   socialInteractions = [],
   encounterError = null,
   experienceJournalEntries = [],
@@ -1435,6 +1477,7 @@ export function renderThreadObservatory({
           .filter(Boolean)),
       ],
     ),
+    worldEventsSection({livedNow,encounterStories,encounterError}),
     encounterEpisodeSection({
       identity,
       threadId,
