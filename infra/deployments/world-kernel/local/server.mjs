@@ -27,6 +27,8 @@ import { createExperienceConsolidationWakeScheduler } from "#services/world-kern
 import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-encounter-registry.mjs";
 import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { createContactWriteApi } from "#services/world-kernel/src/contact-write-api.mjs";
+import { createPublicVisitorEncounterService } from "#services/world-kernel/src/public-visitor-encounter.mjs";
+import { createPublicVisitorEncounterWriteApi } from "#services/world-kernel/src/public-visitor-encounter-write-api.mjs";
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { createThreadContactPerception } from "#services/world-kernel/src/thread-contact-perception.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
@@ -92,15 +94,22 @@ const CONTACT_ROUTES=new Set([
   "/internal/contact/inbox",
 ]);
 
-function attachContactApi(server,contactApi){
+const PUBLIC_VISITOR_ROUTES=new Set([
+  "/internal/public-visitor-encounter",
+  "/internal/public-visitor-encounter/interrupt",
+]);
+
+function attachWorldWriteApis(server,{contactApi,visitorApi}){
   const handlers=server.listeners("request");
-  if(handlers.length!==1)throw new Error("contact API requires exactly one existing request handler");
+  if(handlers.length!==1)throw new Error("World write APIs require one existing request handler");
   const [baseHandler]=handlers;
-  const contactHandler=createNodeServiceHandler({service:contactApi});
+  const contactHandler=contactApi===null?null:createNodeServiceHandler({service:contactApi});
+  const visitorHandler=visitorApi===null?null:createNodeServiceHandler({service:visitorApi});
   server.removeAllListeners("request");
   server.on("request",(request,response)=>{
-    const url=new URL(request.url??"/","http://fibre.local");
-    if(CONTACT_ROUTES.has(url.pathname))return contactHandler(request,response);
+    const path=new URL(request.url??"/","http://fibre.local").pathname;
+    if(contactHandler!==null&&CONTACT_ROUTES.has(path))return contactHandler(request,response);
+    if(visitorHandler!==null&&PUBLIC_VISITOR_ROUTES.has(path))return visitorHandler(request,response);
     return baseHandler(request,response);
   });
 }
@@ -475,7 +484,24 @@ export async function startWorldKernelFromEnvironment(
     privateToken,
     onRouteChanged:()=>reconciliationRuntime.requestWake(),
   });
-  if(contactApi!==null)attachContactApi(server,contactApi);
+  const visitorApi=privateToken===null?null:createPublicVisitorEncounterWriteApi({
+    encounterService:createPublicVisitorEncounterService({
+      worldReader:store,
+      livedNow:contactLivedNow,
+      livedNowStore,
+      identityStore,
+      situatedLifeStore,
+      semanticStateStore,
+      memoryStore:autobiographicalMemoryStore,
+      experienceStore:livedExperienceStore,
+      modelAdapter:selectReasoningIntegration(DEPLOYMENT.integrations.encounter,{environment}),
+      onExperienceQueued:experienceConsolidationWakeScheduler,
+    }),
+    privateToken,
+  });
+  if(contactApi!==null||visitorApi!==null){
+    attachWorldWriteApis(server,{contactApi,visitorApi});
+  }
   const operationalService = attachOperationalService(server, service, {
     repairEnabled: adminToken !== null,
   });
@@ -565,6 +591,7 @@ export async function startWorldKernelFromEnvironment(
       experienceConsolidationWakeScheduler,
       contactOutreachProcess,
       contactApi,
+      visitorApi,
       liveEncounterRegistry,
       repairEnabled: adminToken !== null,
       privateAccessEnabled: privateToken !== null,
