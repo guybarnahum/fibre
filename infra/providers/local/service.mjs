@@ -1,3 +1,6 @@
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+
 class RequestBodyTooLargeError extends Error {}
 
 function normalizedLimit(value) {
@@ -43,7 +46,11 @@ async function toFetchRequest(request, maxBodyBytes) {
 async function writeFetchResponse(response, nodeResponse) {
   for (const [name, value] of response.headers.entries()) nodeResponse.setHeader(name, value);
   nodeResponse.statusCode = response.status;
-  nodeResponse.end(Buffer.from(await response.arrayBuffer()));
+  if(response.body===null){
+    nodeResponse.end();
+    return;
+  }
+  await pipeline(Readable.fromWeb(response.body),nodeResponse);
 }
 
 function adapterErrorResponse(error) {
@@ -64,6 +71,7 @@ export function createNodeServiceHandler({ service, maxBodyBytes = 1024 * 1024 }
       const fetchRequest = await toFetchRequest(request, bodyLimit);
       await writeFetchResponse(await service.fetch(fetchRequest), response);
     } catch (error) {
+      if(response.headersSent||response.destroyed)return;
       await writeFetchResponse(adapterErrorResponse(error), response);
     }
   };
