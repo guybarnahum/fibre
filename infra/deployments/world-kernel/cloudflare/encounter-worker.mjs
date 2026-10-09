@@ -520,6 +520,33 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
       const modelAdapter = selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env });
+      // Observe the real hot-path cost without adding cognition or persisting a transcript.
+      const measuredModelAdapter = {
+        ...modelAdapter,
+        async invoke(request) {
+          const started = Date.now();
+          let invocation;
+          try {
+            invocation = await modelAdapter.invoke(request);
+            return invocation;
+          } finally {
+            const id = request.clientRequestId;
+            const stage = id.startsWith("interior_") ? "participation"
+              : id.startsWith("lived-encounter_") ? "expression"
+                : id.startsWith("encounter-experience_") ? "experience" : "other";
+            console.log(JSON.stringify({
+              event:"public-encounter-model-usage",
+              stage,
+              outcome:invocation === undefined ? "failed" : "completed",
+              elapsedMs:Date.now() - started,
+              provider:invocation?.provenance?.provider ?? modelAdapter.provider,
+              modelId:invocation?.provenance?.modelId ?? modelAdapter.modelId,
+              attempts:invocation?.provenance?.invocationAttempts ?? null,
+              usage:invocation?.provenance?.usage ?? null,
+            }));
+          }
+        },
+      };
       const livedNow = createLivedNowService({
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
@@ -540,7 +567,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         experienceStore,
-        modelAdapter,
+        modelAdapter:measuredModelAdapter,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       this.publicVisitorEncounterApi = createPublicVisitorEncounterWriteApi({
