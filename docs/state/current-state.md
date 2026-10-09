@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-10-08
+last-reviewed: 2026-10-09
 canonical: true
 ---
 
@@ -280,9 +280,40 @@ Modern de-novo Genesis visual identity now derives **one concrete inherited phen
 
 Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
+## Meet / Encounter current handoff — 2026-10-09 05:23 UTC
+
+**Current execution gate: N6.6c Viewer acceptance — website code committed, NOT owner-validated or staging-deployed.** The authoritative, detailed evidence remains in [N6 public lived encounter slices](../validation/n6-public-lived-encounter-slices.md), [Meet / Encounter runtime audit](../validation/meet-encounter-run-path-audit.md) and [Current priorities](current-priorities.md). No newly built encounter engine is called for.
+
+**Evidence already accepted:**
+
+- Guy's local targeted tests and full `npm run slice:validate` passed for the World/Presentation live speech path, subsequent `thread:meet --live` CLI and queued newline-delimited QA visitor input. Exact most recent test counts were not supplied. Guy owns all local validation; assistant did not execute those tests.
+- On 2026-10-09 around 04:51 UTC, Guy's ordinary direct World CLI met Faith Achieng Odhiambo in her actual LivedNow and received **four naturally accepted** utterances with four distinct admitted Encounter Story references; `/leave` ended without a persistent session.
+- At 05:10 UTC, Guy ran `cat tools/meet/scenarios/ordinary-meeting.txt | npm run thread:meet -- --env staging --thread thr_23cea3246a752a403adabda88a7c89d47f5a59c9 --live -vv`: all **three fixed visitor utterances** were processed sequentially, each naturally accepted with actual streamed expression and a distinct final Story ID; same witnessed World situation and clean `/leave`. Header times **403/249/209 ms are not total inference or token latency**.
+- At 05:13 UTC, Guy visited staging public Presentation `GET /api/threads/:threadId/present`, received genuine situation `sit_d38c07af375db5a234e2033d035cf76b512f9299d642bd01c46f70000372fb76`, and sent **one** fresh public `POST /api/threads/:threadId/encounter` with `Accept: text/event-stream`. **HTTP/2 200** carried ordered `speech_delta` events, `speech_end` (`complete`) and `result` (`accepted`), text `Hi! Yes, I’ve got a minute. What’s up?`, and World Story `story_e2496f43f1d213249f3d233646ce88f87fac9040ffcb79aa`. No private inner life was observed in that public payload. This is real public Presentation→World streaming and Story admission evidence, **not** a wall-clock inter-delta latency, visitor-interruption or idempotency staging proof.
+
+**Code and repository heads at checkpoint:**
+
+- Core `guybarnahum/fibre` had `main` at `5c79a1c8888778022cfa1116e12931e92f934f71` before this documentation update. `thread:meet` supports optional `--live` and deterministic, serial **visitor-side** input via `tools/meet/scenarios/ordinary-meeting.txt`. It does not script or constrain Thread behavior.
+- Separate `guybarnahum/insidefibre.com` `main` is `e8666e52e89bdfa81e98557dda3993589fce89f4`. Existing `/meet` now opts into the proven public SSE stream, renders `speech_delta` provisionally, and trusts only final World `result` for admitted Story continuation. **Stop speech** calls the existing public request-scoped interrupt; **Leave this meeting** is local. World movement ends the entered scene while retaining exposed speech; declined/deferred/quiet participation remains valid. Focused Viewer tests were added, but **Guy has not supplied their result or Viewer deploy evidence**.
+
+**Exact next operator actions**, from the two sibling checkouts, on clean `main` with **no branches or PRs**:
+
+```bash
+cd ../insidefibre.com
+git pull --ff-only origin main
+git status --short
+npm run check
+# Only if green:
+npm run deploy:staging
+```
+
+Then manually inspect [staging Meet for Faith](https://staging.insidefibre.com/meet?thread=thr_23cea3246a752a403adabda88a7c89d47f5a59c9): ordinary current-life scene before Send; voluntary acceptance/decline/defer; progressive speech visible when accepted; final Story-backed turn; Leave clears page interaction; a later fresh visit finds later World life, never resumes a durable chat session. Report **observed** results, not inferred success. Do not move to production before this gate.
+
+**Still open:** Viewer local `check` and staging deployment/real GUI validation, real public in-flight interruption, actual browser-visible speech timing, completed-request replay and scene-conflict staging evidence where high-value, independently evidenced private Experience/consolidation/later memory, and N7's Thread-originated mid-speech withdrawal, genuinely overlapping visitor speech, nonpolling World-event interleaving, and selective causal consequence. Acceptance of one opening never obligates another; a Thread may lie, cut short, withdraw or remain silent. Preserve spoken-prefix objective truth but never equate its public speech with World truth. No brute-force retries, invented prompts, duplicate meeting engine, polling or per-token writes. Prefer the **smallest proof that advances persistent personhood**.
+
 ## Immediate next action
 
-N5/E0-E5 are closed live. N6 established ordinary public-lived encounter semantics and the first sustained direct World conversation. That conversation exposed the remaining chatbot-shaped constraint: complete request/response turns. The immediate target is now **N7 — Live Encounters and social consequence**; N6.6 endpoint/Viewer proof remains preserved and resumable.
+N5/E0-E5 are closed live. N6's direct World CLI and first public Presentation-to-World streaming acceptance are now evidenced. The immediate release task is **N6.6c staging Viewer acceptance** of that same World-owned public stream; **N7 — Live Encounters and social consequence** remains the broader ambition and N7.11 later causal proof remains open.
 
 The relevant lived-person machinery is already accepted:
 
@@ -319,7 +350,7 @@ Natural Thread -> Thread social life remains a preserved follow-on. The accepted
 
 Developmental-exploration X0-X4 are accepted. X4 closed the core developmental loop without adding production authority: one objective Encounter Story can become different Thread-subjective Journal accounts, including an emotionally unfair interpretation not present in World truth, or no journal entry at all when the experience is trivial. Selective memory may retain autobiographical meaning or return `not_remembered`; later Interior Cognition sees only retained Thread-owned evidence, and the same existing `lived_planning` concern can bend future life accordingly. Journal and objective Encounter Story / Experience history cannot bypass memory authority. E6 is current pending live witness evidence and removes the remaining encounter-orchestration gap: environmental occurrence prose is World-authored from exterior current-scene evidence, and incidental witnesses are derived from authoritative co-presence rather than caller-selected IDs.
 
-N6 execution remains recorded in [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.1-N6.5 are accepted; direct World CLI bring-up has now demonstrated a naturally accepted sustained conversation grounded in ordinary LivedNow. The remaining N6.6 public endpoint/Viewer proof is preserved.
+N6 execution remains recorded in [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.1-N6.5 are accepted; N6.6a direct World dialogue/live CLI and one actual N6.6b public Presentation SSE→Story response are observed in staging. Further comprehensive public boundary claims and N6.6c real Viewer acceptance remain open; Viewer source is committed, but not yet locally validated or staging-deployed.
 
 N7 is governed by [Live encounters](../architecture/live-encounters.md), [ADR-0024](../decisions/ADR-0024-live-encounters.md), and [N7 live encounter slices](../validation/n7-live-encounter-slices.md). It removes the turn/request-response constraint without weakening existing authority: Live Encounter coordination is ephemeral; exposed outward acts become Encounter Story truth; structured cognition remains distinct from interruptible expression; ordinary World life continues; consolidation becomes bounded later work rather than a required synchronous step after every conversational beat.
 
