@@ -45,12 +45,13 @@ async function callWorldCurrentPresent(env, threadId) {
   return body.result;
 }
 
-async function callWorldVisitorEncounter(env, threadId, input) {
+async function callWorldVisitorEncounter(env, threadId, input, live=false) {
   const response=await binding(env,"WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/public-visitor-encounter",{
     method:"POST",
     headers:{
       "content-type":"application/json",
       "x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN,
+      ...(live?{accept:"text/event-stream"}:{}),
     },
     body:JSON.stringify({
       requestId:input.requestId,
@@ -62,6 +63,7 @@ async function callWorldVisitorEncounter(env, threadId, input) {
         :{ priorEncounterStoryId:input.priorEncounterStoryId }),
     }),
   }));
+  if(live&&response.ok)return response;
   let body=null;
   try{ body=await response.json(); }catch{}
   if(!response.ok){
@@ -71,6 +73,21 @@ async function callWorldVisitorEncounter(env, threadId, input) {
     throw error;
   }
   return body.result;
+}
+
+async function callWorldVisitorInterrupt(env,threadId,requestId){
+  const response=await binding(env,"WORLD_KERNEL").fetch(new Request(
+    "https://world-kernel.internal/internal/public-visitor-encounter/interrupt",{
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN,
+      },
+      body:JSON.stringify({threadId,requestId}),
+    },
+  ));
+  if(!response.ok)throw new Error(`World visitor interruption failed with HTTP ${response.status}`);
+  return response.json();
 }
 
 function expectedWorldConflict(error, worldError) {
@@ -153,6 +170,12 @@ export default {
       },
       submitEncounter(threadId,input){
         return worldVisitorEncounter(env,activityRecorder,threadId,input);
+      },
+      streamEncounter(threadId,input){
+        return callWorldVisitorEncounter(env,threadId,input,true);
+      },
+      interruptEncounter(threadId,requestId){
+        return callWorldVisitorInterrupt(env,threadId,requestId);
       },
     });
     const currentLifeResponse=await currentLifeApi.fetch(request);
