@@ -56,7 +56,7 @@ export async function streamExpressionIntoLiveEncounter({
       if(event?.type==="expression_delta"){
         assertNonEmpty("live expression delta",event.text);
         text+=event.text;
-        encounter.pushSpeechDelta({actorId,text:event.text});
+        encounter.pushSpeechDelta({actorId,text:event.text,signal:controller.signal});
         continue;
       }
       if(event?.type==="expression_complete"){
