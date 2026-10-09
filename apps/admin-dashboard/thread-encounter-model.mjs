@@ -1,3 +1,36 @@
+export function buildThreadWorldEvents({ livedNow=null, encounterStories=[] }={}) {
+  const scenes=new Map();
+  const addScene=(situation)=>{
+    if(typeof situation?.situationId!=="string"||scenes.has(situation.situationId))return;
+    scenes.set(situation.situationId,{
+      kind:"scene",
+      occurredAt:situation.establishedAt??null,
+      situationId:situation.situationId,
+      activity:situation.activity??null,
+      location:situation.location??null,
+    });
+  };
+  addScene(livedNow?.currentSituation);
+  addScene(livedNow?.previousSituation);
+  const occurrences=[];
+  for(const story of encounterStories??[]){
+    addScene(story.situation);
+    for(const beat of story.story?.beats??[]){
+      if(beat.kind!=="occurrence")continue;
+      occurrences.push({
+        kind:"occurrence",
+        occurredAt:story.occurredAt??null,
+        encounterId:story.encounterId,
+        text:beat.text??null,
+        attention:story.attention?.outcome??null,
+      });
+    }
+  }
+  return Object.freeze([...scenes.values(),...occurrences]
+    .sort((a,b)=>String(b.occurredAt??"").localeCompare(String(a.occurredAt??"")))
+    .slice(0,80).map((event)=>Object.freeze(event)));
+}
+
 function continuationRoot(storyById, encounterId) {
   let current=encounterId;
   const seen=new Set();
