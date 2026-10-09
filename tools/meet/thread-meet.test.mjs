@@ -109,7 +109,7 @@ test("a scripted visitor keeps every utterance across slow World replies and exi
   const output=new PassThrough();
   const {terminal,next}=createMeetInputReader({input,output});
 
-  input.end("Hi there! Got a minute?\\nWhat are you doing now?\\n/leave\\n");
+  input.end("Hi there! Got a minute?\nWhat are you doing now?\n/leave\n");
   const first=await next();
   assert.equal(first,"Hi there! Got a minute?","script lost its first visitor utterance");
   await new Promise((resolve)=>setImmediate(resolve));
