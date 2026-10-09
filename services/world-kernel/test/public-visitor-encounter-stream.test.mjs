@@ -1,10 +1,27 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createServer } from "node:http";
+import { once } from "node:events";
+
+import { createNodeServiceHandler } from "../../../infra/providers/local/service.mjs";
 
 import { createPublicVisitorEncounterWriteApi } from "../src/public-visitor-encounter-write-api.mjs";
 import { createPublicCurrentLifeApi } from "../../thread-presentation/src/http/current-life-api.mjs";
 
-test("a public visitor hears the live Thread before completion and can interrupt that same speech",async()=>{
+async function withLocalHttp(service,run){
+  const server=createServer(createNodeServiceHandler({service}));
+  server.listen(0,"127.0.0.1");
+  await once(server,"listening");
+  try{
+    return await run(`http://127.0.0.1:${server.address().port}`);
+  }finally{
+    server.closeAllConnections();
+    server.close();
+    await once(server,"close");
+  }
+}
+
+test("local HTTP delivers live World speech through Presentation before visitor interruption",async()=>{
   const threadId="thr_listening";
   const requestId="req_live_public";
   const situationId="sit_world_now";
@@ -42,41 +59,43 @@ test("a public visitor hears the live Thread before completion and can interrupt
     },
   });
 
-  const presentation=createPublicCurrentLifeApi({
-    viewerOrigin:"https://insidefibre.test",
-    async isPublicThread(){return true;},
-    async ensureCurrentPresent(){throw new Error("not a visit");},
-    async submitEncounter(){throw new Error("completed-response path was selected");},
-    streamEncounter(_threadId,input){
-      return world.fetch(new Request("https://world.internal/internal/public-visitor-encounter",{
-        method:"POST",
-        headers:{"content-type":"application/json","x-fibre-private-token":"private_test",accept:"text/event-stream"},
-        body:JSON.stringify({
-          requestId:input.requestId,
-          threadId,
-          expectedSituationId:input.situationId,
-          utterance:input.utterance,
-        }),
-      }));
-    },
-    interruptEncounter(_threadId,id){
-      return world.fetch(new Request("https://world.internal/internal/public-visitor-encounter/interrupt",{
-        method:"POST",
-        headers:{"content-type":"application/json","x-fibre-private-token":"private_test"},
-        body:JSON.stringify({requestId:id,threadId}),
-      })).then((response)=>response.json());
-    },
-  });
+  await withLocalHttp(world,async (worldUrl)=>{
+    const presentation=createPublicCurrentLifeApi({
+      viewerOrigin:"https://insidefibre.test",
+      async isPublicThread(){return true;},
+      async ensureCurrentPresent(){throw new Error("not a visit");},
+      async submitEncounter(){throw new Error("completed-response path was selected");},
+      streamEncounter(_threadId,input){
+        return fetch(worldUrl+"/internal/public-visitor-encounter",{
+          method:"POST",
+          headers:{"content-type":"application/json","x-fibre-private-token":"private_test",accept:"text/event-stream"},
+          body:JSON.stringify({
+            requestId:input.requestId,
+            threadId,
+            expectedSituationId:input.situationId,
+            utterance:input.utterance,
+          }),
+        });
+      },
+      interruptEncounter(_threadId,id){
+        return fetch(worldUrl+"/internal/public-visitor-encounter/interrupt",{
+          method:"POST",
+          headers:{"content-type":"application/json","x-fibre-private-token":"private_test"},
+          body:JSON.stringify({requestId:id,threadId}),
+        }).then((response)=>response.json());
+      },
+    });
 
-  const stream=await presentation.fetch(new Request(`https://insidefibre.test/api/threads/${threadId}/encounter`,{
-    method:"POST",
-    headers:{
-      origin:"https://insidefibre.test",
-      accept:"text/event-stream",
-      "content-type":"application/json",
-    },
-    body:JSON.stringify({requestId,situationId,utterance:"Tell me more."}),
-  }));
+    await withLocalHttp(presentation,async (presentationUrl)=>{
+      const stream=await fetch(`${presentationUrl}/api/threads/${threadId}/encounter`,{
+        method:"POST",
+        headers:{
+          origin:"https://insidefibre.test",
+          accept:"text/event-stream",
+          "content-type":"application/json",
+        },
+        body:JSON.stringify({requestId,situationId,utterance:"Tell me more."}),
+      });
   assert.equal(stream.status,200,"the public encounter did not open its live stream");
   const reader=stream.body.getReader();
   const first=await reader.read();
@@ -85,11 +104,11 @@ test("a public visitor hears the live Thread before completion and can interrupt
   assert.match(spoken,/I was about to explain/,"the public visitor heard no Thread speech");
   assert.equal(interruptions,0,"live encounter ended before the visitor could interrupt");
 
-  const interruption=await presentation.fetch(new Request(
-    `https://insidefibre.test/api/threads/${threadId}/encounter/${requestId}/interrupt`,{
+  const interruption=await fetch(
+    `${presentationUrl}/api/threads/${threadId}/encounter/${requestId}/interrupt`,{
       method:"POST",headers:{origin:"https://insidefibre.test"},
     },
-  ));
+  );
   assert.deepEqual(await interruption.json(),{interrupted:true},
     "visitor interruption did not reach the active World encounter");
   assert.equal(interruptions,1,"interruption failed to stop the ongoing speech");
@@ -105,4 +124,6 @@ test("a public visitor hears the live Thread before completion and can interrupt
   assert.match(tail,/event: result/,"interrupted speech did not provide an outcome");
   assert.match(tail,/"completion":"interrupted"/,
     "public history lost the audible interruption");
+    });
+  });
 });
