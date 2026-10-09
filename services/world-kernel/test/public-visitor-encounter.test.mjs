@@ -63,6 +63,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
   const admissions=new Map();
   const attentions=new Map();
   const modelCalls=[];
+  const streamCalls=[];
   const queued=[];
   let wakeAttempts=0;
   let experienceAttempts=0;
@@ -146,6 +147,14 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
   const modelAdapter={
     provider:"fixture",
     modelId:"fixture-n6-public",
+    async *streamExpression(call){
+      streamCalls.push(structuredClone(call.input));
+      for(const text of ["I was thinking about this.", " But then I changed my mind."]){
+        if(call.signal.aborted)return;
+        yield {type:"expression_delta",text};
+      }
+      if(!call.signal.aborted)yield {type:"expression_complete",provenance:null};
+    },
     async invoke(call){
       modelCalls.push(structuredClone(call));
       if(call.clientRequestId.startsWith("interior_")){
@@ -246,7 +255,7 @@ function fixture({ applies=true, decision="decline", actualSituation=situation("
     }:{}),
   });
 
-  return { service,stories,receipts,modelCalls,queued };
+  return { service,stories,receipts,modelCalls,streamCalls,queued };
 }
 
 function request(expectedSituationId="sit_displayed",{
@@ -384,6 +393,45 @@ test("N6.3e later accepted turns use admitted Encounter Story history instead of
     "continued encounter invented session authority");
 });
 
+
+test("an interrupted N7 public reply admits only spoken text and a retry cannot invent another life",async()=>{
+  const f=fixture({decision:"accept"});
+  const abort=new AbortController();
+  let delivered="";
+  const input=request("sit_live_accepted",{
+    requestId:"req_live_interrupted",
+  });
+  const first=await f.service.encounter(input,{
+    signal:abort.signal,
+    onLiveEvent(event){
+      if(event.type==="speech_delta"&&event.actorId===THREAD_ID){
+        delivered+=event.text;
+        abort.abort("visitor interrupted");
+      }
+    },
+  });
+
+  assert.equal(first.outcome,"accepted","spoken live speech was not admitted");
+  assert.equal(first.completion,"interrupted","spoken interruption was erased");
+  assert.equal(f.stories.length,1,"one spoken encounter became multiple objective events");
+  assert.equal(f.stories[0].story.beats[1].text,delivered,
+    "World history differs from what the visitor heard");
+  assert.equal(f.stories[0].story.beats[1].completion,"interrupted",
+    "objective speech lost its interrupted ending");
+  assert.equal(f.stories[0].story.beats[1].text.includes("changed my mind"),false,
+    "unexposed model output became World history");
+  assert.equal(f.queued.length,1,"spoken experience was not queued for later consequence");
+  assert.equal(f.modelCalls.filter((call)=>
+    call.clientRequestId.startsWith("lived-encounter_")).length,0,
+    "live expression retriggered complete-response cognition");
+  assert.equal(f.streamCalls.length,1,"live path did not use the N7 expression stream");
+
+  const replay=await f.service.encounter({...input,at:"2026-10-06T02:46:00.000Z"});
+  assert.deepEqual(replay,first,"retry changed the admitted interrupted speech");
+  assert.equal(f.stories.length,1,"retry duplicated what already happened");
+  assert.equal(f.queued.length,1,"retry duplicated personal consequence");
+  assert.equal(f.streamCalls.length,1,"retry repeated already-exposed expression");
+});
 
 test("N6.4 completed retry replays one admitted outcome without repeating private consequence",async()=>{
   const actual=situation("sit_n6_retry_actual");
