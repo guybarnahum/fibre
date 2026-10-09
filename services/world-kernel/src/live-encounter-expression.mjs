@@ -53,6 +53,7 @@ export async function streamExpressionIntoLiveEncounter({
       clientRequestId,
       signal:controller.signal,
     })){
+      if(controller.signal.aborted)break;
       if(event?.type==="expression_delta"){
         assertNonEmpty("live expression delta",event.text);
         text+=event.text;
