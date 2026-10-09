@@ -484,20 +484,26 @@ export async function startWorldKernelFromEnvironment(
     privateToken,
     onRouteChanged:()=>reconciliationRuntime.requestWake(),
   });
-  const visitorApi=privateToken===null?null:createPublicVisitorEncounterWriteApi({
-    encounterService:createPublicVisitorEncounterService({
-      worldReader:store,
-      livedNow:contactLivedNow,
-      livedNowStore,
-      identityStore,
-      situatedLifeStore,
-      semanticStateStore,
-      memoryStore:autobiographicalMemoryStore,
-      experienceStore:livedExperienceStore,
-      modelAdapter:selectReasoningIntegration(DEPLOYMENT.integrations.encounter,{environment}),
-      onExperienceQueued:experienceConsolidationWakeScheduler,
-    }),
-    privateToken,
+  let visitorService=null;
+  const visitorApi=privateToken===null?null:Object.freeze({
+    fetch(request){
+      visitorService??=createPublicVisitorEncounterWriteApi({
+        encounterService:createPublicVisitorEncounterService({
+          worldReader:store,
+          livedNow:contactLivedNow,
+          livedNowStore,
+          identityStore,
+          situatedLifeStore,
+          semanticStateStore,
+          memoryStore:autobiographicalMemoryStore,
+          experienceStore:livedExperienceStore,
+          modelAdapter:selectReasoningIntegration(DEPLOYMENT.integrations.encounter,{environment}),
+          onExperienceQueued:experienceConsolidationWakeScheduler,
+        }),
+        privateToken,
+      });
+      return visitorService.fetch(request);
+    },
   });
   if(contactApi!==null||visitorApi!==null){
     attachWorldWriteApis(server,{contactApi,visitorApi});
