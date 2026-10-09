@@ -380,7 +380,13 @@ export function createPublicVisitorEncounterService({
           persistedLength=exposedText.length;
         };
         const expose=(event)=>{
-          const acknowledgment=onLiveEvent(event);
+          const visible=event.type==="speech_end"&&event.actorId===input.threadId
+            ?{...event,text:exposedText,
+              completion:exposedText===event.text?event.completion:"interrupted"}
+            :event.type==="speaking_opportunity"&&event.sourceActorId===input.threadId
+              ?{...event,heardText:exposedText}
+              :event;
+          const acknowledgment=onLiveEvent(visible);
           if(acknowledgment?.then)throw new TypeError("live observer must acknowledge synchronously");
         };
         const unsubscribe=live.subscribe(visitorId,(event)=>{
