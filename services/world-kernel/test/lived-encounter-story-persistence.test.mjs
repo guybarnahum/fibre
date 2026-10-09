@@ -200,3 +200,60 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
     rmSync(directory, { recursive:true, force:true });
   }
 });
+
+test("interrupted public encounter admission survives a World restart without duplicating its Story",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-encounter-admission-"));
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
+    stateScopeId:"world",
+  };
+  const threadId="thr_public_admission";
+  const requestId="req_interrupted_admission";
+  const requestDigest=`sha256:${"b".repeat(64)}`;
+  try {
+    seedThread(storage,threadId,"Mina");
+    const makeStory=(occurredAt,text)=>({
+      occurredAt,
+      threadPresence:[{threadId,situationId:"sit_admission"}],
+      story:{
+        beats:[
+          {actorThreadId:null,kind:"utterance",text:"Hello"},
+          {actorThreadId:threadId,kind:"utterance",text},
+        ],
+      },
+      visualization:createEncounterVisualization({
+        occurredAt,
+        story:{beats:[
+          {actorThreadId:null,kind:"utterance",text:"Hello"},
+          {actorThreadId:threadId,kind:"utterance",text},
+        ]},
+        scene:"An ongoing day.",
+        sourceReferences:["sit_admission"],
+        depictedThreadRefs:[threadId],
+      }),
+    });
+    const publicRequest={requestId,threadId,requestDigest};
+    const firstStore=openLivedExperienceStore(storage);
+    const first=firstStore.recordEncounterStory(
+      makeStory("2026-09-21T18:00:00.000Z","Hello back"),{publicRequest},
+    );
+    firstStore.close();
+
+    const reopened=openLivedExperienceStore(storage);
+    try {
+      assert.equal(reopened.getPublicEncounterAdmission(requestId)?.encounterRef,first.encounterId,
+        "admitted Story lost its request identity after a restart");
+      const retry=reopened.recordEncounterStory(
+        makeStory("2026-09-21T18:01:00.000Z","A different answer"),{publicRequest},
+      );
+      assert.equal(retry.encounterId,first.encounterId,
+        "retry authored a second objective encounter");
+      assert.equal(reopened.listEncounterStories(threadId).length,1,
+        "retry duplicated World encounter history");
+      assert.throws(()=>reopened.recordEncounterStory(
+        makeStory("2026-09-21T18:02:00.000Z","Another answer"),
+        {publicRequest:{...publicRequest,requestDigest:`sha256:${"c".repeat(64)}`}},
+      ),/conflicts/,"a reused request ID changed the admitted encounter");
+    }finally{reopened.close();}
+  }finally{rmSync(directory,{recursive:true,force:true});}
+});
