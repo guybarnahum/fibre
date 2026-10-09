@@ -109,8 +109,8 @@ export function createPublicVisitorEncounterWriteApi({
               signal:abort.signal,
               onLiveEvent(event){
                 if(cancelled)return;
-                if(event.type==="speech_delta"||event.type==="speech_end"
-                  ||event.type==="scene_changed"||event.type==="participant_action"){
+                if(event.actorId===body.threadId
+                  &&(event.type==="speech_delta"||event.type==="speech_end")){
                   controller.enqueue(liveEvent(event.type,event));
                 }
               },
