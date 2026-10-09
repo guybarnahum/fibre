@@ -210,7 +210,7 @@ material place/activity/mediated-context change
   -> encounter may redirect or end
 ```
 
-A scene change is not itself a forced conversational ending or synthetic farewell.
+A scene change is not itself a forced conversational ending or synthetic farewell. The public Viewer should update the witnessed situation while retaining the admitted Encounter Story chain and the visitor's opportunity for another turn. A new utterance uses the new World situation and earns a new independent participation decision. If old-situation expression had to stop, only that particular generation is interrupted; the social interaction remains open unless the Thread independently withdraws. A stale visitor utterance must never be silently replayed.
 
 If the affected Thread is actively expressing, however, that model invocation is grounded in a stale `CurrentSituation` and is therefore cancelled. Already exposed speech remains objective interrupted expression; unseen output is discarded. A subsequent cognition opportunity must use the new authoritative situation.
 
