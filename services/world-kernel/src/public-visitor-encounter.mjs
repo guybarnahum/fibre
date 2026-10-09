@@ -1,6 +1,7 @@
 import { formVisitorMeetingStance } from "./lived-meeting-cognition.mjs";
 import { respondToLivedEncounter, streamLivedEncounterResponse } from "./lived-encounter-cognition.mjs";
 import { createLiveEncounter } from "./live-encounter.mjs";
+import { sameEnactedScene } from "./lived-now-service.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
@@ -166,7 +167,7 @@ export function createPublicVisitorEncounterService({
       };
 
 
-      const finishAccepted=async(encounterStory,priorContext=null,{stories=[encounterStory],interrupted=false}={})=>{
+      const finishAccepted=async(encounterStory,priorContext=null,{stories=[encounterStory],interrupted=false,currentSituationId=null}={})=>{
         const spokenStory=stories.length===1?encounterStory:{
           ...encounterStory,
           story:{
@@ -220,6 +221,7 @@ export function createPublicVisitorEncounterService({
           encounterStoryId:encounterStory.encounterId,
           ...(interrupted||stories.some((item)=>item.story.beats.some((beat)=>beat.completion==="interrupted"))
             ?{completion:"interrupted"}:{}),
+          ...(currentSituationId===null?{}:{currentSituationId}),
         });
       };
 
@@ -365,6 +367,19 @@ export function createPublicVisitorEncounterService({
         const admitted=[];
         let exposedText="";
         let persistedLength=0;
+        let changedSituationId=null;
+        const observeScene=()=>{
+          if(changedSituationId!==null)return;
+          const current=livedNowStore.getCurrentSituation(input.threadId);
+          if(current===null)throw new TypeError("public live encounter lost its World situation");
+          if(sameEnactedScene(context.situation,current))return;
+          changedSituationId=current.situationId;
+          live.pushSceneChange({
+            participantId:input.threadId,
+            previousSituationId:context.situation.situationId,
+            currentSituation:current,
+          });
+        };
         const checkpoint=(completion=null)=>{
           const next=exposedText.slice(persistedLength);
           if(next.trim()==="")return;
@@ -382,7 +397,8 @@ export function createPublicVisitorEncounterService({
         const expose=(event)=>{
           const visible=event.type==="speech_end"&&event.actorId===input.threadId
             ?{...event,text:exposedText,
-              completion:exposedText===event.text?event.completion:"interrupted"}
+              completion:changedSituationId===null&&exposedText===event.text
+                ?event.completion:"interrupted"}
             :event.type==="speaking_opportunity"&&event.sourceActorId===input.threadId
               ?{...event,heardText:exposedText}
               :event;
@@ -391,7 +407,8 @@ export function createPublicVisitorEncounterService({
         };
         const unsubscribe=live.subscribe(visitorId,(event)=>{
           if(event.type==="speech_end"&&event.actorId===input.threadId){
-            checkpoint(event.completion==="interrupted"?"interrupted":null);
+            checkpoint(event.completion==="interrupted"||changedSituationId!==null
+              ?"interrupted":null);
             expose(event);
             return;
           }
@@ -401,9 +418,10 @@ export function createPublicVisitorEncounterService({
           }
           if(event.type==="speaking_opportunity"
             &&event.sourceActorId===input.threadId
-            &&["sentence","pause"].includes(event.reason)
+            &&["sentence","pause","end"].includes(event.reason)
             &&!signal?.aborted){
-            checkpoint();
+            if(event.reason!=="end")checkpoint();
+            observeScene();
           }
         });
         let expression;
@@ -424,13 +442,15 @@ export function createPublicVisitorEncounterService({
         }
         if(admitted.length===0){
           return complete({
-            outcome:"interrupted",
+            outcome:changedSituationId===null?"interrupted":"scene_changed",
+            ...(changedSituationId===null?{}:{currentSituationId:changedSituationId}),
             situationId:context.situation.situationId,
           });
         }
         return finishAccepted(admitted.at(-1),context,{
           stories:admitted,
-          interrupted:expression.completion==="interrupted",
+          interrupted:expression.completion==="interrupted"||changedSituationId!==null,
+          currentSituationId:changedSituationId,
         });
       }
 
