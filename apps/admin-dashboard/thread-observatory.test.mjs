@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildEncounterEpisodes,
   buildSocialAnalytics,
+  buildThreadWorldEvents,
 } from "./thread-encounter-model.mjs";
 import {
   fetchThreadObservatory,
@@ -674,4 +675,30 @@ test("Thread Observatory keeps Encounter Story, journal authority, and memory se
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("each Thread's World history separates actual occurrence and life from speech or memory",()=>{
+  const events=buildThreadWorldEvents({
+    livedNow:{
+      currentSituation:{situationId:"sit_now",establishedAt:"2026-10-09T17:00:00Z",activity:"Walking"},
+      previousSituation:{situationId:"sit_before",establishedAt:"2026-10-09T16:00:00Z",activity:"Washing"},
+    },
+    encounterStories:[{
+      encounterId:"story_objective_rain",
+      occurredAt:"2026-10-09T16:30:00Z",
+      situation:{situationId:"sit_before",establishedAt:"2026-10-09T16:00:00Z",activity:"Washing"},
+      story:{beats:[{kind:"occurrence",actorThreadId:null,text:"Rain started."}]},
+      attention:{outcome:"not_noticed",experience:null},
+    },{
+      encounterId:"story_visitor",
+      occurredAt:"2026-10-09T16:50:00Z",
+      story:{beats:[{kind:"utterance",actorThreadId:null,text:"Which town are you in?"}]},
+    }],
+  });
+  assert.deepEqual(events.map((item)=>[item.kind,item.kind==="scene"?item.situationId:item.encounterId]),[
+    ["scene","sit_now"],["occurrence","story_objective_rain"],["scene","sit_before"],
+  ],"Thread World history invented a fact from visitor speech or lost admitted World life");
+  assert.equal(events[1].attention,"not_noticed",
+    "a World occurrence became a personal Experience without Thread attention");
+  assert.equal(events.filter((item)=>item.kind==="occurrence").length,1);
 });
