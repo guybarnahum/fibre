@@ -88,7 +88,9 @@ export function threadObservatoryCopyPayload({
     memories:Object.freeze(Array.isArray(memories) ? [...memories] : []),
     memoryError:memoryError ?? null,
     worldEvents:buildThreadWorldEvents({livedNow,encounterStories}),
-    encounterStories:Object.freeze((encounterStories??[]).map((story)=>({
+    encounterStories:Object.freeze([...(encounterStories??[])]
+      .sort((left,right)=>String(right.occurredAt??"").localeCompare(String(left.occurredAt??"")))
+      .slice(0,80).map((story)=>({
       encounterId:story.encounterId,
       occurredAt:story.occurredAt,
       situation:story.situation??null,
