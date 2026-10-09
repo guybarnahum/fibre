@@ -116,6 +116,7 @@ export function createPublicVisitorEncounterService({
   requireMethod(experienceStore, "public visitor experienceStore", "getEncounterStory");
   requireMethod(experienceStore, "public visitor experienceStore", "getPublicEncounterReceipt");
   requireMethod(experienceStore, "public visitor experienceStore", "getPublicEncounterAdmission");
+  requireMethod(experienceStore, "public visitor experienceStore", "listPublicEncounterCheckpointStories");
   requireMethod(experienceStore, "public visitor experienceStore", "getThreadEncounterAttention");
   requireMethod(experienceStore, "public visitor experienceStore", "recordPublicEncounterReceipt");
   requireMethod(experienceStore, "public visitor experienceStore", "recordThreadEncounterAttention");
@@ -165,7 +166,14 @@ export function createPublicVisitorEncounterService({
       };
 
 
-      const finishAccepted=async(encounterStory,priorContext=null)=>{
+      const finishAccepted=async(encounterStory,priorContext=null,{stories=[encounterStory],interrupted=false}={})=>{
+        const spokenStory=stories.length===1?encounterStory:{
+          ...encounterStory,
+          story:{
+            ...encounterStory.story,
+            beats:stories.flatMap((item)=>item.story.beats),
+          },
+        };
         const situationId=encounterStory.threadPresence.find((item)=>item.threadId===input.threadId)?.situationId;
         if(!situationId)throw new TypeError("admitted encounter has no participating Thread");
         let attention=experienceStore.getThreadEncounterAttention(input.threadId,encounterStory.encounterId);
@@ -181,7 +189,7 @@ export function createPublicVisitorEncounterService({
           const experienceText=await formThreadEncounterExperience({
             thread:context.thread,
             situation:context.situation,
-            encounterStory,
+            encounterStory:spokenStory,
             semanticStates:context.semanticStates,
             memories:context.memories,
             modelAdapter,
@@ -201,14 +209,17 @@ export function createPublicVisitorEncounterService({
           queuedAt:encounterStory.occurredAt,
           onQueued:onExperienceQueued,
         });
-        const responseText=encounterStory.story.beats.findLast((beat)=>beat.actorThreadId===input.threadId)?.text;
+        const responseText=stories.flatMap((item)=>item.story.beats)
+          .filter((beat)=>beat.actorThreadId===input.threadId&&beat.kind==="utterance")
+          .map((beat)=>beat.text).join("");
         if(!responseText)throw new TypeError("admitted encounter is missing outward expression");
         return complete({
           outcome:"accepted",
           situationId,
           responseText,
           encounterStoryId:encounterStory.encounterId,
-          ...(encounterStory.story.beats.some((beat)=>beat.completion==="interrupted")?{completion:"interrupted"}:{}),
+          ...(interrupted||stories.some((item)=>item.story.beats.some((beat)=>beat.completion==="interrupted"))
+            ?{completion:"interrupted"}:{}),
         });
       };
 
@@ -225,6 +236,10 @@ export function createPublicVisitorEncounterService({
       if(admission!==null){
         if(admission.threadId!==input.threadId||admission.requestDigest!==requestDigest){
           throw new TypeError(`public encounter request ${input.requestId} conflicts with its existing admission`);
+        }
+        const checkpoints=experienceStore.listPublicEncounterCheckpointStories(input.requestId);
+        if(checkpoints.length>0){
+          return finishAccepted(checkpoints.at(-1),null,{stories:checkpoints,interrupted:true});
         }
         return finishAccepted(experienceStore.getEncounterStory(admission.encounterRef));
       }
@@ -293,14 +308,15 @@ export function createPublicVisitorEncounterService({
         });
       }
 
-      const admitSpeech=(response,{occurredAt=input.at}={})=>{
+      const admitSpeech=(response,{occurredAt=input.at,checkpoint=null,previous=null}={})=>{
+        const continuation=previous?.encounterId??input.priorEncounterStoryId;
         const story={
           storyVersion:"encounter-story-v0.1",
-          ...(input.priorEncounterStoryId===undefined
+          ...(continuation===undefined
             ?{}
-            :{continuationOfEncounterRef:input.priorEncounterStoryId}),
+            :{continuationOfEncounterRef:continuation}),
           beats:[
-            {actorThreadId:null,kind:"utterance",text:input.utterance},
+            ...(previous===null?[{actorThreadId:null,kind:"utterance",text:input.utterance}]:[]),
             {
               actorThreadId:input.threadId,
               kind:"utterance",
@@ -312,7 +328,7 @@ export function createPublicVisitorEncounterService({
         const sourceReferences=[...new Set([
           input.expectedSituationId,
           context.situation.situationId,
-          ...(input.priorEncounterStoryId===undefined?[]:[input.priorEncounterStoryId]),
+          ...(continuation===undefined?[]:[continuation]),
         ])];
         return experienceStore.recordEncounterStory({
           occurredAt,
@@ -328,30 +344,48 @@ export function createPublicVisitorEncounterService({
             sourceReferences,
             depictedThreadRefs:[input.threadId],
           }),
-        },{publicRequest:{
-          requestId:input.requestId,
-          threadId:input.threadId,
-          requestDigest,
-        }});
+        },{
+          ...(previous===null?{publicRequest:{
+            requestId:input.requestId,
+            threadId:input.threadId,
+            requestDigest,
+          }}:{}),
+          ...(checkpoint===null?{}:{publicCheckpoint:{
+            requestId:input.requestId,
+            threadId:input.threadId,
+            requestDigest,
+            position:checkpoint,
+          }}),
+        });
       };
 
       if(onLiveEvent!==null){
         const visitorId=`visitor_${input.requestId}`;
         const live=createLiveEncounter({participantIds:[visitorId,input.threadId]});
-        let admitted=null;
+        const admitted=[];
         let exposedText="";
+        let persistedLength=0;
+        const checkpoint=(completion=null)=>{
+          const next=exposedText.slice(persistedLength);
+          if(next.trim()==="")return;
+          const previous=admitted.at(-1)??null;
+          admitted.push(admitSpeech({
+            responseText:next,
+            completion,
+          },{
+            occurredAt:now(),
+            checkpoint:admitted.length,
+            previous,
+          }));
+          persistedLength=exposedText.length;
+        };
         const expose=(event)=>{
           const acknowledgment=onLiveEvent(event);
           if(acknowledgment?.then)throw new TypeError("live observer must acknowledge synchronously");
         };
         const unsubscribe=live.subscribe(visitorId,(event)=>{
           if(event.type==="speech_end"&&event.actorId===input.threadId){
-            if(exposedText.trim()!==""){
-              admitted=admitSpeech({
-                responseText:exposedText,
-                completion:exposedText===event.text?event.completion:"interrupted",
-              },{occurredAt:now()});
-            }
+            checkpoint(event.completion==="interrupted"?"interrupted":null);
             expose(event);
             return;
           }
@@ -359,11 +393,18 @@ export function createPublicVisitorEncounterService({
           if(event.type==="speech_delta"&&event.actorId===input.threadId){
             exposedText+=event.text;
           }
+          if(event.type==="speaking_opportunity"
+            &&event.sourceActorId===input.threadId
+            &&["sentence","pause"].includes(event.reason)
+            &&!signal?.aborted){
+            checkpoint();
+          }
         });
+        let expression;
         try{
           live.pushSpeechDelta({actorId:visitorId,text:input.utterance});
           live.endSpeech({actorId:visitorId});
-          await streamLivedEncounterResponse({
+          expression=await streamLivedEncounterResponse({
             livedContext:context,
             encounter:{utterance:input.utterance,occurredAt:input.at},
             recentEncounterStories:immediateHistory,
@@ -375,13 +416,16 @@ export function createPublicVisitorEncounterService({
         }finally{
           unsubscribe();
         }
-        if(admitted===null){
+        if(admitted.length===0){
           return complete({
             outcome:"interrupted",
             situationId:context.situation.situationId,
           });
         }
-        return finishAccepted(admitted,context);
+        return finishAccepted(admitted.at(-1),context,{
+          stories:admitted,
+          interrupted:expression.completion==="interrupted",
+        });
       }
 
       const response=await respondToLivedEncounter({
