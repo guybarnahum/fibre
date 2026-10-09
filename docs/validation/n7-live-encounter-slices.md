@@ -109,6 +109,8 @@ Implemented foundation:
 
 Accepted after the focused interruption/cognition/story-persistence suite and full `npm run slice:validate` passed locally.
 
+**Distinct remaining agency gate (not part of accepted N7.3 interruption proof):** a Thread that initially accepts an encounter may voluntarily withdraw **while its own public speech is in progress**, independently of visitor cancellation, model failure or World movement. One Thread-owned changed stance should stop future expression, retain exactly the already-exposed speech, and not force a closing line or a later answer. Silence, a brief answer, and deliberate deception are legitimate expression and not evidence of withdrawal by themselves. The existing N7 coordinator and admitted Story/Experience boundary must carry this, not a durable session controller or a continuous consent-polling model loop.
+
 ## N7.4 — World interleaving — ACCEPTED 2026-10-07
 
 **Capability:** conversation no longer freezes ordinary life.
