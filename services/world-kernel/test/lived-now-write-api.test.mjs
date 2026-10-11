@@ -42,7 +42,7 @@ test("N4 meeting entry asks World for now and publishes exactly that reconciled 
     publication: {
       async publishCurrentSituation(value) {
         calls.push(["publish", structuredClone(value)]);
-        return { situation: value, present, publication: { duplicate: false } };
+        return { situation: value, present, publication: { duplicate: false }, localTimeZone:"Africa/Nairobi" };
       },
     },
   });
@@ -60,7 +60,7 @@ test("N4 meeting entry asks World for now and publishes exactly that reconciled 
       situationId: SITUATION_ID,
       establishedAt: situation.establishedAt,
       present,
-      localTimeZone:null,
+      localTimeZone:"Africa/Nairobi",
     },
   });
 });
