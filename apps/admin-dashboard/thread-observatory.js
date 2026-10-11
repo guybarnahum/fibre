@@ -843,7 +843,7 @@ function situationLabel(situation){
 }
 
 function lifeRecordLinks(){
-  const nav=el("nav","thread-observatory-actions");
+  const nav=el("nav","thread-life-nav");
   nav.setAttribute("aria-label","Thread life and history");
   for(const [label,target] of [
     ["World events","thread-world-events"],
@@ -851,7 +851,7 @@ function lifeRecordLinks(){
     ["Journal","thread-journal"],
     ["Memories","thread-memories"],
   ]){
-    const link=el("a","secondary",label);
+    const link=el("a","thread-life-link",label);
     link.href="#"+target;
     nav.append(link);
   }
