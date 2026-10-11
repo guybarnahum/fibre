@@ -44,7 +44,8 @@ test("public visit observes the Thread's reconciled current life rather than cre
     isPublicThread:async threadId=>threadId===THREAD_ID,
     ensureCurrentPresent:async threadId=>{
       assert.equal(threadId,THREAD_ID);
-      return { present:situations[ensureCalls++] };
+      const index=ensureCalls++;
+      return { present:situations[index], localTimeZone:index===0?"America/Phoenix":null };
     },
     submitEncounter:async()=>{ throw new Error("must not run"); },
   });
@@ -54,8 +55,12 @@ test("public visit observes the Thread's reconciled current life rather than cre
 
   assert.equal(first.status,200);
   assert.equal(second.status,200);
-  assert.equal((await first.json()).currentPresent.payload.situationId,"sit_visit_morning");
-  assert.equal((await second.json()).currentPresent.payload.situationId,"sit_visit_afternoon");
+  const morning=(await first.json()).currentPresent.payload;
+  const transit=(await second.json()).currentPresent.payload;
+  assert.equal(morning.situationId,"sit_visit_morning");
+  assert.equal(morning.localTimeZone,"America/Phoenix","public local time must come from World");
+  assert.equal(transit.situationId,"sit_visit_afternoon");
+  assert.equal(transit.localTimeZone,null,"unknown transit time must not be inferred");
   assert.equal(ensureCalls,2,"public revisit did not ask World for current life again");
 });
 
