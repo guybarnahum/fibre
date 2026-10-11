@@ -411,13 +411,31 @@ function identitySection(identity, threadId) {
   return wrap;
 }
 
-function nowSection(identity) {
+function threadWorldClock(livedNow) {
+  const situation = livedNow?.currentSituation;
+  const zone = livedNow?.worldContext?.timeZone;
+  if (situation?.phase !== "at_place" || situation.location?.kind !== "place"
+    || typeof zone !== "string") return null;
+  try {
+    const time = new Intl.DateTimeFormat(undefined, {
+      timeZone:zone, year:"numeric", month:"short", day:"numeric",
+      hour:"numeric", minute:"2-digit", timeZoneName:"short",
+    }).format(new Date());
+    return `${time} · ${zone}`;
+  } catch { return null; }
+}
+
+function nowSection(identity, livedNow = null) {
   const thread = identity.world?.thread ?? {};
   const current = thread.currentState ?? {};
   const accounts = thread.accounts ?? {};
   const wrap = section("Now");
   const self = current.selfModel ?? thread.identity?.selfDescription ?? identity.summary ?? "No self-model recorded.";
   wrap.append(el("blockquote", "thread-self-model", `“${self}”`));
+  const clock = threadWorldClock(livedNow);
+  wrap.append(el("p", "thread-world-clock", clock
+    ? `Thread local time (World context) · ${clock}`
+    : "Thread local time unavailable for this enacted place"));
   const grid = el("div", "thread-person-facts four");
   grid.append(
     fact("Feelings", valueOrNone(current.feelings)),
@@ -1511,7 +1529,7 @@ export function renderThreadObservatory({
     lifeRecordLinks(),
     identitySection(identity, threadId),
     renderFidSection(identity, threadId),
-    nowSection(identity),
+    nowSection(identity, livedNow),
     journalSection(
       journal,
       journalError,
