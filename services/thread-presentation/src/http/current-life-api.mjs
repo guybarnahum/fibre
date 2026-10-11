@@ -231,7 +231,11 @@ export function createPublicCurrentLifeApi({
         return json({ error:"public_present_unavailable" },request,viewerOrigin,503);
       }
 
-      return json({ currentPresent:{ payload:present } },request,viewerOrigin);
+      return json({ currentPresent:{ payload:{
+        ...present,
+        // Visit-only, World-supplied clock context; not a rewritten historical present event.
+        localTimeZone:admitted?.localTimeZone ?? null,
+      } } },request,viewerOrigin);
     },
   });
 }
