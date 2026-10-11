@@ -26,7 +26,17 @@ export function createLivedNowPublicationService({
       threadId: situation.threadId,
       present,
     });
-    return Object.freeze({ situation, present, publication });
+    // The World context supplies civil time for the enacted place. Transit
+    // cannot be assigned a local zone without a grounded current location.
+    const context = situation.phase === "at_place"
+      ? livedNowStore.getWorldContext?.(situation.threadId, { required:false })
+      : null;
+    let localTimeZone = context?.timeZone ?? null;
+    if (localTimeZone !== null) {
+      try { new Intl.DateTimeFormat("en", { timeZone:localTimeZone }); }
+      catch { localTimeZone = null; }
+    }
+    return Object.freeze({ situation, present, publication, localTimeZone });
   }
 
   return Object.freeze({
