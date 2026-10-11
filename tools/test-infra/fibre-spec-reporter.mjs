@@ -36,6 +36,14 @@ function paint(text, code, enabled) {
 
 const CLEAR_PROGRESS = "\r\u001b[2K";
 
+function fitProgress(line, columns) {
+  // Leave room for terminal wrapping and the width of Unicode symbols.
+  if (!Number.isInteger(columns) || columns < 8) return line;
+  const max = columns - 4;
+  const chars = Array.from(line);
+  return chars.length <= max ? line : chars.slice(0, max - 1).join("") + "…";
+}
+
 function summaryDiagnostic(data) {
   return data?.file === undefined
     && /^(?:tests|suites|pass|fail|cancelled|skipped|todo|duration_ms)\s+\d/u.test(String(data?.message ?? ""));
@@ -57,7 +65,11 @@ export function renderSpecSummary(summary, { color = false } = {}) {
 
 export async function* fibreSpecReporter(
   source,
-  { color = process.stdout.isTTY === true && process.env.NO_COLOR === undefined } = {},
+  {
+    isTTY = process.stdout.isTTY === true,
+    color = isTTY && process.env.NO_COLOR === undefined,
+    columns = process.stdout.columns,
+  } = {},
 ) {
   let summary = null;
 
@@ -73,11 +85,11 @@ export async function* fibreSpecReporter(
       const nesting = Number.isInteger(data.nesting) ? data.nesting : 0;
       const prefix = "  ".repeat(nesting);
       if (data.skip !== undefined && data.skip !== false) {
-        yield `${CLEAR_PROGRESS}${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # SKIP\n`;
+        yield `${isTTY ? CLEAR_PROGRESS : ""}${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # SKIP\n`;
       } else if (data.todo !== undefined && data.todo !== false) {
-        yield `${CLEAR_PROGRESS}${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # TODO\n`;
-      } else {
-        yield `${CLEAR_PROGRESS}${prefix}${paint("✔", GREEN, color)} ${terminalName(data)}${duration(data)}`;
+        yield `${isTTY ? CLEAR_PROGRESS : ""}${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # TODO\n`;
+      } else if (isTTY) {
+        yield `${CLEAR_PROGRESS}${paint(fitProgress(`${prefix}✔ ${terminalName(data)}${duration(data)}`, columns), GREEN, color)}`;
       }
       continue;
     }
@@ -85,29 +97,29 @@ export async function* fibreSpecReporter(
     if (event.type === "test:fail" && !isSuite(data)) {
       const nesting = Number.isInteger(data.nesting) ? data.nesting : 0;
       const prefix = "  ".repeat(nesting);
-      yield `${CLEAR_PROGRESS}${prefix}${paint("✖", RED, color)} ${terminalName(data)}${duration(data)}\n${indent(errorText(data.details?.error), nesting)}\n`;
+      yield `${isTTY ? CLEAR_PROGRESS : ""}${prefix}${paint("✖", RED, color)} ${terminalName(data)}${duration(data)}\n${indent(errorText(data.details?.error), nesting)}\n`;
       continue;
     }
 
     if (event.type === "test:cancel" && !isSuite(data)) {
       const nesting = Number.isInteger(data.nesting) ? data.nesting : 0;
       const prefix = "  ".repeat(nesting);
-      yield `${CLEAR_PROGRESS}${prefix}${paint("⊘", RED, color)} ${terminalName(data)}${duration(data)}\n`;
+      yield `${isTTY ? CLEAR_PROGRESS : ""}${prefix}${paint("⊘", RED, color)} ${terminalName(data)}${duration(data)}\n`;
       continue;
     }
 
     if (event.type === "test:stdout" || event.type === "test:stderr") {
       const message = String(data.message ?? "");
-      if (message !== "") yield `${CLEAR_PROGRESS}${message.endsWith("\n") ? message : `${message}\n`}`;
+      if (message !== "") yield `${isTTY ? CLEAR_PROGRESS : ""}${message.endsWith("\n") ? message : `${message}\n`}`;
       continue;
     }
 
     if (event.type === "test:diagnostic" && !summaryDiagnostic(data)) {
-      yield `${CLEAR_PROGRESS}ℹ ${data.message ?? ""}\n`;
+      yield `${isTTY ? CLEAR_PROGRESS : ""}ℹ ${data.message ?? ""}\n`;
     }
   }
 
-  if (summary !== null) yield `${CLEAR_PROGRESS}${renderSpecSummary(summary, { color })}`;
+  if (summary !== null) yield `${isTTY ? CLEAR_PROGRESS : ""}${renderSpecSummary(summary, { color })}`;
 }
 
 export default fibreSpecReporter;
