@@ -99,6 +99,7 @@ export function createLivedNowWriteApi({
             situationId: situation.situationId,
             establishedAt: situation.establishedAt,
             present: published.present,
+            localTimeZone: published.localTimeZone ?? null,
           },
         });
       } catch (error) {
