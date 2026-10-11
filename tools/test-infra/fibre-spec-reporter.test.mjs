@@ -76,7 +76,7 @@ test("spec reporter preserves failure details", async () => {
 test("spec reporter keeps captured output quiet and terminal progress on one row", async () => {
   const events = [
     { type:"test:pass", data:{ name:"A very long passing test description that should never wrap the current terminal line", details:{type:"test"} } },
-    { type:"test:stdout", data:{ message:'{"event":"world-reconciliation-wake-requested"}\n' } },
+    { type:"test:stdout", data:{ message:'{"event":"world-reconciliation-wake-requested"}\n{"event":"world-alarm-failed","detail":"alarm failure"}\n' } },
     { type:"test:summary", data:{
       counts:{tests:1,suites:0,passed:1,failed:0,cancelled:0,skipped:0,todo:0},
       duration_ms:7,
@@ -87,10 +87,11 @@ test("spec reporter keeps captured output quiet and terminal progress on one row
   assert.ok(progress?.startsWith("✔ "));
   assert.ok(Array.from(progress).length <= 28,
     "transient success must fit one terminal row");
-  assert.match(terminal, /world-reconciliation-wake-requested/u);
+  assert.doesNotMatch(terminal, /world-reconciliation-wake-requested/u);
+  assert.match(terminal, /world-alarm-failed/u, "unexpected runtime events remain visible");
   const captured = await collect(events, { isTTY:false, color:false });
   assert.equal(captured,
-    '{"event":"world-reconciliation-wake-requested"}\n'
+    '{"event":"world-alarm-failed","detail":"alarm failure"}\n'
     + "tests 1, suites 0, pass 1, fail 0, cancelled 0, skipped 0, todo 0, duration_ms 7\n",
     "captured logs should include diagnostics and one summary without per-test success noise");
 });
