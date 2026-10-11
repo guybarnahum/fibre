@@ -36,6 +36,14 @@ function paint(text, code, enabled) {
 
 const CLEAR_PROGRESS = "\r\u001b[2K";
 
+// Routine runtime scheduling telemetry is not a test diagnostic.
+function visibleTestOutput(message) {
+  return message.split(/(?<=\n)/u).filter((line) => {
+    try { return JSON.parse(line).event !== "world-reconciliation-wake-requested"; }
+    catch { return true; }
+  }).join("");
+}
+
 function fitProgress(line, columns) {
   // Leave room for terminal wrapping and the width of Unicode symbols.
   if (!Number.isInteger(columns) || columns < 8) return line;
@@ -109,7 +117,7 @@ export async function* fibreSpecReporter(
     }
 
     if (event.type === "test:stdout" || event.type === "test:stderr") {
-      const message = String(data.message ?? "");
+      const message = visibleTestOutput(String(data.message ?? ""));
       if (message !== "") yield `${isTTY ? CLEAR_PROGRESS : ""}${message.endsWith("\n") ? message : `${message}\n`}`;
       continue;
     }
