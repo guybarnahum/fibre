@@ -76,21 +76,21 @@ test("spec reporter preserves failure details", async () => {
 test("spec reporter keeps captured output quiet and terminal progress on one row", async () => {
   const events = [
     { type:"test:pass", data:{ name:"A very long passing test description that should never wrap the current terminal line", details:{type:"test"} } },
-    { type:"test:stdout", data:{ message:'{"event":"world-reconciliation-wake-requested"}\\n' } },
+    { type:"test:stdout", data:{ message:'{"event":"world-reconciliation-wake-requested"}\n' } },
     { type:"test:summary", data:{
       counts:{tests:1,suites:0,passed:1,failed:0,cancelled:0,skipped:0,todo:0},
       duration_ms:7,
     } },
   ];
   const terminal = await collect(events, { isTTY:true, columns:32, color:false });
-  const progress = terminal.split('{"event"')[0];
-  assert.ok(progress.startsWith("\\r\\u001b[2K✔ "));
-  assert.ok(Array.from(progress.replace(/^\\r\\u001b\\[2K/u,"")).length <= 28,
+  const progress = terminal.match(/^\r\u001b\[2K([^\r\n]*)/u)?.[1];
+  assert.ok(progress?.startsWith("✔ "));
+  assert.ok(Array.from(progress).length <= 28,
     "transient success must fit one terminal row");
   assert.match(terminal, /world-reconciliation-wake-requested/u);
   const captured = await collect(events, { isTTY:false, color:false });
   assert.equal(captured,
-    '{"event":"world-reconciliation-wake-requested"}\\n'
-    + "tests 1, suites 0, pass 1, fail 0, cancelled 0, skipped 0, todo 0, duration_ms 7\\n",
+    '{"event":"world-reconciliation-wake-requested"}\n'
+    + "tests 1, suites 0, pass 1, fail 0, cancelled 0, skipped 0, todo 0, duration_ms 7\n",
     "captured logs should include diagnostics and one summary without per-test success noise");
 });
