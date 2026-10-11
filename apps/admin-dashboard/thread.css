@@ -27,6 +27,9 @@
 .thread-observatory-page{padding:18px}
 .thread-observatory-actions{display:flex;justify-content:flex-end;margin-bottom:-6px}
 .thread-observatory-copy{flex:0 0 auto}
+.thread-life-nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0}
+.thread-life-link{display:inline-flex;align-items:center;padding:7px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface-subtle);color:var(--muted);font-size:11px;font-weight:650;text-decoration:none}
+.thread-life-link:hover,.thread-life-link:focus-visible{border-color:var(--border-strong);background:var(--surface);color:var(--text)}
 .thread-person-summary{font-size:13px;line-height:1.55;color:var(--muted);margin:0 0 10px;max-width:720px}
 .thread-identity-table{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .thread-identity-table .thread-person-fact.wide{grid-column:span 2}
