@@ -215,6 +215,21 @@ test("authoritative Genesis birth automatically becomes a persisted public non-f
     const discoveryBody = await discovery.json();
     assert.equal(discoveryBody.threads.length, 1);
     assert.equal(discoveryBody.threads[0].threadId, candidate.thread.threadId);
+    assert.deepEqual(discoveryBody.threads[0].birthPlace,{
+      displayName:"Los Angeles, California",
+      city:"Los Angeles, California",
+      country:"United States",
+      countryCode:"US",
+      lat:34.05223,
+      long:-118.24368,
+    },"public directory lost the already-published birthplace");
+    const search=await readApi.fetch(new Request("http://presentation.local/api/threads/search?limit=10"));
+    assert.equal(search.status,200);
+    const searched=(await search.json()).threads[0];
+    assert.deepEqual(searched.birthPlace,discoveryBody.threads[0].birthPlace,
+      "search and roster must agree on published birthplace");
+    assert.equal(searched.homePlaceRef,null,
+      "birthplace must not become an invented current home");
 
     const outbox = await waitForDeliveredOutbox(
       world.presentationOutboxStore,
