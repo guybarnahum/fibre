@@ -373,7 +373,7 @@ export function advanceThreadMeetState(state,result){
       terminal:typeof result.currentSituationId==="string",
     });
   }
-  if(["decline","defer","scene_changed","interrupted"].includes(result.outcome)){
+  if(["decline","defer","unavailable","scene_changed","interrupted"].includes(result.outcome)){
     return Object.freeze({
       situationId:result.situationId??result.currentSituationId??state.situationId,
       priorEncounterStoryId:state.priorEncounterStoryId,
@@ -489,6 +489,8 @@ export async function meetThread({
         output.write(`${threadName}> ${result.expression??"Not right now."}\n  declined\n`);
       }else if(result.outcome==="defer"){
         output.write(`${threadName}> ${result.expression??"Later."}\n  deferred${result.suggestedAt?` · ${result.suggestedAt}`:""}\n`);
+      }else if(result.outcome==="unavailable"){
+        output.write("  Thread unavailable · no outward response\n");
       }else if(result.outcome==="interrupted"){
         output.write("  encounter interrupted before outward speech\n");
       }else if(result.outcome==="scene_changed"){
