@@ -81,7 +81,7 @@ function showThreadPortraitPreview(target){
   const image=document.createElement("img");
   image.src=url;
   image.alt=(target.dataset.portraitPreviewName||"Person")+" portrait preview";
-  if(target.dataset.portraitPreviewFallbackUrl)useThumbnailFallback(image,{
+  if(target.dataset.portraitPreviewIsThumbnail==="true")useThumbnailFallback(image,{
     threadId:target.dataset.threadId||null,thumbnailUrl:url,
     fallbackUrl:target.dataset.portraitPreviewFallbackUrl,context:"hover_preview",
   });
@@ -100,19 +100,20 @@ function showThreadPortraitPreview(target){
   }
 }
 
-export function setPortraitPreviewSource(target,{url=null,name=null,fallbackUrl=null,placement:side="left"}={}){
+export function setPortraitPreviewSource(target,{url=null,name=null,fallbackUrl=null,isThumbnail=false,placement:side="left"}={}){
   if(!target)return target;
   target.dataset.portraitPreviewUrl=url??"";
   target.dataset.portraitPreviewFallbackUrl=fallbackUrl??"";
+  target.dataset.portraitPreviewIsThumbnail=isThumbnail?"true":"false";
   target.dataset.portraitPreviewName=name??"";
   target.dataset.portraitPreviewPlacement=placement(side);
   if(!url&&preview&&!preview.hidden)hidePortraitPreview();
   return target;
 }
 
-export function bindPortraitPreview(target,{url=null,name=null,fallbackUrl=null,placement:side="left"}={}){
+export function bindPortraitPreview(target,{url=null,name=null,fallbackUrl=null,isThumbnail=false,placement:side="left"}={}){
   if(!target)throw new TypeError("portrait preview target is required");
-  setPortraitPreviewSource(target,{url,name,fallbackUrl,placement:side});
+  setPortraitPreviewSource(target,{url,name,fallbackUrl,isThumbnail,placement:side});
   if(target.dataset.portraitPreviewBound==="true")return target;
   target.dataset.portraitPreviewBound="true";
   target.addEventListener("pointerenter",()=>showThreadPortraitPreview(target));
