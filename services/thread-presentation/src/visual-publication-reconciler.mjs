@@ -219,6 +219,22 @@ export function createThreadPresentationVisualPublicationReconciler({
       }
       const canonicalObjectRef = embodiment.asset.referenceObjectRef;
 
+      // The operator's one-time thumbnail backfill cannot rewrite identity
+      // or enter FID issuance; it uses the already-admitted public projection.
+      if(thumbnailOnly){
+        const thumbnail=ensurePortraitThumbnail===null
+          ? null
+          : await ensurePortraitThumbnail({threadId});
+        return thumbnail?.published===true
+          ? result(true,"complete",{
+              portraitThumbnailObjectRef:thumbnail.objectRef,
+              reused:thumbnail.reused===true,
+            })
+          : result(false,"portrait_thumbnail_pending",{
+              reason:thumbnail?.reason??"thumbnail publisher not configured",
+            });
+      }
+
       const channelId = threadPresentationChannelId(threadId);
       const initial = await presentationServer.getSnapshot(channelId);
       if (initial === null) return result(false, "awaiting_genesis_projection");
@@ -253,16 +269,6 @@ export function createThreadPresentationVisualPublicationReconciler({
         threadId,sourceObjectRef:canonicalObjectRef,
         reason:thumbnailError instanceof Error?thumbnailError.message:String(thumbnailError),
       });
-      if(thumbnailOnly===true){
-        return thumbnailError===null && thumbnail?.published===true
-          ? result(true,"complete",{
-              portraitThumbnailObjectRef:thumbnail.objectRef,reused:thumbnail.reused===true,
-            })
-          : result(false,"portrait_thumbnail_pending",{
-              reason:thumbnailError?.message??"thumbnail publisher not configured",
-            });
-      }
-
       const fid = await runChangedStage(activity, {
         ...context,
         stage:"presentation.identity_media.ensure",
