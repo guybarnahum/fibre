@@ -444,6 +444,7 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
                 endAt: context.horizon.endAt,
                 physicalPlaceRef: placeRef,
                 presenceMode: "physical",
+                wakefulness:"awake",
                 mediatedContext: "",
                 activity: "Continue ordinary life from the place already reached.",
                 purpose: "Carry forward existing intentions without inventing a visitor or exceptional event.",
