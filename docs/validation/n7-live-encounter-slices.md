@@ -1,11 +1,14 @@
 ---
 id: validation-n7-live-encounter-slices
 status: accepted
-last-reviewed: 2026-10-07
+last-reviewed: 2026-10-11
 canonical: true
 ---
 
 # N7 — Live encounters and social consequence
+
+**October 11 status:** N7.0–N7.10 are locally accepted. N7.11 recipient-contact Gate 1 has a Guy-validated local authority/retry proof (**27 focused / 1,564 full tests on October 8**), but no genuine staging provider-owned recipient noticing yet. Gate 2 selective long-term retention/non-retention and Gate 3 later endogenous, history-caused behavior divergence remain open. The actual public `/encounter` has since acquired N7-derived SSE, acknowledged outward-text checkpoints, interruption and recovery with a real public staging accepted stream; this does **not** prove true overlapping public voice, in-browser interruption, or spontaneous Thread-owned mid-expression withdrawal. October 11 Sophie's sleeping-state spoken decline raises an additional independent LivedNow-reachability gap. Thread-to-Thread conversation themes from oral-history research can support a bounded experiment, but must not script either individual's answers or force co-presence, friendship or retention. Viewer redesign is on a separate planned UX hold; World evidence/cost investigations can continue. See [current priorities](../state/current-priorities.md) and [N6 browser gate](n6-public-lived-encounter-slices.md).
+
 
 N7 takes the accepted N5/N6 encounter authorities and removes the remaining chatbot-shaped constraints.
 
