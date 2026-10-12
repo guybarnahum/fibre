@@ -550,7 +550,7 @@ function observationDivergesFrom(position, observation) {
     return position.location.placeRef !== observation.location.placeRef ||
       position.mediatedContext !== observation.mediatedContext ||
       position.activity !== observation.activity ||
-      position.wakefulness !== (observation.wakefulness ?? "unknown") ||
+      (observation.wakefulness !== undefined && position.wakefulness !== observation.wakefulness) ||
       canonicalJson(position.participantRefs) !== canonicalJson(observation.participantRefs);
   }
   return observation.location.kind !== "transit" ||
