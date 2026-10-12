@@ -80,7 +80,6 @@ export function createVisualPublicationWriteApi({ reconciler, privateToken } = {
               observedAt: body.observedAt,
               activityContext: optionalActivityContext(body.activityContext),
               regenerationKey: optionalRegenerationKey(body.regenerationKey),
-              thumbnailOnly:body.thumbnailOnly===true,
             });
         return Response.json({ ok: true, result });
       } catch (error) {
