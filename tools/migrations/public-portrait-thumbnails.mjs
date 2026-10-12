@@ -33,6 +33,9 @@ export async function backfillPortraitThumbnails({
   const directoryResponse=await fetchImpl(new URL("/api/threads/search?limit=200",presentation));
   if(!directoryResponse.ok)throw new Error("Directory: HTTP "+directoryResponse.status);
   const directory=await directoryResponse.json();
+  if(directory.threads?.length && !Object.hasOwn(directory.threads[0],"portraitThumbnailObjectRef")){
+    throw new Error("Deploy updated Thread Presentation before thumbnail backfill");
+  }
   const missing=(directory.threads??[]).filter((t)=>!t.portraitThumbnailObjectRef).slice(0,limit);
   const summary={environment,mode:apply?"apply":"preview",candidates:missing.length,
     published:0,notReady:0,failed:0};
