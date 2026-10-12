@@ -7,6 +7,41 @@ const SOLAR_INTERVAL_MS = 15 * 60_000;
 const solarMaps = new Set();
 let solarTimer = null;
 let solarObserver = null;
+let clockTimer = null;
+
+// Longitude gives approximate mean solar time, not a country's civil time zone.
+export function solarClockForLongitude(longitude, instant, localOffsetMinutes = -new Date(instant).getTimezoneOffset()) {
+  const utcOffsetMinutes = Math.round(Math.max(-180, Math.min(180, longitude)) * 4);
+  return Object.freeze({
+    time:new Date(new Date(instant).getTime() + utcOffsetMinutes * 60_000),
+    differenceMinutes:utcOffsetMinutes - localOffsetMinutes,
+  });
+}
+
+function showMapClock(map) {
+  if (map.longitude === null) return;
+  const { time, differenceMinutes } = solarClockForLongitude(map.longitude, new Date());
+  map.clockTime.textContent = time.toLocaleTimeString(undefined, {
+    timeZone:"UTC", hour:"numeric", minute:"2-digit",
+  });
+  const magnitude = Math.abs(differenceMinutes);
+  const hours = Math.floor(magnitude / 60);
+  const minutes = magnitude % 60;
+  const offset = magnitude === 0 ? "±0h" :
+    `${differenceMinutes > 0 ? "+" : "−"}${hours}h${minutes ? ` ${minutes}m` : ""}`;
+  map.clockOffset.textContent = `≈ ${offset} from you · solar`;
+}
+
+function refreshMapClocks() {
+  if (clockTimer !== null) window.clearTimeout(clockTimer);
+  clockTimer = null;
+  if (document.hidden || !document.hasFocus()) return;
+  const visible = [...solarMaps].filter((map) =>
+    map.visible && map.container.isConnected && map.longitude !== null
+  );
+  for (const map of visible) showMapClock(map);
+  if (visible.length > 0) clockTimer = window.setTimeout(refreshMapClocks, 60_000);
+}
 
 // Only one scheduler for all three maps; no work in a blurred tab or
 // while every map is offscreen. SVG animates movement without JS frames.
@@ -15,6 +50,7 @@ function syncSolarMaps() {
   solarTimer = null;
   const focused = !document.hidden && document.hasFocus();
   const active = [...solarMaps].filter((map) => focused && map.visible && map.container.isConnected);
+  refreshMapClocks();
   for (const map of solarMaps) {
     map.motion?.remove();
     map.motion = null;
@@ -108,8 +144,31 @@ export function mountWorldMap(container, { selection = false } = {}) {
   legend.className = "thread-world-night-legend";
   legend.textContent = "☾ Solar night · not sleep status";
   legend.setAttribute("aria-hidden", "true");
-  container.replaceChildren(svg, legend);
-  watchSolarMap({ container, group:night, paths:nightPaths, motion:null, visible:false });
+  const clock = document.createElement("div");
+  clock.className = "thread-world-map-clock";
+  clock.title = "Approximate mean solar time by longitude; not a civil time zone.";
+  const clockTime = document.createElement("strong");
+  clockTime.textContent = "—:—";
+  const clockOffset = document.createElement("span");
+  clockOffset.textContent = "Hover map for solar time";
+  clock.append(clockTime, clockOffset);
+  container.replaceChildren(svg, legend, clock);
+
+  const map = { container, group:night, paths:nightPaths, motion:null,
+    visible:false, longitude:null, clockTime, clockOffset };
+  svg.addEventListener("pointermove", (event) => {
+    // Keep the last geographic reading while examining an interactive marker.
+    if (markers.contains(event.target) || event.target === selectionMarker) return;
+    const bounds = svg.getBoundingClientRect();
+    if (bounds.width <= 0) return;
+    const x = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+    map.longitude = x * 360 - 180;
+    showMapClock(map);
+    if (clockTimer === null && map.visible && !document.hidden && document.hasFocus()) {
+      refreshMapClocks();
+    }
+  });
+  watchSolarMap(map);
   return Object.freeze({ svg, markers, selectionMarker });
 }
 
