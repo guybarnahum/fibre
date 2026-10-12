@@ -64,8 +64,19 @@ async function fixture({visible=true,portrait=true}={}){
 test("public portrait has one immutable, servable thumbnail; retry neither regenerates nor republishes",async()=>{
   const f=await fixture();
   let transformations=0;
+  let originalReads=0;
+  const infra={
+    ...f.infra,
+    objects:{
+      ...f.infra.objects,
+      async get(ref){
+        if(ref===SOURCE_REF)originalReads+=1;
+        return f.infra.objects.get(ref);
+      },
+    },
+  };
   const publish=()=>publishPublicPortraitThumbnail({
-    ...f,threadId:THREAD,
+    ...f,infra,threadId:THREAD,
     async transform(){transformations++;return THUMB;},
   });
   const first=await publish();
@@ -81,6 +92,7 @@ test("public portrait has one immutable, servable thumbnail; retry neither regen
   const second=await publish();
   assert.equal(second.reused,true,"same portrait should reuse its immutable rendition");
   assert.equal(transformations,1,"repeated completion must not reencode the image");
+  assert.equal(originalReads,1,"repeat should not re-download the full portrait");
   const channel=await f.infra.catalog.get("presentation:"+THREAD);
   await f.infra.catalog.upsert("presentation:"+THREAD,{
     ...channel,publiclyVisible:false,
