@@ -103,7 +103,7 @@ test("operator thumbnail-only publication never enters the FID lifecycle",async(
     },
     infra:{},selectProviderProfile(){return "unused";},
     createDemandService:()=>demandService(),
-    createVisualRewrite(){return {async project(){return {reused:true};}};},
+    createVisualRewrite(){throw new Error("thumbnail backfill must not rewrite identity");},
     async ensurePortraitThumbnail(){return {
       published:true,reused:false,objectRef:"portrait_thumb_sample",
     };},
