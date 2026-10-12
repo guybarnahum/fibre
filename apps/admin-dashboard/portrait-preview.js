@@ -2,7 +2,7 @@
 const failedThumbnails=new Set();
 
 export function useThumbnailFallback(image,{
-  threadId=null,thumbnailUrl=null,fallbackUrl=null,context="portrait",
+  threadId=null,thumbnailUrl=null,fallbackUrl=null,context="portrait",onFallback=null,
 }={}){
   if(!thumbnailUrl)return;
   image.addEventListener("error",()=>{
@@ -16,7 +16,10 @@ export function useThumbnailFallback(image,{
         reason:"image_load_error",
       });
     }
-    if(fallbackUrl&&fallbackUrl!==thumbnailUrl)image.src=fallbackUrl;
+    if(fallbackUrl&&fallbackUrl!==thumbnailUrl){
+      image.src=fallbackUrl;
+      onFallback?.();
+    }
   },{once:true});
 }
 
@@ -78,6 +81,10 @@ function showThreadPortraitPreview(target){
   const image=document.createElement("img");
   image.src=url;
   image.alt=(target.dataset.portraitPreviewName||"Person")+" portrait preview";
+  if(target.dataset.portraitPreviewFallbackUrl)useThumbnailFallback(image,{
+    threadId:target.dataset.threadId||null,thumbnailUrl:url,
+    fallbackUrl:target.dataset.portraitPreviewFallbackUrl,context:"hover_preview",
+  });
   popup.replaceChildren(image);
 
   const position=portraitPreviewPosition(target.getBoundingClientRect(),{
@@ -93,18 +100,19 @@ function showThreadPortraitPreview(target){
   }
 }
 
-export function setPortraitPreviewSource(target,{url=null,name=null,placement:side="left"}={}){
+export function setPortraitPreviewSource(target,{url=null,name=null,fallbackUrl=null,placement:side="left"}={}){
   if(!target)return target;
   target.dataset.portraitPreviewUrl=url??"";
+  target.dataset.portraitPreviewFallbackUrl=fallbackUrl??"";
   target.dataset.portraitPreviewName=name??"";
   target.dataset.portraitPreviewPlacement=placement(side);
   if(!url&&preview&&!preview.hidden)hidePortraitPreview();
   return target;
 }
 
-export function bindPortraitPreview(target,{url=null,name=null,placement:side="left"}={}){
+export function bindPortraitPreview(target,{url=null,name=null,fallbackUrl=null,placement:side="left"}={}){
   if(!target)throw new TypeError("portrait preview target is required");
-  setPortraitPreviewSource(target,{url,name,placement:side});
+  setPortraitPreviewSource(target,{url,name,fallbackUrl,placement:side});
   if(target.dataset.portraitPreviewBound==="true")return target;
   target.dataset.portraitPreviewBound="true";
   target.addEventListener("pointerenter",()=>showThreadPortraitPreview(target));
