@@ -10,7 +10,7 @@ import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { createLivedNowService, LivedNowCoverageError } from "../src/lived-now-service.mjs";
 import { createLivedBoundaryProcess, nextLivedBoundary } from "../src/lived-now-boundary.mjs";
-import { livedPlanId, livedSituationId, normalizeLivedPlan } from "../src/lived-now.mjs";
+import { livedPlanId, livedSituationId, plannedPositionAt } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import {
   lifeRelationId,
