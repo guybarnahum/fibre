@@ -67,17 +67,3 @@ export function worldNightPath(at) {
   }
   return path.join("");
 }
-
-// A single browser clock drives the three static SVG maps. No World reads,
-// per-Thread timers, model inference, external ephemeris or tracking.
-if (typeof document !== "undefined") {
-  const masks = [...document.querySelectorAll(".thread-world-night-mask")];
-  const refresh = () => {
-    if (document.hidden || masks.length === 0) return;
-    const path = worldNightPath(Date.now());
-    for (const mask of masks) mask.setAttribute("d", path);
-  };
-  refresh();
-  window.setInterval(refresh, 5 * 60_000);
-  document.addEventListener("visibilitychange", refresh);
-}
