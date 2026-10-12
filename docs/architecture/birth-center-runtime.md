@@ -86,6 +86,6 @@ The Cloudflare deployment uses a private Worker plus one named SQLite-backed Dur
 
 ## Current development boundary
 
-The current Genesis hardening plan is [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md). It may evolve memory/meaning selection and experimental instrumentation, but it does not move authoritative birth state into the Birth Center.
+The completed Genesis memory/meaning selectivity and scientific-diagnostic bridge is recorded in [its outcome](../history/genesis-selectivity-scientific-hardening.md). That work did not move authoritative birth state into the Birth Center or earn a Whole-Person standing increase.
 
 Production persistence remains governed separately by [`production-persistence.md`](production-persistence.md): semantic stores own Fibre meaning, while provider-neutral `InfraDriver` capabilities own production persistence guarantees. Authoritative World relational state and Birth Center provisional/provider-call durability now cross `InfraDriver.state`; local `.fibre` development artifacts are fixtures/validation artifacts rather than production persistence precedent.

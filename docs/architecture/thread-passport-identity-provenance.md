@@ -129,7 +129,7 @@ The registry itself has a deterministic digest. Every immutable assertion row al
 
 A 5,000-word biography record cannot therefore enter the ledger as one assertion. The byte bound, however, is **not** a complete semantic proposition detector: materially independent propositions can still fit below 2,048 bytes.
 
-That hostile-review finding is deferred only while #37 has no authoring-at-scale surface. The hardening deadline is **before any PR authors identity assertions at scale**. #38 must therefore either land semantic one-claim enforcement before its lineage/geography/culture writers emit durable assertions, or mechanically constrain every #38 writer to a provisional one-material-proposition-per-assertion discipline. It may not defer the problem until #39 after an immutable corpus already exists.
+This was a **#37 milestone limitation**, subsequently closed in #38 before bulk identity authoring. Current v2 admission requires `claimPredicate: {subject, predicate, object}` in addition to the prose backstop. Immutable `admission.claimDiscipline` names the exact historical claim-shape policy; `admission.policy` independently records the source/provenance authority. Current write admission and historical read rehydration use their respective pinned policies, so future admission changes cannot invalidate old history. V1 history stays immutable and is not a bulk-write escape hatch. Registry version remains bound into assertion digests and revisions; mixed/v2 views bind only the domain definitions actually consumed, while unsupported historical registry versions fail before schema repair mutates state. The concise [#38 outcome](../history/milestones/pr38.md) preserves the hostile-review closure and its non-causal evidence boundary.
 
 Long biography, life chapters, and rich exterior prose are derived representations over claim-level records. They are never the source of truth.
 
@@ -420,6 +420,6 @@ A pending photo does **not** make the identity ledger corrupt; it makes the sepa
 - endogenous self-authored Development — #41;
 - reciprocal relationship mechanics — #42.
 
-The hostile-review finding that the 2,048-byte limit is not a complete semantic anti-blob detector remains unclaimed in #37, but its deferral expires **before #38 begins authoring identity assertions at scale**. #38 must not create an immutable multi-proposition corpus and leave #39 to discover that Scenario E cannot ablate it.
+The #37 2,048-byte anti-blob limitation was addressed by #38's version-pinned structural admission rule before bulk authoring. This section retains #37's historical scope; [#38's completed outcome](../history/milestones/pr38.md) records the subsequent proof.
 
 #37 earns persistence/provenance infrastructure only. The rubric remains at the pre-M2 checkpoint until later PRs earn causal standing.

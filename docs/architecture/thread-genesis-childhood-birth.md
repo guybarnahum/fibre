@@ -21,7 +21,7 @@ The inherited substrate is [`Symbolic Thread Genome`](symbolic-thread-genome.md)
 
 Richness follows [`rich-life.md`](../foundations/rich-life.md): experiential fertility for later individuality, not biography length, drama or a quota of formative experiences.
 
-Current admission/publication detail lives in [`genesis-compiler-contract.md`](genesis-compiler-contract.md). Current scientific hardening is [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md). The completed #39 result is retained in [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+Current admission/publication detail lives in [`genesis-compiler-contract.md`](genesis-compiler-contract.md). Completed Genesis scientific-hardening and #39 birth outcomes remain in [Genesis hardening](../history/genesis-selectivity-scientific-hardening.md) and [#39](../history/milestones/pr39.md), respectively.
 
 ## Authority boundary
 
@@ -445,9 +445,9 @@ The result also exposed real debt: scheduled memory decisions saturated, reinter
 
 Those findings were retained rather than regenerated away. The concise outcome is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
 
-## Current hardening before causal consumption
+## Completed scientific hardening before causal consumption
 
-The accepted unnumbered bridge [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md) hardens:
+The accepted unnumbered bridge, now recorded in [its completed outcome](../history/genesis-selectivity-scientific-hardening.md), hardened:
 
 - actual remember/decline selectivity without quotas;
 - negative, ambiguous, mundane and unchanged meaning fidelity;
@@ -456,7 +456,7 @@ The accepted unnumbered bridge [`../state/genesis-selectivity-scientific-hardeni
 - diagnostics with meaningful positive/negative/counterfactual controls;
 - prospective sealed-history evaluation with compiler-enforced transitive provenance isolation.
 
-This bridge does not implement ordinary-cognition identity/history projection and earns no Whole-Person standing.
+That bridge did not implement ordinary-cognition identity/history projection or earn Whole-Person standing. The subsequent [#40 outcome](../history/milestones/pr40.md) records a separate bounded causal-consumption result.
 
 ## Vision test
 

@@ -19,7 +19,7 @@ It governs what Genesis cognition may know, what it may produce, what Fibre may 
 
 This contract is subordinate to the Fibre Constitution, [`interpretive-personhood.md`](../foundations/interpretive-personhood.md), [`rich-life.md`](../foundations/rich-life.md), [`thread-genesis-childhood-birth.md`](thread-genesis-childhood-birth.md), [`symbolic-thread-genome.md`](symbolic-thread-genome.md), ADR-0012 and ADR-0013.
 
-Current scientific hardening is governed by [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md) and [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md). The completed #39 validation outcome is retained in [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+Current diagnostic doctrine lives in [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md). The completed #39 birth proof and subsequent prospective selectivity/scientific-hardening bridge retain separate outcomes in [#39](../history/milestones/pr39.md) and [Genesis hardening](../history/genesis-selectivity-scientific-hardening.md). Neither is itself Whole-Person standing.
 
 Genesis creates durable life substrate. #40 owns canonical causal consumption of that substrate; #41 owns M2 standing.
 
@@ -403,4 +403,4 @@ Genesis does not by itself:
 
 Milestone #39 exercised this contract with one fixed five-Thread cohort and established exact replay, per-Thread atomic birth, civil registration and deep hydration while preserving negative scientific findings. The concise outcome is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
 
-The next work does not rerun #39 to obtain a prettier result. It hardens memory/meaning selectivity and diagnostic validity under [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md), then #40 builds the ordinary-cognition consumer.
+The post-#39 prospective bridge later corrected memory/meaning selectivity and strengthened diagnostic validity without rewriting #39's negative evidence. Its [completed outcome](../history/genesis-selectivity-scientific-hardening.md) remains separate from [#40's bounded ordinary-cognition causal proof](../history/milestones/pr40.md).

@@ -212,4 +212,4 @@ PR39's frozen D1-D5 run is the motivating case for these rules:
 - temperature-zero repeated calls with option permutation were robustness checks rather than independent replicates;
 - durable operational resume preserved committed judgments through provider timeouts without rerating accepted results.
 
-The accepted implementation follow-up is [`../state/genesis-selectivity-scientific-hardening.md`](../state/genesis-selectivity-scientific-hardening.md).
+The accepted prospective implementation follow-up is completed; its experimental outcomes, including negative genome standing, remain in [Genesis selectivity and scientific hardening](../history/genesis-selectivity-scientific-hardening.md).
