@@ -1,6 +1,54 @@
-import { WORLD_MAP_BOUNDS } from "./world-map-data.js";
+import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
+import { worldNightPath } from "./world-daylight.js";
 
 export const SVG_NS = "http://www.w3.org/2000/svg";
+
+const nightLayers = new Set();
+let nightTimer = null;
+
+function updateNightLayers() {
+  if (document.hidden || nightLayers.size === 0) return;
+  const night = worldNightPath(Date.now());
+  for (const layer of nightLayers) layer.setAttribute("d", night);
+}
+
+// Shared geographic component for population, birth and appearance.
+// The map owns land, solar shading, meridians and refresh. Each caller
+// supplies only its domain-specific markers/interactions.
+export function mountWorldMap(container, { selection = false } = {}) {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.classList.add("thread-world-map-svg");
+  svg.setAttribute("viewBox", "0 0 1000 500");
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.setAttribute("aria-hidden", "true");
+  const worldPath = document.createElementNS(SVG_NS, "path");
+  worldPath.classList.add("thread-world-map-path");
+  worldPath.setAttribute("d", WORLD_MAP_PATH);
+  const night = document.createElementNS(SVG_NS, "path");
+  night.classList.add("thread-world-night-mask");
+  const meridians = document.createElementNS(SVG_NS, "g");
+  meridians.classList.add("thread-world-timezones");
+  renderWorldTimeZoneLines(meridians);
+  const markers = document.createElementNS(SVG_NS, "g");
+  svg.append(worldPath, night, meridians, markers);
+  let selectionMarker = null;
+  if (selection) {
+    selectionMarker = document.createElementNS(SVG_NS, "circle");
+    selectionMarker.id = "thread-birth-map-marker";
+    selectionMarker.setAttribute("r", "10");
+    selectionMarker.setAttribute("hidden", "");
+    svg.append(selectionMarker);
+  }
+  container.replaceChildren(svg);
+  nightLayers.add(night);
+  if (nightTimer === null) {
+    nightTimer = window.setInterval(updateNightLayers, 5 * 60_000);
+    document.addEventListener("visibilitychange", updateNightLayers);
+  }
+  updateNightLayers();
+  return Object.freeze({ svg, markers, selectionMarker });
+}
+
 
 export function worldMapPoint(latitude, longitude) {
   const x = ((longitude + 180) / 360) * WORLD_MAP_BOUNDS.width;
