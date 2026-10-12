@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-birth-presentation-data-flow
 status: accepted
-last-reviewed: 2026-09-28
+last-reviewed: 2026-10-12
 canonical: true
 ---
 
@@ -360,6 +360,8 @@ GET /api/threads/:threadId/snapshot
 ```
 
 Thread discovery is derived from `presentation:` catalog entries. Media catalog entries are excluded. A catalog record is insufficient by itself: Thread Presentation also verifies that a current snapshot exists for the same Thread and that immutable identity-card visibility permits public presentation.
+
+The public roster (`GET /api/threads`) and searchable directory (`GET /api/threads/search`) now expose a separate `birthPlace` projected only from an already-published Genesis birthplace entry. Shape: `{displayName, city?, country?, countryCode?, lat?, long?}`; geographical coordinates come exclusively from Fibre's canonical locality evidence where a name resolves. Neither `homePlaceRef` nor a genuine World-enacted `currentPresent` is populated from historical birth location. Unknown birthplaces stay unmapped; no private Situated Life record is newly published. The catalog index is updated upon a snapshot publication; existing catalog records require republishing or a one-time reindex, not a per-request scan. Source implementation is pending local and staging validation.
 
 `insidefibre.com` must never query World Kernel, Civil Registry storage, R2/D1 directly, or Fibre implementation files to discover inhabitants.
 
