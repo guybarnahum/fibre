@@ -1,11 +1,24 @@
 ---
 id: validation-meet-encounter-run-path-audit
 status: proposed
-last-reviewed: 2026-10-09
+last-reviewed: 2026-10-11
 canonical: true
 ---
 
 # Meet / Encounter runtime audit — findings and deferred work
+
+## Current audit checkpoint — October 11 (read before historical sections)
+
+The October 8 ranked source findings below are **the original baseline**, not the current state of every issue. Since that initial review, operator-approved local proofs and staging evidence established **N7-derived public SSE**, sentence/pause World checkpoints, interrupt/retry recovery with a durable request-to-Story admission witness, and a real public Presentation→World accepted stream (October 9). Do not schedule a second implementation of those now-accepted mechanisms because their *original finding* still uses future tense.
+
+**Measured and still open:** one real staging public `participation` call took **4.37 s / 4,169 reported tokens**. The baseline public request made **655 SQL queries, 557 in SituatedLifeStore**; its indexed relation-history read correction was deployed October 8. **No post-optimization SQL delta or complete accepted participation/expression/Experience token+latency sample is yet observed.** Use existing `public-encounter-model-usage`, `world-state-cost` and `thread:meet -vv` evidence on a naturally accepted encounter; no new telemetry framework or forced retry loop. Optimize measured redundant cognition/reads only after preserving consent, outward truth and real personal experience.
+
+**Causal audit still open:** live browser interruption/wall-clock delivery acknowledgement and admitted Story continuation across genuine scene movement need owner-staged observation. October 11 read-only evidence confirms Sophie spoke an outward refusal while her exact authoritative CurrentSituation was `Sleep.` (17:42:06.437Z), so **sleep/reachability/waking consistency is a new high-value World defect hypothesis to resolve**; do not treat a spoken reply as a verified wake-up. Faith and Sophie both legitimately declined first-turn visitor invitations October 11; no accepted Story should be invented for these. Admin UI showed no World scenes for Sophie despite API returning current and previous situations; Faith's API returned 31 Stories despite a formerly empty UI. The browser after-Leave display called a two-speaker decline `Conversation · 0 turns`; that is a Viewer presentation problem, not a missing World Story.
+
+**Deliberate product hold:** further insidefibre.com layout polish and production promotion are paused for review of the existing [scene-first, voice-first Viewer proposal](https://github.com/guybarnahum/insidefibre.com/blob/main/docs/meet-voice-first-experience-proposal.md). The nullable World-context dual clock and small Admin nav styling changes are committed in source but **post-change staging acceptance is unreported**. Complete cohesive UX design before additional piecemeal UI work; do not block read-only runtime measurement or an evidence-backed World semantic fix. Real browser voice, Thread-initiated midstream withdrawal, episode-level inference cost reduction and N7.11 later-life causality remain **distinct open capabilities**.
+
+**Recommended sequence:** first gather factual sleep/admin data → decide the Viewer redesign → validate/deploy staging with Guy → one accepted public browser lifecycle → one bounded full-stage cost/SQL sample → one causally attributable Thread-to-Thread/recipient follow-on, preserving valid non-memory outcomes. The larger World cost/accounting/scaling tracks are recorded separately in [current priorities](../state/current-priorities.md). No new code/tests/deployment are claimed by this documentation checkpoint.
+
 
 **Status:** source-level audit, **not** a code fix or accepted behavior change. Inspected `main` on 2026-10-08 after recipient-contact Gate 1 and the World operating-economics plans. No new tests, CLI validation or staging deployment were performed as part of this audit. Source-level risks require the specific proofs below before being called live defects.
 
