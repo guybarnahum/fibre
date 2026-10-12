@@ -12,10 +12,17 @@ import { ageYearsAt } from "./visual-identity-reference-domain.mjs";
 
 export const LIVED_PLAN_KINDS = Object.freeze(["personal", "care"]);
 export const CARE_CONSTRAINTS = Object.freeze(["preferred", "required"]);
+export const WAKEFULNESS_STATES = Object.freeze(["awake", "asleep", "unknown"]);
 const SHA256_PATTERN = /^sha256:[0-9a-f]{64}$/u;
 
 function assertEnum(name, value, allowed) {
   if (!allowed.includes(value)) throw new TypeError(`${name} is invalid`);
+}
+
+function normalizeWakefulness(value) {
+  const state = value ?? "unknown";
+  assertEnum("World wakefulness", state, WAKEFULNESS_STATES);
+  return state;
 }
 
 function normalizeIds(name, value, { required = false } = {}) {
@@ -151,6 +158,7 @@ function normalizeStop(value, index) {
     "physicalPlaceRef",
     "mediatedContext",
     "activity",
+    "wakefulness",
     "purpose",
     "companionRefs",
     "travelFromPrevious",
@@ -172,6 +180,7 @@ function normalizeStop(value, index) {
     physicalPlaceRef: value.physicalPlaceRef,
     mediatedContext,
     activity: value.activity,
+    wakefulness: normalizeWakefulness(value.wakefulness),
     purpose: value.purpose,
     companionRefs,
     travelFromPrevious,
@@ -357,6 +366,7 @@ export function plannedPositionAt(planCandidate, at) {
         location: { kind: "place", placeRef: stop.physicalPlaceRef },
         mediatedContext: stop.mediatedContext,
         activity: stop.activity,
+        wakefulness: stop.wakefulness,
         reason: stop.purpose,
         participantRefs: stop.companionRefs,
       };
@@ -385,6 +395,7 @@ export function plannedPositionAt(planCandidate, at) {
       },
       mediatedContext: null,
       activity: next.travelFromPrevious,
+      wakefulness: "unknown",
       reason: next.purpose,
       participantRefs: next.companionRefs,
     };
@@ -395,6 +406,7 @@ export function plannedPositionAt(planCandidate, at) {
     location: { kind: "place", placeRef: previous.physicalPlaceRef },
     mediatedContext: null,
     activity: "Unstructured time between planned commitments.",
+    wakefulness: "unknown",
     reason: "The flight plan leaves this interval open.",
     participantRefs: [],
   };
@@ -407,6 +419,7 @@ export function normalizeWorldObservation(value) {
     "location",
     "mediatedContext",
     "activity",
+    "wakefulness",
     "reason",
     "participantRefs",
     "evidenceRefs",
@@ -429,6 +442,7 @@ export function normalizeWorldObservation(value) {
     location,
     mediatedContext,
     activity: value.activity,
+    wakefulness: normalizeWakefulness(value.wakefulness),
     reason: value.reason,
     participantRefs,
     evidenceRefs,
@@ -445,6 +459,7 @@ export function normalizeCurrentSituation(value) {
     "location",
     "mediatedContext",
     "activity",
+    "wakefulness",
     "reason",
     "participantRefs",
     "evidenceRefs",
@@ -461,6 +476,7 @@ export function normalizeCurrentSituation(value) {
     location: value.location,
     mediatedContext: value.mediatedContext,
     activity: value.activity,
+    wakefulness: value.wakefulness,
     reason: value.reason,
     participantRefs: value.participantRefs,
     evidenceRefs: value.evidenceRefs,
@@ -535,6 +551,7 @@ function observationDivergesFrom(position, observation) {
     return position.location.placeRef !== observation.location.placeRef ||
       position.mediatedContext !== observation.mediatedContext ||
       position.activity !== observation.activity ||
+      position.wakefulness !== observation.wakefulness ||
       canonicalJson(position.participantRefs) !== canonicalJson(observation.participantRefs);
   }
   return observation.location.kind !== "transit" ||
