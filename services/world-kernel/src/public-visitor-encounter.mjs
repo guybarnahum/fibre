@@ -256,6 +256,15 @@ export function createPublicVisitorEncounterService({
         });
       }
 
+      // An asleep Thread cannot produce an immediate outward refusal without a World wake transition.
+      if(validation.currentSituation.wakefulness==="asleep"){
+        return complete({
+          outcome:"unavailable",
+          situationId:validation.currentSituation.situationId,
+          reason:"asleep",
+        });
+      }
+
       const immediateHistory = recentEncounterStories({
         experienceStore,
         threadId:input.threadId,
