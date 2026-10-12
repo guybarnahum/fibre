@@ -50,9 +50,10 @@ export async function publishPublicPortraitThumbnail({
   const portrait=activePortrait(current,channel);
   if(portrait===null)return {published:false,reason:"not_publicly_authorized"};
   const sourceObjectRef=portrait.referenceObjectRefs[0];
-  const source=await infra.objects.get(sourceObjectRef);
-  if(source===null) return {published:false,reason:"portrait_bytes_unavailable"};
-  const id=await identity(source.digest);
+  const sourceHead=await infra.objects.head(sourceObjectRef);
+  if(sourceHead===null)return {published:false,reason:"portrait_bytes_unavailable"};
+  const sourceDigest=sourceHead.digest;
+  const id=await identity(sourceDigest);
   const existing=existingThumbnail(current,sourceObjectRef);
   if(existing!==null && existing.locator!==id.objectRef){
     throw new Error("public portrait rendition conflicts with current source");
@@ -62,18 +63,20 @@ export async function publishPublicPortraitThumbnail({
   const prior=await infra.objects.head(id.objectRef);
   let digest=prior?.digest??null;
   if(prior!==null && (prior.metadata?.kind!==ROLE
-    || prior.metadata?.sourceDigest!==source.digest
+    || prior.metadata?.sourceDigest!==sourceDigest
     || prior.metadata?.sourceObjectRef!==sourceObjectRef)){
     throw new Error("portrait thumbnail immutable identity collision");
   }
   if(prior===null){
     if(typeof transform!=="function")throw new TypeError("portrait thumbnail transformer is required");
+    const source=await infra.objects.get(sourceObjectRef);
+    if(source?.digest!==sourceDigest)throw new Error("canonical portrait source changed during thumbnail derivation");
     const bytes=new Uint8Array(await transform(source.bytes));
     if(!isWebp(bytes))throw new Error("portrait thumbnail transformation was not WebP");
     const hash=await crypto.subtle.digest("SHA-256",bytes);
     digest="sha256:"+Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,"0")).join("");
     await infra.objects.putImmutable(id.objectRef,bytes,digest,{
-      kind:ROLE,sourceObjectRef,sourceDigest:source.digest,
+      kind:ROLE,sourceObjectRef,sourceDigest,
       mediaType:"image/webp",width:SIZE,height:SIZE,quality:QUALITY,
     });
   }
@@ -101,7 +104,7 @@ export async function publishPublicPortraitThumbnail({
       identityCredentialMedia:false,threadId,mediaId:id.mediaId,role:ROLE,
       objectRef:id.objectRef,digest,mediaType:"image/webp",
       provenanceClass:"derived_public_portrait",
-      sourceObjectRef,sourceDigest:source.digest,
+      sourceObjectRef,sourceDigest,
     });
     await presentationServer.publishSnapshot({
       channelId,
