@@ -6,6 +6,7 @@ import { renderThreadHealth } from "./thread-repair-ui.js";
 import {
   fetchThreadObservatory,
   portraitAsset,
+  portraitThumbnailAsset,
   renderFidSection,
   renderThreadObservatory,
   threadName,
@@ -126,7 +127,8 @@ export async function renderThreadPage(threadId) {
       button.dataset.lightboxSrc = photo.url;
       button.dataset.lightboxAlt = `${name} portrait`;
       const image = node("img");
-      image.src = photo.url;
+      image.src = portraitThumbnailAsset(identity)?.url??photo.url;
+      if(image.src!==photo.url)image.addEventListener("error",()=>{image.src=photo.url;},{once:true});
       image.alt = `${name} portrait`;
       button.append(image);
       portrait.replaceChildren(button);
