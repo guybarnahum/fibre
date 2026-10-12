@@ -1,3 +1,5 @@
+import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
+
 function cleanString(value) {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
@@ -6,6 +8,25 @@ function cleanStrings(value) {
   return Array.isArray(value)
     ? value.map(cleanString).filter((entry) => entry !== null)
     : [];
+}
+
+// Birthplace is a published identity fact, never a proxy for where the Thread lives now.
+export function publicBirthPlaceFromPresentation(presentation) {
+  const place = presentation?.places?.find((entry)=>
+    typeof entry.placeRef==="string" && entry.placeRef.startsWith("place_birth_"));
+  const displayName=cleanString(place?.displayName);
+  if(displayName===null)return null;
+  const geography=resolveLocalityGeography(displayName);
+  return Object.freeze({
+    displayName,
+    ...(geography===null?{}:{
+      city:geography.city,
+      country:geography.country,
+      countryCode:geography.countryCode,
+      lat:geography.lat,
+      long:geography.long,
+    }),
+  });
 }
 
 export function publicThreadDirectoryEntry({ current = null, catalogRecord }) {
@@ -27,6 +48,7 @@ export function publicThreadDirectoryEntry({ current = null, catalogRecord }) {
     birthDate: cleanString(projected?.birthDate ?? presentation?.subject?.birthDate),
     languages: Object.freeze(cleanStrings(projected?.languages ?? presentation?.subject?.languages)),
     homePlaceRef: cleanString(projected?.homePlaceRef ?? presentation?.subject?.homePlaceRef),
+    birthPlace: projected?.birthPlace ?? publicBirthPlaceFromPresentation(presentation),
     headline: cleanString(projected?.headline ?? presentation?.introduction?.headline),
     summary: cleanString(projected?.summary ?? presentation?.introduction?.summary),
     visualDescription: cleanString(projected?.visualDescription ?? presentation?.visualIdentity?.subjectDescription),
@@ -61,6 +83,7 @@ export function matchesThreadDirectoryEntry(entry, {
     entry.birthDate,
     ...entry.languages,
     entry.homePlaceRef,
+    entry.birthPlace?.displayName,
     entry.headline,
     entry.summary,
     entry.visualDescription,
