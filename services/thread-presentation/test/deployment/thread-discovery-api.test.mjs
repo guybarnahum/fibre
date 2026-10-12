@@ -6,7 +6,7 @@ import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import { THREAD_PRESENTATION_STREAM_VERSION } from "#services/world-kernel/src/thread-presentation-stream-domain.mjs";
 import { createPresentationReadApi, channelIdForThread } from "../../src/http/read-api.mjs";
-import { publicBirthPlaceFromPresentation } from "../../src/thread-directory.mjs";
+import { publicBirthPlaceFromPresentation, reindexPublishedBirthplaces } from "../../src/thread-directory.mjs";
 
 async function presentationBundle() {
   const base = new URL("../../../../fixtures/thread-presentation/can-tho/", import.meta.url);
@@ -97,6 +97,51 @@ test("directory birthplace is admitted public birth, not inferred residence or w
   assert.equal(publicBirthPlaceFromPresentation({
     ...presentation,places:[presentation.places[0]],
   }),null,"work city is not evidence of birthplace");
+});
+
+test("published birthplaces reindex without changing history or inventing a home",async()=>{
+  const infra=createMemoryInfraDriver();
+  const key="presentation:thr_born";
+  const original={
+    channelId:key,threadId:"thr_born",publiclyVisible:true,
+    latestSnapshotDigest:"sha256:existing",
+    publicDirectory:{displayName:"Ari",homePlaceRef:null},
+  };
+  await infra.catalog.upsert(key,original);
+  await infra.catalog.upsert("presentation:thr_private",{
+    channelId:"presentation:thr_private",threadId:"thr_private",
+    publiclyVisible:false,publicDirectory:{displayName:"Private"},
+  });
+  let opened=0;
+  const presentationServer={
+    async getSnapshot(channelId){
+      opened+=1;
+      assert.equal(channelId,key,"private history must not be scanned");
+      return {
+        pointer:{threadId:"thr_born",snapshotDigest:"sha256:existing"},
+        snapshot:{presentation:{places:[{
+          placeRef:"place_birth_ari",displayName:"Los Angeles, California",
+        }]}},
+      };
+    },
+  };
+  const repaired=await reindexPublishedBirthplaces({
+    infra,presentationServer,limit:25,
+  });
+  assert.equal(repaired.updated,1,"published birthplace was not reindexed");
+  const actual=await infra.catalog.get(key);
+  assert.equal(actual.publicDirectory.birthPlace.displayName,"Los Angeles, California");
+  assert.equal(actual.publicDirectory.birthPlace.lat,34.05223);
+  assert.equal(actual.publicDirectory.homePlaceRef,null,
+    "birthplace must never imply where the Thread lives now");
+  assert.equal(actual.latestSnapshotDigest,original.latestSnapshotDigest,
+    "index repair must preserve the immutable public snapshot witness");
+  assert.equal((await infra.catalog.get("presentation:thr_private"))
+    .publicDirectory.birthPlace,undefined,
+    "private identity must not be published by reindex");
+  const retry=await reindexPublishedBirthplaces({infra,presentationServer,limit:25});
+  assert.equal(retry.updated,0,"reindex must converge");
+  assert.equal(opened,1,"reindex must not reopen already-indexed snapshots");
 });
 
 test("GET /api/threads discovers only explicitly public Thread presentations", async () => {
