@@ -65,6 +65,13 @@ test("thread:meet continuation follows admitted encounter history and stops when
     situationId:"sit_002",
   });
   assert.equal(declined.terminal,true,"declined participation kept a meeting session alive");
+  const sleeping=advanceThreadMeetState(accepted,{
+    outcome:"unavailable",
+    situationId:"sit_002",
+    reason:"asleep",
+  });
+  assert.equal(sleeping.terminal,true,"unavailable Thread must not begin a conversation");
+  assert.equal(sleeping.priorEncounterStoryId,"story_001","sleep must not erase prior admitted history");
 });
 
 test("live CLI preserves actual audible speech and a single World admission across fragmented transport",async()=>{
