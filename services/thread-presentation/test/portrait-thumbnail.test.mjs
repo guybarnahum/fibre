@@ -120,3 +120,35 @@ test("non-public or unprojected portrait cannot produce a public thumbnail",asyn
       "private or absent portrait must remain unmapped in the directory");
   }
 });
+
+
+test("a prior derivative can be re-admitted after Presentation evolves without rewriting immutable snapshots",async()=>{
+  const f=await fixture();
+  let transformations=0;
+  const publish=()=>publishPublicPortraitThumbnail({
+    ...f,threadId:THREAD,async transform(){transformations++;return THUMB;},
+  });
+  const first=await publish();
+  const current=await f.presentationServer.getSnapshot("presentation:"+THREAD);
+  const derivative=current.snapshot.media.assets.find(a=>a.role==="portrait_thumbnail");
+  await f.presentationServer.publishSnapshot({
+    channelId:"presentation:"+THREAD,
+    objectRef:"snapshot_after_portrait_revision",
+    snapshotVersion:"portrait-revision-v2",
+    cursor:current.snapshot.cursor,
+    expectedSnapshotDigest:current.pointer.snapshotDigest,
+    bundle:{
+      presentation:current.snapshot.presentation,
+      media:{...current.snapshot.media,
+        assets:current.snapshot.media.assets.filter(a=>a.mediaId!==derivative.mediaId)},
+      provenance:{...current.snapshot.provenance,
+        entries:current.snapshot.provenance.entries.filter(p=>p.provenanceId!==derivative.provenanceRef)},
+    },
+  });
+  const second=await publish();
+  assert.equal(second.published,true,"current portrait could not regain its public derivative");
+  assert.equal(second.objectRef,first.objectRef,"an unchanged portrait must reuse thumbnail bytes");
+  assert.equal(transformations,1,"re-admission must not transform original bytes twice");
+  const served=await f.api.fetch(new Request("https://api.insidefibre.com/api/assets/"+second.objectRef));
+  assert.equal(served.status,200,"re-admitted current portrait must be servable");
+});
