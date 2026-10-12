@@ -1,11 +1,14 @@
 ---
 id: validation-n6-public-lived-encounter-slices
 status: accepted
-last-reviewed: 2026-10-09
+last-reviewed: 2026-10-11
 canonical: true
 ---
 
 # N6 — Rich Public Lived Encounter
+
+**October 11 handoff (supersedes chronological pending-source statements below):** Direct World CLI accepted real Faith conversation and public Presentation SSE returned a genuine admitted Story in staging on October 9. Both actual staging Viewer pages loaded; human October 11 browser exports showed voluntary `declined` first approaches for Faith and Sophie with valid World/request references, and after Leave the page retained the decline but displayed `Conversation · 0 turns` without speaker boundaries. Sophie independently had `Sleep.` as the exact World situation while outwardly declining, a World reachability/wakefulness conflict to investigate, not a failed consent test. Sophie Admin API returned current/previous World situations while the visible page said no events; Faith API previously returned 31 Stories despite an empty UI. Small Admin navigation styling and public World-context/visitor clock source changes are committed, **local/deployed acceptance not reported**. **N6.6c is partially human-tested, NOT closed**: one naturally accepted multi-turn live Viewer exchange, correct scene change, speaker-attributed terminal history, later visit to advanced life and client-facing interrupt still need observed staging evidence. **Pause piecemeal website UI edits** pending a cohesive scene-first/voice-first redesign review in `guybarnahum/insidefibre.com/docs/meet-voice-first-experience-proposal.md`; it is a proposal, not a shipped voice experience. Historical steps/status claims below must be read as checkpoints, not the present deployment ledger. [Canonical current priorities](../state/current-priorities.md).
+
 
 N6 proves a simple public Fibre truth:
 
