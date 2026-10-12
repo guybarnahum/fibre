@@ -82,6 +82,7 @@ export function mountWorldMap(container, { selection = false } = {}) {
   worldPath.classList.add("thread-world-map-path");
   worldPath.setAttribute("d", WORLD_MAP_PATH);
   const night = document.createElementNS(SVG_NS, "g");
+  night.classList.add("thread-world-night-layer");
   const nightPaths = [-WORLD_MAP_BOUNDS.width, 0, WORLD_MAP_BOUNDS.width].map((shift) => {
     const path = document.createElementNS(SVG_NS, "path");
     path.classList.add("thread-world-night-mask");
