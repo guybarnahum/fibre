@@ -34,9 +34,9 @@ function showMapClock(map) {
   const now = new Date(Math.floor(Date.now() / 60_000) * 60_000);
   const { time, differenceHours } = worldClockForLongitude(map.longitude, now, -now.getTimezoneOffset(), map.latitude);
   map.clockTime.textContent = time.toISOString().slice(11, 16);
-  const offset = differenceHours === 0 ? "±0h"
-    : `${differenceHours > 0 ? "+" : "−"}${Math.abs(differenceHours)}h`;
-  map.clockOffset.textContent = `≈ ${offset} from you · longitude`;
+  const hours = Math.abs(differenceHours);
+  map.clockOffset.textContent = differenceHours === 0 ? "~same as local"
+    : `~${hours} hour${hours === 1 ? "" : "s"} ${differenceHours > 0 ? "after" : "behind"} local`;
   map.clock.hidden = false;
 }
 
