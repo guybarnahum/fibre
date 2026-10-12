@@ -37,7 +37,9 @@ export async function reindexPublishedBirthplaces({ infra, presentationServer, a
   for(const {key,value} of page.entries){
     if(value.publiclyVisible!==true
       || !value.publicDirectory
-      || value.publicDirectory.identityCardVisibility==="private"
+      || (value.publicDirectory.identityCardVisibility!==null
+        && value.publicDirectory.identityCardVisibility!==undefined
+        && value.publicDirectory.identityCardVisibility!=="public")
       || Object.hasOwn(value.publicDirectory,"birthPlace"))continue;
     const current=await presentationServer.getSnapshot(key);
     if(current?.pointer?.threadId!==value.threadId)continue;
