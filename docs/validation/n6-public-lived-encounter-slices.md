@@ -55,11 +55,9 @@ Accepted but **not a prerequisite for ordinary N6 meeting**:
 
 Those remain separate work/economy capabilities. N6.3 does not schedule or pay a Thread merely so a visitor can approach them.
 
-Not yet accepted:
+**Already demonstrated in staging:** public visitor participation is independently appraised against the ordinary displayed scene, and accepted/declined/deferred are real outcomes. The World/public SSE contract has emitted an admitted accepted Story; October 11 Viewer exports also document real decline without Story.
 
-- a public visitor request appraised by the Thread from the ordinary displayed scene;
-- accepted/declined/deferred public participation over that exact lived context;
-- later public continuity after an accepted encounter.
+**Still to accept:** a full natural *accepted multi-turn website lifecycle* with progressive speech, coherent cross-scene continuation, speaker-attributed page-local history after Leave, and a later visit to the same independently advanced Thread. Spontaneous Thread-owned withdrawal and credible sleeping-person reachability are separate World organism proofs.
 
 The Viewer remains projection-only. World owns LivedNow and participation; Presentation owns the bounded public API; Viewer owns display and interaction.
 
