@@ -10,7 +10,7 @@ import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { createLivedNowService, LivedNowCoverageError } from "../src/lived-now-service.mjs";
 import { createLivedBoundaryProcess, nextLivedBoundary } from "../src/lived-now-boundary.mjs";
-import { livedPlanId, livedSituationId } from "../src/lived-now.mjs";
+import { livedPlanId, livedSituationId, normalizeLivedPlan } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import {
   lifeRelationId,
@@ -260,11 +260,7 @@ test("World enacts sleep and waking from Thread-owned plan facts, not activity w
 
     const legacy=personalPlan(life);
     legacy.stops[0].activity="Sleep.";
-    assert.equal(lived.recordPlan({
-      ...legacy,
-      planId:"lplan_legacy_unknown",
-      authoredAt:"2026-09-10T04:59:59Z",
-    }).stops[0].wakefulness,"unknown",
+    assert.equal(normalizeLivedPlan(legacy).stops[0].wakefulness,"unknown",
     "historic plans without structured sleep must remain unknown");
     lived.close();
   }));
