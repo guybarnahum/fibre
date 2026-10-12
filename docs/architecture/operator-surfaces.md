@@ -1,7 +1,7 @@
 ---
 id: fibre-operator-surfaces
 status: accepted
-last-reviewed: 2026-10-09
+last-reviewed: 2026-10-11
 canonical: true
 ---
 
@@ -33,6 +33,12 @@ Population statistics such as sex counts, health counts, migration availability 
 Population inspection is operator-driven and bounded. It should not become a background polling loop or a second directory authority. Normal Activity auto-refresh may pause while the population view is active so population diagnosis does not create avoidable infrastructure load.
 
 While Threads is open, the same single Admin live connection used by other operator views carries best-effort Thread invalidation hints. Thread Presentation publishes those hints only through the provider-neutral `InfraDriver.realtime` capability; no Fibre semantic code depends on Durable Objects, WebSocket sessions or another cloud primitive. The deployment adapter owns the browser transport. Cloudflare currently maps that transport and the `admin` realtime channel to one environment-wide Admin-live Durable Object; another provider may realize the same capability differently. A normal Thread hint causes one exact authoritative reread for that Thread and replaces only that row; an open Thread Observatory also rereads that same Thread rather than remaining stale until reopened. The browser recomputes table statistics and map presentation from its already-authoritative local population state. It must not call the full population endpoint for a single-Thread mutation. A live reconnect is different: because hints may have been missed while disconnected, Admin performs one bounded full population reconciliation. Visual reconciliation has two authoritative edges: when World requeues work it emits a reconciliation hint so Admin can show `pending` immediately, and after World commits completion or terminal dead-letter it emits the final reconciliation hint. The browser therefore cannot depend on reload timing for either transition. Presentation-only media changes may emit Presentation invalidation hints, but raw asset or intermediate FID/Presentation completion is never treated as World readiness.
+
+### Shared Admin World Map — source implemented 2026-10-11, operator acceptance pending
+
+Threads, Birth Center and Appearance use the **same browser World Map component** (`apps/admin-dashboard/world-map-ui.js`) for SVG geography, bounded projection, timezone meridians and a solar night overlay. Each view contributes only its relevant markers and interactions: authoritative situated Thread/current population, selected birthplace/birth pipeline, or represented appearance calibration demand. A shared client-side solar approximation (`world-daylight.js`) shades geographical night and refreshes all three mounted maps on a single five-minute timer while the page is visible; it does **not** query World, schedule life, invoke a model or persist any clock/state.
+
+**Interpretation limit:** geographical sunlight is contextual information, **not** whether a Thread is awake, asleep, available, consented, or computationally active. Neither a birthplace placeholder nor the runtime state can become asserted current physical presence or sleeping status. Actual sleep/wake/reachability belongs to enacted LivedNow and remains the separate Sophie World consistency investigation. Solar shading is approximate, not a per-place civil time-zone resolver. One meaningful fixed equinox/solstice test protects day/night orientation; local full-suite/browser/staging acceptance is still Guy's responsibility.
 
 ### Appearance workbench
 
