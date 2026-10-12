@@ -4,7 +4,9 @@ const QUALITY=76;
 const ROLE="portrait_thumbnail";
 const encoder=new TextEncoder();
 
-async function identity(sourceDigest,threadId){
+// A rendition reuses immutable bytes; each Presentation rewrite needs its own
+// immutable snapshot identity when the intervening Presentation has evolved.
+async function identity(sourceDigest,threadId,priorSnapshotDigest){
   const spec=`portrait-thumbnail:v1:webp:128x128:cover:q76:${sourceDigest}:${threadId}`;
   const bytes=await crypto.subtle.digest("SHA-256",encoder.encode(spec));
   const hash=Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,"0")).join("");
@@ -12,7 +14,7 @@ async function identity(sourceDigest,threadId){
     objectRef:`portrait_thumb_${hash}`,
     mediaId:`media_portrait_thumb_${hash}`,
     provenanceRef:`prov_portrait_thumb_${hash}`,
-    snapshotRef:`snapshot_portrait_thumb_${hash}`,
+    snapshotRef:`snapshot_portrait_thumb_${hash}_${priorSnapshotDigest.slice(7)}`,
   };
 }
 
@@ -53,7 +55,7 @@ export async function publishPublicPortraitThumbnail({
   const sourceHead=await infra.objects.head(sourceObjectRef);
   if(sourceHead===null)return {published:false,reason:"portrait_bytes_unavailable"};
   const sourceDigest=sourceHead.digest;
-  const id=await identity(sourceDigest,threadId);
+  const id=await identity(sourceDigest,threadId,current.pointer.snapshotDigest);
   const existing=existingThumbnail(current,sourceObjectRef);
   if(existing!==null && existing.locator!==id.objectRef){
     throw new Error("public portrait rendition conflicts with current source");
@@ -109,7 +111,7 @@ export async function publishPublicPortraitThumbnail({
     await presentationServer.publishSnapshot({
       channelId,
       objectRef:id.snapshotRef,
-      snapshotVersion:`portrait-thumb-${id.objectRef.slice(-24)}`,
+      snapshotVersion:`portrait-thumb-${id.snapshotRef.slice(-24)}`,
       cursor:current.snapshot.cursor,
       expectedSnapshotDigest:current.pointer.snapshotDigest,
       bundle:{
