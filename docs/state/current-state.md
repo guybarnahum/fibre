@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-10-11
+last-reviewed: 2026-10-12
 canonical: true
 ---
 
@@ -10,6 +10,10 @@ canonical: true
 Fibre is a persistent world for artificial persons called **Threads**. A Thread is durable world state with identity, history, private interior state, relationships, embodiment, permissions and a life trajectory spanning temporary model executions.
 
 Models provide temporary cognition. Fibre owns continuity, authoritative state, validation, persistence, replay and consequence.
+
+## New architecture decision — 2026-10-12 (not yet implemented)
+
+[ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md) and the [drive-extension/social-contact plan](../architecture/regulation-drive-extensions.md) are accepted design and execution direction. They **do not** make `social_contact`, automatically derived loneliness, per-Thread local social-time appraisal, dynamic drive plugins, or inherited social sensitivity active today. The present regulator still supplies social resonance/presence and exploration, with normal cognition/World consent authority. Evidence-bound Body extension, careful recipient timing and a later-life causal proof remain open; current N6/N7 and sleeping-Thread reachability work retain their own previously recorded acceptance boundaries.
 
 ## Meet / Encounter status — 2026-10-11 (current handoff)
 
