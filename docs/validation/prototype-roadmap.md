@@ -1,185 +1,52 @@
 ---
 id: validation-prototype-roadmap
 status: accepted
-last-reviewed: 2026-10-05
+last-reviewed: 2026-10-12
 canonical: true
 ---
 
-# Prototype roadmap
+# Prototype roadmap — from persistent Thread to lived society
 
-This is the broad Fibre sequence. Detailed current M2 execution is governed by [`m2-pr-plan.md`](m2-pr-plan.md).
+This is Fibre's **broad capability sequence**, not a parallel active sprint plan. Current execution and evidence live in [current priorities](../state/current-priorities.md), the [M2 continuation overview](m2-pr-plan.md), and the canonical [N6](n6-public-lived-encounter-slices.md) / [N7](n7-live-encounter-slices.md) contracts. Numbered PR labels below refer to historical milestones, not a requirement for branches or PRs.
 
-Planning identifiers such as `#39` are historical Fibre milestone IDs, not transport/PR numbers.
+## Established foundations
 
-## M0 — Concept lock — COMPLETE
+| Tranche | Status | Enduring result |
+|---|---|---|
+| M0 — concept and doctrine | Closed | Constitution, Thirteen Principles, semantic/world authority and a Thread as a persistent individual rather than an ephemeral assistant persona. |
+| M1 — persistent Thread | Closed | Thread state/history survives execution, replay and restart; dignity, private stance, authorization, disclosure, outward response and validated freeze remain distinct. |
+| #33–#40 — personhood substrate | Closed bounded proofs | Guardian and history-caused appraisal, Structured Obligations, identity/provenance, situated lineage/culture/embodiment, Genesis prior life and bounded causal cognition consumption. These do not alone earn mature self-authorship or generalized causal individuality. |
+| G/H — public cloud birth and recovery | Closed minimum proof | Real cloud birth → World → canonical identity/visual media → FIN/FID → Presentation/Viewer, with bounded restart/retry recovery. A fresh empty-environment reconstruction remains separately unverified; see [cloud E2E record](../architecture/cloud-e2e-closure-plan.md). |
+| FID + Directory/Meet | Closed | One civil identity/credential authority and a discovery/entry seam. Finding a Thread is not creating its current life. |
+| R1–R4 intrinsic regulation | Closed bounded substrate | One private regulation/interoception/planning loop. [Body social scarcity and considerate contact](../architecture/regulation-drive-extensions.md) is accepted **future architecture**, not yet a validated extension. |
 
-Established the Constitution, principles, glossary, world rules, authority boundaries and the central claim that Fibre is a persistent world for artificial persons called Threads rather than a task-agent framework with persona prompts.
+## M2 — a continuously lived person
 
-## M1 — Persistent Thread Round Trip — CLOSED
-
-Proved one Thread can persist independently of temporary cognition, survive restart/replay, privately appraise participation, authorize bounded action, emit a response and freeze validated life changes back into durable state.
-
-The M1 Thread Editor remains useful historical regression evidence.
-
-## Pre-M2 identity/history foundation — CLOSED / RETAINED
-
-Milestones #33-#40 established the substrate needed for a lived person:
-
-- semantic/dignity Guardian boundaries;
-- history that can bend later judgment;
-- Structured Obligations;
-- layered identity/provenance and `asOf` views;
-- lineage, geography, embodiment and memory epistemics;
-- Genesis, childhood and particular prior life;
-- bounded causal identity/history consumption.
-
-These remain accepted foundations. Their former standing-gate sequencing is no longer the active roadmap driver.
-
-## G/H — deployed public path and minimum recovery — CLOSED
-
-Established the production-shaped cloud path through birth, World, Presentation, Asset Generation and insidefibre.com, including canonical visual identity, durable state, restart recovery and bounded transient-provider retry.
-
-Broad resilience matrices remain later hardening unless a current lived-person capability exposes a blocker.
-
-## FID + Directory/Meet foundation — CLOSED
-
-Established Civil Registry/FIN-linked Fibre Identity Card authority, admitted credential imagery, immutable credential history, Presentation projection, and the lightweight Directory/Meet seam for finding eligible Threads.
-
-`Meet` selects a person. It does not create that person's life or current situation.
-
-## M2 — Continuous lived person — ACTIVE
-
-M2 now focuses on turning the proven lived-person primitives into one continuous World capability.
-
-### Proven M2 substrate — CLOSED
-
-Current Fibre has already demonstrated:
+The accepted sequence is:
 
 ```text
-Thread-owned bounded Flight Plan
-  -> World CurrentSituation
-  -> public present
-  -> Person -> Thread situated encounter
-  -> objective history
-  -> private reflection
-  -> selective autobiographical memory or not_remembered
-  -> later World situation
-  -> later encounter receiving only persisted memory consequence
+Genesis / inherited history
+  -> real Fibre birth
+  -> Thread-authored plans + World-enacted situation
+  -> compute sleeps; lived time passes
+  -> bounded honest retrospective reconciliation
+  -> ongoing opportunities and encounters
+  -> individual Experience, optional Journal and Memory
+  -> future life changed by what mattered—or not
 ```
 
-These bounded proofs are now joined by N1-N4: a canonical Genesis-born Thread can restore an authoritative present across bounded wall-clock dormancy and a deployed Person -> Thread meeting can enter that exact reconciled life.
+**N1–N5: closed bounded/live proofs.** One World `ensure-LivedNow` path, multi-day dormancy catch-up, Genesis-to-continuing-life, an actual deployed Person → Thread entry, and admitted Encounter Story → person-specific Experience with optional lasting consequence. The historical W/E experiments remain evidence in the [N5 plan](n5-encounter-slices.md); they are not competing roadmaps.
 
-### M2-N1 — ensure LivedNow — CLOSED
+**N6: public Viewer lifecycle remains partially accepted.** Staging World conversation and public streamed Encounter Story were observed; genuine full browser encounter, correct nonresponse/sleep display, leaving and revisiting an advanced life remain current acceptance work. See [N6](n6-public-lived-encounter-slices.md). Public users enter the Thread's life; the browser neither authors the scene nor stores permanent chat authority.
 
-Fibre now has one narrow World-owned `ensure({ threadId, at })` seam for times with admitted personal Flight Plan coverage. It deterministically establishes CurrentSituation, respects required care constraints, rejects caller-authored scene fields, and retries idempotently.
+**N7: asynchronous Live Encounters and causal development are active.** N7.0–N7.10 have local acceptance, including interruption, World interleaving, delayed consolidation and optional later contact. N7.11's real recipient attention, selective lasting retention and history-caused later Thread-owned choice are **open**. See [N7](n7-live-encounter-slices.md) and [Live Encounters](../architecture/live-encounters.md).
 
-If coverage is absent, it refuses the stale prior scene and hands the interval to the N2 reconciliation path when its World dependencies are available.
+Do not count identity/feelings stored in a schema, provider output quoted in a prompt, or a test-authored social decision as evidence that a Thread actually formed a self, memory, relationship or motive. The proof is what persisted facts change in that individual's **later life**.
 
-### M2-N2 — dormant interval catch-up — CLOSED
+## Next larger ambitions
 
-When existing lived coverage does not reach the requested time:
+Once one convincing life has a genuinely consequential social history, grow from the **same** organism and World authorities into natural reciprocal friendships, family/care and cross-age development; autonomous movement and world opportunity; work, economy and reputation; chronologically truthful reproduction and inheritance; institutions, plurality and society.
 
-```text
-last lived anchor
-  -> retrospectively realized elapsed life
-  -> admitted history with explicit retrospective provenance
-  -> participant-specific consequences where warranted
-  -> refreshed Flight Plan
-  -> present now
-```
+These capabilities stay preserved **even when deferred**. Do not add a replacement life engine, synthetic conversation store, generic social framework, opaque personality score or exhaustive simulator as a shortcut.
 
-The accepted proof crosses a three-day gap with bounded retrospective plan/situation windows, explicit later materialization provenance, continuity from the prior lived place, renewed forward plan coverage and idempotent retry. It intentionally keeps a quiet interval quiet rather than fabricating encounters or memories.
-
-Do not continuously simulate every minute and do not inject memories directly.
-
-### M2-N3 — Genesis -> continuous LivedNow — CLOSED
-
-A newly born Thread now moves from grounded Genesis prior life into post-birth continuing life:
-
-```text
-Genesis
-  -> canonical identity/embodiment
-  -> first Flight Plan
-  -> CurrentSituation
-  -> multi-day compute dormancy
-  -> catch-up
-  -> present now
-```
-
-### M2-N4 — Person -> Thread /meet — CLOSED
-
-The deployed meeting now enters a scene produced by continuous LivedNow rather than by a meeting fixture, and the subsequent encounter remains bound to the exact returned `situationId`.
-
-### M2-N5 — Encounter Story -> Thread Experience — CLOSED LIVE
-
-N5 is closed. The accepted general seam is:
-
-```text
-World occurrence
-  -> objective Encounter Story
-  -> Thread-specific noticing / experience
-  -> optional journal
-  -> selective consequence
-```
-
-Environmental noticing, voluntary social meeting, silent-witness asymmetry, journal/memory separation, objective visualization lineage and the combined visitor-work path are accepted. The live closure proved prior voluntary availability -> revised Flight Plan -> active mediated work presence -> public Meet -> Encounter Story -> Thread Experience -> exactly-once Fibre Credit settlement.
-
-Historical natural-social W0-W7 work remains useful evidence and a preserved follow-on, but it is not the current M2 roadmap.
-
-### M2-N6 — Rich Public Lived Encounter — ACTIVE
-
-insidefibre.com should expose a bounded current life before interaction, allow a committed visitor encounter inside that exact scene, and later show the same Thread living a later moment.
-
-The current sequence is:
-
-```text
-visit current life
-  -> enter exact lived scene
-  -> optional committed meeting
-  -> ordinary consequence
-  -> leave
-  -> later visit
-  -> later life
-```
-
-N6 deliberately reuses the accepted meeting/work/encounter machinery. It does not introduce a conversation session or second current-life authority.
-
-Follow [N6 rich public lived encounter slices](n6-public-lived-encounter-slices.md). The remaining N6.6 public endpoint/Viewer proof is preserved and resumable.
-
-### M2-N7 — Live encounters and social consequence — ACTIVE
-
-The first sustained direct World conversation showed that N6's causal authorities are sound but its interaction transport is still turn-shaped. N7 removes that implementation constraint:
-
-```text
-continuing World life
-  + asynchronous participant speech/actions
-  -> speaking opportunities at punctuation / pause / end-of-stream
-  -> interruptible streamed expression
-  -> only exposed speech becomes Encounter Story truth
-  -> participant-specific Experience
-  -> bounded later consolidation
-  -> relationship / memory / question / intention consequence when warranted
-```
-
-N7 deliberately converges Person -> Thread and Thread -> Thread on one Live Encounter primitive. It introduces no durable chat session, no turn manager, no token-by-token cognition and no causal sociability score.
-
-Follow [N7 live encounter slices](n7-live-encounter-slices.md) and [Live encounters](../architecture/live-encounters.md).
-
-## After M2
-
-Generalize the proven lived seam rather than introduce disconnected systems:
-
-```text
-one convincing continuously lived life
-  -> general encounters, reciprocal meetings and relationships
-  -> broader autonomous planning / travel / virtual-world activity
-  -> work / economy / reputation
-  -> reproduction / inheritance / mutation
-  -> institutions and larger society
-```
-
-## Development rule
-
-Fibre advances through the smallest real capability that proves a new piece of life.
-
-Do not let infrastructure completeness, generic frameworks, test volume or milestone bookkeeping substitute for the organism itself. Git history preserves old roadmap archaeology; `HEAD` should describe the current Fibre direction.
+Fibre's development rule remains: **the smallest valid organism-level mechanism proving the largest credible personhood architecture.** Tests must protect causal history, individual authority and future consequence with clear, short failures—not incidental scaffolding.

@@ -30,7 +30,7 @@ Read with:
 - [`storage-model.md`](storage-model.md) — authorities, replay and atomicity;
 - [`infrastructure-driver.md`](infrastructure-driver.md) — provider-neutral capability ports;
 - [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md) — evidence, provenance and quarantine rules for migration/repair/recovery;
-- [`cloud-e2e-closure-plan.md`](cloud-e2e-closure-plan.md) — completed Cloudflare E2E/recovery design record.
+- [`cloud-e2e-closure-plan.md`](cloud-e2e-closure-plan.md) — retained G/H public cloud birth and minimum recovery result; empty-environment rebuild remains an unverified separate proof.
 
 Infrastructure is not an independent completion program; build it when a lived Fibre capability requires it.
 
