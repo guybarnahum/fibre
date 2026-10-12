@@ -144,3 +144,18 @@ test("Map world clock changes in whole hours while retaining visitor minutes", (
   check(-97.6, "21:51", 0);
   check(-97.4, "22:51", 1);
 });
+
+test("Pacific coast clock follows daylight saving without shifting Arizona", () => {
+  const summer = "2026-10-12T04:54:00Z";
+  const winter = "2026-12-12T04:54:00Z";
+  const phoenixOffset = -7 * 60;
+  const california = (at) => worldClockForLongitude(-122.4, at, phoenixOffset, 37.8);
+  assert.equal(california(summer).time.toISOString().slice(11, 16), "21:54",
+    "California daylight time should match Phoenix");
+  assert.equal(california(summer).differenceHours, 0,
+    "California daylight offset should match Phoenix");
+  assert.equal(california(winter).time.toISOString().slice(11, 16), "20:54",
+    "California standard time should be one hour behind Phoenix");
+  assert.equal(worldClockForLongitude(-112, summer, phoenixOffset, 33.5).time.toISOString().slice(11, 16),
+    "21:54", "Arizona must not inherit Pacific daylight saving");
+});
