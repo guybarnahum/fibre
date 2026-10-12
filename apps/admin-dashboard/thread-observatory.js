@@ -1,3 +1,4 @@
+import { useThumbnailFallback } from "./portrait-preview.js";
 import { bindCopyAction } from "./copy-action.js";
 import { humanAppearanceKey, parseCanonicalAppearancePresentation } from "./appearance-description.mjs";
 import { decorateActionButton, faIcon, setWaitingContent } from "./fa-icons.js";
@@ -327,14 +328,14 @@ function section(titleText, subtitle = null) {
   wrap.append(head); return wrap;
 }
 
-function imageButton(asset, alt, className = "thread-asset-preview", previewUrl = asset.url) {
+function imageButton(asset, alt, className = "thread-asset-preview", previewUrl = asset.url, threadId = null) {
   const button = el("button", `${className} thread-image-button`);
   button.type = "button";
   button.dataset.lightboxSrc = asset.url;
   button.dataset.lightboxAlt = alt;
   const image = el("img");
   image.src = previewUrl;
-  if(previewUrl!==asset.url)image.addEventListener("error",()=>{image.src=asset.url;},{once:true});
+  if(previewUrl!==asset.url)useThumbnailFallback(image,{threadId,thumbnailUrl:previewUrl,fallbackUrl:asset.url,context:"observatory"});
   image.loading = "lazy";
   image.alt = alt;
   button.append(image);
@@ -384,7 +385,7 @@ function hero(identity, threadId) {
   const wrap = el("section", "thread-person-hero");
   const portrait = el("div", `thread-person-portrait${image ? " has-image" : ""}`);
   if (image) {
-    portrait.append(imageButton(image, `${name ?? "Thread"} portrait`, "thread-person-portrait-button",portraitThumbnailAsset(identity)?.url??image.url));
+    portrait.append(imageButton(image, `${name ?? "Thread"} portrait`, "thread-person-portrait-button",portraitThumbnailAsset(identity)?.url??image.url,threadId));
   } else if (admittedPortrait) {
     portrait.append(
       el("span", "thread-person-portrait-mark", "◌"),
