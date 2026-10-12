@@ -61,7 +61,8 @@ function stickyIdentityChip(identity, threadId) {
   const imageAsset = portraitThumbnailAsset(identity)??portraitAsset(identity);
   const name = threadName(identity) ?? "Thread";
   const avatar = el("span", "thread-observatory-sticky-avatar");
-  bindPortraitPreview(avatar,{url:imageAsset?.url??null,name});
+  bindPortraitPreview(avatar,{url:imageAsset?.url??null,name,
+    fallbackUrl:imageAsset?.role==="portrait_thumbnail"?portraitAsset(identity)?.url??null:null});
   if (imageAsset?.url) {
     const image = el("img");
     image.src = imageAsset.url;
