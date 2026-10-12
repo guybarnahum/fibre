@@ -135,6 +135,22 @@ export async function publishPublicPortraitThumbnail({
         sourceObjectRef,sourceDigest,
       });
     }
+    // A prior snapshot may be admitted even if the post-CAS directory write
+    // was interrupted. Republish the unchanged admitted packet to repair it.
+    if(channel.publicDirectory?.portraitThumbnailObjectRef!==id.objectRef){
+      await presentationServer.publishSnapshot({
+        channelId,
+        objectRef:id.snapshotRef,
+        snapshotVersion:`portrait-thumb-${id.snapshotRef.slice(-24)}`,
+        cursor:current.snapshot.cursor,
+        expectedSnapshotDigest:current.pointer.snapshotDigest,
+        bundle:{
+          presentation:current.snapshot.presentation,
+          media:current.snapshot.media,
+          provenance:current.snapshot.provenance,
+        },
+      });
+    }
   }
   return {published:true,reused:existing!==null,objectRef:id.objectRef};
 }
