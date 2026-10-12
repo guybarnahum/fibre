@@ -133,6 +133,7 @@ function fixturePlanningModel() {
               endAt:external.horizon.endAt,
               physicalPlaceRef:external.startingPlaceRef,
               presenceMode:"physical",
+              wakefulness:"awake",
               mediatedContext:"",
               activity:welcomesCompany
                 ? "Read and sketch while sharing the room quietly with other people."
@@ -182,6 +183,7 @@ function x4PlanningModel() {
               endAt:external.horizon.endAt,
               physicalPlaceRef:enriching?"place_x4_library":"place_x4_home",
               presenceMode:"physical",
+              wakefulness:"awake",
               mediatedContext:"",
               activity:enriching
                 ?"Spend the afternoon at the library and leave room for an unfamiliar workshop or conversation."
@@ -650,6 +652,7 @@ test("Flight Planning receives actual local civil time for a non-UTC World", asy
                 endAt:external.horizon.endAt,
                 physicalPlaceRef:external.startingPlaceRef,
                 presenceMode:"physical",
+                wakefulness:"awake",
                 mediatedContext:"",
                 activity:"Continue the ordinary day from the current place.",
                 purpose:"Follow the life already underway.",
@@ -779,6 +782,7 @@ test("X1 grounded exploration reaches the existing planning mind without becomin
                 endAt:external.horizon.endAt,
                 physicalPlaceRef:exploring ? "place_x1_library" : "place_x1_home",
                 presenceMode:"physical",
+                wakefulness:"awake",
                 mediatedContext:"",
                 activity:exploring
                   ? "Spend the afternoon somewhere different and browse unfamiliar material."
@@ -920,6 +924,7 @@ test("X2 planning place meaning comes from World/situated authority, not caller 
                 endAt:call.input.concern.externalContext.horizon.endAt,
                 physicalPlaceRef:library.ref,
                 presenceMode:"physical",
+                wakefulness:"awake",
                 mediatedContext:"",
                 activity:"Read somewhere already known as a place of study.",
                 purpose:"Use the real alternatives available in my world.",
