@@ -276,6 +276,8 @@ test("a debug snapshot shows enacted meeting place, actual dialogue and selectiv
   assert.equal(snapshot.current.meetingPlace.name,"Family home",
     "a real World place must not disappear from meeting inspection");
   assert.equal(snapshot.worldEvents[0].place.name,"Family home");
+  assert.equal(snapshot.encounterEpisodes[0].meetingPlace.name,"Family home",
+    "the meeting must carry its actual historical place");
   assert.deepEqual(snapshot.encounterEpisodes[0].conversation,[
     {speaker:"Visitor",text:"Are you busy?"},
     {speaker:"Thread",text:"I am reading right now."},
