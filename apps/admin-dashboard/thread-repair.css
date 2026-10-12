@@ -239,9 +239,7 @@
   overflow:hidden;
   border:1px solid var(--border);
   border-radius:11px;
-  background:linear-gradient(180deg,
-    color-mix(in srgb,var(--surface-subtle) 60%,var(--surface)),
-    var(--surface));
+  background:#74b8e6; /* Daylight ocean; solar night is nearly black. */
 }
 .thread-birth-map { cursor:crosshair; }
 .thread-birth-map:focus-visible {
@@ -250,7 +248,7 @@
 }
 .thread-world-map-svg { display:block; width:100%; height:100%; }
 .thread-world-night-mask {
-  fill:color-mix(in srgb,#14223c 34%,transparent);
+  fill:#070a10;
   pointer-events:none;
 }
 .thread-world-night-legend {
@@ -259,24 +257,24 @@
   bottom:6px;
   padding:3px 6px;
   border-radius:5px;
-  background:color-mix(in srgb,var(--surface) 88%,transparent);
-  color:var(--muted);
+  background:rgba(7,10,16,.86);
+  color:#ecf4ff;
   font-size:8px;
   pointer-events:none;
 }
 .thread-world-timezones line {
-  stroke:color-mix(in srgb,var(--text) 11%,transparent);
+  stroke:rgba(255,255,255,.16);
   stroke-width:.55;
   stroke-dasharray:2 5;
   vector-effect:non-scaling-stroke;
 }
 .thread-world-timezones line.major {
-  stroke:color-mix(in srgb,var(--text) 20%,transparent);
+  stroke:rgba(255,255,255,.28);
   stroke-width:.8;
 }
 .thread-world-map-path {
-  fill:color-mix(in srgb,var(--text) 7%,var(--surface));
-  stroke:color-mix(in srgb,var(--text) 23%,transparent);
+  fill:rgba(255,255,255,.11);
+  stroke:rgba(255,255,255,.30);
   stroke-width:.65;
   vector-effect:non-scaling-stroke;
 }
@@ -570,8 +568,8 @@
 .thread-world-count-marker.frozen-situated .thread-world-count { fill:var(--accent); }
 .thread-world-count-marker.active-unsituated .thread-world-count { fill:#b42318; }
 .thread-world-count-marker .thread-world-city-label {
-  fill:var(--text);
-  stroke:var(--surface);
+  fill:#f8fbff;
+  stroke:#142338;
   stroke-width:3px;
   paint-order:stroke;
   font-size:9px;
