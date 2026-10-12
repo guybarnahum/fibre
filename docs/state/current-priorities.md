@@ -33,7 +33,7 @@ Fibre's active north star is now **continuous LivedNow + encounters**.
 The scan is a file inventory plus targeted source-reference search, **not a completed semantic/link/AI-context audit**. Before any future deletion, inspect the candidate's unique claims and references, update indexes/manifest/canonical IDs, and run the single `npm run slice:validate` under Guy's local workflow. No broad refactoring, source deletion or formatting campaign is authorized by this inventory.
 
 
-The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 established the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. N6 then proved a sustained ordinary Person -> Thread conversation directly against World and exposed the next architectural constraint: the conversation engine is still request/response shaped. **N7 is now the active north-star tranche: asynchronous Live Encounters with no turn owner, interruptible streamed expression, continuing World life, bounded later consolidation, and the same primitive for Person -> Thread and Thread -> Thread.** N6.6 public-endpoint/Viewer proof remains preserved and resumable rather than being erased by the refactor.
+The bounded M2 slices proved the core pieces of a lived person. N1 establishes World-owned present life, N2 restores it across bounded multi-day dormancy, N3 makes a canonical Genesis birth enter that same continuity seam, and N4 proves a deployed Person -> Thread encounter can enter that reconciled life. N5 established the broader insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. N6 proved sustained ordinary Person -> Thread dialogue directly against World and later public Presentation SSE in staging; the complete human-facing Viewer acceptance remains open and its redesign is on deliberate hold. **N7 is now the active north-star tranche: asynchronous Live Encounters with no turn owner, interruptible streamed expression, continuing World life, bounded later consolidation, and the same primitive for Person -> Thread and Thread -> Thread.** N6.6 public-endpoint/Viewer proof remains preserved and resumable rather than being erased by the refactor.
 
 Canonical architecture:
 
@@ -60,9 +60,7 @@ B1 encounter -> private reflection -> selective memory    CLOSED
 B2 later situation + later encounter continuity           CLOSED
 ```
 
-These are valuable **primitives and bounded proofs**.
-
-They do not yet prove:
+These were valuable **early primitives and bounded proofs**. On their own, before N1–N7 later execution, they did not yet prove:
 
 ```text
 wall-clock dormancy
@@ -72,7 +70,7 @@ wall-clock dormancy
   -> real deployed /meet
 ```
 
-Therefore Fibre should no longer describe the remaining work as merely “run the live meeting.” The deployed meeting depends on continuous LivedNow first.
+N1–N5 subsequently closed that basic continuity substrate. The current frontier is human Viewer acceptance, autonomous social consequences and measured runtime economics, not building another LivedNow or meeting engine.
 
 ## Active sequence
 
@@ -265,7 +263,7 @@ Historical W0-W7 and S coordinates remain useful implementation archaeology only
 
 **E7.5 — natural staging life progression observed; internal alarm-callback attribution remains unverified.** Once Fibre has an actual admitted Flight Plan and CurrentSituation for a Thread, the World stores that Thread's next *real planned* boundary and lets the **existing InfraDriver World alarm** advance it through ordinary `LivedNow.ensure` without a viewer prompting it. The workset is per Thread with an indexed earliest-deadline read; one due Thread per pass, no population poll, no extra scheduler and no arbitrary environmental frequency. The same alarm chooses the earliest lived or E7 continuation deadline. Transient failures stop after three attempts with a short inspectable reason; genuine later LivedNow reconciliation can re-arm. Guy observed the same sleeping Thread advance at `2026-10-09T02:00:00.003Z`, aligned with its planned waking boundary, without an intervening operator wake, followed by a new due boundary at `03:00Z` and zero failed attempts. The internal callback trace was not captured, so report this as strong unattended progression evidence, not independently verified alarm attribution. E7.4's separate manual `no_change` recovery remains unchanged.
 
-## N6 — Rich Public Lived Encounter — CURRENT
+## N6 — Rich Public Lived Encounter — ACCEPTANCE OPEN / VIEWER DESIGN HOLD
 
 The concrete public goal is:
 
