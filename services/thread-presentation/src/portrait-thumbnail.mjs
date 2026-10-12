@@ -4,8 +4,8 @@ const QUALITY=76;
 const ROLE="portrait_thumbnail";
 const encoder=new TextEncoder();
 
-async function identity(sourceDigest){
-  const spec=`portrait-thumbnail:v1:webp:128x128:cover:q76:${sourceDigest}`;
+async function identity(sourceDigest,threadId){
+  const spec=`portrait-thumbnail:v1:webp:128x128:cover:q76:${sourceDigest}:${threadId}`;
   const bytes=await crypto.subtle.digest("SHA-256",encoder.encode(spec));
   const hash=Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,"0")).join("");
   return {
@@ -53,7 +53,7 @@ export async function publishPublicPortraitThumbnail({
   const sourceHead=await infra.objects.head(sourceObjectRef);
   if(sourceHead===null)return {published:false,reason:"portrait_bytes_unavailable"};
   const sourceDigest=sourceHead.digest;
-  const id=await identity(sourceDigest);
+  const id=await identity(sourceDigest,threadId);
   const existing=existingThumbnail(current,sourceObjectRef);
   if(existing!==null && existing.locator!==id.objectRef){
     throw new Error("public portrait rendition conflicts with current source");
