@@ -1,3 +1,25 @@
+
+const failedThumbnails=new Set();
+
+export function useThumbnailFallback(image,{
+  threadId=null,thumbnailUrl=null,fallbackUrl=null,context="portrait",
+}={}){
+  if(!thumbnailUrl)return;
+  image.addEventListener("error",()=>{
+    const key=`${threadId??"unknown"}:${thumbnailUrl}`;
+    if(!failedThumbnails.has(key)){
+      failedThumbnails.add(key);
+      console.warn("[Fibre] Portrait thumbnail unavailable",{
+        threadId,context,thumbnailUrl,
+        thumbnailObjectRef:thumbnailUrl.match(/\/api\/(?:thread-assets|assets)\/([^/?#]+)/)?.[1]??null,
+        fallbackUrl,
+        reason:"image_load_error",
+      });
+    }
+    if(fallbackUrl&&fallbackUrl!==thumbnailUrl)image.src=fallbackUrl;
+  },{once:true});
+}
+
 const PORTRAIT_PREVIEW_PLACEMENTS=new Set(["left","center","right"]);
 
 function placement(value){
