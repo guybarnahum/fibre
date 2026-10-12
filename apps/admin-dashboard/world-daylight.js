@@ -27,6 +27,14 @@ export function sunIsUpAt(latitude, longitude, at) {
     + Math.cos(latitudeRad) * Math.cos(sun.declination) * Math.cos(hourAngle) >= 0;
 }
 
+// Solar longitude is periodic; keep 15-minute movement continuous across ±180°.
+export function solarDriftPixels(at, minutes = 15) {
+  const start = solarPositionAt(at).longitude;
+  const end = solarPositionAt(new Date(new Date(at).getTime() + minutes * 60_000)).longitude;
+  const delta = ((end - start + 540) % 360) - 180;
+  return (delta / 360) * WORLD_MAP_BOUNDS.width;
+}
+
 // One fill path made from latitude scanlines, including the polar day/night
 // bands and antimeridian wrap. This is a visual solar estimate, never Thread state.
 export function worldNightPath(at) {
