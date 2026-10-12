@@ -178,6 +178,7 @@ function publicDiscoveryEntry({ key, value, current = null, currentPresent = nul
     threadId: directory.threadId,
     lifecycleStatus: directory.lifecycleStatus,
     displayName: directory.displayName,
+    birthPlace: directory.birthPlace,
     snapshotVersion: directory.snapshotVersion,
     snapshotDigest: directory.snapshotDigest,
     currentPresent,
