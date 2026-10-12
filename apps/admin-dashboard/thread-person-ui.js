@@ -128,7 +128,7 @@ async function resolveThreadPortrait(threadId){
 function applyPortrait(face,url,name,{fallbackUrl=null,isThumbnail=false}={}){
   face.replaceChildren();
   face.dataset.portraitUrl=url??"";
-  setPortraitPreviewSource(face,{url,name,fallbackUrl});
+  setPortraitPreviewSource(face,{url,name,fallbackUrl,isThumbnail});
   delete face.dataset.lightboxSrc;
   delete face.dataset.lightboxAlt;
   if(!url){
