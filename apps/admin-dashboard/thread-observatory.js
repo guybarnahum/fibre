@@ -144,9 +144,10 @@ export function threadObservatoryDebugSnapshot({
         .map((record)=>record.complete?.payload?.memoryOutcome??record.decision?.payload?.memory?.outcome)
         .filter(Boolean),
     })),
-    latestWorldJournalEntries:[...experienceJournalEntries].slice(-6)
-      .map((entry)=>({writtenAt:entry.writtenAt,text:entry.entryText})),
-    currentMemories:[...memories].slice(-6)
+    latestWorldJournalEntries:[...experienceJournalEntries]
+      .sort((a,b)=>String(b.writtenAt??"").localeCompare(String(a.writtenAt??"")))
+      .slice(0,6).map((entry)=>({writtenAt:entry.writtenAt,text:entry.entryText})),
+    currentMemories:[...memories].slice(0,6)
       .map((memory)=>({content:memory.rememberedContent,meaning:memory.rememberedMeaning})),
     ...(encounterError?{encounterError}:{}),
     ...(memoryError?{memoryError}:{}),
