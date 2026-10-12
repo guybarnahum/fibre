@@ -1,7 +1,7 @@
 ---
 id: architecture-symbolic-thread-genome-v1
 status: accepted
-last-reviewed: 2026-09-10
+last-reviewed: 2026-10-12
 canonical: true
 ---
 
@@ -98,6 +98,8 @@ Invalid designs include `safety = 0`, `attachment = 20x`, `happiness = 0.7`, or 
 Developmental gating is separate from baseline magnitude. Reproductive/mating regulation, for example, may become active only at an appropriate developmental stage rather than being an always-on inherited scalar.
 
 See [`intrinsic-regulation.md`](intrinsic-regulation.md).
+
+**Drive extensibility (accepted plan, unimplemented):** [Extensible Body regulation](regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md) distinguish (1) adding a purely evidence-derived drive from (2) declaring an **actually heritable** numeric sensitivity. Current `core/src/intrinsic-regulation.mjs` can consume `regulatorSocialSensitivity`, but durable symbolic-genome generation currently defines `circadianPhaseOffsetMinutes`, `sleepNeedMinutes`, and `regulatorRestSensitivity` only. Do not claim social sensitivity is inherited without integrating and validating the existing genome authority. Future drive families do not automatically acquire genetic parameters, nor do numeric parameters become personality or consent.
 
 ## Recombination
 
