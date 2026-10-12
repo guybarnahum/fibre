@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   catalogPlaceForLocation,
   groupThreadsByCurrentLocation,
+  solarClockForLongitude,
   threadMapState,
 } from "./world-map-ui.js";
 
@@ -119,4 +120,16 @@ test("World place lookup does not guess an ambiguous city", () => {
     null,
     "ambiguous city was guessed",
   );
+});
+
+
+test("Map longitude clock uses minute-resolution solar time relative to the visitor", () => {
+  const at = new Date("2026-10-12T04:00:00Z");
+  const localOffset = -7 * 60; // Phoenix on October 11.
+  const east = solarClockForLongitude(30, at, localOffset);
+  assert.equal(east.time.toISOString(), "2026-10-12T06:00:00.000Z", "east solar time is wrong");
+  assert.equal(east.differenceMinutes, 9 * 60, "east solar offset from visitor is wrong");
+  const west = solarClockForLongitude(-120, at, localOffset);
+  assert.equal(west.time.toISOString(), "2026-10-11T20:00:00.000Z", "west solar time is wrong");
+  assert.equal(west.differenceMinutes, -60, "west solar offset from visitor is wrong");
 });
