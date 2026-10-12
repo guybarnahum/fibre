@@ -104,7 +104,7 @@ The generic route is exercised by the generated-media P3 proof. The Thread-speci
 
 ## Public portrait thumbnails
 
-A current, independently authorized public Embodiment portrait may produce one immutable `128×128` WebP thumbnail at quality 76, using the original already-stored image bytes and Cloudflare Images' image binding. The rendition identity is SHA-256 over the source digest and the fixed rendition specification. No portrait model is called; retries reuse the same bytes.
+A current, independently authorized public Embodiment portrait may produce one immutable `128×128` WebP thumbnail at quality 76, using the original already-stored image bytes and Cloudflare Images' image binding. The rendition identity is SHA-256 over the source digest, fixed rendition specification, and owning Thread; the same source bytes can never accidentally assign one Thread's public serving record to another. No portrait model is called; retries reuse the same bytes.
 
 Thumbnail publication has three steps: immutable derivative object, separate `portrait_thumbnail` media admission and provenance in the current Thread Presentation packet, then the indexed `publicDirectory.portraitThumbnailObjectRef` when that media is ready. The normal public directory exposes `portraitThumbnailObjectRef: string|null` in both `GET /api/threads` and `GET /api/threads/search`. The Viewer builds `/api/assets/:objectRef` from it, never exposes the original canonical portrait ref or FID records. A thumbnail request validates the current public catalog pointer and serving record before reading immutable bytes; no full Presentation snapshot retrieval is performed per map preview.
 
