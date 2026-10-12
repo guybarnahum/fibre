@@ -6,6 +6,7 @@ import { createMemoryInfraDriver } from "#infra/providers/local";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
 import { THREAD_PRESENTATION_STREAM_VERSION } from "#services/world-kernel/src/thread-presentation-stream-domain.mjs";
 import { createPresentationReadApi, channelIdForThread } from "../../src/http/read-api.mjs";
+import { publicBirthPlaceFromPresentation } from "../../src/thread-directory.mjs";
 
 async function presentationBundle() {
   const base = new URL("../../../../fixtures/thread-presentation/can-tho/", import.meta.url);
@@ -81,6 +82,22 @@ async function catalogDiscoveryFixture(records) {
     async openStream() { return new Response(null, { status: 426 }); },
   });
 }
+
+test("directory birthplace is admitted public birth, not inferred residence or work",()=>{
+  const presentation={
+    places:[
+      {placeRef:"place_current_work_gen_1",displayName:"Nairobi, Kenya"},
+      {placeRef:"place_birth_gen_1",displayName:"An unmapped village"},
+    ],
+    subject:{homePlaceRef:null},
+  };
+  assert.deepEqual(publicBirthPlaceFromPresentation(presentation),{
+    displayName:"An unmapped village",
+  },"unknown birthplace must not be assigned fabricated coordinates");
+  assert.equal(publicBirthPlaceFromPresentation({
+    ...presentation,places:[presentation.places[0]],
+  }),null,"work city is not evidence of birthplace");
+});
 
 test("GET /api/threads discovers only explicitly public Thread presentations", async () => {
   const visible = await discoveryFixture();
