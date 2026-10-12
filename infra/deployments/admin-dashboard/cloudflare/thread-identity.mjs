@@ -27,8 +27,11 @@ export function presentationOrigin(environment) {
 
 function publicMedia(presentationOriginValue, snapshot) {
   const assets = Array.isArray(snapshot?.media?.assets) ? snapshot.media.assets : [];
+  const currentPortraitRef = snapshot?.presentation?.visualIdentity?.referenceObjectRefs?.[0] ?? null;
   return Object.freeze(assets
-    .filter((asset) => asset?.status === "ready" && clean(asset.locator) !== null)
+    .filter((asset) => asset?.status === "ready" && clean(asset.locator) !== null
+      && (asset.role !== "portrait_thumbnail"
+        || (currentPortraitRef !== null && asset.sourceReferences?.includes(currentPortraitRef))))
     .map((asset) => {
       const objectRef = id("media objectRef", clean(asset.locator));
       return Object.freeze({
