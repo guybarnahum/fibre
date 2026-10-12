@@ -239,7 +239,7 @@
   overflow:hidden;
   border:1px solid var(--border);
   border-radius:11px;
-  background:#74b8e6; /* Daylight ocean; solar night is nearly black. */
+  background:rgb(116 184 230 / 50%); /* Muted daylight blue; night remains near black. */
 }
 .thread-birth-map { cursor:crosshair; }
 .thread-birth-map:focus-visible {
