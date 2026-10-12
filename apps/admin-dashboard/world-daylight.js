@@ -40,7 +40,7 @@ export function solarDriftPixels(at, minutes = 15) {
 export function worldNightPath(at) {
   const sun = solarPositionAt(at);
   const { width, height, minLat, maxLat } = WORLD_MAP_BOUNDS;
-  const rowDegrees = 1;
+  const rowDegrees = 0.5; // Smaller latitude steps keep the curved terminator smooth.
   const rows = Math.ceil((maxLat - minLat) / rowDegrees);
   const middleX = ((sun.longitude + 180) / 360) * width;
   const path = [];
