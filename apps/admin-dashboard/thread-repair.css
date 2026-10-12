@@ -239,7 +239,7 @@
   overflow:hidden;
   border:1px solid var(--border);
   border-radius:11px;
-  background:rgb(116 184 230 / 50%); /* Muted daylight blue; night remains near black. */
+  background:rgb(116 184 230 / 25%); /* Subtle daylight blue; night remains near black. */
 }
 .thread-birth-map { cursor:crosshair; }
 .thread-birth-map:focus-visible {
@@ -247,9 +247,12 @@
   outline-offset:2px;
 }
 .thread-world-map-svg { display:block; width:100%; height:100%; }
+.thread-world-night-layer {
+  filter:blur(8px); /* Approximately 20px soft daylight/solar-night transition. */
+  pointer-events:none;
+}
 .thread-world-night-mask {
   fill:#070a10;
-  pointer-events:none;
 }
 .thread-world-night-legend {
   position:absolute;
