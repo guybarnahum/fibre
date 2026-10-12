@@ -257,7 +257,7 @@
 .thread-world-night-legend {
   position:absolute;
   right:7px;
-  bottom:6px;
+  top:6px;
   padding:3px 6px;
   border-radius:5px;
   background:rgba(7,10,16,.86);
@@ -265,6 +265,27 @@
   font-size:8px;
   pointer-events:none;
 }
+.thread-world-map-clock {
+  position:absolute;
+  left:53%;
+  bottom:8px;
+  transform:translateX(-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  min-width:116px;
+  padding:5px 10px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:8px;
+  background:rgba(7,10,16,.86);
+  color:#f3f8ff;
+  font-variant-numeric:tabular-nums;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+  pointer-events:none;
+}
+.thread-world-map-clock strong { font-size:14px; font-weight:650; line-height:1.2; }
+.thread-world-map-clock span { font-size:9px; color:#c7d6e8; white-space:nowrap; }
 .thread-world-timezones line {
   stroke:rgba(255,255,255,.16);
   stroke-width:.55;
