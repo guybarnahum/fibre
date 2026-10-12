@@ -51,7 +51,7 @@ function refreshMapClocks() {
   }
   if (!focused) return;
   const visible = [...solarMaps].filter((map) =>
-    map.visible && map.container.isConnected && map.longitude !== null
+    map.visible && map.container.isConnected && map.longitude !== null && !map.clock.hidden
   );
   for (const map of visible) showMapClock(map);
   if (visible.length > 0) clockTimer = window.setTimeout(refreshMapClocks, 60_000);
@@ -188,8 +188,7 @@ export function mountWorldMap(container, { selection = false } = {}) {
   // while crossing to one, but hide it when the pointer leaves both.
   const popupSelector = ".thread-map-popover, .appearance-map-popover";
   const shell = container.parentElement;
-  const onPopup = (element) => element?.closest?.(popupSelector) !== null
-    && element?.closest?.(popupSelector) !== undefined;
+  const onPopup = (element) => Boolean(element?.closest?.(popupSelector));
   const hideClock = () => {
     map.clock.hidden = true;
     refreshMapClocks();
