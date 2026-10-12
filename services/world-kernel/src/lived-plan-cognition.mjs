@@ -25,6 +25,7 @@ const STOP_SCHEMA = Object.freeze({
     "presenceMode",
     "mediatedContext",
     "activity",
+    "wakefulness",
     "purpose",
     "travelFromPrevious",
   ],
@@ -35,6 +36,7 @@ const STOP_SCHEMA = Object.freeze({
     presenceMode: { type: "string", enum: ["physical", "mediated"] },
     mediatedContext: { type: "string" },
     activity: { type: "string", minLength: 1, maxLength: 500 },
+    wakefulness: { type:"string", enum:["awake","asleep","unknown"] },
     purpose: { type: "string", minLength: 1, maxLength: 500 },
     travelFromPrevious: { type: "string" },
   },
@@ -60,6 +62,7 @@ const FLIGHT_PLAN_ADAPTER = Object.freeze({
 The concern's externalContext is primarily World-provided planning reality: the lived horizon, local civil time when known, the physical places currently available, and optionally the physical place where the Thread must begin. It may also include a bounded dailyRhythm projection from the Thread's inherited organismic baselines. Treat World facts as constraint/opportunity and dailyRhythm as a soft physiological tendency, never personality or destiny.
 When localHorizon is supplied, plan ordinary life for that local civil time rather than treating UTC clock time as the Thread's local day.
 When dailyRhythm is supplied, let sleep/wake timing usually reflect it while allowing developed habits, current life and real commitments to override it. Do not default every Thread to the same conventional bedtime, wake time or morning routine.
+For each stop, state wakefulness separately from the natural-language activity: asleep only when the stop is actual sleep, awake for ordinary waking life, unknown only when the state cannot be established. This is a World-enacted feasibility fact, not the Thread\'s willingness to converse.
 When interoception is supplied, it is bounded subsemantic organismic state grounded in recent lived evidence. Interpret what it means for this Thread alongside developed self/history and current commitments. Exploration pressure is not a command, does not mean boredom, and does not imply social activity; staying put, learning, play, solitude, physical exploration or social exposure may all be valid depending on the Thread.
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
@@ -243,6 +246,9 @@ function normalizeCognitiveStop(output, index, places, horizonStart, horizonEnd)
     assertNonEmpty(`personal plan cognition stops[${index}].mediatedContext`, output.mediatedContext);
   }
   assertNonEmpty(`personal plan cognition stops[${index}].activity`, output.activity);
+  if(!["awake","asleep","unknown"].includes(output.wakefulness)){
+    throw new TypeError("personal Flight Plan must declare wakefulness");
+  }
   assertNonEmpty(`personal plan cognition stops[${index}].purpose`, output.purpose);
   if (typeof output.travelFromPrevious !== "string") {
     throw new TypeError(`personal plan cognition stops[${index}].travelFromPrevious must be a string`);
@@ -253,6 +259,7 @@ function normalizeCognitiveStop(output, index, places, horizonStart, horizonEnd)
     physicalPlaceRef: output.physicalPlaceRef,
     mediatedContext: output.presenceMode === "physical" ? null : output.mediatedContext,
     activity: output.activity,
+    wakefulness:output.wakefulness,
     purpose: output.purpose,
     companionRefs: [],
     travelFromPrevious: output.travelFromPrevious.trim() === "" ? null : output.travelFromPrevious.trim(),
