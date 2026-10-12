@@ -69,82 +69,106 @@ function memoryAgeLabel(memory, birthDate) {
   return remainder === 0 ? `Age ${years}` : `Age ${years}y ${remainder}m`;
 }
 
-export function threadObservatoryCopyPayload({
-  threadId,
-  identity,
-  memories = [],
-  memoryError = null,
-  livedNow = null,
-  encounterStories = [],
-  experienceJournalEntries = [],
-  journal = null,
-  repair = null,
-  repairError = null,
-} = {}) {
-  return Object.freeze({
-    contract:"fibre-thread-observatory-copy-v0.2",
-    threadId:threadId ?? null,
-    identity:identity ?? null,
-    memories:Object.freeze(Array.isArray(memories) ? [...memories] : []),
-    memoryError:memoryError ?? null,
-    worldEvents:buildThreadWorldEvents({livedNow,encounterStories}),
-    encounterStories:Object.freeze([...(encounterStories??[])]
-      .sort((left,right)=>String(right.occurredAt??"").localeCompare(String(left.occurredAt??"")))
-      .slice(0,80).map((story)=>({
-      encounterId:story.encounterId,
-      occurredAt:story.occurredAt,
-      situation:story.situation??null,
-      beats:story.story?.beats??[],
-      attention:story.attention?.outcome??null,
-    }))),
-    experienceJournalEntries:Object.freeze([...(experienceJournalEntries??[])]),
-    journal:journal??null,
-    repair:repair ?? null,
-    repairError:repairError ?? null,
-  });
+export function threadSituationPlace(situation,livedNow=null){
+  const location=situation?.location;
+  if(!location)return null;
+  const name=(ref)=>{
+    const shared=(livedNow?.worldPlaces??[]).find((place)=>place.ref===ref);
+    const episode=(livedNow?.placeEpisodes??[]).find((place)=>
+      `per:${place.episodeId}:${place.revision}`===ref);
+    return shared?.displayName??episode?.place?.displayName??ref;
+  };
+  if(location.kind==="place")return {
+    kind:"place",placeRef:location.placeRef,
+    name:name(location.placeRef),
+  };
+  if(location.kind==="transit")return {
+    kind:"transit",fromPlaceRef:location.fromPlaceRef,
+    toPlaceRef:location.toPlaceRef,
+    name:`In transit · ${name(location.fromPlaceRef)} → ${name(location.toPlaceRef)}`,
+  };
+  return null;
 }
 
-async function fetchThreadRepairSnapshot(threadId) {
-  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
-    headers:{ Accept:"application/json" },
-    cache:"no-store",
+export function threadObservatoryDebugSnapshot({
+  threadId,identity,livedNow=null,encounterStories=[],
+  experienceConsolidation=null,experienceJournalEntries=[],
+  memories=[],semanticStates=[],lifeRelations=[],
+  encounterError=null,memoryError=null,
+}={}){
+  const current=livedNow?.currentSituation??null;
+  const episodes=buildEncounterEpisodes({
+    encounterStories,experienceConsolidation,experienceJournalEntries,
+    memories,semanticStates,lifeRelations,
   });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok && !(response.status === 404 && payload?.diagnosis)) {
-    throw new Error(payload?.error?.detail ?? payload?.error?.code ?? payload?.error ?? `HTTP ${response.status}`);
-  }
-  return payload;
+  return {
+    threadId,
+    name:threadName(identity),
+    current:current===null?null:{
+      situationId:current.situationId,
+      establishedAt:current.establishedAt,
+      activity:current.activity,
+      wakefulness:current.wakefulness??"unknown",
+      meetingPlace:threadSituationPlace(current,livedNow),
+      timeZone:livedNow?.worldContext?.timeZone??null,
+    },
+    worldEvents:buildThreadWorldEvents({livedNow,encounterStories})
+      .slice(0,16).map((event)=>({
+        kind:event.kind,at:event.occurredAt,
+        ...(event.kind==="scene"?{
+          situationId:event.situationId,activity:event.activity,
+          place:threadSituationPlace({location:event.location},livedNow),
+        }:{
+          encounterId:event.encounterId,text:event.text,attention:event.attention,
+        }),
+      })),
+    encounterEpisodes:episodes.slice(0,5).map((episode)=>({
+      startedAt:episode.startedAt,
+      meetingPlace:threadSituationPlace(episode.stories[0]?.situation,livedNow),
+      conversation:episode.stories.flatMap((story)=>(story.story?.beats??[])
+        .filter((beat)=>beat.kind==="utterance"||beat.kind==="occurrence")
+        .map((beat)=>({
+          speaker:beat.actorThreadId===null?"Visitor":beat.actorThreadId===threadId?"Thread":beat.actorThreadId,
+          text:beat.text,
+        }))).slice(0,28),
+      experiences:episode.experiences.map((e)=>e.experienceText).filter(Boolean).slice(0,12),
+      consolidation:episode.consolidation.status,
+      afterthoughts:episode.afterthoughts.slice(0,6),
+      journalEntries:episode.journals.map((entry)=>entry.entryText??entry.text)
+        .filter(Boolean).slice(0,8),
+      memories:episode.memories.map((memory)=>({
+        content:memory.rememberedContent??null,
+        meaning:memory.rememberedMeaning??null,
+      })).slice(0,6),
+      memoryOutcomes:episode.consolidation.records
+        .map((record)=>record.complete?.payload?.memoryOutcome??record.decision?.payload?.memory?.outcome)
+        .filter(Boolean),
+    })),
+    latestWorldJournalEntries:[...experienceJournalEntries].slice(-6)
+      .map((entry)=>({writtenAt:entry.writtenAt,text:entry.entryText})),
+    currentMemories:[...memories].slice(-6)
+      .map((memory)=>({content:memory.rememberedContent,meaning:memory.rememberedMeaning})),
+    ...(encounterError?{encounterError}:{}),
+    ...(memoryError?{memoryError}:{}),
+  };
 }
 
 function observatoryCopyAction({
-  identity,threadId,memories,memoryError,livedNow,encounterStories,experienceJournalEntries,journal,
+  identity,threadId,memories,memoryError,livedNow,encounterStories,
+  experienceConsolidation,experienceJournalEntries,semanticStates,lifeRelations,encounterError,
 }) {
-  const actions = el("div", "thread-observatory-actions");
-  const button = el("button", "secondary thread-observatory-copy");
-  button.type = "button";
+  const actions=el("div","thread-observatory-actions");
+  const button=el("button","secondary thread-observatory-copy");
+  button.type="button";
   bindCopyAction(button,{
-    value:async()=>{
-      let repair=null;
-      let repairError=null;
-      try{repair=await fetchThreadRepairSnapshot(threadId)}
-      catch(error){repairError=error instanceof Error?error.message:String(error)}
-      return threadObservatoryCopyPayload({
-        threadId,
-        identity,
-        memories,
-        memoryError,
-        livedNow,
-        encounterStories,
-        experienceJournalEntries,
-        journal,
-        repair,
-        repairError,
-      });
-    },
-    label:"Copy Thread Observatory",
-    tooltip:"Copy Thread life, encounters, journal, memories and current repair diagnosis",
-    copiedLabel:"Copied Thread Observatory",
-    failedLabel:"Copy Thread Observatory failed",
+    value:()=>threadObservatoryDebugSnapshot({
+      identity,threadId,memories,memoryError,livedNow,encounterStories,
+      experienceConsolidation,experienceJournalEntries,semanticStates,lifeRelations,encounterError,
+    }),
+    label:"Copy debug snapshot",
+    tooltip:"Copy debug snapshot",
+    copiedLabel:"Copied debug snapshot",
+    failedLabel:"Copy debug snapshot failed",
     iconOnly:true,
   });
   actions.append(button);
@@ -388,7 +412,7 @@ function hero(identity, threadId) {
   copy.append(states); wrap.append(portrait, copy); return wrap;
 }
 
-function identitySection(identity, threadId) {
+function identitySection(identity, threadId, livedNow=null) {
   const raised = identity.raisedAs ?? {};
   const wrap = section("Identity", "Authoritative World identity");
   const grid = el("div", "thread-identity-table");
@@ -398,6 +422,7 @@ function identitySection(identity, threadId) {
     fact("Sex", threadSex(identity) ? human(threadSex(identity)) : null),
     fact("Birth date", identity.birthDate),
     fact("Birth place", identity.birthPlace),
+    fact("Current place",threadSituationPlace(livedNow?.currentSituation,livedNow)?.name??"Not established"),
     fact("Lifecycle", identity.lifecycleStatus ? human(identity.lifecycleStatus) : null),
     fact("Genesis origin", identity.originOrientation ? human(identity.originOrientation) : null),
     fact("Thread ID", threadId, { mono:true }),
@@ -848,16 +873,10 @@ function socialAnalyticsSection({
   return wrap;
 }
 
-function situationLabel(situation){
-  if(!situation)return "World scene unavailable";
-  const activity=firstText(situation.activity);
-  const location=situation.location??null;
-  let place=null;
-  if(location?.kind==="place")place=location.placeRef??null;
-  else if(location?.kind==="transit"){
-    place=[location.fromPlaceRef,location.toPlaceRef].filter(Boolean).join(" → ");
-  }
-  return [activity,place].filter(Boolean).join(" · ")||"World scene";
+function situationLabel(situation,livedNow=null){
+  const activity=situation?.activity??null;
+  const place=threadSituationPlace(situation,livedNow);
+  return [activity,place?.name].filter(Boolean).join(" · ")||"World scene";
 }
 
 function lifeRecordLinks(){
@@ -899,7 +918,7 @@ function worldEventsSection({livedNow=null,encounterStories=[],encounterError=nu
       row.append(el("p",null,situationLabel({
         activity:event.activity,
         location:event.location,
-      })));
+      },livedNow)));
       row.append(el("small","mono",event.situationId));
     }else{
       row.append(el("p",null,event.text??"An occurrence was admitted without prose."));
@@ -931,6 +950,7 @@ function encounterEpisodeSection({
   memories=[],
   semanticStates=[],
   lifeRelations=[],
+  livedNow=null,
 }={}){
   const episodes=buildEncounterEpisodes({
     encounterStories,
@@ -987,7 +1007,7 @@ function encounterEpisodeSection({
       scene.append(el("p",null,"Historical World scene unavailable."));
     }else{
       for(const situation of distinctSituations){
-        scene.append(el("p",null,situationLabel(situation)));
+        scene.append(el("p",null,situationLabel(situation,livedNow)));
       }
     }
     article.append(scene);
@@ -1523,11 +1543,12 @@ export function renderThreadObservatory({
   const view = el("div", "thread-person-view");
   view.append(
     observatoryCopyAction({
-      identity,threadId,memories,memoryError,livedNow,encounterStories,experienceJournalEntries,journal,
+      identity,threadId,memories,memoryError,livedNow,encounterStories,
+      encounterError,experienceConsolidation,experienceJournalEntries,semanticStates,lifeRelations,
     }),
     hero(identity, threadId),
     lifeRecordLinks(),
-    identitySection(identity, threadId),
+    identitySection(identity, threadId, livedNow),
     renderFidSection(identity, threadId),
     nowSection(identity, livedNow),
     journalSection(
@@ -1546,6 +1567,7 @@ export function renderThreadObservatory({
       threadId,
       encounterStories,
       encounterError,
+      livedNow,
       experienceConsolidation,
       experienceJournalEntries,
       memories,
