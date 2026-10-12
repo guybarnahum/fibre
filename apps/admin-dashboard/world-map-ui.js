@@ -16,14 +16,15 @@ const pacificHour = new Intl.DateTimeFormat("en-US", {
 });
 
 export function worldClockForLongitude(longitude, instant, localOffsetMinutes = -new Date(instant).getTimezoneOffset(), latitude = null) {
+  const at = new Date(instant);
   let bandHours = Math.round(Math.max(-180, Math.min(180, longitude)) / 15);
   if (latitude !== null && latitude >= 31 && latitude <= 49 && longitude >= -125 && longitude <= -114) {
-    const hour = Number(pacificHour.format(instant));
-    bandHours = ((hour - new Date(instant).getUTCHours() + 36) % 24) - 12;
+    const hour = Number(pacificHour.format(at));
+    bandHours = ((hour - at.getUTCHours() + 36) % 24) - 12;
   }
   const differenceHours = Math.round(bandHours - localOffsetMinutes / 60);
   return Object.freeze({
-    time:new Date(new Date(instant).getTime() + (localOffsetMinutes + differenceHours * 60) * 60_000),
+    time:new Date(at.getTime() + (localOffsetMinutes + differenceHours * 60) * 60_000),
     differenceHours,
   });
 }
