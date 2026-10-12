@@ -210,17 +210,9 @@ export function createThreadPresentationVisualPublicationReconciler({
       thumbnailOnly = false,
     } = {}) {
       assertId("threadId", threadId);
-      assertIsoTimestamp("observedAt", observedAt);
-      const normalizedRegenerationKey = optionalRegenerationKey(regenerationKey);
-      const context = activityIdentity(threadId, activityContext);
-      const embodiment = normalizeAdmittedCanonicalPortrait(candidate);
-      if (embodiment.threadId !== threadId) {
-        throw new TypeError("supplied Embodiment belongs to a different Thread");
-      }
-      const canonicalObjectRef = embodiment.asset.referenceObjectRef;
 
-      // The operator's one-time thumbnail backfill cannot rewrite identity
-      // or enter FID issuance; it uses the already-admitted public projection.
+      // Operator backfill reads only the already-admitted public Presentation.
+      // No World Embodiment rewrite, generation request or FID issuance.
       if(thumbnailOnly){
         const thumbnail=ensurePortraitThumbnail===null
           ? null
@@ -234,6 +226,15 @@ export function createThreadPresentationVisualPublicationReconciler({
               reason:thumbnail?.reason??"thumbnail publisher not configured",
             });
       }
+
+      assertIsoTimestamp("observedAt", observedAt);
+      const normalizedRegenerationKey = optionalRegenerationKey(regenerationKey);
+      const context = activityIdentity(threadId, activityContext);
+      const embodiment = normalizeAdmittedCanonicalPortrait(candidate);
+      if (embodiment.threadId !== threadId) {
+        throw new TypeError("supplied Embodiment belongs to a different Thread");
+      }
+      const canonicalObjectRef = embodiment.asset.referenceObjectRef;
 
       const channelId = threadPresentationChannelId(threadId);
       const initial = await presentationServer.getSnapshot(channelId);
