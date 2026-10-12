@@ -20,9 +20,8 @@ function assertEnum(name, value, allowed) {
 }
 
 function normalizeWakefulness(value) {
-  const state = value ?? "unknown";
-  assertEnum("World wakefulness", state, WAKEFULNESS_STATES);
-  return state;
+  assertEnum("World wakefulness", value, WAKEFULNESS_STATES);
+  return value;
 }
 
 function normalizeIds(name, value, { required = false } = {}) {
@@ -180,7 +179,7 @@ function normalizeStop(value, index) {
     physicalPlaceRef: value.physicalPlaceRef,
     mediatedContext,
     activity: value.activity,
-    wakefulness: normalizeWakefulness(value.wakefulness),
+    ...(value.wakefulness === undefined ? {} : { wakefulness:normalizeWakefulness(value.wakefulness) }),
     purpose: value.purpose,
     companionRefs,
     travelFromPrevious,
@@ -366,7 +365,7 @@ export function plannedPositionAt(planCandidate, at) {
         location: { kind: "place", placeRef: stop.physicalPlaceRef },
         mediatedContext: stop.mediatedContext,
         activity: stop.activity,
-        wakefulness: stop.wakefulness,
+        wakefulness: stop.wakefulness ?? "unknown",
         reason: stop.purpose,
         participantRefs: stop.companionRefs,
       };
@@ -442,7 +441,7 @@ export function normalizeWorldObservation(value) {
     location,
     mediatedContext,
     activity: value.activity,
-    wakefulness: normalizeWakefulness(value.wakefulness),
+    ...(value.wakefulness === undefined ? {} : { wakefulness:normalizeWakefulness(value.wakefulness) }),
     reason: value.reason,
     participantRefs,
     evidenceRefs,
@@ -551,7 +550,7 @@ function observationDivergesFrom(position, observation) {
     return position.location.placeRef !== observation.location.placeRef ||
       position.mediatedContext !== observation.mediatedContext ||
       position.activity !== observation.activity ||
-      position.wakefulness !== observation.wakefulness ||
+      position.wakefulness !== (observation.wakefulness ?? "unknown") ||
       canonicalJson(position.participantRefs) !== canonicalJson(observation.participantRefs);
   }
   return observation.location.kind !== "transit" ||
