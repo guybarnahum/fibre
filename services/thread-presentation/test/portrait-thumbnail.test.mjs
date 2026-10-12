@@ -81,6 +81,13 @@ test("public portrait has one immutable, servable thumbnail; retry neither regen
   const second=await publish();
   assert.equal(second.reused,true,"same portrait should reuse its immutable rendition");
   assert.equal(transformations,1,"repeated completion must not reencode the image");
+  const channel=await f.infra.catalog.get("presentation:"+THREAD);
+  await f.infra.catalog.upsert("presentation:"+THREAD,{
+    ...channel,publiclyVisible:false,
+  });
+  const revoked=await f.api.fetch(new Request("https://api.insidefibre.com/api/assets/"+first.objectRef));
+  assert.equal(revoked.status,404,
+    "a withdrawn public Presentation must no longer serve its thumbnail");
 });
 
 test("non-public or unprojected portrait cannot produce a public thumbnail",async()=>{
