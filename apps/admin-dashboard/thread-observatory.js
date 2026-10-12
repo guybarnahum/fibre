@@ -240,6 +240,10 @@ export function mergeObservatoryWorldIdentity(identity = {}, deepWorld = null) {
   });
 }
 
+export function portraitThumbnailAsset(identity) {
+  return (identity?.assets??[]).find((asset)=>asset?.role==="portrait_thumbnail"&&asset?.url)??null;
+}
+
 export function portraitAsset(identity) {
   const assets = Array.isArray(identity?.assets) ? identity.assets : [];
   return assets.find((asset) => asset?.role === "official_id_photo" && asset?.url)
@@ -323,13 +327,14 @@ function section(titleText, subtitle = null) {
   wrap.append(head); return wrap;
 }
 
-function imageButton(asset, alt, className = "thread-asset-preview") {
+function imageButton(asset, alt, className = "thread-asset-preview", previewUrl = asset.url) {
   const button = el("button", `${className} thread-image-button`);
   button.type = "button";
   button.dataset.lightboxSrc = asset.url;
   button.dataset.lightboxAlt = alt;
   const image = el("img");
-  image.src = asset.url;
+  image.src = previewUrl;
+  if(previewUrl!==asset.url)image.addEventListener("error",()=>{image.src=asset.url;},{once:true});
   image.loading = "lazy";
   image.alt = alt;
   button.append(image);
@@ -379,7 +384,7 @@ function hero(identity, threadId) {
   const wrap = el("section", "thread-person-hero");
   const portrait = el("div", `thread-person-portrait${image ? " has-image" : ""}`);
   if (image) {
-    portrait.append(imageButton(image, `${name ?? "Thread"} portrait`, "thread-person-portrait-button"));
+    portrait.append(imageButton(image, `${name ?? "Thread"} portrait`, "thread-person-portrait-button",portraitThumbnailAsset(identity)?.url??image.url));
   } else if (admittedPortrait) {
     portrait.append(
       el("span", "thread-person-portrait-mark", "◌"),
