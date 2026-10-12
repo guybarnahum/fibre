@@ -12,7 +12,8 @@ import {
   mergeObservatoryWorldIdentity,
   reissueFidCard,
   resumeFidReissue,
-  threadObservatoryCopyPayload,
+  threadObservatoryDebugSnapshot,
+  threadSituationPlace,
 } from "./thread-observatory.js";
 
 test("Thread Observatory renders mutable identity from current authoritative World", () => {
@@ -228,52 +229,63 @@ test("first FIN issuance resumes the same idempotent workflow after photo deriva
 });
 
 
-test("Thread Observatory copy payload carries person state and current repair diagnosis", () => {
-  const payload = threadObservatoryCopyPayload({
-    threadId:"thr_observatory_copy_1",
-    identity:{
-      displayName:"Maya Cohen",
-      raisedAs:{ languages:["Hebrew"] },
-      languages:["Hebrew", "Danish"],
-      world:{ thread:{ version:12, status:"active" } },
-    },
-    memories:[{ memoryId:"mem_1", rememberedContent:"Worked in Copenhagen." }],
-    livedNow:{currentSituation:{situationId:"sit_maya_now",establishedAt:"2026-10-09T16:00:00Z",activity:"Reading"}},
-    encounterStories:[{
-      encounterId:"story_maya_guest",occurredAt:"2026-10-09T16:01:00Z",
-      story:{beats:[
-        {kind:"utterance",actorThreadId:null,text:"Which town do you live in?"},
-        {kind:"utterance",actorThreadId:"thr_observatory_copy_1",text:"I would rather not say."},
-      ]},
+test("a debug snapshot shows enacted meeting place, actual dialogue and selective consequence",()=>{
+  const threadId="thr_observatory_copy_1";
+  const location={kind:"place",placeRef:"per:plce_home:1"};
+  const situation={
+    situationId:"sit_maya_now",establishedAt:"2026-10-09T16:00:00Z",
+    activity:"Reading at home",wakefulness:"awake",location,
+  };
+  const livedNow={
+    currentSituation:situation,
+    worldContext:{timeZone:"Europe/Copenhagen"},
+    placeEpisodes:[{episodeId:"plce_home",revision:1,place:{displayName:"Family home"}}],
+  };
+  const record={
+    encounterId:"story_maya_guest",occurredAt:"2026-10-09T16:01:00Z",
+    situation,
+    story:{beats:[
+      {kind:"utterance",actorThreadId:null,text:"Are you busy?"},
+      {kind:"utterance",actorThreadId:threadId,text:"I am reading right now."},
+    ]},
+    attention:{outcome:"noticed",experience:{
+      experienceId:"exp_maya_guest",experienceText:"I appreciated the brief visit.",
+    }},
+  };
+  const snapshot=threadObservatoryDebugSnapshot({
+    threadId,
+    identity:{displayName:"Maya Cohen"},
+    livedNow,
+    encounterStories:[record],
+    experienceJournalEntries:[{
+      journalEntryId:"journal_maya",
+      aboutExperienceRef:"exp_maya_guest",
+      writtenAt:"2026-10-09T16:10:00Z",
+      entryText:"It was a short but welcome interruption.",
     }],
-    experienceJournalEntries:[{journalEntryId:"journal_maya",entryText:"I valued keeping this private."}],
-    repair:{
-      diagnosis:{
-        health:"operator_decision_required",
-        findings:[{ code:"RAISED_LANGUAGES_NEED_REVIEW", state:"operator_decision_required" }],
-      },
-      reconciliation:{ state:"pending" },
-    },
+    memories:[],
+    experienceConsolidation:{queued:[],consolidations:[{
+      consolidationId:"con_maya_guest",
+      experienceRefs:["exp_maya_guest"],
+      decision:{payload:{afterthoughts:[],memory:{outcome:"not_remembered"}}},
+      complete:{payload:{memoryOutcome:"not_remembered"}},
+      journal:null,
+    }]},
   });
-
-  assert.equal(payload.contract, "fibre-thread-observatory-copy-v0.2");
-  assert.equal(payload.threadId, "thr_observatory_copy_1");
-  assert.deepEqual(payload.identity.raisedAs.languages, ["Hebrew"]);
-  assert.deepEqual(payload.identity.languages, ["Hebrew", "Danish"]);
-  assert.equal(payload.identity.world.thread.version, 12);
-  assert.equal(payload.memories[0].memoryId, "mem_1");
-  assert.equal(payload.worldEvents[0].situationId,"sit_maya_now",
-    "one person's World scene was lost from their copied Observatory");
-  assert.equal(payload.encounterStories[0].beats[1].text,"I would rather not say.",
-    "an admitted outward conversation disappeared from the copied Thread history");
-  assert.equal(payload.experienceJournalEntries[0].journalEntryId,"journal_maya",
-    "private journal authority was omitted from the person's copy");
-  assert.equal(payload.repair.diagnosis.health, "operator_decision_required");
-  assert.equal(payload.repair.reconciliation.state, "pending");
-  assert.equal(payload.memoryError, null);
-  assert.equal(payload.repairError, null);
+  assert.equal(threadSituationPlace(situation,livedNow).name,"Family home");
+  assert.equal(snapshot.current.meetingPlace.name,"Family home",
+    "a real World place must not disappear from meeting inspection");
+  assert.equal(snapshot.worldEvents[0].place.name,"Family home");
+  assert.deepEqual(snapshot.encounterEpisodes[0].conversation,[
+    {speaker:"Visitor",text:"Are you busy?"},
+    {speaker:"Thread",text:"I am reading right now."},
+  ],"debug copy must retain the real exchange");
+  assert.deepEqual(snapshot.encounterEpisodes[0].memoryOutcomes,["not_remembered"],
+    "debug copy must not turn an experience into an invented memory");
+  assert.equal(snapshot.latestWorldJournalEntries[0].text,
+    "It was a short but welcome interruption.");
+  assert.equal(snapshot.currentMemories.length,0);
 });
-
 
 test("Encounter Episodes derive continuation and consequence without becoming authority", () => {
   const first={
