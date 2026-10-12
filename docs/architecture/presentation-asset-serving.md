@@ -110,6 +110,14 @@ Thumbnail publication has three steps: immutable derivative object, separate `po
 
 For existing admitted portraits only, `npm run presentation:portraits:backfill -- --env staging` previews the missing thumbnail references; `--apply` uses the existing normal visual-publication operation in thumbnail-only mode, without generating or reissuing canonical portraits or FID cards. This one-time CLI is intended to be removed after staging acceptance. Cloudflare Images is an optional infrastructure capability: when unavailable, normal Thread/FID publication can continue, but the derivative remains pending and is reported, not falsely published. Admin prefers a thumbnail for small portraits and falls back to the existing image; failed thumbnail loads emit one structured browser warning.
 
+## Public portrait thumbnails
+
+For a Thread whose current public Presentation carries an authorized canonical Embodiment portrait, the Presentation Worker derives one immutable **128 × 128 WebP (quality 76)** preview directly from the existing canonical image bytes, using its Cloudflare Images binding. The deterministic rendition identity binds the Thread, source digest, and fixed rendition specification; retries reuse the stored derivative without re-transforming the original. No new image-generation job is submitted.
+
+The derivative is a distinct `portrait_thumbnail` media role with `fibre_projection` provenance, admitted into the current immutable Presentation snapshot before its `portraitThumbnailObjectRef` appears in the public directory. The serving resolver requires both the current public directory admission and the derivative's `public_presentation_media` catalog record. Consumers fetch `GET /api/assets/:objectRef`, not the original source or an FID image, and the thumbnail hot path does not reopen full Presentation snapshots. Revocation of the public channel or changing the current portrait source removes the public delivery path.
+
+A bounded, manually invoked `presentation:portraits:backfill` CLI can trigger thumbnail-only reconciliation for existing public Threads through the already-existing Presentation publication route. It uses no World updates, new image generation, FID issuance, scheduler, or permanent migration endpoint. This is a visual delivery capability; it does not alter Thread identity, social behavior, or living experience.
+
 ## Public versus private audience
 
 This first serving contract resolves **public presentation assets only**.
