@@ -184,6 +184,7 @@ export function createThreadPresentationVisualPublicationReconciler({
   createDemandService,
   createVisualRewrite,
   ensureFid,
+  ensurePortraitThumbnail = null,
   activityRecorder = null,
 } = {}) {
   if (!presentationServer
@@ -235,6 +236,16 @@ export function createThreadPresentationVisualPublicationReconciler({
         embodimentId: embodiment.embodimentId,
       }), (entry) => entry?.reused !== true);
 
+      let thumbnail=null;
+      let thumbnailError=null;
+      if(ensurePortraitThumbnail!==null){
+        try {
+          thumbnail=await ensurePortraitThumbnail({threadId});
+        }catch(error){
+          thumbnailError=error;
+        }
+      }
+
       const fid = await runChangedStage(activity, {
         ...context,
         stage:"presentation.identity_media.ensure",
@@ -254,7 +265,14 @@ export function createThreadPresentationVisualPublicationReconciler({
         });
       }
 
+      if(thumbnailError!==null){
+        return result(false,"portrait_thumbnail_pending",{
+          visualReused:visual.reused===true,
+          reason:thumbnailError instanceof Error?thumbnailError.message:String(thumbnailError),
+        });
+      }
       return result(true, "complete", {
+        ...(thumbnail===null?{}:{portraitThumbnailObjectRef:thumbnail.objectRef??null}),
         visualReused:visual.reused === true,
         regenerationKey:normalizedRegenerationKey,
         fidCredentialId:fid.credential?.credentialId ?? null,
