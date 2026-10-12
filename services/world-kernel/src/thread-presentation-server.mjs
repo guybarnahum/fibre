@@ -96,6 +96,10 @@ export function createThreadPresentationServer({ infra }) {
         ? { expectedSequence: sequence }
         : { expectedSnapshotDigest });
       const priorCatalog = await infra.catalog.get(channelId);
+      const visualSource=normalized.presentation.visualIdentity?.referenceObjectRefs?.[0]??null;
+      const readyPortraitThumbnail=normalized.media.assets.find((asset)=>
+        asset.role==="portrait_thumbnail" && asset.status==="ready"
+        && asset.sourceReferences.includes(visualSource))??null;
       await infra.catalog.upsert(channelId, {
         ...(priorCatalog ?? {}),
         channelId,
@@ -109,6 +113,7 @@ export function createThreadPresentationServer({ infra }) {
           languages: normalized.presentation.subject?.languages ?? [],
           homePlaceRef: normalized.presentation.subject?.homePlaceRef ?? null,
           birthPlace: publicBirthPlaceFromPresentation(normalized.presentation),
+          portraitThumbnailObjectRef: readyPortraitThumbnail?.locator??null,
           headline: normalized.presentation.introduction?.headline ?? null,
           summary: normalized.presentation.introduction?.summary ?? null,
           visualDescription: normalized.presentation.visualIdentity?.subjectDescription ?? null,
