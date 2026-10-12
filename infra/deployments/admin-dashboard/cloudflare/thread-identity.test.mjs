@@ -225,3 +225,19 @@ test("O1 opens the same Thread identity through Admin", async () => {
   assert.equal(response.status, 200);
   assert.deepEqual((await response.json()).identity, identity);
 });
+
+test("Admin sees only the thumbnail for the current public canonical portrait",async()=>{
+  const snapshot=structuredClone(presentationSnapshot);
+  snapshot.media.assets.push(
+    {mediaId:"media_thumb_old",kind:"image",role:"portrait_thumbnail",status:"ready",
+      locator:"thumb_old",mediaType:"image/webp",sourceReferences:["visual_reference_old"]},
+    {mediaId:"media_thumb_current",kind:"image",role:"portrait_thumbnail",status:"ready",
+      locator:"thumb_current",mediaType:"image/webp",sourceReferences:["visual_reference_1"]},
+  );
+  const resolved=await resolveAdminThreadIdentity({
+    environment:"staging",threadId:"thr_test_1",
+    fetchImpl:async()=>Response.json({pointer:{threadId:"thr_test_1"},snapshot}),
+  });
+  assert.deepEqual(resolved.assets.filter(a=>a.role==="portrait_thumbnail").map(a=>a.objectRef),
+    ["thumb_current"],"Admin must not preview an obsolete portrait derivative");
+});
