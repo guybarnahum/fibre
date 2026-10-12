@@ -9,28 +9,25 @@ let solarTimer = null;
 let solarObserver = null;
 let clockTimer = null;
 
-// Longitude gives approximate mean solar time, not a country's civil time zone.
-export function solarClockForLongitude(longitude, instant, localOffsetMinutes = -new Date(instant).getTimezoneOffset()) {
-  const utcOffsetMinutes = Math.round(Math.max(-180, Math.min(180, longitude)) * 4);
+// Approximate 15° longitude hour bands, not civil time zones.
+// Offset relative to the visitor is always a whole hour, preserving local minutes.
+export function worldClockForLongitude(longitude, instant, localOffsetMinutes = -new Date(instant).getTimezoneOffset()) {
+  const bandHours = Math.round(Math.max(-180, Math.min(180, longitude)) / 15);
+  const differenceHours = Math.round(bandHours - localOffsetMinutes / 60);
   return Object.freeze({
-    time:new Date(new Date(instant).getTime() + utcOffsetMinutes * 60_000),
-    differenceMinutes:utcOffsetMinutes - localOffsetMinutes,
+    time:new Date(new Date(instant).getTime() + (localOffsetMinutes + differenceHours * 60) * 60_000),
+    differenceHours,
   });
 }
 
 function showMapClock(map) {
   if (map.longitude === null || document.hidden || !document.hasFocus() || !map.visible) return;
   const now = new Date(Math.floor(Date.now() / 60_000) * 60_000);
-  const { time, differenceMinutes } = solarClockForLongitude(map.longitude, now);
-  map.clockTime.textContent = time.toLocaleTimeString(undefined, {
-    timeZone:"UTC", hour:"numeric", minute:"2-digit",
-  });
-  const magnitude = Math.abs(differenceMinutes);
-  const hours = Math.floor(magnitude / 60);
-  const minutes = magnitude % 60;
-  const offset = magnitude === 0 ? "±0h" :
-    `${differenceMinutes > 0 ? "+" : "−"}${hours}h${minutes ? ` ${minutes}m` : ""}`;
-  map.clockOffset.textContent = `≈ ${offset} from you · solar`;
+  const { time, differenceHours } = worldClockForLongitude(map.longitude, now);
+  map.clockTime.textContent = time.toISOString().slice(11, 16);
+  const offset = differenceHours === 0 ? "±0h"
+    : `${differenceHours > 0 ? "+" : "−"}${Math.abs(differenceHours)}h`;
+  map.clockOffset.textContent = `≈ ${offset} from you · longitude`;
   map.clock.hidden = false;
 }
 
@@ -156,7 +153,7 @@ export function mountWorldMap(container, { selection = false } = {}) {
   const clock = document.createElement("div");
   clock.className = "thread-world-map-clock";
   clock.hidden = true;
-  clock.title = "Approximate mean solar time by longitude; not a civil time zone.";
+  clock.title = "Approximate one-hour longitude bands; not civil time zones.";
   const clockTime = document.createElement("strong");
   clockTime.textContent = "";
   const clockOffset = document.createElement("span");
