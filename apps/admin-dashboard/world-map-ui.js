@@ -9,10 +9,18 @@ let solarTimer = null;
 let solarObserver = null;
 let clockTimer = null;
 
-// Approximate 15° longitude hour bands, not civil time zones.
-// Offset relative to the visitor is always a whole hour, preserving local minutes.
-export function worldClockForLongitude(longitude, instant, localOffsetMinutes = -new Date(instant).getTimezoneOffset()) {
-  const bandHours = Math.round(Math.max(-180, Math.min(180, longitude)) / 15);
+// Approximate 15° hour bands. For the Pacific coast, use the browser's
+// DST-aware IANA clock instead of treating California as permanent UTC−8.
+const pacificHour = new Intl.DateTimeFormat("en-US", {
+  timeZone:"America/Los_Angeles", hour:"2-digit", hourCycle:"h23",
+});
+
+export function worldClockForLongitude(longitude, instant, localOffsetMinutes = -new Date(instant).getTimezoneOffset(), latitude = null) {
+  let bandHours = Math.round(Math.max(-180, Math.min(180, longitude)) / 15);
+  if (latitude !== null && latitude >= 31 && latitude <= 49 && longitude >= -125 && longitude <= -114) {
+    const hour = Number(pacificHour.format(instant));
+    bandHours = ((hour - new Date(instant).getUTCHours() + 36) % 24) - 12;
+  }
   const differenceHours = Math.round(bandHours - localOffsetMinutes / 60);
   return Object.freeze({
     time:new Date(new Date(instant).getTime() + (localOffsetMinutes + differenceHours * 60) * 60_000),
@@ -23,7 +31,7 @@ export function worldClockForLongitude(longitude, instant, localOffsetMinutes = 
 function showMapClock(map) {
   if (map.longitude === null || document.hidden || !document.hasFocus() || !map.visible) return;
   const now = new Date(Math.floor(Date.now() / 60_000) * 60_000);
-  const { time, differenceHours } = worldClockForLongitude(map.longitude, now);
+  const { time, differenceHours } = worldClockForLongitude(map.longitude, now, -now.getTimezoneOffset(), map.latitude);
   map.clockTime.textContent = time.toISOString().slice(11, 16);
   const offset = differenceHours === 0 ? "±0h"
     : `${differenceHours > 0 ? "+" : "−"}${Math.abs(differenceHours)}h`;
@@ -162,7 +170,7 @@ export function mountWorldMap(container, { selection = false } = {}) {
   container.replaceChildren(svg, legend, clock);
 
   const map = { container, group:night, paths:nightPaths, motion:null,
-    visible:false, longitude:null, clock, clockTime, clockOffset };
+    visible:false, longitude:null, latitude:null, clock, clockTime, clockOffset };
   svg.addEventListener("pointermove", (event) => {
     // Keep the last geographic reading while examining an interactive marker.
     if (markers.contains(event.target) || event.target === selectionMarker) return;
@@ -170,15 +178,34 @@ export function mountWorldMap(container, { selection = false } = {}) {
     const bounds = svg.getBoundingClientRect();
     if (bounds.width <= 0) return;
     const x = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+    const y = Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height));
     map.longitude = x * 360 - 180;
+    map.latitude = WORLD_MAP_BOUNDS.maxLat - y * (WORLD_MAP_BOUNDS.maxLat - WORLD_MAP_BOUNDS.minLat);
     showMapClock(map);
     if (clockTimer === null) refreshMapClocks();
   });
-  svg.addEventListener("pointerleave", () => {
-    // Leaving the map ends the reading; moving onto a marker does not.
-    map.longitude = null;
+  // Popovers are siblings of the map inside its shell. Keep the reading
+  // while crossing to one, but hide it when the pointer leaves both.
+  const popupSelector = ".thread-map-popover, .appearance-map-popover";
+  const shell = container.parentElement;
+  const onPopup = (element) => element?.closest?.(popupSelector) !== null
+    && element?.closest?.(popupSelector) !== undefined;
+  const hideClock = () => {
     map.clock.hidden = true;
     refreshMapClocks();
+  };
+  svg.addEventListener("pointerleave", (event) => {
+    if (!onPopup(event.relatedTarget)) hideClock();
+  });
+  shell.addEventListener("pointerover", (event) => {
+    if (onPopup(event.target) && !onPopup(event.relatedTarget)) {
+      showMapClock(map);
+      if (clockTimer === null) refreshMapClocks();
+    }
+  });
+  shell.addEventListener("pointerout", (event) => {
+    if (onPopup(event.target) && !onPopup(event.relatedTarget)
+      && !svg.contains(event.relatedTarget)) hideClock();
   });
   watchSolarMap(map);
   return Object.freeze({ svg, markers, selectionMarker });
