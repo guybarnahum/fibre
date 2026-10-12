@@ -1,4 +1,4 @@
-import { bindPortraitPreview } from "./portrait-preview.js";
+import { bindPortraitPreview, useThumbnailFallback } from "./portrait-preview.js";
 import { watchAdminLive } from "./admin-live.js";
 import { threadObservatoryViewKey } from "./view-invalidation.js";
 import {
@@ -66,7 +66,7 @@ function stickyIdentityChip(identity, threadId) {
     const image = el("img");
     image.src = imageAsset.url;
     const fallback=portraitAsset(identity)?.url;
-    if(fallback&&fallback!==imageAsset.url)image.addEventListener("error",()=>{image.src=fallback;},{once:true});
+    if(imageAsset.role==="portrait_thumbnail")useThumbnailFallback(image,{threadId,thumbnailUrl:imageAsset.url,fallbackUrl:fallback,context:"observatory_popup"});
     image.alt = "";
     image.loading = "eager";
     avatar.append(image);
