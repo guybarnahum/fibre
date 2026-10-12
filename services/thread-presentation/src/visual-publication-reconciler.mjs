@@ -207,6 +207,7 @@ export function createThreadPresentationVisualPublicationReconciler({
       observedAt,
       activityContext = {},
       regenerationKey = null,
+      thumbnailOnly = false,
     } = {}) {
       assertId("threadId", threadId);
       assertIsoTimestamp("observedAt", observedAt);
@@ -241,9 +242,25 @@ export function createThreadPresentationVisualPublicationReconciler({
       if(ensurePortraitThumbnail!==null){
         try {
           thumbnail=await ensurePortraitThumbnail({threadId});
+          if(thumbnail?.published!==true){
+            thumbnailError=new Error(thumbnail?.reason??"portrait thumbnail not published");
+          }
         }catch(error){
           thumbnailError=error;
         }
+      }
+      if(thumbnailError!==null)console.warn("[Fibre] portrait thumbnail publication failed",{
+        threadId,sourceObjectRef:canonicalObjectRef,
+        reason:thumbnailError instanceof Error?thumbnailError.message:String(thumbnailError),
+      });
+      if(thumbnailOnly===true){
+        return thumbnailError===null && thumbnail?.published===true
+          ? result(true,"complete",{
+              portraitThumbnailObjectRef:thumbnail.objectRef,reused:thumbnail.reused===true,
+            })
+          : result(false,"portrait_thumbnail_pending",{
+              reason:thumbnailError?.message??"thumbnail publisher not configured",
+            });
       }
 
       const fid = await runChangedStage(activity, {
