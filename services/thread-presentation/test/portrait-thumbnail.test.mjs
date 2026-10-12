@@ -89,6 +89,10 @@ test("public portrait has one immutable, servable thumbnail; retry neither regen
   const indexed=await f.infra.catalog.get("presentation:"+THREAD);
   assert.equal(indexed.publicDirectory.portraitThumbnailObjectRef,first.objectRef,
     "public directory must name only a ready derivative");
+  const directory=await f.api.fetch(new Request("https://api.insidefibre.com/api/threads/search?limit=10"));
+  const page=await directory.json();
+  assert.equal(page.threads[0]?.portraitThumbnailObjectRef,first.objectRef,
+    "public Thread discovery must expose the admitted preview, not a full portrait");
   const second=await publish();
   assert.equal(second.reused,true,"same portrait should reuse its immutable rendition");
   assert.equal(transformations,1,"repeated completion must not reencode the image");
