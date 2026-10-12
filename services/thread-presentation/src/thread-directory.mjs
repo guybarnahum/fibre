@@ -49,6 +49,7 @@ export function publicThreadDirectoryEntry({ current = null, catalogRecord }) {
     languages: Object.freeze(cleanStrings(projected?.languages ?? presentation?.subject?.languages)),
     homePlaceRef: cleanString(projected?.homePlaceRef ?? presentation?.subject?.homePlaceRef),
     birthPlace: projected?.birthPlace ?? publicBirthPlaceFromPresentation(presentation),
+    portraitThumbnailObjectRef: cleanString(projected?.portraitThumbnailObjectRef),
     headline: cleanString(projected?.headline ?? presentation?.introduction?.headline),
     summary: cleanString(projected?.summary ?? presentation?.introduction?.summary),
     visualDescription: cleanString(projected?.visualDescription ?? presentation?.visualIdentity?.subjectDescription),
