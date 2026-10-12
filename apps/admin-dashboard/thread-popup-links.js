@@ -134,10 +134,8 @@ async function openThread(threadId, { showLoading = true, ensureWatch = true } =
     const identity = payload.identity ?? {};
     title.textContent = identity.fibreIdentityNumber ?? threadName(identity) ?? "Thread";
     body.replaceChildren(renderThreadObservatory({
-      identity,
+      ...payload,
       threadId,
-      memories:payload.memories,
-      memoryError:payload.memoryError,
     }));
     requestAnimationFrame(()=>watchHeroForStickyIdentity(identity,threadId));
   } catch (error) {
