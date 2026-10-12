@@ -1,15 +1,72 @@
 import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
-import { worldNightPath } from "./world-daylight.js";
+import { solarDriftPixels, worldNightPath } from "./world-daylight.js";
 
 export const SVG_NS = "http://www.w3.org/2000/svg";
 
-const nightLayers = new Set();
-let nightTimer = null;
+const SOLAR_INTERVAL_MS = 15 * 60_000;
+const solarMaps = new Set();
+let solarTimer = null;
+let solarObserver = null;
 
-function updateNightLayers() {
-  if (document.hidden || nightLayers.size === 0) return;
-  const night = worldNightPath(Date.now());
-  for (const layer of nightLayers) layer.setAttribute("d", night);
+// Only one scheduler for all three maps; no work in a blurred tab or
+// while every map is offscreen. SVG animates movement without JS frames.
+function syncSolarMaps() {
+  if (solarTimer !== null) window.clearTimeout(solarTimer);
+  solarTimer = null;
+  const focused = !document.hidden && document.hasFocus();
+  const active = [...solarMaps].filter((map) => focused && map.visible && map.container.isConnected);
+  for (const map of solarMaps) {
+    map.motion?.remove();
+    map.motion = null;
+    map.group.removeAttribute("transform");
+  }
+  if (active.length === 0) return;
+  const now = Date.now();
+  const path = worldNightPath(now);
+  const offset = solarDriftPixels(now);
+  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+  for (const map of active) {
+    for (const night of map.paths) night.setAttribute("d", path);
+    if (!reducedMotion) {
+      const motion = document.createElementNS(SVG_NS, "animateTransform");
+      motion.setAttribute("attributeName", "transform");
+      motion.setAttribute("type", "translate");
+      motion.setAttribute("from", "0 0");
+      motion.setAttribute("to", `${offset.toFixed(3)} 0`);
+      motion.setAttribute("dur", "900s");
+      motion.setAttribute("calcMode", "linear");
+      motion.setAttribute("fill", "freeze");
+      motion.setAttribute("begin", "indefinite");
+      map.group.append(motion);
+      map.motion = motion;
+      motion.beginElement();
+    }
+  }
+  solarTimer = window.setTimeout(syncSolarMaps, SOLAR_INTERVAL_MS);
+}
+
+function watchSolarMap(map) {
+  solarMaps.add(map);
+  if (solarObserver === null) {
+    solarObserver = new IntersectionObserver((entries) => {
+      let changed = false;
+      for (const entry of entries) {
+        for (const current of solarMaps) {
+          if (current.container !== entry.target) continue;
+          if (current.visible !== entry.isIntersecting) {
+            current.visible = entry.isIntersecting;
+            changed = true;
+          }
+          break;
+        }
+      }
+      if (changed) syncSolarMaps();
+    });
+    document.addEventListener("visibilitychange", syncSolarMaps);
+    window.addEventListener("focus", syncSolarMaps);
+    window.addEventListener("blur", syncSolarMaps);
+  }
+  solarObserver.observe(map.container);
 }
 
 // Shared geographic component for population, birth and appearance.
@@ -24,8 +81,14 @@ export function mountWorldMap(container, { selection = false } = {}) {
   const worldPath = document.createElementNS(SVG_NS, "path");
   worldPath.classList.add("thread-world-map-path");
   worldPath.setAttribute("d", WORLD_MAP_PATH);
-  const night = document.createElementNS(SVG_NS, "path");
-  night.classList.add("thread-world-night-mask");
+  const night = document.createElementNS(SVG_NS, "g");
+  const nightPaths = [-WORLD_MAP_BOUNDS.width, 0, WORLD_MAP_BOUNDS.width].map((shift) => {
+    const path = document.createElementNS(SVG_NS, "path");
+    path.classList.add("thread-world-night-mask");
+    path.setAttribute("transform", `translate(${shift} 0)`);
+    night.append(path);
+    return path;
+  });
   const meridians = document.createElementNS(SVG_NS, "g");
   meridians.classList.add("thread-world-timezones");
   renderWorldTimeZoneLines(meridians);
@@ -45,12 +108,7 @@ export function mountWorldMap(container, { selection = false } = {}) {
   legend.textContent = "☾ Solar night · not sleep status";
   legend.setAttribute("aria-hidden", "true");
   container.replaceChildren(svg, legend);
-  nightLayers.add(night);
-  if (nightTimer === null) {
-    nightTimer = window.setInterval(updateNightLayers, 5 * 60_000);
-    document.addEventListener("visibilitychange", updateNightLayers);
-  }
-  updateNightLayers();
+  watchSolarMap({ container, group:night, paths:nightPaths, motion:null, visible:false });
   return Object.freeze({ svg, markers, selectionMarker });
 }
 
