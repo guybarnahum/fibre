@@ -179,6 +179,7 @@ function publicDiscoveryEntry({ key, value, current = null, currentPresent = nul
     lifecycleStatus: directory.lifecycleStatus,
     displayName: directory.displayName,
     birthPlace: directory.birthPlace,
+    portraitThumbnailObjectRef: directory.portraitThumbnailObjectRef,
     snapshotVersion: directory.snapshotVersion,
     snapshotDigest: directory.snapshotDigest,
     currentPresent,
