@@ -1,3 +1,4 @@
+import { useThumbnailFallback } from "./portrait-preview.js";
 import { watchAdminLive } from "./admin-live.js";
 import { threadObservatoryViewKey } from "./view-invalidation.js";
 import { setWaitingContent } from "./fa-icons.js";
@@ -128,7 +129,7 @@ export async function renderThreadPage(threadId) {
       button.dataset.lightboxAlt = `${name} portrait`;
       const image = node("img");
       image.src = portraitThumbnailAsset(identity)?.url??photo.url;
-      if(image.src!==photo.url)image.addEventListener("error",()=>{image.src=photo.url;},{once:true});
+      if(portraitThumbnailAsset(identity)?.url)useThumbnailFallback(image,{threadId,thumbnailUrl:portraitThumbnailAsset(identity).url,fallbackUrl:photo.url,context:"thread_page"});
       image.alt = `${name} portrait`;
       button.append(image);
       portrait.replaceChildren(button);
