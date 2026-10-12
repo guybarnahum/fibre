@@ -54,6 +54,17 @@ test("broken small portrait gives one actionable warning and uses the full-image
     });
     duplicate.fail();
     assert.equal(warnings.length,1,"repeated failures should not flood the console");
+    const noOriginal={src:"/api/thread-assets/thumb_unavailable",addEventListener(_type,handler){
+      this.fail=handler;
+    }};
+    useThumbnailFallback(noOriginal,{
+      threadId:"thr_unavailable",thumbnailUrl:noOriginal.src,
+      context:"hover_preview",
+    });
+    noOriginal.fail();
+    assert.equal(warnings.length,2,"unrecoverable thumbnails must still warn");
+    assert.equal(noOriginal.src,"/api/thread-assets/thumb_unavailable",
+      "no invented original fallback");
   }finally{
     console.warn=originalWarn;
   }
