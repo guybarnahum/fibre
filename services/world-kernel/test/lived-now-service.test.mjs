@@ -243,6 +243,32 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
     lived.close();
   }));
 
+test("World enacts sleep and waking from Thread-owned plan facts, not activity wording",async()=>
+  withDatabase(async(databasePath)=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    const plan=personalPlan(life);
+    plan.stops[0].activity="Sleep.";
+    plan.stops[0].wakefulness="asleep";
+    plan.stops[1].wakefulness="awake";
+    lived.recordPlan(plan);
+    const service=createLivedNowService({livedNowStore:lived});
+    const asleep=await service.ensure({threadId:life.thread.threadId,at:"2026-09-10T05:10:00Z"});
+    assert.equal(asleep.wakefulness,"asleep","actual planned sleep must be enacted");
+    const awake=await service.ensure({threadId:life.thread.threadId,at:"2026-09-10T05:35:00Z"});
+    assert.equal(awake.wakefulness,"awake","later waking activity must replace sleep");
+
+    const legacy=personalPlan(life);
+    legacy.stops[0].activity="Sleep.";
+    assert.equal(lived.recordPlan({
+      ...legacy,
+      planId:"lplan_legacy_unknown",
+      authoredAt:"2026-09-10T04:59:59Z",
+    }).stops[0].wakefulness,"unknown",
+    "historic plans without structured sleep must remain unknown");
+    lived.close();
+  }));
+
 test("N6.3b keeps the displayed scene valid when enacted life frustrates the Flight Plan", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
