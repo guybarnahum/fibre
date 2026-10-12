@@ -1,7 +1,7 @@
 ---
 id: architecture-intrinsic-regulation
 status: accepted
-last-reviewed: 2026-09-22
+last-reviewed: 2026-10-12
 canonical: true
 ---
 
@@ -24,6 +24,12 @@ World / body / sensory reality
 ```
 
 Regulation is private organism-like control state, not semantic self-knowledge. The same lower architecture should support Threads and simpler animals; language and autobiographical interpretation are optional above it.
+
+## Planned extension: sparse social need and reusable drive rules
+
+The official accepted **implementation plan**, not yet a deployed Body capability, is [Extensible Body regulation, social hunger, and considerate contact](regulation-drive-extensions.md) ([ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md)). It keeps one regulator and existing `RegulationFrame` consumers. A new drive should use a small bounded World/body evidence projection and a pure evaluator; a tiny compile-time family list is justified **only** if real additional families need it. `social_contact` scarcity is the first candidate; low-world-stimulation continues through the existing `exploration` family. Recipient-local weekday/time and actually enacted sleep/reachability belong to existing social contact judgment, not a new scheduler or a global permission table.
+
+The core regulator already recognizes optional social sensitivity, but this is **not yet an inherited parameter in the current durable symbolic-genome generation**. Inherited variation requires its own explicit bounded genome/birth policy; no implicit retroactive DNA changes. No pressure may directly author the semantic emotion `loneliness` or compel meeting. **Source implementation, local/staging acceptance and causal life proof are open.**
 
 ## One engine, layered regulation
 
