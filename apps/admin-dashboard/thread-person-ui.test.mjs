@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   forgetThreadPortrait,
+  preferredThreadPortraitUrl,
   threadPortraitUrl,
   threadLocationFlag,
   threadLocationText,
@@ -56,4 +57,16 @@ test("missing portrait lookup does not hide a newly published visual",async()=>{
     forgetThreadPortrait(threadId);
     globalThis.fetch=originalFetch;
   }
+});
+
+test("compact Admin portraits prefer admitted thumbnails without losing original fallback",()=>{
+  const identity={assets:[
+    {role:"official_id_photo",url:"/api/thread-assets/full"},
+    {role:"portrait_thumbnail",url:"/api/thread-assets/tiny"},
+  ]};
+  assert.equal(preferredThreadPortraitUrl(identity),"/api/thread-assets/tiny",
+    "compact Admin image should prefer the small published derivative");
+  assert.equal(preferredThreadPortraitUrl({
+    assets:[identity.assets[0]],
+  }),"/api/thread-assets/full","unmigrated portrait should remain usable");
 });
