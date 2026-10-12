@@ -282,14 +282,12 @@ export function createThreadPresentationVisualPublicationReconciler({
         });
       }
 
-      if(thumbnailError!==null){
-        return result(false,"portrait_thumbnail_pending",{
-          visualReused:visual.reused===true,
-          reason:thumbnailError instanceof Error?thumbnailError.message:String(thumbnailError),
-        });
-      }
+      // A presentation-only derivative must never keep Thread visual/FID
+      // reconciliation awake in an expensive retry loop.
       return result(true, "complete", {
-        ...(thumbnail===null?{}:{portraitThumbnailObjectRef:thumbnail.objectRef??null}),
+        ...(thumbnail?.published===true
+          ? {portraitThumbnailObjectRef:thumbnail.objectRef}
+          : {portraitThumbnailStatus:"unavailable"}),
         visualReused:visual.reused === true,
         regenerationKey:normalizedRegenerationKey,
         fidCredentialId:fid.credential?.credentialId ?? null,
