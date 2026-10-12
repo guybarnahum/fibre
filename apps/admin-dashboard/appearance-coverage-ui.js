@@ -29,8 +29,7 @@ import {
 } from "./thread-appearance-ui.js";
 import { createStarRating, starRatingValue } from "./star-rating.js";
 import { threadViewKey } from "./view-invalidation.js";
-import { WORLD_MAP_PATH } from "./world-map-data.js";
-import { SVG_NS, renderWorldTimeZoneLines, worldMapPoint } from "./world-map-ui.js";
+import { SVG_NS, mountWorldMap, worldMapPoint } from "./world-map-ui.js";
 import {
   cssSimilarityMatrix,
   displayedImagePoint,
@@ -86,9 +85,7 @@ const shadowEvidence=$("#appearance-shadow-evidence");
 const shadowValues=$("#appearance-shadow-values");
 const shadowVariation=$("#appearance-shadow-variation");
 const mapShell=$(".appearance-coverage-map-shell");
-const worldPath=$("#appearance-world-path");
-const timezones=$("#appearance-timezones");
-const markers=$("#appearance-hole-markers");
+const markers=mountWorldMap($(".appearance-coverage-map")).markers;
 const mapSummary=$("#appearance-map-summary");
 const scanButton=$("#appearance-scan");
 const copyButton=$("#appearance-copy");
@@ -2862,9 +2859,7 @@ function showMapPopover(hole,place,marker){
 }
 
 function renderMap(){
-  if(!worldPath||!markers||!timezones)return;
-  worldPath.setAttribute("d",WORLD_MAP_PATH);
-  renderWorldTimeZoneLines(timezones);
+  if(!markers)return;
   markers.replaceChildren();
   hideMapPopover();
   let points=0;
