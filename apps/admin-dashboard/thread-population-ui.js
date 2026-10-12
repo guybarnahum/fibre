@@ -28,13 +28,13 @@ import {
 } from "./thread-person-ui.js";
 import { identityActionPayload } from "./thread-identity-action.js";
 import { reissueFidCard } from "./thread-observatory.js";
-import { WORLD_MAP_BOUNDS, WORLD_MAP_PATH } from "./world-map-data.js";
+import { WORLD_MAP_BOUNDS } from "./world-map-data.js";
 import {
   SVG_NS,
   catalogPlaceForLocation,
   groupThreadsByCurrentLocation,
+  mountWorldMap,
   renderWorldCountMarkers,
-  renderWorldTimeZoneLines,
   threadMapState,
   worldMapPoint,
 } from "./world-map-ui.js";
@@ -46,9 +46,7 @@ const appearanceView = $("#appearance-view");
 const rows = $("#thread-population-rows");
 const empty = $("#thread-population-empty");
 const threadPopulationMapShell = $(".thread-population-map-shell");
-const threadPopulationWorldPath = $("#thread-population-world-path");
-const threadPopulationTimezones = $("#thread-population-timezones");
-const threadPopulationMapMarkers = $("#thread-population-map-markers");
+const threadPopulationMapMarkers = mountWorldMap($(".thread-population-map")).markers;
 const threadPopulationMapSummary = $("#thread-population-map-summary");
 const threadPopulationRepairGeography = $("#thread-population-repair-geography");
 const threadPopulationFilterMigration = $("#thread-population-filter-migration");
@@ -59,10 +57,9 @@ const birthCenterView = $("#birth-center-view");
 const birthForm = $("#thread-birth-form");
 const birthLocation = $("#thread-birth-location");
 const birthMap = $("#thread-birth-map");
-const birthWorldPath = $("#thread-birth-world-path");
-const birthTimezones = $("#thread-birth-timezones");
-const birthPipelineMarkers = $("#thread-birth-pipeline-markers");
-const birthMapMarker = $("#thread-birth-map-marker");
+const birthMapParts = mountWorldMap(birthMap, { selection:true });
+const birthPipelineMarkers = birthMapParts.markers;
+const birthMapMarker = birthMapParts.selectionMarker;
 const birthMapSelection = $("#thread-birth-map-selection");
 const birthSearchResults = $("#thread-birth-search-results");
 const birthRandomLocation = $("#thread-birth-location-random");
@@ -79,7 +76,6 @@ let birthSearchSequence = 0;
 let pendingBirthSnapshot = [];
 let pendingBirthTimer = null;
 let birthCenterInitialized = false;
-let threadPopulationMapInitialized = false;
 let birthLoading = false;
 const recentInWorldBirths = new Map();
 let active = false;
@@ -1105,11 +1101,6 @@ async function repairBirthGeographyBatch() {
 }
 
 function renderThreadPopulationMap() {
-  if (!threadPopulationMapInitialized) {
-    threadPopulationWorldPath.setAttribute("d", WORLD_MAP_PATH);
-    renderWorldTimeZoneLines(threadPopulationTimezones);
-    threadPopulationMapInitialized = true;
-  }
   const grouped = groupThreadsByCurrentLocation(population);
   hideThreadMapPopover();
   const rendered = renderWorldCountMarkers(threadPopulationMapMarkers, grouped.locations);
@@ -1332,8 +1323,6 @@ async function loadBirthCenter() {
   setWaitingContent($("#chain-summary"), "Reading durable Birth Center progress and birthplace catalog");
   try {
     if (!birthCenterInitialized) {
-      birthWorldPath.setAttribute("d", WORLD_MAP_PATH);
-      renderWorldTimeZoneLines(birthTimezones);
       syncBirthMode();
       birthCenterInitialized = true;
     }
