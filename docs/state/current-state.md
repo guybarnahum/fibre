@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-10-09
+last-reviewed: 2026-10-11
 canonical: true
 ---
 
@@ -10,6 +10,20 @@ canonical: true
 Fibre is a persistent world for artificial persons called **Threads**. A Thread is durable world state with identity, history, private interior state, relationships, embodiment, permissions and a life trajectory spanning temporary model executions.
 
 Models provide temporary cognition. Fibre owns continuity, authoritative state, validation, persistence, replay and consequence.
+
+## Meet / Encounter status — 2026-10-11 (current handoff)
+
+**Current authority:** [Current priorities](current-priorities.md) governs execution. Earlier October 9 handoff instructions below are retained as evidence of past checkpoints, **not instructions to bypass the present Viewer redesign hold**. [N6 acceptance](../validation/n6-public-lived-encounter-slices.md), [N7 causal gates](../validation/n7-live-encounter-slices.md), and the [Meet runtime audit](../validation/meet-encounter-run-path-audit.md) retain detailed boundaries.
+
+- **N6:** staging World direct meeting (four accepted Faith turns) and client-neutral public streamed response are observed. The staging website was subsequently loaded and tested; on October 11 Faith and Sophie both returned `declined` with page-local exports. **Human acceptance of an accepted multi-turn SSE Viewer lifecycle and later-life revisit remains open**, not contradicted by genuine refusal.
+- **Sophie World/speech contradiction:** her October 11 exact witnessed situation was `Sleep.` at `2026-10-11T17:42:06.437Z`; at about `17:43:06Z` she outwardly answered a visitor that she was sleeping and unable to talk. World-owned sleep/wake/reachability must decide whether an immediate outward response is physically possible; no transcript prompt edit or coerced social reply stands in for that mechanism.
+- **Admin/Viewer defects:** the Observatory page showed no World events even though Sophie's authenticated read API returned the current and previous situations; its zero Encounter Stories for an unaccepted approach is expected. Faith's API already returned 31 admitted Stories even when the page looked empty. After Leave the Viewer preserved the approach text but showed `Conversation · 0 turns` and merged the two speakers. The small Admin navigation CSS correction and a nullable World-context/visitor dual-clock source slice are committed on `main`; Guy's post-change local/staging acceptance was not yet reported.
+- **Design pause:** the existing <https://github.com/guybarnahum/insidefibre.com/blob/main/docs/meet-voice-first-experience-proposal.md> is a **proposal awaiting cohesive review/approval**, not a completed voice frontend. Freeze piecemeal Viewer layout fixes and production release until that review. Preserve readable refusal/transcript, public Scene/Portrait and genuine consent while designing V1 (scene-first), V2 (outcomes/history), then only later V3 (actual voice). World/Presentation remain the only owners of life and social admission.
+- **N7.11:** recipient-side contact-to-Experience semantics passed local fixture tests, but real staging provider noticeability, selective lasting consequence and a future **Thread-owned choice that differs because of retained experience** remain open. Research-led Thread→Thread interview themes are potential experiments, not scripts authoring autobiographies or forced friendship.
+- **Audit:** one real participation appraisal consumed 4,169 tokens in 4.37 seconds; its pre-optimization World request used 655 SQL queries (557 in SituatedLifeStore). The N+1 correction was deployed; actual after-fix reduction, full accepted expression+Experience cost, and a reliable economic baseline remain unmeasured. Live SSE and interrupted-request recovery progressed beyond the *original* October 8 source findings. See the updated audit checkpoint before acting on old open items.
+- **Validation truth:** Guy's last pasted full result on October 11 was 1,581/1,581 passing before subsequent local-only reporter/combined-validator output commits. That result is **not** a blanket validation of all later code, newer document edits, or staging deployments. Work on `main`, let Guy run `npm run slice:validate`, and deploy only when he reports green.
+
+**Near-term order:** evaluate documentation retirement without deleting active evidence; review/pick the cohesive Viewer design; investigate sleep/reachability and Admin display mismatch using read-only World facts; validate/deploy the combined source and finish N6.6c; measure an actual accepted encounter; then prove N7.11 later-life consequence. Avoid new polling, session state, duplicate meeting authority, quota-based memories or repeated model calls merely for a favorable result.
 
 ## Accepted foundation
 
@@ -280,7 +294,7 @@ Modern de-novo Genesis visual identity now derives **one concrete inherited phen
 
 Continuous LivedNow owns the continuing world-time life after Fibre birth.
 
-## Meet / Encounter current handoff — 2026-10-09 05:23 UTC
+## Historical Meet / Encounter handoff — 2026-10-09 05:23 UTC (superseded)
 
 **Current execution gate: N6.6c Viewer acceptance — website code committed, NOT owner-validated or staging-deployed.** The authoritative, detailed evidence remains in [N6 public lived encounter slices](../validation/n6-public-lived-encounter-slices.md), [Meet / Encounter runtime audit](../validation/meet-encounter-run-path-audit.md) and [Current priorities](current-priorities.md). No newly built encounter engine is called for.
 
@@ -319,7 +333,7 @@ The existing Admin Thread Observatory already displays Journal, Memories, Encoun
 
 **Immediate operator sequence:** on clean core Fibre `main`, run `npm run test:focused -- apps/admin-dashboard/thread-observatory.test.mjs`, then `npm run slice:validate`; if green, deploy only staging Admin via `npm run cloud:deploy:apps -- --env staging --file .env --app admin-dashboard`. Open `https://admin.staging.insidefibre.com`, locate Faith in Threads and inspect World events, Encounter Episodes, Journal, Memories, and Copy. Guy owns validation/deployment; **no green report or deployment evidence exists yet for this Admin slice**. N6.6c still requires fuller Viewer lifecycle and result verification; N7.11 selective long-term causal consequence remains open.
 
-## Immediate next action
+## Historical immediate next action — October 9 (superseded by October 11)
 
 N5/E0-E5 are closed live. N6's direct World CLI and first public Presentation-to-World streaming acceptance are now evidenced. The immediate release task is **N6.6c staging Viewer acceptance** of that same World-owned public stream; **N7 — Live Encounters and social consequence** remains the broader ambition and N7.11 later causal proof remains open.
 
@@ -370,7 +384,7 @@ N7.0-N7.10 are accepted locally (Guy reported N7.10 validation green on 2026-10-
 
 **Recipient-side Thread contact — local validation passed, staging pending (Guy, 2026-10-08, `0880f1d9`: 27 focused and 1,564 full tests green):** real Thread-to-Thread delivery now earns an indexed, one-recipient World perception opportunity, which is processed through ordinary LivedNow and existing selective attention/Experience and delayed-consolidation authorities, with bounded retry and no bystander co-presence. No private inbox scan or forced answer. This change has passed Guy's focused/full local validation but has not been deployed to staging and cannot yet demonstrate real provider appraisal, retained memory or later developmental causality; N7.11 remains open. The E7.5 read-only pre/post boundary evidence has now been captured. The previous redeployment hold for this independent experiment no longer applies.
 
-## Meet / Encounter source audit — work deferred
+## Historical source-audit baseline — original October 8 findings, later implementation recorded
 
 A [source-only audit of public `/meet` and `/encounter`](../validation/meet-encounter-run-path-audit.md) was recorded on 2026-10-08. Public display and World entrance already use LivedNow, accepted contact passes independent stance, objective Story and personal Experience/queued consolidation, and completed requests have a durable replay receipt. The public response remains a complete turn rather than N7's interruptible streaming expression; each accepted public turn invokes separate stance, response and immediate Experience cognition. Interrupted *incomplete* requests and scene movement during slow inference remain **risks to validate**, not proven live failures. The separate compensated-work encounter path must retain its actual agreement/settlement semantics while common social-event composition is reconsidered.
 
