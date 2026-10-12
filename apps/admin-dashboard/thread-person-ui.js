@@ -1,4 +1,4 @@
-import { bindPortraitPreview, hidePortraitPreview, setPortraitPreviewSource } from "./portrait-preview.js";
+import { bindPortraitPreview, hidePortraitPreview, setPortraitPreviewSource, useThumbnailFallback } from "./portrait-preview.js";
 import { countryFlag } from "./thread-label-cache.js";
 
 const portraitCache=new Map();
@@ -16,14 +16,22 @@ export function threadInitials(value){
   return (parts[0].slice(0,1)+parts.at(-1).slice(0,1)).toLocaleUpperCase();
 }
 
-export function preferredThreadPortraitUrl(identity){
+function preferredThreadPortrait(identity){
   const assets=Array.isArray(identity?.assets)?identity.assets:[];
-  const asset=assets.find((entry)=>entry?.role==="portrait_thumbnail"&&entry?.url)
-    ??assets.find((entry)=>entry?.role==="official_id_photo"&&entry?.url)
+  const thumbnail=assets.find((entry)=>entry?.role==="portrait_thumbnail"&&entry?.url)??null;
+  const original=assets.find((entry)=>entry?.role==="official_id_photo"&&entry?.url)
     ??assets.find((entry)=>entry?.role==="canonical_portrait"&&entry?.url)
-    ??assets.find((entry)=>entry?.url&&String(entry.mediaType??"").startsWith("image/"))
-    ??null;
-  return typeof asset?.url==="string"&&asset.url!==""?asset.url:null;
+    ??assets.find((entry)=>entry?.url&&entry?.role!=="portrait_thumbnail"
+      &&String(entry.mediaType??"").startsWith("image/"))??null;
+  return {
+    url:thumbnail?.url??original?.url??null,
+    fallbackUrl:thumbnail?original?.url??null:null,
+    isThumbnail:thumbnail!==null,
+  };
+}
+
+export function preferredThreadPortraitUrl(identity){
+  return preferredThreadPortrait(identity).url;
 }
 
 function locationParts(value){
@@ -104,23 +112,23 @@ async function resolveThreadPortrait(threadId){
         headers:{Accept:"application/json"},
         cache:"no-store",
       });
-      if(!response.ok)return null;
+      if(!response.ok)return {url:null,fallbackUrl:null,isThumbnail:false};
       const payload=await response.json();
-      return preferredThreadPortraitUrl(payload?.identity);
+      return preferredThreadPortrait(payload?.identity);
     }catch{
-      return null;
+      return {url:null,fallbackUrl:null,isThumbnail:false};
     }
   })();
   portraitCache.set(threadId,pending);
-  const url=await pending;
-  if(url===null&&portraitCache.get(threadId)===pending)portraitCache.delete(threadId);
-  return url;
+  const result=await pending;
+  if(result.url===null&&portraitCache.get(threadId)===pending)portraitCache.delete(threadId);
+  return result;
 }
 
-function applyPortrait(face,url,name){
+function applyPortrait(face,url,name,{fallbackUrl=null,isThumbnail=false}={}){
   face.replaceChildren();
   face.dataset.portraitUrl=url??"";
-  setPortraitPreviewSource(face,{url,name});
+  setPortraitPreviewSource(face,{url,name,fallbackUrl});
   delete face.dataset.lightboxSrc;
   delete face.dataset.lightboxAlt;
   if(!url){
@@ -128,24 +136,32 @@ function applyPortrait(face,url,name){
     return;
   }
   const image=document.createElement("img");
-  image.src=url;
   image.alt=(name??"Thread")+" portrait";
   image.loading="lazy";
-  face.dataset.lightboxSrc=url;
+  face.dataset.lightboxSrc=fallbackUrl??url;
   face.dataset.lightboxAlt=image.alt;
   face.append(image);
+  if(isThumbnail)useThumbnailFallback(image,{
+    threadId:face.dataset.threadId||null,thumbnailUrl:url,fallbackUrl,
+    context:"thread_list",
+    onFallback:()=>setPortraitPreviewSource(face,{url:fallbackUrl,name}),
+  });
+  let errors=0;
   image.addEventListener("error",()=>{
+    errors+=1;
+    if(isThumbnail&&fallbackUrl&&errors===1)return;
     hidePortraitPreview();
     applyPortrait(face,null,name);
-  },{once:true});
+  });
+  image.src=url;
 }
 
 async function hydrateThreadPortrait(face){
   const threadId=face?.dataset?.threadId;
   if(!threadId||!face.isConnected)return;
-  const url=await resolveThreadPortrait(threadId);
+  const portrait=await resolveThreadPortrait(threadId);
   if(!face.isConnected||face.dataset.threadId!==threadId)return;
-  applyPortrait(face,url,face.dataset.threadName||null);
+  applyPortrait(face,portrait.url,face.dataset.threadName||null,portrait);
 }
 
 const portraitObserver=typeof IntersectionObserver==="function"
@@ -163,12 +179,12 @@ export function forgetThreadPortrait(threadId){
 }
 
 export async function threadPortraitUrl(threadId){
-  return resolveThreadPortrait(threadId);
+  return (await resolveThreadPortrait(threadId)).url;
 }
 
 export async function refreshThreadPortraitUrl(threadId){
   forgetThreadPortrait(threadId);
-  return resolveThreadPortrait(threadId);
+  return (await resolveThreadPortrait(threadId)).url;
 }
 
 export function createThreadPortrait({threadId,name=null,url=null,className="",link=true}={}){
