@@ -86,6 +86,7 @@ World reality + Thread-owned life
 Load together when working on drives, affect, motivation, movement pressure, attachment/proximity or semantic feeling:
 
 - `architecture/intrinsic-regulation.md`
+- `architecture/regulation-drive-extensions.md` — accepted plan, Body extension and causal proof still open ([ADR-0025](decisions/ADR-0025-extensible-body-regulation.md))
 - `architecture/interior-cognition.md`
 - `concepts/emotions-and-needs.md`
 - `architecture/thread-lifecycle.md`
