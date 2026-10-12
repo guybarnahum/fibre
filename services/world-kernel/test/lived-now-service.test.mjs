@@ -260,7 +260,7 @@ test("World enacts sleep and waking from Thread-owned plan facts, not activity w
 
     const legacy=personalPlan(life);
     legacy.stops[0].activity="Sleep.";
-    assert.equal(normalizeLivedPlan(legacy).stops[0].wakefulness,"unknown",
+    assert.equal(plannedPositionAt(legacy,"2026-09-10T05:10:00Z").wakefulness,"unknown",
     "historic plans without structured sleep must remain unknown");
     lived.close();
   }));
