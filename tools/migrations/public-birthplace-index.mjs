@@ -53,7 +53,10 @@ export async function migratePublicBirthplaces({
   if (!base) throw new Error("No deployed public Thread Presentation URL");
 
   // Select only previously published public entries missing the indexed fact.
-  const query = `SELECT catalog_key, value_json FROM fibre_catalog
+  const query = `SELECT catalog_key,
+      json_extract(value_json, '$.threadId') AS thread_id,
+      json_extract(value_json, '$.latestSnapshotDigest') AS snapshot_digest
+    FROM fibre_catalog
     WHERE catalog_key LIKE 'presentation:%'
       AND json_extract(value_json, '$.publiclyVisible') = 1
       AND json_type(value_json, '$.publicDirectory') = 'object'
@@ -71,17 +74,19 @@ export async function migratePublicBirthplaces({
 
   // Eight bounded reads at a time; only public snapshots, with no World/runtime cognition.
   for (let offset = 0; offset < candidates.length; offset += 8) {
-    await Promise.all(candidates.slice(offset, offset + 8).map(async ({ catalog_key:key, value_json:raw }) => {
-      const entry = JSON.parse(raw);
+    await Promise.all(candidates.slice(offset, offset + 8).map(async ({
+      catalog_key:key, thread_id:threadId, snapshot_digest:digest,
+    }) => {
+      if (!threadId || !digest) { skipped += 1; return; }
       const response = await fetchImpl(new URL(
-        `/api/threads/${encodeURIComponent(entry.threadId)}/snapshot`, base,
+        `/api/threads/${encodeURIComponent(threadId)}/snapshot`, base,
       ));
       if (response.status === 404) { skipped += 1; return; }
-      if (!response.ok) throw new Error(`Snapshot ${entry.threadId}: HTTP ${response.status}`);
+      if (!response.ok) throw new Error(`Snapshot ${threadId}: HTTP ${response.status}`);
       const published = await response.json();
-      if (published.pointer?.threadId !== entry.threadId
-        || published.pointer?.snapshotDigest !== entry.latestSnapshotDigest
-        || published.snapshot?.presentation?.manifest?.threadId !== entry.threadId) {
+      if (published.pointer?.threadId !== threadId
+        || published.pointer?.snapshotDigest !== digest
+        || published.snapshot?.presentation?.manifest?.threadId !== threadId) {
         skipped += 1;
         return;
       }
@@ -91,7 +96,7 @@ export async function migratePublicBirthplaces({
         SET value_json = json_set(value_json, '$.publicDirectory.birthPlace', json(${sql(JSON.stringify(birthPlace))})),
             updated_at = CURRENT_TIMESTAMP
         WHERE catalog_key = ${sql(key)}
-          AND json_extract(value_json, '$.latestSnapshotDigest') = ${sql(entry.latestSnapshotDigest)}
+          AND json_extract(value_json, '$.latestSnapshotDigest') = ${sql(digest)}
           AND json_extract(value_json, '$.publiclyVisible') = 1
           AND json_type(value_json, '$.publicDirectory.birthPlace') IS NULL;`;
       changes.push({ key, statement });
@@ -114,7 +119,7 @@ export async function migratePublicBirthplaces({
   try {
     const path = join(directory, "reindex.sql");
     await writeFile(path, changes.map(({ statement }) => statement).join("\n") + "\n");
-    await runner(["d1", "execute", catalog.name, "--remote", "--file", path, "--json"], {
+    await runner(["d1", "execute", catalog.name, "--remote", "--file", path], {
       cwd:repoRoot,
     });
   } finally {
