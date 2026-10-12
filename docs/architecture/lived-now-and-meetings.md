@@ -1,7 +1,7 @@
 ---
 id: architecture-lived-now-and-meetings-v0-1
 status: accepted
-last-reviewed: 2026-10-05
+last-reviewed: 2026-10-12
 canonical: false
 ---
 
@@ -53,6 +53,14 @@ Genesis / existing Thread life
 The meeting is not the life engine. It is one event inside the life engine.
 
 The life engine's private cognition must follow [Interior cognition](interior-cognition.md): organismic regulation and interoception create felt pressure; the Thread interprets that through its developed self/history; only then does planning or social deliberation occur. Flight Plan and meeting cognition are domain adapters over that one reusable private-mind component; they must not each construct an independent persona/context prompt. The neutral publication snapshot and raw genome are not finished personality.
+
+## World-owned wakefulness for real-time encounters (source implementation, operator proof pending)
+
+New Thread-authored personal Flight Plan stops carry a small factual `wakefulness: awake | asleep | unknown` alongside ordinary, meaning-bearing `activity` text. This is not availability, consent, the Thread's social preference, or an inferred bedtime. When World enacts a stop, its `CurrentSituation` carries the same bounded fact; transit and unstructured gaps remain `unknown`. **Historic persisted Plan/Situation JSON omitting the field remains byte-for-byte intact for digest integrity**; only the effective enacted projection defaults to `unknown`. No activity-text regex, nighttime assumption, retroactive genetics, per-minute scheduler, or separate sleep state database.
+
+An ordinary interruptive public Visitor approach against a verified `asleep` enacted situation yields `outcome: unavailable`, `reason: asleep`, tied to the existing `situationId` and an idempotent request receipt. It performs **zero participation or speech inference**, emits no invented outward refusal, and creates no accepted Encounter Story or private notice. An `awake` or `unknown` situation still uses the ordinary independent appraisal path; unknown never falsely asserts sleep. A later authentic World transition to wakefulness permits a *new* approach at the later present. Waking a sleeper in response to urgency is a distinct deferred World mechanism, not an implied capability of this slice. Voluntary `decline` and `defer` remain different outcomes from `unavailable`.
+
+The Core World and public Presentation mapping are implemented in source on `main`; **Guy's focused/full local validation, staging deployment and naturally enacted new typed-plan proof remain open**. Current Sophie staging sleep was recorded in a plan written *before* this field existed: her existing `activity: "Sleep."` is **not** retroactively upgraded to `asleep`. The website-owner chat must render `unavailable` without claiming that Sophie spoke; no website code is owned by this slice.
 
 ## Terms
 
