@@ -284,6 +284,7 @@
   box-shadow:0 2px 8px rgba(0,0,0,.15);
   pointer-events:none;
 }
+.thread-world-map-clock[hidden] { display:none; }
 .thread-world-map-clock strong { font-size:14px; font-weight:650; line-height:1.2; }
 .thread-world-map-clock span { font-size:9px; color:#c7d6e8; white-space:nowrap; }
 .thread-world-timezones line {
