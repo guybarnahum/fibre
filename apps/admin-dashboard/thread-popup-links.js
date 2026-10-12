@@ -4,6 +4,7 @@ import { threadObservatoryViewKey } from "./view-invalidation.js";
 import {
   fetchThreadObservatory,
   portraitAsset,
+  portraitThumbnailAsset,
   renderFidSection,
   renderThreadObservatory,
   threadName,
@@ -57,13 +58,15 @@ function stickyIdentityChip(identity, threadId) {
   const chip = el("div", "thread-observatory-sticky-identity");
   chip.setAttribute("aria-hidden", "true");
 
-  const imageAsset = portraitAsset(identity);
+  const imageAsset = portraitThumbnailAsset(identity)??portraitAsset(identity);
   const name = threadName(identity) ?? "Thread";
   const avatar = el("span", "thread-observatory-sticky-avatar");
   bindPortraitPreview(avatar,{url:imageAsset?.url??null,name});
   if (imageAsset?.url) {
     const image = el("img");
     image.src = imageAsset.url;
+    const fallback=portraitAsset(identity)?.url;
+    if(fallback&&fallback!==imageAsset.url)image.addEventListener("error",()=>{image.src=fallback;},{once:true});
     image.alt = "";
     image.loading = "eager";
     avatar.append(image);
