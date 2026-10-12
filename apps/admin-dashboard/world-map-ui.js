@@ -30,7 +30,8 @@ export function mountWorldMap(container, { selection = false } = {}) {
   meridians.classList.add("thread-world-timezones");
   renderWorldTimeZoneLines(meridians);
   const markers = document.createElementNS(SVG_NS, "g");
-  svg.append(worldPath, night, meridians, markers);
+  // Solar shading sits below coastlines so night never erases geography.
+  svg.append(night, worldPath, meridians, markers);
   let selectionMarker = null;
   if (selection) {
     selectionMarker = document.createElementNS(SVG_NS, "circle");
