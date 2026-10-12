@@ -29,6 +29,35 @@ export function publicBirthPlaceFromPresentation(presentation) {
   });
 }
 
+// One-time catalog repair: only immutable, already-public snapshot evidence is read.
+export async function reindexPublishedBirthplaces({ infra, presentationServer, after=null, limit=25 }){
+  const page=await infra.catalog.list({prefix:"presentation:",after,limit});
+  let updated=0;
+  let withoutBirthPlace=0;
+  for(const {key,value} of page.entries){
+    if(value.publiclyVisible!==true
+      || !value.publicDirectory
+      || value.publicDirectory.identityCardVisibility==="private"
+      || Object.hasOwn(value.publicDirectory,"birthPlace"))continue;
+    const current=await presentationServer.getSnapshot(key);
+    if(current?.pointer?.threadId!==value.threadId)continue;
+    if(value.latestSnapshotDigest && value.latestSnapshotDigest!==current.pointer.snapshotDigest)continue;
+    const birthPlace=publicBirthPlaceFromPresentation(current.snapshot.presentation);
+    if(birthPlace===null)withoutBirthPlace+=1;
+    await infra.catalog.upsert(key,{
+      ...value,
+      publicDirectory:{...value.publicDirectory,birthPlace},
+    });
+    updated+=1;
+  }
+  return Object.freeze({
+    scanned:page.entries.length,
+    updated,
+    withoutBirthPlace,
+    nextCursor:page.nextCursor,
+  });
+}
+
 export function publicThreadDirectoryEntry({ current = null, catalogRecord }) {
   const threadId = cleanString(catalogRecord?.threadId);
   if (threadId === null) return null;
