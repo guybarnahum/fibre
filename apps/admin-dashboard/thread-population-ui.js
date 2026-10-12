@@ -882,7 +882,7 @@ function renderBirthPipelineMarkers() {
 
 function renderBirthMarker(place) {
   if (place === null) {
-    birthMapMarker.hidden = true;
+    birthMapMarker.setAttribute("hidden", "");
     birthMapMarker.removeAttribute("cx");
     birthMapMarker.removeAttribute("cy");
     return;
@@ -890,7 +890,7 @@ function renderBirthMarker(place) {
   const point = worldMapPoint(place.lat, place.long);
   birthMapMarker.setAttribute("cx", point.x.toFixed(1));
   birthMapMarker.setAttribute("cy", point.y.toFixed(1));
-  birthMapMarker.hidden = false;
+  birthMapMarker.removeAttribute("hidden");
 }
 
 function syncBirthMode() {
