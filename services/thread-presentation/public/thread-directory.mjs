@@ -1,1 +1,1 @@
-export { publicBirthPlaceFromPresentation } from "../src/thread-directory.mjs";
+export { publicBirthPlaceFromPresentation, reindexPublishedBirthplaces } from "../src/thread-directory.mjs";
