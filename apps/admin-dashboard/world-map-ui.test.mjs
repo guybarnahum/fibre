@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   catalogPlaceForLocation,
   groupThreadsByCurrentLocation,
-  solarClockForLongitude,
+  worldClockForLongitude,
   threadMapState,
 } from "./world-map-ui.js";
 
@@ -123,13 +123,24 @@ test("World place lookup does not guess an ambiguous city", () => {
 });
 
 
-test("Map longitude clock uses minute-resolution solar time relative to the visitor", () => {
-  const at = new Date("2026-10-12T04:00:00Z");
-  const localOffset = -7 * 60; // Phoenix on October 11.
-  const east = solarClockForLongitude(30, at, localOffset);
-  assert.equal(east.time.toISOString(), "2026-10-12T06:00:00.000Z", "east solar time is wrong");
-  assert.equal(east.differenceMinutes, 9 * 60, "east solar offset from visitor is wrong");
-  const west = solarClockForLongitude(-120, at, localOffset);
-  assert.equal(west.time.toISOString(), "2026-10-11T20:00:00.000Z", "west solar time is wrong");
-  assert.equal(west.differenceMinutes, -60, "west solar offset from visitor is wrong");
+test("Map world clock changes in whole hours while retaining visitor minutes", () => {
+  const at = new Date("2026-10-12T04:51:00Z"); // 21:51 in Phoenix (UTC−7).
+  const localOffset = -7 * 60;
+  const check = (longitude, expectedClock, expectedHours) => {
+    const clock = worldClockForLongitude(longitude, at, localOffset);
+    assert.equal(clock.time.toISOString().slice(11, 16), expectedClock, "world clock hour band is wrong");
+    assert.equal(clock.differenceHours, expectedHours, "visitor offset must be whole hours");
+  };
+
+  check(-120, "20:51", -1);
+  check(-105, "21:51", 0);
+  check(-90, "22:51", 1);
+  check(0, "04:51", 7);
+  check(180, "16:51", 19);
+  // A fractional-offset home zone still preserves its local minutes.
+  const halfHourHome = worldClockForLongitude(90, at, 330);
+  assert.equal(halfHourHome.time.toISOString().slice(11, 16), "11:21", "visitor minutes should not drift");
+  // Cross one 15° band boundary: the displayed hour, not minutes, changes.
+  check(-97.6, "21:51", 0);
+  check(-97.4, "22:51", 1);
 });
