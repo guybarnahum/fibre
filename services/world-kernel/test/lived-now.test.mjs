@@ -14,6 +14,7 @@ import {
   developmentalContextForThread,
   livedPlanId,
   livedSituationId,
+  resolveCurrentSituation,
 } from "../src/lived-now.mjs";
 import {
   LivedNowConflictError,
@@ -324,6 +325,17 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
     assert.equal(first.resolution.kind, "personal_plan");
     assert.equal(first.resolution.conflict, false);
     assert.equal(first.resolution.observedDivergence, false);
+    const observedAsleep=resolveCurrentSituation({
+      situationId:"sit_observed_sleep_against_waking_plan",
+      establishedAt:"2026-09-10T05:04:00Z",
+      personalPlan:personal,
+      carePlan:null,
+      observation:{...homeObservation(life),wakefulness:"asleep"},
+    });
+    assert.equal(observedAsleep.resolution.observedDivergence,true,
+      "explicitly observed sleep must contradict an awake plan");
+    assert.equal(observedAsleep.wakefulness,"asleep",
+      "observed sleep must remain World truth");
     assert.equal(first.resolution.governingPlanRef, personal.planId);
     assert.equal(first.phase, "at_place");
     assert.deepEqual(first.location, { kind: "place", placeRef: life.homeRef });
