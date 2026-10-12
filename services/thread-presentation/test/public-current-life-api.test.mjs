@@ -99,6 +99,9 @@ test("public encounter exposes only outward participation and accepted encounter
     ensureCurrentPresent:async()=>{ throw new Error("must not visit"); },
     async submitEncounter(threadId,input){
       submitted.push({ threadId,input:structuredClone(input) });
+      if(input.utterance==="Are you asleep?"){
+        return {outcome:"unavailable",situationId:"sit_public_encounter",reason:"asleep"};
+      }
       if(input.utterance==="Not now?"){
         return {
           outcome:"decline",
@@ -138,6 +141,25 @@ test("public encounter exposes only outward participation and accepted encounter
     expression:"Not right now, thanks.",
   });
 
+  const unavailable=await api.fetch(new Request(
+    `https://api.insidefibre.com/api/threads/${THREAD_ID}/encounter`,
+    {
+      method:"POST",
+      headers:{ Origin:"https://insidefibre.com","content-type":"application/json" },
+      body:JSON.stringify({
+        requestId:"req_public_sleep",
+        situationId:"sit_public_encounter",
+        utterance:"Are you asleep?",
+      }),
+    },
+  ));
+  assert.equal(unavailable.status,200);
+  assert.deepEqual(await unavailable.json(),{
+    outcome:"unavailable",
+    situationId:"sit_public_encounter",
+    reason:"asleep",
+  },"sleep must not appear as a voluntary refusal");
+
   const accepted=await api.fetch(new Request(
     `https://api.insidefibre.com/api/threads/${THREAD_ID}/encounter`,
     {
@@ -172,13 +194,13 @@ test("public encounter exposes only outward participation and accepted encounter
     },
   ));
   assert.equal(continued.status,200);
-  assert.deepEqual(submitted[2].input,{
+  assert.deepEqual(submitted[3].input,{
     requestId:"req_public_continue",
     situationId:"sit_public_encounter",
     utterance:"What do you mean?",
     priorEncounterStoryId:"story_public_encounter",
   },"Presentation should forward only the causal continuation reference");
-  assert.equal(submitted.length,3);
+  assert.equal(submitted.length,4);
 });
 
 test("public encounter preserves scene-changed as the only expected conflict",async()=>{
