@@ -129,7 +129,8 @@ export async function renderThreadPage(threadId) {
       button.dataset.lightboxAlt = `${name} portrait`;
       const image = node("img");
       image.src = portraitThumbnailAsset(identity)?.url??photo.url;
-      if(portraitThumbnailAsset(identity)?.url)useThumbnailFallback(image,{threadId,thumbnailUrl:portraitThumbnailAsset(identity).url,fallbackUrl:photo.url,context:"thread_page"});
+      if(portraitThumbnailAsset(identity)?.url)useThumbnailFallback(image,{threadId,thumbnailUrl:portraitThumbnailAsset(identity).url,
+        fallbackUrl:photo.role==="portrait_thumbnail"?null:photo.url,context:"thread_page"});
       image.alt = `${name} portrait`;
       button.append(image);
       portrait.replaceChildren(button);
