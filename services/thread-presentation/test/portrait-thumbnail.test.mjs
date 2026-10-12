@@ -97,6 +97,18 @@ test("public portrait has one immutable, servable thumbnail; retry neither regen
   assert.equal(second.reused,true,"same portrait should reuse its immutable rendition");
   assert.equal(transformations,1,"repeated completion must not reencode the image");
   assert.equal(originalReads,1,"repeat should not re-download the full portrait");
+  const interrupted=await f.infra.catalog.get("presentation:"+THREAD);
+  await f.infra.catalog.upsert("presentation:"+THREAD,{
+    ...interrupted,publicDirectory:{
+      ...interrupted.publicDirectory,portraitThumbnailObjectRef:null,
+    },
+  });
+  const recovered=await publish();
+  assert.equal(recovered.objectRef,first.objectRef,"directory recovery must reuse derivative bytes");
+  const repaired=await f.infra.catalog.get("presentation:"+THREAD);
+  assert.equal(repaired.publicDirectory.portraitThumbnailObjectRef,first.objectRef,
+    "admitted thumbnail must recover an interrupted directory publication");
+  assert.equal(transformations,1,"directory recovery must not reencode the portrait");
   const channel=await f.infra.catalog.get("presentation:"+THREAD);
   await f.infra.catalog.upsert("presentation:"+THREAD,{
     ...channel,publiclyVisible:false,
