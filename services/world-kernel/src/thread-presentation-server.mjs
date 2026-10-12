@@ -1,5 +1,6 @@
 import { canonicalJson, assertId, assertNonEmpty, sha256 } from "./persistence-common.mjs";
 import { requireInfraCapabilities } from "#infra";
+import { publicBirthPlaceFromPresentation } from "#services/thread-presentation/src/thread-directory.mjs";
 import { normalizeThreadPresentationBundle } from "./thread-presentation-domain.mjs";
 import {
   materializeThreadPresentationEvent,
@@ -107,6 +108,7 @@ export function createThreadPresentationServer({ infra }) {
           birthDate: normalized.presentation.subject?.birthDate ?? null,
           languages: normalized.presentation.subject?.languages ?? [],
           homePlaceRef: normalized.presentation.subject?.homePlaceRef ?? null,
+          birthPlace: publicBirthPlaceFromPresentation(normalized.presentation),
           headline: normalized.presentation.introduction?.headline ?? null,
           summary: normalized.presentation.introduction?.summary ?? null,
           visualDescription: normalized.presentation.visualIdentity?.subjectDescription ?? null,
