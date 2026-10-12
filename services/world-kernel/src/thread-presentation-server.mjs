@@ -1,6 +1,6 @@
 import { canonicalJson, assertId, assertNonEmpty, sha256 } from "./persistence-common.mjs";
 import { requireInfraCapabilities } from "#infra";
-import { publicBirthPlaceFromPresentation } from "#services/thread-presentation/src/thread-directory.mjs";
+import { publicBirthPlaceFromPresentation } from "fibre/thread-presentation/thread-directory";
 import { normalizeThreadPresentationBundle } from "./thread-presentation-domain.mjs";
 import {
   materializeThreadPresentationEvent,
