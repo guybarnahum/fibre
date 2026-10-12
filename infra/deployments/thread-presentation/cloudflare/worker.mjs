@@ -30,6 +30,7 @@ import { createFidLifecycleWriteApi } from "#services/thread-presentation/src/ht
 import { createGenesisPresentationWriteApi } from "#services/thread-presentation/src/http/genesis-write-api.mjs";
 import { createIdentityProjectionWriteApi } from "#services/thread-presentation/src/http/identity-projection-write-api.mjs";
 import { createPresentationReadApi, channelIdForThread } from "#services/thread-presentation/src/http/read-api.mjs";
+import { publishPublicPortraitThumbnail, cloudflarePortraitThumbnail } from "#services/thread-presentation/src/portrait-thumbnail.mjs";
 import { createVisualPublicationWriteApi } from "#services/thread-presentation/src/http/visual-publication-write-api.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
 import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
@@ -120,6 +121,10 @@ function createVisualReconciler(env, infra, presentationServer, activityRecorder
     ),
     createDemandService: createPresentationAssetDemandService,
     createVisualRewrite: createThreadPresentationEmbodimentRewriteService,
+    ensurePortraitThumbnail:({threadId})=>publishPublicPortraitThumbnail({
+      infra,presentationServer,threadId,
+      transform:(bytes)=>cloudflarePortraitThumbnail(bytes,env.IMAGES),
+    }),
     ensureFid:({ threadId, idempotencyKey, canonicalReferenceObjectRef }) => createFidLifecycle(
       env,
       infra,
