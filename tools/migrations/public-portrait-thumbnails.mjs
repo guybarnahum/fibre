@@ -4,88 +4,65 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT=fileURLToPath(new URL("../../",import.meta.url));
 
-function argumentsFrom(argv){
-  let environment=null,apply=false,limit=50;
-  for(let i=0;i<argv.length;i+=1){
+function options(argv){
+  let environment=null,apply=false;
+  for(let i=0;i<argv.length;i++){
     if(argv[i]==="--env")environment=argv[++i]??null;
     else if(argv[i]==="--apply")apply=true;
-    else if(argv[i]==="--limit")limit=Number(argv[++i]);
     else throw new TypeError("Unknown option "+argv[i]);
   }
-  if(!["staging","production"].includes(environment))throw new TypeError("Use --env staging|production");
-  if(!Number.isSafeInteger(limit)||limit<1||limit>200)throw new TypeError("--limit must be 1-200");
-  return {environment,apply,limit};
+  if(!["staging","production"].includes(environment))
+    throw new TypeError("Use --env staging|production [--apply]");
+  return {environment,apply};
 }
 
 export async function backfillPortraitThumbnails({
-  environment,apply=false,limit=50,fetchImpl=fetch,log=console.log,
+  environment,apply=false,fetchImpl=fetch,log=console.log,
 }={}){
   const deployed=JSON.parse(readFileSync(resolve(ROOT,
     ".fibre/cloudflare",environment,"deployment.json"),"utf8"));
-  const base=(service)=>deployed.deployments.find((d)=>d.serviceId===service)?.baseUrl;
-  const presentation=base("thread-presentation");
-  const world=base("world-kernel");
-  if(deployed.environment!==environment||!presentation||!world)
-    throw new Error("Missing deployment evidence for "+environment);
-  const token=process.env.FIBRE_PRIVATE_TOKEN;
-  if(apply&&!token)throw new Error("FIBRE_PRIVATE_TOKEN is required for --apply");
-
-  const directoryResponse=await fetchImpl(new URL("/api/threads/search?limit=200",presentation));
-  if(!directoryResponse.ok)throw new Error("Directory: HTTP "+directoryResponse.status);
-  const directory=await directoryResponse.json();
-  if(directory.threads?.length && !Object.hasOwn(directory.threads[0],"portraitThumbnailObjectRef")){
-    throw new Error("Deploy updated Thread Presentation before thumbnail backfill");
-  }
-  const missing=(directory.threads??[]).filter((t)=>!t.portraitThumbnailObjectRef).slice(0,limit);
+  const base=deployed.deployments.find(d=>d.serviceId==="thread-presentation")?.baseUrl;
+  if(deployed.environment!==environment||!base)throw new Error("Missing Presentation deployment");
+  const response=await fetchImpl(new URL("/api/threads/search?limit=200",base));
+  if(!response.ok)throw new Error("Public directory HTTP "+response.status);
+  const directory=await response.json();
+  if(directory.threads?.length===200)throw new Error("Directory exceeds bounded backfill; paginate first");
+  if(directory.threads?.length&&!Object.hasOwn(directory.threads[0],"portraitThumbnailObjectRef"))
+    throw new Error("Deploy updated Presentation before thumbnail backfill");
+  const missing=(directory.threads??[]).filter(t=>!t.portraitThumbnailObjectRef);
   const summary={environment,mode:apply?"apply":"preview",candidates:missing.length,
-    published:0,notReady:0,failed:0};
-  if(!apply){log(JSON.stringify(summary,null,2));return summary;}
-
-  for(const entry of missing){
-    try{
-      const response=await fetchImpl(new URL(
-        "/internal/threads/"+encodeURIComponent(entry.threadId)+"/observatory",world),
-      {headers:{"x-fibre-private-token":token}});
-      if(!response.ok)throw new Error("World observatory HTTP "+response.status);
-      const worldBody=await response.json();
-      const embodiments=worldBody?.observatory?.embodiments??[];
-      const candidates=embodiments.filter((e)=>e.kind==="portrait"&&e.visibility==="public"
-        &&e.status==="available"&&e.asset?.referenceObjectRef);
-      if(candidates.length!==1){summary.notReady+=1;continue;}
-      const submitted=await fetchImpl(new URL(
-        "/internal/visual-publication/reconcile",presentation),{
-        method:"POST",
-        headers:{"content-type":"application/json","x-fibre-private-token":token},
-        body:JSON.stringify({
-          threadId:entry.threadId,embodiment:candidates[0],
-          observedAt:new Date().toISOString(),thumbnailOnly:true,
-        }),
-      });
-      const result=await submitted.json().catch(()=>null);
-      if(!submitted.ok||result?.result?.complete!==true){
-        log(JSON.stringify({threadId:entry.threadId,
-          status:"pending",detail:result?.result?.detail??result?.detail??null}));
-        summary.failed+=1;
-        continue;
-      }
-      summary.published+=1;
-      log(JSON.stringify({threadId:entry.threadId,
-        thumbnailObjectRef:result.result.detail.portraitThumbnailObjectRef,
-        reused:result.result.detail.reused===true}));
-    }catch(error){
-      summary.failed+=1;
-      log(JSON.stringify({threadId:entry.threadId,
-        error:error instanceof Error?error.message:String(error)}));
+    published:0,notReady:0};
+  log(JSON.stringify(summary,null,2));
+  if(!apply)return summary;
+  const token=process.env.FIBRE_PRIVATE_TOKEN;
+  if(!token)throw new Error("FIBRE_PRIVATE_TOKEN required");
+  for(const thread of missing){
+    const published=await fetchImpl(new URL("/internal/visual-publication/reconcile",base),{
+      method:"POST",
+      headers:{"content-type":"application/json","x-fibre-private-token":token},
+      body:JSON.stringify({threadId:thread.threadId,thumbnailOnly:true}),
+    });
+    const result=await published.json().catch(()=>null);
+    if(!published.ok||result?.ok!==true)
+      throw new Error("Thumbnail "+thread.threadId+": HTTP "+published.status+" "+JSON.stringify(result));
+    if(result.result?.complete!==true){
+      summary.notReady+=1;
+      log("SKIP "+thread.threadId+": "+(result.result?.detail?.reason??result.result?.stage));
+      continue;
     }
+    const ref=result.result.detail.portraitThumbnailObjectRef;
+    const asset=await fetchImpl(new URL("/api/assets/"+encodeURIComponent(ref),base));
+    if(!asset.ok||!asset.headers.get("content-type")?.startsWith("image/webp"))
+      throw new Error("Thumbnail was not publicly deliverable for "+thread.threadId);
+    summary.published+=1;
+    log("READY "+thread.threadId+" "+ref);
   }
   log(JSON.stringify(summary,null,2));
-  if(summary.failed)process.exitCode=1;
   return summary;
 }
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
-  const args=argumentsFrom(process.argv.slice(2));
-  backfillPortraitThumbnails(args).catch(error=>{
+  backfillPortraitThumbnails(options(process.argv.slice(2))).catch(error=>{
     console.error(error instanceof Error?error.message:String(error));
     process.exitCode=1;
   });
