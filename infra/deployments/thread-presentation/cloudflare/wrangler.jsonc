@@ -22,6 +22,7 @@
     "FIBRE_DEPLOYMENT_ENV": "cloudflare",
     "VIEWER_ORIGIN": "https://insidefibre.com"
   },
+  "images": { "binding": "IMAGES" },
   "secrets": {
     "required": [
       "FIBRE_PRIVATE_TOKEN"
