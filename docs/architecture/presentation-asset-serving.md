@@ -1,7 +1,7 @@
 ---
 id: architecture-presentation-asset-serving
 status: proposed
-last-reviewed: 2026-08-25
+last-reviewed: 2026-10-12
 canonical: false
 ---
 
@@ -101,6 +101,14 @@ GET /api/threads/:threadId/media/:objectRef
 Both use the same provider-neutral resolver. The compatibility route supplies `expectedThreadId`, so it cannot be used to retrieve another Thread's asset by presenting a mismatched Thread path.
 
 The generic route is exercised by the generated-media P3 proof. The Thread-specific route remains covered as a compatibility contract.
+
+## Public portrait thumbnails
+
+A current, independently authorized public Embodiment portrait may produce one immutable `128×128` WebP thumbnail at quality 76, using the original already-stored image bytes and Cloudflare Images' image binding. The rendition identity is SHA-256 over the source digest and the fixed rendition specification. No portrait model is called; retries reuse the same bytes.
+
+Thumbnail publication has three steps: immutable derivative object, separate `portrait_thumbnail` media admission and provenance in the current Thread Presentation packet, then the indexed `publicDirectory.portraitThumbnailObjectRef` when that media is ready. The normal public directory exposes `portraitThumbnailObjectRef: string|null` in both `GET /api/threads` and `GET /api/threads/search`. The Viewer builds `/api/assets/:objectRef` from it, never exposes the original canonical portrait ref or FID records. A thumbnail request validates the current public catalog pointer and serving record before reading immutable bytes; no full Presentation snapshot retrieval is performed per map preview.
+
+For existing admitted portraits only, `npm run presentation:portraits:backfill -- --env staging` previews the missing thumbnail references; `--apply` uses the existing normal visual-publication operation in thumbnail-only mode, without generating or reissuing canonical portraits or FID cards. This one-time CLI is intended to be removed after staging acceptance. Cloudflare Images is an optional infrastructure capability: when unavailable, normal Thread/FID publication can continue, but the derivative remains pending and is reported, not falsely published. Admin prefers a thumbnail for small portraits and falls back to the existing image; failed thumbnail loads emit one structured browser warning.
 
 ## Public versus private audience
 
