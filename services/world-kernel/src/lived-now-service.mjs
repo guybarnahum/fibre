@@ -94,7 +94,7 @@ function sceneFacts(situation) {
       : structuredClone(situation.location),
     mediatedContext:situation.mediatedContext,
     activity:situation.activity,
-    wakefulness:situation.wakefulness,
+    wakefulness:situation.wakefulness??"unknown",
     participantRefs:[...situation.participantRefs].sort(),
   };
 }
