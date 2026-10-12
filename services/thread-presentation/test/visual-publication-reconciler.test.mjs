@@ -94,6 +94,29 @@ test("admitted canonical identity automatically converges through the FID lifecy
   );
 });
 
+test("operator thumbnail-only publication never enters the FID lifecycle",async()=>{
+  const visual=embodiment("thr_thumbnail_only_1");
+  const reconciler=createThreadPresentationVisualPublicationReconciler({
+    presentationServer:{
+      async getSnapshot(){return snapshot(visual.threadId);},
+      async publishSnapshot(){throw new Error("not reached");},
+    },
+    infra:{},selectProviderProfile(){return "unused";},
+    createDemandService:()=>demandService(),
+    createVisualRewrite(){return {async project(){return {reused:true};}};},
+    async ensurePortraitThumbnail(){return {
+      published:true,reused:false,objectRef:"portrait_thumb_sample",
+    };},
+    async ensureFid(){throw new Error("thumbnail backfill must not issue a credential");},
+  });
+  const out=await reconciler.reconcileAvailableEmbodiment({
+    threadId:visual.threadId,embodiment:visual,
+    observedAt:"2026-10-12T21:00:00Z",thumbnailOnly:true,
+  });
+  assert.equal(out.complete,true,"authorized portrait derivative was not published");
+  assert.equal(out.detail.portraitThumbnailObjectRef,"portrait_thumb_sample");
+});
+
 test("visual reconciliation waits for newborn Presentation before issuing identity media", async () => {
   const visual = embodiment("thr_visual_waiting");
   let touched = false;
