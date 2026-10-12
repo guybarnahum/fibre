@@ -39,7 +39,11 @@ export function mountWorldMap(container, { selection = false } = {}) {
     selectionMarker.setAttribute("hidden", "");
     svg.append(selectionMarker);
   }
-  container.replaceChildren(svg);
+  const legend = document.createElement("span");
+  legend.className = "thread-world-night-legend";
+  legend.textContent = "☾ Solar night · not sleep status";
+  legend.setAttribute("aria-hidden", "true");
+  container.replaceChildren(svg, legend);
   nightLayers.add(night);
   if (nightTimer === null) {
     nightTimer = window.setInterval(updateNightLayers, 5 * 60_000);
