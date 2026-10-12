@@ -335,7 +335,8 @@ function imageButton(asset, alt, className = "thread-asset-preview", previewUrl 
   button.dataset.lightboxAlt = alt;
   const image = el("img");
   image.src = previewUrl;
-  if(previewUrl!==asset.url)useThumbnailFallback(image,{threadId,thumbnailUrl:previewUrl,fallbackUrl:asset.url,context:"observatory"});
+  if(previewUrl!==asset.url||asset.role==="portrait_thumbnail")useThumbnailFallback(image,{threadId,thumbnailUrl:previewUrl,
+    fallbackUrl:previewUrl===asset.url?null:asset.url,context:"observatory"});
   image.loading = "lazy";
   image.alt = alt;
   button.append(image);
