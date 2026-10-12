@@ -207,25 +207,8 @@ export function createThreadPresentationVisualPublicationReconciler({
       observedAt,
       activityContext = {},
       regenerationKey = null,
-      thumbnailOnly = false,
     } = {}) {
       assertId("threadId", threadId);
-
-      // Operator backfill reads only the already-admitted public Presentation.
-      // No World Embodiment rewrite, generation request or FID issuance.
-      if(thumbnailOnly){
-        const thumbnail=ensurePortraitThumbnail===null
-          ? null
-          : await ensurePortraitThumbnail({threadId});
-        return thumbnail?.published===true
-          ? result(true,"complete",{
-              portraitThumbnailObjectRef:thumbnail.objectRef,
-              reused:thumbnail.reused===true,
-            })
-          : result(false,"portrait_thumbnail_pending",{
-              reason:thumbnail?.reason??"thumbnail publisher not configured",
-            });
-      }
 
       assertIsoTimestamp("observedAt", observedAt);
       const normalizedRegenerationKey = optionalRegenerationKey(regenerationKey);
