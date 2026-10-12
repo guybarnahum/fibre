@@ -30,7 +30,6 @@ import { createFidLifecycleWriteApi } from "#services/thread-presentation/src/ht
 import { createGenesisPresentationWriteApi } from "#services/thread-presentation/src/http/genesis-write-api.mjs";
 import { createIdentityProjectionWriteApi } from "#services/thread-presentation/src/http/identity-projection-write-api.mjs";
 import { createPresentationReadApi, channelIdForThread } from "#services/thread-presentation/src/http/read-api.mjs";
-import { reindexPublishedBirthplaces } from "fibre/thread-presentation/thread-directory";
 import { createVisualPublicationWriteApi } from "#services/thread-presentation/src/http/visual-publication-write-api.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
 import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
@@ -409,22 +408,6 @@ export default {
     const adminRealtime = createAdminRealtime(env);
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
     const presentationServer = createThreadPresentationServer({ infra });
-    if(url.pathname==="/internal/presentation/reindex-birthplaces"){
-      if(request.method!=="POST")return Response.json({error:"method_not_allowed"},{status:405});
-      if(!env.FIBRE_PRIVATE_TOKEN
-        || request.headers.get("x-fibre-private-token")!==env.FIBRE_PRIVATE_TOKEN){
-        return Response.json({error:"private_token_required"},{status:403});
-      }
-      const input=await request.json().catch(()=>null);
-      const limit=input?.limit??25;
-      const after=input?.after??null;
-      if(!Number.isSafeInteger(limit)||limit<1||limit>50
-        || (after!==null&&(typeof after!=="string"||!after.startsWith("presentation:")))){
-        return Response.json({error:"invalid_page"},{status:400});
-      }
-      const result=await reindexPublishedBirthplaces({infra,presentationServer,after,limit});
-      return Response.json({ok:true,result});
-    }
     const genesisWriteApi = createGenesisPresentationWriteApi({ presentationServer, privateToken: env.FIBRE_PRIVATE_TOKEN ?? null });
     const genesisWriteResponse = await genesisWriteApi.fetch(request);
     if (genesisWriteResponse !== null) return genesisWriteResponse;
