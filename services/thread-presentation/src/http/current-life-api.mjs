@@ -206,6 +206,13 @@ export function createPublicCurrentLifeApi({
               :{}),
           },request,viewerOrigin);
         }
+        if(result?.outcome==="unavailable" && typeof result.situationId==="string"){
+          return json({
+            outcome:"unavailable",
+            situationId:result.situationId,
+            reason:result.reason==="asleep"?"asleep":"unknown",
+          },request,viewerOrigin);
+        }
         return json({ error:"public_encounter_unavailable" },request,viewerOrigin,503);
       }
 
