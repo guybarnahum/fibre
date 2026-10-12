@@ -38,6 +38,7 @@ M1 is intentionally deterministic. It validates persistence, event integrity, di
 - 2026-08-06: the owner then chose to close that remaining gap before M2. The closure contract supersedes the earlier deferral for final M1 scope.
 - Outward posture may not contradict participation authority. Accepted authorization communicates `accept`; non-accept authority may communicate the same action or `noncommittal`.
 - Obligation-mediated `refuse -> accept` remains identifiable as compulsion rather than consent. Willing and compelled acceptance use distinguishable deterministic wording.
+- **Deferred expression boundary:** any future capability for compelled participation whose outward response withholds participation requires a distinct explicit record; it must not misrepresent an authorized `accept` as `refuse`.
 - Disclosure mode is private strategy intent, not a kernel honesty classifier.
 - The M1 audience-safety claim is narrow: the audience-response payload does not newly copy private rationale, dignity details, withheld reasons, or governing obligation references. Current public `unresolvedIntentions` remain provisional and are not a permanent privacy model.
 - One disclosure strategy and one audience response are immutable per request attempt; future revision must use superseding append-only records rather than in-place mutation.
