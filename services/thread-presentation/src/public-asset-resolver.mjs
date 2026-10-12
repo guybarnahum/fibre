@@ -37,12 +37,20 @@ function normalizePublicMediaRecord(value, objectRef) {
     assertId("media.threadId", value.threadId);
     assertId("media.mediaId", value.mediaId);
     assertId("media.objectRef", value.objectRef);
-    assertId("media.eventId", value.eventId);
     nonEmpty("media.role", value.role);
     nonEmpty("media.digest", value.digest);
     nonEmpty("media.mediaType", value.mediaType);
     nonEmpty("media.provenanceClass", value.provenanceClass);
-    if (!Number.isSafeInteger(value.eventSequence) || value.eventSequence < 1) return null;
+    if (value.role === "portrait_thumbnail") {
+      assertId("media.sourceObjectRef", value.sourceObjectRef);
+      nonEmpty("media.sourceDigest", value.sourceDigest);
+      if (value.provenanceClass !== "derived_public_portrait"
+        || value.mediaType !== "image/webp"
+        || value.identityCredentialMedia === true) return null;
+    } else {
+      assertId("media.eventId", value.eventId);
+      if (!Number.isSafeInteger(value.eventSequence) || value.eventSequence < 1) return null;
+    }
     if (value.identityCredentialMedia !== undefined && typeof value.identityCredentialMedia !== "boolean") return null;
   } catch {
     return null;
@@ -59,8 +67,10 @@ function normalizePublicMediaRecord(value, objectRef) {
     digest: value.digest,
     mediaType: value.mediaType,
     provenanceClass: value.provenanceClass,
-    eventId: value.eventId,
-    eventSequence: value.eventSequence,
+    eventId: value.eventId??null,
+    eventSequence: value.eventSequence??null,
+    sourceObjectRef:value.sourceObjectRef??null,
+    sourceDigest:value.sourceDigest??null,
   });
 }
 
@@ -107,12 +117,18 @@ export function createPublicPresentationAssetResolver({
         return null;
       }
 
-      const current = await presentationReader.getSnapshot(channelId);
-      if (current === null || current.pointer?.threadId !== media.threadId) return null;
-
-      const slot = current.snapshot?.media?.assets?.find((asset) => asset.mediaId === media.mediaId) ?? null;
-      if (slot === null || slot.role !== media.role) return null;
-      if (!identityCredentialVisible(current.snapshot, media)) return null;
+      if (media.role === "portrait_thumbnail") {
+        // A current Presentation publication projects only ready, authorized
+        // portrait media into this indexed directory field. No snapshot read
+        // is needed on a map-image hot path.
+        if (channel.publicDirectory?.portraitThumbnailObjectRef !== objectRef) return null;
+      } else {
+        const current = await presentationReader.getSnapshot(channelId);
+        if (current === null || current.pointer?.threadId !== media.threadId) return null;
+        const slot = current.snapshot?.media?.assets?.find((asset) => asset.mediaId === media.mediaId) ?? null;
+        if (slot === null || slot.role !== media.role) return null;
+        if (!identityCredentialVisible(current.snapshot, media)) return null;
+      }
 
       const stored = await infra.objects.get(objectRef);
       if (stored === null || stored.digest !== media.digest) {
