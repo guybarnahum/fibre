@@ -130,7 +130,7 @@ export async function publishPublicPortraitThumbnail({
         identityCredentialMedia:false,threadId,mediaId:id.mediaId,role:ROLE,
         objectRef:id.objectRef,digest,mediaType:"image/webp",
         provenanceClass:"derived_public_portrait",
-        sourceObjectRef,sourceDigest:source.digest,
+        sourceObjectRef,sourceDigest,
       });
     }
   }
