@@ -328,6 +328,38 @@ test("N6.3d stale or declined visitor requests cannot become Encounter Stories",
     "decline became an Encounter Story");
 });
 
+test("an enacted sleeping Thread does not answer a live approach without waking",async()=>{
+  const sleeping=fixture({
+    decision:"accept",
+    actualSituation:{...situation("sit_sleeping","Sleep."),wakefulness:"asleep"},
+  });
+  const liveEvents=[];
+  const incoming=request("sit_sleeping");
+  const result=await sleeping.service.encounter(incoming,{
+    onLiveEvent:(event)=>liveEvents.push(event),
+  });
+  assert.deepEqual(result,{
+    outcome:"unavailable",
+    situationId:"sit_sleeping",
+    reason:"asleep",
+  },"sleeping Thread should remain unavailable");
+  assert.equal(sleeping.modelCalls.length,0,"sleeping Thread must not appraise an unheard approach");
+  assert.equal(sleeping.streamCalls.length,0,"sleeping Thread must not speak");
+  assert.equal(sleeping.stories.length,0,"sleep must not invent an encounter");
+  assert.equal(liveEvents.length,0,"sleep must not emit fictitious speech");
+  assert.deepEqual(await sleeping.service.encounter(incoming),result,
+    "retry must preserve the original nonresponse");
+
+  const legacy=fixture({
+    decision:"decline",
+    actualSituation:situation("sit_unknown_sleep","Sleep."),
+  });
+  const legacyResult=await legacy.service.encounter(request("sit_unknown_sleep"));
+  assert.equal(legacyResult.outcome,"decline",
+    "untyped historic sleep prose must not become a fabricated wakefulness fact");
+  assert.equal(legacy.modelCalls.length,1,"unknown wakefulness must retain ordinary judgment");
+});
+
 test("N6.3d accepted visitor request becomes one Encounter Story in revalidated actual life",async()=>{
   const actual=situation("sit_revalidated_actual");
   const f=fixture({ decision:"accept",actualSituation:actual });
