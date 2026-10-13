@@ -1552,6 +1552,22 @@ export class LivedExperienceStore {
     return rows.map(({ encounter_ref }) => this.getEncounterStory(encounter_ref));
   }
 
+  listThreadJournalEntries(threadId) {
+    assertId("journal threadId",threadId);
+    return this.#database.prepare(`
+      SELECT journal_entry_id AS journalEntryId,
+             written_at AS writtenAt, entry_text AS entryText
+      FROM thread_experience_consolidation_journal_entries WHERE thread_id=?
+      UNION ALL
+      SELECT journal_entry_id, written_at, entry_text
+      FROM thread_encounter_journal_entries WHERE thread_id=?
+      UNION ALL
+      SELECT journal_entry_id, written_at, entry_text
+      FROM thread_journal_entries WHERE thread_id=?
+      ORDER BY writtenAt,journalEntryId
+    `).all(threadId,threadId,threadId);
+  }
+
   listThreadExperienceJournal(threadId) {
     assertId("threadId", threadId);
     return this.#database.prepare(`
