@@ -796,8 +796,11 @@ export class LivedExperienceStore {
         initiator_situation_id,recipient_situation_id,request_text,response_decision,
         response_expression,suggested_at
       FROM social_interaction_records
-      WHERE initiator_thread_id=? OR recipient_thread_id=?
-    `).all(threadId,threadId).map((row) => ({
+      WHERE (initiator_thread_id=? OR recipient_thread_id=?)
+        AND (? IS NULL OR initiator_thread_id=? OR recipient_thread_id=?)
+      ORDER BY occurred_at ${newestFirst?"DESC":"ASC"}, interaction_id ${newestFirst?"DESC":"ASC"}
+      LIMIT ?
+    `).all(threadId,threadId,withThreadId,withThreadId,withThreadId,limit).map((row) => ({
       interactionId:row.interaction_id,
       occurredAt:row.occurred_at,
       initiatorThreadId:row.initiator_thread_id,
@@ -808,16 +811,8 @@ export class LivedExperienceStore {
       responseDecision:row.response_decision,
       responseExpression:row.response_expression,
       suggestedAt:row.suggested_at,
-    })).filter((record) => withThreadId === null
-      || record.initiatorThreadId === withThreadId
-      || record.recipientThreadId === withThreadId);
-
-    rows.sort((left,right) => {
-      const time = Date.parse(left.occurredAt) - Date.parse(right.occurredAt);
-      const ordered = time || left.interactionId.localeCompare(right.interactionId);
-      return newestFirst ? -ordered : ordered;
-    });
-    return rows.slice(0,limit);
+    }));
+    return rows;
   }
 
   recordThreadExperience(candidate) {
