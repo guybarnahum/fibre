@@ -738,6 +738,7 @@ function journalSection(journal, journalError = null, authorityEntries = []) {
       if (!viewport.isConnected || viewport.clientHeight===0) return;
       const wasLast=initialized && current===groups.length-1;
       const selected=groups[current]?.[0] ?? articles.length-1;
+      measure.style.width=`${viewport.clientWidth}px`;
       measure.replaceChildren(...articles);
       const heights=articles.map((article) => article.getBoundingClientRect().height);
       groups=packJournalPages(heights,viewport.clientHeight);
