@@ -329,7 +329,11 @@ function planningInteroception({
   startAt,
 }) {
   const current = livedNowStore.getCurrentSituation(threadId);
-  if (current === null || current.establishedAt !== startAt) return null;
+  if(current===null)return null;
+  const age=Date.parse(startAt)-Date.parse(current.establishedAt);
+  // A recent enacted state is evidence for renewal, not a fabricated
+  // observation at the future boundary or across a dormant interval.
+  if(!Number.isFinite(age)||age<0||age>FORWARD_PLAN_MS)return null;
   const thread = worldStore.getThread(threadId, { required:false });
   if (thread === null) return null;
   return livedInteroceptionForLivedHistory({
