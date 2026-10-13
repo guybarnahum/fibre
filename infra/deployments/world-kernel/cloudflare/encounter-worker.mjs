@@ -159,6 +159,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const semanticStateStore=openSemanticStateStore(runtime.worldStorage);
       const memoryStore=openAutobiographicalMemoryStore(runtime.worldStorage);
       const livedNow=createLivedNowService({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
@@ -200,6 +201,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const semanticStateStore=openSemanticStateStore(runtime.worldStorage);
       const memoryStore=openAutobiographicalMemoryStore(runtime.worldStorage);
       const livedNow=createLivedNowService({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,worldStore:runtime.worldStore,
@@ -285,6 +287,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
@@ -329,6 +332,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
@@ -370,6 +374,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
@@ -447,6 +452,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         worldReader:runtime.worldStore,
       });
       const livedNow = createLivedNowService({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
@@ -531,6 +537,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         },
       };
       const livedNow = createLivedNowService({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
@@ -590,6 +597,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNowStore = openLivedNowStore(runtime.worldStorage);
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
@@ -637,6 +645,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
       const livedNowStore=openLivedNowStore(runtime.worldStorage);
       const livedNow=createLivedNowService({
+        experienceStore:openLivedExperienceStore(runtime.worldStorage),
         livedNowStore,worldStore:runtime.worldStore,
         identityStore:openIdentityStore(runtime.worldStorage),
         semanticStateStore:openSemanticStateStore(runtime.worldStorage),
