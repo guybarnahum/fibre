@@ -8,6 +8,7 @@ import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sql
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { createExperienceConsolidationProcess } from "../src/lived-experience-consolidation.mjs";
 import { createLiveEncounterRegistry } from "../src/live-encounter-registry.mjs";
+import { createThreadJournalBook } from "../src/thread-journal-book.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
@@ -79,6 +80,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
   const world=openWorldStore(storage);
   const experienceStore=openLivedExperienceStore(storage);
   const memoryStore=openAutobiographicalMemoryStore(storage);
+  const journalBook=createThreadJournalBook({storage,experienceStore});
   try{
     world.seedThread(thread);
     const situationId="sit_n75_breakfast";
@@ -126,6 +128,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
     });
 
     const calls=[];
+    let profileCalls=0;
     const decisions=[
       {
         journalEntry:"Guy's point about drawing stayed with me more than the fish themselves. I liked having to revise what I thought he meant.",
@@ -159,6 +162,14 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
     ];
     const modelAdapter={
       async invoke(request){
+        if(request.clientRequestId.startsWith("journal-profile_")){
+          profileCalls++;
+          return {output:{
+            title:"Kaleo's Notebook",
+            presentationStyle:"notebook",
+            aestheticNote:"Quiet, careful pages.",
+          }};
+        }
         calls.push(structuredClone(request.input));
         return {
           output:structuredClone(decisions[calls.length-1]),
@@ -199,6 +210,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       memoryStore,
       experienceStore,
       modelAdapter,
+      journalBook,
       onAfterthoughts:(event)=>liveEncounterRegistry.publishAfterthoughts(event),
       now:()=>times.shift(),
       batchLimit:1,
@@ -212,6 +224,12 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       "nearby conversational experiences were not consolidated together");
     assert.equal(firstRun.hasPending,true,"later experience should remain pending");
     assert.equal(calls.length,1,"one consolidation cluster used more than one cognition call");
+    const book=await journalBook.read(thread.threadId);
+    assert.equal(book?.profile.title,"Kaleo's Notebook",
+      "first personal reflection did not create the Thread's chosen Journal");
+    assert.ok(book.document.includes(decisions[0].journalEntry),
+      "Journal failed to render its admitted private reflection");
+    assert.equal(profileCalls,1,"Journal formation resampled the Thread's aesthetic");
     assert.deepEqual(firstRun.results[0].afterthoughts,[{
       kind:"question",
       text:"Would drawing something myself change what I notice about it?",
@@ -246,6 +264,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
     assert.equal(secondRun.completed,1,"no-consequence consolidation did not complete");
     assert.equal(secondRun.hasPending,false,"consolidation frontier did not become quiescent");
     assert.equal(calls.length,2,"later cluster did not get exactly one cognition opportunity");
+    assert.equal(profileCalls,1,"later experience unnecessarily reformed the Journal");
     assert.equal(memoryStore.listCurrentMemories(thread.threadId).length,1,
       "not_remembered cluster fabricated a memory");
     assert.equal(secondRun.results[0].afterthoughtDelivery.attempted,false,
@@ -278,6 +297,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
     assert.equal(idle.attempted,0,"completed experience reentered consolidation");
     assert.equal(calls.length,2,"quiescent consolidation resampled cognition");
   }finally{
+    journalBook.close();
     memoryStore.close();
     experienceStore.close();
     world.close();
