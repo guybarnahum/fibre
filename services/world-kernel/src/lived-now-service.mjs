@@ -7,7 +7,7 @@ import {
 } from "./persistence-common.mjs";
 import { formPersonalLivedPlan } from "./lived-plan-cognition.mjs";
 import {
-  explorationInteroceptionForLivedHistory,
+  livedInteroceptionForLivedHistory,
   runLivedNowRegulationPulse,
 } from "./lived-now-regulation.mjs";
 import {
@@ -324,6 +324,7 @@ function requireCatchUpDependencies({
 function planningInteroception({
   livedNowStore,
   worldStore,
+  experienceStore,
   threadId,
   startAt,
 }) {
@@ -331,10 +332,11 @@ function planningInteroception({
   if (current === null || current.establishedAt !== startAt) return null;
   const thread = worldStore.getThread(threadId, { required:false });
   if (thread === null) return null;
-  return explorationInteroceptionForLivedHistory({
+  return livedInteroceptionForLivedHistory({
     thread,
     livedNowStore,
     currentSituation:current,
+    experienceStore,
   });
 }
 
@@ -346,6 +348,7 @@ async function formPlan({
   memoryStore,
   situatedLifeStore,
   modelAdapter,
+  experienceStore,
   threadId,
   startAt,
   endAt,
@@ -369,6 +372,7 @@ async function formPlan({
   const interoception = planningInteroception({
     livedNowStore,
     worldStore,
+    experienceStore,
     threadId,
     startAt,
   });
@@ -403,6 +407,7 @@ async function catchUpDormantInterval({
   memoryStore,
   situatedLifeStore,
   modelAdapter,
+  experienceStore,
   threadId,
   current,
   at,
@@ -431,6 +436,7 @@ async function catchUpDormantInterval({
       memoryStore,
       situatedLifeStore,
       modelAdapter,
+      experienceStore,
       threadId,
       startAt: window.startAt,
       endAt: window.endAt,
@@ -463,6 +469,7 @@ async function catchUpDormantInterval({
     memoryStore,
     situatedLifeStore,
     modelAdapter,
+    experienceStore,
     threadId,
     startAt: at,
     endAt: futureEnd,
@@ -478,6 +485,7 @@ async function establishFirstLivedNow({
   memoryStore,
   situatedLifeStore,
   modelAdapter,
+  experienceStore,
   threadId,
   at,
 }) {
@@ -504,6 +512,7 @@ async function establishFirstLivedNow({
     memoryStore,
     situatedLifeStore,
     modelAdapter,
+    experienceStore,
     threadId,
     startAt: bornAt,
     endAt: firstHorizonEnd,
@@ -644,6 +653,7 @@ export function createLivedNowService({
           memoryStore,
           situatedLifeStore,
           modelAdapter,
+          experienceStore,
           threadId: input.threadId,
           at: input.at,
         });
@@ -658,6 +668,7 @@ export function createLivedNowService({
         memoryStore,
         situatedLifeStore,
         modelAdapter,
+        experienceStore,
         threadId: input.threadId,
         current,
         at: input.at,
