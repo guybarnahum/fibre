@@ -126,24 +126,8 @@ export function explorationInteroceptionForLivedContinuity(input) {
   return frame === null ? null : projectInteroception(frame);
 }
 
-export function explorationRegulationForLivedHistory({
-  thread,
-  livedNowStore,
-  currentSituation,
-}) {
-  const continuity=explorationContinuityForLivedHistory({
-    livedNowStore,
-    currentSituation,
-  });
-  if(!continuity.grounded)return null;
-  return evaluateIntrinsicRegulation({
-    perceptFrame:{
-      asOf:currentSituation.establishedAt,
-      exploration:{ novelty:0 },
-      evidenceRefs:[...continuity.evidenceRefs],
-    },
-    runtimeBaselines:thread.genome?.runtimeBaselines ?? {},
-  });
+export function explorationRegulationForLivedHistory(input) {
+  return livedRegulationForLivedHistory({ ...input, experienceStore:null });
 }
 
 export function explorationInteroceptionForLivedHistory(input) {
@@ -202,6 +186,39 @@ export function socialContactEvidenceForLivedHistory({
       ...(contact===null?[]:[contact.ref]),
     ])]),
   });
+}
+
+// One evidence-driven Body projection for planning and social attention.
+// No extra model call, time tick, or family-specific consumer path.
+export function livedRegulationForLivedHistory({
+  thread,livedNowStore,currentSituation,experienceStore=null,
+}) {
+  if(currentSituation===null)return null;
+  if(thread?.threadId!==currentSituation.threadId){
+    throw new TypeError("lived regulation situation belongs to another Thread");
+  }
+  const continuity=explorationContinuityForLivedHistory({livedNowStore,currentSituation});
+  const contact=experienceStore===null?null:socialContactEvidenceForLivedHistory({
+    threadId:thread.threadId,currentSituation,livedNowStore,experienceStore,
+  });
+  if(!continuity.grounded&&contact===null)return null;
+  return evaluateIntrinsicRegulation({
+    perceptFrame:{
+      asOf:currentSituation.establishedAt,
+      evidenceRefs:[...new Set([
+        ...(continuity.grounded?continuity.evidenceRefs:[]),
+        ...(contact?.evidenceRefs??[]),
+      ])],
+      ...(continuity.grounded?{exploration:{novelty:0}}:{}),
+      ...(contact===null?{}:{contact}),
+    },
+    runtimeBaselines:thread.genome?.runtimeBaselines??{},
+  });
+}
+
+export function livedInteroceptionForLivedHistory(input){
+  const frame=livedRegulationForLivedHistory(input);
+  return frame===null?null:projectInteroception(frame);
 }
 
 function frameForSituation({ thread, situation, livedNowStore, experienceStore }) {
