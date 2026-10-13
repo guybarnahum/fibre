@@ -95,3 +95,39 @@ test("tests and tools under services are not production runtime policy targets",
     [],
   );
 });
+
+test("deployment composition cannot bypass transactional World state", () => {
+  assert.deepEqual(
+    productionPersistenceViolationsForSource(
+      "infra/deployments/world-kernel/cloudflare/runtime.mjs",
+      'storage.sql.exec("CREATE TABLE world_reconciliation_runtime_state(x)");',
+    ),
+    ["Production persistence bypass: infra/deployments/world-kernel/cloudflare/runtime.mjs accesses Durable Object SQL outside InfraDriver.state"],
+  );
+});
+
+test("deployment composition cannot write Thread Journal directly to R2", () => {
+  assert.deepEqual(
+    productionPersistenceViolationsForSource(
+      "infra/deployments/world-kernel/cloudflare/encounter-worker.mjs",
+      'await bucket.put(key, text);',
+    ),
+    ["Production persistence bypass: infra/deployments/world-kernel/cloudflare/encounter-worker.mjs accesses mutable object storage outside InfraDriver"],
+  );
+  assert.deepEqual(
+    productionPersistenceViolationsForSource(
+      "infra/providers/cloudflare/driver.mjs",
+      'await bucket.put(key, text);',
+    ),
+    [],
+    "provider adapters must own their native storage mechanism",
+  );
+  assert.deepEqual(
+    productionPersistenceViolationsForSource(
+      "infra/deployments/world-kernel/cloudflare/encounter-worker.mjs",
+      'const infra = createCloudflareInfraDriver({stateScopes:{world:storage},objectBucket:env.THREAD_OBJECTS});',
+    ),
+    [],
+    "legitimate provider composition was incorrectly blocked",
+  );
+});
