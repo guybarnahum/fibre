@@ -16,7 +16,7 @@ import {
 } from "./persistence-common.mjs";
 import { projectSituatedPercept } from "./situated-percept.mjs";
 import { evaluateSalience } from "./salience-gate.mjs";
-import { explorationRegulationForLivedHistory } from "./lived-now-regulation.mjs";
+import { livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
 
 const MEMORY_LIMIT = 6;
 
@@ -312,10 +312,11 @@ export function createSocialMeetingService({
       });
       const opportunities = perceived.opportunities.filter((opportunity) =>
         opportunity.kind === "actor_presence" && opportunity.actorKind === "thread");
-      const explorationRegulation = explorationRegulationForLivedHistory({
+      const regulationFrame = livedRegulationForLivedHistory({
         thread:initiator.thread,
         livedNowStore,
         currentSituation:initiator.situation,
+        experienceStore,
       });
 
       const discoveredById = new Map(discovered.map((context) => [
@@ -340,7 +341,7 @@ export function createSocialMeetingService({
         const salience = evaluateSalience({
           opportunity:actorOpportunity,
           situatedPercept,
-          regulationFrame:explorationRegulation,
+          regulationFrame,
         });
 
         if (salience.outcome === "background") {
