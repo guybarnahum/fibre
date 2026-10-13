@@ -120,6 +120,30 @@
 .thread-journal-book.journal-minimal .thread-journal-cover{background:var(--surface);padding-left:0;padding-right:0}
 .thread-journal-book.journal-minimal .thread-journal-entry{padding-left:0;padding-right:0}
 @media(max-width:650px){.thread-journal-cover,.thread-journal-entry{padding:17px}.thread-journal-cover h4{font-size:21px}.thread-journal-book.journal-literary .thread-journal-entry{padding-inline:17px}}
+
+/* The Journal is a compact book: pages hold as many full entries as fit. */
+.thread-journal-book{position:relative}
+.thread-journal-cover{padding:13px 18px}
+.thread-journal-cover h4{font-size:19px;margin:2px 0 5px}
+.thread-journal-viewport{height:clamp(260px,44vh,420px);overflow-y:auto;scrollbar-width:thin}
+.thread-journal-measure{position:absolute;inset:0 0 auto;display:grid;visibility:hidden;pointer-events:none}
+.thread-journal-entry,.thread-journal-entry:first-child{padding:14px 18px;border-top:0;border-bottom:1px solid var(--border);overflow-wrap:anywhere}
+.thread-journal-prose{font-family:Georgia,"Times New Roman",serif;font-size:13px;line-height:1.6}
+.thread-journal-date{display:flex;align-items:center;gap:12px;margin-bottom:10px;font:12px/1.4 "Bradley Hand","Segoe Print",cursive;letter-spacing:0;color:var(--muted)}
+.thread-journal-date::after{content:"";height:1px;flex:1;background:var(--border)}
+.thread-journal-pager{display:flex;justify-content:center;align-items:center;gap:6px;padding:8px;border-bottom:1px solid var(--border);background:var(--surface-subtle)}
+.thread-journal-page-button{min-width:30px;min-height:27px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);cursor:pointer;font-size:16px;line-height:1}
+.thread-journal-page-button:hover:not(:disabled){background:var(--accent-soft);border-color:var(--border-strong)}
+.thread-journal-page-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.thread-journal-page-button:disabled{opacity:.32;cursor:default}
+.thread-journal-page-count{min-width:90px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums}
+@media(max-width:650px){
+  .thread-journal-cover,.thread-journal-entry,.thread-journal-entry:first-child{padding:12px 14px}
+  .thread-journal-cover h4{font-size:18px}
+  .thread-journal-viewport{height:clamp(260px,44vh,360px)}
+  .thread-journal-book.journal-literary .thread-journal-entry{padding-inline:14px}
+}
+
 .thread-encounter-episode{display:grid;gap:10px;border:1px solid var(--border);border-radius:12px;padding:13px;background:var(--surface-subtle);margin-top:10px}
 .thread-encounter-episode-head{display:flex;align-items:start;justify-content:space-between;gap:14px}
 .thread-encounter-episode-head strong{font-size:11px}
