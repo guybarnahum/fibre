@@ -166,6 +166,7 @@ export function socialContactEvidenceForLivedHistory({
   if(currentSituation.threadId!==threadId)throw new TypeError("social contact situation belongs to another Thread");
   requireMethod(livedNowStore,"getPreviousSituation");
   requireMethod(experienceStore,"listSocialInteractions");
+  requireMethod(experienceStore,"listAcceptedHumanMeetings");
   const end=Date.parse(currentSituation.establishedAt);
   let before=currentSituation.establishedAt;
   let observedStart=end;
@@ -181,9 +182,16 @@ export function socialContactEvidenceForLivedHistory({
     before=prior.establishedAt;
   }
   if(end-observedStart<2*3600_000)return null;
-  const recent=experienceStore.listSocialInteractions(threadId,{limit:8});
-  const contact=recent.filter(item=>item.responseDecision==="accept"
-    &&Date.parse(item.occurredAt)>=observedStart
+  const recent=experienceStore.listSocialInteractions(threadId,{limit:8})
+    .filter(item=>item.responseDecision==="accept")
+    .map(item=>({ref:item.interactionId,occurredAt:item.occurredAt}));
+  const human=experienceStore.listAcceptedHumanMeetings(threadId,{
+    since:new Date(observedStart).toISOString(),
+    until:currentSituation.establishedAt,
+    limit:8,
+  }).map(item=>({ref:item.encounterRef,occurredAt:item.occurredAt}));
+  const contact=[...recent,...human].filter(item=>
+    Date.parse(item.occurredAt)>=observedStart
     &&Date.parse(item.occurredAt)<=end)
     .sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt))[0]??null;
   const since=contact===null?observedStart:Date.parse(contact.occurredAt);
@@ -191,7 +199,7 @@ export function socialContactEvidenceForLivedHistory({
     observedUnmetHours:Math.min(96,Math.max(0,(end-since)/3600_000)),
     evidenceRefs:Object.freeze([...new Set([
       firstRef,currentSituation.situationId,
-      ...(contact===null?[]:[contact.interactionId]),
+      ...(contact===null?[]:[contact.ref]),
     ])]),
   });
 }
