@@ -23,6 +23,7 @@ import {
 } from "#services/world-kernel/src/lived-now-boundary.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
+import { createThreadJournalBook } from "#services/world-kernel/src/thread-journal-book.mjs";
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
 import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-encounter-registry.mjs";
 import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
@@ -311,6 +312,7 @@ export async function startWorldKernelFromEnvironment(
   }
 
   const liveEncounterRegistry=createLiveEncounterRegistry();
+  const journalBook=createThreadJournalBook({storage:worldStorage,experienceStore:livedExperienceStore});
   let consolidationModelAdapter=null;
   const experienceConsolidationProcess = createExperienceConsolidationProcess({
     worldReader:store,
@@ -318,6 +320,7 @@ export async function startWorldKernelFromEnvironment(
     semanticStateStore,
     memoryStore:autobiographicalMemoryStore,
     experienceStore:livedExperienceStore,
+    journalBook,
     modelAdapter:{
       async invoke(request){
         consolidationModelAdapter??=selectReasoningIntegration(
