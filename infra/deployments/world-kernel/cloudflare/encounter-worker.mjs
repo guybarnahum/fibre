@@ -1,5 +1,4 @@
 import baseWorker, { FibreWorldDurableObject as BaseWorldDurableObject } from "./worker.mjs";
-import { createLegacyThreadJournalReader } from "#infra/providers/cloudflare";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
@@ -100,9 +99,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
 
   journalBookForRequest() {
     if (this.threadJournalBook === null) {
+      const storage=this.runtimeForRequest().worldStorage;
       this.threadJournalBook = createThreadJournalBook({
-        storage:this.runtimeForRequest().worldStorage,
-        legacyReader:createLegacyThreadJournalReader(this.env.THREAD_OBJECTS),
+        storage,
+        experienceStore:openLivedExperienceStore(storage),
       });
     }
     return this.threadJournalBook;
@@ -136,6 +136,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore:openSemanticStateStore(runtime.worldStorage),
         memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
+        journalBook:this.journalBookForRequest(),
         modelAdapter:selectReasoningIntegration(
           deployment.integrations.encounter,
           {environment:this.env},
