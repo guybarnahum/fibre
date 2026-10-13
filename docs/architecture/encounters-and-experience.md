@@ -528,22 +528,13 @@ A witness may remember A as looming or the room as oppressive even when those de
 
 Generated encounter media must never be fed back as evidence for the Encounter Story, Thread Experience, identity, relationship or memory. It is representation.
 
-## Journal artifact
+## Journal presentation
 
-World remains authoritative for encounter stories, Thread experiences, journal-entry provenance and memory.
+World owns encounter stories, Thread experiences, and each optional private Journal entry. A Thread chooses the title and aesthetic of its book once, after a genuine Journal entry is admitted. That choice is also durable World state.
 
-R2 stores the Thread-readable/admin-readable journal artifact:
+The Admin-facing `journals/<threadId>/journal.md` document is assembled when requested from those admitted entries and the Thread's chosen profile. No second mutable document, R2 write, or model call per entry is needed. Journal presentation is not another historical authority and never implies autobiographical memory.
 
-```text
-fibre-thread-objects
-  journals/<threadId>/journal.md
-```
-
-The document is a free-form private "book" with a stable Thread-specific title and aesthetic preference. Admin may render it richly.
-
-The R2 book is downstream presentation of journal authority. It is not itself history or memory.
-
-Existing presentation/media R2 objects remain in the existing immutable object-ref layout and are not migrated.
+Existing immutable presentation/media R2 objects remain untouched.
 
 ## What the current implementation spike taught us
 
@@ -556,7 +547,7 @@ The first N5 implementation correctly exposed several reusable pieces:
 - n-ary story persistence direction;
 - witness-specific experience direction;
 - subjective journal separated from selective memory;
-- private journal book in R2 and Admin presentation.
+- distinct private Journal authority and Admin book presentation (subsequently moved to state-backed read-time projection).
 
 But the spike overfit the central orchestration to **meeting**.
 
