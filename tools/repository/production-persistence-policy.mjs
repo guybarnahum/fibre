@@ -15,8 +15,8 @@ const FS_NAMED_WRITE_IMPORT = new RegExp(
   "su",
 );
 const FS_NAMESPACE_IMPORT = /import\s+\*\s+as\s+([A-Za-z_$][\w$]*)\s+from\s+["']node:fs(?:\/promises)?["']/gu;
-const DEPLOYMENT_SQL_BYPASS = /\\bstorage\\s*\\.\\s*sql\\b/u;
-const DEPLOYMENT_OBJECT_BYPASS = /\\b(?:bucket|[A-Za-z_$][\\w$]*Bucket|[A-Z_]+_OBJECTS)\\s*\\.\\s*(?:get|put|delete)\\s*\\(/u;
+const DEPLOYMENT_SQL_BYPASS = /\bstorage\s*\.\s*sql\b/u;
+const DEPLOYMENT_OBJECT_BYPASS = /\b(?:bucket|[A-Za-z_$][\w$]*Bucket|[A-Z_]+_OBJECTS)\s*\.\s*(?:get|put|delete)\s*\(/u;
 
 const CLOUD_STORAGE_IMPORT = /(?:from\s+["']|require\(\s*["'])(?:@aws-sdk\/client-(?:s3|dynamodb)|@google-cloud\/(?:storage|spanner|firestore)|@azure\/(?:storage-blob|cosmos)|firebase-admin\/firestore)(?:["']|["']\s*\))/u;
 
@@ -37,7 +37,7 @@ function isRuntimeDeploymentSource(path) {
   return path.startsWith("infra/deployments/")
     && RUNTIME_SOURCE.test(path)
     && !path.includes("/test/")
-    && !/\\.test\\.(?:mjs|js|ts)$/u.test(path);
+    && !/\.test\.(?:mjs|js|ts)$/u.test(path);
 }
 
 function namespaceWrites(text) {
