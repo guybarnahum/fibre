@@ -29,6 +29,30 @@ const RUNTIME_BASELINE_SPECS = Object.freeze({
   regulatorRestSensitivity:Object.freeze({
     minimum:0.85, maximum:1.15, step:0.01, integer:false, seedSuffix:"rest-sensitivity",
   }),
+  regulatorThermalSensitivity:Object.freeze({
+    minimum:0.85, maximum:1.15, step:0.01, integer:false, seedSuffix:"thermal-sensitivity",
+    optional:true,
+  }),
+  regulatorEnergySensitivity:Object.freeze({
+    minimum:0.85, maximum:1.15, step:0.01, integer:false, seedSuffix:"energy-sensitivity",
+    optional:true,
+  }),
+  regulatorSensorySensitivity:Object.freeze({
+    minimum:0.85, maximum:1.15, step:0.01, integer:false, seedSuffix:"sensory-sensitivity",
+    optional:true,
+  }),
+  regulatorPresenceSensitivity:Object.freeze({
+    minimum:0.85, maximum:1.15, step:0.01, integer:false, seedSuffix:"presence-sensitivity",
+    optional:true,
+  }),
+  regulatorSocialSensitivity:Object.freeze({
+    minimum:0.85, maximum:1.15, step:0.01, integer:false, seedSuffix:"social-sensitivity",
+    optional:true,
+  }),
+  regulatorExplorationSensitivity:Object.freeze({
+    minimum:0.85, maximum:1.15, step:0.01, integer:false, seedSuffix:"exploration-sensitivity",
+    optional:true,
+  }),
 });
 
 function unitFromSeed(seed) {
@@ -55,7 +79,9 @@ export function normalizeSymbolicRuntimeBaselines(candidate) {
   assertPlainObject("symbolicGenome.runtimeBaselines", candidate);
   assertExactKeys("symbolicGenome.runtimeBaselines", candidate, Object.keys(RUNTIME_BASELINE_SPECS));
   return Object.freeze(Object.fromEntries(
-    Object.keys(RUNTIME_BASELINE_SPECS).map((key) => [key, normalizeRuntimeBaseline(key, candidate[key])]),
+    Object.keys(RUNTIME_BASELINE_SPECS)
+      .filter((key) => candidate[key] !== undefined || !RUNTIME_BASELINE_SPECS[key].optional)
+      .map((key) => [key, normalizeRuntimeBaseline(key, candidate[key])]),
   ));
 }
 
@@ -441,13 +467,17 @@ function baselineSourceIndex({ key, selectionSeed, sourceGenomeDigests }) {
 
 function runtimeBaselineSelections({ selectionSeed, sourceGenomes }) {
   const sourceGenomeDigests = sourceGenomes.map((source) => source.genomeDigest);
-  return Object.keys(RUNTIME_BASELINE_SPECS).sort().map((key) => {
-    const sourceIndex = baselineSourceIndex({ key, selectionSeed, sourceGenomeDigests });
-    return Object.freeze({
+  return Object.keys(RUNTIME_BASELINE_SPECS).sort().flatMap((key) => {
+    const preferred = baselineSourceIndex({ key, selectionSeed, sourceGenomeDigests });
+    const sourceIndex = sourceGenomes[preferred].runtimeBaselines[key] !== undefined
+      ? preferred
+      : sourceGenomes[1-preferred].runtimeBaselines[key] !== undefined ? 1-preferred : null;
+    if (sourceIndex === null) return []; // Neither parent had this allele.
+    return [Object.freeze({
       key,
       sourceGenomeRef:sourceGenomes[sourceIndex].header.genomeId,
       value:sourceGenomes[sourceIndex].runtimeBaselines[key],
-    });
+    })];
   });
 }
 
