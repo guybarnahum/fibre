@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { evaluateIntrinsicRegulation } from "../../../core/src/intrinsic-regulation.mjs";
-import { socialContactEvidenceForLivedHistory } from "../src/lived-now-regulation.mjs";
+import { socialContactEvidenceForLivedHistory, livedInteroceptionForLivedHistory } from "../src/lived-now-regulation.mjs";
+import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
 
 test("World-grounded lack of reciprocal contact changes inherited Body pressure without inventing loneliness", () => {
   const situations=[
@@ -70,4 +71,99 @@ test("World-grounded lack of reciprocal contact changes inherited Body pressure 
   assert.equal(socialContactEvidenceForLivedHistory({
     threadId:last.threadId,currentSituation:situations[0],livedNowStore,experienceStore,
   }),null,"missing lived coverage was mistaken for deprivation");
+});
+
+test("inherited social need can change a later Thread-authored Flight Plan without inventing a meeting",async()=>{
+  const threadId="thr_grounded_planner";
+  const at="2026-10-13T18:00:00Z";
+  const prior={
+    threadId,situationId:"sit_sustained_life",establishedAt:"2026-10-13T06:00:00Z",
+    activity:"Quiet morning chores.",location:{kind:"place",placeRef:"wpl_home"},
+  };
+  const current={
+    ...prior,situationId:"sit_current_life",establishedAt:at,
+    activity:"Working at home.",
+  };
+  const livedNowStore={
+    getPreviousSituation(id,before){
+      assert.equal(id,threadId);
+      return before>prior.establishedAt?prior:null;
+    },
+    getWorldPlace(_id,ref){
+      return ref==="wpl_home"
+        ?{ref,displayName:"Home",placeKind:"residence"}
+        :ref==="wpl_cafe"?{ref,displayName:"Neighborhood café",placeKind:"market_or_commerce"}:null;
+    },
+  };
+  const experienceStore={
+    listSocialInteractions(){return [];},
+    listAcceptedHumanMeetings(){return [];},
+  };
+  const base={
+    threadId,version:1,
+    identity:{name:"Casey"},
+    currentState:{selfModel:"I enjoy quiet work, but sometimes miss being around people.",unresolvedIntentions:[]},
+  };
+  const inputs=[];
+  const modelAdapter={
+    async invoke(call){
+      const context=call.input.concern.externalContext;
+      inputs.push(context);
+      const social=context.interoception?.drives.find(d=>d.family==="social_contact");
+      const seekCompany=(social?.pressure??0)>=0.4;
+      const home={
+        startAt:at,endAt:seekCompany?"2026-10-13T19:00:00Z":"2026-10-14T06:00:00Z",
+        physicalPlaceRef:"wpl_home",presenceMode:"physical",wakefulness:"awake",
+        mediatedContext:"",activity:"Continue drawing.",purpose:"Spend time on my own work.",
+        travelFromPrevious:"",
+      };
+      const stops=[home];
+      if(seekCompany)stops.push({
+        ...home,startAt:"2026-10-13T19:00:00Z",endAt:"2026-10-14T06:00:00Z",
+        physicalPlaceRef:"wpl_cafe",activity:"Draw where people gather.",
+        purpose:"Make room for social contact without arranging a meeting.",
+        travelFromPrevious:"Walk to the café.",
+      });
+      return {
+        output:{result:{stops},evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+        provenance:{provider:"fixture",modelId:"need-responsive-planning"},
+      };
+    },
+  };
+  async function planFor(socialSensitivity){
+    const thread={
+      ...base,genome:{runtimeBaselines:{regulatorSocialSensitivity:socialSensitivity}},
+    };
+    const interoception=livedInteroceptionForLivedHistory({
+      thread,livedNowStore,currentSituation:current,experienceStore,
+    });
+    return formPersonalLivedPlan({
+      threadId,authoredAt:at,horizonEnd:"2026-10-14T06:00:00Z",
+      availablePlaceRefs:["wpl_home","wpl_cafe"],
+      sourceReferences:[current.situationId],
+      startingPlaceRef:"wpl_home",
+      sourceStores:{
+        worldStore:{getThread(){return thread;}},
+        identityStore:{getCurrentIdentityView(){return {threadId,assertions:[]};}},
+        semanticStateStore:{listCurrentState(){return [];}},
+        memoryStore:{listCurrentMemories(){return [];}},
+        situatedLifeStore:{
+          listCurrentPlaceEpisodes(){return [];},
+          listCurrentLifeRelations(){return [];},
+        },
+        livedNowStore,
+      },
+      interoception,modelAdapter,
+    });
+  }
+  const quieter=await planFor(0.85);
+  const moreSocial=await planFor(1.15);
+  assert.deepEqual(quieter.stops.map(s=>s.physicalPlaceRef),["wpl_home"],
+    "low social pressure did not preserve a legitimate solitary plan");
+  assert.deepEqual(moreSocial.stops.map(s=>s.physicalPlaceRef),["wpl_home","wpl_cafe"],
+    "inherited social hunger did not change a later owned destination");
+  assert.ok(inputs.every(c=>c.interoception?.evidenceRefs.includes("sit_sustained_life")),
+    "planning lost the lived source of social need");
+  assert.ok(moreSocial.stops.every(s=>s.companionRefs.length===0),
+    "a need-driven plan manufactured a companion");
 });
