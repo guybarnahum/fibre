@@ -5,7 +5,6 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import { formEncounterStoryMemory } from "./lived-encounter-memory.mjs";
-import { formThreadJournalProfile } from "./thread-journal-book.mjs";
 
 const SYSTEM_PROMPT = `You are the private journal voice of one persistent Fibre Thread after a lived Encounter Story.
 The story is objective World evidence of what was observably said or done. Do not rewrite those facts.
@@ -54,7 +53,7 @@ export async function internalizeThreadEncounterExperience({
   requireMethod("modelAdapter", modelAdapter, "invoke");
   if (journalBook !== null) {
     requireMethod("journalBook", journalBook, "getProfile");
-    requireMethod("journalBook", journalBook, "append");
+    requireMethod("journalBook", journalBook, "ensureProfile");
   }
   if (activityRecorder !== null) requireMethod("activityRecorder", activityRecorder, "runStage");
 
@@ -143,19 +142,12 @@ export async function internalizeThreadEncounterExperience({
 
       if (journalBook !== null) {
         try {
-          const profile = journalProfile ?? await formThreadJournalProfile({
-            thread:livedContext.thread,
-            modelAdapter,
-          });
           journalBookRecord = await runStage(activityRecorder, {
             ...activity,
             stage:"encounter.journal.book",
             evidence:{ experienceId:activeExperience.experienceId },
-          }, () => journalBook.append({
-            threadId,
-            profile,
-            writtenAt:journalEntry.writtenAt,
-            entryText:journalEntry.entryText,
+          }, () => journalBook.ensureProfile({
+            thread:livedContext.thread,modelAdapter,
           }));
         } catch {
           journalBookRecord = null;
