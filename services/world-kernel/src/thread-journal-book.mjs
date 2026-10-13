@@ -167,7 +167,7 @@ export function createThreadJournalBook({ storage, legacyReader = null } = {}) {
             SET document=excluded.document,document_digest=excluded.document_digest
         `).run(threadId, document, `sha256:${sha256(document)}`);
         return selected;
-      })();
+      });
       return Object.freeze({
         objectKey:journalKey(threadId),
         profile:activeProfile,
