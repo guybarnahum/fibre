@@ -9,7 +9,7 @@ canonical: true
 
 ## Status and intent
 
-**Accepted implementation plan; source implementation, local acceptance and staging proof are OPEN.** This plan extends the existing [intrinsic regulator](intrinsic-regulation.md), [symbolic-genome boundaries](symbolic-thread-genome.md), [developmental exploration](developmental-exploration.md), [Interior Cognition](interior-cognition.md), and [live encounters](live-encounters.md). It does not establish a second organism, feelings store, meeting scheduler, or availability authority.
+**G1/D1 source slice implemented on `main`; Guy's local validation and staging proof are OPEN.** D2 (needs change Flight Plans), autonomous Thread encounters, and recipient social-time appraisal remain planned. This plan extends the existing [intrinsic regulator](intrinsic-regulation.md), [symbolic-genome boundaries](symbolic-thread-genome.md), [developmental exploration](developmental-exploration.md), [Interior Cognition](interior-cognition.md), and [live encounters](live-encounters.md). It does not establish a second organism, feelings store, meeting scheduler, or availability authority.
 
 The ambition is not to make Threads easier to summon. A Thread whose actual life contains prolonged insufficient connection or stimulation should develop *body-level pressure* that can affect private attention, felt meaning, ordinary planning, and eventually independently chosen circumstances. Different Threads may legitimately seek solitude, company, novelty, rest, or nothing. A powerful desire for company does not entitle its owner to interrupt somebody at 02:00 or oblige the recipient to answer.
 
