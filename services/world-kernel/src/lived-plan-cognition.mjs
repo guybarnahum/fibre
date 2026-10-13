@@ -401,6 +401,7 @@ export async function formPersonalLivedPlan({
     stops,
     sourceReferences:[...new Set([
       ...sourceReferences,
+      ...(planningInteroception?.evidenceRefs??[]),
       ...selectedPlaces,
       ...workCommitments.map((item) => item.commitmentId),
     ])],
