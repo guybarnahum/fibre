@@ -168,9 +168,9 @@ Already behind `InfraDriver`:
 - durable Birth Center model-invocation journal through `InfraDriver.state`, not a direct filesystem journal;
 - World and Birth Center Cloudflare runtime composition, alongside their local counterparts;
 - World reconciliation retry streaks stored through the World semantic state boundary in both local and Cloudflare deployments, alongside `InfraDriver.scheduler`;
-- Thread Journal Markdown books and Thread-chosen profiles persisted transactionally in World `InfraDriver.state`, with the original public journal document contract unchanged.
+- admitted private Journal reflections and the once-chosen per-Thread book profile held in World `InfraDriver.state`; Markdown is assembled only on read, so it never becomes another mutable authority.
 
-A **temporary read-only Cloudflare provider migration** preserves existing Thread Journal books written under `journals/<threadId>/journal.md` in the previous R2 bucket. On first access to a missing World-state book, the provider reads the old bytes once, and the semantic Journal store admits that exact document into state; all subsequent reads/appends use state. This reader must remain until existing journals have been imported and checked, then be retired. It is not a mutable-object capability.
+The earlier mutable R2 Journal and its read-only import adapter were retired. Journal reading queries admitted World entries and renders a Thread-specific Markdown view. One profile-formation model invocation is earned by the first actual private reflection; subsequent entries and reads reuse the chosen profile without invoking another model.
 
 Remaining infrastructure debt is deliberately separate: some internal service calls still use HTTP/Worker binding fetch rather than `InfraDriver.services`; Cloudflare queue consumers still use provider-native acknowledgement/retry. Neither is part of the two persistence corrections, and neither justifies a broad transport or queue rewrite.
 
