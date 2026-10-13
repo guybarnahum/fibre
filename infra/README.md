@@ -6,7 +6,7 @@ It does **not** own Fibre semantics. Thread identity, history, memory, birth, ci
 
 The production persistence rule remains [`../docs/architecture/production-persistence.md`](../docs/architecture/production-persistence.md): every persistent production state or byte object used as durable state by a Fibre service crosses a provider-neutral `InfraDriver` capability.
 
-The accepted cloud-runtime closure plan is [`../docs/architecture/cloud-runtime-infradriver-plan.md`](../docs/architecture/cloud-runtime-infradriver-plan.md). Its central rule is that local and cloud runtimes use the same service architecture and the same provider-neutral capability contracts; only the provider adapter changes.
+The live implementation/adoption state is [`../docs/state/infra-pure.md`](../docs/state/infra-pure.md). Durable rules remain in [production persistence](../docs/architecture/production-persistence.md) and [InfraDriver](../docs/architecture/infrastructure-driver.md). Local and cloud runtimes use the same semantic architecture; only provider adapters and deployment wiring may differ.
 
 ## Shape
 
@@ -100,13 +100,13 @@ Semantic records use Fibre identities such as `threadId`, `eventId`, `registrati
 
 Provider-native bucket keys, database IDs, Durable Object IDs, ARNs, region IDs and filesystem paths remain inside provider adapters or explicitly classified operational metadata.
 
-## Current migration debt
+## Current infra-pure posture
 
-World Kernel domain stores still open their shared SQLite database directly, and the durable model-invocation journal still writes a local filesystem journal directly. Those are migration debt, not examples for new services.
+The representative persistence and scheduling boundary is now proven and adopted across the main World/Birth/Presentation paths. In particular, authoritative World state, World scheduling/retry state, Birth Center durable invocation state and private Journal authority no longer rely on service-level SQLite/filesystem/R2 bypasses.
 
-The accepted cloud-runtime plan requires World and Birth Center authoritative/provisional state to move through `InfraDriver.state`, then adds the minimum scheduler/coordination contracts required to run the same recovery architecture locally and on Cloudflare.
+Remaining portability debt is deliberately trigger-driven rather than a cleanup mandate. Some internal service calls still use fetch-shaped/Worker-binding transport, and Cloudflare queue consumers still use provider-native acknowledgement/retry. The exact current state, triggers and stop conditions live in [Infra-pure state and workstream](../docs/state/infra-pure.md).
 
-Disposable `.fibre/` development state, tests and repository fixtures are outside the production persistence rule.
+Disposable `.fibre/` development state, tests and repository fixtures remain outside the production persistence rule.
 
 ## Secrets and deployment configuration
 
@@ -118,7 +118,7 @@ Infrastructure resource bindings, application secrets and deployment credentials
 - Secret-upload tooling must require an explicit caller-supplied input file path. `.env` may be passed explicitly, but it is not read implicitly by default.
 - Secret tooling reports missing secret names and status only and must never print secret values.
 
-See [`../docs/architecture/cloud-runtime-infradriver-plan.md`](../docs/architecture/cloud-runtime-infradriver-plan.md) for the service-by-service inventory and deployment closure gates.
+See [Infra-pure state and workstream](../docs/state/infra-pure.md) for current provider-neutral adoption/debt and [Cloud E2E closure](../docs/architecture/cloud-e2e-closure-plan.md) for retained deployment acceptance evidence.
 
 ## Development rule
 

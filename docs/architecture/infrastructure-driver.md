@@ -1,7 +1,7 @@
 ---
 id: architecture-infrastructure-driver-v0-1
 status: proposed
-last-reviewed: 2026-09-30
+last-reviewed: 2026-10-13
 canonical: false
 ---
 
@@ -497,39 +497,20 @@ Migration tools may export/import state, ordered logs, and immutable object byte
 
 For ordered streams or transactional authorities, a migration must have exactly one active logical write authority at any instant. Dual-running implementations may mirror or validate, but must not independently allocate competing sequence/version authority.
 
-## Relationship to presentation work
+## Adoption posture
 
-Presentation is the first consumer and should prove the pattern before broader backend migration.
+Presentation was the first substantial consumer, but InfraDriver is now used across Presentation, Asset Generator, World, Birth Center and selected control-plane work. The abstraction has therefore moved beyond its original proof stage.
 
-P3 therefore uses:
+This document owns the **capability semantics and guarantee vocabulary**, not a migration backlog. Current adoption, remaining provider-specific seams and the trigger for addressing each one are tracked in [Infra-pure state and workstream](../state/infra-pure.md).
 
-```text
-PresentationServer
-        |
-        v
-InfraDriver
-        |
-        v
-cloudflare-v1
-```
-
-The presentation-specific architecture document defines the **presentation capability profile and Cloudflare mapping**, not a separate `PresentationInfraDriver`.
-
-Once the pattern and conformance harness are credible, later Fibre backend work may adopt the same `InfraDriver` incrementally. Existing SQLite domain stores should not be rewritten merely to satisfy an abstraction milestone.
-
-## Adoption rule
-
-Do not perform a broad infrastructure refactor before a vertical slice proves the abstraction.
-
-Sequence:
+The standing adoption rule is:
 
 ```text
-1. define InfraDriver architecture + capability/profile discipline
-2. implement the minimum ports required by PresentationServer
-3. implement local/in-memory conformance driver
-4. implement cloudflare-v1 presentation profile
-5. validate snapshot + stream end to end
-6. reuse/extend the same InfraDriver for later backend services as concrete needs arise
+real Fibre operation
+  -> name the exact infrastructure guarantee
+  -> use or minimally extend one InfraDriver capability
+  -> prove the same semantic shape locally and in the required provider
+  -> stop
 ```
 
-The abstraction earns wider use by surviving real services, not by anticipating every future cloud product in advance.
+Do not migrate unrelated callers for symmetry, invent a generic provider framework, or freeze a new capability before a second real use earns it.

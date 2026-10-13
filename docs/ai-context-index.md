@@ -183,10 +183,11 @@ Thread Editor is an authorized causal inspection lens. insidefibre.com is a publ
 - `architecture/storage-model.md`
 - `architecture/production-persistence.md`
 - `architecture/infrastructure-driver.md`
+- `state/infra-pure.md` — live InfraDriver adoption/debt/triggers
 - `decisions/ADR-0017-provider-neutral-production-persistence.md`
 - `decisions/ADR-0020-vision-led-development-discipline.md`
 
-Provider-neutral persistence remains mandatory for authoritative production state, but infrastructure is not an independent completion program. Build only what a real Fibre capability requires.
+Provider-neutral persistence remains mandatory for authoritative production state. Durable rules live in architecture/ADRs; current infra-pure status and trigger-based debt live in `state/infra-pure.md`. Infrastructure is not an independent completion program.
 
 ## Request, consent and expression
 

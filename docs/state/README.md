@@ -37,6 +37,12 @@ Use this for architecture, milestone posture, persistence surfaces, causal stand
 
 Use this for the immediate execution sequence, current experimental constraints, blockers and rules for what maintainers may or may not do next.
 
+## Infra-pure workstream
+
+[`infra-pure.md`](infra-pure.md)
+
+Use this as the single live status page for provider-neutral infrastructure adoption: what is already clean, what provider debt remains, the concrete trigger for reopening each item, and the stop condition that returns work to the Fibre organism. Durable infrastructure rules remain in architecture/ADRs; this page owns current execution truth.
+
 ## Thread preservation and migration
 
 [`thread-preservation-and-migration.md`](thread-preservation-and-migration.md)
