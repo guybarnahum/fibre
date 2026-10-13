@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { packJournalPages } from "./thread-journal-presentation.mjs";
 import {
   buildEncounterEpisodes,
   buildSocialAnalytics,
@@ -730,4 +731,13 @@ test("each Thread's World history separates actual occurrence and life from spee
   assert.equal(events[1].attention,"not_noticed",
     "a World occurrence became a personal Experience without Thread attention");
   assert.equal(events.filter((item)=>item.kind==="occurrence").length,1);
+});
+
+
+test("Journal pages pack whole reflections in order, keeping a long entry readable", () => {
+  const pages=packJournalPages([100,120,80,90,260,70],250);
+  assert.deepEqual(pages,[[0,1],[2,3],[4],[5]],
+    "Journal pagination lost or split a private reflection");
+  assert.deepEqual(pages.flat(),[0,1,2,3,4,5],
+    "Journal pagination altered chronological entry order");
 });
