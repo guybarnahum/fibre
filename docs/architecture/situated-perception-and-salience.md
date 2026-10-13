@@ -219,7 +219,7 @@ If no materiality anchor is present, compatible co-presence remains `background`
 
 If an anchor is present, the gate returns `salient` and ordinary Interior Cognition may still decide `not_initiate`. The gate therefore controls whether cognition is warranted, not what the person wants.
 
-This first profile is deliberately conservative and incomplete. W4 adds World-derived opportunities; W5 adds one grounded organismic anchor: active `exploration` pressure derived from repeated authoritative lived sameness. Exploration pressure may elevate an otherwise-background opportunity into cognition, but it does not force engagement or label the opportunity novel.
+The profile remains intentionally conservative. W4 added World-derived opportunities, W5 grounded exploration pressure in repeated enacted sameness, and D2 adds sufficiently material evidenced `social_contact` pressure from the same Body frame. Either can make otherwise-background co-presence worth consideration; neither labels an emotion, commands an approach, asserts a relationship or creates a Story. Weak social pressure stays background to avoid speculative cognition.
 
 Do not convert these anchors into a universal human-attention formula or weighted score.
 
