@@ -11,9 +11,14 @@ Architecture documents define technical authorities, boundaries, flows, storage/
 - [`regulation-drive-extensions.md`](regulation-drive-extensions.md) — **accepted plan, implementation open** for adding small evidenced drive evaluators, bounded genetic tuning, social scarcity, and considerate local-time/weekend contact through existing Body/World/Interior Cognition ([ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md)).
 - [`interior-cognition.md`](interior-cognition.md) — reusable private-thought pipeline from organismic pressure through developed-self deliberation to domain-specific stance, plan, reflection or meaning.
 - [`lived-now-and-meetings.md`](lived-now-and-meetings.md) — continuous present-life reconciliation across dormancy, Flight Plan renewal, and Person/Thread meetings that enter already-existing lives.
+- [`situated-perception-and-salience.md`](situated-perception-and-salience.md) — grounded World opportunities and selective attention.
+- [`encounters-and-experience.md`](encounters-and-experience.md) — one objective Encounter Story, separate Thread-specific attention, Experience and optional aftermath.
+- [`live-encounters.md`](live-encounters.md) — asynchronous, interruptible encounter coordination without creating a turn owner or chat-session authority.
 - [`../concepts/emotions-and-needs.md`](../concepts/emotions-and-needs.md) — meaning-bearing semantic emotion/need doctrine above the regulatory layer.
 - [`thread-lifecycle.md`](thread-lifecycle.md) — activation, cognition, freeze and lifecycle behavior.
 - [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md) — canonical distinction between evolving old authoritative representations, reconstructing derivable state, and resuming quarantined work.
+
+Implemented mechanisms are distinct from **accepted live proof**. See [N6 public acceptance](../validation/n6-public-lived-encounter-slices.md), [N7 live and social-causality acceptance](../validation/n7-live-encounter-slices.md), and [current priorities](../state/current-priorities.md) for the open gates.
 
 ## Runtime ownership and dependencies
 
