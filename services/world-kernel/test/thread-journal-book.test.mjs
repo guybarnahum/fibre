@@ -27,8 +27,7 @@ test("a Thread's chosen Journal survives restart and renders new World reflectio
   }];
   const experienceStore={
     listThreadJournalEntries(threadId){
-      assert.equal(threadId,profile.threadId);
-      return entries;
+      return threadId===profile.threadId?entries:[];
     },
   };
   let profileCalls=0;
@@ -44,8 +43,19 @@ test("a Thread's chosen Journal survives restart and renders new World reflectio
   };
   try{
     const book=createThreadJournalBook({storage,experienceStore});
-    assert.equal(await book.read(profile.threadId),null,
-      "Journal appeared without a chosen profile");
+    const defaultBook=await book.read(profile.threadId);
+    assert.equal(defaultBook?.profile.title,"Journal",
+      "existing reflection disappeared without a personal book style");
+    assert.equal(defaultBook.profile.presentationStyle,"classic",
+      "unchosen Journal did not use a neutral layout");
+    assert.ok(defaultBook.document.includes("A first private thought."),
+      "default Journal omitted existing subjective history");
+    assert.equal(await book.getProfile(profile.threadId),null,
+      "default appearance was stored as a Thread-owned choice");
+    assert.equal(profileCalls,0,
+      "reading an existing Journal unnecessarily invoked cognition");
+    assert.equal(await book.read("thr_without_reflections"),null,
+      "Journal appeared without any authored reflection");
     await book.ensureProfile({thread:{threadId:profile.threadId},modelAdapter});
     const first=await book.read(profile.threadId);
     assert.deepEqual(first.profile,profile,"Journal did not preserve its chosen identity");
