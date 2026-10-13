@@ -96,6 +96,8 @@ function fixture({
   plannedCompanionRefs = null,
   selaPresent = false,
   sustainedSameness = false,
+  observedSolitudeHours = 0,
+  inheritedSocialSensitivity = null,
   moveAfterAcceptance = false,
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
@@ -401,7 +403,19 @@ function fixture({
   const meeting = createSocialMeetingService({
     worldReader:{
       getThread(threadId) {
-        if (threadId === mina.threadId) return structuredClone(mina);
+        if (threadId === mina.threadId) {
+          const person=structuredClone(mina);
+          if(inheritedSocialSensitivity!==null){
+            person.genome={
+              ...person.genome,
+              runtimeBaselines:{
+                ...(person.genome?.runtimeBaselines??{}),
+                regulatorSocialSensitivity:inheritedSocialSensitivity,
+              },
+            };
+          }
+          return person;
+        }
         if (threadId === noor.threadId) return structuredClone(noor);
         if (threadId === sela.threadId) return structuredClone(sela);
         return null;
@@ -440,6 +454,17 @@ function fixture({
         return place;
       },
       getPreviousSituation(threadId, before) {
+        if(observedSolitudeHours>0){
+          const current=structuredClone(situations.get(threadId));
+          const at=new Date(Date.parse(current.establishedAt)-observedSolitudeHours*3600_000).toISOString();
+          if(before<=at)return null;
+          return {
+            ...current,
+            activity:"Ordinary prior time without a witnessed meeting.",
+            situationId:`sit_sustained_life_${threadId}`,
+            establishedAt:at,
+          };
+        }
         if (!sustainedSameness) return null;
         const current=structuredClone(situations.get(threadId));
         const recentAt=new Date(Date.parse(current.establishedAt)-(10*60*1000)).toISOString();
@@ -505,6 +530,7 @@ function fixture({
         socialInteractions.push(structuredClone(record));
         return record;
       },
+      listAcceptedHumanMeetings(){return [];},
       listSocialInteractions(threadId, { withThreadId = null, limit = 8, newestFirst = true } = {}) {
         let records = socialInteractions.filter((record) =>
           record.initiatorThreadId === threadId || record.recipientThreadId === threadId);
@@ -1016,4 +1042,31 @@ test("E6b one social story discovers a silent co-present witness", async () => {
     "witness journaling still ran on the social-meeting hot path");
   assert.equal(f.memories.length,0,
     "witness memory still formed on the social-meeting hot path");
+});
+
+test("inherited social deprivation changes attention without commanding an encounter", async () => {
+  const opts={
+    plannedCompanions:false,
+    mediatedContext:null,
+    observedSolitudeHours:12,
+    initiationFor:()=> "not_initiate",
+  };
+  const lessSensitive=fixture({...opts,inheritedSocialSensitivity:0.85});
+  const moreSensitive=fixture({...opts,inheritedSocialSensitivity:1.15});
+  const low=attemptFor(await lessSensitive.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,
+  }));
+  const high=attemptFor(await moreSensitive.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,
+  }));
+  assert.equal(low.outcome,"background",
+    "weak inherited social need incorrectly woke social cognition");
+  assert.equal(lessSensitive.modelCallCount(),0,
+    "unremarkable co-presence wasted model cognition");
+  assert.equal(high.salience.anchors.includes("social_contact_pressure"),true,
+    "inherited social hunger did not make presence salient");
+  assert.equal(high.initiation.decision,"not_initiate",
+    "social need overrode the Thread's private decision");
+  assert.equal(moreSensitive.socialInteractions.length,0,
+    "social pressure fabricated a reciprocal interaction");
 });
