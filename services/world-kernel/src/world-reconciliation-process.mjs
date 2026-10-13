@@ -1,4 +1,5 @@
 import { requireInfraCapabilities } from "#infra";
+import { openWorldReconciliationRetryStore } from "./world-reconciliation-retry-store.mjs";
 
 export const WORLD_RECONCILIATION_SCOPE_ID = "world";
 const DEFAULT_MAX_RETRY_MS = 300_000;
@@ -259,10 +260,16 @@ export function createWorldReconciliationRuntime({
     throw new TypeError("World reconciliation retryState must be null or expose get() and set()");
   }
   const infra = requireInfraCapabilities(infraDriver, "scheduler");
-  let memoryRetryStreak = 0;
+  const ownedRetryStore = retryState === null
+    ? openWorldReconciliationRetryStore({ infraDriver, stateScopeId:scopeId })
+    : null;
+  const resolvedRetryState = retryState ?? Object.freeze({
+    get:() => ownedRetryStore.get(scopeId),
+    set:(value) => ownedRetryStore.set(scopeId, value),
+  });
 
   async function retryStreak() {
-    const value = retryState === null ? memoryRetryStreak : await retryState.get();
+    const value = await resolvedRetryState.get();
     if (!Number.isSafeInteger(value) || value < 0) {
       throw new TypeError("World reconciliation retry streak must be a non-negative integer");
     }
@@ -273,8 +280,7 @@ export function createWorldReconciliationRuntime({
     if (!Number.isSafeInteger(value) || value < 0) {
       throw new TypeError("World reconciliation retry streak must be a non-negative integer");
     }
-    if (retryState === null) memoryRetryStreak = value;
-    else await retryState.set(value);
+    await resolvedRetryState.set(value);
   }
 
   function retryDelayMs(streak) {
@@ -386,7 +392,9 @@ export function createWorldReconciliationRuntime({
     handleWake: runAndSettle,
     stop: async () => {
       await setRetryStreak(0);
-      return infra.scheduler.cancel(scopeId);
+      const cancelled = await infra.scheduler.cancel(scopeId);
+      ownedRetryStore?.close();
+      return cancelled;
     },
   });
 }
