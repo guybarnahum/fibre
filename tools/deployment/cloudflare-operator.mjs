@@ -170,7 +170,6 @@ export function createCloudflareResourcePlan(configs, { environment }) {
   const assetBucket = requireBinding(asset, ["r2_buckets", 0, "bucket_name"], "Asset Generator R2 bucket");
   const presentationBucket = requireBinding(presentation, ["r2_buckets", 0, "bucket_name"], "Thread Presentation R2 bucket");
   const fidBucket = requireBinding(fid, ["r2_buckets", 0, "bucket_name"], "Fibre Identity Authority R2 bucket");
-  const threadObjectsBucket = requireBinding(world, ["r2_buckets", 0, "bucket_name"], "World Thread objects R2 bucket");
   if (assetBucket !== presentationBucket || assetBucket !== fidBucket) {
     throw new TypeError("Asset Generator, Thread Presentation, and Fibre Identity Authority must share the declared presentation R2 bucket");
   }
@@ -205,7 +204,6 @@ export function createCloudflareResourcePlan(configs, { environment }) {
       ]),
       r2: Object.freeze([
         { name: environmentResourceName(assetBucket, env) },
-        { name: environmentResourceName(threadObjectsBucket, env) },
       ]),
       queues: Object.freeze([
         { role: "completion", name: environmentResourceName(completionQueue, env) },
