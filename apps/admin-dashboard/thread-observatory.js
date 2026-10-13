@@ -3,7 +3,7 @@ import { bindCopyAction } from "./copy-action.js";
 import { humanAppearanceKey, parseCanonicalAppearancePresentation } from "./appearance-description.mjs";
 import { decorateActionButton, faIcon, setWaitingContent } from "./fa-icons.js";
 import { createFibreFinCard } from "./fibre-fin-card.js";
-import { threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
+import { packJournalPages, threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
 import { buildEncounterEpisodes, buildSocialAnalytics, buildThreadWorldEvents } from "./thread-encounter-model.mjs";
 import { openThreadActionDialog } from "./thread-action-dialog.js";
 
@@ -677,18 +677,87 @@ function journalSection(journal, journalError = null, authorityEntries = []) {
   );
   book.append(cover);
 
+  const viewport = el("div", "thread-journal-viewport");
   const pages = el("div", "thread-journal-pages");
-  for (const entry of [...entries].reverse()) {
-    const page = el("article", "thread-journal-entry");
-    page.append(el("time", "thread-journal-date", entry.heading));
-    appendJournalBlocks(page, entry.lines);
-    pages.append(page);
+  const measure = el("div", "thread-journal-measure");
+  const articles = entries.map((entry) => {
+    const article = el("article", "thread-journal-entry");
+    const time = el("time", "thread-journal-date");
+    const date = new Date(entry.heading.replace(" · ", "T"));
+    time.textContent = Number.isNaN(date.getTime())
+      ? entry.heading
+      : new Intl.DateTimeFormat(undefined, {
+          weekday:"short",month:"short",day:"numeric",year:"numeric",
+          hour:"numeric",minute:"2-digit",
+        }).format(date);
+    if (!Number.isNaN(date.getTime())) time.dateTime=date.toISOString();
+    article.append(time);
+    appendJournalBlocks(article, entry.lines);
+    return article;
+  });
+  viewport.append(pages);
+  if (articles.length === 0) {
+    pages.append(el("p", "thread-empty-note", "The journal exists, but it has no entries yet."));
+    book.append(viewport);
+  } else {
+    // One page can contain several complete reflections; an oversized one scrolls.
+    const pager = el("nav", "thread-journal-pager");
+    pager.setAttribute("aria-label", "Journal pages");
+    const indicator = el("span", "thread-journal-page-count");
+    indicator.setAttribute("aria-live", "polite");
+    let groups=[];
+    let current=0;
+    let initialized=false;
+    const button = (label, description, destination) => {
+      const control=el("button", "thread-journal-page-button", label);
+      control.type="button";
+      control.title=description;
+      control.setAttribute("aria-label", description);
+      control.addEventListener("click", () => {
+        current=destination();
+        showPage();
+      });
+      pager.append(control);
+      return control;
+    };
+    const first=button("«", "First page", () => 0);
+    const previous=button("‹", "Previous page", () => current-1);
+    pager.append(indicator);
+    const next=button("›", "Next page", () => current+1);
+    const last=button("»", "Last page", () => groups.length-1);
+    function showPage(){
+      const count=groups.length;
+      current=Math.max(0,Math.min(count-1,current));
+      pages.replaceChildren(...groups[current].map((index) => articles[index]));
+      viewport.scrollTop=0;
+      indicator.textContent=`Page ${current+1} of ${count}`;
+      first.disabled=previous.disabled=current===0;
+      next.disabled=last.disabled=current===count-1;
+    }
+    function repaginate(){
+      if (!viewport.isConnected || viewport.clientHeight===0) return;
+      const wasLast=initialized && current===groups.length-1;
+      const selected=groups[current]?.[0] ?? articles.length-1;
+      measure.replaceChildren(...articles);
+      const heights=articles.map((article) => article.getBoundingClientRect().height);
+      groups=packJournalPages(heights,viewport.clientHeight);
+      current=!initialized || wasLast ? groups.length-1
+        : Math.max(0,groups.findIndex((group) => group.includes(selected)));
+      initialized=true;
+      showPage();
+    }
+    measure.append(...articles);
+    book.append(pager,viewport,measure);
+    if(typeof ResizeObserver==="function"){
+      new ResizeObserver(repaginate).observe(viewport);
+    }else{
+      window.addEventListener("resize",repaginate);
+    }
+    requestAnimationFrame(repaginate);
   }
-  if (entries.length === 0) pages.append(el("p", "thread-empty-note", "The journal exists, but it has no entries yet."));
-  book.append(pages);
   wrap.append(
     book,
-    el("p", "thread-journal-note", "The book above is a private presentation of Journal authority and may lag newly consolidated World entries. World journal-entry records remain authoritative, and neither presentation nor Journal becomes autobiographical memory unless Fibre separately retains the experience."),
+    el("p", "thread-journal-note", "This book presents the Thread's admitted private reflections, not World history or autobiographical memory."),
   );
   if (authorityCount > 0) wrap.append(disclosure("World journal-entry authority", model.authorityEntries));
   return wrap;
