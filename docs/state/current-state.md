@@ -1,418 +1,130 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-10-12
+last-reviewed: 2026-10-13
 canonical: true
 ---
 
 # Current state of Fibre
 
-Fibre is a persistent world for artificial persons called **Threads**. A Thread is durable world state with identity, history, private interior state, relationships, embodiment, permissions and a life trajectory spanning temporary model executions.
+Fibre is a persistent World for artificial persons called **Threads**. Each Thread's identity, history, embodied origin, private interior, relationships, resources, and changing life persist beyond any particular model execution. Models supply temporary, fallible cognition; World and the owning domain authorities admit durable facts and consequences.
 
-Models provide temporary cognition. Fibre owns continuity, authoritative state, validation, persistence, replay and consequence.
+This document answers **what Fibre can actually do and what remains unproven**. It is not an operational handoff or a duplicate milestone ledger. [Current priorities](current-priorities.md) owns the next action; [public progress](public-progress.md) owns public claims; [prototype roadmap](../validation/prototype-roadmap.md) preserves future ambition. A committed source capability, locally passed test, staging-observed behavior, and scientific standing are **different evidence levels**.
 
-## World wakefulness for public encounters — 2026-10-12 (source implemented, acceptance pending)
+## Core authority and standing
 
-A new explicitly classified `wakefulness: awake | asleep | unknown` for Thread-authored Flight Plan stops propagates into World-enacted CurrentSituation. The public visitor boundary now returns `unavailable` without spoken refusal, model invocation or Encounter Story when a situation is explicitly `asleep`. Existing untyped durable history retains its original digests and is treated as unknown at use sites, not reclassified from prose such as `Sleep.`. Public Presentation forwards the unavailable result. Local tests and staged/real-life acceptance are **not yet reported**; Sophie currently has an older, untyped plan and remains unproven by this new slice. Actual World wake transitions and recipient-local social-time judgment remain separate open work. See [continuous LivedNow](../architecture/lived-now-and-meetings.md) and [current priorities](current-priorities.md).
+The accepted [Constitution](../foundations/constitution.md), [Principles](../foundations/principles.md), [Invariants](../foundations/invariants.md), [Interpretive Personhood](../foundations/interpretive-personhood.md) and [Rich Life](../foundations/rich-life.md) define the intended artificial person. Among their load-bearing boundaries:
 
-## Heritable Body and social-contact regulation — 2026-10-13 (source implemented; validation pending)
+- A Thread is not its worker, prompt, model, session, public portrait or browser interaction. Identity and lived history have independent authority.
+- World history, contemporaneous private Journal, selective autobiographical Memory and durable remembered meaning are distinct. History does not automatically become recollection. Private stance, authorization, public expression and performed action also remain separate.
+- Genome, lineage, culture, embodied origin, relationships, needs and learned meaning must have plausible *causal* routes to later choices; schema fields and context inclusion alone are not proof of individuality.
+- Inherited constraints shape a beginning, not a fixed moral, cultural or psychological destiny. The same belief reached through different lived paths can still express different individual histories.
+- Public availability, request safety, and human interest do not mechanically compel a Thread's participation, disclosure, speech or future contact.
 
-[ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md) and the [drive-extension/social-contact plan](../architecture/regulation-drive-extensions.md) are accepted design and execution direction. They now include G1/D1 source work: new genomes inherit bounded response sensitivities supported by the existing Body; immutable older genomes retain their existing alleles/digests; an evidence-bound `social_contact` drive is evaluated during ordinary World regulation pulses. This does **not** mechanically assert loneliness, complete social observability, socially motivated future plans, spontaneous meetings, or consent. Local and staging validation, careful recipient timing and a later-life causal proof remain open; current N6/N7 and sleeping-Thread reachability work retain their own previously recorded acceptance boundaries.
+The mature Whole-Person / causal-individuality claim remains subject to [standing gates and evidence](../validation/m2-standing-gate-rubric-and-evidence-map.md), not aggregate tests or generated narrative quality. Preserve negative results and distinguish `Named-only`, `Stored-only`, `Context-only` and behaviorally/future-state causal evidence.
 
-## Meet / Encounter status — 2026-10-11 (current handoff)
+## Capability status at this checkpoint
 
-**Current authority:** [Current priorities](current-priorities.md) governs execution. Earlier October 9 handoff instructions below are retained as evidence of past checkpoints, **not instructions to bypass the present Viewer redesign hold**. [N6 acceptance](../validation/n6-public-lived-encounter-slices.md), [N7 causal gates](../validation/n7-live-encounter-slices.md), and the [Meet runtime audit](../validation/meet-encounter-run-path-audit.md) retain detailed boundaries.
+| Capability | Evidence-supported state |
+|---|---|
+| M1 and #33–#40 identity/history, appraisal, Genesis and causal foundation | Closed **bounded** architectural and validation proofs; not a general claim of mature personhood |
+| G/H remote birth → World → canonical media → FIN/FID → public Presentation | Closed minimum deployed/retry/recovery proof; independently reconstructed empty environment **not verified** ([cloud record](../architecture/cloud-e2e-closure-plan.md)) |
+| Symbolic genome, intrinsic Body regulation R1–R4, Situated Percept/Interior Cognition | Accepted bounded substrate |
+| Population/physical inheritance, Human Appearance v0.4, versioned calibration and Tranche A | Implemented with specified human visual and staging admission results; global anatomy/realism remains experimental |
+| N1–N3 continuous LivedNow, multi-day retrospective catch-up and Genesis-to-life | Closed bounded proofs |
+| N4 genuine deployed Person → Thread Meet entry | Closed |
+| N5 objective Encounter Story → independent attention/Experience/optional aftermath | Closed live through E0–E5; E6/E7 natural-world follow-ons retain separate gates |
+| N6 direct World dialogue and public SSE | Real staging acceptance; **full browser multi-turn/leave/revisit lifecycle not closed** |
+| N7.0–N7.10 asynchronous Live Encounter | Local acceptance; **N7.11 staging attention/selective later consequence open** |
+| Typed wakefulness; G1/D1 inherited Body sensitivity and `social_contact` drive | **Source implemented**; Guy's local/full validation and staged organism proof not yet established by the recorded checkpoint |
+| Population-scale economy, live-Thread reproduction, broad natural society | Preserved ambitions, not complete capabilities |
 
-- **N6:** staging World direct meeting (four accepted Faith turns) and client-neutral public streamed response are observed. The staging website was subsequently loaded and tested; on October 11 Faith and Sophie both returned `declined` with page-local exports. **Human acceptance of an accepted multi-turn SSE Viewer lifecycle and later-life revisit remains open**, not contradicted by genuine refusal.
-- **Sophie World/speech contradiction:** her October 11 exact witnessed situation was `Sleep.` at `2026-10-11T17:42:06.437Z`; at about `17:43:06Z` she outwardly answered a visitor that she was sleeping and unable to talk. World-owned sleep/wake/reachability must decide whether an immediate outward response is physically possible; no transcript prompt edit or coerced social reply stands in for that mechanism.
-- **Admin/Viewer defects:** the Observatory page showed no World events even though Sophie's authenticated read API returned the current and previous situations; its zero Encounter Stories for an unaccepted approach is expected. Faith's API already returned 31 admitted Stories even when the page looked empty. After Leave the Viewer preserved the approach text but showed `Conversation · 0 turns` and merged the two speakers. The small Admin navigation CSS correction and a nullable World-context/visitor dual-clock source slice are committed on `main`; Guy's post-change local/staging acceptance was not yet reported.
-- **Design pause:** the existing <https://github.com/guybarnahum/insidefibre.com/blob/main/docs/meet-voice-first-experience-proposal.md> is a **proposal awaiting cohesive review/approval**, not a completed voice frontend. Freeze piecemeal Viewer layout fixes and production release until that review. Preserve readable refusal/transcript, public Scene/Portrait and genuine consent while designing V1 (scene-first), V2 (outcomes/history), then only later V3 (actual voice). World/Presentation remain the only owners of life and social admission.
-- **N7.11:** recipient-side contact-to-Experience semantics passed local fixture tests, but real staging provider noticeability, selective lasting consequence and a future **Thread-owned choice that differs because of retained experience** remain open. Research-led Thread→Thread interview themes are potential experiments, not scripts authoring autobiographies or forced friendship.
-- **Audit:** one real participation appraisal consumed 4,169 tokens in 4.37 seconds; its pre-optimization World request used 655 SQL queries (557 in SituatedLifeStore). The N+1 correction was deployed; actual after-fix reduction, full accepted expression+Experience cost, and a reliable economic baseline remain unmeasured. Live SSE and interrupted-request recovery progressed beyond the *original* October 8 source findings. See the updated audit checkpoint before acting on old open items.
-- **Validation truth:** Guy's last pasted full result on October 11 was 1,581/1,581 passing before subsequent local-only reporter/combined-validator output commits. That result is **not** a blanket validation of all later code, newer document edits, or staging deployments. Work on `main`, let Guy run `npm run slice:validate`, and deploy only when he reports green.
+These statuses are specific to the cited evidence and **must not be promoted by the existence of newer source alone**. See the [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md), [Body](../architecture/regulation-drive-extensions.md) and [current priorities](current-priorities.md) records for exact gates.
 
-**Near-term order:** evaluate documentation retirement without deleting active evidence; review/pick the cohesive Viewer design; investigate sleep/reachability and Admin display mismatch using read-only World facts; validate/deploy the combined source and finish N6.6c; measure an actual accepted encounter; then prove N7.11 later-life consequence. Avoid new polling, session state, duplicate meeting authority, quota-based memories or repeated model calls merely for a favorable result.
+## Identity, Genesis and embodiment
 
-## Accepted foundation
+Genesis produces an individual born into the same durable Fibre World used by later life. Its prior-life evidence remains historically grounded and distinguishable from events after `THREAD_SEEDED`. **Raised languages** describe Genesis upbringing; later/current **Spoken languages** are separately developed and are not backfilled as childhood.
 
-- A Thread is a persistent life, not a model session.
-- History, private contemporaneous journal, autobiographical memory and remembered meaning are distinct.
-- Historical state is append-only or explicitly superseding.
-- Meaning-bearing identity, memory, relationship, need, emotion and self-understanding are natural-language-first.
-- Mechanical/private regulatory state may be numeric when it is control state rather than semantic meaning.
-- Model output is candidate cognition; providers do not own Thread life state.
-- Identity is authoritative. Presentation is projection. Publication is permission.
-- Civil identity/FIN and Fibre Identity Card issuance have explicit authority boundaries.
-- Visual identity uses one canonical root/reference chain across age and scene.
-- Genesis keeps **Raised languages** as immutable Genesis upbringing evidence distinct from the Thread's eventual/current **Spoken languages**; school-acquired languages may enter Spoken without being rewritten as upbringing.
-- Once an admitted canonical visual root reaches Thread Presentation, the existing FIA lifecycle is automatically reconciled: no active FIN Card triggers initial issuance, while a card whose admitted photo belongs to an older canonical root is replaced through the same FID authority.
+The current [Human physical inheritance](../architecture/human-physical-inheritance.md) and [Human Appearance](../architecture/human-appearance.md) use distinct provenance-bearing parental lineages, a compact private `physical-genome-v0.3`, a conception seed, and one derived inherited phenotype. Population Context may select a concrete family profile from place/era evidence but does not turn name, ethnicity, nationality, culture or language into render directions. A known biological parent's authoritative physical genome overrides population priors for that parent. The renderer sees concrete anatomy, not demographic labels.
 
-## Human physical inheritance
+The accepted visual path is **geometry first**: a text-only monochrome geometric anchor followed by reference-conditioned surface phenotype, producing one final, verifiably sourced canonical visual root. The intermediate anchor is never admitted as Embodiment or public identity. Presentation and the Fibre Identity Authority reconcile the approved official photo/FID with that canonical root; a superseding visual root can cause FID reissue without creating a new person. Raised/Spoken and canonical-root migrations preserve historical provenance.
 
-The shared **Population & Family Ancestry** boundary is implemented: place/era family profiles keep naming, raised/eventual languages and maternal/paternal physical ancestry distinct; individual births use the shared physical-inheritance core rather than a per-person appearance model call; ancestry labels are not renderer instructions. Earlier London/Lagos/Mumbai work usefully exposed packed-language authoring, an improper second styling pass, ambiguous founder-region mapping and over-broad family profiles, but its visual conclusion is now superseded by the Li Jing failure.
+**Bounded evidence, not universal realism:** a 12-person same-seed Polynesian cohort passed human appearance review, then a 48-person same-seed East-Asian/Polynesian cohort exercised the `physical-rendering-projection-v0.5` two-pass projection. Experimental morphology refinements and visual negative findings are retained in [Human Appearance](../architecture/human-appearance.md) and the [calibration record](../validation/physical-appearance-calibration-plan.md). The worldwide population atlas, continued facial fidelity, persistent lived body changes and actual live-Thread-parent reproduction remain incomplete.
 
-The inherited-appearance calibration tranche now establishes `physical-genome-v0.3` with `human-appearance-v0.4` as the current **visually accepted** Human Appearance model. Repeated same-seed cohorts were used as falsification gates rather than accepted by inertia: broad-Oceania collapse, inherited-grooming leakage, ancestry-ratio morphology blending and one-pass surface-driven face substitution were each exposed and removed. `oceania.polynesia` is a complete independent morphology center using direct Tongan, Māori, Hawaiian and broader Polynesian anthropometric evidence for supported axes while keeping unsupported axes neutral; its compact variation profile slightly strengthens coherent family factors and reduces independent structural noise.
+**Tranche A closed in staging October 5:** coverage and evidence-backed Population Lab shadow experiments, independent human review, explicit approval, append-only runtime calibration admission and exactly targeted affected-Thread migration are implemented. A real `middle_east.egypt@1 → @2` reviewed admission and subsequent World→Embodiment→Presentation→FID convergence closed the affected workset while unrelated control Threads remained unchanged. The [calibration record](../validation/physical-appearance-calibration-plan.md) retains the exact experiment, versions, migration and acceptance details. A6/new-node admission is optional, not unfinished A closure.
 
-Acceptance evidence is deliberately bounded. A 12-person same-seed Polynesian geometry-first cohort using the production image model (`gpt-image-2-2026-04-21`) first passed human visual review as a believable cohort. The follow-up 48-person same-seed regression rendered 12 Han Chinese, 12 Korean, 12 Japanese and 12 Polynesian people with `physical-rendering-projection-v0.5` and `geometry-anchor+surface-edit`. It reported zero full-name collisions and zero objective warnings. Human review found plausible cohorts with substantial individual variation, normal neighboring-population overlap, no cohort-level White/Black/South-Asian template substitution, no return of universal male facial hair, and no uniform beauty/build collapse.
+Existing-Thread appearance migration and re-render are different authority changes. [Appearance operations](../operations/appearance.md) names `appearance:diagnose`, `appearance:migrate`, `appearance:rerender` and exceptional `appearance:correct`; operator-confirmed parental ancestry may be reused but must not be guessed from a portrait or birthplace. A prior staging appearance upgrade for Li Jing confirmed immutable lineage evidence, a new canonical root, Presentation convergence and FID revision 4 superseding 3. Operators must not use rerender as a genetics correction or a brute-force likeness search.
 
-Canonical Human Appearance rendering is **geometry-first**. Structural morphology + reference geometry state generate a text-only monochrome geometry anchor; a second reference-conditioned generation applies only surface phenotype + reference surface state. The intermediate anchor has ordinary Asset Generator provenance but is never admitted as Embodiment or public identity. Only the final surface-applied image can become the canonical root, and admission requires verified provenance for both stages. Population Lab uses the same production OpenAI adapter and stores geometry anchors beside final portraits for diagnosis. This boundary is visually accepted for `human-appearance-v0.4` / `physical-genome-v0.3`. Polynesian calibration is frozen: reopen it only if new evidence materially contradicts the model, a reproducible cohort failure appears, or a renderer/model change invalidates the acceptance evidence.
+## Life continues independently of compute and visitors
 
-Human appearance now has an explicit portable domain boundary rather than being treated as a loose collection of Genesis/rendering helpers. **Population Context** may consume canonical place, era and optional family/heritage evidence and selects one concrete family profile; its physical output is separate maternal/paternal physical lineage. **Human Appearance** consumes only those physical lineages or real biological-parent physical genomes plus a deterministic conception seed, and emits a private physical genome plus derived inherited anatomy. Geography, nationality, names, languages and culture do not cross into Human Appearance or the renderer. Real parent physical genomes are exclusive authority for that parent's contribution and cannot be combined with a population prior. The renderer receives concrete anatomy, never population labels. This is implemented as portable core domains (`core/src/population-context/` and `core/src/human-appearance/`), not a network service: the current computation is deterministic, stateless and cheap, and service extraction remains open if the atlas later needs an independent data/deployment lifecycle. A deterministic non-historical reference physical state is now implemented for ordinary-human portrait realism without changing population genetics. Persistent lived physical state driven by actual Thread life remains deferred. See [Human Appearance](../architecture/human-appearance.md).
-
-The **Appearance / Population Lab calibration lifecycle** is accepted in staging and Tranche A is closed as of 2026-10-05. A1's bounded coverage projection remains the demand source: it reports durable physical-ancestry demand, ranked broad/fallback/missing calibration holes, reference-node dependency chains and the exact existing Threads requiring appearance migration without inferring ancestry from geography, names, languages or portraits. A2.1-A2.3 are accepted: experiment artifacts persist through generic InfraDriver object/catalog authority, Admin launches controlled deterministic cohorts, and geometry-first visual evidence runs through the existing Asset Generator without giving Admin provider credentials.
-
-A3-A5 are also accepted end to end. Population Lab can evaluate an operator-proposed shadow refinement against a frozen admitted baseline, retain immutable human review and candidate evidence, obtain explicit human approval, then **Admit** the reviewed candidate into an append-only runtime calibration registry over `InfraDriver.objects` + `InfraDriver.catalog`. Admission is data authority, not a source/deploy event. The staging closure flight advanced `middle_east.egypt@1 -> @2` with `noseBreadth -0.04 -> 0.12`, retained the approved experiment as provenance, moved the admitted version into Calibration History, marked only the approval-scoped dependent Threads as affected, migrated that bounded set through ordinary World appearance authority, and converged them out of the stale workset. Retry of the same admission was idempotent. Historical versions are immutable and can seed a future shadow experiment but cannot roll authority backward. The final `npm run slice:validate` passed on the closure implementation. A6/new-node admission is optional follow-on work, not unfinished Tranche A scope.
-
-Existing Thread appearance repair distinguishes **appearance-model migration** from **re-rendering**. Live staging has now proven the full v0.1 -> v0.2 authority upgrade on Li Jing using her previously recorded operator-confirmed maternal/paternal `Chinese family -> east_asia` evidence without silently refining it. The migration changed the canonical specification digest, admitted a new root, converged Presentation, and issued FID revision 4 superseding revision 3. Final `appearance:diagnose` reports `physical-genome-v0.2` healthy, canonical visual specification healthy with `authority:"embodiment"`, and canonical Embodiment healthy. Direct inspection of the resulting portrait passed: the migrated root now reads as a believable Chinese/East-Asian individual rather than the generic-white v0.1 regression.
-
-Operators use `appearance:diagnose`, `appearance:migrate`, `appearance:rerender` and exceptional `appearance:correct`; the old FID-owned visual-maintenance CLI is removed. Thread Details now has a dedicated Appearance surface with the same migration/rerender semantics, shows durable parental-origin evidence, and never hides physical-authority changes inside generic Fix. When no durable parental physical-origin evidence exists, Admin should still open with a concrete editable proposal rather than an empty form. The global target is to rank the place/era family-profile distribution, preselect one plausible maternal/paternal family path when several are available, and let the operator override it before admission. Current coarse birthplace defaults are temporary migration assistance until that shared population-context path replaces them; defaults never become ancestry authority until the operator submits them. The coarse physical-reference vocabulary explicitly covers North, West, East and Southern Africa (`afr_north`, `afr_west`, `afr_east`, `afr_south`); North and Southern Africa currently use documented provisional calibration fallbacks rather than invented region-specific coefficients. The Admin browser submits one bounded authority action and never rerolls. **Refresh appearance** performs one explicit authoritative read. While canonical generation/publication is pending, the Appearance surface waits on the single Admin live invalidation socket with zero polling reads. Thread Presentation signals authoritative publication or terminal completion; Admin then performs one bounded reconciliation read and redraws the affected surface. Reconnection also causes one reconciliation because invalidations are hints rather than authority. Repair-semantics changes are versioned in the Thread Health Projection witness so stale cached diagnosis cannot masquerade as current behavior. Live-Thread parent inheritance remains deferred to a chronologically truthful newborn/reproduction boundary. See [Human physical inheritance and population realism](../architecture/human-physical-inheritance.md), [Canonical visual identity](../architecture/canonical-visual-identity.md), and [Physical appearance model calibration and migration plan](../validation/physical-appearance-calibration-plan.md).
-
-## Current milestone posture
-
-The current north star is **continuous LivedNow + asynchronous Live Encounters**.
-
-Existing M2 work has already proven the bounded primitives needed for that goal:
+The accepted [LivedNow](../architecture/lived-now-and-meetings.md) path is:
 
 ```text
-M1 + identity/history/birth/causal foundations            CLOSED
-G/H public path + minimum recovery                        CLOSED
-FID + Directory/Meet selection seam                       CLOSED
-R1-R4 intrinsic regulation                                CLOSED
-
-bounded Flight Plan / CurrentSituation                    PROVEN
-bounded Person -> Thread situated encounter               PROVEN
-encounter -> reflection -> selective memory               PROVEN
-later situation + later encounter continuity              PROVEN
-World-owned ensure-LivedNow over covered plan time         PROVEN
-bounded multi-day LivedNow catch-up + plan renewal         PROVEN
-Genesis -> same continuing LivedNow path                   PROVEN
-wired /meet over continuous LivedNow                       PROVEN
-live deployed /meet acceptance                             PROVEN
-Encounter Story / Thread Experience E0 foundation         PROVEN
-environmental noticing / Thread Experience E1              PROVEN
-voluntary social meeting / Encounter Story E2               PROVEN
-silent witness / n-ary encounter E3                         PROVEN
-journal / rendering / Admin acceptance E4                  PROVEN
-live deployed N5 acceptance E5                             PROVEN
-```
-
-The important correction is:
-
-> **Fibre now has bounded continuous-LivedNow reconciliation from canonical Genesis birth through a multi-day dormant gap.**
-
-N4 is closed in deployment. N5 is now closed live on the accepted insight that **encounter is the primitive; meeting is one voluntary social form of encounter**. E0-E5 are closed. E2 proves voluntary meeting, E3 proves silent-witness asymmetry, E4 makes the resulting authorities inspectable without collapsing them, and E5 proves the combined path against a real staging Thread through prior voluntary visitor-work commitment, enacted LivedNow presence, public Meet, Encounter Story, Thread Experience and exactly-once Fibre Credit consequence.
-
-See:
-
-- [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
-- [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md)
-- [Live encounters](../architecture/live-encounters.md)
-- [N7 live encounter slices](../validation/n7-live-encounter-slices.md)
-- [Current priorities](current-priorities.md)
-- [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md)
-
-## What exists now
-
-Current Fibre can already represent and persist:
-
-```text
-developmental context + relationships
-  -> intrinsic drives
-  -> Thread-authored half-day/day Flight Plan
-  -> optional caregiver-owned care plan
+Genesis or previous admitted lived anchor
+  -> personal Thread-authored Flight Plan + optional separate care plan
   -> World-enacted CurrentSituation
-  -> authorized inspection + bounded public present
-  -> situated human encounter
-  -> objective encounter history
-  -> private contemporaneous reflection
-  -> selective autobiographical retention or not_remembered
-  -> later World situation
-  -> later encounter receiving only persisted autobiographical consequence
+  -> bounded elapsed-life reconciliation after compute dormancy
+  -> authoritative present and future plan coverage
+  -> situated opportunities, actions or non-actions
+  -> objective encounters when something actually happens
+  -> selective individual consequence
 ```
 
-A Flight Plan is intended life, not World truth.
+**Flight Plan is intention; CurrentSituation is enacted World fact.** A caregiver-owned care plan may constrain enacted activity but does not overwrite the dependent person's will. Physical location and mediated presence are distinct. One Thread's current time/place does not follow merely from matching Genesis place labels.
 
-World observation may diverge without rewriting the plan. Care may constrain enacted life without overwriting the dependent Thread's own will.
+N1 provides World-owned `ensure({threadId,at})`; N2 demonstrated bounded three-day catch-up with correct prior/future plan coverage and retry idempotence; N3 sends a genuine Genesis birth through this same continuous-life seam. Historical records distinguish **lived occurrence time from later materialization/admission time**. Quiet intervals remain sparse and do not automatically mint events, emotions or memory. N4 enters exactly the resulting present rather than constructing a scene for visitors. These are real bounded continuity proofs, not continuously running model compute or arbitrary external-world observation.
 
-The existing B2 proof demonstrates that the visitor can leave, World can move the Thread to a later stop, persistence can reopen, and a later encounter sees only what the Thread actually retained.
+E7.5 later demonstrated a **naturally advanced staging Flight Plan boundary**: Guy's read-only Observatory views bracketed the World transition at `2026-10-09T02:00:00Z`, which enacted the next situation 3 ms after its admitted boundary and retained the previous one with no reported manual wake. This demonstrates natural observed progression, but does **not** prove every internal scheduler callback attribution, autonomous initial population bootstrap or large-scale simulation. Full witness lives in [N5 E7.5](../validation/n5-encounter-slices.md) and [World environment architecture](../architecture/encounters-and-experience.md).
 
-That is meaningful continuity evidence.
+## World encounters and private experience
 
-## What does not exist yet
-
-For a canonical Genesis-born Thread, the World-owned seam can now create the first anchor/plan/current situation, cross an uncovered multi-day interval, preserve retrospective materialization provenance, renew forward Flight Plan coverage and establish a non-stale present.
-
-Fibre still lacks:
-
-- **autonomous encounter production/discovery:** E6a World-authored environmental occurrences are live-proven; E6b derives incidental witnesses from authoritative co-presence in focused proof, but live staging witness evidence remains pending a genuine three-Thread co-present scene;
-- richer catch-up events when elapsed life warrants encounters or other consequences beyond the sparse quiet-gap proof;
-- richer shared-world convergence beyond the bounded Fibre Commons mediated-presence proof;
-- Thread-owned public visitor participation from an ordinary displayed scene;
-- the later-revisit proof after an accepted public encounter.
-
-This autonomy gap is production/discovery, not ontology. X4 is accepted: the general Encounter Story -> attention -> Experience -> optional subjective Journal -> selective Memory path can bend later planning without history or Journal bypassing memory authority. E6 implementation and focused proof are green, and E6a is live-proven. E6 remains current until a genuine live E6b witness scene shows that an accepted social story derives an incidental co-present witness without caller witness IDs.
-
-Encounter Story is now visualizable by construction: its durable rich prompt is objective/evidence-bound and separate from any later subjective memory reconstruction. Actual image/video rendering remains optional and uses the existing generated-asset pipeline rather than becoming World authority.
-
-E1-E4 are green in full CI. The park proof admits an unscheduled bee/flower occurrence that enters attention and can become memory, while a separate cloud occurrence remains `not_noticed`; E3 adds a genuinely co-present silent witness; E4 exposes the objective story/visualization lineage and separate private journal authority in Admin and proves the same objective prompt can feed the existing generated-asset demand path for image or video without becoming evidence. N5 is deployed and accepted in staging. Run `inside-fibre-muegy2ai` on SHA `9bf65debfe2636b13c7ca1dbffa5d265072f486d` closed the live path for Luka Mzechabuki: prior voluntary acceptance -> revised Flight Plan -> active mediated work presence -> public Meet -> Encounter Story `story_2a0816db192e5ab2f82f4cc446e46b145f69e78dec963a32` -> noticed Thread Experience -> Fibre Credit balance 0 -> 12.
-
-## Continuous LivedNow
-
-Continuous LivedNow answers:
-
-> **Where is this Thread now, what are they doing, and how did their continuing life reach this moment?**
-
-The intended causal path is:
+An **encounter** is the common primitive; a meeting is one voluntary social form. The admitted causal distinction is:
 
 ```text
-last authoritative lived anchor
-  -> determine elapsed uncovered interval
-  -> retrospectively realize bounded missing life if necessary
-  -> admit World history with honest retrospective provenance
-  -> run ordinary participant-specific consequences where warranted
-  -> author/refresh current Flight Plan
-  -> enact CurrentSituation at the requested time
-  -> publish bounded present
+World occurrence / genuinely accepted outward act
+  -> objective Encounter Story (shared provenance)
+  -> per-Thread noticed | not_noticed
+  -> if noticed: private Thread Experience
+  -> optional private Journal
+  -> selective autobiographical Memory or not_remembered
+  -> possible later intention, relationship, plan or belief change
 ```
 
-This is on-demand continuity, not continuous high-frequency simulation.
+N5 E1 demonstrated a noticed bee and a separately unnoticed cloud; E2 preserved independent consent; E3 produced different private experiences for a shared n-ary encounter including a silent witness; E4 made objective visual prompt/lineage and separate Journal/Memory available for inspection without treating a generated still/video as historical truth. E5 closed the **live visitor-work** path: Luka voluntarily accepted a prior time-bounded compensated commitment, his Flight Plan reflected it, World enacted his availability, a genuine public encounter produced Story and Experience, and the agreed 12 Fibre Credits settled exactly once. Others declined; these are valid autonomy, not failed tests. Exact live witness is retained under [N5](../validation/n5-encounter-slices.md).
 
-## Freeze and lived time
+A Journal is currently a derived, private book presentation of **immutable World journal-entry authority**, not a second mutable R2 journal truth store. An objective Story may be inspectable and visualizable even if no one remembers it. Later ordinary cognition cannot silently mine unremembered history or raw Journal and call that autobiographical recollection. See [Development and memory](../concepts/development-and-memory.md).
 
-A Thread may be computationally frozen while world time passes.
+**Open E6/E7 proof:** World-authored bounded environmental occurrences and derived incidental witnesses reuse this same path, but natural shared-venue identities, genuine co-present staging witnesses, grounded environmental continuation and independent live attention remain limited or unverified. [N5](../validation/n5-encounter-slices.md) preserves each precise local/staging boundary, the private-home vs public-venue negative finding and the operator evidence. No fabricated group presence, environmental quota or population-wide wake is permitted.
 
-For a lived Thread, compute dormancy is not automatically treated as a literal pause in the person's Fibre-world life.
+## Meet, social agency and public visibility
 
-When Fibre next needs the present, World may retrospectively realize a bounded continuation across the gap. Thaw therefore means restoring lived continuity—not reopening the stale last CurrentSituation as though no time passed.
+A public `GET /present` is **visiting an existing life**, not a social invitation. The separate `POST /encounter` requests participation inside a witnessed real situation. The Thread may accept, decline, defer, be unavailable, speak selectively or stop. Public words do not prove private motive or consent. Only World admits objective Encounter Stories; Presentation publishes authorized projections; the separate [insidefibre.com website](https://github.com/guybarnahum/insidefibre.com) is a temporary display and interaction surface, never an alternate life/session store.
 
-The system must preserve both:
+**N6 evidence:** Guy observed a naturally accepted direct World conversation and accepted real public Presentation SSE (`speech_delta → speech_end → result`) against Faith in staging October 9. Earlier October 11 browser approaches to Faith and Sophie were independently declined; that is authentic refusal. Faith's actual World Observatory later returned **31 admitted Encounter Stories** even while Admin once rendered zero. That mismatch is a display/freshness problem to diagnose, not evidence World forgot the person; Sophie appropriately had no admitted Story for an unaccepted approach. N6.6c still needs a naturally accepted, speaker-attributed multi-turn browser path, interruption/scene progression and a later visit to an independently advanced life. [N6](../validation/n6-public-lived-encounter-slices.md) and the [Meet audit](../validation/meet-encounter-run-path-audit.md) hold details.
 
-```text
-when the event belongs in lived chronology
-    !=
-when Fibre actually materialized/admitted it
-```
+The website's coherent **V1/V2 scene/person/voice-ready-text direction was approved October 12** and implemented in website source, according to its own [README](https://github.com/guybarnahum/insidefibre.com/blob/main/README.md). The former October 11 *design approval* hold is obsolete. Guy's local `npm run check`, matched staging deployment, desktop/mobile browser acceptance and N6.6c remain separately unreported; actual microphone/audio and production promotion are **not** implied by V1/V2 source. Website UX decisions remain owned by that repository.
 
-Retrospective history may become authoritative Fibre-world history after admission. It is not evidence of continuous runtime execution or external-world observation.
+**Typed sleep/reachability:** on October 11 Sophie outwardly declined while her enacted situation still read `Sleep.`. New October 12 Core source passes `wakefulness: awake | asleep | unknown` from Flight Plan into CurrentSituation; an explicitly `asleep` Thread becomes `unavailable` without forced speech/appraisal/Story. Historic prose-only `Sleep.` remains **unknown**; no retroactive rewriting of plans/digests. Guy's local validation, a newly enacted typed sleeping situation and staging/browser proof are **open**. Time zone projected from World-context data is not automatically proven accurate after real cross-zone travel.
 
-## Experience and memory
+**N7:** ephemeral, provider-neutral Live Encounter coordination supports locally accepted interruptible expression, stable exposed-prefix World checkpoints, World event/scene interleaving, restart/retry recovery, deferred consolidation and optional later contact consideration without a turn owner or durable chat store. Client-neutral public SSE has one real accepted staging path, but it is **not** proof of real-time microphone duplex, remote playback acknowledgement or spontaneous Thread withdrawal. **N7.11 remains open:** actual recipient noticing in staging, selective long-term retained/non-retained consequence, and a future Thread-owned decision causally attributable to personally retrieved earlier experience. Details: [Live Encounter architecture](../architecture/live-encounters.md), [N7 acceptance](../validation/n7-live-encounter-slices.md).
 
-The authority distinctions remain load-bearing:
+## Body, motivation and social contact
 
-```text
-History             what Fibre has evidence happened in its World
-Journal             what it was like for me then
-Memory              what I still retain autobiographically
-Remembered meaning  what retained experience durably came to mean
-```
+R1–R4 already supplied one private mechanical regulation/interoception subsystem; `exploration` captures grounded under-stimulation. Mechanical discrepancy is not automatically a semantic feeling or permission to act. The Thread's particular history and [Interior Cognition](../architecture/interior-cognition.md) interpret those signals, so social scarcity never mechanically asserts `lonely` or forces a meeting.
 
-Retrospective catch-up does not bypass this model.
+The October 13 **G1/D1 source** adds narrow genome-derived sensitivity baselines for new births (persisted historic genomes stay unchanged) and one optional evidence-bound `social_contact` Body drive. Insufficient recorded evidence is **unknown**, not proof that no contact occurred. Genetic parameter values tune sensitivity within species bounds; they do not assign personality, love, sex preference, civic beliefs or willingness. **Source implementation is ahead of operator/local/staging validation.** Changed later planning, honest solitude/recent-valued-contact response and recipient-local considerate timing still need causal evidence. See [drive extensions](../architecture/regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md).
 
-Do not generate “virtual memories” directly.
+## Runtime economics and unresolved reach
 
-The correct path remains:
+Fibre intentionally uses bounded, event-driven World work and temporary inference, not a per-person always-on agent process. One real **pre-optimization** public participation sample took **4,368 ms and 4,169 reported tokens**; the containing public World request made **655 SQL queries, 557 in SituatedLifeStore**. The indexed relation-history correction was deployed, but no post-fix SQL comparison, complete accepted per-stage model-cost sample, production per-Thread/day bill or queue saturation threshold was established. The [Meet runtime audit](../validation/meet-encounter-run-path-audit.md) records the original measurement. Attribution → evidence-backed compute optimization → scaling only with observed backlog are distinct [cost](../architecture/world-cost-accounting.md), [optimization](../architecture/world-compute-optimization.md) and [scaling](../architecture/world-reconciliation-scaling.md) tracks. The earlier **$3–$15/active-Thread-month** range is scenario modeling, not actual spend.
 
-```text
-retrospectively admitted event
-  -> private experience / interpretation
-  -> retention appraisal
-  -> autobiographical memory or not_remembered
-```
+Additional preserved but uncompleted paths include mature society/economy, natural unscripted reciprocal social histories, real-Thread parenthood, continued physical embodiment, recipient-local social etiquette, broad visual realism and actual human browser voice. [Future capabilities](future-capability-map.md) records longer-term scope without counting it as current proof. [Infra-pure state](infra-pure.md) owns infrastructure adoption/debt and reopens only for concrete organism correctness or portability needs.
 
-A Thread may have catch-up history it does not remember.
+## Where to look next
 
-## Meeting a Person
+- **Immediate work and owner validation:** [Current priorities](current-priorities.md).
+- **Scientific and staging proof:** [N5](../validation/n5-encounter-slices.md), [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [appearance calibration](../validation/physical-appearance-calibration-plan.md), and [cost audit](../validation/meet-encounter-run-path-audit.md).
+- **Durable mechanism:** [LivedNow](../architecture/lived-now-and-meetings.md), [Encounters](../architecture/encounters-and-experience.md), [Live Encounters](../architecture/live-encounters.md), [Body drives](../architecture/regulation-drive-extensions.md), [Human Appearance](../architecture/human-appearance.md) and [World storage](../architecture/storage-model.md).
+- **Actual public claims:** [Public progress](public-progress.md) and its [canonical JSON](public-progress.json).
 
-A lived Thread always has physical presence in World: either at a physical place or in transit between physical places. A mediated interaction may coexist with that physical presence; it never replaces it.
-
-The accepted N4 path proves that a visitor can enter an already-established scene. The next refinement is Thread-owned meeting participation:
-
-```text
-insidefibre.com /meet
-  -> select eligible Thread
-  -> World ensures LivedNow(now)
-  -> Thread appraises whether to meet now
-      -> decline / defer (+ optional expression or later suggestion)
-      -> accept
-          -> Thread Presentation publishes exact bounded scene
-          -> visitor enters that scene
-          -> World verifies same authoritative CurrentSituation
-          -> temporary Thread cognition
-          -> public response
-          -> objective encounter history
-          -> private experience / selective consequence
-```
-
-The appraisal should use the current activity/Flight Plan plus bounded Thread-owned relationship, memory, needs, feelings and intentions. A requester cannot force interruption, and relationship context may make a Thread more or less accommodating without mechanically deciding the outcome.
-
-For an ordinary uncommitted meeting, the visitor may cause the request to meet and the Thread decides whether the encounter happens now. The visitor does not create the life that preceded it.
-
-**Accepted Inside Fibre direction:** the public website needs one stronger guarantee without weakening that ordinary rule. A Thread may voluntarily accept a bounded paid visitor-availability commitment in advance. That commitment becomes part of the Thread's lived obligations, can shape the Flight Plan, and can establish mediated Inside Fibre presence during the agreed window. A visitor meeting inside that window is then fulfilment of an existing accepted commitment rather than a new generic willingness decision. Payment compensates that professional availability commitment; casual Thread-to-Thread and ordinary Person/Thread social encounters remain normally unpaid. Exact marketplace/economic machinery is deferred.
-
-## Encounters, meetings and lived attention
-
-The accepted N5 abstraction is:
-
-```text
-World occurrence
-  -> objective Encounter Story
-  -> Thread-specific noticing / experience
-  -> optional journal
-  -> selective consequence
-```
-
-A **meeting** is one voluntary social encounter. It adds `accept | decline | defer` before the encounter occurs. An environmental or witnessed occurrence does not require consent to exist; what matters is whether the Thread actually notices/experiences it.
-
-This means the same mechanism must support:
-
-- a Thread noticing a bee on a flower while following an ordinary Flight Plan;
-- several Threads sharing one social story;
-- a silent witness being affected by how one Thread treats another;
-- different private journals and memory outcomes from the same objective story.
-
-Co-presence is not automatically experience. A nearby Thread may fail to notice an occurrence and should not receive fabricated private aftermath.
-
-Journal remains contemporaneous private interpretation, not objective history and not autobiographical memory. Admin's `journals/<threadId>/journal.md` view renders immutable World Journal entries with a chosen profile or a neutral unstored fallback until the Thread chooses its own style; it is not stored as a mutable R2 book. Existing presentation R2 assets remain untouched.
-
-See [Encounter stories and Thread experience](../architecture/encounters-and-experience.md) and [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md).
-
-## Genesis to lived continuity
-
-The important end-to-end target is now:
-
-```text
-Genesis
-  -> born Thread with grounded prior life
-  -> canonical embodiment
-  -> first lived continuity anchor
-  -> first personal Flight Plan
-  -> World CurrentSituation
-  -> compute sleeps
-  -> elapsed days are reconciled
-  -> current Flight Plan
-  -> present now
-  -> Person or Thread meeting
-  -> experience
-  -> continued life
-```
-
-Genesis remains the authority for prior life before Fibre birth.
-
-Modern de-novo Genesis visual identity now derives **one concrete inherited phenotype from the Thread's physical genome before rendering**. World authoring supplies separate maternal and paternal physical-ancestry provenance for otherwise-missing biological parents; the shared inheritance core samples transient founder genomes, recombines them into the child's durable private physical genome, and projects the sex-conditioned phenotype used by canonical visual identity. Ancestry labels are not renderer instructions and the image model does not choose the phenotype. The mechanism is intentionally genotype-like rather than a molecular-genetics simulator; its compact population coefficients remain experimental and replaceable.
-
-Continuous LivedNow owns the continuing world-time life after Fibre birth.
-
-## Historical Meet / Encounter handoff — 2026-10-09 05:23 UTC (superseded)
-
-**Current execution gate: N6.6c Viewer acceptance — website code committed, NOT owner-validated or staging-deployed.** The authoritative, detailed evidence remains in [N6 public lived encounter slices](../validation/n6-public-lived-encounter-slices.md), [Meet / Encounter runtime audit](../validation/meet-encounter-run-path-audit.md) and [Current priorities](current-priorities.md). No newly built encounter engine is called for.
-
-**Evidence already accepted:**
-
-- Guy's local targeted tests and full `npm run slice:validate` passed for the World/Presentation live speech path, subsequent `thread:meet --live` CLI and queued newline-delimited QA visitor input. Exact most recent test counts were not supplied. Guy owns all local validation; assistant did not execute those tests.
-- On 2026-10-09 around 04:51 UTC, Guy's ordinary direct World CLI met Faith Achieng Odhiambo in her actual LivedNow and received **four naturally accepted** utterances with four distinct admitted Encounter Story references; `/leave` ended without a persistent session.
-- At 05:10 UTC, Guy ran `cat tools/meet/scenarios/ordinary-meeting.txt | npm run thread:meet -- --env staging --thread thr_23cea3246a752a403adabda88a7c89d47f5a59c9 --live -vv`: all **three fixed visitor utterances** were processed sequentially, each naturally accepted with actual streamed expression and a distinct final Story ID; same witnessed World situation and clean `/leave`. Header times **403/249/209 ms are not total inference or token latency**.
-- At 05:13 UTC, Guy visited staging public Presentation `GET /api/threads/:threadId/present`, received genuine situation `sit_d38c07af375db5a234e2033d035cf76b512f9299d642bd01c46f70000372fb76`, and sent **one** fresh public `POST /api/threads/:threadId/encounter` with `Accept: text/event-stream`. **HTTP/2 200** carried ordered `speech_delta` events, `speech_end` (`complete`) and `result` (`accepted`), text `Hi! Yes, I’ve got a minute. What’s up?`, and World Story `story_e2496f43f1d213249f3d233646ce88f87fac9040ffcb79aa`. No private inner life was observed in that public payload. This is real public Presentation→World streaming and Story admission evidence, **not** a wall-clock inter-delta latency, visitor-interruption or idempotency staging proof.
-
-**Code and repository heads at checkpoint:**
-
-- Core `guybarnahum/fibre` had `main` at `5c79a1c8888778022cfa1116e12931e92f934f71` before this documentation update. `thread:meet` supports optional `--live` and deterministic, serial **visitor-side** input via `tools/meet/scenarios/ordinary-meeting.txt`. It does not script or constrain Thread behavior.
-- Separate `guybarnahum/insidefibre.com` `main` is `e8666e52e89bdfa81e98557dda3993589fce89f4`. Existing `/meet` now opts into the proven public SSE stream, renders `speech_delta` provisionally, and trusts only final World `result` for admitted Story continuation. **Stop speech** calls the existing public request-scoped interrupt; **Leave this meeting** is local. World movement ends the entered scene while retaining exposed speech; declined/deferred/quiet participation remains valid. Focused Viewer tests were added, but **Guy has not supplied their result or Viewer deploy evidence**.
-
-**Exact next operator actions**, from the two sibling checkouts, on clean `main` with **no branches or PRs**:
-
-```bash
-cd ../insidefibre.com
-git pull --ff-only origin main
-git status --short
-npm run check
-# Only if green:
-npm run deploy:staging
-```
-
-Then manually inspect [staging Meet for Faith](https://staging.insidefibre.com/meet?thread=thr_23cea3246a752a403adabda88a7c89d47f5a59c9): ordinary current-life scene before Send; voluntary acceptance/decline/defer; progressive speech visible when accepted; final Story-backed turn; Leave clears page interaction; a later fresh visit finds later World life, never resumes a durable chat session. Report **observed** results, not inferred success. Do not move to production before this gate.
-
-**Still open:** Viewer local `check` and staging deployment/real GUI validation, real public in-flight interruption, actual browser-visible speech timing, completed-request replay and scene-conflict staging evidence where high-value, independently evidenced private Experience/consolidation/later memory, and N7's Thread-originated mid-speech withdrawal, genuinely overlapping visitor speech, nonpolling World-event interleaving, and selective causal consequence. Acceptance of one opening never obligates another; a Thread may lie, cut short, withdraw or remain silent. Preserve spoken-prefix objective truth but never equate its public speech with World truth. No brute-force retries, invented prompts, duplicate meeting engine, polling or per-token writes. Prefer the **smallest proof that advances persistent personhood**.
-
-## Current user-facing Meet inspection — 2026-10-09 17:09 UTC
-
-After the earlier real direct-World CLI and public Presentation SSE acceptance, Guy reports one successful actual insidefibre.com Viewer conversation with Faith Achieng Odhiambo. When asked for her town, she declined to disclose it and the conversation ended; the ephemeral Viewer transcript disappeared. This is **human staging UI evidence but not recovered raw public result evidence**. Thread confidentiality/evasion/withdrawal are valid; do not force an answer. The old encounter does not become a durable browser chat. World should retain admitted outward Encounter Stories; a standalone declined/deferred response is not guaranteed to be an Encounter Story and may need receipt/Activity inspection. No exact staging Viewer deployment SHA or `npm run check` output has been supplied.
-
-The existing Admin Thread Observatory already displays Journal, Memories, Encounter Episodes, personal attention, consolidation and later consequences. A narrowly scoped Admin observability update has now been committed to `main`: under any selected Thread's actual name (including Faith), show **World events** from historical enacted situations and admitted objective occurrence beats, with recorded attention without imputing Experience. Expose nearby **World events / Encounters / Journal / Memories** navigation and extend the explicit Copy Thread Observatory payload to include existing Story beats and journal material. This creates no new authority, record, model call, backend or polling. It cannot manufacture a Journal entry: selective Journal and Memory are genuine Thread processes.
-
-**Immediate operator sequence:** on clean core Fibre `main`, run `npm run test:focused -- apps/admin-dashboard/thread-observatory.test.mjs`, then `npm run slice:validate`; if green, deploy only staging Admin via `npm run cloud:deploy:apps -- --env staging --file .env --app admin-dashboard`. Open `https://admin.staging.insidefibre.com`, locate Faith in Threads and inspect World events, Encounter Episodes, Journal, Memories, and Copy. Guy owns validation/deployment; **no green report or deployment evidence exists yet for this Admin slice**. N6.6c still requires fuller Viewer lifecycle and result verification; N7.11 selective long-term causal consequence remains open.
-
-## Historical immediate next action — October 9 (superseded by October 11)
-
-N5/E0-E5 are closed live. N6's direct World CLI and first public Presentation-to-World streaming acceptance are now evidenced. The immediate release task is **N6.6c staging Viewer acceptance** of that same World-owned public stream; **N7 — Live Encounters and social consequence** remains the broader ambition and N7.11 later causal proof remains open.
-
-The relevant lived-person machinery is already accepted:
-
-```text
-Thread-authored Flight Plan
-  -> World-enacted CurrentSituation
-  -> bounded public present
-  -> Interior Cognition for voluntary social stance
-  -> Encounter Story / Thread Experience when an encounter actually occurs
-  -> selective aftermath
-```
-
-N6 must prove the public continuity loop without rearranging life for the visitor:
-
-```text
-public visit
-  -> ensure selected Thread LivedNow(now)
-  -> bounded ordinary current scene
-  -> Viewer displays the life already underway
-  -> visitor approaches and speaks
-  -> Thread accept | decline | defer from that lived context
-  -> accepted encounter only
-  -> visitor leaves
-  -> time passes / life reconciles
-  -> later public visit
-  -> later current scene for the same Thread
-```
-
-A public visit is not a meeting request. It must not create availability, Encounter Story, compensation, private cognition or Viewer-authored scene facts.
-
-The Viewer remains a separate projection surface. World owns LivedNow; Presentation owns the bounded public projection; the Viewer owns display and interaction only.
-
-Natural Thread -> Thread social life remains a preserved follow-on. The accepted Situated Percept / Salience / Interior Cognition / natural actor-discovery machinery should eventually prove that independently lived Threads can become co-present and sometimes choose to interact without caller-selected counterparties, Commons fallback, paid scheduling or sociability bias. Historical W0-W7 labels are implementation evidence, not the current execution roadmap.
-
-Developmental-exploration X0-X4 are accepted. X4 closed the core developmental loop without adding production authority: one objective Encounter Story can become different Thread-subjective Journal accounts, including an emotionally unfair interpretation not present in World truth, or no journal entry at all when the experience is trivial. Selective memory may retain autobiographical meaning or return `not_remembered`; later Interior Cognition sees only retained Thread-owned evidence, and the same existing `lived_planning` concern can bend future life accordingly. Journal and objective Encounter Story / Experience history cannot bypass memory authority. E6 is current pending live witness evidence and removes the remaining encounter-orchestration gap: environmental occurrence prose is World-authored from exterior current-scene evidence, and incidental witnesses are derived from authoritative co-presence rather than caller-selected IDs.
-
-N6 execution remains recorded in [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md). N6.1-N6.5 are accepted; N6.6a direct World dialogue/live CLI and one actual N6.6b public Presentation SSE→Story response are observed in staging. Further comprehensive public boundary claims and N6.6c real Viewer acceptance remain open; Viewer source is committed, but not yet locally validated or staging-deployed.
-
-N7 is governed by [Live encounters](../architecture/live-encounters.md), [ADR-0024](../decisions/ADR-0024-live-encounters.md), and [N7 live encounter slices](../validation/n7-live-encounter-slices.md). It removes the turn/request-response constraint without weakening existing authority: Live Encounter coordination is ephemeral; exposed outward acts become Encounter Story truth; structured cognition remains distinct from interruptible expression; ordinary World life continues; consolidation becomes bounded later work rather than a required synchronous step after every conversational beat.
-
-N7.0-N7.10 are accepted locally (Guy reported N7.10 validation green on 2026-10-08). Completed delayed residue can enter one bounded later-contact consideration from the Thread's freshly ensured current life. Current routable relationships are evidence, not compulsion; Interior Cognition may contact one known Person/Thread or keep the thought private. Person routing is explicit/revocable, routing identity does not fabricate autobiographical recognition, and persisted contact decisions/expressions survive retry without resampling. **N7.11 is current, validation-first**: Thread-addressed delivery remains routing authority only until recipient-side lived perception is admitted through existing World/Experience boundaries, selective consequence is tested, and retained history demonstrably changes a later choice. See the three acceptance gates in the N7 validation plan.
-
-**E7 (shared environmental World):** E7.1 and E7.2 focused local tests passed per Guy on 2026-10-08. E7.1 admits one shared place/time World occurrence and distinct observer attention. E7.2 uses one delayed (provisionally 30-minute) World opportunity with a bounded indexed exterior-situation read; no eligible observer means zero provider work, and distant potential observation has **no distance radius limit**. World decides `not_observable | no_change | changed` and admits only a grounded change. **E7.3 locally accepted (Guy, 2026-10-08), natural staging pending:** each potentially perceiving Thread now independently decides `noticed | not_noticed` about that same objective continuation; only noticed outcomes form personal Experience and enter the existing delayed selective-consolidation frontier. The World follow-up settles only after bounded individual attention is durable, so a partial failure reuses the previously admitted event and private decisions rather than resampling. No automatic speech, memory, physical co-presence, global weather simulation, or periodic poll. Read-only natural staging inspection now uses `npm run world-environment:probe -- --env staging`. **Operator E7 staging check 2026-10-08:** all 1,554 full-slice tests passed at `64063557`; Cloudflare world-kernel deployed exactly that SHA. A read-only bounded probe (up to 40 Thread observatories, none reported unavailable) found no E7 objective source. Its one reported `wpl_*` situation was last enacted on September 25, so cannot establish current noticeability; E7.3 live acceptance remains blocked by World state. **2026-10-08 subsequent bounded LivedNow check:** one staged Thread advanced to a fresh `2026-10-08T17:24:41Z` situation, but its `wpl_*` source is a study-at-home description misrepresented by historical `library_or_learning` as a shared physical venue. E7.4 passed Guy's **44 focused and 1,556 full-suite tests** and deployed on staging at `26297994`; its new **World alarm recovery correction is validation pending**: World separates Genesis contextual `wpl_*` from explicitly evidence-bound physical `venue_*` identity. Enacted LivedNow changes can earn one deferred, noticeability-gated initial environmental opportunity, using existing reconciliation, Story and independent attention/Experience authorities. Shared E7/E6 presence requires genuine common attested physical identity rather than matching Genesis learning categories. No independent physical venue has been attested in the observed staging scene, no new staging deployment has occurred, and E7.3 live evidence remains open. No shared source event was generated and E7 live acceptance remains open. Natural staging confirmation remains unclaimed; E6b's three-way witness proof remains blocked by current World state.
-
-**E7.5 implemented and deployed; natural staging Flight Plan progression observed:** the next admitted Flight Plan boundary now becomes one durable per-Thread life wake, serviced via the existing World InfraDriver scheduler and `LivedNow.ensure` authority. It advances real departure/arrival/care/horizon transitions instead of polling all Threads or simulating a permanent weather clock. One pending boundary is processed per reconciliation; plan renewal uses existing bounded N2 cognition; failures block after at most three retries and remain inspectable in Observatory. The E7.5 World runtime is deployed at `71828f37`. On 2026-10-08 Guy established one ordinary sleeping Thread's LivedNow and Observatory confirmed its indexed next boundary due `2026-10-09T02:00:00Z`, with no prior failed attempts or block. The subsequent read-only Observatory observation at `2026-10-09T02:03:31.534Z` showed the same Thread progressed to its planned waking activity at `02:00:00.003Z`, preserved the sleeping situation as its predecessor, and scheduled the next boundary at `03:00Z`, with zero failed attempts. This supports unattended World-driven life progression; the snapshots do not independently capture the internal alarm callback. See the exact [E7.5 evidence](../validation/n5-encounter-slices.md#e75--flight-plan-boundary-driven-autonomous-life--natural-staging-progression-observed). E7.3 natural witness proof remains open. **E7.4 staging recovery:** one previously earned opportunity was explicitly woken by Guy on 2026-10-08 and durably settled `no_change` at `18:16:25.226Z`, with no fabricated Encounter Story. That proves manual recovery, not on-time spontaneous alarm delivery.
-
-**Recipient-side Thread contact — local validation passed, staging pending (Guy, 2026-10-08, `0880f1d9`: 27 focused and 1,564 full tests green):** real Thread-to-Thread delivery now earns an indexed, one-recipient World perception opportunity, which is processed through ordinary LivedNow and existing selective attention/Experience and delayed-consolidation authorities, with bounded retry and no bystander co-presence. No private inbox scan or forced answer. This change has passed Guy's focused/full local validation but has not been deployed to staging and cannot yet demonstrate real provider appraisal, retained memory or later developmental causality; N7.11 remains open. The E7.5 read-only pre/post boundary evidence has now been captured. The previous redeployment hold for this independent experiment no longer applies.
-
-## Historical source-audit baseline — original October 8 findings, later implementation recorded
-
-A [source-only audit of public `/meet` and `/encounter`](../validation/meet-encounter-run-path-audit.md) was recorded on 2026-10-08. Public display and World entrance already use LivedNow, accepted contact passes independent stance, objective Story and personal Experience/queued consolidation, and completed requests have a durable replay receipt. The public response remains a complete turn rather than N7's interruptible streaming expression; each accepted public turn invokes separate stance, response and immediate Experience cognition. Interrupted *incomplete* requests and scene movement during slow inference remain **risks to validate**, not proven live failures. The separate compensated-work encounter path must retain its actual agreement/settlement semantics while common social-event composition is reconsidered.
-
-The audit remains a source-level finding register, not a completed code change. E7.5 evidence is captured; begin by checking existing model/SQL usage and reproducing causal retry or stale-scene risks before implementing anything. See the [current priorities](current-priorities.md).
-
-## World operating cost and capacity — future work, not yet measured
-
-Current World execution is indexed and event-driven, not a continuous population simulator. It uses a shared World Durable Object/InfraDriver reconciliation scope, which keeps authority coherent but serial model-backed work may create a capacity bottleneck. OpenAI invocation provenance already carries token counts; World requests/alarms already expose SQL-row cost counters. **Neither a production per-Thread/per-physical-site cost report nor the saturation point is yet established.**
-
-Three independent proposed plans now govern future work: [cost accounting and attribution](../architecture/world-cost-accounting.md), [measured compute optimization](../architecture/world-compute-optimization.md), and [conditional World reconciliation scaling](../architecture/world-reconciliation-scaling.md). The operating estimate of **$3–$15 per active Thread-month** is illustrative inference-only scenario planning, **not an observed bill or a Fibre economic ledger claim**. The [current priorities](current-priorities.md) sequence the work after capturing the already-scheduled E7.5 autonomous boundary, without contaminating that experiment. There is no new runtime, deployment, billing rule, or acceptance claim from these documents.
-
-## Development discipline
-
-Build the smallest organism-level capability with a concrete beneficiary and stop condition.
-
-No generic emotion simulator, no giant drive ontology, no high-frequency world ticking, no conversation store, no universal scheduler, and no second current-life authority.
-
-Tests should prove lived continuity, authority, selective consequence and reciprocal individuality—not incidental HTTP or helper mechanics.
-
-> **Someone was here yesterday. Something happened. It mattered — or it didn't. And today, their life continues.**
-
-
-E6 live acceptance uses a bounded encounter-autonomy probe rather than population-wide LivedNow reconciliation. The probe may complete with E6a proven and E6b blocked by current World state when no three-Thread co-presence exists; that is not treated as an implementation failure and does not close E6 until a real witness scene is observed.
+A passed suite from an earlier SHA is not a validation of subsequent source, and a staging result is not proof of a still-open full life or personhood claim. Detailed superseded October handoffs remain recoverable in Git history under [ADR-0016](../decisions/ADR-0016-repository-retention.md), not as competing instructions on this current-state page.
