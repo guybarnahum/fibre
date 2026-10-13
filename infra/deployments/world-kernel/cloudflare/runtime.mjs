@@ -36,7 +36,6 @@ import {
 
 const WORLD_SCOPE_ID = "world";
 const DEFAULT_RECONCILIATION_MS = 5_000;
-const RECONCILIATION_STATE_TABLE = "world_reconciliation_runtime_state";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
@@ -76,32 +75,6 @@ function reconciliationIntervalMs(env) {
     throw new TypeError("FIBRE_WORLD_RECONCILIATION_MS must be an integer from 100 through 3600000");
   }
   return value;
-}
-
-function createDurableRetryState(storage) {
-  storage.sql.exec(`
-    CREATE TABLE IF NOT EXISTS ${RECONCILIATION_STATE_TABLE} (
-      scope_id TEXT PRIMARY KEY,
-      retry_streak INTEGER NOT NULL CHECK (retry_streak >= 0)
-    )
-  `);
-  return Object.freeze({
-    async get() {
-      const rows = storage.sql.exec(
-        `SELECT retry_streak FROM ${RECONCILIATION_STATE_TABLE} WHERE scope_id=?`,
-        WORLD_SCOPE_ID,
-      ).toArray();
-      return rows.length === 0 ? 0 : Number(rows[0].retry_streak);
-    },
-    async set(value) {
-      storage.sql.exec(
-        `INSERT INTO ${RECONCILIATION_STATE_TABLE}(scope_id,retry_streak) VALUES(?,?)
-         ON CONFLICT(scope_id) DO UPDATE SET retry_streak=excluded.retry_streak`,
-        WORLD_SCOPE_ID,
-        value,
-      );
-    },
-  });
 }
 
 function closeAll(stores) {
@@ -183,7 +156,6 @@ export function createWorldCloudflareRuntime({
   });
   const worldStorage = Object.freeze({ infraDriver, stateScopeId: WORLD_SCOPE_ID });
   const worldStore = openWorldStore(worldStorage);
-  const retryState = createDurableRetryState(storage);
   let identityStore;
   let embodimentStore;
   let genesisStore;
@@ -317,7 +289,6 @@ export function createWorldCloudflareRuntime({
     process: reconciliationProcess,
     intervalMs: reconciliationIntervalMs(env),
     now: nowMs,
-    retryState,
   });
   const repairApi = createThreadGenesisRepairApi({
     repairService,
