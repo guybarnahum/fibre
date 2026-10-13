@@ -165,12 +165,23 @@ function legacyV1DeNovoUpgrade(database, row, threadId) {
     throw new IntegrityError(`symbolic genome ${row.genome_id} failed v1 aggregate digest verification`);
   }
 
-  const current = buildDeNovoSymbolicGenome({
+  const generated = buildDeNovoSymbolicGenome({
     threadId,
     genesisId:header.genesisId,
     values:loci.map((locus) => locus.value),
     createdAt:header.createdAt,
   });
+  // v1→v2 was defined before additional inherited Body traits existed.
+  // Replaying that historical migration must not invent new genetic alleles.
+  const runtimeBaselines=Object.fromEntries(
+    ["circadianPhaseOffsetMinutes","sleepNeedMinutes","regulatorRestSensitivity"]
+      .map((key)=>[key,generated.runtimeBaselines[key]]),
+  );
+  const current={
+    ...generated,
+    runtimeBaselines,
+    genomeDigest:symbolicGenomeDigest({ ...generated, runtimeBaselines }),
+  };
   const expectedLegacyHeader = {
     ...current.header,
     inheritancePolicy:{ ...LEGACY_SYMBOLIC_GENOME_POLICY },
