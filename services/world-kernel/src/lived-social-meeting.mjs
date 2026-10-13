@@ -17,6 +17,7 @@ import {
 import { projectSituatedPercept } from "./situated-percept.mjs";
 import { evaluateSalience } from "./salience-gate.mjs";
 import { livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
+import { projectInteroception } from "./interoceptive-cognition.mjs";
 
 const MEMORY_LIMIT = 6;
 
@@ -363,6 +364,7 @@ export function createSocialMeetingService({
           at:input.at,
           plan:livedNowStore.latestPlan(initiator.thread.threadId, "personal", { at:input.at }),
           situatedPercept,
+          interoception:regulationFrame===null?null:projectInteroception(regulationFrame),
           sourceStores:{
             worldStore:worldReader,
             identityStore,
