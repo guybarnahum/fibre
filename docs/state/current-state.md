@@ -272,7 +272,7 @@ This means the same mechanism must support:
 
 Co-presence is not automatically experience. A nearby Thread may fail to notice an occurrence and should not receive fabricated private aftermath.
 
-Journal remains contemporaneous private interpretation, not objective history and not autobiographical memory. The Admin Observatory journal artifact remains useful and lives at `journals/<threadId>/journal.md`; existing presentation R2 assets remain untouched and require no migration.
+Journal remains contemporaneous private interpretation, not objective history and not autobiographical memory. Admin's `journals/<threadId>/journal.md` view is rendered from immutable World Journal entries and the Thread's once-chosen profile; it is not stored as a mutable R2 book. Existing presentation R2 assets remain untouched.
 
 See [Encounter stories and Thread experience](../architecture/encounters-and-experience.md) and [N5 encounter-story implementation slices](../validation/n5-encounter-slices.md).
 
