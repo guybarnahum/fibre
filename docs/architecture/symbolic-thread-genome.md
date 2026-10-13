@@ -99,7 +99,7 @@ Developmental gating is separate from baseline magnitude. Reproductive/mating re
 
 See [`intrinsic-regulation.md`](intrinsic-regulation.md).
 
-**Drive extensibility (accepted plan, unimplemented):** [Extensible Body regulation](regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md) distinguish (1) adding a purely evidence-derived drive from (2) declaring an **actually heritable** numeric sensitivity. Current `core/src/intrinsic-regulation.mjs` can consume `regulatorSocialSensitivity`, but durable symbolic-genome generation currently defines `circadianPhaseOffsetMinutes`, `sleepNeedMinutes`, and `regulatorRestSensitivity` only. Do not claim social sensitivity is inherited without integrating and validating the existing genome authority. Future drive families do not automatically acquire genetic parameters, nor do numeric parameters become personality or consent.
+**Drive extensibility (G1/D1 source implemented, validation pending):** [Extensible Body regulation](regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md) distinguish (1) new evidence-grounded Body drives and (2) legitimately inherited quantitative sensitivities. New de-novo genomes now carry the existing rest, thermal, energy, sensory, presence, social and exploration sensitivity parameters within the species envelope. Recombination selects only actually present parental baselines; older immutable genomes retain their original genetic keys/digests and use species defaults for missing keys. Neither inherited sensitivity nor mechanical social deprivation means a named emotion, personality or consent. Guy's local/full and staging validation remain open.
 
 ## Recombination
 
