@@ -8,7 +8,7 @@ Use this index to load only the context needed for a task.
 
 Profiles follow evidence lifecycle:
 
-- `core` — current doctrine, lived-world vision, current state and active M2 authority;
+- `core` — bounded current doctrine, lived-world vision and M2 context; N7 validation detail is linked below for task-specific reading;
 - `request-processing` — appraisal, authorization, disclosure, affect and response behavior built on `core`;
 - `full` — broad current context plus selected historical/sealed evidence with continuing explanatory value.
 
@@ -30,7 +30,9 @@ Start with:
 8. `state/current-priorities.md`
 9. `validation/m2-pr-plan.md`
 10. `validation/n6-public-lived-encounter-slices.md`
-11. `architecture/intrinsic-regulation.md`
+11. `validation/n7-live-encounter-slices.md`
+12. `architecture/live-encounters.md`
+13. `architecture/intrinsic-regulation.md`
 12. `architecture/situated-perception-and-salience.md`
 13. `architecture/interior-cognition.md`
 14. `decisions/ADR-0020-vision-led-development-discipline.md`
@@ -54,7 +56,9 @@ N2 dormant interval catch-up                               closed
 N3 Genesis -> multi-day continuing life                    closed
 N4 Person -> Thread /meet                                  closed
 N5 Encounter Story -> Thread Experience                    closed live
-N6 Rich Public Lived Encounter                             current
+N6 public Viewer lifecycle                                  partially accepted; browser gate open
+N7 live-encounter substrate                                 N7.0–N7.10 locally accepted
+N7.11 recipient attention, memory and later choice            open
 ```
 
 The active architecture is:
@@ -64,6 +68,8 @@ The active architecture is:
 - [`architecture/encounters-and-experience.md`](architecture/encounters-and-experience.md)
 - [`validation/n5-encounter-slices.md`](validation/n5-encounter-slices.md)
 - [`validation/n6-public-lived-encounter-slices.md`](validation/n6-public-lived-encounter-slices.md)
+- [`architecture/live-encounters.md`](architecture/live-encounters.md)
+- [`validation/n7-live-encounter-slices.md`](validation/n7-live-encounter-slices.md)
 
 The E2E meeting remains an architectural forcing function, but meeting is no longer the primitive. When making an encounter real exposes a missing life primitive, build that primitive generally in World/LivedNow rather than faking it in the Viewer or hard-coding it to dialogue.
 
@@ -80,6 +86,10 @@ World reality + Thread-owned life
   -> later public visit
   -> later current scene
 ```
+
+## Current encounter acceptance
+
+N5 E0–E5 is closed live; [E6/E7 natural-world evidence](validation/n5-encounter-slices.md) remains separately open. [N6](validation/n6-public-lived-encounter-slices.md) has genuine staging World/API results but incomplete browser-lifecycle acceptance. [N7](validation/n7-live-encounter-slices.md) has locally accepted live mechanisms, while N7.11 recipient noticing, selective retention, and a later history-caused Thread-owned choice remain unproven. The [runtime audit](validation/meet-encounter-run-path-audit.md) preserves cost baselines and unmeasured post-fix deltas.
 
 ## Intrinsic regulation, emotions and needs
 
