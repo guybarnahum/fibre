@@ -6,7 +6,6 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
-import { formThreadJournalProfile } from "./thread-journal-book.mjs";
 
 const SYSTEM_PROMPT = `You are the private journal voice of one persistent Fibre Thread immediately after a lived encounter.
 The encounter already happened; do not rewrite its objective facts.
@@ -65,7 +64,7 @@ export async function internalizeLivedEncounter({
   if (activityRecorder !== null) requireMethod("activityRecorder", activityRecorder, "runStage");
   if (journalBook !== null) {
     requireMethod("journalBook", journalBook, "getProfile");
-    requireMethod("journalBook", journalBook, "append");
+    requireMethod("journalBook", journalBook, "ensureProfile");
   }
   const activity = Object.freeze({
     threadId: activeThread.threadId,
@@ -149,17 +148,11 @@ export async function internalizeLivedEncounter({
     let journalBookRecord = null;
     if (journalEntry !== null && journalBook !== null) {
       try {
-        const profile = journalProfile ?? await formThreadJournalProfile({ thread:activeThread, modelAdapter });
         journalBookRecord = await runActivityStage(activityRecorder, {
           ...activity,
           stage:"encounter.journal.book",
           evidence:{ eventId:historyEvent.eventId },
-        }, () => journalBook.append({
-          threadId:activeThread.threadId,
-          profile,
-          writtenAt:journalEntry.writtenAt,
-          entryText:journalEntry.entryText,
-        }));
+        }, () => journalBook.ensureProfile({thread:activeThread,modelAdapter}));
       } catch {
         journalBookRecord = null;
       }
