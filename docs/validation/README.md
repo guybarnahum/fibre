@@ -4,6 +4,16 @@ How Fibre tests, challenges, and proves its claims.
 
 `docs/validation/` contains the current validation instruments and concise accepted outcomes that still define Fibre's scientific or engineering standing. Placement here does not make a document canonical; frontmatter status and the governing acceptance contract remain authoritative.
 
+## Current proofs and open questions
+
+- [N5](n5-encounter-slices.md) — E0–E5 closed organism-level encounter evidence; E6/E7 natural-world follow-ons retain unresolved staging requirements.
+- [N6](n6-public-lived-encounter-slices.md) — public World/API proofs and the still-open real browser visit/encounter/revisit lifecycle.
+- [N7](n7-live-encounter-slices.md) — locally accepted live mechanisms and the open recipient noticing → selective history → later-choice proof.
+- [Meet runtime and cost audit](meet-encounter-run-path-audit.md) — bounded staging measurements and open post-fix cost evidence.
+- [Prototype roadmap](prototype-roadmap.md) — broad capability sequence, not the live execution ledger; use [current priorities](../state/current-priorities.md) for the latter.
+
+Scientific standing requires its named [rubric or sealed evidence](m2-standing-gate-rubric-and-evidence-map.md); implementation test results alone do not confer Whole-Person standing.
+
 ## Keep here
 
 - current acceptance and standing-gate definitions;
