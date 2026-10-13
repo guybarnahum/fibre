@@ -300,3 +300,40 @@ test("R1 sparse live evidence regulates only what Fibre actually knows", () => {
   assert.equal(frame.drives[0].attained, true);
   assert.equal(frame.intrinsicAffect.attainment, 1);
 });
+
+test("heritable social-contact pressure is distinct from under-stimulation", () => {
+  const input={
+    asOf:"2026-10-13T18:00:00Z",
+    contact:{observedUnmetHours:24,evidenceRefs:["sit_earlier","sit_now"]},
+    exploration:{novelty:0.9},
+    evidenceRefs:["sit_now"],
+  };
+  const low=evaluateIntrinsicRegulation({
+    perceptFrame:input,runtimeBaselines:{regulatorSocialSensitivity:0.85},
+  });
+  const high=evaluateIntrinsicRegulation({
+    perceptFrame:input,runtimeBaselines:{regulatorSocialSensitivity:1.15},
+  });
+  assert.ok(drive(high,"social_contact").pressure>drive(low,"social_contact").pressure,
+    "genetic social sensitivity has no Body consequence");
+  assert.ok(!low.drives.some((d)=>d.family==="exploration"&&d.pressure>0),
+    "lack of social connection was mistaken for boredom");
+  const stimulatedSocial=evaluateIntrinsicRegulation({
+    perceptFrame:{
+      ...input,contact:{observedUnmetHours:0,evidenceRefs:["interaction_reciprocal"]},
+      exploration:{novelty:0},
+    },
+    runtimeBaselines:{regulatorExplorationSensitivity:1.15},
+  });
+  assert.equal(drive(stimulatedSocial,"social_contact").pressure,0,
+    "recent reciprocal contact did not reduce mechanical deprivation");
+  assert.ok(drive(stimulatedSocial,"exploration").pressure>0,
+    "low novelty was incorrectly treated as social deprivation");
+  const unknown=evaluateIntrinsicRegulation({
+    perceptFrame:{asOf:input.asOf,evidenceRefs:["sit_now"]},
+  });
+  assert.ok(!unknown.drives.some(d=>d.family==="social_contact"),
+    "missing social evidence was invented as deprivation");
+  assert.equal(JSON.stringify(high).includes("lonely"),false,
+    "Body invented a named feeling instead of a drive");
+});
