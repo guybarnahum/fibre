@@ -399,9 +399,10 @@ export async function formPersonalLivedPlan({
     horizonStart: authoredAt,
     horizonEnd,
     stops,
+    // Plan authority cites World facts; private Body evidence stays in
+    // the planning concern, where it can affect choice without becoming authority.
     sourceReferences:[...new Set([
       ...sourceReferences,
-      ...(planningInteroception?.evidenceRefs??[]),
       ...selectedPlaces,
       ...workCommitments.map((item) => item.commitmentId),
     ])],
