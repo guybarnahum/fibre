@@ -213,6 +213,8 @@ export function createLivedExperienceTables(database) {
       ON encounter_story_records(occurred_at, encounter_id);
     CREATE INDEX IF NOT EXISTS idx_encounter_story_presence
       ON encounter_story_thread_presence(thread_id, encounter_ref);
+    CREATE INDEX IF NOT EXISTS idx_public_encounter_admission_thread
+      ON public_encounter_admissions(thread_id, encounter_ref);
     CREATE INDEX IF NOT EXISTS idx_public_encounter_receipt_thread
       ON public_encounter_receipts(thread_id, request_id);
     CREATE INDEX IF NOT EXISTS idx_social_interaction_initiator_time
