@@ -21,4 +21,3 @@ export * from "./driver.mjs";
 export { createCloudflareHealthPort, classifyCloudflareInfraError, extendCloudflareHealth, normalCloudflareCheck, probeCloudflareHealth } from "./health.mjs";
 export { createCloudflareSchedulerPort } from "./scheduler.mjs";
 export { sampleCloudflareResourceHealth } from "./resource-health.mjs";
-export { createLegacyThreadJournalReader } from "./legacy-thread-journal.mjs";
