@@ -8,7 +8,7 @@ last-reviewed: 2026-10-12
 
 ## Status
 
-Accepted planning decision. New social-contact deprivation regulation, full genetic propagation and considerate social-time projection are **planned, not implemented or validated** by this record.
+Accepted decision. **G1/D1 is implemented in source, not yet locally or staging validated:** the one Body now accepts a bounded evidence-backed `social_contact` drive, and newly generated genomes inherit the existing numeric regulator sensitivities. Historical genomes remain unchanged. Full future-drive generality, need-driven Flight Plans, considerate social-time projection and spontaneous encounters are still planned.
 
 ## Context
 
