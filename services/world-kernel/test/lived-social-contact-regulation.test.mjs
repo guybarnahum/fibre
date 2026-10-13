@@ -18,11 +18,17 @@ test("World-grounded lack of reciprocal contact changes inherited Body pressure 
     },
   };
   let interactions=[];
+  let humanMeetings=[];
   const experienceStore={
     listSocialInteractions(threadId,{limit}){
       assert.equal(threadId,last.threadId);
       assert.ok(limit<=8,"social evidence loaded an unbounded history");
       return interactions;
+    },
+    listAcceptedHumanMeetings(threadId,{since,until,limit}){
+      assert.equal(threadId,last.threadId);
+      assert.ok(since<=until&&limit<=8,"Human contact history was not bounded");
+      return humanMeetings;
     },
   };
   const assess=(baseline)=> {
@@ -51,6 +57,16 @@ test("World-grounded lack of reciprocal contact changes inherited Body pressure 
     "real reciprocal contact did not change the Body signal");
   assert.ok(!relieved.evidenceRefs.some(ref=>ref==="imagined_friend"),
     "Body sourced a fictional social encounter");
+  interactions=[];
+  humanMeetings=[{
+    encounterRef:"story_real_person_visit",
+    occurredAt:"2026-10-13T15:30:00Z",
+  }];
+  const humanRelieved=assess(1.15);
+  assert.ok(humanRelieved.pressure<relieved.pressure,
+    "real Human contact did not replenish social exposure");
+  assert.ok(humanRelieved.evidenceRefs.includes("story_real_person_visit"),
+    "Body lost the Human encounter's World provenance");
   assert.equal(socialContactEvidenceForLivedHistory({
     threadId:last.threadId,currentSituation:situations[0],livedNowStore,experienceStore,
   }),null,"missing lived coverage was mistaken for deprivation");
