@@ -125,7 +125,7 @@
 .thread-journal-book{position:relative}
 .thread-journal-cover{padding:13px 18px}
 .thread-journal-cover h4{font-size:19px;margin:2px 0 5px}
-.thread-journal-viewport{height:clamp(260px,44vh,420px);overflow-y:auto;scrollbar-width:thin}
+.thread-journal-viewport{height:clamp(260px,44vh,420px);overflow-y:auto;scrollbar-width:thin;scrollbar-gutter:stable}
 .thread-journal-measure{position:absolute;inset:0 0 auto;display:grid;visibility:hidden;pointer-events:none}
 .thread-journal-entry,.thread-journal-entry:first-child{padding:14px 18px;border-top:0;border-bottom:1px solid var(--border);overflow-wrap:anywhere}
 .thread-journal-prose{font-family:Georgia,"Times New Roman",serif;font-size:13px;line-height:1.6}
