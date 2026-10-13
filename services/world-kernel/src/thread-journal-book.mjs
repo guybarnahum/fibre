@@ -156,10 +156,10 @@ export function createThreadJournalBook({ storage, legacyReader = null } = {}) {
       const activeProfile = database.transaction(() => {
         const existing = stored(threadId);
         const selected = existing?.profile ?? normalizeProfile(profile, threadId);
-        const entry = `## ${displayTimestamp(writtenAt)}\\n\\n${entryText.trim()}\\n`;
+        const entry = `## ${displayTimestamp(writtenAt)}\n\n${entryText.trim()}\n`;
         const document = existing === null
-          ? `${HEADER_PREFIX}${JSON.stringify(selected)}${HEADER_SUFFIX}\\n\\n# ${selected.title}\\n\\n${entry}`
-          : `${existing.document.trimEnd()}\\n\\n${entry}`;
+          ? `${HEADER_PREFIX}${JSON.stringify(selected)}${HEADER_SUFFIX}\n\n# ${selected.title}\n\n${entry}`
+          : `${existing.document.trimEnd()}\n\n${entry}`;
         database.prepare(`
           INSERT INTO thread_journal_books(thread_id,document,document_digest)
           VALUES(?,?,?)
