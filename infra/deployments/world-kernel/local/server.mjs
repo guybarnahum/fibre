@@ -343,6 +343,7 @@ export async function startWorldKernelFromEnvironment(
   }
   let contactLivedNowModelAdapter=null;
   const contactLivedNow=createLivedNowService({
+        experienceStore:livedExperienceStore,
     onSituationResolved:scheduleNextLivedBoundary,
     onSituationEnacted:async(situation)=>{
       if(situation.location?.kind!=="place")return;
