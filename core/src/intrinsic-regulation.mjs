@@ -143,6 +143,17 @@ function normalizeExploration(value = {}) {
   };
 }
 
+function normalizeContact(value) {
+  if (value === undefined) return null; // Unknown is not social deprivation.
+  plainObject("perceptFrame.contact", value);
+  const hours=finite("perceptFrame.contact.observedUnmetHours", value.observedUnmetHours);
+  if(hours<0||hours>96)throw new TypeError("contact observedUnmetHours must be 0-96");
+  return {
+    observedUnmetHours:hours,
+    evidenceRefs:normalizeRefs("perceptFrame.contact.evidenceRefs",value.evidenceRefs),
+  };
+}
+
 function normalizeSocialCue(value, index) {
   const name = `perceptFrame.social[${index}]`;
   plainObject(name, value);
@@ -168,6 +179,7 @@ export function normalizePerceptFrame(value) {
     internal: normalizeInternal(value.internal ?? {}),
     environment: normalizeEnvironment(value.environment ?? {}),
     exploration: normalizeExploration(value.exploration ?? {}),
+    contact: normalizeContact(value.contact),
     social: social.map(normalizeSocialCue),
     evidenceRefs: normalizeRefs("perceptFrame.evidenceRefs", value.evidenceRefs),
   };
@@ -335,6 +347,21 @@ function basalDrives(percept, profile) {
       pressure:explorationPressure,
       urgency:explorationPressure,
       evidenceRefs,
+    }));
+  }
+
+  // Time-supported lack of observed reciprocal contact is a Body signal,
+  // never itself a feeling, semantic loneliness, or a consent decision.
+  if (percept.contact !== null) {
+    const contactPressure = Math.min(1, percept.contact.observedUnmetHours / 24)
+      * 0.65 * profile.sensitivity.social;
+    drives.push(drive({
+      family:"social_contact",
+      targetRef:"self:connection",
+      orientation:"approach",
+      pressure:contactPressure,
+      urgency:contactPressure,
+      evidenceRefs:[...new Set([...evidenceRefs,...percept.contact.evidenceRefs])],
     }));
   }
 
