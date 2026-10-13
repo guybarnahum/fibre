@@ -30,3 +30,22 @@ export function threadJournalPresentationModel(journal, authorityEntries = []) {
     authorityCount:authority.length,
   });
 }
+
+/** Pack whole journal entries into a fixed-height reading area. */
+export function packJournalPages(heights, pageHeight) {
+  const pages=[];
+  let page=[];
+  let used=0;
+  for (let index=0;index<heights.length;index++){
+    const height=Math.max(1,Math.ceil(heights[index]));
+    if (page.length && used+height>pageHeight){
+      pages.push(page);
+      page=[];
+      used=0;
+    }
+    page.push(index);
+    used+=height;
+  }
+  if(page.length)pages.push(page);
+  return pages;
+}
