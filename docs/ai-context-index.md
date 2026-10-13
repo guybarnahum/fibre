@@ -33,10 +33,10 @@ Start with:
 11. `validation/n7-live-encounter-slices.md`
 12. `architecture/live-encounters.md`
 13. `architecture/intrinsic-regulation.md`
-12. `architecture/situated-perception-and-salience.md`
-13. `architecture/interior-cognition.md`
-14. `decisions/ADR-0020-vision-led-development-discipline.md`
-15. the relevant architecture/ADR for the task
+14. `architecture/situated-perception-and-salience.md`
+15. `architecture/interior-cognition.md`
+16. `decisions/ADR-0020-vision-led-development-discipline.md`
+17. the relevant architecture/ADR for the task
 
 For implementation agents, also read repository-root `AGENTS.md` and the relevant subsystem README/contract.
 
