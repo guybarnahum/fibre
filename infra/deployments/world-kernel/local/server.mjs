@@ -549,6 +549,7 @@ export async function startWorldKernelFromEnvironment(
         identityStore.close();
         guardianCognitionStore.close();
         contactStore.close();
+        journalBook.close();
         livedExperienceStore.close();
         livedNowStore.close();
         semanticStateStore.close();
