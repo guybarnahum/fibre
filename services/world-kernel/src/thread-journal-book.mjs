@@ -8,6 +8,11 @@ import {
 } from "./persistence-common.mjs";
 
 const JOURNAL_STYLES = Object.freeze(["classic", "notebook", "literary", "minimal"]);
+const DEFAULT_JOURNAL_PRESENTATION = Object.freeze({
+  title:"Journal",
+  presentationStyle:"classic",
+  aestheticNote:"Plain pages until a personal style is chosen.",
+});
 const HEADER_PREFIX = "<!-- fibre-thread-journal-v1\n";
 const HEADER_SUFFIX = "\n-->";
 
@@ -130,9 +135,10 @@ export function createThreadJournalBook({ storage, experienceStore } = {}) {
     },
 
     async read(threadId){
-      const profile=profileFor(threadId);
-      if(profile===null)return null;
       const entries=experienceStore.listThreadJournalEntries(threadId);
+      const profile=profileFor(threadId)
+        ??(entries.length>0?normalizeProfile(DEFAULT_JOURNAL_PRESENTATION,threadId):null);
+      if(profile===null)return null;
       const document=`${HEADER_PREFIX}${JSON.stringify(profile)}${HEADER_SUFFIX}\n\n# ${profile.title}`+
         entries.map((entry)=>`\n\n## ${displayTimestamp(entry.writtenAt)}\n\n${entry.entryText.trim()}\n`).join("");
       return Object.freeze({profile,document});
