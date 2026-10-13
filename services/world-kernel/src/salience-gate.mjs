@@ -72,8 +72,19 @@ export function evaluateSalience({ opportunity, situatedPercept, regulationFrame
   if (exploration !== undefined) {
     anchors.push("exploration_pressure");
   }
+  // Ordinary weak pressure is background, not a reason to spend social cognition.
+  // Material Body interest earns consideration, never an obligation to approach.
+  const socialContact = regulationFrame?.drives.find((drive) =>
+    drive.family === "social_contact" && drive.orientation === "approach"
+      && drive.pressure >= 0.4);
+  if (socialContact !== undefined) {
+    anchors.push("social_contact_pressure");
+  }
 
-  const regulationRefs = exploration?.evidenceRefs ?? [];
+  const regulationRefs = [
+    ...(exploration?.evidenceRefs ?? []),
+    ...(socialContact?.evidenceRefs ?? []),
+  ];
   return Object.freeze({
     outcome:anchors.length === 0 ? "background" : "salient",
     opportunityKind:opportunity.kind,
