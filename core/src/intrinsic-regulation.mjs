@@ -354,7 +354,7 @@ function basalDrives(percept, profile) {
   // never itself a feeling, semantic loneliness, or a consent decision.
   if (percept.contact !== null) {
     const contactPressure = Math.min(1, percept.contact.observedUnmetHours / 24)
-      * 0.65 * profile.sensitivity.social;
+      * 0.8 * profile.sensitivity.social;
     drives.push(drive({
       family:"social_contact",
       targetRef:"self:connection",
