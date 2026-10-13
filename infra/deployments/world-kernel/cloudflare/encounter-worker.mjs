@@ -1,4 +1,5 @@
 import baseWorker, { FibreWorldDurableObject as BaseWorldDurableObject } from "./worker.mjs";
+import { createLegacyThreadJournalReader } from "#infra/providers/cloudflare";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
@@ -71,27 +72,6 @@ function bindingFetch(binding) {
   return (input, init) => binding.fetch(input instanceof Request ? input : new Request(input, init));
 }
 
-function threadObjectStore(bucket) {
-  if (!bucket || typeof bucket.get !== "function" || typeof bucket.put !== "function") {
-    throw new TypeError("THREAD_OBJECTS R2 binding is required");
-  }
-  return Object.freeze({
-    async read(key) {
-      const object = await bucket.get(key);
-      return object === null ? null : object.text();
-    },
-    async write(key, text, metadata = {}) {
-      await bucket.put(key, text, {
-        httpMetadata:{ contentType:metadata.contentType ?? "application/octet-stream" },
-        customMetadata:{
-          ...(metadata.threadId ? { threadId:metadata.threadId } : {}),
-          ...(metadata.presentationStyle ? { presentationStyle:metadata.presentationStyle } : {}),
-        },
-      });
-    },
-  });
-}
-
 export class FibreWorldDurableObject extends BaseWorldDurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -121,7 +101,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   journalBookForRequest() {
     if (this.threadJournalBook === null) {
       this.threadJournalBook = createThreadJournalBook({
-        objectStore:threadObjectStore(this.env.THREAD_OBJECTS),
+        storage:this.runtimeForRequest().worldStorage,
+        legacyReader:createLegacyThreadJournalReader(this.env.THREAD_OBJECTS),
       });
     }
     return this.threadJournalBook;
