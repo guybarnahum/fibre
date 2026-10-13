@@ -157,7 +157,46 @@ function requireMethod(owner, name) {
   }
 }
 
-function frameForSituation({ thread, situation, livedNowStore }) {
+// Bounded, provenance-bearing evidence of life without recorded reciprocal contact.
+// This is not proof of subjective loneliness or a complete account of a person's social life.
+export function socialContactEvidenceForLivedHistory({
+  threadId,currentSituation,livedNowStore,experienceStore,
+}) {
+  if(currentSituation===null||experienceStore===null||experienceStore===undefined)return null;
+  if(currentSituation.threadId!==threadId)throw new TypeError("social contact situation belongs to another Thread");
+  requireMethod(livedNowStore,"getPreviousSituation");
+  requireMethod(experienceStore,"listSocialInteractions");
+  const end=Date.parse(currentSituation.establishedAt);
+  let before=currentSituation.establishedAt;
+  let observedStart=end;
+  let firstRef=currentSituation.situationId;
+  // An unobserved long gap cannot be silently counted as deprivation.
+  for(let i=0;i<8;i++){
+    const prior=livedNowStore.getPreviousSituation(threadId,before);
+    if(prior===null)break;
+    const at=Date.parse(prior.establishedAt);
+    if(!Number.isFinite(at)||at>=observedStart||observedStart-at>12*3600_000)break;
+    observedStart=at;
+    firstRef=prior.situationId;
+    before=prior.establishedAt;
+  }
+  if(end-observedStart<2*3600_000)return null;
+  const recent=experienceStore.listSocialInteractions(threadId,{limit:8});
+  const contact=recent.filter(item=>item.responseDecision==="accept"
+    &&Date.parse(item.occurredAt)>=observedStart
+    &&Date.parse(item.occurredAt)<=end)
+    .sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt))[0]??null;
+  const since=contact===null?observedStart:Date.parse(contact.occurredAt);
+  return Object.freeze({
+    observedUnmetHours:Math.min(96,Math.max(0,(end-since)/3600_000)),
+    evidenceRefs:Object.freeze([...new Set([
+      firstRef,currentSituation.situationId,
+      ...(contact===null?[]:[contact.interactionId]),
+    ])]),
+  });
+}
+
+function frameForSituation({ thread, situation, livedNowStore, experienceStore }) {
   if (situation === null) return null;
   const plan = livedNowStore.latestPlan(thread.threadId, "personal", {
     at:situation.establishedAt,
@@ -175,6 +214,11 @@ function frameForSituation({ thread, situation, livedNowStore }) {
     perceptFrame:{
       asOf:situation.establishedAt,
       evidenceRefs:[...situation.evidenceRefs],
+      ...(experienceStore===null?{}:{
+        contact:socialContactEvidenceForLivedHistory({
+          threadId:thread.threadId,currentSituation:situation,livedNowStore,experienceStore,
+        })??undefined,
+      }),
     },
     targets:[assessment.presenceTarget],
     runtimeBaselines:thread.genome?.runtimeBaselines ?? {},
@@ -189,6 +233,7 @@ export async function runLivedNowRegulationPulse({
   livedNowStore,
   semanticStateStore,
   modelAdapter,
+  experienceStore=null,
 }) {
   requireMethod(worldStore, "getThread");
   requireMethod(livedNowStore, "latestPlan");
@@ -205,7 +250,7 @@ export async function runLivedNowRegulationPulse({
     throw new TypeError("previous LivedNow situation must belong to the regulated Thread");
   }
 
-  const currentFrame = frameForSituation({ thread, situation:currentSituation, livedNowStore });
+  const currentFrame = frameForSituation({ thread, situation:currentSituation, livedNowStore, experienceStore });
   if (currentFrame === null) {
     return Object.freeze({
       attention:null,
@@ -217,7 +262,7 @@ export async function runLivedNowRegulationPulse({
   // No prior lived state means there is no observed transition to interpret yet.
   const previousFrame = previousSituation === null
     ? structuredClone(currentFrame)
-    : frameForSituation({ thread, situation:previousSituation, livedNowStore });
+    : frameForSituation({ thread, situation:previousSituation, livedNowStore, experienceStore });
 
   const attention = selectRegulationAttention(previousFrame, currentFrame);
   if (attention === null) {
