@@ -588,6 +588,8 @@ test("an in-flight World sweep preserves new ambient work through both InfraDriv
     });
     const runtime=createWorldReconciliationRuntime({
       infraDriver,process,now:()=>1_000,intervalMs:100,maxRetryMs:800,
+      // This test isolates scheduler alarm races; state durability has its own proof.
+      retryState:memoryRetryState(),
     });
     try{
       await runtime.requestWake();
