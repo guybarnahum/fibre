@@ -1,3 +1,4 @@
+import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   assertId,
   assertNonEmpty,
@@ -89,37 +90,84 @@ Do not describe the Thread from outside and do not imitate a demographic stereot
   return normalizeProfile(invocation.output, thread.threadId);
 }
 
-export function createThreadJournalBook({ objectStore }) {
-  requireMethod("objectStore", objectStore, "read");
-  requireMethod("objectStore", objectStore, "write");
+export function createThreadJournalBook({ storage, legacyReader = null } = {}) {
+  if (legacyReader !== null && typeof legacyReader !== "function") {
+    throw new TypeError("journal legacyReader must be a function or null");
+  }
+  const database = openWorldStateDatabase(storage, { storeName:"ThreadJournalBook" });
+  try {
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS thread_journal_books (
+        thread_id TEXT PRIMARY KEY,
+        document TEXT NOT NULL,
+        document_digest TEXT NOT NULL CHECK (document_digest LIKE 'sha256:%')
+      ) STRICT;
+    `);
+  } catch (error) {
+    database.close();
+    throw error;
+  }
+
+  function stored(threadId) {
+    const row = database.prepare(
+      "SELECT document, document_digest FROM thread_journal_books WHERE thread_id=?",
+    ).get(threadId);
+    if (row === undefined) return null;
+    if (row.document_digest !== `sha256:${sha256(row.document)}`) {
+      throw new Error("Thread Journal document failed integrity verification");
+    }
+    const parsed = parseDocument(row.document, threadId);
+    if (parsed === null) throw new Error("Thread Journal document is invalid");
+    return parsed;
+  }
 
   return Object.freeze({
     key:journalKey,
+    close() { database.close(); },
+
     async read(threadId) {
-      const document = await objectStore.read(journalKey(threadId));
-      return document === null ? null : parseDocument(document, threadId);
+      const key = journalKey(threadId);
+      const existing = stored(threadId);
+      if (existing !== null || legacyReader === null) return existing;
+
+      // A one-time, read-only import preserves historical R2 books. New and
+      // subsequent journal writes use only transactional World state.
+      const legacy = await legacyReader(key);
+      if (legacy === null) return null;
+      if (parseDocument(legacy, threadId) === null) {
+        throw new Error("legacy Thread Journal has no valid profile header");
+      }
+      database.prepare(`
+        INSERT OR IGNORE INTO thread_journal_books(thread_id,document,document_digest)
+        VALUES(?,?,?)
+      `).run(threadId, legacy, `sha256:${sha256(legacy)}`);
+      return stored(threadId);
     },
+
     async getProfile(threadId) {
       return (await this.read(threadId))?.profile ?? null;
     },
+
     async append({ threadId, profile, writtenAt, entryText }) {
       assertId("journal threadId", threadId);
       assertNonEmpty("journal writtenAt", writtenAt);
       assertNonEmpty("journal entryText", entryText);
-      const existing = await this.read(threadId);
-      const activeProfile = existing?.profile ?? normalizeProfile(profile, threadId);
-      if (existing !== null && canonicalJson(activeProfile) !== canonicalJson(existing.profile)) {
-        throw new TypeError("journal profile cannot silently change");
-      }
-      const entry = `## ${displayTimestamp(writtenAt)}\n\n${entryText.trim()}\n`;
-      const document = existing === null
-        ? `${HEADER_PREFIX}${JSON.stringify(activeProfile)}${HEADER_SUFFIX}\n\n# ${activeProfile.title}\n\n${entry}`
-        : `${existing.document.trimEnd()}\n\n${entry}`;
-      await objectStore.write(journalKey(threadId), document, {
-        contentType:"text/markdown; charset=utf-8",
-        threadId,
-        presentationStyle:activeProfile.presentationStyle,
-      });
+      await this.read(threadId); // Import an existing book before changing it.
+      const activeProfile = database.transaction(() => {
+        const existing = stored(threadId);
+        const selected = existing?.profile ?? normalizeProfile(profile, threadId);
+        const entry = `## ${displayTimestamp(writtenAt)}\\n\\n${entryText.trim()}\\n`;
+        const document = existing === null
+          ? `${HEADER_PREFIX}${JSON.stringify(selected)}${HEADER_SUFFIX}\\n\\n# ${selected.title}\\n\\n${entry}`
+          : `${existing.document.trimEnd()}\\n\\n${entry}`;
+        database.prepare(`
+          INSERT INTO thread_journal_books(thread_id,document,document_digest)
+          VALUES(?,?,?)
+          ON CONFLICT(thread_id) DO UPDATE
+            SET document=excluded.document,document_digest=excluded.document_digest
+        `).run(threadId, document, `sha256:${sha256(document)}`);
+        return selected;
+      })();
       return Object.freeze({
         objectKey:journalKey(threadId),
         profile:activeProfile,
