@@ -190,6 +190,9 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    CREATE INDEX IF NOT EXISTS idx_consolidation_journal_thread_time
+      ON thread_experience_consolidation_journal_entries(thread_id,written_at,journal_entry_id);
+
     CREATE TABLE IF NOT EXISTS thread_journal_entries (
       journal_entry_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL,
