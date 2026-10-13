@@ -36,6 +36,8 @@ async function proveScheduler(infraDriver){
     process:{ async runOnce(){ return { skipped:false }; } },
     now:()=>now,
     intervalMs:5_000,
+    // This proof tests provider-neutral scheduling, not durable retry state.
+    retryState:{ async get(){ return 0; }, async set(){} },
   });
   const schedule=createExperienceConsolidationWakeScheduler({
     reconciliationRuntime:runtime,
