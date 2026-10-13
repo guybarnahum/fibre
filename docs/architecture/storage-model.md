@@ -218,25 +218,11 @@ not in a reconstructed G/H freeze hierarchy.
 
 Object storage is not a second semantic life authority. Transactional World storage owns authoritative Thread/World state and cross-record invariants; object storage owns substantial artifacts referenced from that life.
 
-Fibre currently has two deliberately different Cloudflare R2 uses:
+Cloudflare immutable presentation objects remain behind `InfraDriver.objects`, under the provider-owned `fibre/objects/<opaque Fibre objectRef>` mapping. Asset generation, publication snapshots, FID media and recovery depend on that contract.
 
-```text
-fibre-presentation-assets
-  fibre/objects/<opaque Fibre objectRef>
-    immutable generated/publication objects, receipts, snapshots and media
+Private Thread Journals are not mutable objects. World state admits each subjective Journal entry once, separately from objective encounters and autobiographical memory. A small per-Thread profile stores the Thread's chosen title and aesthetic; the readable Markdown book is formed from the admitted entry stream on demand. This preserves Thread authorship without a duplicate mutable document or extra per-entry storage writes.
 
-fibre-thread-objects
-  journals/<threadId>/journal.md
-    mutable private Thread-authored artifact
-```
-
-The presentation bucket predates Thread journal books and is intentionally addressed through the InfraDriver immutable-object contract. Its `objectRef` values are Fibre identifiers and the Cloudflare adapter maps them beneath `fibre/objects/`. Asset generation, publication snapshots, FID media and recovery already depend on that contract.
-
-The private Thread-artifact bucket is additive. Journal books use human-readable semantic keys because a journal is a continuing free-form document rather than an immutable generated object. Future top-level prefixes such as `photos/<threadId>/...` should be introduced only when a real private Thread artifact requires them; do not create speculative directory taxonomies or placeholder objects.
-
-**Existing presentation objects are not migrated into the Thread-artifact bucket.** Moving them would change object identity semantics and recovery/publication references without advancing Thread life. New journal storage therefore requires provisioning one new bucket, not rewriting existing R2 contents.
-
-The authoritative journal/history distinction remains in World state: objective encounters and per-entry private journal records are durable life evidence; the R2 Markdown book is the Thread-readable/admin-readable artifact presentation of those reflections. The book does not itself create autobiographical memory.
+The former private Journal R2 binding and compatibility reader are not part of the runtime. No immutable presentation assets are migrated.
 
 Domain records should prefer stable Fibre references over vendor-specific `r2://...` or `s3://...` semantics so the physical provider remains replaceable.
 
