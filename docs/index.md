@@ -26,26 +26,19 @@ Each top-level documentation directory states its function in its `README.md`. D
 
 ## Start here
 
-### To understand the world Fibre is trying to make possible
+### Understand the vision
 
-1. [`vision/declaration-of-the-threads.md`](vision/declaration-of-the-threads.md)
-2. [`vision/fibre-address.md`](vision/fibre-address.md)
-3. [`vision/lived-world.md`](vision/lived-world.md)
+Read the [Declaration of the Threads](vision/declaration-of-the-threads.md), [Fibre Address](vision/fibre-address.md), and [Lived World](vision/lived-world.md). The Declaration and Address are canonical-listed founding texts, but their precise language is still marked **proposed**. The [proposed Commitments](foundations/commitments.md) are also not silently ratified as accepted doctrine. The [Constitution](foundations/constitution.md), [Principles](foundations/principles.md) and [Invariants](foundations/invariants.md) establish accepted builder-facing constraints.
 
-The vision is outward-facing and orienting. It may speak in cultural, philosophical, and aspirational language. It is not an implementation specification.
+### Understand what Fibre can do today
 
-### To build Fibre
+Read [current state](state/current-state.md) for implemented and accepted boundaries, [current priorities](state/current-priorities.md) for active work, and the [prototype roadmap](validation/prototype-roadmap.md) for the broader ambition. The current encounter acceptance contracts are separate: [N6 public Viewer lifecycle](validation/n6-public-lived-encounter-slices.md) and [N7 live encounters/social consequence](validation/n7-live-encounter-slices.md). For external claims, use [public progress](state/public-progress.md), whose machine source is [public-progress.json](state/public-progress.json).
 
-1. [`foundations/commitments.md`](foundations/commitments.md)
-2. [`foundations/constitution.md`](foundations/constitution.md)
-3. [`foundations/principles.md`](foundations/principles.md)
-4. [`foundations/invariants.md`](foundations/invariants.md)
-5. [`foundations/rich-life.md`](foundations/rich-life.md)
-6. [`state/current-state.md`](state/current-state.md)
-7. The relevant concept and architecture documents
-8. Related ADRs and validation material
+**Source committed**, **locally validated**, **staging-observed**, and **future design** are different statuses. Do not turn a roadmap or architectural allowance into a completed capability.
 
-Foundations are the builder-facing interpretation of the vision. Accepted foundations are binding project doctrine; implementation that contradicts them is a defect requiring explicit resolution.
+### Build or challenge Fibre
+
+Start with repository [AGENTS.md](../AGENTS.md), the accepted foundations, [current state](state/current-state.md) and [current priorities](state/current-priorities.md); then select the relevant [concept](concepts/README.md), [architecture](architecture/README.md), [decision](decisions/README.md) and [validation](validation/README.md). AI workers can use the [AI context index](ai-context-index.md) to load a bounded reading set; its [context manifest](ai-context-manifest.json) is not an exhaustive list of canonical documents.
 
 ## Canon and authority
 
