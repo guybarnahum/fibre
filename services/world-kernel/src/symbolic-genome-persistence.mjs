@@ -153,6 +153,12 @@ export function assertRecombinedSymbolicGenomeSourcesInTransaction(
   });
 
   const baselineSelections = replayRecombinationRuntimeBaselines(bundle, sources);
+  const inheritedKeys = new Set(baselineSelections.map((item)=>item.key));
+  for(const key of Object.keys(bundle.runtimeBaselines)){
+    if(!inheritedKeys.has(key)){
+      conflict(ErrorType,`runtime baseline ${key} was never inherited`);
+    }
+  }
   for (const selection of baselineSelections) {
     if (bundle.runtimeBaselines[selection.key] !== selection.value) {
       conflict(ErrorType, `runtime baseline ${selection.key} does not match deterministic inheritance`);
