@@ -276,6 +276,7 @@ export function createExperienceConsolidationProcess({
   memoryStore,
   experienceStore,
   modelAdapter,
+  journalBook=null,
   onAfterthoughts=null,
   now=()=>new Date().toISOString(),
   batchLimit=DEFAULT_BATCH_LIMIT,
@@ -299,6 +300,7 @@ export function createExperienceConsolidationProcess({
   requireMethod("experienceStore",experienceStore,"getThreadExperienceConsolidationJournal");
   requireMethod("experienceStore",experienceStore,"hasPendingExperienceConsolidation");
   requireMethod("modelAdapter",modelAdapter,"invoke");
+  if(journalBook!==null)requireMethod("journalBook",journalBook,"ensureProfile");
   if(onAfterthoughts!==null&&typeof onAfterthoughts!=="function"){
     throw new TypeError("experience consolidation onAfterthoughts must be a function or null");
   }
@@ -382,6 +384,11 @@ export function createExperienceConsolidationProcess({
         writtenAt,
         entryText:decision.journalEntry,
       });
+    }
+    // Choosing a book is earned by a real Journal entry, once per Thread.
+    // The book itself is a read-time view of this admitted World history.
+    if(journalEntry!==null&&journalBook!==null){
+      await journalBook.ensureProfile({thread,modelAdapter});
     }
 
     let memory=null;
