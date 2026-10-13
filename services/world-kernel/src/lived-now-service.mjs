@@ -540,6 +540,7 @@ export function createLivedNowService({
   memoryStore = null,
   situatedLifeStore = null,
   modelAdapter = null,
+  experienceStore = null,
   onSituationEnacted = null,
   onSituationResolved = null,
 } = {}) {
@@ -574,6 +575,7 @@ export function createLivedNowService({
         livedNowStore,
         semanticStateStore,
         modelAdapter,
+        experienceStore,
       });
     }
     const sameJourney=previousSituation?.location?.kind==="transit"
