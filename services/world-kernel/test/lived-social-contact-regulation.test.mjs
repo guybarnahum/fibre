@@ -167,3 +167,40 @@ test("inherited social need can change a later Thread-authored Flight Plan witho
   assert.ok(moreSocial.stops.every(s=>s.companionRefs.length===0),
     "a need-driven plan manufactured a companion");
 });
+
+test("social hunger and sustained sameness coexist in one inherited Body frame",()=>{
+  const threadId="thr_independent_needs";
+  const old={
+    threadId,situationId:"sit_quiet_morning",establishedAt:"2026-10-13T06:00:00Z",
+    activity:"Working quietly.",location:{kind:"place",placeRef:"wpl_home"},
+    mediatedContext:null,participantRefs:[],
+  };
+  const current={...old,situationId:"sit_quiet_evening",establishedAt:"2026-10-13T18:00:00Z"};
+  const livedNowStore={
+    getPreviousSituation(_threadId,before){return before>old.establishedAt?old:null;},
+  };
+  let humanMeetings=[];
+  const experienceStore={
+    listSocialInteractions(){return [];},
+    listAcceptedHumanMeetings(){return humanMeetings;},
+  };
+  const thread={
+    threadId,genome:{runtimeBaselines:{
+      regulatorSocialSensitivity:1.15,regulatorExplorationSensitivity:0.85,
+    }},
+  };
+  const baseline=livedInteroceptionForLivedHistory({
+    thread,livedNowStore,currentSituation:current,experienceStore,
+  });
+  const pressure=family=>baseline.drives.find(d=>d.family===family)?.pressure??0;
+  assert.ok(pressure("social_contact")>0&&pressure("exploration")>0,
+    "independent lived needs were flattened into one drive");
+  humanMeetings=[{encounterRef:"enc_reciprocal",occurredAt:"2026-10-13T17:45:00Z"}];
+  const replenished=livedInteroceptionForLivedHistory({
+    thread,livedNowStore,currentSituation:current,experienceStore,
+  });
+  assert.ok((replenished.drives.find(d=>d.family==="social_contact")?.pressure??0)
+    <pressure("social_contact"),"contact did not reduce only its own pressure");
+  assert.equal(replenished.drives.find(d=>d.family==="exploration").pressure,
+    pressure("exploration"),"social contact incorrectly relieved monotony");
+});
