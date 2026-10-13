@@ -119,7 +119,7 @@ No global `09:00–22:00` policy or deterministic rule that close friends can ca
 
 ## Boundaries, explicit status, and stop condition
 
-**Now accepted:** the reuse-first architecture and this plan as the official execution target. **Not implemented by recording this document:** `social_contact` evidence/drive, drive registry abstraction, inherited social parameter in durable genomes, recipient-weekend appraisal, personal causal acceptance, sleeping-recipient reachability repair, staging proof. Existing `emotion:loneliness` and `need:connection` are vocabulary, not evidence that the new loop is active.
+**Now source implemented (not yet operator accepted):** inherited supported Body sensitivity baselines, `social_contact` mechanical drive from bounded enacted-life and admitted reciprocal-interaction evidence, and normal World regulation-pulse wiring. **Still open:** need-driven Flight Plan differential (D2), general extensibility demonstration beyond the existing families, recipient social-time appraisal, personal causal acceptance, sleeping-recipient staging proof, autonomous social meetings and G1/D1 local/staging validation. Existing `emotion:loneliness` and `need:connection` are vocabulary, not evidence that the new loop is active.
 
 **Deliberately deferred:** generic drive-plugin marketplace, dynamic code loading, per-drive persistence, universal cultural weekend tables, world-wide geography/time-zone inference, always-on physiological simulator, animal/human sensor completeness, automatic memory quota, compulsory mate/romance behavior, token-budget-as-hunger analogy, cross-population scans, new conversation authority, website redesign.
 
