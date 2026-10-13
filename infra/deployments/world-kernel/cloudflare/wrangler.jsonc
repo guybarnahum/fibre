@@ -63,11 +63,5 @@
   },
   "observability": {
     "enabled": true
-  },
-  "r2_buckets": [
-    {
-      "binding": "THREAD_OBJECTS",
-      "bucket_name": "fibre-thread-objects"
-    }
-  ]
+  }
 }
