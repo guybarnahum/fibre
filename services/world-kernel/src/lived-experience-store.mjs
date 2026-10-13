@@ -815,6 +815,23 @@ export class LivedExperienceStore {
     return rows;
   }
 
+  listAcceptedHumanMeetings(threadId,{since,until,limit=8}={}){
+    assertId("Human meeting threadId",threadId);
+    assertIsoTimestamp("Human meeting since",since);
+    assertIsoTimestamp("Human meeting until",until);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>32){
+      throw new TypeError("Human meeting limit must be 1-32");
+    }
+    return this.#database.prepare(`
+      SELECT a.encounter_ref AS encounterRef,e.occurred_at AS occurredAt
+      FROM public_encounter_admissions a
+      JOIN encounter_story_records e ON e.encounter_id=a.encounter_ref
+      WHERE a.thread_id=? AND e.occurred_at BETWEEN ? AND ?
+      ORDER BY e.occurred_at DESC,e.encounter_id DESC
+      LIMIT ?
+    `).all(threadId,since,until,limit);
+  }
+
   recordThreadExperience(candidate) {
     assertId("Thread experience.threadId", candidate.threadId);
     assertId("Thread experience.encounterRef", candidate.encounterRef);
