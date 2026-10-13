@@ -532,7 +532,7 @@ Generated encounter media must never be fed back as evidence for the Encounter S
 
 World owns encounter stories, Thread experiences, and each optional private Journal entry. A Thread chooses the title and aesthetic of its book once, after a genuine Journal entry is admitted. That choice is also durable World state.
 
-The Admin-facing `journals/<threadId>/journal.md` document is assembled when requested from those admitted entries and the Thread's chosen profile. No second mutable document, R2 write, or model call per entry is needed. Journal presentation is not another historical authority and never implies autobiographical memory.
+The Admin-facing `journals/<threadId>/journal.md` document is assembled on request. If admitted entries predate a chosen personal book profile, they appear immediately with a neutral, unstored classic layout; the Thread can choose a lasting form during its next genuine reflective opportunity. No second mutable document, R2 write, or model call per entry is needed. Journal presentation is not another historical authority and never implies autobiographical memory.
 
 Existing immutable presentation/media R2 objects remain untouched.
 
