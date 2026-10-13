@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { createLocalInfraDriver } from "#infra/providers/local";
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
@@ -15,7 +18,7 @@ function createRuntimeFixture({
   now = () => 1_000,
   intervalMs = 100,
   maxRetryMs = 800,
-  retryState = null,
+  retryState = memoryRetryState(),
   infraDriver = null,
 } = {}) {
   let wake = async () => {};
@@ -366,45 +369,41 @@ test("World reconciliation pending work backs off exponentially and caps retry d
   }
 });
 
-test("World reconciliation durable backoff survives runtime recreation", async () => {
-  let clock = 2_000;
-  const retryState = memoryRetryState();
-  const process = createWorldReconciliationProcess({
-    visualPublicationProcess: {
-      async runOnce() {
-        return {
-          skipped: false,
-          reason: null,
-          results: [{ threadId: "thr_pending", ok: true, reconciliation: { complete: false } }],
-        };
+test("World reconciliation state retains retry backoff across restart without provider-specific storage", async () => {
+  const directory=mkdtempSync(join(tmpdir(),"fibre-world-retry-"));
+  const infraDriver=createLocalInfraDriver({
+    stateScopes:{world:join(directory,"world.sqlite")},
+    schedulerScopes:{world:{onWake:async()=>{}}},
+  });
+  let clock=2_000;
+  const process=createWorldReconciliationProcess({
+    visualPublicationProcess:{
+      async runOnce(){
+        return {skipped:false,reason:null,results:[
+          {threadId:"thr_pending",ok:true,reconciliation:{complete:false}},
+        ]};
       },
     },
   });
-  const first = createRuntimeFixture({
-    process,
-    now: () => clock,
-    intervalMs: 100,
-    maxRetryMs: 800,
-    retryState,
-  });
-  await first.runtime.requestWake();
-  const firstWake = await first.runtime.handleWake();
-  assert.equal(firstWake.retryDelayMs, 100);
-
-  clock = 3_000;
-  const second = createRuntimeFixture({
-    process,
-    now: () => clock,
-    intervalMs: 100,
-    maxRetryMs: 800,
-    retryState,
-    infraDriver: first.infraDriver,
-  });
   try {
-    const secondWake = await second.runtime.handleWake();
-    assert.equal(secondWake.retryDelayMs, 200, "restart must retain retry streak instead of returning to hot-loop delay");
+    const first=createWorldReconciliationRuntime({
+      infraDriver,process,now:()=>clock,intervalMs:100,maxRetryMs:800,
+    });
+    await first.requestWake();
+    assert.equal((await first.handleWake()).retryDelayMs,100);
+
+    // Simulate a process reconstruction using the same provider-neutral
+    // durable World state, without resetting the operational retry fact.
+    clock=3_000;
+    const second=createWorldReconciliationRuntime({
+      infraDriver,process,now:()=>clock,intervalMs:100,maxRetryMs:800,
+    });
+    assert.equal((await second.handleWake()).retryDelayMs,200,
+      "restart lost durable World retry backoff");
+    await second.stop();
+    await first.stop();
   } finally {
-    await second.runtime.stop();
+    rmSync(directory,{recursive:true,force:true});
   }
 });
 
