@@ -77,7 +77,6 @@ test("Slice E resource plan derives isolated staging names while deploy-managed 
   ]);
   assert.deepEqual(plan.create.r2, [
     { name: "fibre-presentation-assets-staging" },
-    { name: "fibre-thread-objects-staging" },
   ]);
   assert.deepEqual(plan.create.queues.map((queue) => queue.name), [
     "fibre-asset-completions-staging",
@@ -157,7 +156,6 @@ test("Slice E provision is idempotent and writes resolved D1/resource configurat
       ["d1", "fibre-presentation-catalog-staging"],
       ["d1", "fibre-activity-log-staging"],
       ["r2", "fibre-presentation-assets-staging"],
-      ["r2", "fibre-thread-objects-staging"],
       ["queue", "fibre-asset-completions-staging"],
       ["queue", "fibre-asset-completions-dlq-staging"],
     ],
