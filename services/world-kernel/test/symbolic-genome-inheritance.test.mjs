@@ -362,8 +362,58 @@ test("v1 de_novo genome migration preserves symbolic identity while adding curre
     const genome = store.listThreadGenomes(threadId)[0];
     assert.equal(genome.header.genomeId, current.header.genomeId, "migration changed genome identity");
     assert.deepEqual(genome.loci, current.loci, "migration changed symbolic loci");
-    assert.deepEqual(genome.runtimeBaselines, current.runtimeBaselines, "migration did not restore current inherited baselines");
-    assert.equal(genome.genomeDigest, current.genomeDigest, "migration did not converge on current genome digest");
+    const historicalBaselines=Object.fromEntries(
+      ["circadianPhaseOffsetMinutes","sleepNeedMinutes","regulatorRestSensitivity"]
+        .map((key)=>[key,current.runtimeBaselines[key]]),
+    );
+    assert.deepEqual(genome.runtimeBaselines,historicalBaselines,
+      "historical migration invented genetic response traits");
+    assert.equal(genome.genomeDigest,
+      symbolicGenomeDigest({ ...current,runtimeBaselines:historicalBaselines }),
+      "historical migration failed its original genetic identity");
     assert.equal(store.migrateThreadGenomeV1ToV2(threadId).migrated, false, "migration was not idempotent");
     store.close();
   }));
+
+test("new-born Body sensitivities are inherited; old genotypes keep their exact identity", () => {
+  const first=buildDeNovoSymbolicGenome({
+    threadId:"thr_body_parent_a",genesisId:"gen_body_a",values:parentAValues,
+    createdAt:"2026-08-15T18:00:00Z",
+  });
+  const second=buildDeNovoSymbolicGenome({
+    threadId:"thr_body_parent_b",genesisId:"gen_body_b",values:parentBValues,
+    createdAt:"2026-08-15T18:00:00Z",
+  });
+  for(const key of [
+    "regulatorThermalSensitivity","regulatorEnergySensitivity",
+    "regulatorSensorySensitivity","regulatorPresenceSensitivity",
+    "regulatorSocialSensitivity","regulatorExplorationSensitivity",
+  ]){
+    assert.ok(Number.isFinite(first.runtimeBaselines[key]),
+      "newborn has no inherited Body variation");
+  }
+  const old=structuredClone(first);
+  for(const key of Object.keys(old.runtimeBaselines)){
+    if(!["circadianPhaseOffsetMinutes","sleepNeedMinutes","regulatorRestSensitivity"].includes(key))
+      delete old.runtimeBaselines[key];
+  }
+  old.genomeDigest=symbolicGenomeDigest(old);
+  assert.equal(symbolicGenomeDigest(old),old.genomeDigest,
+    "pre-extension genome changed when later alleles were introduced");
+  const child=buildRecombinedSymbolicGenome({
+    threadId:"thr_body_child",genesisId:"gen_body_child",
+    sourceGenomes:[old,second],selectionSeed:"body-heritability",
+    createdAt:"2026-08-15T19:00:00Z",
+  });
+  for(const [key,value] of Object.entries(child.runtimeBaselines)){
+    assert.ok(value===old.runtimeBaselines[key]||value===second.runtimeBaselines[key],
+      "offspring inherited an allele not present in either parent");
+  }
+  const replay=buildRecombinedSymbolicGenome({
+    threadId:"thr_body_child",genesisId:"gen_body_child",
+    sourceGenomes:[old,second],selectionSeed:"body-heritability",
+    createdAt:"2026-08-15T19:00:00Z",
+  });
+  assert.equal(child.genomeDigest,replay.genomeDigest,
+    "Body inheritance was not deterministic");
+});
