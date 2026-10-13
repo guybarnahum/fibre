@@ -1052,7 +1052,15 @@ test("inherited social deprivation changes attention without commanding an encou
     initiationFor:()=> "not_initiate",
   };
   const lessSensitive=fixture({...opts,inheritedSocialSensitivity:0.85});
-  const moreSensitive=fixture({...opts,inheritedSocialSensitivity:1.15});
+  const moreSensitive=fixture({
+    ...opts,inheritedSocialSensitivity:1.15,
+    initiationFor:(_name,_evidence,context)=>{
+      assert.ok(context.interoception?.drives.some(d=>
+        d.family==="social_contact"&&d.pressure>=0.4),
+      "material Body need did not reach the Thread's private social judgment");
+      return "not_initiate";
+    },
+  });
   const low=attemptFor(await lessSensitive.meeting.meet({
     initiatorThreadId:mina.threadId,at:AT,
   }));
