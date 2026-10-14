@@ -28,8 +28,15 @@ function groundedLifeSummary(threadId,person,checkedAt){
   const lived=person.livedNow??{};
   const situation=lived.currentSituation??null;
   const bound=(lived.worldPlaces??[]).filter((place)=>place.physicalVenue?.ref);
-  const place=situation?.location?.kind==="place"
-    ?bound.find((candidate)=>candidate.ref===situation.location.placeRef):null;
+  const currentRef=situation?.location?.kind==="place"
+    ?situation.location.placeRef:null;
+  const place=currentRef===null?null:
+    bound.find((candidate)=>candidate.ref===currentRef)??null;
+  const description=currentRef===null?null:
+    (lived.worldPlaces??[]).find((candidate)=>candidate.ref===currentRef)
+    ??(lived.placeEpisodes??[]).find((candidate)=>
+      candidate.episodeId===currentRef||candidate.ref===currentRef)
+    ??null;
   const now=Date.parse(checkedAt);
   const futureStops=(lived.currentPersonalPlan?.stops??[])
     .filter((stop)=>stop.presenceMode==="physical"
@@ -43,7 +50,8 @@ function groundedLifeSummary(threadId,person,checkedAt){
     threadId,hasCurrentSituation:situation!==null,
     currentSituationId:situation?.situationId??null,
     currentSituationAt:situation?.establishedAt??null,
-    currentPlaceRef:situation?.location?.kind==="place"?situation.location.placeRef:null,
+    currentPlaceRef:currentRef,
+    currentPlaceDescription:description?.displayName??description?.place?.displayName??null,
     currentWakefulness:situation?.wakefulness??"unknown",
     availableLiveWorldPlaceCount:(lived.worldPlaces??[]).length,
     attestedVenueCount:bound.length,
