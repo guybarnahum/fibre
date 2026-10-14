@@ -456,7 +456,7 @@ export async function startWorldKernelFromEnvironment(
     memoryStore:autobiographicalMemoryStore,
     experienceStore:livedExperienceStore,
     modelAdapter:selectReasoningIntegration(DEPLOYMENT.integrations.encounter,{environment}),
-    recentDiscovery:true,
+    boundedVenueDiscovery:true,
     onExperienceQueued:(queued)=>experienceConsolidationWakeScheduler(queued),
   });
   const socialOpportunityProcess=createWorldSocialOpportunity({
