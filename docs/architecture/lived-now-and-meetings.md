@@ -386,6 +386,14 @@ Version 1 also makes one explicit society-admission choice: Threads whose Civil 
 Flight Planning also receives the World-authoritative IANA time zone as local civil-time context. This lets the Thread plan a morning as morning without Fibre turning UTC into a behavioral rule.
 
 
+### Unprompted social consideration during lived arrival (source implementation, acceptance open)
+
+A genuinely enacted, awake or unknown-wakefulness *at-place* situation can earn **one** future social consideration when its World place has an independently attested physical-venue identity. This is queued for the existing World reconciliation alarm, not a new social clock or caller-written request. At the due boundary, World first checks that the exact original situation is still current and selects at most eight **already-enacted** people through indexed venue-bound current-life evidence (not merely recent arrivals; someone already reading in the café for hours remains discoverable). If nobody else is actually there, there is no social cognition.
+
+An eligible initiator reuses the existing meeting service in a stricter, single-candidate mode. Situated Percept, social/exploration-driven salience, private initiation choice, the recipient's independent stance, Encounter Story, individual Experience and selective consolidation retain their existing ownership. A background opportunity or `not_initiate` must create no reciprocal social history. Decline/defer remain legitimate; an accepted conversation must not be prescribed, and the public `/meet` request path stays unchanged.
+
+Each offered situation has one durable claim. If a model call or outward expression is interrupted, the attempt remains explicitly `interrupted` for inspection and is **not silently retried** because the other person may already have heard an overture. This is a deliberately conservative at-most-once trade-off, not an assertion that an interrupted attempt completed. The new social opportunity adds **no** population polling, global co-presence scan, invented shared location, or compulsory conversation. One sampled venue query is capped, so crowded settings are not yet exhaustive; transit, Human-initiated contact and richer continuation remain separate work. Live staging evidence and actual measured provider costs are open.
+
 ### Scene discovery, not caller-selected counterparties
 
 Thread-to-Thread social consideration now begins from one Thread's World-owned current life. The caller may choose **whose life to advance/inspect**, but not which nearby Thread she should consider.
