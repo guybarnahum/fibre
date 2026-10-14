@@ -161,6 +161,7 @@ export async function runWorldSocialProbe({
   const scan=cards.slice(0,SCAN_LIMIT);
   const observatories=new Map();
   const unavailable=[];
+  const failureSamples=[];
   let deployedSha=null;
   for(const card of scan){
     try{
@@ -180,9 +181,17 @@ export async function runWorldSocialProbe({
         throw error;
       }
       unavailable.push(card.threadId);
+      if(failureSamples.length<3){
+        failureSamples.push(String(error?.message??error).slice(0,200));
+      }
     }
   }
-  if(deployedSha===null)throw new Error("No readable World Observatory or deployed Git SHA");
+  if(deployedSha===null){
+    throw new Error(
+      "World Observatory unreadable for "+unavailable.length+"/"+scan.length+
+      " sampled Threads; first failure: "+(failureSamples[0]??"missing Observatory payload"),
+    );
+  }
 
   const checkedAt=new Date().toISOString();
   const life=[...observatories].map(([threadId,person])=>
