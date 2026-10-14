@@ -65,6 +65,7 @@ When dailyRhythm is supplied, let sleep/wake timing usually reflect it while all
 For each stop, state wakefulness separately from the natural-language activity: asleep only when the stop is actual sleep, awake for ordinary waking life, unknown only when the state cannot be established. This is a World-enacted feasibility fact, not the Thread\'s willingness to converse.
 When interoception is supplied, it is bounded subsemantic organismic state grounded in recent lived evidence. Interpret what it means for this Thread alongside developed self/history and current commitments. Exploration pressure is not a command or proof of boredom. Social-contact pressure is not a diagnosis of loneliness or a demand to seek company. Interpret both through this person's life; meaningful contact, novelty, learning, play, solitude, staying put, or changing places may all be legitimate responses. Never invent a person, a shared venue, a meeting, or consent to satisfy a drive.
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
+Public City Guide suggestions, when offered, are editorial *possibilities* in the Thread's grounded locality. A listing does not mean anyone is there or has invited the Thread, and makes no promise of satisfaction. This Thread may consider one, rely on familiar remembered places, or ignore the guide. Never treat a listing as a visit or a promise of contact.
 Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
 When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
@@ -292,6 +293,7 @@ export async function formPersonalLivedPlan({
   worldTimeZone = null,
   requiredWorkCommitments = [],
   interoception = null,
+  cityGuidePlaces = [],
 }) {
   assertId("personal plan threadId", threadId);
   assertIsoTimestamp("personal plan authoredAt", authoredAt);
@@ -306,6 +308,10 @@ export async function formPersonalLivedPlan({
     }
   }
   const places = resolvePlaces(threadId, availablePlaceRefs, sourceStores);
+  if(!Array.isArray(cityGuidePlaces)||cityGuidePlaces.length>6
+    ||cityGuidePlaces.some(place=>!places.some(available=>available.ref===place.ref))){
+    throw new TypeError("City Guide may suggest only bounded available World places");
+  }
   if (startingPlaceRef !== null) {
     assertId("personal plan startingPlaceRef", startingPlaceRef);
     if (!places.some((place) => place.ref === startingPlaceRef)) {
@@ -349,6 +355,13 @@ export async function formPersonalLivedPlan({
         ...(dailyRhythm === null ? {} : { dailyRhythm:structuredClone(dailyRhythm) }),
         ...(planningInteroception === null ? {} : { interoception:planningInteroception }),
         availablePlaces:places,
+        ...(cityGuidePlaces.length===0?{}:{
+          cityGuide:cityGuidePlaces.map(place=>({
+            placeRef:place.ref,description:place.description,
+            activities:[...place.activities],source:{...place.source},
+            lastRecommendedAt:place.lastRecommendedAt,
+          })),
+        }),
         ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
         ...(workCommitments.length === 0 ? {} : {
           requiredWorkCommitments:workCommitments.map((item) => structuredClone(item)),
