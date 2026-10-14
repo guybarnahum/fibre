@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdirSync,writeFileSync } from "node:fs";
 import { dirname,resolve } from "node:path";
 import { fileURLToPath,pathToFileURL } from "node:url";
@@ -9,6 +10,50 @@ import {
 
 const ROOT=fileURLToPath(new URL("../../",import.meta.url));
 const SCAN_LIMIT=40;
+
+function runtimeSourceMatches(deployedSha,head){
+  if(deployedSha===head)return true;
+  try{
+    const files=execFileSync("git",["diff","--name-only",deployedSha,head],{
+      cwd:ROOT,encoding:"utf8",
+    }).trim().split("\n").filter(Boolean);
+    return files.every((path)=>path==="AGENTS.md"||path.startsWith("docs/")
+      ||path==="tools/validation/world-social-probe.mjs");
+  }catch{
+    return false;
+  }
+}
+
+function groundedLifeSummary(threadId,person,checkedAt){
+  const lived=person.livedNow??{};
+  const situation=lived.currentSituation??null;
+  const bound=(lived.worldPlaces??[]).filter((place)=>place.physicalVenue?.ref);
+  const place=situation?.location?.kind==="place"
+    ?bound.find((candidate)=>candidate.ref===situation.location.placeRef):null;
+  const now=Date.parse(checkedAt);
+  const futureStops=(lived.currentPersonalPlan?.stops??[])
+    .filter((stop)=>stop.presenceMode==="physical"
+      &&bound.some((candidate)=>candidate.ref===stop.physicalPlaceRef)
+      &&Date.parse(stop.endAt)>now)
+    .map((stop)=>({
+      venueRef:bound.find((candidate)=>candidate.ref===stop.physicalPlaceRef).physicalVenue.ref,
+      startsAt:stop.startAt,endsAt:stop.endAt,
+    }));
+  return {
+    threadId,hasCurrentSituation:situation!==null,
+    currentSituationId:situation?.situationId??null,
+    currentSituationAt:situation?.establishedAt??null,
+    currentPlaceRef:situation?.location?.kind==="place"?situation.location.placeRef:null,
+    currentWakefulness:situation?.wakefulness??"unknown",
+    availableLiveWorldPlaceCount:(lived.worldPlaces??[]).length,
+    attestedVenueCount:bound.length,
+    currentAttestedVenueRef:place?.physicalVenue?.ref??null,
+    currentAtAttestedVenue:situation?.phase==="at_place"&&place!==null,
+    nextBoundedLifeWake:lived.nextAutonomousBoundary?.dueAt??null,
+    futureAttestedVenueStops:futureStops.slice(0,4),
+    observedWorldArrivalCount:(person.environmentalOpportunities??[]).length,
+  };
+}
 
 function currentVenue(observatory){
   const situation=observatory?.livedNow?.currentSituation;
@@ -96,6 +141,13 @@ export async function runWorldSocialProbe({
   }
   if(deployedSha===null)throw new Error("No readable World Observatory or deployed Git SHA");
 
+  const checkedAt=new Date().toISOString();
+  const life=[...observatories].map(([threadId,person])=>
+    groundedLifeSummary(threadId,person,checkedAt));
+  const attested=life.filter((entry)=>entry.attestedVenueCount>0);
+  const present=life.filter((entry)=>entry.currentAtAttestedVenue);
+  const awakePresent=present.filter((entry)=>entry.currentWakefulness!=="asleep");
+  const planned=life.filter((entry)=>entry.futureAttestedVenueStops.length>0);
   const groups=new Map();
   const opportunities=[];
   for(const [threadId,person] of observatories){
@@ -121,7 +173,14 @@ export async function runWorldSocialProbe({
   const choices=opportunities.filter((entry)=>
     ["background","not_initiated","not_met","met","scene_changed"].includes(entry.outcome));
   const proven=opportunities.find((entry)=>entry.story?.distinctExperienceConfirmed)??null;
-  const status=deployedSha!==head?"deployment_outdated"
+  const runtimeMatches=runtimeSourceMatches(deployedSha,head);
+  const worldBlocker=observatories.size===0?"observatory_unavailable"
+    :attested.length===0?"no_attested_venues_in_sample"
+    :present.length===0?"no_current_attested_venue_visits_in_sample"
+    :awakePresent.length===0?"all_current_attested_venue_visitors_asleep"
+    :shared.length===0?"no_shared_current_attested_venue_in_sample"
+    :"shared_venue_without_recorded_decision";
+  const status=!runtimeMatches?"deployment_outdated"
     :proven?"shared_encounter_with_distinct_experiences"
     :opportunities.some((entry)=>entry.outcome==="met")?"meeting_reported_story_unverified"
     :choices.length>0?"voluntary_social_choice_observed"
@@ -131,11 +190,22 @@ export async function runWorldSocialProbe({
   const runId="worldsocial-"+Date.now().toString(36);
   const evidence={
     contract:"fibre-world-social-observation-v0.1",runId,
-    checkedAt:new Date().toISOString(),environment:target,
+    checkedAt,environment:target,
     validatorGitSha:head,deployedGitSha:deployedSha,
+    runtimeSourceMatches:runtimeMatches,worldBlocker,
     scannedThreadCount:scan.length,availableThreadCount:observatories.size,
     totalDiscoverableThreadCount:cards.length,
     boundedScan:cards.length>scan.length,unavailableThreadIds:unavailable,
+    groundedLife:{
+      attestedVenueThreadCount:attested.length,
+      currentAttestedVenueVisitCount:present.length,
+      awakeAttestedVenueVisitCount:awakePresent.length,
+      futureAttestedVenuePlanCount:planned.length,
+      threadsWithRecordedWorldArrivalCount:life.filter((entry)=>entry.observedWorldArrivalCount>0).length,
+      threadsWithScheduledLifeWakeCount:life.filter((entry)=>entry.nextBoundedLifeWake!==null).length,
+      withVenues:attested.slice(0,12),withoutVenues:life.filter((entry)=>entry.attestedVenueCount===0).slice(0,12),
+      plannedVisits:planned.slice(0,12),
+    },
     sharedCurrentVenues:shared,
     socialOpportunities:opportunities.slice(0,40),
     status,
@@ -146,8 +216,12 @@ export async function runWorldSocialProbe({
   mkdirSync(dirname(evidencePath),{recursive:true});
   writeFileSync(evidencePath,JSON.stringify(evidence,null,2)+"\n");
   emit({
-    event:"world-social-probe-complete",status,deployedGitSha:deployedSha,
+    event:"world-social-probe-complete",status,worldBlocker,deployedGitSha:deployedSha,
+    runtimeSourceMatches:runtimeMatches,
     scannedThreadCount:scan.length,unavailableThreadCount:unavailable.length,
+    attestedVenueThreadCount:attested.length,
+    currentAttestedVenueVisitCount:present.length,
+    futureAttestedVenuePlanCount:planned.length,
     sharedCurrentVenueCount:shared.length,
     recordedOpportunityCount:opportunities.length,
     voluntaryChoiceCount:choices.length,
