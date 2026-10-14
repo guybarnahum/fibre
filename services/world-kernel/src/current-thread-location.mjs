@@ -69,7 +69,6 @@ function projectedPoint(place) {
 }
 
 export function projectCurrentThreadLocation({
-  entry,
   currentSituation,
   worldPlaces = [],
   placeEpisodes = [],
