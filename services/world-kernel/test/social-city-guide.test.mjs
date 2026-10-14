@@ -4,7 +4,7 @@ import test from "node:test";
 import {listSocialCityGuide} from "../src/social-city-guide.mjs";
 
 const guide=JSON.parse(readFileSync(
-  new URL("../../../data/world/social-city-guide.json",import.meta.url),"utf8",
+  new URL("../../../data/social-city-guide.json",import.meta.url),"utf8",
 ));
 const library=JSON.parse(readFileSync(
   new URL("../../../data/world/places/tbilisi-national-library-building-iii.json",import.meta.url),"utf8",
