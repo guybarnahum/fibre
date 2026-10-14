@@ -137,6 +137,10 @@ test("independent Threads can know one real public venue while their precise hom
     assert.equal(listLocalWorldPublicPlaces(db,{
       locality:places[2].locality,countryCode:places[2].countryCode,
     }).length,0,"a public place appeared in a different locality");
+    assert.equal(
+      getWorldPrivatePlace(db,threads[0][0],threads[0][1])?.streetAddress,
+      places[0].streetAddress,"Thread's own physical home is unknown",
+    );
     assert.equal(getWorldPrivatePlace(db,threads[1][0],threads[0][1]),null,
       "one Thread learned another Thread's home");
     const coarse=coarseWorldPlace(places[0]);
