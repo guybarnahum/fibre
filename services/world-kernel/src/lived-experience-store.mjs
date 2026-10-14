@@ -1653,13 +1653,21 @@ export class LivedExperienceStore {
     } catch (error) { throw translateStorageError(error); }
   }
 
-  listEncounterStories(threadId) {
+  listEncounterStories(threadId,{limit=null}={}) {
     assertId("threadId", threadId);
-    const rows = this.#database.prepare(`
+    if(limit!==null&&(!Number.isSafeInteger(limit)||limit<1||limit>100)){
+      throw new TypeError("recent Encounter Story limit must be 1-100");
+    }
+    const rows=limit===null?this.#database.prepare(`
       SELECT encounter_ref FROM encounter_story_thread_presence
       WHERE thread_id=? ORDER BY encounter_ref
-    `).all(threadId);
-    return rows.map(({ encounter_ref }) => this.getEncounterStory(encounter_ref));
+    `).all(threadId):this.#database.prepare(`
+      SELECT p.encounter_ref FROM encounter_story_thread_presence p
+      JOIN encounter_story_records e ON e.encounter_id=p.encounter_ref
+      WHERE p.thread_id=? ORDER BY e.occurred_at DESC,p.encounter_ref DESC
+      LIMIT ?
+    `).all(threadId,limit);
+    return rows.map(({encounter_ref})=>this.getEncounterStory(encounter_ref));
   }
 
   listThreadJournalEntries(threadId) {
