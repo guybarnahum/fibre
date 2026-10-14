@@ -36,6 +36,7 @@ import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/worl
 import {
   combineWorldEnvironmentProcesses,
   createWorldEnvironmentOpportunity,
+  worldStayOpportunityDueAt,
 } from "#services/world-kernel/src/world-environment-opportunity.mjs";
 import { projectCurrentLife } from "#services/world-kernel/src/current-life-projection.mjs";
 import { openGuardianCognitionStore } from "#services/world-kernel/src/guardian-cognition-store.mjs";
@@ -353,6 +354,16 @@ export async function startWorldKernelFromEnvironment(
         dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
       });
       if(earned.inserted)await reconciliationRuntime.requestWakeAfter(60_000);
+      const stayDueAt=worldStayOpportunityDueAt(
+        situation,nextLivedBoundary(livedNowStore,situation),
+      );
+      if(stayDueAt!==null){
+        const later=livedExperienceStore.enqueueEnvironmentalOpportunity({
+          threadId:situation.threadId,situationId:situation.situationId,
+          dueAt:stayDueAt,kind:"stay",
+        });
+        if(later.inserted)await reconciliationRuntime.requestWakeAt(Date.parse(stayDueAt));
+      }
     },
     livedNowStore,
     worldStore:store,
