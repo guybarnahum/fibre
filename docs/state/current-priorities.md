@@ -11,6 +11,12 @@ canonical: true
 
 **Evidence checkpoint, October 13:** N1–N5 are closed within their stated scope; direct World dialogue and public Presentation SSE have real staging witnesses. **N6.6c's complete human browser lifecycle and N7.11's history-caused later social choice are not closed.** New typed wakefulness and Body work have separate acceptance boundaries: **Guy reports G1/D1 local validation passed**; D2 Body-to-planning/social-salience source is committed but awaits post-change local validation and staging proof. Typed wakefulness's own staging proof remains open. The earlier 1,581-test green result (October 11) predates subsequent source changes and is not blanket validation.
 
+## Open social discovery and next society workstream (October 14)
+
+The accepted [Guy social-discovery oracle](../architecture/social-discovery-oracle.md) is a **load-bearing Fibre society capability**, not an optional website search widget. Both Threads and humans should be able to ask where social opportunities might exist, using Fibre Places **and multiple independently operated public directories**. Places may be empty; directory results, intentions, public availability, actual presence and meaningful encounters are distinct. There must be no guaranteed-company promise or compulsory social outcome.
+
+S0 geography reached staging acceptance: Guy's local full validation passed 1,604 tests, one real National Library of Georgia venue is admitted, and three Tbilisi Threads' residences have admitted private locality-level presence without invented addresses; no Thread venue visits or social opportunities have been observed. The proposed next boundaries are a small Guy discovery contract, open directory sourcing, separate public website discovery, Thread-owned consultation, and voluntary real visits; **these implementation slices await approval**. Website changes remain owned by the separate `insidefibre.com` workstream. This workstream complements rather than closes the N6/N7 causal social acceptance gates below.
+
 ## Decisive next work
 
 ### 1. Validate the current Core source and prove actual sleeping unavailability
