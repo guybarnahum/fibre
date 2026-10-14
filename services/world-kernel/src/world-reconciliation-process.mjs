@@ -98,6 +98,7 @@ export function worldReconciliationNeedsRetry(result) {
     || contactOutreachNeedsRetry(result.contactOutreach)
     || livedBoundaryNeedsRetry(result.contactReception)
     || environmentNeedsRetry(result.environmentEvolution)
+    || (result.socialOpportunity?.enabled===true&&result.socialOpportunity.ok!==true)
     || livedBoundaryNeedsRetry(result.livedBoundary);
 }
 
@@ -108,6 +109,7 @@ export function createWorldReconciliationProcess({
   contactOutreachProcess = null,
   contactReceptionProcess = null,
   environmentEvolutionProcess = null,
+  socialOpportunityProcess = null,
   livedBoundaryProcess = null,
   onError = null,
 } = {}) {
@@ -130,6 +132,7 @@ export function createWorldReconciliationProcess({
     "environmentEvolutionProcess",environmentEvolutionProcess,"runOnce",
   );
   let livedBoundary=optionalMethod("livedBoundaryProcess",livedBoundaryProcess,"runOnce");
+  let socialOpportunity=optionalMethod("socialOpportunityProcess",socialOpportunityProcess,"runOnce");
   if (onError !== null && typeof onError !== "function") {
     throw new TypeError("World reconciliation onError must be a function or null");
   }
@@ -171,6 +174,10 @@ export function createWorldReconciliationProcess({
       environmentEvolution=optionalMethod("environmentEvolutionProcess",process,"runOnce");
     },
 
+    setSocialOpportunityProcess(process){
+      socialOpportunity=optionalMethod("socialOpportunityProcess",process,"runOnce");
+    },
+
     setLivedBoundaryProcess(process){
       livedBoundary=optionalMethod("livedBoundaryProcess",process,"runOnce");
     },
@@ -207,6 +214,10 @@ export function createWorldReconciliationProcess({
           "world_environment_evolution",
           environmentEvolution===null?null:()=>environmentEvolution.runOnce(),
         );
+        const socialResult=await isolated(
+          "world_social_opportunity",
+          socialOpportunity===null?null:()=>socialOpportunity.runOnce(),
+        );
         // Partial per-opportunity failures stay retryable and report through
         // the same injected boundary as other reconciliation failures.
         for(const failure of environmentResult.result?.results??[]){
@@ -226,6 +237,7 @@ export function createWorldReconciliationProcess({
           contactOutreach:contactOutreachResult,
           contactReception:contactReceptionResult,
           environmentEvolution:environmentResult,
+          socialOpportunity:socialResult,
           livedBoundary:livedBoundaryResult,
         });
       } finally {
@@ -340,6 +352,7 @@ export function createWorldReconciliationRuntime({
     await setRetryStreak(0);
     const dueAt=[
       result.environmentEvolution?.result?.nextDueAt,
+      result.socialOpportunity?.result?.nextDueAt,
       result.livedBoundary?.result?.nextDueAt,
       result.contactReception?.result?.nextDueAt,
     ].filter(Boolean).sort()[0]??null;
