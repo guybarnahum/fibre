@@ -1,0 +1,28 @@
+{
+  "version": "fibre-city-guide-v1",
+  "cities": {
+    "tbilisi-GE": {
+      "city": "Tbilisi",
+      "country": "Georgia",
+      "countryCode": "GE",
+      "places": {
+        "national-library-of-georgia-building-iii": {
+          "name": "National Library of Georgia — Building III",
+          "lastRecommendedAt": "2026-10-14",
+          "address": "7 Lado Gudiashvili Street, Tbilisi 0108",
+          "description": "A public place for reading, research and intellectual exploration. Cultural programs may offer social opportunities, but another visitor or conversation is never guaranteed.",
+          "activities": [
+            "Reference research",
+            "Reading halls",
+            "Cultural programs"
+          ],
+          "source": {
+            "directory": "National Library of Georgia",
+            "url": "https://www.nplg.gov.ge/eng/Location"
+          },
+          "worldPlaceRef": "wpl_b60314ae32db5acb2e61fd41a5acfd1137d0fd57f66f76995ee6d085dd8ad47d"
+        }
+      }
+    }
+  }
+}
