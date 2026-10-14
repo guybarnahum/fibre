@@ -85,8 +85,10 @@ export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
         const venue=livedNowStore.bindPhysicalVenue(body);
         return Response.json({ok:true,venue});
       }catch(error){
-        return Response.json({error:"invalid_world_place",
-          detail:String(error?.message??error).slice(0,250)},{status:400});
+        return Response.json({
+          error:route==="guy"?"invalid_guy_question":"invalid_world_place",
+          detail:String(error?.message??error).slice(0,250),
+        },{status:400});
       }
     },
   });
