@@ -9,6 +9,7 @@ import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/worl
 import {
   combineWorldEnvironmentProcesses,
   createWorldEnvironmentOpportunity,
+  worldStayOpportunityDueAt,
 } from "#services/world-kernel/src/world-environment-opportunity.mjs";
 import { createEnvironmentalEncounterWriteApi } from "#services/world-kernel/src/lived-environmental-encounter-write-api.mjs";
 import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
@@ -680,6 +681,18 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     });
     if(earned.inserted){
       await this.runtimeForRequest().reconciliationRuntime.requestWakeAfter(60_000);
+    }
+    const lived=openLivedNowStore(this.runtimeForRequest().worldStorage);
+    const stayDueAt=worldStayOpportunityDueAt(
+      situation,nextLivedBoundary(lived,situation),
+    );
+    if(stayDueAt!==null){
+      const later=store.enqueueEnvironmentalOpportunity({
+        threadId:situation.threadId,situationId:situation.situationId,
+        dueAt:stayDueAt,kind:"stay",
+      });
+      if(later.inserted)await this.runtimeForRequest()
+        .reconciliationRuntime.requestWakeAt(Date.parse(stayDueAt));
     }
   }
 
