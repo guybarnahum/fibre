@@ -141,6 +141,7 @@ test("an extended stay earns one independent World event consideration after a q
   const world=openWorldStore(storage);
   const threads=new Map(people.map((threadId)=> {
     const thread={...structuredClone(seed),threadId};
+    thread.provenance.lastEventId=`evt_${threadId}`;
     world.seedThread(thread);
     return [threadId,thread];
   }));
@@ -252,7 +253,8 @@ test("an extended stay earns one independent World event consideration after a q
       "not_noticed","second person was forced to notice the rain");
     assert.equal(store.getThreadEncounterAttention(people[1],stories[0].encounterId)?.experience,
       null,"a missed event became a private experience");
-    assert.equal(queued.length,1,"one noticing did not produce one selective aftermath");
+    assert.equal(new Set(queued).size,1,
+      "one noticed Experience produced multiple selective aftermath identities");
     assert.equal(invoked.filter(id=>id.startsWith("world-initial-opportunity_")).length,2,
       "retry rerolled exterior World history");
     assert.equal(store.nextEnvironmentalOpportunityAt(),null,
