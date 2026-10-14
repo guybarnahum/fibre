@@ -24,6 +24,10 @@ test("only locally admitted magazine places can enter a Thread's planning choice
   assert.equal(inCity[0].ref,libraryRef);
   assert.equal(inCity[0].source.url,admitted.evidenceRef);
   assert.deepEqual(localCityGuideChoices(manifest,{
+    location:{locality:"Tbilisi",countryCode:"GE"},getPublicPlace,
+    asOf:"2026-10-13T12:00:00Z",
+  }),[],"today's guide appeared in earlier lived history");
+  assert.deepEqual(localCityGuideChoices(manifest,{
     location:{locality:"London",countryCode:"GB"},getPublicPlace,
   }),[],"a venue was recommended in a different city");
   assert.deepEqual(localCityGuideChoices(manifest,{
