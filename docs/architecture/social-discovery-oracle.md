@@ -109,7 +109,7 @@ A public directory result can contain a `worldPlaceRef` **only if** independentl
 
 ## Approved execution slices (October 14)
 
-Guy approved S1A–S3 as the direction and authorized implementation of S1A only. **S1A is now committed in source, but Guy's local validation and staging operator proof are pending.** S1B and later slices have not been implemented. The structural role of this document remains architectural: source admission, local tests, remote staging and actual autonomous use are distinct evidence levels.
+Guy approved S1A–S3 as the direction and authorized implementation of S1A only. **S1A passed local validation (5 focused / 1,607 full tests), and Guy deployed source SHA `1e78f6b` to staging. The first real question returned `HTTP 404 not_found`; the read-route correction is source-committed but needs a fresh local validation, deployment and live question proof.** S1B and later slices have not been implemented. The structural role of this document remains architectural: source admission, local tests, remote staging and actual autonomous use are distinct evidence levels.
 
 | Slice | Owner | Capability and falsifiable outcome |
 |---|---|---|
@@ -125,7 +125,7 @@ Guy approved S1A–S3 as the direction and authorized implementation of S1A only
 
 ### S1A source seam and proof
 
-The small pure contract is `services/world-kernel/src/guy-social-discovery.mjs`, exercised via `POST /internal/guy/ask` through the existing World venue service, not a parallel daemon. An operator can use `npm run guy:ask -- --env staging --question "I'm in Tbilisi; where can I meet people?"` after local validation and deployment. This remains an **internal read interface**, not a public website or an invitation for a Thread to consult it unprompted.
+The small pure contract is `services/world-kernel/src/guy-social-discovery.mjs`, exercised via `POST /internal/guy/ask` through the base World read handler and its existing bounded, read-only LivedNow place projection, not a parallel daemon or the encounter/venue-write router. An operator can use `npm run guy:ask -- --env staging --question "I'm in Tbilisi; where can I meet people?"` after local validation and deployment. This remains an **internal read interface**, not a public website or an invitation for a Thread to consult it unprompted.
 
 An input contains `question`, `asker: human | thread`, and optional independently supplied `location: {locality,countryCode}`. Guy can extract a simple explicitly mentioned proper-name city as a **search clue**, never as an attested current location. This lightweight interpreter intentionally does not claim full open-ended language understanding; questions whose locality is unclear ask for it, and source ambiguity across countries asks for disambiguation. Later public language UX and actual Thread-authored consultation are S1D/S1E.
 
