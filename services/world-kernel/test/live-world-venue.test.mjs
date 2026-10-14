@@ -123,6 +123,23 @@ test("independent Threads can know one real public venue while their precise hom
           :threadId.endsWith("two")?"country":"hidden",
       }));
     }
+    // A historical home can be known by its city without a fabricated door number.
+    db.prepare(`INSERT INTO situated_evidence_witnesses(
+      thread_id,reference,witness_kind
+    ) VALUES('thr_world_locality_only','per:home_locality:1','place_episode_revision')`).run();
+    const localityOnly=admitWorldPrivatePlace(db,{
+      threadId:"thr_world_locality_only",placeRef:"per:home_locality:1",
+      specificPlace:"Apartment building in Tbilisi's Saburtalo district",
+      streetAddress:null,locality:"Tbilisi",country:"Georgia",countryCode:"GE",
+      lat:null,long:null,timeZone:"Asia/Tbilisi",
+      evidenceRef:"per:home_locality:1",publicGranularity:"hidden",
+    });
+    assert.equal(localityOnly.streetAddress,null,
+      "World manufactured a street address from partial residence history");
+    assert.equal(localityOnly.lat,null,
+      "World manufactured precise coordinates from partial residence history");
+    assert.equal(coarseWorldPlace(localityOnly),null,
+      "private locality was disclosed without authorization");
     const publicPlace=admitWorldPublicPlace(db,{
       venueIdentity:"fixture:venue/tbilisi-library",
       displayName:"Example City Library",streetAddress:"1 Example Square",
