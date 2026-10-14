@@ -89,14 +89,14 @@ public place/activities + attributed independent directory sources
 
 A public directory result can contain a `worldPlaceRef` **only if** independently admitted; otherwise an external provider's identity and URL remain external leads. Advertised source timestamps, real-event dates and dynamic availability are not interchangeable.
 
-## Proposed implementation slices (approval required)
+## Approved execution slices (October 14)
 
-The **architectural direction in this document is accepted**; the slice boundaries and execution order are *proposed*, not an implementation claim.
+Guy approved S1A–S3 as the direction and authorized implementation of S1A only. **S1A is now committed in source, but Guy's local validation and staging operator proof are pending.** S1B and later slices have not been implemented. The structural role of this document remains architectural: source admission, local tests, remote staging and actual autonomous use are distinct evidence levels.
 
 | Slice | Owner | Capability and falsifiable outcome |
 |---|---|---|
 | S0 — Grounded shared geography | Fibre Core; **staging accepted in locality-level scope** | Three independent Tbilisi Threads have privately grounded locality-level homes, with no invented exact addresses; National Library Building III is an admitted shared public venue. No presence/social encounter manufactured. |
-| S1A — Guy discovery contract | Fibre Core | One bounded, provenance-bearing question/result vocabulary; distinguishes humans, Threads, mixed/digital opportunity, source claims and verified World place facts. Honest empty result and ambiguous question accepted. |
+| S1A — Guy discovery contract | Fibre Core; **source committed, validation pending** | One bounded, provenance-bearing natural-question/result vocabulary distinguishes human, Thread, mixed and digital intent, public World places, and no verified results. No private World life or live attendance is queried. |
 | S1B — Open multi-directory discovery | Fibre Core | Fibre Places and **two independent non-Fibre public directories** can contribute grounded, attributable leads, including overlap, with de-dup, source age and no false World admission. Additional sources require no new World authority. No blanket crawler or population scan. |
 | S1C — Public directory and syndication | Website owner (insidefibre.com), with Core public projection | Browseable public `/places`, individual URLs, actual activities when evidenced, indexable pages/sitemap plus usable external listing/feed. No private data, false Google listing or guaranteed attendee claim. |
 | S1D — Human Guy interface | Website owner | Ordinary public questions locate venues/events/verified mediated entry points; honest no-results and digital-versus-physical distinction. Human social opportunities need not be Fibre-owned. |
@@ -104,6 +104,16 @@ The **architectural direction in this document is accepted**; the slice boundari
 | S1F — Chosen visits and empty places | Fibre Core | Existing personal Flight Plan selects a reachable admitted venue; World enacts travel/arrival. A socially motivated visitor may find nobody, spend time, leave and develop distinct subjective aftermath. No attendance fabrication. |
 | S2 — Genuine reciprocal opportunities | Fibre Core; website for mediated human entry | Actually co-present actors, if any, pass through Situated Percept and independent social choice; humans use only a verified mediated entry. No auto-conversation, compulsory notice, consent, Story, memory or friendship. |
 | S3 — Actual gatherings and later society | Both, subsequent approval | Time-bound public activities provide reasons to attend without attendance guarantees; encounters, avoidance, disappointing visits and learning may change later social decisions. |
+
+### S1A source seam and proof
+
+The small pure contract is `services/world-kernel/src/guy-social-discovery.mjs`, exercised via `POST /internal/guy/ask` through the existing World venue service, not a parallel daemon. An operator can use `npm run guy:ask -- --env staging --question "I'm in Tbilisi; where can I meet people?"` after local validation and deployment. This remains an **internal read interface**, not a public website or an invitation for a Thread to consult it unprompted.
+
+An input contains `question`, `asker: human | thread`, and optional independently supplied `location: {locality,countryCode}`. Guy can extract a simple explicitly mentioned proper-name city as a **search clue**, never as an attested current location. This lightweight interpreter intentionally does not claim full open-ended language understanding; questions whose locality is unclear ask for it, and source ambiguity across countries asks for disambiguation. Later public language UX and actual Thread-authored consultation are S1D/S1E.
+
+Results include `oracle: Guy`, contract `version`, query interpretation, `status`, short factual `answer`, `coverage: fibre_places_only` and at most eight public place leads. Leads preserve an admitted `wpl_*`, public activities and source evidence. They never contain individual attendees, housing, private records, plans, participation authorizations or inferred feelings. For Thread-seeking questions, a physical place is marked `place_leads_only`: **no verified Thread meeting** is asserted. For digital questions, physical listings are not converted into a fictitious mediated meeting entry. Unknown cities yield a scoped negative result—not a claim that social opportunities do not exist there.
+
+S1A uses a case-insensitive, indexed, bounded World public-city lookup. No model calls, external directory integrations, whole-population queries, schedulers or permanent Guy cognition are introduced. In S1B the same truth-preserving projection will acquire attributed independent public leads without mistaking them for admitted World facts.
 
 **Acceptance discipline:** source committed, locally validated, public discoverability, staging-observed actual attendance, and an actual later-life causal consequence are distinct levels. Tests should prove truthful non-arrival, empty gatherings and independent choice as first-class outcomes, with short semantic failure messages.
 
