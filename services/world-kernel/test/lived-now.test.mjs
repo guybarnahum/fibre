@@ -448,3 +448,30 @@ test("A1/A2 authority boundaries reject unauthored will, visitor-authored now, a
     assert.match(current.activity, /octopus livestream/);
     lived.close();
   }));
+
+test("a grounded World venue is a shared possibility, not an invented visit",async()=>
+  withDatabase(async(databasePath)=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    try{
+      const place=lived.admitPublicPlace({
+        venueIdentity:"fixture:haifa-library",
+        displayName:"Example Haifa Library",
+        streetAddress:"2 Example Street, Haifa",
+        locality:"Haifa",country:"Israel",countryCode:"IL",
+        lat:32.815,long:34.99,timeZone:"Asia/Jerusalem",
+        evidenceRef:"fixture:independently-sourced-library",
+        affordances:["Reading","Study"],
+      });
+      assert.equal(
+        lived.getWorldPlace(life.thread.threadId,place.ref).physicalVenue.ref,
+        place.physicalVenue.ref,
+        "public place was not resolvable by the ordinary World authority",
+      );
+      assert.equal(lived.getCurrentSituation(life.thread.threadId),null,
+        "admitting a venue manufactured a Thread visit");
+      assert.equal(lived.listWorldPlaces(life.thread.threadId).some(item=>
+        item.ref===place.ref),false,
+        "a library was presented as an already-enacted Thread place");
+    }finally{lived.close();}
+  }));
