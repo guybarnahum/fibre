@@ -5,7 +5,20 @@ import {
 } from "./persistence-common.mjs";
 
 const FRESH_MS=60*60_000;
+const STAY_MS=2*60*60_000;
 const FOLLOWUP_MS=30*60_000;
+
+// An enacted, waking place stay can earn one later exterior chance, only if
+// its already-authoritative Flight Plan covers the occasion. No life wake.
+export function worldStayOpportunityDueAt(situation,nextBoundaryAt){
+  if(situation?.location?.kind!=="place"||situation.wakefulness==="asleep"
+    ||nextBoundaryAt===null)return null;
+  const start=Date.parse(situation.establishedAt);
+  const boundary=Date.parse(nextBoundaryAt);
+  if(!Number.isFinite(start)||!Number.isFinite(boundary)
+    ||boundary<start+STAY_MS+60_000)return null;
+  return new Date(start+STAY_MS).toISOString();
+}
 
 // One bounded earned opportunity, never a standing weather loop. A distant
 // observer is eligible for consideration: physics/scene evidence, not a radius,
@@ -47,15 +60,26 @@ export function createWorldEnvironmentOpportunity({
           let decision=opportunity.decision;
           if(decision===null){
             const current=livedNowStore.getCurrentSituation(opportunity.threadId);
+            const age=Date.parse(at)-Date.parse(situation?.establishedAt??"");
+            const overdue=Date.parse(at)-Date.parse(opportunity.dueAt);
             const eligible=situation!==null
               &&current?.situationId===situation.situationId
-              &&Date.parse(at)-Date.parse(situation.establishedAt)<=FRESH_MS
-              &&situation.location?.kind==="place";
+              &&situation.location?.kind==="place"
+              &&situation.wakefulness!=="asleep"
+              &&overdue>=0&&overdue<=FRESH_MS
+              &&age>=0
+              &&(opportunity.kind==="stay"
+                ?age>=STAY_MS:age<=FRESH_MS);
             const candidates=eligible
               ?livedNowStore.listRecentCurrentSituations({
                 at,since:new Date(Date.parse(at)-FRESH_MS).toISOString(),limit:8,
               }).filter((item)=>item.location?.kind==="place")
               :[];
+            // A long stay remains current until the admitted Flight Plan's
+            // boundary. Its original timestamp need not look recently arrived.
+            if(eligible&&!candidates.some((item)=>item.threadId===opportunity.threadId)){
+              candidates.unshift(current);
+            }
             const origin=eligible
               ?livedNowStore.getWorldPlace(
                 opportunity.threadId,situation.location.placeRef,{required:false},
@@ -77,7 +101,12 @@ export function createWorldEnvironmentOpportunity({
                 activity:(item.activity??"").slice(0,220),
               };
             });
-            if(!eligible||!candidateScenes.some((item)=>item.threadId===opportunity.threadId)){
+            const existing=physicalVenue===null?null
+              :experienceStore.getSharedEnvironmentalStory?.({
+                occurredAt:opportunity.dueAt,placeRef:physicalVenue.ref,
+              })??null;
+            if(!eligible||existing!==null
+              ||!candidateScenes.some((item)=>item.threadId===opportunity.threadId)){
               decision={
                 outcome:"not_observable",occurrenceText:null,presence:[],
                 occurredAt:opportunity.dueAt,
@@ -97,7 +126,7 @@ export function createWorldEnvironmentOpportunity({
                 potentialObservers:candidateScenes,
               };
               const result=await modelAdapter.invoke({
-                systemPrompt:`You author at most one ordinary new exterior happening in Fibre's World during an actual Thread life transition.
+                systemPrompt:`You author at most one ordinary new exterior happening in Fibre's World during an admitted lived place occasion.
 First assess whether any supplied physically situated Thread could plausibly perceive a specific event at this time. Choose no_change freely and normally: Fibre does not need an interesting event every time a person moves.
 There is no geographic distance cutoff. For distant observers require a phenomenon with supported long-range observability; scene labels alone do not establish shared physical co-presence.
 A Genesis historical study context is not a public venue. Only physicalVenue is independently identified as a shared venue. If it is null, do not imply the initiating Thread is in a library or public meeting place.
@@ -152,7 +181,7 @@ Do not invent Thread actions, inner life, conversation, emotions, or another per
               };
             }
             decision=experienceStore.recordEnvironmentalOpportunityDecision({
-              situationId:opportunity.situationId,decision,
+              situationId:opportunity.situationId,decision,kind:opportunity.kind,
             });
           }
 
@@ -210,7 +239,7 @@ Do not invent Thread actions, inner life, conversation, emotions, or another per
             }
           }
           experienceStore.completeEnvironmentalOpportunity({
-            situationId:opportunity.situationId,
+            situationId:opportunity.situationId,kind:opportunity.kind,
             resultEncounterRef:encounterId,completedAt:at,
           });
           results.push({situationId:opportunity.situationId,
