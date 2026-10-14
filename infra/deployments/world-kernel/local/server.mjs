@@ -450,12 +450,26 @@ export async function startWorldKernelFromEnvironment(
   const livedBoundaryProcess=createLivedBoundaryProcess({
     livedNowStore,livedNow:contactLivedNow,
   });
+  let socialModelAdapter=null;
   const socialMeetingService=createSocialMeetingService({
     worldReader:store,livedNow:contactLivedNow,livedNowStore,
     identityStore,situatedLifeStore,semanticStateStore,
     memoryStore:autobiographicalMemoryStore,
     experienceStore:livedExperienceStore,
-    modelAdapter:selectReasoningIntegration(DEPLOYMENT.integrations.encounter,{environment}),
+    modelAdapter:{
+      invoke(request){
+        socialModelAdapter??=selectReasoningIntegration(
+          DEPLOYMENT.integrations.encounter,{environment},
+        );
+        return socialModelAdapter.invoke(request);
+      },
+      streamExpression(request){
+        socialModelAdapter??=selectReasoningIntegration(
+          DEPLOYMENT.integrations.encounter,{environment},
+        );
+        return socialModelAdapter.streamExpression(request);
+      },
+    },
     boundedVenueDiscovery:true,
     onExperienceQueued:(queued)=>experienceConsolidationWakeScheduler(queued),
   });
