@@ -128,7 +128,7 @@ export function createSocialMeetingService({
       )?.physicalVenue?.ref??null:null;
     const situations=boundedVenueDiscovery
       ?venue===null?[]:livedNowStore.listCurrentVenueSituations({
-        venueRef:venue,at,limit:8,
+        venueRef:venue,at,limit:8,excludeThreadId:initiator.thread.threadId,
       })
       :livedNowStore.listCurrentSituations({at});
     const candidates = situations
