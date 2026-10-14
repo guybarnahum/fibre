@@ -68,7 +68,7 @@ export function listSocialCityGuide(manifest,{city,countryCode,limit=MAX_PLACES}
 // Editorial entries become possible *planning* destinations only after
 // independent World admission in the Thread's own known locality.
 export function localCityGuideChoices(manifest,{
-  location,getPublicPlace,limit=6,
+  location,getPublicPlace,limit=6,asOf=null,
 }={}){
   if(location?.locality==null||location?.countryCode==null)return [];
   if(typeof getPublicPlace!=="function")return [];
@@ -76,7 +76,8 @@ export function localCityGuideChoices(manifest,{
     city:location.locality,countryCode:location.countryCode,limit,
   });
   return guide.places.flatMap(item=>{
-    if(item.worldPlaceRef===null)return [];
+    if(item.worldPlaceRef===null
+      ||(asOf!==null && item.lastRecommendedAt>asOf.slice(0,10)))return [];
     const world=getPublicPlace(item.worldPlaceRef);
     if(world?.ref!==item.worldPlaceRef||world.placeKind!=="public_venue"
       ||world.authority!=="world-public-place-v1"
