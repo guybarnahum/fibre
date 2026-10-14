@@ -9,6 +9,7 @@ import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { createGuySocialDiscovery } from "#services/world-kernel/src/guy-social-discovery.mjs";
 import {
   explorationContinuityForLivedHistory,
   explorationInteroceptionForLivedHistory,
@@ -29,6 +30,7 @@ const THREAD_IDENTITY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]
 const THREAD_OBSERVATORY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/observatory$/u;
 const THREAD_REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
 const THREAD_DIRECTORY_ROUTE = "/internal/thread-directory/search";
+const GUY_DISCOVERY_ROUTE = "/internal/guy/ask";
 const THREAD_DIRECTORY_ENTRIES_ROUTE = "/internal/thread-directory/entries";
 const THREAD_DIRECTORY_PRESENCE_ROUTE = "/internal/thread-directory/presence";
 const THREAD_DIRECTORY_ENTRY_ROUTE = /^\/internal\/thread-directory\/entry\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})$/u;
@@ -412,6 +414,27 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetchWorldRequest(request, url) {
+    if(url.pathname===GUY_DISCOVERY_ROUTE){
+      if(request.method!=="POST")return Response.json({error:"method_not_allowed"},{status:405});
+      if(!privateOperatorAuthorized(request,this.env)){
+        return Response.json({error:"private_token_required"},{status:403});
+      }
+      try{
+        const input=await request.json();
+        const lived=openLivedNowInspectionStore(this.worldStorage);
+        try{
+          const guy=createGuySocialDiscovery({
+            listPublicPlaces:query=>lived.listPublicPlacesByLocality(query),
+          });
+          return Response.json({ok:true,result:guy.ask(input)});
+        }finally{lived.close();}
+      }catch(error){
+        return Response.json({
+          error:"invalid_guy_question",
+          detail:String(error?.message??error).slice(0,250),
+        },{status:400});
+      }
+    }
     if (url.pathname === APPEARANCE_COVERAGE_ROUTE) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
