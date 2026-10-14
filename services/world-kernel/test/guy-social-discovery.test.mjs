@@ -70,7 +70,7 @@ test("a social question cannot turn a library into a verified Thread meeting",()
     asker:"human",
   });
   assert.equal(thread.seeking,"thread");
-  assert.equal(thread.status,"place_opportunities");
+  assert.equal(thread.status,"place_leads_only");
   assert.equal(thread.places[0].threadMeeting,"not_verified");
   assert.match(thread.answer,/none verifies that a Thread can be met/u);
 
@@ -81,6 +81,17 @@ test("a social question cannot turn a library into a verified Thread meeting",()
   assert.equal(digital.places.length,0,
     "a physical library was falsely offered as a digital meeting channel");
   assert.match(digital.answer,/no verified digital meeting/u);
+
+  const human=guy.ask({
+    question:"Where can I meet humans in Tbilisi?",
+  });
+  assert.equal(human.seeking,"human");
+  assert.equal(human.status,"place_opportunities");
+  assert.equal(human.places[0].attendance,"not_verified");
+  const mixed=guy.ask({
+    question:"Where might humans and Threads meet in Tbilisi?",
+  });
+  assert.equal(mixed.seeking,"either","mixed social discovery excluded one kind of person");
 }));
 
 test("Guy keeps unknown cities, missing locations and overlapping country names uncertain",()=>withPlaces(({guy,db,library})=>{
