@@ -642,11 +642,11 @@ test("an admitted personal public-visit plan enacts transit, empty stay and retu
     const lived=openLivedNowStore(localWorldStateStorage(databasePath));
     try{
       const library=lived.admitPublicPlace({
-        venueIdentity:"fixture:tbilisi-public-reading",
-        displayName:"Tbilisi public reading room",
-        streetAddress:"7 Example Reading Street, Tbilisi",
-        locality:"Tbilisi",country:"Georgia",countryCode:"GE",
-        lat:41.697,long:44.801,timeZone:"Asia/Tbilisi",
+        venueIdentity:"fixture:tucson-public-reading",
+        displayName:"Tucson public reading room",
+        streetAddress:"7 Example Reading Street, Tucson",
+        locality:"Tucson",country:"United States",countryCode:"US",
+        lat:32.222,long:-110.975,timeZone:"America/Phoenix",
         evidenceRef:"https://example.org/public-reading-room",
         affordances:["Reading","Public discussion"],
       });
