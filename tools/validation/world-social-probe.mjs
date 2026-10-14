@@ -51,6 +51,15 @@ function groundedLifeSummary(threadId,person,checkedAt){
     // An admitted historical learning context is not proof of a public venue.
     authority:candidate.authority,
   }));
+  const recentPublicVenueVisits=(lived.recentSituations??[])
+    .filter(situation=>situation.phase==="at_place"
+      &&situation.location?.kind==="place"
+      &&bound.some(place=>place.ref===situation.location.placeRef
+        &&place.authority==="world-public-place-v1"))
+    .map(situation=>({
+      situationId:situation.situationId,establishedAt:situation.establishedAt,
+      worldPlaceRef:situation.location.placeRef,
+    })).slice(0,6);
   const now=Date.parse(checkedAt);
   const futureStops=(lived.currentPersonalPlan?.stops??[])
     .filter((stop)=>stop.presenceMode==="physical"
@@ -85,6 +94,7 @@ function groundedLifeSummary(threadId,person,checkedAt){
     nextBoundedLifeWake:lived.nextAutonomousBoundary?.dueAt??null,
     futureAttestedVenueStops:futureStops.slice(0,4),
     observedWorldArrivalCount:(person.environmentalOpportunities??[]).length,
+    recentPublicVenueVisits,
   };
 }
 
@@ -234,6 +244,12 @@ export async function runWorldSocialProbe({
       exactResidentialAddressCount:life.filter((item)=>item.preciseResidentialAddressKnown).length,
       attestedVenueThreadCount:attested.length,
       currentAttestedVenueVisitCount:present.length,
+      recentlyVisitedPublicVenueThreadCount:life.filter(entry=>
+        entry.recentPublicVenueVisits.length>0).length,
+      recentPublicVenueVisits:life.filter(entry=>
+        entry.recentPublicVenueVisits.length>0)
+        .map(({threadId,recentPublicVenueVisits})=>
+          ({threadId,recentPublicVenueVisits})).slice(0,12),
       awakeAttestedVenueVisitCount:awakePresent.length,
       futureAttestedVenuePlanCount:planned.length,
       threadsWithRecordedWorldArrivalCount:life.filter((entry)=>entry.observedWorldArrivalCount>0).length,
@@ -256,6 +272,8 @@ export async function runWorldSocialProbe({
     scannedThreadCount:scan.length,unavailableThreadCount:unavailable.length,
     attestedVenueThreadCount:attested.length,
     currentAttestedVenueVisitCount:present.length,
+    recentlyVisitedPublicVenueThreadCount:life.filter(entry=>
+      entry.recentPublicVenueVisits.length>0).length,
     futureAttestedVenuePlanCount:planned.length,
     sharedCurrentVenueCount:shared.length,
     recordedOpportunityCount:opportunities.length,
