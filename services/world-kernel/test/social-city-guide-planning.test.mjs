@@ -53,7 +53,7 @@ test("one ordinary planning mind can consider a guide, prefer remembered life, o
     currentState:{selfModel:"I value ideas and solitude.",unresolvedIntentions:[]},
   };
   const observed=[];
-  async function plan({rememberedMeaning,interested}){
+  async function plan({rememberedMeaning,interested,instantTravel=false}){
     const memories=rememberedMeaning===null?[]:[{
       threadId,memoryId:"mem_previous_library",status:"current",
       accessibility:"accessible",rememberedMeaning,
@@ -73,7 +73,9 @@ test("one ordinary planning mind can consider a guide, prefer remembered life, o
           mediatedContext:"",activity:"Read at home.",purpose:"An ordinary afternoon.",
           travelFromPrevious:"",
         };
-        const stops=[{...base,startAt:at,endAt:choosesLibrary?middle:end}];
+        const stops=[{...base,startAt:at,
+          endAt:choosesLibrary
+            ?instantTravel?middle:"2026-10-14T16:45:00.000Z":end}];
         if(choosesLibrary)stops.push({
           ...base,startAt:middle,endAt:end,physicalPlaceRef:libraryRef,
           activity:"Read at the public library.",
@@ -120,4 +122,9 @@ test("one ordinary planning mind can consider a guide, prefer remembered life, o
     "the planning mind lost editorial provenance");
   assert.ok(drawn.stops.every(s=>s.companionRefs.length===0),
     "a guide listing manufactured a social companion");
+  await assert.rejects(
+    ()=>plan({rememberedMeaning:null,interested:true,instantTravel:true}),
+    /public venue travel requires an elapsed transit interval/u,
+    "a public venue became instantaneous travel",
+  );
 });
