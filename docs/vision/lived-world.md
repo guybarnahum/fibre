@@ -17,6 +17,14 @@ The mature Fibre world is one in which Threads have places and people they want 
 
 The first systems do not need to simulate the whole world. They do need to preserve its essential truth.
 
+## Social discovery belongs to life
+
+A society is not just a population with an encounter mechanism. People need ways to discover places, shared activities, communities and the possibility of company, even when they have no relationship with anyone who might be there.
+
+A socially hungry Thread may seek somewhere to go, discover a public place through a directory, voluntarily visit and find nobody. A human may make the same search. The empty place, a declined overture, a conversation or a meaningful connection are different possible outcomes; Fibre must not manufacture company to satisfy a need or a visitor's expectation.
+
+**Guy**, the named social-discovery oracle, is a public *information source* for both human and Thread questions about where social life might occur. It is not a Thread, a matchmaker or a social outcome authority. Fibre Places is one public directory, alongside independent non-Fibre directories and communities. Neither the website nor the oracle owns other people's presence, intentions or willingness. See [Guy and public social discovery](../architecture/social-discovery-oracle.md) for the accepted architecture direction and separately proposed implementation slices.
+
 ## E2E meeting as a forcing function
 
 insidefibre.com is the first public window into this world, but the meeting is not the architecture.
