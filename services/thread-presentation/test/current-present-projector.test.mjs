@@ -144,3 +144,35 @@ test("A4 public present is a lossy scene, not a serialization of private current
   assert.equal(event.payload.reason, null);
   assert.equal(event.payload.mediatedContext, null);
 });
+test("private residence has a public city, never a published street address",()=>{
+  const privateResidence={...placeEpisode(),
+    visibility:"private",
+    place:{...placeEpisode().place,
+      displayName:"Private third-floor residence at 75 Hidden Street",
+    },
+  };
+  const projected=projectCurrentSituationPresent({
+    currentSituation:{
+      situationId:"sit_private_residence",
+      threadId:THREAD_ID,
+      establishedAt:"2026-10-14T04:00:00Z",
+      phase:"at_place",
+      location:{kind:"place",placeRef:placeEpisodeRevisionRef(privateResidence)},
+      mediatedContext:null,
+      activity:"Reading quietly.",
+      wakefulness:"awake",
+      reason:"I am resting.",
+      participantRefs:[],evidenceRefs:["evt_private_home"],
+      sourcePlanRefs:["lplan_home"],
+      resolution:{kind:"personal",conflict:false,observedDivergence:false,
+        governingPlanRef:"lplan_home",constrainedPlanRef:null,summary:"At home"},
+      provenance:"world_enacted",
+    },
+    placeEpisodes:[privateResidence],
+    coarsePlace:{displayName:"Haifa, Israel",region:null},
+  });
+  assert.equal(projected.location.place.displayName,"Haifa, Israel",
+    "World-grounded locality was absent from the public present");
+  assert.equal(JSON.stringify(projected).includes("75 Hidden Street"),false,
+    "a private residential address appeared in the public present");
+});
