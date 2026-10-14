@@ -63,3 +63,31 @@ export function listSocialCityGuide(manifest,{city,countryCode,limit=MAX_PLACES}
     description:"Places to discover, not promises of company.",
     places};
 }
+
+ 
+// Editorial entries become possible *planning* destinations only after
+// independent World admission in the Thread's own known locality.
+export function localCityGuideChoices(manifest,{
+  location,getPublicPlace,limit=6,
+}={}){
+  if(location?.locality==null||location?.countryCode==null)return [];
+  if(typeof getPublicPlace!=="function")return [];
+  const guide=listSocialCityGuide(manifest,{
+    city:location.locality,countryCode:location.countryCode,limit,
+  });
+  return guide.places.flatMap(item=>{
+    if(item.worldPlaceRef===null)return [];
+    const world=getPublicPlace(item.worldPlaceRef);
+    if(world?.ref!==item.worldPlaceRef||world.placeKind!=="public_venue"
+      ||world.authority!=="world-public-place-v1"
+      ||world.countryCode!==location.countryCode
+      ||world.locality.toLowerCase()!==location.locality.toLowerCase()
+      ||world.streetAddress!==item.address
+      ||world.evidenceRef!==item.source.url)return [];
+    return [{
+      ref:world.ref,description:item.description,
+      activities:[...item.activities],source:item.source,
+      lastRecommendedAt:item.lastRecommendedAt,
+    }];
+  });
+}
