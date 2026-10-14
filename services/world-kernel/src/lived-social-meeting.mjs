@@ -70,14 +70,14 @@ export function createSocialMeetingService({
   modelAdapter,
   liveEncounterRegistry = null,
   onExperienceQueued = null,
-  recentDiscovery = false,
+  boundedVenueDiscovery = false,
 }) {
   requireMethod("worldReader", worldReader, "getThread");
   requireMethod("livedNow", livedNow, "ensure");
   requireMethod("livedNowStore", livedNowStore, "getCurrentSituation");
   requireMethod("livedNowStore", livedNowStore, "getPreviousSituation");
   requireMethod("livedNowStore", livedNowStore, "listCurrentSituations");
-  if(recentDiscovery){
+  if(boundedVenueDiscovery){
     requireMethod("livedNowStore",livedNowStore,"getWorldPlace");
     requireMethod("livedNowStore",livedNowStore,"listCurrentVenueSituations");
   }
@@ -121,12 +121,12 @@ export function createSocialMeetingService({
   async function discoverCoPresent(initiator, at) {
     // Indexed venue authority finds current people, including long-stayers.
     // Explicit /meet retains its existing general discovery semantics.
-    const venue=recentDiscovery&&initiator.situation.location?.kind==="place"
+    const venue=boundedVenueDiscovery&&initiator.situation.location?.kind==="place"
       ?livedNowStore.getWorldPlace(
         initiator.thread.threadId,initiator.situation.location.placeRef,
         {required:false},
       )?.physicalVenue?.ref??null:null;
-    const situations=recentDiscovery
+    const situations=boundedVenueDiscovery
       ?venue===null?[]:livedNowStore.listCurrentVenueSituations({
         venueRef:venue,at,limit:8,
       })
@@ -150,7 +150,7 @@ export function createSocialMeetingService({
       const refreshed = await currentContext(candidateSituation.threadId, at);
       if (compatible(initiator, refreshed, livedNowStore)) {
         discovered.push(refreshed);
-        if(recentDiscovery)break; // One candidate, one bounded social decision.
+        if(boundedVenueDiscovery)break; // One candidate, one bounded social decision.
       }
     }
 
