@@ -396,7 +396,8 @@ async function formPlan({
     },
     modelAdapter,
     startingPlaceRef: startingPlace,
-    worldTimeZone:worldContext?.timeZone ?? null,
+    worldTimeZone:livedNowStore.currentLocationTimeZone?.(threadId)
+      ??worldContext?.timeZone??null,
     ...(interoception === null ? {} : { interoception }),
     ...(materializedAt === null ? {} : { materializedAt }),
   });
