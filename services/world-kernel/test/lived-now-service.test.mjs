@@ -720,6 +720,17 @@ test("a self-authored public visit becomes transit, an empty stay, and a genuine
         assert.equal(outcome.failed,0,"an ordinary travel boundary failed");
         assert.equal(outcome.attempted,1,"travel needed an invented extra wake");
         progressed.push(lived.getCurrentSituation(threadId));
+        if(at==="2026-10-14T16:40:00.000Z"){
+          const duringStay=await service.ensure({
+            threadId,at:"2026-10-14T17:20:00.000Z",
+          });
+          assert.equal(duringStay.situationId,progressed.at(-1).situationId,
+            "time spent reading created a fabricated new scene");
+          assert.deepEqual(lived.listCurrentVenueSituations({
+            venueRef:library.physicalVenue.ref,
+            at:"2026-10-14T17:20:00.000Z",excludeThreadId:threadId,
+          }),[],"an empty afternoon manufactured someone to meet");
+        }
       }
       assert.deepEqual(progressed.map(scene=>scene.phase),[
         "in_transit","at_place","in_transit","at_place",
