@@ -39,7 +39,7 @@ The central acceptance is an **independently motivated Thread finding and visiti
 ## Slice direction
 
 - **S0:** Geography staging-accepted (three distinct Tbilisi homes known to locality precision and one real public library); no manufactured attendance.
-- **S1A:** Source implementation of magazine manifest, bounded reader and semantic tests. Local validation pending; replaces the superseded Guy oracle.
+- **S1A:** **Accepted as a source/local capability on October 14:** 4/4 focused tests and 1,606/1,606 full tests passed; the CLI returned the sourced Tbilisi library and an honest `not_listed` result for London. The World worker was separately deployed successfully at `e810c5c9`; **no public magazine endpoint, deployed guide consumer or Thread cognition invocation exists yet**. This replaces the superseded oracle.
 - **S1B:** Genuine plural external public-directory sourcing with attribution, and no false World admission.
 - **S1C:** Public Inside Fibre magazine pages, sitemap and third-party discovery (website workstream).
 - **S1D:** Human browsing and relevant filters/participation opportunities (website workstream).
