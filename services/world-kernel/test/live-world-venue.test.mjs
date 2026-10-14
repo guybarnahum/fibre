@@ -9,6 +9,10 @@ import {
   liveWorldPlaceRef,
 } from "../src/live-world-place.mjs";
 import { meetingPresenceCompatible } from "../src/lived-meeting-cognition.mjs";
+import {
+  admitWorldPublicPlace,admitWorldPrivatePlace,coarseWorldPlace,
+  createLiveWorldGeographyTables,getWorldPrivatePlace,listLocalWorldPublicPlaces,
+} from "../src/live-world-geography.mjs";
 import { canonicalJson,sha256 } from "../src/persistence-common.mjs";
 
 test("E7.4 Genesis learning contexts cannot impersonate a common physical venue",()=>{
@@ -87,5 +91,62 @@ test("E7.4 Genesis learning contexts cannot impersonate a common physical venue"
     ),false,"home study entered a public scene because of Genesis kind");
     assert.equal(listLiveWorldPlaces(db,home.threadId)[0].physicalVenue,undefined,
       "private contextual place silently became an admitted public venue");
+  }finally{db.close();}
+});
+
+test("independent Threads can know one real public venue while their precise homes stay private",()=>{
+  const db=new DatabaseSync(":memory:");
+  try{
+    db.exec(`CREATE TABLE situated_evidence_witnesses(
+      thread_id TEXT,reference TEXT,witness_kind TEXT
+    ) STRICT`);
+    createLiveWorldPlaceTables(db);
+    createLiveWorldGeographyTables(db);
+    const threads=[
+      ["thr_world_citizen_one","per:home_one:1","12 Example Lane, Apt A"],
+      ["thr_world_citizen_two","per:home_two:1","34 Example Lane, Apt C"],
+      ["thr_world_citizen_other","per:home_other:1","56 Example Lane, Apt E"],
+    ];
+    const places=[];
+    for(const [threadId,placeRef,streetAddress] of threads){
+      db.prepare(`INSERT INTO situated_evidence_witnesses(
+        thread_id,reference,witness_kind
+      ) VALUES(?,?,'place_episode_revision')`).run(threadId,placeRef);
+      places.push(admitWorldPrivatePlace(db,{
+        threadId,placeRef,specificPlace:"My actual apartment",
+        streetAddress,locality:threadId.endsWith("other")?"Batumi":"Tbilisi",
+        country:"Georgia",countryCode:"GE",lat:41.72,long:44.78,
+        timeZone:"Asia/Tbilisi",evidenceRef:"world-attested-private-address",
+      }));
+    }
+    const publicPlace=admitWorldPublicPlace(db,{
+      venueIdentity:"fixture:venue/tbilisi-library",
+      displayName:"Example City Library",streetAddress:"1 Example Square",
+      locality:"Tbilisi",country:"Georgia",countryCode:"GE",
+      lat:41.73,long:44.79,timeZone:"Asia/Tbilisi",
+      evidenceRef:"fixture:independent-public-place",
+      affordances:["Reading","Public learning"],
+    });
+    const inCity=places.slice(0,2).map(place=>
+      listLocalWorldPublicPlaces(db,{locality:place.locality,countryCode:place.countryCode}));
+    assert.equal(inCity[0][0].ref,inCity[1][0].ref,
+      "two local lives did not resolve one independent public place");
+    assert.equal(inCity[0][0].physicalVenue.ref,publicPlace.physicalVenue.ref);
+    assert.equal(listLocalWorldPublicPlaces(db,{
+      locality:places[2].locality,countryCode:places[2].countryCode,
+    }).length,0,"a public place appeared in a different locality");
+    assert.equal(getWorldPrivatePlace(db,threads[1][0],threads[0][1]),null,
+      "one Thread learned another Thread's home");
+    const coarse=coarseWorldPlace(places[0]);
+    assert.equal(coarse.displayName,"Tbilisi, Georgia");
+    assert.equal(JSON.stringify(coarse).includes(places[0].streetAddress),false,
+      "private address reached public geography");
+    assert.throws(()=>admitWorldPublicPlace(db,{
+      venueIdentity:"fixture:venue/tbilisi-library",
+      displayName:"Example City Library",streetAddress:"9 Contradiction Way",
+      locality:"Tbilisi",country:"Georgia",countryCode:"GE",
+      lat:41.73,long:44.79,timeZone:"Asia/Tbilisi",
+      evidenceRef:"fixture:independent-public-place",affordances:["Reading"],
+    }),/conflicting facts/,"one real venue silently changed identity");
   }finally{db.close();}
 });
