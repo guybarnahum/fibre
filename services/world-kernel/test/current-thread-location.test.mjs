@@ -48,7 +48,7 @@ test("current World place, not birthplace, defines the Threads map position", ()
   assert.equal(location.long, 35.21633);
 });
 
-test("shared current venue uses current situation while retaining World-locality coordinates", () => {
+test("verified public venue supplies its own location, never birthplace geography", () => {
   const location = projectCurrentThreadLocation({
     entry,
     currentSituation:{
@@ -58,6 +58,8 @@ test("shared current venue uses current situation while retaining World-locality
     worldPlaces:[{
       ref:"wpl_library",
       displayName:"Neighborhood public library",
+      locality:"Tbilisi",country:"Georgia",countryCode:"GE",
+      lat:41.7151,long:44.8271,
     }],
   });
 
@@ -66,6 +68,21 @@ test("shared current venue uses current situation while retaining World-locality
   assert.equal(location.locality, "Tbilisi");
   assert.equal(location.countryCode, "GE");
   assert.equal(location.authority, "live_world_place");
+  assert.equal(location.lat,41.7151);
+  assert.equal(location.long,44.8271);
+});
+
+test("unlocated historical World context cannot masquerade as present geography",()=>{
+  const location=projectCurrentThreadLocation({
+    entry,
+    currentSituation:{
+      establishedAt:"2026-09-25T18:00:00.000Z",
+      location:{kind:"place",placeRef:"wpl_context_only"},
+    },
+    worldPlaces:[{ref:"wpl_context_only",displayName:"Studying at home"}],
+  });
+  assert.equal(location,null,
+    "World context inherited birth coordinates without an identified venue");
 });
 
 
