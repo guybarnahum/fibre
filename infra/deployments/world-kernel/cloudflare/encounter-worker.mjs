@@ -13,6 +13,7 @@ import {
 } from "#services/world-kernel/src/world-environment-opportunity.mjs";
 import { createEnvironmentalEncounterWriteApi } from "#services/world-kernel/src/lived-environmental-encounter-write-api.mjs";
 import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
+import { createWorldSocialOpportunity } from "#services/world-kernel/src/world-social-opportunity.mjs";
 import { createSocialMeetingWriteApi } from "#services/world-kernel/src/lived-social-meeting-write-api.mjs";
 import { createLivedCommonsService } from "#services/world-kernel/src/lived-commons.mjs";
 import { createLivedCommonsWriteApi } from "#services/world-kernel/src/lived-commons-write-api.mjs";
@@ -80,6 +81,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.worldEnvironmentEvolutionProcess = null;
     this.livedNowApi = null;
     this.socialMeetingApi = null;
+    this.worldSocialOpportunityProcess = null;
     this.livedCommonsApi = null;
     this.insideFibreWorkApi = null;
     this.insideFibreMeetingApi = null;
@@ -276,6 +278,45 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       );
     }
     return this.worldEnvironmentEvolutionProcess;
+  }
+
+  worldSocialOpportunityProcessForRequest(){
+    if(this.worldSocialOpportunityProcess===null){
+      const runtime=this.runtimeForRequest();
+      const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
+      const livedNowStore=openLivedNowStore(runtime.worldStorage);
+      const experienceStore=openLivedExperienceStore(runtime.worldStorage);
+      const identityStore=openIdentityStore(runtime.worldStorage);
+      const situatedLifeStore=openSituatedLifeStore(runtime.worldStorage);
+      const semanticStateStore=openSemanticStateStore(runtime.worldStorage);
+      const memoryStore=openAutobiographicalMemoryStore(runtime.worldStorage);
+      const livedNow=createLivedNowService({
+        experienceStore,
+        livedNowStore,worldStore:runtime.worldStore,
+        identityStore,semanticStateStore,memoryStore,situatedLifeStore,
+        modelAdapter:selectReasoningIntegration(
+          deployment.integrations.livedNow,{environment:this.env},
+        ),
+        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
+      });
+      const meetingService=createSocialMeetingService({
+        worldReader:runtime.worldStore,livedNow,livedNowStore,
+        identityStore,situatedLifeStore,semanticStateStore,memoryStore,experienceStore,
+        modelAdapter:selectReasoningIntegration(
+          deployment.integrations.encounter,{environment:this.env},
+        ),
+        recentDiscovery:true,
+        onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
+      });
+      this.worldSocialOpportunityProcess=createWorldSocialOpportunity({
+        experienceStore,livedNowStore,meetingService,
+      });
+      runtime.reconciliationProcess.setSocialOpportunityProcess(
+        this.worldSocialOpportunityProcess,
+      );
+    }
+    return this.worldSocialOpportunityProcess;
   }
 
   environmentalEncounterApiForRequest() {
@@ -694,6 +735,17 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       if(later.inserted)await this.runtimeForRequest()
         .reconciliationRuntime.requestWakeAt(Date.parse(stayDueAt));
     }
+    const venue=lived.getWorldPlace(
+      situation.threadId,situation.location.placeRef,{required:false},
+    )?.physicalVenue?.ref??null;
+    if(venue!==null&&situation.wakefulness!=="asleep"){
+      const social=store.enqueueSocialOpportunity({
+        threadId:situation.threadId,situationId:situation.situationId,
+        dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
+      });
+      if(social.inserted)await this.runtimeForRequest()
+        .reconciliationRuntime.requestWakeAfter(60_000);
+    }
   }
 
   worldVenueApiForRequest(){
@@ -763,6 +815,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.contactReceptionProcessForRequest();
     this.livedBoundaryProcessForRequest();
     this.worldEnvironmentEvolutionProcessForRequest();
+    this.worldSocialOpportunityProcessForRequest();
     return super.alarm(alarmInfo);
   }
 }
