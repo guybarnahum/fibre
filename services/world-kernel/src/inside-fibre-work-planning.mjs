@@ -78,10 +78,10 @@ export async function replanForAcceptedInsideFibreWork({
       livedNowStore,
     },
     modelAdapter,
-    worldTimeZone:livedNowStore.getWorldContext(
-      commitment.threadId,
-      { required:false },
-    )?.timeZone ?? null,
+    worldTimeZone:livedNowStore.currentLocationTimeZone?.(commitment.threadId)
+      ??livedNowStore.getWorldContext(
+        commitment.threadId,{required:false},
+      )?.timeZone??null,
     requiredWorkCommitments:[commitment],
   });
 
