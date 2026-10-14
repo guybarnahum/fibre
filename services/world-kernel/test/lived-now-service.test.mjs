@@ -634,3 +634,109 @@ test("E7.5 repeatedly unavailable cognition becomes a quiet, inspectable blocked
     assert.equal(attempts,3,"blocked life continued spending cognition");
     lived.close();
   }));
+
+
+test("a self-authored public visit becomes transit, an empty stay, and a genuine return home",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    try{
+      const library=lived.admitPublicPlace({
+        venueIdentity:"fixture:tbilisi-public-reading",
+        displayName:"Tbilisi public reading room",
+        streetAddress:"7 Example Reading Street, Tbilisi",
+        locality:"Tbilisi",country:"Georgia",countryCode:"GE",
+        lat:41.697,long:44.801,timeZone:"Asia/Tbilisi",
+        evidenceRef:"https://example.org/public-reading-room",
+        affordances:["Reading","Public discussion"],
+      });
+      // The World consumes a completed personal intention. Fixture-authored
+      // choice is not evidence of a live Thread deciding to leave home.
+      const threadId=life.thread.threadId;
+      const authoredAt="2026-10-14T16:00:00.000Z";
+      const stops=[
+        {
+          startAt:authoredAt,endAt:"2026-10-14T16:20:00.000Z",
+          physicalPlaceRef:life.homeRef,activity:"Finish a sketch at home.",
+          purpose:"Complete private work.",travelFromPrevious:null,
+        },
+        {
+          startAt:"2026-10-14T16:40:00.000Z",
+          endAt:"2026-10-14T17:40:00.000Z",
+          physicalPlaceRef:library.ref,activity:"Read at the library.",
+          purpose:"Seek intellectual stimulation without expecting company.",
+          travelFromPrevious:"Travel across the city.",
+        },
+        {
+          startAt:"2026-10-14T18:00:00.000Z",
+          endAt:"2026-10-14T19:00:00.000Z",
+          physicalPlaceRef:life.homeRef,activity:"Reflect at home.",
+          purpose:"Spend some time alone.",travelFromPrevious:"Return home.",
+        },
+      ].map(stop=>({
+        ...stop,mediatedContext:null,wakefulness:"awake",companionRefs:[],
+      }));
+      const plan=lived.recordPlan({
+        planId:livedPlanId({threadId,kind:"personal",authoredAt}),
+        kind:"personal",subjectThreadId:threadId,
+        owner:{partyId:threadId,kind:"thread"},
+        authoredAt,horizonStart:authoredAt,
+        horizonEnd:"2026-10-14T19:00:00.000Z",
+        stops,sourceReferences:[life.sourceEvent,life.homeRef,library.ref],
+        cognition:{provider:"fixture",modelId:"public-visit-enactment",providerRequestId:"fixture-public-trip"},
+      });
+      assert.ok(plan.sourceReferences.includes(library.ref),
+        "the destination lacks World place authority");
+      const scenes=[];
+      let dueAt=authoredAt;
+      const service=createLivedNowService({
+        livedNowStore:lived,
+        onSituationEnacted:situation=>scenes.push(situation),
+        onSituationResolved:situation=>{
+          lived.scheduleNextLivedBoundary({
+            threadId:situation.threadId,situationId:situation.situationId,
+            dueAt:nextLivedBoundary(lived,situation),
+          });
+        },
+      });
+      const atHome=await service.ensure({
+        threadId,at:"2026-10-14T16:10:00.000Z",
+      });
+      assert.equal(atHome.location.placeRef,life.homeRef);
+      assert.equal(lived.nextLivedBoundaryAt(),"2026-10-14T16:20:00.000Z");
+      const times=[
+        "2026-10-14T16:20:00.000Z",
+        "2026-10-14T16:40:00.000Z",
+        "2026-10-14T17:40:00.000Z",
+        "2026-10-14T18:00:00.000Z",
+      ];
+      const progressed=[];
+      for(const at of times){
+        dueAt=at;
+        const boundary=createLivedBoundaryProcess({
+          livedNowStore:lived,livedNow:service,now:()=>dueAt,
+        });
+        const outcome=await boundary.runOnce();
+        assert.equal(outcome.failed,0,"an ordinary travel boundary failed");
+        assert.equal(outcome.attempted,1,"travel needed an invented extra wake");
+        progressed.push(lived.getCurrentSituation(threadId));
+      }
+      assert.deepEqual(progressed.map(scene=>scene.phase),[
+        "in_transit","at_place","in_transit","at_place",
+      ],"the visit skipped travel or failed to come home");
+      assert.equal(progressed[0].location.toPlaceRef,library.ref);
+      assert.equal(progressed[1].location.placeRef,library.ref);
+      assert.equal(progressed[2].location.fromPlaceRef,library.ref);
+      assert.equal(progressed[3].location.placeRef,life.homeRef);
+      assert.deepEqual(lived.listCurrentVenueSituations({
+        venueRef:library.physicalVenue.ref,at:"2026-10-14T17:00:00.000Z",
+        excludeThreadId:threadId,
+      }),[],"an empty venue manufactured someone to meet");
+      assert.deepEqual(lived.listCurrentVenueSituations({
+        venueRef:library.physicalVenue.ref,at:"2026-10-14T18:00:00.000Z",
+      }),[],"departed visitor remained at the library");
+      assert.equal(scenes.length,5,
+        "an unchanged stay generated extra situation callbacks");
+      assert.equal(lived.nextLivedBoundaryAt(),"2026-10-14T19:00:00.001Z");
+    }finally{lived.close();}
+  }));
