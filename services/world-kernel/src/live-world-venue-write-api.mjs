@@ -1,6 +1,7 @@
 import {
   assertExactKeys,assertId,assertPlainObject,
 } from "./persistence-common.mjs";
+import {createGuySocialDiscovery} from "./guy-social-discovery.mjs";
 
 // Admission establishes World facts, not visits, consent, meetings or plans.
 const ROUTES=Object.freeze({
@@ -8,6 +9,7 @@ const ROUTES=Object.freeze({
   "/internal/world-venues/admit-public":"public",
   "/internal/world-venues/locate-private":"private",
   "/internal/world-venues/places":"list_public",
+  "/internal/guy/ask":"guy",
 });
 const PUBLIC_FIELDS=[
   "venueIdentity","displayName","streetAddress","locality","country",
@@ -31,6 +33,9 @@ export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
   if(typeof privateToken!=="string"||!privateToken){
     throw new TypeError("World venue admission requires private token");
   }
+  const guy=createGuySocialDiscovery({
+    listPublicPlaces:query=>livedNowStore.listPublicPlacesByLocality(query),
+  });
   return Object.freeze({
     async fetch(request){
       const route=ROUTES[new URL(request.url).pathname];
@@ -53,6 +58,11 @@ export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
           return Response.json({ok:true,places});
         }
         const body=await request.json();
+        if(route==="guy"){
+          assertPlainObject("Guy question",body);
+          assertExactKeys("Guy question",body,["question","asker","location"]);
+          return Response.json({ok:true,result:guy.ask(body)});
+        }
         assertPlainObject("World place admission",body);
         if(route==="public"){
           assertExactKeys("public World venue",body,PUBLIC_FIELDS);
