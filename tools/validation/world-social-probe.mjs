@@ -4,6 +4,7 @@ import { dirname,resolve } from "node:path";
 import { fileURLToPath,pathToFileURL } from "node:url";
 
 import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
+import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
 import {
   privateGet,publicThreads,requireRuntimeAncestor,topology,validatorGitSha,
 } from "./encounter-autonomy-probe.mjs";
@@ -32,11 +33,23 @@ function groundedLifeSummary(threadId,person,checkedAt){
     ?situation.location.placeRef:null;
   const place=currentRef===null?null:
     bound.find((candidate)=>candidate.ref===currentRef)??null;
+  const currentEpisode=currentRef===null?null:
+    (lived.placeEpisodes??[]).find((candidate)=>
+      placeEpisodeRevisionRef(candidate)===currentRef)??null;
   const description=currentRef===null?null:
     (lived.worldPlaces??[]).find((candidate)=>candidate.ref===currentRef)
-    ??(lived.placeEpisodes??[]).find((candidate)=>
-      candidate.episodeId===currentRef||candidate.ref===currentRef)
-    ??null;
+    ??currentEpisode;
+  const geography=[...new Set((lived.placeEpisodes??[])
+    .filter((episode)=>episode.place?.locality&&episode.place?.countryCode)
+    .map((episode)=>episode.place.locality+", "+episode.place.countryCode))];
+  const availableContexts=(lived.worldPlaces??[]).map((candidate)=>({
+    contextPlaceRef:candidate.ref,
+    kind:candidate.placeKind,
+    description:candidate.displayName,
+    attestedVenueRef:candidate.physicalVenue?.ref??null,
+    // An admitted historical learning context is not proof of a public venue.
+    authority:candidate.authority,
+  }));
   const now=Date.parse(checkedAt);
   const futureStops=(lived.currentPersonalPlan?.stops??[])
     .filter((stop)=>stop.presenceMode==="physical"
@@ -52,6 +65,9 @@ function groundedLifeSummary(threadId,person,checkedAt){
     currentSituationAt:situation?.establishedAt??null,
     currentPlaceRef:currentRef,
     currentPlaceDescription:description?.displayName??description?.place?.displayName??null,
+    currentPlaceKind:currentEpisode?.episodeKind??description?.placeKind??null,
+    coarseKnownLocalities:geography.slice(0,4),
+    availableWorldContexts:availableContexts.slice(0,5),
     currentWakefulness:situation?.wakefulness??"unknown",
     availableLiveWorldPlaceCount:(lived.worldPlaces??[]).length,
     attestedVenueCount:bound.length,
