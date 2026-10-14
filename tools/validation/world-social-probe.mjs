@@ -28,6 +28,7 @@ function runtimeSourceMatches(deployedSha,head){
 function groundedLifeSummary(threadId,person,checkedAt){
   const lived=person.livedNow??{};
   const situation=lived.currentSituation??null;
+  const privatePlace=lived.privatelyKnownCurrentPlace??null;
   const bound=(lived.worldPlaces??[]).filter((place)=>place.physicalVenue?.ref);
   const currentRef=situation?.location?.kind==="place"
     ?situation.location.placeRef:null;
@@ -66,7 +67,15 @@ function groundedLifeSummary(threadId,person,checkedAt){
     currentPlaceRef:currentRef,
     currentPlaceDescription:description?.displayName??description?.place?.displayName??null,
     currentPlaceKind:currentEpisode?.episodeKind??description?.placeKind??null,
-    coarseKnownLocalities:geography.slice(0,4),
+    privatelyLocated:privatePlace!==null,
+    preciseResidentialAddressKnown:privatePlace?.streetAddress!==null
+      &&privatePlace?.streetAddress!==undefined,
+    privateWorldLocality:privatePlace?.locality??null,
+    publicLocationGranularity:privatePlace?.publicGranularity??null,
+    coarseKnownLocalities:[...new Set([
+      ...(privatePlace===null?[]:[privatePlace.locality+", "+privatePlace.countryCode]),
+      ...geography,
+    ])].slice(0,4),
     availableWorldContexts:availableContexts.slice(0,5),
     currentWakefulness:situation?.wakefulness??"unknown",
     availableLiveWorldPlaceCount:(lived.worldPlaces??[]).length,
@@ -221,6 +230,8 @@ export async function runWorldSocialProbe({
     totalDiscoverableThreadCount:cards.length,
     boundedScan:cards.length>scan.length,unavailableThreadIds:unavailable,
     groundedLife:{
+      privatelyLocatedThreadCount:life.filter((item)=>item.privatelyLocated).length,
+      exactResidentialAddressCount:life.filter((item)=>item.preciseResidentialAddressKnown).length,
       attestedVenueThreadCount:attested.length,
       currentAttestedVenueVisitCount:present.length,
       awakeAttestedVenueVisitCount:awakePresent.length,
