@@ -70,12 +70,14 @@ export function createSocialMeetingService({
   modelAdapter,
   liveEncounterRegistry = null,
   onExperienceQueued = null,
+  recentDiscovery = false,
 }) {
   requireMethod("worldReader", worldReader, "getThread");
   requireMethod("livedNow", livedNow, "ensure");
   requireMethod("livedNowStore", livedNowStore, "getCurrentSituation");
   requireMethod("livedNowStore", livedNowStore, "getPreviousSituation");
   requireMethod("livedNowStore", livedNowStore, "listCurrentSituations");
+  if(recentDiscovery)requireMethod("livedNowStore",livedNowStore,"listRecentCurrentSituations");
   requireMethod("livedNowStore", livedNowStore, "listWorldPlaces");
   requireMethod("livedNowStore", livedNowStore, "latestPlan");
   requireMethod("identityStore", identityStore, "getCurrentIdentityView");
@@ -114,8 +116,16 @@ export function createSocialMeetingService({
   }
 
   async function discoverCoPresent(initiator, at) {
-    const candidates = livedNowStore.listCurrentSituations({ at })
-      .filter((situation) => situation.threadId !== initiator.thread.threadId);
+    // Autonomous consideration is limited to an already-enacted recent
+    // neighborhood sample; explicit /meet retains its existing discovery.
+    const situations=recentDiscovery
+      ?livedNowStore.listRecentCurrentSituations({
+        at,since:new Date(Date.parse(at)-60*60_000).toISOString(),limit:16,
+      })
+      :livedNowStore.listCurrentSituations({at});
+    const candidates = situations
+      .filter((situation) => situation.threadId !== initiator.thread.threadId
+        &&situation.wakefulness!=="asleep");
     const discovered = [];
 
     for (const candidateSituation of candidates) {
@@ -130,7 +140,10 @@ export function createSocialMeetingService({
       if (!compatible(initiator, candidate, livedNowStore)) continue;
 
       const refreshed = await currentContext(candidateSituation.threadId, at);
-      if (compatible(initiator, refreshed, livedNowStore)) discovered.push(refreshed);
+      if (compatible(initiator, refreshed, livedNowStore)) {
+        discovered.push(refreshed);
+        if(recentDiscovery)break; // One candidate, one bounded social decision.
+      }
     }
 
     return Object.freeze(discovered);
