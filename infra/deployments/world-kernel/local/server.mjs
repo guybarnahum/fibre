@@ -33,6 +33,8 @@ import { createPublicVisitorEncounterWriteApi } from "#services/world-kernel/src
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { createThreadContactPerception } from "#services/world-kernel/src/thread-contact-perception.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
+import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
+import { createWorldSocialOpportunity } from "#services/world-kernel/src/world-social-opportunity.mjs";
 import {
   combineWorldEnvironmentProcesses,
   createWorldEnvironmentOpportunity,
@@ -354,6 +356,16 @@ export async function startWorldKernelFromEnvironment(
         dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
       });
       if(earned.inserted)await reconciliationRuntime.requestWakeAfter(60_000);
+      const venue=livedNowStore.getWorldPlace(
+        situation.threadId,situation.location.placeRef,{required:false},
+      )?.physicalVenue?.ref??null;
+      if(venue!==null&&situation.wakefulness!=="asleep"){
+        const social=livedExperienceStore.enqueueSocialOpportunity({
+          threadId:situation.threadId,situationId:situation.situationId,
+          dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
+        });
+        if(social.inserted)await reconciliationRuntime.requestWakeAfter(60_000);
+      }
       const stayDueAt=worldStayOpportunityDueAt(
         situation,nextLivedBoundary(livedNowStore,situation),
       );
@@ -438,6 +450,19 @@ export async function startWorldKernelFromEnvironment(
   const livedBoundaryProcess=createLivedBoundaryProcess({
     livedNowStore,livedNow:contactLivedNow,
   });
+  const socialMeetingService=createSocialMeetingService({
+    worldReader:store,livedNow:contactLivedNow,livedNowStore,
+    identityStore,situatedLifeStore,semanticStateStore,
+    memoryStore:autobiographicalMemoryStore,
+    experienceStore:livedExperienceStore,
+    modelAdapter:selectReasoningIntegration(DEPLOYMENT.integrations.encounter,{environment}),
+    recentDiscovery:true,
+    onExperienceQueued:(queued)=>experienceConsolidationWakeScheduler(queued),
+  });
+  const socialOpportunityProcess=createWorldSocialOpportunity({
+    experienceStore:livedExperienceStore,livedNowStore,
+    meetingService:socialMeetingService,
+  });
   const reconciliationProcess = createWorldReconciliationProcess({
     livedBoundaryProcess,
     presentationDelivery,
@@ -445,6 +470,7 @@ export async function startWorldKernelFromEnvironment(
     contactOutreachProcess,
     contactReceptionProcess,
     environmentEvolutionProcess,
+    socialOpportunityProcess,
     onError: reportReconciliationError,
   });
   const reconciliationRuntime = createWorldReconciliationRuntime({
