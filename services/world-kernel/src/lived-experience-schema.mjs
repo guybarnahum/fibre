@@ -55,6 +55,21 @@ export function createLivedExperienceTables(database) {
       ON world_environment_stay_opportunities(due_at)
       WHERE completed_at IS NULL;
 
+    -- Enacted co-presence may earn one bounded social consideration.
+    -- Starting an attempt is durable: interrupted cognition is not silently rerolled.
+    CREATE TABLE IF NOT EXISTS world_social_opportunities (
+      situation_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      due_at TEXT NOT NULL,
+      started_at TEXT,
+      completed_at TEXT,
+      outcome TEXT,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_world_social_opportunities_due
+      ON world_social_opportunities(due_at)
+      WHERE started_at IS NULL;
+
     CREATE TABLE IF NOT EXISTS world_environment_followups (
       source_encounter_ref TEXT PRIMARY KEY,
       place_ref TEXT NOT NULL,
