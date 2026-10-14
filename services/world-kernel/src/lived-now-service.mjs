@@ -375,7 +375,7 @@ async function formPlan({
     :null;
   const guidePlaces=materializedAt===null
     ?localCityGuideChoices(cityGuide,{
-      location:currentLocation,
+      location:currentLocation,asOf:startAt,
       getPublicPlace:ref=>livedNowStore.getPublicPlace?.(ref)??null,
     })
     :[];
