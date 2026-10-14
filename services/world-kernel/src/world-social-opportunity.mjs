@@ -47,7 +47,7 @@ export function createWorldSocialOpportunity({
             outcome="no_co_presence";
           }else{
             const candidates=livedNowStore.listCurrentVenueSituations({
-              venueRef:venue,at,limit:8,
+              venueRef:venue,at,limit:8,excludeThreadId:opportunity.threadId,
             });
             const other=candidates.some((situation)=>{
               if(situation.threadId===opportunity.threadId
