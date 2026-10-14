@@ -15,6 +15,7 @@ const PUBLIC_FIELDS=[
 const PRIVATE_FIELDS=[
   "threadId","placeRef","specificPlace","streetAddress","locality",
   "country","countryCode","lat","long","timeZone","evidenceRef",
+  "publicGranularity",
 ];
 
 export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
