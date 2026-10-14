@@ -250,8 +250,8 @@ test("an extended stay earns one independent World event consideration after a q
       "noticed","first person lost independently admitted experience");
     assert.equal(store.getThreadEncounterAttention(people[1],stories[0].encounterId)?.outcome,
       "not_noticed","second person was forced to notice the rain");
-    assert.equal(store.listThreadExperiences(people[1]).length,0,
-      "a missed event became a private experience");
+    assert.equal(store.getThreadEncounterAttention(people[1],stories[0].encounterId)?.experience,
+      null,"a missed event became a private experience");
     assert.equal(queued.length,1,"one noticing did not produce one selective aftermath");
     assert.equal(invoked.filter(id=>id.startsWith("world-initial-opportunity_")).length,2,
       "retry rerolled exterior World history");
