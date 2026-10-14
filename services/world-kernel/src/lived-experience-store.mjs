@@ -145,6 +145,13 @@ function normalizeStory(candidate, participantIds) {
   };
 }
 
+// A fixed internal SQL table selection, never a value authored by cognition.
+function environmentOpportunityTable(kind){
+  if(kind==="arrival")return "world_environment_opportunities";
+  if(kind==="stay")return "world_environment_stay_opportunities";
+  throw new TypeError("World opportunity kind must be arrival or stay");
+}
+
 export class LivedExperienceStore {
   #database;
 
@@ -161,15 +168,16 @@ export class LivedExperienceStore {
 
   close() { this.#database.close(); }
 
-  enqueueEnvironmentalOpportunity({threadId,situationId,dueAt}){
+  enqueueEnvironmentalOpportunity({threadId,situationId,dueAt,kind="arrival"}){
     assertId("World opportunity threadId",threadId);
     assertId("World opportunity situationId",situationId);
     assertIsoTimestamp("World opportunity dueAt",dueAt);
+    const table=environmentOpportunityTable(kind);
     const inserted=this.#database.prepare(`
-      INSERT OR IGNORE INTO world_environment_opportunities(situation_id,thread_id,due_at)
+      INSERT OR IGNORE INTO ${table}(situation_id,thread_id,due_at)
       VALUES(?,?,?)
     `).run(situationId,threadId,dueAt).changes===1;
-    return Object.freeze({threadId,situationId,dueAt,inserted});
+    return Object.freeze({threadId,situationId,dueAt,kind,inserted});
   }
 
   inspectEnvironmentalOpportunities(threadId,{limit=12}={}){
@@ -178,11 +186,15 @@ export class LivedExperienceStore {
       throw new TypeError("World opportunity inspection limit must be 1-40");
     }
     return this.#database.prepare(`
-      SELECT situation_id,due_at,decision_json,result_encounter_ref,completed_at
-      FROM world_environment_opportunities
-      WHERE thread_id=?
-      ORDER BY due_at DESC,situation_id DESC LIMIT ?
-    `).all(threadId,limit).map((row)=>Object.freeze({
+      SELECT * FROM (
+        SELECT 'arrival' AS kind,situation_id,due_at,decision_json,result_encounter_ref,completed_at
+        FROM world_environment_opportunities WHERE thread_id=?
+        UNION ALL
+        SELECT 'stay' AS kind,situation_id,due_at,decision_json,result_encounter_ref,completed_at
+        FROM world_environment_stay_opportunities WHERE thread_id=?
+      ) ORDER BY due_at DESC,situation_id DESC LIMIT ?
+    `).all(threadId,threadId,limit).map((row)=>Object.freeze({
+      kind:row.kind,
       situationId:row.situation_id,
       dueAt:row.due_at,
       outcome:row.decision_json===null?"pending":JSON.parse(row.decision_json).outcome,
@@ -193,8 +205,11 @@ export class LivedExperienceStore {
 
   nextEnvironmentalOpportunityAt(){
     return this.#database.prepare(`
-      SELECT due_at FROM world_environment_opportunities
-      WHERE completed_at IS NULL ORDER BY due_at LIMIT 1
+      SELECT due_at FROM (
+        SELECT due_at FROM world_environment_opportunities WHERE completed_at IS NULL
+        UNION ALL
+        SELECT due_at FROM world_environment_stay_opportunities WHERE completed_at IS NULL
+      ) ORDER BY due_at LIMIT 1
     `).get()?.due_at??null;
   }
 
@@ -204,18 +219,25 @@ export class LivedExperienceStore {
       throw new TypeError("World opportunity limit must be 1-4");
     }
     return this.#database.prepare(`
-      SELECT thread_id,situation_id,due_at,decision_json
-      FROM world_environment_opportunities
-      WHERE completed_at IS NULL AND due_at<=?
-      ORDER BY due_at,situation_id LIMIT ?
-    `).all(at,limit).map((row)=>Object.freeze({
+      SELECT * FROM (
+        SELECT 'arrival' AS kind,thread_id,situation_id,due_at,decision_json
+        FROM world_environment_opportunities
+        WHERE completed_at IS NULL AND due_at<=?
+        UNION ALL
+        SELECT 'stay' AS kind,thread_id,situation_id,due_at,decision_json
+        FROM world_environment_stay_opportunities
+        WHERE completed_at IS NULL AND due_at<=?
+      ) ORDER BY due_at,situation_id LIMIT ?
+    `).all(at,at,limit).map((row)=>Object.freeze({
+      kind:row.kind,
       threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
       decision:row.decision_json===null?null:JSON.parse(row.decision_json),
     }));
   }
 
-  recordEnvironmentalOpportunityDecision({situationId,decision}){
+  recordEnvironmentalOpportunityDecision({situationId,decision,kind="arrival"}){
     assertId("World opportunity situationId",situationId);
+    const table=environmentOpportunityTable(kind);
     if(!["no_change","changed","not_observable"].includes(decision?.outcome)
       ||typeof decision.occurredAt!=="string"
       ||(decision.outcome==="changed")!==
@@ -235,23 +257,24 @@ export class LivedExperienceStore {
     }
     const body=canonicalJson(decision);
     this.#database.prepare(`
-      UPDATE world_environment_opportunities SET decision_json=?
+      UPDATE ${table} SET decision_json=?
       WHERE situation_id=? AND decision_json IS NULL AND completed_at IS NULL
     `).run(body,situationId);
     const recorded=this.#database.prepare(`
-      SELECT decision_json FROM world_environment_opportunities WHERE situation_id=?
+      SELECT decision_json FROM ${table} WHERE situation_id=?
     `).get(situationId);
     if(recorded?.decision_json!==body)throw new TypeError("World initial decision conflicts");
     return Object.freeze(JSON.parse(body));
   }
 
-  completeEnvironmentalOpportunity({situationId,resultEncounterRef=null,completedAt}){
+  completeEnvironmentalOpportunity({situationId,resultEncounterRef=null,completedAt,kind="arrival"}){
     assertId("World opportunity situationId",situationId);
+    const table=environmentOpportunityTable(kind);
     if(resultEncounterRef!==null)assertId("World initial result",resultEncounterRef);
     assertIsoTimestamp("World initial completedAt",completedAt);
     const row=this.#database.prepare(`
       SELECT decision_json,result_encounter_ref,completed_at
-      FROM world_environment_opportunities WHERE situation_id=?
+      FROM ${table} WHERE situation_id=?
     `).get(situationId);
     if(!row?.decision_json)throw new TypeError("World initial decision not recorded");
     const decision=JSON.parse(row.decision_json);
@@ -265,7 +288,7 @@ export class LivedExperienceStore {
       return;
     }
     this.#database.prepare(`
-      UPDATE world_environment_opportunities SET result_encounter_ref=?,completed_at=?
+      UPDATE ${table} SET result_encounter_ref=?,completed_at=?
       WHERE situation_id=? AND completed_at IS NULL
     `).run(resultEncounterRef,completedAt,situationId);
   }
