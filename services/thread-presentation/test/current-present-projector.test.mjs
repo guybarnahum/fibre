@@ -153,8 +153,8 @@ test("private residence has a public city, never a published street address",()=
       displayName:"Private third-floor residence at 75 Hidden Street",
     },
   };
-  const projected=projectCurrentSituationPresent({
-    currentSituation:{
+  const currentSituation={
+
       situationId:"sit_private_residence",
       threadId:THREAD_ID,
       establishedAt:"2026-10-14T04:00:00Z",
@@ -169,7 +169,9 @@ test("private residence has a public city, never a published street address",()=
       resolution:{kind:"personal_plan",conflict:false,observedDivergence:false,
         governingPlanRef:"lplan_home",constrainedPlanRef:null,summary:"At home"},
       provenance:"world_enacted",
-    },
+  };
+  const projected=projectCurrentSituationPresent({
+    currentSituation,
     placeEpisodes:[privateResidence],
     coarsePlace:{displayName:"Haifa, Israel",region:null},
   });
@@ -177,4 +179,9 @@ test("private residence has a public city, never a published street address",()=
     "World-grounded locality was absent from the public present");
   assert.equal(JSON.stringify(projected).includes("75 Hidden Street"),false,
     "a private residential address appeared in the public present");
+  const hidden=projectCurrentSituationPresent({
+    currentSituation,placeEpisodes:[privateResidence],coarsePlace:null,
+  });
+  assert.equal(hidden.location.place,null,
+    "hidden residence inherited an older public place disclosure");
 });
