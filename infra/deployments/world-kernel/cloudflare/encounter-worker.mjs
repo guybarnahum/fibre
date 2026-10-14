@@ -290,22 +290,37 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const situatedLifeStore=openSituatedLifeStore(runtime.worldStorage);
       const semanticStateStore=openSemanticStateStore(runtime.worldStorage);
       const memoryStore=openAutobiographicalMemoryStore(runtime.worldStorage);
+      // Quiet social opportunities need neither planning nor encounter inference.
+      let livedNowModelAdapter=null;
       const livedNow=createLivedNowService({
         experienceStore,
         livedNowStore,worldStore:runtime.worldStore,
         identityStore,semanticStateStore,memoryStore,situatedLifeStore,
-        modelAdapter:selectReasoningIntegration(
-          deployment.integrations.livedNow,{environment:this.env},
-        ),
+        modelAdapter:{
+          invoke:(request)=>{
+            livedNowModelAdapter??=selectReasoningIntegration(
+              deployment.integrations.livedNow,{environment:this.env},
+            );
+            return livedNowModelAdapter.invoke(request);
+          },
+        },
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
       });
+      let socialModelAdapter=null;
+      const encounterModelAdapter=()=>{
+        socialModelAdapter??=selectReasoningIntegration(
+          deployment.integrations.encounter,{environment:this.env},
+        );
+        return socialModelAdapter;
+      };
       const meetingService=createSocialMeetingService({
         worldReader:runtime.worldStore,livedNow,livedNowStore,
         identityStore,situatedLifeStore,semanticStateStore,memoryStore,experienceStore,
-        modelAdapter:selectReasoningIntegration(
-          deployment.integrations.encounter,{environment:this.env},
-        ),
+        modelAdapter:{
+          invoke:(request)=>encounterModelAdapter().invoke(request),
+          streamExpression:(request)=>encounterModelAdapter().streamExpression(request),
+        },
         boundedVenueDiscovery:true,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
