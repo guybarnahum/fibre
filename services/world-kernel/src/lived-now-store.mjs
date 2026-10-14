@@ -232,7 +232,8 @@ export class LivedNowStore {
   #resolveLivedReference(threadId, reference) {
     const situated = resolveSituatedReference(this.#database, threadId, reference);
     if (situated !== null) return situated;
-    const worldPlace = resolveLiveWorldPlace(this.#database, threadId, reference);
+    const worldPlace = resolveLiveWorldPlace(this.#database, threadId, reference)
+      ??getWorldPublicPlace(this.#database,reference);
     if (worldPlace !== null) return { kind:"world_place", reference, worldPlace };
     const workTable = this.#database.prepare(`
       SELECT 1 AS present FROM sqlite_master
@@ -416,7 +417,13 @@ export class LivedNowStore {
 
   listWorldPlaces(threadId) {
     this.#requireThread(threadId);
-    return listLiveWorldPlaces(this.#database, threadId);
+    const historic=listLiveWorldPlaces(this.#database,threadId);
+    // A current public visit must resolve to exactly the same World venue
+    // for perception and meeting compatibility. Do not list the whole city.
+    const location=this.getCurrentSituation(threadId)?.location;
+    const current=location?.kind==="place"
+      ?getWorldPublicPlace(this.#database,location.placeRef):null;
+    return current===null?historic:[...historic,current];
   }
 
   admitPublicPlace(candidate){
@@ -442,6 +449,10 @@ export class LivedNowStore {
 
   getPublicPlace(placeRef){
     return getWorldPublicPlace(this.#database,placeRef);
+  }
+
+  listPublicPlacesByLocality({locality,countryCode,limit=12}){
+    return listLocalWorldPublicPlaces(this.#database,{locality,countryCode,limit});
   }
 
   listPublicPlacesNearCurrentLife(threadId,{limit=12}={}){
@@ -477,7 +488,8 @@ export class LivedNowStore {
 
   getWorldPlace(threadId, reference, { required = true } = {}) {
     this.#requireThread(threadId);
-    const place = resolveLiveWorldPlace(this.#database, threadId, reference);
+    const place = resolveLiveWorldPlace(this.#database, threadId, reference)
+      ??getWorldPublicPlace(this.#database,reference);
     if (place === null && required) {
       throw new LivedNowNotFoundError(`shared World place ${reference} was not found for Thread ${threadId}`);
     }
