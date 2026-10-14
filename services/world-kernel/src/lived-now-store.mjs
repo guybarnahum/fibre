@@ -458,6 +458,12 @@ export class LivedNowStore {
     return coarseWorldPlace(this.getPrivatePlace(threadId,placeRef));
   }
 
+  currentLocationTimeZone(threadId){
+    const situation=this.getCurrentSituation(threadId);
+    if(situation?.location?.kind!=="place")return null;
+    return this.getPrivatePlace(threadId,situation.location.placeRef)?.timeZone??null;
+  }
+
   bindPhysicalVenue(candidate){
     if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot attest a physical venue");
     return this.#database.transaction(()=>bindLivePhysicalVenue(this.#database,candidate));
