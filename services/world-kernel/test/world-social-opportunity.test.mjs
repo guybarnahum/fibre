@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync,readFileSync,rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
+import { openLivedNowStore } from "../src/lived-now-store.mjs";
+import { normalizeCurrentSituation } from "../src/lived-now.mjs";
+import { canonicalJson,sha256 } from "../src/persistence-common.mjs";
 import { createWorldSocialOpportunity } from "../src/world-social-opportunity.mjs";
 
 const seed=JSON.parse(readFileSync(
@@ -102,6 +106,97 @@ test("ordinary shared presence permits a single voluntary consideration, not a s
     );
   }finally{
     experience.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
+
+
+test("venue discovery reaches actual awake long-stayers beyond historical bindings",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-venue-presence-"));
+  const path=join(directory,"world.sqlite");
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:path}}),
+    stateScopeId:"world",
+  };
+  const historical=Array.from({length:32},(_,i)=>"thr_venue_history_"+String(i).padStart(2,"0"));
+  const asleep="thr_venue_asleep";
+  const reader="thr_venue_reader";
+  const arriving="thr_venue_arriving";
+  const threadIds=[...historical,asleep,reader,arriving];
+  const venueRef="venue_library_attested";
+  const placeRef="wpl_library_attested";
+  let lived=null;
+  try{
+    const world=openWorldStore(storage);
+    try{
+      for(const threadId of threadIds){
+        const person=structuredClone(seed);
+        person.threadId=threadId;
+        person.provenance.lastEventId="evt_"+threadId;
+        world.seedThread(person);
+      }
+    }finally{world.close();}
+    lived=openLivedNowStore(storage);
+    const db=new DatabaseSync(path,{enableForeignKeyConstraints:true});
+    try{
+      const place={
+        ref:placeRef,liveWorldRef:"lworld_venue_test",
+        sourceWorldRef:"world_venue_test",sourcePlaceId:"library",
+        placeKind:"library_or_learning",
+        displayName:"An attested neighborhood library",
+        authority:"live-world-place-admission-v1",
+      };
+      const placeJson=canonicalJson(place);
+      db.prepare("INSERT INTO live_world_place_records("+
+        "place_ref,live_world_ref,source_world_ref,source_place_id,place_kind,record_json,record_digest"+
+        ") VALUES (?,?,?,?,?,?,?)").run(
+        placeRef,place.liveWorldRef,place.sourceWorldRef,place.sourcePlaceId,
+        place.placeKind,placeJson,"sha256:"+sha256(placeJson),
+      );
+      const bind=db.prepare("INSERT INTO live_physical_venue_bindings("+
+        "thread_id,context_place_ref,venue_ref,display_name,locality,country,evidence_ref"+
+        ") VALUES (?,?,?,?,?,?,?)");
+      for(const threadId of threadIds){
+        bind.run(threadId,placeRef,venueRef,"Neighborhood Library","Tucson","US","fixture-venue-attestation");
+      }
+      const record=db.prepare("INSERT INTO current_situation_records("+
+        "situation_id,thread_id,established_at,record_json,record_digest"+
+        ") VALUES (?,?,?,?,?)");
+      for(const [threadId,establishedAt,wakefulness] of [
+        [asleep,"2026-10-13T18:45:00.000Z","asleep"],
+        [reader,"2026-10-13T16:00:00.000Z","awake"],
+        [arriving,"2026-10-13T19:00:00.000Z","awake"],
+      ]){
+        const situation=normalizeCurrentSituation({
+          situationId:"sit_"+threadId,threadId,establishedAt,
+          phase:"at_place",location:{kind:"place",placeRef},
+          mediatedContext:null,activity:"Spending time at the library.",
+          wakefulness,reason:"World-enacted visit.",
+          participantRefs:[],evidenceRefs:["evt_"+threadId],
+          sourcePlanRefs:["plan_"+threadId],
+          resolution:{
+            kind:"personal_plan",conflict:false,observedDivergence:false,
+            governingPlanRef:"plan_"+threadId,
+            constrainedPlanRef:null,summary:"At the planned library.",
+          },
+          provenance:"world_enacted",
+        });
+        const body=canonicalJson(situation);
+        record.run(situation.situationId,threadId,establishedAt,body,"sha256:"+sha256(body));
+      }
+    }finally{db.close();}
+    const present=lived.listCurrentVenueSituations({
+      venueRef,at:AT,limit:1,excludeThreadId:arriving,
+    });
+    assert.deepEqual(present.map((situation)=>situation.threadId),[reader],
+      "real long-staying company was hidden by historical bindings or sleep");
+    assert.equal(present[0].establishedAt,"2026-10-13T16:00:00.000Z",
+      "venue discovery discarded the independently enacted long stay");
+    assert.deepEqual(lived.listCurrentVenueSituations({
+      venueRef,at:"2026-10-13T15:00:00.000Z",excludeThreadId:arriving,
+    }),[],"future presence was mistaken for current co-presence");
+  }finally{
+    lived?.close();
     rmSync(directory,{recursive:true,force:true});
   }
 });
