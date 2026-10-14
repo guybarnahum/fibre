@@ -51,7 +51,12 @@ export function listSocialCityGuide(manifest,{city,countryCode,limit=MAX_PLACES}
           ||!item.worldPlaceRef.startsWith("wpl_")))){
       throw new TypeError("City Guide contains an ungrounded place entry");
     }
-    return {id,...item};
+    return {
+      id,name:item.name,address:item.address,description:item.description,
+      activities:[...item.activities],lastRecommendedAt:item.lastRecommendedAt,
+      source:{directory:item.source.directory,url:item.source.url},
+      worldPlaceRef:item.worldPlaceRef??null,
+    };
   });
   return {version:GUIDE_VERSION,cityKey:key,status:"listed",
     city:section.city,country:section.country,countryCode,
