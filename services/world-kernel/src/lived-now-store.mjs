@@ -33,6 +33,12 @@ import {
   resolveLiveWorldPlace,
 } from "./live-world-place.mjs";
 
+import {
+  admitWorldPublicPlace,admitWorldPrivatePlace,createLiveWorldGeographyTables,
+  getWorldPrivatePlace,getWorldPublicPlace,listLocalWorldPublicPlaces,
+  coarseWorldPlace,
+} from "./live-world-geography.mjs";
+
 export class LivedNowConflictError extends Error {}
 export class LivedNowNotFoundError extends Error {}
 
@@ -106,6 +112,7 @@ function createTables(database) {
       WHERE due_at IS NOT NULL;
   `);
   createLiveWorldPlaceTables(database);
+  createLiveWorldGeographyTables(database);
 }
 
 function parseJson(name, value) {
@@ -410,6 +417,40 @@ export class LivedNowStore {
   listWorldPlaces(threadId) {
     this.#requireThread(threadId);
     return listLiveWorldPlaces(this.#database, threadId);
+  }
+
+  admitPublicPlace(candidate){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot admit a public venue");
+    return this.#database.transaction(()=>admitWorldPublicPlace(this.#database,candidate));
+  }
+
+  admitPrivatePlace(candidate){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot locate a private place");
+    this.#requireThread(candidate.threadId);
+    return this.#database.transaction(()=>admitWorldPrivatePlace(this.#database,candidate));
+  }
+
+  getPrivatePlace(threadId,placeRef){
+    this.#requireThread(threadId);
+    return getWorldPrivatePlace(this.#database,threadId,placeRef);
+  }
+
+  getPublicPlace(placeRef){
+    return getWorldPublicPlace(this.#database,placeRef);
+  }
+
+  listPublicPlacesNearCurrentLife(threadId,{limit=12}={}){
+    const situation=this.getCurrentSituation(threadId);
+    if(situation?.location?.kind!=="place")return [];
+    const privatePlace=this.getPrivatePlace(threadId,situation.location.placeRef);
+    if(privatePlace===null)return [];
+    return listLocalWorldPublicPlaces(this.#database,{
+      locality:privatePlace.locality,countryCode:privatePlace.countryCode,limit,
+    });
+  }
+
+  coarseCurrentPlace(threadId,placeRef){
+    return coarseWorldPlace(this.getPrivatePlace(threadId,placeRef));
   }
 
   bindPhysicalVenue(candidate){
