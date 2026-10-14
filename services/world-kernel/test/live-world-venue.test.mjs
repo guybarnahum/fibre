@@ -115,7 +115,9 @@ test("independent Threads can know one real public venue while their precise hom
       places.push(admitWorldPrivatePlace(db,{
         threadId,placeRef,specificPlace:"My actual apartment",
         streetAddress,locality:threadId.endsWith("other")?"Batumi":"Tbilisi",
-        country:"Georgia",countryCode:"GE",lat:41.72,long:44.78,
+        country:"Georgia",countryCode:"GE",
+        lat:threadId.endsWith("other")?41.65:41.72,
+        long:threadId.endsWith("other")?41.64:44.78,
         timeZone:"Asia/Tbilisi",evidenceRef:"world-attested-private-address",
       }));
     }
