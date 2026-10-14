@@ -15,7 +15,7 @@ export function createWorldSocialOpportunity({
     }
   }
   for(const method of [
-    "getCurrentSituation","getWorldPlace","listRecentCurrentSituations",
+    "getCurrentSituation","getWorldPlace","listCurrentVenueSituations",
   ]){
     if(typeof livedNowStore?.[method]!=="function"){
       throw new TypeError(`social opportunity requires ${method}()`);
@@ -46,8 +46,8 @@ export function createWorldSocialOpportunity({
             ||overdue<0||overdue>60*60_000){
             outcome="no_co_presence";
           }else{
-            const candidates=livedNowStore.listRecentCurrentSituations({
-              at,since:new Date(Date.parse(at)-60*60_000).toISOString(),limit:16,
+            const candidates=livedNowStore.listCurrentVenueSituations({
+              venueRef:venue,at,limit:8,
             });
             const other=candidates.some((situation)=>{
               if(situation.threadId===opportunity.threadId
