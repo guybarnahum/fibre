@@ -159,10 +159,10 @@ export async function runWorldSocialProbe({
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
   try{
-    if(process.argv.length!==5||process.argv[3]!=="--env"){
+    if(process.argv.length!==4||process.argv[2]!=="--env"){
       throw new TypeError("usage: npm run world-social:probe -- --env staging|production");
     }
-    await runWorldSocialProbe({targetEnvironment:process.argv[4]});
+    await runWorldSocialProbe({targetEnvironment:process.argv[3]});
   }catch(error){
     process.stderr.write(JSON.stringify({
       event:"world-social-probe-failed",
