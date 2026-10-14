@@ -105,7 +105,7 @@ function normalizeTimeZone(value) {
   return value;
 }
 
-function planningPlaceFromEpisode(reference, episode) {
+function planningPlaceFromEpisode(reference, episode, privatelyKnownPlace = null) {
   const location = Object.fromEntries(
     Object.entries({
       countryCode:episode.place.countryCode,
@@ -118,6 +118,17 @@ function planningPlaceFromEpisode(reference, episode) {
     displayName:episode.place.displayName,
     placeKind:episode.episodeKind,
     ...(Object.keys(location).length === 0 ? {} : { location:Object.freeze(location) }),
+    // Cognition receives the Thread's own admitted physical knowledge.
+    // This is never part of a public CurrentPresent projection.
+    ...(privatelyKnownPlace === null ? {} : {
+      privatelyKnownLocation:Object.freeze({
+        specificPlace:privatelyKnownPlace.specificPlace,
+        streetAddress:privatelyKnownPlace.streetAddress,
+        locality:privatelyKnownPlace.locality,
+        country:privatelyKnownPlace.country,
+        timeZone:privatelyKnownPlace.timeZone,
+      }),
+    }),
   });
 }
 
@@ -157,7 +168,9 @@ function resolvePlaces(threadId, references, sourceStores) {
 
   return references.map((reference) => {
     const episode = situated.get(reference);
-    if (episode !== undefined) return planningPlaceFromEpisode(reference, episode);
+    if (episode !== undefined) return planningPlaceFromEpisode(
+      reference,episode,livedNowStore.getPrivatePlace?.(threadId,reference)??null,
+    );
     const worldPlace = livedNowStore.getWorldPlace(threadId, reference, { required:false });
     if (worldPlace !== null) return planningPlaceFromWorld(reference, worldPlace);
     throw new TypeError(`personal plan available place ${reference} lacks World/situated authority`);
