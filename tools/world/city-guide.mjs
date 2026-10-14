@@ -10,7 +10,7 @@ function main(argv){
     else throw new TypeError("Usage: city-guide:list --city Tbilisi --country GE");
   }
   const manifest=JSON.parse(readFileSync(
-    new URL("../../data/world/social-city-guide.json",import.meta.url),"utf8",
+    new URL("../../data/social-city-guide.json",import.meta.url),"utf8",
   ));
   const guide=listSocialCityGuide(manifest,{city,countryCode});
   process.stdout.write(JSON.stringify(guide,null,2)+"\n");
