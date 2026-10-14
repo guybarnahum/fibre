@@ -127,7 +127,7 @@ export function admitWorldPrivatePlace(db,input){
   assertPlainObject("private World place",input);
   const {
     threadId,placeRef,specificPlace,streetAddress,locality,country,countryCode,
-    lat,long,timeZone:zone,evidenceRef,
+    lat,long,timeZone:zone,evidenceRef,publicGranularity="hidden",
   }=input;
   assertId("private World Thread",threadId);
   assertId("private World placeRef",placeRef);
@@ -135,6 +135,9 @@ export function admitWorldPrivatePlace(db,input){
     specificPlace,streetAddress,locality,country,countryCode,timeZone:zone,evidenceRef,
   }))text(`private World place ${name}`,value);
   coordinates(lat,long);timeZone(zone);
+  if(!["hidden","country","city"].includes(publicGranularity)){
+    throw new TypeError("private place publicGranularity must be hidden, country or city");
+  }
   const evidence=db.prepare(`SELECT 1 AS present FROM situated_evidence_witnesses
     WHERE thread_id=? AND reference=? AND witness_kind='place_episode_revision'
     LIMIT 1`).get(threadId,placeRef);
@@ -144,6 +147,7 @@ export function admitWorldPrivatePlace(db,input){
     streetAddress:streetAddress.trim(),locality:locality.trim(),
     country:country.trim(),countryCode:countryCode.trim(),
     lat,long,timeZone:zone,evidenceRef:evidenceRef.trim(),
+    publicGranularity,
     authority:PRIVATE_PLACE_AUTHORITY,
   });
   const existing=getWorldPrivatePlace(db,threadId,placeRef);
@@ -167,8 +171,11 @@ export function getWorldPrivatePlace(db,threadId,placeRef){
 }
 
 export function coarseWorldPlace(privatePlace){
-  if(privatePlace===null)return null;
+  if(privatePlace===null||privatePlace.publicGranularity==="hidden")return null;
   return Object.freeze({
-    displayName:`${privatePlace.locality}, ${privatePlace.country}`,region:null,
+    displayName:privatePlace.publicGranularity==="city"
+      ?`${privatePlace.locality}, ${privatePlace.country}`
+      :privatePlace.country,
+    region:null,
   });
 }
