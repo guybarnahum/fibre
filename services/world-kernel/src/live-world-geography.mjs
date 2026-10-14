@@ -1,5 +1,5 @@
 import {
-  IntegrityError,assertId,assertNonEmpty,assertIsoTimestamp,
+  IntegrityError,assertId,assertNonEmpty,
   assertPlainObject,canonicalJson,sha256,
 } from "./persistence-common.mjs";
 import { resolveLivePhysicalVenue } from "./live-world-place.mjs";
