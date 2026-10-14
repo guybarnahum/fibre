@@ -19,7 +19,8 @@ function runtimeSourceMatches(deployedSha,head){
       cwd:ROOT,encoding:"utf8",
     }).trim().split("\n").filter(Boolean);
     return files.every((path)=>path==="AGENTS.md"||path.startsWith("docs/")
-      ||path==="tools/validation/world-social-probe.mjs");
+      ||path==="tools/validation/world-social-probe.mjs"
+      ||path==="tools/validation/encounter-autonomy-probe.mjs");
   }catch{
     return false;
   }
