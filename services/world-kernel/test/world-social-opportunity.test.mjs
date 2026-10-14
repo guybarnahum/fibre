@@ -200,3 +200,82 @@ test("venue discovery reaches actual awake long-stayers beyond historical bindin
     rmSync(directory,{recursive:true,force:true});
   }
 });
+
+
+test("independently admitted public places reveal only actual same-venue visitors",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-public-venue-presence-"));
+  const path=join(directory,"world.sqlite");
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:path}}),
+    stateScopeId:"world",
+  };
+  const reader="thr_public_reader",visitor="thr_public_visitor";
+  let lived=null;
+  try{
+    const world=openWorldStore(storage);
+    try{
+      for(const threadId of [reader,visitor]){
+        const person=structuredClone(seed);
+        person.threadId=threadId;
+        person.provenance.lastEventId="evt_"+threadId;
+        world.seedThread(person);
+      }
+    }finally{world.close();}
+    lived=openLivedNowStore(storage);
+    const library=lived.admitPublicPlace({
+      venueIdentity:"fixture:independent-public-library",
+      displayName:"Public city library",
+      streetAddress:"7 Public Reading Street, Tbilisi",
+      locality:"Tbilisi",country:"Georgia",countryCode:"GE",
+      lat:41.697,long:44.801,timeZone:"Asia/Tbilisi",
+      evidenceRef:"https://example.org/public-library",
+      affordances:["Reading","Research"],
+    });
+    const db=new DatabaseSync(path,{enableForeignKeyConstraints:true});
+    try{
+      const insert=db.prepare(
+        "INSERT INTO current_situation_records("+
+        "situation_id,thread_id,established_at,record_json,record_digest"+
+        ") VALUES (?,?,?,?,?)"
+      );
+      function witness(threadId,at,phase,placeRef){
+        const staying=phase==="at_place";
+        const situation=normalizeCurrentSituation({
+          situationId:"sit_public_"+threadId+"_"+at.slice(11,16).replace(":",""),
+          threadId,establishedAt:at,phase,
+          location:staying?{kind:"place",placeRef}
+            :{kind:"transit",fromPlaceRef:library.ref,toPlaceRef:"per:home:1",progress:0.5},
+          mediatedContext:null,activity:staying?"Quiet reading.":"Returning home.",
+          wakefulness:"awake",reason:"Ordinary personal life.",
+          participantRefs:[],evidenceRefs:["evt_"+threadId],
+          sourcePlanRefs:["lplan_"+threadId],
+          resolution:{
+            kind:"personal_plan",conflict:false,observedDivergence:false,
+            governingPlanRef:"lplan_"+threadId,
+            constrainedPlanRef:null,summary:"Independent World presence.",
+          },
+          provenance:"world_enacted",
+        });
+        const body=canonicalJson(situation);
+        insert.run(situation.situationId,threadId,at,body,"sha256:"+sha256(body));
+      }
+      witness(reader,"2026-10-13T16:00:00.000Z","at_place",library.ref);
+      witness(visitor,"2026-10-13T18:00:00.000Z","at_place",library.ref);
+      witness(visitor,"2026-10-13T20:00:00.000Z","in_transit",null);
+    }finally{db.close();}
+    const venueRef=library.physicalVenue.ref;
+    assert.deepEqual(lived.listCurrentVenueSituations({
+      venueRef,at:"2026-10-13T17:00:00.000Z",excludeThreadId:reader,
+    }),[],"a future arrival was manufactured as company");
+    assert.deepEqual(lived.listCurrentVenueSituations({
+      venueRef,at:"2026-10-13T19:00:00.000Z",excludeThreadId:reader,
+    }).map(situation=>situation.threadId),[visitor],
+    "a second independent visitor was invisible at a shared public venue");
+    assert.deepEqual(lived.listCurrentVenueSituations({
+      venueRef,at:"2026-10-13T21:00:00.000Z",excludeThreadId:reader,
+    }),[],"someone who departed remained available for a meeting");
+  }finally{
+    lived?.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
