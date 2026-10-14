@@ -89,6 +89,14 @@ function createTables(database) {
 
     CREATE INDEX IF NOT EXISTS idx_current_situations_recent
       ON current_situation_records(established_at DESC);
+    -- Public venue presence is discovered by the enacted place ref, not by
+    -- scanning every Thread or relying on legacy per-Thread venue bindings.
+    CREATE INDEX IF NOT EXISTS idx_current_situations_place
+      ON current_situation_records(
+        json_extract(record_json,'$.location.placeRef'),
+        established_at DESC,thread_id
+      )
+      WHERE json_extract(record_json,'$.location.kind')='place';
 
     CREATE TRIGGER IF NOT EXISTS current_situations_no_update
       BEFORE UPDATE ON current_situation_records
@@ -679,7 +687,31 @@ export class LivedNowStore {
         AND s.thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')
       ORDER BY v.thread_id LIMIT ?
     `).all(at,venueRef,excludeThreadId,excludeThreadId,limit);
-    return rows.map(situationFromRow);
+    // Newly admitted public venues have a shared wpl_* ref and do not need
+    // one historical binding per Thread. Search the indexed enacted ref,
+    // then confirm it is still that person's latest actual situation.
+    const publicRows=this.#database.prepare(`
+      SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
+      FROM world_public_places p
+      JOIN current_situation_records s
+        ON json_extract(s.record_json,'$.location.placeRef')=p.place_ref
+      WHERE p.venue_ref=?
+        AND json_extract(s.record_json,'$.location.kind')='place'
+        AND s.established_at<=?
+        AND (? IS NULL OR s.thread_id<>?)
+        AND COALESCE(json_extract(s.record_json,'$.wakefulness'),'unknown')<>'asleep'
+        AND s.thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')
+        AND s.situation_id=(
+          SELECT latest.situation_id FROM current_situation_records latest
+          WHERE latest.thread_id=s.thread_id AND latest.established_at<=?
+          ORDER BY latest.established_at DESC,latest.situation_id DESC LIMIT 1
+        )
+      ORDER BY s.thread_id LIMIT ?
+    `).all(venueRef,at,excludeThreadId,excludeThreadId,at,limit);
+    const present=new Map([...rows,...publicRows]
+      .map(row=>[row.thread_id,situationFromRow(row)]));
+    return [...present.values()].sort((a,b)=>a.threadId.localeCompare(b.threadId))
+      .slice(0,limit);
   }
 
   listRecentCurrentSituations({at,since,limit=8}={}){
