@@ -228,6 +228,13 @@ export function createWorldReconciliationProcess({
             ...detail,
           },new Error(failure.message));
         }
+        for(const attempt of socialResult.result?.results??[]){
+          if(attempt.outcome!=="interrupted")continue;
+          const error=new Error(attempt.message??"social opportunity interrupted");
+          await onError?.({
+            kind:"world_social_opportunity",...errorRecord(error),
+          },error);
+        }
         return Object.freeze({
           skipped: false,
           reason: null,
