@@ -588,6 +588,35 @@ export class LivedNowStore {
     return rows.map(situationFromRow);
   }
 
+  // An arriving Thread can find someone who has been at an independently
+  // attested venue for hours. The venue index selects candidate Threads first;
+  // each one's latest enacted situation is then resolved by the Thread/time index.
+  listCurrentVenueSituations({venueRef,at,limit=8}={}){
+    assertId("shared venue reference",venueRef);
+    assertIsoTimestamp("venue presence time",at);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>16){
+      throw new TypeError("venue presence limit must be 1-16");
+    }
+    const rows=this.#database.prepare(`
+      WITH venue_candidates AS (
+        SELECT thread_id,context_place_ref FROM live_physical_venue_bindings
+        WHERE venue_ref=? ORDER BY thread_id LIMIT 32
+      )
+      SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
+      FROM venue_candidates v
+      JOIN current_situation_records s ON s.situation_id=(
+        SELECT latest.situation_id FROM current_situation_records latest
+        WHERE latest.thread_id=v.thread_id AND latest.established_at<=?
+        ORDER BY latest.established_at DESC,latest.situation_id DESC LIMIT 1
+      )
+      WHERE json_extract(s.record_json,'$.location.kind')='place'
+        AND json_extract(s.record_json,'$.location.placeRef')=v.context_place_ref
+        AND s.thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')
+      ORDER BY s.thread_id LIMIT ?
+    `).all(venueRef,at,limit);
+    return rows.map(situationFromRow);
+  }
+
   listRecentCurrentSituations({at,since,limit=8}={}){
     assertIsoTimestamp("recent situations at",at);
     assertIsoTimestamp("recent situations since",since);
