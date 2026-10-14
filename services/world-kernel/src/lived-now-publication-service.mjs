@@ -22,7 +22,7 @@ export function createLivedNowPublicationService({
     const coarsePlace=situation.location?.kind==="place"
       ?livedNowStore.coarseCurrentPlace?.(
         situation.threadId,situation.location.placeRef,
-      )??null:null;
+      ):undefined;
     const present = projectCurrentSituationPresent({
       currentSituation: situation,
       placeEpisodes: situatedLifeStore.listCurrentPlaceEpisodes(situation.threadId),
