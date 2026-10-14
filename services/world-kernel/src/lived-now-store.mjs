@@ -455,7 +455,9 @@ export class LivedNowStore {
   }
 
   coarseCurrentPlace(threadId,placeRef){
-    return coarseWorldPlace(this.getPrivatePlace(threadId,placeRef));
+    const privatePlace=this.getPrivatePlace(threadId,placeRef);
+    // undefined: no World disclosure authority; null: explicitly hidden.
+    return privatePlace===null?undefined:coarseWorldPlace(privatePlace);
   }
 
   currentLocationTimeZone(threadId){
