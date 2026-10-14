@@ -146,7 +146,9 @@ test("A4 public present is a lossy scene, not a serialization of private current
 });
 test("private residence has a public city, never a published street address",()=>{
   const privateResidence={...placeEpisode(),
-    visibility:"private",
+    // Even a prior public history label must not override the current private
+    // physical-location authority when World has one.
+    visibility:"public",
     place:{...placeEpisode().place,
       displayName:"Private third-floor residence at 75 Hidden Street",
     },
