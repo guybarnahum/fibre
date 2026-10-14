@@ -17,10 +17,17 @@ export function createLivedNowPublicationService({
   requireMethod(presentationPublisher, "publishCurrentPresent");
 
   async function publishCurrentSituation(situation) {
+    // World may know the exact private home; the viewer sees only its
+    // independently grounded city/country, never an address or coordinates.
+    const coarsePlace=situation.location?.kind==="place"
+      ?livedNowStore.coarseCurrentPlace?.(
+        situation.threadId,situation.location.placeRef,
+      )??null:null;
     const present = projectCurrentSituationPresent({
       currentSituation: situation,
       placeEpisodes: situatedLifeStore.listCurrentPlaceEpisodes(situation.threadId),
       lifeRelations: situatedLifeStore.listCurrentLifeRelations(situation.threadId),
+      coarsePlace,
     });
     const publication = await presentationPublisher.publishCurrentPresent({
       threadId: situation.threadId,
