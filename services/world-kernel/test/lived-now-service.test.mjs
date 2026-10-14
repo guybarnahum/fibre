@@ -636,7 +636,7 @@ test("E7.5 repeatedly unavailable cognition becomes a quiet, inspectable blocked
   }));
 
 
-test("a self-authored public visit becomes transit, an empty stay, and a genuine return home",async()=>
+test("an admitted personal public-visit plan enacts transit, empty stay and return home",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
     const lived=openLivedNowStore(localWorldStateStorage(databasePath));
