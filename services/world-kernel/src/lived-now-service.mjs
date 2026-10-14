@@ -5,6 +5,8 @@ import {
   assertPlainObject,
   canonicalJson,
 } from "./persistence-common.mjs";
+import cityGuide from "../../../data/social-city-guide.json" with { type:"json" };
+import { localCityGuideChoices } from "./social-city-guide.mjs";
 import { formPersonalLivedPlan } from "./lived-plan-cognition.mjs";
 import {
   livedInteroceptionForLivedHistory,
@@ -364,7 +366,22 @@ async function formPlan({
     : retrospectivePlan(livedNowStore, threadId, startAt, endAt, materializedAt);
   if (existing !== null) return existing;
 
-  const placeRefs = knownPlaceRefsAt(livedNowStore, situatedLifeStore, threadId, startAt);
+  const ordinaryPlaceRefs=knownPlaceRefsAt(livedNowStore,situatedLifeStore,threadId,startAt);
+  // A forward-looking Thread may learn of nearby editorial possibilities.
+  // Do not retroactively insert today's recommendations into a lived past.
+  const currentLocation=materializedAt===null
+    ?(livedNowStore.getPrivatePlace?.(threadId,startingPlace)
+      ??livedNowStore.getPublicPlace?.(startingPlace)??null)
+    :null;
+  const guidePlaces=materializedAt===null
+    ?localCityGuideChoices(cityGuide,{
+      location:currentLocation,
+      getPublicPlace:ref=>livedNowStore.getPublicPlace?.(ref)??null,
+    })
+    :[];
+  const placeRefs=[...new Set([
+    ...ordinaryPlaceRefs,...guidePlaces.map(place=>place.ref),
+  ])];
   if (placeRefs.length === 0) {
     throw new LivedNowCoverageError("Dormant catch-up has no grounded place available at the lived time");
   }
@@ -385,6 +402,7 @@ async function formPlan({
     authoredAt: startAt,
     horizonEnd: endAt,
     availablePlaceRefs: placeRefs,
+    cityGuidePlaces:guidePlaces,
     sourceReferences: [latestEventRefAt(worldStore, threadId, startAt)],
     sourceStores:{
       worldStore,
