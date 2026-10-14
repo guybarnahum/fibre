@@ -24,18 +24,17 @@ function localityGeography(place) {
   return resolveMentionedLocalityGeography(place?.displayName);
 }
 
-function fallbackGeography(entry) {
-  if (finiteCoordinates(entry?.birthLocation)) return entry.birthLocation;
-  return resolveLocalityGeography(entry?.birthPlace);
-}
-
-function resolvedPlace(reference, { worldPlaces, placeEpisodes, fallback }) {
+function resolvedPlace(reference, { worldPlaces, placeEpisodes }) {
   const shared = worldPlaces.find((place) => place.ref === reference) ?? null;
   if (shared !== null) {
     return Object.freeze({
       ref:reference,
       displayName:shared.displayName,
-      geography:fallback,
+      // A historical World context is not positioned at the Thread's birthplace.
+      geography:finiteCoordinates(shared)
+        ?{lat:shared.lat,long:shared.long,city:shared.locality,
+          country:shared.country,countryCode:shared.countryCode}
+        :null,
       authority:"live_world_place",
     });
   }
@@ -75,12 +74,11 @@ export function projectCurrentThreadLocation({
   worldPlaces = [],
   placeEpisodes = [],
 } = {}) {
-  const fallback = fallbackGeography(entry);
   if (currentSituation === null || currentSituation === undefined) return null;
 
   const location = currentSituation.location;
   if (location?.kind === "place") {
-    const place = resolvedPlace(location.placeRef, { worldPlaces, placeEpisodes, fallback });
+    const place = resolvedPlace(location.placeRef, { worldPlaces, placeEpisodes });
     const point = projectedPoint(place);
     if (point === null) return null;
     return Object.freeze({
@@ -95,8 +93,8 @@ export function projectCurrentThreadLocation({
   }
 
   if (location?.kind === "transit") {
-    const from = resolvedPlace(location.fromPlaceRef, { worldPlaces, placeEpisodes, fallback });
-    const to = resolvedPlace(location.toPlaceRef, { worldPlaces, placeEpisodes, fallback });
+    const from = resolvedPlace(location.fromPlaceRef, { worldPlaces, placeEpisodes });
+    const to = resolvedPlace(location.toPlaceRef, { worldPlaces, placeEpisodes });
     const fromPoint = projectedPoint(from);
     const toPoint = projectedPoint(to);
     if (fromPoint === null && toPoint === null) return null;
