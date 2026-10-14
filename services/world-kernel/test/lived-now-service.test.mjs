@@ -739,6 +739,9 @@ test("an admitted personal public-visit plan enacts transit, empty stay and retu
       assert.equal(progressed[1].location.placeRef,library.ref);
       assert.equal(progressed[2].location.fromPlaceRef,library.ref);
       assert.equal(progressed[3].location.placeRef,life.homeRef);
+      assert.ok(lived.listRecentSituations(threadId).some(scene=>
+        scene.phase==="at_place"&&scene.location.placeRef===library.ref),
+        "the completed library stay disappeared from actual World history");
       assert.deepEqual(lived.listCurrentVenueSituations({
         venueRef:library.physicalVenue.ref,at:"2026-10-14T17:00:00.000Z",
         excludeThreadId:threadId,
