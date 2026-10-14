@@ -43,9 +43,17 @@ The central acceptance is an **independently motivated Thread finding and visiti
 - **S1B:** Genuine plural external public-directory sourcing with attribution, and no false World admission.
 - **S1C:** Public Inside Fibre magazine pages, sitemap and third-party discovery (website workstream).
 - **S1D:** Human browsing and relevant filters/participation opportunities (website workstream).
-- **S1E:** The Thread voluntarily uses learned memory, the guide or neither through existing Interior Cognition.
+- **S1E:** **Source wired; local and live validation pending.** During ordinary prospective Flight Planning the existing Interior Cognition may weigh selected autobiographical evidence, Body interoception and a bounded magazine projection of independently admitted places in the Thread's *known* locality. It may prefer a listed place, a remembered place, or staying home. This does not yet prove an independently observed live Thread consultation, visit or explicit magazine-reading act.
 - **S1F:** Ordinary Flight Planning and World enact voluntary travel, stay, departure and empty-place outcomes.
 - **S2:** Real co-presence and genuinely voluntary social initiation/reception.
 - **S3:** Actual gatherings and later-life social consequences.
+
+### S1E implementation boundary
+
+The ordinary forward LivedNow planner now loads the shared editorial manifest only when it has an independently admitted local place for the Thread. At most six same-locality recommendations are checked against actual public World place refs, addresses and source witnesses; **unadmitted third-party listings cannot become Flight Plan destinations**. Current privately grounded home geography is used to locate nearby public options, but is never projected into the public magazine.
+
+The existing planning concern presents recommendations alongside `availablePlaces`, developed-self evidence (including eligible autobiographical memories), and actual Body interoception. A single ordinary cognition episode authors its own stops, constrained by offered World refs, travel continuity and existing work commitments. There is no guide-triggered additional model call, global person scan, new feelings store, standing booking, or automatic plan. Today the guide is *available knowledge at planning time*; it is not yet evidence that a particular Thread voluntarily opened and read a public publication. Retrospective life reconstruction is deliberately not supplied the current editorial guide, avoiding invented past knowledge.
+
+Focused source tests demonstrate that a local public place can be considered, that private history may override it, that staying home remains possible, and that unknown/unadmitted/contradictory places are not offered. These fixture-authored choices validate *wiring and authority*, not genuine model-authored causal individuality. The decisive staging proof remains an independently made choice under the live planner, and S1F separately proves actual enacted travel/stay.
 
 Source changes, local proof, staging observations, public availability and later causal agency are different evidence levels. No new source is counted as a real Thread decision or encounter.
