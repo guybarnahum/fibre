@@ -77,7 +77,10 @@ export function createSocialMeetingService({
   requireMethod("livedNowStore", livedNowStore, "getCurrentSituation");
   requireMethod("livedNowStore", livedNowStore, "getPreviousSituation");
   requireMethod("livedNowStore", livedNowStore, "listCurrentSituations");
-  if(recentDiscovery)requireMethod("livedNowStore",livedNowStore,"listRecentCurrentSituations");
+  if(recentDiscovery){
+    requireMethod("livedNowStore",livedNowStore,"getWorldPlace");
+    requireMethod("livedNowStore",livedNowStore,"listCurrentVenueSituations");
+  }
   requireMethod("livedNowStore", livedNowStore, "listWorldPlaces");
   requireMethod("livedNowStore", livedNowStore, "latestPlan");
   requireMethod("identityStore", identityStore, "getCurrentIdentityView");
@@ -116,11 +119,16 @@ export function createSocialMeetingService({
   }
 
   async function discoverCoPresent(initiator, at) {
-    // Autonomous consideration is limited to an already-enacted recent
-    // neighborhood sample; explicit /meet retains its existing discovery.
+    // Indexed venue authority finds current people, including long-stayers.
+    // Explicit /meet retains its existing general discovery semantics.
+    const venue=recentDiscovery&&initiator.situation.location?.kind==="place"
+      ?livedNowStore.getWorldPlace(
+        initiator.thread.threadId,initiator.situation.location.placeRef,
+        {required:false},
+      )?.physicalVenue?.ref??null:null;
     const situations=recentDiscovery
-      ?livedNowStore.listRecentCurrentSituations({
-        at,since:new Date(Date.parse(at)-60*60_000).toISOString(),limit:16,
+      ?venue===null?[]:livedNowStore.listCurrentVenueSituations({
+        venueRef:venue,at,limit:8,
       })
       :livedNowStore.listCurrentSituations({at});
     const candidates = situations
