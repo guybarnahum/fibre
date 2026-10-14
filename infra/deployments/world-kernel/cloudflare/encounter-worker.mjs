@@ -59,6 +59,7 @@ const WORLD_VENUE_ROUTE = "/internal/world-venues/bind";
 const WORLD_PUBLIC_PLACE_ROUTE = "/internal/world-venues/admit-public";
 const WORLD_PRIVATE_PLACE_ROUTE = "/internal/world-venues/locate-private";
 const WORLD_PUBLIC_LIST_ROUTE = "/internal/world-venues/places";
+const GUY_DISCOVERY_ROUTE = "/internal/guy/ask";
 const SOCIAL_MEETING_ROUTE = "/internal/social-meeting";
 const LIVED_COMMONS_ROUTE = "/internal/lived-commons";
 const INSIDE_FIBRE_WORK_OFFER_ROUTE = "/internal/inside-fibre/work-offer";
@@ -785,6 +786,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       && url.pathname !== WORLD_PUBLIC_PLACE_ROUTE
       && url.pathname !== WORLD_PRIVATE_PLACE_ROUTE
       && url.pathname !== WORLD_PUBLIC_LIST_ROUTE
+      && url.pathname !== GUY_DISCOVERY_ROUTE
       && url.pathname !== SOCIAL_MEETING_ROUTE
       && url.pathname !== LIVED_COMMONS_ROUTE
       && url.pathname !== INSIDE_FIBRE_WORK_OFFER_ROUTE
@@ -804,7 +806,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       () => (url.pathname === WORLD_VENUE_ROUTE
         || url.pathname === WORLD_PUBLIC_PLACE_ROUTE
         || url.pathname === WORLD_PRIVATE_PLACE_ROUTE
-        || url.pathname === WORLD_PUBLIC_LIST_ROUTE)
+        || url.pathname === WORLD_PUBLIC_LIST_ROUTE
+        || url.pathname === GUY_DISCOVERY_ROUTE)
         ? this.worldVenueApiForRequest().fetch(request)
         : url.pathname === LIVED_NOW_ROUTE
         ? this.livedNowApiForRequest().fetch(request)
