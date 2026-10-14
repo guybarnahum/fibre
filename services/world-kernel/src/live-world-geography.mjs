@@ -41,6 +41,8 @@ export function createLiveWorldGeographyTables(db){
     ) STRICT;
     CREATE INDEX IF NOT EXISTS idx_world_public_places_locality
       ON world_public_places(country_code,locality,place_ref);
+    CREATE INDEX IF NOT EXISTS idx_world_public_places_city
+      ON world_public_places(locality COLLATE NOCASE,place_ref);
     CREATE TABLE IF NOT EXISTS world_private_place_locations(
       thread_id TEXT NOT NULL,
       place_ref TEXT NOT NULL,
@@ -111,15 +113,22 @@ export function getWorldPublicPlace(db,placeRef){
   ).get(placeRef),"public World place");
 }
 
-export function listLocalWorldPublicPlaces(db,{locality,countryCode,limit=12}){
-  text("World locality",locality);text("World countryCode",countryCode);
+export function listLocalWorldPublicPlaces(db,{locality,countryCode=null,limit=12}){
+  text("World locality",locality);
+  if(countryCode!==null)text("World countryCode",countryCode);
   if(!Number.isSafeInteger(limit)||limit<1||limit>20){
     throw new TypeError("World venue discovery must be bounded");
   }
-  return db.prepare(`SELECT record_json,record_digest
-    FROM world_public_places WHERE country_code=? AND locality=?
-    ORDER BY place_ref LIMIT ?`).all(countryCode,locality,limit)
-    .map(row=>stored(row,"public World place"));
+  const sql=countryCode===null
+    ?`SELECT record_json,record_digest FROM world_public_places
+       WHERE locality=? COLLATE NOCASE ORDER BY place_ref LIMIT ?`
+    :`SELECT record_json,record_digest FROM world_public_places
+       WHERE country_code=? AND locality=? COLLATE NOCASE
+       ORDER BY place_ref LIMIT ?`;
+  const rows=countryCode===null
+    ?db.prepare(sql).all(locality,limit)
+    :db.prepare(sql).all(countryCode,locality,limit);
+  return rows.map(row=>stored(row,"public World place"));
 }
 
 // This is a current-life World attestation, never a rewriting of Genesis history.
