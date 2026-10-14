@@ -46,7 +46,7 @@ function publicLocation(location, places, coarsePlace) {
   if (location.kind === "place") {
     return Object.freeze({
       kind: "place",
-      place: places.get(location.placeRef) ?? coarsePlace,
+      place: coarsePlace ?? places.get(location.placeRef) ?? null,
     });
   }
   return Object.freeze({
