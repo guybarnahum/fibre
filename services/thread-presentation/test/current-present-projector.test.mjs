@@ -164,7 +164,7 @@ test("private residence has a public city, never a published street address",()=
       reason:"I am resting.",
       participantRefs:[],evidenceRefs:["evt_private_home"],
       sourcePlanRefs:["lplan_home"],
-      resolution:{kind:"personal",conflict:false,observedDivergence:false,
+      resolution:{kind:"personal_plan",conflict:false,observedDivergence:false,
         governingPlanRef:"lplan_home",constrainedPlanRef:null,summary:"At home"},
       provenance:"world_enacted",
     },
