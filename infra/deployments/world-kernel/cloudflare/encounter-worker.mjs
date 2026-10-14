@@ -306,7 +306,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         modelAdapter:selectReasoningIntegration(
           deployment.integrations.encounter,{environment:this.env},
         ),
-        recentDiscovery:true,
+        boundedVenueDiscovery:true,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       this.worldSocialOpportunityProcess=createWorldSocialOpportunity({
