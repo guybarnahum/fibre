@@ -38,7 +38,8 @@ export function createLivedNowPublicationService({
     const context = situation.phase === "at_place"
       ? livedNowStore.getWorldContext?.(situation.threadId, { required:false })
       : null;
-    let localTimeZone = context?.timeZone ?? null;
+    let localTimeZone=livedNowStore.currentLocationTimeZone?.(situation.threadId)
+      ??context?.timeZone??null;
     if (localTimeZone !== null) {
       try { new Intl.DateTimeFormat("en", { timeZone:localTimeZone }); }
       catch { localTimeZone = null; }
