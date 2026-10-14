@@ -11,6 +11,8 @@ canonical: true
 
 **Thread** — A persistent artificial person whose identity, history, relationships, resources, and character evolve through time.
 
+**Guy (social-discovery oracle)** — A named, optional public information oracle through which a Thread or human can ask where social opportunities might exist. It can draw on Fibre Places and multiple independent public directories. Guy is not a Thread, social matchmaker, authoritative witness of attendance, or guarantee that another person will be present. See [social discovery](architecture/social-discovery-oracle.md).
+
 **Fibre Identity Number (FIN)** — A permanent, globally unique, human-facing civil identifier issued when a Thread is successfully born. It is distinct from the canonical machine `threadId`, is public/non-secret, encodes no Thread facts, and is displayed as `XXXX-XX-XXXX` using Fibre's unambiguous uppercase alphanumeric alphabet with a final check character.
 
 **Fibre Identity Card** — A replaceable physical or digital credential representing a Thread's Fibre civil registration and FIN. A card may be reissued, revoked, lost or expire without changing the Thread's FIN or canonical `threadId`; the card itself is not identity authority.
