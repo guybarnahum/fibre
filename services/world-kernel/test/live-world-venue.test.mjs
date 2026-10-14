@@ -119,6 +119,8 @@ test("independent Threads can know one real public venue while their precise hom
         lat:threadId.endsWith("other")?41.65:41.72,
         long:threadId.endsWith("other")?41.64:44.78,
         timeZone:"Asia/Tbilisi",evidenceRef:"world-attested-private-address",
+        publicGranularity:threadId.endsWith("one")?"city"
+          :threadId.endsWith("two")?"country":"hidden",
       }));
     }
     const publicPlace=admitWorldPublicPlace(db,{
@@ -145,6 +147,10 @@ test("independent Threads can know one real public venue while their precise hom
       "one Thread learned another Thread's home");
     const coarse=coarseWorldPlace(places[0]);
     assert.equal(coarse.displayName,"Tbilisi, Georgia");
+    assert.equal(coarseWorldPlace(places[1]).displayName,"Georgia",
+      "country-only publication exposed the city");
+    assert.equal(coarseWorldPlace(places[2]),null,
+      "hidden home geography was disclosed");
     assert.equal(JSON.stringify(coarse).includes(places[0].streetAddress),false,
       "private address reached public geography");
     assert.throws(()=>admitWorldPublicPlace(db,{
