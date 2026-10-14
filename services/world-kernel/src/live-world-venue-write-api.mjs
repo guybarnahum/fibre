@@ -2,23 +2,53 @@ import {
   assertExactKeys,assertId,assertPlainObject,
 } from "./persistence-common.mjs";
 
+// Admission establishes World facts, not visits, consent, meetings or plans.
+const ROUTES=Object.freeze({
+  "/internal/world-venues/bind":"legacy_context_binding",
+  "/internal/world-venues/admit-public":"public",
+  "/internal/world-venues/locate-private":"private",
+});
+const PUBLIC_FIELDS=[
+  "venueIdentity","displayName","streetAddress","locality","country",
+  "countryCode","lat","long","timeZone","evidenceRef","affordances",
+];
+const PRIVATE_FIELDS=[
+  "threadId","placeRef","specificPlace","streetAddress","locality",
+  "country","countryCode","lat","long","timeZone","evidenceRef",
+];
+
 export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
-  if(typeof livedNowStore?.bindPhysicalVenue!=="function"){
-    throw new TypeError("World venue admission requires the lived World authority");
+  for(const method of ["bindPhysicalVenue","admitPublicPlace","admitPrivatePlace"]){
+    if(typeof livedNowStore?.[method]!=="function"){
+      throw new TypeError(`World geography requires ${method}()`);
+    }
   }
   if(typeof privateToken!=="string"||!privateToken){
     throw new TypeError("World venue admission requires private token");
   }
   return Object.freeze({
     async fetch(request){
-      if(new URL(request.url).pathname!=="/internal/world-venues/bind")return null;
+      const route=ROUTES[new URL(request.url).pathname];
+      if(route===undefined)return null;
       if(request.method!=="POST")return Response.json({error:"method_not_allowed"},{status:405});
       if(request.headers.get("x-fibre-private-token")!==privateToken){
         return Response.json({error:"private_token_required"},{status:403});
       }
       try{
         const body=await request.json();
-        assertPlainObject("World venue binding",body);
+        assertPlainObject("World place admission",body);
+        if(route==="public"){
+          assertExactKeys("public World venue",body,PUBLIC_FIELDS);
+          const place=livedNowStore.admitPublicPlace(body);
+          return Response.json({ok:true,place});
+        }
+        if(route==="private"){
+          assertExactKeys("private World place",body,PRIVATE_FIELDS);
+          assertId("private World place threadId",body.threadId);
+          assertId("private World place placeRef",body.placeRef);
+          const place=livedNowStore.admitPrivatePlace(body);
+          return Response.json({ok:true,place});
+        }
         assertExactKeys("World venue binding",body,[
           "threadId","contextPlaceRef","venueIdentity","displayName",
           "locality","country","evidenceRef",
@@ -28,7 +58,7 @@ export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
         const venue=livedNowStore.bindPhysicalVenue(body);
         return Response.json({ok:true,venue});
       }catch(error){
-        return Response.json({error:"invalid_world_venue",
+        return Response.json({error:"invalid_world_place",
           detail:String(error?.message??error).slice(0,250)},{status:400});
       }
     },
