@@ -189,6 +189,17 @@ function threadObservatory(runtime, threadId) {
           sourceReferences:structuredClone(currentPersonalPlan.sourceReferences),
           cognition:structuredClone(currentPersonalPlan.cognition),
         });
+    // Read-only operator projection: distinguish a public place referenced
+    // by an actual personal plan from a privately instantiated WorldSpec place.
+    // A plan is not evidence that its destination was ever visited.
+    const legacyPlaces=livedNow.listWorldPlaces(threadId);
+    const publicPlaceRefs=new Set([
+      ...(currentSituation?.location?.kind==="place"
+        ?[currentSituation.location.placeRef]:[]),
+      ...(currentPersonalPlan?.stops??[]).map(stop=>stop.physicalPlaceRef),
+    ].filter(ref=>ref.startsWith("wpl_")));
+    const publicPlaces=[...publicPlaceRefs]
+      .map(ref=>livedNow.getPublicPlace(ref)).filter(Boolean);
     return Object.freeze({
       threadId,
       fibreIdentityNumber:registration?.fibreIdentityNumber ?? null,
@@ -213,7 +224,7 @@ function threadObservatory(runtime, threadId) {
         explorationInteroception:structuredClone(explorationInteroception),
         currentPersonalPlan:currentPersonalPlanWitness,
         worldContext:structuredClone(livedNow.getWorldContext(threadId, { required:false })),
-        worldPlaces:structuredClone(livedNow.listWorldPlaces(threadId)),
+        worldPlaces:structuredClone([...legacyPlaces,...publicPlaces]),
         placeEpisodes:structuredClone(situatedLife.listCurrentPlaceEpisodes(threadId)),
       }),
       memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:200 })),
