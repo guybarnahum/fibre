@@ -29,8 +29,11 @@ export function understandGuyQuestion({question,asker="human",location=null}={})
     if(locality===null)throw new TypeError("Guy countryCode requires a locality");
   }
   const mentionsThread=/\bthreads?\b/iu.test(question);
-  const mentionsHuman=/\bhumans?\b|\bpeople\b|\bpersons?\b/iu.test(question);
-  const seeking=mentionsThread?(mentionsHuman?"either":"thread"):"either";
+  const mentionsHuman=/\bhumans?\b/iu.test(question);
+  const generalPerson=/\bpeople\b|\bpersons?\b/iu.test(question);
+  const seeking=mentionsThread
+    ?mentionsHuman||generalPerson?"either":"thread"
+    :mentionsHuman?"human":"either";
   const mode=/\b(?:online|virtual|digitally|digital|remotely)\b/iu.test(question)
     ?"mediated":/\b(?:in.person|physically|face.to.face)\b/iu.test(question)
       ?"physical":"either";
@@ -91,7 +94,9 @@ export function createGuySocialDiscovery({listPublicPlaces}={}){
           // A physical library does not establish a digital meeting channel.
           // Its presence in a directory is not Thread or human attendance.
           places=mode==="mediated"?[]:found.map(publicLead);
-          status=places.length?"place_opportunities":"no_verified_options";
+          status=places.length
+            ?seeking==="thread"?"place_leads_only":"place_opportunities"
+            :"no_verified_options";
           const where=location.locality;
           if(mode==="mediated"){
             answer=`I have no verified digital meeting opportunities in ${where} from Fibre Places. Physical venue listings are not digital meeting channels.`;
