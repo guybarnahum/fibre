@@ -203,7 +203,7 @@ export class LivedExperienceStore {
       return Object.freeze({
         threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
       });
-    })();
+    });
   }
 
   completeSocialOpportunity({situationId,at,outcome}){
