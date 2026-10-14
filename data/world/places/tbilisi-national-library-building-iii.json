@@ -1,0 +1,17 @@
+{
+  "venueIdentity": "nplg:building-iii:tbilisi",
+  "displayName": "National Library of Georgia — Building III",
+  "streetAddress": "7 Lado Gudiashvili Street, Tbilisi 0108",
+  "locality": "Tbilisi",
+  "country": "Georgia",
+  "countryCode": "GE",
+  "lat": 41.697083,
+  "long": 44.80069,
+  "timeZone": "Asia/Tbilisi",
+  "evidenceRef": "https://www.nplg.gov.ge/eng/Location",
+  "affordances": [
+    "Reference research",
+    "Reading halls",
+    "Cultural programs"
+  ]
+}
