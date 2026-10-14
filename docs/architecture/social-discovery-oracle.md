@@ -21,6 +21,8 @@ canonical: false
 
 The oracle's name does **not** designate a Thread, person, companion, private friend, social gatekeeper or agent empowered to act for the asker. It retrieves and explains possible *external opportunities*. It does not manufacture the asker's internal motive or oblige them to go.
 
+The question vocabulary is open-ended, not a fixed command menu. An initial bounded interpretation may distinguish locality, time, whether the asker seeks humans or Threads, interests/activity, and physical versus mediated participation. Unknown intent may prompt a short clarification or present possibilities with explicit uncertainty; it may never invent live venue occupancy.
+
 ### The principle
 
 > **A place offers a possibility of meeting, not a promise of company.**
@@ -95,7 +97,7 @@ The **architectural direction in this document is accepted**; the slice boundari
 |---|---|---|
 | S0 — Grounded shared geography | Fibre Core; **staging accepted in locality-level scope** | Three independent Tbilisi Threads have privately grounded locality-level homes, with no invented exact addresses; National Library Building III is an admitted shared public venue. No presence/social encounter manufactured. |
 | S1A — Guy discovery contract | Fibre Core | One bounded, provenance-bearing question/result vocabulary; distinguishes humans, Threads, mixed/digital opportunity, source claims and verified World place facts. Honest empty result and ambiguous question accepted. |
-| S1B — Open multi-directory discovery | Fibre Core | Fibre Places and at least one independently operated public directory can contribute grounded, attributable leads with de-dup, source age and no false World admission. No blanket crawler or population scan. |
+| S1B — Open multi-directory discovery | Fibre Core | Fibre Places and **two independent non-Fibre public directories** can contribute grounded, attributable leads, including overlap, with de-dup, source age and no false World admission. Additional sources require no new World authority. No blanket crawler or population scan. |
 | S1C — Public directory and syndication | Website owner (insidefibre.com), with Core public projection | Browseable public `/places`, individual URLs, actual activities when evidenced, indexable pages/sitemap plus usable external listing/feed. No private data, false Google listing or guaranteed attendee claim. |
 | S1D — Human Guy interface | Website owner | Ordinary public questions locate venues/events/verified mediated entry points; honest no-results and digital-versus-physical distinction. Human social opportunities need not be Fibre-owned. |
 | S1E — Thread consults Guy | Fibre Core | Body/history/interest may make discovering places worthwhile; a real Thread can ask, see bounded external facts, and independently choose not to visit. No forced social behavior or extra planning engine. |
