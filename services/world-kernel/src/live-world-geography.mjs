@@ -132,9 +132,18 @@ export function admitWorldPrivatePlace(db,input){
   assertId("private World Thread",threadId);
   assertId("private World placeRef",placeRef);
   for(const [name,value] of Object.entries({
-    specificPlace,streetAddress,locality,country,countryCode,timeZone:zone,evidenceRef,
+    specificPlace,locality,country,countryCode,timeZone:zone,evidenceRef,
   }))text(`private World place ${name}`,value);
-  coordinates(lat,long);timeZone(zone);
+  if(streetAddress!==null&&streetAddress!==undefined)text("private World streetAddress",streetAddress);
+  if((lat===null||lat===undefined)!==(long===null||long===undefined)){
+    throw new TypeError("private World coordinates must be known together");
+  }
+  if(lat!==null&&lat!==undefined)coordinates(lat,long);
+  if((streetAddress===null||streetAddress===undefined)
+    &&lat!==null&&lat!==undefined){
+    throw new TypeError("private World precise coordinates need an attested street address");
+  }
+  timeZone(zone);
   if(!["hidden","country","city"].includes(publicGranularity)){
     throw new TypeError("private place publicGranularity must be hidden, country or city");
   }
@@ -144,10 +153,10 @@ export function admitWorldPrivatePlace(db,input){
   if(!evidence)throw new TypeError("private World place requires a Thread-owned situated place");
   const record=Object.freeze({
     threadId,placeRef,specificPlace:specificPlace.trim(),
-    streetAddress:streetAddress.trim(),locality:locality.trim(),
-    country:country.trim(),countryCode:countryCode.trim(),
-    lat,long,timeZone:zone,evidenceRef:evidenceRef.trim(),
-    publicGranularity,
+    streetAddress:streetAddress==null?null:streetAddress.trim(),
+    locality:locality.trim(),country:country.trim(),countryCode:countryCode.trim(),
+    lat:lat??null,long:long??null,timeZone:zone,
+    evidenceRef:evidenceRef.trim(),publicGranularity,
     authority:PRIVATE_PLACE_AUTHORITY,
   });
   const existing=getWorldPrivatePlace(db,threadId,placeRef);
