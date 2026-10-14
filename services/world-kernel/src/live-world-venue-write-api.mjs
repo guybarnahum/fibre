@@ -7,6 +7,7 @@ const ROUTES=Object.freeze({
   "/internal/world-venues/bind":"legacy_context_binding",
   "/internal/world-venues/admit-public":"public",
   "/internal/world-venues/locate-private":"private",
+  "/internal/world-venues/places":"list_public",
 });
 const PUBLIC_FIELDS=[
   "venueIdentity","displayName","streetAddress","locality","country",
@@ -19,7 +20,10 @@ const PRIVATE_FIELDS=[
 ];
 
 export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
-  for(const method of ["bindPhysicalVenue","admitPublicPlace","admitPrivatePlace"]){
+  for(const method of [
+    "bindPhysicalVenue","admitPublicPlace","admitPrivatePlace",
+    "listPublicPlacesByLocality",
+  ]){
     if(typeof livedNowStore?.[method]!=="function"){
       throw new TypeError(`World geography requires ${method}()`);
     }
@@ -31,11 +35,23 @@ export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
     async fetch(request){
       const route=ROUTES[new URL(request.url).pathname];
       if(route===undefined)return null;
-      if(request.method!=="POST")return Response.json({error:"method_not_allowed"},{status:405});
+      if((route==="list_public"&&request.method!=="GET")
+        ||(route!=="list_public"&&request.method!=="POST")){
+        return Response.json({error:"method_not_allowed"},{status:405});
+      }
       if(request.headers.get("x-fibre-private-token")!==privateToken){
         return Response.json({error:"private_token_required"},{status:403});
       }
       try{
+        if(route==="list_public"){
+          const url=new URL(request.url);
+          const places=livedNowStore.listPublicPlacesByLocality({
+            locality:url.searchParams.get("locality"),
+            countryCode:url.searchParams.get("countryCode"),
+            limit:12,
+          });
+          return Response.json({ok:true,places});
+        }
         const body=await request.json();
         assertPlainObject("World place admission",body);
         if(route==="public"){
