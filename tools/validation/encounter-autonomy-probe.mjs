@@ -87,7 +87,12 @@ export async function privateGet(base,path,token,label){
     signal:AbortSignal.timeout(READ_TIMEOUT_MS),
   });
   const payload=await json(response,label);
-  if(!response.ok)throw new Error(`${label} failed HTTP ${response.status}`);
+  if(!response.ok){
+    const code=typeof payload?.error==="string"
+      ?payload.error
+      :typeof payload?.error?.code==="string"?payload.error.code:null;
+    throw new Error(`${label} failed HTTP ${response.status}${code===null?"":": "+code.slice(0,100)}`);
+  }
   return payload;
 }
 
