@@ -30,7 +30,7 @@ export function listSocialCityGuide(manifest,{city,countryCode,limit=MAX_PLACES}
       description:"No places are listed for this city yet; other places may exist.",
       places:[]};
   }
-  if(section.city!==city||section.countryCode!==countryCode
+  if(cityGuideKey(section.city,section.countryCode)!==key||section.countryCode!==countryCode
     ||typeof section.country!=="string"||!section.country.trim()
     ||!section.places||typeof section.places!=="object"
     ||Array.isArray(section.places)){
