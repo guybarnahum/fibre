@@ -6,7 +6,7 @@ import test from "node:test";
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
-import { createWorldEnvironmentOpportunity } from "../src/world-environment-opportunity.mjs";
+import { createWorldEnvironmentOpportunity,worldStayOpportunityDueAt } from "../src/world-environment-opportunity.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -124,5 +124,141 @@ test("E7.4 enacted life earns at most one observable event or an ordinary no_cha
       "only independently noticed Experience may enter selective consolidation");
   }finally{
     experience.close();rmSync(directory,{recursive:true,force:true});
+  }
+});
+
+
+test("an extended stay earns one independent World event consideration after a quiet arrival",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-world-extended-stay-"));
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
+    stateScopeId:"world",
+  };
+  const arrive="2026-10-08T10:00:00.000Z";
+  const arrivalDue="2026-10-08T10:01:00.000Z";
+  const stayDue="2026-10-08T12:00:00.000Z";
+  const people=["thr_world_stay_a","thr_world_stay_b"];
+  const world=openWorldStore(storage);
+  const threads=new Map(people.map((threadId)=> {
+    const thread={...structuredClone(seed),threadId};
+    world.seedThread(thread);
+    return [threadId,thread];
+  }));
+  world.close();
+  const first={
+    threadId:people[0],situationId:"sit_long_stay_a",establishedAt:arrive,
+    wakefulness:"awake",activity:"Reading near the café window.",
+    location:{kind:"place",placeRef:"wpl_long_cafe"},
+  };
+  const second={
+    threadId:people[1],situationId:"sit_cafe_arrival_b",
+    establishedAt:"2026-10-08T11:45:00.000Z",
+    activity:"Having a quiet coffee.",wakefulness:"awake",
+    location:{kind:"place",placeRef:"wpl_long_cafe"},
+  };
+  const situations=new Map([first,second].map(item=>[item.situationId,item]));
+  const store=openLivedExperienceStore(storage);
+  try{
+    assert.equal(worldStayOpportunityDueAt(first,"2026-10-08T13:00:00.000Z"),stayDue,
+      "admitted long residence did not earn a later World occasion");
+    assert.equal(worldStayOpportunityDueAt(first,"2026-10-08T11:00:00.000Z"),null,
+      "brief visit was misrepresented as a long stay");
+    assert.equal(worldStayOpportunityDueAt({...first,wakefulness:"asleep"},
+      "2026-10-08T13:00:00.000Z"),null,
+      "known sleeping life earned a waking encounter opportunity");
+
+    store.enqueueEnvironmentalOpportunity({
+      threadId:first.threadId,situationId:first.situationId,dueAt:arrivalDue,
+    });
+    store.enqueueEnvironmentalOpportunity({
+      threadId:first.threadId,situationId:first.situationId,
+      dueAt:stayDue,kind:"stay",
+    });
+    assert.equal(store.enqueueEnvironmentalOpportunity({
+      threadId:first.threadId,situationId:first.situationId,
+      dueAt:stayDue,kind:"stay",
+    }).inserted,false,"same long stay was scheduled twice");
+
+    let at=arrivalDue;
+    const invoked=[];
+    const queued=[];
+    let interruptWitness=true;
+    const process=createWorldEnvironmentOpportunity({
+      experienceStore:store,
+      livedNowStore:{
+        getSituation:id=>structuredClone(situations.get(id)??null),
+        getCurrentSituation:id=>structuredClone(people[0]===id?first:second),
+        getWorldPlace:()=>({
+          displayName:"The neighborhood café",
+          physicalVenue:{ref:"venue_stay_cafe",displayName:"The neighborhood café",
+            locality:"Tucson",country:"US"},
+        }),
+        listRecentCurrentSituations:()=>at===arrivalDue?[structuredClone(first)]
+          :[structuredClone(second)],
+      },
+      worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
+      semanticStateStore:{listCurrentState:()=>[]},
+      memoryStore:{listCurrentMemories:()=>[]},
+      modelAdapter:{
+        async invoke(request){
+          invoked.push(request.clientRequestId);
+          if(request.clientRequestId.startsWith("world-initial-opportunity_")){
+            const changed=request.input.occurrenceAt===stayDue;
+            assert.equal(request.input.initiatingSituation.situationId,first.situationId);
+            return {output:{
+              outcome:changed?"changed":"no_change",
+              occurrenceText:changed?"A sudden shower patters against the café windows.":null,
+              potentialObserverThreadIds:changed?people:[],
+            }};
+          }
+          if(request.clientRequestId.startsWith("encounter-attention_")){
+            const observed=request.input.thread.threadId;
+            if(observed===people[1]&&interruptWitness){
+              interruptWitness=false;
+              throw new Error("temporary attention interruption");
+            }
+            return {output:observed===people[0]
+              ?{outcome:"noticed",experienceText:"I hear the rain begin at the window."}
+              :{outcome:"not_noticed",experienceText:null},
+              provenance:{provider:"fixture",modelId:"world-attention"}};
+          }
+          throw new Error("unexpected World cognition");
+        },
+      },
+      onExperienceQueued:async(item)=>queued.push(item.experienceId),
+      now:()=>at,
+    });
+    const quiet=await process.runOnce();
+    assert.equal(quiet.results[0].outcome,"no_change",
+      "arrival invented an objective event");
+    assert.equal(store.listEncounterStories(first.threadId).length,0);
+    assert.equal(store.nextEnvironmentalOpportunityAt(),stayDue,
+      "later opportunity was lost after the quiet arrival");
+
+    at=stayDue;
+    const interrupted=await process.runOnce();
+    assert.equal(interrupted.failed,1,
+      "interrupted witness should leave the event pending for exact replay");
+    const recovered=await process.runOnce();
+    assert.equal(recovered.failed,0,
+      "pending World attention could not resume");
+    const stories=store.listEncounterStories(first.threadId);
+    assert.equal(stories.length,1,"long residence authored duplicate World occurrences");
+    assert.deepEqual(stories[0].threadPresence.map(item=>item.threadId),people,
+      "one World event did not preserve two independently present observers");
+    assert.equal(store.getThreadEncounterAttention(people[0],stories[0].encounterId)?.outcome,
+      "noticed","first person lost independently admitted experience");
+    assert.equal(store.getThreadEncounterAttention(people[1],stories[0].encounterId)?.outcome,
+      "not_noticed","second person was forced to notice the rain");
+    assert.equal(store.listThreadExperiences(people[1]).length,0,
+      "a missed event became a private experience");
+    assert.equal(queued.length,1,"one noticing did not produce one selective aftermath");
+    assert.equal(invoked.filter(id=>id.startsWith("world-initial-opportunity_")).length,2,
+      "retry rerolled exterior World history");
+    assert.equal(store.nextEnvironmentalOpportunityAt(),null,
+      "finished long stay retained a recurring World wake");
+  }finally{
+    store.close();
+    rmSync(directory,{recursive:true,force:true});
   }
 });
