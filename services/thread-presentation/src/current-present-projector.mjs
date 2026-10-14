@@ -46,7 +46,9 @@ function publicLocation(location, places, coarsePlace) {
   if (location.kind === "place") {
     return Object.freeze({
       kind: "place",
-      place: coarsePlace ?? places.get(location.placeRef) ?? null,
+      place:coarsePlace===undefined
+        ?places.get(location.placeRef)??null
+        :coarsePlace,
     });
   }
   return Object.freeze({
@@ -61,12 +63,12 @@ export function projectCurrentSituationPresent({
   currentSituation,
   placeEpisodes = [],
   lifeRelations = [],
-  coarsePlace = null,
+  coarsePlace = undefined,
 }) {
   const situation = normalizeCurrentSituation(currentSituation);
   if (!Array.isArray(placeEpisodes)) throw new TypeError("placeEpisodes must be an array");
   if (!Array.isArray(lifeRelations)) throw new TypeError("lifeRelations must be an array");
-  if(coarsePlace!==null&&(
+  if(coarsePlace!==undefined&&coarsePlace!==null&&(
     typeof coarsePlace?.displayName!=="string"||!coarsePlace.displayName.trim()
     ||coarsePlace.region!==null
   ))throw new TypeError("public coarse place must contain only locality and country");
