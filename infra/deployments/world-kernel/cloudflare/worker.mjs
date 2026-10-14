@@ -219,6 +219,9 @@ function threadObservatory(runtime, threadId) {
       environmentalOpportunities:structuredClone(
         experience.inspectEnvironmentalOpportunities(threadId,{limit:12}),
       ),
+      socialOpportunities:structuredClone(
+        experience.inspectSocialOpportunities(threadId,{limit:12}),
+      ),
       experienceJournalEntries:structuredClone(experience.listThreadExperienceJournal(threadId)),
       experienceConsolidation:structuredClone(
         experience.inspectThreadExperienceConsolidation(threadId,{limit:200}),
