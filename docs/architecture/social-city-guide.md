@@ -13,7 +13,7 @@ Fibre's public social-discovery metaphor is a **city magazine**, like a local Ti
 
 ## City manifest
 
-The repository's `data/world/social-city-guide.json` is a compact city-keyed editorial manifest. Keys have the form `tbilisi-GE`, with a display city, country name/code, and a stable-keyed map of public places.
+The repository's `data/social-city-guide.json` is a compact city-keyed editorial manifest. Keys have the form `tbilisi-GE`, with a display city, country name/code, and a stable-keyed map of public places.
 
 Each place contains `name`, `address`, `description`, `activities`, `lastRecommendedAt`, `source: { directory, url }`, and optional `worldPlaceRef` (null for places not independently admitted to World).
 
