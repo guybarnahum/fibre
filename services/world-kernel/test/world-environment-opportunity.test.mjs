@@ -14,8 +14,8 @@ const seed=JSON.parse(readFileSync(
 const AT="2026-10-08T17:24:00.000Z";
 const DUE="2026-10-08T17:25:00.000Z";
 
-test("E7.4 enacted life earns at most one observable event or an ordinary no_change",async()=>{
-  const directory=mkdtempSync(join(tmpdir(),"fibre-e7-initial-"));
+test("an enacted arrival earns at most one observable event or an ordinary no_change",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-world-arrival-"));
   const storage={
     infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
     stateScopeId:"world",
@@ -23,10 +23,10 @@ test("E7.4 enacted life earns at most one observable event or an ordinary no_cha
   const threads=new Map();
   const situations=new Map();
   const world=openWorldStore(storage);
-  for(const [i,situationId] of ["sit_e7_a","sit_e7_b"].entries()){
+  for(const [i,situationId] of ["sit_arrival_a","sit_arrival_b"].entries()){
     const thread=structuredClone(seed);
-    thread.threadId=`thr_initial_e7_${i}`;
-    thread.provenance.lastEventId=`evt_initial_e7_${i}`;
+    thread.threadId=`thr_world_arrival_${i}`;
+    thread.provenance.lastEventId=`evt_world_arrival_${i}`;
     world.seedThread(thread);
     threads.set(thread.threadId,thread);
     situations.set(situationId,{
@@ -72,7 +72,7 @@ test("E7.4 enacted life earns at most one observable event or an ordinary no_cha
           if(request.clientRequestId.startsWith("world-initial-opportunity_")){
             assert.equal(request.input.initiatingSituation.physicalVenue,null,
               "home study incorrectly became a public venue");
-            const isFirst=request.input.initiatingSituation.situationId==="sit_e7_a";
+            const isFirst=request.input.initiatingSituation.situationId==="sit_arrival_a";
             return {output:{
               outcome:isFirst?"changed":"no_change",
               occurrenceText:isFirst?"A gust rattles the nearby window.":null,
