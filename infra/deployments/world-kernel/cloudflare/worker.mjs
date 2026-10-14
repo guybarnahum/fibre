@@ -193,10 +193,13 @@ function threadObservatory(runtime, threadId) {
     // by an actual personal plan from a privately instantiated WorldSpec place.
     // A plan is not evidence that its destination was ever visited.
     const legacyPlaces=livedNow.listWorldPlaces(threadId);
+    const recentSituations=livedNow.listRecentSituations(threadId,{limit:8});
     const publicPlaceRefs=new Set([
       ...(currentSituation?.location?.kind==="place"
         ?[currentSituation.location.placeRef]:[]),
       ...(currentPersonalPlan?.stops??[]).map(stop=>stop.physicalPlaceRef),
+      ...recentSituations.flatMap(situation=>
+        situation.location?.kind==="place"?[situation.location.placeRef]:[]),
     ].filter(ref=>ref.startsWith("wpl_")));
     const publicPlaces=[...publicPlaceRefs]
       .map(ref=>livedNow.getPublicPlace(ref)).filter(Boolean);
@@ -219,6 +222,7 @@ function threadObservatory(runtime, threadId) {
             :null,
         ),
         previousSituation:structuredClone(previousSituation),
+        recentSituations:structuredClone(recentSituations),
         nextAutonomousBoundary:structuredClone(livedNow.inspectLivedBoundary(threadId)),
         explorationContinuity:structuredClone(explorationContinuity),
         explorationInteroception:structuredClone(explorationInteroception),
