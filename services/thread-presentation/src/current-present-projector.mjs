@@ -42,11 +42,11 @@ function publicParticipantNames(records, participantRefs) {
   return names;
 }
 
-function publicLocation(location, places) {
+function publicLocation(location, places, coarsePlace) {
   if (location.kind === "place") {
     return Object.freeze({
       kind: "place",
-      place: places.get(location.placeRef) ?? null,
+      place: places.get(location.placeRef) ?? coarsePlace,
     });
   }
   return Object.freeze({
@@ -61,10 +61,15 @@ export function projectCurrentSituationPresent({
   currentSituation,
   placeEpisodes = [],
   lifeRelations = [],
+  coarsePlace = null,
 }) {
   const situation = normalizeCurrentSituation(currentSituation);
   if (!Array.isArray(placeEpisodes)) throw new TypeError("placeEpisodes must be an array");
   if (!Array.isArray(lifeRelations)) throw new TypeError("lifeRelations must be an array");
+  if(coarsePlace!==null&&(
+    typeof coarsePlace?.displayName!=="string"||!coarsePlace.displayName.trim()
+    ||coarsePlace.region!==null
+  ))throw new TypeError("public coarse place must contain only locality and country");
   const places = publicPlaces(placeEpisodes);
 
   return Object.freeze({
@@ -72,7 +77,7 @@ export function projectCurrentSituationPresent({
     situationId: situation.situationId,
     establishedAt: situation.establishedAt,
     phase: situation.phase,
-    location: publicLocation(situation.location, places),
+    location: publicLocation(situation.location, places, coarsePlace),
     // World knows these enacted details, but their text is not itself a public
     // disclosure decision. Keep them closed until Fibre has admitted public context.
     mediatedContext: null,
