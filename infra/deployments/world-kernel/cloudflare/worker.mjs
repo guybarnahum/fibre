@@ -201,6 +201,12 @@ function threadObservatory(runtime, threadId) {
       lifeRelations:structuredClone(situatedLife.listCurrentLifeRelations(threadId)),
       livedNow:Object.freeze({
         currentSituation:structuredClone(currentSituation),
+        // Internal operator evidence only. Never added to public directory.
+        privatelyKnownCurrentPlace:structuredClone(
+          currentSituation?.location?.kind==="place"
+            ?livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef)
+            :null,
+        ),
         previousSituation:structuredClone(previousSituation),
         nextAutonomousBoundary:structuredClone(livedNow.inspectLivedBoundary(threadId)),
         explorationContinuity:structuredClone(explorationContinuity),
