@@ -23,7 +23,7 @@ A society is not just a population with an encounter mechanism. People need ways
 
 A socially hungry Thread may seek somewhere to go, discover a public place through a directory, voluntarily visit and find nobody. A human may make the same search. The empty place, a declined overture, a conversation or a meaningful connection are different possible outcomes; Fibre must not manufacture company to satisfy a need or a visitor's expectation.
 
-**Guy**, the named social-discovery oracle, is a public *information source* for both human and Thread questions about where social life might occur. It is not a Thread, a matchmaker or a social outcome authority. Fibre Places is one public directory, alongside independent non-Fibre directories and communities. Neither the website nor the oracle owns other people's presence, intentions or willingness. See [Guy and public social discovery](../architecture/social-discovery-oracle.md) for the accepted architecture direction and separately proposed implementation slices.
+**Fibre City Guide** is a public editorial magazine of places where social or intellectual activity might happen, drawing on Fibre public places and independent non-Fibre directories. A Thread may remember a favorite venue or read the guide, and a human can browse the same recommendations. The magazine is not a matchmaker or authority over anyone's presence, intentions or willingness. See [Fibre City Guide](../architecture/social-city-guide.md) for the accepted architecture and implementation slices.
 
 ## E2E meeting as a forcing function
 
