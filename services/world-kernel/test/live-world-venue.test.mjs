@@ -153,6 +153,14 @@ test("independent Threads can know one real public venue while their precise hom
     assert.equal(inCity[0][0].ref,inCity[1][0].ref,
       "two local lives did not resolve one independent public place");
     assert.equal(inCity[0][0].physicalVenue.ref,publicPlace.physicalVenue.ref);
+    const atPlace=(threadId)=>({
+      threadId,location:{kind:"place",placeRef:publicPlace.ref},
+    });
+    assert.equal(meetingPresenceCompatible(
+      atPlace(threads[0][0]),atPlace(threads[1][0]),{
+        leftWorldPlaces:inCity[0],rightWorldPlaces:inCity[1],
+      },
+    ),true,"two separately admitted lives cannot share one real public venue");
     assert.equal(listLocalWorldPublicPlaces(db,{
       locality:places[2].locality,countryCode:places[2].countryCode,
     }).length,0,"a public place appeared in a different locality");
