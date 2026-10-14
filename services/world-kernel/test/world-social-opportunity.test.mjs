@@ -54,9 +54,9 @@ test("ordinary shared presence permits a single voluntary consideration, not a s
         ref:ref==="wpl_park"?"venue_actual_park":"venue_actual_cafe",
       }};
     },
-    listRecentCurrentSituations({limit,since,at}){
-      assert.ok(limit<=16&&since<at,"social discovery scanned an unbounded population");
-      return [...situations];
+    listCurrentVenueSituations({venueRef,limit,at}){
+      assert.ok(limit<=8&&at===AT,"social discovery exceeded its bounded venue query");
+      return situations.filter(s=>s.location.placeRef===(venueRef==="venue_actual_park"?"wpl_park":"wpl_cafe"));
     },
   };
   try{
