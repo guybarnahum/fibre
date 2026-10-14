@@ -427,6 +427,11 @@ export class LivedNowStore {
   admitPrivatePlace(candidate){
     if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot locate a private place");
     this.#requireThread(candidate.threadId);
+    const current=this.getCurrentSituation(candidate.threadId);
+    if(current?.phase!=="at_place"||current.location?.kind!=="place"
+      ||current.location.placeRef!==candidate.placeRef){
+      throw new LivedNowConflictError("private location must describe the Thread's enacted present");
+    }
     return this.#database.transaction(()=>admitWorldPrivatePlace(this.#database,candidate));
   }
 
