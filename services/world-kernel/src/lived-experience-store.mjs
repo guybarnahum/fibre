@@ -168,6 +168,81 @@ export class LivedExperienceStore {
 
   close() { this.#database.close(); }
 
+  enqueueSocialOpportunity({threadId,situationId,dueAt}){
+    assertId("social opportunity Thread",threadId);
+    assertId("social opportunity situation",situationId);
+    assertIsoTimestamp("social opportunity due",dueAt);
+    const inserted=this.#database.prepare(`
+      INSERT OR IGNORE INTO world_social_opportunities(thread_id,situation_id,due_at)
+      VALUES(?,?,?)
+    `).run(threadId,situationId,dueAt).changes===1;
+    return Object.freeze({inserted,dueAt});
+  }
+
+  nextSocialOpportunityAt(){
+    return this.#database.prepare(`
+      SELECT due_at FROM world_social_opportunities
+      WHERE started_at IS NULL ORDER BY due_at LIMIT 1
+    `).get()?.due_at??null;
+  }
+
+  claimDueSocialOpportunity({at}){
+    assertIsoTimestamp("social opportunity now",at);
+    return this.#database.transaction(()=>{
+      const row=this.#database.prepare(`
+        SELECT thread_id,situation_id,due_at FROM world_social_opportunities
+        WHERE started_at IS NULL AND due_at<=?
+        ORDER BY due_at,situation_id LIMIT 1
+      `).get(at);
+      if(row===undefined)return null;
+      const changed=this.#database.prepare(`
+        UPDATE world_social_opportunities SET started_at=?
+        WHERE situation_id=? AND started_at IS NULL
+      `).run(at,row.situation_id).changes;
+      if(changed!==1)return null;
+      return Object.freeze({
+        threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
+      });
+    })();
+  }
+
+  completeSocialOpportunity({situationId,at,outcome}){
+    assertId("social opportunity situation",situationId);
+    assertIsoTimestamp("social opportunity completion",at);
+    if(!["no_co_presence","background","not_initiated","not_met","met","scene_changed"].includes(outcome)){
+      throw new TypeError("social opportunity outcome is invalid");
+    }
+    const row=this.#database.prepare(`
+      SELECT started_at,completed_at,outcome
+      FROM world_social_opportunities WHERE situation_id=?
+    `).get(situationId);
+    if(!row?.started_at)throw new TypeError("social opportunity was not started");
+    if(row.completed_at!==null){
+      if(row.outcome!==outcome)throw new TypeError("social opportunity outcome conflicts");
+      return;
+    }
+    this.#database.prepare(`
+      UPDATE world_social_opportunities SET completed_at=?,outcome=?
+      WHERE situation_id=? AND completed_at IS NULL
+    `).run(at,outcome,situationId);
+  }
+
+  inspectSocialOpportunities(threadId,{limit=12}={}){
+    assertId("social opportunity Thread",threadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>40){
+      throw new TypeError("social opportunity inspection limit must be 1-40");
+    }
+    return this.#database.prepare(`
+      SELECT situation_id,due_at,started_at,completed_at,outcome
+      FROM world_social_opportunities WHERE thread_id=?
+      ORDER BY due_at DESC LIMIT ?
+    `).all(threadId,limit).map(row=>Object.freeze({
+      situationId:row.situation_id,dueAt:row.due_at,
+      outcome:row.outcome??(row.started_at===null?"pending":"interrupted"),
+      completedAt:row.completed_at,
+    }));
+  }
+
   enqueueEnvironmentalOpportunity({threadId,situationId,dueAt,kind="arrival"}){
     assertId("World opportunity threadId",threadId);
     assertId("World opportunity situationId",situationId);
