@@ -1,3 +1,4 @@
+import {worldSchemaReady} from "./world-state-storage.mjs";
 import {
   IntegrityError,
   canonicalJson,
@@ -21,6 +22,7 @@ const SYMBOLIC_GENOME_TABLES = Object.freeze([
 ]);
 
 function tableExists(database, tableName) {
+  if(worldSchemaReady(database))return true;
   return database.prepare(
     "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name=?",
   ).get(tableName) !== undefined;
