@@ -416,6 +416,12 @@ export class FibreWorldDurableObject extends DurableObject {
         response.headers.set("x-fibre-state-rows-read", String(cost.rowsRead));
         response.headers.set("x-fibre-state-rows-written", String(cost.rowsWritten));
         response.headers.set("x-fibre-state-queries", String(cost.queries));
+        response.headers.set("x-fibre-state-top-stores", JSON.stringify(
+          Object.entries(cost.labels)
+            .sort(([,a],[,b])=>b.rowsRead-a.rowsRead||b.queries-a.queries)
+            .slice(0,8)
+            .map(([store,usage])=>({store,...usage})),
+        ));
       }
       if (cost.queries !== 0 || cost.rowsRead !== 0 || cost.rowsWritten !== 0) {
         console.log(JSON.stringify({ event:"world-state-cost", ...operation, ...cost }));
