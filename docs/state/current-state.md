@@ -116,44 +116,37 @@ The October 13 **G1/D1 source** adds narrow genome-derived sensitivity baselines
 
 ## Social-place discovery: editorial City Guide source, lived agency unproven
 
-On October 14, Fibre replaced the previously proposed named social oracle with the [Fibre City Guide](../architecture/social-city-guide.md): a Time Out–style public editorial catalogue, keyed by city and country. A shared `data/social-city-guide.json` manifest records sourced public addresses, meaningful descriptions, activities and an editorial `lastRecommendedAt` date. An admitted public venue may link to a real World place reference; external listings must not pretend World admission. The bounded reader and local inspection command **passed Guy's October 14 local validation (4 focused and 1,606 full tests)**. The Tbilisi query returned the sourced National Library entry; London returned `not_listed`. The World worker deployed successfully at source `e810c5c9`; that deployment did **not** publish or serve the repository magazine. **S1E source has since introduced bounded local recommendations into existing prospective Flight Planning beside current interoception and autobiographical memory.** Guy reports S1E local validation passed, though no new live Thread-authored choice or actual visit has been supplied. S1F is now source-implemented: the ordinary public-venue planning contract requires nonzero elapsed transit, the existing boundary-driven World can enact an empty venue stay and departure, and the shared public venue index observes only actual enacted co-presence. The operator observatory can expose public destinations referenced in admitted plans as **intention evidence**, not presence. S1F passed Guy's local validation (15 focused, 1,610 full) and deployed World kernel SHA `ec878aee` to staging. The read-only social probe then failed twice before reading any Observatory; subsequent Cloudflare tail logs identified **`Exceeded allowed rows read in Durable Objects free tier`** during World runtime initialization, before Thread inspection could begin. **Staging visit evidence is temporarily inaccessible, not negative.** The exception identifies the exhausted account allowance, not which earlier queries consumed it. Do not keep retrying the 40-Thread probe while quota-exhausted; restore capacity and inspect real per-service row-read usage before assessing natural visits. Thread-owned choice and enacted public venue presence remain unproven in staging. Fixture-authored trips cannot establish real Thread autonomy.
+On October 14, Fibre replaced the previously proposed named social oracle with the [Fibre City Guide](../architecture/social-city-guide.md): a Time Out–style public editorial catalogue, keyed by city and country. A shared `data/social-city-guide.json` manifest records sourced public addresses, meaningful descriptions, activities and an editorial `lastRecommendedAt` date. An admitted public venue may link to a real World place reference; external listings must not pretend World admission. The bounded reader and local inspection command **passed Guy's October 14 local validation (4 focused and 1,606 full tests)**. The Tbilisi query returned the sourced National Library entry; London returned `not_listed`. The World worker deployed successfully at source `e810c5c9`; that deployment did **not** publish or serve the repository magazine. **S1E source has since introduced bounded local recommendations into existing prospective Flight Planning beside current interoception and autobiographical memory.** Guy reports S1E local validation passed, though no new live Thread-authored choice or actual visit has been supplied. S1F is now source-implemented: the ordinary public-venue planning contract requires nonzero elapsed transit, the existing boundary-driven World can enact an empty venue stay and departure, and the shared public venue index observes only actual enacted co-presence. The operator observatory can expose public destinations referenced in admitted plans as **intention evidence**, not presence. S1F passed Guy's local validation (15 focused, 1,610 full) and deployed World kernel SHA `ec878aee` to staging. The read-only social probe then failed twice before reading any Observatory; subsequent Cloudflare tail logs identified **`Exceeded allowed rows read in Durable Objects free tier`** during World runtime initialization, before Thread inspection could begin. **Those October 14 failures produced no visit evidence, not a negative visit result.** Subsequent October 15 read-only Observatory requests returned HTTP 200 after schema and query-cost corrections, but did not inspect natural public-venue visits. Avoid unbounded population sampling; inspect independently authored plans and enacted presence only with a small evidence-driven probe. Thread-owned choice and enacted public venue presence remain unproven in staging. Fixture-authored trips cannot establish real Thread autonomy.
 
 The superseded Guy oracle prototype passed earlier local tests but returned `HTTP 404` at its first staging question; it was retired, not declared operational. Editorial recommendation, remembered-place discovery, a Thread choosing to browse, actual travel, a co-present visitor and an encounter are distinct facts and **not yet shown causally linked**. S0 staging has one public library and three privately locality-grounded Tbilisi Threads but no observed shared-venue visit or social contact.
 
-## Current-World and Observatory efficiency correction — source only
+## World storage and Observatory efficiency — staging validated October 15
 
-October 14–15 source work addresses two scaling defects identified by the independent infrastructure audit. An enacted CurrentSituation now updates a single transactional current frontier alongside immutable historical evidence, so ordinary per-Thread and current-population reads do not rank all prior situations. Environmental shared observers consult indexed local venue presence, while general /meet discovery retains broader current-World semantics. Operator Observatory now has small recent windows and a joined Encounter Story + situational/attention/follow-up read, backed by a per-Thread chronological index rather than sorting a lifetime. The preexisting `world-state-cost` instrumentation remains the measurement authority.
+The World now maintains a transactional current-situation frontier beside
+immutable history and uses venue-indexed presence for bounded local
+opportunities. Recent Encounter Story reads, SituatedLife current heads
+and enacted Flight Plan lookup are indexed or direct; operator inspection
+retains the full history on demand. SQL schema creation and migration are
+explicit deployment work, not routine World wakeup work. Local databases
+continue to initialize normally.
 
-**Staging deployed and one read-only Observatory response verified:** deployed source `ad4d62d` returned HTTP 200 for one Thread with current situation, 12 bounded recent stories, 7 memories, and 8 recent situations; Cloudflare tail showed no corresponding exception. Guy's local focused/full validation outputs and before/after SQL rows-read measurements are still pending.** A first upgrade makes a one-time indexed historical bootstrap of the projections. No conclusion about spontaneous S1F visits, Thread agency or actual savings on Cloudflare staging follows merely from source changes. Avoid broad probes until a few controlled reads establish capacity and cost.
+**Live validation:** Guy ran six focused deployment tests and all **1,614**
+full-suite tests successfully at source `d21c4346`. The staging World
+deployment explicitly confirmed `WORLD SCHEMA INSTALLED`. On the same
+Thread, a former full Observatory request costing **11,541 rows / 199
+queries** fell to **697 rows / 104 queries**. A current-only request
+initially cost 593 rows because a separate reconciliation retry-store
+descriptor repeated schema-catalog inspection. After that descriptor
+reused the already installed World schema, staging current-only checks
+returned HTTP 200 at **62 rows / 17 and 16 queries**, while full remained
+**697 rows / 104 queries**. All supplied measurements recorded zero
+inspection writes. These savings are verified for inspection, not billed
+per-Thread life or inference.
 
-## Deployment-managed schema and on-demand Observatory — source only
-
-After Guy's first two measured requests, a full Observatory repeatedly consumed
-**11,541 Durable Object SQL rows read and 199 queries** for one Thread with no
-writes. The largest measured labels were LivedNow (4,724), SituatedLife (2,612)
-and SymbolicGenome (2,579 rows). This is a baseline for the previous deployed
-code, **not** the cost of the new changes.
-
-A further correction on `main` now installs World SQLite schema, latest
-situations and recent-story/frontier projections through an explicit
-deployment-controlled migration route. The `cloud:deploy:service` command for
-`world-kernel` requires migration success after publishing code; normal World
-store opening skips schema installation and SQLite catalog probing for known
-tables. Local test databases continue to initialize themselves normally.
-SituatedLife relationships and places have a transactional current-head
-projection while their full immutable histories remain available.
-
-The admin Thread page now requests a **current-only** Observatory view first;
-detailed history, genomes, memories and Later Contact load when the deferred
-section is reached or requested. Individual operations include direct
-enacted-plan lookup and bounded, indexed recent life reads.
-The existing `world-state-cost` counters remain the measurement authority.
-
-**This pass is not yet locally validated or staged.** Guy must validate,
-deploy World kernel (including `WORLD SCHEMA INSTALLED`), deploy the admin app,
-then measure one current-only and one full inspection without a population
-probe. Neither SQL savings nor live Thread behavior has been proven by these
-source edits.
+The admin page defers the lifetime dossier until needed; the on-page
+UX still merits one real browser check. The data/storage efficiency
+gate is accepted; natural Thread-chosen travel, social encounters,
+scheduled World work and full runtime economics remain distinct.
 
 ## Runtime economics and unresolved reach
 
