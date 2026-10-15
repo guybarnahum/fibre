@@ -1,4 +1,8 @@
 export function createContactTables(database){
+  const needsPendingWork=database.prepare(`
+    SELECT 1 FROM sqlite_master WHERE type='table'
+      AND name='thread_contact_pending_work'
+  `).get()===undefined;
   database.exec(`
     CREATE TABLE IF NOT EXISTS person_contact_capabilities (
       capability_id TEXT PRIMARY KEY,
@@ -78,6 +82,44 @@ export function createContactTables(database){
     CREATE INDEX IF NOT EXISTS idx_thread_contact_messages_sender
       ON thread_contact_messages(sender_thread_id,sent_at,message_id);
 
+    -- Mutable contact frontier, derived from immutable decisions and attempts.
+    CREATE TABLE IF NOT EXISTS thread_contact_pending_work (
+      kind TEXT NOT NULL CHECK (kind IN ('afterthought','attempt')),
+      reference TEXT NOT NULL,
+      due_at TEXT NOT NULL,
+      PRIMARY KEY(kind,reference)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_thread_contact_pending_due
+      ON thread_contact_pending_work(kind,due_at,reference);
+
+    CREATE TRIGGER IF NOT EXISTS thread_contact_pending_afterthought
+      AFTER INSERT ON thread_experience_consolidation_stages
+      WHEN NEW.stage='complete' BEGIN
+        INSERT INTO thread_contact_pending_work(kind,reference,due_at)
+        SELECT 'afterthought',NEW.consolidation_id,NEW.recorded_at
+        FROM thread_experience_consolidation_stages decision
+        WHERE decision.consolidation_id=NEW.consolidation_id
+          AND decision.stage='decision'
+          AND json_array_length(decision.payload_json,'$.afterthoughts')>0
+          AND NOT EXISTS (
+            SELECT 1 FROM thread_contact_attempts a
+            WHERE a.consolidation_id=NEW.consolidation_id
+          );
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_contact_pending_claimed
+      AFTER INSERT ON thread_contact_attempts BEGIN
+        DELETE FROM thread_contact_pending_work
+        WHERE kind='afterthought' AND reference=NEW.consolidation_id;
+        INSERT INTO thread_contact_pending_work(kind,reference,due_at)
+        VALUES ('attempt',NEW.contact_attempt_id,NEW.started_at);
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_contact_pending_completed
+      AFTER INSERT ON thread_contact_attempt_stages
+      WHEN NEW.stage='complete' BEGIN
+        DELETE FROM thread_contact_pending_work
+        WHERE kind='attempt' AND reference=NEW.contact_attempt_id;
+      END;
+
     CREATE TRIGGER IF NOT EXISTS person_contact_capabilities_no_update
       BEFORE UPDATE ON person_contact_capabilities BEGIN
         SELECT RAISE(ABORT,'person_contact_capabilities is append-only');
@@ -119,4 +161,30 @@ export function createContactTables(database){
         SELECT RAISE(ABORT,'thread_contact_messages is append-only');
       END;
   `);
+  if(needsPendingWork){
+    // Migration only: reconcile existing unfinished work once, at deployment.
+    database.exec(`
+      INSERT INTO thread_contact_pending_work(kind,reference,due_at)
+      SELECT 'afterthought',c.consolidation_id,complete.recorded_at
+      FROM thread_experience_consolidations c
+      JOIN thread_experience_consolidation_stages decision
+        ON decision.consolidation_id=c.consolidation_id
+        AND decision.stage='decision'
+      JOIN thread_experience_consolidation_stages complete
+        ON complete.consolidation_id=c.consolidation_id
+        AND complete.stage='complete'
+      LEFT JOIN thread_contact_attempts a
+        ON a.consolidation_id=c.consolidation_id
+      WHERE a.contact_attempt_id IS NULL
+        AND json_array_length(decision.payload_json,'$.afterthoughts')>0;
+
+      INSERT INTO thread_contact_pending_work(kind,reference,due_at)
+      SELECT 'attempt',a.contact_attempt_id,a.started_at
+      FROM thread_contact_attempts a
+      LEFT JOIN thread_contact_attempt_stages complete
+        ON complete.contact_attempt_id=a.contact_attempt_id
+        AND complete.stage='complete'
+      WHERE complete.contact_attempt_id IS NULL;
+    `);
+  }
 }
