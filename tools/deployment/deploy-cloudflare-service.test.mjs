@@ -75,6 +75,10 @@ test("service deploy re-resolves current source config without provisioning", as
       async ensureD1MigrationsImpl({ databases }) {
         calls.push(["migrate", databases]);
       },
+      async acceptWorldSchemaImpl(){
+        calls.push(["world-schema"]);
+        return {ok:true};
+      },
       print() {},
       async runner(args, options) {
         calls.push(["wrangler", args, options]);
@@ -91,6 +95,8 @@ test("service deploy re-resolves current source config without provisioning", as
     assert.equal(writes[0][1].vars.FIBRE_DEPLOYMENT_GIT_SHA, SHA);
     const migrateIndex = calls.findIndex((entry) => entry[0] === "migrate");
     const wranglerIndex = calls.findIndex((entry) => entry[0] === "wrangler");
+    const worldIndex=calls.findIndex(entry=>entry[0]==="world-schema");
+    assert.ok(worldIndex>wranglerIndex,"World schema installation must follow deployment");
     assert.ok(migrateIndex >= 0 && migrateIndex < wranglerIndex, "D1 migrations must complete before Worker deploy");
     assert.deepEqual(calls[migrateIndex][1], [{ binding:"ACTIVITY_LOG", name:"fibre-activity-log-staging" }]);
     const wrangler = calls[wranglerIndex];
