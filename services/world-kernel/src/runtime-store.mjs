@@ -71,7 +71,7 @@ export class RuntimeStore {
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName: "RuntimeStore" });
     try {
-      migrateDatabase(this.#database);
+      if (!storage.schemaReady) migrateDatabase(this.#database);
     } catch (error) {
       this.#database.close();
       throw error;
