@@ -37,7 +37,7 @@ export class GenesisOriginAuthorityStore {
     this.#readOnly = readOnly;
     this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "GenesisOriginAuthorityStore" });
     try {
-      if (!readOnly) {
+      if (!readOnly && !storage.schemaReady) {
         migrateDatabase(this.#database);
         this.#database.transaction(() => {
           createGenesisTables(this.#database);
