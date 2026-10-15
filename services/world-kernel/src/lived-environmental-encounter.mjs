@@ -147,7 +147,7 @@ function sharedObservers(context, at, livedNowStore) {
   const venueRef=place?.physicalVenue?.ref;
   if(typeof venueRef!=="string")return null;
   const others=livedNowStore.listCurrentVenueSituations({
-    venueRef,at,limit:8,excludeThreadId:context.thread.threadId,
+    venueRef,at,limit:1,excludeThreadId:context.thread.threadId,
   });
   return Object.freeze({
     placeRef:venueRef,
