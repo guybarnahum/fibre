@@ -750,10 +750,13 @@ export class LivedNowStore {
     const rows=this.#database.prepare(`
       SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
       FROM live_physical_venue_bindings v
+      JOIN current_situation_frontier f ON f.thread_id=v.thread_id
       JOIN current_situation_records s ON s.situation_id=(
-        SELECT latest.situation_id FROM current_situation_records latest
-        WHERE latest.thread_id=v.thread_id AND latest.established_at<=?
-        ORDER BY latest.established_at DESC,latest.situation_id DESC LIMIT 1
+        CASE WHEN f.established_at<=? THEN f.situation_id
+        ELSE (SELECT latest.situation_id FROM current_situation_records latest
+          WHERE latest.thread_id=v.thread_id AND latest.established_at<=?
+          ORDER BY latest.established_at DESC,latest.situation_id DESC LIMIT 1)
+        END
       )
       WHERE v.venue_ref=?
         AND (? IS NULL OR v.thread_id<>?)
@@ -762,28 +765,41 @@ export class LivedNowStore {
         AND COALESCE(json_extract(s.record_json,'$.wakefulness'),'unknown')<>'asleep'
         AND s.thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')
       ORDER BY v.thread_id LIMIT ?
-    `).all(at,venueRef,excludeThreadId,excludeThreadId,limit);
+    `).all(at,at,venueRef,excludeThreadId,excludeThreadId,limit);
     // Newly admitted public venues have a shared wpl_* ref and do not need
     // one historical binding per Thread. Search the indexed enacted ref,
     // then confirm it is still that person's latest actual situation.
     const publicRows=this.#database.prepare(`
+      SELECT f.situation_id,f.thread_id,f.established_at,f.record_json,f.record_digest
+      FROM world_public_places p
+      JOIN current_situation_frontier f ON f.place_ref=p.place_ref
+      JOIN threads t ON t.thread_id=f.thread_id
+      WHERE p.venue_ref=? AND f.established_at<=?
+        AND (? IS NULL OR f.thread_id<>?)
+        AND COALESCE(f.wakefulness,'unknown')<>'asleep'
+        AND t.status<>'retired'
+      UNION ALL
       SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
       FROM world_public_places p
       JOIN current_situation_records s
         ON json_extract(s.record_json,'$.location.placeRef')=p.place_ref
-      WHERE p.venue_ref=?
-        AND json_extract(s.record_json,'$.location.kind')='place'
+      JOIN current_situation_frontier f ON f.thread_id=s.thread_id
+      JOIN threads t ON t.thread_id=s.thread_id
+      WHERE p.venue_ref=? AND f.established_at>?
         AND s.established_at<=?
         AND (? IS NULL OR s.thread_id<>?)
         AND COALESCE(json_extract(s.record_json,'$.wakefulness'),'unknown')<>'asleep'
-        AND s.thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')
+        AND t.status<>'retired'
         AND s.situation_id=(
           SELECT latest.situation_id FROM current_situation_records latest
           WHERE latest.thread_id=s.thread_id AND latest.established_at<=?
           ORDER BY latest.established_at DESC,latest.situation_id DESC LIMIT 1
         )
-      ORDER BY s.thread_id LIMIT ?
-    `).all(venueRef,at,excludeThreadId,excludeThreadId,at,limit);
+      ORDER BY thread_id LIMIT ?
+    `).all(
+      venueRef,at,excludeThreadId,excludeThreadId,
+      venueRef,at,at,excludeThreadId,excludeThreadId,at,limit,
+    );
     const present=new Map([...rows,...publicRows]
       .map(row=>[row.thread_id,situationFromRow(row)]));
     return [...present.values()].sort((a,b)=>a.threadId.localeCompare(b.threadId))
