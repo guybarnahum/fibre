@@ -76,32 +76,34 @@ export class FibreCreditStore {
     this.#worldReader = worldReader;
     this.#database = openWorldStateDatabase(storage, { storeName:"FibreCreditStore" });
     try {
-      migrateDatabase(this.#database);
-      this.#database.exec(`
-        CREATE TABLE IF NOT EXISTS fibre_credit_entries (
-          entry_id TEXT PRIMARY KEY,
-          thread_id TEXT NOT NULL,
-          commitment_id TEXT NOT NULL UNIQUE,
-          encounter_story_id TEXT NOT NULL,
-          occurred_at TEXT NOT NULL,
-          amount INTEGER NOT NULL CHECK (amount > 0),
-          record_json TEXT NOT NULL CHECK (json_valid(record_json)),
-          record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
-          FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
-        ) STRICT;
+      if (!storage.schemaReady) {
+        migrateDatabase(this.#database);
+        this.#database.exec(`
+          CREATE TABLE IF NOT EXISTS fibre_credit_entries (
+            entry_id TEXT PRIMARY KEY,
+            thread_id TEXT NOT NULL,
+            commitment_id TEXT NOT NULL UNIQUE,
+            encounter_story_id TEXT NOT NULL,
+            occurred_at TEXT NOT NULL,
+            amount INTEGER NOT NULL CHECK (amount > 0),
+            record_json TEXT NOT NULL CHECK (json_valid(record_json)),
+            record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+            FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+          ) STRICT;
 
-        CREATE INDEX IF NOT EXISTS idx_fibre_credit_entries_thread_time
-          ON fibre_credit_entries(thread_id,occurred_at,entry_id);
+          CREATE INDEX IF NOT EXISTS idx_fibre_credit_entries_thread_time
+            ON fibre_credit_entries(thread_id,occurred_at,entry_id);
 
-        CREATE TRIGGER IF NOT EXISTS fibre_credit_entries_no_update
-          BEFORE UPDATE ON fibre_credit_entries BEGIN
-            SELECT RAISE(ABORT, 'fibre_credit_entries is append-only');
-          END;
-        CREATE TRIGGER IF NOT EXISTS fibre_credit_entries_no_delete
-          BEFORE DELETE ON fibre_credit_entries BEGIN
-            SELECT RAISE(ABORT, 'fibre_credit_entries is append-only');
-          END;
-      `);
+          CREATE TRIGGER IF NOT EXISTS fibre_credit_entries_no_update
+            BEFORE UPDATE ON fibre_credit_entries BEGIN
+              SELECT RAISE(ABORT, 'fibre_credit_entries is append-only');
+            END;
+          CREATE TRIGGER IF NOT EXISTS fibre_credit_entries_no_delete
+            BEFORE DELETE ON fibre_credit_entries BEGIN
+              SELECT RAISE(ABORT, 'fibre_credit_entries is append-only');
+            END;
+        `);
+      }
     } catch (error) {
       this.#database.close();
       throw error;
