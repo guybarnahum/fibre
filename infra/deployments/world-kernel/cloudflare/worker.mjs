@@ -463,21 +463,14 @@ export class FibreWorldDurableObject extends DurableObject {
       if(!privateOperatorAuthorized(request,this.env)){
         return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
       }
-      const installed=createWorldCloudflareRuntime({
-        storage:this.ctx.storage,env:this.env,
-        calibrationModelProvider:()=>this.calibrationModel,
-        schemaManaged:false,
-      });
-      try{
-        installWorldSchemas(installed.worldStorage,installed.worldStore);
-        // Migration uses writable installers. Reopen operational stores with
-        // schemaReady=true rather than retaining migration connections.
-        await this.runtime?.close();
-        this.runtime=null;
-        return Response.json({ok:true,contract:"fibre-world-schema-installed-v1"});
-      }finally{
-        await installed.close();
-      }
+      const schemaStorage={
+        infraDriver:this.infraDriver,stateScopeId:WORLD_SCOPE_ID,
+      };
+      installWorldSchemas(schemaStorage);
+      // A running World can now reopen its installed, schema-ready stores.
+      await this.runtime?.close();
+      this.runtime=null;
+      return Response.json({ok:true,contract:"fibre-world-schema-installed-v1"});
     }
     if (url.pathname === APPEARANCE_COVERAGE_ROUTE) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
