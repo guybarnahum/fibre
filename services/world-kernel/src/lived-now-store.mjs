@@ -717,7 +717,7 @@ export class LivedNowStore {
     if (!at) throw new TypeError("listCurrentSituations requires an at timestamp");
     assertIsoTimestamp("listCurrentSituations at", at);
     const rows = this.#database.prepare(`
-      SELECT f.situation_id,f.thread_id,f.established_at,f.record_json,f.record_digest
+      SELECT f.situation_id,f.thread_id AS thread_id,f.established_at,f.record_json,f.record_digest
       FROM current_situation_frontier f
       JOIN threads t ON t.thread_id=f.thread_id
       WHERE f.established_at<=?
@@ -770,7 +770,7 @@ export class LivedNowStore {
     // one historical binding per Thread. Search the indexed enacted ref,
     // then confirm it is still that person's latest actual situation.
     const publicRows=this.#database.prepare(`
-      SELECT f.situation_id,f.thread_id,f.established_at,f.record_json,f.record_digest
+      SELECT f.situation_id,f.thread_id AS thread_id,f.established_at,f.record_json,f.record_digest
       FROM world_public_places p
       JOIN current_situation_frontier f ON f.place_ref=p.place_ref
       JOIN threads t ON t.thread_id=f.thread_id
