@@ -80,7 +80,7 @@ export class StructuredAuthorityWithdrawalStore {
 
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName: "StructuredAuthorityWithdrawalStore" });
-    try { migrateDatabase(this.#database); }
+    try { if (!storage.schemaReady) migrateDatabase(this.#database); }
     catch (error) { this.#database.close(); throw error; }
   }
 
