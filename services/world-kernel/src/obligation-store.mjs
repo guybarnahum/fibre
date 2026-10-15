@@ -144,9 +144,11 @@ export class ObligationStore {
   constructor(storage) {
         this.#database = openWorldStateDatabase(storage, { storeName: "ObligationStore" });
     try {
-      migrateDatabase(this.#database);
-      createObligationTables(this.#database);
-      migrateLegacyConsumedObligations(this.#database);
+      if (!storage.schemaReady) {
+        migrateDatabase(this.#database);
+        createObligationTables(this.#database);
+        migrateLegacyConsumedObligations(this.#database);
+      }
     } catch (error) {
       this.#database.close();
       throw error;
