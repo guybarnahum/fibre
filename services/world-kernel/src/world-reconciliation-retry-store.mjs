@@ -5,7 +5,7 @@ export function openWorldReconciliationRetryStore(storage) {
     storeName:"WorldReconciliationRetryStore",
   });
   try {
-    database.exec(`
+    if(!storage.schemaReady)database.exec(`
       CREATE TABLE IF NOT EXISTS world_reconciliation_retry (
         scope_id TEXT PRIMARY KEY,
         retry_streak INTEGER NOT NULL CHECK (retry_streak >= 0)
