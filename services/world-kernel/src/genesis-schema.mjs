@@ -1,4 +1,4 @@
-import { createCivilRegistryTables } from "./civil-registry-store.mjs";
+import { createCivilRegistryTables } from "./civil-registry-schema.mjs";
 
 export function createGenesisTables(database) {
   createCivilRegistryTables(database);
