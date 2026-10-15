@@ -98,6 +98,10 @@ export function worldStateInitialization(database) {
   return INITIALIZATION_BY_DATABASE.get(database) ?? null;
 }
 
+export function worldSchemaReady(database){
+  return INITIALIZATION_BY_DATABASE.get(database)?.schemaReady===true;
+}
+
 export function openWorldStateDatabase(storage, {
   readOnly = false,
   storeName = "World state store",
@@ -117,6 +121,7 @@ export function openWorldStateDatabase(storage, {
   const database = infra.state.open(stateScopeId, { readOnly, queryLabel:storeName });
   const initialization = initializationFor(storage);
   if(storage.schemaReady===true){
+    initialization.schemaReady=true;
     initialization.recovered=true;
     initialization.migrated=true;
   }
