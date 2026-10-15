@@ -19,6 +19,27 @@ Fibre has accepted the [Fibre City Guide](../architecture/social-city-guide.md) 
 
 **Defining end-to-end outcome:** a naturally motivated Thread can recall a favorite place or consult the shared editorial guide, independently plan and enact an actual journey, spend meaningful time at a public destination even when nobody is there, and perhaps encounter a separately arriving Thread or genuinely connected human. The World must not fill the scene with company or prescribe her choice. The website workstream owns public magazine publication; Core owns real life and encounter authority. This complements, but does not close, N6/N7 causal social proof.
 
+## Follow-up: explicit World schema migration and lazy inspection
+
+**Source committed on main; Guy's validation, deployment and SQL savings measurement pending.**
+The verified staging baseline for one full Thread Observatory remained **11,541 DO
+rows read and 199 SQL queries** (zero writes), with the largest costs in
+LivedNow, SituatedLife and SymbolicGenome. A corrective pass now installs
+World schemas through the existing Cloudflare deploy command's explicit
+post-deploy migration, instead of normal World runtime initialization.
+The admin Observatory opens with current-life evidence; deeper memories,
+genome, contact and social history load as needed. Current Flight Plans
+use a direct ID lookup; current SituatedLife heads are transactionally
+projected while complete revision histories remain immutable; deployment-
+known SQL tables avoid repeated catalog lookups.
+
+**Next:** Guy runs the focused semantic/deployment tests and
+`npm run slice:validate` locally. Only after they pass, deploy
+`world-kernel` to staging (the command must print
+`WORLD SCHEMA INSTALLED`) and the admin dashboard, then measure **one
+current-only and one full Observatory request**, separately, using the
+existing SQL cost headers. No 40-Thread probe or forced Thread encounter.
+
 ## Current-World and Observatory efficiency correction (October 14–15)
 
 Approved and **deployed to staging at SHA `ad4d62d64bcd9b0b51aa3d5b60f057da8bf032b7`**. Guy's focused/full local validation output and measured before/after SQL rows read are still pending. Ordinary current-situation reads now use one transactional latest/frontier projection per Thread while append-only situation history remains intact. Venue-local environmental observers use the existing indexed presence authority; general /meet reads current World without scanning historical situations. Observatory inspection is bounded to recent stories, memory, social history, journal, consolidation and contact, with joined Story/attention/follow-up evidence and an indexed per-Thread story timeline. No alternate cache, new polling mechanism, or telemetry system was introduced. [LivedNow architecture](../architecture/lived-now-and-meetings.md#efficient-current-life-without-erasing-history) records the semantic boundary.
