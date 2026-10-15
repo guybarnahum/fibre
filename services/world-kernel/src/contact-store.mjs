@@ -31,11 +31,13 @@ function messageIdFor({contactAttemptId,recipientPartyId,messageText}){
 export class ContactStore {
   #database;
 
-  constructor(storage){
-    this.#database=openWorldStateDatabase(storage,{storeName:"ContactStore"});
+  constructor(storage,{readOnly=false}={}){
+    this.#database=openWorldStateDatabase(storage,{readOnly,storeName:"ContactStore"});
     try{
-      migrateDatabase(this.#database);
-      createContactTables(this.#database);
+      if(!readOnly){
+        migrateDatabase(this.#database);
+        createContactTables(this.#database);
+      }
     }catch(error){
       this.#database.close();
       throw error;
@@ -543,4 +545,8 @@ export class ContactStore {
 
 export function openContactStore(storage){
   return new ContactStore(storage);
+}
+
+export function openContactInspectionStore(storage){
+  return new ContactStore(storage,{readOnly:true});
 }
