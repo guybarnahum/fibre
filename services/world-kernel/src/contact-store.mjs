@@ -487,21 +487,37 @@ export class ContactStore {
     if(!Number.isSafeInteger(limit)||limit<1||limit>500){
       throw new TypeError("contact inspection limit must be 1-500");
     }
-    const attempts=this.#database.prepare(`
-      SELECT contact_attempt_id,thread_id,consolidation_id,started_at
-      FROM thread_contact_attempts
-      WHERE thread_id=?
-      ORDER BY started_at DESC,contact_attempt_id DESC
-      LIMIT ?
-    `).all(threadId,limit).map((row)=>({
-      contactAttemptId:row.contact_attempt_id,
-      threadId:row.thread_id,
-      consolidationId:row.consolidation_id,
-      startedAt:row.started_at,
-      decision:this.getStage(row.contact_attempt_id,"decision"),
-      expression:this.getStage(row.contact_attempt_id,"expression"),
-      complete:this.getStage(row.contact_attempt_id,"complete"),
-    }));
+    const rows=this.#database.prepare(`
+      WITH recent AS (
+        SELECT contact_attempt_id,thread_id,consolidation_id,started_at
+        FROM thread_contact_attempts
+        WHERE thread_id=?
+        ORDER BY started_at DESC,contact_attempt_id DESC LIMIT ?
+      )
+      SELECT a.*,s.stage,s.recorded_at,s.payload_json
+      FROM recent a LEFT JOIN thread_contact_attempt_stages s
+        ON s.contact_attempt_id=a.contact_attempt_id
+      ORDER BY a.started_at DESC,a.contact_attempt_id DESC,s.stage
+    `).all(threadId,limit);
+    const byId=new Map();
+    for(const row of rows){
+      let attempt=byId.get(row.contact_attempt_id);
+      if(!attempt){
+        attempt={
+          contactAttemptId:row.contact_attempt_id,threadId:row.thread_id,
+          consolidationId:row.consolidation_id,startedAt:row.started_at,
+          decision:null,expression:null,complete:null,
+        };
+        byId.set(row.contact_attempt_id,attempt);
+      }
+      if(row.stage!==null){
+        attempt[row.stage]={
+          contactAttemptId:row.contact_attempt_id,stage:row.stage,
+          recordedAt:row.recorded_at,payload:JSON.parse(row.payload_json),
+        };
+      }
+    }
+    const attempts=[...byId.values()];
     return Object.freeze({
       attempts:Object.freeze(attempts),
       sent:Object.freeze(this.listSent(threadId,{limit})),
