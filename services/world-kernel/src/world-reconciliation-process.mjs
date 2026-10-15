@@ -262,6 +262,7 @@ export function createWorldReconciliationRuntime({
   maxRetryMs = DEFAULT_MAX_RETRY_MS,
   now = Date.now,
   retryState = null,
+  storage = null,
 } = {}) {
   if (!process || typeof process.runOnce !== "function") {
     throw new TypeError("World reconciliation runtime requires process.runOnce()");
@@ -280,7 +281,7 @@ export function createWorldReconciliationRuntime({
   }
   const infra = requireInfraCapabilities(infraDriver, "scheduler");
   const ownedRetryStore = retryState === null
-    ? openWorldReconciliationRetryStore({ infraDriver, stateScopeId:scopeId })
+    ? openWorldReconciliationRetryStore(storage ?? { infraDriver, stateScopeId:scopeId })
     : null;
   const resolvedRetryState = retryState ?? Object.freeze({
     get:() => ownedRetryStore.get(scopeId),
