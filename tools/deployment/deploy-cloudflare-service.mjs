@@ -126,6 +126,31 @@ export async function acceptBirthCenterServiceDeployment({
   return Object.freeze({ baseUrl, migration, stateHealth, runtimeAcceptance });
 }
 
+export async function acceptWorldSchemaDeployment({
+  prepared,deploymentOutput,
+  fetchImpl=globalThis.fetch,
+  privateToken=process.env.FIBRE_PRIVATE_TOKEN,
+}={}){
+  if(typeof privateToken!=="string"||privateToken.length===0){
+    throw new Error("World schema installation requires FIBRE_PRIVATE_TOKEN");
+  }
+  const baseUrl=healthBaseUrlForDeployment({
+    serviceId:"world-kernel",
+    resolvedConfig:prepared.config,
+    deploymentOutput,
+  });
+  const response=await fetchImpl(new URL("/internal/world-schema/migrate",baseUrl),{
+    method:"POST",headers:{"x-fibre-private-token":privateToken},
+  });
+  if(!response.ok){
+    const message=await response.text();
+    throw new Error("World schema installation HTTP "+response.status+": "+message.slice(0,180));
+  }
+  const result=await response.json();
+  if(result?.ok!==true)throw new Error("World schema installation returned no success witness");
+  return result;
+}
+
 export async function deployCloudflareService({
   repoRoot,
   environment,
@@ -137,6 +162,7 @@ export async function deployCloudflareService({
   writeFileImpl = writeFile,
   ensureD1MigrationsImpl = ensureCloudflareD1Migrations,
   acceptBirthCenterImpl = acceptBirthCenterServiceDeployment,
+  acceptWorldSchemaImpl = acceptWorldSchemaDeployment,
   print = console.log,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
@@ -178,6 +204,12 @@ export async function deployCloudflareService({
   ], { cwd: root });
   const stdout = result.stdout ?? "";
   const stderr = result.stderr ?? "";
+  const worldSchemaAcceptance=serviceId==="world-kernel"
+    ?await acceptWorldSchemaImpl({
+      prepared,deploymentOutput:`${stdout}\n${stderr}`,
+    })
+    :null;
+  if(worldSchemaAcceptance!==null)print("WORLD SCHEMA INSTALLED");
   const birthCenterAcceptance = serviceId === "birth-center"
     ? await acceptBirthCenterImpl({
         runner,
@@ -195,6 +227,7 @@ export async function deployCloudflareService({
     stdout,
     stderr,
     birthCenterAcceptance,
+    worldSchemaAcceptance,
   });
 }
 
