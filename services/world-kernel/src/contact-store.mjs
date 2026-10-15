@@ -34,7 +34,7 @@ export class ContactStore {
   constructor(storage,{readOnly=false}={}){
     this.#database=openWorldStateDatabase(storage,{readOnly,storeName:"ContactStore"});
     try{
-      if(!readOnly){
+      if(!readOnly && !storage.schemaReady){
         migrateDatabase(this.#database);
         createContactTables(this.#database);
       }
