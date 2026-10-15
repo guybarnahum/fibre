@@ -470,11 +470,13 @@ export class FibreWorldDurableObject extends DurableObject {
       });
       try{
         installWorldSchemas(installed.worldStorage,installed.worldStore);
-        this.runtime=installed;
+        // Migration uses writable installers. Reopen operational stores with
+        // schemaReady=true rather than retaining migration connections.
+        await this.runtime?.close();
+        this.runtime=null;
         return Response.json({ok:true,contract:"fibre-world-schema-installed-v1"});
-      }catch(error){
+      }finally{
         await installed.close();
-        throw error;
       }
     }
     if (url.pathname === APPEARANCE_COVERAGE_ROUTE) {
