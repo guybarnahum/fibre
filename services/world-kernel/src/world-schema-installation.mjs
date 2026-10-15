@@ -1,6 +1,7 @@
 import {openContactStore} from "./contact-store.mjs";
 import {openFibreCreditStore} from "./fibre-credit-store.mjs";
-import {openGuardianCognitionStore} from "./guardian-cognition-store.mjs";
+import {createGuardianCognitionTables} from "./guardian-cognition-schema.mjs";
+import {openWorldStateDatabase} from "./world-state-storage.mjs";
 import {openInsideFibreWorkStore} from "./inside-fibre-work-store.mjs";
 import {openObligationApplicabilityStore} from "./obligation-applicability-store.mjs";
 import {openSemanticStateStore} from "./semantic-state-store.mjs";
@@ -18,7 +19,12 @@ export function installWorldSchemas(storage,worldReader){
     ()=>new ThreadHealthProjectionStore(storage),
     ()=>openContactStore(storage),
     ()=>openInsideFibreWorkStore(storage),
-    ()=>openGuardianCognitionStore(storage),
+    ()=>{
+      const database=openWorldStateDatabase(storage,{storeName:"GuardianCognitionSchema"});
+      try{database.transaction(()=>createGuardianCognitionTables(database));}
+      catch(error){database.close();throw error;}
+      return {close:()=>database.close()};
+    },
     ()=>openObligationApplicabilityStore(storage),
     ()=>new GenesisOriginAuthorityStore(storage),
     ()=>openFibreCreditStore(storage,{worldReader}),
