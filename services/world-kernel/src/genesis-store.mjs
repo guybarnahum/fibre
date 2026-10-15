@@ -388,7 +388,7 @@ export class GenesisStore {
       storeName: "GenesisStore",
     });
     try {
-      if (!readOnly) {
+      if (!readOnly && !storage.schemaReady) {
         migrateDatabase(this.#database);
         this.#database.transaction(() => {
           createGenesisTables(this.#database);
