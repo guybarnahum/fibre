@@ -368,8 +368,10 @@ export function createThreadContactProcess({
       }
 
       const remaining=batchLimit-attempted;
+      let sourcesExhausted=false;
       if(remaining>0){
         const sources=unconsideredSources(remaining);
+        sourcesExhausted=sources.length===0;
         for(const {source,candidates} of sources){
           attempted+=1;
           let attempt=null;
@@ -398,7 +400,9 @@ export function createThreadContactProcess({
         attempted,
         completed:results.filter((item)=>item.completed===true).length,
         failed,
-        hasPending:hasPending(),
+        // An entirely quiet pass has already checked both durable queues,
+        // without yielding to another request; do not scan them twice.
+        hasPending:attempted===0&&sourcesExhausted?false:hasPending(),
         results:Object.freeze(results),
       });
     },
