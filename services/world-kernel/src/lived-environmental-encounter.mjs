@@ -152,12 +152,9 @@ function sharedObservers(context, at, livedNowStore) {
   );
   const venueRef=place?.physicalVenue?.ref;
   if(typeof venueRef!=="string")return null;
-  const others=livedNowStore.listCurrentSituations({at,livingOnly:true})
-    .filter((other)=>other.threadId!==context.thread.threadId
-      && other.location?.kind==="place"
-      && livedNowStore.getWorldPlace(
-        other.threadId,other.location.placeRef,{required:false},
-      )?.physicalVenue?.ref===venueRef);
+  const others=livedNowStore.listCurrentVenueSituations({
+    venueRef,at,limit:8,excludeThreadId:context.thread.threadId,
+  });
   return Object.freeze({
     placeRef:venueRef,
     presence:Object.freeze([
