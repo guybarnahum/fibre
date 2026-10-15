@@ -5,6 +5,7 @@ import {openInsideFibreWorkStore} from "./inside-fibre-work-store.mjs";
 import {openObligationApplicabilityStore} from "./obligation-applicability-store.mjs";
 import {openSemanticStateStore} from "./semantic-state-store.mjs";
 import {openWorldReconciliationRetryStore} from "./world-reconciliation-retry-store.mjs";
+import {ThreadHealthProjectionStore} from "./thread-health-projection-store.mjs";
 import {GenesisOriginAuthorityStore} from "./genesis-origin-authority-store.mjs";
 
 // Called by the explicit deployment command, never by an ordinary World
@@ -14,6 +15,7 @@ export function installWorldSchemas(storage,worldReader){
   const constructors=[
     ()=>openSemanticStateStore(storage),
     ()=>openWorldReconciliationRetryStore(storage),
+    ()=>new ThreadHealthProjectionStore(storage),
     ()=>openContactStore(storage),
     ()=>openInsideFibreWorkStore(storage),
     ()=>openGuardianCognitionStore(storage),
