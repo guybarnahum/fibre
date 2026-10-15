@@ -636,7 +636,8 @@ export function createLivedNowService({
       assertId("ensure LivedNow input.threadId", input.threadId);
       assertIsoTimestamp("ensure LivedNow input.at", input.at);
 
-      livedNowStore.ensureWorldPlaces(input.threadId);
+      // Existing admitted plans already resolved their World-place authority
+      // when authored. Only new planning needs Genesis place admission.
       const current = livedNowStore.getCurrentSituation(input.threadId);
       if (current !== null) {
         if (current.establishedAt === input.at) return current;
