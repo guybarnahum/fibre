@@ -130,6 +130,32 @@ async function reconciliationState(runtime) {
   });
 }
 
+// The default operator view needs present life, not a lifetime dossier.
+// Detailed memories, genomes, and social evidence are requested separately.
+function currentThreadObservatory(runtime,threadId){
+  const thread=runtime.worldStore.getThread(threadId,{required:false});
+  if(thread===null)return null;
+  const livedNow=openLivedNowInspectionStore(runtime.worldStorage);
+  try{
+    const currentSituation=livedNow.getCurrentSituation(threadId);
+    const recentSituations=livedNow.listRecentSituations(threadId,{limit:8});
+    const currentPersonalPlan=(currentSituation?.sourcePlanRefs??[])
+      .map(ref=>livedNow.getPlan(threadId,ref))
+      .find(plan=>plan?.kind==="personal")??null;
+    return Object.freeze({
+      threadId,thread:structuredClone(thread),
+      livedNow:{
+        currentSituation:structuredClone(currentSituation),
+        recentSituations:structuredClone(recentSituations),
+        currentPersonalPlan:structuredClone(currentPersonalPlan),
+        worldContext:structuredClone(livedNow.getWorldContext(threadId,{required:false})),
+        privatelyKnownCurrentPlace:currentSituation?.location?.kind==="place"
+          ?structuredClone(livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef)):null,
+      },
+    });
+  }finally{livedNow.close();}
+}
+
 function threadObservatory(runtime, threadId) {
   const thread = runtime.worldStore.getThread(threadId, { required:false });
   if (thread === null) return null;
@@ -558,13 +584,19 @@ export class FibreWorldDurableObject extends DurableObject {
     }
     const observatoryMatch = THREAD_OBSERVATORY_ROUTE.exec(url.pathname);
     if (observatoryMatch !== null) {
-      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
+      const view=url.searchParams.get("view")??"full";
+      if(!["full","current"].includes(view)
+        || [...url.searchParams.keys()].some(key=>key!=="view")){
+        return Response.json({error:{code:"QUERY_NOT_SUPPORTED"}},{status:400});
+      }
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
       if (!privateOperatorAuthorized(request, this.env)) {
         return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
       }
       const threadId = decodeURIComponent(observatoryMatch[1]);
-      const observatory = threadObservatory(this.runtimeForRequest(), threadId);
+      const observatory=view==="current"
+        ?currentThreadObservatory(this.runtimeForRequest(),threadId)
+        :threadObservatory(this.runtimeForRequest(),threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
         contract:"fibre-world-thread-observatory-v0.10",
