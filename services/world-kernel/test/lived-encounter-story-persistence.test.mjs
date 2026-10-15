@@ -6,6 +6,7 @@ import test from "node:test";
 
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
+import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 
@@ -39,6 +40,8 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
   try {
     seedThread(storage, "thr_e0_mina", "Mina");
     seedThread(storage, "thr_e0_noor", "Noor");
+    // An actual World always has the authoritative LivedNow history store.
+    openLivedNowStore(storage).close();
 
     const store = openLivedExperienceStore(storage);
     try {
