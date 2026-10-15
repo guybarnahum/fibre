@@ -298,6 +298,7 @@ export function createWorldCloudflareRuntime({
   });
   const reconciliationRuntime = createWorldReconciliationRuntime({
     infraDriver,
+    storage:worldStorage,
     process: reconciliationProcess,
     intervalMs: reconciliationIntervalMs(env),
     now: nowMs,
