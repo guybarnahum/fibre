@@ -157,55 +157,72 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
   }
 });
 
-test("World schema deployment waits for the installed route, not just the Worker upload", async()=>{
-  let requests=0;
+test("World schema deploy waits for its Durable Object revision, then installs exactly once",async()=>{
+  const calls=[];
   const result=await acceptWorldSchemaDeployment({
     prepared:{config:resolvedConfig()},
     deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
     privateToken:"test-token",
     fetchImpl:async(url,init)=>{
+      calls.push([url.pathname,init.method]);
+      assert.equal(init.headers["x-fibre-private-token"],"test-token");
+      if(url.pathname==="/internal/world-schema/revision"){
+        return calls.length===1
+          ?Response.json({error:"not_found"},{status:404})
+          :Response.json({deploymentGitSha:"b".repeat(40)});
+      }
       assert.equal(url.pathname,"/internal/world-schema/migrate");
       assert.equal(init.method,"POST");
-      assert.equal(init.headers["x-fibre-private-token"],"test-token");
-      requests++;
-      return requests===1
-        ?Response.json({error:"not_found"},{status:404})
-        :Response.json({ok:true,contract:"fibre-world-schema-installed-v1",deploymentGitSha:"b".repeat(40)});
-    },
-    wait:async()=>{},
-  });
-  assert.equal(requests,2);
-  assert.equal(result.ok,true);
-});
-
-test("World schema installation cannot be acknowledged by an older Worker revision",async()=>{
-  let attempts=0;
-  const result=await acceptWorldSchemaDeployment({
-    prepared:{config:resolvedConfig()},
-    deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
-    privateToken:"test-token",
-    fetchImpl:async()=>{
-      attempts++;
       return Response.json({
         ok:true,contract:"fibre-world-schema-installed-v1",
-        deploymentGitSha:attempts===1?"a".repeat(40):"b".repeat(40),
+        deploymentGitSha:"b".repeat(40),
       });
     },
     wait:async()=>{},
   });
-  assert.equal(attempts,2,"stale World revision acknowledged new schema");
-  assert.equal(result.deploymentGitSha,"b".repeat(40));
+  assert.deepEqual(calls,[
+    ["/internal/world-schema/revision","GET"],
+    ["/internal/world-schema/revision","GET"],
+    ["/internal/world-schema/migrate","POST"],
+  ],"schema installation occurred before the new World was ready");
+  assert.equal(result.ok,true);
 });
 
-test("World schema deployment rejects a route that never becomes available",async()=>{
+test("old Durable Object code cannot execute migration during a Worker rollout",async()=>{
+  const calls=[];
+  await acceptWorldSchemaDeployment({
+    prepared:{config:resolvedConfig()},
+    deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
+    privateToken:"test-token",
+    fetchImpl:async(url)=>{
+      calls.push(url.pathname);
+      return url.pathname==="/internal/world-schema/revision"
+        ?Response.json({deploymentGitSha:calls.length===1?"a".repeat(40):"b".repeat(40)})
+        :Response.json({ok:true,deploymentGitSha:"b".repeat(40)});
+    },
+    wait:async()=>{},
+  });
+  assert.deepEqual(calls,[
+    "/internal/world-schema/revision",
+    "/internal/world-schema/revision",
+    "/internal/world-schema/migrate",
+  ],"old World code attempted schema migration");
+});
+
+test("World deploy rejects a Durable Object that never serves the intended revision",async()=>{
+  let migrations=0;
   await assert.rejects(
     acceptWorldSchemaDeployment({
       prepared:{config:resolvedConfig()},
       deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
       privateToken:"test-token",
-      fetchImpl:async()=>Response.json({error:"not_found"},{status:404}),
+      fetchImpl:async(url)=>{
+        if(url.pathname==="/internal/world-schema/migrate")migrations++;
+        return Response.json({error:"not_found"},{status:404});
+      },
       wait:async()=>{},
     }),
-    /World schema installation at .* HTTP 404:.*not_found/u,
+    /World Durable Object revision did not converge: route unavailable \(404\)/u,
   );
+  assert.equal(migrations,0,"unready World revision performed a migration");
 });
