@@ -2,6 +2,10 @@ import {openContactStore} from "./contact-store.mjs";
 import {openFibreCreditStore} from "./fibre-credit-store.mjs";
 import {createGuardianCognitionTables} from "./guardian-cognition-schema.mjs";
 import {openWorldStateDatabase} from "./world-state-storage.mjs";
+import {openWorldStore} from "./persistence.mjs";
+import {openLivedNowStore} from "./lived-now-store.mjs";
+import {openLivedExperienceStore} from "./lived-experience-store.mjs";
+import {SymbolicGenomeStore} from "./symbolic-genome-store.mjs";
 import {openInsideFibreWorkStore} from "./inside-fibre-work-store.mjs";
 import {openObligationApplicabilityStore} from "./obligation-applicability-store.mjs";
 import {openSemanticStateStore} from "./semantic-state-store.mjs";
@@ -13,8 +17,13 @@ import {GenesisOriginAuthorityStore} from "./genesis-origin-authority-store.mjs"
 // Called by the explicit deployment command, never by an ordinary World
 // request. Constructors retain local development setup, but skip this work
 // when their Cloudflare storage has schemaReady=true.
-export function installWorldSchemas(storage,worldReader){
+export function installWorldSchemas(storage){
+  const worldReader=openWorldStore(storage);
+  try{
   const constructors=[
+    ()=>openLivedNowStore(storage),
+    ()=>openLivedExperienceStore(storage),
+    ()=>new SymbolicGenomeStore(storage),
     ()=>openSemanticStateStore(storage),
     ()=>openWorldReconciliationRetryStore(storage),
     ()=>new ThreadHealthProjectionStore(storage),
@@ -35,4 +44,5 @@ export function installWorldSchemas(storage,worldReader){
     const store=open();
     store.close();
   }
+  }finally{worldReader.close();}
 }
