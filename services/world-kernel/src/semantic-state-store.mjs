@@ -54,9 +54,11 @@ export class SemanticStateStore {
   constructor(storage,{readOnly=false}={}) {
     this.#database = openWorldStateDatabase(storage, {readOnly,storeName:"SemanticStateStore"});
     try {
-      if(!readOnly){
-        migrateDatabase(this.#database);
-        createSemanticStateTables(this.#database);
+      if (!storage.schemaReady) {
+        if(!readOnly){
+          migrateDatabase(this.#database);
+          createSemanticStateTables(this.#database);
+        }
       }
     } catch (error) {
       this.#database.close();
