@@ -46,6 +46,28 @@ function sleep(ms) {
   return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 }
 
+function formatDuration(seconds) {
+  const wholeSeconds = Math.max(0, Math.ceil(seconds));
+  const minutes = Math.floor(wholeSeconds / 60);
+  const remainder = wholeSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
+async function idleCountdown(seconds) {
+  if (seconds <= 0) {
+    process.stdout.write("Idle baseline: complete\n");
+    return;
+  }
+  const endAt = Date.now() + seconds * 1000;
+  for (;;) {
+    const remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+    if (remaining <= 0) break;
+    process.stdout.write(`\rIdle baseline: ${formatDuration(remaining)} remaining · do not use staging`);
+    await sleep(Math.min(1000, Math.max(0, endAt - Date.now())));
+  }
+  process.stdout.write("\rIdle baseline: complete                              \n");
+}
+
 function numbers(event) {
   return {
     rowsRead:Number(event.rowsRead ?? 0),
@@ -275,8 +297,7 @@ async function main(argv) {
     }
 
     phase = "idle";
-    process.stdout.write(`Idle baseline: ${options.idleSeconds}s. Do not use staging during this window.\n`);
-    await sleep(options.idleSeconds * 1000);
+    await idleCountdown(options.idleSeconds);
 
     if (!options.skipMeeting) {
       phase = "meeting";
