@@ -37,7 +37,7 @@ export class AutobiographicalMemoryStore {
     this.#readOnly = readOnly;
     this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "AutobiographicalMemoryStore" });
     try {
-      if (!readOnly) {
+      if (!readOnly && !storage.schemaReady) {
         migrateDatabase(this.#database);
       }
     } catch (error) {
