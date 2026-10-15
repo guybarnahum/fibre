@@ -7,6 +7,7 @@ import {openObligationApplicabilityStore} from "./obligation-applicability-store
 import {openSemanticStateStore} from "./semantic-state-store.mjs";
 import {openWorldReconciliationRetryStore} from "./world-reconciliation-retry-store.mjs";
 import {ThreadHealthProjectionStore} from "./thread-health-projection-store.mjs";
+import {ThreadVisualPublicationWorksetStore} from "./thread-visual-publication-workset-store.mjs";
 import {GenesisOriginAuthorityStore} from "./genesis-origin-authority-store.mjs";
 
 // Called by the explicit deployment command, never by an ordinary World
@@ -17,6 +18,7 @@ export function installWorldSchemas(storage,worldReader){
     ()=>openSemanticStateStore(storage),
     ()=>openWorldReconciliationRetryStore(storage),
     ()=>new ThreadHealthProjectionStore(storage),
+    ()=>new ThreadVisualPublicationWorksetStore(storage),
     ()=>openContactStore(storage),
     ()=>openInsideFibreWorkStore(storage),
     ()=>{
