@@ -269,7 +269,7 @@ export class LivedNowStore {
     this.#readOnly = readOnly;
     this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "LivedNowStore" });
     try {
-      if (!readOnly) {
+      if (!readOnly && !storage.schemaReady) {
         migrateDatabase(this.#database);
         this.#database.transaction(() => createTables(this.#database));
       }
