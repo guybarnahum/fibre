@@ -16,9 +16,9 @@ import {
   civilRegistrationToPresentationCivilIdentity,
   readPresentationCivilIdentity,
 } from "#services/thread-presentation/src/index.mjs";
+import {createCivilRegistryTables} from "../src/civil-registry-schema.mjs";
 import {
   CivilRegistryStore,
-  createCivilRegistryTables,
   persistCivilRegistrationInTransaction,
 } from "../src/civil-registry-store.mjs";
 
