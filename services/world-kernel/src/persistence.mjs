@@ -90,7 +90,7 @@ export class WorldStore {
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName: "WorldStore" });
     try {
-      migrateDatabase(this.#database);
+      if (!storage.schemaReady) migrateDatabase(this.#database);
     } catch (error) {
       this.#database.close();
       throw error;
