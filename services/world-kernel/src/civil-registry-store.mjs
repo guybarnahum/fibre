@@ -1,3 +1,4 @@
+import {worldSchemaReady} from "./world-state-storage.mjs";
 import {
   normalizeFibreCivilRegistration,
   normalizeFibreIdentityNumber,
@@ -9,6 +10,7 @@ import {
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 function tableExists(database) {
+  if(worldSchemaReady(database))return true;
   return database.prepare(
     "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name='fibre_civil_registrations'",
   ).get() !== undefined;
