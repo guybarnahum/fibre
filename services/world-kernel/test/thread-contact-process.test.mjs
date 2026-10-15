@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
@@ -675,6 +676,95 @@ test("delivered private contact may remain unnoticed and never become memory",as
     semanticStateStore.close();
     memoryStore.close();
     world.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
+
+test("unfinished afterthoughts and contact attempts survive a projection rebuild",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-contact-frontier-"));
+  const path=join(directory,"world.sqlite");
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:path}}),
+    stateScopeId:"world",
+  };
+  let world,experienceStore,contactStore;
+  try{
+    world=openWorldStore(storage);
+    experienceStore=openLivedExperienceStore(storage);
+    contactStore=openContactStore(storage);
+    const author=thread("thr_contact_frontier","Mira","evt_contact_frontier_seed");
+    world.seedThread(author);
+    const older=completeAfterthought(experienceStore,{
+      threadId:author.threadId,situationId:"sit_frontier_older",
+      occurredAt:"2026-10-07T18:00:00.000Z",
+      startedAt:"2026-10-07T18:01:00.000Z",
+      completedAt:"2026-10-07T18:02:00.000Z",
+      text:"I want to ask about the first meeting.",
+    });
+    const later=completeAfterthought(experienceStore,{
+      threadId:author.threadId,situationId:"sit_frontier_later",
+      occurredAt:"2026-10-07T18:03:00.000Z",
+      startedAt:"2026-10-07T18:04:00.000Z",
+      completedAt:"2026-10-07T18:05:00.000Z",
+      text:"I might reach out another time.",
+    });
+    const claimed=contactStore.claimAttempt({
+      threadId:author.threadId,consolidationId:older.consolidationId,
+      startedAt:"2026-10-07T18:06:00.000Z",
+    });
+    assert.deepEqual(
+      contactStore.listUnconsideredAfterthoughtSources({limit:4})
+        .map(item=>item.consolidationId),
+      [later.consolidationId],"claim did not remove the offered afterthought");
+    assert.equal(contactStore.hasPendingAttempts(),true,
+      "claimed contact was lost before completion");
+
+    contactStore.close();experienceStore.close();world.close();
+    world=null;experienceStore=null;contactStore=null;
+    // Simulate upgrading an existing World whose immutable history predates
+    // the indexed pending projection. Install must recover exactly the work.
+    const db=new DatabaseSync(path);
+    try{db.exec(`
+      DROP TABLE thread_contact_pending_work;
+      DROP TABLE thread_experience_pending_work;
+    `);}finally{db.close();}
+    world=openWorldStore(storage);
+    experienceStore=openLivedExperienceStore(storage);
+    contactStore=openContactStore(storage);
+
+    assert.equal(contactStore.listPendingAttempts({limit:4})[0]?.contactAttemptId,
+      claimed.contactAttemptId,"uncompleted contact did not survive schema installation");
+    assert.deepEqual(
+      contactStore.listUnconsideredAfterthoughtSources({limit:4})
+        .map(item=>item.consolidationId),
+      [later.consolidationId],"unfinished afterthought did not survive schema installation");
+    assert.equal(experienceStore.hasPendingExperienceConsolidation(),false,
+      "already consolidated experiences were replayed as unfinished");
+
+    contactStore.recordStage({
+      contactAttemptId:claimed.contactAttemptId,stage:"complete",
+      recordedAt:"2026-10-07T18:07:00.000Z",payload:{outcome:"no_route"},
+    });
+    assert.equal(contactStore.hasPendingAttempts(),false,
+      "completed contact remained pending");
+    const second=contactStore.claimAttempt({
+      threadId:author.threadId,consolidationId:later.consolidationId,
+      startedAt:"2026-10-07T18:08:00.000Z",
+    });
+    contactStore.recordStage({
+      contactAttemptId:second.contactAttemptId,stage:"complete",
+      recordedAt:"2026-10-07T18:09:00.000Z",payload:{outcome:"no_route"},
+    });
+    assert.deepEqual(contactStore.listUnconsideredAfterthoughtSources({limit:4}),[],
+      "completed contact residue was reconsidered");
+    assert.equal(contactStore.hasPendingAttempts(),false,
+      "World did not become quiescent");
+    assert.equal(experienceStore.inspectThreadExperienceConsolidation(author.threadId)
+      .consolidations.length,2,"frontier cleanup erased lived consolidation history");
+  }finally{
+    contactStore?.close();
+    experienceStore?.close();
+    world?.close();
     rmSync(directory,{recursive:true,force:true});
   }
 });
