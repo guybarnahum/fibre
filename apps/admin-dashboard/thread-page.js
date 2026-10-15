@@ -110,7 +110,7 @@ export async function renderThreadPage(threadId) {
   main.append(host);
 
   try {
-    const payload = await fetchThreadObservatory(threadId);
+    const payload = await fetchThreadObservatory(threadId,{currentOnly:true});
     if (renderedThreadId !== threadId || load !== threadPageLoad) return;
     environmentPill.textContent = payload.environment;
     const identity = payload.identity ?? {};
@@ -153,12 +153,57 @@ export async function renderThreadPage(threadId) {
       lifeRelations:payload.lifeRelations,
       journal:payload.journal,
       journalError:payload.journalError,
+      deferredHistory:true,
     });
     observatory.querySelector(".thread-person-hero")?.after(
       healthSection(threadId),
       threadAppearanceSection(threadId,name),
     );
     host.replaceChildren(observatory);
+    const placeholder=observatory.querySelector("[data-observatory-history]");
+    if(placeholder){
+      const loadButton=placeholder.querySelector("[data-load-history]");
+      let started=false;
+      let watcher=null;
+      const loadHistory=async()=>{
+        if(started||!placeholder.isConnected)return;
+        started=true;
+        watcher?.disconnect();
+        if(loadButton)loadButton.textContent="Loading history…";
+        try{
+          const full=await fetchThreadObservatory(threadId);
+          if(renderedThreadId!==threadId||load!==threadPageLoad||!observatory.isConnected)return;
+          const detailed=renderThreadObservatory({
+            identity:full.identity,threadId,
+            memories:full.memories,memoryError:full.memoryError,
+            encounterStories:full.encounterStories,livedNow:full.livedNow,
+            socialInteractions:full.socialInteractions,
+            encounterError:full.encounterError,
+            experienceJournalEntries:full.experienceJournalEntries,
+            experienceConsolidation:full.experienceConsolidation,
+            contactOutreach:full.contactOutreach,
+            semanticStates:full.semanticStates,lifeRelations:full.lifeRelations,
+            journal:full.journal,journalError:full.journalError,
+          });
+          detailed.querySelector(".thread-person-hero")?.after(
+            healthSection(threadId),threadAppearanceSection(threadId,name),
+          );
+          observatory.replaceWith(detailed);
+        }catch(error){
+          started=false;
+          if(loadButton)loadButton.textContent="Retry loading history";
+          placeholder.querySelector(".thread-empty-note").textContent=
+            error instanceof Error?error.message:String(error);
+        }
+      };
+      loadButton?.addEventListener("click",loadHistory);
+      if(typeof IntersectionObserver==="function"){
+        watcher=new IntersectionObserver(entries=>{
+          if(entries.some(entry=>entry.isIntersecting))void loadHistory();
+        });
+        watcher.observe(placeholder);
+      }
+    }
   } catch (error) {
     copy.querySelector("h1").textContent = "Thread unavailable";
     host.replaceChildren(node("div", "error-box", `Thread identity unavailable: ${error instanceof Error ? error.message : String(error)}`));
