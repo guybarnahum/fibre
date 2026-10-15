@@ -1,4 +1,8 @@
 export function createLivedExperienceTables(database) {
+  const needsStoryTimeline=database.prepare(`
+    SELECT 1 FROM sqlite_master WHERE type='table'
+      AND name='thread_encounter_story_timeline'
+  `).get()===undefined;
   database.exec(`
     CREATE TABLE IF NOT EXISTS lived_encounter_records (
       event_id TEXT PRIMARY KEY,
@@ -92,6 +96,23 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (encounter_ref) REFERENCES encounter_story_records(encounter_id),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
+
+    -- An indexed time dimension for participant-owned story browsing.
+    CREATE TABLE IF NOT EXISTS thread_encounter_story_timeline (
+      thread_id TEXT NOT NULL,
+      encounter_ref TEXT NOT NULL,
+      occurred_at TEXT NOT NULL,
+      PRIMARY KEY(thread_id,occurred_at,encounter_ref),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (encounter_ref) REFERENCES encounter_story_records(encounter_id)
+    ) STRICT;
+    CREATE TRIGGER IF NOT EXISTS encounter_presence_update_timeline
+      AFTER INSERT ON encounter_story_thread_presence
+      BEGIN
+        INSERT INTO thread_encounter_story_timeline(thread_id,encounter_ref,occurred_at)
+        SELECT NEW.thread_id,NEW.encounter_ref,occurred_at
+        FROM encounter_story_records WHERE encounter_id=NEW.encounter_ref;
+      END;
 
     CREATE TABLE IF NOT EXISTS public_encounter_admissions (
       request_id TEXT PRIMARY KEY,
@@ -400,4 +421,12 @@ export function createLivedExperienceTables(database) {
         SELECT RAISE(ABORT, 'thread_journal_entries is append-only');
       END;
   `);
+  if(needsStoryTimeline){
+    database.exec(`
+      INSERT INTO thread_encounter_story_timeline(thread_id,encounter_ref,occurred_at)
+      SELECT p.thread_id,p.encounter_ref,e.occurred_at
+      FROM encounter_story_thread_presence p
+      JOIN encounter_story_records e ON e.encounter_id=p.encounter_ref
+    `);
+  }
 }
