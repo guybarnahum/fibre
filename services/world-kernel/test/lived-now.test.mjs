@@ -406,6 +406,16 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
     assert.deepEqual(lived.getCurrentSituation(life.thread.threadId), second);
     assert.equal(lived.listPlans(life.thread.threadId).length, 2);
     lived.close();
+
+    // The deployed operational reader trusts separately installed schema,
+    // but must retain exactly the same current and past World.
+    const managed={...localWorldStateStorage(databasePath),schemaReady:true};
+    lived=openLivedNowStore(managed);
+    assert.deepEqual(lived.getCurrentSituation(life.thread.threadId),second,
+      "deployment-managed World lost the actual present");
+    assert.deepEqual(lived.getPreviousSituation(life.thread.threadId,second.establishedAt),first,
+      "deployment-managed World rewrote prior lived history");
+    lived.close();
   }));
 
 test("A1/A2 authority boundaries reject unauthored will, visitor-authored now, and unrelated caregiver authority", async () =>
