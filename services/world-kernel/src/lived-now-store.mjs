@@ -433,6 +433,16 @@ export class LivedNowStore {
     }
   }
 
+  getPlan(threadId,planId){
+    this.#requireThread(threadId);
+    assertId("Flight Plan reference",planId);
+    const row=this.#database.prepare(`
+      SELECT * FROM lived_now_plans
+      WHERE subject_thread_id=? AND plan_id=?
+    `).get(threadId,planId);
+    return row===undefined?null:planFromRow(row);
+  }
+
   listPlans(threadId, { kind = null } = {}) {
     this.#requireThread(threadId);
     if (kind !== null && !["personal", "care"].includes(kind)) {
