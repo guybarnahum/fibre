@@ -299,8 +299,18 @@ export function listLiveWorldPlaces(database, threadId) {
 
 export function resolveLiveWorldPlace(database, threadId, reference) {
   if (typeof reference !== "string" || !reference.startsWith("wpl_")) return null;
-  return listLiveWorldPlaces(database, threadId)
-    .find((place) => place.ref === reference) ?? null;
+  const sourceWorldRef=worldRefForThread(database,threadId);
+  if(sourceWorldRef===null||!tableExists(database,"live_world_place_records"))return null;
+  // A single plan reference needs one place, not every historical place in
+  // this World. Preserve Thread-specific physical-venue authority.
+  const row=database.prepare(`
+    SELECT place_ref,record_json,record_digest FROM live_world_place_records
+    WHERE place_ref=? AND source_world_ref=?
+  `).get(reference,sourceWorldRef);
+  if(row===undefined)return null;
+  const record=recordFromRow(row);
+  const physicalVenue=physicalVenueFor(database,threadId,reference);
+  return physicalVenue===null?record:Object.freeze({...record,physicalVenue});
 }
 
 export function liveWorldContext(database, threadId) {
