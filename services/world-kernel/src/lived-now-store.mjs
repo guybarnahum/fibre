@@ -53,6 +53,10 @@ function digest(record) {
 }
 
 function createTables(database) {
+  const needsFrontier=database.prepare(`
+    SELECT 1 FROM sqlite_master
+    WHERE type='table' AND name='current_situation_frontier'
+  `).get()===undefined;
   database.exec(`
     CREATE TABLE IF NOT EXISTS lived_now_plans (
       plan_id TEXT PRIMARY KEY,
@@ -98,6 +102,44 @@ function createTables(database) {
       )
       WHERE json_extract(record_json,'$.location.kind')='place';
 
+    -- One authoritative current record per Thread; history stays immutable.
+    CREATE TABLE IF NOT EXISTS current_situation_frontier (
+      thread_id TEXT PRIMARY KEY,
+      situation_id TEXT NOT NULL,
+      established_at TEXT NOT NULL,
+      record_json TEXT NOT NULL,
+      record_digest TEXT NOT NULL,
+      place_ref TEXT,
+      wakefulness TEXT,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (situation_id) REFERENCES current_situation_records(situation_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_current_frontier_place
+      ON current_situation_frontier(place_ref,thread_id)
+      WHERE place_ref IS NOT NULL;
+    CREATE TRIGGER IF NOT EXISTS current_situations_advance_frontier
+      AFTER INSERT ON current_situation_records
+      BEGIN
+        INSERT INTO current_situation_frontier (
+          thread_id,situation_id,established_at,record_json,record_digest,place_ref,wakefulness
+        ) VALUES (
+          NEW.thread_id,NEW.situation_id,NEW.established_at,NEW.record_json,NEW.record_digest,
+          CASE WHEN json_extract(NEW.record_json,'$.location.kind')='place'
+            THEN json_extract(NEW.record_json,'$.location.placeRef') ELSE NULL END,
+          json_extract(NEW.record_json,'$.wakefulness')
+        )
+        ON CONFLICT(thread_id) DO UPDATE SET
+          situation_id=excluded.situation_id,
+          established_at=excluded.established_at,
+          record_json=excluded.record_json,
+          record_digest=excluded.record_digest,
+          place_ref=excluded.place_ref,
+          wakefulness=excluded.wakefulness
+        WHERE excluded.established_at>current_situation_frontier.established_at
+          OR (excluded.established_at=current_situation_frontier.established_at
+            AND excluded.situation_id>current_situation_frontier.situation_id);
+      END;
+
     CREATE TRIGGER IF NOT EXISTS current_situations_no_update
       BEFORE UPDATE ON current_situation_records
       BEGIN SELECT RAISE(ABORT,'current_situation_records is append-only'); END;
@@ -119,6 +161,25 @@ function createTables(database) {
       ON lived_now_next_boundaries(due_at)
       WHERE due_at IS NOT NULL;
   `);
+  // One-time migration from append-only evidence, using the existing
+  // (thread_id,established_at,situation_id) index. Never replay histories
+  // during ordinary runtime initialization after the frontier exists.
+  if(needsFrontier){
+    database.exec(`
+      INSERT INTO current_situation_frontier(
+        thread_id,situation_id,established_at,record_json,record_digest,place_ref,wakefulness
+      )
+      SELECT s.thread_id,s.situation_id,s.established_at,s.record_json,s.record_digest,
+        CASE WHEN json_extract(s.record_json,'$.location.kind')='place'
+          THEN json_extract(s.record_json,'$.location.placeRef') ELSE NULL END,
+        json_extract(s.record_json,'$.wakefulness')
+      FROM threads t JOIN current_situation_records s ON s.situation_id=(
+        SELECT situation_id FROM current_situation_records
+        WHERE thread_id=t.thread_id
+        ORDER BY established_at DESC,situation_id DESC LIMIT 1
+      )
+    `);
+  }
   createLiveWorldPlaceTables(database);
   createLiveWorldGeographyTables(database);
 }
@@ -623,8 +684,8 @@ export class LivedNowStore {
   getCurrentSituation(threadId) {
     this.#requireThread(threadId);
     const row = this.#database.prepare(`
-      SELECT * FROM current_situation_records
-      WHERE thread_id=? ORDER BY established_at DESC,situation_id DESC LIMIT 1
+      SELECT situation_id,thread_id,established_at,record_json,record_digest
+      FROM current_situation_frontier WHERE thread_id=?
     `).get(threadId);
     return row === undefined ? null : situationFromRow(row);
   }
@@ -656,21 +717,24 @@ export class LivedNowStore {
     if (!at) throw new TypeError("listCurrentSituations requires an at timestamp");
     assertIsoTimestamp("listCurrentSituations at", at);
     const rows = this.#database.prepare(`
-      WITH ranked AS (
-        SELECT *,
-          ROW_NUMBER() OVER (
-            PARTITION BY thread_id
-            ORDER BY established_at DESC,situation_id DESC
-          ) AS rn
-        FROM current_situation_records
-        WHERE established_at<=?
-          ${livingOnly ? "AND thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')" : ""}
+      SELECT f.situation_id,f.thread_id,f.established_at,f.record_json,f.record_digest
+      FROM current_situation_frontier f
+      JOIN threads t ON t.thread_id=f.thread_id
+      WHERE f.established_at<=?
+        ${livingOnly ? "AND t.status<>'retired'" : ""}
+      UNION ALL
+      SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
+      FROM current_situation_frontier f
+      JOIN threads t ON t.thread_id=f.thread_id
+      JOIN current_situation_records s ON s.situation_id=(
+        SELECT prior.situation_id FROM current_situation_records prior
+        WHERE prior.thread_id=f.thread_id AND prior.established_at<=?
+        ORDER BY prior.established_at DESC,prior.situation_id DESC LIMIT 1
       )
-      SELECT situation_id,thread_id,established_at,record_json,record_digest
-      FROM ranked
-      WHERE rn=1
+      WHERE f.established_at>?
+        ${livingOnly ? "AND t.status<>'retired'" : ""}
       ORDER BY thread_id
-    `).all(at);
+    `).all(at,at,at);
     return rows.map(situationFromRow);
   }
 
