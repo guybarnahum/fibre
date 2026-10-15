@@ -136,6 +136,7 @@ export function createWorldCloudflareRuntime({
   now = () => new Date().toISOString(),
   nowMs = Date.now,
   calibrationModelProvider = null,
+  schemaManaged = false,
 } = {}) {
   if (!storage || typeof storage !== "object") throw new TypeError("Cloudflare World runtime requires Durable Object storage");
   if (typeof now !== "function") throw new TypeError("Cloudflare World runtime now must be a function");
@@ -156,7 +157,10 @@ export function createWorldCloudflareRuntime({
     schedulerScopes: { [WORLD_SCOPE_ID]: storage },
     realtimeChannels: env?.ADMIN_LIVE ?? null,
   });
-  const worldStorage = Object.freeze({ infraDriver, stateScopeId: WORLD_SCOPE_ID });
+  const worldStorage = Object.freeze({
+    infraDriver,stateScopeId:WORLD_SCOPE_ID,
+    schemaReady:schemaManaged,
+  });
   const worldStore = openWorldStore(worldStorage);
   // Ensure the current-situation frontier is available before any read-only
   // Observatory or directory opens. The one-time migration preserves history.
