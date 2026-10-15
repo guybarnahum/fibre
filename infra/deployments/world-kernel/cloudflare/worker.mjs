@@ -22,6 +22,7 @@ import { createThreadHealthProjectionService } from "#services/world-kernel/src/
 import { THREAD_REPAIR_CONTRACT } from "#services/world-kernel/src/thread-genesis-repair-api.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { createWorldCloudflareRuntime } from "./runtime.mjs";
+import {installWorldSchemas} from "#services/world-kernel/src/world-schema-installation.mjs";
 
 const WORLD_SCOPE_ID = "world";
 const TOKEN_ENCODER = new TextEncoder();
@@ -281,7 +282,9 @@ export class FibreWorldDurableObject extends DurableObject {
     super(ctx, env);
     this.runtime = null;
     this.infraDriver = createCloudflareInfraDriver({ stateScopes:{ [WORLD_SCOPE_ID]:ctx.storage } });
-    this.worldStorage = Object.freeze({ infraDriver:this.infraDriver, stateScopeId:WORLD_SCOPE_ID });
+    this.worldStorage = Object.freeze({
+      infraDriver:this.infraDriver,stateScopeId:WORLD_SCOPE_ID,schemaReady:true,
+    });
     this.health = this.infraDriver.health;
     this.threadDirectoryStore = null;
     this.threadDirectory = null;
@@ -312,6 +315,7 @@ export class FibreWorldDurableObject extends DurableObject {
         storage:this.ctx.storage,
         env:this.env,
         calibrationModelProvider:()=>this.calibrationModel,
+        schemaManaged:true,
       });
     }
     return this.runtime;
@@ -454,6 +458,25 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetchWorldRequest(request, url) {
+    if(url.pathname==="/internal/world-schema/migrate"){
+      if(request.method!=="POST")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
+      if(!privateOperatorAuthorized(request,this.env)){
+        return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
+      }
+      const installed=createWorldCloudflareRuntime({
+        storage:this.ctx.storage,env:this.env,
+        calibrationModelProvider:()=>this.calibrationModel,
+        schemaManaged:false,
+      });
+      try{
+        installWorldSchemas(installed.worldStorage,installed.worldStore);
+        this.runtime=installed;
+        return Response.json({ok:true,contract:"fibre-world-schema-installed-v1"});
+      }catch(error){
+        await installed.close();
+        throw error;
+      }
+    }
     if (url.pathname === APPEARANCE_COVERAGE_ROUTE) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
