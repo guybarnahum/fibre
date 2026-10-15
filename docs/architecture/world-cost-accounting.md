@@ -20,6 +20,39 @@ This is **operational cost reflection**, not a new Thread economic decision auth
 - Exact provider bills, token mix by World operation, average model latency, billed Durable Object duration, cache/failed-call charges, and wake frequency have **not** been established from a real sustained population run.
 - Previous discussion used a *scenario*, not observed spending: roughly **$3–$15 per active Thread-month**, with a central modeled **$5–$8** routine inference budget. The illustrative $7.56/Thread-month case assumed four daily planning calls (including possible redundant renewal), four environmental considerations, two regulation interpretations and half an attention+consolidation episode; it excludes births, media, visitor conversations and significant external activity. Price assumptions must be refreshed at measurement time. Do **not** treat these values as deployed cost evidence or a pricing commitment.
 
+## October 14–15 staging evidence and corrective design
+
+Two repeated single-Thread Observatory inspections measured the same steady-state
+**11,541 Durable Objects SQL rows read, 199 queries, zero writes**. One earlier
+request measured 14,837 rows, 232 queries and two writes. The steady-state
+largest store labels were LivedNow 4,724 rows; SituatedLife 2,612;
+SymbolicGenome 2,579; SemanticState 551; CivilRegistry 514;
+LivedExperience 465. These are measured *request* counts, not baseline
+idle-Thread usage and not yet a measured post-correction result.
+
+The corrective pass moves Cloudflare World SQL schema installation into an
+**explicit deployment operation**. The existing `cloud:deploy:service` command
+deploys the World kernel, then invokes a private migration route and requires
+a successful installation response. Operational store opens use the installed
+schema, not repeated DDL, migration, or SQLite catalog existence checks.
+Local development still initializes its own isolated database normally.
+Deploy migrations once while quota capacity is available; their one-time
+cost must never be confused with routine Thread life.
+
+The operator Thread page initially requests **current life only**.
+Memories, social history, genomes, contact activity and detailed
+relationships load when the deferred history section becomes visible or
+is requested. Individual operations are also being made bounded/indexed:
+direct lookup of the enacted Flight Plan, transactional latest-revision
+projection for SituatedLife with full immutable histories retained, and
+catalog-free reads for installed symbolic-genome/civil-registry/venue tables.
+
+**Acceptance remains open until Guy validates and measures the new deployment.**
+Check one current-only Observatory request and one explicitly requested full
+inspection, collecting the existing `x-fibre-state-*` cost headers. Do not
+infer cloud savings from source code or test success. Do not run population
+probes to obtain these two measurements.
+
 ## Measurement plan
 
 1. **Reconcile existing evidence before adding instrumentation.** Trace each World wake through the existing activity/usage/cost reporting path. Identify genuinely missing usage counters, not a parallel telemetry platform.
