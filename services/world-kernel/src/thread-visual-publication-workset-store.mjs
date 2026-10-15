@@ -26,7 +26,7 @@ export class ThreadVisualPublicationWorksetStore {
 
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName:"ThreadVisualPublicationWorksetStore" });
-    this.#database.exec(`
+    if(!storage.schemaReady)this.#database.exec(`
       CREATE TABLE IF NOT EXISTS ${TABLE} (
         thread_id TEXT PRIMARY KEY,
         state TEXT NOT NULL CHECK (state IN ('pending','complete','dead_letter')),
