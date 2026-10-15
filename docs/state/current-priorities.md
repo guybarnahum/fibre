@@ -19,6 +19,12 @@ Fibre has accepted the [Fibre City Guide](../architecture/social-city-guide.md) 
 
 **Defining end-to-end outcome:** a naturally motivated Thread can recall a favorite place or consult the shared editorial guide, independently plan and enact an actual journey, spend meaningful time at a public destination even when nobody is there, and perhaps encounter a separately arriving Thread or genuinely connected human. The World must not fill the scene with company or prescribe her choice. The website workstream owns public magazine publication; Core owns real life and encounter authority. This complements, but does not close, N6/N7 causal social proof.
 
+## Current-World and Observatory efficiency correction (October 14–15)
+
+Approved and **implemented in source; Guy's local validation and staging comparison remain pending**. Ordinary current-situation reads now use one transactional latest/frontier projection per Thread while append-only situation history remains intact. Venue-local environmental observers use the existing indexed presence authority; general /meet reads current World without scanning historical situations. Observatory inspection is bounded to recent stories, memory, social history, journal, consolidation and contact, with joined Story/attention/follow-up evidence and an indexed per-Thread story timeline. No alternate cache, new polling mechanism, or telemetry system was introduced. [LivedNow architecture](../architecture/lived-now-and-meetings.md#efficient-current-life-without-erasing-history) records the semantic boundary.
+
+**Next:** Guy runs focused tests and `npm run slice:validate` locally. If they pass, deploy the World kernel once and inspect a *single* bounded Observatory request plus existing `world-state-cost` evidence, not a 40-Thread probe. The first upgrade performs one indexed bootstrap of preexisting current situations and Story timeline entries; measure the steady-state reads separately from that one-time work. This is an efficiency correction, not an autonomous-social acceptance claim.
+
 ## Decisive next work
 
 ### 1. Validate the current Core source and prove actual sleeping unavailability
