@@ -1721,6 +1721,9 @@ export class LivedExperienceStore {
     for(const row of rows){
       let story=stories.get(row.encounter_id);
       if(story===undefined){
+        if(row.attention_outcome==="noticed"&&row.experience_id===null){
+          throw new TypeError("noticed encounter is missing Thread Experience");
+        }
         const continuation=row.continuation_id===null?null:{
           encounterId:row.continuation_id,occurredAt:row.continuation_at,
           threadPresence:[],story:JSON.parse(row.continuation_story),
