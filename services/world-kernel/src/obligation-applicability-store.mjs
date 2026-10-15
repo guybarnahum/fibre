@@ -217,8 +217,10 @@ export class ObligationApplicabilityStore {
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName: "ObligationApplicabilityStore" });
     try {
-      migrateDatabase(this.#database);
-      installApplicabilityBackstops(this.#database);
+      if(!storage.schemaReady){
+        migrateDatabase(this.#database);
+        installApplicabilityBackstops(this.#database);
+      }
       // A companion read connection reuses ObligationStore's full-chain validation. The
       // applicability writer holds the provider-neutral write transaction while consulting it, so no competing
       // writer can append a newer obligation revision between resolution and persistence.
