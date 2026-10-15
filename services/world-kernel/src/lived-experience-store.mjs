@@ -368,6 +368,24 @@ export class LivedExperienceStore {
     `).run(resultEncounterRef,completedAt,situationId);
   }
 
+  getThreadEnvironmentalStory({threadId,situationId,occurredAt}){
+    assertId("environmental story Thread",threadId);
+    assertId("environmental story situation",situationId);
+    assertIsoTimestamp("environmental story time",occurredAt);
+    const row=this.#database.prepare(`
+      SELECT e.encounter_id FROM encounter_story_records e
+      JOIN encounter_story_thread_presence p ON p.encounter_ref=e.encounter_id
+      WHERE e.occurred_at=? AND p.thread_id=? AND p.situation_id=?
+        AND json_array_length(json_extract(e.story_json,'$.beats'))=1
+        AND json_extract(e.story_json,'$.beats[0].kind')='occurrence'
+        AND json_extract(e.story_json,'$.beats[0].actorThreadId') IS NULL
+        AND (SELECT COUNT(*) FROM encounter_story_thread_presence other
+          WHERE other.encounter_ref=e.encounter_id)=1
+      ORDER BY e.encounter_id LIMIT 1
+    `).get(occurredAt,threadId,situationId);
+    return row===undefined?null:this.getEncounterStory(row.encounter_id);
+  }
+
   getSharedEnvironmentalStory({occurredAt,placeRef}) {
     assertIsoTimestamp("shared occurrence occurredAt",occurredAt);
     assertId("shared occurrence placeRef",placeRef);
