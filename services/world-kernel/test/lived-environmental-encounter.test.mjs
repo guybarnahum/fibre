@@ -158,7 +158,8 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
       livedNowStore:{
         getCurrentSituation:() => structuredClone(situation),
         getWorldPlace:() => null,
-        listCurrentSituations:() => [structuredClone(situation)],
+        listCurrentVenueSituations:()=>[],
+        listCurrentSituations:()=>{throw new Error("venue observation scanned the World");},
       },
       situatedLifeStore:{ listCurrentPlaceEpisodes:() => [structuredClone(place)] },
       semanticStateStore:{ listCurrentState:() => [] },
@@ -401,7 +402,14 @@ test("shared World occurrence belongs to one place and different observers notic
               locality:"Park District",country:"US",
               evidenceRef:"fixture_attested_venue"},
           }:null,
-        listCurrentSituations:()=>[...situations.values()].map((item)=>structuredClone(item)),
+        listCurrentVenueSituations:({venueRef,at,excludeThreadId,limit})=>{
+          assert.equal(venueRef,placeRef);
+          assert.equal(at,AT);
+          assert.ok(limit<=8,"venue observation is not bounded");
+          return [first,second].filter(person=>person.threadId!==excludeThreadId)
+            .map(person=>structuredClone(situations.get(person.threadId)));
+        },
+        listCurrentSituations:()=>{throw new Error("venue observation scanned the World");},
       },
       situatedLifeStore:{listCurrentPlaceEpisodes:()=>[]},
       semanticStateStore:{listCurrentState:()=>[]},
