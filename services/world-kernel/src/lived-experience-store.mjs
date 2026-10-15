@@ -1233,11 +1233,11 @@ export class LivedExperienceStore {
     return this.#database.prepare(`
       SELECT q.experience_id,q.thread_id,q.queued_at,
         e.encounter_ref,e.situation_id,e.occurred_at,e.experience_text
-      FROM thread_experience_consolidation_queue q
-      JOIN thread_encounter_experiences e ON e.experience_id=q.experience_id
-      LEFT JOIN thread_experience_consolidation_members m ON m.experience_id=q.experience_id
-      WHERE m.experience_id IS NULL
-      ORDER BY e.occurred_at,q.experience_id
+      FROM thread_experience_pending_work w
+      JOIN thread_experience_consolidation_queue q ON q.experience_id=w.reference
+      JOIN thread_encounter_experiences e ON e.experience_id=w.reference
+      WHERE w.kind='unclaimed'
+      ORDER BY w.due_at,w.reference
       LIMIT ?
     `).all(limit).map((row)=>({
       experienceId:row.experience_id,
@@ -1341,12 +1341,10 @@ export class LivedExperienceStore {
     }
     return this.#database.prepare(`
       SELECT c.consolidation_id,c.thread_id,c.started_at,c.experience_refs_json
-      FROM thread_experience_consolidations c
-      WHERE NOT EXISTS (
-        SELECT 1 FROM thread_experience_consolidation_stages s
-        WHERE s.consolidation_id=c.consolidation_id AND s.stage='complete'
-      )
-      ORDER BY c.started_at,c.consolidation_id
+      FROM thread_experience_pending_work w
+      JOIN thread_experience_consolidations c ON c.consolidation_id=w.reference
+      WHERE w.kind='consolidation'
+      ORDER BY w.due_at,w.reference
       LIMIT ?
     `).all(limit).map((row)=>({
       consolidationId:row.consolidation_id,
@@ -1572,22 +1570,9 @@ export class LivedExperienceStore {
   }
 
   hasPendingExperienceConsolidation() {
-    const incomplete=this.#database.prepare(`
-      SELECT 1 AS pending
-      FROM thread_experience_consolidations c
-      WHERE NOT EXISTS (
-        SELECT 1 FROM thread_experience_consolidation_stages s
-        WHERE s.consolidation_id=c.consolidation_id AND s.stage='complete'
-      )
-      LIMIT 1
-    `).get();
-    if(incomplete!==undefined)return true;
     return this.#database.prepare(`
-      SELECT 1 AS pending
-      FROM thread_experience_consolidation_queue q
-      LEFT JOIN thread_experience_consolidation_members m ON m.experience_id=q.experience_id
-      WHERE m.experience_id IS NULL
-      LIMIT 1
+      SELECT 1 AS pending FROM thread_experience_pending_work
+      WHERE kind IN ('unclaimed','consolidation') LIMIT 1
     `).get()!==undefined;
   }
 
