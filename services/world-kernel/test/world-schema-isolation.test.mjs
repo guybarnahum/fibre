@@ -22,7 +22,7 @@ test("World schema installation does not initialize cognition or prompt assets",
     assert.doesNotMatch(source,/\bresolvePromptAsset\s*\(|\b(?:new URL)\s*\([^\n]*import\.meta\.url/u,
       "World schema installation reached prompt initialization: "+path.slice(root.length));
     // Resolve local static imports, including multi-line named imports.
-    for(const match of source.matchAll(/\b(?:import|export)\s+(?:[^"'\`;]*?\s+from\s+)?["']([^"']+)["']/gsu)){
+    for(const match of source.matchAll(/\b(?:import|export)\s+(?:[^"'`;]*?\s+from\s+)?["']([^"']+)["']/gsu)){
       const spec=match[1];
       if(spec.startsWith("./")||spec.startsWith("../")){
         const next=resolve(dirname(path),spec);
