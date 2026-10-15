@@ -130,6 +130,7 @@ export async function acceptWorldSchemaDeployment({
   prepared,deploymentOutput,
   fetchImpl=globalThis.fetch,
   privateToken=process.env.FIBRE_PRIVATE_TOKEN,
+  wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),
 }={}){
   if(typeof privateToken!=="string"||privateToken.length===0){
     throw new Error("World schema installation requires FIBRE_PRIVATE_TOKEN");
@@ -139,16 +140,27 @@ export async function acceptWorldSchemaDeployment({
     resolvedConfig:prepared.config,
     deploymentOutput,
   });
-  const response=await fetchImpl(new URL("/internal/world-schema/migrate",baseUrl),{
-    method:"POST",headers:{"x-fibre-private-token":privateToken},
-  });
-  if(!response.ok){
-    const message=await response.text();
-    throw new Error("World schema installation HTTP "+response.status+": "+message.slice(0,180));
+  const url=new URL("/internal/world-schema/migrate",baseUrl);
+  // Wrangler may finish uploading before the new route is serving traffic.
+  // Only retry an absent route; never report a deployment as installed
+  // unless the schema handler itself confirms completion.
+  for(let attempt=1;attempt<=8;attempt++){
+    const response=await fetchImpl(url,{
+      method:"POST",headers:{"x-fibre-private-token":privateToken},
+    });
+    if(response.status===404&&attempt<8){
+      await wait(1_000);
+      continue;
+    }
+    if(!response.ok){
+      const message=await response.text();
+      throw new Error("World schema installation at "+url.origin+
+        " HTTP "+response.status+": "+message.slice(0,180));
+    }
+    const result=await response.json();
+    if(result?.ok!==true)throw new Error("World schema installation returned no success witness");
+    return result;
   }
-  const result=await response.json();
-  if(result?.ok!==true)throw new Error("World schema installation returned no success witness");
-  return result;
 }
 
 export async function deployCloudflareService({
