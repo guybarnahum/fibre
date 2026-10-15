@@ -160,7 +160,7 @@ export class LivedExperienceStore {
       readOnly,storeName:"LivedExperienceStore",
     });
     try {
-      if(!readOnly){
+      if(!readOnly && !storage.schemaReady){
         migrateDatabase(this.#database);
         this.#database.transaction(()=>createLivedExperienceTables(this.#database));
       }
