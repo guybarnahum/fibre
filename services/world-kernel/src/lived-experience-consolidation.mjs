@@ -472,11 +472,14 @@ export function createExperienceConsolidationProcess({
       let pending=experienceStore.listPendingThreadExperienceConsolidations({
         limit:batchLimit,
       });
+      let claimed=[];
       if(pending.length<batchLimit){
-        claimGroups(batchLimit-pending.length);
-        pending=experienceStore.listPendingThreadExperienceConsolidations({
-          limit:batchLimit,
-        });
+        claimed=claimGroups(batchLimit-pending.length);
+        if(claimed.length>0){
+          pending=experienceStore.listPendingThreadExperienceConsolidations({
+            limit:batchLimit,
+          });
+        }
       }
 
       const results=[];
@@ -498,7 +501,10 @@ export function createExperienceConsolidationProcess({
         attempted:pending.length,
         completed:pending.length-failed,
         failed,
-        hasPending:experienceStore.hasPendingExperienceConsolidation(),
+        // No pending consolidation and no unclaimed experiences were found.
+        // With no await on that path, a second historical scan proves nothing.
+        hasPending:pending.length===0&&claimed.length===0
+          ?false:experienceStore.hasPendingExperienceConsolidation(),
         results:Object.freeze(results),
       });
     },
