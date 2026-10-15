@@ -1508,7 +1508,7 @@ function dnaSection(identity) {
   return wrap;
 }
 
-export async function fetchThreadObservatory(threadId) {
+export async function fetchThreadObservatory(threadId,{currentOnly=false}={}) {
   const identityResponse = await fetch(`/api/threads/${encodeURIComponent(threadId)}/identity`, { headers:{ Accept:"application/json" }, cache:"no-store" });
   const payload = await identityResponse.json().catch(() => null);
   if (!identityResponse.ok) {
@@ -1533,7 +1533,7 @@ export async function fetchThreadObservatory(threadId) {
   let journalError = null;
   let deepWorld = null;
   try {
-    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/observatory`, { headers:{ Accept:"application/json" }, cache:"no-store" });
+    const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/observatory${currentOnly?"?view=current":""}`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const observatoryPayload = await response.json().catch(() => null);
     if (!response.ok) throw new Error(observatoryPayload?.detail ?? observatoryPayload?.error?.detail ?? observatoryPayload?.error?.code ?? observatoryPayload?.error ?? `HTTP ${response.status}`);
     const observatory = observatoryPayload?.observatory ?? null;
@@ -1566,7 +1566,7 @@ export async function fetchThreadObservatory(threadId) {
     memoryError = detail;
     encounterError = detail;
   }
-  try {
+  if(!currentOnly)try {
     const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/journal`, { headers:{ Accept:"application/json" }, cache:"no-store" });
     const journalPayload = await response.json().catch(() => null);
     if (!response.ok) throw new Error(journalPayload?.detail ?? journalPayload?.error ?? `HTTP ${response.status}`);
@@ -1617,6 +1617,7 @@ export function renderThreadObservatory({
   lifeRelations = [],
   journal = null,
   journalError = null,
+  deferredHistory = false,
 } = {}) {
   const view = el("div", "thread-person-view");
   view.append(
@@ -1624,51 +1625,47 @@ export function renderThreadObservatory({
       identity,threadId,memories,memoryError,livedNow,encounterStories,
       encounterError,experienceConsolidation,experienceJournalEntries,semanticStates,lifeRelations,
     }),
-    hero(identity, threadId),
+    hero(identity,threadId),
     lifeRecordLinks(),
-    identitySection(identity, threadId, livedNow),
-    renderFidSection(identity, threadId),
-    nowSection(identity, livedNow),
-    journalSection(
-      journal,
-      journalError,
-      [
-        ...experienceJournalEntries,
-        ...((experienceConsolidation?.consolidations??[])
-          .map((item)=>item.journal)
-          .filter(Boolean)),
-      ],
-    ),
-    worldEventsSection({livedNow,encounterStories,encounterError}),
-    encounterEpisodeSection({
-      identity,
-      threadId,
-      encounterStories,
-      encounterError,
-      livedNow,
-      experienceConsolidation,
-      experienceJournalEntries,
-      memories,
-      semanticStates,
-      lifeRelations,
-    }),
-    socialAnalyticsSection({
-      threadId,
-      encounterStories,
-      socialInteractions,
-      experienceConsolidation,
-      experienceJournalEntries,
-      memories,
-      semanticStates,
-      lifeRelations,
-    }),
-    laterContactSection(contactOutreach),
-    memoriesSection(memories, firstText(identity.birthDate, identity.world?.thread?.identity?.birthDate), memoryError),
+    identitySection(identity,threadId,livedNow),
+    renderFidSection(identity,threadId),
+    nowSection(identity,livedNow),
   );
+  if(deferredHistory){
+    const placeholder=section("Lived history","On demand");
+    placeholder.dataset.observatoryHistory="deferred";
+    const load=el("button","secondary","Load life history");
+    load.type="button";
+    load.dataset.loadHistory="true";
+    placeholder.append(el("p","thread-empty-note",
+      "Memories, encounters, relationship history and DNA are loaded only when needed."),load);
+    view.append(placeholder);
+  }else{
+    view.append(
+      journalSection(
+        journal,journalError,
+        [...experienceJournalEntries,
+          ...((experienceConsolidation?.consolidations??[])
+            .map(item=>item.journal).filter(Boolean))],
+      ),
+      worldEventsSection({livedNow,encounterStories,encounterError}),
+      encounterEpisodeSection({
+        identity,threadId,encounterStories,encounterError,livedNow,
+        experienceConsolidation,experienceJournalEntries,memories,
+        semanticStates,lifeRelations,
+      }),
+      socialAnalyticsSection({
+        threadId,encounterStories,socialInteractions,experienceConsolidation,
+        experienceJournalEntries,memories,semanticStates,lifeRelations,
+      }),
+      laterContactSection(contactOutreach),
+      memoriesSection(memories,firstText(identity.birthDate,identity.world?.thread?.identity?.birthDate),memoryError),
+    );
+  }
   const who = whoSection(identity); if (who) view.append(who);
   const appearance = appearanceSection(identity); if (appearance) view.append(appearance);
   const media = mediaSection(identity); if (media) view.append(media);
-  const dna = dnaSection(identity); if (dna) view.append(dna);
+  if(!deferredHistory){const dna = dnaSection(identity); if (dna) view.append(dna);}
 
   const records = el("section", "thread-records"); records.append(el("h3", null, "Records"));
   if (identity.world?.civilRegistration) records.append(disclosure("Civil identity & World registration", identity.world.civilRegistration));
