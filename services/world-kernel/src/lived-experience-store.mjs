@@ -155,11 +155,15 @@ function environmentOpportunityTable(kind){
 export class LivedExperienceStore {
   #database;
 
-  constructor(storage) {
-    this.#database = openWorldStateDatabase(storage, { storeName:"LivedExperienceStore" });
+  constructor(storage,{readOnly=false}={}) {
+    this.#database = openWorldStateDatabase(storage, {
+      readOnly,storeName:"LivedExperienceStore",
+    });
     try {
-      migrateDatabase(this.#database);
-      this.#database.transaction(()=>createLivedExperienceTables(this.#database));
+      if(!readOnly){
+        migrateDatabase(this.#database);
+        this.#database.transaction(()=>createLivedExperienceTables(this.#database));
+      }
     } catch (error) {
       this.#database.close();
       throw error;
@@ -1867,4 +1871,8 @@ export class LivedExperienceStore {
 
 export function openLivedExperienceStore(storage) {
   return new LivedExperienceStore(storage);
+}
+
+export function openLivedExperienceInspectionStore(storage){
+  return new LivedExperienceStore(storage,{readOnly:true});
 }
