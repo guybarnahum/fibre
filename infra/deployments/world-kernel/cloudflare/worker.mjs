@@ -143,19 +143,7 @@ function threadObservatory(runtime, threadId) {
   const semanticState = openSemanticStateStore(runtime.worldStorage);
   const situatedLife = openSituatedLifeInspectionStore(runtime.worldStorage);
   try {
-    const encounterStories = experience.listEncounterStories(threadId).map((story) => {
-      const presence=(story.threadPresence??[]).find((item)=>item.threadId===threadId)??null;
-      return Object.freeze({
-        ...structuredClone(story),
-        situation:presence===null
-          ?null
-          :structuredClone(livedNow.getSituation(presence.situationId,{required:false})),
-        attention:structuredClone(experience.getThreadEncounterAttention(threadId, story.encounterId)),
-        worldEnvironmentFollowup:structuredClone(
-          experience.inspectEnvironmentalFollowup(story.encounterId),
-        ),
-      });
-    });
+    const encounterStories=experience.inspectRecentEncounterStories(threadId,{limit:12});
     const currentSituation = livedNow.getCurrentSituation(threadId);
     const previousSituation = currentSituation === null
       ? null
@@ -231,10 +219,10 @@ function threadObservatory(runtime, threadId) {
         worldPlaces:structuredClone([...legacyPlaces,...publicPlaces]),
         placeEpisodes:structuredClone(situatedLife.listCurrentPlaceEpisodes(threadId)),
       }),
-      memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:200 })),
+      memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:24 })),
       socialInteractions:structuredClone(experience.listSocialInteractions(threadId, {
         newestFirst:true,
-        limit:100,
+        limit:24,
       })),
       encounterStories:Object.freeze(encounterStories),
       environmentalOpportunities:structuredClone(
@@ -243,12 +231,12 @@ function threadObservatory(runtime, threadId) {
       socialOpportunities:structuredClone(
         experience.inspectSocialOpportunities(threadId,{limit:12}),
       ),
-      experienceJournalEntries:structuredClone(experience.listThreadExperienceJournal(threadId)),
+      experienceJournalEntries:structuredClone(experience.listThreadExperienceJournal(threadId,{limit:24})),
       experienceConsolidation:structuredClone(
-        experience.inspectThreadExperienceConsolidation(threadId,{limit:200}),
+        experience.inspectThreadExperienceConsolidation(threadId,{limit:12}),
       ),
       contactOutreach:structuredClone(
-        contact.inspectThreadContact(threadId,{limit:200}),
+        contact.inspectThreadContact(threadId,{limit:12}),
       ),
       contactReceptions:structuredClone(
         contact.inspectContactReceptions(threadId,{limit:12}),
