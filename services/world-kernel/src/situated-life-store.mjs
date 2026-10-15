@@ -184,7 +184,7 @@ export class SituatedLifeStore {
     this.#readOnly = readOnly;
     this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "SituatedLifeStore" });
     try {
-      if (!readOnly) {
+      if (!readOnly && !storage.schemaReady) {
         migrateDatabase(this.#database);
         this.#database.transaction(() => {
           createSituatedLifeTables(this.#database);
