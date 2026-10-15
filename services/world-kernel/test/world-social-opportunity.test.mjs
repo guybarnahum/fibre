@@ -192,6 +192,13 @@ test("venue discovery reaches actual awake long-stayers beyond historical bindin
       "real long-staying company was hidden by historical bindings or sleep");
     assert.equal(present[0].establishedAt,"2026-10-13T16:00:00.000Z",
       "venue discovery discarded the independently enacted long stay");
+    assert.deepEqual(lived.listCurrentSituations({at:AT,livingOnly:true})
+      .map(situation=>situation.threadId).sort(),[asleep,reader,arriving].sort(),
+      "current World lost one of its enacted people");
+    assert.deepEqual(lived.listCurrentSituations({
+      at:"2026-10-13T17:00:00.000Z",livingOnly:true,
+    }).map(situation=>situation.threadId),[reader],
+      "later enactments rewrote who was present earlier");
     assert.deepEqual(lived.listCurrentVenueSituations({
       venueRef,at:"2026-10-13T15:00:00.000Z",excludeThreadId:arriving,
     }),[],"future presence was mistaken for current co-presence");
