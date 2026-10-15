@@ -6,6 +6,7 @@ import test from "node:test";
 import {mkdtempSync,rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
+import {DatabaseSync} from "node:sqlite";
 import {localWorldStateStorage} from "./support/world-state-storage-fixture.mjs";
 import {installWorldSchemas} from "../src/world-schema-installation.mjs";
 import {openLivedNowInspectionStore} from "../src/lived-now-store.mjs";
@@ -42,6 +43,13 @@ test("deployment prepares an inspectable World without creating a Thread or runn
   try{
     const storage=localWorldStateStorage(join(directory,"world.sqlite"));
     installWorldSchemas(storage);
+    const schema=new DatabaseSync(join(directory,"world.sqlite"),{readOnly:true});
+    try{
+      for(const name of ["thread_experience_pending_work","thread_contact_pending_work"]){
+        assert.equal(schema.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(name)?.name,name,
+          "deployment did not install pending World work: "+name);
+      }
+    }finally{schema.close();}
     const reader=openLivedNowInspectionStore({...storage,schemaReady:true});
     try{
       assert.deepEqual(reader.listCurrentSituations({
