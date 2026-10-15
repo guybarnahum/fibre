@@ -1,4 +1,8 @@
 export function createSituatedLifeTables(database) {
+  const needsCurrent=database.prepare(`
+    SELECT 1 FROM sqlite_master WHERE type='table'
+      AND name='situated_life_current'
+  `).get()===undefined;
   database.exec(`
     CREATE TABLE IF NOT EXISTS life_relation_records (
       relation_id TEXT NOT NULL,
@@ -68,6 +72,36 @@ export function createSituatedLifeTables(database) {
 
     CREATE INDEX IF NOT EXISTS idx_situated_life_heads_thread
       ON situated_life_lineage_heads(thread_id,ledger_kind,lineage_id,revision);
+
+    -- One head per living relationship/place lineage. Old revisions remain
+    -- immutable in their original tables.
+    CREATE TABLE IF NOT EXISTS situated_life_current (
+      ledger_kind TEXT NOT NULL,
+      lineage_id TEXT NOT NULL,
+      thread_id TEXT NOT NULL,
+      revision INTEGER NOT NULL,
+      head_digest TEXT NOT NULL,
+      recorded_at TEXT NOT NULL,
+      PRIMARY KEY(ledger_kind,lineage_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_situated_life_current_thread
+      ON situated_life_current(thread_id,ledger_kind,lineage_id);
+    CREATE TRIGGER IF NOT EXISTS situated_life_advance_current
+      AFTER INSERT ON situated_life_lineage_heads
+      BEGIN
+        INSERT INTO situated_life_current (
+          ledger_kind,lineage_id,thread_id,revision,head_digest,recorded_at
+        ) VALUES (
+          NEW.ledger_kind,NEW.lineage_id,NEW.thread_id,
+          NEW.revision,NEW.head_digest,NEW.recorded_at
+        )
+        ON CONFLICT(ledger_kind,lineage_id) DO UPDATE SET
+          thread_id=excluded.thread_id,
+          revision=excluded.revision,
+          head_digest=excluded.head_digest,
+          recorded_at=excluded.recorded_at
+        WHERE excluded.revision>situated_life_current.revision;
+      END;
 
     CREATE TRIGGER IF NOT EXISTS situated_life_heads_no_update
       BEFORE UPDATE ON situated_life_lineage_heads
@@ -177,4 +211,18 @@ export function createSituatedLifeTables(database) {
         )
       BEGIN SELECT RAISE(ABORT,'geography identity requires a resolved place-revision witness'); END;
   `);
+  if(needsCurrent){
+    database.exec(`
+      INSERT INTO situated_life_current(
+        ledger_kind,lineage_id,thread_id,revision,head_digest,recorded_at
+      )
+      SELECT h.ledger_kind,h.lineage_id,h.thread_id,h.revision,
+        h.head_digest,h.recorded_at
+      FROM situated_life_lineage_heads h
+      WHERE h.revision=(
+        SELECT MAX(last.revision) FROM situated_life_lineage_heads last
+        WHERE last.ledger_kind=h.ledger_kind AND last.lineage_id=h.lineage_id
+      )
+    `);
+  }
 }
