@@ -178,6 +178,24 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
         "objective history lost audible interruption",
       );
 
+      store.recordThreadEncounterAttention({
+        threadId:"thr_e0_mina",encounterRef:interrupted.encounterId,
+        situationId:"sit_e0_mina",occurredAt:interrupted.occurredAt,
+        outcome:"noticed",experienceText:"I felt interrupted mid-thought.",
+      });
+      const recent=store.inspectRecentEncounterStories("thr_e0_mina",{limit:2});
+      assert.deepEqual(recent.map(item=>item.encounterId),
+        [interrupted.encounterId,continued.encounterId],
+        "recent inspection returned lifetime history instead of the latest moments");
+      assert.deepEqual(recent[0].threadPresence,
+        interrupted.threadPresence,
+        "recent inspection lost the actual shared encounter");
+      assert.equal(recent[0].attention.experience.experienceText,
+        "I felt interrupted mid-thought.",
+        "bounded inspection lost the Thread's distinct experience");
+      assert.equal(recent[0].story.beats[0].completion,"interrupted",
+        "recent inspection rewrote an interrupted encounter");
+
       const receipt=store.recordPublicEncounterReceipt({
         requestId:"req_e0_public_retry",
         threadId:"thr_e0_mina",
