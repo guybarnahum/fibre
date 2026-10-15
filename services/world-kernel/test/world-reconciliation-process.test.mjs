@@ -6,6 +6,7 @@ import { join } from "node:path";
 
 import { createLocalInfraDriver } from "#infra/providers/local";
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
+import { openWorldReconciliationRetryStore } from "../src/world-reconciliation-retry-store.mjs";
 import {
   WORLD_RECONCILIATION_SCOPE_ID,
   createWorldReconciliationProcess,
@@ -722,7 +723,7 @@ test("schema-ready World reconciliation does not repeat schema work on a cold ru
       stateScopes:{world:join(directory,"world.sqlite")},
       schedulerScopes:{world:{onWake(){}}},
     });
-    const {openWorldReconciliationRetryStore}=await import("../src/world-reconciliation-retry-store.mjs");
+
     const installer=openWorldReconciliationRetryStore({infraDriver:underlying,stateScopeId:"world"});
     await installer.set("world",2);
     installer.close();
