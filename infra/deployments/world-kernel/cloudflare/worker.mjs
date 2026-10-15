@@ -131,6 +131,35 @@ async function reconciliationState(runtime) {
   });
 }
 
+function reconciliationOutcome(result) {
+  const names=[
+    "presentation","visualPublication","experienceConsolidation",
+    "contactOutreach","contactReception","livedBoundary",
+    "environmentEvolution","socialOpportunity",
+  ];
+  return Object.fromEntries(names.flatMap((name)=>{
+    const entry=result[name];
+    if(entry?.enabled!==true)return [];
+    const work=entry.result??{};
+    const counts=Object.fromEntries(
+      ["attempted","failed","hasPending","hasDue","noticed","nextDueAt"]
+        .filter(key=>work[key]!==undefined)
+        .map(key=>[key,work[key]]),
+    );
+    if(name==="livedBoundary"&&Array.isArray(work.results)){
+      counts.lives=work.results.slice(0,1).map(item=>({
+        threadId:item.threadId,outcome:item.outcome,
+        ...(item.message?{message:String(item.message).slice(0,180)}:{}),
+      }));
+    }
+    return [[name,{
+      ok:entry.ok,
+      ...(entry.error?{error:String(entry.error.message).slice(0,180)}:{}),
+      ...counts,
+    }]];
+  }));
+}
+
 // The default operator view needs present life, not a lifetime dossier.
 // Detailed memories, genomes, and social evidence are requested separately.
 function currentThreadObservatory(runtime,threadId){
@@ -744,6 +773,7 @@ export class FibreWorldDurableObject extends DurableObject {
           event: "world-reconciliation-alarm-completed",
           reconciliationPending: result.reconciliationPending,
           retryDelayMs: result.retryDelayMs,
+          stages:reconciliationOutcome(result),
         }));
         return result;
       } catch (error) {
