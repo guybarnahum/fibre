@@ -1,4 +1,5 @@
 import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
+import {createCivilRegistryTables} from "../src/civil-registry-schema.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -12,7 +13,6 @@ import {
 } from "#core/src/fibre-civil-identity.mjs";
 import {
   CivilRegistryStore,
-  createCivilRegistryTables,
   persistCivilRegistrationInTransaction,
 } from "../src/civil-registry-store.mjs";
 
