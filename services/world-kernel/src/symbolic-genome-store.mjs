@@ -219,7 +219,7 @@ export class SymbolicGenomeStore {
     this.#readOnly = readOnly;
     this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "SymbolicGenomeStore" });
     try {
-      if (!readOnly) {
+      if (!readOnly && !storage.schemaReady) {
         migrateDatabase(this.#database);
         this.#database.transaction(() => {
           createSymbolicGenomeTables(this.#database);
