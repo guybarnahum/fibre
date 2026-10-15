@@ -182,17 +182,12 @@ export class ContactStore {
       throw new TypeError("contact source limit must be 1-256");
     }
     return this.#database.prepare(`
-      SELECT c.consolidation_id,c.thread_id,complete.recorded_at AS completed_at
-      FROM thread_experience_consolidations c
-      JOIN thread_experience_consolidation_stages decision
-        ON decision.consolidation_id=c.consolidation_id AND decision.stage='decision'
-      JOIN thread_experience_consolidation_stages complete
-        ON complete.consolidation_id=c.consolidation_id AND complete.stage='complete'
-      LEFT JOIN thread_contact_attempts attempt
-        ON attempt.consolidation_id=c.consolidation_id
-      WHERE attempt.contact_attempt_id IS NULL
-        AND json_array_length(decision.payload_json,'$.afterthoughts') > 0
-      ORDER BY complete.recorded_at,c.consolidation_id
+      SELECT c.consolidation_id,c.thread_id,w.due_at AS completed_at
+      FROM thread_contact_pending_work w
+      JOIN thread_experience_consolidations c
+        ON c.consolidation_id=w.reference
+      WHERE w.kind='afterthought'
+      ORDER BY w.due_at,w.reference
       LIMIT ?
     `).all(limit).map((row)=>Object.freeze({
       consolidationId:row.consolidation_id,
@@ -207,12 +202,10 @@ export class ContactStore {
     }
     return this.#database.prepare(`
       SELECT a.contact_attempt_id,a.thread_id,a.consolidation_id,a.started_at
-      FROM thread_contact_attempts a
-      WHERE NOT EXISTS (
-        SELECT 1 FROM thread_contact_attempt_stages s
-        WHERE s.contact_attempt_id=a.contact_attempt_id AND s.stage='complete'
-      )
-      ORDER BY a.started_at,a.contact_attempt_id
+      FROM thread_contact_pending_work w
+      JOIN thread_contact_attempts a ON a.contact_attempt_id=w.reference
+      WHERE w.kind='attempt'
+      ORDER BY w.due_at,w.reference
       LIMIT ?
     `).all(limit).map((row)=>Object.freeze({
       contactAttemptId:row.contact_attempt_id,
@@ -550,11 +543,8 @@ export class ContactStore {
 
   hasPendingAttempts(){
     return this.#database.prepare(`
-      SELECT 1 AS pending FROM thread_contact_attempts a
-      WHERE NOT EXISTS (
-        SELECT 1 FROM thread_contact_attempt_stages s
-        WHERE s.contact_attempt_id=a.contact_attempt_id AND s.stage='complete'
-      ) LIMIT 1
+      SELECT 1 AS pending FROM thread_contact_pending_work
+      WHERE kind='attempt' LIMIT 1
     `).get()!==undefined;
   }
 }
