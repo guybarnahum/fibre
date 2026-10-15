@@ -177,7 +177,7 @@ export class IdentityStore {
     this.#readOnly = readOnly;
     this.#database = openWorldStateDatabase(storage, { readOnly, storeName: "IdentityStore" });
     try {
-      if (!readOnly) {
+      if (!readOnly && !storage.schemaReady) {
         migrateDatabase(this.#database);
       }
     } catch (error) {
