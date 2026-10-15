@@ -126,6 +126,35 @@ October 14–15 source work addresses two scaling defects identified by the inde
 
 **Staging deployed and one read-only Observatory response verified:** deployed source `ad4d62d` returned HTTP 200 for one Thread with current situation, 12 bounded recent stories, 7 memories, and 8 recent situations; Cloudflare tail showed no corresponding exception. Guy's local focused/full validation outputs and before/after SQL rows-read measurements are still pending.** A first upgrade makes a one-time indexed historical bootstrap of the projections. No conclusion about spontaneous S1F visits, Thread agency or actual savings on Cloudflare staging follows merely from source changes. Avoid broad probes until a few controlled reads establish capacity and cost.
 
+## Deployment-managed schema and on-demand Observatory — source only
+
+After Guy's first two measured requests, a full Observatory repeatedly consumed
+**11,541 Durable Object SQL rows read and 199 queries** for one Thread with no
+writes. The largest measured labels were LivedNow (4,724), SituatedLife (2,612)
+and SymbolicGenome (2,579 rows). This is a baseline for the previous deployed
+code, **not** the cost of the new changes.
+
+A further correction on `main` now installs World SQLite schema, latest
+situations and recent-story/frontier projections through an explicit
+deployment-controlled migration route. The `cloud:deploy:service` command for
+`world-kernel` requires migration success after publishing code; normal World
+store opening skips schema installation and SQLite catalog probing for known
+tables. Local test databases continue to initialize themselves normally.
+SituatedLife relationships and places have a transactional current-head
+projection while their full immutable histories remain available.
+
+The admin Thread page now requests a **current-only** Observatory view first;
+detailed history, genomes, memories and Later Contact load when the deferred
+section is reached or requested. Individual operations include direct
+enacted-plan lookup and bounded, indexed recent life reads.
+The existing `world-state-cost` counters remain the measurement authority.
+
+**This pass is not yet locally validated or staged.** Guy must validate,
+deploy World kernel (including `WORLD SCHEMA INSTALLED`), deploy the admin app,
+then measure one current-only and one full inspection without a population
+probe. Neither SQL savings nor live Thread behavior has been proven by these
+source edits.
+
 ## Runtime economics and unresolved reach
 
 Fibre intentionally uses bounded, event-driven World work and temporary inference, not a per-person always-on agent process. One real **pre-optimization** public participation sample took **4,368 ms and 4,169 reported tokens**; the containing public World request made **655 SQL queries, 557 in SituatedLifeStore**. The indexed relation-history correction was deployed, but no post-fix SQL comparison, complete accepted per-stage model-cost sample, production per-Thread/day bill or queue saturation threshold was established. The [Meet runtime audit](../validation/meet-encounter-run-path-audit.md) records the original measurement. Attribution → evidence-backed compute optimization → scaling only with observed backlog are distinct [cost](../architecture/world-cost-accounting.md), [optimization](../architecture/world-compute-optimization.md) and [scaling](../architecture/world-reconciliation-scaling.md) tracks. The earlier **$3–$15/active-Thread-month** range is scenario modeling, not actual spend.
