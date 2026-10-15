@@ -141,14 +141,17 @@ export async function acceptWorldSchemaDeployment({
     deploymentOutput,
   });
   const url=new URL("/internal/world-schema/migrate",baseUrl);
-  // Wrangler may finish uploading before the new route is serving traffic.
-  // Only retry an absent route; never report a deployment as installed
-  // unless the schema handler itself confirms completion.
-  for(let attempt=1;attempt<=8;attempt++){
+  // A previous Worker revision can still answer after Wrangler has uploaded
+  // the new one. Never accept an older revision's successful migration.
+  const expectedSha=prepared.config.vars?.FIBRE_DEPLOYMENT_GIT_SHA;
+  if(!GIT_SHA_PATTERN.test(expectedSha??"")){
+    throw new Error("World schema installation requires a deployment Git SHA");
+  }
+  for(let attempt=1;attempt<=15;attempt++){
     const response=await fetchImpl(url,{
       method:"POST",headers:{"x-fibre-private-token":privateToken},
     });
-    if(response.status===404&&attempt<8){
+    if(response.status===404&&attempt<15){
       await wait(1_000);
       continue;
     }
@@ -159,6 +162,14 @@ export async function acceptWorldSchemaDeployment({
     }
     const result=await response.json();
     if(result?.ok!==true)throw new Error("World schema installation returned no success witness");
+    if(result.deploymentGitSha!==expectedSha){
+      if(attempt===15){
+        throw new Error("World schema installation acknowledged revision "+
+          String(result.deploymentGitSha)+"; expected "+expectedSha);
+      }
+      await wait(1_000);
+      continue;
+    }
     return result;
   }
 }
