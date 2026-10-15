@@ -28,7 +28,28 @@ request measured 14,837 rows, 232 queries and two writes. The steady-state
 largest store labels were LivedNow 4,724 rows; SituatedLife 2,612;
 SymbolicGenome 2,579; SemanticState 551; CivilRegistry 514;
 LivedExperience 465. These are measured *request* counts, not baseline
-idle-Thread usage and not yet a measured post-correction result.
+idle-Thread usage.
+
+**October 15 controlled staging acceptance:** Guy ran six focused deployment
+tests and the complete 1,614-test validation suite successfully at `d21c4346`.
+The World staging Worker installed its schema explicitly and printed
+`WORLD SCHEMA INSTALLED`. For the same Thread, the first post-correction
+current-only Observatory request read **593 rows / 19 queries**; the full
+inspection read **697 rows / 104 queries** (zero writes). The current-only
+cost included **531 rows / 2 queries** attributed to
+`WorldReconciliationRetryStore`: the scheduler opened a separate storage
+descriptor without `schemaReady`, reactivating cold-start catalog inspection.
+A narrow follow-up carries the World schema-ready descriptor into that scheduler.
+
+**Post-follow-up staging measurement, October 15:** the same Thread's
+current-only requests each read **62 rows** (**17 then 16 queries**),
+and a full request read **697 rows / 104 queries**; all returned HTTP 200
+and recorded zero inspection writes. `WorldReconciliationRetryStore` no
+longer appeared in current-only costs. The remaining current-only reads
+were 60 from LivedNowStore and two from WorldStore. Relative to the
+original full-view baseline, current-only reads fell 99.46%; this is
+**inspection cost**, not a claim about total autonomous World activity,
+model tokens, or provider billing.
 
 The corrective pass moves Cloudflare World SQL schema installation into an
 **explicit deployment operation**. The existing `cloud:deploy:service` command
@@ -47,11 +68,11 @@ direct lookup of the enacted Flight Plan, transactional latest-revision
 projection for SituatedLife with full immutable histories retained, and
 catalog-free reads for installed symbolic-genome/civil-registry/venue tables.
 
-**Acceptance remains open until Guy validates and measures the new deployment.**
-Check one current-only Observatory request and one explicitly requested full
-inspection, collecting the existing `x-fibre-state-*` cost headers. Do not
-infer cloud savings from source code or test success. Do not run population
-probes to obtain these two measurements.
+**Inspection optimization accepted on staging from the controlled readings
+above.** The full-history view remains available, and a read-only inspection
+does not write state. Next measure natural World alarms, planner invocations,
+token usage and admitted life transitions separately before making any
+claims about per-Thread cost. Do not wake a population to manufacture samples.
 
 ## Measurement plan
 
