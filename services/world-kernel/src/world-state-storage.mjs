@@ -116,6 +116,10 @@ export function openWorldStateDatabase(storage, {
   );
   const database = infra.state.open(stateScopeId, { readOnly, queryLabel:storeName });
   const initialization = initializationFor(storage);
+  if(storage.schemaReady===true){
+    initialization.recovered=true;
+    initialization.migrated=true;
+  }
   INITIALIZATION_BY_DATABASE.set(database, initialization);
   if (!readOnly && !initialization.recovered) {
     try {
