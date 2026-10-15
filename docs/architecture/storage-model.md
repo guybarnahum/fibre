@@ -174,6 +174,12 @@ Fibre does not repair life history by overwriting it. Legitimate correction patt
 
 Projection repair may reconstruct current state from authoritative events; it may not rewrite the events to make the projection convenient.
 
+## Deployment schema boundary
+
+Cloudflare Durable Object schema creation, indexing, and migration are explicit deployment operations. Normal World wakeups and read-only inspection operate on the installed schema; they must never repair tables or scan the SQLite catalog merely to confirm the deployed contract. Local development may initialize a fresh fixture database.
+
+The deployment SQL path must not load Thread cognition, model adapters, prompts, or reasoning modules. In particular, Guardian cognition tables come from the pure `guardian-cognition-schema.mjs` definition and civil identity tables from `civil-registry-schema.mjs`, not from their operational services. Identity-context policy is independently defined without loading prompt assets. The focused schema-isolation test follows local module dependencies to catch accidental prompt initialization in the deployment installer.
+
 ## Read-only inspection
 
 Human/operator inspection uses bounded read-only surfaces. World inspection stores request read-only `InfraDriver.state` sessions. The local database inspector additionally opens its source SQLite file read-only and uses `PRAGMA query_only` where applicable before verifying a temporary snapshot through the provider-neutral stores. Inspection verifies chains rather than silently repairing them.
