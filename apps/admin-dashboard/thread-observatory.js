@@ -1631,6 +1631,7 @@ export function renderThreadObservatory({
     renderFidSection(identity,threadId),
     nowSection(identity,livedNow),
   );
+  let deferredPlaceholder=null;
   if(deferredHistory){
     const placeholder=section("Lived history","On demand");
     placeholder.dataset.observatoryHistory="deferred";
@@ -1639,7 +1640,7 @@ export function renderThreadObservatory({
     load.dataset.loadHistory="true";
     placeholder.append(el("p","thread-empty-note",
       "Memories, encounters, relationship history and DNA are loaded only when needed."),load);
-    view.append(placeholder);
+    deferredPlaceholder=placeholder;
   }else{
     view.append(
       journalSection(
@@ -1673,5 +1674,6 @@ export function renderThreadObservatory({
   if (identity.world?.thread?.provenance) records.append(disclosure("Technical provenance", { threadId:identity.world.thread.threadId, status:identity.world.thread.status, version:identity.world.thread.version, provenance:identity.world.thread.provenance }));
   if (identity.presentation) records.append(disclosure("Current public Presentation", identity.presentation));
   view.append(records);
+  if(deferredPlaceholder!==null)view.append(deferredPlaceholder);
   return view;
 }
