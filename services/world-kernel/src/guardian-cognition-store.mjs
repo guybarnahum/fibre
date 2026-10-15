@@ -245,8 +245,10 @@ export class GuardianCognitionStore {
   constructor(storage) {
         this.#database = openWorldStateDatabase(storage, { storeName: "GuardianCognitionStore" });
     try {
-      migrateDatabase(this.#database);
-      createGuardianCognitionTables(this.#database);
+      if (!storage.schemaReady) {
+        migrateDatabase(this.#database);
+        createGuardianCognitionTables(this.#database);
+      }
     } catch (error) {
       this.#database.close();
       throw error;
