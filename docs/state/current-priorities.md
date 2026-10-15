@@ -19,26 +19,30 @@ Fibre has accepted the [Fibre City Guide](../architecture/social-city-guide.md) 
 
 **Defining end-to-end outcome:** a naturally motivated Thread can recall a favorite place or consult the shared editorial guide, independently plan and enact an actual journey, spend meaningful time at a public destination even when nobody is there, and perhaps encounter a separately arriving Thread or genuinely connected human. The World must not fill the scene with company or prescribe her choice. The website workstream owns public magazine publication; Core owns real life and encounter authority. This complements, but does not close, N6/N7 causal social proof.
 
-## Follow-up: explicit World schema migration and lazy inspection
+## Deployment-managed World schema and Observatory — staging accepted October 15
 
-**Source committed on main; Guy's validation, deployment and SQL savings measurement pending.**
-The verified staging baseline for one full Thread Observatory remained **11,541 DO
-rows read and 199 SQL queries** (zero writes), with the largest costs in
-LivedNow, SituatedLife and SymbolicGenome. A corrective pass now installs
-World schemas through the existing Cloudflare deploy command's explicit
-post-deploy migration, instead of normal World runtime initialization.
-The admin Observatory opens with current-life evidence; deeper memories,
-genome, contact and social history load as needed. Current Flight Plans
-use a direct ID lookup; current SituatedLife heads are transactionally
-projected while complete revision histories remain immutable; deployment-
-known SQL tables avoid repeated catalog lookups.
+Guy's local validation at `d21c4346` passed six focused deployment tests
+and all 1,614 full-suite tests. The World Worker deployed to staging and
+explicitly returned `WORLD SCHEMA INSTALLED`. Both a current-only and a
+full-history Observatory request returned HTTP 200 for the same Thread.
 
-**Next:** Guy runs the focused semantic/deployment tests and
-`npm run slice:validate` locally. Only after they pass, deploy
-`world-kernel` to staging (the command must print
-`WORLD SCHEMA INSTALLED`) and the admin dashboard, then measure **one
-current-only and one full Observatory request**, separately, using the
-existing SQL cost headers. No 40-Thread probe or forced Thread encounter.
+**Measured steady-state request costs:** before this corrective pass,
+one full inspection read **11,541 DO SQL rows / 199 queries**. After the
+schema and indexed-current corrections, full inspection read **697 rows /
+104 queries**, while current-only initially read **593 rows / 19 queries**.
+A cold scheduler path accounted for 531 of those current-only rows.
+Passing its existing `schemaReady` World storage into reconciliation
+eliminated that path: Guy's follow-up staging checks read **62 rows /
+17 then 16 queries** for current-only, and **697 rows / 104 queries**
+for full history. Every checked request was HTTP 200 with **zero writes**.
+
+The admin Thread page now initially loads current life, with history deferred
+until requested or visible; its staging deployment was reported passed, but
+browser UX acceptance has not been independently documented. **The
+inspection/storage efficiency acceptance is closed**, not the autonomous-life
+cost, scheduled World work, or genuine Thread agency gates. Next observe
+natural World life and its cost, without forced population wakes or additional
+speculative infrastructure refactoring.
 
 ## Current-World and Observatory efficiency correction (October 14–15)
 
