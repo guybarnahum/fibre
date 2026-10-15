@@ -7,7 +7,7 @@ import { createThreadMigrationSummaryService } from "#services/world-kernel/src/
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
-import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
+import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import {
   explorationContinuityForLivedHistory,
@@ -137,7 +137,7 @@ function threadObservatory(runtime, threadId) {
   const embodiments = runtime.embodimentStore.listCurrent(threadId);
   const symbolicGenomes = runtime.symbolicGenomeStore.listThreadGenomes(threadId);
   const memory = openAutobiographicalMemoryInspectionStore(runtime.worldStorage);
-  const experience = openLivedExperienceStore(runtime.worldStorage);
+  const experience = openLivedExperienceInspectionStore(runtime.worldStorage);
   const contact = openContactStore(runtime.worldStorage);
   const livedNow = openLivedNowInspectionStore(runtime.worldStorage);
   const semanticState = openSemanticStateStore(runtime.worldStorage);
