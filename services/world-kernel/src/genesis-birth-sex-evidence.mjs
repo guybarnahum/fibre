@@ -1,8 +1,10 @@
+import {worldSchemaReady} from "./world-state-storage.mjs";
 import { normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
 import { assertId, canonicalJson, sha256 } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 function tableExists(database, tableName) {
+  if(worldSchemaReady(database))return true;
   return database.prepare(
     "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name=?",
   ).get(tableName) !== undefined;
