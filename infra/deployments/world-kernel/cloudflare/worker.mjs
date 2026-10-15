@@ -487,6 +487,15 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetchWorldRequest(request, url) {
+    // Deployment-only revision probe. Never initializes a store or reads
+    // historical state, and never participates in ordinary World wakeups.
+    if(url.pathname==="/internal/world-schema/revision"){
+      if(request.method!=="GET")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
+      if(!privateOperatorAuthorized(request,this.env)){
+        return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
+      }
+      return Response.json({deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null});
+    }
     if(url.pathname==="/internal/world-schema/migrate"){
       if(request.method!=="POST")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
       if(!privateOperatorAuthorized(request,this.env)){
