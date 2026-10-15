@@ -29,7 +29,7 @@ export class ThreadHealthProjectionStore {
 
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName:"ThreadHealthProjectionStore" });
-    this.#database.exec(`
+    if(!storage.schemaReady)this.#database.exec(`
       CREATE TABLE IF NOT EXISTS ${TABLE} (
         thread_id TEXT PRIMARY KEY,
         witness_json TEXT NOT NULL CHECK (json_valid(witness_json)),
