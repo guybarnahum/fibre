@@ -404,10 +404,19 @@ export class FibreWorldDurableObject extends DurableObject {
     const state = this.infraDriver.state;
     if (typeof state.costSnapshot !== "function") return run();
     const before = state.costSnapshot(WORLD_SCOPE_ID);
+    let response;
     try {
-      return await run();
+      response = await run();
+      return response;
     } finally {
       const cost = stateCostDelta(before, state.costSnapshot(WORLD_SCOPE_ID));
+      // A private Observatory inspection can measure its own SQL cost
+      // without relying on sampled console tails or an extra DB query.
+      if (response && THREAD_OBSERVATORY_ROUTE.test(operation.path ?? "")) {
+        response.headers.set("x-fibre-state-rows-read", String(cost.rowsRead));
+        response.headers.set("x-fibre-state-rows-written", String(cost.rowsWritten));
+        response.headers.set("x-fibre-state-queries", String(cost.queries));
+      }
       if (cost.queries !== 0 || cost.rowsRead !== 0 || cost.rowsWritten !== 0) {
         console.log(JSON.stringify({ event:"world-state-cost", ...operation, ...cost }));
       }
