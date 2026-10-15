@@ -499,7 +499,11 @@ export class FibreWorldDurableObject extends DurableObject {
       // A running World can now reopen its installed, schema-ready stores.
       await this.runtime?.close();
       this.runtime=null;
-      return Response.json({ok:true,contract:"fibre-world-schema-installed-v1"});
+      return Response.json({
+        ok:true,
+        contract:"fibre-world-schema-installed-v1",
+        deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
+      });
     }
     if (url.pathname === APPEARANCE_COVERAGE_ROUTE) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
