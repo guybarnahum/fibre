@@ -714,3 +714,46 @@ test("multiple due Flight Plan boundaries progress without exponential error bac
       "settled lives kept the World alarm alive");
   }finally{await runtime.stop();}
 });
+
+test("schema-ready World reconciliation does not repeat schema work on a cold runtime",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-world-retry-"));
+  try{
+    const underlying=createLocalInfraDriver({
+      stateScopes:{world:join(directory,"world.sqlite")},
+      schedulerScopes:{world:{onWake(){}}},
+    });
+    const {openWorldReconciliationRetryStore}=await import("../src/world-reconciliation-retry-store.mjs");
+    const installer=openWorldReconciliationRetryStore({infraDriver:underlying,stateScopeId:"world"});
+    await installer.set("world",2);
+    installer.close();
+
+    const statements=[];
+    const observed={
+      ...underlying,
+      state:{
+        ...underlying.state,
+        open(scopeId,options){
+          const session=underlying.state.open(scopeId,options);
+          return {
+            ...session,
+            prepare(sql){statements.push(sql);return session.prepare(sql);},
+            exec(sql){statements.push(sql);return session.exec(sql);},
+          };
+        },
+      },
+    };
+    const runtime=createWorldReconciliationRuntime({
+      infraDriver:observed,
+      storage:{infraDriver:observed,stateScopeId:"world",schemaReady:true},
+      process:{async runOnce(){return {skipped:false};}},
+      now:()=>1_000,intervalMs:100,maxRetryMs:800,
+    });
+    try{
+      await runtime.requestWake();
+      assert.equal(statements.some(sql=>/sqlite_master|CREATE TABLE/iu.test(sql)),false,
+        "cold World reconciliation repeated schema inspection or installation");
+      assert.equal(statements.some(sql=>/world_reconciliation_retry/iu.test(sql)),true,
+        "World reconciliation lost durable retry state");
+    }finally{await runtime.stop();}
+  }finally{rmSync(directory,{recursive:true,force:true});}
+});
