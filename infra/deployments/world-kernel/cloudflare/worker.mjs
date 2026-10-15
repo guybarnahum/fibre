@@ -5,7 +5,7 @@ import { createHumanAppearanceCalibrationRegistry } from "#services/population-l
 import { createAppearanceCoverageService } from "#services/world-kernel/src/appearance-coverage-service.mjs";
 import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
-import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
+import { openContactInspectionStore } from "#services/world-kernel/src/contact-store.mjs";
 import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
@@ -13,7 +13,7 @@ import {
   explorationContinuityForLivedHistory,
   explorationInteroceptionForLivedHistory,
 } from "#services/world-kernel/src/lived-now-regulation.mjs";
-import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
+import { openSemanticStateInspectionStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openSituatedLifeInspectionStore } from "#services/world-kernel/src/situated-life-store.mjs";
 import { ThreadDirectoryStore } from "#services/world-kernel/src/thread-directory-store.mjs";
 import { createThreadDirectoryService } from "#services/world-kernel/src/thread-directory-service.mjs";
@@ -164,9 +164,9 @@ function threadObservatory(runtime, threadId) {
   const symbolicGenomes = runtime.symbolicGenomeStore.listThreadGenomes(threadId);
   const memory = openAutobiographicalMemoryInspectionStore(runtime.worldStorage);
   const experience = openLivedExperienceInspectionStore(runtime.worldStorage);
-  const contact = openContactStore(runtime.worldStorage);
+  const contact = openContactInspectionStore(runtime.worldStorage);
   const livedNow = openLivedNowInspectionStore(runtime.worldStorage);
-  const semanticState = openSemanticStateStore(runtime.worldStorage);
+  const semanticState = openSemanticStateInspectionStore(runtime.worldStorage);
   const situatedLife = openSituatedLifeInspectionStore(runtime.worldStorage);
   try {
     const encounterStories=experience.inspectRecentEncounterStories(threadId,{limit:12});
