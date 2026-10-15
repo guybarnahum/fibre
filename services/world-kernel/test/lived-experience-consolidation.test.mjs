@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
@@ -427,6 +428,89 @@ test("N7.5 retry reuses the durable consolidation decision",async()=>{
     memoryStore.close();
     experienceStore.close();
     world.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
+
+test("queued experiences and interrupted consolidation recover without duplicating life",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-experience-frontier-"));
+  const path=join(directory,"world.sqlite");
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:path}}),
+    stateScopeId:"world",
+  };
+  let world,store;
+  try{
+    world=openWorldStore(storage);
+    store=openLivedExperienceStore(storage);
+    const author=activeThread();
+    world.seedThread(author);
+    const first=story(store,{
+      threadId:author.threadId,situationId:"sit_frontier_a",
+      occurredAt:"2026-10-07T18:00:00.000Z",text:"The first encounter.",
+    });
+    const later=story(store,{
+      threadId:author.threadId,situationId:"sit_frontier_b",
+      occurredAt:"2026-10-07T18:05:00.000Z",text:"A later encounter.",
+    });
+    const a=experience(store,{
+      threadId:author.threadId,situationId:"sit_frontier_a",
+      occurredAt:first.occurredAt,encounterRef:first.encounterId,
+      text:"The first encounter mattered.",
+    });
+    const b=experience(store,{
+      threadId:author.threadId,situationId:"sit_frontier_b",
+      occurredAt:later.occurredAt,encounterRef:later.encounterId,
+      text:"The later encounter also mattered.",
+    });
+    const claimed=store.createThreadExperienceConsolidation({
+      threadId:author.threadId,experienceRefs:[a.experienceId],
+      startedAt:"2026-10-07T19:00:00.000Z",
+    });
+    store.recordThreadExperienceConsolidationStage({
+      consolidationId:claimed.consolidationId,stage:"decision",
+      recordedAt:"2026-10-07T19:01:00.000Z",
+      payload:{afterthoughts:[],memory:{outcome:"not_remembered"}},
+    });
+    store.close();world.close();store=null;world=null;
+    // Simulate schema installation on a World with existing durable history.
+    const db=new DatabaseSync(path);
+    try{db.exec("DROP TABLE thread_experience_pending_work");}
+    finally{db.close();}
+    world=openWorldStore(storage);
+    store=openLivedExperienceStore(storage);
+
+    assert.deepEqual(store.listUnclaimedExperienceConsolidationCandidates({limit:8})
+      .map(item=>item.experienceId),[b.experienceId],
+      "unclaimed lived experience vanished on upgrade");
+    assert.deepEqual(store.listPendingThreadExperienceConsolidations({limit:8})
+      .map(item=>item.consolidationId),[claimed.consolidationId],
+      "interrupted consolidation vanished on upgrade");
+
+    store.recordThreadExperienceConsolidationStage({
+      consolidationId:claimed.consolidationId,stage:"complete",
+      recordedAt:"2026-10-07T19:02:00.000Z",payload:{outcome:"not_remembered"},
+    });
+    const next=store.createThreadExperienceConsolidation({
+      threadId:author.threadId,experienceRefs:[b.experienceId],
+      startedAt:"2026-10-07T19:03:00.000Z",
+    });
+    store.recordThreadExperienceConsolidationStage({
+      consolidationId:next.consolidationId,stage:"decision",
+      recordedAt:"2026-10-07T19:04:00.000Z",
+      payload:{afterthoughts:[],memory:{outcome:"not_remembered"}},
+    });
+    store.recordThreadExperienceConsolidationStage({
+      consolidationId:next.consolidationId,stage:"complete",
+      recordedAt:"2026-10-07T19:05:00.000Z",payload:{outcome:"not_remembered"},
+    });
+    assert.equal(store.hasPendingExperienceConsolidation(),false,
+      "completed experiences stayed on the work frontier");
+    assert.equal(store.inspectThreadExperienceConsolidation(author.threadId)
+      .consolidations.length,2,
+      "quiescence discarded lived consolidation history");
+  }finally{
+    store?.close();world?.close();
     rmSync(directory,{recursive:true,force:true});
   }
 });
