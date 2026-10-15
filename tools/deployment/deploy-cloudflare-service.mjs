@@ -140,38 +140,51 @@ export async function acceptWorldSchemaDeployment({
     resolvedConfig:prepared.config,
     deploymentOutput,
   });
-  const url=new URL("/internal/world-schema/migrate",baseUrl);
-  // A previous Worker revision can still answer after Wrangler has uploaded
-  // the new one. Never accept an older revision's successful migration.
   const expectedSha=prepared.config.vars?.FIBRE_DEPLOYMENT_GIT_SHA;
   if(!GIT_SHA_PATTERN.test(expectedSha??"")){
     throw new Error("World schema installation requires a deployment Git SHA");
   }
-  for(let attempt=1;attempt<=15;attempt++){
-    const response=await fetchImpl(url,{
-      method:"POST",headers:{"x-fibre-private-token":privateToken},
-    });
-    if(response.status===404&&attempt<15){
-      await wait(1_000);
-      continue;
-    }
-    if(!response.ok){
-      const message=await response.text();
-      throw new Error("World schema installation at "+url.origin+
-        " HTTP "+response.status+": "+message.slice(0,180));
-    }
-    const result=await response.json();
-    if(result?.ok!==true)throw new Error("World schema installation returned no success witness");
-    if(result.deploymentGitSha!==expectedSha){
-      if(attempt===15){
-        throw new Error("World schema installation acknowledged revision "+
-          String(result.deploymentGitSha)+"; expected "+expectedSha);
+  const headers={"x-fibre-private-token":privateToken};
+  const revisionUrl=new URL("/internal/world-schema/revision",baseUrl);
+  // Cloudflare can briefly serve an older Durable Object after a Worker
+  // upload. Poll the deployment-only, read-only revision before migrating.
+  // The old revision does no migration work while the rollout converges.
+  let observed="not available";
+  let ready=false;
+  for(let attempt=1;attempt<=40;attempt++){
+    const response=await fetchImpl(revisionUrl,{method:"GET",headers});
+    if(response.ok){
+      const revision=await response.json();
+      observed=String(revision?.deploymentGitSha??"missing");
+      if(revision?.deploymentGitSha===expectedSha){
+        ready=true;
+        break;
       }
-      await wait(1_000);
-      continue;
+    }else if(response.status===404){
+      observed="route unavailable (404)";
+    }else{
+      const detail=await response.text();
+      throw new Error("World revision probe HTTP "+response.status+": "+detail.slice(0,180));
     }
-    return result;
+    if(attempt<40)await wait(3_000);
   }
+  if(!ready){
+    throw new Error("World Durable Object revision did not converge: "+
+      observed+"; expected "+expectedSha);
+  }
+
+  const url=new URL("/internal/world-schema/migrate",baseUrl);
+  const response=await fetchImpl(url,{method:"POST",headers});
+  if(!response.ok){
+    const message=await response.text();
+    throw new Error("World schema installation at "+url.origin+
+      " HTTP "+response.status+": "+message.slice(0,180));
+  }
+  const result=await response.json();
+  if(result?.ok!==true||result.deploymentGitSha!==expectedSha){
+    throw new Error("World schema installation did not confirm expected revision "+expectedSha);
+  }
+  return result;
 }
 
 export async function deployCloudflareService({
