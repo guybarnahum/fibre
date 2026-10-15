@@ -1653,6 +1653,113 @@ export class LivedExperienceStore {
     } catch (error) { throw translateStorageError(error); }
   }
 
+  // One bounded newest-first operator read: story, presence, this Thread's
+  // experienced attention, enacted situation and World follow-up are joined
+  // after selecting the recent stories. No per-story store calls.
+  inspectRecentEncounterStories(threadId,{limit=12}={}){
+    assertId("story inspection Thread",threadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>24){
+      throw new TypeError("recent story inspection must be bounded");
+    }
+    const rows=this.#database.prepare(`
+      WITH recent AS (
+        SELECT e.* FROM encounter_story_thread_presence own
+        JOIN encounter_story_records e ON e.encounter_id=own.encounter_ref
+        WHERE own.thread_id=?
+        ORDER BY e.occurred_at DESC,e.encounter_id DESC LIMIT ?
+      )
+      SELECT e.*,
+        p.thread_id AS participant_thread_id,p.situation_id AS participant_situation_id,
+        sit.record_json AS situation_json,
+        a.situation_id AS attention_situation_id,a.occurred_at AS attention_at,
+        a.outcome AS attention_outcome,
+        x.experience_id,x.situation_id AS experience_situation_id,
+        x.occurred_at AS experience_at,x.experience_text,
+        f.place_ref AS followup_place,f.due_at AS followup_due,
+        f.decision_json AS followup_decision,
+        f.result_encounter_ref AS followup_result,f.completed_at AS followup_completed,
+        c.encounter_id AS continuation_id,c.occurred_at AS continuation_at,
+        c.story_json AS continuation_story,
+        c.visualization_prompt AS continuation_prompt,
+        c.visualization_prompt_digest AS continuation_digest,
+        c.visualization_source_refs_json AS continuation_sources,
+        c.depicted_thread_refs_json AS continuation_depicted,
+        cp.thread_id AS continuation_thread_id,cp.situation_id AS continuation_situation_id
+      FROM recent e
+      JOIN encounter_story_thread_presence p ON p.encounter_ref=e.encounter_id
+      LEFT JOIN encounter_story_thread_presence own
+        ON own.encounter_ref=e.encounter_id AND own.thread_id=?
+      LEFT JOIN current_situation_records sit ON sit.situation_id=own.situation_id
+      LEFT JOIN thread_encounter_attention a
+        ON a.encounter_ref=e.encounter_id AND a.thread_id=?
+      LEFT JOIN thread_encounter_experiences x
+        ON x.encounter_ref=e.encounter_id AND x.thread_id=?
+      LEFT JOIN world_environment_followups f ON f.source_encounter_ref=e.encounter_id
+      LEFT JOIN encounter_story_records c ON c.encounter_id=f.result_encounter_ref
+      LEFT JOIN encounter_story_thread_presence cp ON cp.encounter_ref=c.encounter_id
+      ORDER BY e.occurred_at DESC,e.encounter_id DESC,p.thread_id,cp.thread_id
+    `).all(threadId,limit,threadId,threadId,threadId);
+    const stories=new Map();
+    for(const row of rows){
+      let story=stories.get(row.encounter_id);
+      if(story===undefined){
+        const continuation=row.continuation_id===null?null:{
+          encounterId:row.continuation_id,occurredAt:row.continuation_at,
+          threadPresence:[],story:JSON.parse(row.continuation_story),
+          visualization:{
+            visualizationPrompt:row.continuation_prompt,
+            visualizationPromptDigest:row.continuation_digest,
+            visualizationSourceReferences:JSON.parse(row.continuation_sources),
+            depictedThreadRefs:JSON.parse(row.continuation_depicted),
+          },
+        };
+        story={
+          encounterId:row.encounter_id,occurredAt:row.occurred_at,
+          threadPresence:[],story:JSON.parse(row.story_json),
+          visualization:{
+            visualizationPrompt:row.visualization_prompt,
+            visualizationPromptDigest:row.visualization_prompt_digest,
+            visualizationSourceReferences:JSON.parse(row.visualization_source_refs_json),
+            depictedThreadRefs:JSON.parse(row.depicted_thread_refs_json),
+          },
+          situation:row.situation_json===null?null:JSON.parse(row.situation_json),
+          attention:row.attention_outcome===null?null:{
+            threadId,encounterRef:row.encounter_id,
+            situationId:row.attention_situation_id,occurredAt:row.attention_at,
+            outcome:row.attention_outcome,
+            experience:row.experience_id===null?null:{
+              experienceId:row.experience_id,threadId,
+              encounterRef:row.encounter_id,situationId:row.experience_situation_id,
+              occurredAt:row.experience_at,experienceText:row.experience_text,
+            },
+          },
+          worldEnvironmentFollowup:row.followup_place===null?null:{
+            sourceEncounterRef:row.encounter_id,placeRef:row.followup_place,
+            dueAt:row.followup_due,
+            outcome:row.followup_decision===null?"pending":JSON.parse(row.followup_decision).outcome,
+            completedAt:row.followup_completed,continuation,
+          },
+        };
+        stories.set(row.encounter_id,story);
+      }
+      if(!story.threadPresence.some(p=>p.threadId===row.participant_thread_id)){
+        story.threadPresence.push({
+          threadId:row.participant_thread_id,
+          situationId:row.participant_situation_id,
+        });
+      }
+      const continued=story.worldEnvironmentFollowup?.continuation;
+      if(continued&&row.continuation_thread_id!==null
+        &&!continued.threadPresence.some(p=>p.threadId===row.continuation_thread_id)){
+        continued.threadPresence.push({
+          threadId:row.continuation_thread_id,
+          situationId:row.continuation_situation_id,
+        });
+      }
+    }
+    return [...stories.values()];
+  }
+
   listEncounterStories(threadId,{limit=null}={}) {
     assertId("threadId", threadId);
     if(limit!==null&&(!Number.isSafeInteger(limit)||limit<1||limit>100)){
