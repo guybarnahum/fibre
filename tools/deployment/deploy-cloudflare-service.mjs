@@ -151,7 +151,7 @@ export async function acceptWorldSchemaDeployment({
   // The old revision does no migration work while the rollout converges.
   let observed="not available";
   let ready=false;
-  for(let attempt=1;attempt<=40;attempt++){
+  for(let attempt=1;attempt<=15;attempt++){
     const response=await fetchImpl(revisionUrl,{method:"GET",headers});
     if(response.ok){
       const revision=await response.json();
@@ -166,7 +166,7 @@ export async function acceptWorldSchemaDeployment({
       const detail=await response.text();
       throw new Error("World revision probe HTTP "+response.status+": "+detail.slice(0,180));
     }
-    if(attempt<40)await wait(3_000);
+    if(attempt<15)await wait(2_000);
   }
   if(!ready){
     throw new Error("World Durable Object revision did not converge: "+
