@@ -305,48 +305,48 @@ export class SituatedLifeStore {
 
   listCurrentLifeRelations(threadId) {
     this.#requireThread(threadId);
-    // Read all revisions and integrity heads for this Thread in two bounded queries,
-    // not three queries for each relationship in a developed person's life.
-    const rows = this.#database.prepare(`
-      SELECT relation_id,revision,thread_id,related_party_id,relation_kind,
-        genetic_contribution_role,visibility,provenance,recorded_at,
-        supersedes_revision,record_json,record_digest
-      FROM life_relation_records
-      WHERE thread_id=? ORDER BY relation_id,revision
+    const rows=this.#database.prepare(`
+      SELECT r.*,c.head_digest,c.recorded_at AS head_recorded_at,
+        (SELECT previous.record_digest FROM life_relation_records previous
+          WHERE previous.relation_id=r.relation_id AND previous.revision=r.revision-1
+        ) AS previous_digest
+      FROM situated_life_current c
+      JOIN life_relation_records r
+        ON r.relation_id=c.lineage_id AND r.revision=c.revision
+      WHERE c.thread_id=? AND c.ledger_kind='life_relation'
+      ORDER BY c.lineage_id
     `).all(threadId);
-    if (rows.length === 0) return [];
-    const heads = this.#database.prepare(`
-      SELECT h.lineage_id,h.revision,h.thread_id,h.head_digest,h.recorded_at
-      FROM situated_life_lineage_heads h
-      JOIN (SELECT DISTINCT relation_id FROM life_relation_records WHERE thread_id=?) r
-        ON h.lineage_id=r.relation_id
-      WHERE h.ledger_kind='life_relation'
-      ORDER BY h.lineage_id,h.revision
-    `).all(threadId);
-
-    const historyById = new Map();
-    const headsById = new Map();
-    for (const row of rows) {
-      if (!historyById.has(row.relation_id)) historyById.set(row.relation_id, []);
-      historyById.get(row.relation_id).push(row);
-    }
-    for (const head of heads) {
-      if (!headsById.has(head.lineage_id)) headsById.set(head.lineage_id, []);
-      headsById.get(head.lineage_id).push(head);
-    }
-    return [...historyById].map(([id, history]) =>
-      decodeLifeRelationHistory(this.#database, threadId, id, history, headsById.get(id) ?? []).at(-1),
-    ).filter(situatedLifeRecordIsCurrent);
+    return rows.map(row=>{
+      const item=relationFromRow(row,row.previous_digest);
+      if(item.digest!==row.head_digest
+        ||item.record.recordedAt!==row.head_recorded_at){
+        throw new IntegrityError("current life relation head disagrees with lived evidence");
+      }
+      return item.record;
+    }).filter(situatedLifeRecordIsCurrent);
   }
 
   listCurrentPlaceEpisodes(threadId) {
     this.#requireThread(threadId);
-    const ids = this.#database.prepare(
-      "SELECT DISTINCT episode_id FROM place_episode_records WHERE thread_id=? ORDER BY episode_id",
-    ).all(threadId);
-    return ids
-      .map(({ episode_id: id }) => this.placeEpisodeHistory(threadId, id).at(-1))
-      .filter(situatedLifeRecordIsCurrent);
+    const rows=this.#database.prepare(`
+      SELECT r.*,c.head_digest,c.recorded_at AS head_recorded_at,
+        (SELECT previous.record_digest FROM place_episode_records previous
+          WHERE previous.episode_id=r.episode_id AND previous.revision=r.revision-1
+        ) AS previous_digest
+      FROM situated_life_current c
+      JOIN place_episode_records r
+        ON r.episode_id=c.lineage_id AND r.revision=c.revision
+      WHERE c.thread_id=? AND c.ledger_kind='place_episode'
+      ORDER BY c.lineage_id
+    `).all(threadId);
+    return rows.map(row=>{
+      const item=placeFromRow(row,row.previous_digest);
+      if(item.digest!==row.head_digest
+        ||item.record.recordedAt!==row.head_recorded_at){
+        throw new IntegrityError("current place head disagrees with lived evidence");
+      }
+      return item.record;
+    }).filter(situatedLifeRecordIsCurrent);
   }
 
   recordLifeRelation(candidate) {
