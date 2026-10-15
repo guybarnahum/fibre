@@ -669,6 +669,21 @@ export class FibreWorldDurableObject extends DurableObject {
       }
     }
     if(THREAD_REPAIR_ROUTE.test(url.pathname))await this.refreshCalibrationModel();
+    if (url.pathname === "/internal/reconciliation/status") {
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } },{status:400});
+      if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } },{status:405});
+      if (!privateOperatorAuthorized(request,this.env)) {
+        return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } },{status:403});
+      }
+      const runtime=this.runtimeForRequest();
+      const lived=openLivedNowInspectionStore(runtime.worldStorage);
+      try{
+        return Response.json({
+          reconciliation:await reconciliationState(runtime),
+          earliestLivedBoundaryAt:lived.nextLivedBoundaryAt(),
+        });
+      }finally{lived.close();}
+    }
     const runtime = this.runtimeForRequest();
     if (url.pathname === "/internal/reconciliation/stop" || url.pathname === "/internal/reconciliation/wake") {
       if (url.search !== "") return Response.json({ error: { code: "QUERY_NOT_SUPPORTED" } }, { status: 400 });
