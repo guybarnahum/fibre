@@ -47,7 +47,7 @@ export class LifecycleHardeningStore {
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName: "LifecycleHardeningStore" });
     try {
-      migrateDatabase(this.#database);
+      if (!storage.schemaReady) migrateDatabase(this.#database);
     } catch (error) {
       this.#database.close();
       throw error;
