@@ -159,7 +159,7 @@ export class LivedExperienceStore {
     this.#database = openWorldStateDatabase(storage, { storeName:"LivedExperienceStore" });
     try {
       migrateDatabase(this.#database);
-      createLivedExperienceTables(this.#database);
+      this.#database.transaction(()=>createLivedExperienceTables(this.#database));
     } catch (error) {
       this.#database.close();
       throw error;
@@ -1681,10 +1681,10 @@ export class LivedExperienceStore {
     }
     const rows=this.#database.prepare(`
       WITH recent AS (
-        SELECT e.* FROM encounter_story_thread_presence own
+        SELECT e.* FROM thread_encounter_story_timeline own
         JOIN encounter_story_records e ON e.encounter_id=own.encounter_ref
         WHERE own.thread_id=?
-        ORDER BY e.occurred_at DESC,e.encounter_id DESC LIMIT ?
+        ORDER BY own.occurred_at DESC,own.encounter_ref DESC LIMIT ?
       )
       SELECT e.*,
         p.thread_id AS participant_thread_id,p.situation_id AS participant_situation_id,
@@ -1787,10 +1787,8 @@ export class LivedExperienceStore {
       SELECT encounter_ref FROM encounter_story_thread_presence
       WHERE thread_id=? ORDER BY encounter_ref
     `).all(threadId):this.#database.prepare(`
-      SELECT p.encounter_ref FROM encounter_story_thread_presence p
-      JOIN encounter_story_records e ON e.encounter_id=p.encounter_ref
-      WHERE p.thread_id=? ORDER BY e.occurred_at DESC,p.encounter_ref DESC
-      LIMIT ?
+      SELECT encounter_ref FROM thread_encounter_story_timeline
+      WHERE thread_id=? ORDER BY occurred_at DESC,encounter_ref DESC LIMIT ?
     `).all(threadId,limit);
     return rows.map(({encounter_ref})=>this.getEncounterStory(encounter_ref));
   }
