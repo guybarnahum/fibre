@@ -51,11 +51,13 @@ function rowToState(row) {
 export class SemanticStateStore {
   #database;
 
-  constructor(storage) {
-    this.#database = openWorldStateDatabase(storage, { storeName: "SemanticStateStore" });
+  constructor(storage,{readOnly=false}={}) {
+    this.#database = openWorldStateDatabase(storage, {readOnly,storeName:"SemanticStateStore"});
     try {
-      migrateDatabase(this.#database);
-      createSemanticStateTables(this.#database);
+      if(!readOnly){
+        migrateDatabase(this.#database);
+        createSemanticStateTables(this.#database);
+      }
     } catch (error) {
       this.#database.close();
       throw error;
@@ -221,4 +223,8 @@ export class SemanticStateStore {
 
 export function openSemanticStateStore(storage) {
   return new SemanticStateStore(storage);
+}
+
+export function openSemanticStateInspectionStore(storage){
+  return new SemanticStateStore(storage,{readOnly:true});
 }
