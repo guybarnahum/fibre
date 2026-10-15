@@ -90,6 +90,10 @@ export function createGenesisTables(database) {
       asserted_at TEXT NOT NULL
     ) STRICT;
 
+    -- Ordinary LivedNow place/time-zone resolution must search the relevant
+    -- Genesis World, not scan every Thread's historical envelope.
+    CREATE INDEX IF NOT EXISTS idx_genesis_envelope_world
+      ON genesis_historical_envelope_plans(world_spec_id,thread_id);
     CREATE INDEX IF NOT EXISTS idx_genesis_attempts_genesis
       ON genesis_generation_attempts(genesis_id, candidate_attempt_number, recorded_at, attempt_id);
     CREATE INDEX IF NOT EXISTS idx_genesis_origin_authority_source
