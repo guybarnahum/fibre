@@ -8,7 +8,7 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import { migrateDatabase, translateStorageError } from "./persistence-sqlite.mjs";
-import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import {openWorldStateDatabase,worldSchemaReady} from "./world-state-storage.mjs";
 import {
   normalizeLivedPlan,
   normalizeCurrentSituation,
@@ -304,11 +304,13 @@ export class LivedNowStore {
     const worldPlace = resolveLiveWorldPlace(this.#database, threadId, reference)
       ??getWorldPublicPlace(this.#database,reference);
     if (worldPlace !== null) return { kind:"world_place", reference, worldPlace };
-    const workTable = this.#database.prepare(`
-      SELECT 1 AS present FROM sqlite_master
-      WHERE type='table' AND name='inside_fibre_work_commitments'
-    `).get();
-    if (workTable === undefined) return null;
+    if(!worldSchemaReady(this.#database)){
+      const workTable=this.#database.prepare(`
+        SELECT 1 AS present FROM sqlite_master
+        WHERE type='table' AND name='inside_fibre_work_commitments'
+      `).get();
+      if(workTable===undefined)return null;
+    }
     const work = this.#database.prepare(`
       SELECT commitment_id
       FROM inside_fibre_work_commitments
@@ -661,10 +663,11 @@ export class LivedNowStore {
     this.#requireThread(threadId);
     // An existing World may be inspected before its first post-upgrade
     // writable LivedNow session creates this optional frontier.
-    if(this.#readOnly&&!this.#database.prepare(`
-      SELECT 1 FROM sqlite_master
-      WHERE type='table' AND name='lived_now_next_boundaries'
-    `).get())return null;
+    if(this.#readOnly&&!worldSchemaReady(this.#database)
+      &&!this.#database.prepare(`
+        SELECT 1 FROM sqlite_master
+        WHERE type='table' AND name='lived_now_next_boundaries'
+      `).get())return null;
     const row=this.#database.prepare(`
       SELECT situation_id,due_at,blocked_reason,failed_attempts
       FROM lived_now_next_boundaries WHERE thread_id=?
