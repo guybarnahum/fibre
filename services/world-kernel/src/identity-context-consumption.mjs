@@ -5,7 +5,7 @@ import {
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
-import { IDENTITY_CONTEXT_PROJECTION_POLICY } from "./identity-context-capsule.mjs";
+import { IDENTITY_CONTEXT_PROJECTION_POLICY } from "./identity-context-policy.mjs";
 
 const HASH = /^sha256:[0-9a-f]{64}$/;
 const EVIDENCE_KINDS = new Set(["identity", "memory", "current_state"]);
