@@ -741,3 +741,33 @@ test("Journal pages pack whole reflections in order, keeping a long entry readab
   assert.deepEqual(pages.flat(),[0,1,2,3,4,5],
     "Journal pagination altered chronological entry order");
 });
+
+
+test("opening a Thread's current life does not fetch her private history or journal",async()=>{
+  const originalFetch=globalThis.fetch;
+  const fetched=[];
+  globalThis.fetch=async url=>{
+    fetched.push(String(url));
+    if(String(url).endsWith("/identity"))return Response.json({
+      environment:"staging",identity:{threadId:"thr_current_only",displayName:"Lina"},
+    });
+    if(String(url).endsWith("/observatory?view=current"))return Response.json({
+      observatory:{
+        threadId:"thr_current_only",
+        thread:{threadId:"thr_current_only",status:"active",identity:{name:"Lina"}},
+        livedNow:{currentSituation:{threadId:"thr_current_only",
+          situationId:"sit_here_now",phase:"at_place",activity:"Reading."}},
+      },
+    });
+    throw new Error("Current life unexpectedly requested historical inspection");
+  };
+  try{
+    const current=await fetchThreadObservatory("thr_current_only",{currentOnly:true});
+    assert.equal(current.livedNow.currentSituation.activity,"Reading.",
+      "lazy inspection hid actual current life");
+    assert.equal(current.encounterStories.length,0);
+    assert.deepEqual(fetched.map(url=>url.split("/").at(-1)),
+      ["identity","observatory?view=current"],
+      "current life should not fetch unseen memories or historical journals");
+  }finally{globalThis.fetch=originalFetch;}
+});
