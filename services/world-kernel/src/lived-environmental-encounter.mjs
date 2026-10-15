@@ -133,15 +133,9 @@ Write observable World fact only.`,
 }
 
 function existingEnvironmentalStory(experienceStore, threadId, situation, at) {
-  return experienceStore.listEncounterStories(threadId).find((story) =>
-    story.occurredAt === at
-    && story.threadPresence.some((presence) =>
-      presence.threadId === threadId && presence.situationId === situation.situationId)
-    && story.threadPresence.length === 1
-    && story.story?.beats?.length === 1
-    && story.story.beats[0].actorThreadId === null
-    && story.story.beats[0].kind === "occurrence"
-  ) ?? null;
+  return experienceStore.getThreadEnvironmentalStory({
+    threadId,situationId:situation.situationId,occurredAt:at,
+  });
 }
 
 function sharedObservers(context, at, livedNowStore) {
