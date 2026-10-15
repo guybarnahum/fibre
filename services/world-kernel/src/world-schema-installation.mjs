@@ -44,5 +44,12 @@ export function installWorldSchemas(storage){
     const store=open();
     store.close();
   }
+  // Deployment must not acknowledge a World with missing queue frontiers.
+  // Verify physical schema on the same state scope that serves alarms.
+  const database=openWorldStateDatabase(storage,{storeName:"WorldSchemaInstallation"});
+  try{
+    database.prepare("SELECT 1 FROM thread_experience_pending_work LIMIT 1").get();
+    database.prepare("SELECT 1 FROM thread_contact_pending_work LIMIT 1").get();
+  }finally{database.close();}
   }finally{worldReader.close();}
 }
