@@ -780,25 +780,24 @@ export class LivedNowStore {
         AND t.status<>'retired'
       UNION ALL
       SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
-      FROM world_public_places p
-      JOIN current_situation_records s
-        ON json_extract(s.record_json,'$.location.placeRef')=p.place_ref
-      JOIN current_situation_frontier f ON f.thread_id=s.thread_id
-      JOIN threads t ON t.thread_id=s.thread_id
-      WHERE p.venue_ref=? AND f.established_at>?
-        AND s.established_at<=?
-        AND (? IS NULL OR s.thread_id<>?)
+      FROM current_situation_frontier f
+      JOIN threads t ON t.thread_id=f.thread_id
+      JOIN world_public_places p ON p.venue_ref=?
+      JOIN current_situation_records s ON s.situation_id=(
+        SELECT latest.situation_id FROM current_situation_records latest
+        WHERE latest.thread_id=f.thread_id AND latest.established_at<=?
+        ORDER BY latest.established_at DESC,latest.situation_id DESC LIMIT 1
+      )
+      WHERE f.established_at>?
+        AND (? IS NULL OR f.thread_id<>?)
+        AND json_extract(s.record_json,'$.location.kind')='place'
+        AND json_extract(s.record_json,'$.location.placeRef')=p.place_ref
         AND COALESCE(json_extract(s.record_json,'$.wakefulness'),'unknown')<>'asleep'
         AND t.status<>'retired'
-        AND s.situation_id=(
-          SELECT latest.situation_id FROM current_situation_records latest
-          WHERE latest.thread_id=s.thread_id AND latest.established_at<=?
-          ORDER BY latest.established_at DESC,latest.situation_id DESC LIMIT 1
-        )
       ORDER BY thread_id LIMIT ?
     `).all(
       venueRef,at,excludeThreadId,excludeThreadId,
-      venueRef,at,at,excludeThreadId,excludeThreadId,at,limit,
+      venueRef,at,at,excludeThreadId,excludeThreadId,limit,
     );
     const present=new Map([...rows,...publicRows]
       .map(row=>[row.thread_id,situationFromRow(row)]));
