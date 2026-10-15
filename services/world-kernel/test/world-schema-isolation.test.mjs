@@ -3,6 +3,12 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import {mkdtempSync,rmSync} from "node:fs";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+import {localWorldStateStorage} from "./support/world-state-storage-fixture.mjs";
+import {installWorldSchemas} from "../src/world-schema-installation.mjs";
+import {openLivedNowInspectionStore} from "../src/lived-now-store.mjs";
 
 test("World schema installation does not initialize cognition or prompt assets",()=>{
   const root=fileURLToPath(new URL("../src/",import.meta.url));
@@ -29,4 +35,18 @@ test("World schema installation does not initialize cognition or prompt assets",
       }
     }
   }
+});
+
+test("deployment prepares an inspectable World without creating a Thread or running cognition",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-schema-"));
+  try{
+    const storage=localWorldStateStorage(join(directory,"world.sqlite"));
+    installWorldSchemas(storage);
+    const reader=openLivedNowInspectionStore({...storage,schemaReady:true});
+    try{
+      assert.deepEqual(reader.listCurrentSituations({
+        at:"2026-10-15T00:00:00.000Z",livingOnly:true,
+      }),[],"installing the World should not manufacture a living person");
+    }finally{reader.close();}
+  }finally{rmSync(directory,{recursive:true,force:true});}
 });
