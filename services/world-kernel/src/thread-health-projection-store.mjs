@@ -38,7 +38,11 @@ export class ThreadHealthProjectionStore {
         FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
       ) STRICT;
     `);
-    this.#tables = tableNames(this.#database);
+    this.#tables=storage.schemaReady
+      ?new Set(["threads","fibre_civil_registrations","embodiment_current_heads",
+        "thread_visual_publication_work","genesis_birth_publications",
+        "genesis_raised_language_corrections","symbolic_genomes"])
+      :tableNames(this.#database);
   }
 
   close() { this.#database.close(); }
