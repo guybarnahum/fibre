@@ -146,33 +146,35 @@ export class InsideFibreWorkStore {
   constructor(storage) {
     this.#database = openWorldStateDatabase(storage, { storeName:"InsideFibreWorkStore" });
     try {
-      migrateDatabase(this.#database);
-      this.#database.exec(`
-        CREATE TABLE IF NOT EXISTS inside_fibre_work_commitments (
-          commitment_id TEXT PRIMARY KEY,
-          offer_id TEXT NOT NULL,
-          thread_id TEXT NOT NULL,
-          accepted_at TEXT NOT NULL,
-          start_at TEXT NOT NULL,
-          end_at TEXT NOT NULL,
-          record_json TEXT NOT NULL CHECK (json_valid(record_json)),
-          record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
-          UNIQUE(thread_id, offer_id),
-          FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
-        ) STRICT;
+      if (!storage.schemaReady) {
+        migrateDatabase(this.#database);
+        this.#database.exec(`
+          CREATE TABLE IF NOT EXISTS inside_fibre_work_commitments (
+            commitment_id TEXT PRIMARY KEY,
+            offer_id TEXT NOT NULL,
+            thread_id TEXT NOT NULL,
+            accepted_at TEXT NOT NULL,
+            start_at TEXT NOT NULL,
+            end_at TEXT NOT NULL,
+            record_json TEXT NOT NULL CHECK (json_valid(record_json)),
+            record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
+            UNIQUE(thread_id, offer_id),
+            FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+          ) STRICT;
 
-        CREATE INDEX IF NOT EXISTS idx_inside_fibre_work_thread_window
-          ON inside_fibre_work_commitments(thread_id,start_at,end_at,commitment_id);
+          CREATE INDEX IF NOT EXISTS idx_inside_fibre_work_thread_window
+            ON inside_fibre_work_commitments(thread_id,start_at,end_at,commitment_id);
 
-        CREATE TRIGGER IF NOT EXISTS inside_fibre_work_commitments_no_update
-          BEFORE UPDATE ON inside_fibre_work_commitments BEGIN
-            SELECT RAISE(ABORT, 'inside_fibre_work_commitments is append-only');
-          END;
-        CREATE TRIGGER IF NOT EXISTS inside_fibre_work_commitments_no_delete
-          BEFORE DELETE ON inside_fibre_work_commitments BEGIN
-            SELECT RAISE(ABORT, 'inside_fibre_work_commitments is append-only');
-          END;
-      `);
+          CREATE TRIGGER IF NOT EXISTS inside_fibre_work_commitments_no_update
+            BEFORE UPDATE ON inside_fibre_work_commitments BEGIN
+              SELECT RAISE(ABORT, 'inside_fibre_work_commitments is append-only');
+            END;
+          CREATE TRIGGER IF NOT EXISTS inside_fibre_work_commitments_no_delete
+            BEFORE DELETE ON inside_fibre_work_commitments BEGIN
+              SELECT RAISE(ABORT, 'inside_fibre_work_commitments is append-only');
+            END;
+        `);
+      }
     } catch (error) {
       this.#database.close();
       throw error;
