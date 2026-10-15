@@ -3,6 +3,10 @@ export function createLivedExperienceTables(database) {
     SELECT 1 FROM sqlite_master WHERE type='table'
       AND name='thread_encounter_story_timeline'
   `).get()===undefined;
+  const needsPendingWork=database.prepare(`
+    SELECT 1 FROM sqlite_master WHERE type='table'
+      AND name='thread_experience_pending_work'
+  `).get()===undefined;
   database.exec(`
     CREATE TABLE IF NOT EXISTS lived_encounter_records (
       event_id TEXT PRIMARY KEY,
@@ -290,6 +294,40 @@ export function createLivedExperienceTables(database) {
     CREATE INDEX IF NOT EXISTS idx_experience_consolidation_members
       ON thread_experience_consolidation_members(consolidation_id, ordinal);
 
+    -- Mutable, strictly derived queue frontier. Historical experience,
+    -- consolidation, and completion authorities remain append-only.
+    CREATE TABLE IF NOT EXISTS thread_experience_pending_work (
+      kind TEXT NOT NULL CHECK (kind IN ('unclaimed','consolidation')),
+      reference TEXT NOT NULL,
+      due_at TEXT NOT NULL,
+      PRIMARY KEY(kind,reference)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_thread_experience_pending_due
+      ON thread_experience_pending_work(kind,due_at,reference);
+
+    CREATE TRIGGER IF NOT EXISTS thread_experience_pending_queued
+      AFTER INSERT ON thread_experience_consolidation_queue BEGIN
+        INSERT INTO thread_experience_pending_work(kind,reference,due_at)
+        SELECT 'unclaimed',NEW.experience_id,occurred_at
+        FROM thread_encounter_experiences WHERE experience_id=NEW.experience_id;
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_pending_claimed
+      AFTER INSERT ON thread_experience_consolidation_members BEGIN
+        DELETE FROM thread_experience_pending_work
+        WHERE kind='unclaimed' AND reference=NEW.experience_id;
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_pending_consolidation
+      AFTER INSERT ON thread_experience_consolidations BEGIN
+        INSERT INTO thread_experience_pending_work(kind,reference,due_at)
+        VALUES ('consolidation',NEW.consolidation_id,NEW.started_at);
+      END;
+    CREATE TRIGGER IF NOT EXISTS thread_experience_pending_completed
+      AFTER INSERT ON thread_experience_consolidation_stages
+      WHEN NEW.stage='complete' BEGIN
+        DELETE FROM thread_experience_pending_work
+        WHERE kind='consolidation' AND reference=NEW.consolidation_id;
+      END;
+
     CREATE TRIGGER IF NOT EXISTS lived_encounter_records_no_update
       BEFORE UPDATE ON lived_encounter_records BEGIN
         SELECT RAISE(ABORT, 'lived_encounter_records is append-only');
@@ -427,6 +465,27 @@ export function createLivedExperienceTables(database) {
       SELECT p.thread_id,p.encounter_ref,e.occurred_at
       FROM encounter_story_thread_presence p
       JOIN encounter_story_records e ON e.encounter_id=p.encounter_ref
+    `);
+  }
+
+  // One-time migration of genuinely unfinished work; never rescan history
+  // on a normal wake or a later schema installation.
+  if(needsPendingWork){
+    database.exec(`
+      INSERT INTO thread_experience_pending_work(kind,reference,due_at)
+      SELECT 'unclaimed',q.experience_id,e.occurred_at
+      FROM thread_experience_consolidation_queue q
+      JOIN thread_encounter_experiences e ON e.experience_id=q.experience_id
+      LEFT JOIN thread_experience_consolidation_members m
+        ON m.experience_id=q.experience_id
+      WHERE m.experience_id IS NULL;
+
+      INSERT INTO thread_experience_pending_work(kind,reference,due_at)
+      SELECT 'consolidation',c.consolidation_id,c.started_at
+      FROM thread_experience_consolidations c
+      LEFT JOIN thread_experience_consolidation_stages s
+        ON s.consolidation_id=c.consolidation_id AND s.stage='complete'
+      WHERE s.consolidation_id IS NULL;
     `);
   }
 }
