@@ -1793,13 +1793,21 @@ export class LivedExperienceStore {
     `).all(threadId,threadId,threadId);
   }
 
-  listThreadExperienceJournal(threadId) {
+  listThreadExperienceJournal(threadId,{limit=null}={}) {
     assertId("threadId", threadId);
-    return this.#database.prepare(`
+    if(limit!==null&&(!Number.isSafeInteger(limit)||limit<1||limit>100)){
+      throw new TypeError("experience journal inspection must be bounded");
+    }
+    const rows=limit===null?this.#database.prepare(`
       SELECT journal_entry_id,thread_id,about_experience_ref,written_at,entry_text
       FROM thread_encounter_journal_entries
       WHERE thread_id=? ORDER BY written_at,journal_entry_id
-    `).all(threadId).map((row) => ({
+    `).all(threadId):this.#database.prepare(`
+      SELECT journal_entry_id,thread_id,about_experience_ref,written_at,entry_text
+      FROM thread_encounter_journal_entries
+      WHERE thread_id=? ORDER BY written_at DESC,journal_entry_id DESC LIMIT ?
+    `).all(threadId,limit);
+    return rows.map((row) => ({
       journalEntryId:row.journal_entry_id,
       threadId:row.thread_id,
       aboutExperienceRef:row.about_experience_ref,
