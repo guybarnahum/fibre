@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import {
+  acceptWorldSchemaDeployment,
   deployCloudflareService,
   normalizeService,
   prepareResolvedServiceConfig,
@@ -154,4 +155,38 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
   } finally {
     rmSync(repoRoot, { recursive:true, force:true });
   }
+});
+
+test("World schema deployment waits for the installed route, not just the Worker upload", async()=>{
+  let requests=0;
+  const result=await acceptWorldSchemaDeployment({
+    prepared:{config:resolvedConfig()},
+    deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
+    privateToken:"test-token",
+    fetchImpl:async(url,init)=>{
+      assert.equal(url.pathname,"/internal/world-schema/migrate");
+      assert.equal(init.method,"POST");
+      assert.equal(init.headers["x-fibre-private-token"],"test-token");
+      requests++;
+      return requests===1
+        ?Response.json({error:"not_found"},{status:404})
+        :Response.json({ok:true,contract:"fibre-world-schema-installed-v1"});
+    },
+    wait:async()=>{},
+  });
+  assert.equal(requests,2);
+  assert.equal(result.ok,true);
+});
+
+test("World schema deployment rejects a route that never becomes available",async()=>{
+  await assert.rejects(
+    acceptWorldSchemaDeployment({
+      prepared:{config:resolvedConfig()},
+      deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
+      privateToken:"test-token",
+      fetchImpl:async()=>Response.json({error:"not_found"},{status:404}),
+      wait:async()=>{},
+    }),
+    /World schema installation at .* HTTP 404:.*not_found/u,
+  );
 });
