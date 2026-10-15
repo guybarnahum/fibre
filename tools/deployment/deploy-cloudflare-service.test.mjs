@@ -170,12 +170,31 @@ test("World schema deployment waits for the installed route, not just the Worker
       requests++;
       return requests===1
         ?Response.json({error:"not_found"},{status:404})
-        :Response.json({ok:true,contract:"fibre-world-schema-installed-v1"});
+        :Response.json({ok:true,contract:"fibre-world-schema-installed-v1",deploymentGitSha:"b".repeat(40)});
     },
     wait:async()=>{},
   });
   assert.equal(requests,2);
   assert.equal(result.ok,true);
+});
+
+test("World schema installation cannot be acknowledged by an older Worker revision",async()=>{
+  let attempts=0;
+  const result=await acceptWorldSchemaDeployment({
+    prepared:{config:resolvedConfig()},
+    deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
+    privateToken:"test-token",
+    fetchImpl:async()=>{
+      attempts++;
+      return Response.json({
+        ok:true,contract:"fibre-world-schema-installed-v1",
+        deploymentGitSha:attempts===1?"a".repeat(40):"b".repeat(40),
+      });
+    },
+    wait:async()=>{},
+  });
+  assert.equal(attempts,2,"stale World revision acknowledged new schema");
+  assert.equal(result.deploymentGitSha,"b".repeat(40));
 });
 
 test("World schema deployment rejects a route that never becomes available",async()=>{
