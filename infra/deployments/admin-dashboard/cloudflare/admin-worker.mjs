@@ -217,9 +217,10 @@ async function proxyThreadMeeting(request, env, initiatorThreadId) {
   });
 }
 
-async function proxyThreadObservatory(env, threadId) {
+async function proxyThreadObservatory(env, threadId, view=null) {
+  const suffix=view==="current"?"?view=current":"";
   const upstream = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
-    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/observatory`,
+    `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/observatory${suffix}`,
     { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
   ));
   const payload = await upstream.text();
@@ -853,7 +854,12 @@ export default {
         }
         if (observatoryMatch) {
           const threadId = id("threadId", decodeURIComponent(observatoryMatch[1]));
-          return proxyThreadObservatory(env, threadId);
+          const view=url.searchParams.get("view");
+          if((view!==null&&view!=="current")
+            ||[...url.searchParams.keys()].some(key=>key!=="view")){
+            return json(400,{error:"unsupported_observatory_view"});
+          }
+          return proxyThreadObservatory(env, threadId, view);
         }
         if (identityMatch) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
