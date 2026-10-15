@@ -161,11 +161,9 @@ function threadObservatory(runtime, threadId) {
           livedNowStore:livedNow,
           currentSituation,
         });
-    const currentPlanRefs = new Set(currentSituation?.sourcePlanRefs ?? []);
-    const currentPersonalPlan = currentSituation === null
-      ? null
-      : livedNow.listPlans(threadId, { kind:"personal" })
-          .find((plan) => currentPlanRefs.has(plan.planId)) ?? null;
+    const currentPersonalPlan = (currentSituation?.sourcePlanRefs??[])
+      .map(ref=>livedNow.getPlan(threadId,ref))
+      .find(plan=>plan?.kind==="personal")??null;
     const currentPersonalPlanWitness = currentPersonalPlan === null
       ? null
       : Object.freeze({
