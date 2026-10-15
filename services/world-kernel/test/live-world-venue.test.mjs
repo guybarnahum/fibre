@@ -7,6 +7,7 @@ import {
   createLiveWorldPlaceTables,
   listLiveWorldPlaces,
   liveWorldPlaceRef,
+  resolveLiveWorldPlace,
 } from "../src/live-world-place.mjs";
 import { meetingPresenceCompatible } from "../src/lived-meeting-cognition.mjs";
 import {
@@ -72,6 +73,12 @@ test("E7.4 Genesis learning contexts cannot impersonate a common physical venue"
     });
     assert.equal(first.ref,second.ref,
       "independent Genesis contexts failed to resolve one actual venue");
+    assert.equal(resolveLiveWorldPlace(db,library.threadId,library.ref)?.physicalVenue?.ref,
+      first.ref,"single-place lookup lost the Thread's admitted physical venue");
+    assert.equal(resolveLiveWorldPlace(db,home.threadId,library.ref),null,
+      "single-place lookup crossed the Thread's Genesis World authority");
+    assert.equal(resolveLiveWorldPlace(db,"thr_reused_genesis_library",library.ref)?.physicalVenue,
+      undefined,"single-place lookup inherited another Thread's venue binding");
     assert.equal(meetingPresenceCompatible(
       situation(library),situation(other),{
         leftWorldPlaces:listLiveWorldPlaces(db,library.threadId),
