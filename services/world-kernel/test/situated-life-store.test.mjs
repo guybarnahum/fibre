@@ -102,6 +102,8 @@ test("situated life persists revision history and survives restart", () =>
 
     const reopened = openSituatedLifeStore(localWorldStateStorage(databasePath));
     const relations=reopened.listCurrentLifeRelations(fixture.threadId);
+    assert.equal(reopened.lifeRelationHistory(fixture.threadId,relation(sourceEvent,1).relationId).length,2,
+      "current relationship projection must not replace immutable history");
     assert.equal(relations.length,2,"developed relationships must remain independently retrievable");
     assert.equal(relations.find((item)=>item.relatedParty.partyId==="ancestor.synthetic.mother")?.revision,2,
       "relationship revisions must retain the latest authored meaning");
