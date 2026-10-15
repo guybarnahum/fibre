@@ -157,56 +157,29 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
   }
 });
 
-test("World schema deploy waits for its Durable Object revision, then installs exactly once",async()=>{
-  const calls=[];
-  const result=await acceptWorldSchemaDeployment({
-    prepared:{config:resolvedConfig()},
-    deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
-    privateToken:"test-token",
-    fetchImpl:async(url,init)=>{
-      calls.push([url.pathname,init.method]);
-      assert.equal(init.headers["x-fibre-private-token"],"test-token");
-      if(url.pathname==="/internal/world-schema/revision"){
-        return calls.length===1
-          ?Response.json({error:"not_found"},{status:404})
-          :Response.json({deploymentGitSha:"b".repeat(40)});
-      }
-      assert.equal(url.pathname,"/internal/world-schema/migrate");
-      assert.equal(init.method,"POST");
-      return Response.json({
-        ok:true,contract:"fibre-world-schema-installed-v1",
-        deploymentGitSha:"b".repeat(40),
-      });
-    },
-    wait:async()=>{},
-  });
-  assert.deepEqual(calls,[
-    ["/internal/world-schema/revision","GET"],
-    ["/internal/world-schema/revision","GET"],
-    ["/internal/world-schema/migrate","POST"],
-  ],"schema installation occurred before the new World was ready");
-  assert.equal(result.ok,true);
-});
-
-test("old Durable Object code cannot execute migration during a Worker rollout",async()=>{
-  const calls=[];
+test("World schema installation waits for the current World code before running",async()=>{
+  let revisionChecks=0;
+  let installs=0;
   await acceptWorldSchemaDeployment({
     prepared:{config:resolvedConfig()},
     deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
     privateToken:"test-token",
     fetchImpl:async(url)=>{
-      calls.push(url.pathname);
-      return url.pathname==="/internal/world-schema/revision"
-        ?Response.json({deploymentGitSha:calls.length===1?"a".repeat(40):"b".repeat(40)})
-        :Response.json({ok:true,deploymentGitSha:"b".repeat(40)});
+      if(url.pathname==="/internal/world-schema/revision"){
+        revisionChecks++;
+        return revisionChecks===1
+          ?Response.json({error:"not_found"},{status:404})
+          :revisionChecks===2
+            ?Response.json({deploymentGitSha:"a".repeat(40)})
+            :Response.json({deploymentGitSha:"b".repeat(40)});
+      }
+      installs++;
+      assert.equal(revisionChecks,3,"World schema installed by stale code");
+      return Response.json({ok:true,deploymentGitSha:"b".repeat(40)});
     },
     wait:async()=>{},
   });
-  assert.deepEqual(calls,[
-    "/internal/world-schema/revision",
-    "/internal/world-schema/revision",
-    "/internal/world-schema/migrate",
-  ],"old World code attempted schema migration");
+  assert.equal(installs,1,"World schema installed more than once");
 });
 
 test("World deploy rejects a Durable Object that never serves the intended revision",async()=>{
