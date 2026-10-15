@@ -134,6 +134,16 @@ A meeting begins when one Thread actually asks another for something socially me
 The proposed [Developmental exploration](developmental-exploration.md) extension addresses a different question: why a Thread may choose a life that creates richer opportunities before any visitor arrives. Exploration may make socially porous life more likely, but it never pre-authorizes a concrete meeting request.
 
 
+## Efficient current life without erasing history
+
+World keeps **immutable enacted CurrentSituation history** and a small, authoritative **current frontier**: one latest situation per Thread, advanced transactionally in the same write that admits the next historical situation. A one-time indexed migration derives that frontier from existing lived history; it does not rebuild the projection on each ordinary read. Reading the current World scales with the present population rather than all situations ever enacted. Historical as-of queries can still resolve the appropriate earlier situation from indexed immutable records.
+
+The same current frontier supports bounded physical-venue discovery, while environmental shared-observer discovery asks the indexed **venue authority**, not the entire population. General `/meet` discovery retains its broader current-World semantics, reading the frontier rather than reconstructing lifetimes. Due boundaries and social/environmental/contact opportunity queues remain their existing event-driven authorities.
+
+The internal Observatory is a **recent inspection**, not a lifetime export: encounters, memories, social interactions, journal entries, consolidation and contact activity have explicit small windows. Recent shared Encounter Stories include participant presence, actual enacted situation (where available), individual attention/Experience, and World follow-up from a joined read. A small indexed story timeline preserves newest-first participant browsing without sorting every historical story. Full historical inspection remains a separately requested future capability, not silently included here.
+
+These are storage and diagnostic efficiency improvements, **not evidence that a Thread chose, remembered, visited, or met anyone**. SQL billing and staging impact require separately measured evidence.
+
 ## Compute dormancy is not necessarily life suspension
 
 A lived Thread may be computationally frozen while wall-clock time continues.
