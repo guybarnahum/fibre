@@ -14,6 +14,7 @@ import { createGenesisThreadInspectionApi } from "#services/world-kernel/src/gen
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openWorldStore } from "#services/world-kernel/src/persistence.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { SymbolicGenomeStore } from "#services/world-kernel/src/symbolic-genome-store.mjs";
 import { createThreadGenesisRepairApi } from "#services/world-kernel/src/thread-genesis-repair-api.mjs";
 import { createThreadGenesisRepairService } from "#services/world-kernel/src/thread-genesis-repair-service.mjs";
@@ -159,8 +160,10 @@ export function createWorldCloudflareRuntime({
   const worldStore = openWorldStore(worldStorage);
   // Ensure the current-situation frontier is available before any read-only
   // Observatory or directory opens. The one-time migration preserves history.
-  try{openLivedNowStore(worldStorage).close();}
-  catch(error){worldStore.close();throw error;}
+  try{
+    openLivedNowStore(worldStorage).close();
+    openLivedExperienceStore(worldStorage).close();
+  }catch(error){worldStore.close();throw error;}
   let identityStore;
   let embodimentStore;
   let genesisStore;
