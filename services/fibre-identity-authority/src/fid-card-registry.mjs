@@ -308,7 +308,7 @@ export class FidCardRegistry {
 
   constructor(storage) {
     this.#database = openState(storage);
-    try { createSchema(this.#database); }
+    try { if(storage.schemaReady!==true)createSchema(this.#database); }
     catch (error) {
       this.#database.close();
       throw error;
