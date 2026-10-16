@@ -29,6 +29,7 @@ import {
   placeEpisodeRevisionRef,
 } from "../src/situated-life-evidence.mjs";
 import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
+import { resolveSituatedReference } from "../src/situated-identity-grounding.mjs";
 import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 
 const mina = JSON.parse(
@@ -269,6 +270,17 @@ function homeObservation(life, {
 test("A1/A2: Thread cognition forms personal will; care can govern without fabricating observed life", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
+    const witnesses = new DatabaseSync(databasePath, { enableForeignKeyConstraints:true });
+    try {
+      assert.deepEqual(resolveSituatedReference(witnesses,life.thread.threadId,life.homeRef),
+        {kind:"place_episode_revision",reference:life.homeRef},
+        "grounded place evidence became unavailable to World life");
+      assert.deepEqual(resolveSituatedReference(witnesses,life.thread.threadId,life.parentRef),
+        {kind:"life_relation_revision",reference:life.parentRef},
+        "grounded relationship evidence became unavailable");
+      assert.equal(resolveSituatedReference(witnesses,"thr_unrelated_thread",life.homeRef),null,
+        "a Thread could claim someone else's place evidence");
+    } finally { witnesses.close(); }
     const context = developmentalContextForThread(life.thread, "2026-09-10T05:03:00Z");
     assert.equal(context.ageYears, 10);
     assert.equal(context.birthDate, "2016-02-08");
