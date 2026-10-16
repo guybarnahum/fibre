@@ -10,6 +10,7 @@ import {
   deployCloudflareStack,
   healthBaseUrlForDeployment,
   missingRequiredSecretNames,
+  retryStateHealth,
 } from "./deploy-cloudflare.mjs";
 import { CLOUDFLARE_SERVICE_CONFIGS, parseJsonc } from "./cloudflare-operator.mjs";
 
@@ -65,6 +66,25 @@ function allSecrets() {
     "FIA_CREDENTIAL_KEY_BASE64",
   ]);
 }
+
+test("deploy waits for the current World revision before accepting persistent state",async()=>{
+  let checks=0;
+  const state=await retryStateHealth({
+    serviceId:"world-kernel",
+    baseUrl:"https://world.example",
+    expectedSha:"b".repeat(40),
+    wait:async()=>{},
+    client:{
+      async checkStateHealth({expectedSha}){
+        checks++;
+        if(checks<3)throw new Error("deployed revision not ready: previous World");
+        return {ok:true,stateChecked:true,deploymentGitSha:expectedSha};
+      },
+    },
+  });
+  assert.equal(checks,3,"deployment skipped Durable Object revision convergence");
+  assert.equal(state.deploymentGitSha,"b".repeat(40));
+});
 
 test("cloud deployment accepts the Fibre service stack after shallow and durable state health", async () => {
   const { root, state } = await fixtureRepo();
