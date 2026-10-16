@@ -211,6 +211,8 @@ test("Genesis birth publishes participant/place continuity through canonical sit
     const genesis = new GenesisStore(localWorldStateStorage(databasePath));
     genesis.recordWorldSpec(world);
     const result = genesis.publishBirth(birth);
+    assert.equal(genesis.publishBirth(birth).idempotent,true,
+      "replayed birth did not preserve its one original publication");
     assert.ok(result.situatedContinuity);
     assert.equal(result.historicalEnvelopePlan.digest, birth.historicalEnvelopePlan.digest);
     genesis.close();
@@ -222,6 +224,13 @@ test("Genesis birth publishes participant/place continuity through canonical sit
     const seedEventId = database.prepare(
       "SELECT event_id FROM thread_events WHERE thread_id=? AND event_type='THREAD_SEEDED'",
     ).get(birth.thread.threadId).event_id;
+    assert.deepEqual(database.prepare(`
+      SELECT due_at,attempts,first_established_at
+      FROM genesis_first_life_work WHERE thread_id=?
+    `).all(birth.thread.threadId),[{
+      due_at:birth.manifest.publication.publishedAt,
+      attempts:0,first_established_at:null,
+    }],"atomic birth or exact replay changed the unique first-life obligation");
 
     const relations = parseRows(database, "life_relation_records");
     const caregiver = relations.find((record) => record.relatedParty.partyId === "person_situated_caregiver");
@@ -399,6 +408,7 @@ test("situated continuity is inside the atomic Genesis birth transaction", () =>
       ["genesis_historical_envelope_plans", "genesis_id", birth.manifest.genesisId],
       ["genesis_manifests", "genesis_id", birth.manifest.genesisId],
       ["fibre_civil_registrations", "thread_id", birth.thread.threadId],
+      ["genesis_first_life_work", "thread_id", birth.thread.threadId],
     ]) {
       assert.equal(database.prepare(`SELECT count(*) AS n FROM ${table} WHERE ${column}=?`).get(value).n, 0);
     }
