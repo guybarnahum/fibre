@@ -8,6 +8,16 @@ const FRESH_MS=60*60_000;
 const STAY_MS=2*60*60_000;
 const FOLLOWUP_MS=30*60_000;
 
+// Only the initiating Thread's private scene is available to this World
+// consideration. A private place never implies a shared venue or bystander.
+function observedPlace(livedNowStore,threadId,placeRef,initiatorThreadId){
+  if(placeRef.startsWith("per:")){
+    return threadId===initiatorThreadId
+      ?livedNowStore.getPrivatePlace?.(threadId,placeRef)??null:null;
+  }
+  return livedNowStore.getWorldPlace(threadId,placeRef,{required:false});
+}
+
 // An enacted, waking place stay can earn one later exterior chance, only if
 // its already-authoritative Flight Plan covers the occasion. No life wake.
 export function worldStayOpportunityDueAt(situation,nextBoundaryAt){
@@ -84,11 +94,8 @@ export function createWorldEnvironmentOpportunity({
             // Thread's admitted private setting. Use its own description for
             // grounded exterior consideration without disclosing it to peers.
             const origin=eligible
-              ?(livedNowStore.getWorldPlace(
-                opportunity.threadId,situation.location.placeRef,{required:false},
-              )??livedNowStore.getPrivatePlace?.(
-                opportunity.threadId,situation.location.placeRef,
-              )??null):null;
+              ?observedPlace(livedNowStore,opportunity.threadId,
+                situation.location.placeRef,opportunity.threadId):null;
             const physicalVenue=origin?.physicalVenue??null;
             // Without grounded physical venue geography we can authorize a
             // private local opportunity, not conjecture distant sight lines.
@@ -96,11 +103,8 @@ export function createWorldEnvironmentOpportunity({
               ?candidates.filter((item)=>item.threadId===opportunity.threadId)
               :candidates;
             const candidateScenes=observableCandidates.map((item)=>{
-              const place=livedNowStore.getWorldPlace(
-                item.threadId,item.location.placeRef,{required:false},
-              )??(item.threadId===opportunity.threadId
-                ?livedNowStore.getPrivatePlace?.(item.threadId,item.location.placeRef)
-                :null)??null;
+              const place=observedPlace(livedNowStore,item.threadId,
+                item.location.placeRef,opportunity.threadId);
               return {
                 threadId:item.threadId,situationId:item.situationId,
                 physicalVenueRef:place?.physicalVenue?.ref??null,
