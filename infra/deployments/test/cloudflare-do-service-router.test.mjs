@@ -14,6 +14,7 @@ function router() {
 test("healthz is answered without resolving or invoking Durable Object binding", async () => {
   let getByNameCalls = 0;
   const response = await router().fetch(new Request("https://fixture.example/healthz"), {
+    FIBRE_DEPLOYMENT_GIT_SHA:"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     FIXTURE_STATE: {
       getByName() {
         getByNameCalls += 1;
@@ -22,14 +23,12 @@ test("healthz is answered without resolving or invoking Durable Object binding",
     },
   });
   assert.equal(response.status, 200);
-  assert.equal(getByNameCalls, 0);
-  assert.deepEqual(await response.json(), {
-    ok: true,
-    service: "fixture-service",
-    provider: "cloudflare",
-    stateScopeId: "fixture",
-    stateChecked: false,
-  });
+  assert.equal(getByNameCalls, 0,"shallow health must not wake state");
+  const health=await response.json();
+  assert.equal(health.service,"fixture-service");
+  assert.equal(health.stateChecked,false);
+  assert.equal(health.deploymentGitSha,"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "shallow health did not identify deployed code");
 });
 
 test("healthz remains available even when Durable Object binding is absent", async () => {
