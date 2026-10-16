@@ -11,6 +11,7 @@ import {
   parseOperatorEnv,
 } from "./cloudflare-operator.mjs";
 import { provisionCloudflareResources } from "./provision-cloudflare.mjs";
+import { D1_MIGRATIONS_BY_BINDING } from "./cloudflare-d1-migrations.mjs";
 import { configureCloudflareSecrets, createWranglerSecretWriter } from "./configure-cloudflare-secrets.mjs";
 
 const sourceRoot = resolve(new URL("../..", import.meta.url).pathname);
@@ -60,7 +61,13 @@ function fakeClient() {
       state.creates.push(["d1", name]);
       state.d1.set(name, { name, id: `d1-${state.nextD1++}` });
     },
-    async applyD1Migration(name, filePath) { state.creates.push(["d1-migrate", name, filePath]); },
+    async ensureD1Migrations({databases}) {
+      for(const {binding,name} of databases){
+        for(const filePath of D1_MIGRATIONS_BY_BINDING[binding]){
+          state.creates.push(["d1-migrate",name,filePath]);
+        }
+      }
+    },
     async hasR2(name) { return state.r2.has(name); },
     async createR2(name) { state.creates.push(["r2", name]); state.r2.add(name); },
     async hasQueue(name) { return state.queues.has(name); },
