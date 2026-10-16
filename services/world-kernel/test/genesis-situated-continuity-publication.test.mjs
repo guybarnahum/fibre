@@ -12,6 +12,9 @@ import test from "node:test";
 
 import { GenesisStore } from "../src/genesis-store.mjs";
 import { createLivedNowService } from "../src/lived-now-service.mjs";
+import { createGenesisFirstLifeProcess } from "../src/genesis-first-life-process.mjs";
+import { openGenesisFirstLifeStore } from "../src/genesis-first-life-store.mjs";
+import { createLivedBoundaryProcess, nextLivedBoundary } from "../src/lived-now-boundary.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { livedSituationId } from "../src/lived-now.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
@@ -403,7 +406,7 @@ test("situated continuity is inside the atomic Genesis birth transaction", () =>
   }));
 
 
-test("N3 Genesis enters the same LivedNow seam and survives multi-day dormancy", () =>
+test("Birth earns one real first life, no invented dormant past, and a continuing autonomous boundary", () =>
   withDatabase(async (databasePath) => {
     const { world, birth } = publicationCandidate();
     const storage = localWorldStateStorage(databasePath);
@@ -467,6 +470,7 @@ test("N3 Genesis enters the same LivedNow seam and survives multi-day dormancy",
       },
     };
 
+    const firstLifeStore=openGenesisFirstLifeStore(storage);
     const service = createLivedNowService({
       livedNowStore,
       worldStore,
@@ -475,51 +479,60 @@ test("N3 Genesis enters the same LivedNow seam and survives multi-day dormancy",
       memoryStore,
       situatedLifeStore,
       modelAdapter,
+      onSituationResolved(situation){
+        const dueAt=nextLivedBoundary(livedNowStore,situation);
+        livedNowStore.scheduleNextLivedBoundary({
+          threadId:situation.threadId,situationId:situation.situationId,dueAt,
+        });
+      },
     });
-    const bornAt = birth.manifest.publication.publishedAt;
-    const targetAt = "2026-08-23T00:02:00Z";
-    const current = await service.ensure({
-      threadId: birth.thread.threadId,
-      at: targetAt,
+    const bornAt=birth.manifest.publication.publishedAt;
+    const targetAt="2026-08-23T00:02:00Z";
+    assert.equal(firstLifeStore.nextDueAt(),bornAt,
+      "an admitted birth lacks its durable first-life obligation");
+    const process=createGenesisFirstLifeProcess({
+      workStore:firstLifeStore,livedNow:service,now:()=>targetAt,
     });
+    const established=await process.runOnce();
+    assert.equal(established.results[0]?.outcome,"established",
+      "World did not establish the Thread's own first present");
+    const current=livedNowStore.getCurrentSituation(birth.thread.threadId);
+    assert.equal(current.establishedAt,targetAt);
+    assert.equal(current.location.placeRef,libraryRef,
+      "first life abandoned the place grounded by Genesis");
+    assert.equal(firstLifeStore.inspect(birth.thread.threadId)?.first_established_at,targetAt,
+      "first life did not settle its durable birth obligation");
+    assert.equal(firstLifeStore.nextDueAt(),null,
+      "completed birth remains scheduled for another first life");
 
-    const plans = livedNowStore.listPlans(birth.thread.threadId, { kind: "personal" });
-    const firstPlan = plans.find((plan) => plan.authoredAt === bornAt && plan.materialization === undefined);
-    assert.ok(firstPlan, "Genesis should author the first personal Flight Plan at Fibre birth");
-    const birthSituation = livedNowStore.getSituation(livedSituationId({
-      kind: "ensure_lived_now_v1",
-      threadId: birth.thread.threadId,
-      at: bornAt,
-      governingPlanRef: firstPlan.planId,
-    }));
-    assert.equal(birthSituation.location.placeRef, libraryRef, "first LivedNow should continue from admitted Genesis life");
+    const plans=livedNowStore.listPlans(birth.thread.threadId,{kind:"personal"});
+    assert.equal(plans.length,1,"first admission invented earlier personal history");
+    assert.equal(plans[0].authoredAt,targetAt,
+      "a delayed first life impersonated planning at birth");
+    assert.equal(plans[0].materialization,undefined,
+      "first lived moment became a fabricated retrospective plan");
+    assert.equal(livedNowStore.getSituation(livedSituationId({
+      kind:"ensure_lived_now_v1",threadId:birth.thread.threadId,
+      at:bornAt,governingPlanRef:plans[0].planId,
+    }),{required:false}),null,"first admission fabricated an earlier World situation");
 
-    const retrospective = plans.filter((plan) => plan.materialization?.mode === "retrospective");
-    assert.ok(retrospective.length > 0 && retrospective.length <= 4, "post-birth dormancy should reuse bounded N2 catch-up");
-    assert.ok(retrospective.every((plan) => plan.materialization.materializedAt === targetAt));
-    assert.equal(current.establishedAt, targetAt);
-    assert.equal(current.materialization, undefined);
-    assert.equal(current.location.placeRef, libraryRef, "current life should remain causally connected to the birth anchor");
-
-    const fresh = plans.find((plan) =>
-      plan.authoredAt === targetAt &&
-      plan.materialization === undefined &&
-      Date.parse(plan.horizonEnd) > Date.parse(targetAt));
-    assert.ok(fresh, "N3 should leave the born Thread with fresh forward plan coverage");
-
-    const callsAfterFirstEnsure = cognitionCalls;
-    const planCount = plans.length;
-    const retry = await service.ensure({
-      threadId: birth.thread.threadId,
-      at: targetAt,
+    const callsAfterFirst=cognitionCalls;
+    const replay=await process.runOnce();
+    assert.equal(replay.attempted,0,"birth replay duplicated first-life work");
+    assert.equal(cognitionCalls,callsAfterFirst,"first-life retry consumed cognition");
+    const nextAt=livedNowStore.nextLivedBoundaryAt();
+    assert.ok(nextAt&&nextAt>targetAt,
+      "first life did not earn a future autonomous wake");
+    const next=createLivedBoundaryProcess({
+      livedNowStore,livedNow:service,now:()=>nextAt,
     });
-    assert.deepEqual(retry, current, "Genesis-to-now reconciliation should be idempotent");
-    assert.equal(cognitionCalls, callsAfterFirstEnsure, "retry should not regenerate post-birth life");
-    assert.equal(
-      livedNowStore.listPlans(birth.thread.threadId, { kind: "personal" }).length,
-      planCount,
-      "retry should not duplicate Flight Plans",
-    );
+    const advanced=await next.runOnce();
+    assert.equal(advanced.results[0]?.outcome,"advanced",
+      "Thread failed to continue its independently admitted life");
+    assert.notEqual(livedNowStore.getCurrentSituation(birth.thread.threadId).situationId,
+      current.situationId,"future World boundary did not advance the Thread");
+    assert.equal(firstLifeStore.nextDueAt(),null,"continuing life requeued its own birth");
+    firstLifeStore.close();
 
     livedNowStore.close();
     situatedLifeStore.close();
