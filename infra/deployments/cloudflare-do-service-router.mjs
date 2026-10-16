@@ -50,6 +50,7 @@ export function createCloudflareDurableObjectServiceRouter({
           provider,
           stateScopeId,
           stateChecked: false,
+          deploymentGitSha:env?.FIBRE_DEPLOYMENT_GIT_SHA??null,
           ...health,
         });
       }
