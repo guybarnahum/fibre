@@ -31,7 +31,7 @@ test("an enacted arrival earns at most one observable event or an ordinary no_ch
     threads.set(thread.threadId,thread);
     situations.set(situationId,{
       threadId:thread.threadId,situationId,establishedAt:AT,
-      location:{kind:"place",placeRef:`wpl_home_study_${i}`},
+      location:{kind:"place",placeRef:i===0?"per:home_study:1":`wpl_home_study_${i}`},
       activity:"Reading at home.",
     });
   }
@@ -58,8 +58,11 @@ test("an enacted arrival earns at most one observable event or an ordinary no_ch
         getCurrentSituation:(id)=>structuredClone(
           all.find((item)=>item.threadId===id)??null,
         ),
-        getWorldPlace:()=>({ref:"wpl_home",displayName:
-          "Homework is done at a dining table or on a bed."}),
+        getWorldPlace:(_threadId,ref)=>ref.startsWith("per:")?null:({
+          ref:"wpl_home",displayName:"Homework is done at a dining table or on a bed.",
+        }),
+        getPrivatePlace:(_threadId,ref)=>ref==="per:home_study:1"
+          ?{specificPlace:"A reading nook beside a private home's window."}:null,
         listRecentCurrentSituations:()=>structuredClone(all),
       },
       worldReader:{getThread:(id)=>structuredClone(threads.get(id)??null)},
@@ -72,6 +75,13 @@ test("an enacted arrival earns at most one observable event or an ordinary no_ch
           if(request.clientRequestId.startsWith("world-initial-opportunity_")){
             assert.equal(request.input.initiatingSituation.physicalVenue,null,
               "home study incorrectly became a public venue");
+            if(request.input.initiatingSituation.situationId==="sit_arrival_a"){
+              assert.equal(request.input.initiatingSituation.sceneDescription,
+                "A reading nook beside a private home's window.",
+                "World considered a private life without its actual setting");
+              assert.equal(request.input.potentialObservers.length,1,
+                "private home incorrectly acquired a social observer");
+            }
             const isFirst=request.input.initiatingSituation.situationId==="sit_arrival_a";
             return {output:{
               outcome:isFirst?"changed":"no_change",
