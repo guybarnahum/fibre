@@ -140,9 +140,12 @@ export function createWranglerDeploymentClient({
       return secretNames(JSON.parse(stdout));
     },
     async deployService({ configPath, workerName, resolvedConfig = null }) {
+      const ownsDurableObjects=(resolvedConfig?.durable_objects?.bindings??[])
+        .some(binding=>!binding.script_name);
       const result = await runner([
         "deploy",
         "--config", configPath,
+        ...(ownsDurableObjects?["--durable-objects-code-update-mode","immediate"]:[]),
         "--experimental-provision=false",
         "--experimental-auto-create=false",
       ], { cwd });
