@@ -394,6 +394,20 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
       [],
       "World noticeability must not infer presence from a stale situation",
     );
+    assert.deepEqual(
+      lived.listRecentCurrentSituations({
+        at:"2026-09-10T05:05:00Z",since:"2026-09-10T05:03:00Z",limit:2,
+      }),
+      [first],
+      "delayed World observation lost the earlier enacted situation",
+    );
+    assert.deepEqual(
+      lived.listRecentCurrentSituations({
+        at:"2026-09-10T05:05:00Z",since:"2026-09-10T05:04:01Z",limit:2,
+      }),
+      [],
+      "delayed World observation invented presence outside its time window",
+    );
     const locationSnapshot = lived.listCurrentLocationEvidence({ at:second.establishedAt });
     const mayaNow = locationSnapshot.find((entry) => entry.threadId === life.thread.threadId);
     assert.equal(mayaNow.currentSituation.situationId, second.situationId, "live map lost the current situation");
