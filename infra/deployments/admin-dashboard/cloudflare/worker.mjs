@@ -165,6 +165,7 @@ export function createAdminDashboardWorker({ authenticate = authenticateAccessRe
         return json(200, {
           ok:true,
           service:"admin-dashboard",
+          deploymentGitSha:env.FIBRE_DEPLOYMENT_GIT_SHA??null,
           version:ADMIN_DASHBOARD_VERSION,
           buildId:build.id ?? null,
           buildTag:build.tag ?? null,
