@@ -21,6 +21,9 @@ import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FORWARD_PLAN_MS = 12 * 60 * 60 * 1000;
 const MAX_RETROSPECTIVE_WINDOWS = 4;
+// Alarm delivery is not exact to the millisecond. A brief post-horizon lag
+// should renew forward life, not fabricate a retrospective Flight Plan.
+const BOUNDARY_DELIVERY_GRACE_MS = 60_000;
 
 export class LivedNowCoverageError extends Error {}
 
@@ -267,9 +270,13 @@ function forwardPlan(livedNowStore, threadId, at) {
 }
 
 function personalPlanForSituation(livedNowStore, situation) {
-  const refs = new Set(situation.sourcePlanRefs);
-  return livedNowStore.listPlans(situation.threadId, { kind: "personal" })
-    .find((plan) => refs.has(plan.planId)) ?? null;
+  // A situation cites its governing plan. Resolve those bounded references,
+  // not the Thread's entire accumulated planning history.
+  return situation.sourcePlanRefs
+    .map((ref)=>livedNowStore.getPlan(situation.threadId,ref))
+    .filter((plan)=>plan?.kind==="personal")
+    .sort((a,b)=>a.authoredAt.localeCompare(b.authoredAt)
+      ||a.planId.localeCompare(b.planId))[0]??null;
 }
 
 function atPlaceRef(plan, at) {
@@ -444,9 +451,16 @@ async function catchUpDormantInterval({
     modelAdapter,
   });
 
+  const priorPlan=personalPlanForSituation(livedNowStore,current);
   let anchor = advanceThroughExistingPlan(livedNowStore, current, at);
   let placeRef = startingPlaceRef(anchor);
-  const windows = dormantWindows(anchor.establishedAt, at);
+  const sinceHorizon=Date.parse(at)-Date.parse(priorPlan?.horizonEnd??"");
+  const boundaryDelivery=anchor.establishedAt===priorPlan?.horizonEnd
+    &&sinceHorizon>0&&sinceHorizon<=BOUNDARY_DELIVERY_GRACE_MS;
+  // The admitted plan establishes life through its final instant. Seconds
+  // of alarm-delivery lag are not a dormant biography requiring invented
+  // retrospective intentions. Longer gaps retain bounded historical catch-up.
+  const windows=boundaryDelivery?[]:dormantWindows(anchor.establishedAt,at);
   let finalRetrospectivePlan = null;
 
   for (let index = 0; index < windows.length; index += 1) {
@@ -580,6 +594,7 @@ export function createLivedNowService({
   requireMethod(livedNowStore, "getCurrentSituation");
   requireMethod(livedNowStore, "latestPlan");
   requireMethod(livedNowStore, "listPlans");
+  requireMethod(livedNowStore, "getPlan");
   requireMethod(livedNowStore, "recordPlan");
   requireMethod(livedNowStore, "enactCurrentSituation");
   requireMethod(livedNowStore, "ensureWorldPlaces");
