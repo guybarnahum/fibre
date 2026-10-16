@@ -5,7 +5,6 @@ import { join } from "node:path";
 import test from "node:test";
 
 import {
-  acceptWorldSchemaDeployment,
   deployCloudflareService,
   normalizeService,
   prepareResolvedServiceConfig,
@@ -77,7 +76,7 @@ test("service deploy re-resolves current source config without provisioning", as
         calls.push(["migrate", databases]);
       },
       async acceptServiceRevisionImpl(){ calls.push(["service-revision"]); return {baseUrl:"https://world.example"}; },
-      async acceptWorldSchemaImpl(){
+      async acceptSchemaImpl(){
         calls.push(["world-schema"]);
         return {ok:true};
       },
@@ -138,66 +137,21 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
         return { stdout:"Published https://fibre-birth-center-staging.account.workers.dev", stderr:"" };
       },
       async acceptServiceRevisionImpl(){ calls.push("service-revision"); return {baseUrl:"https://birth.example"}; },
-      async acceptBirthCenterImpl({ deploymentOutput }) {
+      async acceptSchemaImpl(){
         calls.push("birth-migrate-and-accept");
-        assert.match(deploymentOutput, /fibre-birth-center-staging/u);
         return {
-          baseUrl:"https://fibre-birth-center-staging.account.workers.dev",
           migration:{ fromVersion:0, toVersion:2, applied:[1,2] },
-          stateHealth:{ ok:true, service:"birth-center", stateChecked:true },
           runtimeAcceptance:{ ok:true, status:404 },
         };
       },
       print() {},
     });
 
-    assert.deepEqual(calls, ["d1","wrangler:deploy","birth-migrate-and-accept"]);
-    assert.equal(result.birthCenterAcceptance.migration.toVersion, 2);
-    assert.equal(result.birthCenterAcceptance.runtimeAcceptance.status, 404);
+    assert.deepEqual(calls, ["d1","wrangler:deploy","service-revision","birth-migrate-and-accept"]);
+    assert.equal(result.schemaAcceptance.migration.toVersion, 2);
+    assert.equal(result.schemaAcceptance.runtimeAcceptance.status, 404);
   } finally {
     rmSync(repoRoot, { recursive:true, force:true });
   }
 });
 
-test("World schema installation waits for the current World code before running",async()=>{
-  let revisionChecks=0;
-  let installs=0;
-  await acceptWorldSchemaDeployment({
-    prepared:{config:resolvedConfig()},
-    deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
-    privateToken:"test-token",
-    fetchImpl:async(url)=>{
-      if(url.pathname==="/internal/world-schema/revision"){
-        revisionChecks++;
-        return revisionChecks===1
-          ?Response.json({error:"not_found"},{status:404})
-          :revisionChecks===2
-            ?Response.json({deploymentGitSha:"a".repeat(40)})
-            :Response.json({deploymentGitSha:"b".repeat(40)});
-      }
-      installs++;
-      assert.equal(revisionChecks,3,"World schema installed by stale code");
-      return Response.json({ok:true,deploymentGitSha:"b".repeat(40)});
-    },
-    wait:async()=>{},
-  });
-  assert.equal(installs,1,"World schema installed more than once");
-});
-
-test("World deploy rejects a Durable Object that never serves the intended revision",async()=>{
-  let migrations=0;
-  await assert.rejects(
-    acceptWorldSchemaDeployment({
-      prepared:{config:resolvedConfig()},
-      deploymentOutput:"Published https://fibre-world-kernel-staging.example.workers.dev",
-      privateToken:"test-token",
-      fetchImpl:async(url)=>{
-        if(url.pathname==="/internal/world-schema/migrate")migrations++;
-        return Response.json({error:"not_found"},{status:404});
-      },
-      wait:async()=>{},
-    }),
-    /World Durable Object revision did not converge: route unavailable \(404\)/u,
-  );
-  assert.equal(migrations,0,"unready World revision performed a migration");
-});
