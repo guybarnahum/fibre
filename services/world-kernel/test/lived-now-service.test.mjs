@@ -567,6 +567,79 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
     lived.close();
   }));
 
+
+test("a slightly delayed horizon alarm renews forward life without inventing retrospective intentions",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    const lived=openLivedNowStore(storage);
+    const world=openWorldStore(storage);
+    const identity=openIdentityStore(storage);
+    const semantic=openSemanticStateStore(storage);
+    const memory=openAutobiographicalMemoryStore(storage);
+    const situated=openSituatedLifeStore(storage);
+    try{
+      const initial=lived.recordPlan(personalPlan(life));
+      let planningCalls=0;
+      const service=createLivedNowService({
+        livedNowStore:lived,worldStore:world,identityStore:identity,
+        semanticStateStore:semantic,memoryStore:memory,situatedLifeStore:situated,
+        modelAdapter:{
+          async invoke(input){
+            if(input.input?.concern?.kind==="lived_planning"){
+              planningCalls++;
+              const {horizon,startingPlaceRef}=input.input.concern.externalContext;
+              return {
+                output:{result:{stops:[{
+                  startAt:horizon.startAt,endAt:horizon.endAt,
+                  physicalPlaceRef:startingPlaceRef,presenceMode:"physical",
+                  mediatedContext:"",wakefulness:"awake",
+                  activity:"Continue reading at the library.",
+                  purpose:"Follow my existing interest without inventing an elapsed journey.",
+                  travelFromPrevious:"",
+                }]},evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+                provenance:{provider:"fixture",modelId:"boundary-forward-renewal",
+                  providerRequestId:input.clientRequestId},
+              };
+            }
+            if(input.input?.interoception){
+              return {output:{states:[]},provenance:{
+                provider:"fixture",modelId:"boundary-interoception",
+                providerRequestId:input.clientRequestId,
+              }};
+            }
+            throw new Error("unexpected cognition at lived boundary");
+          },
+        },
+      });
+      await service.ensure({threadId:life.thread.threadId,at:"2026-09-10T05:10:00Z"});
+      const delayedAt="2026-09-10T06:30:12.000Z";
+      const renewed=await service.ensure({threadId:life.thread.threadId,at:delayedAt});
+      assert.equal(renewed.location.placeRef,life.libraryRef,
+        "minor alarm latency broke continuity with the last reached place");
+      assert.equal(planningCalls,1,"minor alarm latency caused duplicate retrospective planning");
+      const plans=lived.listPlans(life.thread.threadId,{kind:"personal"});
+      assert.equal(plans.length,2,"minor alarm latency invented an extra lived biography");
+      assert.ok(plans.every(plan=>plan.materialization===undefined),
+        "a short delivery lag became an invented retrospective Flight Plan");
+      assert.equal(plans[0].planId,initial.planId,"earlier Thread will was replaced");
+      const boundary=lived.getSituation(livedSituationId({
+        kind:"retrospective_lived_now_v1",
+        threadId:life.thread.threadId,
+        at:initial.horizonEnd,
+        governingPlanRef:initial.planId,
+        materializedAt:delayedAt,
+      }));
+      assert.equal(boundary.location.placeRef,life.libraryRef,
+        "final admitted place was not preserved at the true horizon boundary");
+      const repeat=await service.ensure({threadId:life.thread.threadId,at:delayedAt});
+      assert.deepEqual(repeat,renewed,"repeated boundary reconciliation rewrote life");
+      assert.equal(planningCalls,1,"repeated boundary reconciliation consumed cognition");
+    }finally{
+      situated.close();memory.close();semantic.close();identity.close();world.close();lived.close();
+    }
+  }));
+
 test("E7.5 admitted Flight Plan boundaries advance life without polling",async()=>
   withDatabase(async(databasePath)=>{
     const life=seedLife(databasePath);
