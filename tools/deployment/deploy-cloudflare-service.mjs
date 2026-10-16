@@ -169,9 +169,12 @@ export async function deployCloudflareService({
     print,
   });
   print(`WORKER DEPLOY ${serviceId} -> ${prepared.workerName}`);
+  const ownsDurableObjects=(prepared.config.durable_objects?.bindings??[])
+    .some(binding=>!binding.script_name);
   const result = await runner([
     "deploy",
     "--config", deployConfigPath,
+    ...(ownsDurableObjects?["--durable-objects-code-update-mode","immediate"]:[]),
     "--experimental-provision=false",
     "--experimental-auto-create=false",
   ], { cwd: root });
