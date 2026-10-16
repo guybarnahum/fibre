@@ -1,4 +1,8 @@
 export function createEmbodimentTables(database) {
+  const needsReferenceIndex=database.prepare(`
+    SELECT 1 FROM sqlite_master
+    WHERE type='table' AND name='embodiment_reference_index'
+  `).get()===undefined;
   database.exec(`
     CREATE TABLE IF NOT EXISTS embodiment_rights_authorities (
       authority_id TEXT PRIMARY KEY,
@@ -122,5 +126,48 @@ export function createEmbodimentTables(database) {
     CREATE TRIGGER IF NOT EXISTS embodiment_heads_no_delete
       BEFORE DELETE ON embodiment_lineage_heads
       BEGIN SELECT RAISE(ABORT,'embodiment_lineage_heads is append-only'); END;
+
+    -- Embodiment source and permission references are many-to-many. A
+    -- separate indexed projection keeps arbitrary historical references
+    -- resolvable without replaying every embodiment at each life boundary.
+    CREATE TABLE IF NOT EXISTS embodiment_reference_index (
+      thread_id TEXT NOT NULL,
+      reference TEXT NOT NULL,
+      embodiment_id TEXT NOT NULL,
+      revision INTEGER NOT NULL,
+      PRIMARY KEY(thread_id,reference,embodiment_id,revision)
+    ) STRICT;
+    CREATE TRIGGER IF NOT EXISTS embodiment_references_on_insert
+      AFTER INSERT ON embodiment_records
+      BEGIN
+        INSERT OR IGNORE INTO embodiment_reference_index(
+          thread_id,reference,embodiment_id,revision
+        )
+        SELECT NEW.thread_id,NEW.embodiment_id,NEW.embodiment_id,NEW.revision
+        UNION ALL
+        SELECT NEW.thread_id,value,NEW.embodiment_id,NEW.revision
+          FROM json_each(NEW.record_json,'$.sourceReferences') WHERE type='text'
+        UNION ALL
+        SELECT NEW.thread_id,value,NEW.embodiment_id,NEW.revision
+          FROM json_each(NEW.record_json,'$.permissionReferences') WHERE type='text';
+      END;
   `);
+  // The existing append-only records remain authoritative. Projection
+  // backfill happens only when installing the new index, not during alarms.
+  if(needsReferenceIndex){
+    database.exec(`
+      INSERT OR IGNORE INTO embodiment_reference_index(
+        thread_id,reference,embodiment_id,revision
+      )
+      SELECT thread_id,embodiment_id,embodiment_id,revision FROM embodiment_records
+      UNION ALL
+      SELECT b.thread_id,j.value,b.embodiment_id,b.revision
+        FROM embodiment_records b,json_each(b.record_json,'$.sourceReferences') j
+        WHERE j.type='text'
+      UNION ALL
+      SELECT b.thread_id,j.value,b.embodiment_id,b.revision
+        FROM embodiment_records b,json_each(b.record_json,'$.permissionReferences') j
+        WHERE j.type='text';
+    `);
+  }
 }
