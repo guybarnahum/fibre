@@ -466,6 +466,7 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
         provider:health.provider,
         stateScopeId:FID_SCOPE_ID,
         stateChecked:true,
+        deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
         capabilities:["state","objects"],
         health,
       }, { status:health.level === "normal" ? 200 : 503 });
