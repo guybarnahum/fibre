@@ -1,6 +1,5 @@
 import { IntegrityError } from "./persistence-common.mjs";
 
-
 function tableExists(database, table) {
   return database.prepare(
     "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name=?",
@@ -34,16 +33,11 @@ function hasPlaceRevision(database, threadId, reference) {
 }
 
 function hasEmbodimentRevision(database, threadId, reference) {
-  if (!tableExists(database, "embodiment_records")) return false;
-  const rows = database.prepare(
-    "SELECT record_json FROM embodiment_records WHERE thread_id=? ORDER BY embodiment_id,revision",
-  ).all(threadId);
-  return rows.some((row) => {
-    const record = JSON.parse(row.record_json);
-    return record.embodimentId === reference ||
-      record.sourceReferences?.includes(reference) ||
-      record.permissionReferences?.includes(reference);
-  });
+  if (!tableExists(database, "embodiment_reference_index")) return false;
+  return database.prepare(`
+    SELECT 1 FROM embodiment_reference_index
+    WHERE thread_id=? AND reference=? LIMIT 1
+  `).get(threadId, reference) !== undefined;
 }
 
 const WITNESS_CHECKS = Object.freeze({
