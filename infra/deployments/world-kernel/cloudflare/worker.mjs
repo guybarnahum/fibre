@@ -134,7 +134,7 @@ async function reconciliationState(runtime) {
 function reconciliationOutcome(result) {
   const names=[
     "presentation","visualPublication","experienceConsolidation",
-    "contactOutreach","contactReception","livedBoundary",
+    "contactOutreach","contactReception","firstLife","livedBoundary",
     "environmentEvolution","socialOpportunity",
   ];
   return Object.fromEntries(names.flatMap((name)=>{
@@ -146,6 +146,12 @@ function reconciliationOutcome(result) {
         .filter(key=>work[key]!==undefined)
         .map(key=>[key,work[key]]),
     );
+    if(name==="firstLife"&&Array.isArray(work.results)){
+      counts.lives=work.results.slice(0,1).map(item=>({
+        threadId:item.threadId,outcome:item.outcome,
+        ...(item.message?{message:item.message}:{}),
+      }));
+    }
     if(name==="livedBoundary"&&Array.isArray(work.results)){
       counts.lives=work.results.slice(0,1).map(item=>({
         threadId:item.threadId,outcome:item.outcome,
