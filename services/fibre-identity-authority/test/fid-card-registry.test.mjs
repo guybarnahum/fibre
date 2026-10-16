@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
@@ -104,4 +105,22 @@ test("FID registry rejects civil-identity drift and a second active card for one
   assert.equal(registry.listByFin(FIN).length, 1);
   assert.equal(registry.getActiveByFin(FIN).credential.credentialId, "fidc_mira_001");
   registry.close();
+}));
+
+test("live FID access never silently installs a missing schema",()=>withDatabase((databasePath)=>{
+  const deployed=storage(databasePath);
+  const live=new FidCardRegistry({...deployed,schemaReady:true});
+  live.close();
+  const database=new DatabaseSync(databasePath,{readOnly:true});
+  try{
+    assert.equal(database.prepare("SELECT 1 FROM sqlite_master WHERE name='fid_card_credentials'").get(),
+      undefined,"live FID construction performed deployment schema work");
+  }finally{database.close();}
+  const installer=new FidCardRegistry(deployed);
+  installer.close();
+  const ready=new FidCardRegistry({...deployed,schemaReady:true});
+  try{
+    assert.equal(ready.getActiveByFin(FIN),null,
+      "deployment-installed FID schema was not usable by live runtime");
+  }finally{ready.close();}
 }));
