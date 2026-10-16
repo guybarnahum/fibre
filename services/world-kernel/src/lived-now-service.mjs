@@ -396,7 +396,10 @@ async function formPlan({
     throw new LivedNowCoverageError("Dormant catch-up cannot continue from an ungrounded prior place");
   }
 
-  const worldContext = livedNowStore.getWorldContext(threadId, { required:false });
+  // The already-authoritative current place may supply local civil time.
+  // Only reconstruct shared World context when that time-zone fallback is needed.
+  const worldTimeZone=livedNowStore.currentLocationTimeZone?.(threadId)
+    ??livedNowStore.getWorldContext(threadId,{required:false})?.timeZone??null;
   const interoception = planningInteroception({
     livedNowStore,
     worldStore,
@@ -421,8 +424,7 @@ async function formPlan({
     },
     modelAdapter,
     startingPlaceRef: startingPlace,
-    worldTimeZone:livedNowStore.currentLocationTimeZone?.(threadId)
-      ??worldContext?.timeZone??null,
+    worldTimeZone,
     ...(interoception === null ? {} : { interoception }),
     ...(materializedAt === null ? {} : { materializedAt }),
   });
