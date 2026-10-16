@@ -206,7 +206,7 @@ export function createGenesisTables(database) {
       AFTER INSERT ON genesis_birth_publications
       BEGIN
         INSERT INTO genesis_first_life_work(thread_id,due_at)
-        VALUES(NEW.thread_id,NEW.published_at);
+        VALUES(NEW.thread_id,strftime('%Y-%m-%dT%H:%M:%fZ',NEW.published_at));
       END;
 
     CREATE TRIGGER IF NOT EXISTS genesis_raised_language_corrections_no_update
