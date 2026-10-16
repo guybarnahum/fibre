@@ -259,14 +259,26 @@ export function retryServiceHealth({ client, serviceId, baseUrl, expectedSha, at
   });
 }
 
-export function retryStateHealth({ client, serviceId, baseUrl, expectedSha, attempts = HEALTH_RETRY_ATTEMPTS, wait = delay } = {}) {
-  return retryHealth({
-    serviceId,
-    attempts,
-    wait,
-    kind: "state",
-    check: () => client.checkStateHealth({ serviceId, baseUrl, expectedSha }),
-  });
+export async function retryStateHealth({
+  client,serviceId,baseUrl,expectedSha,wait=delay,attempts=15,
+}={}){
+  let lastError;
+  for(let attempt=0;attempt<attempts;attempt++){
+    try{
+      return await client.checkStateHealth({serviceId,baseUrl,expectedSha});
+    }catch(error){
+      lastError=error;
+      if(attempt===attempts-1)break;
+      // Cloudflare may continue serving the prior Durable Object code for
+      // minutes after the Worker deploy. Probe sparingly, never redeploy.
+      const pause=Math.min(30_000,1_500*2**attempt);
+      if(attempt===0||attempt>=4){
+        console.log(`STATE REVISION PENDING ${serviceId} (${error.message}); next check in ${pause/1_000}s`);
+      }
+      await wait(pause);
+    }
+  }
+  throw new Error(`${serviceId} state did not become healthy after deployment: ${lastError?.message}`,{cause:lastError});
 }
 
 export async function deployCloudflareStack({
