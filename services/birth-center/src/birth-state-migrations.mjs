@@ -173,6 +173,12 @@ export function migrateBirthState(storage) {
         `Birth Center state migration stopped at schema ${toVersion}; expected ${BIRTH_STATE_SCHEMA_VERSION}`,
       );
     }
+    for(const table of [
+      "provisional_births","modern_birth_requests","genesis_development_requests",
+      "genesis_development_dispositions","birth_model_invocations",
+    ]){
+      session.prepare(`SELECT 1 FROM ${table} LIMIT 1`).get();
+    }
     return Object.freeze({ fromVersion, toVersion, applied:Object.freeze(applied) });
   } finally {
     session.close();
