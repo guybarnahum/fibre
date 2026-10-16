@@ -124,90 +124,6 @@ export async function acceptCloudflareServiceRevision({
   return {baseUrl,health,stateHealth};
 }
 
-export async function acceptBirthCenterServiceDeployment({
-  runner,
-  cwd,
-  prepared,
-  deploymentOutput,
-  fetchImpl = globalThis.fetch,
-  privateToken = process.env.FIBRE_PRIVATE_TOKEN,
-} = {}) {
-  const client = createWranglerDeploymentClient({ runner, cwd, fetchImpl, privateToken });
-  const baseUrl = healthBaseUrlForDeployment({
-    serviceId:"birth-center",
-    resolvedConfig:prepared.config,
-    deploymentOutput,
-  });
-  const expectedSha=prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA;
-  const stateHealth=await retryStateHealth({
-    client,serviceId:"birth-center",baseUrl,expectedSha,
-  });
-  const migration=await client.migrateBirthCenter({baseUrl,expectedSha});
-  const runtimeAcceptance = await client.checkBirthCenterRuntime({ baseUrl });
-  return Object.freeze({ baseUrl, migration, stateHealth, runtimeAcceptance });
-}
-
-export async function acceptWorldSchemaDeployment({
-  prepared,deploymentOutput,
-  fetchImpl=globalThis.fetch,
-  privateToken=process.env.FIBRE_PRIVATE_TOKEN,
-  wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),
-}={}){
-  if(typeof privateToken!=="string"||privateToken.length===0){
-    throw new Error("World schema installation requires FIBRE_PRIVATE_TOKEN");
-  }
-  const baseUrl=healthBaseUrlForDeployment({
-    serviceId:"world-kernel",
-    resolvedConfig:prepared.config,
-    deploymentOutput,
-  });
-  const expectedSha=prepared.config.vars?.FIBRE_DEPLOYMENT_GIT_SHA;
-  if(!GIT_SHA_PATTERN.test(expectedSha??"")){
-    throw new Error("World schema installation requires a deployment Git SHA");
-  }
-  const headers={"x-fibre-private-token":privateToken};
-  const revisionUrl=new URL("/internal/world-schema/revision",baseUrl);
-  // Cloudflare can briefly serve an older Durable Object after a Worker
-  // upload. Poll the deployment-only, read-only revision before migrating.
-  // The old revision does no migration work while the rollout converges.
-  let observed="not available";
-  let ready=false;
-  for(let attempt=1;attempt<=15;attempt++){
-    const response=await fetchImpl(revisionUrl,{method:"GET",headers});
-    if(response.ok){
-      const revision=await response.json();
-      observed=String(revision?.deploymentGitSha??"missing");
-      if(revision?.deploymentGitSha===expectedSha){
-        ready=true;
-        break;
-      }
-    }else if(response.status===404){
-      observed="route unavailable (404)";
-    }else{
-      const detail=await response.text();
-      throw new Error("World revision probe HTTP "+response.status+": "+detail.slice(0,180));
-    }
-    if(attempt<15)await wait(2_000);
-  }
-  if(!ready){
-    throw new Error("World Durable Object revision did not converge: "+
-      observed+"; expected "+expectedSha);
-  }
-
-  const url=new URL("/internal/world-schema/migrate",baseUrl);
-  const response=await fetchImpl(url,{method:"POST",headers});
-  if(!response.ok){
-    const message=await response.text();
-    throw new Error("World schema installation at "+url.origin+
-      " HTTP "+response.status+": "+message.slice(0,180));
-  }
-  const result=await response.json();
-  if(result?.ok!==true||result.deploymentGitSha!==expectedSha){
-    throw new Error("World schema installation did not confirm expected revision "+expectedSha);
-  }
-  return result;
-}
-
 export async function deployCloudflareService({
   repoRoot,
   environment,
@@ -218,10 +134,8 @@ export async function deployCloudflareService({
   readFileImpl = readFile,
   writeFileImpl = writeFile,
   ensureD1MigrationsImpl = ensureCloudflareD1Migrations,
-  acceptBirthCenterImpl = acceptBirthCenterServiceDeployment,
-  acceptWorldSchemaImpl = acceptWorldSchemaDeployment,
   acceptServiceRevisionImpl = acceptCloudflareServiceRevision,
-  acceptFidSchemaImpl = null,
+  acceptSchemaImpl = null,
   print = console.log,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
@@ -267,27 +181,25 @@ export async function deployCloudflareService({
   const serviceRevision=await acceptServiceRevisionImpl({
     prepared,deploymentOutput,
   });
-  const worldSchemaAcceptance=serviceId==="world-kernel"
-    ?await acceptWorldSchemaImpl({prepared,deploymentOutput})
-    :null;
-  const fidSchemaAcceptance=serviceId==="fibre-identity-authority"
-    ?await (acceptFidSchemaImpl??(async()=>{
+  const expectedSha=prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA;
+  const schemaAcceptance=["world-kernel","fibre-identity-authority","birth-center"].includes(serviceId)
+    ?await (acceptSchemaImpl??(async()=>{
       const client=createWranglerDeploymentClient({cwd:root});
+      if(serviceId==="birth-center"){
+        const migration=await client.migrateBirthCenter({
+          baseUrl:serviceRevision.baseUrl,expectedSha,
+        });
+        const runtimeAcceptance=await client.checkBirthCenterRuntime({
+          baseUrl:serviceRevision.baseUrl,
+        });
+        return {migration,runtimeAcceptance};
+      }
       return client.migrateWorldOrFid({
-        serviceId,baseUrl:serviceRevision.baseUrl,
-        expectedSha:prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA,
+        serviceId,baseUrl:serviceRevision.baseUrl,expectedSha,
       });
-    }))({prepared,deploymentOutput})
+    }))({prepared,serviceRevision})
     :null;
-  if(worldSchemaAcceptance!==null)print("WORLD SCHEMA INSTALLED");
-  const birthCenterAcceptance = serviceId === "birth-center"
-    ? await acceptBirthCenterImpl({
-        runner,
-        cwd:root,
-        prepared,
-        deploymentOutput:`${stdout}\n${stderr}`,
-      })
-    : null;
+  if(schemaAcceptance!==null)print("STATE SCHEMA INSTALLED "+serviceId);
   return Object.freeze({
     environment: env,
     serviceId,
@@ -296,8 +208,8 @@ export async function deployCloudflareService({
     configPath: deployConfigPath,
     stdout,
     stderr,
-    birthCenterAcceptance,
-    worldSchemaAcceptance,
+    serviceRevision,
+    schemaAcceptance,
   });
 }
 
