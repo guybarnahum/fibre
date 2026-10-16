@@ -408,7 +408,12 @@ async function completionActivityIdentity(infra, rawCompletion) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (request.method === "GET" && url.pathname === "/healthz") return HTTP_SERVICE.fetch(request);
+    if (request.method === "GET" && url.pathname === "/healthz"){
+      const response=await HTTP_SERVICE.fetch(request);
+      return Response.json({...await response.json(),
+        deploymentGitSha:env.FIBRE_DEPLOYMENT_GIT_SHA??null,
+      },{status:response.status});
+    }
     const infra = createInfra(env);
     const adminRealtime = createAdminRealtime(env);
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
