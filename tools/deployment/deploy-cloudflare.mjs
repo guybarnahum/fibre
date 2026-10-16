@@ -320,13 +320,21 @@ export async function deployCloudflareStack({
     const baseUrl = healthBaseUrlForDeployment({ serviceId, resolvedConfig: resolved.config, deploymentOutput: deployed.output });
     const customDomain = deployed.customDomain ?? null;
     const attempts = customDomain === null ? HEALTH_RETRY_ATTEMPTS : CUSTOM_DOMAIN_HEALTH_RETRY_ATTEMPTS;
-    const health = await retryServiceHealth({ client, serviceId, baseUrl, attempts, wait });
-    const migration = serviceId === "birth-center"
-      ? await client.migrateBirthCenter({ baseUrl })
-      : null;
-    const stateHealth = STATEFUL_DO_SERVICES.has(serviceId)
-      ? await retryStateHealth({ client, serviceId, baseUrl, wait })
-      : null;
+    const expectedSha=resolved.config.vars?.FIBRE_DEPLOYMENT_GIT_SHA;
+    if(!/^[0-9a-f]{40}$/u.test(expectedSha??"")){
+      throw new Error(serviceId+" requires an exact source revision for deployment");
+    }
+    const health=await retryServiceHealth({
+      client,serviceId,baseUrl,expectedSha,attempts,wait,
+    });
+    const stateHealth=STATEFUL_DO_SERVICES.has(serviceId)
+      ?await retryStateHealth({client,serviceId,baseUrl,expectedSha,wait})
+      :null;
+    const migration=serviceId==="birth-center"
+      ?await client.migrateBirthCenter({baseUrl,expectedSha})
+      :serviceId==="world-kernel"||serviceId==="fibre-identity-authority"
+        ?await client.migrateWorldOrFid({serviceId,baseUrl,expectedSha})
+        :null;
     const runtimeAcceptance = serviceId === "birth-center"
       ? await retryHealth({
           serviceId,
