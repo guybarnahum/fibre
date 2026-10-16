@@ -80,10 +80,15 @@ export function createWorldEnvironmentOpportunity({
             if(eligible&&!candidates.some((item)=>item.threadId===opportunity.threadId)){
               candidates.unshift(current);
             }
+            // A home is not a shared venue, but World already knows this
+            // Thread's admitted private setting. Use its own description for
+            // grounded exterior consideration without disclosing it to peers.
             const origin=eligible
-              ?livedNowStore.getWorldPlace(
+              ?(livedNowStore.getWorldPlace(
                 opportunity.threadId,situation.location.placeRef,{required:false},
-              ):null;
+              )??livedNowStore.getPrivatePlace?.(
+                opportunity.threadId,situation.location.placeRef,
+              )??null):null;
             const physicalVenue=origin?.physicalVenue??null;
             // Without grounded physical venue geography we can authorize a
             // private local opportunity, not conjecture distant sight lines.
@@ -93,11 +98,14 @@ export function createWorldEnvironmentOpportunity({
             const candidateScenes=observableCandidates.map((item)=>{
               const place=livedNowStore.getWorldPlace(
                 item.threadId,item.location.placeRef,{required:false},
-              );
+              )??(item.threadId===opportunity.threadId
+                ?livedNowStore.getPrivatePlace?.(item.threadId,item.location.placeRef)
+                :null)??null;
               return {
                 threadId:item.threadId,situationId:item.situationId,
                 physicalVenueRef:place?.physicalVenue?.ref??null,
-                placeName:(place?.physicalVenue?.displayName??place?.displayName??"").slice(0,300),
+                placeName:(place?.physicalVenue?.displayName??place?.displayName
+                  ??place?.specificPlace??"").slice(0,300),
                 activity:(item.activity??"").slice(0,220),
               };
             });
@@ -121,7 +129,8 @@ export function createWorldEnvironmentOpportunity({
                     ref:physicalVenue.ref,name:physicalVenue.displayName,
                     locality:physicalVenue.locality,country:physicalVenue.country,
                   },
-                  sceneDescription:(origin?.displayName??"Ordinary lived setting").slice(0,320),
+                  sceneDescription:(origin?.displayName??origin?.specificPlace
+                    ??"Ordinary lived setting").slice(0,320),
                 },
                 potentialObservers:candidateScenes,
               };
