@@ -349,7 +349,7 @@ export async function startWorldKernelFromEnvironment(
         experienceStore:livedExperienceStore,
     onSituationResolved:scheduleNextLivedBoundary,
     onSituationEnacted:async(situation)=>{
-      if(situation.location?.kind!=="place")return;
+      if(situation.location?.kind!=="place"||situation.wakefulness==="asleep")return;
       const earned=livedExperienceStore.enqueueEnvironmentalOpportunity({
         threadId:situation.threadId,
         situationId:situation.situationId,
