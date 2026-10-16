@@ -81,6 +81,12 @@ export class FibreBirthCenterDurableObject extends DurableObject {
 
   async fetch(request) {
     const url = new URL(request.url);
+    if (url.pathname === "/internal/deployment/revision" && request.method==="GET") {
+      if(request.headers.get("x-fibre-private-token")!==this.env.FIBRE_PRIVATE_TOKEN){
+        return Response.json({error:{code:"PRIVATE_TOKEN_REQUIRED"}},{status:403});
+      }
+      return Response.json({deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null});
+    }
     if (url.pathname === "/internal/migrate") {
       if (request.method !== "POST") {
         return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
@@ -90,7 +96,8 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       }
       const infraDriver = createCloudflareInfraDriver({ stateScopes:{ [BIRTH_SCOPE_ID]:this.ctx.storage } });
       const result = migrateBirthState({ infraDriver, stateScopeId:BIRTH_SCOPE_ID });
-      return Response.json({ ok:true, service:"birth-center", migration:result });
+      return Response.json({ ok:true, service:"birth-center", migration:result,
+        deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null });
     }
     if (request.method === "GET"
       && (url.pathname === "/internal/health/state" || url.pathname === "/internal/health/infra")) {
@@ -101,6 +108,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         provider: health.provider,
         stateScopeId: BIRTH_SCOPE_ID,
         stateChecked: true,
+        deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
         capabilities:["state"],
         health,
       }, { status:health.level === "normal" ? 200 : 503 });
