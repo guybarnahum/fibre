@@ -50,6 +50,7 @@ export function installWorldSchemas(storage){
   try{
     database.prepare("SELECT 1 FROM thread_experience_pending_work LIMIT 1").get();
     database.prepare("SELECT 1 FROM thread_contact_pending_work LIMIT 1").get();
+    database.prepare("SELECT 1 FROM embodiment_reference_index LIMIT 1").get();
   }finally{database.close();}
   }finally{worldReader.close();}
 }
