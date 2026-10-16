@@ -64,6 +64,7 @@ test("service deploy re-resolves current source config without provisioning", as
         calls.push(["resolve-current"]);
         const config = resolvedConfig();
         config.migrations = [{ tag:"new-do", new_sqlite_classes:["NewDurableObject"] }];
+        config.durable_objects={bindings:[{name:"WORLD_STATE",class_name:"FibreWorldDurableObject"}]};
         return {
           sourceConfigPath:"infra/deployments/world-kernel/cloudflare/wrangler.jsonc",
           config,
@@ -104,6 +105,8 @@ test("service deploy re-resolves current source config without provisioning", as
     assert.deepEqual(wrangler[1].slice(0, 1), ["deploy"]);
     assert.ok(wrangler[1].includes("--experimental-provision=false"));
     assert.ok(wrangler[1].includes("--experimental-auto-create=false"));
+    assert.equal(wrangler[1][wrangler[1].indexOf("--durable-objects-code-update-mode")+1],
+      "immediate","World deployment must activate the new Durable Object code");
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
   }
