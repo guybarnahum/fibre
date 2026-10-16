@@ -1,4 +1,5 @@
 import {openContactStore} from "./contact-store.mjs";
+import {GenesisStore} from "./genesis-store.mjs";
 import {openFibreCreditStore} from "./fibre-credit-store.mjs";
 import {createGuardianCognitionTables} from "./guardian-cognition-schema.mjs";
 import {openWorldStateDatabase} from "./world-state-storage.mjs";
@@ -21,6 +22,7 @@ export function installWorldSchemas(storage){
   const worldReader=openWorldStore(storage);
   try{
   const constructors=[
+    ()=>new GenesisStore(storage),
     ()=>openLivedNowStore(storage),
     ()=>openLivedExperienceStore(storage),
     ()=>new SymbolicGenomeStore(storage),
@@ -51,6 +53,7 @@ export function installWorldSchemas(storage){
     database.prepare("SELECT 1 FROM thread_experience_pending_work LIMIT 1").get();
     database.prepare("SELECT 1 FROM thread_contact_pending_work LIMIT 1").get();
     database.prepare("SELECT 1 FROM embodiment_reference_index LIMIT 1").get();
+    database.prepare("SELECT 1 FROM genesis_first_life_work LIMIT 1").get();
   }finally{database.close();}
   }finally{worldReader.close();}
 }
