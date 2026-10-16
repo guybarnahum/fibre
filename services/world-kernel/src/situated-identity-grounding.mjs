@@ -1,5 +1,5 @@
 import { IntegrityError } from "./persistence-common.mjs";
-import { lifeRelationRevisionRef, placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
+
 
 function tableExists(database, table) {
   return database.prepare(
@@ -13,20 +13,24 @@ function hasThreadEvent(database, threadId, reference) {
   ).get(threadId, reference) !== undefined;
 }
 
+// Place/relation revisions already have immutable, Thread-owned witnesses
+// maintained by insertion triggers. Resolve by the reference index instead of
+// replaying every prior relationship and place episode at each life boundary.
+function hasRevisionWitness(database, threadId, reference, kind) {
+  if (!reference.startsWith(kind === "life_relation_revision" ? "lrr:" : "per:")) return false;
+  if (!tableExists(database, "situated_evidence_witnesses")) return false;
+  return database.prepare(`
+    SELECT 1 FROM situated_evidence_witnesses
+    WHERE reference=? AND thread_id=? AND witness_kind=?
+  `).get(reference, threadId, kind) !== undefined;
+}
+
 function hasRelationRevision(database, threadId, reference) {
-  if (!tableExists(database, "life_relation_records")) return false;
-  const rows = database.prepare(
-    "SELECT record_json FROM life_relation_records WHERE thread_id=? ORDER BY relation_id,revision",
-  ).all(threadId);
-  return rows.some((row) => lifeRelationRevisionRef(JSON.parse(row.record_json)) === reference);
+  return hasRevisionWitness(database, threadId, reference, "life_relation_revision");
 }
 
 function hasPlaceRevision(database, threadId, reference) {
-  if (!tableExists(database, "place_episode_records")) return false;
-  const rows = database.prepare(
-    "SELECT record_json FROM place_episode_records WHERE thread_id=? ORDER BY episode_id,revision",
-  ).all(threadId);
-  return rows.some((row) => placeEpisodeRevisionRef(JSON.parse(row.record_json)) === reference);
+  return hasRevisionWitness(database, threadId, reference, "place_episode_revision");
 }
 
 function hasEmbodimentRevision(database, threadId, reference) {
