@@ -230,12 +230,13 @@ test("Wrangler client verifies secret names, shallow health and deep state healt
   });
   await client.assertAuthenticated();
   assert.deepEqual(await client.listSecretNames("fibre-world-kernel-staging"), new Set(["FIBRE_PRIVATE_TOKEN"]));
-  await client.deployService({ configPath:"/repo/.fibre/world.jsonc" });
-  assert.deepEqual(calls.at(-1), [
-    "deploy", "--config", "/repo/.fibre/world.jsonc",
-    "--experimental-provision=false",
-    "--experimental-auto-create=false",
-  ]);
+  await client.deployService({
+    configPath:"/repo/.fibre/world.jsonc",
+    resolvedConfig:{durable_objects:{bindings:[{name:"WORLD_STATE",class_name:"FibreWorldDurableObject"}]}},
+  });
+  const deployArgs=calls.at(-1);
+  assert.equal(deployArgs[deployArgs.indexOf("--durable-objects-code-update-mode")+1],
+    "immediate","stateful deployment left the previous Durable Object code active");
   assert.equal((await client.checkServiceHealth({
     serviceId:"world-kernel",
     baseUrl:"https://world.example",
