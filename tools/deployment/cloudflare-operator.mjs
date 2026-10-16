@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
 
-export const CLOUDFLARE_WRANGLER_VERSION = "4.126.0";
+export const CLOUDFLARE_WRANGLER_VERSION = "4.151.0";
 export const CLOUDFLARE_OPERATOR_STATE_VERSION = "fibre-cloudflare-operator-state-v0.1";
 export const CLOUDFLARE_ENVIRONMENTS = Object.freeze(["staging", "production"]);
 
