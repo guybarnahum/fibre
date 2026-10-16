@@ -22,6 +22,8 @@ import {
 import {
   createWranglerDeploymentClient,
   healthBaseUrlForDeployment,
+  retryServiceHealth,
+  retryStateHealth,
 } from "./deploy-cloudflare.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -106,6 +108,22 @@ export async function resolveCurrentServiceConfig({
   });
 }
 
+export async function acceptCloudflareServiceRevision({
+  prepared,deploymentOutput,
+  client=createWranglerDeploymentClient({}),
+}={}){
+  const serviceId=prepared.serviceId;
+  const expectedSha=prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA;
+  const baseUrl=healthBaseUrlForDeployment({
+    serviceId,resolvedConfig:prepared.config,deploymentOutput,
+  });
+  const health=await retryServiceHealth({client,serviceId,baseUrl,expectedSha});
+  const stateHealth=["world-kernel","fibre-identity-authority","birth-center"].includes(serviceId)
+    ?await retryStateHealth({client,serviceId,baseUrl,expectedSha})
+    :null;
+  return {baseUrl,health,stateHealth};
+}
+
 export async function acceptBirthCenterServiceDeployment({
   runner,
   cwd,
@@ -120,8 +138,11 @@ export async function acceptBirthCenterServiceDeployment({
     resolvedConfig:prepared.config,
     deploymentOutput,
   });
-  const migration = await client.migrateBirthCenter({ baseUrl });
-  const stateHealth = await client.checkStateHealth({ serviceId:"birth-center", baseUrl });
+  const expectedSha=prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA;
+  const stateHealth=await retryStateHealth({
+    client,serviceId:"birth-center",baseUrl,expectedSha,
+  });
+  const migration=await client.migrateBirthCenter({baseUrl,expectedSha});
   const runtimeAcceptance = await client.checkBirthCenterRuntime({ baseUrl });
   return Object.freeze({ baseUrl, migration, stateHealth, runtimeAcceptance });
 }
@@ -199,6 +220,8 @@ export async function deployCloudflareService({
   ensureD1MigrationsImpl = ensureCloudflareD1Migrations,
   acceptBirthCenterImpl = acceptBirthCenterServiceDeployment,
   acceptWorldSchemaImpl = acceptWorldSchemaDeployment,
+  acceptServiceRevisionImpl = acceptCloudflareServiceRevision,
+  acceptFidSchemaImpl = null,
   print = console.log,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
@@ -240,10 +263,21 @@ export async function deployCloudflareService({
   ], { cwd: root });
   const stdout = result.stdout ?? "";
   const stderr = result.stderr ?? "";
+  const deploymentOutput=`${stdout}\n${stderr}`;
+  const serviceRevision=await acceptServiceRevisionImpl({
+    prepared,deploymentOutput,
+  });
   const worldSchemaAcceptance=serviceId==="world-kernel"
-    ?await acceptWorldSchemaImpl({
-      prepared,deploymentOutput:`${stdout}\n${stderr}`,
-    })
+    ?await acceptWorldSchemaImpl({prepared,deploymentOutput})
+    :null;
+  const fidSchemaAcceptance=serviceId==="fibre-identity-authority"
+    ?await (acceptFidSchemaImpl??(async()=>{
+      const client=createWranglerDeploymentClient({cwd:root});
+      return client.migrateWorldOrFid({
+        serviceId,baseUrl:serviceRevision.baseUrl,
+        expectedSha:prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA,
+      });
+    }))({prepared,deploymentOutput})
     :null;
   if(worldSchemaAcceptance!==null)print("WORLD SCHEMA INSTALLED");
   const birthCenterAcceptance = serviceId === "birth-center"
