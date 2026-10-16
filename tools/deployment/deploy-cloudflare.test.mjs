@@ -244,6 +244,11 @@ test("Wrangler client verifies secret names, shallow health and deep state healt
     serviceId:"world-kernel",
     baseUrl:"https://world.example",
   })).stateChecked, true);
+  await assert.rejects(client.checkStateHealth({
+    serviceId:"world-kernel",
+    baseUrl:"https://world.example",
+    expectedSha:"a".repeat(40),
+  }),/deployed revision not ready/u);
   assert.equal((await client.migrateBirthCenter({
     baseUrl:"https://birth.example",
   })).toVersion, 2);
