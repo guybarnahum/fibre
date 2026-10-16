@@ -152,6 +152,15 @@ function reconciliationOutcome(result) {
         ...(item.message?{message:String(item.message).slice(0,180)}:{}),
       }));
     }
+    if(name==="environmentEvolution"&&Array.isArray(work.results)){
+      // The outcome is already durable; summarize it without inspecting
+      // another World record or confusing no-change with absent attention.
+      counts.decisions=Object.fromEntries(
+        ["not_observable","no_change","changed","failed"].map(outcome=>[
+          outcome,work.results.filter(item=>item.outcome===outcome).length,
+        ]),
+      );
+    }
     return [[name,{
       ok:entry.ok,
       ...(entry.error?{error:String(entry.error.message).slice(0,180)}:{}),
