@@ -300,6 +300,12 @@ export default {
     if (url.pathname === "/internal/generation/reconcile") {
       return createControlApi(env).fetch(request);
     }
+    if(request.method==="GET"&&url.pathname==="/healthz"){
+      return Promise.resolve(HTTP_SERVICE.fetch(request)).then(async response=>Response.json({
+        ...await response.json(),
+        deploymentGitSha:env.FIBRE_DEPLOYMENT_GIT_SHA??null,
+      },{status:response.status}));
+    }
     return HTTP_SERVICE.fetch(request);
   },
 };
