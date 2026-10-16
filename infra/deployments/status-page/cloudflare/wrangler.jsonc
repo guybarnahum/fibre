@@ -22,7 +22,7 @@
   "assets": {
     "directory": "../../../../apps/status-page",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/healthz"],
+    "run_worker_first": ["/api/*", "/healthz", "/internal/deployment/admin-revision"],
     "not_found_handling": "single-page-application"
   },
   "observability": { "enabled": true }
