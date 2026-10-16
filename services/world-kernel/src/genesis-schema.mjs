@@ -1,7 +1,9 @@
 import { createCivilRegistryTables } from "./civil-registry-schema.mjs";
+import { createGenesisFirstLifeTables } from "./genesis-first-life-store.mjs";
 
 export function createGenesisTables(database) {
   createCivilRegistryTables(database);
+  createGenesisFirstLifeTables(database);
   database.exec(`
     CREATE TABLE IF NOT EXISTS genesis_world_specs (
       world_spec_id TEXT PRIMARY KEY,
@@ -197,6 +199,15 @@ export function createGenesisTables(database) {
       json_extract(record_json,'$.publication.publishedAt')
     FROM genesis_manifests
     WHERE publication_status='published';
+
+    -- Initial life is earned at publication, never inferred by scanning old
+    -- births during a deploy. The same transaction records the obligation.
+    CREATE TRIGGER IF NOT EXISTS genesis_birth_earns_first_life
+      AFTER INSERT ON genesis_birth_publications
+      BEGIN
+        INSERT INTO genesis_first_life_work(thread_id,due_at)
+        VALUES(NEW.thread_id,NEW.published_at);
+      END;
 
     CREATE TRIGGER IF NOT EXISTS genesis_raised_language_corrections_no_update
       BEFORE UPDATE ON genesis_raised_language_corrections
