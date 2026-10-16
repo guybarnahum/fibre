@@ -228,7 +228,7 @@ test("Genesis birth publishes participant/place continuity through canonical sit
       SELECT due_at,attempts,first_established_at
       FROM genesis_first_life_work WHERE thread_id=?
     `).all(birth.thread.threadId),[{
-      due_at:birth.manifest.publication.publishedAt,
+      due_at:new Date(birth.manifest.publication.publishedAt).toISOString(),
       attempts:0,first_established_at:null,
     }],"atomic birth or exact replay changed the unique first-life obligation");
 
@@ -544,7 +544,7 @@ test("Birth earns one real first life, no invented dormant past, and a continuin
     });
     const bornAt=birth.manifest.publication.publishedAt;
     const targetAt="2026-08-23T00:02:00Z";
-    assert.equal(firstLifeStore.nextDueAt(),bornAt,
+    assert.equal(firstLifeStore.nextDueAt(),new Date(bornAt).toISOString(),
       "an admitted birth lacks its durable first-life obligation");
     const process=createGenesisFirstLifeProcess({
       workStore:firstLifeStore,livedNow:service,now:()=>targetAt,
