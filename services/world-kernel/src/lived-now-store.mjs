@@ -117,6 +117,8 @@ function createTables(database) {
     CREATE INDEX IF NOT EXISTS idx_current_frontier_place
       ON current_situation_frontier(place_ref,thread_id)
       WHERE place_ref IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_current_frontier_recent
+      ON current_situation_frontier(established_at DESC,situation_id DESC);
     CREATE TRIGGER IF NOT EXISTS current_situations_advance_frontier
       AFTER INSERT ON current_situation_records
       BEGIN
@@ -825,19 +827,25 @@ export class LivedNowStore {
       throw new TypeError("recent situations limit must be 1-32");
     }
     const rows=this.#database.prepare(`
-      WITH ranked AS (
-        SELECT *,ROW_NUMBER() OVER (
-          PARTITION BY thread_id ORDER BY established_at DESC,situation_id DESC
-        ) AS rn
-        FROM current_situation_records
-        WHERE established_at BETWEEN ? AND ?
-          AND thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')
+      -- The live frontier already holds the latest situation per Thread.
+      SELECT f.situation_id,f.thread_id,f.established_at,f.record_json,f.record_digest
+      FROM current_situation_frontier f
+      JOIN threads t ON t.thread_id=f.thread_id
+      WHERE f.established_at BETWEEN ? AND ? AND t.status<>'retired'
+      UNION ALL
+      -- For a delayed World event, that frontier may be in the future.
+      -- Recover precisely the latest situation inside the original window.
+      SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
+      FROM current_situation_frontier f
+      JOIN threads t ON t.thread_id=f.thread_id
+      JOIN current_situation_records s ON s.situation_id=(
+        SELECT prior.situation_id FROM current_situation_records prior
+        WHERE prior.thread_id=f.thread_id AND prior.established_at BETWEEN ? AND ?
+        ORDER BY prior.established_at DESC,prior.situation_id DESC LIMIT 1
       )
-      SELECT situation_id,thread_id,established_at,record_json,record_digest
-      FROM ranked WHERE rn=1
-      ORDER BY established_at DESC,situation_id DESC
-      LIMIT ?
-    `).all(since,at,limit);
+      WHERE f.established_at>? AND t.status<>'retired'
+      ORDER BY established_at DESC,situation_id DESC LIMIT ?
+    `).all(since,at,since,at,at,limit);
     return rows.map(situationFromRow);
   }
 
