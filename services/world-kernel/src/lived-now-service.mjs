@@ -541,8 +541,11 @@ async function establishFirstLivedNow({
     throw new LivedNowCoverageError("LivedNow cannot be established before the Thread entered Fibre");
   }
 
-  const placeRef = latestGroundedPlaceRef(situatedLifeStore, threadId, bornAt);
-  const firstHorizonEnd = new Date(Date.parse(bornAt) + FORWARD_PLAN_MS).toISOString();
+  // Birth is historical authority; the first *realized* present starts at
+  // its actual admission. A delayed first life must not invent an elapsed
+  // autobiography or impersonate cognition at the original birth timestamp.
+  const placeRef = latestGroundedPlaceRef(situatedLifeStore, threadId, at);
+  const firstHorizonEnd = new Date(Date.parse(at) + FORWARD_PLAN_MS).toISOString();
   await formPlan({
     livedNowStore,
     worldStore,
@@ -553,29 +556,9 @@ async function establishFirstLivedNow({
     modelAdapter,
     experienceStore,
     threadId,
-    startAt: bornAt,
+    startAt: at,
     endAt: firstHorizonEnd,
     startingPlace: placeRef,
-  });
-  const first = enact(livedNowStore, threadId, bornAt);
-  if (at === bornAt) return first;
-
-  const coveringPlan = livedNowStore.latestPlan(threadId, "personal", { at });
-  if (planCovers(coveringPlan, at)) {
-    return enact(livedNowStore, threadId, at);
-  }
-
-  await catchUpDormantInterval({
-    livedNowStore,
-    worldStore,
-    identityStore,
-    semanticStateStore,
-    memoryStore,
-    situatedLifeStore,
-    modelAdapter,
-    threadId,
-    current: first,
-    at,
   });
   return enact(livedNowStore, threadId, at);
 }
