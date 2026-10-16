@@ -510,7 +510,7 @@ export function createBirthCenterCloudflareRuntime({
     stateScopes: { [BIRTH_SCOPE_ID]: storage },
     schedulerScopes: { [BIRTH_SCOPE_ID]: storage },
   });
-  const birthStorage = Object.freeze({ infraDriver, stateScopeId: BIRTH_SCOPE_ID });
+  const birthStorage = Object.freeze({ infraDriver, stateScopeId: BIRTH_SCOPE_ID, schemaReady:true });
   const worldPublisher = createWorldKernelBirthPublisher({
     baseUrl: "https://world-kernel.internal",
     privateToken,
