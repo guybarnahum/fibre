@@ -339,7 +339,7 @@ function createRuntime(ctx, env) {
     objectBucket:env.FID_OBJECTS,
     workflowBindings:{ asset_generation_v1:env.ASSET_GENERATION },
   });
-  const storage = Object.freeze({ infraDriver:infra, stateScopeId:FID_SCOPE_ID });
+  const storage = Object.freeze({ infraDriver:infra, stateScopeId:FID_SCOPE_ID, schemaReady:true });
   const registry = new FidCardRegistry(storage);
   const issuanceStore = new FidCardIssuanceStore(storage);
   const admissions = new FidPhotoAdmissionStore(storage);
@@ -418,6 +418,28 @@ async function activePhoto(runtime, active) {
   });
 }
 
+// Only the deployment command calls this. Live FID issuance never touches DDL.
+function installFidSchema(ctx){
+  const infraDriver=createCloudflareInfraDriver({stateScopes:{[FID_SCOPE_ID]:ctx.storage}});
+  const storage={infraDriver,stateScopeId:FID_SCOPE_ID};
+  for(const open of [
+    ()=>new FidCardRegistry(storage),
+    ()=>new FidCardIssuanceStore(storage),
+    ()=>new FidPhotoAdmissionStore(storage),
+  ]){
+    const store=open();
+    store.close();
+  }
+  const database=infraDriver.state.open(FID_SCOPE_ID);
+  try{
+    for(const table of [
+      "fid_card_credentials","fid_card_issuance_workflows","fid_photo_admissions",
+    ]){
+      database.prepare(`SELECT 1 FROM ${table} LIMIT 1`).get();
+    }
+  }finally{database.close();}
+}
+
 export class FibreIdentityAuthorityDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -450,6 +472,16 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
     }
     if (request.headers.get("x-fibre-private-token") !== privateToken(this.env)) {
       return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
+    }
+    if(url.pathname==="/internal/deployment/revision" && request.method==="GET"){
+      return Response.json({deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null});
+    }
+    if(url.pathname==="/internal/migrate" && request.method==="POST"){
+      installFidSchema(this.ctx);
+      return Response.json({
+        ok:true,service:"fibre-identity-authority",
+        deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
+      });
     }
 
     const runtime = this.runtimeForRequest();
