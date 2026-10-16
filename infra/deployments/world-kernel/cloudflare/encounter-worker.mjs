@@ -43,6 +43,8 @@ import { createContactWriteApi } from "#services/world-kernel/src/contact-write-
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { createThreadContactPerception } from "#services/world-kernel/src/thread-contact-perception.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
+import { createGenesisFirstLifeProcess } from "#services/world-kernel/src/genesis-first-life-process.mjs";
 import { createWorldVenueWriteApi } from "#services/world-kernel/src/live-world-venue-write-api.mjs";
 import { openIdentityStore } from "#services/world-kernel/src/identity-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
@@ -99,6 +101,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.contactReceptionProcess = null;
     this.contactReceptionModelAdapter = null;
     this.livedBoundaryProcess = null;
+    this.firstLifeProcess = null;
     this.livedBoundaryModelAdapter = null;
     this.liveEncounterRegistry = createLiveEncounterRegistry();
   }
@@ -725,6 +728,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       this.livedBoundaryProcess=createLivedBoundaryProcess({
         livedNowStore,livedNow,
       });
+      this.firstLifeProcess=createGenesisFirstLifeProcess({
+        workStore:openGenesisFirstLifeStore(runtime.worldStorage),livedNow,
+      });
+      runtime.reconciliationProcess.setFirstLifeProcess(this.firstLifeProcess);
       runtime.reconciliationProcess.setLivedBoundaryProcess(this.livedBoundaryProcess);
     }
     return this.livedBoundaryProcess;
