@@ -104,6 +104,7 @@ test("generated Admin and Status Wrangler configs retain source Worker entry poi
         audience: "audience-tag",
       },
       operatorConfig:{ GEONAMES_USERNAME:"fibre-test" },
+      sourceGitSha:"a".repeat(40),
     });
 
     for (const [appId, generatedConfigPath] of Object.entries(written)) {
