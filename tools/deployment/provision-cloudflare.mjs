@@ -152,14 +152,13 @@ export async function provisionCloudflareResources({
     const resolved = await ensureD1(client, database.name);
     const migrations = D1_MIGRATIONS_BY_BINDING[database.binding];
     if (!migrations?.length) throw new TypeError(`no D1 migrations registered for binding ${database.binding}`);
-    if (typeof client.ensureD1Migrations === "function") {
-      await client.ensureD1Migrations({
-        repoRoot,
-        databases:[{ binding:database.binding, name:database.name }],
-      });
-    } else {
-      for (const migration of migrations) await client.applyD1Migration(database.name, migration);
+    if(typeof client.ensureD1Migrations!=="function"){
+      throw new Error("Cloudflare provision requires D1 migration verification");
     }
+    await client.ensureD1Migrations({
+      repoRoot,
+      databases:[{binding:database.binding,name:database.name}],
+    });
     d1.push({
       ...resolved,
       binding: database.binding,
