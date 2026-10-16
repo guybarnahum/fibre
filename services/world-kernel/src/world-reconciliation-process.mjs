@@ -99,7 +99,8 @@ export function worldReconciliationNeedsRetry(result) {
     || livedBoundaryNeedsRetry(result.contactReception)
     || environmentNeedsRetry(result.environmentEvolution)
     || (result.socialOpportunity?.enabled===true&&result.socialOpportunity.ok!==true)
-    || livedBoundaryNeedsRetry(result.livedBoundary);
+    || livedBoundaryNeedsRetry(result.livedBoundary)
+    || livedBoundaryNeedsRetry(result.firstLife);
 }
 
 export function createWorldReconciliationProcess({
@@ -111,6 +112,7 @@ export function createWorldReconciliationProcess({
   environmentEvolutionProcess = null,
   socialOpportunityProcess = null,
   livedBoundaryProcess = null,
+  firstLifeProcess = null,
   onError = null,
 } = {}) {
   const delivery = optionalMethod("presentationDelivery", presentationDelivery, "deliverPending");
@@ -132,6 +134,7 @@ export function createWorldReconciliationProcess({
     "environmentEvolutionProcess",environmentEvolutionProcess,"runOnce",
   );
   let livedBoundary=optionalMethod("livedBoundaryProcess",livedBoundaryProcess,"runOnce");
+  let firstLife=optionalMethod("firstLifeProcess",firstLifeProcess,"runOnce");
   let socialOpportunity=optionalMethod("socialOpportunityProcess",socialOpportunityProcess,"runOnce");
   if (onError !== null && typeof onError !== "function") {
     throw new TypeError("World reconciliation onError must be a function or null");
@@ -182,6 +185,10 @@ export function createWorldReconciliationProcess({
       livedBoundary=optionalMethod("livedBoundaryProcess",process,"runOnce");
     },
 
+    setFirstLifeProcess(process){
+      firstLife=optionalMethod("firstLifeProcess",process,"runOnce");
+    },
+
     async runOnce() {
       if (running) return Object.freeze({ skipped: true, reason: "already_running" });
       running = true;
@@ -205,6 +212,10 @@ export function createWorldReconciliationProcess({
         const contactReceptionResult=await isolated(
           "thread_contact_perception",
           contactReception===null?null:()=>contactReception.runOnce(),
+        );
+        const firstLifeResult=await isolated(
+          "genesis_first_life",
+          firstLife===null?null:()=>firstLife.runOnce(),
         );
         const livedBoundaryResult=await isolated(
           "lived_boundary_advance",
@@ -246,6 +257,7 @@ export function createWorldReconciliationProcess({
           environmentEvolution:environmentResult,
           socialOpportunity:socialResult,
           livedBoundary:livedBoundaryResult,
+          firstLife:firstLifeResult,
         });
       } finally {
         running = false;
@@ -362,6 +374,7 @@ export function createWorldReconciliationRuntime({
       result.environmentEvolution?.result?.nextDueAt,
       result.socialOpportunity?.result?.nextDueAt,
       result.livedBoundary?.result?.nextDueAt,
+      result.firstLife?.result?.nextDueAt,
       result.contactReception?.result?.nextDueAt,
     ].filter(Boolean).sort()[0]??null;
     if(dueAt!==null){
