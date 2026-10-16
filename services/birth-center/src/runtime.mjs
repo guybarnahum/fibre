@@ -46,7 +46,7 @@ export function createBirthCenterRuntime({
   }
   assertPublisher(worldPublisher);
   const activity = optionalActivityRecorder(activityRecorder);
-  requireCurrentBirthState(storage);
+  if(storage.schemaReady!==true)requireCurrentBirthState(storage);
 
   const invocationJournal = createStateModelInvocationJournal(storage, { now });
   let provisionalBirthStore = null;
