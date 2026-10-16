@@ -762,6 +762,7 @@ export class FibreWorldDurableObject extends DurableObject {
         provider: health.provider,
         stateScopeId: WORLD_SCOPE_ID,
         stateChecked: true,
+        deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
         capabilities:["state"],
         health,
       }, { status:health.level === "normal" ? 200 : 503 });
