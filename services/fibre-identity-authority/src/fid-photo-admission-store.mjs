@@ -64,7 +64,7 @@ export class FidPhotoAdmissionStore {
 
   constructor(storage) {
     this.#database = openState(storage);
-    try { schema(this.#database); }
+    try { if(storage.schemaReady!==true)schema(this.#database); }
     catch (error) { this.#database.close(); throw error; }
   }
 
