@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   CLOUDFLARE_APP_DEPLOY_ORDER,
+  createWranglerAppDeploymentClient,
   cloudflareAppDomain,
   resolveCloudflareAppConfig,
   selectedCloudflareApps,
@@ -211,4 +212,20 @@ test("resolved Status config rejects missing or misdirected internal bindings", 
     () => validateResolvedCloudflareAppConfig("status-page", misdirected, { environment: "staging" }),
     /ADMIN_DASHBOARD must target fibre-admin-dashboard-staging/u,
   );
+});
+
+test("Admin deployment updates its Durable Object code without deferred rollout",async()=>{
+  let deployArgs=null;
+  const client=createWranglerAppDeploymentClient({
+    runner:async(args)=>{deployArgs=args;return {stdout:"deployed",stderr:""};},
+  });
+  await client.deploy({
+    configPath:"/repo/admin.jsonc",
+    resolvedConfig:{
+      name:"fibre-admin-dashboard-staging",
+      durable_objects:{bindings:[{name:"INFRA_MONITOR",class_name:"FibreAdminInfraMonitor"}]},
+    },
+  });
+  assert.equal(deployArgs[deployArgs.indexOf("--durable-objects-code-update-mode")+1],
+    "immediate","Admin deployment left stale Durable Object code active");
 });
