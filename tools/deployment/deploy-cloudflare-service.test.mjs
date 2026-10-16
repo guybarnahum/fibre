@@ -76,6 +76,7 @@ test("service deploy re-resolves current source config without provisioning", as
       async ensureD1MigrationsImpl({ databases }) {
         calls.push(["migrate", databases]);
       },
+      async acceptServiceRevisionImpl(){ calls.push(["service-revision"]); return {baseUrl:"https://world.example"}; },
       async acceptWorldSchemaImpl(){
         calls.push(["world-schema"]);
         return {ok:true};
@@ -136,6 +137,7 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
         calls.push(`wrangler:${args[0]}`);
         return { stdout:"Published https://fibre-birth-center-staging.account.workers.dev", stderr:"" };
       },
+      async acceptServiceRevisionImpl(){ calls.push("service-revision"); return {baseUrl:"https://birth.example"}; },
       async acceptBirthCenterImpl({ deploymentOutput }) {
         calls.push("birth-migrate-and-accept");
         assert.match(deploymentOutput, /fibre-birth-center-staging/u);
