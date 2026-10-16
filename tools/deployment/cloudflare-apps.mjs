@@ -341,7 +341,7 @@ export async function deployCloudflareApps({
     for(const deployment of deployments){
       const url=deployment.appId==="status-page"
         ?`https://${statusDomain}/healthz`
-        :`https://${statusDomain}/internal/deployment/admin-revision`;
+        :`https://${statusDomain}/healthz?service=admin-dashboard`;
       // Public status can inspect the Access-protected Admin Worker through
       // its existing service binding. No app's normal request needs to probe.
       let verified=false;
