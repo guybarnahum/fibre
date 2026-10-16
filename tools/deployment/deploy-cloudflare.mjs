@@ -106,6 +106,13 @@ async function fetchJson(fetchImpl, url) {
   return payload;
 }
 
+function requireDeployedRevision(payload,expectedSha,serviceId){
+  if(expectedSha&&payload?.deploymentGitSha!==expectedSha){
+    throw new Error(`${serviceId} deployed revision not ready: ${String(payload?.deploymentGitSha)}; expected ${expectedSha}`);
+  }
+  return payload;
+}
+
 export function createWranglerDeploymentClient({
   runner = runWrangler,
   cwd = process.cwd(),
@@ -145,16 +152,37 @@ export function createWranglerDeploymentClient({
         : null;
       return Object.freeze({ ...result, customDomain, output: `${result.stdout ?? ""}\n${result.stderr ?? ""}` });
     },
-    async checkServiceHealth({ serviceId, baseUrl }) {
-      return assertHealthPayload(await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/healthz`), serviceId);
-    },
-    async checkStateHealth({ serviceId, baseUrl }) {
-      return assertStateHealthPayload(
-        await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/internal/health/state`),
-        serviceId,
+    async checkServiceHealth({ serviceId, baseUrl, expectedSha }) {
+      return requireDeployedRevision(
+        assertHealthPayload(await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/healthz`), serviceId),
+        expectedSha,serviceId,
       );
     },
-    async migrateBirthCenter({ baseUrl }) {
+    async checkStateHealth({ serviceId, baseUrl, expectedSha }) {
+      return requireDeployedRevision(
+        assertStateHealthPayload(
+          await fetchJson(fetchImpl, `${baseUrl.replace(/\/$/u, "")}/internal/health/state`),serviceId,
+        ),
+        expectedSha,serviceId,
+      );
+    },
+    async migrateWorldOrFid({ serviceId, baseUrl, expectedSha }) {
+      const token=nonEmpty("FIBRE_PRIVATE_TOKEN",privateToken);
+      const path=serviceId==="world-kernel"
+        ?"/internal/world-schema/migrate":"/internal/migrate";
+      if(serviceId!=="world-kernel"&&serviceId!=="fibre-identity-authority"){
+        throw new TypeError("unsupported World state migration target");
+      }
+      const response=await fetchImpl(`${baseUrl.replace(/\/$/u,"")}${path}`,{
+        method:"POST",headers:{"x-fibre-private-token":token},
+      });
+      const payload=await response.json();
+      if(!response.ok||payload?.ok!==true||payload?.deploymentGitSha!==expectedSha){
+        throw new Error(serviceId+" schema installation did not confirm deployed revision");
+      }
+      return payload;
+    },
+    async migrateBirthCenter({ baseUrl, expectedSha }) {
       const token = nonEmpty("FIBRE_PRIVATE_TOKEN", privateToken);
       const url = `${baseUrl.replace(/\/$/u, "")}/internal/migrate`;
       const response = await fetchImpl(url, {
@@ -171,6 +199,7 @@ export function createWranglerDeploymentClient({
         const detail = payload?.error?.message ?? payload?.detail ?? payload?.title ?? payload?.error?.code ?? "unexpected response";
         throw new Error(`birth-center migration failed with HTTP ${response.status}: ${detail}`);
       }
+      requireDeployedRevision(payload,expectedSha,"birth-center");
       return payload.migration;
     },
     async checkBirthCenterRuntime({ baseUrl }) {
@@ -217,23 +246,23 @@ async function retryHealth({ serviceId, check, attempts, wait, kind }) {
   throw new Error(`${serviceId} ${kind} did not become healthy after deployment${detail}`, { cause: lastError });
 }
 
-export function retryServiceHealth({ client, serviceId, baseUrl, attempts = HEALTH_RETRY_ATTEMPTS, wait = delay } = {}) {
+export function retryServiceHealth({ client, serviceId, baseUrl, expectedSha, attempts = HEALTH_RETRY_ATTEMPTS, wait = delay } = {}) {
   return retryHealth({
     serviceId,
     attempts,
     wait,
     kind: "service",
-    check: () => client.checkServiceHealth({ serviceId, baseUrl }),
+    check: () => client.checkServiceHealth({ serviceId, baseUrl, expectedSha }),
   });
 }
 
-export function retryStateHealth({ client, serviceId, baseUrl, attempts = HEALTH_RETRY_ATTEMPTS, wait = delay } = {}) {
+export function retryStateHealth({ client, serviceId, baseUrl, expectedSha, attempts = HEALTH_RETRY_ATTEMPTS, wait = delay } = {}) {
   return retryHealth({
     serviceId,
     attempts,
     wait,
     kind: "state",
-    check: () => client.checkStateHealth({ serviceId, baseUrl }),
+    check: () => client.checkStateHealth({ serviceId, baseUrl, expectedSha }),
   });
 }
 
