@@ -227,10 +227,11 @@ test("Genesis birth publishes participant/place continuity through canonical sit
     assert.deepEqual(database.prepare(`
       SELECT due_at,attempts,first_established_at
       FROM genesis_first_life_work WHERE thread_id=?
-    `).all(birth.thread.threadId),[{
-      due_at:new Date(birth.manifest.publication.publishedAt).toISOString(),
-      attempts:0,first_established_at:null,
-    }],"atomic birth or exact replay changed the unique first-life obligation");
+    `).all(birth.thread.threadId).map(row=>[
+      row.due_at,row.attempts,row.first_established_at,
+    ]),[[
+      new Date(birth.manifest.publication.publishedAt).toISOString(),0,null,
+    ]],"atomic birth or exact replay changed the unique first-life obligation");
 
     const relations = parseRows(database, "life_relation_records");
     const caregiver = relations.find((record) => record.relatedParty.partyId === "person_situated_caregiver");
