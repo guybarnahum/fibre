@@ -474,9 +474,6 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
     if (request.headers.get("x-fibre-private-token") !== privateToken(this.env)) {
       return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
     }
-    if(url.pathname==="/internal/deployment/revision" && request.method==="GET"){
-      return Response.json({deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null});
-    }
     if(url.pathname==="/internal/migrate" && request.method==="POST"){
       installFidSchema(this.ctx);
       return Response.json({
