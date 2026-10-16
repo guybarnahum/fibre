@@ -27,6 +27,7 @@ async function fixtureRepo() {
     const resolved = parseJsonc(source, path);
     resolved.name = `${resolved.name}-staging`;
     resolved.vars ??= {};
+    resolved.vars.FIBRE_DEPLOYMENT_GIT_SHA="b".repeat(40);
     for (const binding of resolved.services ?? []) binding.service = `${binding.service}-staging`;
     if (serviceId === "thread-presentation") {
       resolved.vars.VIEWER_ORIGIN = "https://staging.insidefibre.com";
@@ -78,18 +79,22 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
     },
     async checkServiceHealth({ serviceId, baseUrl }) {
       calls.push(`health:${serviceId}:${baseUrl}`);
-      return { ok:true, service:serviceId, stateChecked:false };
+      return { ok:true, service:serviceId, stateChecked:false, deploymentGitSha:"b".repeat(40) };
     },
     async migrateBirthCenter({ baseUrl }) {
       calls.push(`migrate:birth-center:${baseUrl}`);
       return { fromVersion:0, toVersion:2, applied:[1,2] };
+    },
+    async migrateWorldOrFid({serviceId,baseUrl}){
+      calls.push(`migrate:${serviceId}:${baseUrl}`);
+      return {ok:true};
     },
     async checkStateHealth({ serviceId, baseUrl }) {
       calls.push(`state-health:${serviceId}:${baseUrl}`);
       if (serviceId === "birth-center" && birthStateAttempts++ === 0) {
         throw new Error("Durable Object still initializing");
       }
-      return { ok:true, service:serviceId, stateChecked:true };
+      return { ok:true, service:serviceId, stateChecked:true, deploymentGitSha:"b".repeat(40) };
     },
     async checkBirthCenterRuntime({ baseUrl }) {
       calls.push(`runtime-health:birth-center:${baseUrl}`);
@@ -130,6 +135,10 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
     "deploy:birth-center",
   ]);
   assert.equal(result.deployments.find((item) => item.serviceId === "world-kernel").stateHealth.stateChecked, true);
+  assert.equal(calls.filter(call=>call.startsWith("migrate:world-kernel:")).length,1,
+    "World schema was not installed during full deployment");
+  assert.equal(calls.filter(call=>call.startsWith("migrate:fibre-identity-authority:")).length,1,
+    "FID schema was not installed during full deployment");
   assert.equal(result.deployments.find((item) => item.serviceId === "fibre-identity-authority").stateHealth.stateChecked, true);
   const birthDeployment = result.deployments.find((item) => item.serviceId === "birth-center");
   assert.equal(birthDeployment.migration.toVersion, 2);
@@ -137,11 +146,11 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
   assert.equal(birthDeployment.runtimeAcceptance.status, 404);
   assert.equal(result.deployments.find((item) => item.serviceId === "asset-generator").stateHealth, null);
   assert.ok(
-    calls.indexOf("migrate:birth-center:https://birth-center.account.workers.dev")
-      < calls.indexOf("state-health:birth-center:https://birth-center.account.workers.dev"),
+    calls.indexOf("state-health:birth-center:https://birth-center.account.workers.dev")
+      < calls.indexOf("migrate:birth-center:https://birth-center.account.workers.dev"),
   );
   assert.ok(
-    calls.indexOf("state-health:birth-center:https://birth-center.account.workers.dev")
+    calls.indexOf("migrate:birth-center:https://birth-center.account.workers.dev")
       < calls.indexOf("runtime-health:birth-center:https://birth-center.account.workers.dev"),
   );
   assert.equal(calls.at(-2), "accept:https://api.staging.insidefibre.com");
