@@ -22,6 +22,8 @@ import {
   createLivedBoundaryProcess,
 } from "#services/world-kernel/src/lived-now-boundary.mjs";
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
+import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
+import { createGenesisFirstLifeProcess } from "#services/world-kernel/src/genesis-first-life-process.mjs";
 import { createExperienceConsolidationProcess } from "#services/world-kernel/src/lived-experience-consolidation.mjs";
 import { createThreadJournalBook } from "#services/world-kernel/src/thread-journal-book.mjs";
 import { createExperienceConsolidationWakeScheduler } from "#services/world-kernel/src/lived-experience-consolidation-scheduler.mjs";
@@ -450,6 +452,10 @@ export async function startWorldKernelFromEnvironment(
   const livedBoundaryProcess=createLivedBoundaryProcess({
     livedNowStore,livedNow:contactLivedNow,
   });
+  const firstLifeStore=openGenesisFirstLifeStore(worldStorage);
+  const firstLifeProcess=createGenesisFirstLifeProcess({
+    workStore:firstLifeStore,livedNow:contactLivedNow,
+  });
   let socialModelAdapter=null;
   const socialMeetingService=createSocialMeetingService({
     worldReader:store,livedNow:contactLivedNow,livedNowStore,
@@ -478,7 +484,7 @@ export async function startWorldKernelFromEnvironment(
     meetingService:socialMeetingService,
   });
   const reconciliationProcess = createWorldReconciliationProcess({
-    livedBoundaryProcess,
+    firstLifeProcess,livedBoundaryProcess,
     presentationDelivery,
     experienceConsolidationProcess,
     contactOutreachProcess,
