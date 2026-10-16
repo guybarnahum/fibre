@@ -119,3 +119,22 @@ test("status Worker exposes public API and its own minimal health identity", asy
   const health = await worker.fetch(new Request("https://status.insidefibre.com/healthz"), {});
   assert.equal((await health.json()).service, "status-page");
 });
+
+test("Admin app deployment can be verified without polling Admin during regular status health",async()=>{
+  let inspected=0;
+  const env=environment({
+    FIBRE_DEPLOYMENT_GIT_SHA:"status-source",
+    ADMIN_DASHBOARD:{async fetch(){
+      inspected++;
+      return Response.json({ok:true,deploymentGitSha:"admin-source"});
+    }},
+  });
+  const worker=createStatusPageWorker();
+  const normal=await worker.fetch(new Request("https://status.staging.insidefibre.com/healthz"),env);
+  assert.equal((await normal.json()).deploymentGitSha,"status-source");
+  assert.equal(inspected,0,"routine Status health probed Admin deployment");
+  const accepted=await worker.fetch(new Request("https://status.staging.insidefibre.com/healthz?service=admin-dashboard"),env);
+  assert.equal((await accepted.json()).deploymentGitSha,"admin-source",
+    "Admin deployment revision was not available through its service binding");
+  assert.equal(inspected,1);
+});
