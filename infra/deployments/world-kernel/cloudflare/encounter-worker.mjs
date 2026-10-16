@@ -731,8 +731,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   }
 
   async enqueueWorldOpportunity(situation){
-    // E7.4's initial author currently admits at-place scenes only.
-    if(situation.location?.kind!=="place")return;
+    // Only waking or unknown-wakefulness place scenes can earn an
+    // environmental occurrence. Do not schedule certain rejection.
+    if(situation.location?.kind!=="place"||situation.wakefulness==="asleep")return;
     const store=openLivedExperienceStore(this.runtimeForRequest().worldStorage);
     const earned=store.enqueueEnvironmentalOpportunity({
       threadId:situation.threadId,situationId:situation.situationId,
