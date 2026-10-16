@@ -674,6 +674,36 @@ test("E7.5 World alarm follows the earliest lived boundary and then returns to q
   }
 });
 
+test("a new birth earns first life without a population tick",async()=>{
+  let now=1_000;
+  let dueAt=new Date(1_000).toISOString();
+  let created=false;
+  const process=createWorldReconciliationProcess({
+    firstLifeProcess:{
+      async runOnce(){
+        if(now<1_000)return {attempted:0,failed:0,nextDueAt:dueAt};
+        if(!created){
+          created=true;
+          dueAt=null;
+          return {attempted:1,failed:0,nextDueAt:null,
+            results:[{threadId:"thr_new_life",outcome:"established"}]};
+        }
+        return {attempted:0,failed:0,nextDueAt:null};
+      },
+    },
+  });
+  const {runtime,infraDriver}=createRuntimeFixture({process,now:()=>now});
+  try{
+    await runtime.requestWake();
+    const first=await runtime.handleWake();
+    assert.equal(first.firstLife.result.results[0].outcome,"established",
+      "World alarm skipped earned first life");
+    assert.equal(created,true,"birth never became a living Thread");
+    assert.equal(await infraDriver.scheduler.get("world"),null,
+      "completed first life left behind a population tick");
+  }finally{await runtime.stop();}
+});
+
 test("an absolute Flight Plan wake cannot postpone overdue World work",async()=>{
   const process=createWorldReconciliationProcess();
   const {runtime,infraDriver}=createRuntimeFixture({
