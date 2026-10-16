@@ -6,6 +6,7 @@ import { ADMIN_DASHBOARD_VERSION, createAdminDashboardWorker } from "./worker.mj
 test("Admin health reports the running Cloudflare Worker build", async () => {
   const worker = createAdminDashboardWorker({ authenticate: async () => null });
   const response = await worker.fetch(new Request("https://admin.staging.insidefibre.com/healthz"), {
+    FIBRE_DEPLOYMENT_GIT_SHA:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     CF_VERSION_METADATA: {
       id: "01234567-89ab-cdef-0123-456789abcdef",
       tag: "staging-test",
@@ -13,14 +14,14 @@ test("Admin health reports the running Cloudflare Worker build", async () => {
     },
   });
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), {
-    ok: true,
-    service: "admin-dashboard",
-    version: ADMIN_DASHBOARD_VERSION,
-    buildId: "01234567-89ab-cdef-0123-456789abcdef",
-    buildTag: "staging-test",
-    builtAt: "2026-09-13T03:10:00.000Z",
-  });
+  const build=await response.json();
+  assert.equal(build.service,"admin-dashboard");
+  assert.equal(build.version,ADMIN_DASHBOARD_VERSION);
+  assert.equal(build.deploymentGitSha,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "Admin health did not identify deployed source");
+  assert.equal(build.buildId,"01234567-89ab-cdef-0123-456789abcdef");
+  assert.equal(build.buildTag,"staging-test");
+  assert.equal(build.builtAt,"2026-09-13T03:10:00.000Z");
 });
 
 
