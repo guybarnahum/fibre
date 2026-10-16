@@ -271,7 +271,12 @@ export function createWranglerAppDeploymentClient({
     async deploy({ configPath, dryRun = false, resolvedConfig = null }) {
       const args = ["deploy"];
       if (dryRun) args.push("--dry-run");
-      args.push("--config", configPath, "--experimental-provision=false", "--experimental-auto-create=false");
+      args.push("--config", configPath);
+      if(!dryRun&&(resolvedConfig?.durable_objects?.bindings??[])
+        .some(binding=>!binding.script_name)){
+        args.push("--durable-objects-code-update-mode","immediate");
+      }
+      args.push("--experimental-provision=false", "--experimental-auto-create=false");
       const result = await runner(args, { cwd });
       const customRoute = (resolvedConfig?.routes ?? []).find((route) => route?.custom_domain === true);
       if (!dryRun && customRoute?.pattern) {
