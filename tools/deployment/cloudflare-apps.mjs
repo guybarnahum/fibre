@@ -215,12 +215,14 @@ export async function loadCloudflareAppConfigs(repoRoot, appIds = CLOUDFLARE_APP
   return configs;
 }
 
-export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment, configs, resourceState, accessConfig, operatorConfig, appIds = CLOUDFLARE_APP_DEPLOY_ORDER }) {
+export async function writeResolvedCloudflareAppConfigs({ repoRoot, environment, configs, resourceState, accessConfig, operatorConfig, sourceGitSha, appIds = CLOUDFLARE_APP_DEPLOY_ORDER }) {
   const baseDir = resolve(repoRoot, ".fibre", "cloudflare", environment, "wrangler");
   await mkdir(baseDir, { recursive: true });
   const written = {};
   for (const appId of appIds) {
     const resolvedConfig = resolveCloudflareAppConfig(appId, configs[appId], { environment, resourceState, accessConfig, operatorConfig });
+    if(!/^[0-9a-f]{40}$/u.test(sourceGitSha??""))throw new Error("app deployment needs exact Git revision");
+    resolvedConfig.vars.FIBRE_DEPLOYMENT_GIT_SHA=sourceGitSha;
     validateResolvedCloudflareAppConfig(appId, resolvedConfig, { environment });
     const path = resolve(baseDir, `${appId}.jsonc`);
     relocateWranglerMain(resolvedConfig, {
@@ -256,6 +258,15 @@ export function createWranglerAppDeploymentClient({
         dryRun,
         print:console.log,
       });
+    },
+    async checkRevision({url,expectedSha}){
+      const response=await fetchImpl(url,{headers:{Accept:"application/json"}});
+      if(!response.ok)throw new Error("App revision probe HTTP "+response.status);
+      const payload=await response.json();
+      if(payload?.deploymentGitSha!==expectedSha){
+        throw new Error("App revision not ready: expected "+expectedSha);
+      }
+      return payload;
     },
     async deploy({ configPath, dryRun = false, resolvedConfig = null }) {
       const args = ["deploy"];
@@ -307,6 +318,7 @@ export async function deployCloudflareApps({
     accessConfig: access,
     operatorConfig,
     appIds,
+    sourceGitSha:source.gitSha,
   });
   const deployments = [];
   for (const appId of appIds) {
@@ -320,6 +332,31 @@ export async function deployCloudflareApps({
     await client.deploy({ appId, configPath, dryRun, resolvedConfig: resolved });
     const route = (resolved.routes ?? []).find((item) => item.custom_domain === true);
     deployments.push(Object.freeze({ appId, workerName: resolved.name, domain: route?.pattern ?? null }));
+  }
+  if(!dryRun){
+    if(typeof client.checkRevision!=="function"){
+      throw new TypeError("Cloudflare app deployment requires revision acceptance");
+    }
+    const statusDomain=cloudflareAppDomain("status.insidefibre.com",env);
+    for(const deployment of deployments){
+      const url=deployment.appId==="status-page"
+        ?`https://${statusDomain}/healthz`
+        :`https://${statusDomain}/internal/deployment/admin-revision`;
+      // Public status can inspect the Access-protected Admin Worker through
+      // its existing service binding. No app's normal request needs to probe.
+      let verified=false;
+      for(let attempt=0;attempt<10;attempt++){
+        try{
+          await client.checkRevision({url,expectedSha:source.gitSha});
+          verified=true;
+          break;
+        }catch(error){
+          if(attempt===9)throw error;
+          await new Promise(resolve=>setTimeout(resolve,1500));
+        }
+      }
+      if(!verified)throw new Error(deployment.appId+" revision was not accepted");
+    }
   }
   const evidence = Object.freeze({
     contract: CLOUDFLARE_APP_DEPLOYMENT_VERSION,
