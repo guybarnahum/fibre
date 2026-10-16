@@ -676,15 +676,14 @@ test("E7.5 World alarm follows the earliest lived boundary and then returns to q
 
 test("a new birth earns first life without a population tick",async()=>{
   let now=1_000;
-  let dueAt=new Date(1_000).toISOString();
+  const birthDueAt=new Date(2_000).toISOString();
   let created=false;
   const process=createWorldReconciliationProcess({
     firstLifeProcess:{
       async runOnce(){
-        if(now<1_000)return {attempted:0,failed:0,nextDueAt:dueAt};
+        if(now<2_000)return {attempted:0,failed:0,nextDueAt:birthDueAt};
         if(!created){
           created=true;
-          dueAt=null;
           return {attempted:1,failed:0,nextDueAt:null,
             results:[{threadId:"thr_new_life",outcome:"established"}]};
         }
@@ -695,10 +694,13 @@ test("a new birth earns first life without a population tick",async()=>{
   const {runtime,infraDriver}=createRuntimeFixture({process,now:()=>now});
   try{
     await runtime.requestWake();
-    const first=await runtime.handleWake();
-    assert.equal(first.firstLife.result.results[0].outcome,"established",
+    await runtime.handleWake();
+    assert.equal(await infraDriver.scheduler.get("world"),2_000,
+      "World lost an earned first-life deadline");
+    now=2_000;
+    const result=await runtime.handleWake();
+    assert.equal(result.firstLife.result.results[0].outcome,"established",
       "World alarm skipped earned first life");
-    assert.equal(created,true,"birth never became a living Thread");
     assert.equal(await infraDriver.scheduler.get("world"),null,
       "completed first life left behind a population tick");
   }finally{await runtime.stop();}
