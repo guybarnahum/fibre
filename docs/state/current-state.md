@@ -76,6 +76,8 @@ N1 provides World-owned `ensure({threadId,at})`; N2 demonstrated bounded three-d
 
 E7.5 later demonstrated a **naturally advanced staging Flight Plan boundary**: Guy's read-only Observatory views bracketed the World transition at `2026-10-09T02:00:00Z`, which enacted the next situation 3 ms after its admitted boundary and retained the previous one with no reported manual wake. This demonstrates natural observed progression, but does **not** prove every internal scheduler callback attribution, autonomous initial population bootstrap or large-scale simulation. Full witness lives in [N5 E7.5](../validation/n5-encounter-slices.md) and [World environment architecture](../architecture/encounters-and-experience.md).
 
+**October 16 source change — validation and staging proof pending:** a newly published Genesis birth now atomically earns a single indexed first-life obligation. Existing event-driven World reconciliation invokes the same LivedNow authority to author the first *actual* present and roll forward through Flight Plan boundaries. The realized first moment is not backdated to publication after an elapsed unobserved gap; absence of an admitted place blocks without invented life; retries are bounded. The schema does not enqueue previously born dormant Threads. This is committed implementation, **not yet a locally validated or staging-observed birth-to-autonomous-life result**. The [LivedNow design](../architecture/lived-now-and-meetings.md) owns the exact boundary.
+
 ## World encounters and private experience
 
 An **encounter** is the common primitive; a meeting is one voluntary social form. The admitted causal distinction is:
