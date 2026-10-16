@@ -103,8 +103,9 @@ export function createWorldEnvironmentOpportunity({
               ?candidates.filter((item)=>item.threadId===opportunity.threadId)
               :candidates;
             const candidateScenes=observableCandidates.map((item)=>{
-              const place=observedPlace(livedNowStore,item.threadId,
-                item.location.placeRef,opportunity.threadId);
+              const place=item.threadId===opportunity.threadId
+                ?origin:observedPlace(livedNowStore,item.threadId,
+                  item.location.placeRef,opportunity.threadId);
               return {
                 threadId:item.threadId,situationId:item.situationId,
                 physicalVenueRef:place?.physicalVenue?.ref??null,
