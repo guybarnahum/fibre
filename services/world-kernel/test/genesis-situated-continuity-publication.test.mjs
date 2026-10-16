@@ -416,6 +416,52 @@ test("situated continuity is inside the atomic Genesis birth transaction", () =>
   }));
 
 
+test("a born Thread without grounded place blocks first life instead of inventing one", () =>
+  withDatabase(async databasePath=>{
+    const {world,birth}=publicationCandidate();
+    birth.episodes=[];
+    birth.initialRoster=null;
+    birth.lifeContinuity=null;
+    birth.historicalEnvelopePlan=null;
+    birth.manifest.publication.resultingThreadVersion=birth.thread.version;
+    const storage=localWorldStateStorage(databasePath);
+    const genesis=new GenesisStore(storage);
+    genesis.recordWorldSpec(world);
+    genesis.publishBirth(birth);
+    genesis.close();
+
+    const worldStore=openWorldStore(storage);
+    const livedNowStore=openLivedNowStore(storage);
+    const situatedLifeStore=openSituatedLifeStore(storage);
+    const identityStore=openIdentityStore(storage);
+    const semanticStateStore=openSemanticStateStore(storage);
+    const memoryStore=openAutobiographicalMemoryStore(storage);
+    const workStore=openGenesisFirstLifeStore(storage);
+    let called=false;
+    const livedNow=createLivedNowService({
+      livedNowStore,worldStore,situatedLifeStore,
+      identityStore,semanticStateStore,memoryStore,
+      modelAdapter:{async invoke(){called=true;throw Error("ungrounded mind ran");}},
+    });
+    const process=createGenesisFirstLifeProcess({
+      workStore,livedNow,now:()=>"2026-08-22T00:02:00Z",
+    });
+    try{
+      const result=await process.runOnce();
+      assert.equal(result.results[0]?.outcome,"blocked",
+        "ungrounded birth invented a first life");
+      assert.match(workStore.inspect(birth.thread.threadId)?.blocked_reason??"",
+        /grounded place/u,"missing place did not explain blocked admission");
+      assert.equal(workStore.nextDueAt(),null,"ungrounded birth entered a retry loop");
+      assert.equal(livedNowStore.getCurrentSituation(birth.thread.threadId),null,
+        "ungrounded birth claimed a physical present");
+      assert.equal(called,false,"ungrounded birth invoked cognition");
+    }finally{
+      workStore.close();memoryStore.close();semanticStateStore.close();
+      identityStore.close();situatedLifeStore.close();livedNowStore.close();worldStore.close();
+    }
+  }));
+
 test("Birth earns one real first life, no invented dormant past, and a continuing autonomous boundary", () =>
   withDatabase(async (databasePath) => {
     const { world, birth } = publicationCandidate();
