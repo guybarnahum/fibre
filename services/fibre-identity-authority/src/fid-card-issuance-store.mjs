@@ -204,8 +204,10 @@ export class FidCardIssuanceStore {
   constructor(storage) {
     this.#database = openState(storage);
     try {
-      requireCredentialRegistrySchema(this.#database);
-      createSchema(this.#database);
+      if(storage.schemaReady!==true){
+        requireCredentialRegistrySchema(this.#database);
+        createSchema(this.#database);
+      }
     } catch (error) {
       this.#database.close();
       throw error;
