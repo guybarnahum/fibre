@@ -36,6 +36,7 @@ export function decorateCopyAction(button,{
   tooltip=label,
   iconOnly=true,
 }={}){
+  button.classList.add("copy-action");
   return decorateActionButton(button,{icon:"copy",label,tooltip,iconOnly});
 }
 
