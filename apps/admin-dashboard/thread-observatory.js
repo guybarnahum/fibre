@@ -1388,6 +1388,7 @@ export function renderFidSection(identity, threadId) {
     tooltip:"Create and review one new OpenAI photo from the canonical portrait before reissuing",
   });
   const review=el("div","thread-fid-visuals");
+  let pendingCorrectionId=null;
   correction.addEventListener("click",()=>{
     openThreadActionDialog({
       threadId,threadName:threadName(identity),
@@ -1395,7 +1396,8 @@ export function renderFidSection(identity, threadId) {
       eyebrow:"Fibre visual identity",
       description:"Generate one OpenAI candidate from the existing canonical portrait. The current card remains active until you review and approve the image.",
       run:async()=>{
-        const correctionId=fidPhotoCorrectionKey();
+        const correctionId=pendingCorrectionId??fidPhotoCorrectionKey();
+        pendingCorrectionId=correctionId;
         await fidPhotoCorrectionRequest(threadId,correctionId,"POST");
         correction.disabled=true;
         actionStatus.hidden=false;
@@ -1420,6 +1422,7 @@ export function renderFidSection(identity, threadId) {
           discard.type="button";
           discard.addEventListener("click",()=>{
             review.replaceChildren();
+            pendingCorrectionId=null;
             actionStatus.textContent="Candidate discarded. Existing FID Card remains unchanged.";
             correction.disabled=false;
           });
@@ -1438,6 +1441,7 @@ export function renderFidSection(identity, threadId) {
                 if(result.state!=="active")throw new Error(`FID correction did not activate: ${result.state}`);
                 actionStatus.textContent=`Corrected FID Card · revision ${result.credential?.revision??"?"}`;
                 review.replaceChildren();
+                pendingCorrectionId=null;
                 window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued",{
                   detail:{threadId,result,identity:identityWithFidPublication(identity,result)},
                 }));
