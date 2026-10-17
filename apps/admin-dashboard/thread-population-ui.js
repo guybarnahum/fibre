@@ -21,6 +21,7 @@ import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirt
 import {
   createThreadIdentityViewer,
   createThreadLocation,
+  currentThreadPlace,
   createThreadPortrait,
   forgetThreadPortrait,
   hideThreadPortraitPreview,
@@ -126,6 +127,16 @@ function threadBirthplaceCell(identity) {
     fallback:identity?.birthPlace??null,
     className:"thread-population-birthplace-value",
   }));
+  return cell;
+}
+
+function threadCurrentPlaceCell(location) {
+  const cell=document.createElement("td");
+  cell.className="thread-population-current-place";
+  cell.append(createThreadLocation(currentThreadPlace(location),{
+    className:"thread-population-current-place-value",
+  }));
+  if(location?.establishedAt)cell.title="Last enacted · "+when(location.establishedAt);
   return cell;
 }
 
@@ -415,6 +426,7 @@ function threadRow(thread) {
     ?"No durable parental physical-origin evidence is recorded for this Thread."
     :"Recorded parental physical-origin evidence; never inferred from birthplace, name, language, culture, or portrait.";
   const birthplace=threadBirthplaceCell(identity);
+  const currentPlace=threadCurrentPlaceCell(thread.currentLocation);
   const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
   const birthDate = document.createElement("td"); birthDate.textContent = identity.birthDate ?? "—";
   const health = document.createElement("td"); health.append(badge(thread.admitted === false ? "not admitted" : thread.health, healthKind(thread.health)));
@@ -433,7 +445,7 @@ function threadRow(thread) {
   if (thread.reconciliation?.lastError?.message) reconciliation.title = thread.reconciliation.lastError.message;
   const lastActivity = document.createElement("td"); lastActivity.className = "time"; lastActivity.textContent = when(thread.lastActivityAt);
 
-  tr.append(portraitCell, person, ethnicity, birthplace, sex, birthDate, health, reconciliation, lastActivity, actionCell(thread));
+  tr.append(portraitCell, person, ethnicity, birthplace, currentPlace, sex, birthDate, health, reconciliation, lastActivity, actionCell(thread));
   return tr;
 }
 
