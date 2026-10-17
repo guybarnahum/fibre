@@ -24,6 +24,7 @@ import {
 } from "./situated-life-domain.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
+import {resolveLocalityGeography} from "#core/src/locality-geography.mjs";
 import {
   bindLivePhysicalVenue,
   createLiveWorldPlaceTables,
@@ -35,8 +36,8 @@ import {
 } from "./live-world-place.mjs";
 
 import {
-  admitWorldPublicPlace,admitWorldPrivatePlace,createLiveWorldGeographyTables,
-  getWorldPrivatePlace,getWorldPublicPlace,listLocalWorldPublicPlaces,
+  admitWorldPublicPlace,admitWorldPrivatePlace,admitWorldLocality,createLiveWorldGeographyTables,
+  getWorldLocality,getWorldPrivatePlace,getWorldPublicPlace,listLocalWorldPublicPlaces,
   coarseWorldPlace,
 } from "./live-world-geography.mjs";
 
@@ -522,6 +523,40 @@ export class LivedNowStore {
   admitPublicPlace(candidate){
     if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot admit a public venue");
     return this.#database.transaction(()=>admitWorldPublicPlace(this.#database,candidate));
+  }
+
+  // Geographical knowledge can precede a visit: a future destination, a
+  // familiar place, or a new city must not require fabricated current presence.
+  groundPlace({place,localityEvidence=null}={}){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot ground a place");
+    assertPlainObject("World place grounding",place);
+    this.#requireThread(place.threadId);
+    this.#requirePlace(place.threadId,place.placeRef);
+    const existing=this.getPrivatePlace(place.threadId,place.placeRef);
+    if(existing!==null)return {place:admitWorldPrivatePlace(this.#database,place),
+      locality:this.getWorldLocality({locality:place.locality,countryCode:place.countryCode})};
+    const known=this.getWorldLocality({locality:place.locality,countryCode:place.countryCode});
+    const catalog=known===null?resolveLocalityGeography(`${place.country}/${place.locality}`):null;
+    const locality=localityEvidence??known??(catalog?.countryCode===place.countryCode?{
+      locality:catalog.city,country:catalog.country,countryCode:catalog.countryCode,
+      lat:catalog.lat,long:catalog.long,timeZone:place.timeZone,
+      evidenceRef:place.evidenceRef,
+    }:null);
+    if(locality===null)throw new LivedNowConflictError(
+      "World place grounding needs independently resolved locality evidence");
+    if(locality.locality.toLowerCase()!==place.locality.toLowerCase()
+      ||locality.countryCode!==place.countryCode||locality.country!==place.country
+      ||locality.timeZone!==place.timeZone){
+      throw new LivedNowConflictError("World place locality evidence contradicts the proposed place");
+    }
+    return this.#database.transaction(()=>({
+      locality:admitWorldLocality(this.#database,locality),
+      place:admitWorldPrivatePlace(this.#database,place),
+    }));
+  }
+
+  getWorldLocality(query){
+    return getWorldLocality(this.#database,query);
   }
 
   admitPrivatePlace(candidate){
