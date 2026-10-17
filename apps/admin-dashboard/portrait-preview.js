@@ -78,6 +78,7 @@ function showThreadPortraitPreview(target){
   const url=target?.dataset?.portraitPreviewUrl;
   if(!url)return;
   const popup=ensurePreview(target);
+  popup.dataset.lifeStatus=target.closest?.("[data-life-status]")?.dataset.lifeStatus??"";
   const image=document.createElement("img");
   image.src=url;
   image.alt=(target.dataset.portraitPreviewName||"Person")+" portrait preview";
