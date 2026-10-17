@@ -71,6 +71,33 @@ export function openGenesisFirstLifeStore(storage){
       `).get(threadId);
       return row??null;
     },
+    // Operator-only, read-only backlog inspection. A published birth,
+    // blocked obligation and missing obligation are different diagnoses.
+    unstarted(){
+      return database.prepare(`
+        SELECT t.thread_id AS threadId,
+          CASE
+            WHEN b.thread_id IS NULL THEN 'no_birth_publication'
+            WHEN w.thread_id IS NULL THEN 'missing_obligation'
+            WHEN w.first_established_at IS NOT NULL THEN 'completed_without_current'
+            WHEN w.due_at IS NOT NULL THEN 'pending'
+            WHEN w.blocked_reason IS NOT NULL THEN 'blocked'
+            ELSE 'inactive'
+          END AS state,
+          b.published_at AS publishedAt,
+          w.due_at AS dueAt,
+          w.attempts,
+          w.blocked_reason AS blockedReason,
+          w.first_established_at AS firstEstablishedAt
+        FROM threads t
+        LEFT JOIN genesis_birth_publications b ON b.thread_id=t.thread_id
+        LEFT JOIN genesis_first_life_work w ON w.thread_id=t.thread_id
+        LEFT JOIN current_situation_frontier f ON f.thread_id=t.thread_id
+        WHERE t.status<>'retired' AND f.thread_id IS NULL
+        ORDER BY t.thread_id
+        LIMIT 500
+      `).all();
+    },
     close(){database.close();},
   });
 }
