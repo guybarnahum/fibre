@@ -801,8 +801,17 @@ test("Observatory displays authoritative current city separately from immutable 
       placeRef:"per:hidden:1",locality:"London",country:"United Kingdom",
       countryCode:"GB",publicGranularity:"hidden",
     },
-  }),"London, United Kingdom · Private",
-  "private Observatory concealed an admitted current city from the operator");
+  }),"London, United Kingdom",
+  "God-view failed to display the attested current city");
+  assert.equal(observatoryCurrentPlace({
+    currentSituation:{location:{kind:"place",placeRef:"per:hidden:1"}},
+    privatelyKnownCurrentPlace:{
+      placeRef:"per:hidden:1",specificPlace:"Family home",
+      locality:"London",country:"United Kingdom",
+      countryCode:"GB",publicGranularity:"hidden",
+    },
+  }),"Family home · London, United Kingdom",
+  "God-view lost the Thread's actual private place description");
   assert.equal(observatoryCurrentPlace({
     currentSituation:{location:{kind:"place",placeRef:"per:other:1"}},
     privatelyKnownCurrentPlace:{
