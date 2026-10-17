@@ -50,7 +50,55 @@ export function createLiveWorldGeographyTables(db){
       record_digest TEXT NOT NULL,
       PRIMARY KEY(thread_id,place_ref)
     ) STRICT;
+    CREATE TABLE IF NOT EXISTS world_localities(
+      country_code TEXT NOT NULL,
+      locality_key TEXT NOT NULL,
+      record_json TEXT NOT NULL CHECK(json_valid(record_json)),
+      record_digest TEXT NOT NULL,
+      PRIMARY KEY(country_code,locality_key)
+    ) STRICT;
   `);
+}
+
+
+function localityKey(value){
+  return text("World locality",value).normalize("NFKC").toLocaleLowerCase("en-US");
+}
+
+// Shared factual geography. A locality anchors many distinct places; it is
+// never itself a venue, residence, or evidence of physical co-presence.
+export function getWorldLocality(db,{locality,countryCode}={}){
+  if(!locality||!countryCode)return null;
+  const key=localityKey(locality);
+  return stored(db.prepare(`SELECT record_json,record_digest
+    FROM world_localities WHERE country_code=? AND locality_key=?`
+  ).get(countryCode,key),"World locality");
+}
+
+export function admitWorldLocality(db,input){
+  assertPlainObject("World locality",input);
+  const {locality,country,countryCode,lat,long,timeZone:zone,evidenceRef}=input;
+  for(const [label,value] of Object.entries({locality,country,countryCode,timeZone:zone,evidenceRef}))
+    text("World locality "+label,value);
+  if(!/^[A-Z]{2}$/u.test(countryCode))throw new TypeError("World locality needs ISO country code");
+  coordinates(lat,long);
+  timeZone(zone);
+  const record=Object.freeze({
+    locality:locality.trim(),country:country.trim(),countryCode,
+    lat,long,timeZone:zone,evidenceRef:evidenceRef.trim(),
+  });
+  const existing=getWorldLocality(db,record);
+  if(existing!==null){
+    if(existing.country!==record.country
+      ||existing.lat!==record.lat||existing.long!==record.long
+      ||existing.timeZone!==record.timeZone){
+      throw new IntegrityError("World locality has conflicting geographical evidence");
+    }
+    return existing;
+  }
+  db.prepare(`INSERT INTO world_localities(country_code,locality_key,record_json,record_digest)
+    VALUES(?,?,?,?)`).run(countryCode,localityKey(locality),canonicalJson(record),digest(record));
+  return record;
 }
 
 export function admitWorldPublicPlace(db,input){
