@@ -1,4 +1,5 @@
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import { assertId,assertIsoTimestamp } from "./persistence-common.mjs";
 
 export function createGenesisFirstLifeTables(database){
   database.exec(`
@@ -88,7 +89,17 @@ export function openGenesisFirstLifeStore(storage){
           w.due_at AS dueAt,
           w.attempts,
           w.blocked_reason AS blockedReason,
-          w.first_established_at AS firstEstablishedAt
+          w.first_established_at AS firstEstablishedAt,
+          EXISTS (
+            SELECT 1 FROM situated_life_current c
+            JOIN place_episode_records p
+              ON p.episode_id=c.lineage_id AND p.revision=c.revision
+            WHERE c.thread_id=t.thread_id AND c.ledger_kind='place_episode'
+              AND COALESCE(json_extract(p.record_json,'$.status'),'current')
+                IN ('current','corrected')
+              AND (json_extract(p.record_json,'$.startAt') IS NULL
+                OR json_extract(p.record_json,'$.startAt')<=?)
+          ) AS hasGroundedPlace
         FROM threads t
         LEFT JOIN genesis_birth_publications b ON b.thread_id=t.thread_id
         LEFT JOIN genesis_first_life_work w ON w.thread_id=t.thread_id
@@ -96,7 +107,47 @@ export function openGenesisFirstLifeStore(storage){
         WHERE t.status<>'retired' AND f.thread_id IS NULL
         ORDER BY t.thread_id
         LIMIT 500
-      `).all();
+      `).all(new Date().toISOString()).map(row=>({
+        ...row,hasGroundedPlace:row.hasGroundedPlace===1,
+      }));
+    },
+    enqueueMissing(threadIds,at){
+      assertIsoTimestamp("first-life recovery time",at);
+      if(!Array.isArray(threadIds)||threadIds.length===0||threadIds.length>20
+        ||new Set(threadIds).size!==threadIds.length){
+        throw new TypeError("first-life recovery requires 1–20 distinct Thread IDs");
+      }
+      for(const threadId of threadIds)assertId("first-life Thread",threadId);
+      return database.transaction(()=>{
+        const eligible=database.prepare(`
+          SELECT 1 FROM genesis_birth_publications b
+          JOIN threads t ON t.thread_id=b.thread_id
+          LEFT JOIN genesis_first_life_work w ON w.thread_id=b.thread_id
+          LEFT JOIN current_situation_frontier f ON f.thread_id=b.thread_id
+          WHERE b.thread_id=? AND t.status<>'retired'
+            AND b.published_at<=? AND w.thread_id IS NULL AND f.thread_id IS NULL
+            AND EXISTS (
+              SELECT 1 FROM situated_life_current c
+              JOIN place_episode_records p
+                ON p.episode_id=c.lineage_id AND p.revision=c.revision
+              WHERE c.thread_id=b.thread_id AND c.ledger_kind='place_episode'
+                AND COALESCE(json_extract(p.record_json,'$.status'),'current')
+                  IN ('current','corrected')
+                AND (json_extract(p.record_json,'$.startAt') IS NULL
+                  OR json_extract(p.record_json,'$.startAt')<=?)
+            )
+        `);
+        const insert=database.prepare(`
+          INSERT INTO genesis_first_life_work(thread_id,due_at) VALUES(?,?)
+        `);
+        for(const threadId of threadIds){
+          if(!eligible.get(threadId,at,at)){
+            throw new Error("first-life recovery requires an unstarted published life with a grounded place: "+threadId);
+          }
+          insert.run(threadId,at);
+        }
+        return {enqueued:threadIds.length};
+      })();
     },
     close(){database.close();},
   });
