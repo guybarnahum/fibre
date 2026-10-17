@@ -49,6 +49,7 @@ const THREAD_JOURNAL_ROUTE = /^\/api\/threads\/([^/]+)\/journal$/u;
 const THREAD_MEETING_ROUTE = /^\/api\/threads\/([^/]+)\/meet-threads$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
 const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
+const THREAD_FID_PHOTO_CORRECTION_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/photo-corrections\/([^/]+)(\/preview|\/approve)?$/u;
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
@@ -322,6 +323,27 @@ export async function proxyFidReissue(request, env, threadId) {
   return json(upstream.status, payload.result);
 }
 
+export async function proxyFidPhotoCorrection(request,env,threadId,correctionId,action=null){
+  const path=`/internal/fid/threads/${encodeURIComponent(threadId)}/photo-corrections/${encodeURIComponent(correctionId)}${action??""}`;
+  const upstream=await serviceBinding(env,"FIBRE_IDENTITY_AUTHORITY").fetch(new Request(
+    `https://fibre-identity-authority.internal${path}`,{
+      method:request.method,
+      headers:{Accept:action==="/preview"?"image/png":"application/json",
+        "x-fibre-private-token":privateToken(env)},
+    },
+  ));
+  if(action==="/preview" && upstream.ok){
+    return new Response(await upstream.arrayBuffer(),{
+      status:upstream.status,
+      headers:{"Content-Type":"image/png","Cache-Control":"no-store"},
+    });
+  }
+  return new Response(await upstream.text(),{
+    status:upstream.status,
+    headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"},
+  });
+}
+
 function geoNamesUsername(env) {
   const value = typeof env?.GEONAMES_USERNAME === "string" ? env.GEONAMES_USERNAME.trim() : "";
   return value === "" ? null : value;
@@ -504,6 +526,7 @@ export default {
     const meetingMatch = THREAD_MEETING_ROUTE.exec(url.pathname);
     const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
     const fidReissueMatch = THREAD_FID_REISSUE_ROUTE.exec(url.pathname);
+    const fidPhotoCorrectionMatch = THREAD_FID_PHOTO_CORRECTION_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
     const appearanceCoverageRequest = url.pathname === APPEARANCE_COVERAGE_ROUTE;
@@ -530,9 +553,9 @@ export default {
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
+    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
     const adminDelete = request.method === "DELETE" && (appearanceExperimentMatch || appearanceExperimentAlignmentMatch);
     if (adminGet || adminPost || adminDelete) {
       const gate = await adminPrincipal(request, env);
@@ -840,6 +863,11 @@ export default {
           const threadId = id("threadId", decodeURIComponent(fidReissueMatch[1]));
           return proxyFidReissue(request, env, threadId);
         }
+        if (fidPhotoCorrectionMatch) {
+          const threadId=id("threadId",decodeURIComponent(fidPhotoCorrectionMatch[1]));
+          const correctionId=id("photo correction ID",decodeURIComponent(fidPhotoCorrectionMatch[2]));
+          return proxyFidPhotoCorrection(request,env,threadId,correctionId,fidPhotoCorrectionMatch[3]??null);
+        }
         if (repairMatch) {
           const threadId = id("threadId", decodeURIComponent(repairMatch[1]));
           return proxyThreadRepair(request, env, threadId);
@@ -902,6 +930,7 @@ export default {
         }
         if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
         if (fidReissueMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_reissue_unavailable", detail:error.message });
+        if (fidPhotoCorrectionMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_photo_correction_unavailable", detail:error.message });
         return json(error instanceof TypeError ? 400 : 503, {
           error: error instanceof TypeError ? "invalid_thread_resource" : "thread_identity_unavailable",
           detail: error.message,
