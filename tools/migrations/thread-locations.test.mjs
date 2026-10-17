@@ -59,3 +59,40 @@ test("current situated geography outranks birthplace without changing its histor
   assert.equal(result.place.countryCode,"PT");
   assert.equal(result.place.evidenceRef,situation.location.placeRef);
 });
+
+test("legacy Genesis learning context may receive city geography without claiming public attendance",()=>{
+  const legacy=planThreadLocation({
+    ...thread,birthLocation:{city:"Dhaka",country:"Bangladesh",countryCode:"BD"},
+  },{
+    currentSituation:{
+      phase:"at_place",location:{kind:"place",placeRef:"wpl_genesis_learning"},
+    },
+    worldContext:{timeZone:"Asia/Dhaka"},
+    worldPlaces:[{
+      ref:"wpl_genesis_learning",authority:"live-world-place-admission-v1",
+      placeKind:"library_or_learning",displayName:"Learning in the household",
+    }],
+    placeEpisodes:[],
+  });
+  assert.equal(legacy.state,"ready");
+  assert.equal(legacy.place.locality,"Dhaka");
+  assert.equal(legacy.place.lat,null);
+  assert.equal(legacy.place.specificPlace,"Genesis library_or_learning context");
+  assert.equal(legacy.basis,"birth_city_operator_default");
+
+  const publicVenue=planThreadLocation({
+    ...thread,birthLocation:{city:"Dhaka",country:"Bangladesh",countryCode:"BD"},
+  },{
+    currentSituation:{
+      phase:"at_place",location:{kind:"place",placeRef:"wpl_public_library"},
+    },
+    worldContext:{timeZone:"Asia/Dhaka"},
+    worldPlaces:[{
+      ref:"wpl_public_library",authority:"world-public-place-v1",
+      physicalVenue:{ref:"venue_actual"},displayName:"Actual public library",
+    }],
+    placeEpisodes:[],
+  });
+  assert.equal(publicVenue.state,"unresolved_shared_world_place",
+    "a real public venue must not be rewritten as a private Genesis context");
+});
