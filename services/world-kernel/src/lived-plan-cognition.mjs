@@ -67,7 +67,7 @@ When interoception is supplied, it is bounded subsemantic organismic state groun
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Public City Guide suggestions, when offered, are editorial *possibilities* in the Thread's grounded locality. A listing does not mean anyone is there or has invited the Thread, and makes no promise of satisfaction. This Thread may consider one, rely on familiar remembered places, or ignore the guide. Never treat a listing as a visit or a promise of contact.
 Use offered physical-place refs for known destinations. For a new destination absent from the list, physicalPlaceRef may instead name it naturally, such as "Porto, Portugal" for a city or "A neighborhood café, Porto, Portugal" for a specific place. World will replace that temporary name with its place reference before admission. Unknown geography is allowed; do not invent exact addresses, shared venues or people present. Propose at most two new places per plan. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
-When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place. Any move to a new locality and any journey to or from an independently admitted public venue needs real elapsed transit time between stops, not an immediate jump or a claim that travel already occurred.
+When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place. Give journeys credible elapsed transit time between stops, especially when cities are geographically far apart. A multi-hour journey should not become a few minutes merely because both stops fit the horizon. World will reject an impossibly short arrival window; unknown routes and travel modes are not permission to teleport.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
 requiredWorkCommitments, when present, are commitments this Thread already voluntarily accepted. Each must appear as one mediated stop with exactly the committed start/end and mediatedContext. Do not revisit whether the Thread should honor an accepted commitment; arrange the rest of the life around it naturally.
@@ -139,6 +139,12 @@ function planningPlaceFromWorld(reference, place) {
     displayName:place.displayName,
     placeKind:place.placeKind,
     description:place.displayName,
+    ...(place.locality&&place.country?{
+      location:{city:place.locality,country:place.country,
+        ...(Number.isFinite(place.lat)&&Number.isFinite(place.long)
+          ?{lat:place.lat,long:place.long}:{}),
+      },
+    }:{}),
   });
 }
 
