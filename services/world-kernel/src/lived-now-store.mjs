@@ -738,17 +738,27 @@ export class LivedNowStore {
     `).all(threadId,limit).map(situationFromRow);
   }
 
-  listCurrentSituations({ at, livingOnly = false } = {}) {
+  listCurrentSituations({ at, livingOnly = false, includeLifeContinuity = false } = {}) {
     if (!at) throw new TypeError("listCurrentSituations requires an at timestamp");
     assertIsoTimestamp("listCurrentSituations at", at);
     const rows = this.#database.prepare(`
       SELECT f.situation_id,f.thread_id AS thread_id,f.established_at,f.record_json,f.record_digest
+        ${includeLifeContinuity ? `,p.record_json AS life_plan_json,b.situation_id AS life_boundary_situation_id,
+          b.due_at AS life_due_at,b.blocked_reason AS life_blocked_reason,
+          b.failed_attempts AS life_failed_attempts` : ""}
       FROM current_situation_frontier f
       JOIN threads t ON t.thread_id=f.thread_id
+      ${includeLifeContinuity ? `LEFT JOIN lived_now_plans p ON p.plan_id=
+          json_extract(f.record_json,'$.sourcePlanRefs[0]') AND p.plan_kind='personal'
+        LEFT JOIN lived_now_next_boundaries b ON b.thread_id=f.thread_id
+          AND b.situation_id=f.situation_id` : ""}
       WHERE f.established_at<=?
         ${livingOnly ? "AND t.status<>'retired'" : ""}
       UNION ALL
       SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
+        ${includeLifeContinuity ? `,p.record_json AS life_plan_json,b.situation_id AS life_boundary_situation_id,
+          b.due_at AS life_due_at,b.blocked_reason AS life_blocked_reason,
+          b.failed_attempts AS life_failed_attempts` : ""}
       FROM current_situation_frontier f
       JOIN threads t ON t.thread_id=f.thread_id
       JOIN current_situation_records s ON s.situation_id=(
@@ -756,11 +766,32 @@ export class LivedNowStore {
         WHERE prior.thread_id=f.thread_id AND prior.established_at<=?
         ORDER BY prior.established_at DESC,prior.situation_id DESC LIMIT 1
       )
+      ${includeLifeContinuity ? `LEFT JOIN lived_now_plans p ON p.plan_id=
+          json_extract(s.record_json,'$.sourcePlanRefs[0]') AND p.plan_kind='personal'
+        LEFT JOIN lived_now_next_boundaries b ON b.thread_id=s.thread_id
+          AND b.situation_id=s.situation_id` : ""}
       WHERE f.established_at>?
         ${livingOnly ? "AND t.status<>'retired'" : ""}
       ORDER BY thread_id
     `).all(at,at,at);
-    return rows.map(situationFromRow);
+    return rows.map(row=>{
+      const situation=situationFromRow(row);
+      if(!includeLifeContinuity)return situation;
+      const plan=row.life_plan_json===null?null:JSON.parse(row.life_plan_json);
+      return Object.freeze({
+        ...situation,
+        lifeContinuity:Object.freeze({
+          currentAt:situation.establishedAt,
+          planHorizonEnd:plan?.horizonEnd??null,
+          nextAutonomousBoundary:row.life_boundary_situation_id===null?null:Object.freeze({
+            situationId:row.life_boundary_situation_id,
+            dueAt:row.life_due_at,
+            blockedReason:row.life_blocked_reason,
+            failedAttempts:row.life_failed_attempts,
+          }),
+        }),
+      });
+    });
   }
 
   // The venue index narrows the search; the result limit applies only after
@@ -886,7 +917,7 @@ export class LivedNowStore {
   }
 
   listCurrentLocationEvidence({ at } = {}) {
-    const situations = this.listCurrentSituations({ at, livingOnly:true });
+    const situations = this.listCurrentSituations({ at, livingOnly:true, includeLifeContinuity:true });
     if (situations.length === 0) return [];
 
     const references = [...new Set(situations.flatMap(observedPlaceRefs))];
@@ -980,6 +1011,7 @@ export class LivedNowStore {
       return Object.freeze({
         threadId:currentSituation.threadId,
         currentSituation,
+        lifeContinuity:currentSituation.lifeContinuity??null,
         privatePlace:privateByThread.get(currentSituation.threadId)??null,
         contextLocations:Object.freeze(genesisContextLocations(
           placeEpisodes,anchors,ownedWorld,
