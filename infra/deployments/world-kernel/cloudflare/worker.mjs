@@ -430,6 +430,22 @@ export class FibreWorldDurableObject extends DurableObject {
     return this.appearanceCoverage;
   }
 
+  // Internal operator inspection may show an admitted private city without
+  // changing the public Present projection or plotting a private residence.
+  operatorCurrentPlace(evidence){
+    const situation=evidence?.currentSituation;
+    const privatePlace=evidence?.privatePlace;
+    if(situation?.location?.kind!=="place"
+      ||privatePlace?.placeRef!==situation.location.placeRef
+      ||privatePlace.publicGranularity==="city")return null;
+    return Object.freeze({
+      locality:privatePlace.locality,
+      country:privatePlace.country,
+      countryCode:privatePlace.countryCode,
+      disclosure:"private",
+    });
+  }
+
   directoryPopulationForRequest(search) {
     const result = this.directoryForRequest().search(search);
     const livedNow = openLivedNowInspectionStore(this.worldStorage);
@@ -449,6 +465,7 @@ export class FibreWorldDurableObject extends DurableObject {
         const current = byThread.get(entry.threadId) ?? null;
         return Object.freeze({
           ...entry,
+          operatorCurrentPlace:this.operatorCurrentPlace(current),
           currentLocation:projectCurrentThreadLocation({
             entry,
             currentSituation:current?.currentSituation ?? null,
@@ -475,6 +492,7 @@ export class FibreWorldDurableObject extends DurableObject {
         ?optionalLivedRead(()=>livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef),null):null;
       return Object.freeze({
         ...entry,
+        operatorCurrentPlace:this.operatorCurrentPlace({currentSituation,privatePlace}),
         currentLocation:projectedCurrentLocation(livedNow,threadId,{
           currentSituation,worldPlaces,placeEpisodes,privatePlace,
         }),
