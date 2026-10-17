@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { genesisContextLocations,projectCurrentThreadLocation } from "../src/current-thread-location.mjs";
+import { genesisContextLocations,projectCurrentThreadLocation,projectOperatorCurrentPlace } from "../src/current-thread-location.mjs";
 
 const entry = Object.freeze({
   threadId:"thr_current_location",
@@ -276,4 +276,36 @@ test("explicit current-place locality and private disclosure outrank sibling hin
     privatePlace:{placeRef:"per:pep_paris:1",publicGranularity:"hidden"},
   });
   assert.equal(hidden,null,"hidden private geography was exposed by a sibling");
+});
+
+test("God-view preserves a hidden home's attested current city without inventing address or attendance",()=>{
+  const currentSituation={
+    establishedAt:"2026-10-17T05:00:00.000Z",
+    location:{kind:"place",placeRef:"per:tbilisi-home:1"},
+  };
+  const privatePlace={
+    placeRef:"per:tbilisi-home:1",threadId:"thr_tbilisi",
+    specificPlace:"A family apartment in Saburtalo",
+    streetAddress:null,lat:null,long:null,
+    locality:"Tbilisi",country:"Georgia",countryCode:"GE",
+    publicGranularity:"hidden",
+  };
+  const operator=projectOperatorCurrentPlace({currentSituation,privatePlace});
+  assert.equal(operator?.specificPlace,"A family apartment in Saburtalo");
+  assert.equal(operator?.locality,"Tbilisi");
+  assert.equal(operator?.mapPrecision,"city");
+  assert.equal(operator?.streetAddress,null);
+  assert.ok(Number.isFinite(operator?.lat)&&Number.isFinite(operator?.long),
+    "God-view cannot plot an attested current city");
+  assert.equal(projectCurrentThreadLocation({currentSituation,privatePlace}),null,
+    "public disclosure was widened by an operator-only map position");
+  assert.equal(projectOperatorCurrentPlace({
+    currentSituation:{...currentSituation,location:{kind:"place",placeRef:"per:different-home:1"}},
+    privatePlace,
+  }),null,"an earlier home masqueraded as the actual current home");
+  assert.equal(projectOperatorCurrentPlace({
+    currentSituation:{...currentSituation,location:{kind:"transit",
+      fromPlaceRef:"per:tbilisi-home:1",toPlaceRef:"per:elsewhere:1"}},
+    privatePlace,
+  }),null,"a journey was falsely fixed at its point of departure");
 });
