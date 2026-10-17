@@ -38,19 +38,21 @@ export function genesisContextLocations(placeEpisodes, locatedContexts){
   const known=new Map();
   for(const {placeEpisode,privatePlace} of locatedContexts){
     const context=modernGenesisContext(placeEpisode);
-    if(context===null||privatePlace?.publicGranularity!=="city"
+    if(context===null||privatePlace?.threadId!==placeEpisode.threadId
+      ||privatePlace?.publicGranularity!=="city"
       ||privatePlace.placeRef!==placeEpisodeRevisionRef(placeEpisode))continue;
     const geo=resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
     if(!geo||geo.countryCode!==privatePlace.countryCode)continue;
-    const prior=known.get(context);
-    if(prior===undefined)known.set(context,geo);
+    const key=`${placeEpisode.threadId}/${context}`;
+    const prior=known.get(key);
+    if(prior===undefined)known.set(key,geo);
     else if(prior!==null&&(
       prior.countryCode!==geo.countryCode||prior.city!==geo.city
-    ))known.set(context,null);
+    ))known.set(key,null);
   }
   return placeEpisodes.flatMap(episode=>{
     const context=modernGenesisContext(episode);
-    const geography=context===null?null:known.get(context);
+    const geography=context===null?null:known.get(`${episode.threadId}/${context}`);
     return geography?[{
       placeRef:placeEpisodeRevisionRef(episode),geography,
     }]:[];
