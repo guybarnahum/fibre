@@ -207,6 +207,15 @@ function worldPlaceEvidence(ref, json, storedDigest) {
   return Object.freeze(record);
 }
 
+function privatePlaceEvidence(threadId, placeRef, json, storedDigest) {
+  const record = parseJson(`private World place ${placeRef}`, json);
+  if (record.threadId !== threadId || record.placeRef !== placeRef
+    || canonicalJson(record) !== json || digest(record) !== storedDigest) {
+    throw new IntegrityError(`private World place ${placeRef} failed integrity`);
+  }
+  return Object.freeze(record);
+}
+
 function placeEpisodeEvidence(ref, json, recordDigest, witnessDigest) {
   if (json === null) return null;
   const record = normalizePlaceEpisode(parseJson(`place episode ${ref}`, json));
@@ -886,6 +895,29 @@ export class LivedNowStore {
       ),
     })]));
 
+    // One indexed lookup for present privately located places. A private
+    // address stays in World; only a locality-level projection leaves here.
+    const privateTargets = situations
+      .filter(situation => situation.location.kind === "place"
+        && situation.location.placeRef.startsWith("per:"))
+      .map(situation => [situation.threadId, situation.location.placeRef]);
+    const privateRows = privateTargets.length === 0 ? [] : this.#database.prepare(`
+      WITH targets AS (
+        SELECT json_extract(value,'$[0]') AS thread_id,
+               json_extract(value,'$[1]') AS place_ref
+        FROM json_each(?)
+      )
+      SELECT p.thread_id,p.place_ref,p.record_json,p.record_digest
+      FROM targets t
+      JOIN world_private_place_locations p
+        ON p.thread_id=t.thread_id AND p.place_ref=t.place_ref
+    `).all(JSON.stringify(privateTargets));
+    const privateByThread = new Map(privateRows.map(row => [
+      row.thread_id,privatePlaceEvidence(
+        row.thread_id,row.place_ref,row.record_json,row.record_digest,
+      ),
+    ]));
+
     return situations.map((currentSituation) => {
       const evidence = observedPlaceRefs(currentSituation)
         .map((ref) => evidenceByRef.get(ref))
@@ -899,6 +931,7 @@ export class LivedNowStore {
       return Object.freeze({
         threadId:currentSituation.threadId,
         currentSituation,
+        privatePlace:privateByThread.get(currentSituation.threadId) ?? null,
         worldPlaces:Object.freeze(observedPlaceRefs(currentSituation)
           .map((ref)=>this.getWorldPlace(currentSituation.threadId,ref,{required:false}))
           .filter(Boolean)),
