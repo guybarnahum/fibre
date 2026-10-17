@@ -31,7 +31,22 @@
 .admin-notice-dismiss{border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;padding:0 2px;cursor:pointer}
 @media(max-width:650px){.admin-notices{left:16px;right:16px;bottom:16px;width:auto}}
 
-/* All Admin copy controls share one quiet, layout-stable hover affordance. */
+/* All Admin copy controls share a layout-stable hover and copy acknowledgment. */
+.copy-action{position:relative}
 .copy-action .fa-action-icon{transition:transform .15s ease;transform-origin:center}
 .copy-action:is(:hover,:focus-visible) .fa-action-icon{transform:scale(1.35)}
+.copy-action[data-copy-feedback]{z-index:12}
+.copy-action[data-copy-feedback]::after{
+  content:attr(data-copy-feedback);position:absolute;left:0;top:calc(100% + 4px);
+  display:block;pointer-events:none;white-space:nowrap;
+  padding:4px 7px;border:1px solid var(--success);border-radius:6px;
+  background:var(--surface);color:var(--success);font-size:10px;font-weight:700;
+  box-shadow:0 3px 10px rgba(20,22,26,.12);
+}
+.copy-action[data-copy-feedback-state="failed"]::after{border-color:var(--danger);color:var(--danger)}
 @media(prefers-reduced-motion:reduce){.copy-action .fa-action-icon{transition:none}}
+
+/* The enlarged portrait carries the same life status as its source portrait. */
+.portrait-hover-preview[data-life-status="continuing"]{border:2px solid var(--success)}
+.portrait-hover-preview:is([data-life-status="dormant"],[data-life-status="overdue"],[data-life-status="unarmed"]){border:2px solid var(--warning)}
+.portrait-hover-preview[data-life-status="blocked"]{border:2px solid var(--danger)}
