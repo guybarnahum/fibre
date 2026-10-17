@@ -431,17 +431,22 @@ function hero(identity, threadId) {
 }
 
 export function observatoryCurrentPlace(livedNow){
-  const privatePlace=livedNow?.privatelyKnownCurrentPlace;
-  const located=currentThreadPlace(livedNow?.currentLocation)
-    ??currentThreadPlace(privatePlace?.publicGranularity==="city"
-      ?{...privatePlace,kind:"place"}:null);
-  if(located===null){
-    return livedNow?.currentSituation?.location?.kind==="transit"
-      ?"In transit · location unresolved"
-      :livedNow?.currentSituation?"Location unresolved":"Not established";
-  }
-  const city=threadLocationText(located);
   const situation=livedNow?.currentSituation;
+  const privatePlace=livedNow?.privatelyKnownCurrentPlace;
+  const publicCity=currentThreadPlace(livedNow?.currentLocation);
+  const privateCurrent=publicCity===null
+    &&situation?.location?.kind==="place"
+    &&privatePlace?.placeRef===situation.location.placeRef
+    ?currentThreadPlace({...privatePlace,kind:"place"}):null;
+  const located=publicCity??privateCurrent;
+  if(located===null){
+    return situation?.location?.kind==="transit"
+      ?"In transit · location unresolved"
+      :situation?"Location unresolved":"Not established";
+  }
+  const city=threadLocationText(located)
+    +(privateCurrent!==null&&privatePlace.publicGranularity!=="city"
+      ?" · Private":"");
   const publicVenue=situation?.location?.kind==="place"
     ?(livedNow?.worldPlaces??[]).find(place=>
       place.ref===situation.location.placeRef
