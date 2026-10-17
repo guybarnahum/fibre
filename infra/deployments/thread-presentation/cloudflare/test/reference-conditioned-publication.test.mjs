@@ -43,22 +43,6 @@ function jsonResponse(payload, status = 200) {
   };
 }
 
-function binaryResponse(bytes, mediaType = "image/png") {
-  const copied = bytes.slice();
-  return {
-    ok: true,
-    status: 200,
-    headers: {
-      get(name) {
-        return name.toLowerCase() === "content-type" ? mediaType : null;
-      },
-    },
-    async arrayBuffer() {
-      return copied.buffer.slice(copied.byteOffset, copied.byteOffset + copied.byteLength);
-    },
-  };
-}
-
 async function deployment() {
   const yaml = await readFile(new URL("../../../environments/cloudflare.yaml", import.meta.url), "utf8");
   return parseDeploymentManifest(yaml);
@@ -123,33 +107,24 @@ async function admittedPresentationBundle() {
   return { presentation, media, provenance };
 }
 
-function createBflFixtureFetch({ expectedReferenceBase64 }) {
-  const calls = [];
-  const providerBytes = encoder.encode("slice-f-bfl-derived-image-bytes");
-  const fetchImpl = async (url, init = {}) => {
-    calls.push({ url, init });
-    if (init.method === "POST") {
-      const body = JSON.parse(init.body);
-      assert.equal(body.input_image, expectedReferenceBase64);
-      assert.equal(body.input_image_2, undefined);
-      assert.match(body.prompt, /preserve .*identity/i);
-      return jsonResponse({
-        id: "bfl_slice_f_reference_task",
-        polling_url: "https://api.bfl.ai/v1/get_result?id=bfl_slice_f_reference_task",
-      });
-    }
-    if (url.startsWith("https://api.bfl.ai/")) {
-      return jsonResponse({
-        status: "Ready",
-        result: { sample: "https://delivery.eu.bfl.ai/slice-f-reference.png" },
-      });
-    }
-    if (url === "https://delivery.eu.bfl.ai/slice-f-reference.png") {
-      return binaryResponse(providerBytes);
-    }
-    throw new Error(`unexpected BFL fixture URL ${url}`);
+function createOpenAiFixtureFetch({expectedReferenceBytes}) {
+  const calls=[];
+  const providerBytes=encoder.encode("slice-f-openai-derived-image-bytes");
+  const fetchImpl=async(url,init={})=>{
+    calls.push({url,init});
+    assert.equal(url,"https://api.openai.com/v1/images/edits");
+    assert.equal(init.method,"POST");
+    assert.equal(init.body.get("model"),"gpt-image-2-2026-04-21");
+    assert.match(String(init.body.get("prompt")) ,/preserve .*identity/i);
+    const references=init.body.getAll("image[]");
+    assert.equal(references.length,1);
+    assert.deepEqual(new Uint8Array(await references[0].arrayBuffer()),expectedReferenceBytes,
+      "official portrait generation lost its canonical image");
+    return jsonResponse({
+      data:[{b64_json:Buffer.from(providerBytes).toString("base64")}],
+    });
   };
-  return { calls, providerBytes, fetchImpl };
+  return {calls,providerBytes,fetchImpl};
 }
 
 test("Slice F reference-capable generation converges through Fibre provenance into one admitted media.ready publication", async () => {
@@ -197,7 +172,7 @@ test("Slice F reference-capable generation converges through Fibre provenance in
   const providerProfile = selectImageProviderProfile(assetDeployment, {
     requiresReferenceObjects: official.referenceObjectRefs.length > 0,
   });
-  assert.equal(providerProfile, "bfl-flux-2-pro-v1");
+  assert.equal(providerProfile, "openai-gpt-image-2-medium-v1");
 
   const demandService = createPresentationAssetDemandService({ infra });
   const reconciled = await demandService.reconcile({
@@ -208,15 +183,13 @@ test("Slice F reference-capable generation converges through Fibre provenance in
   });
   assert.equal(reconciled.reconciliation.jobs.length, 1);
   const [job] = reconciled.reconciliation.jobs;
-  assert.equal(job.providerProfile, "bfl-flux-2-pro-v1");
+  assert.equal(job.providerProfile, "openai-gpt-image-2-medium-v1");
   assert.deepEqual(job.referenceObjectRefs, [CANONICAL_ROOT]);
 
-  const bfl = createBflFixtureFetch({
-    expectedReferenceBase64: Buffer.from(rootBytes).toString("base64"),
-  });
-  const provider = selectImageIntegration(assetDeployment.integrations[providerProfile], {
-    environment: { BFL_API_KEY: "slice-f-bfl-key" },
-    fetchImpl: bfl.fetchImpl,
+  const openai=createOpenAiFixtureFetch({expectedReferenceBytes:rootBytes});
+  const provider=selectImageIntegration(assetDeployment.integrations[providerProfile],{
+    environment:{OPENAI_API_KEY:"slice-f-openai-key"},
+    fetchImpl:openai.fetchImpl,
   });
   const runtime = createAssetGenerationRuntime({
     infra,
@@ -224,13 +197,11 @@ test("Slice F reference-capable generation converges through Fibre provenance in
   });
   const generated = await runtime.execute(job);
   assert.equal(generated.receipt.role, "official_id_photo");
-  assert.notEqual(generated.providerOperationObjectRef, null, "accepted BFL task must be durably checkpointed");
 
   const generationRecordStored = await infra.objects.get(generated.generationRecordObjectRef);
   const generationRecord = JSON.parse(decoder.decode(generationRecordStored.bytes));
   assert.deepEqual(generationRecord.providerRequestWitness.body.referenceInputs, [
     {
-      inputField: "input_image",
       objectRef: CANONICAL_ROOT,
       digest: rootDigest,
       mediaType: "image/png",
@@ -242,7 +213,7 @@ test("Slice F reference-capable generation converges through Fibre provenance in
     false,
     "durable provider witness must retain reference identity/digest but not copy reference bytes",
   );
-  assert.equal(bfl.calls.filter((call) => call.init.method === "POST").length, 1);
+  assert.equal(openai.calls.length,1,"reference-conditioned official photo must use one OpenAI edit");
 
   const publisher = createThreadPresentationAssetPublisher({
     infra,
