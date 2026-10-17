@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { planThreadLocation } from "./thread-locations.mjs";
+import { resolveLocalityGeography } from "../../core/src/locality-geography.mjs";
 
 const thread={
   threadId:"thr_person",displayName:"Someone",
@@ -95,4 +96,24 @@ test("legacy Genesis learning context may receive city geography without claimin
   });
   assert.equal(publicVenue.state,"unresolved_shared_world_place",
     "a real public venue must not be rewritten as a private Genesis context");
+});
+
+test("legacy London and Tokyo births resolve to current-city geography without inventing a residence",()=>{
+  for(const [city,country,countryCode,timeZone,lat,long] of [
+    ["London","United Kingdom","GB","Europe/London",51.50853,-0.12574],
+    ["Tokyo","Japan","JP","Asia/Tokyo",35.6895,139.69171],
+  ]){
+    const person={...thread,birthLocation:{city,country,countryCode}};
+    const present={...life({}),worldContext:{timeZone}};
+    const decision=planThreadLocation(person,present);
+    assert.equal(decision.state,"ready",`${city} remains unmappable`);
+    assert.equal(decision.place.locality,city);
+    assert.equal(decision.place.countryCode,countryCode);
+    assert.equal(decision.place.lat,null,"migration must not invent a home coordinate");
+    assert.equal(decision.place.long,null,"migration must not invent a home coordinate");
+    assert.equal(decision.place.streetAddress,null);
+    const resolved=resolveLocalityGeography(`${country}/${city}`);
+    assert.deepEqual([resolved.lat,resolved.long],[lat,long],
+      "city center was not grounded in the shared locality catalogue");
+  }
 });
