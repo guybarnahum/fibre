@@ -2,7 +2,7 @@ import {
   IntegrityError,assertId,assertNonEmpty,
   assertPlainObject,canonicalJson,sha256,
 } from "./persistence-common.mjs";
-import { resolveLivePhysicalVenue } from "./live-world-place.mjs";
+import { resolveLivePhysicalVenue,resolveLiveWorldPlace } from "./live-world-place.mjs";
 
 const WORLD_PLACE_AUTHORITY="world-public-place-v1";
 const PRIVATE_PLACE_AUTHORITY="world-private-place-v1";
@@ -156,10 +156,20 @@ export function admitWorldPrivatePlace(db,input){
   if(!["hidden","country","city"].includes(publicGranularity)){
     throw new TypeError("private place publicGranularity must be hidden, country or city");
   }
-  const evidence=db.prepare(`SELECT 1 AS present FROM situated_evidence_witnesses
-    WHERE thread_id=? AND reference=? AND witness_kind='place_episode_revision'
-    LIMIT 1`).get(threadId,placeRef);
-  if(!evidence)throw new TypeError("private World place requires a Thread-owned situated place");
+  if(placeRef.startsWith("wpl_")){
+    // Genesis World learning/home contexts have historically used wpl_ refs,
+    // but they are not independently attested public venues. A locality
+    // attestation belongs to this Thread's context only.
+    const context=resolveLiveWorldPlace(db,threadId,placeRef);
+    if(context?.authority!=="live-world-place-admission-v1"||context.physicalVenue){
+      throw new TypeError("private World locality requires an owned nonpublic Genesis context");
+    }
+  }else{
+    const evidence=db.prepare(`SELECT 1 AS present FROM situated_evidence_witnesses
+      WHERE thread_id=? AND reference=? AND witness_kind='place_episode_revision'
+      LIMIT 1`).get(threadId,placeRef);
+    if(!evidence)throw new TypeError("private World place requires a Thread-owned situated place");
+  }
   const record=Object.freeze({
     threadId,placeRef,specificPlace:specificPlace.trim(),
     streetAddress:streetAddress==null?null:streetAddress.trim(),
@@ -182,7 +192,8 @@ export function admitWorldPrivatePlace(db,input){
 }
 
 export function getWorldPrivatePlace(db,threadId,placeRef){
-  if(typeof placeRef!=="string"||!placeRef.startsWith("per:"))return null;
+  if(typeof placeRef!=="string"||(!placeRef.startsWith("per:")
+    &&!placeRef.startsWith("wpl_")))return null;
   return stored(db.prepare(`SELECT record_json,record_digest
     FROM world_private_place_locations WHERE thread_id=? AND place_ref=?`
   ).get(threadId,placeRef),"private World place");
