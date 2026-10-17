@@ -433,20 +433,20 @@ function hero(identity, threadId) {
 export function observatoryCurrentPlace(livedNow){
   const situation=livedNow?.currentSituation;
   const privatePlace=livedNow?.privatelyKnownCurrentPlace;
-  const publicCity=currentThreadPlace(livedNow?.currentLocation);
-  const privateCurrent=publicCity===null
-    &&situation?.location?.kind==="place"
-    &&privatePlace?.placeRef===situation.location.placeRef
-    ?currentThreadPlace({...privatePlace,kind:"place"}):null;
-  const located=publicCity??privateCurrent;
+  const atPrivatePlace=situation?.location?.kind==="place"
+    &&privatePlace?.placeRef===situation.location.placeRef;
+  const located=currentThreadPlace(atPrivatePlace
+    ?{...privatePlace,kind:"place"}:livedNow?.currentLocation);
   if(located===null){
     return situation?.location?.kind==="transit"
       ?"In transit · location unresolved"
       :situation?"Location unresolved":"Not established";
   }
-  const city=threadLocationText(located)
-    +(privateCurrent!==null&&privatePlace.publicGranularity!=="city"
-      ?" · Private":"");
+  const city=threadLocationText(located);
+  if(atPrivatePlace){
+    const description=privatePlace.specificPlace?.trim();
+    return description?description+" · "+city:city;
+  }
   const publicVenue=situation?.location?.kind==="place"
     ?(livedNow?.worldPlaces??[]).find(place=>
       place.ref===situation.location.placeRef
@@ -466,7 +466,7 @@ function identitySection(identity, threadId, livedNow=null) {
     fact("Sex", threadSex(identity) ? human(threadSex(identity)) : null),
     fact("Birth date", identity.birthDate),
     fact("Birth place", identity.birthPlace),
-    fact("Current place",observatoryCurrentPlace(livedNow)),
+    fact("Current place",observatoryCurrentPlace(livedNow),{wide:true}),
     fact("Lifecycle", identity.lifecycleStatus ? human(identity.lifecycleStatus) : null),
     fact("Genesis origin", identity.originOrientation ? human(identity.originOrientation) : null),
     fact("Thread ID", threadId, { mono:true }),
