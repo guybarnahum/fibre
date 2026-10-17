@@ -133,9 +133,25 @@ function projectedPoint(place) {
 
 // God's view uses actual attested private-place evidence; public disclosure
 // never determines whether World itself knows a Thread's current location.
-export function projectOperatorCurrentPlace({currentSituation,privatePlace}={}){
+export function projectOperatorCurrentPlace({
+  currentSituation,privatePlace,placeEpisodes=[],privateContextLocations=[],
+}={}){
   if(currentSituation?.location?.kind!=="place"
-    ||privatePlace?.placeRef!==currentSituation.location.placeRef)return null;
+    ||privatePlace?.placeRef!==currentSituation.location.placeRef){
+    if(privateContextLocations.length===0)return null;
+    const situated=projectCurrentThreadLocation({
+      currentSituation,placeEpisodes,contextLocations:privateContextLocations,
+    });
+    if(situated===null)return null;
+    const activeEpisode=currentSituation?.location?.kind==="place"
+      ?placeEpisodes.find(episode=>
+        placeEpisodeRevisionRef(episode)===currentSituation.location.placeRef):null;
+    return Object.freeze({
+      ...situated,
+      specificPlace:activeEpisode?.place?.displayName??null,
+      streetAddress:null,mapPrecision:"city",
+    });
+  }
   const city=resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
   const point=city?.countryCode===privatePlace.countryCode?city:null;
   const precise=finiteCoordinates(privatePlace);
