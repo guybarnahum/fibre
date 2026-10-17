@@ -24,7 +24,21 @@ function localityGeography(place) {
   return resolveMentionedLocalityGeography(place?.displayName);
 }
 
-function resolvedPlace(reference, { worldPlaces, placeEpisodes }) {
+function resolvedPlace(reference, { worldPlaces, placeEpisodes, privatePlace }) {
+  // A World-attested private place is mapped only at city precision; its
+  // street address or precise residence coordinates never enter the map.
+  if (privatePlace?.placeRef === reference && privatePlace.publicGranularity === "city") {
+    const city = resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
+    if (city?.countryCode === privatePlace.countryCode) {
+      return Object.freeze({
+        ref:reference,
+        displayName:`${city.city}, ${city.country}`,
+        geography:{lat:city.lat,long:city.long,city:city.city,
+          country:city.country,countryCode:city.countryCode},
+        authority:"world_private_place_locality",
+      });
+    }
+  }
   const shared = worldPlaces.find((place) => place.ref === reference) ?? null;
   if (shared !== null) {
     return Object.freeze({
@@ -72,12 +86,13 @@ export function projectCurrentThreadLocation({
   currentSituation,
   worldPlaces = [],
   placeEpisodes = [],
+  privatePlace = null,
 } = {}) {
   if (currentSituation === null || currentSituation === undefined) return null;
 
   const location = currentSituation.location;
   if (location?.kind === "place") {
-    const place = resolvedPlace(location.placeRef, { worldPlaces, placeEpisodes });
+    const place = resolvedPlace(location.placeRef, { worldPlaces, placeEpisodes, privatePlace });
     const point = projectedPoint(place);
     if (point === null) return null;
     return Object.freeze({
@@ -92,8 +107,8 @@ export function projectCurrentThreadLocation({
   }
 
   if (location?.kind === "transit") {
-    const from = resolvedPlace(location.fromPlaceRef, { worldPlaces, placeEpisodes });
-    const to = resolvedPlace(location.toPlaceRef, { worldPlaces, placeEpisodes });
+    const from = resolvedPlace(location.fromPlaceRef, { worldPlaces, placeEpisodes, privatePlace });
+    const to = resolvedPlace(location.toPlaceRef, { worldPlaces, placeEpisodes, privatePlace });
     const fromPoint = projectedPoint(from);
     const toPoint = projectedPoint(to);
     if (fromPoint === null && toPoint === null) return null;
