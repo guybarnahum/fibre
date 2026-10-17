@@ -182,7 +182,8 @@ function projectedCurrentLocation(livedNow,threadId,{
   const direct=projectCurrentThreadLocation({
     currentSituation,privatePlace,worldPlaces,placeEpisodes,
   });
-  if(direct!==null||placeEpisodes.length===0)return direct;
+  // A direct private visibility decision wins over sibling-context inference.
+  if(direct!==null||privatePlace!==null||placeEpisodes.length===0)return direct;
   // A personal place may be a sibling of a previously located modern
   // Genesis context. Resolve only that shared, attested context, not birth.
   return projectCurrentThreadLocation({
