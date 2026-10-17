@@ -67,7 +67,7 @@ When interoception is supplied, it is bounded subsemantic organismic state groun
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Public City Guide suggestions, when offered, are editorial *possibilities* in the Thread's grounded locality. A listing does not mean anyone is there or has invited the Thread, and makes no promise of satisfaction. This Thread may consider one, rely on familiar remembered places, or ignore the guide. Never treat a listing as a visit or a promise of contact.
 Use offered physical-place refs for known destinations. For a new destination absent from the list, physicalPlaceRef may instead name it naturally, such as "Porto, Portugal" for a city or "A neighborhood café, Porto, Portugal" for a specific place. World will replace that temporary name with its place reference before admission. Unknown geography is allowed; do not invent exact addresses, shared venues or people present. Propose at most two new places per plan. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
-When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place. Give journeys credible elapsed transit time between stops, especially when cities are geographically far apart. A multi-hour journey should not become a few minutes merely because both stops fit the horizon. World will reject an impossibly short arrival window; unknown routes and travel modes are not permission to teleport.
+When startingPlaceRef is supplied, the first stop must remain at that physical place. When physicalPlaceRef changes, leave a positive time gap between the end of the previous stop and the start of the next, even for local places. That gap is the actual journey, not an instantaneous scene change. Allow longer travel for distant cities; World will reject impossible arrival times. Do not fabricate travel when staying in the same place.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
 requiredWorkCommitments, when present, are commitments this Thread already voluntarily accepted. Each must appear as one mediated stop with exactly the committed start/end and mediatedContext. Do not revisit whether the Thread should honor an accepted commitment; arrange the rest of the life around it naturally.
@@ -461,17 +461,13 @@ export async function formPersonalLivedPlan({
   const available=[...places,...discovery.places];
   const stops = discovery.stops.map((stop, index) =>
     normalizeCognitiveStop(stop, index, available, authoredAt, horizonEnd));
-  // A public place is a shared physical location, not another room in an
-  // invented scene. Record an actual transit interval before changing place.
-  const publicRefs=new Set(available.filter(place=>place.placeKind==="public_venue")
-    .map(place=>place.ref));
+  // A new physical place is a journey, not an instantaneous scene switch.
+  // The positive gap is enacted as World transit by the existing scheduler.
   for(let i=1;i<stops.length;i++){
     const previous=stops[i-1],next=stops[i];
     if(previous.physicalPlaceRef!==next.physicalPlaceRef
-      &&(publicRefs.has(previous.physicalPlaceRef)
-        ||publicRefs.has(next.physicalPlaceRef))
       &&Date.parse(next.startAt)<=Date.parse(previous.endAt)){
-      throw new TypeError("public venue travel requires an elapsed transit interval");
+      throw new TypeError("personal Flight Plan place change requires transit time");
     }
   }
   if (stops[0].startAt !== authoredAt) {
