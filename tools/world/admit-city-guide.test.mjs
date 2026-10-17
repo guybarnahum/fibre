@@ -26,7 +26,7 @@ test("sourced editorial places become World admissions only through independent 
     assert.ok(admission.venueIdentity&&admission.affordances.length,
       "public venue lacks an independent identity or an activity");
   }
-  const admitted=structuredClone(guide);
+  const admitted=structuredClone(editorial);
   admitted.cities[pending[0].cityKey].places[pending[0].placeKey].worldPlaceRef="wpl_verified";
   assert.ok(!pendingCityGuideAdmissions(admitted,venues).some(item=>
     item.cityKey===pending[0].cityKey&&item.placeKey===pending[0].placeKey),
