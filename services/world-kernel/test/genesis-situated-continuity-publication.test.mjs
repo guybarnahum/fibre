@@ -598,3 +598,43 @@ test("Birth earns one real first life, no invented dormant past, and a continuin
     identityStore.close();
     worldStore.close();
   }));
+
+test("legacy birth recovery restores only missing First Life work without rewriting history",()=>
+  withDatabase(databasePath=>{
+    const {world,birth}=publicationCandidate();
+    const genesis=new GenesisStore(localWorldStateStorage(databasePath));
+    genesis.recordWorldSpec(world);
+    genesis.publishBirth(birth);
+    genesis.close();
+
+    const database=new DatabaseSync(databasePath,{enableForeignKeyConstraints:true});
+    database.prepare("DELETE FROM genesis_first_life_work WHERE thread_id=?")
+      .run(birth.thread.threadId);
+    database.close();
+
+    const work=openGenesisFirstLifeStore(localWorldStateStorage(databasePath));
+    try{
+      const legacy=work.unstarted().find(row=>row.threadId===birth.thread.threadId);
+      assert.equal(legacy?.state,"missing_obligation");
+      assert.equal(legacy?.hasGroundedPlace,true,
+        "recovery lacks a place from Thread-owned lived evidence");
+
+      assert.throws(()=>work.enqueueMissing([
+        birth.thread.threadId,"thr_nonexistent",
+      ],"2026-08-21T00:00:00.000Z"),/first-life recovery requires/,
+      "an invalid second Thread should abort the entire recovery");
+      assert.equal(work.inspect(birth.thread.threadId),null,
+        "failed recovery partially queued a Thread");
+
+      const restored=work.enqueueMissing(
+        [birth.thread.threadId],"2026-08-21T00:00:00.000Z");
+      assert.equal(restored.enqueued,1);
+      assert.equal(work.inspect(birth.thread.threadId)?.due_at,
+        "2026-08-21T00:00:00.000Z",
+        "old birth did not regain ordinary First Life scheduling");
+      assert.throws(()=>work.enqueueMissing(
+        [birth.thread.threadId],"2026-08-21T00:00:00.000Z"),
+        /first-life recovery requires/,
+        "recovery silently duplicated a published birth obligation");
+    }finally{work.close();}
+  }));
