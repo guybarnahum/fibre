@@ -32,7 +32,8 @@ function inPeriod(value,start,end){
 export function inspectThreadJourneys(observatory){
   const life=observatory?.livedNow??{};
   const plans=[life.currentPersonalPlan,...(life.recentPersonalPlans??[])]
-    .filter(plan=>plan?.kind==="personal"&&Array.isArray(plan.stops));
+    .filter(plan=>plan?.planId&&Array.isArray(plan.stops)
+      &&(plan.kind===undefined||plan.kind==="personal"));
   const distinct=[...new Map(plans.map(plan=>[plan.planId,plan])).values()];
   const situations=life.recentSituations??[];
   const worldPlaces=life.worldPlaces??[];
