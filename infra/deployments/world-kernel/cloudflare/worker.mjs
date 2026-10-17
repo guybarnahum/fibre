@@ -522,6 +522,28 @@ export class FibreWorldDurableObject extends DurableObject {
         firstLife.close();
       }
     }
+    if(url.pathname==="/internal/first-life/recover"){
+      if(request.method!=="POST")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
+      if(!privateOperatorAuthorized(request,this.env)){
+        return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
+      }
+      const body=await request.json().catch(()=>null);
+      if(!body||Object.keys(body).length!==1||!Array.isArray(body.threadIds)){
+        return Response.json({error:"EXPECTED_THREAD_IDS"},{status:400});
+      }
+      const store=openGenesisFirstLifeStore(this.worldStorage);
+      let result;
+      try{
+        result=store.enqueueMissing(body.threadIds,new Date().toISOString());
+      }catch(error){
+        return Response.json({error:"FIRST_LIFE_RECOVERY_REJECTED",
+          detail:String(error.message??error).slice(0,180)},{status:409});
+      }finally{store.close();}
+      // The existing World alarm processes one durable birth obligation at a
+      // time. This endpoint never invokes individual cognition or LivedNow.
+      const wake=await this.runtimeForRequest().reconciliationRuntime.requestWake();
+      return Response.json({ok:true,...result,wake});
+    }
     if(url.pathname==="/internal/world-schema/migrate"){
       if(request.method!=="POST")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
       if(!privateOperatorAuthorized(request,this.env)){
