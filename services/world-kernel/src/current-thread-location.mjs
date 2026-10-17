@@ -24,21 +24,32 @@ function localityGeography(place) {
   return resolveMentionedLocalityGeography(place?.displayName);
 }
 
-// Modern Genesis authors one coherent local WorldSpec with distinct private
-// home/school/transit/learning/commerce places. Their shared seed, not their
-// prose or the person's birthplace, identifies sibling contexts.
+// One authored modern Genesis WorldSpec has distinct private places and
+// legacy learning contexts. Their source place IDs, not names or birthplace,
+// establish whether they belong to the same local context.
+function modernGenesisSeed(placeId){
+  return /^place_modern_([0-9a-f]{12})_(home|school|transit|learning|commerce)$/u
+    .exec(placeId??"")?.[1]??null;
+}
+
 function modernGenesisContext(episode){
-  if(episode?.provenance!=="genesis_created")return null;
-  const match=/^place_modern_([0-9a-f]{12})_(home|school|transit|learning|commerce)$/u
-    .exec(episode.place?.placeId??"");
-  return match?.[1]??null;
+  return episode?.provenance==="genesis_created"
+    ?modernGenesisSeed(episode.place?.placeId):null;
 }
 
 export function isModernGenesisPlace(episode){
   return modernGenesisContext(episode)!==null;
 }
 
-export function genesisContextLocations(placeEpisodes, locatedContexts,{privatePerspective=false}={}){
+export function isModernGenesisWorldPlace(place){
+  return place?.authority==="live-world-place-admission-v1"
+    &&typeof place.sourceWorldRef==="string"
+    &&modernGenesisSeed(place.sourcePlaceId)!==null;
+}
+
+export function genesisContextLocations(placeEpisodes, locatedContexts,{
+  privatePerspective=false,worldPlaces=[],threadId=null,
+}={}){
   const known=new Map();
   for(const {placeEpisode,privatePlace} of locatedContexts){
     const context=modernGenesisContext(placeEpisode);
@@ -54,13 +65,22 @@ export function genesisContextLocations(placeEpisodes, locatedContexts,{privateP
       prior.countryCode!==geo.countryCode||prior.city!==geo.city
     ))known.set(key,null);
   }
-  return placeEpisodes.flatMap(episode=>{
+  const situated=placeEpisodes.flatMap(episode=>{
     const context=modernGenesisContext(episode);
     const geography=context===null?null:known.get(`${episode.threadId}/${context}`);
     return geography?[{
       placeRef:placeEpisodeRevisionRef(episode),geography,
     }]:[];
   });
+  // A legacy wpl_* can be an authored learning place in the same WorldSpec
+  // as an independently located Genesis home. This gives it a *city*, not
+  // a real-world venue identity or evidence of co-presence.
+  if(threadId===null)return situated;
+  return [...situated,...worldPlaces.flatMap(place=>{
+    if(!isModernGenesisWorldPlace(place))return [];
+    const geography=known.get(`${threadId}/${modernGenesisSeed(place.sourcePlaceId)}`);
+    return geography?[{placeRef:place.ref,geography}]:[];
+  })];
 }
 
 function resolvedPlace(reference, { worldPlaces, placeEpisodes, privatePlace, contextLocations }) {
@@ -85,15 +105,19 @@ function resolvedPlace(reference, { worldPlaces, placeEpisodes, privatePlace, co
   }
   const shared = worldPlaces.find((place) => place.ref === reference) ?? null;
   if (shared !== null) {
+    const attested=finiteCoordinates(shared)
+      ?{lat:shared.lat,long:shared.long,city:shared.locality,
+        country:shared.country,countryCode:shared.countryCode}
+      :null;
+    const contextual=attested===null
+      ?contextLocations.find(item=>item.placeRef===reference)?.geography??null
+      :null;
     return Object.freeze({
       ref:reference,
       displayName:shared.displayName,
-      // A historical World context is not positioned at the Thread's birthplace.
-      geography:finiteCoordinates(shared)
-        ?{lat:shared.lat,long:shared.long,city:shared.locality,
-          country:shared.country,countryCode:shared.countryCode}
-        :null,
-      authority:"live_world_place",
+      // Never use birthplace or a learning-context name to invent geography.
+      geography:attested??contextual,
+      authority:contextual===null?"live_world_place":"genesis_context_locality",
     });
   }
 
@@ -134,21 +158,26 @@ function projectedPoint(place) {
 // God's view uses actual attested private-place evidence; public disclosure
 // never determines whether World itself knows a Thread's current location.
 export function projectOperatorCurrentPlace({
-  currentSituation,privatePlace,placeEpisodes=[],privateContextLocations=[],
+  currentSituation,privatePlace,placeEpisodes=[],worldPlaces=[],
+  privateContextLocations=[],
 }={}){
   if(currentSituation?.location?.kind!=="place"
     ||privatePlace?.placeRef!==currentSituation.location.placeRef){
     if(privateContextLocations.length===0)return null;
     const situated=projectCurrentThreadLocation({
-      currentSituation,placeEpisodes,contextLocations:privateContextLocations,
+      currentSituation,placeEpisodes,worldPlaces,
+      contextLocations:privateContextLocations,
     });
     if(situated===null)return null;
-    const activeEpisode=currentSituation?.location?.kind==="place"
-      ?placeEpisodes.find(episode=>
-        placeEpisodeRevisionRef(episode)===currentSituation.location.placeRef):null;
+    const activeRef=currentSituation?.location?.kind==="place"
+      ?currentSituation.location.placeRef:null;
+    const activeEpisode=placeEpisodes.find(episode=>
+      placeEpisodeRevisionRef(episode)===activeRef);
+    const activeWorld=worldPlaces.find(place=>place.ref===activeRef);
     return Object.freeze({
       ...situated,
-      specificPlace:activeEpisode?.place?.displayName??null,
+      specificPlace:activeEpisode?.place?.displayName
+        ??activeWorld?.displayName??null,
       streetAddress:null,mapPrecision:"city",
     });
   }
