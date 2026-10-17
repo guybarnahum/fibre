@@ -157,7 +157,7 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
   assert.ok(assetDeployment.infra.capabilities.includes("queues"));
   assert.ok(assetDeployment.infra.capabilities.includes("workflows"));
   assert.equal(assetDeployment.integrations["openai-gpt-image-2-medium-v1"].provider, "openai");
-  assert.equal(assetDeployment.integrations["bfl-flux-2-pro-v1"].provider, "bfl");
+  assert.deepEqual(Object.keys(assetDeployment.integrations), ["openai-gpt-image-2-medium-v1"]);
 
   const presentationDeployment = resolveServiceDeployment(manifest, "thread-presentation");
   assert.equal(presentationDeployment.runtime.runtimeId, "cloudflare-local");
@@ -178,7 +178,7 @@ test("local deployment manifest selects Cloudflare while presentation owns compl
   assert.equal(presentationWorkflow.class_name, "AssetGenerationWorkflow");
   assert.equal(presentationWorkflow.script_name, assetConfig.name);
   assert.equal(presentationWorkflow.name, assetWorkflow.name);
-  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"]);
+  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN"]);
   assert.equal(presentationConfig.secrets, undefined);
   assert.equal(producer.queue, "fibre-asset-completions-local");
   assert.equal(consumer.max_retries, 10);
