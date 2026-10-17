@@ -88,7 +88,11 @@ function resolvedPlace(reference, { worldPlaces, placeEpisodes, privatePlace, co
   // A World-attested private place is mapped only at city precision; its
   // street address or precise residence coordinates never enter the map.
   if (privatePlace?.placeRef === reference && privatePlace.publicGranularity === "city") {
-    const city = resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
+    const world=worldPlaces.find(item=>item.ref===reference);
+    const city=finiteCoordinates(world)?{
+      city:world.locality,country:world.country,countryCode:world.countryCode,
+      lat:world.lat,long:world.long,
+    }:resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
     if (city?.countryCode === privatePlace.countryCode) {
       return Object.freeze({
         ref:reference,
@@ -166,10 +170,18 @@ function projectedPoint(place) {
 // never determines whether World itself knows a Thread's current location.
 export function projectOperatorCurrentPlace({
   currentSituation,privatePlace,placeEpisodes=[],worldPlaces=[],
-  privateContextLocations=[],worldLocality=null,
+  privateContextLocations=[],
 }={}){
   if(currentSituation?.location?.kind!=="place"
     ||privatePlace?.placeRef!==currentSituation.location.placeRef){
+    const shared=worldPlaces.find(place=>place.ref===currentSituation?.location?.placeRef);
+    if(shared?.authority==="world-place-v1"){
+      const situated=projectCurrentThreadLocation({currentSituation,worldPlaces});
+      return situated===null?null:Object.freeze({
+        ...situated,specificPlace:shared.displayName,streetAddress:null,
+        mapPrecision:finiteCoordinates(shared)?"city":null,
+      });
+    }
     if(privateContextLocations.length===0)return null;
     const situated=projectCurrentThreadLocation({
       currentSituation,placeEpisodes,worldPlaces,
@@ -189,9 +201,9 @@ export function projectOperatorCurrentPlace({
     });
   }
   const city=resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
-  const point=worldLocality?.countryCode===privatePlace.countryCode
-      &&worldLocality.locality.toLowerCase()===privatePlace.locality.toLowerCase()
-    ?worldLocality:city?.countryCode===privatePlace.countryCode?city:null;
+  const known=worldPlaces.find(place=>place.ref===privatePlace.placeRef);
+  const point=finiteCoordinates(known)&&known.countryCode===privatePlace.countryCode
+    ?known:city?.countryCode===privatePlace.countryCode?city:null;
   const precise=finiteCoordinates(privatePlace);
   return Object.freeze({
     kind:"place",current:true,establishedAt:currentSituation.establishedAt,
