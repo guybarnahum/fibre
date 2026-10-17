@@ -215,6 +215,9 @@ export function planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,p
     placeEpisodeRevisionRef(item)===placeRef)??null;
   const worldPlace=placeRef?.startsWith("wpl_")
     ?livedNowStore.getWorldPlace?.(threadId,placeRef,{required:false})??null:null;
+  if(worldPlace?.authority==="world-place-v1"&&worldPlace.locality&&worldPlace.countryCode){
+    return {locality:worldPlace.locality,countryCode:worldPlace.countryCode};
+  }
   if(!(isModernGenesisPlace(episode)||isModernGenesisWorldPlace(worldPlace))
     ||typeof livedNowStore.listLocatedGenesisContexts!=="function")return null;
   const context=genesisContextLocations(
