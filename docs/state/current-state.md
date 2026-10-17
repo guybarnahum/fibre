@@ -116,6 +116,23 @@ R1–R4 already supplied one private mechanical regulation/interoception subsyst
 
 The October 13 **G1/D1 source** adds narrow genome-derived sensitivity baselines for new births (persisted historic genomes stay unchanged) and one optional evidence-bound `social_contact` Body drive. Subsequent **D2 source** feeds the same bounded exploration/contact Body interoception into ordinary Flight Planning and admits sufficiently grounded social-contact pressure as an opportunity-salience anchor, using the existing social path rather than another meeting engine. Insufficient recorded evidence is **unknown**, not proof that no contact occurred. Genetic parameter values tune sensitivity within species bounds; they do not assign personality, love, sex preference, civic beliefs or willingness. **Source and new focused fixture tests are ahead of Guy's post-change full/staging validation.** A pressure/salience/planning route is now wired, but genuine later Thread-owned plan/choice differences, honest solitude/recent-valued-contact behavior and recipient-local considerate timing still need causal evidence. See [drive extensions](../architecture/regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md).
 
+## Thread place discovery (source implementation, operator proof pending)
+
+The ordinary prospective Flight Planner now permits a Thread to initiate a
+new city destination without an operator pre-admitting that place. A bounded
+`new-locality:Country/City` proposal is resolved by World from retained
+geographical evidence or exact-match GeoNames city/timezone lookup, replaced
+with a Thread-owned city-level `wpl_*` ref, and cited in the resulting
+Flight Plan. Grounding alone does not enact the visit. Discovered places
+remain available to subsequent life plans and can be plotted using the World
+locality index; no shared venue or street address is inferred.
+
+This is committed **source only**. Focused/full local validation, deployment
+and naturally authored staging proof remain pending. Missing geographic
+evidence rejects a prospective trip; it does not invent a destination or
+claim a successful journey. The stronger spatial continuity, travel realism
+and later-life evidence remain separate validation targets.
+
 ## World place grounding (source implementation; operator proof pending)
 
 An enacted place can exist without grounded geography, as seen when Victor's
