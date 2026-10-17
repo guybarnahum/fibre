@@ -468,9 +468,11 @@ test("a newly discovered city has map geography without becoming a public venue"
     privatePlace:{threadId:"thr_victor",placeRef,specificPlace:"Porto, Portugal",
       streetAddress:null,lat:null,long:null,locality:"Porto",
       country:"Portugal",countryCode:"PT",publicGranularity:"hidden"},
-    worldLocality:{locality:"Porto",country:"Portugal",countryCode:"PT",
+    worldPlaces:[{
+      ref:placeRef,authority:"world-place-v1",displayName:"Porto, Portugal",
+      placeKind:"city",locality:"Porto",country:"Portugal",countryCode:"PT",
       lat:41.1496,long:-8.6109,timeZone:"Europe/Lisbon",
-      evidenceRef:"fixture:porto"},
+    }],
   });
   assert.equal(projection?.locality,"Porto");
   assert.equal(projection?.mapPrecision,"city");
