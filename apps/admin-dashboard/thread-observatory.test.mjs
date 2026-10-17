@@ -801,3 +801,27 @@ test("Observatory displays authoritative current city separately from immutable 
   }),"British Library · London, United Kingdom",
     "a public current venue lost its World place identity");
 });
+
+test("Observatory describes modern Genesis home and keeps current city in debug output",()=>{
+  const threadId="thr_home_fes";
+  const currentSituation={
+    threadId,situationId:"sit_home",establishedAt:"2026-10-17T04:38:00.000Z",
+    location:{kind:"place",placeRef:"per:plce_home:1"},
+    activity:"Sleep at home.",
+  };
+  const livedNow={
+    currentSituation,worldContext:{timeZone:"Africa/Casablanca"},
+    currentLocation:{kind:"place",locality:"Fes",country:"Morocco",countryCode:"MA"},
+    placeEpisodes:[{episodeId:"plce_home",revision:1,place:{
+      displayName:"place_modern_97e4cb643db2_home",
+    }}],
+  };
+  assert.equal(threadSituationPlace(currentSituation,livedNow).name,"Home");
+  const snapshot=threadObservatoryDebugSnapshot({
+    threadId,identity:{displayName:"Salma"},livedNow,
+  });
+  assert.equal(snapshot.current.currentPlace,"Fes, Morocco",
+    "copying current life concealed the resolved current city");
+  assert.equal(snapshot.current.meetingPlace.name,"Home",
+    "operator place label leaked opaque internal Genesis identifier");
+});
