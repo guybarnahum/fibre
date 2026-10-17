@@ -17,6 +17,7 @@ test("a Thread's earlier Flight Plan and enacted travel remain distinguishable a
   };
   const scene=(kind,time,location)=>({
     establishedAt:time,location,sourcePlanRefs:["plan_travel"],
+    resolution:{governingPlanRef:"plan_travel"},
   });
   const origin=scene("at_place","2026-10-17T08:30:00Z",
     {kind:"place",placeRef:"wpl_lisbon"});
@@ -47,4 +48,9 @@ test("a Thread's earlier Flight Plan and enacted travel remain distinguishable a
   const wrongPlan={...movement,sourcePlanRefs:["plan_other"]};
   assert.equal(phase([arrival,wrongPlan,origin]).stage,"arrival_observed",
     "another plan's transit was falsely attributed to this journey");
+  const overridden={...movement,
+    resolution:{governingPlanRef:"plan_care"},
+    sourcePlanRefs:["plan_travel","plan_care"]};
+  assert.equal(phase([arrival,overridden,origin]).stage,"arrival_observed",
+    "a care-governed journey was credited to the Thread's personal plan");
 });
