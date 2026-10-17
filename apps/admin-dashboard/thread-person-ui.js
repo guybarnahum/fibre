@@ -60,6 +60,20 @@ function locationParts(value){
   return {city:null,country:null,displayName:text,countryCode:null};
 }
 
+// The public/Admin population projection is deliberately city-granular.
+// Never display a private address, precise coordinate or invented residence.
+export function currentThreadPlace(location){
+  if(!location||!["place","transit"].includes(location.kind))return null;
+  const city=clean(location.locality);
+  const country=clean(location.country);
+  if(!city||!country)return null;
+  const displayName=[city,country].join(", ");
+  return {
+    city,country,countryCode:clean(location.countryCode)?.toUpperCase()??null,
+    displayName:location.kind==="transit"?"In transit · "+displayName:displayName,
+  };
+}
+
 export function threadLocationText(location,fallback=null){
   const parts=locationParts(location??fallback);
   return parts.displayName??"—";
