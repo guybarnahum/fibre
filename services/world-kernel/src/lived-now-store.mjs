@@ -568,12 +568,19 @@ export class LivedNowStore {
   listWorldPlaces(threadId) {
     this.#requireThread(threadId);
     const historic=listLiveWorldPlaces(this.#database,threadId);
-    // A current public visit must resolve to exactly the same World venue
-    // for perception and meeting compatibility. Do not list the whole city.
-    const location=this.getCurrentSituation(threadId)?.location;
-    const current=location?.kind==="place"
-      ?getWorldPublicPlace(this.#database,location.placeRef):null;
-    return current===null?historic:[...historic,current];
+    // Include enacted destinations (and transit endpoints), never every
+    // place the Thread knows. Knowing a place is not being present there.
+    const refs=observedPlaceRefs(this.getCurrentSituation(threadId));
+    const additional=refs.map(ref=>
+      getWorldPlaceEntity(this.#database,threadId,ref)
+      ??getWorldPublicPlace(this.#database,ref),
+    ).filter(Boolean);
+    const seen=new Set(historic.map(place=>place.ref));
+    return [...historic,...additional.filter(place=>{
+      if(seen.has(place.ref))return false;
+      seen.add(place.ref);
+      return true;
+    })];
   }
 
   admitPublicPlace(candidate){
