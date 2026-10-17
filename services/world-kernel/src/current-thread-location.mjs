@@ -131,6 +131,26 @@ function projectedPoint(place) {
   });
 }
 
+// God's view uses actual attested private-place evidence; public disclosure
+// never determines whether World itself knows a Thread's current location.
+export function projectOperatorCurrentPlace({currentSituation,privatePlace}={}){
+  if(currentSituation?.location?.kind!=="place"
+    ||privatePlace?.placeRef!==currentSituation.location.placeRef)return null;
+  const city=resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
+  const point=city?.countryCode===privatePlace.countryCode?city:null;
+  const precise=finiteCoordinates(privatePlace);
+  return Object.freeze({
+    kind:"place",current:true,establishedAt:currentSituation.establishedAt,
+    placeRef:privatePlace.placeRef,specificPlace:privatePlace.specificPlace,
+    streetAddress:privatePlace.streetAddress,
+    locality:privatePlace.locality,country:privatePlace.country,
+    countryCode:privatePlace.countryCode,
+    lat:precise?privatePlace.lat:point?.lat??null,
+    long:precise?privatePlace.long:point?.long??null,
+    mapPrecision:precise?"address":point?"city":null,
+  });
+}
+
 export function projectCurrentThreadLocation({
   currentSituation,
   worldPlaces = [],
