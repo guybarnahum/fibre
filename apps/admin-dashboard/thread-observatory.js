@@ -1,5 +1,6 @@
 import { useThumbnailFallback } from "./portrait-preview.js";
 import { bindCopyAction } from "./copy-action.js";
+import { threadLifeStatus, threadLifeDescription } from "./thread-life-status.mjs";
 import { humanAppearanceKey, parseCanonicalAppearancePresentation } from "./appearance-description.mjs";
 import { decorateActionButton, faIcon, setWaitingContent } from "./fa-icons.js";
 import { createFibreFinCard } from "./fibre-fin-card.js";
@@ -387,16 +388,31 @@ function worldCanonicalAsset(identity) {
   )) ?? null;
 }
 
-function hero(identity, threadId) {
+function lifeEvidence(livedNow){
+  return {
+    currentAt:livedNow?.currentSituation?.establishedAt??null,
+    planHorizonEnd:livedNow?.currentPersonalPlan?.horizonEnd??null,
+    nextAutonomousBoundary:livedNow?.nextAutonomousBoundary??null,
+  };
+}
+
+function hero(identity, threadId, livedNow=null) {
   const worldIdentity = identity.world?.thread?.identity ?? {};
   const name = threadName(identity);
   const sex = threadSex(identity);
   const image = portraitAsset(identity);
   const admittedPortrait = worldCanonicalAsset(identity);
   const wrap = el("section", "thread-person-hero");
+  const life=lifeEvidence(livedNow);
+  const lifeState=threadLifeStatus(life);
+  const lifeDescription=threadLifeDescription(lifeState,life);
   const portrait = el("div", `thread-person-portrait${image ? " has-image" : ""}`);
+  portrait.dataset.lifeStatus=lifeState;
+  portrait.title=lifeDescription;
   if (image) {
-    portrait.append(imageButton(image, `${name ?? "Thread"} portrait`, "thread-person-portrait-button",portraitThumbnailAsset(identity)?.url??image.url,threadId));
+    const preview=imageButton(image, `${name ?? "Thread"} portrait`, "thread-person-portrait-button",portraitThumbnailAsset(identity)?.url??image.url,threadId);
+    preview.title=lifeDescription;
+    portrait.append(preview);
   } else if (admittedPortrait) {
     portrait.append(
       el("span", "thread-person-portrait-mark", "◌"),
@@ -423,9 +439,13 @@ function hero(identity, threadId) {
   copy.append(el("p", "thread-person-id mono", threadId));
 
   const states = el("div", "thread-person-states");
+  const lifeIndicator=el("span", `thread-state life-${lifeState}`,
+    threadLifeDescription(lifeState).split(" · ")[0]);
+  lifeIndicator.title=lifeDescription;
   states.append(
     el("span", "thread-state good", "● World admitted"),
     el("span", `thread-state ${identity.presentationStatus === "current" ? "good" : "muted"}`, `${identity.presentationStatus === "current" ? "●" : "○"} Presentation ${identity.presentationStatus ?? "unavailable"}`),
+    lifeIndicator,
   );
   copy.append(states); wrap.append(portrait, copy); return wrap;
 }
@@ -518,7 +538,19 @@ function nowSection(identity, livedNow = null) {
     fact("Intentions", valueOrNone(current.unresolvedIntentions, "None unresolved")),
     fact("Resources", `FC ${accounts.fibreCredits ?? 0} · $${accounts.usdAvailable ?? 0} · ${accounts.modelTokensAvailable ?? 0} tokens`),
   );
-  wrap.append(grid); return wrap;
+  wrap.append(grid);
+  const life=lifeEvidence(livedNow);
+  const state=threadLifeStatus(life);
+  const continuity=el("div","thread-life-evidence");
+  continuity.append(
+    fact("Life continuity",threadLifeDescription(state).split(" · ")[0]),
+    fact("Current situation",life.currentAt??"Not established"),
+    fact("Personal plan through",life.planHorizonEnd??"Not available"),
+    fact("Next autonomous wake",life.nextAutonomousBoundary?.dueAt
+      ??life.nextAutonomousBoundary?.blockedReason??"Not scheduled"),
+  );
+  wrap.append(continuity);
+  return wrap;
 }
 
 function memoryCard(memory, birthDate) {
@@ -1768,7 +1800,7 @@ export function renderThreadObservatory({
       identity,threadId,memories,memoryError,livedNow,encounterStories,
       encounterError,experienceConsolidation,experienceJournalEntries,semanticStates,lifeRelations,
     }),
-    hero(identity,threadId),
+    hero(identity,threadId,livedNow),
     lifeRecordLinks(),
     identitySection(identity,threadId,livedNow),
     renderFidSection(identity,threadId),
