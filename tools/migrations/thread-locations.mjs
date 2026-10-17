@@ -26,15 +26,21 @@ export function planThreadLocation(thread, livedNow) {
     return { state:"not_at_place" };
   }
   const placeRef = current.location.placeRef;
-  if (!placeRef.startsWith("per:")) {
-    return { state:"unresolved_shared_world_place", placeRef };
-  }
+  const legacyContext=(livedNow.worldPlaces??[]).find(place=>place.ref===placeRef
+    &&place.authority==="live-world-place-admission-v1"
+    &&!place.physicalVenue)??null;
   const episode = (livedNow.placeEpisodes ?? [])
     .find(item => placeEpisodeRevisionRef(item) === placeRef);
-  if (!episode) return { state:"missing_situated_place", placeRef };
+  if(!episode&&!legacyContext){
+    return {state:placeRef.startsWith("per:")
+      ?"missing_situated_place":"unresolved_shared_world_place",placeRef};
+  }
 
   const birth = thread.birthLocation;
-  const known = episode.place;
+  const known = episode?.place??{
+    displayName:legacyContext.displayName,
+    locality:null,countryCode:null,
+  };
   const birthplace = text(birth?.city) && text(birth?.country)
     ? resolveLocalityGeography(`${birth.country}/${birth.city}`) : null;
   const mentioned = resolveMentionedLocalityGeography(known.displayName);
@@ -74,7 +80,9 @@ export function planThreadLocation(thread, livedNow) {
     basis:fallback?"birth_city_operator_default":"situated_place_evidence",
     place:{
       threadId:thread.threadId,placeRef,
-      specificPlace:known.displayName,
+      specificPlace:legacyContext
+        ?`Genesis ${legacyContext.placeKind} context`
+        :known.displayName,
       streetAddress:null,locality:location.city,
       country:location.country,countryCode:location.countryCode,
       lat:null,long:null,timeZone,
