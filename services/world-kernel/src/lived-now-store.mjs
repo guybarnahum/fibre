@@ -743,7 +743,8 @@ export class LivedNowStore {
     assertIsoTimestamp("listCurrentSituations at", at);
     const rows = this.#database.prepare(`
       SELECT f.situation_id,f.thread_id AS thread_id,f.established_at,f.record_json,f.record_digest
-        ${includeLifeContinuity ? `,p.record_json AS life_plan_json,b.situation_id AS life_boundary_situation_id,
+        ${includeLifeContinuity ? `,json_extract(p.record_json,'$.horizonEnd') AS life_horizon_end,
+          b.situation_id AS life_boundary_situation_id,
           b.due_at AS life_due_at,b.blocked_reason AS life_blocked_reason,
           b.failed_attempts AS life_failed_attempts` : ""}
       FROM current_situation_frontier f
@@ -756,7 +757,8 @@ export class LivedNowStore {
         ${livingOnly ? "AND t.status<>'retired'" : ""}
       UNION ALL
       SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
-        ${includeLifeContinuity ? `,p.record_json AS life_plan_json,b.situation_id AS life_boundary_situation_id,
+        ${includeLifeContinuity ? `,json_extract(p.record_json,'$.horizonEnd') AS life_horizon_end,
+          b.situation_id AS life_boundary_situation_id,
           b.due_at AS life_due_at,b.blocked_reason AS life_blocked_reason,
           b.failed_attempts AS life_failed_attempts` : ""}
       FROM current_situation_frontier f
@@ -777,12 +779,11 @@ export class LivedNowStore {
     return rows.map(row=>{
       const situation=situationFromRow(row);
       if(!includeLifeContinuity)return situation;
-      const plan=row.life_plan_json===null?null:JSON.parse(row.life_plan_json);
       return Object.freeze({
         ...situation,
         lifeContinuity:Object.freeze({
           currentAt:situation.establishedAt,
-          planHorizonEnd:plan?.horizonEnd??null,
+          planHorizonEnd:row.life_horizon_end??null,
           nextAutonomousBoundary:row.life_boundary_situation_id===null?null:Object.freeze({
             situationId:row.life_boundary_situation_id,
             dueAt:row.life_due_at,
