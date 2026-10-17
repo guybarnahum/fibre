@@ -199,14 +199,16 @@ function projectedCurrentLocation(livedNow,threadId,{
 
 function projectedOperatorLocation(livedNow,threadId,{
   currentSituation,privatePlace=null,placeEpisodes=[],worldPlaces=[],
-  currentLocation=null,
+  currentLocation=null,worldLocality=null,
 }){
-  const direct=projectOperatorCurrentPlace({currentSituation,privatePlace,worldPlaces});
+  const direct=projectOperatorCurrentPlace({
+    currentSituation,privatePlace,worldPlaces,worldLocality,
+  });
   if(direct!==null||currentLocation!==null
     ||!(placeEpisodes.some(isModernGenesisPlace)
       ||worldPlaces.some(isModernGenesisWorldPlace)))return direct;
   return projectOperatorCurrentPlace({
-    currentSituation,privatePlace,placeEpisodes,worldPlaces,
+    currentSituation,privatePlace,placeEpisodes,worldPlaces,worldLocality,
     privateContextLocations:genesisContextLocations(
       placeEpisodes,livedNow.listLocatedGenesisContexts([threadId]),
       {privatePerspective:true,worldPlaces,threadId},
@@ -252,6 +254,9 @@ function currentThreadObservatory(runtime,threadId){
         currentLocation,
         operatorCurrentPlace:projectedOperatorLocation(livedNow,threadId,{
           currentSituation,privatePlace,placeEpisodes,worldPlaces,currentLocation,
+          worldLocality:privatePlace===null?null:livedNow.getWorldLocality({
+            locality:privatePlace.locality,countryCode:privatePlace.countryCode,
+          }),
         }),
         recentSituations:structuredClone(recentSituations),
         currentPersonalPlan:structuredClone(currentPersonalPlan),
@@ -344,6 +349,9 @@ function threadObservatory(runtime, threadId) {
         currentLocation,
         operatorCurrentPlace:projectedOperatorLocation(livedNow,threadId,{
           currentSituation,privatePlace,placeEpisodes,worldPlaces,currentLocation,
+          worldLocality:privatePlace===null?null:livedNow.getWorldLocality({
+            locality:privatePlace.locality,countryCode:privatePlace.countryCode,
+          }),
         }),
         // Internal operator evidence only. Never added to public directory.
         privatelyKnownCurrentPlace:structuredClone(privatePlace),
@@ -519,6 +527,9 @@ export class FibreWorldDurableObject extends DurableObject {
         },
         operatorCurrentPlace:projectedOperatorLocation(livedNow,threadId,{
           currentSituation,privatePlace,placeEpisodes,worldPlaces,currentLocation,
+          worldLocality:privatePlace===null?null:livedNow.getWorldLocality({
+            locality:privatePlace.locality,countryCode:privatePlace.countryCode,
+          }),
         }),
         currentLocation,
       });
