@@ -16,6 +16,7 @@ import {
   threadPopulationViewKey,
 } from "./view-invalidation.js";
 import { bindCopyAction } from "./copy-action.js";
+import { threadLifeStatus, threadLifeDescription } from "./thread-life-status.mjs";
 import { decorateActionButton, iconForIdentityAction, setBlockingButtonState, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
 import {
@@ -101,13 +102,14 @@ function threadIdCopyButton(threadId) {
   control.className = "thread-id-copy";
   bindCopyAction(control,{
     value:threadId,
-    label:threadId,
-    tooltip:`Copy Thread ID: ${threadId}`,
+    label:threadId.slice(0,16)+"…",
+    tooltip:`Copy full Thread ID: ${threadId}`,
     copiedLabel:"Copied",
     copiedTooltip:`Copied Thread ID: ${threadId}`,
     failedLabel:"Copy failed",
     failedTooltip:`Could not copy Thread ID: ${threadId}`,
     iconOnly:false,
+    preventDefault:true,
     stopPropagation:true,
   });
   return control;
@@ -401,6 +403,10 @@ function threadRow(thread) {
         link:false,
       })
     : createThreadPortrait({ name:null, className:"thread-population-portrait", link:false });
+  const life=thread.lifeContinuity;
+  const lifeState=life===null?"unknown":threadLifeStatus(life);
+  portrait.dataset.lifeStatus=lifeState;
+  portrait.title=threadLifeDescription(lifeState,life??{});
   portraitCell.append(portrait);
 
   const person = document.createElement("td");
@@ -455,7 +461,11 @@ function threadRow(thread) {
 }
 
 function sortValue(thread, key) {
-  if (key === "sex") return thread.identity?.sex ?? null;
+  if(key==="name")return thread.identity?.name??thread.threadId;
+  if(key==="ethnicity")return physicalOriginsText(thread)==="—"?null:physicalOriginsText(thread);
+  if(key==="birthplace")return thread.identity?.birthLocation?.displayName??thread.identity?.birthPlace??null;
+  if(key==="currentPlace")return (thread.operatorCurrentPlace??thread.currentLocation)?.locality??null;
+  if(key==="sex") return thread.identity?.sex ?? null;
   if (key === "birthDate") {
     const parsed = Date.parse(thread.identity?.birthDate ?? "");
     return Number.isFinite(parsed) ? parsed : null;
