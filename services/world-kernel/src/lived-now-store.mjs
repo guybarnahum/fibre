@@ -899,7 +899,8 @@ export class LivedNowStore {
     // address stays in World; only a locality-level projection leaves here.
     const privateTargets = situations
       .filter(situation => situation.location.kind === "place"
-        && situation.location.placeRef.startsWith("per:"))
+        && (situation.location.placeRef.startsWith("per:")
+          || situation.location.placeRef.startsWith("wpl_")))
       .map(situation => [situation.threadId, situation.location.placeRef]);
     const privateRows = privateTargets.length === 0 ? [] : this.#database.prepare(`
       WITH targets AS (
