@@ -434,6 +434,17 @@ World-attested private current places and verified public venues are retained.
 
 ### Spatial continuity — cross-city feasibility and enacted arrival (source only)
 
+For prospective personal plans, a change between distinct physical
+place refs must also reserve a **positive transit interval even if both
+locations share a city centroid or are unmapped**. The planner communicates
+this to ordinary Thread cognition; a zero-gap proposed journey fails
+admission rather than teleporting. This does not change an existing plan's
+stored timestamps or reinterpret past situations. The October 17 staging
+probe observed four older zero-gap switches, correctly classified after
+the correction as `instant_place_change`, not proof of physical travel.
+Such a legacy plan can still enact its recorded boundary; this
+prospective check does not retroactively stop it.
+
 World now checks the temporal feasibility of changes between **grounded**
 physical places when admitting a new Flight Plan. It uses a cheap,
 conservative great-circle distance and an optimistic minimum journey time:
