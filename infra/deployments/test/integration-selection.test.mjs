@@ -36,12 +36,7 @@ test("deployment composition constructs selected image integrations", () => {
     environment: { OPENAI_API_KEY: "test-openai-key" },
     fetchImpl: async () => { throw new Error("not called"); },
   });
-  const bfl = selectImageIntegration(assetGenerator.integrations["bfl-flux-2-pro-v1"], {
-    environment: { BFL_API_KEY: "test-bfl-key" },
-    fetchImpl: async () => { throw new Error("not called"); },
-  });
   assert.equal(openai.providerId, "openai-image-v1");
-  assert.equal(bfl.providerId, "bfl-flux-image-v1");
 });
 
 test("presentation image profile selection is deployment-owned and reference-aware", () => {
@@ -53,42 +48,44 @@ test("presentation image profile selection is deployment-owned and reference-awa
     );
     assert.equal(
       selectImageProviderProfile(assetGenerator, { requiresReferenceObjects: true }),
-      "bfl-flux-2-pro-v1",
+      "openai-gpt-image-2-medium-v1",
     );
     assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].config.acceptsReferenceObjects, true);
-    assert.equal(assetGenerator.integrations["bfl-flux-2-pro-v1"].config.acceptsReferenceObjects, true);
-    assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].config.presentationReferenceDefault, false);
-    assert.equal(assetGenerator.integrations["bfl-flux-2-pro-v1"].config.presentationReferenceDefault, true);
+    assert.deepEqual(Object.keys(assetGenerator.integrations), ["openai-gpt-image-2-medium-v1"],
+      "BFL is still selectable in Fibre image generation");
+    assert.equal(assetGenerator.integrations["openai-gpt-image-2-medium-v1"].config.presentationReferenceDefault, true);
   }
 });
 
-test("image provider routes declare primary and secondary and can explicitly select secondary", () => {
+test("Fibre image generation uses OpenAI alone, without a BFL fallback", () => {
   for (const manifest of [local, cloudflare]) {
     const assetGenerator = resolveServiceDeployment(manifest, "asset-generator");
 
-    const referenced = selectImageProviderRoute(assetGenerator, {
-      primaryProfile:"bfl-flux-2-pro-v1",
-      requiresReferenceObjects:true,
-    });
-    assert.deepEqual(referenced, {
-      primaryProfile:"bfl-flux-2-pro-v1",
-      secondaryProfile:"openai-gpt-image-2-medium-v1",
-      selectedProfile:"bfl-flux-2-pro-v1",
-      mode:"primary",
-    });
-
-    const forcedSecondary = selectImageProviderRoute(assetGenerator, {
-      primaryProfile:"bfl-flux-2-pro-v1",
-      requiresReferenceObjects:true,
-      mode:"secondary",
-    });
-    assert.equal(forcedSecondary.selectedProfile, "openai-gpt-image-2-medium-v1");
-
-    const textOnly = selectImageProviderRoute(assetGenerator, {
-      primaryProfile:"openai-gpt-image-2-medium-v1",
-      requiresReferenceObjects:false,
-    });
-    assert.equal(textOnly.secondaryProfile, "bfl-flux-2-pro-v1");
+    for (const requiresReferenceObjects of [false,true]) {
+      const route = selectImageProviderRoute(assetGenerator, {
+        primaryProfile:"openai-gpt-image-2-medium-v1",
+        requiresReferenceObjects,
+      });
+      assert.equal(route.selectedProfile, "openai-gpt-image-2-medium-v1");
+      assert.equal(route.secondaryProfile, null, "BFL fallback is still enabled");
+    }
+    assert.throws(
+      () => selectImageProviderRoute(assetGenerator, {
+        primaryProfile:"openai-gpt-image-2-medium-v1",
+        requiresReferenceObjects:true,
+        mode:"secondary",
+      }),
+      /has no secondary provider profile/,
+      "a secondary image provider was unexpectedly available",
+    );
+    assert.throws(
+      () => selectImageProviderRoute(assetGenerator, {
+        primaryProfile:"bfl-flux-2-pro-v1",
+        requiresReferenceObjects:true,
+      }),
+      /has no ai.image provider profile/,
+      "BFL must not be available to new image jobs",
+    );
   }
 });
 
