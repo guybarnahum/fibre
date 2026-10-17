@@ -848,8 +848,8 @@ test("Observatory describes modern Genesis home and keeps current city in debug 
   const snapshot=threadObservatoryDebugSnapshot({
     threadId,identity:{displayName:"Salma"},livedNow,
   });
-  assert.equal(snapshot.current.currentPlace,"Fes, Morocco",
-    "copying current life concealed the resolved current city");
+  assert.equal(snapshot.current.currentPlace,"Home · Fes, Morocco",
+    "God-view lost the enacted home or its resolved current city");
   assert.equal(snapshot.current.meetingPlace.name,"Home",
     "operator place label leaked opaque internal Genesis identifier");
 });
