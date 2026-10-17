@@ -200,7 +200,7 @@ function knownPlaceRefsAt(livedNowStore, episodes, threadId, at) {
     .filter((episode) => Date.parse(episode.startAt) <= instant)
     .map(placeEpisodeRevisionRef);
   const shared = livedNowStore.ensureWorldPlaces(threadId).map((place) => place.ref);
-  const discovered=livedNowStore.listDiscoveredPlaces?.(threadId).map(place=>place.ref)??[];
+  const discovered=livedNowStore.listKnownPlaces?.(threadId).map(place=>place.ref)??[];
   return [...new Set([...situated,...shared,...discovered])];
 }
 
