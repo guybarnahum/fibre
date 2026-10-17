@@ -17,7 +17,7 @@ import {
   plannedPositionAt,
 } from "./lived-now.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
-import {genesisContextLocations,isModernGenesisPlace} from "./current-thread-location.mjs";
+import {genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FORWARD_PLAN_MS = 12 * 60 * 60 * 1000;
@@ -212,11 +212,13 @@ export function planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,p
   if(direct)return direct;
   const episode=placeEpisodes?.find(item=>
     placeEpisodeRevisionRef(item)===placeRef)??null;
-  if(!isModernGenesisPlace(episode)
+  const worldPlace=placeRef?.startsWith("wpl_")
+    ?livedNowStore.getWorldPlace?.(threadId,placeRef,{required:false})??null:null;
+  if(!(isModernGenesisPlace(episode)||isModernGenesisWorldPlace(worldPlace))
     ||typeof livedNowStore.listLocatedGenesisContexts!=="function")return null;
   const context=genesisContextLocations(
-    [episode],livedNowStore.listLocatedGenesisContexts([threadId]),
-    {privatePerspective:true},
+    episode?[episode]:[],livedNowStore.listLocatedGenesisContexts([threadId]),
+    {privatePerspective:true,worldPlaces:worldPlace?[worldPlace]:[],threadId},
   ).find(item=>item.placeRef===placeRef)?.geography??null;
   return context===null?null
     :{locality:context.city,countryCode:context.countryCode};
