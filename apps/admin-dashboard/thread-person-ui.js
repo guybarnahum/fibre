@@ -19,8 +19,8 @@ export function threadInitials(value){
 function preferredThreadPortrait(identity){
   const assets=Array.isArray(identity?.assets)?identity.assets:[];
   const thumbnail=assets.find((entry)=>entry?.role==="portrait_thumbnail"&&entry?.url)??null;
-  const original=assets.find((entry)=>entry?.role==="official_id_photo"&&entry?.url)
-    ??assets.find((entry)=>entry?.role==="canonical_portrait"&&entry?.url)
+  const original=assets.find((entry)=>entry?.role==="canonical_portrait"&&entry?.url)
+    ??assets.find((entry)=>entry?.role==="official_id_photo"&&entry?.url)
     ??assets.find((entry)=>entry?.url&&entry?.role!=="portrait_thumbnail"
       &&String(entry.mediaType??"").startsWith("image/"))??null;
   return {
