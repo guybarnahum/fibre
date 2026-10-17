@@ -323,7 +323,7 @@ test("a hidden private sibling can inform its Thread without becoming public geo
   });
   const home=episode("home"),source=episode("transit");
   const anchor=[{placeEpisode:source,privatePlace:{
-    threadId,placeRef:placeEpisodeRevisionRef(source),
+    threadId,placeRef:"per:pep_transit:1",
     locality:"Fes",country:"Morocco",countryCode:"MA",
     publicGranularity:"hidden",
   }}];
