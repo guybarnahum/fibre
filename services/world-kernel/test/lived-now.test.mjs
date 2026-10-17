@@ -15,6 +15,7 @@ import {
   developmentalContextForThread,
   livedPlanId,
   livedSituationId,
+  plannedPositionAt,
   resolveCurrentSituation,
 } from "../src/lived-now.mjs";
 import {
@@ -190,6 +191,45 @@ test("Thread chooses a previously unknown place; World remembers it without inve
       livedNowStore.close();situatedLifeStore.close();memoryStore.close();
       semanticStateStore.close();identityStore.close();worldStore.close();
     }
+  });
+});
+
+test("prospective personal life reserves transit for distinct places without inventing travel within one place",async()=>{
+  await withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    try{
+      const destination=lived.resolvePlace({
+        threadId:life.thread.threadId,name:"Neighborhood park",kind:"place",
+        city:"Haifa",country:"Israel",
+      }).place;
+      const baseline=personalPlanFixture({
+        threadId:life.thread.threadId,
+        sourceEvent:life.sourceEvent,homeRef:life.homeRef,
+      });
+      const next={...baseline.stops[0],
+        startAt:"2026-09-10T05:30:00Z",
+        physicalPlaceRef:destination.ref,mediatedContext:null,
+        activity:"Walk in the park.",
+        travelFromPrevious:"Walk from home to the park.",
+      };
+      const instant={...baseline,
+        sourceReferences:[...baseline.sourceReferences,destination.ref],
+        stops:[{...baseline.stops[0],endAt:next.startAt},next],
+      };
+      assert.throws(()=>lived.recordPlan(instant),
+        /requires elapsed transit time/,
+        "World allowed an instantaneous change of physical place");
+      assert.equal(lived.listPlans(life.thread.threadId).length,0,
+        "rejected travel entered the Thread's life");
+      const feasible={...instant,stops:[
+        {...instant.stops[0],endAt:"2026-09-10T05:25:00Z"},
+        next,
+      ]};
+      const accepted=lived.recordPlan(feasible);
+      assert.equal(plannedPositionAt(accepted,"2026-09-10T05:27:00Z").kind,
+        "in_transit","reserved travel did not become a transit situation");
+    }finally{lived.close();}
   });
 });
 
