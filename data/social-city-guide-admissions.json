@@ -1,0 +1,86 @@
+{
+  "version": "fibre-city-guide-admissions-v1",
+  "venues": [
+    {
+      "cityKey": "tbilisi-GE",
+      "placeKey": "prosperos-books-and-coffee",
+      "venueIdentity": "prosperosbookshop.com:34-rustaveli",
+      "lat": 41.7014,
+      "long": 44.79445,
+      "timeZone": "Asia/Tbilisi",
+      "coordinateSource": "https://georgia.worldplaces.me/view-place/25812534-prospero-s-books.html"
+    },
+    {
+      "cityKey": "tbilisi-GE",
+      "placeKey": "dedaena-park",
+      "venueIdentity": "osm:way/174304310",
+      "lat": 41.70058,
+      "long": 44.80449,
+      "timeZone": "Asia/Tbilisi",
+      "coordinateSource": "https://mapcarta.com/W174304310"
+    },
+    {
+      "cityKey": "tbilisi-GE",
+      "placeKey": "fabrika-tbilisi",
+      "venueIdentity": "fabrikatbilisi.com:8-ninoshvili",
+      "lat": 41.70974,
+      "long": 44.8025,
+      "timeZone": "Asia/Tbilisi",
+      "coordinateSource": "https://mapcarta.com/N5357321715"
+    },
+    {
+      "cityKey": "addis-ababa-ET",
+      "placeKey": "abrehot-library",
+      "venueIdentity": "osm:way/1049534695",
+      "lat": 9.03033,
+      "long": 38.76246,
+      "timeZone": "Africa/Addis_Ababa",
+      "coordinateSource": "https://mapcarta.com/W1049534695"
+    },
+    {
+      "cityKey": "addis-ababa-ET",
+      "placeKey": "entoto-park",
+      "venueIdentity": "osm:way/1154581451",
+      "lat": 9.08427,
+      "long": 38.73692,
+      "timeZone": "Africa/Addis_Ababa",
+      "coordinateSource": "https://mapcarta.com/W1154581451"
+    },
+    {
+      "cityKey": "addis-ababa-ET",
+      "placeKey": "unity-park",
+      "venueIdentity": "unitypark.et:arat-kilo",
+      "lat": 9.02256,
+      "long": 38.76329,
+      "timeZone": "Africa/Addis_Ababa",
+      "coordinateSource": "https://mapcarta.com/N8651300417"
+    },
+    {
+      "cityKey": "london-GB",
+      "placeKey": "british-library",
+      "venueIdentity": "bl.uk:96-euston-road",
+      "lat": 51.5299848,
+      "long": -0.1270141,
+      "timeZone": "Europe/London",
+      "coordinateSource": "https://access.sconul.ac.uk/content/the-british-library"
+    },
+    {
+      "cityKey": "london-GB",
+      "placeKey": "southbank-centre",
+      "venueIdentity": "southbankcentre.co.uk:belvedere-road",
+      "lat": 51.5060805,
+      "long": -0.1163042,
+      "timeZone": "Europe/London",
+      "coordinateSource": "https://www.artsmark.org.uk/organisations/southbank-centre"
+    },
+    {
+      "cityKey": "london-GB",
+      "placeKey": "barbican-centre",
+      "venueIdentity": "osm:way/34038687",
+      "lat": 51.51987,
+      "long": -0.09384,
+      "timeZone": "Europe/London",
+      "coordinateSource": "https://mapcarta.com/fr/W34038687"
+    }
+  ]
+}
