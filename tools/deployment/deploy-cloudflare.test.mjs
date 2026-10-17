@@ -60,7 +60,6 @@ async function fixtureRepo() {
 function allSecrets() {
   return new Set([
     "OPENAI_API_KEY",
-    "BFL_API_KEY",
     "FIBRE_PRIVATE_TOKEN",
     "FIA_ISSUER_JWK",
     "FIA_CREDENTIAL_KEY_BASE64",
