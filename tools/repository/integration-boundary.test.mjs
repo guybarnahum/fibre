@@ -88,7 +88,7 @@ test("deployment composition is the one place that maps stable selections to con
   const [local, cloudflare] = await Promise.all([text(localDeploymentUrl), text(cloudflareDeploymentUrl)]);
   assertSourceMatches(local, /provider: openai/, "local deployment must select integrations explicitly");
   assertSourceMatches(local, /dignityGuardian: guardian-openai/, "World Kernel reasoning must be selected by deployment");
-  assertSourceMatches(cloudflare, /provider: bfl/, "Cloudflare deployment must name image integration choices");
+  assertSourceMatches(cloudflare, /asset-image-openai:\s*\n\s*kind: ai\.image\s*\n\s*provider: openai/, "Cloudflare deployment must select OpenAI image generation");
   assertSourceOmits(local, /(?:sk-|Bearer\s+[A-Za-z0-9])/, "deployment YAML must not contain secret values");
   assertSourceOmits(cloudflare, /(?:sk-|Bearer\s+[A-Za-z0-9])/, "deployment YAML must not contain secret values");
 });
