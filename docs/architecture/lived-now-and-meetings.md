@@ -464,6 +464,31 @@ fixture-authored plausible cross-city Flight Plan rejected when rushed, then
 enacted by normal scheduler boundaries when given enough time; naturally
 Thread-authored staging travel is still unverified.
 
+### Witnessing naturally authored journeys — source probe, live proof pending
+
+Operator full Observatory now retains up to four personal Flight Plans referenced
+by the eight most recent enacted CurrentSituations, alongside the current plan.
+This is a bounded inspection of already stored Thread-owned plans, not a new
+planning, simulation, or scheduling authority. It allows an earlier journey's
+authorship to be examined after a Thread renews its ordinary Flight Plan.
+
+The read-only `thread-journey:probe -- --env staging --thread <threadId>`
+uses existing private Observatory authority to distinguish planned movement,
+enacted departure, transit, and arrival. An enacted journey requires
+time-consistent CurrentSituations tied to the **same** Thread-owned plan;
+a destination in an itinerary is not counted as a visit. The probe records
+model provenance, any visible World place entity, the next scheduler frontier,
+the checked/deployed Git revisions, and a local evidence JSON under
+`.fibre/journeys/`. It never calls `ensure` or writes World state.
+
+An Observatory snapshot alone cannot prove that **no person manually triggered**
+an `ensure`, or that a destination was new rather than previously known by
+the Thread. Live proof requires an unprompted plan, the operator abstaining
+from manual advancement, and a later read showing ordinary scheduler
+transit/arrival. Status remains **not yet observed** until those conditions
+are supported by actual staging evidence. No extra cognition or background
+polling is introduced by the probe.
+
 ### Grounded geography and private residences — S0 staging admitted, social visits still open
 
 S0 adds two complementary World authorities without manufacturing movement or co-presence:
