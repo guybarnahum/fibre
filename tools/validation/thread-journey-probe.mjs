@@ -43,7 +43,8 @@ export function inspectThreadJourneys(observatory){
       const from=plan.stops[i-1],to=plan.stops[i];
       if(from.physicalPlaceRef===to.physicalPlaceRef)continue;
       const scenes=situations.filter(situation=>
-        (situation.sourcePlanRefs??[]).includes(plan.planId));
+        (situation.sourcePlanRefs??[]).includes(plan.planId)
+        &&situation.resolution?.governingPlanRef===plan.planId);
       const departure=scenes.find(situation=>
         situation.location?.kind==="place"
         &&situation.location.placeRef===from.physicalPlaceRef
