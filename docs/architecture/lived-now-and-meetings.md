@@ -409,10 +409,10 @@ where the Thread is currently present. City entities are shared facts; an
 unverified specific place is Thread-scoped until independently identified.
 Two Threads knowing a city do not thereby share a café or physical encounter.
 
-A personal Flight Plan may naturally propose a `newPlace` description
-(name, kind, city, country) rather than fabricating a place reference.
-World resolves/reuses the entity and substitutes its reference before
-admitting the plan. GeoNames can enrich an unfamiliar city's coordinates and
+A personal Flight Plan can refer to a new destination by natural name
+(for example `Porto, Portugal` or `A neighborhood café, Porto, Portugal`)
+using its existing stop schema. World resolves/reuses that entity and
+substitutes its reference before admitting the plan. GeoNames can enrich an unfamiliar city's coordinates and
 time zone at the moment of actual selection. A missing or unavailable
 geographical lookup does not prevent the place from existing or the Thread
 from choosing it; it remains explicitly unmapped. Repeated selections reuse
