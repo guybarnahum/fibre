@@ -975,6 +975,11 @@ export class LivedNowStore {
           evidence.map(item=>item.placeEpisode).filter(Boolean),
           anchorsByThread.get(currentSituation.threadId)??[],
         )),
+        privateContextLocations:Object.freeze(genesisContextLocations(
+          evidence.map(item=>item.placeEpisode).filter(Boolean),
+          anchorsByThread.get(currentSituation.threadId)??[],
+          {privatePerspective:true},
+        )),
         worldPlaces:Object.freeze(observedPlaceRefs(currentSituation)
           .map((ref)=>this.getWorldPlace(currentSituation.threadId,ref,{required:false}))
           .filter(Boolean)),
