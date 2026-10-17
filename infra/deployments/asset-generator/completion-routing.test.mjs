@@ -58,5 +58,7 @@ test("unknown completion contexts stay off the completion queue", () => {
   assert.equal(assetGenerationCompletionRoute(job), ASSET_COMPLETION_ROUTE_NONE);
   assert.equal(shouldPublishAssetGenerationCompletion(job), false);
   assert.equal(shouldWakeWorldAfterAssetCompletion(job), false);
+  assert.equal(assetGenerationCompletionRoute({context:{kind:"fid_photo_correction"}}),ASSET_COMPLETION_ROUTE_NONE,
+    "unapproved FID photograph must not wake World");
   assert.equal(assetGenerationCompletionRoute({}), ASSET_COMPLETION_ROUTE_NONE);
 });
