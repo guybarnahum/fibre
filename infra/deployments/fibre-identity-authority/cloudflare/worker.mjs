@@ -39,7 +39,7 @@ const ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const ACTIVE_ROUTE = /^\/internal\/fid\/threads\/([^/]+)\/active$/u;
 const REISSUE_ROUTE = "/internal/fid/cards/reissue";
 const VERIFY_ROUTE = "/internal/fid/cards/verify";
-const PHOTO_CORRECTION_ROUTE = /^\/internal\/fid\/threads\/([^/]+)\/photo-corrections\/([^/]+)(\/preview|\/approve)?$/u;
+const PHOTO_CORRECTION_ROUTE = /^\/internal\/fid\/threads\/([^/]+)\/photo-corrections\/([^/]+)(\/preview|\/canonical|\/approve)?$/u;
 const PHOTO_CORRECTION_PREFIX = "fid_photo_correction_";
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
 const ASSET_DEPLOYMENT = resolveServiceDeployment(DEPLOYMENT, "asset-generator");
@@ -617,7 +617,7 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
       const threadId=fibreId("threadId",decodeURIComponent(correctionMatch[1]));
       const correctionId=photoCorrectionId(decodeURIComponent(correctionMatch[2]));
       const action=correctionMatch[3]??null;
-      if(!((request.method==="GET" && (action===null || action==="/preview"))
+      if(!((request.method==="GET" && (action===null || action==="/preview" || action==="/canonical"))
         || (request.method==="POST" && (action===null || action==="/approve")))){
         return Response.json({error:{code:"METHOD_NOT_ALLOWED"}},{status:405});
       }
@@ -636,6 +636,15 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
           }
           const result=await runtime.assetGeneration.request(job);
           return Response.json({state:"requested",correctionId,jobId:result.job.jobId},{status:202});
+        }
+        if(request.method==="GET" && action==="/canonical"){
+          const canonical=await runtime.infra.objects.get(source.canonicalVisualReferenceRef);
+          if(canonical===null || canonical.digest!==source.canonicalVisualReferenceDigest){
+            throw new Error("Canonical portrait is unavailable");
+          }
+          return new Response(canonical.bytes,{
+            headers:{"Content-Type":"image/png","Cache-Control":"no-store"},
+          });
         }
         const candidate=await fidPhotoCorrectionCandidate(runtime.infra,source,job);
         if(candidate===null)return Response.json({error:{code:"PHOTO_NOT_READY"}},{status:409});
