@@ -23,6 +23,7 @@ test("E7.4 Genesis learning contexts cannot impersonate a common physical venue"
       thread_id TEXT PRIMARY KEY,world_ref TEXT NOT NULL
     ) STRICT`);
     createLiveWorldPlaceTables(db);
+    createLiveWorldGeographyTables(db);
     const contexts=[
       {threadId:"thr_home_study",sourceWorldRef:"genesis_context_one",sourcePlaceId:"learn_one"},
       {threadId:"thr_public_library",sourceWorldRef:"genesis_context_two",sourcePlaceId:"learn_two"},
@@ -51,6 +52,23 @@ test("E7.4 Genesis learning contexts cannot impersonate a common physical venue"
       );
     }
     const [home,library,other]=contexts;
+    const homeGeography={
+      threadId:home.threadId,placeRef:home.ref,
+      specificPlace:"Genesis learning context",streetAddress:null,
+      locality:"Tbilisi",country:"Georgia",countryCode:"GE",
+      lat:null,long:null,timeZone:"Asia/Tbilisi",
+      evidenceRef:"operator_birth_city_default:"+home.threadId,
+      publicGranularity:"city",
+    };
+    const admitted=admitWorldPrivatePlace(db,homeGeography);
+    assert.equal(getWorldPrivatePlace(db,home.threadId,home.ref)?.locality,"Tbilisi",
+      "Thread-owned Genesis context could not receive present locality");
+    assert.equal(admitted.streetAddress,null,
+      "operator migration fabricated a residence");
+    assert.throws(()=>admitWorldPrivatePlace(db,{
+      ...homeGeography,threadId:other.threadId,
+    }),/owned nonpublic Genesis context/,
+    "one Thread acquired another Thread's Genesis context");
     const situation=(item)=>({
       threadId:item.threadId,location:{kind:"place",placeRef:item.ref},
     });
