@@ -116,6 +116,27 @@ R1–R4 already supplied one private mechanical regulation/interoception subsyst
 
 The October 13 **G1/D1 source** adds narrow genome-derived sensitivity baselines for new births (persisted historic genomes stay unchanged) and one optional evidence-bound `social_contact` Body drive. Subsequent **D2 source** feeds the same bounded exploration/contact Body interoception into ordinary Flight Planning and admits sufficiently grounded social-contact pressure as an opportunity-salience anchor, using the existing social path rather than another meeting engine. Insufficient recorded evidence is **unknown**, not proof that no contact occurred. Genetic parameter values tune sensitivity within species bounds; they do not assign personality, love, sex preference, civic beliefs or willingness. **Source and new focused fixture tests are ahead of Guy's post-change full/staging validation.** A pressure/salience/planning route is now wired, but genuine later Thread-owned plan/choice differences, honest solitude/recent-valued-contact behavior and recipient-local considerate timing still need causal evidence. See [drive extensions](../architecture/regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md).
 
+## Victor's place transitions — observed October 17, 2026
+
+Guy ran the read-only Thread journey probe against staging for
+`thr_aa21357c65c8228e65f266723389faa257304250`. The output showed
+four personal-model-authored changes between different place references
+with World-enacted new presence, including a 17:30 UTC boundary arriving
+about 1.6 seconds after its due time, and next autonomous wake at
+20:30 UTC. **All four Flight Plan transitions reserved zero travel time**,
+and none had an enacted transit interval. Earlier probe output called these
+`arrival_observed`; that was evidence of *place transition*, not a
+physically witnessed journey or discovery of a new destination.
+
+The next source correction makes the probe label these legacy situations
+`instant_place_change` and prevents new prospective personal plans from
+admitting a zero-duration transition between different physical place refs.
+The planner must supply an actual positive travel gap, and the existing
+World transit boundary enacts it. The historical plans remain unchanged.
+A genuinely model-chosen journey with scheduled and enacted transit remains
+unproven on staging. The corrective source has not yet been locally
+validated or deployed.
+
 ## Natural journey evidence (probe source, staging outcome open)
 
 Full World Observatory can now show the recent personal Flight Plans behind
