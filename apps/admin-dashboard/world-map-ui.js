@@ -318,6 +318,8 @@ function mappableLocation(thread, state = threadMapState(thread)) {
       threadState:state.kind,
     });
   }
+  // Known current life without a map coordinate is not a birthplace.
+  if(current!==null&&current!==undefined)return null;
 
   const birth = thread?.identity?.birthLocation;
   if (birth && Number.isFinite(birth.lat) && Number.isFinite(birth.long)) {
