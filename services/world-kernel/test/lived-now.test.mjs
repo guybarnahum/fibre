@@ -10,6 +10,7 @@ import { openIdentityStore } from "../src/identity-store.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
+import { meetingPresenceCompatible } from "../src/lived-meeting-cognition.mjs";
 import {
   developmentalContextForThread,
   livedPlanId,
@@ -219,6 +220,21 @@ test("World reuses city geography for distinct places and never equates knowledg
       assert.equal(library.place.lat,geo.lat,"place did not reuse city geography");
       assert.notEqual(library.place.ref,cafe.place.ref,
         "two different places collapsed into the same venue");
+      const other=childThread();
+      other.threadId="thr_independent_geo";
+      const world=openWorldStore(localWorldStateStorage(databasePath));
+      world.seedThread(other);world.close();
+      const sharedCity=life.resolvePlace({
+        threadId:other.threadId,name:"Porto",kind:"city",
+        city:"Porto",country:"Portugal",
+      });
+      assert.equal(sharedCity.place.ref,city.place.ref,
+        "two Threads discovered different entities for the same city");
+      assert.equal(meetingPresenceCompatible(
+        {location:{kind:"place",placeRef:city.place.ref}},
+        {location:{kind:"place",placeRef:sharedCity.place.ref}},
+        {leftWorldPlaces:[city.place],rightWorldPlaces:[sharedCity.place]},
+      ),false,"knowing the same city fabricated physical co-presence");
       assert.equal(life.getCurrentSituation(thread.threadId),null,
         "World knowledge created a false presence");
       assert.equal(life.listPlans(thread.threadId).length,0,
