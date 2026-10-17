@@ -249,7 +249,7 @@ test("remote Cloudflare composition shares generated assets and Fibre provenance
   assert.equal(consumer.dead_letter_queue, "fibre-asset-completions-dlq");
   assert.equal(presentationConfig.queues.producers, undefined);
   assert.equal(assetConfig.queues.consumers, undefined);
-  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"]);
+  assert.deepEqual(assetConfig.secrets.required, ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN"]);
   assert.deepEqual(presentationConfig.secrets.required, ["FIBRE_PRIVATE_TOKEN"]);
   assert.equal(presentationConfig.vars?.P3_FIXTURE_MODE, undefined);
 });
