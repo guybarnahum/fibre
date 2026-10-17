@@ -23,7 +23,7 @@ import {
   situatedLifeRecordIsCurrent,
 } from "./situated-life-domain.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
-import {genesisContextLocations,isModernGenesisPlace} from "./current-thread-location.mjs";
+import {genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
 import {
   bindLivePhysicalVenue,
   createLiveWorldPlaceTables,
@@ -947,9 +947,11 @@ export class LivedNowStore {
     ]));
 
     const needsContext=[...new Set(situations.filter(situation=>
-      observedPlaceRefs(situation).some(ref=>
-        isModernGenesisPlace(evidenceByRef.get(ref)?.placeEpisode))
-      &&!privateByThread.has(situation.threadId)
+      observedPlaceRefs(situation).some(ref=>{
+        const evidence=evidenceByRef.get(ref);
+        return isModernGenesisPlace(evidence?.placeEpisode)
+          ||isModernGenesisWorldPlace(evidence?.worldPlace);
+      })&&!privateByThread.has(situation.threadId)
     ).map(situation=>situation.threadId))];
     const anchorsByThread=new Map();
     for(const anchor of this.listLocatedGenesisContexts(needsContext)){
@@ -967,23 +969,26 @@ export class LivedNowStore {
       )) {
         throw new IntegrityError(`current place evidence belongs to another Thread ${currentSituation.threadId}`);
       }
+      const worldPlaces=observedPlaceRefs(currentSituation)
+        .map(ref=>this.getWorldPlace(currentSituation.threadId,ref,{required:false}))
+        .filter(Boolean);
+      const placeEpisodes=evidence.map(item=>item.placeEpisode).filter(Boolean);
+      const anchors=anchorsByThread.get(currentSituation.threadId)??[];
+      const ownedWorld={
+        worldPlaces,threadId:currentSituation.threadId,
+      };
       return Object.freeze({
         threadId:currentSituation.threadId,
         currentSituation,
-        privatePlace:privateByThread.get(currentSituation.threadId) ?? null,
+        privatePlace:privateByThread.get(currentSituation.threadId)??null,
         contextLocations:Object.freeze(genesisContextLocations(
-          evidence.map(item=>item.placeEpisode).filter(Boolean),
-          anchorsByThread.get(currentSituation.threadId)??[],
+          placeEpisodes,anchors,ownedWorld,
         )),
         privateContextLocations:Object.freeze(genesisContextLocations(
-          evidence.map(item=>item.placeEpisode).filter(Boolean),
-          anchorsByThread.get(currentSituation.threadId)??[],
-          {privatePerspective:true},
+          placeEpisodes,anchors,{...ownedWorld,privatePerspective:true},
         )),
-        worldPlaces:Object.freeze(observedPlaceRefs(currentSituation)
-          .map((ref)=>this.getWorldPlace(currentSituation.threadId,ref,{required:false}))
-          .filter(Boolean)),
-        placeEpisodes:Object.freeze(evidence.map((item) => item.placeEpisode).filter(Boolean)),
+        worldPlaces:Object.freeze(worldPlaces),
+        placeEpisodes:Object.freeze(placeEpisodes),
       });
     });
   }
