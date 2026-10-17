@@ -114,7 +114,8 @@ export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind=
   // city's centroid differently.
   const knownGeo=prior!==null&&prior.lat!==null?{
     locality:prior.locality,country:prior.country,countryCode:prior.countryCode,
-    lat:prior.lat,long:prior.long,timeZone:prior.timeZone,
+    lat:prior.lat,long:prior.long,
+    timeZone:prior.timeZone??geography?.timeZone??null,
     evidenceRef:prior.evidenceRef,
   }:geography;
   const record=Object.freeze({
