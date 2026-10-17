@@ -793,6 +793,14 @@ test("Observatory displays authoritative current city separately from immutable 
   }),"Location unresolved",
   "an existing situated life was mistaken for a Thread without First Life");
   assert.equal(observatoryCurrentPlace({
+    currentSituation:{location:{kind:"place",placeRef:"per:hidden:1"}},
+    privatelyKnownCurrentPlace:{
+      placeRef:"per:hidden:1",locality:"London",country:"United Kingdom",
+      countryCode:"GB",publicGranularity:"hidden",
+    },
+  }),"Location unresolved",
+  "operator presentation widened an explicitly hidden private locality");
+  assert.equal(observatoryCurrentPlace({
     currentSituation:{location:{kind:"place",placeRef:"wpl_library"}},
     currentLocation:{kind:"place",locality:"London",country:"United Kingdom",
       countryCode:"GB",authority:"live_world_place"},
