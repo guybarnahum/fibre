@@ -813,6 +813,16 @@ test("Observatory displays authoritative current city separately from immutable 
   }),"Family home · London, United Kingdom",
   "God-view lost the Thread's actual private place description");
   assert.equal(observatoryCurrentPlace({
+    currentSituation:{location:{kind:"place",placeRef:"per:home:2"}},
+    currentLocation:null,
+    operatorCurrentPlace:{
+      kind:"place",placeRef:"per:home:2",
+      specificPlace:"place_modern_eb39aeda7e03_home",
+      locality:"Kaohsiung",country:"Taiwan",countryCode:"TW",
+    },
+  }),"Home · Kaohsiung, Taiwan",
+    "God-view hid a known current Genesis home behind public disclosure");
+  assert.equal(observatoryCurrentPlace({
     currentSituation:{location:{kind:"place",placeRef:"per:other:1"}},
     privatelyKnownCurrentPlace:{
       placeRef:"per:hidden:1",locality:"London",country:"United Kingdom",
