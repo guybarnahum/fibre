@@ -315,13 +315,14 @@ test("a Genesis public venue can become live shared World presence without rewri
         assert.equal(context.localHorizon?.timeZone, "UTC",
           "Flight Planning should receive authoritative local civil-time context");
         const midpoint = new Date(Date.parse(context.horizon.startAt) + 30 * 60 * 1000).toISOString();
+        const departure = new Date(Date.parse(midpoint) - 5 * 60 * 1000).toISOString();
         return {
           output:{
             result:{
               stops:[
                 {
                   startAt:context.horizon.startAt,
-                  endAt:midpoint,
+                  endAt:departure,
                   physicalPlaceRef:starting,
                   presenceMode:"physical",
                   wakefulness:"awake",
