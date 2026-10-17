@@ -43,6 +43,7 @@ export function isModernGenesisPlace(episode){
 
 export function isModernGenesisWorldPlace(place){
   return place?.authority==="live-world-place-admission-v1"
+    &&place.physicalVenue==null
     &&typeof place.sourceWorldRef==="string"
     &&modernGenesisSeed(place.sourcePlaceId)!==null;
 }
@@ -109,15 +110,21 @@ function resolvedPlace(reference, { worldPlaces, placeEpisodes, privatePlace, co
       ?{lat:shared.lat,long:shared.long,city:shared.locality,
         country:shared.country,countryCode:shared.countryCode}
       :null;
-    const contextual=attested===null
+    const venue=shared.physicalVenue;
+    const venueGeography=venue?.locality&&venue?.country
+      ?resolveLocalityGeography(`${venue.country}/${venue.locality}`)
+      :null;
+    const contextual=attested===null&&venueGeography===null
       ?contextLocations.find(item=>item.placeRef===reference)?.geography??null
       :null;
     return Object.freeze({
       ref:reference,
-      displayName:shared.displayName,
-      // Never use birthplace or a learning-context name to invent geography.
-      geography:attested??contextual,
-      authority:contextual===null?"live_world_place":"genesis_context_locality",
+      displayName:venue?.displayName??shared.displayName,
+      // Independently bound venue authority outranks Genesis context locality.
+      geography:attested??venueGeography??contextual,
+      authority:attested!==null?"live_world_place"
+        :venueGeography!==null?"world_venue_locality"
+          :contextual!==null?"genesis_context_locality":"live_world_place",
     });
   }
 
