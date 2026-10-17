@@ -766,8 +766,11 @@
   cursor:pointer;
 }
 .thread-id-copy:hover { color:var(--text); background:transparent; }
-.thread-id-copy .fa-action-icon { width:8px; height:8px; flex-basis:8px; }
-.thread-id-copy .fa-action-label { min-width:0; overflow-wrap:anywhere; word-break:break-all; text-align:left; }
+.thread-id-copy .fa-action-icon { width:13px; height:13px; flex:0 0 13px; }
+.thread-id-copy .fa-action-label { min-width:0; white-space:nowrap; text-align:left; }
+.thread-population-table .thread-id-copy { min-height:26px; padding:3px 5px; border-radius:5px; }
+.thread-population-table .thread-id-copy:hover,
+.thread-population-table .thread-id-copy:focus-visible { background:var(--surface-subtle); }
 .thread-id-copy.copied { color:#067647; }
 .thread-id-copy.copy-failed { color:#b42318; }
 .thread-population-actions { min-width:148px; }
@@ -965,3 +968,25 @@
   .thread-action-status.succeeded { color:#75e0a7; }
   .thread-action-status.failed { color:#fda29b; }
 }
+/* A Thread's lived continuity is not the temporary model execution state. */
+.thread-population-table thead th { text-transform:none; letter-spacing:normal; }
+.thread-population-portrait[data-life-status="continuing"],
+.thread-person-portrait[data-life-status="continuing"] { border-color:var(--success); }
+.thread-population-portrait[data-life-status="dormant"],
+.thread-population-portrait[data-life-status="unarmed"],
+.thread-population-portrait[data-life-status="overdue"],
+.thread-person-portrait[data-life-status="dormant"],
+.thread-person-portrait[data-life-status="unarmed"],
+.thread-person-portrait[data-life-status="overdue"] { border-color:var(--warning); }
+.thread-population-portrait[data-life-status="blocked"],
+.thread-person-portrait[data-life-status="blocked"] { border-color:var(--danger); }
+.thread-population-portrait[data-life-status="continuing"] { box-shadow:0 0 0 1px var(--success); }
+.thread-population-portrait[data-life-status="dormant"],
+.thread-population-portrait[data-life-status="unarmed"],
+.thread-population-portrait[data-life-status="overdue"] { box-shadow:0 0 0 1px var(--warning); }
+.thread-population-portrait[data-life-status="blocked"] { box-shadow:0 0 0 1px var(--danger); }
+.thread-state.life-continuing { color:var(--success); border-color:var(--success); }
+.thread-state.life-dormant,.thread-state.life-overdue,.thread-state.life-unarmed { color:var(--warning); border-color:var(--warning); }
+.thread-state.life-blocked { color:var(--danger); border-color:var(--danger); }
+.thread-life-evidence { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:11px; }
+@media(max-width:600px){.thread-life-evidence{grid-template-columns:minmax(0,1fr)}}
