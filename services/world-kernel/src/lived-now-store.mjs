@@ -547,8 +547,13 @@ export class LivedNowStore {
         ?resolveWorldPlace(this.#database,{
           threadId,name:locality,country:countryName,kind:"city",geography:location,
         }):null;
+      const cityGeography=parent?.lat===null||parent===null?null:{
+        locality:parent.locality,country:parent.country,
+        countryCode:parent.countryCode,lat:parent.lat,long:parent.long,
+        timeZone:parent.timeZone,evidenceRef:parent.evidenceRef,
+      };
       const place=resolveWorldPlace(this.#database,{
-        threadId,name,city,country,kind,geography:location,
+        threadId,name,city,country,kind,geography:location??cityGeography,
       });
       return Object.freeze({place,parent,status:place.lat===null?"unlocated":"located"});
     });
