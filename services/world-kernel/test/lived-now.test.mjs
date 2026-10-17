@@ -176,6 +176,9 @@ test("Thread's own Flight Plan discovers a new city without operator-prepared pl
       assert.equal(lookups,1,"geography provider was not bounded to chosen destination");
       assert.equal(livedNowStore.getWorldPlace(life.thread.threadId,nextRef).placeKind,
         "discovered_locality","World invented a public venue instead of city arrival");
+      assert.equal(livedNowStore.listDiscoveredPlaces(life.thread.threadId)
+        .some(place=>place.ref===nextRef),true,
+        "a discovered city disappeared from future planning knowledge");
       assert.equal(livedNowStore.getPrivatePlace(life.thread.threadId,nextRef).locality,
         "Porto","new destination lost the attested city");
       assert.equal(livedNowStore.getPrivatePlace(life.thread.threadId,nextRef).publicGranularity,
