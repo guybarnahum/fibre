@@ -309,3 +309,28 @@ test("God-view preserves a hidden home's attested current city without inventing
     privatePlace,
   }),null,"a journey was falsely fixed at its point of departure");
 });
+
+test("a hidden private sibling can inform its Thread without becoming public geography",()=>{
+  const threadId="thr_private_context";
+  const episode=(kind)=>({
+    episodeId:"pep_"+kind,revision:1,threadId,
+    episodeKind:"formative_presence",provenance:"genesis_created",
+    place:{placeId:"place_modern_97e4cb643db2_"+kind,displayName:kind,
+      locality:null,countryCode:null,region:null,precision:"unspecified"},
+    startAt:"2026-01-01T00:00:00.000Z",endAt:null,
+    sourceReferences:["evt_birth"],visibility:"private",
+    recordedAt:"2026-10-17T03:38:00.000Z",
+  });
+  const home=episode("home"),source=episode("transit");
+  const anchor=[{placeEpisode:source,privatePlace:{
+    threadId,placeRef:placeEpisodeRevisionRef(source),
+    locality:"Fes",country:"Morocco",countryCode:"MA",
+    publicGranularity:"hidden",
+  }}];
+  assert.deepEqual(genesisContextLocations([home],anchor),[],
+    "private World city escaped through the normal public projection");
+  const owned=genesisContextLocations([home],anchor,{privatePerspective:true});
+  assert.equal(owned.length,1,
+    "the Thread's own known locality disappeared with public disclosure");
+  assert.equal(owned[0].geography.city,"Fes");
+});
