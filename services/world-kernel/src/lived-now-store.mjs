@@ -1044,16 +1044,30 @@ export class LivedNowStore {
                json_extract(value,'$[1]') AS place_ref
         FROM json_each(?)
       )
-      SELECT p.thread_id,p.place_ref,p.record_json,p.record_digest
+      SELECT p.thread_id,p.place_ref,p.record_json,p.record_digest,
+        l.record_json AS locality_json,l.record_digest AS locality_digest
       FROM targets t
       JOIN world_private_place_locations p
         ON p.thread_id=t.thread_id AND p.place_ref=t.place_ref
+      LEFT JOIN world_localities l
+        ON l.country_code=json_extract(p.record_json,'$.countryCode')
+       AND l.locality_key=lower(json_extract(p.record_json,'$.locality'))
     `).all(JSON.stringify(privateTargets));
     const privateByThread = new Map(privateRows.map(row => [
       row.thread_id,privatePlaceEvidence(
         row.thread_id,row.place_ref,row.record_json,row.record_digest,
       ),
     ]));
+
+    const localityByThread=new Map(privateRows.map(row=>{
+      if(row.locality_json===null)return [row.thread_id,null];
+      const record=parseJson("World locality",row.locality_json);
+      if(canonicalJson(record)!==row.locality_json
+        ||digest(record)!==row.locality_digest){
+        throw new IntegrityError("World locality failed integrity");
+      }
+      return [row.thread_id,Object.freeze(record)];
+    }));
 
     const needsContext=[...new Set(situations.filter(situation=>
       observedPlaceRefs(situation).some(ref=>{
@@ -1091,6 +1105,7 @@ export class LivedNowStore {
         currentSituation,
         lifeContinuity:currentSituation.lifeContinuity??null,
         privatePlace:privateByThread.get(currentSituation.threadId)??null,
+        worldLocality:localityByThread.get(currentSituation.threadId)??null,
         contextLocations:Object.freeze(genesisContextLocations(
           placeEpisodes,anchors,ownedWorld,
         )),
