@@ -174,8 +174,13 @@ test("operator-attested private locality maps at city precision, never a home ad
 test("an attested modern Genesis transit anchors its distinct home in the same city",()=>{
   const place=(threadId,seed,kind)=>({
     episodeId:`plce_${kind}_${threadId}`,revision:1,threadId,
-    provenance:"genesis_created",
-    place:{placeId:`place_modern_${seed}_${kind}`},
+    episodeKind:"formative_presence",provenance:"genesis_created",
+    place:{placeId:`place_modern_${seed}_${kind}`,
+      displayName:"An ordinary "+kind+" place",countryCode:null,
+      region:null,locality:null,precision:"unspecified"},
+    startAt:"2026-01-01T10:00:00.000Z",endAt:null,
+    sourceReferences:["evt_modern_birth"],
+    visibility:"private",recordedAt:"2026-10-17T03:38:00.000Z",
   });
   const threadId="thr_omar_london",source=place(threadId,"4572b13ec97a","transit");
   const home=place(threadId,"4572b13ec97a","home");
@@ -215,8 +220,13 @@ test("an attested modern Genesis transit anchors its distinct home in the same c
 test("conflicting source attestations do not manufacture a current city",()=>{
   const mk=(episodeId,kind)=>({
     episodeId,revision:1,threadId:"thr_conflict",
-    provenance:"genesis_created",
-    place:{placeId:`place_modern_97e4cb643db2_${kind}`},
+    episodeKind:"formative_presence",provenance:"genesis_created",
+    place:{placeId:`place_modern_97e4cb643db2_${kind}`,
+      displayName:"Ordinary "+kind,countryCode:null,
+      region:null,locality:null,precision:"unspecified"},
+    startAt:"2026-01-01T10:00:00.000Z",endAt:null,
+    sourceReferences:["evt_modern_birth"],visibility:"private",
+    recordedAt:"2026-10-17T03:38:00.000Z",
   });
   const home=mk("plce_home","home");
   const locatedContexts=["Fes","London"].map((city,index)=>{
