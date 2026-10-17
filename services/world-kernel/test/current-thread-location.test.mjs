@@ -426,6 +426,19 @@ test("a Genesis learning place keeps its own identity and inherits only an attes
     "a local learning context manufactured a street address");
   assert.equal(learning.physicalVenue,undefined,
     "a Genesis learning place was presented as an independently admitted venue");
+  const independentlyBound={
+    ...learning,physicalVenue:{ref:"venue_tbilisi_library",
+      displayName:"Independent public library",locality:"Tbilisi",country:"Georgia"},
+  };
+  assert.equal(isModernGenesisWorldPlace(independentlyBound),false,
+    "an externally admitted venue was treated as an unlocated Genesis context");
+  const bound=projectCurrentThreadLocation({
+    currentSituation:situation,worldPlaces:[independentlyBound],
+    contextLocations:privateContextLocations,
+  });
+  assert.equal(bound?.locality,"Tbilisi",
+    "Genesis locality overrode an independently attested venue");
+  assert.equal(bound?.authority,"world_venue_locality");
   assert.equal(projectCurrentThreadLocation({
     currentSituation:situation,worldPlaces:[learning],
   }),null,"unlocated historical WorldSpec place acquired geography without evidence");
