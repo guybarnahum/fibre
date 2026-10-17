@@ -384,6 +384,7 @@ async function formPlan({
   situatedLifeStore,
   modelAdapter,
   experienceStore,
+  resolveDestinationGeography,
   threadId,
   startAt,
   endAt,
@@ -445,6 +446,7 @@ async function formPlan({
       livedNowStore,
     },
     modelAdapter,
+    resolveDestinationGeography,
     startingPlaceRef: startingPlace,
     worldTimeZone,
     ...(interoception === null ? {} : { interoception }),
@@ -462,6 +464,7 @@ async function catchUpDormantInterval({
   situatedLifeStore,
   modelAdapter,
   experienceStore,
+  resolveDestinationGeography,
   threadId,
   current,
   at,
@@ -498,6 +501,7 @@ async function catchUpDormantInterval({
       situatedLifeStore,
       modelAdapter,
       experienceStore,
+      resolveDestinationGeography,
       threadId,
       startAt: window.startAt,
       endAt: window.endAt,
@@ -531,6 +535,7 @@ async function catchUpDormantInterval({
     situatedLifeStore,
     modelAdapter,
     experienceStore,
+    resolveDestinationGeography,
     threadId,
     startAt: at,
     endAt: futureEnd,
@@ -547,6 +552,7 @@ async function establishFirstLivedNow({
   situatedLifeStore,
   modelAdapter,
   experienceStore,
+  resolveDestinationGeography,
   threadId,
   at,
 }) {
@@ -577,6 +583,7 @@ async function establishFirstLivedNow({
     situatedLifeStore,
     modelAdapter,
     experienceStore,
+    resolveDestinationGeography,
     threadId,
     startAt: at,
     endAt: firstHorizonEnd,
@@ -596,6 +603,7 @@ export function createLivedNowService({
   experienceStore = null,
   onSituationEnacted = null,
   onSituationResolved = null,
+  resolveDestinationGeography = null,
 } = {}) {
   requireMethod(livedNowStore, "getSituation");
   requireMethod(livedNowStore, "getCurrentSituation");
@@ -607,6 +615,9 @@ export function createLivedNowService({
   requireMethod(livedNowStore, "ensureWorldPlaces");
   requireMethod(livedNowStore, "getWorldContext");
 
+  if(resolveDestinationGeography!==null&&typeof resolveDestinationGeography!=="function"){
+    throw new TypeError("LivedNow destination resolver must be a function");
+  }
   if(onSituationEnacted!==null&&typeof onSituationEnacted!=="function"){
     throw new TypeError("LivedNow onSituationEnacted must be a function");
   }
@@ -700,6 +711,7 @@ export function createLivedNowService({
           situatedLifeStore,
           modelAdapter,
           experienceStore,
+          resolveDestinationGeography,
           threadId: input.threadId,
           at: input.at,
         });
@@ -715,6 +727,7 @@ export function createLivedNowService({
         situatedLifeStore,
         modelAdapter,
         experienceStore,
+        resolveDestinationGeography,
         threadId: input.threadId,
         current,
         at: input.at,
