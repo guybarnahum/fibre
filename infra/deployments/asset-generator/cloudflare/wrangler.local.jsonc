@@ -19,7 +19,6 @@
   "secrets": {
     "required": [
       "OPENAI_API_KEY",
-      "BFL_API_KEY",
       "FIBRE_PRIVATE_TOKEN"
     ]
   },
