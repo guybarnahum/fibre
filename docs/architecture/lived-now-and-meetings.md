@@ -432,6 +432,38 @@ there under ordinary event-driven life; travel-time realism remains separate.
 Earlier deployed locality tables may remain as unused storage; existing
 World-attested private current places and verified public venues are retained.
 
+### Spatial continuity — cross-city feasibility and enacted arrival (source only)
+
+World now checks the temporal feasibility of changes between **grounded**
+physical places when admitting a new Flight Plan. It uses a cheap,
+conservative great-circle distance and an optimistic minimum journey time:
+regional travel allows fast ground transport; longer distances allow an
+optimistic flight with departure/arrival overhead. A proposed arrival earlier
+than that physical lower bound is rejected before the plan enters World.
+Unmapped places do not gain invented coordinates, routes or false travel
+metrics; only grounded pairs can support this geographic feasibility check.
+This is not a road network, travel-mode parser, booking engine or promise of
+actual transport availability.
+
+The accepted Flight Plan's ordinary gaps remain the authoritative **intended
+travel intervals**. Existing LivedNow and its per-Thread boundary scheduler
+enact departure, transit and arrival, without a new background process.
+When transit is underway, the departure locality still governs local civil
+time; after enacted arrival, the destination's World place timezone and
+locality become available to later personal planning and local City Guide
+opportunities. Operator projections retain the enacted destination and
+transit endpoints, not the Thread's entire catalog of known places.
+The map may interpolate a coarse straight-line indication **only when both
+geographical endpoints are known**; this is not a verified route. If either
+endpoint is unmapped, transit remains real but has no invented map position.
+
+This conservative filter cannot prove feasibility for every travel mode or
+unknown place, and a rejected personal plan is not yet autonomously rescheduled
+into a later arrival. Both limits remain open. Its semantic proof is one
+fixture-authored plausible cross-city Flight Plan rejected when rushed, then
+enacted by normal scheduler boundaries when given enough time; naturally
+Thread-authored staging travel is still unverified.
+
 ### Grounded geography and private residences — S0 staging admitted, social visits still open
 
 S0 adds two complementary World authorities without manufacturing movement or co-presence:
