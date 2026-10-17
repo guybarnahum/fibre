@@ -24,7 +24,7 @@ import {
 } from "./situated-life-domain.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
-import {resolveLocalityGeography} from "#core/src/locality-geography.mjs";
+import {resolveLocalityGeography,countryCodeForCountry} from "#core/src/locality-geography.mjs";
 import {
   bindLivePhysicalVenue,
   createLiveWorldPlaceTables,
@@ -571,7 +571,7 @@ export class LivedNowStore {
       throw new TypeError("destination requires city and country");
     }
     const geo=localityEvidence;
-    const code=geo?.countryCode??resolveLocalityGeography(`${country}/${city}`)?.countryCode??null;
+    const code=geo?.countryCode??countryCodeForCountry(country)??resolveLocalityGeography(`${country}/${city}`)?.countryCode??null;
     const known=code===null?null:this.getWorldLocality({locality:city,countryCode:code});
     const evidence=known??geo;
     if(evidence===null)return Object.freeze({
