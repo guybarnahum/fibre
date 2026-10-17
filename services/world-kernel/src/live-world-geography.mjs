@@ -50,106 +50,93 @@ export function createLiveWorldGeographyTables(db){
       record_digest TEXT NOT NULL,
       PRIMARY KEY(thread_id,place_ref)
     ) STRICT;
-    CREATE TABLE IF NOT EXISTS world_localities(
-      country_code TEXT NOT NULL,
-      locality_key TEXT NOT NULL,
+    CREATE TABLE IF NOT EXISTS world_places(
+      place_ref TEXT PRIMARY KEY,
       record_json TEXT NOT NULL CHECK(json_valid(record_json)),
-      record_digest TEXT NOT NULL,
-      PRIMARY KEY(country_code,locality_key)
+      record_digest TEXT NOT NULL
     ) STRICT;
-    CREATE TABLE IF NOT EXISTS world_discovered_places(
+    CREATE TABLE IF NOT EXISTS thread_known_places(
       thread_id TEXT NOT NULL,
       place_ref TEXT NOT NULL,
-      record_json TEXT NOT NULL CHECK(json_valid(record_json)),
-      record_digest TEXT NOT NULL,
       PRIMARY KEY(thread_id,place_ref)
     ) STRICT;
   `);
 }
 
 
-function localityKey(value){
-  return text("World locality",value).normalize("NFKC").toLocaleLowerCase("en-US");
-}
 
-// Shared factual geography. A locality anchors many distinct places; it is
-// never itself a venue, residence, or evidence of physical co-presence.
-export function getWorldLocality(db,{locality,countryCode}={}){
-  if(!locality||!countryCode)return null;
-  const key=localityKey(locality);
-  return stored(db.prepare(`SELECT record_json,record_digest
-    FROM world_localities WHERE country_code=? AND locality_key=?`
-  ).get(countryCode,key),"World locality");
-}
+function placeKey(value){return text("World place name",value).normalize("NFKC").toLocaleLowerCase("en-US");}
 
-export function admitWorldLocality(db,input){
-  assertPlainObject("World locality",input);
-  const {locality,country,countryCode,lat,long,timeZone:zone,evidenceRef}=input;
-  for(const [label,value] of Object.entries({locality,country,countryCode,timeZone:zone,evidenceRef}))
-    text("World locality "+label,value);
-  if(!/^[A-Z]{2}$/u.test(countryCode))throw new TypeError("World locality needs ISO country code");
-  coordinates(lat,long);
-  timeZone(zone);
-  const record=Object.freeze({
-    locality:locality.trim(),country:country.trim(),countryCode,
-    lat,long,timeZone:zone,evidenceRef:evidenceRef.trim(),
-  });
-  const existing=getWorldLocality(db,record);
-  if(existing!==null){
-    if(existing.country!==record.country
-      ||existing.lat!==record.lat||existing.long!==record.long
-      ||existing.timeZone!==record.timeZone){
-      throw new IntegrityError("World locality has conflicting geographical evidence");
-    }
-    return existing;
-  }
-  db.prepare(`INSERT INTO world_localities(country_code,locality_key,record_json,record_digest)
-    VALUES(?,?,?,?)`).run(countryCode,localityKey(locality),canonicalJson(record),digest(record));
-  return record;
-}
-
-// A Thread's independently chosen destination names a city-level arrival,
-// not a manufactured venue. Thread-scoped identity prevents false co-presence.
-export function getWorldDiscoveredPlace(db,threadId,placeRef){
+// One World entity for a city. An unverified specific place is scoped to its
+// discoverer until its physical identity can be independently established.
+export function getWorldPlaceEntity(db,threadId,placeRef){
   if(typeof placeRef!=="string"||!placeRef.startsWith("wpl_"))return null;
-  return stored(db.prepare(`SELECT record_json,record_digest FROM world_discovered_places
-    WHERE thread_id=? AND place_ref=?`).get(threadId,placeRef),"discovered World place");
+  const row=db.prepare(`SELECT p.record_json,p.record_digest
+    FROM world_places p JOIN thread_known_places k ON k.place_ref=p.place_ref
+    WHERE p.place_ref=? AND k.thread_id=?`).get(placeRef,threadId);
+  return stored(row,"World place");
 }
 
-export function listWorldDiscoveredPlaces(db,threadId,{limit=16}={}){
-  assertId("discovered World threadId",threadId);
-  if(!Number.isSafeInteger(limit)||limit<1||limit>32){
-    throw new TypeError("World destinations require a bounded limit");
+export function listKnownWorldPlaces(db,threadId,{limit=24}={}){
+  assertId("known World Thread",threadId);
+  if(!Number.isSafeInteger(limit)||limit<1||limit>64)
+    throw new TypeError("known World places need bounded limit");
+  return Object.freeze(db.prepare(`SELECT p.record_json,p.record_digest
+    FROM thread_known_places k JOIN world_places p ON p.place_ref=k.place_ref
+    WHERE k.thread_id=? ORDER BY p.place_ref LIMIT ?`
+  ).all(threadId,limit).map(row=>stored(row,"World place")));
+}
+
+export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind="place",geography=null}={}){
+  assertId("World place Thread",threadId);
+  const title=text("World place name",name);
+  if(!["city","place"].includes(kind))throw new TypeError("World place kind must be city or place");
+  const locality=kind==="city"?title:(city===null?null:text("World place city",city));
+  const nation=country===null?null:text("World place country",country);
+  const identity={kind,name:placeKey(title),city:locality===null?null:placeKey(locality),
+    country:nation===null?null:placeKey(nation),
+    ...(kind==="place"?{threadId}:{})};
+  const ref=`wpl_${sha256(canonicalJson(identity))}`;
+  const row=db.prepare("SELECT record_json,record_digest FROM world_places WHERE place_ref=?").get(ref);
+  const prior=stored(row,"World place");
+  if(geography!==null){
+    assertPlainObject("World place geography",geography);
+    if(nation===null||locality===null
+      ||placeKey(geography.locality)!==placeKey(locality)
+      ||placeKey(geography.country)!==placeKey(nation)){
+      throw new TypeError("World place geography must match its named city and country");
+    }
+    coordinates(geography.lat,geography.long);
+    timeZone(geography.timeZone);
   }
-  return Object.freeze(db.prepare(`SELECT place_ref,record_json,record_digest
-    FROM world_discovered_places WHERE thread_id=? ORDER BY place_ref LIMIT ?`
-  ).all(threadId,limit).map(row=>stored(row,"discovered World place")));
-}
-
-export function admitWorldDiscoveredPlace(db,{threadId,locality}={}){
-  assertId("discovered World threadId",threadId);
-  assertPlainObject("discovered World locality",locality);
-  const record=Object.freeze({
-    ref:`wpl_${sha256(canonicalJson({
-      kind:"thread-discovered-locality-v1",threadId,
-      locality:localityKey(locality.locality),countryCode:locality.countryCode,
-    }))}`,
-    threadId,placeKind:"discovered_locality",
-    displayName:`${locality.locality}, ${locality.country}`,
-    locality:locality.locality,country:locality.country,
-    countryCode:locality.countryCode,
-    timeZone:locality.timeZone,
-    authority:"world-thread-discovered-place-v1",
+  const knownGeo=geography??(prior?.lat===null?null:{
+    locality:prior.locality,country:prior.country,countryCode:prior.countryCode,
+    lat:prior.lat,long:prior.long,timeZone:prior.timeZone,
+    evidenceRef:prior.evidenceRef,
   });
-  const existing=getWorldDiscoveredPlace(db,threadId,record.ref);
-  if(existing!==null){
-    if(canonicalJson(existing)!==canonicalJson(record))
-      throw new IntegrityError("discovered place conflicts with existing World identity");
-    return existing;
+  if(prior!==null&&geography!==null&&prior.lat!==null
+    &&(prior.lat!==geography.lat||prior.long!==geography.long)){
+    throw new IntegrityError("World place geographic evidence conflicts with existing location");
   }
-  db.prepare(`INSERT INTO world_discovered_places(
-    thread_id,place_ref,record_json,record_digest
-  ) VALUES(?,?,?,?)`).run(threadId,record.ref,canonicalJson(record),digest(record));
+  const record=Object.freeze({
+    ref,displayName:kind==="city"&&nation!==null?`${title}, ${nation}`:title,
+    placeKind:kind,locality,country:nation,
+    countryCode:knownGeo?.countryCode??null,
+    lat:knownGeo?.lat??null,long:knownGeo?.long??null,
+    timeZone:knownGeo?.timeZone??null,evidenceRef:knownGeo?.evidenceRef??null,
+    mapPrecision:knownGeo===null?null:"city",
+    ...(kind==="place"?{ownerThreadId:threadId}:{}),
+    authority:"world-place-v1",
+  });
+  if(prior===null){
+    db.prepare(`INSERT INTO world_places(place_ref,record_json,record_digest)
+      VALUES(?,?,?)`).run(ref,canonicalJson(record),digest(record));
+  }else if(canonicalJson(prior)!==canonicalJson(record)){
+    db.prepare(`UPDATE world_places SET record_json=?,record_digest=?
+      WHERE place_ref=?`).run(canonicalJson(record),digest(record),ref);
+  }
+  db.prepare(`INSERT OR IGNORE INTO thread_known_places(thread_id,place_ref)
+    VALUES(?,?)`).run(threadId,ref);
   return record;
 }
 
@@ -262,7 +249,7 @@ export function admitWorldPrivatePlace(db,input){
     // attestation belongs to this Thread's context only.
     const context=resolveLiveWorldPlace(db,threadId,placeRef);
     if((context?.authority!=="live-world-place-admission-v1"||context.physicalVenue)
-      &&getWorldDiscoveredPlace(db,threadId,placeRef)===null){
+      &&getWorldPlaceEntity(db,threadId,placeRef)===null){
       throw new TypeError("private World locality requires an owned nonpublic place");
     }
   }else{
