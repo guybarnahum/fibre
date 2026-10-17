@@ -612,6 +612,60 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
       }
     }
 
+    const correctionMatch=PHOTO_CORRECTION_ROUTE.exec(url.pathname);
+    if(correctionMatch!==null){
+      const threadId=fibreId("threadId",decodeURIComponent(correctionMatch[1]));
+      const correctionId=photoCorrectionId(decodeURIComponent(correctionMatch[2]));
+      const action=correctionMatch[3]??null;
+      if(!((request.method==="GET" && (action===null || action==="/preview"))
+        || (request.method==="POST" && (action===null || action==="/approve")))){
+        return Response.json({error:{code:"METHOD_NOT_ALLOWED"}},{status:405});
+      }
+      try {
+        const {source,job}=await fidPhotoCorrection({
+          env:this.env,infra:runtime.infra,providerProfile:runtime.providerProfile,threadId,correctionId,
+        });
+        if(request.method==="GET" && action===null){
+          const ready=await runtime.infra.objects.head(job.receiptObjectRef)!==null;
+          const approved=await runtime.infra.objects.head(photoCorrectionApprovalRef(threadId,correctionId))!==null;
+          return Response.json({state:approved?"approved":ready?"ready":"pending",correctionId});
+        }
+        if(request.method==="POST" && action===null){
+          if(await runtime.infra.objects.head(job.receiptObjectRef)!==null){
+            return Response.json({state:"ready",correctionId});
+          }
+          const result=await runtime.assetGeneration.request(job);
+          return Response.json({state:"requested",correctionId,jobId:result.job.jobId},{status:202});
+        }
+        const candidate=await fidPhotoCorrectionCandidate(runtime.infra,source,job);
+        if(candidate===null)return Response.json({error:{code:"PHOTO_NOT_READY"}},{status:409});
+        if(request.method==="GET" && action==="/preview"){
+          return new Response(candidate.asset.bytes,{
+            headers:{"Content-Type":"image/png","Cache-Control":"no-store"},
+          });
+        }
+        if(request.method==="POST" && action==="/approve"){
+          const approval={
+            threadId,correctionId,
+            canonicalRef:source.canonicalVisualReferenceRef,
+            canonicalDigest:source.canonicalVisualReferenceDigest,
+            photoRef:candidate.receipt.objectRef,
+            photoDigest:candidate.receipt.sha256,
+            receiptRef:job.receiptObjectRef,
+          };
+          const bytes=new TextEncoder().encode(JSON.stringify(approval));
+          const digest="sha256:"+createHash("sha256").update(bytes).digest("hex");
+          await runtime.infra.objects.putImmutable(
+            photoCorrectionApprovalRef(threadId,correctionId),bytes,digest,
+            {kind:"fid_photo_correction_approval",threadId,correctionId},
+          );
+          return Response.json({state:"approved",correctionId});
+        }
+      }catch(error){
+        return Response.json({error:{code:"FID_PHOTO_CORRECTION_FAILED",detail:error.message}},{status:503});
+      }
+    }
+
     const activeMatch = ACTIVE_ROUTE.exec(url.pathname);
     if (request.method === "GET" && activeMatch !== null) {
       try {
