@@ -247,9 +247,11 @@ export function projectCurrentThreadLocation({
     const to = resolvedPlace(location.toPlaceRef, { worldPlaces, placeEpisodes, privatePlace, contextLocations });
     const fromPoint = projectedPoint(from);
     const toPoint = projectedPoint(to);
-    if (fromPoint === null && toPoint === null) return null;
-    const start = fromPoint ?? toPoint;
-    const end = toPoint ?? fromPoint;
+    // Without both endpoints World cannot infer a position along a route.
+    // In particular, never plot an unknown departure at the destination.
+    if (fromPoint === null || toPoint === null) return null;
+    const start = fromPoint;
+    const end = toPoint;
     const progress = Number.isFinite(location.progress) ? Math.max(0, Math.min(1, location.progress)) : 0.5;
     const sameLocality = start.locality !== null && start.locality === end.locality;
     const sameCountry = start.country !== null && start.country === end.country;
