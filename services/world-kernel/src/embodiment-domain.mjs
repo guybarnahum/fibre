@@ -37,6 +37,7 @@ export const EMBODIMENT_VISIBILITIES = Object.freeze(["public", "restricted", "p
 const ASSET_REF_PATTERN = /^(?:cache|asset):\/\/[A-Za-z0-9._~!$&'()*+,;=:@%\/-]+$/;
 const MIN_SUBJECT_DESCRIPTION_BYTES = 40;
 const MIN_RENDER_DESCRIPTION_BYTES = 24;
+const MAX_CANONICAL_SUBJECT_DESCRIPTION_BYTES = 8192;
 const MAX_CANONICAL_DESCRIPTION_BYTES = 4000;
 const UTF8_ENCODER = new TextEncoder();
 
@@ -65,7 +66,7 @@ function normalizeSubject(value) {
   assertId("embodiment.specification.subject.partyId", value.partyId);
   assertBoundedDescription("embodiment.specification.subject.description", value.description, {
     minimum: MIN_SUBJECT_DESCRIPTION_BYTES,
-    maximum: MAX_CANONICAL_DESCRIPTION_BYTES,
+    maximum: MAX_CANONICAL_SUBJECT_DESCRIPTION_BYTES,
   });
   return { partyId: value.partyId, description: value.description };
 }
