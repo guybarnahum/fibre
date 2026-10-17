@@ -53,9 +53,9 @@ This is separate from `providerOutputDurable`. A durable provider operation mean
 
 ## BFL FLUX
 
-The current BFL profile uses `flux-2-pro`, the fixed FLUX.2 Pro endpoint selected for reproducibility. BFL's API is asynchronous: submission returns an `id` and `polling_url`; Fibre persists those before polling. Polling and delivery remain provider-adapter behavior, while checkpoint identity and persistence are provider-neutral Asset Generator behavior.
+The optional BFL adapter uses `flux-2-pro`, the fixed FLUX.2 Pro endpoint selected for reproducibility. BFL is not configured in the active Fibre deployment; OpenAI GPT Image 2 is the sole image provider. BFL's API is asynchronous: submission returns an `id` and `polling_url`; Fibre persists those before polling. Polling and delivery remain provider-adapter behavior, while checkpoint identity and persistence are provider-neutral Asset Generator behavior.
 
-BFL credentials are deployment secrets. Local development uses:
+When separately exercising this adapter, local development can supply:
 
 ```text
 BFL_API_KEY=<your-bfl-api-key>
@@ -63,7 +63,7 @@ BFL_API_KEY=<your-bfl-api-key>
 
 The adapter sends that value only in BFL's `x-key` request header. The job does not contain the key, and neither the provider request witness nor the operation checkpoint contains it.
 
-No `BFL_MODEL` environment variable is required for the current profile. `bfl-flux-2-pro-v1` is the logical Fibre provider profile and the Cloudflare deployment maps it to the pinned `flux-2-pro` endpoint.
+No `BFL_MODEL` environment variable is required by the adapter. Its historical `bfl-flux-2-pro-v1` deployment profile is currently unconfigured.
 
 ## Residual ambiguity
 
