@@ -433,8 +433,8 @@ function hero(identity, threadId) {
 export function observatoryCurrentPlace(livedNow){
   const privatePlace=livedNow?.privatelyKnownCurrentPlace;
   const located=currentThreadPlace(livedNow?.currentLocation)
-    ??currentThreadPlace(privatePlace===null||privatePlace===undefined
-      ?null:{...privatePlace,kind:"place"});
+    ??currentThreadPlace(privatePlace?.publicGranularity==="city"
+      ?{...privatePlace,kind:"place"}:null);
   if(located===null){
     return livedNow?.currentSituation?.location?.kind==="transit"
       ?"In transit · location unresolved"
