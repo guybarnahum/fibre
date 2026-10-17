@@ -801,8 +801,16 @@ test("Observatory displays authoritative current city separately from immutable 
       placeRef:"per:hidden:1",locality:"London",country:"United Kingdom",
       countryCode:"GB",publicGranularity:"hidden",
     },
+  }),"London, United Kingdom · Private",
+  "private Observatory concealed an admitted current city from the operator");
+  assert.equal(observatoryCurrentPlace({
+    currentSituation:{location:{kind:"place",placeRef:"per:other:1"}},
+    privatelyKnownCurrentPlace:{
+      placeRef:"per:hidden:1",locality:"London",country:"United Kingdom",
+      countryCode:"GB",publicGranularity:"hidden",
+    },
   }),"Location unresolved",
-  "operator presentation widened an explicitly hidden private locality");
+  "operator Observatory projected an unrelated historical private place");
   assert.equal(observatoryCurrentPlace({
     currentSituation:{location:{kind:"place",placeRef:"wpl_library"}},
     currentLocation:{kind:"place",locality:"London",country:"United Kingdom",
