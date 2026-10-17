@@ -887,9 +887,13 @@ test("local discovery survives travel from a grounded home to its Genesis learni
   };
   const transit={
     threadId,episodeId:"plce_transit",revision:1,
-    provenance:"genesis_created",place:{
-      placeId:`place_modern_${seed}_transit`,
-    },
+    episodeKind:"formative_presence",provenance:"genesis_created",
+    place:{placeId:`place_modern_${seed}_transit`,
+      displayName:"Local transit",countryCode:null,locality:null,
+      region:null,precision:"unspecified"},
+    startAt:"2026-01-01T10:00:00.000Z",endAt:null,
+    sourceReferences:["evt_origin"],visibility:"private",
+    recordedAt:"2026-10-17T03:38:00.000Z",
   };
   let anchorReads=0;
   const livedNowStore={
