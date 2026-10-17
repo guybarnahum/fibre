@@ -570,7 +570,8 @@ export class LivedNowStore {
     const historic=listLiveWorldPlaces(this.#database,threadId);
     // Include enacted destinations (and transit endpoints), never every
     // place the Thread knows. Knowing a place is not being present there.
-    const refs=observedPlaceRefs(this.getCurrentSituation(threadId));
+    const situation=this.getCurrentSituation(threadId);
+    const refs=situation===null?[]:observedPlaceRefs(situation);
     const additional=refs.map(ref=>
       getWorldPlaceEntity(this.#database,threadId,ref)
       ??getWorldPublicPlace(this.#database,ref),
