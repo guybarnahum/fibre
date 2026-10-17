@@ -8,13 +8,20 @@ test("sourced editorial places become World admissions only through independent 
     new URL("../../data/social-city-guide.json",import.meta.url),"utf8"));
   const venues=JSON.parse(readFileSync(
     new URL("../../data/social-city-guide-admissions.json",import.meta.url),"utf8"));
-  const pending=pendingCityGuideAdmissions(guide,venues);
-  assert.ok(pending.length>0,"no sourced public destinations are ready for admission");
+  assert.equal(pendingCityGuideAdmissions(guide,venues).length,0,
+    "an admitted World venue was requeued");
+  const editorial=structuredClone(guide);
+  for(const {cityKey,placeKey} of venues.venues){
+    editorial.cities[cityKey].places[placeKey].worldPlaceRef=null;
+  }
+  const pending=pendingCityGuideAdmissions(editorial,venues);
+  assert.equal(pending.length,venues.venues.length,
+    "source-grounded editorial places could not be prepared for World admission");
   for(const {cityKey,placeKey,admission} of pending){
-    const editorial=guide.cities[cityKey].places[placeKey];
-    assert.equal(admission.streetAddress,editorial.address,
+    const place=guide.cities[cityKey].places[placeKey];
+    assert.equal(admission.streetAddress,place.address,
       "World admission would contradict the public editorial address");
-    assert.equal(admission.evidenceRef,editorial.source.url,
+    assert.equal(admission.evidenceRef,place.source.url,
       "World admission would lose independently sourced provenance");
     assert.ok(admission.venueIdentity&&admission.affordances.length,
       "public venue lacks an independent identity or an activity");
