@@ -68,9 +68,7 @@ export function topology(environment){
 }
 
 function endpoint(base,path){
-  const url=new URL(base);
-  url.pathname=path;
-  url.search="";
+  const url=new URL(path,base);
   url.hash="";
   return url;
 }
