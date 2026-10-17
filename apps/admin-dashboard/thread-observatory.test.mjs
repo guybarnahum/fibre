@@ -11,6 +11,7 @@ import {
   fetchThreadObservatory,
   identityWithFidPublication,
   mergeObservatoryWorldIdentity,
+  observatoryCurrentPlace,
   reissueFidCard,
   resumeFidReissue,
   threadObservatoryDebugSnapshot,
@@ -770,4 +771,29 @@ test("opening a Thread's current life does not fetch her private history or jour
       ["identity","observatory?view=current"],
       "current life should not fetch unseen memories or historical journals");
   }finally{globalThis.fetch=originalFetch;}
+});
+
+test("Observatory displays authoritative current city separately from immutable birthplace",()=>{
+  const london={
+    currentSituation:{location:{kind:"place",placeRef:"per:home:1"}},
+    currentLocation:{kind:"place",locality:"London",country:"United Kingdom",
+      countryCode:"GB",authority:"world_private_place_locality"},
+  };
+  assert.equal(observatoryCurrentPlace(london),"London, United Kingdom",
+    "current situated place did not override the birthplace");
+  assert.equal(observatoryCurrentPlace({
+    ...london,currentLocation:null,
+    privatelyKnownCurrentPlace:{locality:"London",country:"United Kingdom",countryCode:"GB"},
+  }),"London, United Kingdom",
+  "existing private World locality was not reused when projection is unavailable");
+  assert.equal(observatoryCurrentPlace({currentSituation:null}),"Not established",
+    "a Thread with no enacted present was assigned a location");
+  assert.equal(observatoryCurrentPlace({
+    currentSituation:{location:{kind:"place",placeRef:"wpl_library"}},
+    currentLocation:{kind:"place",locality:"London",country:"United Kingdom",
+      countryCode:"GB",authority:"live_world_place"},
+    worldPlaces:[{ref:"wpl_library",authority:"world-public-place-v1",
+      displayName:"British Library"}],
+  }),"British Library · London, United Kingdom",
+    "a public current venue lost its World place identity");
 });
