@@ -46,6 +46,23 @@ test("a Thread's earlier Flight Plan and enacted travel remain distinguishable a
     "real World transitions were not joined to their Thread-owned plan");
   assert.equal(full.modelProvider,"openai");
   assert.equal(full.destination.authority,"world-place-v1");
+  const instantPlan={
+    ...travel,planId:"plan_instant",
+    stops:[travel.stops[0],{
+      ...travel.stops[1],startAt:travel.stops[0].endAt,
+    }],
+  };
+  const instantScenes=[origin,arrival].map(item=>({
+    ...item,sourcePlanRefs:["plan_instant"],
+    resolution:{governingPlanRef:"plan_instant"},
+  }));
+  const instant=inspectThreadJourneys({
+    livedNow:{recentPersonalPlans:[instantPlan],recentSituations:instantScenes},
+  })[0];
+  assert.equal(instant.stage,"instant_place_change",
+    "zero-duration location switch was credited as a journey");
+  assert.equal(instant.plannedTransitSeconds,0,
+    "zero-duration change concealed its missing travel interval");
   const wrongPlan={...movement,sourcePlanRefs:["plan_other"]};
   assert.equal(phase([arrival,wrongPlan,origin]).stage,"arrival_observed",
     "another plan's transit was falsely attributed to this journey");
