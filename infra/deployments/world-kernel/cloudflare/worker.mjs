@@ -412,6 +412,7 @@ export class FibreWorldDurableObject extends DurableObject {
             currentSituation:current?.currentSituation ?? null,
             worldPlaces:current?.worldPlaces ?? [],
             placeEpisodes:current?.placeEpisodes ?? [],
+            privatePlace:current?.privatePlace ?? null,
           }),
         });
       })),
@@ -424,13 +425,16 @@ export class FibreWorldDurableObject extends DurableObject {
     const livedNow = openLivedNowInspectionStore(this.worldStorage);
     const situatedLife = openSituatedLifeInspectionStore(this.worldStorage);
     try {
+      const currentSituation=optionalLivedRead(() => livedNow.getCurrentSituation(threadId), null);
       return Object.freeze({
         ...entry,
         currentLocation:projectCurrentThreadLocation({
-          entry,
-          currentSituation:optionalLivedRead(() => livedNow.getCurrentSituation(threadId), null),
+          currentSituation,
           worldPlaces:optionalLivedRead(() => livedNow.listWorldPlaces(threadId), []),
           placeEpisodes:optionalLivedRead(() => situatedLife.listCurrentPlaceEpisodes(threadId), []),
+          privatePlace:currentSituation?.location?.kind==="place"
+            ?optionalLivedRead(() => livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef),null)
+            :null,
         }),
       });
     } finally {
