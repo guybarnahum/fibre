@@ -36,8 +36,10 @@ import {
 } from "./live-world-place.mjs";
 
 import {
-  admitWorldPublicPlace,admitWorldPrivatePlace,admitWorldLocality,createLiveWorldGeographyTables,
-  getWorldLocality,getWorldPrivatePlace,getWorldPublicPlace,listLocalWorldPublicPlaces,
+  admitWorldPublicPlace,admitWorldPrivatePlace,admitWorldLocality,
+  admitWorldDiscoveredPlace,createLiveWorldGeographyTables,
+  getWorldLocality,getWorldPrivatePlace,getWorldPublicPlace,
+  getWorldDiscoveredPlace,listLocalWorldPublicPlaces,
   coarseWorldPlace,
 } from "./live-world-geography.mjs";
 
@@ -315,6 +317,7 @@ export class LivedNowStore {
     const situated = resolveSituatedReference(this.#database, threadId, reference);
     if (situated !== null) return situated;
     const worldPlace = resolveLiveWorldPlace(this.#database, threadId, reference)
+      ??getWorldDiscoveredPlace(this.#database,threadId,reference)
       ??getWorldPublicPlace(this.#database,reference);
     if (worldPlace !== null) return { kind:"world_place", reference, worldPlace };
     if(!worldSchemaReady(this.#database)){
@@ -559,6 +562,40 @@ export class LivedNowStore {
     }));
   }
 
+  // Geography is resolved before World admits a Thread-originated destination.
+  // No scene, travel, or verified public venue is created by this operation.
+  discoverDestination({threadId,city,country,localityEvidence=null}={}){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot discover destinations");
+    this.#requireThread(threadId);
+    if(typeof city!=="string"||!city.trim()||typeof country!=="string"||!country.trim()){
+      throw new TypeError("destination requires city and country");
+    }
+    const geo=localityEvidence;
+    const code=geo?.countryCode??resolveLocalityGeography(`${country}/${city}`)?.countryCode??null;
+    const known=code===null?null:this.getWorldLocality({locality:city,countryCode:code});
+    const evidence=known??geo;
+    if(evidence===null)return Object.freeze({
+      status:"unlocated",city,country,reason:"locality_evidence_missing",
+    });
+    if(evidence.locality.toLowerCase()!==city.trim().toLowerCase()
+      ||evidence.country.toLowerCase()!==country.trim().toLowerCase()
+      ||evidence.countryCode!==code){
+      throw new LivedNowConflictError("destination locality evidence contradicts the Thread's choice");
+    }
+    return this.#database.transaction(()=>{
+      const locality=admitWorldLocality(this.#database,evidence);
+      const destination=admitWorldDiscoveredPlace(this.#database,{threadId,locality});
+      admitWorldPrivatePlace(this.#database,{
+        threadId,placeRef:destination.ref,specificPlace:destination.displayName,
+        streetAddress:null,locality:locality.locality,country:locality.country,
+        countryCode:locality.countryCode,lat:null,long:null,
+        timeZone:locality.timeZone,evidenceRef:locality.evidenceRef,
+        publicGranularity:"hidden",
+      });
+      return Object.freeze({status:"grounded",place:destination,locality});
+    });
+  }
+
   getWorldLocality(query){
     return getWorldLocality(this.#database,query);
   }
@@ -621,6 +658,7 @@ export class LivedNowStore {
   getWorldPlace(threadId, reference, { required = true } = {}) {
     this.#requireThread(threadId);
     const place = resolveLiveWorldPlace(this.#database, threadId, reference)
+      ??getWorldDiscoveredPlace(this.#database,threadId,reference)
       ??getWorldPublicPlace(this.#database,reference);
     if (place === null && required) {
       throw new LivedNowNotFoundError(`shared World place ${reference} was not found for Thread ${threadId}`);
