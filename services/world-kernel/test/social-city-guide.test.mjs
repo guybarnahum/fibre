@@ -13,8 +13,11 @@ const library=JSON.parse(readFileSync(
 test("the Tbilisi guide recommends a real place without claiming visitors",()=>{
   const page=listSocialCityGuide(guide,{city:"tbilisi",countryCode:"GE"});
   assert.equal(page.status,"listed","Tbilisi's public guide is missing");
-  assert.equal(page.places.length,1);
-  const [place]=page.places;
+  assert.ok(page.places.length>=2,
+    "The public guide lost its diverse real-world destinations");
+  const place=page.places.find(item=>
+    item.id==="national-library-of-georgia-building-iii");
+  assert.ok(place,"Tbilisi's previously admitted library disappeared");
   assert.equal(place.address,library.streetAddress,
     "editorial address contradicts admitted World evidence");
   assert.equal(place.source.url,library.evidenceRef,
@@ -27,11 +30,19 @@ test("the Tbilisi guide recommends a real place without claiming visitors",()=>{
     "a guide listing exposed an individual");
 });
 
-test("an unlisted city stays unknown; an external listing never becomes World presence",()=>{
-  const unknown=listSocialCityGuide(guide,{city:"London",countryCode:"GB"});
+test("public editorial discovery does not imply World presence",()=>{
+  const london=listSocialCityGuide(guide,{city:"London",countryCode:"GB"});
+  assert.equal(london.status,"listed",
+    "London's independently sourced cultural destinations are missing");
+  assert.ok(london.places.length>=2,
+    "City Guide lacks useful London cultural variety");
+  assert.ok(london.places.every(item=>item.worldPlaceRef===null),
+    "unadmitted editorial places were claimed to be World destinations");
+
+  const unknown=listSocialCityGuide(guide,{city:"Toulouse",countryCode:"FR"});
   assert.equal(unknown.status,"not_listed");
   assert.deepEqual(unknown.places,[],
-    "the magazine invented recommendations for an unknown city");
+    "an unlisted city invented public venues");
 
   const external=structuredClone(guide);
   external.cities["tel-aviv-IL"]={
