@@ -334,3 +334,51 @@ test("a hidden private sibling can inform its Thread without becoming public geo
     "the Thread's own known locality disappeared with public disclosure");
   assert.equal(owned[0].geography.city,"Fes");
 });
+
+test("God-view follows a Thread to a different Genesis home without fabricating public location",()=>{
+  const threadId="thr_kaohsiung";
+  const episode=(kind)=>({
+    episodeId:"pep_"+kind,revision:1,threadId,
+    episodeKind:"formative_presence",provenance:"genesis_created",
+    place:{placeId:"place_modern_eb39aeda7e03_"+kind,
+      displayName:"place_modern_eb39aeda7e03_"+kind,
+      locality:null,countryCode:null,region:null,precision:"unspecified"},
+    startAt:"2026-01-01T00:00:00.000Z",endAt:null,
+    sourceReferences:["evt_birth"],visibility:"private",
+    recordedAt:"2026-10-17T03:38:00.000Z",
+  });
+  const transit=episode("transit"),home=episode("home");
+  const source=[{placeEpisode:transit,privatePlace:{
+    threadId,placeRef:"per:pep_transit:1",
+    locality:"Kaohsiung",country:"Taiwan",countryCode:"TW",
+    publicGranularity:"hidden",
+  }}];
+  const publicContext=genesisContextLocations([home],source);
+  const ownedContext=genesisContextLocations(
+    [home],source,{privatePerspective:true},
+  );
+  const situation={threadId,establishedAt:"2026-10-17T06:00:00.000Z",
+    location:{kind:"place",placeRef:"per:pep_home:1"}};
+  assert.equal(projectCurrentThreadLocation({
+    currentSituation:situation,placeEpisodes:[home],
+    contextLocations:publicContext,
+  }),null,"private sibling locality escaped into public presence");
+  const current=projectOperatorCurrentPlace({
+    currentSituation:situation,placeEpisodes:[home],
+    privateContextLocations:ownedContext,
+  });
+  assert.equal(current?.locality,"Kaohsiung",
+    "God-view lost a current home in an attested Genesis city");
+  assert.equal(current?.countryCode,"TW");
+  assert.equal(current?.placeRef,"per:pep_home:1",
+    "the previous transit was substituted for the current home");
+  assert.equal(current?.mapPrecision,"city");
+  assert.equal(current?.streetAddress,null,
+    "Genesis inferred a nonexistent residence address");
+  assert.equal(projectOperatorCurrentPlace({
+    currentSituation:{...situation,location:{
+      kind:"place",placeRef:"per:pep_unrelated:1",
+    }},
+    placeEpisodes:[home],privateContextLocations:ownedContext,
+  }),null,"the Thread was located at an unrelated current place");
+});
