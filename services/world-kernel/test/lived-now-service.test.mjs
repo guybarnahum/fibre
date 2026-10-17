@@ -876,3 +876,46 @@ test("a Thread can consider local public places from a hidden but attested Genes
   }).locality,"Tbilisi","direct World evidence was ignored in favor of sibling inference");
   assert.equal(anchorReads,1,"direct World locality incurred avoidable lookup");
 });
+
+test("local discovery survives travel from a grounded home to its Genesis learning place",()=>{
+  const threadId="thr_chen",seed="eb39aeda7e03";
+  const worldPlace={
+    ref:"wpl_legacy_learning",authority:"live-world-place-admission-v1",
+    sourceWorldRef:"world_chen",
+    sourcePlaceId:`place_modern_${seed}_learning`,
+    placeKind:"library_or_learning",displayName:"A place to browse books",
+  };
+  const transit={
+    threadId,episodeId:"plce_transit",revision:1,
+    provenance:"genesis_created",place:{
+      placeId:`place_modern_${seed}_transit`,
+    },
+  };
+  let anchorReads=0;
+  const livedNowStore={
+    getPrivatePlace:()=>null,getPublicPlace:()=>null,
+    getWorldPlace:(id,ref)=>{
+      assert.equal(id,threadId);
+      return ref===worldPlace.ref?worldPlace:null;
+    },
+    listLocatedGenesisContexts:()=>{
+      anchorReads++;
+      return [{placeEpisode:transit,privatePlace:{
+        threadId,placeRef:"per:plce_transit:1",
+        locality:"Kaohsiung",country:"Taiwan",countryCode:"TW",
+        publicGranularity:"hidden",
+      }}];
+    },
+  };
+  assert.deepEqual(planningLocalityForPlace({
+    livedNowStore,placeEpisodes:[],threadId,placeRef:worldPlace.ref,
+  }),{locality:"Kaohsiung",countryCode:"TW"},
+  "a real learning-world visit severed the Thread from local social destinations");
+  assert.equal(anchorReads,1,
+    "one local City Guide choice required repeated history queries");
+  assert.equal(planningLocalityForPlace({
+    livedNowStore,placeEpisodes:[],threadId,placeRef:"wpl_unrelated",
+  }),null,"an unrelated shared place acquired the Thread's city");
+  assert.equal(anchorReads,1,
+    "ungrounded shared place required a needless context lookup");
+});
