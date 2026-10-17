@@ -207,21 +207,7 @@ function jsonResponse(payload, status = 200, headers = {}) {
   };
 }
 
-function binaryResponse(bytes, mediaType = "image/png") {
-  const copied = bytes.slice();
-  return {
-    ok: true,
-    status: 200,
-    headers: {
-      get(name) { return name.toLowerCase() === "content-type" ? mediaType : null; },
-    },
-    async arrayBuffer() {
-      return copied.buffer.slice(copied.byteOffset, copied.byteOffset + copied.byteLength);
-    },
-  };
-}
-
-function createOpenAiFixtureFetch({geometryBytes,rootBytes}) {
+function createOpenAiFixtureFetch({geometryBytes,rootBytes,photoBytes}) {
   const calls=[];
   const fetchImpl=async(url,init={})=>{
     calls.push({url,init});
@@ -237,52 +223,24 @@ function createOpenAiFixtureFetch({geometryBytes,rootBytes}) {
     }
     if(url==="https://api.openai.com/v1/images/edits"){
       assert.equal(init.body.get("model"),"gpt-image-2-2026-04-21");
-      assert.match(String(init.body.get("prompt")),/supplied geometry anchor/i);
+      const prompt=String(init.body.get("prompt"));
       const references=init.body.getAll("image[]");
       assert.equal(references.length,1);
-      assert.deepEqual(
-        new Uint8Array(await references[0].arrayBuffer()),
-        geometryBytes,
-        "surface pass did not receive the generated geometry anchor",
-      );
+      const isOfficial=prompt.includes("official_id_photo");
+      assert.match(prompt,isOfficial?/preserve .*identity/i:/supplied geometry anchor/i);
+      assert.deepEqual(new Uint8Array(await references[0].arrayBuffer()),
+        isOfficial?rootBytes:geometryBytes,
+        isOfficial?"official photo lost its canonical face":"surface pass lost its geometry anchor");
       return jsonResponse({
         created:Date.parse("2026-08-30T18:37:30Z")/1000,
-        data:[{b64_json:Buffer.from(rootBytes).toString("base64")}],
-      },200,{"x-request-id":"openai_h_root_001"});
+        data:[{b64_json:Buffer.from(isOfficial?photoBytes:rootBytes).toString("base64")}],
+      },200,{"x-request-id":isOfficial?"openai_h_photo_001":"openai_h_root_001"});
     }
     throw new Error(`unexpected OpenAI fixture URL ${url}`);
   };
   return {calls,fetchImpl};
 }
 
-function createBflFixtureFetch({ expectedReferenceBase64 }) {
-  const calls = [];
-  const providerBytes = encoder.encode("one-birth-derived-official-photo-provider-bytes");
-  const fetchImpl = async (url, init = {}) => {
-    calls.push({ url, init });
-    if (init.method === "POST") {
-      const body = JSON.parse(init.body);
-      assert.equal(body.input_image, expectedReferenceBase64);
-      assert.equal(body.input_image_2, undefined);
-      assert.match(body.prompt, /preserve .*identity/i);
-      return jsonResponse({
-        id: "bfl_h_reference_task",
-        polling_url: "https://api.bfl.ai/v1/get_result?id=bfl_h_reference_task",
-      });
-    }
-    if (url.startsWith("https://api.bfl.ai/")) {
-      return jsonResponse({
-        status: "Ready",
-        result: { sample: "https://delivery.eu.bfl.ai/h-reference.png" },
-      });
-    }
-    if (url === "https://delivery.eu.bfl.ai/h-reference.png") {
-      return binaryResponse(providerBytes);
-    }
-    throw new Error(`unexpected BFL fixture URL ${url}`);
-  };
-  return { calls, providerBytes, fetchImpl };
-}
 
 function worldEnvironment(databasePath, presentationPort) {
   return {
@@ -363,6 +321,7 @@ test("one birth recovers through one canonical root and one public identity/phot
     const openai=createOpenAiFixtureFetch({
       geometryBytes:geometryProviderBytes,
       rootBytes:rootProviderBytes,
+      photoBytes:encoder.encode("one-birth-derived-official-photo-provider-bytes"),
     });
     const rootProvider=selectImageIntegration(ASSET_DEPLOYMENT.integrations[rootJob.providerProfile],{
       environment:{OPENAI_API_KEY:"one-birth-openai-key"},
@@ -457,7 +416,7 @@ test("one birth recovers through one canonical root and one public identity/phot
     const providerProfile = selectImageProviderProfile(ASSET_DEPLOYMENT, {
       requiresReferenceObjects: true,
     });
-    assert.equal(providerProfile, "bfl-flux-2-pro-v1");
+    assert.equal(providerProfile, "openai-gpt-image-2-medium-v1");
     const demandService = createPresentationAssetDemandService({ infra: presentationInfra });
     const demand = await demandService.reconcile({
       scope: { entityKind: "thread", entityRef: THREAD_ID },
@@ -469,19 +428,16 @@ test("one birth recovers through one canonical root and one public identity/phot
     const [photoJob] = demand.reconciliation.jobs;
     assert.deepEqual(photoJob.referenceObjectRefs, [rootObjectRef]);
 
-    const bfl = createBflFixtureFetch({
-      expectedReferenceBase64: Buffer.from(rootStored.bytes).toString("base64"),
-    });
-    const photoProvider = selectImageIntegration(ASSET_DEPLOYMENT.integrations[providerProfile], {
-      environment: { BFL_API_KEY: "one-birth-bfl-key" },
-      fetchImpl: bfl.fetchImpl,
+    const photoProvider=selectImageIntegration(ASSET_DEPLOYMENT.integrations[providerProfile],{
+      environment:{OPENAI_API_KEY:"one-birth-openai-key"},
+      fetchImpl:openai.fetchImpl,
     });
     const photoRuntime = createAssetGenerationRuntime({
       infra: presentationInfra,
       provider: photoProvider,
     });
     const generatedPhoto = await photoRuntime.execute(photoJob);
-    assert.equal(bfl.calls.filter((call) => call.init.method === "POST").length, 1);
+    assert.equal(openai.calls.length,3,"birth and official ID should use three OpenAI image calls");
 
     const publisher = createThreadPresentationAssetPublisher({
       infra: presentationInfra,
@@ -568,11 +524,8 @@ test("one birth recovers through one canonical root and one public identity/phot
       1,
     );
     assert.equal(openai.calls.length, 2, "recovery must not repeat either canonical identity generation stage");
-    assert.equal(
-      bfl.calls.filter((call) => call.init.method === "POST").length,
-      1,
-      "replay must not create a second official-photo provider operation",
-    );
+    assert.equal(openai.calls.length,3,
+      "replay must not regenerate the canonical face or official ID photo");
     assert.equal(world.civilRegistryStore.getCivilRegistrationByThreadId(THREAD_ID).fibreIdentityNumber, fin);
     assert.equal(world.embodimentStore.listCurrent(THREAD_ID).length, 1);
     assert.equal(world.embodimentStore.listCurrent(THREAD_ID)[0].asset.referenceObjectRef, rootObjectRef);
