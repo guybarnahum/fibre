@@ -107,9 +107,9 @@ export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind=
       throw new TypeError("World place geography must match its named city and country");
     }
     coordinates(geography.lat,geography.long);
-    timeZone(geography.timeZone);
+    if(geography.timeZone!==null&&geography.timeZone!==undefined)timeZone(geography.timeZone);
   }
-  const knownGeo=geography??(prior?.lat===null?null:{
+  const knownGeo=geography??(prior===null||prior.lat===null?null:{
     locality:prior.locality,country:prior.country,countryCode:prior.countryCode,
     lat:prior.lat,long:prior.long,timeZone:prior.timeZone,
     evidenceRef:prior.evidenceRef,
