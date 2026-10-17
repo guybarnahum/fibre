@@ -260,11 +260,15 @@ export function createWranglerAppDeploymentClient({
       });
     },
     async checkRevision({url,expectedSha}){
-      const response=await fetchImpl(url,{headers:{Accept:"application/json"}});
+      const response=await fetchImpl(url,{
+        headers:{Accept:"application/json","Cache-Control":"no-cache"},
+        cache:"no-store",
+      });
       if(!response.ok)throw new Error("App revision probe HTTP "+response.status);
       const payload=await response.json();
       if(payload?.deploymentGitSha!==expectedSha){
-        throw new Error("App revision not ready: expected "+expectedSha);
+        throw new Error("App revision not ready: received "
+          +String(payload?.deploymentGitSha)+"; expected "+expectedSha);
       }
       return payload;
     },
@@ -288,6 +292,34 @@ export function createWranglerAppDeploymentClient({
       }
       return result;
     },
+  });
+}
+
+// A deployed Worker may be visible through its Status service binding later
+// than Wrangler's successful upload. Poll the exact revision, never redeploy.
+export async function acceptCloudflareAppRevision({
+  client,appId,url,expectedSha,attempts=13,
+  wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),
+}={}){
+  if(typeof client?.checkRevision!=="function"){
+    throw new TypeError("Cloudflare app deployment requires revision acceptance");
+  }
+  let lastError;
+  for(let attempt=0;attempt<attempts;attempt++){
+    try{
+      return await client.checkRevision({url,expectedSha});
+    }catch(error){
+      lastError=error;
+      if(attempt===attempts-1)break;
+      const pause=Math.min(15_000,1_500*2**attempt);
+      if(attempt===0||attempt>=4){
+        console.log(`APP REVISION PENDING ${appId} (${error.message}); next check in ${pause/1000}s`);
+      }
+      await wait(pause);
+    }
+  }
+  throw new Error(`${appId} revision was not accepted: ${lastError?.message}`,{
+    cause:lastError,
   });
 }
 
@@ -339,28 +371,16 @@ export async function deployCloudflareApps({
     deployments.push(Object.freeze({ appId, workerName: resolved.name, domain: route?.pattern ?? null }));
   }
   if(!dryRun){
-    if(typeof client.checkRevision!=="function"){
-      throw new TypeError("Cloudflare app deployment requires revision acceptance");
-    }
     const statusDomain=cloudflareAppDomain("status.insidefibre.com",env);
     for(const deployment of deployments){
       const url=deployment.appId==="status-page"
         ?`https://${statusDomain}/healthz`
         :`https://${statusDomain}/healthz?service=admin-dashboard`;
-      // Public status can inspect the Access-protected Admin Worker through
-      // its existing service binding. No app's normal request needs to probe.
-      let verified=false;
-      for(let attempt=0;attempt<10;attempt++){
-        try{
-          await client.checkRevision({url,expectedSha:source.gitSha});
-          verified=true;
-          break;
-        }catch(error){
-          if(attempt===9)throw error;
-          await new Promise(resolve=>setTimeout(resolve,1500));
-        }
-      }
-      if(!verified)throw new Error(deployment.appId+" revision was not accepted");
+      // Public status can inspect Access-protected Admin through its
+      // existing service binding. Only the deployer polls this route.
+      await acceptCloudflareAppRevision({
+        client,appId:deployment.appId,url,expectedSha:source.gitSha,
+      });
     }
   }
   const evidence = Object.freeze({
