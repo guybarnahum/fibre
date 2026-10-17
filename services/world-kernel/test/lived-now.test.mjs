@@ -169,6 +169,10 @@ test("World grounds known noncurrent places in a different city without pretendi
       assert.equal(second.status,"grounded","a later place failed to reuse grounded city");
       assert.equal(second.locality.evidenceRef,porto.evidenceRef,
         "later place invented independent geography");
+      assert.notEqual(first.place.placeRef,second.place.placeRef,
+        "shared locality collapsed two distinct physical places");
+      assert.equal(life.getPublicPlace(admitted[0]),null,
+        "grounding a private place fabricated a shared public venue");
       assert.equal(unknown.status,"unlocated","World fabricated unknown geographical evidence");
       assert.equal(life.getPrivatePlace(thread.threadId,admitted[2]),null,
         "unlocated place was incorrectly admitted as grounded");
