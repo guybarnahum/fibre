@@ -200,7 +200,8 @@ function knownPlaceRefsAt(livedNowStore, episodes, threadId, at) {
     .filter((episode) => Date.parse(episode.startAt) <= instant)
     .map(placeEpisodeRevisionRef);
   const shared = livedNowStore.ensureWorldPlaces(threadId).map((place) => place.ref);
-  return [...new Set([...situated, ...shared])];
+  const discovered=livedNowStore.listDiscoveredPlaces?.(threadId).map(place=>place.ref)??[];
+  return [...new Set([...situated,...shared,...discovered])];
 }
 
 // A Thread can discover real local destinations from its own situated city.
@@ -410,7 +411,7 @@ async function formPlan({
     })
     :[];
   const placeRefs=[...new Set([
-    ...ordinaryPlaceRefs,...guidePlaces.map(place=>place.ref),
+    ...ordinaryPlaceRefs,startingPlace,...guidePlaces.map(place=>place.ref),
   ])];
   if (placeRefs.length === 0) {
     throw new LivedNowCoverageError("Dormant catch-up has no grounded place available at the lived time");
