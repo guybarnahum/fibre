@@ -50,6 +50,25 @@ const CARE_AUTHORITY_RELATION_KINDS = new Set([
   "social_parent",
 ]);
 
+// Optimistic lower bound, not a route or transport-mode prediction.
+// Below 25 km, available evidence may be only a city centroid; avoid
+// pretending that two local venues have measurable separation.
+function minimumTravelMilliseconds(from,to){
+  if(!from||!to)return 0;
+  const radians=Math.PI/180;
+  const lat1=from.lat*radians,lat2=to.lat*radians;
+  const angle=2*Math.asin(Math.min(1,Math.sqrt(
+    Math.sin((lat2-lat1)/2)**2
+    +Math.cos(lat1)*Math.cos(lat2)*Math.sin((to.long-from.long)*radians/2)**2,
+  )));
+  const km=6371*angle;
+  if(km<25)return 0;
+  // Regional land travel or an optimistic flight including departure and
+  // arrival time. No assumptions about roads, stations, or actual routes.
+  const minutes=km<=150?km/120*60:40+km/900*60;
+  return Math.ceil(minutes*60_000);
+}
+
 function digest(record) {
   return `sha256:${sha256(canonicalJson(record))}`;
 }
@@ -391,6 +410,41 @@ export class LivedNowStore {
     }
   }
 
+  #travelPoint(threadId,placeRef){
+    const world=this.getWorldPlace(threadId,placeRef,{required:false});
+    if(Number.isFinite(world?.lat)&&Number.isFinite(world?.long)){
+      return {lat:world.lat,long:world.long};
+    }
+    const privatePlace=getWorldPrivatePlace(this.#database,threadId,placeRef);
+    if(Number.isFinite(privatePlace?.lat)&&Number.isFinite(privatePlace?.long)){
+      return {lat:privatePlace.lat,long:privatePlace.long};
+    }
+    if(privatePlace!==null){
+      const city=resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
+      if(city?.countryCode===privatePlace.countryCode)return city;
+    }
+    return null;
+  }
+
+  #requireFeasibleTravel(plan){
+    const points=new Map();
+    const point=ref=>{
+      if(!points.has(ref))points.set(ref,this.#travelPoint(plan.subjectThreadId,ref));
+      return points.get(ref);
+    };
+    for(let i=1;i<plan.stops.length;i++){
+      const from=plan.stops[i-1],to=plan.stops[i];
+      if(from.physicalPlaceRef===to.physicalPlaceRef)continue;
+      const minimum=minimumTravelMilliseconds(point(from.physicalPlaceRef),point(to.physicalPlaceRef));
+      const available=Date.parse(to.startAt)-Date.parse(from.endAt);
+      if(available<minimum){
+        throw new LivedNowConflictError(
+          "Flight Plan arrival is too soon for the geographical distance",
+        );
+      }
+    }
+  }
+
   recordPlan(candidate) {
     if (this.#readOnly) throw new LivedNowConflictError("read-only lived-now store cannot write");
     const record = normalizeLivedPlan(candidate);
@@ -409,6 +463,7 @@ export class LivedNowStore {
 
         const placeRefs = physicalPlaceRefs(record);
         placeRefs.forEach((reference) => this.#requirePlace(record.subjectThreadId, reference));
+        this.#requireFeasibleTravel(record);
         const resolved = this.#resolveLivedReferences(
           record.subjectThreadId,
           record.sourceReferences,
