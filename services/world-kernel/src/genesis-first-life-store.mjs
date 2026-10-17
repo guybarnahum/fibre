@@ -147,7 +147,7 @@ export function openGenesisFirstLifeStore(storage){
           insert.run(threadId,at);
         }
         return {enqueued:threadIds.length};
-      })();
+      });
     },
     close(){database.close();},
   });
