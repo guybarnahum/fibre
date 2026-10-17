@@ -387,9 +387,13 @@ test("a Genesis learning place keeps its own identity and inherits only an attes
   const threadId="thr_chen",seed="eb39aeda7e03";
   const transit={
     episodeId:"plce_transit",revision:1,threadId,
-    provenance:"genesis_created",place:{
-      placeId:`place_modern_${seed}_transit`,
-    },
+    episodeKind:"formative_presence",provenance:"genesis_created",
+    place:{placeId:`place_modern_${seed}_transit`,
+      displayName:"Local transit",locality:null,countryCode:null,
+      region:null,precision:"unspecified"},
+    startAt:"2026-01-01T10:00:00.000Z",endAt:null,
+    sourceReferences:["evt_origin"],visibility:"private",
+    recordedAt:"2026-10-17T03:38:00.000Z",
   };
   const attestation=[{
     placeEpisode:transit,privatePlace:{
