@@ -80,7 +80,7 @@
         "abrehot-library": {
           "name": "Abrehot Library",
           "lastRecommendedAt": "2026-10-16",
-          "address": "Abrehot Library, Arat Kilo, Addis Ababa, Ethiopia",
+          "address": "Abrehot Library, 4 Kilo, Addis Ababa, Ethiopia",
           "description": "A public library for reading, research and study; a place to spend time among books and other visitors without presuming interaction.",
           "activities": [
             "Reading",
@@ -88,8 +88,8 @@
             "Research"
           ],
           "source": {
-            "directory": "Addis Ababa Mayor’s Office",
-            "url": "https://addismayor.gov.et/cityprojects/public-library-project"
+            "directory": "Abrehot Library",
+            "url": "https://abrehot.org.et/"
           },
           "worldPlaceRef": null
         },
