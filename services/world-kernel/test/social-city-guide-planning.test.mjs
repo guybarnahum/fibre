@@ -124,7 +124,7 @@ test("one ordinary planning mind can consider a guide, prefer remembered life, o
     "a guide listing manufactured a social companion");
   await assert.rejects(
     ()=>plan({rememberedMeaning:null,interested:true,instantTravel:true}),
-    /public venue travel requires an elapsed transit interval/u,
+    /personal Flight Plan place change requires transit time/u,
     "a public venue became instantaneous travel",
   );
 });
