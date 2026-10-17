@@ -279,3 +279,25 @@ test("app deployment rejects stale revisions after a bounded wait",async()=>{
   assert.deepEqual(pauses,[1500,3000],
     "revision acceptance waited after the final failed check");
 });
+
+test("targeted Admin deploy diagnoses an obsolete Status revision proxy without retrying",async()=>{
+  let checks=0;
+  const client=createWranglerAppDeploymentClient({
+    fetchImpl:async()=>{checks++;return Response.json({
+      ok:true,service:"status-page",deploymentGitSha:"old-status-source",
+    });},
+  });
+  const pauses=[];
+  await assert.rejects(
+    ()=>acceptCloudflareAppRevision({
+      client,appId:"admin-dashboard",
+      url:"https://status.staging.insidefibre.com/healthz?service=admin-dashboard",
+      expectedSha:"a".repeat(40),
+      wait:async ms=>pauses.push(ms),log:()=>{},
+    }),
+    /Deploy status-page before a targeted admin-dashboard deploy/,
+  );
+  assert.equal(checks,1,
+    "missing Status proxy caused costly, unproductive revision polling");
+  assert.deepEqual(pauses,[]);
+});
