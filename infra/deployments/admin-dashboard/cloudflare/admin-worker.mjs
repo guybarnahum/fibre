@@ -49,7 +49,7 @@ const THREAD_JOURNAL_ROUTE = /^\/api\/threads\/([^/]+)\/journal$/u;
 const THREAD_MEETING_ROUTE = /^\/api\/threads\/([^/]+)\/meet-threads$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
 const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
-const THREAD_FID_PHOTO_CORRECTION_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/photo-corrections\/([^/]+)(\/preview|\/approve)?$/u;
+const THREAD_FID_PHOTO_CORRECTION_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/photo-corrections\/([^/]+)(\/preview|\/canonical|\/approve)?$/u;
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
@@ -328,11 +328,11 @@ export async function proxyFidPhotoCorrection(request,env,threadId,correctionId,
   const upstream=await serviceBinding(env,"FIBRE_IDENTITY_AUTHORITY").fetch(new Request(
     `https://fibre-identity-authority.internal${path}`,{
       method:request.method,
-      headers:{Accept:action==="/preview"?"image/png":"application/json",
+      headers:{Accept:(action==="/preview"||action==="/canonical")?"image/png":"application/json",
         "x-fibre-private-token":privateToken(env)},
     },
   ));
-  if(action==="/preview" && upstream.ok){
+  if((action==="/preview"||action==="/canonical") && upstream.ok){
     return new Response(await upstream.arrayBuffer(),{
       status:upstream.status,
       headers:{"Content-Type":"image/png","Cache-Control":"no-store"},
