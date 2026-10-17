@@ -31,19 +31,7 @@ Thread Presentation fixture
 
 Start the local Cloudflare stack first; see `infra/deployments/asset-generator/cloudflare/README.md` and `infra/deployments/thread-presentation/cloudflare/README.md`. The stack listens on `http://127.0.0.1:8788` by default.
 
-Force the configured secondary image provider without waiting for a primary failure:
-
-```bash
-npm run test:asset-live:cloudflare -- --provider-mode secondary
-```
-
-To exercise the BFL → OpenAI route specifically, make BFL the fixture's explicit primary and force its configured secondary:
-
-```bash
-npm run test:asset-live:cloudflare -- \
-  --primary-profile bfl-flux-2-pro-v1 \
-  --provider-mode secondary
-```
+The active Fibre deployment uses OpenAI GPT Image 2 for both reference-free generation and reference-conditioned edits. No secondary image provider is configured, so the smoke runs against the sole OpenAI profile without provider-mode overrides.
 
 The smoke watches the published Thread snapshot for the requested media to become ready. It intentionally does not depend on presentation stream replay; provider failover acceptance should prove the user-visible media consequence, not an incidental observer endpoint.
 
