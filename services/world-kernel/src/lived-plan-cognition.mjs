@@ -328,7 +328,8 @@ async function resolveNewPlaces({
       let result=store.resolvePlace({threadId,...place});
       // Geography enriches a known entity; it never determines whether a
       // Thread is permitted to know it. Provider failures do not block life.
-      if(result.status==="unlocated"&&typeof resolveDestinationGeography==="function"){
+      if((result.status==="unlocated"||result.place.timeZone===null)
+        &&typeof resolveDestinationGeography==="function"){
         try{
           const geography=await resolveDestinationGeography({
             city:place.city,country:place.country,
