@@ -116,6 +116,23 @@ R1–R4 already supplied one private mechanical regulation/interoception subsyst
 
 The October 13 **G1/D1 source** adds narrow genome-derived sensitivity baselines for new births (persisted historic genomes stay unchanged) and one optional evidence-bound `social_contact` Body drive. Subsequent **D2 source** feeds the same bounded exploration/contact Body interoception into ordinary Flight Planning and admits sufficiently grounded social-contact pressure as an opportunity-salience anchor, using the existing social path rather than another meeting engine. Insufficient recorded evidence is **unknown**, not proof that no contact occurred. Genetic parameter values tune sensitivity within species bounds; they do not assign personality, love, sex preference, civic beliefs or willingness. **Source and new focused fixture tests are ahead of Guy's post-change full/staging validation.** A pressure/salience/planning route is now wired, but genuine later Thread-owned plan/choice differences, honest solitude/recent-valued-contact behavior and recipient-local considerate timing still need causal evidence. See [drive extensions](../architecture/regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md).
 
+## Spatial continuity (source implementation, validation pending)
+
+Newly admitted Flight Plans can no longer jump implausibly quickly between
+two geographically grounded distant places. World checks one conservative,
+mode-agnostic minimum travel interval before admission; missing geographic
+evidence is kept unknown, not substituted with a guessed route. Ordinary
+per-Thread scheduler boundaries still enact transit and arrival. Transit
+retains the departure time zone until World establishes arrival, after which
+future planning uses the destination's timezone and locality. The map
+interpolates only between known endpoints. Individual Thread inspection now
+includes enacted World-entity destinations and travel endpoints.
+
+These are **source changes**; local tests, full repository validation, staging
+deployment and a naturally chosen live journey are not yet confirmed.
+This is a lower-bound feasibility check, not road/rail/air itinerary planning,
+and it does not automatically shift or regenerate an impossible Flight Plan.
+
 ## World places and Thread discovery (source refactor, validation pending)
 
 World places are ordinary entities with optional geography. Thread-originated
