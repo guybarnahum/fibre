@@ -156,6 +156,11 @@ export async function deployCloudflareService({
   const deployConfigPath = resolve(root, ".fibre", "cloudflare", env, "service-deploy", `${serviceId}.jsonc`);
   await mkdir(dirname(deployConfigPath), { recursive:true });
   const deployConfig = structuredClone(prepared.config);
+  // GeoNames is a public application username, deployed only for World
+  // discovery; other services need no new environment configuration.
+  if(serviceId==="world-kernel"&&process.env.GEONAMES_USERNAME?.trim()){
+    deployConfig.vars.GEONAMES_USERNAME=process.env.GEONAMES_USERNAME.trim();
+  }
   relocateWranglerMain(deployConfig, {
     repoRoot:root,
     sourceConfigPath:current.sourceConfigPath,
