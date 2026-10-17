@@ -452,8 +452,11 @@ export function observatoryCurrentPlace(livedNow){
       place.ref===situation.location.placeRef
       &&place.authority==="world-public-place-v1")??null
     :null;
-  return publicVenue?.displayName
-    ?publicVenue.displayName+" · "+city:city;
+  if(publicVenue?.displayName)return publicVenue.displayName+" · "+city;
+  const enacted=threadSituationPlace(situation,livedNow);
+  const setting=enacted?.kind==="place"
+    &&enacted.name!==enacted.placeRef?enacted.name:null;
+  return setting&&setting!==city?setting+" · "+city:city;
 }
 
 function identitySection(identity, threadId, livedNow=null) {
