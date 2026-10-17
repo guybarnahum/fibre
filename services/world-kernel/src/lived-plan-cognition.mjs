@@ -66,8 +66,8 @@ For each stop, state wakefulness separately from the natural-language activity: 
 When interoception is supplied, it is bounded subsemantic organismic state grounded in recent lived evidence. Interpret what it means for this Thread alongside developed self/history and current commitments. Exploration pressure is not a command or proof of boredom. Social-contact pressure is not a diagnosis of loneliness or a demand to seek company. Interpret both through this person's life; meaningful contact, novelty, learning, play, solitude, staying put, or changing places may all be legitimate responses. Never invent a person, a shared venue, a meeting, or consent to satisfy a drive.
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Public City Guide suggestions, when offered, are editorial *possibilities* in the Thread's grounded locality. A listing does not mean anyone is there or has invited the Thread, and makes no promise of satisfaction. This Thread may consider one, rely on familiar remembered places, or ignore the guide. Never treat a listing as a visit or a promise of contact.
-Use only offered physical-place refs. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
-When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place. A journey to or from an independently admitted public venue needs real elapsed transit time between stops, not an immediate jump or a claim that travel already occurred.
+Use offered physical-place refs for familiar or verified destinations. You may also initiate a genuinely new city destination using physicalPlaceRef formatted exactly as new-locality:Country/City (for example new-locality:Portugal/Porto). World, not you, resolves its geography and issues a physical place ref. This requests city-level arrival only; do not claim a specific address, venue, or anyone present there. An ungrounded request may not be admitted as a journey. Make at most two new locality requests in the plan. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
+When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place. Any move to a new locality and any journey to or from an independently admitted public venue needs real elapsed transit time between stops, not an immediate jump or a claim that travel already occurred.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
 requiredWorkCommitments, when present, are commitments this Thread already voluntarily accepted. Each must appear as one mediated stop with exactly the committed start/end and mediatedContext. Do not revisit whether the Thread should honor an accepted commitment; arrange the rest of the life around it naturally.
@@ -280,6 +280,69 @@ function normalizeCognitiveStop(output, index, places, horizonStart, horizonEnd)
   };
 }
 
+// A proposal is private intention, never itself an authoritative physical
+// reference. Resolve only selected destinations through World after cognition.
+const DESTINATION_PROPOSAL=/^new-locality:([^/]+)\/([^/]+)$/u;
+function proposedDestination(ref){
+  if(typeof ref!=="string"||!ref.startsWith("new-locality:"))return null;
+  const match=DESTINATION_PROPOSAL.exec(ref);
+  if(!match||!match[1].trim()||!match[2].trim()){
+    throw new TypeError("Thread destination needs new-locality:Country/City");
+  }
+  return {country:match[1].trim(),city:match[2].trim()};
+}
+
+async function groundSelectedDestinations({
+  threadId,stops,startingPlaceRef,materializedAt,sourceStores,
+  resolveDestinationGeography,
+}){
+  const requests=[...new Set(stops.map(stop=>stop.physicalPlaceRef)
+    .filter(ref=>typeof ref==="string"&&ref.startsWith("new-locality:")))];
+  if(requests.length===0)return {stops,places:[]};
+  if(materializedAt!==null)throw new TypeError("retrospective life cannot discover present-day destinations");
+  if(startingPlaceRef===null||stops[0].physicalPlaceRef!==startingPlaceRef){
+    throw new TypeError("new destination cannot replace the Thread's starting place");
+  }
+  if(requests.length>2)throw new TypeError("Flight Plan may discover at most two localities");
+  const known=new Map();
+  for(let i=1;i<stops.length;i++){
+    const prev=stops[i-1],next=stops[i];
+    if(!proposedDestination(next.physicalPlaceRef))continue;
+    if(next.physicalPlaceRef!==prev.physicalPlaceRef
+      &&(Date.parse(next.startAt)<=Date.parse(prev.endAt)
+        ||typeof next.travelFromPrevious!=="string"
+        ||!next.travelFromPrevious.trim())){
+      throw new TypeError("new locality journey needs positive elapsed travel time");
+    }
+  }
+  const store=sourceStores?.livedNowStore;
+  if(typeof store?.discoverDestination!=="function"){
+    throw new TypeError("World destination admission is required for new localities");
+  }
+  const choices=[];
+  for(const request of requests){
+    const destination=proposedDestination(request);
+    let admission=store.discoverDestination({threadId,...destination});
+    if(admission.status==="unlocated"&&typeof resolveDestinationGeography==="function"){
+      const localityEvidence=await resolveDestinationGeography(destination);
+      if(localityEvidence!==null){
+        admission=store.discoverDestination({threadId,...destination,localityEvidence});
+      }
+    }
+    if(admission.status!=="grounded"){
+      throw new TypeError(`World cannot ground the Thread's chosen locality: ${destination.city}, ${destination.country}`);
+    }
+    known.set(request,admission.place.ref);
+    choices.push({
+      ref:admission.place.ref,placeKind:admission.place.placeKind,
+      displayName:admission.place.displayName,
+    });
+  }
+  return {stops:stops.map(stop=>({
+    ...stop,physicalPlaceRef:known.get(stop.physicalPlaceRef)??stop.physicalPlaceRef,
+  })),places:choices};
+}
+
 export async function formPersonalLivedPlan({
   threadId,
   authoredAt,
@@ -294,6 +357,7 @@ export async function formPersonalLivedPlan({
   requiredWorkCommitments = [],
   interoception = null,
   cityGuidePlaces = [],
+  resolveDestinationGeography = null,
 }) {
   assertId("personal plan threadId", threadId);
   assertIsoTimestamp("personal plan authoredAt", authoredAt);
@@ -382,11 +446,16 @@ export async function formPersonalLivedPlan({
   assertNonEmpty("personal plan cognition provenance.provider", cognition.provenance.provider);
   assertNonEmpty("personal plan cognition provenance.modelId", cognition.provenance.modelId);
 
-  const stops = cognition.result.stops.map((stop, index) =>
-    normalizeCognitiveStop(stop, index, places, authoredAt, horizonEnd));
+  const discovery=await groundSelectedDestinations({
+    threadId,stops:cognition.result.stops,startingPlaceRef,materializedAt,
+    sourceStores,resolveDestinationGeography,
+  });
+  const available=[...places,...discovery.places];
+  const stops = discovery.stops.map((stop, index) =>
+    normalizeCognitiveStop(stop, index, available, authoredAt, horizonEnd));
   // A public place is a shared physical location, not another room in an
   // invented scene. Record an actual transit interval before changing place.
-  const publicRefs=new Set(places.filter(place=>place.placeKind==="public_venue")
+  const publicRefs=new Set(available.filter(place=>place.placeKind==="public_venue")
     .map(place=>place.ref));
   for(let i=1;i<stops.length;i++){
     const previous=stops[i-1],next=stops[i];
