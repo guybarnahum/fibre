@@ -216,6 +216,7 @@ export function planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,p
     ||typeof livedNowStore.listLocatedGenesisContexts!=="function")return null;
   const context=genesisContextLocations(
     [episode],livedNowStore.listLocatedGenesisContexts([threadId]),
+    {privatePerspective:true},
   ).find(item=>item.placeRef===placeRef)?.geography??null;
   return context===null?null
     :{locality:context.city,countryCode:context.countryCode};
