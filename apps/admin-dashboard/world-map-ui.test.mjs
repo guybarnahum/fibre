@@ -159,3 +159,29 @@ test("Pacific coast clock follows daylight saving without shifting Arizona", () 
   assert.equal(worldClockForLongitude(-112, summer, phoenixOffset, 33.5).time.toISOString().slice(11, 16),
     "21:54", "Arizona must not inherit Pacific daylight saving");
 });
+
+test("God-view maps a known current home without pretending the birthplace or another home is the same venue",()=>{
+  const threads=["thr_ioseb","thr_giorgi","thr_luka"].map((threadId,index)=>({
+    threadId,
+    identity:{lifecycleStatus:"frozen",birthLocation:{
+      city:"London",country:"United Kingdom",lat:51.5,long:-0.12,
+    }},
+    currentLocation:null,
+    operatorCurrentPlace:{
+      kind:"place",current:true,placeRef:"per:home_"+index+":1",
+      locality:"Tbilisi",country:"Georgia",countryCode:"GE",
+      lat:41.69143,long:44.83412,mapPrecision:"city",
+    },
+  }));
+  const grouped=groupThreadsByCurrentLocation(threads);
+  assert.equal(grouped.situated,3,
+    "God-view treated World-known home locations as absent");
+  assert.equal(grouped.awaitingLivedNow,0,
+    "World-known current homes were plotted as birth-place placeholders");
+  assert.equal(grouped.locations.length,1,
+    "city-level map projection must group residents without implying a shared home");
+  assert.equal(grouped.locations[0].place.city,"Tbilisi");
+  assert.equal(grouped.locations[0].count,3);
+  assert.equal(new Set(threads.map(t=>t.operatorCurrentPlace.placeRef)).size,3,
+    "a common city is not proof of physical co-presence");
+});
