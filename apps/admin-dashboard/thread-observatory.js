@@ -6,6 +6,7 @@ import { createFibreFinCard } from "./fibre-fin-card.js";
 import { packJournalPages, threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
 import { buildEncounterEpisodes, buildSocialAnalytics, buildThreadWorldEvents } from "./thread-encounter-model.mjs";
 import { openThreadActionDialog } from "./thread-action-dialog.js";
+import { currentThreadPlace, threadLocationText } from "./thread-person-ui.js";
 
 function el(tag, className = null, text = null) {
   const node = document.createElement(tag);
@@ -420,6 +421,23 @@ function hero(identity, threadId) {
   copy.append(states); wrap.append(portrait, copy); return wrap;
 }
 
+export function observatoryCurrentPlace(livedNow){
+  const privatePlace=livedNow?.privatelyKnownCurrentPlace;
+  const located=currentThreadPlace(livedNow?.currentLocation)
+    ??currentThreadPlace(privatePlace===null||privatePlace===undefined
+      ?null:{...privatePlace,kind:"place"});
+  if(located===null)return "Not established";
+  const city=threadLocationText(located);
+  const situation=livedNow?.currentSituation;
+  const publicVenue=situation?.location?.kind==="place"
+    ?(livedNow?.worldPlaces??[]).find(place=>
+      place.ref===situation.location.placeRef
+      &&place.authority==="world-public-place-v1")??null
+    :null;
+  return publicVenue?.displayName
+    ?publicVenue.displayName+" · "+city:city;
+}
+
 function identitySection(identity, threadId, livedNow=null) {
   const raised = identity.raisedAs ?? {};
   const wrap = section("Identity", "Authoritative World identity");
@@ -430,7 +448,7 @@ function identitySection(identity, threadId, livedNow=null) {
     fact("Sex", threadSex(identity) ? human(threadSex(identity)) : null),
     fact("Birth date", identity.birthDate),
     fact("Birth place", identity.birthPlace),
-    fact("Current place",threadSituationPlace(livedNow?.currentSituation,livedNow)?.name??"Not established"),
+    fact("Current place",observatoryCurrentPlace(livedNow)),
     fact("Lifecycle", identity.lifecycleStatus ? human(identity.lifecycleStatus) : null),
     fact("Genesis origin", identity.originOrientation ? human(identity.originOrientation) : null),
     fact("Thread ID", threadId, { mono:true }),
