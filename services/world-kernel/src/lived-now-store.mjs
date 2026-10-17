@@ -542,7 +542,7 @@ export class LivedNowStore {
     const locality=localityEvidence??known??(catalog?.countryCode===place.countryCode?{
       locality:catalog.city,country:catalog.country,countryCode:catalog.countryCode,
       lat:catalog.lat,long:catalog.long,timeZone:place.timeZone,
-      evidenceRef:place.evidenceRef,
+      evidenceRef:`fibre:locality-catalog:${catalog.countryCode}/${catalog.city}`,
     }:null);
     if(locality===null)return Object.freeze({
       status:"unlocated",placeRef:place.placeRef,reason:"locality_evidence_missing",
