@@ -449,7 +449,9 @@ export class FibreWorldDurableObject extends DurableObject {
         const current = byThread.get(entry.threadId) ?? null;
         return Object.freeze({
           ...entry,
-          operatorCurrentPlace:projectOperatorCurrentPlace(current),
+          operatorCurrentPlace:projectOperatorCurrentPlace({
+            ...current,privateContextLocations:current?.privateContextLocations??[],
+          }),
           currentLocation:projectCurrentThreadLocation({
             entry,
             currentSituation:current?.currentSituation ?? null,
@@ -474,12 +476,22 @@ export class FibreWorldDurableObject extends DurableObject {
       const worldPlaces=optionalLivedRead(()=>livedNow.listWorldPlaces(threadId),[]);
       const privatePlace=currentSituation?.location?.kind==="place"
         ?optionalLivedRead(()=>livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef),null):null;
+      const currentLocation=projectedCurrentLocation(livedNow,threadId,{
+        currentSituation,worldPlaces,placeEpisodes,privatePlace,
+      });
+      const direct=projectOperatorCurrentPlace({currentSituation,privatePlace});
+      const privateContextLocations=direct===null&&currentLocation===null
+        &&placeEpisodes.some(isModernGenesisPlace)
+        ?genesisContextLocations(
+          placeEpisodes,livedNow.listLocatedGenesisContexts([threadId]),
+          {privatePerspective:true},
+        ): [];
       return Object.freeze({
         ...entry,
-        operatorCurrentPlace:projectOperatorCurrentPlace({currentSituation,privatePlace}),
-        currentLocation:projectedCurrentLocation(livedNow,threadId,{
-          currentSituation,worldPlaces,placeEpisodes,privatePlace,
+        operatorCurrentPlace:direct??projectOperatorCurrentPlace({
+          currentSituation,privatePlace,placeEpisodes,privateContextLocations,
         }),
+        currentLocation,
       });
     } finally {
       situatedLife.close();
