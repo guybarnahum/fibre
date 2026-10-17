@@ -6,7 +6,7 @@ import { createAppearanceCoverageService } from "#services/world-kernel/src/appe
 import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { openContactInspectionStore } from "#services/world-kernel/src/contact-store.mjs";
-import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
+import { projectCurrentThreadLocation,genesisContextLocations } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
@@ -176,6 +176,23 @@ function reconciliationOutcome(result) {
   }));
 }
 
+function projectedCurrentLocation(livedNow,threadId,{
+  currentSituation,privatePlace=null,worldPlaces=[],placeEpisodes=[],
+}){
+  const direct=projectCurrentThreadLocation({
+    currentSituation,privatePlace,worldPlaces,placeEpisodes,
+  });
+  if(direct!==null||placeEpisodes.length===0)return direct;
+  // A personal place may be a sibling of a previously located modern
+  // Genesis context. Resolve only that shared, attested context, not birth.
+  return projectCurrentThreadLocation({
+    currentSituation,privatePlace,worldPlaces,placeEpisodes,
+    contextLocations:genesisContextLocations(
+      placeEpisodes,livedNow.listLocatedGenesisContexts([threadId]),
+    ),
+  });
+}
+
 // The default operator view needs present life, not a lifetime dossier.
 // Detailed memories, genomes, and social evidence are requested separately.
 function currentThreadObservatory(runtime,threadId){
@@ -200,7 +217,7 @@ function currentThreadObservatory(runtime,threadId){
       try{placeEpisodes=situatedLife.listCurrentPlaceEpisodes(threadId);}
       finally{situatedLife.close();}
     }
-    const currentLocation=projectCurrentThreadLocation({
+    const currentLocation=projectedCurrentLocation(livedNow,threadId,{
       currentSituation,privatePlace,worldPlaces,placeEpisodes,
     });
     const recentSituations=livedNow.listRecentSituations(threadId,{limit:8});
@@ -296,7 +313,7 @@ function threadObservatory(runtime, threadId) {
       lifeRelations:structuredClone(situatedLife.listCurrentLifeRelations(threadId)),
       livedNow:Object.freeze({
         currentSituation:structuredClone(currentSituation),
-        currentLocation:projectCurrentThreadLocation({
+        currentLocation:projectedCurrentLocation(livedNow,threadId,{
           currentSituation,privatePlace,worldPlaces,placeEpisodes,
         }),
         // Internal operator evidence only. Never added to public directory.
@@ -436,6 +453,7 @@ export class FibreWorldDurableObject extends DurableObject {
             worldPlaces:current?.worldPlaces ?? [],
             placeEpisodes:current?.placeEpisodes ?? [],
             privatePlace:current?.privatePlace ?? null,
+            contextLocations:current?.contextLocations ?? [],
           }),
         });
       })),
@@ -449,15 +467,14 @@ export class FibreWorldDurableObject extends DurableObject {
     const situatedLife = openSituatedLifeInspectionStore(this.worldStorage);
     try {
       const currentSituation=optionalLivedRead(() => livedNow.getCurrentSituation(threadId), null);
+      const placeEpisodes=optionalLivedRead(()=>situatedLife.listCurrentPlaceEpisodes(threadId),[]);
+      const worldPlaces=optionalLivedRead(()=>livedNow.listWorldPlaces(threadId),[]);
+      const privatePlace=currentSituation?.location?.kind==="place"
+        ?optionalLivedRead(()=>livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef),null):null;
       return Object.freeze({
         ...entry,
-        currentLocation:projectCurrentThreadLocation({
-          currentSituation,
-          worldPlaces:optionalLivedRead(() => livedNow.listWorldPlaces(threadId), []),
-          placeEpisodes:optionalLivedRead(() => situatedLife.listCurrentPlaceEpisodes(threadId), []),
-          privatePlace:currentSituation?.location?.kind==="place"
-            ?optionalLivedRead(() => livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef),null)
-            :null,
+        currentLocation:projectedCurrentLocation(livedNow,threadId,{
+          currentSituation,worldPlaces,placeEpisodes,privatePlace,
         }),
       });
     } finally {
