@@ -4,10 +4,10 @@ export function threadLifeStatus({
   currentAt=null,planHorizonEnd=null,nextAutonomousBoundary=null,
 }={},at=Date.now()){
   if(currentAt===null)return "unstarted";
-  const horizon=Date.parse(planHorizonEnd??"");
-  if(!Number.isFinite(horizon))return "unknown";
   const boundary=nextAutonomousBoundary;
   if(boundary?.blockedReason)return "blocked";
+  const horizon=Date.parse(planHorizonEnd??"");
+  if(!Number.isFinite(horizon))return "unknown";
   if(horizon<=at)return "dormant";
   if(!boundary?.dueAt)return "unarmed";
   const due=Date.parse(boundary.dueAt);
