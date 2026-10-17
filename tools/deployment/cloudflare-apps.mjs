@@ -266,9 +266,22 @@ export function createWranglerAppDeploymentClient({
       });
       if(!response.ok)throw new Error("App revision probe HTTP "+response.status);
       const payload=await response.json();
+      if(new URL(url).searchParams.get("service")==="admin-dashboard"
+        &&payload?.service==="status-page"){
+        const error=new Error(
+          "Status is serving its own health instead of the Admin revision. "
+          +"Deploy status-page before a targeted admin-dashboard deploy.",
+        );
+        error.code="APP_REVISION_PROXY_MISSING";
+        throw error;
+      }
       if(payload?.deploymentGitSha!==expectedSha){
+        const received=payload?.deploymentGitSha;
+        const available=payload&&typeof payload==="object"
+          ?Object.keys(payload).join(", "):typeof payload;
         throw new Error("App revision not ready: received "
-          +String(payload?.deploymentGitSha)+"; expected "+expectedSha);
+          +String(received)+"; expected "+expectedSha
+          +(received===undefined?" (response fields: "+available+")":""));
       }
       return payload;
     },
@@ -311,6 +324,7 @@ export async function acceptCloudflareAppRevision({
       return await client.checkRevision({url,expectedSha});
     }catch(error){
       lastError=error;
+      if(error?.code==="APP_REVISION_PROXY_MISSING")throw error;
       if(attempt===attempts-1)break;
       const pause=Math.min(15_000,1_500*2**attempt);
       if(attempt===0||attempt>=4){
