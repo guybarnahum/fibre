@@ -8,7 +8,7 @@ import { openWorldStore } from "../src/persistence.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
-import { createLivedNowService, LivedNowCoverageError } from "../src/lived-now-service.mjs";
+import { createLivedNowService, LivedNowCoverageError,planningLocalityForPlace } from "../src/lived-now-service.mjs";
 import { createLivedBoundaryProcess, nextLivedBoundary } from "../src/lived-now-boundary.mjs";
 import { livedPlanId, livedSituationId, plannedPositionAt } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
@@ -829,3 +829,50 @@ test("an admitted personal public-visit plan enacts transit, empty stay and retu
       assert.equal(lived.nextLivedBoundaryAt(),"2026-10-14T19:00:00.001Z");
     }finally{lived.close();}
   }));
+
+test("a Thread can consider local public places from a hidden but attested Genesis sibling",()=>{
+  const threadId="thr_local_choice";
+  const place=(kind)=>({
+    episodeId:"plce_"+kind,revision:1,threadId,
+    episodeKind:"formative_presence",provenance:"genesis_created",
+    place:{placeId:"place_modern_4572b13ec97a_"+kind,
+      displayName:"Personal "+kind+" place",countryCode:null,
+      region:null,locality:null,precision:"unspecified"},
+    startAt:"2026-01-01T10:00:00.000Z",endAt:null,
+    sourceReferences:["evt_birth"],visibility:"private",
+    recordedAt:"2026-10-17T03:38:00.000Z",
+  });
+  const home=place("home"),transit=place("transit");
+  const homeRef=placeEpisodeRevisionRef(home);
+  let anchorReads=0;
+  const livedNowStore={
+    getPrivatePlace:()=>null,
+    getPublicPlace:()=>null,
+    listLocatedGenesisContexts:(ids)=>{
+      anchorReads++;
+      assert.deepEqual(ids,[threadId]);
+      return [{placeEpisode:transit,privatePlace:{
+        threadId,placeRef:placeEpisodeRevisionRef(transit),
+        locality:"London",country:"United Kingdom",countryCode:"GB",
+        publicGranularity:"hidden",
+      }}];
+    },
+  };
+  const locality=planningLocalityForPlace({
+    livedNowStore,placeEpisodes:[home],threadId,placeRef:homeRef,
+  });
+  assert.deepEqual(locality,{locality:"London",countryCode:"GB"},
+    "the private mind could not discover its own locality from grounded World evidence");
+  assert.equal(anchorReads,1,
+    "local discovery repeatedly scanned historical places");
+  assert.deepEqual(planningLocalityForPlace({
+    livedNowStore,placeEpisodes:[place("school")],threadId,placeRef:homeRef,
+  }),null,"an ungrounded place was assigned another place's city");
+  assert.equal(anchorReads,1,"unrelated place triggered unnecessary locality lookup");
+  assert.equal(planningLocalityForPlace({
+    livedNowStore:{...livedNowStore,
+      getPrivatePlace:()=>({locality:"Tbilisi",countryCode:"GE"})},
+    placeEpisodes:[home],threadId,placeRef:homeRef,
+  }).locality,"Tbilisi","direct World evidence was ignored in favor of sibling inference");
+  assert.equal(anchorReads,1,"direct World locality incurred avoidable lookup");
+});
