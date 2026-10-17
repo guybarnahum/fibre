@@ -20,14 +20,23 @@ function ageInstruction(targetAgeYears) {
 }
 
 export function buildFidPhotoDerivationJob({
-  workflow: candidateWorkflow,
+  workflow: candidateWorkflow = null,
+  threadId = null,
+  correctionId = null,
   source,
   requestedAt,
   providerProfile,
   createGenerationJob,
 }) {
-  const workflow = normalizeFidIssuanceWorkflowRecord(candidateWorkflow);
-  if (source?.threadId !== workflow.threadId) {
+  const ownerId = candidateWorkflow === null ? threadId : normalizeFidIssuanceWorkflowRecord(candidateWorkflow).threadId;
+  if (typeof ownerId !== "string" || ownerId.trim() === "") {
+    throw new TypeError("FID photo derivation requires a Thread");
+  }
+  if (correctionId !== null && (typeof correctionId !== "string"
+    || !/^fid_photo_correction_[A-Za-z0-9._:-]+$/.test(correctionId))) {
+    throw new TypeError("FID photo correction ID is invalid");
+  }
+  if (source?.threadId !== ownerId) {
     throw new FidPhotoDerivationUnavailableError("FID photo derivation source belongs to a different Thread");
   }
   if (typeof source.canonicalVisualReferenceRef !== "string"
@@ -46,7 +55,8 @@ export function buildFidPhotoDerivationJob({
   const identityDigest = digest({
     kind: "fid_photo_derivation",
     policyVersion: FID_PHOTO_POLICY_VERSION,
-    threadId: workflow.threadId,
+    threadId: ownerId,
+    ...(correctionId === null ? {} : { correctionId }),
     canonicalVisualReferenceRef: source.canonicalVisualReferenceRef,
     canonicalVisualReferenceDigest: source.canonicalVisualReferenceDigest,
     targetAgeYears: source.targetAgeYears ?? null,
@@ -59,7 +69,9 @@ export function buildFidPhotoDerivationJob({
     variant: "fid-card",
     brief: {
       description: [
-        "Derived Fibre Identity Card photograph using the admitted canonical visual reference as the sole identity anchor.",
+        correctionId === null
+          ? "Derived Fibre Identity Card photograph using the admitted canonical visual reference as the sole identity anchor."
+          : "Correct a previously mismatched Fibre Identity Card photo. Retain the exact same person and recognizable facial features as the supplied canonical portrait; change only what is essential for ID-photo framing.",
         ageInstruction(source.targetAgeYears ?? null),
       ].join(" "),
       constraints: [
@@ -81,7 +93,8 @@ export function buildFidPhotoDerivationJob({
     providerProfile,
     context: {
       kind: "fid_photo_derivation",
-      threadId: workflow.threadId,
+      threadId: ownerId,
+      ...(correctionId === null ? {} : { correctionId }),
       policyVersion: FID_PHOTO_POLICY_VERSION,
       canonicalVisualReferenceDigest: source.canonicalVisualReferenceDigest,
       targetAgeYears: source.targetAgeYears ?? null,
