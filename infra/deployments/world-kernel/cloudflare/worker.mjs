@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
+import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
 import { createHumanAppearanceCalibrationRegistry } from "#services/population-lab/src/calibration-registry.mjs";
 import { createAppearanceCoverageService } from "#services/world-kernel/src/appearance-coverage-service.mjs";
 import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
@@ -437,15 +438,19 @@ export class FibreWorldDurableObject extends DurableObject {
     const place=evidence?.privatePlace;
     if(situation?.location?.kind!=="place"
       ||place?.placeRef!==situation.location.placeRef)return null;
+    const city=resolveLocalityGeography(`${place.country}/${place.locality}`);
+    const point=city?.countryCode===place.countryCode?city:null;
     return Object.freeze({
+      kind:"place",current:true,
+      establishedAt:situation.establishedAt,
       placeRef:place.placeRef,
       specificPlace:place.specificPlace,
       streetAddress:place.streetAddress,
-      locality:place.locality,
-      country:place.country,
+      locality:place.locality,country:place.country,
       countryCode:place.countryCode,
-      lat:place.lat,long:place.long,
-      publicGranularity:place.publicGranularity,
+      lat:place.lat??point?.lat??null,
+      long:place.long??point?.long??null,
+      mapPrecision:place.lat===null?"city":"address",
     });
   }
 
