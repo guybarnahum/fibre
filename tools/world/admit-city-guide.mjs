@@ -117,13 +117,13 @@ async function main(argv){
     mkdirSync(receiptDir,{recursive:true});
     writeFileSync(receiptFile,JSON.stringify({
       environment:env,venues:completed,
-    },null,2)+"\\n");
+    },null,2)+"\n");
     process.stdout.write(JSON.stringify({
       city:admission.locality,venue:admission.displayName,
       worldPlaceRef:place.ref,
-    })+"\\n");
+    })+"\n");
   }
-  process.stdout.write(`World admission receipt: .fibre/city-guide-${env}-admissions.json. Send it for the guide commit before deploying.\\n`);
+  process.stdout.write(`World admission receipt: .fibre/city-guide-${env}-admissions.json. Send it for the guide commit before deploying.\n`);
 }
 
 if(process.argv[1]===fileURLToPath(import.meta.url)){
