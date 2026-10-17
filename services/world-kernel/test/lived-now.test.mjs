@@ -151,10 +151,7 @@ test("Thread chooses a previously unknown place; World remembers it without inve
           situatedLifeStore,livedNowStore},
         modelAdapter:{...model.adapter,async invoke(request){
           const output=await model.adapter.invoke(request);
-          output.output.result.stops[1].physicalPlaceRef="";
-          output.output.result.stops[1].newPlace={
-            name:"Porto",kind:"city",city:"Porto",country:"Portugal",
-          };
+          output.output.result.stops[1].physicalPlaceRef="Porto, Portugal";
           output.output.result.stops[1].travelFromPrevious="Travel to Porto.";
           return output;
         }},
