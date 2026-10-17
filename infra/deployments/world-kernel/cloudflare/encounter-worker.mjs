@@ -21,6 +21,7 @@ import { createThreadJournalBook } from "#services/world-kernel/src/thread-journ
 import { createThreadJournalReadApi } from "#services/world-kernel/src/thread-journal-read-api.mjs";
 import { createLivedNowPublicationService } from "#services/world-kernel/src/lived-now-publication-service.mjs";
 import { createLivedNowService } from "#services/world-kernel/src/lived-now-service.mjs";
+import { resolveGeoNamesLocality } from "#integrations/geography/geonames.mjs";
 import {
   nextLivedBoundary,
   createLivedBoundaryProcess,
@@ -169,6 +170,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const semanticStateStore=openSemanticStateStore(runtime.worldStorage);
       const memoryStore=openAutobiographicalMemoryStore(runtime.worldStorage);
       const livedNow=createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
@@ -211,6 +213,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const semanticStateStore=openSemanticStateStore(runtime.worldStorage);
       const memoryStore=openAutobiographicalMemoryStore(runtime.worldStorage);
       const livedNow=createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
@@ -300,6 +303,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       // Quiet social opportunities need neither planning nor encounter inference.
       let livedNowModelAdapter=null;
       const livedNow=createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore,
         livedNowStore,worldStore:runtime.worldStore,
         identityStore,semanticStateStore,memoryStore,situatedLifeStore,
@@ -351,6 +355,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
@@ -396,6 +401,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
@@ -438,6 +444,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
@@ -516,6 +523,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         worldReader:runtime.worldStore,
       });
       const livedNow = createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
@@ -601,6 +609,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         },
       };
       const livedNow = createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
@@ -654,6 +663,15 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.threadJournalApi;
   }
 
+  // Geocoding is invoked only after the Thread selects a genuinely unknown
+  // locality; ordinary waking and planning never query an external provider.
+  destinationGeographyResolver(){
+    const username=this.env?.GEONAMES_USERNAME;
+    return typeof username==="string"&&username.trim()
+      ?(destination)=>resolveGeoNamesLocality({...destination,username})
+      :null;
+  }
+
   livedNowApiForRequest() {
     if (this.livedNowApi === null) {
       const runtime = this.runtimeForRequest();
@@ -661,6 +679,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNowStore = openLivedNowStore(runtime.worldStorage);
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const livedNow = createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
@@ -709,6 +728,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
       const livedNowStore=openLivedNowStore(runtime.worldStorage);
       const livedNow=createLivedNowService({
+        resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         livedNowStore,worldStore:runtime.worldStore,
         identityStore:openIdentityStore(runtime.worldStorage),
