@@ -23,7 +23,7 @@ import {
   situatedLifeRecordIsCurrent,
 } from "./situated-life-domain.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
-import {genesisContextLocations} from "./current-thread-location.mjs";
+import {genesisContextLocations,isModernGenesisPlace} from "./current-thread-location.mjs";
 import {
   bindLivePhysicalVenue,
   createLiveWorldPlaceTables,
@@ -947,7 +947,8 @@ export class LivedNowStore {
     ]));
 
     const needsContext=[...new Set(situations.filter(situation=>
-      observedPlaceRefs(situation).some(ref=>ref.startsWith("per:"))
+      observedPlaceRefs(situation).some(ref=>
+        isModernGenesisPlace(evidenceByRef.get(ref)?.placeEpisode))
       &&!privateByThread.has(situation.threadId)
     ).map(situation=>situation.threadId))];
     const anchorsByThread=new Map();
