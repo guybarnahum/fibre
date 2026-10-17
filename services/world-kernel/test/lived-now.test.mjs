@@ -128,7 +128,7 @@ function seedLife(databasePath) {
   };
 }
 
-test("World grounds future places in an unfamiliar city without pretending a visit",async()=>{
+test("World grounds known noncurrent places in a different city without pretending a new visit",async()=>{
   await withDatabase(async databasePath=>{
     const {thread,sourceEvent}=seedLife(databasePath);
     const situated=openSituatedLifeStore(localWorldStateStorage(databasePath));
@@ -137,7 +137,7 @@ test("World grounds future places in an unfamiliar city without pretending a vis
       const locality=name==="imaginary-hamlet"?"Imaginary Hamlet":"Porto";
       const episode=situated.recordPlaceEpisode({
         episodeId:placeEpisodeId({thread:thread.threadId,place:name}),
-        revision:1,threadId:thread.threadId,episodeKind:"other",
+        revision:1,threadId:thread.threadId,episodeKind:"formative_presence",
         place:{placeId:"place.future."+name,displayName:name,
           countryCode:"PT",region:"Portugal",locality,precision:"locality"},
         startAt:"2026-09-10T05:04:00Z",endAt:null,
@@ -151,7 +151,7 @@ test("World grounds future places in an unfamiliar city without pretending a vis
     const life=openLivedNowStore(localWorldStateStorage(databasePath));
     try{
       const place=(ref,locality)=>({
-        threadId:thread.threadId,placeRef:ref,specificPlace:"A place Victor may visit",
+        threadId:thread.threadId,placeRef:ref,specificPlace:"A place the Thread previously knew",
         streetAddress:null,locality,country:"Portugal",countryCode:"PT",
         lat:null,long:null,timeZone:"Europe/Lisbon",
         evidenceRef:ref,publicGranularity:"hidden",
