@@ -1,13 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
-import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
 import { createHumanAppearanceCalibrationRegistry } from "#services/population-lab/src/calibration-registry.mjs";
 import { createAppearanceCoverageService } from "#services/world-kernel/src/appearance-coverage-service.mjs";
 import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { openContactInspectionStore } from "#services/world-kernel/src/contact-store.mjs";
-import { projectCurrentThreadLocation,genesisContextLocations,isModernGenesisPlace } from "#services/world-kernel/src/current-thread-location.mjs";
+import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContextLocations,isModernGenesisPlace } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
@@ -431,29 +430,6 @@ export class FibreWorldDurableObject extends DurableObject {
     return this.appearanceCoverage;
   }
 
-  // Authenticated operator reality is independent of public disclosure.
-  // This is already-joined current-place evidence: no historical lookup.
-  operatorCurrentPlace(evidence){
-    const situation=evidence?.currentSituation;
-    const place=evidence?.privatePlace;
-    if(situation?.location?.kind!=="place"
-      ||place?.placeRef!==situation.location.placeRef)return null;
-    const city=resolveLocalityGeography(`${place.country}/${place.locality}`);
-    const point=city?.countryCode===place.countryCode?city:null;
-    return Object.freeze({
-      kind:"place",current:true,
-      establishedAt:situation.establishedAt,
-      placeRef:place.placeRef,
-      specificPlace:place.specificPlace,
-      streetAddress:place.streetAddress,
-      locality:place.locality,country:place.country,
-      countryCode:place.countryCode,
-      lat:place.lat??point?.lat??null,
-      long:place.long??point?.long??null,
-      mapPrecision:place.lat===null?"city":"address",
-    });
-  }
-
   directoryPopulationForRequest(search) {
     const result = this.directoryForRequest().search(search);
     const livedNow = openLivedNowInspectionStore(this.worldStorage);
@@ -473,7 +449,7 @@ export class FibreWorldDurableObject extends DurableObject {
         const current = byThread.get(entry.threadId) ?? null;
         return Object.freeze({
           ...entry,
-          operatorCurrentPlace:this.operatorCurrentPlace(current),
+          operatorCurrentPlace:projectOperatorCurrentPlace(current),
           currentLocation:projectCurrentThreadLocation({
             entry,
             currentSituation:current?.currentSituation ?? null,
@@ -500,7 +476,7 @@ export class FibreWorldDurableObject extends DurableObject {
         ?optionalLivedRead(()=>livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef),null):null;
       return Object.freeze({
         ...entry,
-        operatorCurrentPlace:this.operatorCurrentPlace({currentSituation,privatePlace}),
+        operatorCurrentPlace:projectOperatorCurrentPlace({currentSituation,privatePlace}),
         currentLocation:projectedCurrentLocation(livedNow,threadId,{
           currentSituation,worldPlaces,placeEpisodes,privatePlace,
         }),
