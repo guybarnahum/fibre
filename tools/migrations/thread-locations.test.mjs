@@ -36,7 +36,8 @@ test("repair locates the enacted place without inventing a home, journey or new 
   assert.equal(decision.place.streetAddress,null);
   assert.equal(decision.place.lat,null);
   assert.equal(decision.place.long,null);
-  assert.equal(decision.place.evidenceRef,situation.location.placeRef);
+  assert.equal(decision.place.evidenceRef,"operator_birth_city_default:"+thread.threadId,
+    "birth city placement lost its operator-default provenance");
 });
 
 test("missing First Life cannot be replaced by fictional birthplace presence",()=>{
@@ -56,4 +57,5 @@ test("current situated geography outranks birthplace without changing its histor
   assert.equal(result.basis,"situated_place_evidence");
   assert.equal(result.place.locality,"Braga");
   assert.equal(result.place.countryCode,"PT");
+  assert.equal(result.place.evidenceRef,situation.location.placeRef);
 });
