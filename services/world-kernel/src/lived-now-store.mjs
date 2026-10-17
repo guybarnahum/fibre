@@ -36,11 +36,9 @@ import {
 } from "./live-world-place.mjs";
 
 import {
-  admitWorldPublicPlace,admitWorldPrivatePlace,admitWorldLocality,
-  admitWorldDiscoveredPlace,createLiveWorldGeographyTables,
-  getWorldLocality,getWorldPrivatePlace,getWorldPublicPlace,
-  getWorldDiscoveredPlace,listWorldDiscoveredPlaces,listLocalWorldPublicPlaces,
-  coarseWorldPlace,
+  admitWorldPublicPlace,admitWorldPrivatePlace,createLiveWorldGeographyTables,
+  getWorldPrivatePlace,getWorldPublicPlace,getWorldPlaceEntity,
+  listKnownWorldPlaces,listLocalWorldPublicPlaces,resolveWorldPlace,coarseWorldPlace,
 } from "./live-world-geography.mjs";
 
 export class LivedNowConflictError extends Error {}
@@ -317,7 +315,7 @@ export class LivedNowStore {
     const situated = resolveSituatedReference(this.#database, threadId, reference);
     if (situated !== null) return situated;
     const worldPlace = resolveLiveWorldPlace(this.#database, threadId, reference)
-      ??getWorldDiscoveredPlace(this.#database,threadId,reference)
+      ??getWorldPlaceEntity(this.#database,threadId,reference)
       ??getWorldPublicPlace(this.#database,reference);
     if (worldPlace !== null) return { kind:"world_place", reference, worldPlace };
     if(!worldSchemaReady(this.#database)){
@@ -528,80 +526,37 @@ export class LivedNowStore {
     return this.#database.transaction(()=>admitWorldPublicPlace(this.#database,candidate));
   }
 
-  // Geographical knowledge can precede a visit: a future destination, a
-  // familiar place, or a new city must not require fabricated current presence.
-  groundPlace({place,localityEvidence=null}={}){
-    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot ground a place");
-    assertPlainObject("World place grounding",place);
-    this.#requireThread(place.threadId);
-    this.#requirePlace(place.threadId,place.placeRef);
-    const existing=this.getPrivatePlace(place.threadId,place.placeRef);
-    if(existing!==null)return {
-      status:"grounded",place:admitWorldPrivatePlace(this.#database,place),
-      locality:this.getWorldLocality({locality:place.locality,countryCode:place.countryCode}),
-    };
-    const known=this.getWorldLocality({locality:place.locality,countryCode:place.countryCode});
-    const catalog=known===null?resolveLocalityGeography(`${place.country}/${place.locality}`):null;
-    const locality=localityEvidence??known??(catalog?.countryCode===place.countryCode?{
-      locality:catalog.city,country:catalog.country,countryCode:catalog.countryCode,
-      lat:catalog.lat,long:catalog.long,timeZone:place.timeZone,
-      evidenceRef:`fibre:locality-catalog:${catalog.countryCode}/${catalog.city}`,
+  // A place is World knowledge; a visit is enacted separately by LivedNow.
+  // Unknown geography is an ordinary, explicit property, not an admission failure.
+  resolvePlace({threadId,name,city=null,country=null,kind="place",geography=null}={}){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot resolve a place");
+    this.#requireThread(threadId);
+    const title=typeof name==="string"?name.trim():"";
+    const locality=kind==="city"?title:city;
+    const countryName=country;
+    const known=locality&&countryName
+      ?resolveLocalityGeography(`${countryName}/${locality}`):null;
+    const location=geography??(known?{
+      locality:known.city,country:known.country,countryCode:known.countryCode,
+      lat:known.lat,long:known.long,
+      timeZone:known.timeZone??null,
+      evidenceRef:`fibre:locality-catalog:${known.countryCode}/${known.city}`,
     }:null);
-    if(locality===null)return Object.freeze({
-      status:"unlocated",placeRef:place.placeRef,reason:"locality_evidence_missing",
-    });
-    if(locality.locality.toLowerCase()!==place.locality.toLowerCase()
-      ||locality.countryCode!==place.countryCode||locality.country!==place.country
-      ||locality.timeZone!==place.timeZone){
-      throw new LivedNowConflictError("World place locality evidence contradicts the proposed place");
-    }
-    return this.#database.transaction(()=>({
-      status:"grounded",
-      locality:admitWorldLocality(this.#database,locality),
-      place:admitWorldPrivatePlace(this.#database,place),
-    }));
-  }
-
-  // Geography is resolved before World admits a Thread-originated destination.
-  // No scene, travel, or verified public venue is created by this operation.
-  discoverDestination({threadId,city,country,localityEvidence=null}={}){
-    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot discover destinations");
-    this.#requireThread(threadId);
-    if(typeof city!=="string"||!city.trim()||typeof country!=="string"||!country.trim()){
-      throw new TypeError("destination requires city and country");
-    }
-    const geo=localityEvidence;
-    const code=geo?.countryCode??countryCodeForCountry(country)??resolveLocalityGeography(`${country}/${city}`)?.countryCode??null;
-    const known=code===null?null:this.getWorldLocality({locality:city,countryCode:code});
-    const evidence=known??geo;
-    if(evidence===null)return Object.freeze({
-      status:"unlocated",city,country,reason:"locality_evidence_missing",
-    });
-    if(evidence.locality.toLowerCase()!==city.trim().toLowerCase()
-      ||evidence.country.toLowerCase()!==country.trim().toLowerCase()
-      ||evidence.countryCode!==code){
-      throw new LivedNowConflictError("destination locality evidence contradicts the Thread's choice");
-    }
     return this.#database.transaction(()=>{
-      const locality=admitWorldLocality(this.#database,evidence);
-      const destination=admitWorldDiscoveredPlace(this.#database,{threadId,locality});
-      admitWorldPrivatePlace(this.#database,{
-        threadId,placeRef:destination.ref,specificPlace:destination.displayName,
-        streetAddress:null,locality:locality.locality,country:locality.country,
-        countryCode:locality.countryCode,lat:null,long:null,
-        timeZone:locality.timeZone,evidenceRef:locality.evidenceRef,
-        publicGranularity:"hidden",
+      const parent=kind==="place"&&locality&&countryName
+        ?resolveWorldPlace(this.#database,{
+          threadId,name:locality,country:countryName,kind:"city",geography:location,
+        }):null;
+      const place=resolveWorldPlace(this.#database,{
+        threadId,name,city,country,kind,geography:location,
       });
-      return Object.freeze({status:"grounded",place:destination,locality});
+      return Object.freeze({place,parent,status:place.lat===null?"unlocated":"located"});
     });
   }
 
-  getWorldLocality(query){
-    return getWorldLocality(this.#database,query);
-  }
-  listDiscoveredPlaces(threadId,{limit=16}={}){
+  listKnownPlaces(threadId,{limit=24}={}){
     this.#requireThread(threadId);
-    return listWorldDiscoveredPlaces(this.#database,threadId,{limit});
+    return listKnownWorldPlaces(this.#database,threadId,{limit});
   }
 
   admitPrivatePlace(candidate){
@@ -662,7 +617,7 @@ export class LivedNowStore {
   getWorldPlace(threadId, reference, { required = true } = {}) {
     this.#requireThread(threadId);
     const place = resolveLiveWorldPlace(this.#database, threadId, reference)
-      ??getWorldDiscoveredPlace(this.#database,threadId,reference)
+      ??getWorldPlaceEntity(this.#database,threadId,reference)
       ??getWorldPublicPlace(this.#database,reference);
     if (place === null && required) {
       throw new LivedNowNotFoundError(`shared World place ${reference} was not found for Thread ${threadId}`);
@@ -1048,30 +1003,16 @@ export class LivedNowStore {
                json_extract(value,'$[1]') AS place_ref
         FROM json_each(?)
       )
-      SELECT p.thread_id,p.place_ref,p.record_json,p.record_digest,
-        l.record_json AS locality_json,l.record_digest AS locality_digest
+      SELECT p.thread_id,p.place_ref,p.record_json,p.record_digest
       FROM targets t
       JOIN world_private_place_locations p
         ON p.thread_id=t.thread_id AND p.place_ref=t.place_ref
-      LEFT JOIN world_localities l
-        ON l.country_code=json_extract(p.record_json,'$.countryCode')
-       AND l.locality_key=lower(json_extract(p.record_json,'$.locality'))
     `).all(JSON.stringify(privateTargets));
     const privateByThread = new Map(privateRows.map(row => [
       row.thread_id,privatePlaceEvidence(
         row.thread_id,row.place_ref,row.record_json,row.record_digest,
       ),
     ]));
-
-    const localityByThread=new Map(privateRows.map(row=>{
-      if(row.locality_json===null)return [row.thread_id,null];
-      const record=parseJson("World locality",row.locality_json);
-      if(canonicalJson(record)!==row.locality_json
-        ||digest(record)!==row.locality_digest){
-        throw new IntegrityError("World locality failed integrity");
-      }
-      return [row.thread_id,Object.freeze(record)];
-    }));
 
     const needsContext=[...new Set(situations.filter(situation=>
       observedPlaceRefs(situation).some(ref=>{
@@ -1109,7 +1050,6 @@ export class LivedNowStore {
         currentSituation,
         lifeContinuity:currentSituation.lifeContinuity??null,
         privatePlace:privateByThread.get(currentSituation.threadId)??null,
-        worldLocality:localityByThread.get(currentSituation.threadId)??null,
         contextLocations:Object.freeze(genesisContextLocations(
           placeEpisodes,anchors,ownedWorld,
         )),
