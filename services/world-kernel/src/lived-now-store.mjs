@@ -607,7 +607,9 @@ export class LivedNowStore {
   currentLocationTimeZone(threadId){
     const situation=this.getCurrentSituation(threadId);
     if(situation?.location?.kind!=="place")return null;
-    return this.getPrivatePlace(threadId,situation.location.placeRef)?.timeZone??null;
+    return this.getPrivatePlace(threadId,situation.location.placeRef)?.timeZone
+      ??this.getWorldPlace(threadId,situation.location.placeRef,{required:false})?.timeZone
+      ??null;
   }
 
   bindPhysicalVenue(candidate){
