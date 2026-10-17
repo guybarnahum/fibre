@@ -777,7 +777,7 @@ async function renderStill({ assetBaseUrl, privateToken, accepted, emit }) {
   const reconciliation = reconcilePresentationAssets({
     slots:[image],
     requestedAt:new Date().toISOString(),
-    providerProfile:"bfl-flux-2-pro-v1",
+    providerProfile:"openai-gpt-image-2-medium-v1",
   });
   if (reconciliation.jobs.length !== 1) throw new Error("lived-encounters still did not become exactly one generated-asset job");
   const [job] = reconciliation.jobs;
