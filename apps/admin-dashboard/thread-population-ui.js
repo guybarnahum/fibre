@@ -134,13 +134,13 @@ function threadCurrentPlaceCell(location,operatorCurrentPlace) {
   const cell=document.createElement("td");
   cell.className="thread-population-current-place";
   const publicPlace=currentThreadPlace(location);
-  const privatePlace=publicPlace===null&&operatorCurrentPlace?.disclosure==="private"
+  const privatePlace=publicPlace===null&&operatorCurrentPlace?.locality
     ?operatorCurrentPlace:null;
   cell.append(createThreadLocation(publicPlace??privatePlace,{
     className:"thread-population-current-place-value",
-    suffix:privatePlace?"Private":null,
+    suffix:null,
   }));
-  if(privatePlace)cell.title="Privately attested current city · not publicly disclosed";
+  if(privatePlace)cell.title="World-attested current place";
   else if(location?.establishedAt)cell.title="Last enacted · "+when(location.establishedAt);
   return cell;
 }
