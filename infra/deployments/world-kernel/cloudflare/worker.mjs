@@ -430,19 +430,22 @@ export class FibreWorldDurableObject extends DurableObject {
     return this.appearanceCoverage;
   }
 
-  // Internal operator inspection may show an admitted private city without
-  // changing the public Present projection or plotting a private residence.
+  // Authenticated operator reality is independent of public disclosure.
+  // This is already-joined current-place evidence: no historical lookup.
   operatorCurrentPlace(evidence){
     const situation=evidence?.currentSituation;
-    const privatePlace=evidence?.privatePlace;
+    const place=evidence?.privatePlace;
     if(situation?.location?.kind!=="place"
-      ||privatePlace?.placeRef!==situation.location.placeRef
-      ||privatePlace.publicGranularity==="city")return null;
+      ||place?.placeRef!==situation.location.placeRef)return null;
     return Object.freeze({
-      locality:privatePlace.locality,
-      country:privatePlace.country,
-      countryCode:privatePlace.countryCode,
-      disclosure:"private",
+      placeRef:place.placeRef,
+      specificPlace:place.specificPlace,
+      streetAddress:place.streetAddress,
+      locality:place.locality,
+      country:place.country,
+      countryCode:place.countryCode,
+      lat:place.lat,long:place.long,
+      publicGranularity:place.publicGranularity,
     });
   }
 
