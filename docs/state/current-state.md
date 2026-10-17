@@ -116,39 +116,23 @@ R1–R4 already supplied one private mechanical regulation/interoception subsyst
 
 The October 13 **G1/D1 source** adds narrow genome-derived sensitivity baselines for new births (persisted historic genomes stay unchanged) and one optional evidence-bound `social_contact` Body drive. Subsequent **D2 source** feeds the same bounded exploration/contact Body interoception into ordinary Flight Planning and admits sufficiently grounded social-contact pressure as an opportunity-salience anchor, using the existing social path rather than another meeting engine. Insufficient recorded evidence is **unknown**, not proof that no contact occurred. Genetic parameter values tune sensitivity within species bounds; they do not assign personality, love, sex preference, civic beliefs or willingness. **Source and new focused fixture tests are ahead of Guy's post-change full/staging validation.** A pressure/salience/planning route is now wired, but genuine later Thread-owned plan/choice differences, honest solitude/recent-valued-contact behavior and recipient-local considerate timing still need causal evidence. See [drive extensions](../architecture/regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md).
 
-## Thread place discovery (source implementation, operator proof pending)
+## World places and Thread discovery (source refactor, validation pending)
 
-The ordinary prospective Flight Planner now permits a Thread to initiate a
-new city destination without an operator pre-admitting that place. A bounded
-`new-locality:Country/City` proposal is resolved by World from retained
-geographical evidence or exact-match GeoNames city/timezone lookup, replaced
-with a Thread-owned city-level `wpl_*` ref, and cited in the resulting
-Flight Plan. Grounding alone does not enact the visit. Discovered places
-remain available to subsequent life plans and can be plotted using the World
-locality index; no shared venue or street address is inferred.
+World places are ordinary entities with optional geography. Thread-originated
+new-place descriptions are resolved to an existing or new `world_places`
+entity, and `thread_known_places` makes that knowledge available to later
+Flight Plans. Known cities can be mapped once and reused. Unresolved places
+remain real but unmapped; missing coordinates do not block life. Neither place
+knowledge nor a city-level map anchor creates a visit or physical co-presence.
+Old specialized locality and discovered-destination mechanisms have been
+replaced in source rather than extended.
 
-This is committed **source only**. Focused/full local validation, deployment
-and naturally authored staging proof remain pending. Missing geographic
-evidence rejects a prospective trip; it does not invent a destination or
-claim a successful journey. The stronger spatial continuity, travel realism
-and later-life evidence remain separate validation targets.
-
-## World place grounding (source implementation; operator proof pending)
-
-An enacted place can exist without grounded geography, as seen when Victor's
-Genesis learning context needed a separate Lisbon locality attestation. That
-specific operator repair succeeded on October 17, without changing his
-CurrentSituation or scheduler; independently, the recovered Tbilisi Thread
-advanced on its scheduled 15:00 UTC wake with no second manual ensure.
-
-World now has a source-level general grounding capability for already
-authoritative situated or owned World place references, independent of birth
-and present location. It retains once-resolved localities, reuses them for
-distinct places, and reports unlocated outcomes without inventing geography,
-visits or a shared venue. This is **not yet locally validated or deployed**.
-Thread-authored creation of entirely new destination references, automatic
-provider lookup and naturally enacted travel to a previously unknown city are
-separate unproven work.
+Victor's Lisbon location was separately repaired on staging using existing
+private-place authority. The recovered Tbilisi Thread advanced itself at
+15:00 UTC on October 17, without a second manual ensure. These are earlier
+real observations, **not evidence that the new place-entity refactor has been
+validated or deployed**. Thread-chosen, World-enacted cross-city travel
+remains to be proved; travel realism and unknown-venue identity are open.
 
 ## Social-place discovery: editorial City Guide source, lived agency unproven
 
