@@ -1401,7 +1401,7 @@ export function renderFidSection(identity, threadId) {
         actionStatus.hidden=false;
         setWaitingContent(actionStatus,"Preparing corrected ID photograph");
         void waitForFidPhotoCorrection(threadId,correctionId).then(()=>{
-          actionStatus.textContent="Review the new photograph against Vítor's canonical likeness before approving.";
+          actionStatus.textContent="Review the new photograph against the Thread's canonical likeness before approving.";
           const previewUrl=`/api/threads/${encodeURIComponent(threadId)}/fid/photo-corrections/${encodeURIComponent(correctionId)}/preview`;
           const candidatePane=el("article","thread-fid-photo");
           candidatePane.append(
