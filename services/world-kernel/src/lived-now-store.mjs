@@ -23,6 +23,7 @@ import {
   situatedLifeRecordIsCurrent,
 } from "./situated-life-domain.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
+import {genesisContextLocations} from "./current-thread-location.mjs";
 import {
   bindLivePhysicalVenue,
   createLiveWorldPlaceTables,
@@ -858,6 +859,32 @@ export class LivedNowStore {
     return rows.map(situationFromRow);
   }
 
+  listLocatedGenesisContexts(threadIds){
+    if(!Array.isArray(threadIds)||threadIds.length===0)return [];
+    const rows=this.#database.prepare(`
+      SELECT p.thread_id,p.place_ref,
+        p.record_json AS private_json,p.record_digest AS private_digest,
+        e.record_json AS episode_json,e.record_digest AS episode_digest,
+        w.record_digest AS witness_digest
+      FROM world_private_place_locations p
+      JOIN situated_evidence_witnesses w
+        ON w.thread_id=p.thread_id AND w.reference=p.place_ref
+        AND w.witness_kind='place_episode_revision'
+      JOIN place_episode_records e
+        ON e.thread_id=p.thread_id AND e.episode_id=w.source_id
+        AND e.revision=w.revision
+      WHERE p.thread_id IN (SELECT value FROM json_each(?))
+      ORDER BY p.thread_id,p.place_ref
+    `).all(JSON.stringify([...new Set(threadIds)]));
+    return rows.map(row=>Object.freeze({
+      threadId:row.thread_id,
+      privatePlace:privatePlaceEvidence(row.thread_id,row.place_ref,
+        row.private_json,row.private_digest),
+      placeEpisode:placeEpisodeEvidence(row.place_ref,row.episode_json,
+        row.episode_digest,row.witness_digest),
+    }));
+  }
+
   listCurrentLocationEvidence({ at } = {}) {
     const situations = this.listCurrentSituations({ at, livingOnly:true });
     if (situations.length === 0) return [];
@@ -919,6 +946,16 @@ export class LivedNowStore {
       ),
     ]));
 
+    const needsContext=[...new Set(situations.filter(situation=>
+      observedPlaceRefs(situation).some(ref=>ref.startsWith("per:"))
+      &&!privateByThread.has(situation.threadId)
+    ).map(situation=>situation.threadId))];
+    const anchorsByThread=new Map();
+    for(const anchor of this.listLocatedGenesisContexts(needsContext)){
+      const items=anchorsByThread.get(anchor.threadId)??[];
+      items.push(anchor);
+      anchorsByThread.set(anchor.threadId,items);
+    }
     return situations.map((currentSituation) => {
       const evidence = observedPlaceRefs(currentSituation)
         .map((ref) => evidenceByRef.get(ref))
@@ -933,6 +970,10 @@ export class LivedNowStore {
         threadId:currentSituation.threadId,
         currentSituation,
         privatePlace:privateByThread.get(currentSituation.threadId) ?? null,
+        contextLocations:Object.freeze(genesisContextLocations(
+          evidence.map(item=>item.placeEpisode).filter(Boolean),
+          anchorsByThread.get(currentSituation.threadId)??[],
+        )),
         worldPlaces:Object.freeze(observedPlaceRefs(currentSituation)
           .map((ref)=>this.getWorldPlace(currentSituation.threadId,ref,{required:false}))
           .filter(Boolean)),
