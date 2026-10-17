@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { inspectThreadJourneys } from "./thread-journey-probe.mjs";
+import { privateGet } from "./encounter-autonomy-probe.mjs";
 
 test("a Thread's earlier Flight Plan and enacted travel remain distinguishable after renewal",()=>{
   const travel={
@@ -53,4 +54,28 @@ test("a Thread's earlier Flight Plan and enacted travel remain distinguishable a
     sourcePlanRefs:["plan_travel","plan_care"]};
   assert.equal(phase([arrival,overridden,origin]).stage,"arrival_observed",
     "a care-governed journey was credited to the Thread's personal plan");
+});
+
+test("read-only journey inspection reaches full World Observatory rather than a fabricated route",async()=>{
+  const original=globalThis.fetch;
+  let called=false;
+  globalThis.fetch=async request=>{
+    called=true;
+    const url=new URL(request);
+    assert.equal(url.pathname,"/internal/threads/thr_example/observatory",
+      "World Observatory route was not preserved");
+    assert.equal(url.searchParams.get("view"),"full",
+      "full Observatory query disappeared");
+    return Response.json({observatory:{livedNow:{recentPersonalPlans:[]}}});
+  };
+  try{
+    const result=await privateGet("https://world.example",
+      "/internal/threads/thr_example/observatory?view=full",
+      "fixture-token","journey Observatory");
+    assert.equal(called,true,"World Observatory was not consulted");
+    assert.deepEqual(result.observatory.livedNow.recentPersonalPlans,[],
+      "full Observatory response was lost");
+  }finally{
+    globalThis.fetch=original;
+  }
 });
