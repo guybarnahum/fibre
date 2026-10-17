@@ -607,6 +607,11 @@ test("legacy birth recovery restores only missing First Life work without rewrit
     genesis.publishBirth(birth);
     genesis.close();
 
+    // Recovery runs in the installed World, where Genesis and LivedNow
+    // share one schema. Initialize the frontier without enacting a life.
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    lived.close();
+
     const database=new DatabaseSync(databasePath,{enableForeignKeyConstraints:true});
     database.prepare("DELETE FROM genesis_first_life_work WHERE thread_id=?")
       .run(birth.thread.threadId);
