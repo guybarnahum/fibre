@@ -48,10 +48,12 @@ test("missing First Life cannot be replaced by fictional birthplace presence",()
   }).state,"already_located","prior World location must be preserved");
 });
 
-test("a grounded current city outranks the Thread's birth city",()=>{
-  const moved={...thread,birthLocation:{city:"Oslo",country:"Norway",countryCode:"NO"}};
-  const result=planThreadLocation(moved,life({
-    locality:"Lisbon",countryCode:"PT",displayName:"Reading room",
+test("current situated geography outranks birthplace without changing its history",()=>{
+  const result=planThreadLocation(thread,life({
+    locality:"Braga",countryCode:"PT",displayName:"Reading room",
   }));
-  assert.equal(result.state,"review_time_zone","World timezone must not be reused after a move");
+  assert.equal(result.state,"ready");
+  assert.equal(result.basis,"situated_place_evidence");
+  assert.equal(result.place.locality,"Braga");
+  assert.equal(result.place.countryCode,"PT");
 });
