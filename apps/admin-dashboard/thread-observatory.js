@@ -459,9 +459,13 @@ export function observatoryCurrentPlace(livedNow){
   const located=currentThreadPlace(atPrivatePlace
     ?{...privatePlace,kind:"place"}:operatorPlace??livedNow?.currentLocation);
   if(located===null){
+    const unresolved=situation?.location?.kind==="place"
+      ?(livedNow?.worldPlaces??[]).find(place=>place.ref===situation.location.placeRef)
+      :null;
     return situation?.location?.kind==="transit"
       ?"In transit · location unresolved"
-      :situation?"Location unresolved":"Not established";
+      :unresolved?`Unlocated · ${unresolved.displayName}`
+        :situation?"Location unresolved":"Not established";
   }
   const city=threadLocationText(located);
   if(atPrivatePlace||operatorPlace){
