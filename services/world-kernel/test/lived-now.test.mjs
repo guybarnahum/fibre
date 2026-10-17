@@ -128,6 +128,87 @@ function seedLife(databasePath) {
   };
 }
 
+test("Thread's own Flight Plan discovers a new city without operator-prepared place refs",async()=>{
+  await withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    const worldStore=openWorldStore(storage);
+    const identityStore=openIdentityStore(storage);
+    const semanticStateStore=openSemanticStateStore(storage);
+    const memoryStore=openAutobiographicalMemoryStore(storage);
+    const situatedLifeStore=openSituatedLifeStore(storage);
+    const livedNowStore=openLivedNowStore(storage);
+    try{
+      const model=cognition(life.homeRef);
+      let lookups=0;
+      const plan=await formPersonalLivedPlan({
+        threadId:life.thread.threadId,
+        authoredAt:"2026-09-10T05:03:00Z",
+        horizonEnd:"2026-09-10T06:00:00Z",
+        startingPlaceRef:life.homeRef,
+        availablePlaceRefs:[life.homeRef],
+        sourceReferences:[life.sourceEvent],
+        sourceStores:{worldStore,identityStore,semanticStateStore,memoryStore,
+          situatedLifeStore,livedNowStore},
+        modelAdapter:{
+          ...model.adapter,
+          async invoke(request){
+            const output=await model.adapter.invoke(request);
+            output.output.result.stops[1].physicalPlaceRef="new-locality:Portugal/Porto";
+            output.output.result.stops[1].travelFromPrevious="Travel to Porto.";
+            return output;
+          },
+        },
+        resolveDestinationGeography:async({city,country})=>{
+          lookups++;
+          assert.equal(city,"Porto");
+          assert.equal(country,"Portugal");
+          return {locality:"Porto",country:"Portugal",countryCode:"PT",
+            lat:41.1496,long:-8.6109,timeZone:"Europe/Lisbon",
+            evidenceRef:"fixture:verified-city-porto"};
+        },
+      });
+      const nextRef=plan.stops[1].physicalPlaceRef;
+      assert.ok(nextRef.startsWith("wpl_"),"new-city proposal did not receive World identity");
+      assert.notEqual(nextRef,life.homeRef,"Thread's chosen destination was ignored");
+      assert.equal(plan.sourceReferences.includes(nextRef),true,
+        "new place lacks cited World authority");
+      assert.equal(lookups,1,"geography provider was not bounded to chosen destination");
+      assert.equal(livedNowStore.getWorldPlace(life.thread.threadId,nextRef).placeKind,
+        "discovered_locality","World invented a public venue instead of city arrival");
+      assert.equal(livedNowStore.getPrivatePlace(life.thread.threadId,nextRef).locality,
+        "Porto","new destination lost the attested city");
+      assert.equal(livedNowStore.getPrivatePlace(life.thread.threadId,nextRef).publicGranularity,
+        "hidden","World published Thread location without a disclosure decision");
+      assert.equal(livedNowStore.getCurrentSituation(life.thread.threadId),null,
+        "destination cognition fabricated a journey");
+      const stored=livedNowStore.recordPlan(plan);
+      assert.equal(stored.stops[1].physicalPlaceRef,nextRef,
+        "World rejected the grounded Thread-authored destination");
+
+      await assert.rejects(()=>formPersonalLivedPlan({
+        threadId:life.thread.threadId,
+        authoredAt:"2026-09-10T05:03:00Z",
+        horizonEnd:"2026-09-10T06:00:00Z",
+        startingPlaceRef:life.homeRef,
+        availablePlaceRefs:[life.homeRef],
+        sourceReferences:[life.sourceEvent],
+        sourceStores:{worldStore,identityStore,semanticStateStore,memoryStore,
+          situatedLifeStore,livedNowStore},
+        modelAdapter:{...model.adapter,async invoke(request){
+          const output=await model.adapter.invoke(request);
+          output.output.result.stops[1].physicalPlaceRef="new-locality:Unknown/Nowhere";
+          output.output.result.stops[1].travelFromPrevious="Travel to Nowhere.";
+          return output;
+        }},
+      }),/cannot ground/,"unresolved city became an admitted visit");
+    }finally{
+      livedNowStore.close();situatedLifeStore.close();memoryStore.close();
+      semanticStateStore.close();identityStore.close();worldStore.close();
+    }
+  });
+});
+
 test("World grounds known noncurrent places in a different city without pretending a new visit",async()=>{
   await withDatabase(async databasePath=>{
     const {thread,sourceEvent}=seedLife(databasePath);
