@@ -688,7 +688,8 @@
   line-height:1.35;
   color:var(--text);
 }
-.thread-population-birthplace {
+.thread-population-birthplace,
+.thread-population-current-place {
   min-width:150px;
   max-width:220px;
   white-space:normal;
