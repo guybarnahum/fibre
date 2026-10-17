@@ -441,6 +441,13 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
       "admitted locality was not available to the Thread directory");
     assert.equal(located.privatePlace?.streetAddress,null,
       "locality admission fabricated a residential address");
+    const anchors=lived.listLocatedGenesisContexts([life.thread.threadId]);
+    assert.equal(anchors.length,1,
+      "indexed situated-place anchor lookup lost a previously attested locality");
+    assert.equal(anchors[0].privatePlace.locality,"Haifa");
+    assert.equal(anchors[0].placeEpisode.place.placeId,"place.il.haifa.home");
+    assert.equal(lived.listLocatedGenesisContexts([]).length,0,
+      "no target Threads should mean no additional World place queries");
     assert.match(personal.stops[0].activity, /octopus livestream/);
     assert.match(personal.stops[1].activity, /Finish the sketch/);
     lived.close();
