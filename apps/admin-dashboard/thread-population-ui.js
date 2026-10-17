@@ -140,7 +140,7 @@ function threadCurrentPlaceCell(location,operatorCurrentPlace) {
     className:"thread-population-current-place-value",
     suffix:null,
   }));
-  if(privatePlace)cell.title="World-attested current place";
+  if(privatePlace)cell.title=operatorCurrentPlace.specificPlace??"World-attested current place";
   else if(location?.establishedAt)cell.title="Last enacted · "+when(location.establishedAt);
   return cell;
 }
@@ -1035,8 +1035,8 @@ function showThreadMapPopover(location, marker) {
     const thread = population.find((candidate) => candidate.threadId === threadId);
     if (!thread) continue;
     const state = threadMapState(thread);
-    const situatedAt = thread.currentLocation?.establishedAt
-      ? " · situation "+elapsedText(thread.currentLocation.establishedAt)
+    const situatedAt = (thread.operatorCurrentPlace??thread.currentLocation)?.establishedAt
+      ? " · situation "+elapsedText((thread.operatorCurrentPlace??thread.currentLocation).establishedAt)
       : "";
     const stateLabel = state.kind === "active"
       ? "active"
