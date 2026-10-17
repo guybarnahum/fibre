@@ -398,6 +398,41 @@ Version 1 also makes one explicit society-admission choice: Threads whose Civil 
 Flight Planning also receives the World-authoritative IANA time zone as local civil-time context. This lets the Thread plan a morning as morning without Fibre turning UTC into a behavioral rule.
 
 
+### World place grounding beyond birth — first source slice
+
+Geographical knowledge is independent of Genesis and enacted presence. One Thread
+may know a place in a different city before choosing to travel there. That
+place's geography must not be inferred from birthplace or from a current
+location merely because it belongs to the same person.
+
+The World now has a small indexed locality register
+(`world_localities`, by country and locality) and a provider-neutral
+`LivedNowStore.groundPlace({place,localityEvidence})` operation, also exposed
+through `POST /internal/world-venues/ground-place` to the private World operator.
+It accepts an **already authoritative** Thread-owned place reference,
+validates the same situated-life or owned Genesis World authority as ordinary
+LivedNow, and resolves locality using World knowledge, the existing bounded
+canonical locality catalog, or supplied independently resolved geographical
+evidence. The latter carries country, city, coordinates, IANA timezone and
+source witness. One resolved locality can ground another distinct place in that
+city without recreating its geography.
+
+The location record belongs to the original `placeRef`; the locality
+register is not a residence, a shared physical venue, or a record of a visit.
+A place may be grounded before it is the Thread's enacted current setting.
+No plan, transit, encounter, or CurrentSituation is created by grounding.
+No source-proven place reference, or no resolvable locality, yields an explicit
+failure or `unlocated` outcome rather than guessed coordinates. Unlocated
+places remain addressable through their original place authority.
+
+This first source slice does **not** create previously unknown Thread-authored
+destination references, call an external geocoding provider, automatically
+ground every Genesis place or move a Thread. Those are distinct next steps.
+An actual model-authored discovery and World-enacted journey must be
+demonstrated separately. Existing locality-level private disclosure remains
+unchanged; the new operation does not promote historical context into
+physical venue identity or co-presence.
+
 ### Grounded geography and private residences — S0 staging admitted, social visits still open
 
 S0 adds two complementary World authorities without manufacturing movement or co-presence:
