@@ -118,6 +118,7 @@
     "lived-encounters:validate": "node tools/deployment/run-with-progress.mjs lived-encounters:validate node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/lived-encounters-validation.mjs",
     "encounter-autonomy:probe": "node tools/deployment/run-with-progress.mjs encounter-autonomy:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/encounter-autonomy-probe.mjs",
     "world-environment:probe": "node tools/deployment/run-with-progress.mjs world-environment:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/world-environment-probe.mjs",
+    "thread-journey:probe": "node tools/deployment/run-with-progress.mjs thread-journey:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/thread-journey-probe.mjs",
     "world-social:probe": "node tools/deployment/run-with-progress.mjs world-social:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/world-social-probe.mjs",
     "world-place": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/world/world-place.mjs",
     "city-guide:list": "node --disable-warning=ExperimentalWarning tools/world/city-guide.mjs"
