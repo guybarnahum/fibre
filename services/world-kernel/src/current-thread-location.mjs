@@ -38,12 +38,12 @@ export function isModernGenesisPlace(episode){
   return modernGenesisContext(episode)!==null;
 }
 
-export function genesisContextLocations(placeEpisodes, locatedContexts){
+export function genesisContextLocations(placeEpisodes, locatedContexts,{privatePerspective=false}={}){
   const known=new Map();
   for(const {placeEpisode,privatePlace} of locatedContexts){
     const context=modernGenesisContext(placeEpisode);
     if(context===null||privatePlace?.threadId!==placeEpisode.threadId
-      ||privatePlace?.publicGranularity!=="city"
+      ||(!privatePerspective&&privatePlace?.publicGranularity!=="city")
       ||privatePlace.placeRef!==placeEpisodeRevisionRef(placeEpisode))continue;
     const geo=resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
     if(!geo||geo.countryCode!==privatePlace.countryCode)continue;
