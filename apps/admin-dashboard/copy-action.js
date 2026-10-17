@@ -40,6 +40,28 @@ export function decorateCopyAction(button,{
   return decorateActionButton(button,{icon:"copy",label,tooltip,iconOnly});
 }
 
+const feedbackTimers=new WeakMap();
+
+// Feedback is an overlay; the existing icon and label never change size or position.
+function showCopyFeedback(button,{state,message,tooltip,label,originalTooltip,resetMs}){
+  const previous=feedbackTimers.get(button);
+  if(previous!==undefined)globalThis.clearTimeout?.(previous);
+  button.dataset.copyFeedback=message;
+  button.dataset.copyFeedbackState=state;
+  button.title=tooltip;
+  button.dataset.tooltip=tooltip;
+  button.setAttribute("aria-label",tooltip);
+  const timer=globalThis.setTimeout?.(()=>{
+    delete button.dataset.copyFeedback;
+    delete button.dataset.copyFeedbackState;
+    button.title=originalTooltip;
+    button.dataset.tooltip=originalTooltip;
+    button.setAttribute("aria-label",label);
+    feedbackTimers.delete(button);
+  },resetMs);
+  if(timer!==undefined)feedbackTimers.set(button,timer);
+}
+
 export async function copyWithFeedback(button,value,{
   label,
   tooltip=label,
@@ -51,22 +73,18 @@ export async function copyWithFeedback(button,value,{
   resetMs=1200,
 }={}){
   if(!button)throw new TypeError("copy button is required");
-  let copied=false;
   try{
     await writeClipboard(value);
-    copied=true;
-    decorateCopyAction(button,{label:copiedLabel,tooltip:copiedTooltip,iconOnly});
+    showCopyFeedback(button,{state:"success",message:copiedLabel,
+      tooltip:copiedTooltip,label,originalTooltip:tooltip,resetMs});
+    return true;
   }catch(error){
-    decorateCopyAction(button,{
-      label:failedLabel,
+    showCopyFeedback(button,{state:"failed",message:failedLabel,
       tooltip:failedTooltip==="Copy failed"&&error instanceof Error
-        ?failedTooltip+": "+error.message
-        :failedTooltip,
-      iconOnly,
-    });
+        ?failedTooltip+": "+error.message:failedTooltip,
+      label,originalTooltip:tooltip,resetMs});
+    return false;
   }
-  globalThis.setTimeout?.(()=>decorateCopyAction(button,{label,tooltip,iconOnly}),resetMs);
-  return copied;
 }
 
 export function bindCopyAction(button,{
@@ -93,12 +111,9 @@ export function bindCopyAction(button,{
         label,tooltip,iconOnly,copiedLabel,copiedTooltip,failedLabel,failedTooltip,resetMs,
       });
     }catch(error){
-      decorateCopyAction(button,{
-        label:failedLabel,
+      showCopyFeedback(button,{state:"failed",message:failedLabel,
         tooltip:error instanceof Error?failedTooltip+": "+error.message:failedTooltip,
-        iconOnly,
-      });
-      globalThis.setTimeout?.(()=>decorateCopyAction(button,{label,tooltip,iconOnly}),resetMs);
+        label,originalTooltip:tooltip,resetMs});
     }
   });
   return button;
