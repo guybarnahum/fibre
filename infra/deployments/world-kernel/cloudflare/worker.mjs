@@ -255,6 +255,7 @@ function currentThreadObservatory(runtime,threadId){
         }),
         recentSituations:structuredClone(recentSituations),
         currentPersonalPlan:structuredClone(currentPersonalPlan),
+        nextAutonomousBoundary:structuredClone(livedNow.inspectLivedBoundary(threadId)),
         worldContext:structuredClone(livedNow.getWorldContext(threadId,{required:false})),
         privatelyKnownCurrentPlace:structuredClone(privatePlace),
       },
@@ -475,6 +476,7 @@ export class FibreWorldDurableObject extends DurableObject {
         const current = byThread.get(entry.threadId) ?? null;
         return Object.freeze({
           ...entry,
+          lifeContinuity:current?.lifeContinuity??null,
           operatorCurrentPlace:projectOperatorCurrentPlace({
             ...current,worldPlaces:current?.worldPlaces??[],
             privateContextLocations:current?.privateContextLocations??[],
@@ -506,8 +508,15 @@ export class FibreWorldDurableObject extends DurableObject {
       const currentLocation=projectedCurrentLocation(livedNow,threadId,{
         currentSituation,worldPlaces,placeEpisodes,privatePlace,
       });
+      const plan=currentSituation?.sourcePlanRefs
+        ?.map(ref=>livedNow.getPlan(threadId,ref)).find(value=>value?.kind==="personal")??null;
       return Object.freeze({
         ...entry,
+        lifeContinuity:currentSituation===null?null:{
+          currentAt:currentSituation.establishedAt,
+          planHorizonEnd:plan?.horizonEnd??null,
+          nextAutonomousBoundary:livedNow.inspectLivedBoundary(threadId),
+        },
         operatorCurrentPlace:projectedOperatorLocation(livedNow,threadId,{
           currentSituation,privatePlace,placeEpisodes,worldPlaces,currentLocation,
         }),
