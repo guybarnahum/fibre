@@ -220,6 +220,8 @@ function admittedThread(entry, lastActivityAt) {
     currentLocation:entry.currentLocation === null || entry.currentLocation === undefined
       ? null
       : structuredClone(entry.currentLocation),
+    operatorCurrentPlace:entry.operatorCurrentPlace == null
+      ? null:structuredClone(entry.operatorCurrentPlace),
     runtime:entry.runtime === null || entry.runtime === undefined
       ? null
       : structuredClone(entry.runtime),
@@ -241,6 +243,7 @@ function settledStillborn(row, lastActivityAt = null) {
     health:"unrecoverable",
     identity:null,
     currentLocation:null,
+    operatorCurrentPlace:null,
     runtime:null,
     portraitUrl:null,
     findings:Object.freeze([]),
@@ -260,6 +263,7 @@ function activityOnly(row) {
     health:"unrecoverable",
     identity:null,
     currentLocation:null,
+    operatorCurrentPlace:null,
     runtime:null,
     portraitUrl:null,
     findings:Object.freeze([]),
