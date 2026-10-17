@@ -36,8 +36,10 @@ test("public editorial discovery does not imply World presence",()=>{
     "London's independently sourced cultural destinations are missing");
   assert.ok(london.places.length>=2,
     "City Guide lacks useful London cultural variety");
-  assert.ok(london.places.every(item=>item.worldPlaceRef===null),
-    "unadmitted editorial places were claimed to be World destinations");
+  assert.ok(london.places.every(item=>/^wpl_/u.test(item.worldPlaceRef??"")),
+    "verified London World admissions were not published in the guide");
+  assert.ok(london.places.every(item=>!Object.hasOwn(item,"attendance")),
+    "a public World venue identity was misrepresented as an actual visit");
 
   const unknown=listSocialCityGuide(guide,{city:"Toulouse",countryCode:"FR"});
   assert.equal(unknown.status,"not_listed");
