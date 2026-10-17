@@ -533,8 +533,10 @@ export class LivedNowStore {
     this.#requireThread(place.threadId);
     this.#requirePlace(place.threadId,place.placeRef);
     const existing=this.getPrivatePlace(place.threadId,place.placeRef);
-    if(existing!==null)return {place:admitWorldPrivatePlace(this.#database,place),
-      locality:this.getWorldLocality({locality:place.locality,countryCode:place.countryCode})};
+    if(existing!==null)return {
+      status:"grounded",place:admitWorldPrivatePlace(this.#database,place),
+      locality:this.getWorldLocality({locality:place.locality,countryCode:place.countryCode}),
+    };
     const known=this.getWorldLocality({locality:place.locality,countryCode:place.countryCode});
     const catalog=known===null?resolveLocalityGeography(`${place.country}/${place.locality}`):null;
     const locality=localityEvidence??known??(catalog?.countryCode===place.countryCode?{
@@ -542,14 +544,16 @@ export class LivedNowStore {
       lat:catalog.lat,long:catalog.long,timeZone:place.timeZone,
       evidenceRef:place.evidenceRef,
     }:null);
-    if(locality===null)throw new LivedNowConflictError(
-      "World place grounding needs independently resolved locality evidence");
+    if(locality===null)return Object.freeze({
+      status:"unlocated",placeRef:place.placeRef,reason:"locality_evidence_missing",
+    });
     if(locality.locality.toLowerCase()!==place.locality.toLowerCase()
       ||locality.countryCode!==place.countryCode||locality.country!==place.country
       ||locality.timeZone!==place.timeZone){
       throw new LivedNowConflictError("World place locality evidence contradicts the proposed place");
     }
     return this.#database.transaction(()=>({
+      status:"grounded",
       locality:admitWorldLocality(this.#database,locality),
       place:admitWorldPrivatePlace(this.#database,place),
     }));
