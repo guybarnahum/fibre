@@ -435,8 +435,16 @@ export class LivedNowStore {
     for(let i=1;i<plan.stops.length;i++){
       const from=plan.stops[i-1],to=plan.stops[i];
       if(from.physicalPlaceRef===to.physicalPlaceRef)continue;
-      const minimum=minimumTravelMilliseconds(point(from.physicalPlaceRef),point(to.physicalPlaceRef));
       const available=Date.parse(to.startAt)-Date.parse(from.endAt);
+      // A distinct physical place cannot be reached at the exact instant
+      // the previous stay ends, even if both map to the same city centroid.
+      // Historical Flight Plans remain immutable and readable.
+      if(plan.kind==="personal"&&plan.materialization===undefined&&available<=0){
+        throw new LivedNowConflictError(
+          "Flight Plan place change requires elapsed transit time",
+        );
+      }
+      const minimum=minimumTravelMilliseconds(point(from.physicalPlaceRef),point(to.physicalPlaceRef));
       if(available<minimum){
         throw new LivedNowConflictError(
           "Flight Plan arrival is too soon for the geographical distance",
