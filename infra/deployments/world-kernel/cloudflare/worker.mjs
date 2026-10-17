@@ -184,6 +184,25 @@ function currentThreadObservatory(runtime,threadId){
   const livedNow=openLivedNowInspectionStore(runtime.worldStorage);
   try{
     const currentSituation=livedNow.getCurrentSituation(threadId);
+    const currentRefs=currentSituation?.location?.kind==="place"
+      ?[currentSituation.location.placeRef]
+      :currentSituation?.location?.kind==="transit"
+        ?[currentSituation.location.fromPlaceRef,currentSituation.location.toPlaceRef]:[];
+    const privatePlace=currentSituation?.location?.kind==="place"
+      ?livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef):null;
+    const worldPlaces=currentRefs.filter(ref=>ref.startsWith("wpl_"))
+      .map(ref=>livedNow.getWorldPlace(threadId,ref,{required:false})).filter(Boolean);
+    let placeEpisodes=[];
+    // Nearly all current locations already have city-level World authority.
+    // Only legacy situated places without it need one indexed history-head read.
+    if(currentRefs.some(ref=>ref.startsWith("per:")&&ref!==privatePlace?.placeRef)){
+      const situatedLife=openSituatedLifeInspectionStore(runtime.worldStorage);
+      try{placeEpisodes=situatedLife.listCurrentPlaceEpisodes(threadId);}
+      finally{situatedLife.close();}
+    }
+    const currentLocation=projectCurrentThreadLocation({
+      currentSituation,privatePlace,worldPlaces,placeEpisodes,
+    });
     const recentSituations=livedNow.listRecentSituations(threadId,{limit:8});
     const currentPersonalPlan=(currentSituation?.sourcePlanRefs??[])
       .map(ref=>livedNow.getPlan(threadId,ref))
@@ -192,11 +211,11 @@ function currentThreadObservatory(runtime,threadId){
       threadId,thread:structuredClone(thread),
       livedNow:{
         currentSituation:structuredClone(currentSituation),
+        currentLocation,
         recentSituations:structuredClone(recentSituations),
         currentPersonalPlan:structuredClone(currentPersonalPlan),
         worldContext:structuredClone(livedNow.getWorldContext(threadId,{required:false})),
-        privatelyKnownCurrentPlace:currentSituation?.location?.kind==="place"
-          ?structuredClone(livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef)):null,
+        privatelyKnownCurrentPlace:structuredClone(privatePlace),
       },
     });
   }finally{livedNow.close();}
@@ -261,6 +280,10 @@ function threadObservatory(runtime, threadId) {
     ].filter(ref=>ref.startsWith("wpl_")));
     const publicPlaces=[...publicPlaceRefs]
       .map(ref=>livedNow.getPublicPlace(ref)).filter(Boolean);
+    const privatePlace=currentSituation?.location?.kind==="place"
+      ?livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef):null;
+    const placeEpisodes=situatedLife.listCurrentPlaceEpisodes(threadId);
+    const worldPlaces=[...legacyPlaces,...publicPlaces];
     return Object.freeze({
       threadId,
       fibreIdentityNumber:registration?.fibreIdentityNumber ?? null,
@@ -273,12 +296,11 @@ function threadObservatory(runtime, threadId) {
       lifeRelations:structuredClone(situatedLife.listCurrentLifeRelations(threadId)),
       livedNow:Object.freeze({
         currentSituation:structuredClone(currentSituation),
+        currentLocation:projectCurrentThreadLocation({
+          currentSituation,privatePlace,worldPlaces,placeEpisodes,
+        }),
         // Internal operator evidence only. Never added to public directory.
-        privatelyKnownCurrentPlace:structuredClone(
-          currentSituation?.location?.kind==="place"
-            ?livedNow.getPrivatePlace(threadId,currentSituation.location.placeRef)
-            :null,
-        ),
+        privatelyKnownCurrentPlace:structuredClone(privatePlace),
         previousSituation:structuredClone(previousSituation),
         recentSituations:structuredClone(recentSituations),
         nextAutonomousBoundary:structuredClone(livedNow.inspectLivedBoundary(threadId)),
@@ -286,8 +308,8 @@ function threadObservatory(runtime, threadId) {
         explorationInteroception:structuredClone(explorationInteroception),
         currentPersonalPlan:currentPersonalPlanWitness,
         worldContext:structuredClone(livedNow.getWorldContext(threadId, { required:false })),
-        worldPlaces:structuredClone([...legacyPlaces,...publicPlaces]),
-        placeEpisodes:structuredClone(situatedLife.listCurrentPlaceEpisodes(threadId)),
+        worldPlaces:structuredClone(worldPlaces),
+        placeEpisodes:structuredClone(placeEpisodes),
       }),
       memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:24 })),
       socialInteractions:structuredClone(experience.listSocialInteractions(threadId, {
