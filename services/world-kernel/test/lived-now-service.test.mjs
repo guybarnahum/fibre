@@ -830,6 +830,88 @@ test("an admitted personal public-visit plan enacts transit, empty stay and retu
     }finally{lived.close();}
   }));
 
+test("World rejects a rushed cross-city arrival and autonomous life completes a feasible journey",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    try{
+      const threadId=life.thread.threadId;
+      const city=(name,country,countryCode,lat,long,timeZone)=>
+        lived.resolvePlace({
+          threadId,name,kind:"city",city:name,country,
+          geography:{locality:name,country,countryCode,lat,long,timeZone,
+            evidenceRef:"fixture:city-"+name},
+        }).place;
+      const lisbon=city("Lisbon","Portugal","PT",38.72509,-9.1498,"Europe/Lisbon");
+      const madrid=city("Madrid","Spain","ES",40.4168,-3.7038,"Europe/Madrid");
+      const start="2026-10-20T09:00:00.000Z";
+      const travelPlan=(arrival)=>({
+        planId:livedPlanId({threadId,kind:"personal",authoredAt:start}),
+        kind:"personal",subjectThreadId:threadId,
+        owner:{partyId:threadId,kind:"thread"},
+        authoredAt:start,horizonStart:start,
+        horizonEnd:"2026-10-20T18:00:00.000Z",
+        stops:[
+          {
+            startAt:start,endAt:"2026-10-20T09:30:00.000Z",
+            physicalPlaceRef:lisbon.ref,mediatedContext:null,
+            activity:"Prepare for the visit.",wakefulness:"awake",
+            purpose:"Leave Lisbon in good time.",companionRefs:[],
+            travelFromPrevious:null,
+          },
+          {
+            startAt:arrival,endAt:"2026-10-20T18:00:00.000Z",
+            physicalPlaceRef:madrid.ref,mediatedContext:null,
+            activity:"Explore Madrid.",wakefulness:"awake",
+            purpose:"Spend the afternoon in Madrid.",companionRefs:[],
+            travelFromPrevious:"Travel from Lisbon to Madrid.",
+          },
+        ],
+        sourceReferences:[life.sourceEvent,lisbon.ref,madrid.ref],
+        cognition:{provider:"fixture",modelId:"city-journey",providerRequestId:"fixture-city-journey"},
+      });
+      assert.throws(()=>lived.recordPlan(travelPlan("2026-10-20T09:40:00.000Z")),
+        /arrival is too soon/,
+        "World admitted a ten-minute Lisbon-to-Madrid journey");
+      assert.equal(lived.listPlans(threadId).length,0,
+        "rejected travel was written into the Thread's future");
+
+      lived.recordPlan(travelPlan("2026-10-20T13:30:00.000Z"));
+      const observed=[];
+      const service=createLivedNowService({
+        livedNowStore:lived,
+        onSituationEnacted:situation=>observed.push(situation.phase),
+        onSituationResolved:situation=>lived.scheduleNextLivedBoundary({
+          threadId,situationId:situation.situationId,
+          dueAt:nextLivedBoundary(lived,situation),
+        }),
+      });
+      const before=await service.ensure({threadId,at:"2026-10-20T09:10:00.000Z"});
+      assert.equal(before.location.placeRef,lisbon.ref);
+      assert.equal(lived.currentLocationTimeZone(threadId),"Europe/Lisbon");
+      let now="2026-10-20T09:30:00.000Z";
+      const scheduler=createLivedBoundaryProcess({
+        livedNowStore:lived,livedNow:service,now:()=>now,
+      });
+      assert.equal((await scheduler.runOnce()).failed,0);
+      const journey=lived.getCurrentSituation(threadId);
+      assert.equal(journey.phase,"in_transit","cross-city travel skipped its transit interval");
+      assert.equal(journey.location.toPlaceRef,madrid.ref);
+      assert.equal(lived.currentLocationTimeZone(threadId),"Europe/Lisbon",
+        "destination time zone was adopted before arriving");
+
+      now="2026-10-20T13:30:00.000Z";
+      assert.equal((await scheduler.runOnce()).failed,0);
+      const arrived=lived.getCurrentSituation(threadId);
+      assert.equal(arrived.location.placeRef,madrid.ref,
+        "the autonomous boundary failed to enact the intended arrival");
+      assert.equal(lived.currentLocationTimeZone(threadId),"Europe/Madrid",
+        "the arrived Thread retained its departed city's time zone");
+      assert.deepEqual(observed,["at_place","in_transit","at_place"],
+        "cross-city travel generated a false scene or skipped a real one");
+    }finally{lived.close();}
+  }));
+
 test("a Thread can consider local public places from a hidden but attested Genesis sibling",()=>{
   const threadId="thr_local_choice";
   const place=(kind)=>({
