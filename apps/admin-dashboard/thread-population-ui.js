@@ -130,13 +130,18 @@ function threadBirthplaceCell(identity) {
   return cell;
 }
 
-function threadCurrentPlaceCell(location) {
+function threadCurrentPlaceCell(location,operatorCurrentPlace) {
   const cell=document.createElement("td");
   cell.className="thread-population-current-place";
-  cell.append(createThreadLocation(currentThreadPlace(location),{
+  const publicPlace=currentThreadPlace(location);
+  const privatePlace=publicPlace===null&&operatorCurrentPlace?.disclosure==="private"
+    ?operatorCurrentPlace:null;
+  cell.append(createThreadLocation(publicPlace??privatePlace,{
     className:"thread-population-current-place-value",
+    suffix:privatePlace?"Private":null,
   }));
-  if(location?.establishedAt)cell.title="Last enacted · "+when(location.establishedAt);
+  if(privatePlace)cell.title="Privately attested current city · not publicly disclosed";
+  else if(location?.establishedAt)cell.title="Last enacted · "+when(location.establishedAt);
   return cell;
 }
 
@@ -426,7 +431,7 @@ function threadRow(thread) {
     ?"No durable parental physical-origin evidence is recorded for this Thread."
     :"Recorded parental physical-origin evidence; never inferred from birthplace, name, language, culture, or portrait.";
   const birthplace=threadBirthplaceCell(identity);
-  const currentPlace=threadCurrentPlaceCell(thread.currentLocation);
+  const currentPlace=threadCurrentPlaceCell(thread.currentLocation,thread.operatorCurrentPlace);
   const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
   const birthDate = document.createElement("td"); birthDate.textContent = identity.birthDate ?? "—";
   const health = document.createElement("td"); health.append(badge(thread.admitted === false ? "not admitted" : thread.health, healthKind(thread.health)));
