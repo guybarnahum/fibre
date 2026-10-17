@@ -426,7 +426,11 @@ export function observatoryCurrentPlace(livedNow){
   const located=currentThreadPlace(livedNow?.currentLocation)
     ??currentThreadPlace(privatePlace===null||privatePlace===undefined
       ?null:{...privatePlace,kind:"place"});
-  if(located===null)return "Not established";
+  if(located===null){
+    return livedNow?.currentSituation?.location?.kind==="transit"
+      ?"In transit · location unresolved"
+      :livedNow?.currentSituation?"Location unresolved":"Not established";
+  }
   const city=threadLocationText(located);
   const situation=livedNow?.currentSituation;
   const publicVenue=situation?.location?.kind==="place"
