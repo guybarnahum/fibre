@@ -87,4 +87,9 @@ test("current-place presentation uses enacted city, not birthplace or a private 
   assert.equal(threadLocationText(currentThreadPlace({
     ...worldLocation,kind:"transit",
   })),"In transit · London, United Kingdom");
+  assert.equal(threadLocationText(currentThreadPlace({
+    ...worldLocation,kind:"transit",locality:"In transit",
+    displayName:"Private home → private destination",
+  })),"In transit",
+  "transit exposed a private route or repeated an unknown city");
 });
