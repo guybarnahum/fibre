@@ -427,6 +427,14 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
       "population lost Thread-authored plan coverage");
     assert.equal(mayaNow.lifeContinuity?.nextAutonomousBoundary,null,
       "World invented an autonomous wake for an unarmed life");
+    const wakeAt="2026-09-10T05:07:00Z";
+    lived.scheduleNextLivedBoundary({
+      threadId:life.thread.threadId,situationId:second.situationId,dueAt:wakeAt,
+    });
+    const withWake=lived.listCurrentLocationEvidence({at:second.establishedAt})
+      .find(entry=>entry.threadId===life.thread.threadId);
+    assert.equal(withWake.lifeContinuity?.nextAutonomousBoundary?.dueAt,wakeAt,
+      "population lost the Thread's durable next wake");
     assert.equal(mayaNow.placeEpisodes[0].place.locality, "Haifa", "live map lost current place evidence");
     assert.equal(mayaNow.privatePlace,null,"World invented an operator-attested location");
     lived.admitPrivatePlace({
