@@ -554,6 +554,7 @@ export class LivedNowStore {
       };
       const place=resolveWorldPlace(this.#database,{
         threadId,name,city,country,kind,geography:location??cityGeography,
+        parentRef:parent?.ref??null,
       });
       return Object.freeze({place,parent,status:place.lat===null?"unlocated":"located"});
     });
