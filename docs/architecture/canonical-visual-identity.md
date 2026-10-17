@@ -287,18 +287,9 @@ Later Thread-depicting generation also requires a provider profile capable of re
 
 If the selected provider cannot accept the canonical reference, the asset demand remains deferred or selects another explicitly configured reference-capable provider.
 
-Both current image integrations preserve Fibre's reference-object requirement. BFL/FLUX sends canonical references through its native reference inputs; the OpenAI adapter uses the Images edits endpoint when a job carries reference objects and the generations endpoint when it does not. Deployment composition still chooses the provider profile; the semantic job retains the same reference requirement independent of provider.
+The configured OpenAI GPT Image 2 integration preserves the reference-object requirement. It uses the Images edits endpoint when a job carries canonical reference images and the generations endpoint when it does not. Deployment composition chooses the provider; the semantic job retains the same reference requirement independently of provider.
 
-Image profiles may name a deployment-owned secondary profile. Current routing is:
-
-```text
-reference-conditioned image: BFL FLUX.2 Pro -> OpenAI GPT Image 2
-reference-free image:        OpenAI GPT Image 2 -> BFL FLUX.2 Pro
-```
-
-A provider rejection can therefore fail over without dropping the canonical reference or changing the semantic job. Fibre does not switch providers for ambiguous transport/timeouts where the first provider may already have accepted work, and it resumes a durable accepted provider operation rather than racing it with another render. Provider rejections and failover are logged.
-
-For explicit validation, a deliberately crafted Asset Generation job may set `context.imageProviderMode = "secondary"`. This bypasses the primary for that job only and exists as an operator/test seam; ordinary planners leave it unset.
+For now, both reference-conditioned and reference-free generation use OpenAI GPT Image 2 exclusively. There is no BFL profile or automatic image-provider fallback in the active deployment. An unavailable provider leaves the job pending or failed according to the existing retry semantics; it must not silently render the Thread without its canonical reference. Provider adapters remain replaceable without altering identity authority.
 
 ## Supersession and correction
 
