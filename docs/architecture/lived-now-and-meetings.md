@@ -433,6 +433,54 @@ demonstrated separately. Existing locality-level private disclosure remains
 unchanged; the new operation does not promote historical context into
 physical venue identity or co-presence.
 
+### Thread-originated discovery of new localities — source implemented, validation pending
+
+A prospective ordinary personal Flight Plan may now propose up to two destinations
+absent from its offered World place refs using a transient
+`new-locality:Country/City` stop reference. This is **Thread-authored
+intention**, not a physical-place assertion. Existing offered references remain
+unchanged, retrospective Flight Plans cannot use present-day discovery, and
+a new-locality stop cannot replace the Thread's starting place. A transition
+into a new locality requires a positive elapsed travel interval; the next
+spatial-continuity slice will address stronger travel feasibility.
+
+After the **same** bounded private cognition episode, World resolves only
+destinations the Thread actually selected. It first reuses indexed
+`world_localities` evidence; if no grounded locality is known, the World
+deployment may consult the existing GeoNames integration with an exact
+city/country match and actual IANA timezone. A missing, ambiguous or failed
+lookup never admits a fabricated city or arrival. The GeoNames application
+username is supplied through existing `GEONAMES_USERNAME` deployment
+configuration; ordinary plans that select no new destination perform no
+geographical network calls.
+
+For a located destination World admits one Thread-scoped
+`world_discovered_places` identity (`wpl_*`) and an associated
+city-precision private World geography record, initially hidden from public
+location disclosure. This is a *city arrival context*, not a specific café,
+shop, school, residence, or independently verified public venue. The model's
+transient proposal is replaced with that authoritative ref **before**
+`recordPlan`; the admitted Flight Plan cites the new World place evidence.
+World's existing boundary-driven LivedNow may later enact departure,
+transit and arrival; discovery does not itself place a Thread there or create
+a meeting. Repeated choices reuse the same city identity. Later prospective
+plans can include bounded previously discovered destinations and always retain
+the current starting place, so life does not stall after the first journey.
+
+Operator current-place geography can use the retained locality register,
+including cities absent from the original static locality catalog. The
+population projection reads these via a set-wise join rather than per-Thread
+geocoding. Neither city centroids nor same-city presence imply the same venue
+or physical co-presence.
+
+**Proof boundary:** semantic source tests cover model-selected unlisted
+destinations, World-owned identity, locality reuse, privacy, no fabricated
+visit, and rejected unknown geography. Guy's local validation and a real
+staging Thread choosing, travelling to, and inhabiting a new city remain open.
+Unresolvable Thread destination proposals currently fail Flight Plan admission;
+they must not be counted as completed travel or claimed as retained
+autobiographical intention.
+
 ### Grounded geography and private residences — S0 staging admitted, social visits still open
 
 S0 adds two complementary World authorities without manufacturing movement or co-presence:
