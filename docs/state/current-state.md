@@ -127,7 +127,7 @@ absence of manual ensure, and new-destination novelty require additional
 operator evidence and are **not yet claimed**. This slice is source only
 until local validation and staging inspection.
 
-## Spatial continuity (source implementation, validation pending)
+## Spatial continuity (locally validated and deployed to staging; natural journey proof open)
 
 Newly admitted Flight Plans can no longer jump implausibly quickly between
 two geographically grounded distant places. World checks one conservative,
@@ -139,8 +139,9 @@ future planning uses the destination's timezone and locality. The map
 interpolates only between known endpoints. Individual Thread inspection now
 includes enacted World-entity destinations and travel endpoints.
 
-These are **source changes**; local tests, full repository validation, staging
-deployment and a naturally chosen live journey are not yet confirmed.
+Guy reported on October 17, 2026 that the full local validation passed
+and the World service was deployed to staging. That confirms source validation
+and staging deployment, **not** a naturally Thread-chosen completed journey.
 This is a lower-bound feasibility check, not road/rail/air itinerary planning,
 and it does not automatically shift or regenerate an impossible Flight Plan.
 
