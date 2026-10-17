@@ -128,6 +128,58 @@ function seedLife(databasePath) {
   };
 }
 
+test("World grounds future places in an unfamiliar city without pretending a visit",async()=>{
+  await withDatabase(async databasePath=>{
+    const {thread,sourceEvent}=seedLife(databasePath);
+    const situated=openSituatedLifeStore(localWorldStateStorage(databasePath));
+    const admitted=[];
+    for(const name of ["porto-apartment","porto-books","imaginary-hamlet"]){
+      const locality=name==="imaginary-hamlet"?"Imaginary Hamlet":"Porto";
+      const episode=situated.recordPlaceEpisode({
+        episodeId:placeEpisodeId({thread:thread.threadId,place:name}),
+        revision:1,threadId:thread.threadId,episodeKind:"other",
+        place:{placeId:"place.future."+name,displayName:name,
+          countryCode:"PT",region:"Portugal",locality,precision:"locality"},
+        startAt:"2026-09-10T05:04:00Z",endAt:null,
+        sourceReferences:[sourceEvent],visibility:"private",
+        provenance:"thread_history",recordedAt:"2026-09-10T05:05:00Z",
+      });
+      admitted.push(placeEpisodeRevisionRef(episode));
+    }
+    situated.close();
+
+    const life=openLivedNowStore(localWorldStateStorage(databasePath));
+    try{
+      const place=(ref,locality)=>({
+        threadId:thread.threadId,placeRef:ref,specificPlace:"A place Victor may visit",
+        streetAddress:null,locality,country:"Portugal",countryCode:"PT",
+        lat:null,long:null,timeZone:"Europe/Lisbon",
+        evidenceRef:ref,publicGranularity:"hidden",
+      });
+      const porto={
+        locality:"Porto",country:"Portugal",countryCode:"PT",
+        lat:41.1496,long:-8.6109,timeZone:"Europe/Lisbon",
+        evidenceRef:"fixture:verified-porto-locality",
+      };
+      const first=life.groundPlace({place:place(admitted[0],"Porto"),localityEvidence:porto});
+      const second=life.groundPlace({place:place(admitted[1],"Porto")});
+      const unknown=life.groundPlace({place:place(admitted[2],"Imaginary Hamlet")});
+
+      assert.equal(first.status,"grounded","new destination did not acquire a grounded locality");
+      assert.equal(second.status,"grounded","a later place failed to reuse grounded city");
+      assert.equal(second.locality.evidenceRef,porto.evidenceRef,
+        "later place invented independent geography");
+      assert.equal(unknown.status,"unlocated","World fabricated unknown geographical evidence");
+      assert.equal(life.getPrivatePlace(thread.threadId,admitted[2]),null,
+        "unlocated place was incorrectly admitted as grounded");
+      assert.equal(life.getCurrentSituation(thread.threadId),null,
+        "geographical knowledge fabricated an enacted visit");
+      assert.equal(life.listPlans(thread.threadId).length,0,
+        "grounding a destination fabricated a Flight Plan");
+    }finally{life.close();}
+  });
+});
+
 function cognition(homeRef) {
   let invocation = null;
   return {
