@@ -461,6 +461,11 @@ function threadRow(thread) {
 }
 
 function sortValue(thread, key) {
+  if(key==="life"){
+    const states=["continuing","overdue","unarmed","dormant","blocked","unstarted","unknown"];
+    const status=thread.lifeContinuity===null?"unknown":threadLifeStatus(thread.lifeContinuity);
+    return states.indexOf(status);
+  }
   if(key==="name")return thread.identity?.name??thread.threadId;
   if(key==="ethnicity")return physicalOriginsText(thread)==="—"?null:physicalOriginsText(thread);
   if(key==="birthplace")return thread.identity?.birthLocation?.displayName??thread.identity?.birthPlace??null;
