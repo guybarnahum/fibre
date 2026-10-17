@@ -36,7 +36,7 @@
             "directory": "Prospero’s Books & Coffee",
             "url": "https://prosperosbookshop.com/en/services/home"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_e9c0b1a026ae6d4e6574df38f47bf8b253f3d3652d94900f1bf2f07c53de5075"
         },
         "dedaena-park": {
           "name": "Dedaena Park",
@@ -52,7 +52,7 @@
             "directory": "Georgia Travel",
             "url": "https://georgia.travel/family-attractions/dedaena-park"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_f90d859dbb78de7c67e4b36c0c995999ac02810d5f8c2a43557af08ac914e862"
         },
         "fabrika-tbilisi": {
           "name": "Fabrika Tbilisi",
@@ -68,7 +68,7 @@
             "directory": "Fabrika Tbilisi",
             "url": "https://fabrikatbilisi.com/contact/"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_fcc0d084eca1b6c5fd2fcf0141eca6dc4bf6b45b7577051296680d7ccd9e7d9c"
         }
       }
     },
@@ -91,7 +91,7 @@
             "directory": "Abrehot Library",
             "url": "https://abrehot.org.et/"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_3a89b83bb9e16a1f7619fbbfa9f2a7189789f8631730ae7dfc3bed9f9fb9c821"
         },
         "entoto-park": {
           "name": "Entoto Park",
@@ -107,7 +107,7 @@
             "directory": "Entoto Park",
             "url": "https://www.entotopark.gov.et/aboutus"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_ed7a38abb1ec2e43da62af0441d232784fcc74e49adb3e6962e8583c00c8f1f2"
         },
         "unity-park": {
           "name": "Unity Park",
@@ -123,7 +123,7 @@
             "directory": "Unity Park",
             "url": "https://unitypark.et/"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_5bbf7f5260c45c5b5f2cb699ebc74b2cd75e3fcddc01228316cb540c9824e873"
         }
       }
     },
@@ -146,7 +146,7 @@
             "directory": "British Library",
             "url": "https://www.bl.uk/visit"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_a41bd2fa31ae0a524221cb17c1c4989c9b9bba372e9ea9604c6e2950e757590d"
         },
         "southbank-centre": {
           "name": "Southbank Centre",
@@ -162,7 +162,7 @@
             "directory": "Southbank Centre",
             "url": "https://www.southbankcentre.co.uk/visit-us/getting-here/"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_ddb52842250ba08bc29f1a1d724448ec505d678ebc18b12288d76dc89cbc6593"
         },
         "barbican-centre": {
           "name": "Barbican Centre",
@@ -178,7 +178,7 @@
             "directory": "Barbican Centre",
             "url": "https://www.barbican.org.uk/your-visit/general-info/getting-here"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_c735684a7f02b2b0de818c5789fdf89dce5c9dada528cc358c42f19cc0839254"
         }
       }
     }
