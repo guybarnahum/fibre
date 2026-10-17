@@ -33,16 +33,6 @@ const STOP_SCHEMA = Object.freeze({
     startAt: { type: "string" },
     endAt: { type: "string" },
     physicalPlaceRef: { type: "string" },
-    newPlace: {
-      type:"object",additionalProperties:false,
-      required:["name","kind","city","country"],
-      properties:{
-        name:{type:"string",minLength:1,maxLength:120},
-        kind:{type:"string",enum:["city","place"]},
-        city:{type:"string",minLength:1,maxLength:120},
-        country:{type:"string",minLength:1,maxLength:120},
-      },
-    },
     presenceMode: { type: "string", enum: ["physical", "mediated"] },
     mediatedContext: { type: "string" },
     activity: { type: "string", minLength: 1, maxLength: 500 },
@@ -76,7 +66,7 @@ For each stop, state wakefulness separately from the natural-language activity: 
 When interoception is supplied, it is bounded subsemantic organismic state grounded in recent lived evidence. Interpret what it means for this Thread alongside developed self/history and current commitments. Exploration pressure is not a command or proof of boredom. Social-contact pressure is not a diagnosis of loneliness or a demand to seek company. Interpret both through this person's life; meaningful contact, novelty, learning, play, solitude, staying put, or changing places may all be legitimate responses. Never invent a person, a shared venue, a meeting, or consent to satisfy a drive.
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Public City Guide suggestions, when offered, are editorial *possibilities* in the Thread's grounded locality. A listing does not mean anyone is there or has invited the Thread, and makes no promise of satisfaction. This Thread may consider one, rely on familiar remembered places, or ignore the guide. Never treat a listing as a visit or a promise of contact.
-Use offered physical-place refs for known destinations. For a genuinely new place, set physicalPlaceRef to an empty string and provide newPlace with its natural name, kind (city or place), city and country. World will resolve or remember it. Unknown geography is allowed; do not invent an exact address, verified venue or anyone present. Propose at most two new places per plan. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
+Use offered physical-place refs for known destinations. For a new destination absent from the list, physicalPlaceRef may instead name it naturally, such as "Porto, Portugal" for a city or "A neighborhood café, Porto, Portugal" for a specific place. World will replace that temporary name with its place reference before admission. Unknown geography is allowed; do not invent exact addresses, shared venues or people present. Propose at most two new places per plan. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
 When startingPlaceRef is supplied, the first stop must remain at that physical place; do not teleport the Thread to another place. Any move to a new locality and any journey to or from an independently admitted public venue needs real elapsed transit time between stops, not an immediate jump or a claim that travel already occurred.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
@@ -290,67 +280,69 @@ function normalizeCognitiveStop(output, index, places, horizonStart, horizonEnd)
   };
 }
 
-// Place proposals are Thread-authored intentions, not visits or World facts.
+// A place name is a fleeting Thread-authored proposal, never durable
+// World authority. Every admitted Flight Plan still cites physical place refs.
+function proposedPlace(value){
+  const parts=typeof value==="string"?value.split(",").map(s=>s.trim()).filter(Boolean):[];
+  if(parts.length<2||parts.some(s=>s.length>120)
+    ||value.startsWith("wpl_")||value.startsWith("per:")){
+    throw new TypeError("new destination needs a place and country");
+  }
+  const country=parts.at(-1),city=parts.at(-2);
+  return {
+    name:parts.length===2?city:parts.slice(0,-2).join(", "),
+    kind:parts.length===2?"city":"place",city,country,
+  };
+}
+
 async function resolveNewPlaces({
-  threadId,stops,startingPlaceRef,materializedAt,sourceStores,resolveDestinationGeography,
+  threadId,stops,startingPlaceRef,materializedAt,sourceStores,
+  resolveDestinationGeography,availablePlaces,
 }){
-  const proposed=stops.filter(stop=>stop.newPlace!==undefined&&stop.newPlace!==null);
-  if(proposed.length===0)return {stops,places:[]};
+  const offered=new Set(availablePlaces.map(place=>place.ref));
+  const requests=[...new Set(stops.map(s=>s.physicalPlaceRef).filter(ref=>!offered.has(ref)))];
+  if(requests.length===0)return {stops,places:[]};
   if(materializedAt!==null)throw new TypeError("retrospective life cannot discover present-day places");
   if(startingPlaceRef===null||stops[0].physicalPlaceRef!==startingPlaceRef){
     throw new TypeError("new place cannot replace the starting location");
   }
-  if(proposed.length>2)throw new TypeError("Flight Plan may discover at most two new places");
+  if(requests.length>2)throw new TypeError("Flight Plan may discover at most two new places");
   const store=sourceStores?.livedNowStore;
-  if(typeof store?.resolvePlace!=="function"){
+  if(typeof store?.resolvePlace!=="function")
     throw new TypeError("World place resolution is required");
-  }
-  const choices=[];
-  const resolved=new Map();
-  for(const [index,stop] of stops.entries()){
-    if(stop.newPlace===undefined||stop.newPlace===null)continue;
-    const place=stop.newPlace;
-    assertPlainObject("Thread proposed place",place);
-    assertExactKeys("Thread proposed place",place,["name","kind","city","country"]);
-    for(const key of ["name","city","country"])assertNonEmpty("Thread place "+key,place[key]);
-    if(!["city","place"].includes(place.kind)||stop.physicalPlaceRef!==""){
-      throw new TypeError("new place must use an empty physicalPlaceRef and a city or place description");
-    }
-    if(index===0)throw new TypeError("new place cannot replace current presence");
-    const previous=stops[index-1];
-    if(Date.parse(stop.startAt)<=Date.parse(previous.endAt)
-      ||typeof stop.travelFromPrevious!=="string"
-      ||!stop.travelFromPrevious.trim()){
-      throw new TypeError("new place requires elapsed travel time");
-    }
-    const key=JSON.stringify(place);
-    if(!resolved.has(key)){
-      let result=store.resolvePlace({threadId,...place});
-      // Geography enriches a known entity; it never determines whether a
-      // Thread is permitted to know it. Provider failures do not block life.
-      if((result.status==="unlocated"||result.place.timeZone===null)
-        &&typeof resolveDestinationGeography==="function"){
-        try{
-          const geography=await resolveDestinationGeography({
-            city:place.city,country:place.country,
-          });
-          if(geography!==null)result=store.resolvePlace({threadId,...place,geography});
-        }catch{
-          // Retain the place with unknown coordinates.
-        }
+  const choices=[],resolved=new Map();
+  for(const request of requests){
+    const place=proposedPlace(request);
+    for(let index=1;index<stops.length;index++){
+      const stop=stops[index];
+      if(stop.physicalPlaceRef!==request)continue;
+      const previous=stops[index-1];
+      if(previous.physicalPlaceRef!==request
+        &&(Date.parse(stop.startAt)<=Date.parse(previous.endAt)
+          ||!stop.travelFromPrevious?.trim())){
+        throw new TypeError("new place requires elapsed travel time");
       }
-      resolved.set(key,result.place.ref);
-      choices.push({
-        ref:result.place.ref,displayName:result.place.displayName,
-        placeKind:result.place.placeKind,
-      });
     }
+    let result=store.resolvePlace({threadId,...place});
+    // Geography enriches the entity, not the Thread's permission to know it.
+    if((result.status==="unlocated"||result.place.timeZone===null)
+      &&typeof resolveDestinationGeography==="function"){
+      try{
+        const geography=await resolveDestinationGeography({city:place.city,country:place.country});
+        if(geography!==null)result=store.resolvePlace({threadId,...place,geography});
+      }catch{
+        // Preserve the place with unknown geography if the provider fails.
+      }
+    }
+    resolved.set(request,result.place.ref);
+    choices.push({
+      ref:result.place.ref,displayName:result.place.displayName,
+      placeKind:result.place.placeKind,
+    });
   }
-  return {places:choices,stops:stops.map(stop=>{
-    if(stop.newPlace===undefined||stop.newPlace===null)return stop;
-    const {newPlace,...ordinary}=stop;
-    return {...ordinary,physicalPlaceRef:resolved.get(JSON.stringify(newPlace))};
-  })};
+  return {places:choices,stops:stops.map(stop=>({
+    ...stop,physicalPlaceRef:resolved.get(stop.physicalPlaceRef)??stop.physicalPlaceRef,
+  }))};
 }
 
 export async function formPersonalLivedPlan({
@@ -458,7 +450,7 @@ export async function formPersonalLivedPlan({
 
   const discovery=await resolveNewPlaces({
     threadId,stops:cognition.result.stops,startingPlaceRef,materializedAt,
-    sourceStores,resolveDestinationGeography,
+    sourceStores,resolveDestinationGeography,availablePlaces:places,
   });
   const available=[...places,...discovery.places];
   const stops = discovery.stops.map((stop, index) =>
