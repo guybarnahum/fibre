@@ -74,6 +74,11 @@ function resolvedPlace(reference, { worldPlaces, placeEpisodes, privatePlace, co
       });
     }
   }
+  if(privatePlace?.placeRef===reference){
+    // Explicit World granularity cannot be broadened by a sibling location.
+    return Object.freeze({ref:reference,displayName:null,geography:null,
+      authority:"world_private_place_hidden"});
+  }
   const shared = worldPlaces.find((place) => place.ref === reference) ?? null;
   if (shared !== null) {
     return Object.freeze({
