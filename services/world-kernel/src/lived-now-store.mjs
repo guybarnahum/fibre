@@ -65,7 +65,7 @@ function minimumTravelMilliseconds(from,to){
   if(km<25)return 0;
   // Regional land travel or an optimistic flight including departure and
   // arrival time. No assumptions about roads, stations, or actual routes.
-  const minutes=km<=150?km/120*60:40+km/900*60;
+  const minutes=km<=150?km/120*60:Math.max(75,40+km/900*60);
   return Math.ceil(minutes*60_000);
 }
 
@@ -662,9 +662,13 @@ export class LivedNowStore {
 
   currentLocationTimeZone(threadId){
     const situation=this.getCurrentSituation(threadId);
-    if(situation?.location?.kind!=="place")return null;
-    return this.getPrivatePlace(threadId,situation.location.placeRef)?.timeZone
-      ??this.getWorldPlace(threadId,situation.location.placeRef,{required:false})?.timeZone
+    // During transit, local civil time follows the known departure context.
+    // It switches only once World enacts arrival at the destination.
+    const ref=situation?.location?.kind==="place"?situation.location.placeRef
+      :situation?.location?.kind==="transit"?situation.location.fromPlaceRef:null;
+    if(ref===null)return null;
+    return this.getPrivatePlace(threadId,ref)?.timeZone
+      ??this.getWorldPlace(threadId,ref,{required:false})?.timeZone
       ??null;
   }
 
