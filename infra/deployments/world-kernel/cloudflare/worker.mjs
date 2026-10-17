@@ -6,7 +6,7 @@ import { createAppearanceCoverageService } from "#services/world-kernel/src/appe
 import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { openContactInspectionStore } from "#services/world-kernel/src/contact-store.mjs";
-import { projectCurrentThreadLocation,genesisContextLocations } from "#services/world-kernel/src/current-thread-location.mjs";
+import { projectCurrentThreadLocation,genesisContextLocations,isModernGenesisPlace } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
@@ -183,7 +183,8 @@ function projectedCurrentLocation(livedNow,threadId,{
     currentSituation,privatePlace,worldPlaces,placeEpisodes,
   });
   // A direct private visibility decision wins over sibling-context inference.
-  if(direct!==null||privatePlace!==null||placeEpisodes.length===0)return direct;
+  if(direct!==null||privatePlace!==null
+    ||!placeEpisodes.some(isModernGenesisPlace))return direct;
   // A personal place may be a sibling of a previously located modern
   // Genesis context. Resolve only that shared, attested context, not birth.
   return projectCurrentThreadLocation({
