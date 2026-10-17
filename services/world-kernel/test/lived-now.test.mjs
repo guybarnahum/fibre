@@ -424,6 +424,23 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
     const mayaNow = locationSnapshot.find((entry) => entry.threadId === life.thread.threadId);
     assert.equal(mayaNow.currentSituation.situationId, second.situationId, "live map lost the current situation");
     assert.equal(mayaNow.placeEpisodes[0].place.locality, "Haifa", "live map lost current place evidence");
+    assert.equal(mayaNow.privatePlace,null,"World invented an operator-attested location");
+    lived.admitPrivatePlace({
+      threadId:life.thread.threadId,placeRef:life.homeRef,
+      specificPlace:"Home in Haifa",streetAddress:null,
+      locality:"Haifa",country:"Israel",countryCode:"IL",
+      lat:null,long:null,timeZone:"Asia/Jerusalem",
+      evidenceRef:"operator_birth_city_default:"+life.thread.threadId,
+      publicGranularity:"city",
+    });
+    const located=lived.listCurrentLocationEvidence({at:second.establishedAt})
+      .find(entry=>entry.threadId===life.thread.threadId);
+    assert.equal(located.privatePlace?.placeRef,life.homeRef,
+      "admitted locality was not joined to enacted presence");
+    assert.equal(located.privatePlace?.locality,"Haifa",
+      "admitted locality was not available to the Thread directory");
+    assert.equal(located.privatePlace?.streetAddress,null,
+      "locality admission fabricated a residential address");
     assert.match(personal.stops[0].activity, /octopus livestream/);
     assert.match(personal.stops[1].activity, /Finish the sketch/);
     lived.close();
