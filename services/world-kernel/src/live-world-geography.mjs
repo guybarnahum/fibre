@@ -116,6 +116,16 @@ export function getWorldDiscoveredPlace(db,threadId,placeRef){
     WHERE thread_id=? AND place_ref=?`).get(threadId,placeRef),"discovered World place");
 }
 
+export function listWorldDiscoveredPlaces(db,threadId,{limit=16}={}){
+  assertId("discovered World threadId",threadId);
+  if(!Number.isSafeInteger(limit)||limit<1||limit>32){
+    throw new TypeError("World destinations require a bounded limit");
+  }
+  return Object.freeze(db.prepare(`SELECT place_ref,record_json,record_digest
+    FROM world_discovered_places WHERE thread_id=? ORDER BY place_ref LIMIT ?`
+  ).all(threadId,limit).map(row=>stored(row,"discovered World place")));
+}
+
 export function admitWorldDiscoveredPlace(db,{threadId,locality}={}){
   assertId("discovered World threadId",threadId);
   assertPlainObject("discovered World locality",locality);
