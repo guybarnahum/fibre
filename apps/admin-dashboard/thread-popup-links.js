@@ -210,6 +210,10 @@ function decorate(root = document) {
 }
 
 document.addEventListener("click", (event) => {
+  // Capture-phase dispatch must not steal clicks from controls nested in
+  // a Thread row (copy, repair, FID, portrait preview, etc.).
+  const control=event.target.closest?.("button,a,input,select,textarea,[role='button']");
+  if(control&&!control.matches(".thread-link,[data-thread-id]"))return;
   const target = event.target.closest?.(".thread-link,[data-thread-id]");
   const threadId = threadIdFor(target);
   if (!threadId) return;
@@ -220,6 +224,8 @@ document.addEventListener("click", (event) => {
 
 document.addEventListener("keydown", (event) => {
   if (!["Enter", " "].includes(event.key)) return;
+  const control=event.target.closest?.("button,a,input,select,textarea,[role='button']");
+  if(control&&!control.matches(".thread-link,[data-thread-id]"))return;
   const target = event.target.closest?.(".thread-link,[data-thread-id]");
   const threadId = threadIdFor(target);
   if (!threadId || target.tagName === "BUTTON") return;
