@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   resolveGeoNamesPlace,
+  resolveGeoNamesLocality,
   reverseGeoNamesPlace,
   searchGeoNamesPlaces,
 } from "./geonames.mjs";
@@ -116,4 +117,29 @@ test("GeoNames reverse lookup produces the same canonical geography shape", asyn
     lat:35.6895,
     long:139.69171,
   });
+});
+
+test("Thread destination geography requires exact city and verified timezone",async()=>{
+  const lookup=async(url)=>{
+    const u=new URL(url);
+    if(u.pathname==="/timezoneJSON"){
+      assert.equal(u.searchParams.get("lat"),"41.1496");
+      return new Response(JSON.stringify({timezoneId:"Europe/Lisbon"}));
+    }
+    return response([
+      {fcl:"P",name:"Porto",countryName:"Portugal",countryCode:"PT",
+        lat:"41.1496",lng:"-8.6109"},
+      {fcl:"P",name:"Porto",countryName:"Brazil",countryCode:"BR",
+        lat:"-10",lng:"-50"},
+    ]);
+  };
+  const grounded=await resolveGeoNamesLocality({
+    city:"Porto",country:"Portugal",username:"fibre-test",fetchImpl:lookup,
+  });
+  assert.equal(grounded?.locality,"Porto");
+  assert.equal(grounded?.countryCode,"PT");
+  assert.equal(grounded?.timeZone,"Europe/Lisbon");
+  assert.equal(await resolveGeoNamesLocality({
+    city:"Nonexistent",country:"Portugal",username:"fibre-test",fetchImpl:lookup,
+  }),null,"unmatched geographical name must not silently use a nearby city");
 });
