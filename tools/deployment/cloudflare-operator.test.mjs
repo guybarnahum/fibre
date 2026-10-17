@@ -220,7 +220,6 @@ test("Slice E secret configuration uploads only each service subset and persists
   const operatorFile = resolve(repoRoot, "operator.env");
   await writeFile(operatorFile, [
     "OPENAI_API_KEY=secret-openai",
-    "BFL_API_KEY=secret-bfl",
     "FIBRE_PRIVATE_TOKEN=secret-private",
     "FIA_ISSUER_JWK=secret-fia-jwk",
     "FIA_CREDENTIAL_KEY_BASE64=secret-fid-key",
@@ -237,7 +236,7 @@ test("Slice E secret configuration uploads only each service subset and persists
   assert.equal(uploads.length, 5, "exactly the five deployed services should receive secrets");
   assert.deepEqual(
     uploadedSecretKeys(uploads, "asset-generator"),
-    ["OPENAI_API_KEY", "BFL_API_KEY", "FIBRE_PRIVATE_TOKEN"],
+    ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN"],
   );
   assert.deepEqual(
     uploadedSecretKeys(uploads, "thread-presentation"),
