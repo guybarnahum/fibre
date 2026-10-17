@@ -196,6 +196,10 @@ test("Thread chooses a previously unknown place; World remembers it without inve
 test("World reuses city geography for distinct places and never equates knowledge with presence",async()=>{
   await withDatabase(async databasePath=>{
     const {thread}=seedLife(databasePath);
+    const other=childThread();
+    other.threadId="thr_independent_geo";
+    const world=openWorldStore(localWorldStateStorage(databasePath));
+    world.seedThread(other);world.close();
     const life=openLivedNowStore(localWorldStateStorage(databasePath));
     try{
       const geo={
@@ -220,10 +224,6 @@ test("World reuses city geography for distinct places and never equates knowledg
       assert.equal(library.place.lat,geo.lat,"place did not reuse city geography");
       assert.notEqual(library.place.ref,cafe.place.ref,
         "two different places collapsed into the same venue");
-      const other=childThread();
-      other.threadId="thr_independent_geo";
-      const world=openWorldStore(localWorldStateStorage(databasePath));
-      world.seedThread(other);world.close();
       const sharedCity=life.resolvePlace({
         threadId:other.threadId,name:"Porto",kind:"city",
         city:"Porto",country:"Portugal",
