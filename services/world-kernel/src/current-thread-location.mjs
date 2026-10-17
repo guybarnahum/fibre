@@ -166,7 +166,7 @@ function projectedPoint(place) {
 // never determines whether World itself knows a Thread's current location.
 export function projectOperatorCurrentPlace({
   currentSituation,privatePlace,placeEpisodes=[],worldPlaces=[],
-  privateContextLocations=[],
+  privateContextLocations=[],worldLocality=null,
 }={}){
   if(currentSituation?.location?.kind!=="place"
     ||privatePlace?.placeRef!==currentSituation.location.placeRef){
@@ -189,7 +189,9 @@ export function projectOperatorCurrentPlace({
     });
   }
   const city=resolveLocalityGeography(`${privatePlace.country}/${privatePlace.locality}`);
-  const point=city?.countryCode===privatePlace.countryCode?city:null;
+  const point=worldLocality?.countryCode===privatePlace.countryCode
+      &&worldLocality.locality.toLowerCase()===privatePlace.locality.toLowerCase()
+    ?worldLocality:city?.countryCode===privatePlace.countryCode?city:null;
   const precise=finiteCoordinates(privatePlace);
   return Object.freeze({
     kind:"place",current:true,establishedAt:currentSituation.establishedAt,
