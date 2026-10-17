@@ -67,8 +67,9 @@ test("E7.4 Genesis learning contexts cannot impersonate a common physical venue"
       "operator migration fabricated a residence");
     assert.throws(()=>admitWorldPrivatePlace(db,{
       ...homeGeography,threadId:other.threadId,
-    }),/owned nonpublic Genesis context/,
-    "one Thread acquired another Thread's Genesis context");
+    }),"another Thread must not acquire a private Genesis place");
+    assert.equal(getWorldPrivatePlace(db,other.threadId,home.ref),null,
+      "rejected place admission still recorded foreign geography");
     const situation=(item)=>({
       threadId:item.threadId,location:{kind:"place",placeRef:item.ref},
     });
