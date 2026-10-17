@@ -458,3 +458,23 @@ test("a Genesis learning place keeps its own identity and inherits only an attes
     worldPlaces:[{...learning,authority:"world-public-place-v1"}],
   }),[],"public venue identity was confused with an historical Genesis context");
 });
+
+
+test("a newly discovered city has map geography without becoming a public venue",()=>{
+  const placeRef="wpl_thread_discovered_porto";
+  const projection=projectOperatorCurrentPlace({
+    currentSituation:{threadId:"thr_victor",establishedAt:"2026-10-17T15:00:00Z",
+      location:{kind:"place",placeRef}},
+    privatePlace:{threadId:"thr_victor",placeRef,specificPlace:"Porto, Portugal",
+      streetAddress:null,lat:null,long:null,locality:"Porto",
+      country:"Portugal",countryCode:"PT",publicGranularity:"hidden"},
+    worldLocality:{locality:"Porto",country:"Portugal",countryCode:"PT",
+      lat:41.1496,long:-8.6109,timeZone:"Europe/Lisbon",
+      evidenceRef:"fixture:porto"},
+  });
+  assert.equal(projection?.locality,"Porto");
+  assert.equal(projection?.mapPrecision,"city");
+  assert.equal(projection?.lat,41.1496);
+  assert.equal(projection?.streetAddress,null,
+    "city grounding invented a private street address");
+});
