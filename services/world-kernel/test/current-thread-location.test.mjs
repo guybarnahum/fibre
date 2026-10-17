@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { projectCurrentThreadLocation } from "../src/current-thread-location.mjs";
+import { genesisContextLocations,projectCurrentThreadLocation } from "../src/current-thread-location.mjs";
 
 const entry = Object.freeze({
   threadId:"thr_current_location",
@@ -169,4 +169,64 @@ test("operator-attested private locality maps at city precision, never a home ad
     placeRef:"per:plce_home:1",locality:"Lisbon",country:"Portugal",
     countryCode:"PT",publicGranularity:"city",
   }}),null,"private location created a current life that did not exist");
+});
+
+test("an attested modern Genesis transit anchors its distinct home in the same city",()=>{
+  const place=(threadId,seed,kind)=>({
+    episodeId:`plce_${kind}_${threadId}`,revision:1,threadId,
+    provenance:"genesis_created",
+    place:{placeId:`place_modern_${seed}_${kind}`},
+  });
+  const threadId="thr_omar_london",source=place(threadId,"4572b13ec97a","transit");
+  const home=place(threadId,"4572b13ec97a","home");
+  const locatedContexts=[{
+    placeEpisode:source,
+    privatePlace:{
+      threadId,placeRef:`per:${source.episodeId}:1`,
+      locality:"London",country:"United Kingdom",countryCode:"GB",
+      streetAddress:null,publicGranularity:"city",
+    },
+  }];
+  const contextLocations=genesisContextLocations([home],locatedContexts);
+  assert.equal(contextLocations.length,1,
+    "a known Genesis home remained unmapped after its sibling transit was located");
+  const result=projectCurrentThreadLocation({
+    currentSituation:{
+      threadId,establishedAt:"2026-10-17T04:15:00.002Z",
+      location:{kind:"place",placeRef:`per:${home.episodeId}:1`},
+    },
+    placeEpisodes:[home],contextLocations,
+  });
+  assert.equal(result.locality,"London");
+  assert.equal(result.countryCode,"GB");
+  assert.equal(result.authority,"genesis_context_locality");
+  assert.equal(result.displayName,"London, United Kingdom");
+  assert.equal(JSON.stringify(result).includes("streetAddress"),false,
+    "a private address escaped through inferred city-level context");
+  assert.deepEqual(genesisContextLocations([place(threadId,"999999999999","home")],
+    locatedContexts),[],"unrelated Genesis contexts inherited a previous residence");
+  assert.deepEqual(genesisContextLocations([place("thr_other","4572b13ec97a","home")],
+    locatedContexts),[],"one Thread inherited another's private locality");
+  assert.deepEqual(genesisContextLocations([{
+    ...home,provenance:"thread_history",
+  }],locatedContexts),[],"a later lived place was treated as a Genesis sibling");
+});
+
+test("conflicting source attestations do not manufacture a current city",()=>{
+  const mk=(episodeId,kind)=>({
+    episodeId,revision:1,threadId:"thr_conflict",
+    provenance:"genesis_created",
+    place:{placeId:`place_modern_97e4cb643db2_${kind}`},
+  });
+  const home=mk("plce_home","home");
+  const locatedContexts=["Fes","London"].map((city,index)=>{
+    const episode=mk(`plce_source_${index}`,index===0?"transit":"commerce");
+    return {placeEpisode:episode,privatePlace:{
+      threadId:"thr_conflict",placeRef:`per:${episode.episodeId}:1`,
+      locality:city,country:index===0?"Morocco":"United Kingdom",
+      countryCode:index===0?"MA":"GB",publicGranularity:"city",
+    }};
+  });
+  assert.deepEqual(genesisContextLocations([home],locatedContexts),[],
+    "contradictory situated localities were silently reconciled");
 });
