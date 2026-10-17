@@ -9,7 +9,10 @@ import { genesisSexForThread } from "../src/genesis-sex.mjs";
 import {
   buildGenesisCanonicalVisualIdentity,
 } from "../src/genesis-visual-phenotype.mjs";
-import { GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY } from "fibre/world-kernel/genesis-authority-contracts";
+import {
+  GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY,
+  normalizeGenesisCanonicalVisualIdentity,
+} from "fibre/world-kernel/genesis-authority-contracts";
 
 const encoder = new TextEncoder();
 
@@ -22,6 +25,11 @@ test("Genesis embodiment is derived from inherited physical genome",()=>{
   const replay=buildGenesisCanonicalVisualIdentity({threadId:"thr_visual_one",sex:"female",physicalGenome:genome});
   assert.deepEqual(first,replay,"same genome changed embodiment");
   assert.equal(first.policyRef,GENESIS_CANONICAL_VISUAL_IDENTITY_POLICY);
+  assert.deepEqual(
+    normalizeGenesisCanonicalVisualIdentity(first,{threadId:"thr_visual_one"}),
+    first,
+    "Genesis rejected or altered inherited appearance at birth",
+  );
   const projection=physicalPhenotypeRenderingProjection(genome,{sex:"female"});
   assert.ok(
     first.specification.subject.description.includes(projection.geometryDescription),
