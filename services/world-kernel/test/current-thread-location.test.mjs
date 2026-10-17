@@ -480,3 +480,32 @@ test("a newly discovered city has map geography without becoming a public venue"
   assert.equal(projection?.streetAddress,null,
     "city grounding invented a private street address");
 });
+
+
+test("World maps transit between grounded cities, never at a missing destination",()=>{
+  const lisbon={
+    ref:"wpl_lisbon",displayName:"Lisbon, Portugal",
+    locality:"Lisbon",country:"Portugal",countryCode:"PT",
+    lat:38.72509,long:-9.1498,
+  };
+  const madrid={
+    ref:"wpl_madrid",displayName:"Madrid, Spain",
+    locality:"Madrid",country:"Spain",countryCode:"ES",
+    lat:40.4168,long:-3.7038,
+  };
+  const currentSituation={
+    establishedAt:"2026-10-20T11:30:00Z",
+    location:{kind:"transit",fromPlaceRef:lisbon.ref,
+      toPlaceRef:madrid.ref,progress:0.5},
+  };
+  const moving=projectCurrentThreadLocation({
+    currentSituation,worldPlaces:[lisbon,madrid],
+  });
+  assert.equal(moving.kind,"transit");
+  assert.equal(moving.progress,0.5);
+  assert.ok(moving.long>lisbon.long&&moving.long<madrid.long,
+    "transit map ignored the journey between cities");
+  assert.equal(projectCurrentThreadLocation({
+    currentSituation,worldPlaces:[madrid],
+  }),null,"unknown departure was plotted at the destination");
+});
