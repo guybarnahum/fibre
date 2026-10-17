@@ -17,6 +17,7 @@ import {
   plannedPositionAt,
 } from "./lived-now.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
+import {genesisContextLocations,isModernGenesisPlace} from "./current-thread-location.mjs";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FORWARD_PLAN_MS = 12 * 60 * 60 * 1000;
@@ -193,13 +194,31 @@ function dormantWindows(from, to) {
   return windows;
 }
 
-function knownPlaceRefsAt(livedNowStore, situatedLifeStore, threadId, at) {
+function knownPlaceRefsAt(livedNowStore, episodes, threadId, at) {
   const instant = Date.parse(at);
-  const situated = situatedLifeStore.listCurrentPlaceEpisodes(threadId)
+  const situated = episodes
     .filter((episode) => Date.parse(episode.startAt) <= instant)
     .map(placeEpisodeRevisionRef);
   const shared = livedNowStore.ensureWorldPlaces(threadId).map((place) => place.ref);
   return [...new Set([...situated, ...shared])];
+}
+
+// A Thread can discover real local destinations from its own situated city.
+// Reuse the same grounded sibling-context evidence as World God-view; never
+// substitute birthplace or a guessed residence for an unlocated current place.
+export function planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,placeRef}={}){
+  const direct=livedNowStore.getPrivatePlace?.(threadId,placeRef)
+    ??livedNowStore.getPublicPlace?.(placeRef)??null;
+  if(direct)return direct;
+  const episode=placeEpisodes?.find(item=>
+    placeEpisodeRevisionRef(item)===placeRef)??null;
+  if(!isModernGenesisPlace(episode)
+    ||typeof livedNowStore.listLocatedGenesisContexts!=="function")return null;
+  const context=genesisContextLocations(
+    [episode],livedNowStore.listLocatedGenesisContexts([threadId]),
+  ).find(item=>item.placeRef===placeRef)?.geography??null;
+  return context===null?null
+    :{locality:context.city,countryCode:context.countryCode};
 }
 
 function latestGroundedPlaceRef(situatedLifeStore, threadId, at) {
@@ -373,12 +392,12 @@ async function formPlan({
     : retrospectivePlan(livedNowStore, threadId, startAt, endAt, materializedAt);
   if (existing !== null) return existing;
 
-  const ordinaryPlaceRefs=knownPlaceRefsAt(livedNowStore,situatedLifeStore,threadId,startAt);
+  const placeEpisodes=situatedLifeStore.listCurrentPlaceEpisodes(threadId);
+  const ordinaryPlaceRefs=knownPlaceRefsAt(livedNowStore,placeEpisodes,threadId,startAt);
   // A forward-looking Thread may learn of nearby editorial possibilities.
   // Do not retroactively insert today's recommendations into a lived past.
   const currentLocation=materializedAt===null
-    ?(livedNowStore.getPrivatePlace?.(threadId,startingPlace)
-      ??livedNowStore.getPublicPlace?.(startingPlace)??null)
+    ?planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,placeRef:startingPlace})
     :null;
   const guidePlaces=materializedAt===null
     ?localCityGuideChoices(cityGuide,{
