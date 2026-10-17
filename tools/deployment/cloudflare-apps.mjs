@@ -300,6 +300,7 @@ export function createWranglerAppDeploymentClient({
 export async function acceptCloudflareAppRevision({
   client,appId,url,expectedSha,attempts=13,
   wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),
+  log=console.log,
 }={}){
   if(typeof client?.checkRevision!=="function"){
     throw new TypeError("Cloudflare app deployment requires revision acceptance");
@@ -313,7 +314,7 @@ export async function acceptCloudflareAppRevision({
       if(attempt===attempts-1)break;
       const pause=Math.min(15_000,1_500*2**attempt);
       if(attempt===0||attempt>=4){
-        console.log(`APP REVISION PENDING ${appId} (${error.message}); next check in ${pause/1000}s`);
+        log(`APP REVISION PENDING ${appId} (${error.message}); next check in ${pause/1000}s`);
       }
       await wait(pause);
     }
