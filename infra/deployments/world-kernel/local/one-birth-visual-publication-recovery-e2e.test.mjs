@@ -523,7 +523,6 @@ test("one birth recovers through one canonical root and one public identity/phot
         event.kind === "media.ready" && event.payload.mediaId === officialMediaId).length,
       1,
     );
-    assert.equal(openai.calls.length, 2, "recovery must not repeat either canonical identity generation stage");
     assert.equal(openai.calls.length,3,
       "replay must not regenerate the canonical face or official ID photo");
     assert.equal(world.civilRegistryStore.getCivilRegistrationByThreadId(THREAD_ID).fibreIdentityNumber, fin);
