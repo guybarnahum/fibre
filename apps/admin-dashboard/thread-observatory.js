@@ -1224,6 +1224,29 @@ export async function resumeFidReissue(threadId, {
   return result;
 }
 
+function fidPhotoCorrectionKey(){
+  return `fid_photo_correction_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+}
+
+async function fidPhotoCorrectionRequest(threadId,correctionId,method="GET",action=""){
+  const response=await fetch(
+    `/api/threads/${encodeURIComponent(threadId)}/fid/photo-corrections/${encodeURIComponent(correctionId)}${action}`,
+    {method,headers:{Accept:"application/json"}},
+  );
+  const result=await response.json().catch(()=>null);
+  if(!response.ok)throw new Error(result?.error?.detail??result?.detail??`HTTP ${response.status}`);
+  return result;
+}
+
+async function waitForFidPhotoCorrection(threadId,correctionId){
+  for(let attempt=0;attempt<40;attempt+=1){
+    const result=await fidPhotoCorrectionRequest(threadId,correctionId);
+    if(result.state==="ready"||result.state==="approved")return result;
+    await new Promise(resolve=>setTimeout(resolve,3000));
+  }
+  throw new Error("Photo is still processing; no new generation was requested");
+}
+
 export function renderFidSection(identity, threadId) {
   const presentation = identity.presentation?.presentation ?? null;
   const card = presentation?.identityCard ?? null;
@@ -1356,7 +1379,75 @@ export function renderFidSection(identity, threadId) {
     });
   });
   actions.append(reissue);
-  wrap.append(actions, actionStatus);
+
+  const correction=el("button","secondary thread-repair-button");
+  correction.type="button";
+  decorateActionButton(correction,{
+    icon:"image",
+    label:"Correct Official ID Photo",
+    tooltip:"Create and review one new OpenAI photo from the canonical portrait before reissuing",
+  });
+  const review=el("div","thread-fid-visuals");
+  correction.addEventListener("click",()=>{
+    openThreadActionDialog({
+      threadId,threadName:threadName(identity),
+      label:"Generate corrected ID photo",
+      eyebrow:"Fibre visual identity",
+      description:"Generate one OpenAI candidate from the existing canonical portrait. The current card remains active until you review and approve the image.",
+      run:async()=>{
+        const correctionId=fidPhotoCorrectionKey();
+        await fidPhotoCorrectionRequest(threadId,correctionId,"POST");
+        correction.disabled=true;
+        actionStatus.hidden=false;
+        setWaitingContent(actionStatus,"Preparing corrected ID photograph");
+        void waitForFidPhotoCorrection(threadId,correctionId).then(()=>{
+          actionStatus.textContent="Review the new photograph against Vítor's canonical likeness before approving.";
+          const previewUrl=`/api/threads/${encodeURIComponent(threadId)}/fid/photo-corrections/${encodeURIComponent(correctionId)}/preview`;
+          const candidatePane=el("article","thread-fid-photo");
+          candidatePane.append(
+            imageButton({url:previewUrl},"Corrected Official ID photograph","thread-fid-photo-preview"),
+            el("strong",null,"Proposed replacement photograph"),
+          );
+          const approve=el("button","primary thread-repair-button","Approve photo & reissue card");
+          approve.type="button";
+          const discard=el("button","secondary thread-repair-button","Discard candidate");
+          discard.type="button";
+          discard.addEventListener("click",()=>{
+            review.replaceChildren();
+            actionStatus.textContent="Candidate discarded. Existing FID Card remains unchanged.";
+            correction.disabled=false;
+          });
+          approve.addEventListener("click",()=>{
+            openThreadActionDialog({
+              threadId,threadName:threadName(identity),
+              label:"Approve photo & reissue card",
+              eyebrow:"Fibre Identity Card",
+              description:"Approve the displayed photograph as Vítor's corrected FID image and replace his card. The FIN, canonical identity and previous card history remain unchanged.",
+              run:async()=>{
+                await fidPhotoCorrectionRequest(threadId,correctionId,"POST","/approve");
+                let result=await reissueFidCard(threadId,{idempotencyKey:correctionId});
+                if(result.state==="derivation_requested")result=await resumeFidReissue(threadId,{
+                  idempotencyKey:correctionId,initialResult:result,
+                });
+                if(result.state!=="active")throw new Error(`FID correction did not activate: ${result.state}`);
+                actionStatus.textContent=`Corrected FID Card · revision ${result.credential?.revision??"?"}`;
+                review.replaceChildren();
+                window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued",{
+                  detail:{threadId,result,identity:identityWithFidPublication(identity,result)},
+                }));
+              },
+            });
+          });
+          review.replaceChildren(candidatePane,approve,discard);
+        }).catch(error=>{
+          actionStatus.textContent=`Photo correction: ${error.message}`;
+          correction.disabled=false;
+        });
+      },
+    });
+  });
+  actions.append(correction);
+  wrap.append(actions, actionStatus, review);
 
   if (card !== null) {
     const meta = el("div", "thread-person-facts thread-fid-meta");
