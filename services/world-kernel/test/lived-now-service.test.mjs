@@ -907,6 +907,12 @@ test("World rejects a rushed cross-city arrival and autonomous life completes a 
         "the autonomous boundary failed to enact the intended arrival");
       assert.equal(lived.currentLocationTimeZone(threadId),"Europe/Madrid",
         "the arrived Thread retained its departed city's time zone");
+      assert.deepEqual(planningLocalityForPlace({
+        livedNowStore:lived,threadId,placeRef:madrid.ref,placeEpisodes:[],
+      }),{locality:"Madrid",countryCode:"ES"},
+      "World did not carry the arrived city into subsequent local opportunities");
+      assert.equal(lived.listWorldPlaces(threadId).some(place=>place.ref===madrid.ref),true,
+        "the enacted World city disappeared from current directory inspection");
       assert.deepEqual(observed,["at_place","in_transit","at_place"],
         "cross-city travel generated a false scene or skipped a real one");
     }finally{lived.close();}
