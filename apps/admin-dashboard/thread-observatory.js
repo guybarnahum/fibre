@@ -1402,7 +1402,13 @@ export function renderFidSection(identity, threadId) {
         setWaitingContent(actionStatus,"Preparing corrected ID photograph");
         void waitForFidPhotoCorrection(threadId,correctionId).then(()=>{
           actionStatus.textContent="Review the new photograph against the Thread's canonical likeness before approving.";
-          const previewUrl=`/api/threads/${encodeURIComponent(threadId)}/fid/photo-corrections/${encodeURIComponent(correctionId)}/preview`;
+          const prefix=`/api/threads/${encodeURIComponent(threadId)}/fid/photo-corrections/${encodeURIComponent(correctionId)}`;
+          const previewUrl=`${prefix}/preview`;
+          const canonicalPane=el("article","thread-fid-photo");
+          canonicalPane.append(
+            imageButton({url:`${prefix}/canonical`},"Canonical portrait","thread-fid-photo-preview"),
+            el("strong",null,"Canonical identity (source)"),
+          );
           const candidatePane=el("article","thread-fid-photo");
           candidatePane.append(
             imageButton({url:previewUrl},"Corrected Official ID photograph","thread-fid-photo-preview"),
@@ -1438,7 +1444,7 @@ export function renderFidSection(identity, threadId) {
               },
             });
           });
-          review.replaceChildren(candidatePane,approve,discard);
+          review.replaceChildren(canonicalPane,candidatePane,approve,discard);
         }).catch(error=>{
           actionStatus.textContent=`Photo correction: ${error.message}`;
           correction.disabled=false;
