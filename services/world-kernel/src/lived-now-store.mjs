@@ -39,7 +39,7 @@ import {
   admitWorldPublicPlace,admitWorldPrivatePlace,admitWorldLocality,
   admitWorldDiscoveredPlace,createLiveWorldGeographyTables,
   getWorldLocality,getWorldPrivatePlace,getWorldPublicPlace,
-  getWorldDiscoveredPlace,listLocalWorldPublicPlaces,
+  getWorldDiscoveredPlace,listWorldDiscoveredPlaces,listLocalWorldPublicPlaces,
   coarseWorldPlace,
 } from "./live-world-geography.mjs";
 
@@ -598,6 +598,10 @@ export class LivedNowStore {
 
   getWorldLocality(query){
     return getWorldLocality(this.#database,query);
+  }
+  listDiscoveredPlaces(threadId,{limit=16}={}){
+    this.#requireThread(threadId);
+    return listWorldDiscoveredPlaces(this.#database,threadId,{limit});
   }
 
   admitPrivatePlace(candidate){
