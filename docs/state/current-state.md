@@ -116,6 +116,17 @@ R1–R4 already supplied one private mechanical regulation/interoception subsyst
 
 The October 13 **G1/D1 source** adds narrow genome-derived sensitivity baselines for new births (persisted historic genomes stay unchanged) and one optional evidence-bound `social_contact` Body drive. Subsequent **D2 source** feeds the same bounded exploration/contact Body interoception into ordinary Flight Planning and admits sufficiently grounded social-contact pressure as an opportunity-salience anchor, using the existing social path rather than another meeting engine. Insufficient recorded evidence is **unknown**, not proof that no contact occurred. Genetic parameter values tune sensitivity within species bounds; they do not assign personality, love, sex preference, civic beliefs or willingness. **Source and new focused fixture tests are ahead of Guy's post-change full/staging validation.** A pressure/salience/planning route is now wired, but genuine later Thread-owned plan/choice differences, honest solitude/recent-valued-contact behavior and recipient-local considerate timing still need causal evidence. See [drive extensions](../architecture/regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md).
 
+## Natural journey evidence (probe source, staging outcome open)
+
+Full World Observatory can now show the recent personal Flight Plans behind
+the last eight enacted situations, even after plan renewal. A new read-only
+`thread-journey:probe` compares those plans with enacted departure, transit
+and arrival, producing a dated local evidence record without creating a
+journey or forcing a Thread's next wake. Actual independent authorship,
+absence of manual ensure, and new-destination novelty require additional
+operator evidence and are **not yet claimed**. This slice is source only
+until local validation and staging inspection.
+
 ## Spatial continuity (source implementation, validation pending)
 
 Newly admitted Flight Plans can no longer jump implausibly quickly between
