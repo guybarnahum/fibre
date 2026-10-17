@@ -222,6 +222,8 @@ test("World reuses city geography for distinct places and never equates knowledg
       assert.equal(city.status,"located","Porto has no geography");
       assert.equal(library.status,"located","a local place lost its city's mapped context");
       assert.equal(library.place.lat,geo.lat,"place did not reuse city geography");
+      assert.equal(library.place.parentRef,city.place.ref,
+        "known neighborhood setting lost its World city");
       assert.notEqual(library.place.ref,cafe.place.ref,
         "two different places collapsed into the same venue");
       const sharedCity=life.resolvePlace({
