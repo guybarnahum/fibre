@@ -132,12 +132,17 @@ function threadBirthplaceCell(identity) {
   return cell;
 }
 
-function threadCurrentPlaceCell(location,operatorCurrentPlace) {
+function threadCurrentPlaceCell(location,operatorCurrentPlace,unlocatedPlace=null) {
   const cell=document.createElement("td");
   cell.className="thread-population-current-place";
   const publicPlace=currentThreadPlace(location);
   const privatePlace=publicPlace===null&&operatorCurrentPlace?.locality
     ?operatorCurrentPlace:null;
+  if(publicPlace===null&&privatePlace===null&&unlocatedPlace!==null){
+    cell.textContent="Unlocated";
+    cell.title=`Enacted place · ${unlocatedPlace.name??unlocatedPlace.placeRef} · geography unknown`;
+    return cell;
+  }
   cell.append(createThreadLocation(publicPlace??privatePlace,{
     className:"thread-population-current-place-value",
     suffix:null,
@@ -437,7 +442,7 @@ function threadRow(thread) {
     ?"No durable parental physical-origin evidence is recorded for this Thread."
     :"Recorded parental physical-origin evidence; never inferred from birthplace, name, language, culture, or portrait.";
   const birthplace=threadBirthplaceCell(identity);
-  const currentPlace=threadCurrentPlaceCell(thread.currentLocation,thread.operatorCurrentPlace);
+  const currentPlace=threadCurrentPlaceCell(thread.currentLocation,thread.operatorCurrentPlace,thread.unlocatedPlace);
   const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
   const birthDate = document.createElement("td"); birthDate.textContent = identity.birthDate ?? "—";
   const health = document.createElement("td"); health.append(badge(thread.admitted === false ? "not admitted" : thread.health, healthKind(thread.health)));
@@ -469,7 +474,8 @@ function sortValue(thread, key) {
   if(key==="name")return thread.identity?.name??thread.threadId;
   if(key==="ethnicity")return physicalOriginsText(thread)==="—"?null:physicalOriginsText(thread);
   if(key==="birthplace")return thread.identity?.birthLocation?.displayName??thread.identity?.birthPlace??null;
-  if(key==="currentPlace")return (thread.operatorCurrentPlace??thread.currentLocation)?.locality??null;
+  if(key==="currentPlace")return (thread.operatorCurrentPlace??thread.currentLocation)?.locality
+    ??(thread.unlocatedPlace?"Unlocated":null);
   if(key==="sex") return thread.identity?.sex ?? null;
   if (key === "birthDate") {
     const parsed = Date.parse(thread.identity?.birthDate ?? "");
