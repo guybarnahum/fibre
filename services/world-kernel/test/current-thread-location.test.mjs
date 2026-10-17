@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { genesisContextLocations,projectCurrentThreadLocation,projectOperatorCurrentPlace } from "../src/current-thread-location.mjs";
+import { genesisContextLocations,isModernGenesisWorldPlace,projectCurrentThreadLocation,projectOperatorCurrentPlace } from "../src/current-thread-location.mjs";
 
 const entry = Object.freeze({
   threadId:"thr_current_location",
@@ -381,4 +381,63 @@ test("God-view follows a Thread to a different Genesis home without fabricating 
     }},
     placeEpisodes:[home],privateContextLocations:ownedContext,
   }),null,"the Thread was located at an unrelated current place");
+});
+
+test("a Genesis learning place keeps its own identity and inherits only an attested local city",()=>{
+  const threadId="thr_chen",seed="eb39aeda7e03";
+  const transit={
+    episodeId:"plce_transit",revision:1,threadId,
+    provenance:"genesis_created",place:{
+      placeId:`place_modern_${seed}_transit`,
+    },
+  };
+  const attestation=[{
+    placeEpisode:transit,privatePlace:{
+      threadId,placeRef:"per:plce_transit:1",
+      locality:"Kaohsiung",country:"Taiwan",countryCode:"TW",
+      publicGranularity:"hidden",
+    },
+  }];
+  const learning={
+    ref:"wpl_genesis_learning",authority:"live-world-place-admission-v1",
+    sourceWorldRef:"world_chen",sourcePlaceId:`place_modern_${seed}_learning`,
+    placeKind:"library_or_learning",
+    displayName:"A neighborhood learning setting",
+  };
+  assert.equal(isModernGenesisWorldPlace(learning),true);
+  const privateContextLocations=genesisContextLocations([],
+    attestation,{privatePerspective:true,worldPlaces:[learning],threadId});
+  assert.equal(privateContextLocations.length,1,
+    "a real Genesis learning context lost its geographic origin");
+  const situation={
+    threadId,establishedAt:"2026-10-17T06:00:00.002Z",
+    location:{kind:"place",placeRef:learning.ref},
+  };
+  const current=projectOperatorCurrentPlace({
+    currentSituation:situation,worldPlaces:[learning],privateContextLocations,
+  });
+  assert.equal(current?.placeRef,learning.ref,
+    "God-view substituted the prior transit for the current learning place");
+  assert.equal(current?.locality,"Kaohsiung");
+  assert.equal(current?.countryCode,"TW");
+  assert.equal(current?.mapPrecision,"city");
+  assert.equal(current?.specificPlace,learning.displayName);
+  assert.equal(current?.streetAddress,null,
+    "a local learning context manufactured a street address");
+  assert.equal(learning.physicalVenue,undefined,
+    "a Genesis learning place was presented as an independently admitted venue");
+  assert.equal(projectCurrentThreadLocation({
+    currentSituation:situation,worldPlaces:[learning],
+  }),null,"unlocated historical WorldSpec place acquired geography without evidence");
+  assert.deepEqual(genesisContextLocations([],attestation,{
+    privatePerspective:true,threadId,
+    worldPlaces:[{...learning,sourcePlaceId:"place_modern_aabbccddeeff_learning"}],
+  }),[],"unrelated WorldSpec places inherited another locality");
+  assert.deepEqual(genesisContextLocations([],attestation,{
+    privatePerspective:true,threadId:"thr_other",worldPlaces:[learning],
+  }),[],"a Thread inherited someone else's admitted private locality");
+  assert.deepEqual(genesisContextLocations([],attestation,{
+    privatePerspective:true,threadId,
+    worldPlaces:[{...learning,authority:"world-public-place-v1"}],
+  }),[],"public venue identity was confused with an historical Genesis context");
 });
