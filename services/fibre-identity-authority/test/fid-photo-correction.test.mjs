@@ -30,6 +30,8 @@ test("correcting an FID photograph preserves the canonical person without replay
     "FID correction lost the canonical face");
   assert.equal(corrected.context.threadId,threadId);
   assert.equal(corrected.context.correctionId,correctionId);
+  assert.equal(corrected.context.kind,"fid_photo_correction",
+    "unapproved ID photo was placed on the World reconciliation path");
   assert.equal(corrected.providerProfile,"openai-gpt-image-2-medium-v1");
   const changedRoot=buildFidPhotoDerivationJob({...options,correctionId,
     source:{...source,canonicalVisualReferenceDigest:`sha256:${"b".repeat(64)}`},
