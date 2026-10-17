@@ -75,21 +75,9 @@ integrations:
       model: gpt-image-2-2026-04-21
       acceptsReferenceObjects: true
       presentationDefault: true
-      presentationReferenceDefault: false
-      secondaryProfile: bfl-flux-2-pro-v1
+      presentationReferenceDefault: true
     secrets:
       apiKey: OPENAI_API_KEY
-  asset-image-bfl:
-    kind: ai.image
-    provider: bfl
-    config:
-      model: flux-2-pro
-      acceptsReferenceObjects: true
-      presentationDefault: false
-      presentationReferenceDefault: true
-      secondaryProfile: openai-gpt-image-2-medium-v1
-    secrets:
-      apiKey: BFL_API_KEY
 
 services:
   world-kernel:
@@ -115,4 +103,3 @@ services:
     infra: cloudflare
     integrations:
       openai-gpt-image-2-medium-v1: asset-image-openai
-      bfl-flux-2-pro-v1: asset-image-bfl
