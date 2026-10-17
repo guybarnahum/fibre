@@ -92,7 +92,7 @@ export function buildFidPhotoDerivationJob({
     requestedAt,
     providerProfile,
     context: {
-      kind: "fid_photo_derivation",
+      kind: correctionId === null ? "fid_photo_derivation" : "fid_photo_correction",
       threadId: ownerId,
       ...(correctionId === null ? {} : { correctionId }),
       policyVersion: FID_PHOTO_POLICY_VERSION,
