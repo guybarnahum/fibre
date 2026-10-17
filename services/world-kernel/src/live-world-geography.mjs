@@ -57,6 +57,13 @@ export function createLiveWorldGeographyTables(db){
       record_digest TEXT NOT NULL,
       PRIMARY KEY(country_code,locality_key)
     ) STRICT;
+    CREATE TABLE IF NOT EXISTS world_discovered_places(
+      thread_id TEXT NOT NULL,
+      place_ref TEXT NOT NULL,
+      record_json TEXT NOT NULL CHECK(json_valid(record_json)),
+      record_digest TEXT NOT NULL,
+      PRIMARY KEY(thread_id,place_ref)
+    ) STRICT;
   `);
 }
 
@@ -98,6 +105,41 @@ export function admitWorldLocality(db,input){
   }
   db.prepare(`INSERT INTO world_localities(country_code,locality_key,record_json,record_digest)
     VALUES(?,?,?,?)`).run(countryCode,localityKey(locality),canonicalJson(record),digest(record));
+  return record;
+}
+
+// A Thread's independently chosen destination names a city-level arrival,
+// not a manufactured venue. Thread-scoped identity prevents false co-presence.
+export function getWorldDiscoveredPlace(db,threadId,placeRef){
+  if(typeof placeRef!=="string"||!placeRef.startsWith("wpl_"))return null;
+  return stored(db.prepare(`SELECT record_json,record_digest FROM world_discovered_places
+    WHERE thread_id=? AND place_ref=?`).get(threadId,placeRef),"discovered World place");
+}
+
+export function admitWorldDiscoveredPlace(db,{threadId,locality}={}){
+  assertId("discovered World threadId",threadId);
+  assertPlainObject("discovered World locality",locality);
+  const record=Object.freeze({
+    ref:`wpl_${sha256(canonicalJson({
+      kind:"thread-discovered-locality-v1",threadId,
+      locality:localityKey(locality.locality),countryCode:locality.countryCode,
+    }))}`,
+    threadId,placeKind:"discovered_locality",
+    displayName:`${locality.locality}, ${locality.country}`,
+    locality:locality.locality,country:locality.country,
+    countryCode:locality.countryCode,
+    timeZone:locality.timeZone,
+    authority:"world-thread-discovered-place-v1",
+  });
+  const existing=getWorldDiscoveredPlace(db,threadId,record.ref);
+  if(existing!==null){
+    if(canonicalJson(existing)!==canonicalJson(record))
+      throw new IntegrityError("discovered place conflicts with existing World identity");
+    return existing;
+  }
+  db.prepare(`INSERT INTO world_discovered_places(
+    thread_id,place_ref,record_json,record_digest
+  ) VALUES(?,?,?,?)`).run(threadId,record.ref,canonicalJson(record),digest(record));
   return record;
 }
 
@@ -209,8 +251,9 @@ export function admitWorldPrivatePlace(db,input){
     // but they are not independently attested public venues. A locality
     // attestation belongs to this Thread's context only.
     const context=resolveLiveWorldPlace(db,threadId,placeRef);
-    if(context?.authority!=="live-world-place-admission-v1"||context.physicalVenue){
-      throw new TypeError("private World locality requires an owned nonpublic Genesis context");
+    if((context?.authority!=="live-world-place-admission-v1"||context.physicalVenue)
+      &&getWorldDiscoveredPlace(db,threadId,placeRef)===null){
+      throw new TypeError("private World locality requires an owned nonpublic place");
     }
   }else{
     const evidence=db.prepare(`SELECT 1 AS present FROM situated_evidence_witnesses
