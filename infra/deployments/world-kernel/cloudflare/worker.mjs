@@ -476,21 +476,30 @@ export class FibreWorldDurableObject extends DurableObject {
       ...result,
       threads:Object.freeze(result.threads.map((entry) => {
         const current = byThread.get(entry.threadId) ?? null;
+        const situation=current?.currentSituation??null;
+        const operatorCurrentPlace=projectOperatorCurrentPlace({
+          ...current,worldPlaces:current?.worldPlaces??[],
+          privateContextLocations:current?.privateContextLocations??[],
+        });
+        const currentLocation=projectCurrentThreadLocation({
+          entry,currentSituation:situation,
+          worldPlaces:current?.worldPlaces??[],
+          placeEpisodes:current?.placeEpisodes??[],
+          privatePlace:current?.privatePlace??null,
+          contextLocations:current?.contextLocations??[],
+        });
+        const ref=situation?.location?.kind==="place"
+          ?situation.location.placeRef:null;
+        const world=(current?.worldPlaces??[]).find(place=>place.ref===ref);
+        const episode=(current?.placeEpisodes??[]).find(place=>
+          `per:${place.episodeId}:${place.revision}`===ref);
         return Object.freeze({
           ...entry,
           lifeContinuity:current?.lifeContinuity??null,
-          operatorCurrentPlace:projectOperatorCurrentPlace({
-            ...current,worldPlaces:current?.worldPlaces??[],
-            privateContextLocations:current?.privateContextLocations??[],
-          }),
-          currentLocation:projectCurrentThreadLocation({
-            entry,
-            currentSituation:current?.currentSituation ?? null,
-            worldPlaces:current?.worldPlaces ?? [],
-            placeEpisodes:current?.placeEpisodes ?? [],
-            privatePlace:current?.privatePlace ?? null,
-            contextLocations:current?.contextLocations ?? [],
-          }),
+          operatorCurrentPlace,currentLocation,
+          unlocatedPlace:ref!==null&&operatorCurrentPlace===null&&currentLocation===null
+            ?{placeRef:ref,name:world?.displayName??episode?.place?.displayName??null}
+            :null,
         });
       })),
     });
