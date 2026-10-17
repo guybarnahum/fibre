@@ -185,3 +185,23 @@ test("God-view maps a known current home without pretending the birthplace or an
   assert.equal(new Set(threads.map(t=>t.operatorCurrentPlace.placeRef)).size,3,
     "a common city is not proof of physical co-presence");
 });
+test("known but unmappable current life is never replaced with its birthplace",()=>{
+  const grouped=groupThreadsByCurrentLocation([{
+    threadId:"thr_ambiguous_current",
+    identity:{
+      lifecycleStatus:"frozen",
+      birthLocation:{city:"London",country:"United Kingdom",lat:51.5,long:-0.12},
+    },
+    currentLocation:null,
+    operatorCurrentPlace:{
+      kind:"place",placeRef:"per:current:1",
+      locality:"A place not in the atlas",country:"Georgia",
+      lat:null,long:null,
+    },
+  }]);
+  assert.equal(grouped.mapped,0,
+    "an unmappable present was misleadingly plotted at the Thread's birthplace");
+  assert.equal(grouped.unmapped,1);
+  assert.equal(grouped.awaitingLivedNow,0,
+    "a known but unmappable physical situation was labeled as absent First Life");
+});
