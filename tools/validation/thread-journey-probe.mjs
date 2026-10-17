@@ -79,11 +79,15 @@ export function inspectThreadJourneys(observatory){
         situation.location?.kind==="place"
         &&situation.location.placeRef===to.physicalPlaceRef
         &&inPeriod(situation.establishedAt,to.startAt,to.endAt));
-      const stage=arrival&&transit&&departure?"journey_enacted"
-        :arrival?"arrival_observed"
-        :transit?"transit_observed"
-        :departure?"departure_observed"
-        :"planned_only";
+      const transitMilliseconds=Date.parse(to.startAt)-Date.parse(from.endAt);
+      // Legacy zero-gap plans may have changed places, but never provided an
+      // interval in which World could enact movement. Do not call it a trip.
+      const stage=transitMilliseconds<=0?"instant_place_change"
+        :arrival&&transit&&departure?"journey_enacted"
+          :arrival?"arrival_observed"
+            :transit?"transit_observed"
+              :departure?"departure_observed"
+                :"planned_only";
       const place=worldPlaces.find(value=>value.ref===to.physicalPlaceRef)??null;
       journeys.push({
         planId:plan.planId,
@@ -100,6 +104,7 @@ export function inspectThreadJourneys(observatory){
         },
         plannedDepartureAt:from.endAt,
         plannedArrivalAt:to.startAt,
+        plannedTransitSeconds:transitMilliseconds/1000,
         enactedDepartureAt:departure?.establishedAt??null,
         enactedTransitAt:transit?.establishedAt??null,
         enactedArrivalAt:arrival?.establishedAt??null,
@@ -152,7 +157,8 @@ export async function runThreadJourneyProbe({
       :journeys.some(j=>j.stage==="journey_enacted")?"journey_enacted"
         :journeys.some(j=>j.stage==="arrival_observed")?"arrival_observed"
           :journeys.some(j=>j.stage==="transit_observed")?"transit_observed"
-            :journeys.length?"journey_planned":"no_recent_journey",
+            :journeys.some(j=>j.stage==="instant_place_change")?"instant_place_change"
+              :journeys.length?"journey_planned":"no_recent_journey",
   };
   const folder=resolve(ROOT,".fibre","journeys",target,threadId);
   const file=resolve(folder,`journey-${new Date().toISOString().replace(/[:.]/gu,"-")}.json`);
