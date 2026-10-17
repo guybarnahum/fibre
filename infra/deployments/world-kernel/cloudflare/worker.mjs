@@ -9,6 +9,7 @@ import { openContactInspectionStore } from "#services/world-kernel/src/contact-s
 import { projectCurrentThreadLocation } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
 import {
   explorationContinuityForLivedHistory,
   explorationInteroceptionForLivedHistory,
@@ -506,6 +507,21 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetchWorldRequest(request, url) {
+    if(url.pathname==="/internal/first-life/backlog"){
+      if(request.method!=="GET")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
+      if(!privateOperatorAuthorized(request,this.env)){
+        return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
+      }
+      const firstLife=openGenesisFirstLifeStore(this.worldStorage);
+      try {
+        return Response.json({
+          contract:"fibre-first-life-backlog-v1",
+          threads:firstLife.unstarted(),
+        });
+      } finally {
+        firstLife.close();
+      }
+    }
     if(url.pathname==="/internal/world-schema/migrate"){
       if(request.method!=="POST")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
       if(!privateOperatorAuthorized(request,this.env)){
