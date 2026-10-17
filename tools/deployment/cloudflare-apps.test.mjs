@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   CLOUDFLARE_APP_DEPLOY_ORDER,
+  acceptCloudflareAppRevision,
   createWranglerAppDeploymentClient,
   cloudflareAppDomain,
   resolveCloudflareAppConfig,
@@ -228,4 +229,53 @@ test("Admin deployment updates its Durable Object code without deferred rollout"
   });
   assert.equal(deployArgs[deployArgs.indexOf("--durable-objects-code-update-mode")+1],
     "immediate","Admin deployment left stale Durable Object code active");
+});
+
+test("app deployment waits for eventual revision visibility without repeating deployment",async()=>{
+  const expectedSha="a".repeat(40),staleSha="b".repeat(40);
+  const pauses=[],messages=[],calls=[];
+  const client={
+    async checkRevision({url,expectedSha:expected}){
+      calls.push({url,expected});
+      if(calls.length<6){
+        throw new Error("App revision not ready: received "+staleSha);
+      }
+      return {deploymentGitSha:expectedSha};
+    },
+  };
+  const accepted=await acceptCloudflareAppRevision({
+    client,appId:"admin-dashboard",
+    url:"https://status.staging.insidefibre.com/healthz?service=admin-dashboard",
+    expectedSha,wait:async ms=>{pauses.push(ms);},
+    log:value=>messages.push(value),
+  });
+  assert.equal(accepted.deploymentGitSha,expectedSha);
+  assert.equal(calls.length,6,"deployer stopped during ordinary revision propagation");
+  assert.deepEqual(pauses,[1500,3000,6000,12000,15000],
+    "Admin acceptance does not back off like stateful service revision checks");
+  assert.ok(calls.every(({expected})=>expected===expectedSha),
+    "app acceptance permitted a stale source revision");
+  assert.ok(messages.some(line=>line.includes("APP REVISION PENDING admin-dashboard")),
+    "app revision wait was invisible to the operator");
+});
+
+test("app deployment rejects stale revisions after a bounded wait",async()=>{
+  let checked=0;const pauses=[];
+  await assert.rejects(
+    ()=>acceptCloudflareAppRevision({
+      client:{async checkRevision(){
+        checked++;
+        throw new Error("received old revision");
+      }},
+      appId:"admin-dashboard",url:"https://status.example/healthz",
+      expectedSha:"a".repeat(40),attempts:3,
+      wait:async ms=>{pauses.push(ms);},
+      log:()=>{},
+    }),
+    /admin-dashboard revision was not accepted: received old revision/,
+    "app revision polling silently accepted stale Cloudflare code",
+  );
+  assert.equal(checked,3);
+  assert.deepEqual(pauses,[1500,3000],
+    "revision acceptance waited after the final failed check");
 });
