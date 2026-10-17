@@ -277,7 +277,7 @@ export function threadMapState(thread) {
   const runtimeActive = thread?.runtime?.state === "active"
     && Number.isFinite(runtimeExpiresAt)
     && runtimeExpiresAt > Date.now();
-  const current = thread?.currentLocation;
+  const current = thread?.operatorCurrentPlace ?? thread?.currentLocation;
   const situated = current && Number.isFinite(current.lat) && Number.isFinite(current.long);
 
   if (lifecycle === "retired") {
@@ -310,7 +310,7 @@ export function threadMapState(thread) {
 function mappableLocation(thread, state = threadMapState(thread)) {
   if (state.kind === "retired") return null;
 
-  const current = thread?.currentLocation;
+  const current = thread?.operatorCurrentPlace ?? thread?.currentLocation;
   if (state.situated) {
     return Object.freeze({
       ...current,
