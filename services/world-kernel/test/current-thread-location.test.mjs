@@ -240,3 +240,40 @@ test("conflicting source attestations do not manufacture a current city",()=>{
   assert.deepEqual(genesisContextLocations([home],locatedContexts),[],
     "contradictory situated localities were silently reconciled");
 });
+
+test("explicit current-place locality and private disclosure outrank sibling hints",()=>{
+  const currentSituation={
+    establishedAt:"2026-10-17T04:15:00.002Z",
+    location:{kind:"place",placeRef:"per:pep_paris:1"},
+  };
+  const placeEpisodes=[{
+    episodeId:"pep_paris",revision:1,threadId:"thr_person",
+    episodeKind:"residence",provenance:"genesis_created",
+    place:{placeId:"place_modern_4572b13ec97a_home",
+      displayName:"Home in Paris",locality:"Paris",countryCode:"FR",
+      region:null,precision:"locality"},
+    startAt:"2026-01-01T00:00:00.000Z",endAt:null,
+    sourceReferences:["evt_origin"],visibility:"private",
+    recordedAt:"2026-10-17T03:38:00.000Z",
+  }];
+  const contextLocations=[{placeRef:"per:pep_paris:1",geography:{
+    city:"London",country:"United Kingdom",countryCode:"GB",
+    lat:51.50853,long:-0.12574,
+  }}];
+  // This may legitimately be a different locality than the originating
+  // context, and must not be overwritten by the sibling's locality.
+  // Check against a resolver-supported explicit city (London here),
+  // keeping the same-location test independent of unknown gazetteer entries.
+  const explicit={...placeEpisodes[0],place:{
+    ...placeEpisodes[0].place,displayName:"Home in Fes",locality:"Fes",countryCode:"MA",
+  }};
+  const located=projectCurrentThreadLocation({
+    currentSituation,placeEpisodes:[explicit],contextLocations,
+  });
+  assert.equal(located.locality,"Fes","Genesis context overrode explicit current locality");
+  const hidden=projectCurrentThreadLocation({
+    currentSituation,placeEpisodes:[explicit],contextLocations,
+    privatePlace:{placeRef:"per:pep_paris:1",publicGranularity:"hidden"},
+  });
+  assert.equal(hidden,null,"hidden private geography was exposed by a sibling");
+});
