@@ -78,7 +78,9 @@ export function planThreadLocation(thread, livedNow) {
       streetAddress:null,locality:location.city,
       country:location.country,countryCode:location.countryCode,
       lat:null,long:null,timeZone,
-      evidenceRef:placeRef,
+      evidenceRef:fallback
+        ?`operator_birth_city_default:${thread.threadId}`
+        :placeRef,
       publicGranularity:"city",
     },
   };
