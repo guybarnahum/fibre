@@ -128,10 +128,9 @@ function seedLife(databasePath) {
   };
 }
 
-test("Thread's own Flight Plan discovers a new city without operator-prepared place refs",async()=>{
+test("Thread chooses a previously unknown place; World remembers it without inventing a visit",async()=>{
   await withDatabase(async databasePath=>{
-    const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const life=seedLife(databasePath),storage=localWorldStateStorage(databasePath);
     const worldStore=openWorldStore(storage);
     const identityStore=openIdentityStore(storage);
     const semanticStateStore=openSemanticStateStore(storage);
@@ -150,61 +149,45 @@ test("Thread's own Flight Plan discovers a new city without operator-prepared pl
         sourceReferences:[life.sourceEvent],
         sourceStores:{worldStore,identityStore,semanticStateStore,memoryStore,
           situatedLifeStore,livedNowStore},
-        modelAdapter:{
-          ...model.adapter,
-          async invoke(request){
-            const output=await model.adapter.invoke(request);
-            output.output.result.stops[1].physicalPlaceRef="new-locality:Portugal/Porto";
-            output.output.result.stops[1].travelFromPrevious="Travel to Porto.";
-            return output;
-          },
-        },
+        modelAdapter:{...model.adapter,async invoke(request){
+          const output=await model.adapter.invoke(request);
+          output.output.result.stops[1].physicalPlaceRef="";
+          output.output.result.stops[1].newPlace={
+            name:"Porto",kind:"city",city:"Porto",country:"Portugal",
+          };
+          output.output.result.stops[1].travelFromPrevious="Travel to Porto.";
+          return output;
+        }},
         resolveDestinationGeography:async({city,country})=>{
           lookups++;
-          assert.equal(city,"Porto");
-          assert.equal(country,"Portugal");
+          assert.equal(city,"Porto");assert.equal(country,"Portugal");
           return {locality:"Porto",country:"Portugal",countryCode:"PT",
             lat:41.1496,long:-8.6109,timeZone:"Europe/Lisbon",
             evidenceRef:"fixture:verified-city-porto"};
         },
       });
-      const nextRef=plan.stops[1].physicalPlaceRef;
-      assert.ok(nextRef.startsWith("wpl_"),"new-city proposal did not receive World identity");
-      assert.notEqual(nextRef,life.homeRef,"Thread's chosen destination was ignored");
-      assert.equal(plan.sourceReferences.includes(nextRef),true,
-        "new place lacks cited World authority");
-      assert.equal(lookups,1,"geography provider was not bounded to chosen destination");
-      assert.equal(livedNowStore.getWorldPlace(life.thread.threadId,nextRef).placeKind,
-        "discovered_locality","World invented a public venue instead of city arrival");
-      assert.equal(livedNowStore.listDiscoveredPlaces(life.thread.threadId)
-        .some(place=>place.ref===nextRef),true,
-        "a discovered city disappeared from future planning knowledge");
-      assert.equal(livedNowStore.getPrivatePlace(life.thread.threadId,nextRef).locality,
-        "Porto","new destination lost the attested city");
-      assert.equal(livedNowStore.getPrivatePlace(life.thread.threadId,nextRef).publicGranularity,
-        "hidden","World published Thread location without a disclosure decision");
+      const destination=plan.stops[1].physicalPlaceRef;
+      assert.ok(destination.startsWith("wpl_"),"chosen place lacks a World reference");
+      assert.equal(lookups,1,"geography was looked up unnecessarily");
+      assert.equal(plan.sourceReferences.includes(destination),true,
+        "plan does not cite the Thread's chosen World place");
+      assert.equal(livedNowStore.getWorldPlace(life.thread.threadId,destination)?.placeKind,
+        "city","World did not represent Porto as a city");
+      assert.equal(livedNowStore.listKnownPlaces(life.thread.threadId)
+        .some(place=>place.ref===destination),true,
+        "a known destination was not retained for future life");
       assert.equal(livedNowStore.getCurrentSituation(life.thread.threadId),null,
-        "destination cognition fabricated a journey");
-      const stored=livedNowStore.recordPlan(plan);
-      assert.equal(stored.stops[1].physicalPlaceRef,nextRef,
-        "World rejected the grounded Thread-authored destination");
+        "knowing a city fabricated a visit");
+      assert.equal(livedNowStore.recordPlan(plan).stops[1].physicalPlaceRef,destination,
+        "World rejected the chosen place after resolving it");
 
-      await assert.rejects(()=>formPersonalLivedPlan({
-        threadId:life.thread.threadId,
-        authoredAt:"2026-09-10T05:03:00Z",
-        horizonEnd:"2026-09-10T06:00:00Z",
-        startingPlaceRef:life.homeRef,
-        availablePlaceRefs:[life.homeRef],
-        sourceReferences:[life.sourceEvent],
-        sourceStores:{worldStore,identityStore,semanticStateStore,memoryStore,
-          situatedLifeStore,livedNowStore},
-        modelAdapter:{...model.adapter,async invoke(request){
-          const output=await model.adapter.invoke(request);
-          output.output.result.stops[1].physicalPlaceRef="new-locality:Unknown/Nowhere";
-          output.output.result.stops[1].travelFromPrevious="Travel to Nowhere.";
-          return output;
-        }},
-      }),/cannot ground/,"unresolved city became an admitted visit");
+      const unresolved=livedNowStore.resolvePlace({
+        threadId:life.thread.threadId,name:"Imaginary Hamlet",
+        kind:"city",city:"Imaginary Hamlet",country:"Portugal",
+      });
+      assert.equal(unresolved.status,"unlocated","World invented unknown coordinates");
+      assert.equal(livedNowStore.getWorldPlace(life.thread.threadId,unresolved.place.ref)?.lat,
+        null,"unlocated place was not retained as a real World entity");
     }finally{
       livedNowStore.close();situatedLifeStore.close();memoryStore.close();
       semanticStateStore.close();identityStore.close();worldStore.close();
@@ -212,58 +195,37 @@ test("Thread's own Flight Plan discovers a new city without operator-prepared pl
   });
 });
 
-test("World grounds known noncurrent places in a different city without pretending a new visit",async()=>{
+test("World reuses city geography for distinct places and never equates knowledge with presence",async()=>{
   await withDatabase(async databasePath=>{
-    const {thread,sourceEvent}=seedLife(databasePath);
-    const situated=openSituatedLifeStore(localWorldStateStorage(databasePath));
-    const admitted=[];
-    for(const name of ["porto-apartment","porto-books","imaginary-hamlet"]){
-      const locality=name==="imaginary-hamlet"?"Imaginary Hamlet":"Porto";
-      const episode=situated.recordPlaceEpisode({
-        episodeId:placeEpisodeId({thread:thread.threadId,place:name}),
-        revision:1,threadId:thread.threadId,episodeKind:"formative_presence",
-        place:{placeId:"place.future."+name,displayName:name,
-          countryCode:"PT",region:"Portugal",locality,precision:"locality"},
-        startAt:"2026-09-10T05:04:00Z",endAt:null,
-        sourceReferences:[sourceEvent],visibility:"private",
-        provenance:"thread_history",recordedAt:"2026-09-10T05:05:00Z",
-      });
-      admitted.push(placeEpisodeRevisionRef(episode));
-    }
-    situated.close();
-
+    const {thread}=seedLife(databasePath);
     const life=openLivedNowStore(localWorldStateStorage(databasePath));
     try{
-      const place=(ref,locality)=>({
-        threadId:thread.threadId,placeRef:ref,specificPlace:"A place the Thread previously knew",
-        streetAddress:null,locality,country:"Portugal",countryCode:"PT",
-        lat:null,long:null,timeZone:"Europe/Lisbon",
-        evidenceRef:ref,publicGranularity:"hidden",
-      });
-      const porto={
+      const geo={
         locality:"Porto",country:"Portugal",countryCode:"PT",
         lat:41.1496,long:-8.6109,timeZone:"Europe/Lisbon",
-        evidenceRef:"fixture:verified-porto-locality",
+        evidenceRef:"fixture:city-porto",
       };
-      const first=life.groundPlace({place:place(admitted[0],"Porto"),localityEvidence:porto});
-      const second=life.groundPlace({place:place(admitted[1],"Porto")});
-      const unknown=life.groundPlace({place:place(admitted[2],"Imaginary Hamlet")});
-
-      assert.equal(first.status,"grounded","new destination did not acquire a grounded locality");
-      assert.equal(second.status,"grounded","a later place failed to reuse grounded city");
-      assert.equal(second.locality.evidenceRef,porto.evidenceRef,
-        "later place invented independent geography");
-      assert.notEqual(first.place.placeRef,second.place.placeRef,
-        "shared locality collapsed two distinct physical places");
-      assert.equal(life.getPublicPlace(admitted[0]),null,
-        "grounding a private place fabricated a shared public venue");
-      assert.equal(unknown.status,"unlocated","World fabricated unknown geographical evidence");
-      assert.equal(life.getPrivatePlace(thread.threadId,admitted[2]),null,
-        "unlocated place was incorrectly admitted as grounded");
+      const city=life.resolvePlace({
+        threadId:thread.threadId,name:"Porto",kind:"city",
+        city:"Porto",country:"Portugal",geography:geo,
+      });
+      const library=life.resolvePlace({
+        threadId:thread.threadId,name:"A local library",kind:"place",
+        city:"Porto",country:"Portugal",
+      });
+      const cafe=life.resolvePlace({
+        threadId:thread.threadId,name:"A neighborhood café",kind:"place",
+        city:"Porto",country:"Portugal",
+      });
+      assert.equal(city.status,"located","Porto has no geography");
+      assert.equal(library.status,"located","a local place lost its city's mapped context");
+      assert.equal(library.place.lat,geo.lat,"place did not reuse city geography");
+      assert.notEqual(library.place.ref,cafe.place.ref,
+        "two different places collapsed into the same venue");
       assert.equal(life.getCurrentSituation(thread.threadId),null,
-        "geographical knowledge fabricated an enacted visit");
+        "World knowledge created a false presence");
       assert.equal(life.listPlans(thread.threadId).length,0,
-        "grounding a destination fabricated a Flight Plan");
+        "resolving a place created an unwanted Flight Plan");
     }finally{life.close();}
   });
 });
