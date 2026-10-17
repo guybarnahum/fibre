@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
 import { topology } from "../validation/encounter-autonomy-probe.mjs";
@@ -75,7 +75,22 @@ async function main(argv){
   const token=process.env.FIBRE_PRIVATE_TOKEN;
   if(!token)throw new Error("FIBRE_PRIVATE_TOKEN is required");
   const base=topology(env).worldBaseUrl;
+  const receiptDir=new URL("../../.fibre/",import.meta.url);
+  const receiptFile=new URL(`../../.fibre/city-guide-${env}-admissions.json`,import.meta.url);
+  let completed=[];
+  try{
+    const saved=JSON.parse(readFileSync(receiptFile,"utf8"));
+    if(saved.environment!==env||!Array.isArray(saved.venues)){
+      throw new Error("City Guide receipt belongs to another environment");
+    }
+    completed=saved.venues;
+  }catch(error){
+    if(error?.code!=="ENOENT")throw error;
+  }
   for(const {cityKey,placeKey,admission} of pending){
+    if(completed.some(item=>item.cityKey===cityKey&&item.placeKey===placeKey)){
+      continue;
+    }
     const response=await fetch(base+"/internal/world-venues/admit-public",{
       method:"POST",
       headers:{Accept:"application/json",
@@ -95,16 +110,20 @@ async function main(argv){
       ||place.countryCode!==admission.countryCode){
       throw new Error("World admission did not match City Guide evidence: "+placeKey);
     }
-    guide.cities[cityKey].places[placeKey].worldPlaceRef=place.ref;
-    // Each successful admission is saved immediately; reruns resume safely
-    // after network errors and the World independently enforces idempotence.
-    writeFileSync(guideFile,JSON.stringify(guide,null,2)+"\n");
+    completed.push({cityKey,placeKey,worldPlaceRef:place.ref,
+      evidenceRef:place.evidenceRef});
+    // Record each World result durably; edit the tracked guide only after
+    // reviewing the complete receipt and committing authoritative refs.
+    mkdirSync(receiptDir,{recursive:true});
+    writeFileSync(receiptFile,JSON.stringify({
+      environment:env,venues:completed,
+    },null,2)+"\\n");
     process.stdout.write(JSON.stringify({
       city:admission.locality,venue:admission.displayName,
       worldPlaceRef:place.ref,
-    })+"\n");
+    })+"\\n");
   }
-  process.stdout.write("World venues admitted. Commit the modified City Guide and deploy it before expecting Thread planning to discover these places.\n");
+  process.stdout.write(`World admission receipt: .fibre/city-guide-${env}-admissions.json. Send it for the guide commit before deploying.\\n`);
 }
 
 if(process.argv[1]===fileURLToPath(import.meta.url)){
