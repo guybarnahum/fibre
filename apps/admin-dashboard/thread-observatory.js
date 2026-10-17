@@ -435,17 +435,20 @@ export function observatoryCurrentPlace(livedNow){
   const privatePlace=livedNow?.privatelyKnownCurrentPlace;
   const atPrivatePlace=situation?.location?.kind==="place"
     &&privatePlace?.placeRef===situation.location.placeRef;
+  const operatorPlace=livedNow?.operatorCurrentPlace;
   const located=currentThreadPlace(atPrivatePlace
-    ?{...privatePlace,kind:"place"}:livedNow?.currentLocation);
+    ?{...privatePlace,kind:"place"}:operatorPlace??livedNow?.currentLocation);
   if(located===null){
     return situation?.location?.kind==="transit"
       ?"In transit · location unresolved"
       :situation?"Location unresolved":"Not established";
   }
   const city=threadLocationText(located);
-  if(atPrivatePlace){
-    const description=privatePlace.specificPlace?.trim();
-    return description?description+" · "+city:city;
+  if(atPrivatePlace||operatorPlace){
+    const description=readableGenesisPlace(
+      (atPrivatePlace?privatePlace:operatorPlace)?.specificPlace?.trim(),
+    );
+    return description&&description!==city?description+" · "+city:city;
   }
   const publicVenue=situation?.location?.kind==="place"
     ?(livedNow?.worldPlaces??[]).find(place=>
