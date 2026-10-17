@@ -1,9 +1,11 @@
 import { DurableObject } from "cloudflare:workers";
+import { createHash } from "node:crypto";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import {
   createAssetGenerationJobFromIdentity,
   createAssetGenerationService,
+  verifyProvenancedAssetForPublication,
 } from "#services/asset-generator/src/index.mjs";
 import { createFidService } from "#services/fibre-identity-authority/public/fid-service.mjs";
 import {
@@ -37,6 +39,8 @@ const ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const ACTIVE_ROUTE = /^\/internal\/fid\/threads\/([^/]+)\/active$/u;
 const REISSUE_ROUTE = "/internal/fid/cards/reissue";
 const VERIFY_ROUTE = "/internal/fid/cards/verify";
+const PHOTO_CORRECTION_ROUTE = /^\/internal\/fid\/threads\/([^/]+)\/photo-corrections\/([^/]+)(\/preview|\/approve)?$/u;
+const PHOTO_CORRECTION_PREFIX = "fid_photo_correction_";
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
 const ASSET_DEPLOYMENT = resolveServiceDeployment(DEPLOYMENT, "asset-generator");
 const FID_TEMPLATE_VERSION = "fid-card-template-v0.3-ocean";
@@ -136,6 +140,16 @@ async function presentationSnapshot(env, threadId) {
   return payload?.snapshot ?? null;
 }
 
+function photoCorrectionId(value) {
+  const correctionId=fibreId("photo correction ID",value);
+  if(!correctionId.startsWith(PHOTO_CORRECTION_PREFIX))throw new TypeError("photo correction ID is invalid");
+  return correctionId;
+}
+
+function photoCorrectionApprovalRef(threadId,correctionId){
+  return "fidphotoapproval_"+createHash("sha256").update(threadId+"\\0"+correctionId).digest("hex");
+}
+
 function refs(values) {
   return [...new Set(values.flat(Infinity).filter((value) => typeof value === "string" && ID.test(value)))];
 }
@@ -190,6 +204,66 @@ async function renderPhotoDigest(infra, objectRef) {
   return fidRenderPhotoDigest(await decodePngRgba(stored.bytes));
 }
 
+async function fidPhotoCorrection({ env, infra, providerProfile, threadId, correctionId }) {
+  const snapshot=await presentationSnapshot(env,threadId);
+  const visual=snapshot?.presentation?.visualIdentity;
+  const canonicalRef=visual?.referenceObjectRefs?.length===1?visual.referenceObjectRefs[0]:null;
+  const canonical=canonicalRef===null?null:await infra.objects.head(canonicalRef);
+  if(canonical===null)throw new Error("Photo correction requires an admitted canonical portrait");
+  const source={
+    role:"official_id_photo",
+    threadId,
+    candidatePhotoRef:null,
+    candidatePhotoDigest:null,
+    canonicalVisualReferenceRef:canonicalRef,
+    canonicalVisualReferenceDigest:canonical.digest,
+    derivationReceiptRef:null,
+    sourceReferences:refs([canonicalRef,visual.embodimentId,visual.provenanceRef,
+      visual.sourceReferences??[],visual.permissionReferences??[]]),
+    targetAgeYears:ageAt(snapshot?.presentation?.subject?.birthDate,new Date().toISOString()),
+  };
+  const job=buildFidPhotoDerivationJob({
+    threadId,correctionId,source,requestedAt:new Date().toISOString(),
+    providerProfile,createGenerationJob:createAssetGenerationJobFromIdentity,
+  });
+  return {source,job};
+}
+
+async function fidPhotoCorrectionCandidate(infra,source,job){
+  const saved=await infra.objects.get(job.receiptObjectRef);
+  if(saved===null)return null;
+  const receipt=await storedJson(infra,job.receiptObjectRef);
+  const proof=await verifyProvenancedAssetForPublication({infra,receipt});
+  if(receipt.jobId!==job.jobId || receipt.objectRef!==job.outputObjectRef
+    || receipt.role!=="official_id_photo"
+    || !receipt.inputReferences.includes(source.canonicalVisualReferenceRef)
+    || receipt.context?.correctionId!==job.context.correctionId
+    || receipt.context?.threadId!==source.threadId
+    || proof.generationRecord.generation.provider!=="openai"
+    || !proof.generationRecord.providerRequestWitness?.body?.referenceInputs?.some(ref=>
+      ref.objectRef===source.canonicalVisualReferenceRef && ref.digest===source.canonicalVisualReferenceDigest)){
+    throw new Error("Corrected ID photo is not proven to derive from the current canonical portrait through OpenAI");
+  }
+  const asset=await infra.objects.get(receipt.objectRef);
+  if(asset===null || receipt.mediaType!=="image/png")throw new Error("Corrected ID photo is not an available PNG");
+  return {receipt,asset};
+}
+
+async function approvedFidPhotoCorrection({infra,threadId,correctionId,source,job}){
+  const stored=await storedJson(infra,photoCorrectionApprovalRef(threadId,correctionId));
+  if(stored===null)return null;
+  const candidate=await fidPhotoCorrectionCandidate(infra,source,job);
+  if(candidate===null || stored.threadId!==threadId || stored.correctionId!==correctionId
+    || stored.canonicalRef!==source.canonicalVisualReferenceRef
+    || stored.canonicalDigest!==source.canonicalVisualReferenceDigest
+    || stored.photoRef!==candidate.receipt.objectRef
+    || stored.photoDigest!==candidate.receipt.sha256
+    || stored.receiptRef!==job.receiptObjectRef){
+    throw new Error("FID correction approval no longer matches canonical identity or generated photo");
+  }
+  return candidate;
+}
+
 function createPhotoSource({ env, infra, registry, admissions, providerProfile }) {
   return Object.freeze({
     async resolveCandidate({ threadId, at, workflow }) {
@@ -200,6 +274,27 @@ function createPhotoSource({ env, infra, registry, admissions, providerProfile }
         ? visual.referenceObjectRefs[0]
         : null;
       const canonical = canonicalRef === null ? null : await infra.objects.head(canonicalRef);
+      if(workflow?.idempotencyKey?.startsWith(PHOTO_CORRECTION_PREFIX)){
+        const correctionId=photoCorrectionId(workflow.idempotencyKey);
+        const context=await fidPhotoCorrection({env,infra,providerProfile,threadId,correctionId});
+        if(context.source.canonicalVisualReferenceRef!==canonicalRef
+          || context.source.canonicalVisualReferenceDigest!==canonical?.digest){
+          throw new Error("FID correction no longer matches canonical identity");
+        }
+        const corrected=await approvedFidPhotoCorrection({
+          infra,threadId,correctionId,...context,
+        });
+        if(corrected===null)throw new Error("FID photo correction must be reviewed and approved before reissue");
+        return {
+          ...context.source,
+          candidatePhotoRef:corrected.receipt.objectRef,
+          candidatePhotoDigest:await renderPhotoDigest(infra,corrected.receipt.objectRef),
+          derivationReceiptRef:context.job.receiptObjectRef,
+          sourceReferences:refs([context.source.sourceReferences,context.job.receiptObjectRef]),
+          candidateEvidence:{ready:true,width:corrected.receipt.width,height:corrected.receipt.height,
+            operatorApproved:true},
+        };
+      }
       const prior = priorFidPhotoSource({
         registry,
         admissions,
@@ -380,7 +475,7 @@ function createRuntime(ctx, env) {
     photoAdmissionStore:admissions,
     issuanceExecutor:executor,
   });
-  return Object.freeze({ infra, fidService, issuerSigner });
+  return Object.freeze({ infra, fidService, issuerSigner, assetGeneration, providerProfile });
 }
 
 async function activePhoto(runtime, active) {
