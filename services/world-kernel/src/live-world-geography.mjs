@@ -87,7 +87,7 @@ export function listKnownWorldPlaces(db,threadId,{limit=24}={}){
   ).all(threadId,limit).map(row=>stored(row,"World place")));
 }
 
-export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind="place",geography=null}={}){
+export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind="place",geography=null,parentRef=null}={}){
   assertId("World place Thread",threadId);
   const title=text("World place name",name);
   if(!["city","place"].includes(kind))throw new TypeError("World place kind must be city or place");
@@ -125,7 +125,7 @@ export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind=
     lat:knownGeo?.lat??null,long:knownGeo?.long??null,
     timeZone:knownGeo?.timeZone??null,evidenceRef:knownGeo?.evidenceRef??null,
     mapPrecision:knownGeo===null?null:"city",
-    ...(kind==="place"?{ownerThreadId:threadId}:{}),
+    ...(kind==="place"?{ownerThreadId:threadId,parentRef}:{}),
     authority:"world-place-v1",
   });
   if(prior===null){
