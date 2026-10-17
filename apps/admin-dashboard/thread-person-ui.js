@@ -66,6 +66,9 @@ export function currentThreadPlace(location){
   if(!location||!["place","transit"].includes(location.kind))return null;
   const city=clean(location.locality);
   const country=clean(location.country);
+  if(location.kind==="transit"&&(!city||city==="In transit"||!country)){
+    return {city:null,country:null,countryCode:null,displayName:"In transit"};
+  }
   if(!city||!country)return null;
   const displayName=[city,country].join(", ");
   return {
