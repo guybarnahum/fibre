@@ -158,7 +158,8 @@ export async function runThreadJourneyProbe({
         :journeys.some(j=>j.stage==="arrival_observed")?"arrival_observed"
           :journeys.some(j=>j.stage==="transit_observed")?"transit_observed"
             :journeys.some(j=>j.stage==="instant_place_change")?"instant_place_change"
-              :journeys.length?"journey_planned":"no_recent_journey",
+              :journeys.some(j=>j.stage==="departure_observed")?"departure_observed"
+                :journeys.length?"journey_planned":"no_recent_journey",
   };
   const folder=resolve(ROOT,".fibre","journeys",target,threadId);
   const file=resolve(folder,`journey-${new Date().toISOString().replace(/[:.]/gu,"-")}.json`);
