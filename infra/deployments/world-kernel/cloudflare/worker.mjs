@@ -6,7 +6,7 @@ import { createAppearanceCoverageService } from "#services/world-kernel/src/appe
 import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { openContactInspectionStore } from "#services/world-kernel/src/contact-store.mjs";
-import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContextLocations,isModernGenesisPlace } from "#services/world-kernel/src/current-thread-location.mjs";
+import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
@@ -184,28 +184,32 @@ function projectedCurrentLocation(livedNow,threadId,{
   });
   // A direct private visibility decision wins over sibling-context inference.
   if(direct!==null||privatePlace!==null
-    ||!placeEpisodes.some(isModernGenesisPlace))return direct;
+    ||!(placeEpisodes.some(isModernGenesisPlace)
+      ||worldPlaces.some(isModernGenesisWorldPlace)))return direct;
   // A personal place may be a sibling of a previously located modern
   // Genesis context. Resolve only that shared, attested context, not birth.
   return projectCurrentThreadLocation({
     currentSituation,privatePlace,worldPlaces,placeEpisodes,
     contextLocations:genesisContextLocations(
       placeEpisodes,livedNow.listLocatedGenesisContexts([threadId]),
+      {worldPlaces,threadId},
     ),
   });
 }
 
 function projectedOperatorLocation(livedNow,threadId,{
-  currentSituation,privatePlace=null,placeEpisodes=[],currentLocation=null,
+  currentSituation,privatePlace=null,placeEpisodes=[],worldPlaces=[],
+  currentLocation=null,
 }){
-  const direct=projectOperatorCurrentPlace({currentSituation,privatePlace});
+  const direct=projectOperatorCurrentPlace({currentSituation,privatePlace,worldPlaces});
   if(direct!==null||currentLocation!==null
-    ||!placeEpisodes.some(isModernGenesisPlace))return direct;
+    ||!(placeEpisodes.some(isModernGenesisPlace)
+      ||worldPlaces.some(isModernGenesisWorldPlace)))return direct;
   return projectOperatorCurrentPlace({
-    currentSituation,privatePlace,placeEpisodes,
+    currentSituation,privatePlace,placeEpisodes,worldPlaces,
     privateContextLocations:genesisContextLocations(
       placeEpisodes,livedNow.listLocatedGenesisContexts([threadId]),
-      {privatePerspective:true},
+      {privatePerspective:true,worldPlaces,threadId},
     ),
   });
 }
@@ -247,7 +251,7 @@ function currentThreadObservatory(runtime,threadId){
         currentSituation:structuredClone(currentSituation),
         currentLocation,
         operatorCurrentPlace:projectedOperatorLocation(livedNow,threadId,{
-          currentSituation,privatePlace,placeEpisodes,currentLocation,
+          currentSituation,privatePlace,placeEpisodes,worldPlaces,currentLocation,
         }),
         recentSituations:structuredClone(recentSituations),
         currentPersonalPlan:structuredClone(currentPersonalPlan),
@@ -338,7 +342,7 @@ function threadObservatory(runtime, threadId) {
         currentSituation:structuredClone(currentSituation),
         currentLocation,
         operatorCurrentPlace:projectedOperatorLocation(livedNow,threadId,{
-          currentSituation,privatePlace,placeEpisodes,currentLocation,
+          currentSituation,privatePlace,placeEpisodes,worldPlaces,currentLocation,
         }),
         // Internal operator evidence only. Never added to public directory.
         privatelyKnownCurrentPlace:structuredClone(privatePlace),
@@ -472,7 +476,8 @@ export class FibreWorldDurableObject extends DurableObject {
         return Object.freeze({
           ...entry,
           operatorCurrentPlace:projectOperatorCurrentPlace({
-            ...current,privateContextLocations:current?.privateContextLocations??[],
+            ...current,worldPlaces:current?.worldPlaces??[],
+            privateContextLocations:current?.privateContextLocations??[],
           }),
           currentLocation:projectCurrentThreadLocation({
             entry,
@@ -504,7 +509,7 @@ export class FibreWorldDurableObject extends DurableObject {
       return Object.freeze({
         ...entry,
         operatorCurrentPlace:projectedOperatorLocation(livedNow,threadId,{
-          currentSituation,privatePlace,placeEpisodes,currentLocation,
+          currentSituation,privatePlace,placeEpisodes,worldPlaces,currentLocation,
         }),
         currentLocation,
       });
