@@ -140,3 +140,37 @@ export async function resolveGeoNamesPlace({
   if (exact === null) throw new Error(`GeoNames could not resolve ${requestedCity}, ${requestedCountry}`);
   return exact;
 }
+
+
+// Used only for a Thread-selected destination absent from known World locality
+// evidence. Accept exact, unambiguous populated places; never a nearby city.
+export async function resolveGeoNamesLocality({
+  city,country,username,fetchImpl=globalThis.fetch,
+}={}){
+  const requestedCity=nonEmpty("destination city",city);
+  const requestedCountry=nonEmpty("destination country",country);
+  const results=await searchGeoNamesPlaces({
+    query:`${requestedCity}, ${requestedCountry}`,
+    username,maxRows:12,fetchImpl,
+  });
+  const exact=results.filter(place=>
+    normalize(place.city)===normalize(requestedCity)
+    &&normalize(place.country)===normalize(requestedCountry));
+  if(exact.length!==1)return null;
+  const place=exact[0];
+  const url=new URL("/timezoneJSON",GEONAMES_BASE_URL);
+  url.searchParams.set("lat",String(place.lat));
+  url.searchParams.set("lng",String(place.long));
+  url.searchParams.set("username",nonEmpty("GEONAMES_USERNAME",username));
+  const response=await fetchImpl(url,{headers:{Accept:"application/json"}});
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||data===null||data.status)throw new Error("GeoNames timezone lookup failed");
+  const timeZone=nonEmpty("destination timezone",data.timezoneId);
+  try{new Intl.DateTimeFormat("en",{timeZone});}
+  catch{throw new TypeError("GeoNames returned an invalid timezone");}
+  return Object.freeze({
+    locality:place.city,country:place.country,countryCode:place.countryCode,
+    lat:place.lat,long:place.long,timeZone,
+    evidenceRef:`geonames:${place.countryCode}/${place.city}/${place.lat},${place.long}`,
+  });
+}
