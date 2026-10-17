@@ -223,6 +223,7 @@ function admittedThread(entry, lastActivityAt) {
     operatorCurrentPlace:entry.operatorCurrentPlace == null
       ? null:structuredClone(entry.operatorCurrentPlace),
     lifeContinuity:entry.lifeContinuity==null?null:structuredClone(entry.lifeContinuity),
+    unlocatedPlace:entry.unlocatedPlace==null?null:structuredClone(entry.unlocatedPlace),
     runtime:entry.runtime === null || entry.runtime === undefined
       ? null
       : structuredClone(entry.runtime),
