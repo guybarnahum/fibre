@@ -34,6 +34,10 @@ function modernGenesisContext(episode){
   return match?.[1]??null;
 }
 
+export function isModernGenesisPlace(episode){
+  return modernGenesisContext(episode)!==null;
+}
+
 export function genesisContextLocations(placeEpisodes, locatedContexts){
   const known=new Map();
   for(const {placeEpisode,privatePlace} of locatedContexts){
