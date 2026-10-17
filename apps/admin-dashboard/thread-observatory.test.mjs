@@ -789,6 +789,10 @@ test("Observatory displays authoritative current city separately from immutable 
   assert.equal(observatoryCurrentPlace({currentSituation:null}),"Not established",
     "a Thread with no enacted present was assigned a location");
   assert.equal(observatoryCurrentPlace({
+    currentSituation:{location:{kind:"place",placeRef:"per:unknown:1"}},
+  }),"Location unresolved",
+  "an existing situated life was mistaken for a Thread without First Life");
+  assert.equal(observatoryCurrentPlace({
     currentSituation:{location:{kind:"place",placeRef:"wpl_library"}},
     currentLocation:{kind:"place",locality:"London",country:"United Kingdom",
       countryCode:"GB",authority:"live_world_place"},
