@@ -74,16 +74,6 @@ function resolvedPlace(reference, { worldPlaces, placeEpisodes, privatePlace, co
       });
     }
   }
-  const contextual=contextLocations.find(item=>item.placeRef===reference)??null;
-  if(contextual){
-    const city=contextual.geography;
-    return Object.freeze({
-      ref:reference,displayName:`${city.city}, ${city.country}`,
-      geography:{lat:city.lat,long:city.long,city:city.city,
-        country:city.country,countryCode:city.countryCode},
-      authority:"genesis_context_locality",
-    });
-  }
   const shared = worldPlaces.find((place) => place.ref === reference) ?? null;
   if (shared !== null) {
     return Object.freeze({
@@ -100,11 +90,16 @@ function resolvedPlace(reference, { worldPlaces, placeEpisodes, privatePlace, co
 
   const episode = placeEpisodes.find((place) => placeEpisodeRevisionRef(place) === reference) ?? null;
   if (episode !== null) {
+    const grounded=localityGeography(episode.place);
+    const context=grounded===null
+      ?contextLocations.find(item=>item.placeRef===reference)?.geography??null
+      :null;
     return Object.freeze({
       ref:reference,
-      displayName:episode.place.displayName,
-      geography:localityGeography(episode.place),
-      authority:"situated_life",
+      displayName:context===null?episode.place.displayName
+        :`${context.city}, ${context.country}`,
+      geography:grounded??context,
+      authority:context===null?"situated_life":"genesis_context_locality",
     });
   }
 
