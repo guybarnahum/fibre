@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdirSync,writeFileSync } from "node:fs";
 import { dirname,resolve } from "node:path";
 import { fileURLToPath,pathToFileURL } from "node:url";
@@ -8,6 +9,26 @@ import {
 } from "./encounter-autonomy-probe.mjs";
 
 const ROOT=fileURLToPath(new URL("../../",import.meta.url));
+
+// A read-only probe edit does not require redeploying World. A runtime
+// source change does. Compare actual deployed ancestry rather than SHA equality.
+function runtimeSourceMatches(deployedSha,checkoutSha){
+  if(deployedSha===checkoutSha)return true;
+  const git=(args)=>execFileSync("git",args,{cwd:ROOT,encoding:"utf8"}).trim();
+  const changed=git(["diff","--name-only",deployedSha,checkoutSha]).split("\n").filter(Boolean);
+  if(changed.some(path=>!path.startsWith("tools/validation/")
+    &&!path.startsWith("docs/")&&path!=="AGENTS.md"&&path!=="package.json")){
+    return false;
+  }
+  if(changed.includes("package.json")){
+    const before=JSON.parse(git(["show",`${deployedSha}:package.json`]));
+    const after=JSON.parse(git(["show",`${checkoutSha}:package.json`]));
+    delete before.scripts;
+    delete after.scripts;
+    if(JSON.stringify(before)!==JSON.stringify(after))return false;
+  }
+  return true;
+}
 
 function argsFrom(argv){
   let environment=null,threadId=null;
@@ -105,6 +126,7 @@ export async function runThreadJourneyProbe({
     token,"Thread journey observatory");
   const deployedSha=response.deploymentGitSha;
   requireRuntimeAncestor(deployedSha,head);
+  const runtimeMatches=runtimeSourceMatches(deployedSha,head);
   if(!response.observatory)throw new Error("Thread is not observable");
   const life=response.observatory.livedNow;
   const journeys=inspectThreadJourneys(response.observatory);
@@ -114,6 +136,7 @@ export async function runThreadJourneyProbe({
     checkedAt:new Date().toISOString(),
     validatorGitSha:head,deployedGitSha:deployedSha,
     deployedMatchesCheckout:deployedSha===head,
+    runtimeSourceMatches:runtimeMatches,
     currentSituation:life.currentSituation===null?null:{
       situationId:life.currentSituation.situationId,
       establishedAt:life.currentSituation.establishedAt,
@@ -125,7 +148,7 @@ export async function runThreadJourneyProbe({
     journeys,
     // The Observatory cannot prove no one called ensure. Do not upgrade an
     // observed sequence to a claim of independent scheduler causation.
-    status:deployedSha!==head?"deployment_outdated"
+    status:!runtimeMatches?"deployment_outdated"
       :journeys.some(j=>j.stage==="journey_enacted")?"journey_enacted"
         :journeys.some(j=>j.stage==="arrival_observed")?"arrival_observed"
           :journeys.some(j=>j.stage==="transit_observed")?"transit_observed"
