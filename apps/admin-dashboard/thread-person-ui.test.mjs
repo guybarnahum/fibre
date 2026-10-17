@@ -8,6 +8,7 @@ import {
   threadLocationFlag,
   threadLocationText,
   threadLocationTooltip,
+  currentThreadPlace,
 } from "./thread-person-ui.js";
 
 test("Thread locations present city/country without changing authority",()=>{
@@ -69,4 +70,21 @@ test("compact Admin portraits prefer admitted thumbnails without losing original
   assert.equal(preferredThreadPortraitUrl({
     assets:[identity.assets[0]],
   }),"/api/thread-assets/full","unmigrated portrait should remain usable");
+});
+
+test("current-place presentation uses enacted city, not birthplace or a private address",()=>{
+  const worldLocation={
+    kind:"place",locality:"London",country:"United Kingdom",countryCode:"GB",
+    displayName:"Private home at 10 Sample Street",lat:51.5,long:-0.12,
+  };
+  const displayed=currentThreadPlace(worldLocation);
+  assert.equal(threadLocationText(displayed),"London, United Kingdom");
+  assert.equal(threadLocationFlag(displayed),"🇬🇧");
+  assert.equal(JSON.stringify(displayed).includes("Sample Street"),false,
+    "World city presentation revealed an exact private place");
+  assert.equal(currentThreadPlace(null),null,
+    "missing current World situation cannot inherit the birthplace");
+  assert.equal(threadLocationText(currentThreadPlace({
+    ...worldLocation,kind:"transit",
+  })),"In transit · London, United Kingdom");
 });
