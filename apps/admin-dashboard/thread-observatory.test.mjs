@@ -783,7 +783,10 @@ test("Observatory displays authoritative current city separately from immutable 
     "current situated place did not override the birthplace");
   assert.equal(observatoryCurrentPlace({
     ...london,currentLocation:null,
-    privatelyKnownCurrentPlace:{locality:"London",country:"United Kingdom",countryCode:"GB"},
+    privatelyKnownCurrentPlace:{
+      placeRef:"per:home:1",locality:"London",country:"United Kingdom",
+      countryCode:"GB",publicGranularity:"city",
+    },
   }),"London, United Kingdom",
   "existing private World locality was not reused when projection is unavailable");
   assert.equal(observatoryCurrentPlace({currentSituation:null}),"Not established",
