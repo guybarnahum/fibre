@@ -109,15 +109,14 @@ export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind=
     coordinates(geography.lat,geography.long);
     if(geography.timeZone!==null&&geography.timeZone!==undefined)timeZone(geography.timeZone);
   }
-  const knownGeo=geography??(prior===null||prior.lat===null?null:{
+  // The existing World entity wins over a later approximate city lookup.
+  // Choosing the same place must not fail because two map catalogs round a
+  // city's centroid differently.
+  const knownGeo=prior!==null&&prior.lat!==null?{
     locality:prior.locality,country:prior.country,countryCode:prior.countryCode,
     lat:prior.lat,long:prior.long,timeZone:prior.timeZone,
     evidenceRef:prior.evidenceRef,
-  });
-  if(prior!==null&&geography!==null&&prior.lat!==null
-    &&(prior.lat!==geography.lat||prior.long!==geography.long)){
-    throw new IntegrityError("World place geographic evidence conflicts with existing location");
-  }
+  }:geography;
   const record=Object.freeze({
     ref,displayName:kind==="city"&&nation!==null?`${title}, ${nation}`:title,
     placeKind:kind,locality,country:nation,
