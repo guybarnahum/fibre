@@ -144,3 +144,29 @@ test("unresolved current place never falls back to birthplace", () => {
 
   assert.equal(location, null, "unresolved current place was plotted as birthplace");
 });
+
+test("operator-attested private locality maps at city precision, never a home address",()=>{
+  const location=projectCurrentThreadLocation({
+    currentSituation:{
+      establishedAt:"2026-10-17T01:00:00.000Z",
+      location:{kind:"place",placeRef:"per:plce_home:1"},
+    },
+    privatePlace:{
+      placeRef:"per:plce_home:1",
+      threadId:"thr_person",specificPlace:"Private residence at 12 Example Street",
+      streetAddress:"12 Example Street",lat:38.732,long:-9.12,
+      locality:"Lisbon",country:"Portugal",countryCode:"PT",
+      publicGranularity:"city",
+    },
+  });
+  assert.equal(location?.locality,"Lisbon","operator place did not establish current city");
+  assert.equal(location?.lat,38.72509,"map location used precise residence coordinates");
+  assert.equal(location?.long,-9.1498,"map location used precise residence coordinates");
+  assert.equal(location?.authority,"world_private_place_locality");
+  assert.equal(JSON.stringify(location).includes("Example Street"),false,
+    "private street address leaked into the Thread location projection");
+  assert.equal(projectCurrentThreadLocation({currentSituation:null,privatePlace:{
+    placeRef:"per:plce_home:1",locality:"Lisbon",country:"Portugal",
+    countryCode:"PT",publicGranularity:"city",
+  }}),null,"private location created a current life that did not exist");
+});
