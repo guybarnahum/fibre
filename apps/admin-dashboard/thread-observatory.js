@@ -247,8 +247,8 @@ export function portraitThumbnailAsset(identity) {
 
 export function portraitAsset(identity) {
   const assets = Array.isArray(identity?.assets) ? identity.assets : [];
-  return assets.find((asset) => asset?.role === "official_id_photo" && asset?.url)
-    ?? assets.find((asset) => asset?.role === "canonical_portrait" && asset?.url)
+  return assets.find((asset) => asset?.role === "canonical_portrait" && asset?.url)
+    ?? assets.find((asset) => asset?.role === "official_id_photo" && asset?.url)
     ?? assets.find((asset) => asset?.url && String(asset.mediaType ?? "").startsWith("image/"))
     ?? null;
 }
