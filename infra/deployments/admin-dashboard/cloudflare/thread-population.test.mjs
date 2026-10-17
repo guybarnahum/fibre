@@ -80,7 +80,9 @@ test("World Registry defines admitted population while Activity remains observat
       raisedAs:null,
       currentLocation:null,
       operatorCurrentPlace:{
-        locality:"Tbilisi",country:"Georgia",countryCode:"GE",disclosure:"private",
+        kind:"place",current:true,placeRef:"per:home:1",
+        specificPlace:"Family home",locality:"Tbilisi",country:"Georgia",
+        countryCode:"GE",lat:41.69143,long:44.83412,mapPrecision:"city",
       },
       version:4,
       stateHash:"sha256:b",
@@ -109,9 +111,10 @@ test("World Registry defines admitted population while Activity remains observat
   assert.equal(population.threads[0].currentLocation.current, true, "Admin population mislabeled enacted World location");
   assert.equal(population.threads[1].currentLocation,null,
     "a private home leaked into public/current World geography");
-  assert.deepEqual(population.threads[1].operatorCurrentPlace,{
-    locality:"Tbilisi",country:"Georgia",countryCode:"GE",disclosure:"private",
-  },"Admin lost the already-admitted private city during population projection");
+  assert.equal(population.threads[1].operatorCurrentPlace?.specificPlace,
+    "Family home","God-view lost the current physical setting");
+  assert.equal(population.threads[1].operatorCurrentPlace?.locality,
+    "Tbilisi","God-view lost the current city");
   assert.equal(population.threads[0].runtime.state, "active", "Admin population lost live thaw state");
   const raisedLanguageAction = population.threads[0].findings.find((finding) => finding.code === "RAISED_LANGUAGES").identityAction;
   assert.equal(raisedLanguageAction.id, "change_raised_languages", "Admin must edit Raised languages, not Spoken languages");
