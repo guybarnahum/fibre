@@ -315,6 +315,12 @@ function threadObservatory(runtime, threadId) {
     // A plan is not evidence that its destination was ever visited.
     const legacyPlaces=livedNow.listWorldPlaces(threadId);
     const recentSituations=livedNow.listRecentSituations(threadId,{limit:8});
+    // Keep the personal intention behind recent enacted scenes inspectable
+    // after a Thread has moved on to a new Flight Plan. No full-history scan.
+    const recentPersonalPlans=[...new Set(recentSituations.flatMap(
+      situation=>situation.sourcePlanRefs??[],
+    ))].map(ref=>livedNow.getPlan(threadId,ref))
+      .filter(plan=>plan?.kind==="personal").slice(0,4);
     const publicPlaceRefs=new Set([
       ...(currentSituation?.location?.kind==="place"
         ?[currentSituation.location.placeRef]:[]),
@@ -351,6 +357,7 @@ function threadObservatory(runtime, threadId) {
         privatelyKnownCurrentPlace:structuredClone(privatePlace),
         previousSituation:structuredClone(previousSituation),
         recentSituations:structuredClone(recentSituations),
+        recentPersonalPlans:structuredClone(recentPersonalPlans),
         nextAutonomousBoundary:structuredClone(livedNow.inspectLivedBoundary(threadId)),
         explorationContinuity:structuredClone(explorationContinuity),
         explorationInteroception:structuredClone(explorationInteroception),
