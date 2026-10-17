@@ -7,7 +7,6 @@ const ROUTES=Object.freeze({
   "/internal/world-venues/bind":"legacy_context_binding",
   "/internal/world-venues/admit-public":"public",
   "/internal/world-venues/locate-private":"private",
-  "/internal/world-venues/ground-place":"ground",
   "/internal/world-venues/places":"list_public",
 });
 const PUBLIC_FIELDS=[
@@ -22,7 +21,7 @@ const PRIVATE_FIELDS=[
 
 export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
   for(const method of [
-    "bindPhysicalVenue","admitPublicPlace","admitPrivatePlace","groundPlace",
+    "bindPhysicalVenue","admitPublicPlace","admitPrivatePlace",
     "listPublicPlacesByLocality",
   ]){
     if(typeof livedNowStore?.[method]!=="function"){
@@ -66,18 +65,6 @@ export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
           assertId("private World place placeRef",body.placeRef);
           const place=livedNowStore.admitPrivatePlace(body);
           return Response.json({ok:true,place});
-        }
-        if(route==="ground"){
-          assertExactKeys("World place grounding",body,["place","localityEvidence"]);
-          assertPlainObject("World place grounding place",body.place);
-          assertExactKeys("World place grounding place",body.place,PRIVATE_FIELDS);
-          if(body.localityEvidence!==null){
-            assertPlainObject("World locality evidence",body.localityEvidence);
-            assertExactKeys("World locality evidence",body.localityEvidence,[
-              "locality","country","countryCode","lat","long","timeZone","evidenceRef",
-            ]);
-          }
-          return Response.json({ok:true,...livedNowStore.groundPlace(body)});
         }
         assertExactKeys("World venue binding",body,[
           "threadId","contextPlaceRef","venueIdentity","displayName",
