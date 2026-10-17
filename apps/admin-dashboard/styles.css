@@ -30,3 +30,8 @@
 .admin-notice-body small{font-size:9px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
 .admin-notice-dismiss{border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;padding:0 2px;cursor:pointer}
 @media(max-width:650px){.admin-notices{left:16px;right:16px;bottom:16px;width:auto}}
+
+/* All Admin copy controls share one quiet, layout-stable hover affordance. */
+.copy-action .fa-action-icon{transition:transform .15s ease;transform-origin:center}
+.copy-action:is(:hover,:focus-visible) .fa-action-icon{transform:scale(1.35)}
+@media(prefers-reduced-motion:reduce){.copy-action .fa-action-icon{transition:none}}
