@@ -71,6 +71,14 @@ function memoryAgeLabel(memory, birthDate) {
   return remainder === 0 ? `Age ${years}` : `Age ${years}y ${remainder}m`;
 }
 
+function readableGenesisPlace(name){
+  const match=/^place_modern_[0-9a-f]{12}_(home|school|transit|learning|commerce)$/u.exec(name??"");
+  return match?{
+    home:"Home",school:"School",transit:"Transit setting",
+    learning:"Learning place",commerce:"Shops / commerce",
+  }[match[1]]:name;
+}
+
 export function threadSituationPlace(situation,livedNow=null){
   const location=situation?.location;
   if(!location)return null;
@@ -78,7 +86,7 @@ export function threadSituationPlace(situation,livedNow=null){
     const shared=(livedNow?.worldPlaces??[]).find((place)=>place.ref===ref);
     const episode=(livedNow?.placeEpisodes??[]).find((place)=>
       `per:${place.episodeId}:${place.revision}`===ref);
-    return shared?.displayName??episode?.place?.displayName??ref;
+    return readableGenesisPlace(shared?.displayName??episode?.place?.displayName??ref);
   };
   if(location.kind==="place")return {
     kind:"place",placeRef:location.placeRef,
@@ -112,6 +120,7 @@ export function threadObservatoryDebugSnapshot({
       activity:current.activity,
       wakefulness:current.wakefulness??"unknown",
       meetingPlace:threadSituationPlace(current,livedNow),
+      currentPlace:observatoryCurrentPlace(livedNow),
       timeZone:livedNow?.worldContext?.timeZone??null,
     },
     worldEvents:buildThreadWorldEvents({livedNow,encounterStories})
