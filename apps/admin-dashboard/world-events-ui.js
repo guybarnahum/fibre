@@ -264,9 +264,9 @@ export function renderWorldEventsPage(){
             experience.title="Admitted personal Experience; not proof of later behavior.";
             row.append(experience);
           }
-          if(witness.memoryLink){
+          for(const memoryId of witness.memoryLinks??(witness.memoryLink?[witness.memoryLink]:[])){
             const memory=el("a",null,"View retained Memory ↗");
-            memory.href=`/thread/${encodeURIComponent(witness.threadId)}?memory=${encodeURIComponent(witness.memoryLink)}`;
+            memory.href=`/thread/${encodeURIComponent(witness.threadId)}?memory=${encodeURIComponent(memoryId)}`;
             memory.title="A current autobiographical Memory explicitly linked through experience consolidation.";
             row.append(memory);
           }
