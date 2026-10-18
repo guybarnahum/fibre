@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   admitWorldPublicPlace,createLiveWorldGeographyTables,getWorldPublicPlace,
   listDiscoverableWorldPublicPlaces,setWorldPublicPlaceDiscovery,
+  setWorldPublicPlaceAppearance,
 } from "../src/live-world-geography.mjs";
 import {formPersonalLivedPlan} from "../src/lived-plan-cognition.mjs";
 import {planningPublicDiscoveries} from "../src/lived-now-service.mjs";
@@ -71,6 +72,44 @@ test("a World venue can be listed, edited and unlisted without changing its phys
     assert.throws(()=>setWorldPublicPlaceDiscovery(db,{
       placeRef:"wpl_unauthenticated",discovery,
     }),/admitted public World place/u,"an unverified place gained public authority");
+  }finally{db.close();}
+});
+
+test("a public place retains one editable visual seed without rewriting attested reality",()=>{
+  const {db,place}=world();
+  try{
+    const before=db.prepare(
+      "SELECT record_json,record_digest FROM world_public_places WHERE place_ref=?"
+    ).get(place.ref);
+    assert.equal(getWorldPublicPlace(db,place.ref).appearance,undefined,
+      "World created an unearned image or visual seed");
+    const appearance={
+      prompt:"A warm reading room with tall bookshelves and afternoon light.",
+      viewpoint:"Standing in the main reading room, at eye height.",
+      projection:"equirectangular",assetRef:null,
+    };
+    const curated=setWorldPublicPlaceAppearance(db,{placeRef:place.ref,appearance});
+    assert.deepEqual(curated.appearance,appearance,
+      "visual seed did not persist on the original World place");
+    assert.deepEqual(listDiscoverableWorldPublicPlaces(db,{
+      locality:"Lisbon",countryCode:"PT",
+    }),[],"giving a place an appearance made it a public recommendation");
+    setWorldPublicPlaceAppearance(db,{placeRef:place.ref,appearance:{
+      ...appearance,prompt:"An inviting but quiet space for independent study.",
+    }});
+    assert.match(getWorldPublicPlace(db,place.ref).appearance.prompt,/independent study/u,
+      "editing a depiction required changing World identity");
+    const after=db.prepare(
+      "SELECT record_json,record_digest FROM world_public_places WHERE place_ref=?"
+    ).get(place.ref);
+    assert.deepEqual(after,before,
+      "an illustrative image seed rewrote the place's physical attestation");
+    assert.throws(()=>setWorldPublicPlaceAppearance(db,{placeRef:place.ref,
+      appearance:{...appearance,projection:"real_3d"}}),/projection/u,
+    "a panorama was mistaken for unrestricted navigable 3D");
+    setWorldPublicPlaceAppearance(db,{placeRef:place.ref,appearance:null});
+    assert.equal(getWorldPublicPlace(db,place.ref).appearance,undefined,
+      "clearing an illustrative view changed World history");
   }finally{db.close();}
 });
 
