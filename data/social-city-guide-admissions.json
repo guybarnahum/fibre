@@ -81,6 +81,33 @@
       "long": -0.09384,
       "timeZone": "Europe/London",
       "coordinateSource": "https://mapcarta.com/fr/W34038687"
+    },
+    {
+      "cityKey": "lisbon-PT",
+      "placeKey": "palacio-galveias-library",
+      "venueIdentity": "osm:node/14106433928",
+      "lat": 38.74144,
+      "long": -9.14364,
+      "timeZone": "Europe/Lisbon",
+      "coordinateSource": "https://mapcarta.com/N14106433928"
+    },
+    {
+      "cityKey": "lisbon-PT",
+      "placeKey": "gulbenkian-gardens",
+      "venueIdentity": "osm:way/175173974",
+      "lat": 38.73683,
+      "long": -9.15413,
+      "timeZone": "Europe/Lisbon",
+      "coordinateSource": "https://mapcarta.com/pt/W175173974"
+    },
+    {
+      "cityKey": "lisbon-PT",
+      "placeKey": "museu-do-aljube",
+      "venueIdentity": "osm:node/4419041593",
+      "lat": 38.71018,
+      "long": -9.13255,
+      "timeZone": "Europe/Lisbon",
+      "coordinateSource": "https://mapcarta.com/N4419041593"
     }
   ]
 }
