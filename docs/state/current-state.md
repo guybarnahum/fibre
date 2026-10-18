@@ -195,7 +195,23 @@ real observations, **not evidence that the new place-entity refactor has been
 validated or deployed**. Thread-chosen, World-enacted cross-city travel
 remains to be proved; travel realism and unknown-venue identity are open.
 
-## Social-place discovery: editorial City Guide source, lived agency unproven
+## Public World-place discovery — database source, validation pending
+
+**October 18 replacement (source only):** City Guide recommendations are
+now mutable `discovery_json` metadata on existing attested
+`world_public_places` records, not a separate JSON catalogue. The
+attestation and persistent World venue reference remain unchanged when
+editorial descriptions or listing status change. Locality-indexed current
+planning can consider up to six listed venues through the existing Interior
+Cognition; it neither changes a Thread's plan automatically nor invents
+attendance. The existing `world-place discovery` operator command updates
+data without a Worker redeployment. The deployed table needs a one-time
+schema installation and previously authored recommendations need a one-time
+data migration. Guy's local validation and staging proof are pending.
+The next acceptance remains a naturally authored real public-venue trip
+and then actual, independently arrived co-present Threads.
+
+### Historical editorial-manifest evidence (October 14)
 
 On October 14, Fibre replaced the previously proposed named social oracle with the [Fibre City Guide](../architecture/social-city-guide.md): a Time Out–style public editorial catalogue, keyed by city and country. A shared `data/social-city-guide.json` manifest records sourced public addresses, meaningful descriptions, activities and an editorial `lastRecommendedAt` date. An admitted public venue may link to a real World place reference; external listings must not pretend World admission. The bounded reader and local inspection command **passed Guy's October 14 local validation (4 focused and 1,606 full tests)**. The Tbilisi query returned the sourced National Library entry; London returned `not_listed`. The World worker deployed successfully at source `e810c5c9`; that deployment did **not** publish or serve the repository magazine. **S1E source has since introduced bounded local recommendations into existing prospective Flight Planning beside current interoception and autobiographical memory.** Guy reports S1E local validation passed, though no new live Thread-authored choice or actual visit has been supplied. S1F is now source-implemented: the ordinary public-venue planning contract requires nonzero elapsed transit, the existing boundary-driven World can enact an empty venue stay and departure, and the shared public venue index observes only actual enacted co-presence. The operator observatory can expose public destinations referenced in admitted plans as **intention evidence**, not presence. S1F passed Guy's local validation (15 focused, 1,610 full) and deployed World kernel SHA `ec878aee` to staging. The read-only social probe then failed twice before reading any Observatory; subsequent Cloudflare tail logs identified **`Exceeded allowed rows read in Durable Objects free tier`** during World runtime initialization, before Thread inspection could begin. **Those October 14 failures produced no visit evidence, not a negative visit result.** Subsequent October 15 read-only Observatory requests returned HTTP 200 after schema and query-cost corrections, but did not inspect natural public-venue visits. Avoid unbounded population sampling; inspect independently authored plans and enacted presence only with a small evidence-driven probe. Thread-owned choice and enacted public venue presence remain unproven in staging. Fixture-authored trips cannot establish real Thread autonomy.
 
