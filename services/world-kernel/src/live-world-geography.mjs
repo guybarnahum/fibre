@@ -227,7 +227,7 @@ export function setWorldPublicPlaceDiscovery(db,{placeRef,discovery}={}){
     if(typeof discovery.listed!=="boolean")throw new TypeError("discovery listed must be boolean");
     text("discovery description",discovery.description);
     if(typeof discovery.lastRecommendedAt!=="string"
-      ||!/^\\d{4}-\\d{2}-\\d{2}$/u.test(discovery.lastRecommendedAt)
+      ||!/^\d{4}-\d{2}-\d{2}$/u.test(discovery.lastRecommendedAt)
       ||!Number.isFinite(Date.parse(discovery.lastRecommendedAt+"T00:00:00Z"))){
       throw new TypeError("discovery requires a valid recommendation date");
     }
@@ -264,7 +264,7 @@ export function listLocalWorldPublicPlaces(db,{locality,countryCode=null,limit=1
   const sql=countryCode===null
     ?`SELECT record_json,record_digest,discovery_json FROM world_public_places
        WHERE locality=? COLLATE NOCASE ORDER BY place_ref LIMIT ?`
-    :`SELECT record_json,record_digest FROM world_public_places
+    :`SELECT record_json,record_digest,discovery_json FROM world_public_places
        WHERE country_code=? AND locality=? COLLATE NOCASE
        ORDER BY place_ref LIMIT ?`;
   const rows=countryCode===null
