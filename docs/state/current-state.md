@@ -78,6 +78,25 @@ E7.5 later demonstrated a **naturally advanced staging Flight Plan boundary**: G
 
 **October 16 source change — validation and staging proof pending:** a newly published Genesis birth now atomically earns a single indexed first-life obligation. Existing event-driven World reconciliation invokes the same LivedNow authority to author the first *actual* present and roll forward through Flight Plan boundaries. The realized first moment is not backdated to publication after an elapsed unobserved gap; absence of an admitted place blocks without invented life; retries are bounded. The schema does not enqueue previously born dormant Threads. This is committed implementation, **not yet a locally validated or staging-observed birth-to-autonomous-life result**. The [LivedNow design](../architecture/lived-now-and-meetings.md) owns the exact boundary.
 
+## World place visual seeds — October 18, source only
+
+The public World-place authority now stores an optional mutable
+`appearance_json` projection on the same verified venue row, distinct
+from attested physical identity and editable City Guide discovery. It
+contains a prompt, viewpoint, `perspective | equirectangular` projection
+and nullable generated-asset reference. The existing operator World
+venue API/CLI can update it as World data. The God-view map's selected
+public place exposes the seed alongside its authoritative timeline.
+Source tests guard against converting a depiction into a verified place,
+visit, recommendation or navigable 3D geometry.
+
+**Not claimed:** any generated panorama, working 360° viewer, asset URL,
+private/Thread-discovered place visual coverage, or improved perception
+and voluntary encounters. The [place appearance proposal](../architecture/place-appearance.md)
+targets Pannellum for lightweight 360° look-around after a real image
+exists. It does not alter the S1F → S2 runtime critical path.
+Local validation and the one-time World schema deployment are pending.
+
 ## World Observatory God-view — October 18 source only
 
 The authenticated Admin `/world-events` source now reads one bounded,
