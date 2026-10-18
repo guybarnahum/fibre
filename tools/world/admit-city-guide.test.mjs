@@ -8,11 +8,8 @@ test("sourced editorial places become World admissions only through independent 
     new URL("../../data/social-city-guide.json",import.meta.url),"utf8"));
   const venues=JSON.parse(readFileSync(
     new URL("../../data/social-city-guide-admissions.json",import.meta.url),"utf8"));
-  const pendingNow=pendingCityGuideAdmissions(guide,venues);
-  assert.equal(pendingNow.length,3,
-    "only the three new Lisbon venues should await independent World admission");
-  assert.ok(pendingNow.every(item=>item.cityKey==="lisbon-PT"),
-    "an already admitted City Guide venue was requeued");
+  assert.equal(pendingCityGuideAdmissions(guide,venues).length,0,
+    "an admitted World venue was requeued");
   const editorial=structuredClone(guide);
   for(const {cityKey,placeKey} of venues.venues){
     editorial.cities[cityKey].places[placeKey].worldPlaceRef=null;
