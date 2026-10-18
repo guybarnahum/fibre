@@ -4,6 +4,36 @@
 
 The dashboard is deliberately not a semantic authority. Activity remains non-authoritative and fail-open; World and service records decide Fibre truth. The browser never receives a Fibre private/admin token. Authenticated operator mutations are narrow service actions—such as initiating a Birth, bounded Thread repair, FID reissue, or meeting initiation—and the owning Fibre service remains authoritative.
 
+## World Events — authenticated God-view (source implementation, staging unverified)
+
+`/world-events` presents a World map whose city pulses are driven by recent
+**admitted occurrences**, not Activity Log entries, demographic counts,
+ambient scheduling opportunities or simulated animation. Selecting a city
+shows the actual coordinates of independently attested World public venues;
+selecting a place opens its bounded World event timeline. World-enacted
+arrival/departure and place-grounded Encounter Stories are read from
+authoritative tables. Presence witnesses separately show recorded
+`noticed | not_noticed | not_appraised`, admitted Experience, and a direct
+Memory link **only when a completed consolidation names a current memory
+record**. No later behavioral impact is inferred.
+
+The Admin Worker proxies one authenticated `GET /api/world-events?hours=24`
+to World's private `/internal/world-events/overview` read API; the browser
+never sees the private token. This first query covers at most 240 verified
+public venues, 240 recent CurrentSituations, and 240 recent Encounter Stories
+in the chosen 1–168-hour window, and reports when the bounded sample is
+truncated. It does not query each Thread, run cognition, enqueue events or
+modify World history. Unverified Genesis places, private city aggregates,
+unlocated occurrences, human physical presence, and downstream causal
+behavioral evidence remain open; their absence on this map is not evidence
+that life or events did not happen.
+
+See [World Observatory](../../docs/architecture/world-observatory.md) for the
+complete intended zoom/timeline/causality design. This implementation needs
+local validation and **both World Kernel and Admin Dashboard staging
+deployments** before operator acceptance. It is a companion to the ongoing
+World-event runtime replacement, not proof that replacement is complete.
+
 ## God's view
 
 Filtering Activity by `Thread ID` turns the same Activity records into a lifecycle-oriented operator view. It groups observed runtime work into Birth, Life, Presentation, Encounter, Experience, and Continuity and renders the causal trail chronologically.
