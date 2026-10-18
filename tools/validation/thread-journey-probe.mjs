@@ -16,8 +16,14 @@ function runtimeSourceMatches(deployedSha,checkoutSha){
   if(deployedSha===checkoutSha)return true;
   const git=(args)=>execFileSync("git",args,{cwd:ROOT,encoding:"utf8"}).trim();
   const changed=git(["diff","--name-only",deployedSha,checkoutSha]).split("\n").filter(Boolean);
-  if(changed.some(path=>!path.startsWith("tools/validation/")
-    &&!path.startsWith("docs/")&&path!=="AGENTS.md"&&path!=="package.json")){
+  // Admin UI and offline appearance tooling do not change the running World.
+  // A changed World runtime or an unrecognized path still fails closed.
+  const nonWorldPaths=[
+    "tools/validation/","docs/","apps/admin-dashboard/",
+    "infra/deployments/admin-dashboard/","tools/appearance/",
+  ];
+  if(changed.some(path=>!nonWorldPaths.some(prefix=>path.startsWith(prefix))
+    &&path!=="AGENTS.md"&&path!=="package.json")){
     return false;
   }
   if(changed.includes("package.json")){
