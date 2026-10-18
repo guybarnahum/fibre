@@ -1,0 +1,50 @@
+/* World Observatory — source-grounded geographic monitoring. */
+.world-events-surface{display:grid;gap:18px;max-width:1500px}
+.world-events-summary{font-size:14px;color:var(--muted,#7f8c98);margin:0}
+.world-events-panel-title{display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.world-events-panel-title h2{margin:0;font-size:18px;letter-spacing:-.02em}
+.world-events-panel-title span{font-size:12px;color:var(--muted,#81909e)}
+.world-events-main-map-panel,.world-events-place-panel,.world-events-timeline-panel{padding:20px;min-width:0}
+.world-events-world-map{height:clamp(280px,42vw,470px);overflow:hidden}
+.world-events-world-map .thread-world-map-svg{width:100%;height:100%}
+.world-events-city-marker,.world-events-place-marker{cursor:pointer;outline:none}
+.world-events-dot{fill:#477c91;stroke:#e0f7ff;stroke-width:1.6;transition:fill .2s,r .2s}
+.world-events-city-marker.is-pulsing .world-events-dot,
+.world-events-place-marker.is-pulsing .world-events-dot{fill:#d9a86e;stroke:#fff0d1}
+.world-events-city-marker.is-selected .world-events-dot,
+.world-events-place-marker.is-selected .world-events-dot{fill:#56d0bc;stroke:#eafffa;stroke-width:2.5}
+.world-events-pulse{fill:none;stroke:#e4a468;stroke-width:1.6;opacity:.6;transform-box:fill-box;transform-origin:center;animation:world-event-pulse 3s ease-out infinite;pointer-events:none}
+@keyframes world-event-pulse{0%{transform:scale(.48);opacity:.68}75%{opacity:.12}100%{transform:scale(1.55);opacity:0}}
+@media (prefers-reduced-motion:reduce){.world-events-pulse{animation:none;opacity:.4}}
+.world-events-city-label{fill:var(--text,#eaf2f6);font-size:12px;paint-order:stroke;stroke:rgba(16,30,39,.8);stroke-width:3px;pointer-events:none}
+.world-events-city-marker:focus-visible .world-events-dot,.world-events-place-marker:focus-visible .world-events-dot{stroke:#fff;stroke-width:4}
+.world-events-city-bar{display:flex;align-items:baseline;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.world-events-city-bar h2{font-size:19px;margin:0}
+.world-events-city-bar p{font-size:13px;margin:0;color:var(--muted,#7f8c98)}
+.world-events-drill{display:grid;grid-template-columns:minmax(280px,.95fr) minmax(340px,1.25fr);gap:16px;align-items:start}
+.world-events-muted{font-size:13px;color:var(--muted,#82909b);line-height:1.5;margin:0 0 12px}
+.world-events-local-map{height:310px;background:linear-gradient(155deg,rgba(62,123,134,.08),rgba(114,146,121,.04));border:1px solid var(--border,#30414d);border-radius:12px;overflow:hidden}
+.world-events-city-svg{width:100%;height:100%}
+.world-events-grid-line{stroke:rgba(131,151,156,.18);stroke-width:1;stroke-dasharray:2 6}
+.world-events-place-list{display:grid;gap:7px;margin-top:14px;max-height:260px;overflow-y:auto}
+.world-events-place-choice{width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 12px;border:1px solid var(--border,#30414d);border-radius:9px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.world-events-place-choice.is-selected{border-color:#4bbba6;background:rgba(55,159,139,.1)}
+.world-events-place-choice strong{font-size:13px;font-weight:630}
+.world-events-place-choice span{font-size:11px;color:var(--muted,#82909b)}
+.world-events-timeline{max-height:690px;overflow-y:auto;display:grid;gap:10px;padding-right:3px}
+.world-events-event-card{border:1px solid var(--border,#30414d);border-radius:12px;padding:13px 15px;background:var(--surface-subtle,rgba(130,144,152,.045))}
+.world-events-event-head{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--muted,#8b9ca7);font-size:12px}
+.world-events-event-kind{font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#a8d9cc;font-size:10px}
+.world-events-event-summary{font-size:14px;line-height:1.48;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.world-events-event-ref{font-size:10px;opacity:.55;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+.world-events-event-card h3{font-size:12px;letter-spacing:.01em;margin:12px 0 7px}
+.world-events-actor{font-size:12px;margin:10px 0 0}
+.world-events-witnesses{display:grid;gap:5px}
+.world-events-witness{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;border-top:1px solid var(--border,#30414d);padding-top:5px}
+.world-events-witness span{color:var(--muted,#8b9ca7);font-size:11px}
+.world-events-attention{font-weight:620}
+.world-events-evidence-note{font-size:11px;opacity:.65;line-height:1.4;margin:11px 0 0}
+.world-events-caveat{margin:0 0 22px}
+.world-events-window{display:flex;align-items:center;gap:7px;font-size:12px}
+.world-events-window select{min-width:114px}
+@media (max-width:950px){.world-events-drill{grid-template-columns:minmax(0,1fr)}.world-events-timeline{max-height:none}.world-events-world-map{height:320px}}
