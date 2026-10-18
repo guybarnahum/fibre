@@ -91,21 +91,21 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       witness.memoryLinks.push(row.memory_id);
     }
   }
-  const unlocatedEvents=[];
+  const unmappedEvents=[];
   for(const event of stories.values()){
     event.witnesses.sort((a,b)=>a.threadId.localeCompare(b.threadId));
     for(const witness of event.witnesses){
       witness.memoryLinks.sort();
       witness.memoryLink=witness.memoryLinks[0]??null;
     }
-    // Preserve unlocated World truth without inventing a map pin or pulse.
-    (event.placeRef?events:unlocatedEvents).push(event);
+    // Preserve unprojected World truth without inventing a map pin or pulse.
+    (event.placeRef?events:unmappedEvents).push(event);
   }
 
   const byTime=(a,b)=>b.occurredAt.localeCompare(a.occurredAt)
     ||a.eventRef.localeCompare(b.eventRef);
   events.sort(byTime);
-  unlocatedEvents.sort(byTime);
+  unmappedEvents.sort(byTime);
   const eventsByPlace=new Map();
   for(const event of events){
     const current=eventsByPlace.get(event.placeRef)??[];
@@ -140,14 +140,14 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       situationsTruncated:situationRows.length>=sourceLimit,
       storiesTruncated:new Set(storyRows.map(r=>r.encounter_id)).size>=sourceLimit,
       privateCityActivity:"not_included",
-      unlocatedStories:"reported_separately_not_mapped",
+      unmappedStories:"reported_separately_not_pinned",
       memory:"consolidated_current_records_only",laterImpact:"not_linked",
     },
     cities:[...cities.values()].sort((a,b)=>b.eventCount-a.eventCount
       ||a.name.localeCompare(b.name)),
     places:activePlaces.sort((a,b)=>b.eventCount-a.eventCount
       ||a.name.localeCompare(b.name)),
-    events,unlocatedEvents,
+    events,unmappedEvents,
   });
 }
 
