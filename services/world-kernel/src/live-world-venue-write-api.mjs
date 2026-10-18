@@ -8,6 +8,7 @@ const ROUTES=Object.freeze({
   "/internal/world-venues/admit-public":"public",
   "/internal/world-venues/locate-private":"private",
   "/internal/world-venues/places":"list_public",
+  "/internal/world-venues/discovery":"discovery",
 });
 const PUBLIC_FIELDS=[
   "venueIdentity","displayName","streetAddress","locality","country",
@@ -22,7 +23,7 @@ const PRIVATE_FIELDS=[
 export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
   for(const method of [
     "bindPhysicalVenue","admitPublicPlace","admitPrivatePlace",
-    "listPublicPlacesByLocality",
+    "listPublicPlacesByLocality","listDiscoverablePublicPlaces","setPublicPlaceDiscovery",
   ]){
     if(typeof livedNowStore?.[method]!=="function"){
       throw new TypeError(`World geography requires ${method}()`);
@@ -57,6 +58,11 @@ export function createWorldVenueWriteApi({livedNowStore,privateToken}={}){
         if(route==="public"){
           assertExactKeys("public World venue",body,PUBLIC_FIELDS);
           const place=livedNowStore.admitPublicPlace(body);
+          return Response.json({ok:true,place});
+        }
+        if(route==="discovery"){
+          assertExactKeys("World venue discovery update",body,["placeRef","discovery"]);
+          const place=livedNowStore.setPublicPlaceDiscovery(body);
           return Response.json({ok:true,place});
         }
         if(route==="private"){
