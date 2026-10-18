@@ -82,9 +82,17 @@ export function renderWorldEventsPage(){
   const timeline=el("div","world-events-timeline");
   timelinePanel.append(timelineHead,timeline);
   drill.append(cityPanel,timelinePanel);
+  const unlocatedPanel=el("section","panel world-events-unlocated-panel");
+  const unlocatedHeading=el("div","world-events-panel-title");
+  const unlocatedCount=el("span");
+  unlocatedHeading.append(el("h2",null,"Unlocated World occurrences"),unlocatedCount);
+  const unlocatedDescription=el("p","world-events-muted",
+    "These admitted stories have no independently verified occurrence location. An observer's whereabouts cannot locate a distant event.");
+  const unlocatedTimeline=el("div","world-events-timeline world-events-unlocated-timeline");
+  unlocatedPanel.append(unlocatedHeading,unlocatedDescription,unlocatedTimeline);
   const caveat=el("p","world-events-muted world-events-caveat",
     "Read-only · Verified public places only in this initial projection. Memory and later-impact links require independent causal evidence; missing links never mean an actor forgot or was unaffected.");
-  surface.append(summary,mapPanel,cityBar,drill,caveat);
+  surface.append(summary,mapPanel,cityBar,drill,unlocatedPanel,caveat);
   heading.after(surface);
 
   let snapshot=null,selectedCity=null,selectedPlace=null,loading=false;
@@ -218,22 +226,7 @@ export function renderWorldEventsPage(){
       places.append(button);
     }
   }
-  function drawTimeline(){
-    timeline.replaceChildren();
-    const selected=snapshot?.places.find(p=>p.placeRef===selectedPlace);
-    timelineTitle.textContent=selected?.name??"World timeline";
-    const events=worldEventPlaceTimeline(snapshot,selectedPlace);
-    timelineCount.textContent=`${events.length} admitted event${events.length===1?"":"s"}`;
-    if(!selected){
-      timeline.append(el("p","world-events-muted","Choose a place to inspect its World history."));
-      return;
-    }
-    if(!events.length){
-      timeline.append(el("p","world-events-muted",
-        "No admitted event in the bounded window. This does not mean nothing happened here."));
-      return;
-    }
-    for(const event of events){
+  function worldEventCard(event){
       const card=el("article","world-events-event-card");
       const head=el("div","world-events-event-head");
       head.append(el("span","world-events-event-kind",pretty(event.kind)),
@@ -277,8 +270,35 @@ export function renderWorldEventsPage(){
       const caveat=el("p","world-events-evidence-note",
         "Memory links appear only when consolidation created a current Memory. Later behavioral impact is not yet causally linked in this view.");
       card.append(caveat);
-      timeline.append(card);
+      return card;
+  }
+  function drawUnlocated(){
+    unlocatedTimeline.replaceChildren();
+    const events=snapshot?.unlocatedEvents??[];
+    unlocatedCount.textContent=`${events.length} admitted, not geographically located`;
+    if(!events.length){
+      unlocatedTimeline.append(el("p","world-events-muted",
+        "No unlocated stories in this bounded window."));
+      return;
     }
+    for(const event of events)unlocatedTimeline.append(worldEventCard(event));
+  }
+  function drawTimeline(){
+    timeline.replaceChildren();
+    const selected=snapshot?.places.find(p=>p.placeRef===selectedPlace);
+    timelineTitle.textContent=selected?.name??"World timeline";
+    const events=worldEventPlaceTimeline(snapshot,selectedPlace);
+    timelineCount.textContent=`${events.length} admitted event${events.length===1?"":"s"}`;
+    if(!selected){
+      timeline.append(el("p","world-events-muted","Choose a place to inspect its World history."));
+      return;
+    }
+    if(!events.length){
+      timeline.append(el("p","world-events-muted",
+        "No admitted event in the bounded window. This does not mean nothing happened here."));
+      return;
+    }
+    for(const event of events)timeline.append(worldEventCard(event));
   }
   async function load(){
     if(loading)return;
@@ -293,14 +313,15 @@ export function renderWorldEventsPage(){
       if(payload.contract!=="fibre-world-event-observatory-v0.1")throw Error("World event contract mismatch");
       snapshot=payload;
       const truncated=Object.entries(payload.coverage??{}).some(([k,v])=>k.endsWith("Truncated")&&v);
-      summary.textContent=`${payload.events.length} admitted public-place events · ${activeWorldEventCities(payload).length} active cities · ${payload.places.length} verified places · last ${payload.hours} hours${truncated?" · bounded source sample":""}`;
+      summary.textContent=`${payload.events.length} located events · ${(payload.unlocatedEvents??[]).length} unlocated stories · ${activeWorldEventCities(payload).length} active cities · ${payload.places.length} verified places · last ${payload.hours} hours${truncated?" · bounded source sample":""}`;
       chooseCity(payload.cities.some(city=>city.key===selectedCity)?selectedCity:
         (activeWorldEventCities(payload)[0]??payload.cities[0])?.key??null);
+      drawUnlocated();
       $("#environment-pill").textContent="World";
     }catch(error){
       summary.textContent=`World event evidence unavailable · ${error.message}`;
       snapshot=null;selectedCity=null;selectedPlace=null;
-      drawWorldMap();drawPlaces();drawTimeline();
+      drawWorldMap();drawPlaces();drawTimeline();drawUnlocated();
     }finally{
       loading=false;refresh.disabled=false;refresh.textContent="Refresh";
     }
