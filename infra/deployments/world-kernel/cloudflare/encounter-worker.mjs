@@ -759,17 +759,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   }
 
   async enqueueWorldOpportunity(situation){
-    // Only waking or unknown-wakefulness place scenes can earn an
-    // environmental occurrence. Do not schedule certain rejection.
+    // An enacted waking presence may earn future ambient activity; the
+    // arrival itself has already happened. No event is guaranteed.
     if(situation.location?.kind!=="place"||situation.wakefulness==="asleep")return;
     const store=openLivedExperienceStore(this.runtimeForRequest().worldStorage);
-    const earned=store.enqueueEnvironmentalOpportunity({
-      threadId:situation.threadId,situationId:situation.situationId,
-      dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
-    });
-    if(earned.inserted){
-      await this.runtimeForRequest().reconciliationRuntime.requestWakeAfter(60_000);
-    }
     const lived=openLivedNowStore(this.runtimeForRequest().worldStorage);
     const stayDueAt=worldStayOpportunityDueAt(
       situation,nextLivedBoundary(lived,situation),
@@ -788,10 +781,12 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     if(venue!==null&&situation.wakefulness!=="asleep"){
       const social=store.enqueueSocialOpportunity({
         threadId:situation.threadId,situationId:situation.situationId,
-        dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
+        // Arrival itself is already World history. Evaluate the resulting
+        // co-presence without inventing a 60-second delayed arrival.
+        dueAt:situation.establishedAt,
       });
       if(social.inserted)await this.runtimeForRequest()
-        .reconciliationRuntime.requestWakeAfter(60_000);
+        .reconciliationRuntime.requestWakeAt(Date.parse(situation.establishedAt));
     }
   }
 
