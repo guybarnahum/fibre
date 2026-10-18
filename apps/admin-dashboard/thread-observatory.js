@@ -1510,7 +1510,7 @@ export function renderFidSection(identity, threadId) {
               threadId,threadName:threadName(identity),
               label:"Approve photo & reissue card",
               eyebrow:"Fibre Identity Card",
-              description:"Approve the displayed photograph as Vítor's corrected FID image and replace his card. The FIN, canonical identity and previous card history remain unchanged.",
+              description:"Approve this Thread's corrected FID photograph and issue a replacement card. The FIN, canonical identity, and previous card history remain unchanged.",
               run:async()=>{
                 await fidPhotoCorrectionRequest(threadId,correctionId,"POST","/approve");
                 let result=await reissueFidCard(threadId,{idempotencyKey:correctionId});
