@@ -74,6 +74,19 @@ place type/affordances, World-attested evidence, currently established
 situations, and the last occurred World event. Mark unreconciled or
 stale presence explicitly.
 
+**Place appearance (October 18 source cut):** a selected verified public
+venue now also projects its World-owned visual seed—one appearance prompt,
+viewpoint and `perspective | equirectangular` projection, with an optional
+asset reference. This mutable presentation metadata does not change the
+physical venue identity or guarantee that a generated image exists. The
+browser displays the prompt, not imaginary image bytes. The proposed
+first immersive depiction is a seamless 2:1 equirectangular panoramic
+image rendered in Pannellum, with optional authored room-to-room hotspots.
+This permits turning one's gaze, not free 3D traversal. Asset generation,
+delivery and a truthful generalized visual system for private/Thread-
+discovered places are explicitly pending. See
+[Place appearance](place-appearance.md).
+
 A vertically scrollable, time-ordered, **cursor-paged event timeline**
 contains admitted actor actions (arrival/departure and subsequent physical
 actions), objective environmental occurrences, social meetings/utterances,
