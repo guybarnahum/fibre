@@ -13,11 +13,6 @@ function isAdminPage(path) {
   return path === "/" || path === "/activity" || path === "/appearance" || THREAD_PAGE_ROUTE.test(path);
 }
 
-function isDocumentRequest(request, path) {
-  return request.headers.get("Accept")?.includes("text/html")
-    || path.endsWith(".html")
-    || !/\.[^/]+$/u.test(path);
-}
 const ACCESS_CACHE = new Map();
 
 function json(status, payload, cacheControl = "no-store") {
@@ -239,15 +234,7 @@ export function createAdminDashboardWorker({ authenticate = authenticateAccessRe
       const assetRequest = isAdminPage(url.pathname)
         ? new Request(new URL("/", request.url), request)
         : request;
-      const asset = await env.ASSETS.fetch(assetRequest);
-      if (asset.status !== 404 || !isDocumentRequest(request, url.pathname)) {
-        return secureAsset(asset);
-      }
-      const missing = await env.ASSETS.fetch(new Request(new URL("/404.html", request.url), request));
-      return secureAsset(new Response(request.method === "HEAD" ? null : missing.body, {
-        status:404,
-        headers:missing.headers,
-      }));
+      return secureAsset(await env.ASSETS.fetch(assetRequest));
     },
   });
 }

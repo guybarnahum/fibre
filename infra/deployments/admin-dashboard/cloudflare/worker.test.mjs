@@ -342,9 +342,13 @@ test("Admin serves real pages and gives missing documents HTTP 404 instead of Ac
     // Cloudflare's canonical redirect from /index.html to / must never be triggered.
     if(path==="/index.html")return Response.redirect("https://admin.insidefibre.com/",308);
     const text=pages.get(path);
-    return text===undefined
-      ?new Response("not found",{status:404})
-      :new Response(text,{headers:{"Content-Type":path.endsWith(".html")?"text/html":"text/css"}});
+    if(text===undefined){
+      return path.endsWith(".js")
+        ?new Response("not found",{status:404})
+        :new Response(pages.get("/404.html"),{status:404,
+          headers:{"Content-Type":"text/html"}});
+    }
+    return new Response(text,{headers:{"Content-Type":path.endsWith(".html")||path==="/"?"text/html":"text/css"}});
   }}};
   for(const path of ["/", "/activity", "/appearance", "/thread/thr_123"]){
     const response=await worker.fetch(new Request("https://admin.insidefibre.com"+path,
@@ -367,5 +371,15 @@ test("Admin serves real pages and gives missing documents HTTP 404 instead of Ac
   assert.doesNotMatch(await asset.text(),/Page not found/u,"A missing script must not receive a document");
   assert.equal(seen.includes("/index.html"),false,
     "Admin must never fetch canonical-redirected /index.html for page routes");
-  assert.ok(seen.includes("/404.html"),"The dedicated not-found page was not served");
+  assert.ok(seen.includes("/not-an-admin-page"),
+    "An unknown route must reach Cloudflare's native 404 response");
+});
+
+test("Cloudflare Admin assets serve the dedicated 404 page natively", async()=>{
+  const {readFile}=await import("node:fs/promises");
+  const config=JSON.parse(await readFile(new URL("./wrangler.jsonc",import.meta.url),"utf8"));
+  assert.equal(config.assets.not_found_handling,"404-page",
+    "Cloudflare must not redirect unknown Admin pages to Activity");
+  assert.equal(config.assets.run_worker_first,true,
+    "Admin routes must still pass through the Worker");
 });
