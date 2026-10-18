@@ -7,6 +7,17 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const ADMIN_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 const STATUSES = new Set(["started", "succeeded", "failed", "retrying"]);
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
+const THREAD_PAGE_ROUTE = /^\/thread\/[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
+
+function isAdminPage(path) {
+  return path === "/activity" || path === "/appearance" || THREAD_PAGE_ROUTE.test(path);
+}
+
+function isDocumentRequest(request, path) {
+  return request.headers.get("Accept")?.includes("text/html")
+    || path.endsWith(".html")
+    || !/\.[^/]+$/u.test(path);
+}
 const ACCESS_CACHE = new Map();
 
 function json(status, payload, cacheControl = "no-store") {
@@ -225,7 +236,18 @@ export function createAdminDashboardWorker({ authenticate = authenticateAccessRe
       }
       if (url.pathname.startsWith("/api/")) return json(404, { error:"not_found" });
       if (!env.ASSETS?.fetch) return json(503, { error:"assets_unavailable" });
-      return secureAsset(await env.ASSETS.fetch(request));
+      const assetRequest = isAdminPage(url.pathname)
+        ? new Request(new URL("/index.html", request.url), request)
+        : request;
+      const asset = await env.ASSETS.fetch(assetRequest);
+      if (asset.status !== 404 || !isDocumentRequest(request, url.pathname)) {
+        return secureAsset(asset);
+      }
+      const missing = await env.ASSETS.fetch(new Request(new URL("/404.html", request.url), request));
+      return secureAsset(new Response(request.method === "HEAD" ? null : missing.body, {
+        status:404,
+        headers:missing.headers,
+      }));
     },
   });
 }

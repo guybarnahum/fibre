@@ -323,3 +323,45 @@ test("Admin static CSP allows Cloudflare analytics without allowing inline scrip
   assert.doesNotMatch(csp,/unsafe-inline/u,
     "Admin CSP allowed inline scripts while fixing analytics");
 });
+
+test("Admin serves real pages and gives missing documents HTTP 404 instead of Activity", async () => {
+  const seen=[];
+  const worker=createAdminDashboardWorker({
+    authenticate:async()=>({email:"operator@example.com"}),
+    authorize:async()=>true,
+  });
+  const pages=new Map([
+    ["/index.html", "<h1>Activity</h1>"],
+    ["/visual-identity-review.html", "<h1>Visual identity review</h1>"],
+    ["/404.html", "<h1>404 · Page not found</h1>"],
+    ["/styles.css", "body{}"],
+  ]);
+  const env={ASSETS:{async fetch(request){
+    const path=new URL(request.url).pathname;
+    seen.push(path);
+    const text=pages.get(path);
+    return text===undefined
+      ?new Response("not found",{status:404})
+      :new Response(text,{headers:{"Content-Type":path.endsWith(".html")?"text/html":"text/css"}});
+  }}};
+  for(const path of ["/", "/activity", "/appearance", "/thread/thr_123"]){
+    const response=await worker.fetch(new Request("https://admin.insidefibre.com"+path,
+      {headers:{Accept:"text/html"}}),env);
+    assert.equal(response.status,200,"Known Admin page "+path+" became unavailable");
+  }
+  const reviewer=await worker.fetch(new Request("https://admin.insidefibre.com/visual-identity-review.html",
+    {headers:{Accept:"text/html"}}),env);
+  assert.equal(reviewer.status,200,"Deployed reviewer must remain accessible");
+  assert.match(await reviewer.text(),/Visual identity review/u);
+
+  for(const path of ["/visual-review-not-deployed.html","/not-an-admin-page"]){
+    const response=await worker.fetch(new Request("https://admin.insidefibre.com"+path,
+      {headers:{Accept:"text/html"}}),env);
+    assert.equal(response.status,404,"Unknown page "+path+" must not load Activity");
+    assert.match(await response.text(),/Page not found/u);
+  }
+  const asset=await worker.fetch(new Request("https://admin.insidefibre.com/missing.js"),env);
+  assert.equal(asset.status,404);
+  assert.doesNotMatch(await asset.text(),/Page not found/u,"A missing script must not receive a document");
+  assert.ok(seen.includes("/404.html"),"The dedicated not-found page was not served");
+});
