@@ -40,7 +40,7 @@ async function getJson(baseUrl, path, token) {
   return json;
 }
 
-export function inspectFidPublication({ world, authority, publicSnapshot, previousPhotoRef }) {
+export function inspectFidPublication({ world, worldIdentity, authority, publicSnapshot, previousPhotoRef }) {
   const obs = world?.observatory;
   const active = authority?.active;
   const snapshot = publicSnapshot?.snapshot;
@@ -63,6 +63,11 @@ export function inspectFidPublication({ world, authority, publicSnapshot, previo
 
   const checks = {
     worldCanonicalPresent:canonicalRef !== null,
+    stagingCanonicalDigestProjected:worldIdentity?.contract === "fibre-world-thread-identity-v0.3"
+      && worldIdentity.identity?.threadId === active?.threadId
+      && worldIdentity.identity?.embodiments?.some((entry) =>
+        entry.asset?.referenceObjectRef === canonicalRef
+        && typeof entry.asset?.sha256 === "string" && entry.asset.sha256 === canonical?.asset?.sha256) === true,
     presentationCanonicalCurrent:canonicalRef !== null
       && presented?.visualIdentity?.referenceObjectRefs?.length === 1
       && presented.visualIdentity.referenceObjectRefs[0] === canonicalRef,
@@ -99,12 +104,13 @@ async function main() {
   if (deployment.environment !== "staging") throw new Error("deployment evidence is not staging");
   const token = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
   const id = encodeURIComponent(threadId);
-  const [world, authority, publicSnapshot] = await Promise.all([
+  const [world, worldIdentity, authority, publicSnapshot] = await Promise.all([
     getJson(serviceBase(deployment,"world-kernel"), `/internal/threads/${id}/observatory`, token),
+    getJson(serviceBase(deployment,"world-kernel"), `/internal/threads/${id}/identity`, token),
     getJson(serviceBase(deployment,"fibre-identity-authority"), `/internal/fid/threads/${id}/active`, token),
     getJson(serviceBase(deployment,"thread-presentation"), `/api/threads/${id}/snapshot`),
   ]);
-  const inspection = inspectFidPublication({ world, authority, publicSnapshot, previousPhotoRef });
+  const inspection = inspectFidPublication({ world, worldIdentity, authority, publicSnapshot, previousPhotoRef });
   inspection.checks.threadBinding = inspection.threadId === threadId
     && publicSnapshot?.snapshot?.presentation?.manifest?.threadId === threadId;
   inspection.passed = Object.values(inspection.checks).every((pass) => pass === true);
