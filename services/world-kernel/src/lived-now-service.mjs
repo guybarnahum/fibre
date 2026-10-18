@@ -669,7 +669,7 @@ export function createLivedNowService({
         !==canonicalJson(currentSituation.sourcePlanRefs);
     if(previousSituation===null||newPlan
       ||(!sameJourney&&!sameEnactedScene(previousSituation,currentSituation))){
-      await onSituationEnacted?.(currentSituation);
+      await onSituationEnacted?.(currentSituation,previousSituation);
     }
     // Even a plan stop whose outward activity did not change can have a
     // meaningful next boundary. Re-arm from the admitted plan, never a tick.
