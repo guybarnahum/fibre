@@ -72,7 +72,8 @@ export function renderWorldEventsPage(){
   const cityDescription=el("p","world-events-muted","Select a city to see real place coordinates.");
   const cityMap=el("div","world-events-local-map");
   const places=el("div","world-events-place-list");
-  cityPanel.append(cityDescription,cityMap,places);
+  const appearance=el("section","world-events-appearance");
+  cityPanel.append(cityDescription,cityMap,places,appearance);
   const timelinePanel=el("section","panel world-events-timeline-panel");
   const timelineHead=el("div","world-events-panel-title");
   const timelineTitle=el("h2",null,"World timeline");
@@ -138,7 +139,7 @@ export function renderWorldEventsPage(){
     }
   }
   function drawPlaces(){
-    cityMap.replaceChildren();places.replaceChildren();
+    cityMap.replaceChildren();places.replaceChildren();appearance.replaceChildren();
     if(!snapshot||!selectedCity){
       cityDescription.textContent="Select a city to view its World-verified places.";
       return;
@@ -147,6 +148,25 @@ export function renderWorldEventsPage(){
     cityDescription.textContent=
       "Relative positions use verified venue coordinates. This is a geographic place view, not a street map.";
     if(!sites.length)return;
+    const selected=sites.find(p=>p.placeRef===selectedPlace);
+    if(selected){
+      appearance.append(el("h3",null,"Place · "+selected.name));
+      if(selected.description)appearance.append(el("p","world-events-place-description",selected.description));
+      const image=selected.appearance;
+      if(image){
+        appearance.append(el("p","world-events-visual-note",
+          "Visual depiction seed · illustrative, not verified physical geometry"));
+        const specifics=el("p","world-events-visual-meta",
+          `${image.projection==="equirectangular"?"360° panorama":"Perspective"} · ${image.viewpoint}`);
+        appearance.append(specifics,el("blockquote","world-events-visual-prompt",image.prompt));
+        appearance.append(el("p","world-events-visual-note",image.assetRef
+          ?`Generated asset reference: ${image.assetRef} · preview pending asset delivery`
+          :"No generated depiction yet"));
+      }else{
+        appearance.append(el("p","world-events-visual-note",
+          "No visual seed or generated depiction recorded for this place."));
+      }
+    }
     const width=720,height=320;
     const latitudes=sites.map(p=>p.lat),longitudes=sites.map(p=>p.long);
     const loLat=Math.min(...latitudes),hiLat=Math.max(...latitudes);
