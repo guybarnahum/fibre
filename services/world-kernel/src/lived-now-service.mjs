@@ -5,8 +5,6 @@ import {
   assertPlainObject,
   canonicalJson,
 } from "./persistence-common.mjs";
-import cityGuide from "../../../data/social-city-guide.json" with { type:"json" };
-import { localCityGuideChoices } from "./social-city-guide.mjs";
 import { formPersonalLivedPlan } from "./lived-plan-cognition.mjs";
 import {
   livedInteroceptionForLivedHistory,
@@ -407,11 +405,19 @@ async function formPlan({
   const currentLocation=materializedAt===null
     ?planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,placeRef:startingPlace})
     :null;
-  const guidePlaces=materializedAt===null
-    ?localCityGuideChoices(cityGuide,{
-      location:currentLocation,asOf:startAt,
-      getPublicPlace:ref=>livedNowStore.getPublicPlace?.(ref)??null,
-    })
+  // The World database supplies editorial opportunities at plan time.
+  // Historical reconstruction must not consume today's changing listings.
+  const guidePlaces=materializedAt===null&&currentLocation
+    ?(livedNowStore.listDiscoverablePublicPlaces?.({
+      locality:currentLocation.locality,countryCode:currentLocation.countryCode,limit:6,
+    })??[])
+      .filter(place=>place.discovery.lastRecommendedAt<=startAt.slice(0,10))
+      .map(place=>({
+        ref:place.ref,description:place.discovery.description,
+        activities:place.affordances,
+        source:{directory:"World-attested venue",url:place.evidenceRef},
+        lastRecommendedAt:place.discovery.lastRecommendedAt,
+      }))
     :[];
   const placeRefs=[...new Set([
     ...ordinaryPlaceRefs,startingPlace,...guidePlaces.map(place=>place.ref),
