@@ -1,4 +1,5 @@
 import {
+  embodimentId,
   embodimentSpecificationDigest,
   normalizeEmbodimentRepresentation,
 } from "./embodiment-domain.mjs";
@@ -161,6 +162,41 @@ export function createCanonicalVisualIdentityRepairService({
   }
 
   return Object.freeze({
+    establish({ threadId, operationKey, specification, evidenceReferences = [], reason } = {}) {
+      assertId("threadId", threadId);
+      assertId("operationKey", operationKey);
+      if (typeof reason !== "string" || reason.trim().length < 16) {
+        throw new TypeError("initial canonical embodiment requires an operator migration reason");
+      }
+      if (!Array.isArray(evidenceReferences) || evidenceReferences.length === 0) {
+        throw new TypeError("initial canonical embodiment requires durable physical migration evidence");
+      }
+      if (embodimentStore.listCurrent(threadId).some((item) =>
+        item.kind === "portrait" && item.visibility === "public"
+      )) {
+        throw new TypeError("initial canonical embodiment cannot replace an existing portrait");
+      }
+      const embodiment = embodimentStore.record(normalizeEmbodimentRepresentation({
+        embodimentId: embodimentId({ threadId, kind:"portrait", lineage:"canonical" }),
+        revision:1,
+        threadId,
+        kind:"portrait",
+        representationKind:"synthetic_generation",
+        truthStatus:"synthetic_representation_not_historical_evidence",
+        rightsBasis:"thread_self_owned",
+        permissionReferences:[],
+        sourceReferences:evidenceReferences,
+        specification,
+        specificationDigest:embodimentSpecificationDigest(specification),
+        respecification:null,
+        status:"pending_generation",
+        unavailableReason:null,
+        asset:null,
+        visibility:"public",
+        recordedAt:now(),
+      }));
+      return Object.freeze({ threadId, operationKey, previous:null, embodiment });
+    },
     repair(input = {}) {
       return apply(input);
     },
