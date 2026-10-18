@@ -241,15 +241,21 @@ export function renderWorldEventsPage(){
           row.append(link,attention);
           if(witness.experienceId){
             const experience=el("span",null,`Experience · ${witness.experienceId}`);
-            experience.title="Admitted personal Experience; not proof of a later memory.";
+            experience.title="Admitted personal Experience; not proof of later behavior.";
             row.append(experience);
+          }
+          if(witness.memoryLink){
+            const memory=el("a",null,"View retained Memory ↗");
+            memory.href=`/thread/${encodeURIComponent(witness.threadId)}?memory=${encodeURIComponent(witness.memoryLink)}`;
+            memory.title="A current autobiographical Memory explicitly linked through experience consolidation.";
+            row.append(memory);
           }
           rows.append(row);
         }
         card.append(witnessHeading,rows);
       }
       const caveat=el("p","world-events-evidence-note",
-        "Memory and later behavioral effect: not linked in this view. Inspect the person's own Observatory for evidence.");
+        "Memory links appear only when consolidation created a current Memory. Later behavioral impact is not yet causally linked in this view.");
       card.append(caveat);
       timeline.append(card);
     }
