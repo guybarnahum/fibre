@@ -15,12 +15,22 @@ const SCAN_LIMIT=40;
 function runtimeSourceMatches(deployedSha,head){
   if(deployedSha===head)return true;
   try{
-    const files=execFileSync("git",["diff","--name-only",deployedSha,head],{
-      cwd:ROOT,encoding:"utf8",
-    }).trim().split("\n").filter(Boolean);
-    return files.every((path)=>path==="AGENTS.md"||path.startsWith("docs/")
-      ||path==="tools/validation/world-social-probe.mjs"
-      ||path==="tools/validation/encounter-autonomy-probe.mjs");
+    const git=(args)=>execFileSync("git",args,{cwd:ROOT,encoding:"utf8"}).trim();
+    const files=git(["diff","--name-only",deployedSha,head]).split("\n").filter(Boolean);
+    const offlinePrefixes=[
+      "tools/validation/","docs/","apps/admin-dashboard/",
+      "infra/deployments/admin-dashboard/","tools/appearance/",
+    ];
+    if(files.some(path=>path!=="AGENTS.md"&&path!=="package.json"
+      &&!offlinePrefixes.some(prefix=>path.startsWith(prefix))))return false;
+    if(files.includes("package.json")){
+      const earlier=JSON.parse(git(["show",deployedSha+":package.json"]));
+      const current=JSON.parse(git(["show",head+":package.json"]));
+      delete earlier.scripts;
+      delete current.scripts;
+      if(JSON.stringify(earlier)!==JSON.stringify(current))return false;
+    }
+    return true;
   }catch{
     return false;
   }
@@ -147,9 +157,12 @@ function acceptedStory(observatories,threadId,opportunity){
 }
 
 export async function runWorldSocialProbe({
-  targetEnvironment,environment=process.env,
+  targetEnvironment,threadId=null,environment=process.env,
   emit=(entry)=>process.stdout.write(JSON.stringify(entry)+"\n"),
 }={}){
+  if(threadId!==null&&!/^thr_[a-zA-Z0-9_-]+$/u.test(threadId)){
+    throw new TypeError("social probe needs --thread thr_...");
+  }
   const token=environment.FIBRE_PRIVATE_TOKEN;
   if(typeof token!=="string"||token.trim()===""){
     throw new TypeError("FIBRE_PRIVATE_TOKEN is required");
@@ -157,8 +170,11 @@ export async function runWorldSocialProbe({
   const target=normalizeCloudflareEnvironment(targetEnvironment);
   const head=validatorGitSha();
   const config=topology(target);
-  const cards=(await publicThreads(config.presentationBaseUrl,config.viewerOrigin))
-    .filter((item)=>item?.threadId&&!["genesis_candidate","retired"].includes(item.lifecycleStatus));
+  // An identified Thread needs one World read, not a directory/population scan.
+  const cards=threadId===null
+    ?(await publicThreads(config.presentationBaseUrl,config.viewerOrigin))
+      .filter(item=>item?.threadId&&!["genesis_candidate","retired"].includes(item.lifecycleStatus))
+    :[{threadId}];
   const scan=cards.slice(0,SCAN_LIMIT);
   const observatories=new Map();
   const unavailable=[];
@@ -247,7 +263,8 @@ export async function runWorldSocialProbe({
     validatorGitSha:head,deployedGitSha:deployedSha,
     runtimeSourceMatches:runtimeMatches,worldBlocker,
     scannedThreadCount:scan.length,availableThreadCount:observatories.size,
-    totalDiscoverableThreadCount:cards.length,
+    totalDiscoverableThreadCount:threadId===null?cards.length:null,
+    targetedThreadId:threadId,
     boundedScan:cards.length>scan.length,unavailableThreadIds:unavailable,
     groundedLife:{
       privatelyLocatedThreadCount:life.filter((item)=>item.privatelyLocated).length,
@@ -296,10 +313,16 @@ export async function runWorldSocialProbe({
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
   try{
-    if(process.argv.length!==4||process.argv[2]!=="--env"){
-      throw new TypeError("usage: npm run world-social:probe -- --env staging|production");
+    let targetEnvironment=null,threadId=null;
+    for(let index=2;index<process.argv.length;index++){
+      if(process.argv[index]==="--env")targetEnvironment=process.argv[++index];
+      else if(process.argv[index]==="--thread")threadId=process.argv[++index];
+      else throw new TypeError("unsupported social probe argument");
     }
-    await runWorldSocialProbe({targetEnvironment:process.argv[3]});
+    if(targetEnvironment===null){
+      throw new TypeError("usage: npm run world-social:probe -- --env staging [--thread thr_...]");
+    }
+    await runWorldSocialProbe({targetEnvironment,threadId});
   }catch(error){
     process.stderr.write(JSON.stringify({
       event:"world-social-probe-failed",
