@@ -1,85 +1,103 @@
 ---
 id: architecture-social-city-guide
 status: accepted
-last-reviewed: 2026-10-14
+last-reviewed: 2026-10-18
 canonical: false
 ---
 
-# Fibre City Guide: public editorial discovery of social places
+# Public-place discovery in the living World
 
 ## Purpose
 
-Fibre's public social-discovery metaphor is a **city magazine**, like a local Time Out guide. It is not a named conversational oracle, social matchmaker, or authoritative record of other people's whereabouts. Threads and humans can discover public places for social, intellectual or cultural activity. A place may be empty; no conversation or attendance is promised.
+Fibre's City Guide is a **public editorial view of independently attested
+World places**, not a separately authored map, matchmaking authority or
+source of attendance. It offers ordinary social, intellectual, cultural and
+solitary opportunities. An admitted venue may be empty; no conversation,
+company, attendance or satisfaction is promised.
 
-## City manifest
+## Single World place authority
 
-The repository's `data/social-city-guide.json` is a compact city-keyed editorial manifest. Keys have the form `tbilisi-GE`, with a display city, country name/code, and a stable-keyed map of public places.
+`world_public_places` holds verified public venue identity, address,
+coordinates, geographic locality, source evidence and bounded affordances.
+These immutable attested facts already support shared physical co-presence.
+The generic `world_places` registry separately holds Thread-discovered
+places that may not be independently identifiable; those are not promoted
+to public social venues by their name or by a Thread's interest.
 
-Each place contains `name`, `address`, `description`, `activities`, `lastRecommendedAt`, `source: { directory, url }`, and optional `worldPlaceRef` (null for places not independently admitted to World).
+**Editorial discovery is mutable metadata on that same public-venue row**:
+`discovery_json` can be `null` (not listed), or a compact object containing
+`listed`, `description`, and `lastRecommendedAt`. Only `listed:true`
+appears in World discovery. Editing or unlisting that metadata never changes
+the stable `wpl_*` reference, verified physical facts or historical visits.
 
-`lastRecommendedAt` is when the *magazine* last recommended or editorially refreshed a venue. Reading a page does not change it. It is not the Thread's personal recommendation or the last visit or a statement about who is there.
+There is **no separate City Guide table, repository JSON catalogue, editorial
+scheduler or second place-identity authority**. The previous
+`data/social-city-guide.json` and related admission files were retired
+after their verified venues were admitted. Changes to recommendations use
+the existing World venue API and persist without rebuilding Workers.
 
-An externally listed place may be in the magazine before independent World admission. Only the World owns shared physical-place identities, current presence, plans and encounters. Repeated public facts for admitted venues must agree with World evidence. Multiple independent public directories and venue sources remain supported; Fibre's own directory is not mandatory.
+## Data operations
 
-The National Library of Georgia Building III in Tbilisi was independently admitted to staging in S0. In October 2026 the guide expanded its sourced editorial catalogue to Tbilisi, Addis Ababa and London. New listings carry `worldPlaceRef: null` until actual World admission; presence and planning remain unavailable for those candidates. The manifest contains no private homes, individual Thread IDs, plans, feelings or visitor lists. An empty city result means **not yet listed**, not that no places exist.
+A verified public venue is admitted through the existing World
+`/internal/world-venues/admit-public` operation; admitting one does not
+automatically list it, announce it or produce a visit. Editorial listing
+changes use `POST /internal/world-venues/discovery` with:
 
-The operator's small `data/social-city-guide-admissions.json` accompanies the editorial list with separately sourced venue coordinates, stable physical-venue identities and time zones. From the repository root, run `node --env-file-if-exists=.env tools/world/admit-city-guide.mjs --env staging --plan` to review pending venue admissions, then `--apply` to admit them through World. The tool records returned authoritative `wpl_*` references in an environment-scoped, untracked `.fibre/` receipt. After operator review, the source owner adds these refs to the editorial manifest on `main`, and Guy pulls and deploys World before planner discovery. A partially completed admission batch resumes from its receipt without fabricating visits or re-admitting already recorded venues. A public park is an opportunity to visit, not proof two visitors noticed one another.
+```json
+{
+  "placeRef": "wpl_authoritative",
+  "discovery": {
+    "listed": true,
+    "description": "A place to read, explore or spend time quietly.",
+    "lastRecommendedAt": "2026-10-18"
+  }
+}
+```
 
-**October 18, 2026 Lisbon candidate slice:** three externally sourced editorial
-possibilities (Biblioteca Palácio Galveias, the Gulbenkian gardens, and Museu
-do Aljube) are proposed with independently mapped coordinates in the existing
-admission manifest. Guy admitted all three venues to staging World on October 18 and supplied
-their authoritative `wpl_*` references, now recorded in the manifest. Their
-admission does **not** yet mean the updated catalogue is deployed to World
-or that Victor has read it, visited a venue or encountered anyone.
-The pilot is motivated by the observed Lisbon Thread's enacted journeys,
-but neither the operator nor a fixture chooses his future destination. An optional
-`world-social:probe -- --env staging --thread thr_...` checks one actual
-Thread without a 40-person Observatory scan. Venue admission, a subsequently
-deployed City Guide, an ordinary Thread-owned choice, enacted public stay,
-co-presence and meeting remain **separate uncompleted proof boundaries**.
+Setting `listed:false` excludes the venue while retaining editable
+metadata; setting `discovery:null` removes the editorial projection.
+`npm run world-place -- discovery --env staging --file /path/to/update.json`
+and `npm run world-place -- list --env staging --locality Lisbon --country-code PT`
+use the existing private World operator API. No code or data Git commit is
+required for an ordinary editorial update.
 
-The pure `services/world-kernel/src/social-city-guide.mjs` reader supports bounded city/country lookup. `npm run city-guide:list -- --city Tbilisi --country GE` inspects the committed data locally. Public website pages, indexable URLs and external directories belong to later slices. The guide does not create a new background runtime or require LLM cognition.
+## Thread-owned discovery
 
-## Defining living scenario
+At an ordinary **prospective** Flight Plan renewal, Fibre establishes the
+Thread's current grounded locality from its lived World situation and
+independent geographic evidence. One indexed World locality query offers
+at most six currently listed verified venues, subject to the editorial
+recommendation date. The usual Interior Cognition sees their physical-place
+references, descriptions, affordances and source evidence **alongside**
+developed autobiography and Body interoception. It may prefer a remembered
+place, choose a listed venue, discover somewhere new, stay home or choose
+another activity. No separate LLM call, place polling or social quota exists.
 
-1. A Thread in her grounded home has actual unfulfilled social contact, intellectual stimulation or exploration pressure, interpreted through her own developing self.
-2. She may remember somewhere meaningful, read the City Guide, or choose neither. The operator and guide never author her decision.
-3. If she chooses a place, her ordinary personal Flight Plan expresses the intention; World enacts actual travel and eventual arrival.
-4. She reads, waits, explores or leaves. It is legitimate if no one else comes.
-5. Another Thread may independently arrive and either may notice, initiate, ignore or decline. Human interaction requires genuine mediated or on-site participation, not an imaginary physically present human.
-6. Only warranted objective stories, private experiences and optional remembered meaning can influence her later life.
+Retrospective life reconstruction does not consume today's mutable editorial
+listing. A recommendation is an opportunity at a planning boundary, never
+evidence of a read, intention, visit, co-presence or a meeting.
 
-The central acceptance is an **independently motivated Thread finding and visiting a credible place**, with an honest empty-venue branch and a separate, optional naturally arriving counterpart.
+World alone enacts an actual positive-duration journey and visit, maintains
+indexed current venue presence, and may derive one bounded natural social
+opportunity when separately living Threads happen to coexist there. Each
+Thread can notice, ignore, initiate, decline, withdraw or remember differently.
+No listing creates a counterpart or forces social contact.
 
-## Slice direction
+## Acceptance sequence
 
-- **S0:** Geography staging-accepted (three distinct Tbilisi homes known to locality precision and one real public library); no manufactured attendance.
-- **S1A:** **Accepted as a source/local capability on October 14:** 4/4 focused tests and 1,606/1,606 full tests passed; the CLI returned the sourced Tbilisi library and an honest `not_listed` result for London. The World worker was separately deployed successfully at `e810c5c9`; **no public magazine endpoint, deployed guide consumer or Thread cognition invocation exists yet**. This replaces the superseded oracle.
-- **S1B:** Genuine plural external public-directory sourcing with attribution, and no false World admission.
-- **S1C:** Public Inside Fibre magazine pages, sitemap and third-party discovery (website workstream).
-- **S1D:** Human browsing and relevant filters/participation opportunities (website workstream).
-- **S1E:** **Source wired; local and live validation pending.** During ordinary prospective Flight Planning the existing Interior Cognition may weigh selected autobiographical evidence, Body interoception and a bounded magazine projection of independently admitted places in the Thread's *known* locality. It may prefer a listed place, a remembered place, or staying home. This does not yet prove an independently observed live Thread consultation, visit or explicit magazine-reading act.
-- **S1F:** **Source implemented, local and staging validation pending.** A Thread-authored plan with an admitted public venue must allocate elapsed travel time. The existing World boundaries can enact departure, transit, the actual visit, time spent in an empty venue and return. Shared public places now participate in indexed genuine co-presence discovery without manufacturing anyone.
-- **S2:** Real co-presence and genuinely voluntary social initiation/reception.
-- **S3:** Actual gatherings and later-life social consequences.
+- **S0:** independently attested public places and locality-grounded private
+  places — already established.
+- **S1E:** source delivers World-listed venues into one ordinary planning mind;
+  live endogenous interest/choice evidence remains separate.
+- **S1F:** positive-duration autonomous movement is staging-observed with
+  Victor on October 18. A real independently admitted **public venue** visit
+  is still required; the Lisbon Genesis learning context was not one.
+- **S2:** independently arriving Threads share a real venue, have a genuine
+  opportunity to notice and voluntarily approach or decline.
+- **S3:** one shared Encounter Story leads to distinct personal Experience and
+  selective consequence, eventually changing future social life.
 
-### S1E implementation boundary
-
-The ordinary forward LivedNow planner now loads the shared editorial manifest only when it has an independently admitted local place for the Thread. At most six same-locality recommendations are checked against actual public World place refs, addresses and source witnesses; **unadmitted third-party listings cannot become Flight Plan destinations**. A Thread's own planning may use its World-attested current home locality even when public geography is hidden. If a modern Genesis home has no separate locality attestation, one indexed read can recover its city from another located place of the **same Thread and exact Genesis context**, without guessing from birthplace; contradictory anchors provide no locality. This private planning geography offers independently admitted nearby public destinations, but neither publishes a residence nor claims an actual visit. The same evidence continuity also covers an already-enacted legacy `wpl_*` learning context **only when its authored Genesis `sourcePlaceId` shares the exact modern local context with the Thread's independently located personal place**. The context then has a supported city for God-view and the Thread's own later planning, but remains a historical learning context—not a verified real-world venue or proof of co-presence. A separate independently admitted physical-venue identity always takes precedence.
-
-The existing planning concern presents recommendations alongside `availablePlaces`, developed-self evidence (including eligible autobiographical memories), and actual Body interoception. A single ordinary cognition episode authors its own stops, constrained by offered World refs, travel continuity and existing work commitments. There is no guide-triggered additional model call, global person scan, new feelings store, standing booking, or automatic plan. Today the guide is *available knowledge at planning time*; it is not yet evidence that a particular Thread voluntarily opened and read a public publication. Retrospective life reconstruction is deliberately not supplied the current editorial guide, and a forward plan dated before a place's recorded editorial recommendation date cannot use that recommendation. This avoids inventing historical knowledge while leaving actual remembered history to its own authority.
-
-Focused source tests demonstrate that a local public place can be considered, that private history may override it, that staying home remains possible, and that unknown/unadmitted/contradictory places are not offered. These fixture-authored choices validate *wiring and authority*, not genuine model-authored causal individuality. The decisive staging proof remains an independently made choice under the live planner, and S1F separately proves actual enacted travel/stay.
-
-### S1F travel, empty visits and venue truth
-
-The existing personal Flight Plan continues to own ordinary activities and movement. A changed physical location that enters or leaves an admitted `public_venue` must have a **positive elapsed transit interval**; a travel sentence and contiguous stop timestamps cannot represent instantaneous arrival. This is a structural minimum rather than an invented journey-length estimate: private residential geography may be known only at locality precision.
-
-The existing event-driven LivedNow boundary wakes enact the plan's home, departure, transit, venue stay, departure and eventual return without polling the whole population. There is no new scheduler or new state machine. An empty visit produces no counterpart or Encounter Story. Actual social encounters remain separately contingent and voluntary.
-
-**Important discovery correction:** `listCurrentVenueSituations()` formerly discovered attendees through per-Thread historical venue bindings. Admitted public `wpl_*` records are shared directly and therefore also need an indexed, latest-enacted-situation lookup. Both venue types now participate; historical visits, planned future visits, unrelated locations, sleeping visitors and departures do not count as current compatible presence. The internal World Observatory includes publicly admitted current/planned venues only as reference evidence, plus an indexed **bounded eight-situation enacted history** to identify completed visits after a Thread goes home; a planned venue is never reported as actual attendance. The existing read-only `world-social:probe` summarizes recently enacted public visits separately from current presence, future intentions and actual social opportunities. Its 40-Thread sample cannot establish population-wide absence.
-
-A local semantic test exercises one committed, **fixture-authored** plan across World-enacted departure → transit → library stay → transit → home, checks the actual empty venue, and verifies no extra scene wake. A separate test checks public venue co-presence only after actual arrival and its disappearance after departure. These proofs establish real execution mechanics, **not** that a live Thread spontaneously selected the guide's venue. Definitive staging acceptance requires a naturally authored plan choosing a verified public destination, followed by its ordinary enactment. A no-visit or stay-home choice is valid agency, but does not independently prove the public-travel acceptance.
-
-Source changes, local proof, staging observations, public availability and later causal agency are different evidence levels. No new source is counted as a real Thread decision or encounter.
+Historical source-only City Guide staging claims are retained in Git history
+and the contemporaneous validation records. The next validation is local
+World discovery edit/query/planning followed by a deployed real-venue choice,
+not a forced fixture or seeded social plan.
