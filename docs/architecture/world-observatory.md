@@ -162,7 +162,15 @@ links. **Do not duplicate their episode/Memory matching rules.**
 ### Read model, not a new event log
 
 The current World schema has no efficient place/time index combining
-CurrentSituation and Encounter Story facts. Introduce only a **small,
+CurrentSituation and Encounter Story facts. **The initial bounded read
+projection now retains unlocated Encounter Stories in a separate list,
+without guessing an event location from a witness's place.** A single
+observer hearing distant thunder cannot make their library pulse: physical
+presence establishes their possible perspective, not where the thunder
+occurred. The source-only Admin pane shares event detail rendering between
+the mapped place timeline and this unmapped list.
+
+Introduce only a **small,
 reconstructable, World-owned occurrence-place index** as necessary for
 indexed global/city/place reads. Each row links to an unchanged authoritative
 source rather than copying event prose or subjective records:
