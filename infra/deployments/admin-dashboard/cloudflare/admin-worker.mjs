@@ -853,7 +853,7 @@ export default {
         if(worldEvents){
           const raw=url.searchParams.get("hours")??"24";
           if([...url.searchParams.keys()].some(key=>key!=="hours")
-            ||!/^\\d{1,3}$/u.test(raw)||Number(raw)<1||Number(raw)>168){
+            ||!/^\d{1,3}$/u.test(raw)||Number(raw)<1||Number(raw)>168){
             return json(400,{error:"invalid_world_event_window"});
           }
           return proxyWorldEvents(env,Number(raw));
