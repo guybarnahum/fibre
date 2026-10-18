@@ -59,6 +59,16 @@ test("God-view pulses only from admitted World activity and keeps subjective con
         attention_outcome:"not_noticed",experience_id:null,
       },
       {
+        encounter_id:"story_unlocated_single_witness",
+        occurred_at:"2026-10-18T18:25:00.000Z",
+        story_json:JSON.stringify({beats:[{kind:"occurrence",
+          text:"Thunder echoes somewhere beyond the city."}]}),
+        visualization_source_refs_json:JSON.stringify(["world_weather_source"]),
+        thread_id:"thr_victor",situation_id:arrived.situationId,
+        situation_json:JSON.stringify(arrived),
+        attention_outcome:"noticed",experience_id:"exp_thunder",memory_id:null,
+      },
+      {
         encounter_id:"story_distant",occurred_at:"2026-10-18T18:24:00.000Z",
         story_json:JSON.stringify({beats:[{kind:"occurrence",text:"A far-off flash."}]}),
         visualization_source_refs_json:JSON.stringify(["event_unlocated"]),
@@ -82,6 +92,13 @@ test("God-view pulses only from admitted World activity and keeps subjective con
   assert.deepEqual(snapshot.cities.map(city=>[city.name,city.eventCount]),
     [["Lisbon",2],["Tbilisi",0]],
     "the map fabricated pulse activity at an unrelated place");
+  assert.deepEqual(snapshot.unlocatedEvents.map(event=>event.eventRef),
+    ["story_unlocated_single_witness","story_distant"],
+    "an unlocated event was dropped or pinned to its observer's venue");
+  assert.equal(snapshot.unlocatedEvents[0].witnesses[0].attention,"noticed",
+    "unlocated events lost their legitimate individual attention");
+  assert.equal(snapshot.coverage.unlocatedStories,"reported_separately_not_mapped",
+    "the map silently claimed complete geographic attribution");
   assert.equal(snapshot.places.find(item=>item.placeRef===place.ref).appearance?.prompt,
     "Tall library shelves","the God-view omitted the persisted venue depiction seed");
   assert.equal(snapshot.places.find(item=>item.placeRef===quietPlace.ref).appearance,null,
