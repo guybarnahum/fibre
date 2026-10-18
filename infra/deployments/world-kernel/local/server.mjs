@@ -16,7 +16,7 @@ import { openExpressionStore } from "#services/world-kernel/src/expression-store
 import { openCausalContextStore } from "#services/world-kernel/src/causal-context-store.mjs";
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
-import { enactedActorOccurrence } from "#services/world-kernel/src/world-occurrence.mjs";
+import { enactedActorOccurrence,coPresentAtActorArrival } from "#services/world-kernel/src/world-occurrence.mjs";
 import { createLivedNowService } from "#services/world-kernel/src/lived-now-service.mjs";
 import {
   nextLivedBoundary,
@@ -357,11 +357,7 @@ export async function startWorldKernelFromEnvironment(
       const venue=livedNowStore.getWorldPlace(
         situation.threadId,situation.location.placeRef,{required:false},
       )?.physicalVenue?.ref??null;
-      if(venue!==null&&occurrence?.kind==="arrival"
-        &&livedNowStore.listCurrentVenueSituations({
-          venueRef:venue,at:occurrence.occurredAt,limit:8,
-          excludeThreadId:situation.threadId,
-        }).some(other=>other.wakefulness!=="asleep")){
+      if(coPresentAtActorArrival(livedNowStore,occurrence,venue).length>0){
         const social=livedExperienceStore.enqueueSocialOpportunity({
           threadId:situation.threadId,situationId:situation.situationId,
           dueAt:situation.establishedAt,
