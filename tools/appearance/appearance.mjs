@@ -32,6 +32,7 @@ function options(argv) {
     diagnose:false,
     migrate:false,
     rerender:false,
+    ignoreMismatch:false,
     specFile:null,
     ancestryFile:null,
     reason:null,
@@ -41,6 +42,7 @@ function options(argv) {
     else if (arg === "--diagnose") parsed.diagnose = true;
     else if (arg === "--migrate") parsed.migrate = true;
     else if (arg === "--rerender") parsed.rerender = true;
+    else if (arg === "--ignore-mismatch") parsed.ignoreMismatch = true;
     else if (arg.startsWith("--spec-file=")) parsed.specFile = arg.slice("--spec-file=".length);
     else if (arg.startsWith("--physical-ancestry-file=")) parsed.ancestryFile = arg.slice("--physical-ancestry-file=".length);
     else if (arg.startsWith("--reason=")) parsed.reason = arg.slice("--reason=".length);
@@ -65,26 +67,31 @@ function options(argv) {
     diagnose:parsed.diagnose,
     migrate:parsed.migrate,
     rerender:parsed.rerender,
+    ignoreMismatch:parsed.ignoreMismatch,
     specFile:parsed.specFile,
     ancestryFile:parsed.ancestryFile,
     reason:parsed.diagnose ? null : required("--reason", parsed.reason),
   };
 }
 
-function deployment({ diagnose = false } = {}) {
+function deployment({ diagnose = false, ignoreMismatch = false } = {}) {
   const path = resolve(REPO_ROOT, ".fibre", "cloudflare", "staging", "deployment.json");
   const record = JSON.parse(readFileSync(path, "utf8"));
   if (record?.environment !== "staging") throw new Error("deployment evidence is not staging");
   const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd:REPO_ROOT, encoding:"utf8" }).trim();
   const status = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd:REPO_ROOT, encoding:"utf8" }).trim();
   if (status !== "") throw new Error("appearance operation requires a clean working tree");
-  if (record.sourceTreeClean !== true || (!diagnose && record.sourceGitSha !== head)) {
-    throw new Error(`staging deployment ${record.sourceGitSha ?? "unknown"} does not match current clean checkout ${head}`);
+  if (record.sourceTreeClean !== true) {
+    throw new Error("staging deployment evidence does not attest a clean source tree");
   }
-  if (diagnose && record.sourceGitSha !== head) {
-    progress("read_only_deployment_revision", {
+  if (record.sourceGitSha !== head) {
+    if (!diagnose && !ignoreMismatch) {
+      throw new Error(`staging deployment ${record.sourceGitSha ?? "unknown"} does not match current clean checkout ${head}; deploy matching Core or explicitly pass --ignore-mismatch`);
+    }
+    progress(diagnose ? "read_only_deployment_revision" : "ignored_deployment_revision_mismatch", {
       deployedGitSha:record.sourceGitSha ?? null,
       checkoutGitSha:head,
+      ...(ignoreMismatch ? { explicitlyOverridden:true } : {}),
     });
   }
   return record;
@@ -270,12 +277,12 @@ async function submitAppearanceMigration({
 }
 
 async function main() {
-  const { threadId, diagnose, migrate, rerender, specFile, ancestryFile, reason } = options(process.argv.slice(2));
+  const { threadId, diagnose, migrate, rerender, ignoreMismatch, specFile, ancestryFile, reason } = options(process.argv.slice(2));
   const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
   const mode=diagnose?"diagnose":migrate?"migration":rerender?"rerender":"correction";
 
   progress("inspect_current_identity", { threadId, mode });
-  const deployed = deployment({ diagnose });
+  const deployed = deployment({ diagnose, ignoreMismatch });
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   progress("verify_repair_contract", { expectedContract:THREAD_REPAIR_CONTRACT });
