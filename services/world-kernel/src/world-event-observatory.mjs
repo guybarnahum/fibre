@@ -75,12 +75,22 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
     const place=situation?.location?.kind==="place"
       ?eventPlace(byRef,situation.location.placeRef):null;
     if(place)event._locations.add(place.placeRef);
-    event.witnesses.push({
-      threadId:row.thread_id,situationId:row.situation_id,
-      attention:row.attention_outcome??"not_appraised",
-      experienceId:row.experience_id??null,
-      memoryLink:row.memory_id??null,impactLink:null,
-    });
+    // Experience may belong to several consolidation rows. Those are
+    // multiple consequences of one person's observation, not new witnesses.
+    let witness=event.witnesses.find(item=>item.threadId===row.thread_id);
+    if(!witness){
+      witness={
+        threadId:row.thread_id,situationId:row.situation_id,
+        attention:row.attention_outcome??"not_appraised",
+        experienceId:row.experience_id??null,
+        memoryLinks:[],impactLink:null,
+      };
+      event.witnesses.push(witness);
+    }
+    if(row.memory_id!==null&&row.memory_id!==undefined
+      &&!witness.memoryLinks.includes(row.memory_id)){
+      witness.memoryLinks.push(row.memory_id);
+    }
   }
   for(const event of stories.values()){
     if(!event.placeRef&&event._locations.size===1){
@@ -90,6 +100,10 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
     delete event._locations;
     if(!event.placeRef)continue; // A remote witness does not locate a storm.
     event.witnesses.sort((a,b)=>a.threadId.localeCompare(b.threadId));
+    for(const witness of event.witnesses){
+      witness.memoryLinks.sort();
+      witness.memoryLink=witness.memoryLinks[0]??null;
+    }
     events.push(event);
   }
 
