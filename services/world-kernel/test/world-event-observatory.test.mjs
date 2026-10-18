@@ -12,8 +12,12 @@ const quietPlace={ref:"wpl_park",displayName:"Quiet Garden",locality:"Lisbon",
 const otherPlace={ref:"wpl_remote",displayName:"Remote Meadow",locality:"Tbilisi",
   country:"Georgia",countryCode:"GE",lat:41.72,long:44.81,
   physicalVenue:{ref:"venue_remote"}};
-const rows=[place,quietPlace,otherPlace].map(item=>({
+const rows=[place,quietPlace,otherPlace].map((item,i)=>({
   record_json:JSON.stringify(item),discovery_json:"null",
+  appearance_json:i===0?JSON.stringify({
+    prompt:"Tall library shelves",viewpoint:"Reading room",
+    projection:"equirectangular",assetRef:null,
+  }):"null",
 }));
 const old={situationId:"sit_before",threadId:"thr_victor",
   establishedAt:"2026-10-18T18:00:00.000Z",provenance:"world_enacted",
@@ -70,6 +74,10 @@ test("God-view pulses only from admitted World activity and keeps subjective con
   assert.deepEqual(snapshot.cities.map(city=>[city.name,city.eventCount]),
     [["Lisbon",2],["Tbilisi",0]],
     "the map fabricated pulse activity at an unrelated place");
+  assert.equal(snapshot.places.find(item=>item.placeRef===place.ref).appearance?.prompt,
+    "Tall library shelves","the God-view omitted the persisted venue depiction seed");
+  assert.equal(snapshot.places.find(item=>item.placeRef===quietPlace.ref).appearance,null,
+    "the God-view fabricated imagery for an unillustrated place");
   assert.equal(snapshot.places.find(item=>item.placeRef===quietPlace.ref).eventCount,0,
     "a listed but quiet place pulsed without World evidence");
   const event=snapshot.events[0];
