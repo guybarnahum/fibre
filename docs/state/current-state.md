@@ -78,6 +78,24 @@ E7.5 later demonstrated a **naturally advanced staging Flight Plan boundary**: G
 
 **October 16 source change — validation and staging proof pending:** a newly published Genesis birth now atomically earns a single indexed first-life obligation. Existing event-driven World reconciliation invokes the same LivedNow authority to author the first *actual* present and roll forward through Flight Plan boundaries. The realized first moment is not backdated to publication after an elapsed unobserved gap; absence of an admitted place blocks without invented life; retries are bounded. The schema does not enqueue previously born dormant Threads. This is committed implementation, **not yet a locally validated or staging-observed birth-to-autonomous-life result**. The [LivedNow design](../architecture/lived-now-and-meetings.md) owns the exact boundary.
 
+## World Observatory God-view — October 18 source only
+
+The authenticated Admin `/world-events` source now reads one bounded,
+read-only World event overview, then shows pulsing cities, independently
+verified public places, and World-enacted movement/Encounter Story timelines
+with actual witness attention and Experience evidence. Where completed
+consolidation links an Experience to a current autobiographical Memory, Admin
+can open that exact Memory in Thread Observatory. Later behavior/relationship
+impact is **not** inferred. The query reports capped source windows and
+explicitly excludes unverified/private/unlocated geographic activity.
+
+The World endpoint and Admin proxy are committed, **not yet locally
+validated or deployed**. The more comprehensive design in
+`docs/architecture/world-observatory.md` is being advanced alongside, not
+in place of, the actor/ambient World-event runtime overhaul and S1F → S2
+natural co-presence. This first dashboard slice does not prove a spontaneous
+meeting or a consequential later decision.
+
 ## World occurrence replacement — October 18, source only
 
 The [accepted World occurrence architecture](../architecture/world-occurrences-and-perception.md)
