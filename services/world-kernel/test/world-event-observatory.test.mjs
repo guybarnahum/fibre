@@ -46,6 +46,14 @@ test("God-view pulses only from admitted World activity and keeps subjective con
         encounter_id:"story_rain",occurred_at:"2026-10-18T18:22:00.000Z",
         story_json:JSON.stringify({beats:[{kind:"occurrence",text:"Rain begins outside."}]}),
         visualization_source_refs_json:JSON.stringify([place.physicalVenue.ref]),
+        thread_id:"thr_victor",situation_id:arrived.situationId,
+        situation_json:JSON.stringify(arrived),attention_outcome:"noticed",
+        experience_id:"exp_rain",memory_id:"mem_another_recorded_recollection",
+      },
+      {
+        encounter_id:"story_rain",occurred_at:"2026-10-18T18:22:00.000Z",
+        story_json:JSON.stringify({beats:[{kind:"occurrence",text:"Rain begins outside."}]}),
+        visualization_source_refs_json:JSON.stringify([place.physicalVenue.ref]),
         thread_id:"thr_reader",situation_id:"sit_reader",
         situation_json:JSON.stringify({...arrived,threadId:"thr_reader",situationId:"sit_reader"}),
         attention_outcome:"not_noticed",experience_id:null,
@@ -86,10 +94,11 @@ test("God-view pulses only from admitted World activity and keeps subjective con
     ["thr_reader","not_noticed",null],
     ["thr_victor","noticed","exp_rain"],
   ],"one shared occurrence lost distinct personal perception");
-  assert.equal(event.witnesses.find(person=>person.threadId==="thr_victor")?.memoryLink,
-    "mem_authoritative_rain","a real consolidated Memory lost its causal event link");
-  assert.equal(event.witnesses.find(person=>person.threadId==="thr_reader")?.memoryLink,
-    null,"unnoticed experience gained an invented Memory");
+  assert.deepEqual(event.witnesses.find(person=>person.threadId==="thr_victor")?.memoryLinks,
+    ["mem_another_recorded_recollection","mem_authoritative_rain"],
+    "multiple retained memories duplicated a witness or lost its memories");
+  assert.deepEqual(event.witnesses.find(person=>person.threadId==="thr_reader")?.memoryLinks,
+    [],"unnoticed experience gained an invented Memory");
   assert.ok(event.witnesses.every(item=>item.impactLink===null),
     "an event or Memory was misreported as proved later behavior");
   assert.equal(snapshot.coverage.privateCityActivity,"not_included",
