@@ -15,11 +15,11 @@ function args(argv){
     else if(arg==="--file")file=argv[++i];
     else if(arg==="--locality")locality=argv[++i];
     else if(arg==="--country-code")countryCode=argv[++i];
-    else if(command===null&&["admit-public","locate-private","list"].includes(arg))command=arg;
+    else if(command===null&&["admit-public","locate-private","discovery","list"].includes(arg))command=arg;
     else throw new TypeError(`unsupported World place argument: ${arg}`);
   }
   const environment=normalizeCloudflareEnvironment(required("--env",env));
-  if(command===null)throw new TypeError("use admit-public, locate-private or list");
+  if(command===null)throw new TypeError("use admit-public, locate-private, discovery or list");
   if(command==="list"){
     required("--locality",locality);required("--country-code",countryCode);
     if(file!==null)throw new TypeError("list does not accept --file");
@@ -60,7 +60,7 @@ async function main(argv){
       places:result.places.map(place=>({
         ref:place.ref,venueRef:place.physicalVenue.ref,
         name:place.displayName,address:place.streetAddress,
-        evidenceRef:place.evidenceRef,
+        evidenceRef:place.evidenceRef,discovery:place.discovery??null,
       })),
     },null,2)+"\n");
     return;
@@ -72,6 +72,9 @@ async function main(argv){
     placeRef:place.placeRef,locality:place.locality,country:place.country,
     precision:place.streetAddress===null?"locality":"address",
     publicGranularity:place.publicGranularity,
+  }:command==="discovery"?{
+    event:"public-world-place-discovery-updated",environment,placeRef:place.ref,
+    name:place.displayName,discovery:place.discovery??null,
   }:{
     event:"public-world-place-admitted",environment,placeRef:place.ref,
     venueRef:place.physicalVenue.ref,name:place.displayName,
