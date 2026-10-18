@@ -130,6 +130,21 @@ A compound UI action such as **Fix & Recover** may sequence those operations but
 
 Dead-letter reconciliation state and its last failure should be visible in Thread Observatory and the population view. `dead_letter` is operational quarantine, not a Thread lifecycle or personhood state.
 
+### World Observatory — proposed place-centric God-view, October 18
+
+The proposed [World Observatory](world-observatory.md) is a separate top-level
+**World Events** Admin pane: global pulsing cities based on **actual admitted
+World activity** (never runtime execution), city-level zoom to verified venues,
+a selected place's objective event timeline, independently grounded
+participants/potential witnesses, distinct noticed/not-noticed decisions, and
+links to real Experience, Journal, Memory, relationships and evidenced later
+choices. It reuses the current Admin SVG World Map and per-Thread Observatory
+rather than introducing a second map/event/Memory authority. A tiny
+reconstructable event-to-place index and bounded World read projections must
+precede the UI; neither the global map nor the browser may scan every Thread,
+call cognition, or create an encounter. The proposal remains unimplemented
+until aligned with the accepted World occurrence replacement.
+
 ### Per-Thread life and history in Admin
 
 A person is the entry point for inspection. On **Threads → [Thread]**, the existing World-backed Thread Observatory groups one person's **World events**, **Encounter episodes**, **Journal**, **Memories**, consolidation, social consequences and current identity. Faith Achieng Odhiambo is a normal Thread, not a special-cased UI or data model.
