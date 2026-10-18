@@ -9,6 +9,7 @@ import { openContactInspectionStore } from "#services/world-kernel/src/contact-s
 import { openEmbodimentInspectionStore } from "#services/world-kernel/src/embodiment-store.mjs";
 import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
+import {readWorldEventOverview} from "#services/world-kernel/src/world-event-observatory.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
 import {
@@ -610,6 +611,20 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetchWorldRequest(request, url) {
+    if(url.pathname==="/internal/world-events/overview"){
+      if(request.method!=="GET")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
+      if(!privateOperatorAuthorized(request,this.env)){
+        return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
+      }
+      const raw=url.searchParams.get("hours")??"24";
+      if([...url.searchParams.keys()].some(key=>key!=="hours")
+        ||!/^\\d{1,3}$/u.test(raw)||Number(raw)<1||Number(raw)>168){
+        return Response.json({error:"INVALID_WORLD_EVENT_WINDOW"},{status:400});
+      }
+      return Response.json(readWorldEventOverview(this.worldStorage,{
+        hours:Number(raw),
+      }));
+    }
     if(url.pathname==="/internal/first-life/backlog"){
       if(request.method!=="GET")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
       if(!privateOperatorAuthorized(request,this.env)){
