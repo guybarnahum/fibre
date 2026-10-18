@@ -199,6 +199,11 @@ export async function renderThreadPage(threadId) {
             healthSection(threadId),threadAppearanceSection(threadId,name),
           );
           observatory.replaceWith(detailed);
+          if(new URLSearchParams(location.search).has("memory")){
+            requestAnimationFrame(()=>
+              detailed.querySelector("#thread-memories")?.scrollIntoView({block:"center"}),
+            );
+          }
         }catch(error){
           started=false;
           if(loadButton)loadButton.textContent="Retry loading history";
@@ -207,6 +212,11 @@ export async function renderThreadPage(threadId) {
         }
       };
       loadButton?.addEventListener("click",loadHistory);
+      // Exact World-event Memory links should open their real history directly,
+      // not require a user to discover the lazy-loading control.
+      if(new URLSearchParams(location.search).has("memory")){
+        void loadHistory();
+      }
       if(typeof IntersectionObserver==="function"){
         watcher=new IntersectionObserver(entries=>{
           if(entries.some(entry=>entry.isIntersecting))void loadHistory();
