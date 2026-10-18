@@ -25,11 +25,12 @@ in the chosen 1–168-hour window, and reports when the bounded sample is
 truncated. It does not query each Thread, run cognition, enqueue events or
 modify World history. Unverified Genesis places, private city aggregates, human physical
 presence, and downstream causal behavioral evidence remain open.
-**Unlocated Encounter Stories now appear in a separate read-only list**
+**Unmapped Encounter Stories now appear in a separate read-only list**
 with independently recorded witnesses and consequences, rather than
 being dropped or pinned to a witness's location. They never make a city
-or venue pulse. Their geographic origin remains unknown; absence from
-the map is not evidence that nothing happened.
+or venue pulse. Geographic origins may be unknown or simply outside
+the current bounded venue sample; absence from the map is not evidence
+that nothing happened.
 
 **Place appearance (source-only extension, October 18):** selecting an attested
 public venue now shows its independently stored World description and optional
