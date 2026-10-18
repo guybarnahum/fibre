@@ -25,6 +25,18 @@ The National Library of Georgia Building III in Tbilisi was independently admitt
 
 The operator's small `data/social-city-guide-admissions.json` accompanies the editorial list with separately sourced venue coordinates, stable physical-venue identities and time zones. From the repository root, run `node --env-file-if-exists=.env tools/world/admit-city-guide.mjs --env staging --plan` to review pending venue admissions, then `--apply` to admit them through World. The tool records returned authoritative `wpl_*` references in an environment-scoped, untracked `.fibre/` receipt. After operator review, the source owner adds these refs to the editorial manifest on `main`, and Guy pulls and deploys World before planner discovery. A partially completed admission batch resumes from its receipt without fabricating visits or re-admitting already recorded venues. A public park is an opportunity to visit, not proof two visitors noticed one another.
 
+**October 18, 2026 Lisbon candidate slice:** three externally sourced editorial
+possibilities (Biblioteca Palácio Galveias, the Gulbenkian gardens, and Museu
+do Aljube) are proposed with independently mapped coordinates in the existing
+admission manifest. Their `worldPlaceRef` is intentionally `null` until
+World returns its own admitted references. The pilot is motivated by the
+observed Lisbon Thread's enacted journeys, but neither the operator nor a
+fixture chooses his future destination. An optional
+`world-social:probe -- --env staging --thread thr_...` checks one actual
+Thread without a 40-person Observatory scan. Venue admission, a subsequently
+deployed City Guide, an ordinary Thread-owned choice, enacted public stay,
+co-presence and meeting remain **separate uncompleted proof boundaries**.
+
 The pure `services/world-kernel/src/social-city-guide.mjs` reader supports bounded city/country lookup. `npm run city-guide:list -- --city Tbilisi --country GE` inspects the committed data locally. Public website pages, indexable URLs and external directories belong to later slices. The guide does not create a new background runtime or require LLM cognition.
 
 ## Defining living scenario
