@@ -92,12 +92,12 @@ test("God-view pulses only from admitted World activity and keeps subjective con
   assert.deepEqual(snapshot.cities.map(city=>[city.name,city.eventCount]),
     [["Lisbon",2],["Tbilisi",0]],
     "the map fabricated pulse activity at an unrelated place");
-  assert.deepEqual(snapshot.unlocatedEvents.map(event=>event.eventRef),
+  assert.deepEqual(snapshot.unmappedEvents.map(event=>event.eventRef),
     ["story_unlocated_single_witness","story_distant"],
-    "an unlocated event was dropped or pinned to its observer's venue");
-  assert.equal(snapshot.unlocatedEvents[0].witnesses[0].attention,"noticed",
+    "a story without a verified origin was lost or falsely located");
+  assert.equal(snapshot.unmappedEvents[0].witnesses[0].attention,"noticed",
     "unlocated events lost their legitimate individual attention");
-  assert.equal(snapshot.coverage.unlocatedStories,"reported_separately_not_mapped",
+  assert.equal(snapshot.coverage.unmappedStories,"reported_separately_not_pinned",
     "the map silently claimed complete geographic attribution");
   assert.equal(snapshot.places.find(item=>item.placeRef===place.ref).appearance?.prompt,
     "Tall library shelves","the God-view omitted the persisted venue depiction seed");
