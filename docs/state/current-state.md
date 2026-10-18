@@ -78,6 +78,35 @@ E7.5 later demonstrated a **naturally advanced staging Flight Plan boundary**: G
 
 **October 16 source change — validation and staging proof pending:** a newly published Genesis birth now atomically earns a single indexed first-life obligation. Existing event-driven World reconciliation invokes the same LivedNow authority to author the first *actual* present and roll forward through Flight Plan boundaries. The realized first moment is not backdated to publication after an elapsed unobserved gap; absence of an admitted place blocks without invented life; retries are bounded. The schema does not enqueue previously born dormant Threads. This is committed implementation, **not yet a locally validated or staging-observed birth-to-autonomous-life result**. The [LivedNow design](../architecture/lived-now-and-meetings.md) owns the exact boundary.
 
+## World occurrence replacement — October 18, source only
+
+The [accepted World occurrence architecture](../architecture/world-occurrences-and-perception.md)
+reframes arrival/departure, human or Thread action, shared environmental
+happenings and individually noticeable opportunities as a single causal
+World model. Compute budgets govern materialization, not whether unobserved
+reality exists. Real actor actions are enacted at World time; speculative
+ambient events need a plausibly perceiving actor and no artificial event
+quota. A scene, rather than every arriving Thread, will own one sparse
+ambient opportunity frontier.
+
+**First bounded source cut (awaiting Guy's local validation):**
+`world-occurrence.mjs` projects actual LivedNow transit/departure/arrival
+using existing immutable situation IDs, excluding Genesis establishment,
+plan renewal and instantaneous/unsupported movement. World and local
+entrypoints pass the real preceding situation and only schedule immediate
+social consideration when a verifiable arrival overlaps a genuinely
+present awake counterpart in an admitted venue. The new test protects
+event-time witness discovery from sleepers and future arrivals. Historical
+situations and Encounter Stories were not modified.
+
+**Not yet implemented or claimed:** the scene-owned durable ambient
+frontier, symmetric bystander attention to an arriving actor, generalized
+human actor occurrences, unified event-time perception across scene
+boundaries, or any new staging encounter. The previous per-Thread
+arrival/stay/continuation machinery is transitional and not accepted as
+the final event model. Do not deploy and declare an overhaul complete
+from this first source cut.
+
 ## World encounters and private experience
 
 An **encounter** is the common primitive; a meeting is one voluntary social form. The admitted causal distinction is:
