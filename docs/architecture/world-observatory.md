@@ -163,12 +163,13 @@ links. **Do not duplicate their episode/Memory matching rules.**
 
 The current World schema has no efficient place/time index combining
 CurrentSituation and Encounter Story facts. **The initial bounded read
-projection now retains unlocated Encounter Stories in a separate list,
+projection now retains unmapped Encounter Stories in a separate list,
 without guessing an event location from a witness's place.** A single
 observer hearing distant thunder cannot make their library pulse: physical
 presence establishes their possible perspective, not where the thunder
 occurred. The source-only Admin pane shares event detail rendering between
-the mapped place timeline and this unmapped list.
+the mapped place timeline and this separate list. Missing map evidence
+may mean the origin is unknown **or** outside the bounded venue sample.
 
 Introduce only a **small,
 reconstructable, World-owned occurrence-place index** as necessary for
