@@ -55,6 +55,7 @@ export function installWorldSchemas(storage){
     database.prepare("SELECT 1 FROM embodiment_reference_index LIMIT 1").get();
     database.prepare("SELECT 1 FROM genesis_first_life_work LIMIT 1").get();
     database.prepare("SELECT 1 FROM world_places LIMIT 1").get();
+    database.prepare("SELECT discovery_json FROM world_public_places LIMIT 1").get();
     database.prepare("SELECT 1 FROM thread_known_places LIMIT 1").get();
   }finally{database.close();}
   }finally{worldReader.close();}
