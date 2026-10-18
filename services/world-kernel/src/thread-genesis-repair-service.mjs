@@ -952,9 +952,9 @@ export function createThreadGenesisRepairService({
         throw new TypeError("physical appearance migration requires authoritative Thread sex");
       }
       const currentPortrait = currentCanonicalPortrait(embodimentReader, threadId);
-      if (
-        current.genome?.physical?.version !== PHYSICAL_GENOME_VERSION
-        && (currentPortrait?.status !== "available" || typeof currentPortrait?.asset?.referenceObjectRef !== "string")
+      if (currentPortrait !== null
+        && (currentPortrait.status !== "available" || typeof currentPortrait.asset?.referenceObjectRef !== "string")
+        && currentPortrait.specificationDigest !== null
       ) {
         throw new TypeError("physical appearance migration requires the admitted canonical root");
       }
@@ -976,8 +976,16 @@ export function createThreadGenesisRepairService({
           reused:true,
           embodiment:currentPortrait,
         });
+      } else if (currentPortrait === null) {
+        visualResult = visualIdentityRepairService.establish({
+          threadId,
+          operationKey:childOperation(root,"canonical_visual"),
+          specification,
+          reason:suppliedInput.reason.trim(),
+          evidenceReferences:[genomeResult.eventId],
+        });
       } else {
-        if (currentPortrait?.status !== "available" || typeof currentPortrait?.asset?.referenceObjectRef !== "string") {
+        if (currentPortrait.status !== "available" || typeof currentPortrait.asset?.referenceObjectRef !== "string") {
           throw new TypeError("physical appearance migration can resume only from its matching canonical specification");
         }
         visualResult = visualIdentityRepairService.repair({
