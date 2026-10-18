@@ -226,6 +226,22 @@ export function planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,p
     :{locality:context.city,countryCode:context.countryCode};
 }
 
+// One indexed locality read; no extra cognition, retrospective listings or
+// implicit presence. The same World venue identity serves planning and meeting.
+export function planningPublicDiscoveries(livedNowStore,location,at){
+  if(!location||typeof livedNowStore?.listDiscoverablePublicPlaces!=="function")return [];
+  return livedNowStore.listDiscoverablePublicPlaces({
+    locality:location.locality,countryCode:location.countryCode,limit:6,
+  }).filter(place=>place.discovery?.listed===true
+    &&place.discovery.lastRecommendedAt<=at.slice(0,10))
+    .map(place=>({
+      ref:place.ref,description:place.discovery.description,
+      activities:place.affordances,
+      source:{directory:"World-attested venue",url:place.evidenceRef},
+      lastRecommendedAt:place.discovery.lastRecommendedAt,
+    }));
+}
+
 function latestGroundedPlaceRef(situatedLifeStore, threadId, at) {
   const instant = Date.parse(at);
   const candidates = situatedLifeStore.listCurrentPlaceEpisodes(threadId)
@@ -405,20 +421,9 @@ async function formPlan({
   const currentLocation=materializedAt===null
     ?planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,placeRef:startingPlace})
     :null;
-  // The World database supplies editorial opportunities at plan time.
-  // Historical reconstruction must not consume today's changing listings.
-  const guidePlaces=materializedAt===null&&currentLocation
-    ?(livedNowStore.listDiscoverablePublicPlaces?.({
-      locality:currentLocation.locality,countryCode:currentLocation.countryCode,limit:6,
-    })??[])
-      .filter(place=>place.discovery.lastRecommendedAt<=startAt.slice(0,10))
-      .map(place=>({
-        ref:place.ref,description:place.discovery.description,
-        activities:place.affordances,
-        source:{directory:"World-attested venue",url:place.evidenceRef},
-        lastRecommendedAt:place.discovery.lastRecommendedAt,
-      }))
-    :[];
+  // Today's curated World venues are offered only to future planning.
+  const guidePlaces=materializedAt===null
+    ?planningPublicDiscoveries(livedNowStore,currentLocation,startAt):[];
   const placeRefs=[...new Set([
     ...ordinaryPlaceRefs,startingPlace,...guidePlaces.map(place=>place.ref),
   ])];
