@@ -32,10 +32,12 @@ function preview(role,asset,canonicalRef){
     img.onerror=()=>img.replaceWith(node("p","missing","Image unavailable"));
     pane.append(img);
   }else pane.append(node("p","missing","Image missing or not published"));
-  pane.append(node("p","meta",role.startsWith("Canonical")
+  const meta=node("p","meta",role.startsWith("Canonical")
     ?"Canonical ref: "+(canonicalRef??"unavailable")
     :"Media: "+(asset?.objectRef??"unavailable")
-       +(asset?.width?" · "+asset.width+"×"+asset.height:"")));
+       +(asset?.width?" · "+asset.width+"×"+asset.height:""));
+  meta.title=meta.textContent;
+  pane.append(meta);
   return pane;
 }
 function updateStatus(){
