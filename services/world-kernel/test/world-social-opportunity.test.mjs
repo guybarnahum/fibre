@@ -15,9 +15,9 @@ import { createWorldSocialOpportunity } from "../src/world-social-opportunity.mj
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
 ));
-const AT="2026-10-13T19:01:00.000Z";
+const AT="2026-10-13T19:00:00.000Z";
 
-test("ordinary shared presence permits a single voluntary consideration, not a scheduled conversation",async()=>{
+test("an enacted arrival permits immediate voluntary consideration without forcing speech",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-natural-social-"));
   const storage={
     infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
@@ -35,7 +35,9 @@ test("ordinary shared presence permits a single voluntary consideration, not a s
   const experience=openLivedExperienceStore(storage);
   const situations=people.map((threadId,i)=>({
     threadId,situationId:`sit_social_${i}`,
-    establishedAt:"2026-10-13T19:00:00.000Z",wakefulness:"awake",
+    // The arriving visitor's immediate World event can expose a reader
+    // who has already been there for an hour.
+    establishedAt:i===2?"2026-10-13T18:00:00.000Z":AT,wakefulness:"awake",
     location:{kind:"place",placeRef:i===0?"wpl_park":"wpl_cafe"},
     activity:i===0?"Reading at the park.":"Enjoying a quiet café visit.",
   }));
