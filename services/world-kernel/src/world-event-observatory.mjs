@@ -77,7 +77,7 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       threadId:row.thread_id,situationId:row.situation_id,
       attention:row.attention_outcome??"not_appraised",
       experienceId:row.experience_id??null,
-      memoryLink:null,impactLink:null,
+      memoryLink:row.memory_id??null,impactLink:null,
     });
   }
   for(const event of stories.values()){
@@ -127,7 +127,7 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       situationsTruncated:situationRows.length>=sourceLimit,
       storiesTruncated:new Set(storyRows.map(r=>r.encounter_id)).size>=sourceLimit,
       privateCityActivity:"not_included",
-      memoryAndLaterImpact:"not_linked",
+      memory:"consolidated_current_records_only",laterImpact:"not_linked",
     },
     cities:[...cities.values()].sort((a,b)=>b.eventCount-a.eventCount
       ||a.name.localeCompare(b.name)),
@@ -160,7 +160,8 @@ export function readWorldEventOverview(storage,{hours=24,now=new Date().toISOStr
     const storyRows=db.prepare(`
       SELECT e.encounter_id,e.occurred_at,e.story_json,e.visualization_source_refs_json,
         p.thread_id,p.situation_id,s.record_json AS situation_json,
-        a.outcome AS attention_outcome,x.experience_id
+        a.outcome AS attention_outcome,x.experience_id,
+        memory.memory_id
       FROM (SELECT encounter_id,occurred_at,story_json,visualization_source_refs_json
         FROM encounter_story_records WHERE occurred_at>=?
         ORDER BY occurred_at DESC,encounter_id DESC LIMIT ?) e
@@ -170,6 +171,16 @@ export function readWorldEventOverview(storage,{hours=24,now=new Date().toISOStr
         AND a.encounter_ref=e.encounter_id
       LEFT JOIN thread_encounter_experiences x ON x.thread_id=p.thread_id
         AND x.encounter_ref=e.encounter_id
+      LEFT JOIN thread_experience_consolidation_members member
+        ON member.experience_id=x.experience_id
+      LEFT JOIN thread_experience_consolidation_stages completed
+        ON completed.consolidation_id=member.consolidation_id AND completed.stage='complete'
+      LEFT JOIN autobiographical_memory_current_heads memory_head
+        ON memory_head.memory_id=json_extract(completed.payload_json,'$.memoryId')
+        AND memory_head.thread_id=p.thread_id
+      LEFT JOIN autobiographical_memory_records memory
+        ON memory.memory_id=memory_head.memory_id AND memory.revision=memory_head.revision
+        AND memory.status='current'
       ORDER BY e.occurred_at DESC,e.encounter_id,p.thread_id
     `).all(since,SOURCE_LIMIT);
     return projectWorldEventOverview({
