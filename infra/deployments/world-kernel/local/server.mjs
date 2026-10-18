@@ -352,21 +352,16 @@ export async function startWorldKernelFromEnvironment(
     onSituationResolved:scheduleNextLivedBoundary,
     onSituationEnacted:async(situation)=>{
       if(situation.location?.kind!=="place"||situation.wakefulness==="asleep")return;
-      const earned=livedExperienceStore.enqueueEnvironmentalOpportunity({
-        threadId:situation.threadId,
-        situationId:situation.situationId,
-        dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
-      });
-      if(earned.inserted)await reconciliationRuntime.requestWakeAfter(60_000);
       const venue=livedNowStore.getWorldPlace(
         situation.threadId,situation.location.placeRef,{required:false},
       )?.physicalVenue?.ref??null;
       if(venue!==null&&situation.wakefulness!=="asleep"){
         const social=livedExperienceStore.enqueueSocialOpportunity({
           threadId:situation.threadId,situationId:situation.situationId,
-          dueAt:new Date(Date.parse(situation.establishedAt)+60_000).toISOString(),
+          dueAt:situation.establishedAt,
         });
-        if(social.inserted)await reconciliationRuntime.requestWakeAfter(60_000);
+        if(social.inserted)await reconciliationRuntime.requestWakeAt(
+          Date.parse(situation.establishedAt));
       }
       const stayDueAt=worldStayOpportunityDueAt(
         situation,nextLivedBoundary(livedNowStore,situation),
