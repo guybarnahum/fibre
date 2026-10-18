@@ -161,6 +161,10 @@ export async function readAdminCanonicalPhoto(env, threadId, objectRef) {
   if (!portrait) return json(404, { error:"canonical_photo_not_found" });
   const stored = await createCloudflareObjectPort(env.PRESENTATION_OBJECTS).get(objectRef);
   if (stored === null) return json(404, { error:"canonical_photo_unavailable" });
+  if(portrait.asset.sha256 && portrait.asset.sha256.replace(/^sha256:/u,"")
+      !==stored.digest.replace(/^sha256:/u,"")){
+    return json(409, { error:"canonical_photo_digest_mismatch" });
+  }
   return new Response(stored.bytes, {
     headers:{
       "Content-Type":portrait.asset.mediaType,

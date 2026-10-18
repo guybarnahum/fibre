@@ -241,3 +241,38 @@ test("Admin sees only the thumbnail for the current public canonical portrait",a
   assert.deepEqual(resolved.assets.filter(a=>a.role==="portrait_thumbnail").map(a=>a.objectRef),
     ["thumb_current"],"Admin must not preview an obsolete portrait derivative");
 });
+
+test("Admin serves only the admitted Thread's canonical portrait at full resolution",async()=>{
+  const {readAdminCanonicalPhoto}=await import("./admin-worker.mjs");
+  const bytes=new Uint8Array([137,80,78,71,13,10,26,10]);
+  const ref="visual_identity_reference_current";
+  const digest="sha256:"+"a".repeat(64);
+  let bucketReads=0;
+  const world={
+    threadId:"thr_review",
+    embodiments:[{
+      kind:"portrait",status:"available",visibility:"public",
+      asset:{referenceObjectRef:ref,mediaType:"image/png",sha256:digest},
+    }],
+  };
+  const env={
+    WORLD_KERNEL:{async fetch(){return Response.json({identity:world});}},
+    PRESENTATION_OBJECTS:{
+      async get(key){
+        bucketReads++;
+        assert.equal(key,"fibre/objects/"+ref);
+        return {customMetadata:{"fibre-digest":digest,"fibre-metadata":"{}"},
+          async arrayBuffer(){return bytes.buffer;}};
+      },
+      async put(){},async head(){},
+    },
+  };
+  const ok=await readAdminCanonicalPhoto(env,"thr_review",ref);
+  assert.equal(ok.status,200,"Admitted canonical photo must be viewable");
+  assert.deepEqual(new Uint8Array(await ok.arrayBuffer()),bytes);
+  assert.equal(ok.headers.get("Cache-Control"),"private, no-store");
+
+  const other=await readAdminCanonicalPhoto(env,"thr_review","visual_identity_reference_foreign");
+  assert.equal(other.status,404,"A Thread must not expose another portrait");
+  assert.equal(bucketReads,1,"Unknown reference must not reach object storage");
+});
