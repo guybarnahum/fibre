@@ -11,7 +11,30 @@ canonical: true
 
 **Evidence checkpoint, October 13:** N1–N5 are closed within their stated scope; direct World dialogue and public Presentation SSE have real staging witnesses. **N6.6c's complete human browser lifecycle and N7.11's history-caused later social choice are not closed.** New typed wakefulness and Body work have separate acceptance boundaries: **Guy reports G1/D1 local validation passed**; D2 Body-to-planning/social-salience source is committed but awaits post-change local validation and staging proof. Typed wakefulness's own staging proof remains open. The earlier 1,581-test green result (October 11) predates subsequent source changes and is not blanket validation.
 
-## City magazine and self-directed social life (October 14)
+## Public World-place discovery and natural social co-presence (October 18)
+
+**Current source change — local validation and staging installation pending:**
+Fibre's City Guide is now an editorial *view of the existing verified World
+public venues*, not a repository JSON source. `world_public_places` keeps
+unchanged attested identity/geography and a small mutable `discovery_json`
+projection on that same row. An indexed city query offers at most six
+listed venues during the ordinary **prospective** personal Flight Plan; the
+Thread can select one or stay home. Operators can admit and curate venues
+through the existing `world-place` CLI, with no future Git changes or
+redeploys for editorial updates. The first deployment must apply the
+optional World column and then migrate the formerly bundled recommendations
+as data; verified Lisbon/Tbilisi/London/Addis place identities already exist.
+**No automatic social encounter, visitor, or venue visit is claimed.**
+
+**Immediate north-star gate:** first show one independently Thread-authored
+and World-enacted visit to an admitted public venue; then inspect two
+independently co-present Threads and their genuine `notice | ignore |
+initiate | decline` decision. Victor's October 18 transit/arrival proof
+closes real elapsed movement, but his Genesis learning context is not a
+publicly attested venue. This public-place step must not become a generic
+directory/infrastructure project.
+
+### Historical City Guide source evidence (October 14)
 
 Fibre has accepted the [Fibre City Guide](../architecture/social-city-guide.md) as its shared **editorial public directory** of plausible social and intellectual places. It replaces the previously named Guy conversational oracle. Place entries are keyed by city/country with stable identity, source, address, description and `lastRecommendedAt` (editorial refresh, **not** attendance). A Thread may remember somewhere meaningful, browse the guide, or remain home. Public places may be empty; never manufacture visits or conversation to fulfill need.
 
