@@ -7,6 +7,7 @@ import {
   listDiscoverableWorldPublicPlaces,setWorldPublicPlaceDiscovery,
 } from "../src/live-world-geography.mjs";
 import {formPersonalLivedPlan} from "../src/lived-plan-cognition.mjs";
+import {planningPublicDiscoveries} from "../src/lived-now-service.mjs";
 
 const at="2026-10-18T16:00:00Z", end="2026-10-18T20:00:00Z";
 const homeRef="per:world_discovery_home:1";
@@ -79,14 +80,17 @@ test("the same planning mind can choose a World-listed place or stay home",async
     const listing={listed:true,description:"Read or think alongside other visitors",
       lastRecommendedAt:"2026-10-18"};
     setWorldPublicPlaceDiscovery(db,{placeRef:place.ref,discovery:listing});
-    const guidePlaces=listDiscoverableWorldPublicPlaces(db,{
+    const store={listDiscoverablePublicPlaces:input=>
+      listDiscoverableWorldPublicPlaces(db,input)};
+    assert.deepEqual(planningPublicDiscoveries(store,{
       locality:"Lisbon",countryCode:"PT",
-    }).map(item=>({
-      ref:item.ref,description:item.discovery.description,
-      activities:item.affordances,
-      source:{directory:"World-attested venue",url:item.evidenceRef},
-      lastRecommendedAt:item.discovery.lastRecommendedAt,
-    }));
+    },"2026-10-17T16:00:00Z"),[],
+    "tomorrow's discovery leaked into a prior Flight Plan");
+    const guidePlaces=planningPublicDiscoveries(store,{
+      locality:"Lisbon",countryCode:"PT",
+    },at);
+    assert.deepEqual(guidePlaces.map(item=>item.ref),[place.ref],
+      "current World discovery failed to enter ordinary planning");
     const threadId="thr_world_discovery",thread={
       threadId,version:1,identity:{name:"A Thread"},
       currentState:{selfModel:"I enjoy thoughtful solitude.",unresolvedIntentions:[]},
