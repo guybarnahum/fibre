@@ -173,6 +173,8 @@ test("O1 uses available public World embodiment media when Presentation is missi
   assert.equal(resolved.assets[0].objectRef, "visual_identity_reference_1");
   assert.equal(resolved.assets[0].role, "canonical_portrait");
   assert.equal(resolved.assets[0].source, "world_embodiment");
+  assert.equal(resolved.assets[0].sha256, "sha256:abc",
+    "admitted canonical digest was lost before the identity review");
   assert.deepEqual(resolved.visualIdentity, {
     embodimentId:"emb_1",
     embodimentRevision:2,
