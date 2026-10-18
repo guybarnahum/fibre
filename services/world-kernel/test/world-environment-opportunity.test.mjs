@@ -14,7 +14,7 @@ const seed=JSON.parse(readFileSync(
 const AT="2026-10-08T17:24:00.000Z";
 const DUE="2026-10-08T17:25:00.000Z";
 
-test("an enacted arrival earns at most one observable event or an ordinary no_change",async()=>{
+test("an observed scene can earn one optional ambient change without fabricating attendance",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-world-arrival-"));
   const storage={
     infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
@@ -41,12 +41,12 @@ test("an enacted arrival earns at most one observable event or an ordinary no_ch
     const all=[...situations.values()];
     for(const situation of all){
       const first=experience.enqueueEnvironmentalOpportunity({
-        threadId:situation.threadId,situationId:situation.situationId,dueAt:DUE,
+        threadId:situation.threadId,situationId:situation.situationId,dueAt:DUE,kind:"stay",
       });
       const second=experience.enqueueEnvironmentalOpportunity({
-        threadId:situation.threadId,situationId:situation.situationId,dueAt:DUE,
+        threadId:situation.threadId,situationId:situation.situationId,dueAt:DUE,kind:"stay",
       });
-      assert.equal(first.inserted,true,"newly enacted life did not earn an opportunity");
+      assert.equal(first.inserted,true,"the World lost an already earned ambient opportunity");
       assert.equal(second.inserted,false,"same situation earned duplicate opportunities");
     }
     const calls=[];
@@ -121,7 +121,7 @@ test("an enacted arrival earns at most one observable event or an ordinary no_ch
     assert.equal(experience.nextEnvironmentalOpportunityAt(),null,
       "completed World opportunity left a polling wake");
     const noScene=experience.enqueueEnvironmentalOpportunity({
-      threadId:all[0].threadId,situationId:"sit_e7_nonexistent",dueAt:DUE,
+      threadId:all[0].threadId,situationId:"sit_e7_nonexistent",dueAt:DUE,kind:"stay",
     });
     assert.equal(noScene.inserted,true);
     const rejected=await process.runOnce();
@@ -138,15 +138,14 @@ test("an enacted arrival earns at most one observable event or an ordinary no_ch
 });
 
 
-test("an extended stay earns one independent World event consideration after a quiet arrival",async()=>{
+test("a scene has one sparse ambient consideration with independently perceiving visitors",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-world-extended-stay-"));
   const storage={
     infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
     stateScopeId:"world",
   };
   const arrive="2026-10-08T10:00:00.000Z";
-  const arrivalDue="2026-10-08T10:01:00.000Z";
-  const stayDue="2026-10-08T12:00:00.000Z";
+  const stayDue="2026-10-08T10:01:00.000Z";
   const people=["thr_world_stay_a","thr_world_stay_b"];
   const world=openWorldStore(storage);
   const threads=new Map(people.map((threadId)=> {
@@ -163,7 +162,7 @@ test("an extended stay earns one independent World event consideration after a q
   };
   const second={
     threadId:people[1],situationId:"sit_cafe_arrival_b",
-    establishedAt:"2026-10-08T11:45:00.000Z",
+    establishedAt:"2026-10-08T10:00:45.000Z",
     activity:"Having a quiet coffee.",wakefulness:"awake",
     location:{kind:"place",placeRef:"wpl_long_cafe"},
   };
@@ -172,16 +171,13 @@ test("an extended stay earns one independent World event consideration after a q
   try{
     assert.equal(worldStayOpportunityDueAt(first,"2026-10-08T13:00:00.000Z"),stayDue,
       "admitted long residence did not earn a later World occasion");
-    assert.equal(worldStayOpportunityDueAt(first,"2026-10-08T11:00:00.000Z"),null,
-      "brief visit was misrepresented as a long stay");
+    assert.equal(worldStayOpportunityDueAt(first,"2026-10-08T10:00:30.000Z"),null,
+      "a scene with no future observer time earned an ambient event");
     assert.equal(worldStayOpportunityDueAt({...first,wakefulness:"asleep"},
       "2026-10-08T13:00:00.000Z"),null,
       "known sleeping life earned a waking encounter opportunity");
 
-    store.enqueueEnvironmentalOpportunity({
-      threadId:first.threadId,situationId:first.situationId,dueAt:arrivalDue,
-    });
-    store.enqueueEnvironmentalOpportunity({
+     store.enqueueEnvironmentalOpportunity({
       threadId:first.threadId,situationId:first.situationId,
       dueAt:stayDue,kind:"stay",
     });
@@ -190,7 +186,7 @@ test("an extended stay earns one independent World event consideration after a q
       dueAt:stayDue,kind:"stay",
     }).inserted,false,"same long stay was scheduled twice");
 
-    let at=arrivalDue;
+    let at=stayDue;
     const invoked=[];
     const queued=[];
     let interruptWitness=true;
@@ -204,8 +200,7 @@ test("an extended stay earns one independent World event consideration after a q
           physicalVenue:{ref:"venue_stay_cafe",displayName:"The neighborhood café",
             locality:"Tucson",country:"US"},
         }),
-        listRecentCurrentSituations:()=>at===arrivalDue?[structuredClone(first)]
-          :[structuredClone(second)],
+        listRecentCurrentSituations:()=>[structuredClone(second)],
       },
       worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
       semanticStateStore:{listCurrentState:()=>[]},
@@ -214,12 +209,12 @@ test("an extended stay earns one independent World event consideration after a q
         async invoke(request){
           invoked.push(request.clientRequestId);
           if(request.clientRequestId.startsWith("world-initial-opportunity_")){
-            const changed=request.input.occurrenceAt===stayDue;
+            const changed=true;
             assert.equal(request.input.initiatingSituation.situationId,first.situationId);
             return {output:{
-              outcome:changed?"changed":"no_change",
-              occurrenceText:changed?"A sudden shower patters against the café windows.":null,
-              potentialObserverThreadIds:changed?people:[],
+              outcome:"changed",
+              occurrenceText:"A sudden shower patters against the café windows.",
+              potentialObserverThreadIds:people,
             }};
           }
           if(request.clientRequestId.startsWith("encounter-attention_")){
@@ -239,15 +234,7 @@ test("an extended stay earns one independent World event consideration after a q
       onExperienceQueued:async(item)=>queued.push(item.experienceId),
       now:()=>at,
     });
-    const quiet=await process.runOnce();
-    assert.equal(quiet.results[0].outcome,"no_change",
-      "arrival invented an objective event");
-    assert.equal(store.listEncounterStories(first.threadId).length,0);
-    assert.equal(store.nextEnvironmentalOpportunityAt(),stayDue,
-      "later opportunity was lost after the quiet arrival");
-
-    at=stayDue;
-    const interrupted=await process.runOnce();
+     const interrupted=await process.runOnce();
     assert.equal(interrupted.failed,1,
       "interrupted witness should leave the event pending for exact replay");
     const recovered=await process.runOnce();
@@ -265,7 +252,7 @@ test("an extended stay earns one independent World event consideration after a q
       null,"a missed event became a private experience");
     assert.equal(new Set(queued).size,1,
       "one noticed Experience produced multiple selective aftermath identities");
-    assert.equal(invoked.filter(id=>id.startsWith("world-initial-opportunity_")).length,2,
+    assert.equal(invoked.filter(id=>id.startsWith("world-initial-opportunity_")).length,1,
       "retry rerolled exterior World history");
     assert.equal(store.nextEnvironmentalOpportunityAt(),null,
       "finished long stay retained a recurring World wake");
