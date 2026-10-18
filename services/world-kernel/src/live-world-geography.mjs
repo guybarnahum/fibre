@@ -37,7 +37,8 @@ export function createLiveWorldGeographyTables(db){
       locality TEXT NOT NULL,
       country_code TEXT NOT NULL,
       record_json TEXT NOT NULL CHECK(json_valid(record_json)),
-      record_digest TEXT NOT NULL
+      record_digest TEXT NOT NULL,
+      discovery_json TEXT NOT NULL DEFAULT 'null' CHECK(json_valid(discovery_json))
     ) STRICT;
     CREATE INDEX IF NOT EXISTS idx_world_public_places_locality
       ON world_public_places(country_code,locality,place_ref);
@@ -61,9 +62,15 @@ export function createLiveWorldGeographyTables(db){
       PRIMARY KEY(thread_id,place_ref)
     ) STRICT;
   `);
+  // Migrate old World venue rows at schema installation, never per request.
+  const columns=db.prepare("PRAGMA table_info(world_public_places)").all();
+  if(!columns.some(column=>column.name==="discovery_json")){
+    db.exec("ALTER TABLE world_public_places ADD COLUMN discovery_json TEXT NOT NULL DEFAULT 'null' CHECK(json_valid(discovery_json))");
+  }
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_world_public_places_discovery
+    ON world_public_places(country_code,locality,place_ref)
+    WHERE json_extract(discovery_json,'$.listed')=1`);
 }
-
-
 
 function placeKey(value){return text("World place name",value).normalize("NFKC").toLocaleLowerCase("en-US");}
 
@@ -177,7 +184,7 @@ export function admitWorldPublicPlace(db,input){
     authority:WORLD_PLACE_AUTHORITY,
   });
   const existing=stored(db.prepare(
-    "SELECT record_json,record_digest FROM world_public_places WHERE place_ref=?",
+    "SELECT record_json,record_digest,discovery_json FROM world_public_places WHERE place_ref=?",
   ).get(record.ref),"public World place");
   if(existing!==null){
     if(canonicalJson(existing)!==canonicalJson(record)){
@@ -193,11 +200,59 @@ export function admitWorldPublicPlace(db,input){
   return record;
 }
 
+function publicPlaceFromRow(row){
+  const place=stored(row,"public World place");
+  if(place===null||row.discovery_json==="null")return place;
+  return Object.freeze({...place,discovery:Object.freeze(JSON.parse(row.discovery_json))});
+}
+
 export function getWorldPublicPlace(db,placeRef){
   if(typeof placeRef!=="string"||!placeRef.startsWith("wpl_"))return null;
-  return stored(db.prepare(
-    "SELECT record_json,record_digest FROM world_public_places WHERE place_ref=?",
-  ).get(placeRef),"public World place");
+  return publicPlaceFromRow(db.prepare(
+    "SELECT record_json,record_digest,discovery_json FROM world_public_places WHERE place_ref=?",
+  ).get(placeRef));
+}
+
+// Curating a venue is not changing its attested physical identity.
+export function setWorldPublicPlaceDiscovery(db,{placeRef,discovery}={}){
+  if(getWorldPublicPlace(db,placeRef)===null){
+    throw new TypeError("discovery requires an admitted public World place");
+  }
+  if(discovery!==null){
+    assertPlainObject("World place discovery",discovery);
+    const keys=Object.keys(discovery).sort();
+    if(canonicalJson(keys)!==canonicalJson(["description","lastRecommendedAt","listed"])){
+      throw new TypeError("discovery requires listed, description and lastRecommendedAt");
+    }
+    if(typeof discovery.listed!=="boolean")throw new TypeError("discovery listed must be boolean");
+    text("discovery description",discovery.description);
+    if(typeof discovery.lastRecommendedAt!=="string"
+      ||!/^\\d{4}-\\d{2}-\\d{2}$/u.test(discovery.lastRecommendedAt)
+      ||!Number.isFinite(Date.parse(discovery.lastRecommendedAt+"T00:00:00Z"))){
+      throw new TypeError("discovery requires a valid recommendation date");
+    }
+  }
+  const json=discovery===null?"null":canonicalJson({
+    listed:discovery.listed,description:discovery.description.trim(),
+    lastRecommendedAt:discovery.lastRecommendedAt,
+  });
+  db.prepare("UPDATE world_public_places SET discovery_json=? WHERE place_ref=?")
+    .run(json,placeRef);
+  return getWorldPublicPlace(db,placeRef);
+}
+
+export function listDiscoverableWorldPublicPlaces(db,{locality,countryCode,limit=6}={}){
+  text("World locality",locality);
+  text("World countryCode",countryCode);
+  if(!Number.isSafeInteger(limit)||limit<1||limit>12){
+    throw new TypeError("World discoverable places need bounded limit");
+  }
+  return Object.freeze(db.prepare(`SELECT record_json,record_digest,discovery_json
+    FROM world_public_places
+    WHERE country_code=? AND locality=? COLLATE NOCASE
+      AND json_extract(discovery_json,'$.listed')=1
+    ORDER BY place_ref LIMIT ?`
+  ).all(countryCode,locality,limit).map(publicPlaceFromRow));
 }
 
 export function listLocalWorldPublicPlaces(db,{locality,countryCode=null,limit=12}){
@@ -207,7 +262,7 @@ export function listLocalWorldPublicPlaces(db,{locality,countryCode=null,limit=1
     throw new TypeError("World venue discovery must be bounded");
   }
   const sql=countryCode===null
-    ?`SELECT record_json,record_digest FROM world_public_places
+    ?`SELECT record_json,record_digest,discovery_json FROM world_public_places
        WHERE locality=? COLLATE NOCASE ORDER BY place_ref LIMIT ?`
     :`SELECT record_json,record_digest FROM world_public_places
        WHERE country_code=? AND locality=? COLLATE NOCASE
@@ -215,7 +270,7 @@ export function listLocalWorldPublicPlaces(db,{locality,countryCode=null,limit=1
   const rows=countryCode===null
     ?db.prepare(sql).all(locality,limit)
     :db.prepare(sql).all(countryCode,locality,limit);
-  return rows.map(row=>stored(row,"public World place"));
+  return rows.map(publicPlaceFromRow);
 }
 
 // This is a current-life World attestation, never a rewriting of Genesis history.
