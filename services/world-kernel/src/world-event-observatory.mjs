@@ -66,15 +66,14 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
         summary:beats.filter(b=>typeof b.text==="string").map(b=>b.text).join(" · ").slice(0,440),
         actorThreadId:beats.find(b=>b.actorThreadId)?.actorThreadId??null,
         sourcePlaceEvidence:explicit?"source_reference":null,
-        witnesses:[],_locations:new Set(),
+        witnesses:[],
       };
       stories.set(row.encounter_id,event);
     }
     if(!row.thread_id)continue;
-    const situation=parse(row.situation_json);
-    const place=situation?.location?.kind==="place"
-      ?eventPlace(byRef,situation.location.placeRef):null;
-    if(place)event._locations.add(place.placeRef);
+    // A witness's situated location is not the source of a World occurrence.
+    // Remote lightning, distant sound and mediated encounters cannot be
+    // pinned to the observer's venue without independent event-location evidence.
     // Experience may belong to several consolidation rows. Those are
     // multiple consequences of one person's observation, not new witnesses.
     let witness=event.witnesses.find(item=>item.threadId===row.thread_id);
@@ -92,23 +91,21 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       witness.memoryLinks.push(row.memory_id);
     }
   }
+  const unlocatedEvents=[];
   for(const event of stories.values()){
-    if(!event.placeRef&&event._locations.size===1){
-      event.placeRef=[...event._locations][0];
-      event.sourcePlaceEvidence="single_verified_witness_place";
-    }
-    delete event._locations;
-    if(!event.placeRef)continue; // A remote witness does not locate a storm.
     event.witnesses.sort((a,b)=>a.threadId.localeCompare(b.threadId));
     for(const witness of event.witnesses){
       witness.memoryLinks.sort();
       witness.memoryLink=witness.memoryLinks[0]??null;
     }
-    events.push(event);
+    // Preserve unlocated World truth without inventing a map pin or pulse.
+    (event.placeRef?events:unlocatedEvents).push(event);
   }
 
-  events.sort((a,b)=>b.occurredAt.localeCompare(a.occurredAt)
-    ||a.eventRef.localeCompare(b.eventRef));
+  const byTime=(a,b)=>b.occurredAt.localeCompare(a.occurredAt)
+    ||a.eventRef.localeCompare(b.eventRef);
+  events.sort(byTime);
+  unlocatedEvents.sort(byTime);
   const eventsByPlace=new Map();
   for(const event of events){
     const current=eventsByPlace.get(event.placeRef)??[];
@@ -143,13 +140,14 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       situationsTruncated:situationRows.length>=sourceLimit,
       storiesTruncated:new Set(storyRows.map(r=>r.encounter_id)).size>=sourceLimit,
       privateCityActivity:"not_included",
+      unlocatedStories:"reported_separately_not_mapped",
       memory:"consolidated_current_records_only",laterImpact:"not_linked",
     },
     cities:[...cities.values()].sort((a,b)=>b.eventCount-a.eventCount
       ||a.name.localeCompare(b.name)),
     places:activePlaces.sort((a,b)=>b.eventCount-a.eventCount
       ||a.name.localeCompare(b.name)),
-    events,
+    events,unlocatedEvents,
   });
 }
 
