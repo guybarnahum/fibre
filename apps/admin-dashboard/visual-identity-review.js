@@ -65,7 +65,11 @@ function render(person,identity){
   const link=node("a",null,threadId);
   link.href="/thread/"+encodeURIComponent(threadId);
   link.target="_blank";link.rel="noopener";
-  title.append(link);card.append(title);
+  const correctionLink=node("a","correction-link","Correct FID photo ↗");
+  correctionLink.href=link.href+"#correct-official-id-photo";
+  correctionLink.target="_blank";correctionLink.rel="noopener";
+  correctionLink.title="Open this Thread's existing FID photo correction workflow";
+  title.append(link,correctionLink);card.append(title);
   const pair=node("div","pair");
   pair.append(preview("Canonical portrait",canonical,canonicalRef),
     preview("Official FID photo",fid,canonicalRef),

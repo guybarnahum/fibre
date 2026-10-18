@@ -18,6 +18,7 @@ let threadPageLoad = 0;
 let fidSectionLoad = 0;
 let threadPageWatchId = null;
 let stopThreadPageWatch = null;
+let focusedCorrectionThreadId = null;
 
 function ensureThreadPageWatch(threadId) {
   if (threadPageWatchId === threadId && stopThreadPageWatch !== null) return;
@@ -160,6 +161,15 @@ export async function renderThreadPage(threadId) {
       threadAppearanceSection(threadId,name),
     );
     host.replaceChildren(observatory);
+    if (location.hash === "#correct-official-id-photo"
+        && focusedCorrectionThreadId !== threadId) {
+      const correction = observatory.querySelector("#correct-official-id-photo");
+      if (correction) {
+        focusedCorrectionThreadId = threadId;
+        correction.scrollIntoView({block:"center"});
+        correction.focus({preventScroll:true});
+      }
+    }
     const placeholder=observatory.querySelector("[data-observatory-history]");
     if(placeholder){
       const loadButton=placeholder.querySelector("[data-load-history]");

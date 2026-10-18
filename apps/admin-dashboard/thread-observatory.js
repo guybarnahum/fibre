@@ -1459,6 +1459,7 @@ export function renderFidSection(identity, threadId) {
   actions.append(reissue);
 
   const correction=el("button","secondary thread-repair-button");
+  correction.id="correct-official-id-photo";
   correction.type="button";
   decorateActionButton(correction,{
     icon:"image",
