@@ -44,6 +44,7 @@ import { createContactWriteApi } from "#services/world-kernel/src/contact-write-
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { createThreadContactPerception } from "#services/world-kernel/src/thread-contact-perception.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { enactedActorOccurrence } from "#services/world-kernel/src/world-occurrence.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
 import { createGenesisFirstLifeProcess } from "#services/world-kernel/src/genesis-first-life-process.mjs";
 import { createWorldVenueWriteApi } from "#services/world-kernel/src/live-world-venue-write-api.mjs";
@@ -172,7 +173,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow=createLivedNowService({
         resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
@@ -215,7 +216,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow=createLivedNowService({
         resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,worldStore:runtime.worldStore,
         identityStore:openIdentityStore(runtime.worldStorage),
@@ -315,7 +316,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
             return livedNowModelAdapter.invoke(request);
           },
         },
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
       });
       let socialModelAdapter=null;
@@ -357,7 +358,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
@@ -403,7 +404,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
@@ -446,7 +447,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
@@ -525,7 +526,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
@@ -611,7 +612,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
         worldStore:runtime.worldStore,
@@ -681,7 +682,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const livedNow = createLivedNowService({
         resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
         livedNowStore,
         worldStore: runtime.worldStore,
@@ -743,7 +744,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
             return this.livedBoundaryModelAdapter.invoke(request);
           },
         },
-        onSituationEnacted:(situation)=>this.enqueueWorldOpportunity(situation),
+        onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
       });
       this.livedBoundaryProcess=createLivedBoundaryProcess({
@@ -758,9 +759,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.livedBoundaryProcess;
   }
 
-  async enqueueWorldOpportunity(situation){
-    // An enacted waking presence may earn future ambient activity; the
-    // arrival itself has already happened. No event is guaranteed.
+  async enqueueWorldOpportunity(situation,previous=null){
+    // Actor action is already World history at the exact enacted time.
+    // Plan renewals and activity refreshes are not fabricated arrivals.
+    const occurrence=enactedActorOccurrence(previous,situation);
     if(situation.location?.kind!=="place"||situation.wakefulness==="asleep")return;
     const store=openLivedExperienceStore(this.runtimeForRequest().worldStorage);
     const lived=openLivedNowStore(this.runtimeForRequest().worldStorage);
@@ -778,7 +780,12 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     const venue=lived.getWorldPlace(
       situation.threadId,situation.location.placeRef,{required:false},
     )?.physicalVenue?.ref??null;
-    if(venue!==null&&situation.wakefulness!=="asleep"){
+    if(venue!==null&&occurrence?.kind==="arrival"){
+      const present=lived.listCurrentVenueSituations({
+        venueRef:venue,at:occurrence.occurredAt,limit:8,
+        excludeThreadId:situation.threadId,
+      }).some(other=>other.wakefulness!=="asleep");
+      if(!present)return; // Empty venues do not manufacture a counterparty.
       const social=store.enqueueSocialOpportunity({
         threadId:situation.threadId,situationId:situation.situationId,
         // Arrival itself is already World history. Evaluate the resulting
