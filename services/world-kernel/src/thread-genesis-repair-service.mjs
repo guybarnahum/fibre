@@ -954,7 +954,6 @@ export function createThreadGenesisRepairService({
       const currentPortrait = currentCanonicalPortrait(embodimentReader, threadId);
       if (currentPortrait !== null
         && (currentPortrait.status !== "available" || typeof currentPortrait.asset?.referenceObjectRef !== "string")
-        && currentPortrait.specificationDigest !== null
       ) {
         throw new TypeError("physical appearance migration requires the admitted canonical root");
       }
