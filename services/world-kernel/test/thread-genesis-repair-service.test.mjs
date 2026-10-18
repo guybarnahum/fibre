@@ -49,7 +49,7 @@ function validatingActivityRecorder(state) {
   };
 }
 
-function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null, visualIdentityRepairService = null, identityUpdater = NO_IDENTITY_UPDATE } = {}) {
+function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null, visualIdentityRepairService = null, identityUpdater = NO_IDENTITY_UPDATE, missingCanonicalPortrait = false } = {}) {
   const threadId = "thr_repair_1";
   const objectRef = "visual_identity_reference_1";
   const officialMediaId = "media_identity_1";
@@ -86,7 +86,7 @@ function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null,
   const service = createThreadGenesisRepairService({
     worldReader:{ getThread(id, options = {}) { return id === threadId ? thread : (options.required === false ? null : undefined); } },
     civilRegistry:{ getCivilRegistrationByThreadId(id) { return id === threadId ? { fibreIdentityNumber:"ABCD-12-EFGH" } : null; } },
-    embodimentReader:{ listCurrent(id) { return id === threadId ? [embodiment] : []; } },
+    embodimentReader:{ listCurrent(id) { return id === threadId && !missingCanonicalPortrait ? [embodiment] : []; } },
     presentationReader:{ async getSnapshot(id) { return id === threadId ? state.presentation : null; } },
     presentationDelivery:{
       async rebuildThreadPresentation(id) {
@@ -942,4 +942,44 @@ test("appearance migration suggests birthplace defaults without treating them as
     undefined,
     "diverse birthplace preselected a physical reference",
   );
+});
+
+test("legacy migration with no portrait establishes its first canonical identity from durable ancestry",async()=>{
+  const ancestry=[{population:"Operator-confirmed family physical origin",share:1,referencePopulation:"eur_south"}];
+  let established=null;
+  const physicalGenomeMigrator={
+    migrate(thread,{physicalAncestry}){
+      assert.deepEqual(physicalAncestry,{maternal:ancestry,paternal:ancestry});
+      const physicalGenome=resolveBirthPhysicalInheritance({
+        maternalAncestry:ancestry,paternalAncestry:ancestry,seed:"legacy-first-portrait",
+      }).genome;
+      thread.genome.physical=physicalGenome;
+      return {thread,physicalGenome,eventId:"evt_first_physical_migration",migrated:true,reused:false};
+    },
+  };
+  const visualIdentityRepairService={
+    establish(input){
+      established=input;
+      return {embodiment:{revision:1,status:"pending_generation",
+        specification:input.specification,specificationDigest:embodimentSpecificationDigest(input.specification)}};
+    },
+    repair(){throw new Error("a first portrait must not supersede a nonexistent root");},
+  };
+  const {service,threadId,thread}=fixture({
+    physicalGenomeMigrator,visualIdentityRepairService,missingCanonicalPortrait:true,
+  });
+  const initial=await service.diagnose(threadId);
+  assert.equal(initial.findings.some(f=>f.code==="CANONICAL_EMBODIMENT_MISSING"),true);
+  const result=await service.migrate(threadId,{
+    migrationId:"physical_embodiment_v2",migrationKey:"initial_physical_migration",
+    input:{physicalAncestry:{maternal:ancestry,paternal:ancestry},
+      reason:"Establish an initial physical and visual authority from reviewed parental origin."},
+  });
+  assert.equal(result.migrated,true,"initial inheritance was not admitted");
+  assert.equal(thread.genome.physical.version,"physical-genome-v0.3");
+  assert.equal(established?.threadId,threadId,"initial canonical authority was not established");
+  assert.deepEqual(established?.evidenceReferences,["evt_first_physical_migration"],
+    "initial appearance must trace the accepted physical migration");
+  assert.equal(result.visualIdentityCorrection.embodiment.revision,1,
+    "first Embodiment was misrepresented as a correction");
 });
