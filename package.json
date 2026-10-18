@@ -121,7 +121,6 @@
     "thread-journey:probe": "node tools/deployment/run-with-progress.mjs thread-journey:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/thread-journey-probe.mjs",
     "world-social:probe": "node tools/deployment/run-with-progress.mjs world-social:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/world-social-probe.mjs",
     "world-place": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/world/world-place.mjs",
-    "city-guide:list": "node --disable-warning=ExperimentalWarning tools/world/city-guide.mjs",
     "appearance:review": "node tools/appearance/visual-identity-review.mjs"
   },
   "engines": {
