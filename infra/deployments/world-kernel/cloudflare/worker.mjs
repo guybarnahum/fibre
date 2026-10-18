@@ -618,7 +618,7 @@ export class FibreWorldDurableObject extends DurableObject {
       }
       const raw=url.searchParams.get("hours")??"24";
       if([...url.searchParams.keys()].some(key=>key!=="hours")
-        ||!/^\\d{1,3}$/u.test(raw)||Number(raw)<1||Number(raw)>168){
+        ||!/^\d{1,3}$/u.test(raw)||Number(raw)<1||Number(raw)>168){
         return Response.json({error:"INVALID_WORLD_EVENT_WINDOW"},{status:400});
       }
       return Response.json(readWorldEventOverview(this.worldStorage,{
