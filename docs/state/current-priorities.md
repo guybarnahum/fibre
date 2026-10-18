@@ -11,6 +11,33 @@ canonical: true
 
 **Evidence checkpoint, October 13:** N1–N5 are closed within their stated scope; direct World dialogue and public Presentation SSE have real staging witnesses. **N6.6c's complete human browser lifecycle and N7.11's history-caused later social choice are not closed.** New typed wakefulness and Body work have separate acceptance boundaries: **Guy reports G1/D1 local validation passed**; D2 Body-to-planning/social-salience source is committed but awaits post-change local validation and staging proof. Typed wakefulness's own staging proof remains open. The earlier 1,581-test green result (October 11) predates subsequent source changes and is not blanket validation.
 
+## One World occurrence and independent perception (October 18)
+
+**Accepted design; replacement is in progress, not staging-proven.** The
+[World occurrence architecture](../architecture/world-occurrences-and-perception.md)
+replaces arrival/environment/stay/social timer silos with two factual sources:
+actual enacted actor actions and independently authored ambient changes. One
+objective event may be potentially perceived by many separately living
+individuals, but notice and response are their own judgments. An ambient
+opportunity is *not* an event, a quota, or an assertion that unobserved
+reality stops. Its compute work will be keyed to one active scene, not each
+Thread. The previous per-Thread minute/arrival queue is transitional.
+
+**First source slice on main:** classify authentic LivedNow departure and
+arrival by the actual preceding/current World-enacted situations. An
+unchanged-place plan renewal and Genesis start do not count as arrival.
+Only an arriving Thread with independently current awake company at an
+attested venue earns the existing immediate social consideration. This is
+**not yet** independently noticed actor presence, symmetric social choice,
+the new scene-owned ambient frontier or staging acceptance. Guy must run
+local focused and full validation before deployment.
+
+**Critical path remains:** one genuine independently chosen and enacted
+public-place visit; subsequent independently overlapping Thread presence;
+an optionally noticed actor/ambient occurrence; voluntary human/Thread
+or Thread/Thread encounter; and individual history bending a later choice.
+Do not let the World-event replacement become a generic scheduler project.
+
 ## Public World-place discovery and natural social co-presence (October 18)
 
 **Current source change — local validation and staging installation pending:**
