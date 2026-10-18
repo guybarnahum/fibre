@@ -5,7 +5,7 @@ import {
 } from "./persistence-common.mjs";
 
 const FRESH_MS=60*60_000;
-const STAY_MS=2*60*60_000;
+const AMBIENT_MINUTE_MS=60_000;
 const FOLLOWUP_MS=30*60_000;
 
 // Only the initiating Thread's private scene is available to this World
@@ -18,16 +18,18 @@ function observedPlace(livedNowStore,threadId,placeRef,initiatorThreadId){
   return livedNowStore.getWorldPlace(threadId,placeRef,{required:false});
 }
 
-// An enacted, waking place stay can earn one later exterior chance, only if
-// its already-authoritative Flight Plan covers the occasion. No life wake.
+// An occupied, waking scene may earn one *ambient consideration* at the
+// next civil minute. The minute is only a scheduling/coalescing granularity:
+// no event is required, and there is no repeating minute tick. Arrivals are
+// already enacted World facts and do not wait for this opportunity.
 export function worldStayOpportunityDueAt(situation,nextBoundaryAt){
   if(situation?.location?.kind!=="place"||situation.wakefulness==="asleep"
     ||nextBoundaryAt===null)return null;
   const start=Date.parse(situation.establishedAt);
   const boundary=Date.parse(nextBoundaryAt);
-  if(!Number.isFinite(start)||!Number.isFinite(boundary)
-    ||boundary<start+STAY_MS+60_000)return null;
-  return new Date(start+STAY_MS).toISOString();
+  if(!Number.isFinite(start)||!Number.isFinite(boundary))return null;
+  const due=Math.floor(start/AMBIENT_MINUTE_MS+1)*AMBIENT_MINUTE_MS;
+  return boundary>due?new Date(due).toISOString():null;
 }
 
 // One bounded earned opportunity, never a standing weather loop. A distant
@@ -79,29 +81,36 @@ export function createWorldEnvironmentOpportunity({
               &&overdue>=0&&overdue<=FRESH_MS
               &&age>=0
               &&(opportunity.kind==="stay"
-                ?age>=STAY_MS:age<=FRESH_MS);
-            const candidates=eligible
-              ?livedNowStore.listRecentCurrentSituations({
-                at,since:new Date(Date.parse(at)-FRESH_MS).toISOString(),limit:8,
-              }).filter((item)=>item.location?.kind==="place")
-              :[];
-            // A long stay remains current until the admitted Flight Plan's
-            // boundary. Its original timestamp need not look recently arrived.
-            if(eligible&&!candidates.some((item)=>item.threadId===opportunity.threadId)){
-              candidates.unshift(current);
-            }
-            // A home is not a shared venue, but World already knows this
-            // Thread's admitted private setting. Use its own description for
-            // grounded exterior consideration without disclosing it to peers.
+                ?Date.parse(opportunity.dueAt)>Date.parse(situation.establishedAt)
+                :age<=FRESH_MS);
+            // A private scene can only expose its owner. A verified shared
+            // venue uses the presence index, including long-stayers; recent
+            // exterior situations may additionally witness a distant event
+            // when the World author finds actual perceptibility.
             const origin=eligible
               ?observedPlace(livedNowStore,opportunity.threadId,
                 situation.location.placeRef,opportunity.threadId):null;
             const physicalVenue=origin?.physicalVenue??null;
-            // Without grounded physical venue geography we can authorize a
-            // private local opportunity, not conjecture distant sight lines.
-            const observableCandidates=physicalVenue===null
-              ?candidates.filter((item)=>item.threadId===opportunity.threadId)
-              :candidates;
+            const venueCandidates=eligible&&physicalVenue!==null
+              &&typeof livedNowStore.listCurrentVenueSituations==="function"
+              ?livedNowStore.listCurrentVenueSituations({
+                venueRef:physicalVenue.ref,at:opportunity.dueAt,limit:8,
+              }):[];
+            const recentCandidates=eligible&&physicalVenue!==null
+              ?livedNowStore.listRecentCurrentSituations({
+                at:opportunity.dueAt,
+                since:new Date(Date.parse(opportunity.dueAt)-FRESH_MS).toISOString(),
+                limit:8,
+              }):[];
+            const byThread=new Map();
+            for(const candidate of [current,...venueCandidates,...recentCandidates]){
+              if(candidate?.location?.kind!=="place"
+                ||candidate.wakefulness==="asleep")continue;
+              if(physicalVenue===null&&candidate.threadId!==opportunity.threadId)continue;
+              if(!byThread.has(candidate.threadId))byThread.set(candidate.threadId,candidate);
+              if(byThread.size===8)break;
+            }
+            const observableCandidates=eligible?[...byThread.values()]:[];
             const candidateScenes=observableCandidates.map((item)=>{
               const place=item.threadId===opportunity.threadId
                 ?origin:observedPlace(livedNowStore,item.threadId,
