@@ -237,7 +237,7 @@ export function createAdminDashboardWorker({ authenticate = authenticateAccessRe
       if (url.pathname.startsWith("/api/")) return json(404, { error:"not_found" });
       if (!env.ASSETS?.fetch) return json(503, { error:"assets_unavailable" });
       const assetRequest = isAdminPage(url.pathname)
-        ? new Request(new URL("/index.html", request.url), request)
+        ? new Request(new URL("/", request.url), request)
         : request;
       const asset = await env.ASSETS.fetch(assetRequest);
       if (asset.status !== 404 || !isDocumentRequest(request, url.pathname)) {

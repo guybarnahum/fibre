@@ -331,7 +331,7 @@ test("Admin serves real pages and gives missing documents HTTP 404 instead of Ac
     authorize:async()=>true,
   });
   const pages=new Map([
-    ["/index.html", "<h1>Activity</h1>"],
+    ["/", "<h1>Activity</h1>"],
     ["/visual-identity-review.html", "<h1>Visual identity review</h1>"],
     ["/404.html", "<h1>404 · Page not found</h1>"],
     ["/styles.css", "body{}"],
@@ -339,6 +339,8 @@ test("Admin serves real pages and gives missing documents HTTP 404 instead of Ac
   const env={ASSETS:{async fetch(request){
     const path=new URL(request.url).pathname;
     seen.push(path);
+    // Cloudflare's canonical redirect from /index.html to / must never be triggered.
+    if(path==="/index.html")return Response.redirect("https://admin.insidefibre.com/",308);
     const text=pages.get(path);
     return text===undefined
       ?new Response("not found",{status:404})
@@ -363,5 +365,7 @@ test("Admin serves real pages and gives missing documents HTTP 404 instead of Ac
   const asset=await worker.fetch(new Request("https://admin.insidefibre.com/missing.js"),env);
   assert.equal(asset.status,404);
   assert.doesNotMatch(await asset.text(),/Page not found/u,"A missing script must not receive a document");
+  assert.equal(seen.includes("/index.html"),false,
+    "Admin must never fetch canonical-redirected /index.html for page routes");
   assert.ok(seen.includes("/404.html"),"The dedicated not-found page was not served");
 });
