@@ -37,6 +37,7 @@ import {
 
 import {
   admitWorldPublicPlace,admitWorldPrivatePlace,createLiveWorldGeographyTables,
+  listDiscoverableWorldPublicPlaces,setWorldPublicPlaceDiscovery,
   getWorldPrivatePlace,getWorldPublicPlace,getWorldPlaceEntity,
   listKnownWorldPlaces,listLocalWorldPublicPlaces,resolveWorldPlace,coarseWorldPlace,
 } from "./live-world-geography.mjs";
@@ -658,6 +659,15 @@ export class LivedNowStore {
 
   listPublicPlacesByLocality({locality,countryCode,limit=12}){
     return listLocalWorldPublicPlaces(this.#database,{locality,countryCode,limit});
+  }
+
+  setPublicPlaceDiscovery(input){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot edit discovery");
+    return this.#database.transaction(()=>setWorldPublicPlaceDiscovery(this.#database,input));
+  }
+
+  listDiscoverablePublicPlaces({locality,countryCode,limit=6}={}){
+    return listDiscoverableWorldPublicPlaces(this.#database,{locality,countryCode,limit});
   }
 
   listPublicPlacesNearCurrentLife(threadId,{limit=12}={}){
