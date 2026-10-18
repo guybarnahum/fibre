@@ -953,6 +953,7 @@ export function createThreadGenesisRepairService({
       }
       const currentPortrait = currentCanonicalPortrait(embodimentReader, threadId);
       if (currentPortrait !== null
+        && current.genome?.physical?.version !== PHYSICAL_GENOME_VERSION
         && (currentPortrait.status !== "available" || typeof currentPortrait.asset?.referenceObjectRef !== "string")
       ) {
         throw new TypeError("physical appearance migration requires the admitted canonical root");
