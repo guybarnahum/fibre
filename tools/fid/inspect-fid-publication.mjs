@@ -57,8 +57,9 @@ export function inspectFidPublication({ world, authority, publicSnapshot, previo
     && asset.role === `fibre_identity_card_${role}` && asset.status === "ready");
   const front = cardAsset("front");
   const back = cardAsset("back");
-  const matches = (published, authoritative) => published?.locator === authoritative?.objectRef
-    && published?.sha256 === authoritative?.digest;
+  const matches = (published, authoritative) => Boolean(published && authoritative
+    && published.locator === authoritative.objectRef
+    && published.sha256 === authoritative.digest);
 
   const checks = {
     worldCanonicalPresent:canonicalRef !== null,
