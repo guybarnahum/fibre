@@ -6,6 +6,7 @@ import { createAppearanceCoverageService } from "#services/world-kernel/src/appe
 import { createThreadMigrationSummaryService } from "#services/world-kernel/src/thread-migration-summary-service.mjs";
 import { openAutobiographicalMemoryInspectionStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { openContactInspectionStore } from "#services/world-kernel/src/contact-store.mjs";
+import { openEmbodimentInspectionStore } from "#services/world-kernel/src/embodiment-store.mjs";
 import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
@@ -790,7 +791,29 @@ export class FibreWorldDurableObject extends DurableObject {
       if (request.method !== "GET") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } }, { status:405 });
       const identity = this.directoryForRequest().get(decodeURIComponent(identityMatch[1]));
       if (identity === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
-      return Response.json({ contract:"fibre-world-thread-identity-v0.3", identity });
+      const embodiments = openEmbodimentInspectionStore(this.worldStorage);
+      let canonicalPortraits;
+      try {
+        canonicalPortraits = embodiments.listCurrent(identity.threadId)
+          .filter(item => item.kind === "portrait" && item.visibility === "public"
+            && item.status === "available" && item.asset?.referenceObjectRef)
+          .map(({ embodimentId, revision, kind, status, visibility, asset }) => ({
+            embodimentId, revision, kind, status, visibility,
+            asset:{
+              referenceObjectRef:asset.referenceObjectRef,
+              sha256:asset.sha256,
+              mediaType:asset.mediaType,
+              width:asset.width,
+              height:asset.height,
+            },
+          }));
+      } finally {
+        embodiments.close();
+      }
+      return Response.json({
+        contract:"fibre-world-thread-identity-v0.3",
+        identity:{ ...identity, embodiments:canonicalPortraits },
+      });
     }
     const observatoryMatch = THREAD_OBSERVATORY_ROUTE.exec(url.pathname);
     if (observatoryMatch !== null) {
