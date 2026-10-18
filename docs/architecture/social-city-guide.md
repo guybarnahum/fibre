@@ -28,10 +28,12 @@ The operator's small `data/social-city-guide-admissions.json` accompanies the ed
 **October 18, 2026 Lisbon candidate slice:** three externally sourced editorial
 possibilities (Biblioteca Palácio Galveias, the Gulbenkian gardens, and Museu
 do Aljube) are proposed with independently mapped coordinates in the existing
-admission manifest. Their `worldPlaceRef` is intentionally `null` until
-World returns its own admitted references. The pilot is motivated by the
-observed Lisbon Thread's enacted journeys, but neither the operator nor a
-fixture chooses his future destination. An optional
+admission manifest. Guy admitted all three venues to staging World on October 18 and supplied
+their authoritative `wpl_*` references, now recorded in the manifest. Their
+admission does **not** yet mean the updated catalogue is deployed to World
+or that Victor has read it, visited a venue or encountered anyone.
+The pilot is motivated by the observed Lisbon Thread's enacted journeys,
+but neither the operator nor a fixture chooses his future destination. An optional
 `world-social:probe -- --env staging --thread thr_...` checks one actual
 Thread without a 40-person Observatory scan. Venue admission, a subsequently
 deployed City Guide, an ordinary Thread-owned choice, enacted public stay,
