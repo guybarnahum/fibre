@@ -29,7 +29,8 @@ test("FID continuity requires a new, canonical-derived active photo and both pub
     ]},
   };
   const data = {
-    world:{observatory:{embodiments:[{kind:"portrait",status:"available",visibility:"public",asset:{referenceObjectRef:canonicalRef}}]}},
+    world:{observatory:{embodiments:[{kind:"portrait",status:"available",visibility:"public",asset:{referenceObjectRef:canonicalRef,sha256:"sha256:root"}}]}},
+    worldIdentity:{contract:"fibre-world-thread-identity-v0.3",identity:{threadId:"thr_example",embodiments:[{asset:{referenceObjectRef:canonicalRef,sha256:"sha256:root"}}]}},
     authority:{active},
     publicSnapshot:{snapshot},
     previousPhotoRef:"photo_old",
