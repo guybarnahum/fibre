@@ -201,7 +201,7 @@
             "directory": "Bibliotecas de Lisboa",
             "url": "https://blx.cm-lisboa.pt/horarios-e-contactos/biblioteca-palacio-galveias/"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_100bb86898ee72284fc292e871ec6b50d6e94e62cbc17b9d2ba1a09b9e1f4f33"
         },
         "gulbenkian-gardens": {
           "name": "Gulbenkian Foundation Gardens",
@@ -217,7 +217,7 @@
             "directory": "Calouste Gulbenkian Foundation",
             "url": "https://gulbenkian.pt/en/useful-information/"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_1edaa48076aa6fdfa0932e3f2dcf90cd3edf8e607e22923c1990b59c91484a32"
         },
         "museu-do-aljube": {
           "name": "Museu do Aljube — Resistência e Liberdade",
@@ -233,7 +233,7 @@
             "directory": "Museu do Aljube",
             "url": "https://www.museudoaljube.pt/en/how-to-get-there/"
           },
-          "worldPlaceRef": null
+          "worldPlaceRef": "wpl_f08c6093e5a8f2a555736b9a6c4f2ec9a0cb83cae1cce087f6015dc784c405f6"
         }
       }
     }
