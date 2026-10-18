@@ -38,7 +38,8 @@ export function createLiveWorldGeographyTables(db){
       country_code TEXT NOT NULL,
       record_json TEXT NOT NULL CHECK(json_valid(record_json)),
       record_digest TEXT NOT NULL,
-      discovery_json TEXT NOT NULL DEFAULT 'null' CHECK(json_valid(discovery_json))
+      discovery_json TEXT NOT NULL DEFAULT 'null' CHECK(json_valid(discovery_json)),
+      appearance_json TEXT NOT NULL DEFAULT 'null' CHECK(json_valid(appearance_json))
     ) STRICT;
     CREATE INDEX IF NOT EXISTS idx_world_public_places_locality
       ON world_public_places(country_code,locality,place_ref);
@@ -66,6 +67,9 @@ export function createLiveWorldGeographyTables(db){
   const columns=db.prepare("PRAGMA table_info(world_public_places)").all();
   if(!columns.some(column=>column.name==="discovery_json")){
     db.exec("ALTER TABLE world_public_places ADD COLUMN discovery_json TEXT NOT NULL DEFAULT 'null' CHECK(json_valid(discovery_json))");
+  }
+  if(!columns.some(column=>column.name==="appearance_json")){
+    db.exec("ALTER TABLE world_public_places ADD COLUMN appearance_json TEXT NOT NULL DEFAULT 'null' CHECK(json_valid(appearance_json))");
   }
   db.exec(`CREATE INDEX IF NOT EXISTS idx_world_public_places_discovery
     ON world_public_places(country_code,locality,place_ref)
@@ -184,7 +188,7 @@ export function admitWorldPublicPlace(db,input){
     authority:WORLD_PLACE_AUTHORITY,
   });
   const existing=stored(db.prepare(
-    "SELECT record_json,record_digest,discovery_json FROM world_public_places WHERE place_ref=?",
+    "SELECT record_json,record_digest,discovery_json,appearance_json FROM world_public_places WHERE place_ref=?",
   ).get(record.ref),"public World place");
   if(existing!==null){
     if(canonicalJson(existing)!==canonicalJson(record)){
@@ -202,15 +206,51 @@ export function admitWorldPublicPlace(db,input){
 
 function publicPlaceFromRow(row){
   const place=stored(row,"public World place");
-  if(place===null||row.discovery_json==="null")return place;
-  return Object.freeze({...place,discovery:Object.freeze(JSON.parse(row.discovery_json))});
+  if(place===null)return null;
+  return Object.freeze({
+    ...place,
+    ...(row.discovery_json&&row.discovery_json!=="null"
+      ?{discovery:Object.freeze(JSON.parse(row.discovery_json))}:{}),
+    ...(row.appearance_json&&row.appearance_json!=="null"
+      ?{appearance:Object.freeze(JSON.parse(row.appearance_json))}:{}),
+  });
 }
 
 export function getWorldPublicPlace(db,placeRef){
   if(typeof placeRef!=="string"||!placeRef.startsWith("wpl_"))return null;
   return publicPlaceFromRow(db.prepare(
-    "SELECT record_json,record_digest,discovery_json FROM world_public_places WHERE place_ref=?",
+    "SELECT record_json,record_digest,discovery_json,appearance_json FROM world_public_places WHERE place_ref=?",
   ).get(placeRef));
+}
+
+// A visual seed describes one possible view; it never becomes evidence of
+// the place's actual geometry or of events that happened there.
+export function setWorldPublicPlaceAppearance(db,{placeRef,appearance}={}){
+  if(getWorldPublicPlace(db,placeRef)===null){
+    throw new TypeError("appearance requires an admitted public World place");
+  }
+  if(appearance!==null){
+    assertPlainObject("World place appearance",appearance);
+    const keys=Object.keys(appearance).sort();
+    if(canonicalJson(keys)!==canonicalJson(["assetRef","projection","prompt","viewpoint"])){
+      throw new TypeError("appearance requires prompt, viewpoint, projection and assetRef");
+    }
+    text("World place appearance prompt",appearance.prompt);
+    text("World place appearance viewpoint",appearance.viewpoint);
+    if(!["perspective","equirectangular"].includes(appearance.projection)){
+      throw new TypeError("World place projection must be perspective or equirectangular");
+    }
+    if(appearance.assetRef!==null){
+      text("World place appearance assetRef",appearance.assetRef);
+    }
+  }
+  const json=appearance===null?"null":canonicalJson({
+    prompt:appearance.prompt.trim(),viewpoint:appearance.viewpoint.trim(),
+    projection:appearance.projection,assetRef:appearance.assetRef,
+  });
+  db.prepare("UPDATE world_public_places SET appearance_json=? WHERE place_ref=?")
+    .run(json,placeRef);
+  return getWorldPublicPlace(db,placeRef);
 }
 
 // Curating a venue is not changing its attested physical identity.
@@ -262,9 +302,9 @@ export function listLocalWorldPublicPlaces(db,{locality,countryCode=null,limit=1
     throw new TypeError("World venue discovery must be bounded");
   }
   const sql=countryCode===null
-    ?`SELECT record_json,record_digest,discovery_json FROM world_public_places
+    ?`SELECT record_json,record_digest,discovery_json,appearance_json FROM world_public_places
        WHERE locality=? COLLATE NOCASE ORDER BY place_ref LIMIT ?`
-    :`SELECT record_json,record_digest,discovery_json FROM world_public_places
+    :`SELECT record_json,record_digest,discovery_json,appearance_json FROM world_public_places
        WHERE country_code=? AND locality=? COLLATE NOCASE
        ORDER BY place_ref LIMIT ?`;
   const rows=countryCode===null
