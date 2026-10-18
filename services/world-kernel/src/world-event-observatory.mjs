@@ -26,6 +26,8 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       name:place.displayName,city:place.locality,country:place.country,
       countryCode:place.countryCode,lat:place.lat,long:place.long,
       discoveryListed:parse(row.discovery_json)?.listed===true,
+      description:parse(row.discovery_json)?.description??null,
+      appearance:parse(row.appearance_json)??null,
     });
     byRef.set(site.placeRef,site);
     if(site.venueRef)byRef.set(site.venueRef,site);
@@ -143,7 +145,7 @@ export function readWorldEventOverview(storage,{hours=24,now=new Date().toISOStr
   const since=new Date(Date.parse(now)-hours*3_600_000).toISOString();
   const db=openWorldStateDatabase(storage,{readOnly:true,storeName:"WorldEventObservatory"});
   try{
-    const placeRows=db.prepare(`SELECT record_json,discovery_json
+    const placeRows=db.prepare(`SELECT record_json,discovery_json,appearance_json
       FROM world_public_places ORDER BY country_code,locality,place_ref
       LIMIT ?`).all(PLACE_LIMIT);
     const situationRows=db.prepare(`
