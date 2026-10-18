@@ -71,15 +71,21 @@ function options(argv) {
   };
 }
 
-function deployment() {
+function deployment({ diagnose = false } = {}) {
   const path = resolve(REPO_ROOT, ".fibre", "cloudflare", "staging", "deployment.json");
   const record = JSON.parse(readFileSync(path, "utf8"));
   if (record?.environment !== "staging") throw new Error("deployment evidence is not staging");
   const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd:REPO_ROOT, encoding:"utf8" }).trim();
   const status = execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd:REPO_ROOT, encoding:"utf8" }).trim();
   if (status !== "") throw new Error("appearance operation requires a clean working tree");
-  if (record.sourceTreeClean !== true || record.sourceGitSha !== head) {
+  if (record.sourceTreeClean !== true || (!diagnose && record.sourceGitSha !== head)) {
     throw new Error(`staging deployment ${record.sourceGitSha ?? "unknown"} does not match current clean checkout ${head}`);
+  }
+  if (diagnose && record.sourceGitSha !== head) {
+    progress("read_only_deployment_revision", {
+      deployedGitSha:record.sourceGitSha ?? null,
+      checkoutGitSha:head,
+    });
   }
   return record;
 }
@@ -269,7 +275,7 @@ async function main() {
   const mode=diagnose?"diagnose":migrate?"migration":rerender?"rerender":"correction";
 
   progress("inspect_current_identity", { threadId, mode });
-  const deployed = deployment();
+  const deployed = deployment({ diagnose });
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   progress("verify_repair_contract", { expectedContract:THREAD_REPAIR_CONTRACT });
