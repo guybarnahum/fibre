@@ -44,7 +44,7 @@ import { createContactWriteApi } from "#services/world-kernel/src/contact-write-
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
 import { createThreadContactPerception } from "#services/world-kernel/src/thread-contact-perception.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
-import { enactedActorOccurrence } from "#services/world-kernel/src/world-occurrence.mjs";
+import { enactedActorOccurrence,coPresentAtActorArrival } from "#services/world-kernel/src/world-occurrence.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
 import { createGenesisFirstLifeProcess } from "#services/world-kernel/src/genesis-first-life-process.mjs";
 import { createWorldVenueWriteApi } from "#services/world-kernel/src/live-world-venue-write-api.mjs";
@@ -781,10 +781,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       situation.threadId,situation.location.placeRef,{required:false},
     )?.physicalVenue?.ref??null;
     if(venue!==null&&occurrence?.kind==="arrival"){
-      const present=lived.listCurrentVenueSituations({
-        venueRef:venue,at:occurrence.occurredAt,limit:8,
-        excludeThreadId:situation.threadId,
-      }).some(other=>other.wakefulness!=="asleep");
+      const present=coPresentAtActorArrival(lived,occurrence,venue).length>0;
       if(!present)return; // Empty venues do not manufacture a counterparty.
       const social=store.enqueueSocialOpportunity({
         threadId:situation.threadId,situationId:situation.situationId,
