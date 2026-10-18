@@ -668,7 +668,10 @@ function memoriesSection(memories, birthDate, memoryError = null) {
 
   timeline.append(track);
   wrap.append(timeline, detail);
-  selectMemory(ordered.length - 1);
+  const requestedMemoryId=new URLSearchParams(globalThis.location?.search??"").get("memory");
+  const requestedIndex=requestedMemoryId===null?-1
+    :ordered.findIndex(memory=>memory.memoryId===requestedMemoryId);
+  selectMemory(requestedIndex>=0?requestedIndex:ordered.length-1);
   return wrap;
 }
 
