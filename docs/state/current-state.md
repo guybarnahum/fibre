@@ -133,22 +133,32 @@ The next source correction makes the probe label these legacy situations
 admitting a zero-duration transition between different physical place refs.
 The planner must supply an actual positive travel gap, and the existing
 World transit boundary enacts it. The historical plans remain unchanged.
-A genuinely model-chosen journey with scheduled and enacted transit remains
-unproven on staging. The corrective source has not yet been locally
-validated or deployed.
+That was the October 17 limitation; October 18 evidence below supersedes
+it without rewriting the historical zero-gap plans.
 
-## Natural journey evidence (probe source, staging outcome open)
+## Natural journey evidence — October 18 staging witness
 
-Full World Observatory can now show the recent personal Flight Plans behind
-the last eight enacted situations, even after plan renewal. A new read-only
-`thread-journey:probe` compares those plans with enacted departure, transit
-and arrival, producing a dated local evidence record without creating a
-journey or forcing a Thread's next wake. Actual independent authorship,
-absence of manual ensure, and new-destination novelty require additional
-operator evidence and are **not yet claimed**. This slice is source only
-until local validation and staging inspection.
+Full World Observatory retains recent Thread-owned Flight Plans and their
+World-enacted situations across plan renewal. Guy's October 18, 14:25 UTC
+read-only `thread-journey:probe` for Victor observed two
+`journey_enacted` transitions with personal OpenAI provenance, positive
+30-minute transit intervals, and actual World departure/transit/arrival
+witnesses. The newest outbound transit began at 13:45:00 UTC and arrived
+at 14:15:01 UTC under the 12:13:18 UTC Thread-authored plan. The 00:13 UTC
+plan also has enacted transit/arrival evidence; one outbound departure
+was absent from the bounded recent-situation window.
 
-## Spatial continuity (locally validated and deployed to staging; natural journey proof open)
+This **closes the bounded Thread-authored spatial-travel enactment proof**,
+not proof of scheduler causation without external influence, a never-before
+known destination, a verified physical venue, or a spontaneous meeting.
+Victor's selected `live-world-place-admission-v1` learning context carries
+historic Lisbon environment prose rather than an independently admitted
+venue identity. A separate real public-venue visit remains the next S1F
+social-place acceptance. The newest local checkout may be ahead of the
+deployed World due to unrelated Admin/appearance changes; that alone is not
+a new World runtime requirement.
+
+## Spatial continuity (staging travel evidence accepted; verified public venue open)
 
 Newly admitted Flight Plans can no longer jump implausibly quickly between
 two geographically grounded distant places. World checks one conservative,
@@ -162,7 +172,8 @@ includes enacted World-entity destinations and travel endpoints.
 
 Guy reported on October 17, 2026 that the full local validation passed
 and the World service was deployed to staging. That confirms source validation
-and staging deployment, **not** a naturally Thread-chosen completed journey.
+and staging deployment; the October 18 World-enacted journey evidence above
+adds a real Thread-chosen completed movement proof.
 This is a lower-bound feasibility check, not road/rail/air itinerary planning,
 and it does not automatically shift or regenerate an impossible Flight Plan.
 
