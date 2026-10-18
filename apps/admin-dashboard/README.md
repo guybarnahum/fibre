@@ -28,6 +28,16 @@ unlocated occurrences, human physical presence, and downstream causal
 behavioral evidence remain open; their absence on this map is not evidence
 that life or events did not happen.
 
+**Place appearance (source-only extension, October 18):** selecting an attested
+public venue now shows its independently stored World description and optional
+visual seed: prompt, camera viewpoint, panorama/perspective projection and
+generated-asset reference. The seed is editable through
+`world-place appearance` without committing JSON or changing stable venue
+identity. It is not an actual image, verified architectural geometry, or
+evidence of a visit. Panorama generation, asset delivery, and a 360° viewer
+remain deferred. The current map does not yet cover private places or
+all unmapped encounters.
+
 See [World Observatory](../../docs/architecture/world-observatory.md) for the
 complete intended zoom/timeline/causality design. This implementation needs
 local validation and **both World Kernel and Admin Dashboard staging
