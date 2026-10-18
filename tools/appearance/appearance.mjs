@@ -166,12 +166,13 @@ async function presentation({ threadPresentation, threadId }) {
   return payload(response, "Thread Presentation snapshot");
 }
 
-function canonicalPortrait(observatoryBody) {
+function canonicalPortrait(observatoryBody, { allowMissing = false } = {}) {
   const portraits = (observatoryBody?.observatory?.embodiments ?? []).filter((entry) => (
     entry?.kind === "portrait"
     && entry?.representationKind === "synthetic_generation"
     && entry?.visibility === "public"
   ));
+  if (allowMissing && portraits.length === 0) return null;
   if (portraits.length !== 1) throw new Error(`expected one current canonical portrait, found ${portraits.length}`);
   return portraits[0];
 }
@@ -315,7 +316,7 @@ async function main() {
     return;
   }
 
-  const before=canonicalPortrait(beforeObservatory);
+  const before=canonicalPortrait(beforeObservatory,{allowMissing:migrate});
   const physicalAncestry=ancestryFile===null
     ? null
     : JSON.parse(readFileSync(resolve(process.cwd(),ancestryFile),"utf8"));
@@ -329,6 +330,9 @@ async function main() {
     : null;
   if(migrate&&migrationFinding===null){
     throw new Error("appearance migration is not available for this Thread");
+  }
+  if (migrate && physicalAncestry === null && migrationFinding.migration?.evidence === null) {
+    throw new Error("appearance migration needs reviewed parental physical ancestry: supply --physical-ancestry-file=<path>");
   }
   const operationKey = `appearance_${mode}_${createHash("sha256")
     .update(JSON.stringify({
@@ -347,8 +351,8 @@ async function main() {
   const previousFidCredentialVersion = previousFidCard?.credentialVersion ?? null;
 
   progress(migrate ? "submit_appearance_migration" : rerender ? "submit_appearance_rerender" : "submit_appearance_correction", {
-    previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
-    previousSpecificationDigest:before.specificationDigest ?? null,
+    previousCanonicalReferenceObjectRef:before?.asset?.referenceObjectRef ?? null,
+    previousSpecificationDigest:before?.specificationDigest ?? null,
     previousFidCredentialId,
   });
   const changed = migrate
@@ -374,7 +378,7 @@ async function main() {
     : rerender ? changed?.visualIdentityRenewal : changed?.visualIdentityCorrection;
   const pendingRevision = result?.embodiment?.revision;
   if (!Number.isSafeInteger(pendingRevision)) throw new Error("visual identity change did not return an Embodiment revision");
-  if (rerender && result.embodiment.specificationDigest !== before.specificationDigest) {
+  if (rerender && result.embodiment.specificationDigest !== before?.specificationDigest) {
     throw new Error("appearance rerender changed the authoritative visual specification");
   }
   if (migrate && result?.reused === true && result.embodiment.status === "available") {
@@ -413,7 +417,7 @@ async function main() {
       threadId,
       operationKey,
       specificationDigest:result.embodiment.specificationDigest,
-      previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
+      previousCanonicalReferenceObjectRef:before?.asset?.referenceObjectRef ?? null,
       canonicalReferenceObjectRef,
       embodimentRevision:result.embodiment.revision,
       fidCredentialId:credential.credentialId,
@@ -431,7 +435,7 @@ async function main() {
       return portrait.status === "available"
         && portrait.revision > pendingRevision
         && portrait.asset?.referenceObjectRef
-        && portrait.asset.referenceObjectRef !== before.asset?.referenceObjectRef;
+        && portrait.asset.referenceObjectRef !== before?.asset?.referenceObjectRef;
     },
     DEFAULT_TIMEOUT_MS,
     {
@@ -507,7 +511,7 @@ async function main() {
     threadId,
     operationKey,
     specificationDigest:corrected.specificationDigest,
-    previousCanonicalReferenceObjectRef:before.asset?.referenceObjectRef ?? null,
+    previousCanonicalReferenceObjectRef:before?.asset?.referenceObjectRef ?? null,
     canonicalReferenceObjectRef,
     embodimentRevision:corrected.revision,
     previousFidCredentialId,
