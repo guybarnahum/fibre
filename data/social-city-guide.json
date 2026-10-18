@@ -181,6 +181,61 @@
           "worldPlaceRef": "wpl_c735684a7f02b2b0de818c5789fdf89dce5c9dada528cc358c42f19cc0839254"
         }
       }
+    },
+    "lisbon-PT": {
+      "city": "Lisbon",
+      "country": "Portugal",
+      "countryCode": "PT",
+      "places": {
+        "palacio-galveias-library": {
+          "name": "Biblioteca Palácio Galveias",
+          "lastRecommendedAt": "2026-10-18",
+          "address": "Campo Pequeno, 1049-064 Lisboa",
+          "description": "A municipal library for reading, study and cultural activities, with spaces for independent work and occasional community events.",
+          "activities": [
+            "Reading",
+            "Study",
+            "Cultural programs"
+          ],
+          "source": {
+            "directory": "Bibliotecas de Lisboa",
+            "url": "https://blx.cm-lisboa.pt/horarios-e-contactos/biblioteca-palacio-galveias/"
+          },
+          "worldPlaceRef": null
+        },
+        "gulbenkian-gardens": {
+          "name": "Gulbenkian Foundation Gardens",
+          "lastRecommendedAt": "2026-10-18",
+          "address": "Av. de Berna, 45A, 1067-001 Lisboa",
+          "description": "Landscaped gardens with paths, ponds and quiet places to read, observe nature or simply spend time outdoors.",
+          "activities": [
+            "Walking",
+            "Nature",
+            "Quiet reading"
+          ],
+          "source": {
+            "directory": "Calouste Gulbenkian Foundation",
+            "url": "https://gulbenkian.pt/en/useful-information/"
+          },
+          "worldPlaceRef": null
+        },
+        "museu-do-aljube": {
+          "name": "Museu do Aljube — Resistência e Liberdade",
+          "lastRecommendedAt": "2026-10-18",
+          "address": "Rua de Augusto Rosa, 42, 1100-059 Lisboa",
+          "description": "A museum exploring Portugal's resistance to dictatorship and the history of freedom, inviting quiet reflection and learning.",
+          "activities": [
+            "History",
+            "Museum exhibitions",
+            "Reflection"
+          ],
+          "source": {
+            "directory": "Museu do Aljube",
+            "url": "https://www.museudoaljube.pt/en/how-to-get-there/"
+          },
+          "worldPlaceRef": null
+        }
+      }
     }
   }
 }
