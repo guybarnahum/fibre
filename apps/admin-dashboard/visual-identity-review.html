@@ -4,38 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Fibre Admin · Visual Identity Review</title>
-  <style>
-    :root{font:14px/1.5 Inter,system-ui,sans-serif;color:#282723;background:#efebe3}
-    *{box-sizing:border-box}body{margin:0;padding:28px clamp(15px,4vw,52px)}
-    button,input{font:inherit}button{cursor:pointer}
-    header{display:flex;align-items:start;justify-content:space-between;gap:24px;margin-bottom:22px}
-    h1{font:400 clamp(28px,4vw,45px)/1.1 Georgia,serif;margin:3px 0 12px}
-    .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:#766b5a}
-    header p{max-width:760px;color:#655f55;margin:0}
-    .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0}
-    .controls button,.review button{border:1px solid #a8a297;background:#faf8f3;border-radius:6px;padding:8px 12px}
-    button:hover,button:focus-visible{border-color:#504b43;background:#e1d9cd}
-    button:disabled{opacity:.55;cursor:wait}
-    .status{font-size:12px;color:#6e6359;min-height:20px;margin:0 0 17px}
-    #rows{display:grid;gap:10px}
-    article{background:#fff;border:1px solid #d8d0c5;border-radius:11px;padding:12px;min-width:0}
-    article.mismatch{border-left:5px solid #ae5145}
-    article h2{font-size:15px;margin:0 0 10px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
-    article h2 a{font-size:11px;color:#746757;text-decoration:underline}
-    .pair{display:grid;grid-template-columns:repeat(2,minmax(0,160px));gap:12px;max-width:100%}
-    .pane{border:1px solid #e4dfd5;border-radius:8px;background:#f7f5ef;padding:9px;min-width:0}
-    .pane h3{font-size:11px;line-height:1.3;font-weight:650;min-height:28px;margin:0 0 7px}
-    .pane img{display:block;width:100%;max-width:128px;aspect-ratio:1/1;height:auto;object-fit:contain;background:#e5dfd3}
-    .meta{margin:7px 0 0;font:10px/1.4 ui-monospace,monospace;color:#71695d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .missing{font-size:12px;color:#994c40}
-    .review{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:11px}
-    .review button.selected[data-decision=match]{background:#e1f2e9;border-color:#568c70}
-    .review button.selected[data-decision=mismatch]{background:#fae1db;border-color:#b15a4a}
-    .review button.selected[data-decision=uncertain]{background:#f4e9c3;border-color:#ad8c39}
-    .review input{flex:1;min-width:220px;padding:8px;border:1px solid #c7beb1;border-radius:5px}
-    .state-warning{color:#975b32}
-    @media(max-width:650px){.pair{grid-template-columns:repeat(2,minmax(0,1fr));max-width:320px}body{padding:14px}}
-  </style>
+  <link rel="stylesheet" href="/visual-identity-review.css">
   <script src="/admin-session.js"></script>
   <script type="module" src="/visual-identity-review.js"></script>
 </head>

@@ -383,3 +383,15 @@ test("Cloudflare Admin assets serve the dedicated 404 page natively", async()=>{
   assert.equal(config.assets.run_worker_first,true,
     "Admin routes must still pass through the Worker");
 });
+
+test("Visual identity reviewer loads its image comparison styles under Admin CSP",async()=>{
+  const {readFile}=await import("node:fs/promises");
+  const page=await readFile(new URL("../../../../apps/admin-dashboard/visual-identity-review.html",import.meta.url),"utf8");
+  const styles=await readFile(new URL("../../../../apps/admin-dashboard/visual-identity-review.css",import.meta.url),"utf8");
+  assert.match(page,/rel="stylesheet" href="\/visual-identity-review\.css"/u,
+    "Reviewer stylesheet is not loaded");
+  assert.doesNotMatch(page,/<style(?:\s|>)/u,
+    "Inline CSS is blocked by Admin CSP");
+  assert.match(styles,/grid-template-columns:repeat\(2,/u,
+    "Canonical and FID photos must share one row");
+});
