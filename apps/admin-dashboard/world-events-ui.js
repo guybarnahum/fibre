@@ -85,9 +85,9 @@ export function renderWorldEventsPage(){
   const unlocatedPanel=el("section","panel world-events-unlocated-panel");
   const unlocatedHeading=el("div","world-events-panel-title");
   const unlocatedCount=el("span");
-  unlocatedHeading.append(el("h2",null,"Unlocated World occurrences"),unlocatedCount);
+  unlocatedHeading.append(el("h2",null,"Unmapped World occurrences"),unlocatedCount);
   const unlocatedDescription=el("p","world-events-muted",
-    "These admitted stories have no independently verified occurrence location. An observer's whereabouts cannot locate a distant event.");
+    "These admitted stories cannot be pinned within this bounded map. Their location may be unknown or outside the sampled venues; an observer's position is not evidence of event origin.");
   const unlocatedTimeline=el("div","world-events-timeline world-events-unlocated-timeline");
   unlocatedPanel.append(unlocatedHeading,unlocatedDescription,unlocatedTimeline);
   const caveat=el("p","world-events-muted world-events-caveat",
@@ -274,11 +274,11 @@ export function renderWorldEventsPage(){
   }
   function drawUnlocated(){
     unlocatedTimeline.replaceChildren();
-    const events=snapshot?.unlocatedEvents??[];
-    unlocatedCount.textContent=`${events.length} admitted, not geographically located`;
+    const events=snapshot?.unmappedEvents??[];
+    unlocatedCount.textContent=`${events.length} admitted, not mapped`;
     if(!events.length){
       unlocatedTimeline.append(el("p","world-events-muted",
-        "No unlocated stories in this bounded window."));
+        "No unmapped stories in this bounded window."));
       return;
     }
     for(const event of events)unlocatedTimeline.append(worldEventCard(event));
@@ -313,7 +313,7 @@ export function renderWorldEventsPage(){
       if(payload.contract!=="fibre-world-event-observatory-v0.1")throw Error("World event contract mismatch");
       snapshot=payload;
       const truncated=Object.entries(payload.coverage??{}).some(([k,v])=>k.endsWith("Truncated")&&v);
-      summary.textContent=`${payload.events.length} located events · ${(payload.unlocatedEvents??[]).length} unlocated stories · ${activeWorldEventCities(payload).length} active cities · ${payload.places.length} verified places · last ${payload.hours} hours${truncated?" · bounded source sample":""}`;
+      summary.textContent=`${payload.events.length} located events · ${(payload.unmappedEvents??[]).length} unmapped stories · ${activeWorldEventCities(payload).length} active cities · ${payload.places.length} verified places · last ${payload.hours} hours${truncated?" · bounded source sample":""}`;
       chooseCity(payload.cities.some(city=>city.key===selectedCity)?selectedCity:
         (activeWorldEventCities(payload)[0]??payload.cities[0])?.key??null);
       drawUnlocated();
