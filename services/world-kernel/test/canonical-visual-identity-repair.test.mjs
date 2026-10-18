@@ -380,3 +380,32 @@ test("operator repair is accepted by real Embodiment authority", () => {
     rmSync(dir, { recursive:true, force:true });
   }
 });
+
+test("a legacy Thread without a portrait establishes one initial canonical lineage", () => {
+  const recorded = [];
+  const service = createCanonicalVisualIdentityRepairService({
+    embodimentStore:{
+      listCurrent:()=>recorded,
+      record(candidate){ recorded.push(candidate); return candidate; },
+    },
+    now:()=>"2026-10-18T20:00:00.000Z",
+  });
+  const result = service.establish({
+    threadId:THREAD_ID,
+    operationKey:"appearance_initial_migration",
+    specification:specification("one genetically inherited adult face with stable features"),
+    reason:"Establish the first embodied canonical visual identity from approved physical inheritance.",
+    evidenceReferences:["evt_physical_migration_proof"],
+  });
+  assert.equal(result.previous,null,"a first portrait cannot supersede a nonexistent root");
+  assert.equal(result.embodiment.revision,1,"initial canonical portrait must start at revision one");
+  assert.equal(result.embodiment.status,"pending_generation","initial canonical portrait must enter generation");
+  assert.equal(result.embodiment.specification.subject.partyId,THREAD_ID,"a first portrait must depict its own Thread");
+  assert.throws(()=>service.establish({
+    threadId:THREAD_ID,
+    operationKey:"appearance_initial_migration_again",
+    specification:specification("another portrait"),
+    reason:"Attempt to replace a portrait by restating a first-time appearance migration.",
+    evidenceReferences:["evt_physical_migration_proof"],
+  }),/cannot replace an existing portrait/,"first-portrait establishment cannot overwrite identity");
+});
