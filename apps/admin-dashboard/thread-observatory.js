@@ -410,7 +410,7 @@ function hero(identity, threadId, livedNow=null) {
   portrait.dataset.lifeStatus=lifeState;
   portrait.title=lifeDescription;
   if (image) {
-    const preview=imageButton(image, `${name ?? "Thread"} portrait`, "thread-person-portrait-button",portraitThumbnailAsset(identity)?.url??image.url,threadId);
+    const preview=imageButton(image, `${name ?? "Thread"} portrait`, "thread-person-portrait-button",image.url,threadId);
     preview.title=lifeDescription;
     portrait.append(preview);
   } else if (admittedPortrait) {
