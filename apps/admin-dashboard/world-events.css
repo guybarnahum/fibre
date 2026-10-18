@@ -44,6 +44,8 @@
 .world-events-witness span{color:var(--muted,#8b9ca7);font-size:11px}
 .world-events-attention{font-weight:620}
 .world-events-evidence-note{font-size:11px;opacity:.65;line-height:1.4;margin:11px 0 0}
+.world-events-unlocated-panel{padding:20px;min-width:0}
+.world-events-unlocated-timeline{max-height:380px}
 .world-events-caveat{margin:0 0 22px}
 .world-events-window{display:flex;align-items:center;gap:7px;font-size:12px}
 .world-events-window select{min-width:114px}
