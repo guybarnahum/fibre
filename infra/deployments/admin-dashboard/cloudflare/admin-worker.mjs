@@ -1,4 +1,5 @@
 import { reverseGeoNamesPlace, searchGeoNamesPlaces } from "#integrations/geography/geonames.mjs";
+import { createCloudflareObjectPort } from "#infra/providers/cloudflare";
 
 import baseWorker, {
   authenticateAccessRequest,
@@ -44,6 +45,7 @@ export { FibreAdminInfraMonitor } from "./infra-monitor-do.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
+const THREAD_CANONICAL_PHOTO_ROUTE = /^\/api\/threads\/([^/]+)\/canonical-photo\/([^/]+)$/u;
 const THREAD_OBSERVATORY_ROUTE = /^\/api\/threads\/([^/]+)\/observatory$/u;
 const THREAD_JOURNAL_ROUTE = /^\/api\/threads\/([^/]+)\/journal$/u;
 const THREAD_MEETING_ROUTE = /^\/api\/threads\/([^/]+)\/meet-threads$/u;
@@ -136,9 +138,35 @@ function adminIdentity(identity) {
       ...asset,
       url: asset.source === "current_public_presentation"
         ? `/api/thread-assets/${encodeURIComponent(asset.objectRef)}`
-        : null,
+        : asset.source === "world_embodiment" && asset.role === "canonical_portrait"
+          && identity.visualIdentity?.referenceObjectRefs?.includes(asset.objectRef)
+          ? `/api/threads/${encodeURIComponent(identity.threadId)}/canonical-photo/${encodeURIComponent(asset.objectRef)}`
+          : null,
       deliveryStatus: asset.source === "current_public_presentation" ? "published" : "world_only",
     }))),
+  });
+}
+
+export async function readAdminCanonicalPhoto(env, threadId, objectRef) {
+  const world = await resolveAdminWorldThreadIdentity({
+    threadId, fetchImpl: bindingFetch(env, "WORLD_KERNEL"),
+  });
+  if (world === null) return json(404, { error:"thread_not_found" });
+  const portrait = (world.embodiments ?? []).find((item) =>
+    item.kind === "portrait"
+    && item.status === "available"
+    && item.visibility === "public"
+    && item.asset?.referenceObjectRef === objectRef
+    && item.asset?.mediaType?.startsWith("image/"));
+  if (!portrait) return json(404, { error:"canonical_photo_not_found" });
+  const stored = await createCloudflareObjectPort(env.PRESENTATION_OBJECTS).get(objectRef);
+  if (stored === null) return json(404, { error:"canonical_photo_unavailable" });
+  return new Response(stored.bytes, {
+    headers:{
+      "Content-Type":portrait.asset.mediaType,
+      "Cache-Control":"private, no-store",
+      "X-Content-Type-Options":"nosniff",
+    },
   });
 }
 
@@ -521,6 +549,7 @@ export default {
     }
 
     const identityMatch = THREAD_IDENTITY_ROUTE.exec(url.pathname);
+    const canonicalPhotoMatch = THREAD_CANONICAL_PHOTO_ROUTE.exec(url.pathname);
     const observatoryMatch = THREAD_OBSERVATORY_ROUTE.exec(url.pathname);
     const journalMatch = THREAD_JOURNAL_ROUTE.exec(url.pathname);
     const meetingMatch = THREAD_MEETING_ROUTE.exec(url.pathname);
@@ -553,7 +582,7 @@ export default {
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
     const adminDelete = request.method === "DELETE" && (appearanceExperimentMatch || appearanceExperimentAlignmentMatch);
@@ -888,6 +917,11 @@ export default {
             return json(400,{error:"unsupported_observatory_view"});
           }
           return proxyThreadObservatory(env, threadId, view);
+        }
+        if (canonicalPhotoMatch) {
+          const threadId = id("threadId", decodeURIComponent(canonicalPhotoMatch[1]));
+          const objectRef = id("objectRef", decodeURIComponent(canonicalPhotoMatch[2]));
+          return readAdminCanonicalPhoto(env, threadId, objectRef);
         }
         if (identityMatch) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);

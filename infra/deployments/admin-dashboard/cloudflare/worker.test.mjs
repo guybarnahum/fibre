@@ -392,6 +392,6 @@ test("Visual identity reviewer loads its image comparison styles under Admin CSP
     "Reviewer stylesheet is not loaded");
   assert.doesNotMatch(page,/<style(?:\s|>)/u,
     "Inline CSS is blocked by Admin CSP");
-  assert.match(styles,/grid-template-columns:repeat\(2,/u,
-    "Canonical and FID photos must share one row");
+  assert.match(styles,/grid-template-columns:repeat\(3,/u,
+    "Canonical, FID, and thumbnail must share one row");
 });

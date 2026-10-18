@@ -30,8 +30,12 @@ function preview(role,asset,canonicalRef){
     const img=node("img",role.startsWith("Canonical")?"canonical-thumb":null);
     img.src=asset.url;img.alt=role;img.loading="lazy";img.decoding="async";
     img.onerror=()=>img.replaceWith(node("p","missing","Image unavailable"));
-    pane.append(img);
-  }else pane.append(node("p","missing","Image missing or not published"));
+    const link=node("a");
+    link.href=asset.url;link.target="_blank";link.rel="noopener";
+    link.title="Open image at original resolution";
+    link.append(img);
+    pane.append(link);
+  }else pane.append(node("p","missing","Image missing or not available"));
   const meta=node("p","meta",role.startsWith("Canonical")
     ?"Canonical ref: "+(canonicalRef??"unavailable")
     :"Media: "+(asset?.objectRef??"unavailable")
@@ -63,8 +67,9 @@ function render(person,identity){
   link.target="_blank";link.rel="noopener";
   title.append(link);card.append(title);
   const pair=node("div","pair");
-  pair.append(preview("Canonical-derived thumbnail",thumb,canonicalRef),
-    preview("Published official FID photo",fid,canonicalRef));
+  pair.append(preview("Canonical portrait",canonical,canonicalRef),
+    preview("Official FID photo",fid,canonicalRef),
+    preview("Derived thumbnail",thumb,canonicalRef));
   card.append(pair);
   if(thumb?.url&&!canonicalRef)
     card.append(node("p","state-warning","Canonical reference is missing from the current identity projection."));
