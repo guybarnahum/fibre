@@ -55,6 +55,7 @@ const THREAD_FID_PHOTO_CORRECTION_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/photo-
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
 const THREAD_ASSET_ROUTE = /^\/api\/thread-assets\/([^/]+)$/u;
 const THREAD_POPULATION_ROUTE = "/api/threads/population";
+const WORLD_EVENTS_ROUTE = "/api/world-events";
 const APPEARANCE_COVERAGE_ROUTE = "/api/appearance/coverage";
 const APPEARANCE_EXPERIMENTS_ROUTE = "/api/appearance/experiments";
 const APPEARANCE_EXPERIMENT_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)$/u;
@@ -246,6 +247,22 @@ async function proxyThreadMeeting(request, env, initiatorThreadId) {
       "Cache-Control":"no-store",
       "X-Content-Type-Options":"nosniff",
       "Referrer-Policy":"no-referrer",
+    },
+  });
+}
+
+async function proxyWorldEvents(env,hours){
+  const upstream=await serviceBinding(env,"WORLD_KERNEL").fetch(new Request(
+    `https://world.internal/internal/world-events/overview?hours=${hours}`,{
+      headers:{Accept:"application/json","x-fibre-private-token":privateToken(env)},
+    },
+  ));
+  return new Response(upstream.body,{
+    status:upstream.status,
+    headers:{
+      "Content-Type":"application/json; charset=utf-8",
+      "Cache-Control":"no-store",
+      "X-Content-Type-Options":"nosniff",
     },
   });
 }
@@ -562,6 +579,7 @@ export default {
     const fidPhotoCorrectionMatch = THREAD_FID_PHOTO_CORRECTION_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
     const threadPopulation = url.pathname === THREAD_POPULATION_ROUTE;
+    const worldEvents = url.pathname === WORLD_EVENTS_ROUTE;
     const appearanceCoverageRequest = url.pathname === APPEARANCE_COVERAGE_ROUTE;
     const appearanceExperimentsRequest = url.pathname === APPEARANCE_EXPERIMENTS_ROUTE;
     const appearanceExperimentMatch = APPEARANCE_EXPERIMENT_ROUTE.exec(url.pathname);
@@ -586,7 +604,7 @@ export default {
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (worldEvents || identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
     const adminDelete = request.method === "DELETE" && (appearanceExperimentMatch || appearanceExperimentAlignmentMatch);
@@ -832,6 +850,14 @@ export default {
         if (pendingBirths) return proxyBirthCenterGet(env, "/internal/births/pending");
         if (birthplaces) return proxyBirthCenterGet(env, "/internal/births/places");
         if (birthPlaceSearch) return searchBirthPlaces(request, env);
+        if(worldEvents){
+          const raw=url.searchParams.get("hours")??"24";
+          if([...url.searchParams.keys()].some(key=>key!=="hours")
+            ||!/^\\d{1,3}$/u.test(raw)||Number(raw)<1||Number(raw)>168){
+            return json(400,{error:"invalid_world_event_window"});
+          }
+          return proxyWorldEvents(env,Number(raw));
+        }
         if (threadPopulation) {
           const environment = id("FIBRE_ENVIRONMENT", env.FIBRE_ENVIRONMENT);
           const worldKernel=serviceBinding(env,"WORLD_KERNEL");
