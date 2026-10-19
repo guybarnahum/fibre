@@ -68,6 +68,7 @@ function sourceStores({ threadId, memoryId, rememberedMeaning }) {
           retentionState:"available",
           salience:0.9,
           asOf:"2026-09-21T12:00:00.000Z",
+          recordedAt:"2026-09-21T12:00:00.000Z",
           rememberedMeaning,
           rememberedContent:"A prior ordinary experience.",
         }];
