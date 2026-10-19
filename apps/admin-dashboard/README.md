@@ -61,9 +61,14 @@ formative history. Genesis execution time and the child's historical
 life must never be merged. Technical operation lineage belongs in
 **Raw Activity**, not in the semantic timeline.
 
-**Implementation pending.** The current Causal Trail below remains
-the deployed/source behavior; a documented screen or Causal Witness
-does not prove the UX or decision provenance already exists.
+**Slice 1 source implemented, deployment not yet verified.** Activity
+no longer renders its indented Causal Trail; /life?thread=... is a
+read-only recent World-situation timeline with a selected-moment
+inspector and exact linked-plan purpose where available. Raw Activity
+retains diagnostics. The compact Thread-detail redesign, lifetime
+history, Genesis formation and Causal Witnesses remain subsequent
+slices; see [four-slice plan](../../docs/validation/life-observatory-slices.md).
+This source is not yet a browser-accepted result.
 
 ## God's view
 
