@@ -150,11 +150,11 @@ export function planEncounterPresentationAssetSlot({
       threadId:entry.threadId,
       visualIdentityDigest:entry.visualIdentityDigest,
       targetAgeYears:entry.targetAgeYears,
-      referenceImages:entry.references.map(ref=>({
+      ...(entry.references.length>1?{referenceImages:entry.references.map(ref=>({
         objectRef:ref.objectRef,
         targetAgeYears:ref.targetAgeYears,
         ...(ref.admissionId===null?{}:{admissionId:ref.admissionId,digest:ref.digest}),
-      })),
+      }))}:{}),
     })),
   };
   const brief = ready ? {
