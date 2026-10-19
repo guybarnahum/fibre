@@ -65,7 +65,63 @@ function healthSection(threadId) {
   return health;
 }
 
+// Only the current person/identity/maintenance belongs on Thread detail.
+// Full histories are explicitly selected in Life & Causes, not scroll-loaded.
+function compactThreadTabs(view,{threadId,name}){
+  const hero=view.querySelector(":scope > .thread-person-hero");
+  const tabs=node("nav","thread-detail-tabs");
+  tabs.setAttribute("aria-label","Thread detail sections");
+  const panels=new Map(["overview","identity","maintenance"].map(key=>{
+    const panel=node("section","thread-detail-panel");
+    panel.dataset.threadTab=key;
+    panel.id="thread-tab-"+key;
+    return [key,panel];
+  }));
+  for(const section of [...view.children]){
+    if(section===hero)continue;
+    const title=section.querySelector(":scope > .thread-person-section-head h3")?.textContent;
+    const pane=title==="Now"||section.classList.contains("thread-history-link")
+      ?"overview":section.classList.contains("thread-repair-section")
+        ?"maintenance":"identity";
+    panels.get(pane).append(section);
+  }
+  panels.get("maintenance").append(
+    healthSection(threadId),threadAppearanceSection(threadId,name),
+  );
+  const activate=key=>{
+    for(const [name,panel] of panels)panel.hidden=name!==key;
+    for(const button of tabs.children){
+      const active=button.dataset.tab===key;
+      button.classList.toggle("active",active);
+      button.setAttribute("aria-selected",String(active));
+      button.tabIndex=active?0:-1;
+    }
+  };
+  for(const [key,label] of [
+    ["overview","Overview"],["identity","Identity & Body"],
+    ["maintenance","Maintenance"],
+  ]){
+    const button=node("button","thread-detail-tab",label);
+    button.type="button";
+    button.dataset.tab=key;
+    button.setAttribute("role","tab");
+    button.setAttribute("aria-controls",panels.get(key).id);
+    button.addEventListener("click",()=>activate(key));
+    tabs.append(button);
+  }
+  tabs.setAttribute("role","tablist");
+  view.replaceChildren(hero,tabs,...panels.values());
+  activate(location.hash==="#correct-official-id-photo"?"identity":"overview");
+  return view;
+}
+
 export async function renderThreadPage(threadId) {
+  const selectedMemory=new URLSearchParams(location.search).get("memory");
+  if(selectedMemory){
+    location.replace("/life?thread="+encodeURIComponent(threadId)
+      +"&memory="+encodeURIComponent(selectedMemory));
+    return;
+  }
   renderedThreadId = threadId;
   ensureThreadPageWatch(threadId);
   const load = ++threadPageLoad;
@@ -158,10 +214,7 @@ export async function renderThreadPage(threadId) {
       journalError:payload.journalError,
       deferredHistory:true,
     });
-    observatory.querySelector(".thread-person-hero")?.after(
-      healthSection(threadId),
-      threadAppearanceSection(threadId,name),
-    );
+    compactThreadTabs(observatory,{threadId,name});
     host.replaceChildren(observatory);
     if (location.hash === "#correct-official-id-photo"
         && focusedCorrectionThreadId !== threadId) {
@@ -172,60 +225,7 @@ export async function renderThreadPage(threadId) {
         correction.focus({preventScroll:true});
       }
     }
-    const placeholder=observatory.querySelector("[data-observatory-history]");
-    if(placeholder){
-      const loadButton=placeholder.querySelector("[data-load-history]");
-      let started=false;
-      let watcher=null;
-      const loadHistory=async()=>{
-        if(started||!placeholder.isConnected)return;
-        started=true;
-        watcher?.disconnect();
-        if(loadButton)loadButton.textContent="Loading history…";
-        try{
-          const full=await fetchThreadObservatory(threadId);
-          if(renderedThreadId!==threadId||load!==threadPageLoad||!observatory.isConnected)return;
-          const detailed=renderThreadObservatory({
-            identity:full.identity,threadId,
-            memories:full.memories,memoryError:full.memoryError,
-            encounterStories:full.encounterStories,livedNow:full.livedNow,
-            socialInteractions:full.socialInteractions,
-            encounterError:full.encounterError,
-            experienceJournalEntries:full.experienceJournalEntries,
-            experienceConsolidation:full.experienceConsolidation,
-            contactOutreach:full.contactOutreach,
-            semanticStates:full.semanticStates,lifeRelations:full.lifeRelations,
-            journal:full.journal,journalError:full.journalError,
-          });
-          detailed.querySelector(".thread-person-hero")?.after(
-            healthSection(threadId),threadAppearanceSection(threadId,name),
-          );
-          observatory.replaceWith(detailed);
-          if(new URLSearchParams(location.search).has("memory")){
-            requestAnimationFrame(()=>
-              detailed.querySelector("#thread-memories")?.scrollIntoView({block:"center"}),
-            );
-          }
-        }catch(error){
-          started=false;
-          if(loadButton)loadButton.textContent="Retry loading history";
-          placeholder.querySelector(".thread-empty-note").textContent=
-            error instanceof Error?error.message:String(error);
-        }
-      };
-      loadButton?.addEventListener("click",loadHistory);
-      // Exact World-event Memory links should open their real history directly,
-      // not require a user to discover the lazy-loading control.
-      if(new URLSearchParams(location.search).has("memory")){
-        void loadHistory();
-      }
-      if(typeof IntersectionObserver==="function"){
-        watcher=new IntersectionObserver(entries=>{
-          if(entries.some(entry=>entry.isIntersecting))void loadHistory();
-        });
-        watcher.observe(placeholder);
-      }
-    }
+
   } catch (error) {
     copy.querySelector("h1").textContent = "Thread unavailable";
     host.replaceChildren(node("div", "error-box", `Thread identity unavailable: ${error instanceof Error ? error.message : String(error)}`));
