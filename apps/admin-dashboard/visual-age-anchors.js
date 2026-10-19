@@ -8,6 +8,10 @@ const make=(tag,className,text)=>{
   return element;
 };
 const base=threadId=>`/api/threads/${encodeURIComponent(threadId)}/age-anchors`;
+const candidateUrl=(threadId,candidateId)=>base(threadId)+"/candidates/"+encodeURIComponent(candidateId);
+const newCandidateId=()=>`visual_age_candidate_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,9)}`;
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
 async function api(url,{method="GET",body}={}){
   const response=await fetch(url,{
     method,headers:{Accept:"application/json",...(body?{"Content-Type":"application/json"}:{})},
@@ -17,6 +21,7 @@ async function api(url,{method="GET",body}={}){
   if(!response.ok)throw new Error(result?.detail??result?.error??`HTTP ${response.status}`);
   return result;
 }
+
 function portrait(url,title){
   const card=make("article","thread-fid-photo");
   const img=make("img","thread-age-anchor-portrait");
@@ -24,15 +29,14 @@ function portrait(url,title){
   card.append(img,make("strong",null,title));
   return card;
 }
-const newCandidateId=()=>`visual_age_candidate_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,9)}`;
 
-/** Each age is optional; exactly one root remains authoritative at age 25. */
+/** Candidate state comes from admitted storage, not from this disposable view. */
 export function renderVisualAgeAnchors({threadId,threadName}={}){
   const root=make("section","thread-visual-age-anchors");
   root.append(make("h3",null,"Age portraits"));
-  root.append(make("p","thread-empty-note",
+  root.append(make("p","thread-person-summary",
     "The age-25 portrait is the canonical identity. Approved portraits at other ages guide future depictions, without changing the person."));
-  const gallery=make("div","thread-age-anchor-gallery");
+
   const actions=make("div","thread-age-anchor-actions");
   const ageLabel=make("label","thread-age-anchor-field","Portrait age");
   const ageInput=make("input","thread-age-anchor-input");
@@ -41,15 +45,133 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
   const generate=make("button","secondary thread-repair-button","Generate age portrait");
   generate.type="button";
   actions.append(ageLabel,generate);
-  const galleryStatus=make("p","thread-empty-note","");
-  const status=make("p","thread-empty-note","");
+
+  const status=make("div","thread-action-status thread-age-anchor-status");
   status.setAttribute("role","status");
   status.setAttribute("aria-live","polite");
+  status.hidden=true;
+  const galleryStatus=make("p","thread-empty-note","");
+  const gallery=make("div","thread-age-anchor-gallery");
   const review=make("div","thread-age-anchor-review");
-  root.append(actions,galleryStatus,status,gallery,review);
+  root.append(actions,status,galleryStatus,gallery,review);
 
+  let active=null;
+  let pollSequence=0;
+
+  function message(text,kind=""){
+    status.hidden=false;
+    status.className="thread-action-status thread-age-anchor-status"+(kind?" "+kind:"");
+    status.textContent=text;
+  }
+  function working(text){
+    status.hidden=false;
+    status.className="thread-action-status thread-age-anchor-status working";
+    setWaitingContent(status,text);
+    const progress=make("div","thread-action-progress");
+    progress.append(make("span"));
+    status.append(progress);
+  }
+  function settle(){
+    active=null;
+    ++pollSequence;
+    generate.disabled=false;
+    generate.textContent="Generate age portrait";
+    galleryStatus.hidden=false;
+  }
+  async function previewReady(id){
+    // A ready workflow is not a usable candidate until the immutable asset
+    // and its provider/canonical provenance pass the admission verifier.
+    const response=await fetch(candidateUrl(threadId,id)+"/portrait",{cache:"no-store"});
+    if(!response.ok){
+      const result=await response.json().catch(()=>null);
+      throw new Error(result?.detail??result?.error??`Portrait preview HTTP ${response.status}`);
+    }
+  }
+  async function showCandidate(id,age,sequence){
+    await previewReady(id);
+    if(sequence!==pollSequence||!root.isConnected)return;
+    const prefix=candidateUrl(threadId,id);
+    review.replaceChildren(
+      portrait(base(threadId)+"/canonical","Canonical · 25"),
+      portrait(prefix+"/portrait",`Proposed · age ${age}`),
+    );
+    const approve=make("button","primary thread-repair-button","Approve age portrait");
+    approve.type="button";
+    const discard=make("button","secondary thread-repair-button","Discard candidate");
+    discard.type="button";
+    discard.addEventListener("click",async()=>{
+      discard.disabled=true;
+      try{
+        await api(prefix+"/discard",{method:"POST"});
+        if(!root.isConnected)return;
+        review.replaceChildren();
+        settle();
+        message("Candidate discarded. Canonical identity is unchanged.");
+      }catch(error){
+        discard.disabled=false;
+        message("Could not discard candidate: "+error.message,"failed");
+      }
+    });
+    approve.addEventListener("click",()=>{
+      openThreadActionDialog({
+        threadId,threadName,
+        label:`Approve age ${age} portrait`,
+        eyebrow:"Fibre visual identity",
+        description:"Admit this verified image as a reusable age reference. The canonical age-25 portrait will not change.",
+        run:async()=>{
+          const admission=await api(prefix+"/admit",{method:"POST"});
+          if(!root.isConnected)return;
+          review.replaceChildren();
+          settle();
+          await reload();
+          message(`Age-${admission.targetAgeYears} portrait approved and available.`,"succeeded");
+        },
+      });
+    });
+    const buttons=make("div","thread-age-anchor-review-actions");
+    buttons.append(approve,discard);
+    review.append(buttons);
+    generate.disabled=false;
+    generate.textContent="Generate another age portrait";
+    message(`Age-${age} portrait ready. Review the image before approving.`,"succeeded");
+  }
+  async function watchCandidate(candidate){
+    const sequence=++pollSequence;
+    const {candidateId,targetAgeYears}=candidate;
+    active=candidate;
+    ageInput.value=String(targetAgeYears);
+    generate.disabled=true;
+    galleryStatus.hidden=true;
+    review.replaceChildren();
+    working(`Generating age-${targetAgeYears} candidate…`);
+    for(let attempt=0;attempt<75;attempt++){
+      if(sequence!==pollSequence||!root.isConnected)return;
+      try{
+        const result=await api(candidateUrl(threadId,candidateId));
+        if(sequence!==pollSequence||!root.isConnected)return;
+        if(result.state==="ready"||result.state==="admitted"){
+          await showCandidate(candidateId,targetAgeYears,sequence);
+          return;
+        }
+        if(result.state==="unavailable")throw new Error("Image generation completed without a usable portrait");
+        if(result.state!=="pending")throw new Error("Unexpected generation state: "+result.state);
+      }catch(error){
+        if(sequence!==pollSequence||!root.isConnected)return;
+        generate.disabled=false;
+        generate.textContent="Retry age portrait";
+        message(`Age-${targetAgeYears} portrait: ${error.message}`,"failed");
+        return;
+      }
+      await wait(4000);
+    }
+    if(sequence!==pollSequence||!root.isConnected)return;
+    generate.disabled=false;
+    generate.textContent="Check age portrait";
+    message(`Age-${targetAgeYears} is still generating. Choose Check age portrait to resume.`);
+  }
   async function reload(){
     const info=await api(base(threadId));
+    if(!root.isConnected)return;
     const anchors=info.anchors??[];
     gallery.replaceChildren(portrait(base(threadId)+"/canonical","Canonical · 25"));
     for(const anchor of anchors){
@@ -61,99 +183,55 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     galleryStatus.textContent=anchors.length
       ?`${anchors.length} approved age ${anchors.length===1?"portrait":"portraits"} available.`
       :"No approved age portraits yet.";
-    galleryStatus.hidden=pending!==null;
+    galleryStatus.hidden=active!==null;
+    // Observatory gets replaced by live updates and deferred-history loading.
+    // Each new view resumes the latest durable candidate, even after refresh.
+    if(active===null&&(info.candidates?.length??0)>0){
+      void watchCandidate(info.candidates[0]);
+    }
   }
-  let pending=null;
   void reload().catch(error=>{
-    galleryStatus.textContent="Approved portraits unavailable: "+error.message;
+    if(root.isConnected)message("Age portraits could not load: "+error.message,"failed");
   });
 
-  async function showCandidate(candidateId,targetAgeYears){
-    const prefix=base(threadId)+"/candidates/"+encodeURIComponent(candidateId);
-    review.replaceChildren(
-      portrait(base(threadId)+"/canonical","Canonical · 25"),
-      portrait(prefix+"/portrait",`Proposed · ${targetAgeYears}`),
-    );
-    const approve=make("button","primary thread-repair-button","Approve age portrait");
-    approve.type="button";
-    const discard=make("button","secondary thread-repair-button","Discard candidate");
-    discard.type="button";
-    discard.addEventListener("click",()=>{
-      review.replaceChildren();pending=null;generate.disabled=false;
-      galleryStatus.hidden=false;
-      status.textContent="Candidate discarded; canonical identity is unchanged.";
-    });
-    approve.addEventListener("click",()=>{
-      openThreadActionDialog({
-        threadId,threadName,
-        label:`Approve age ${targetAgeYears} portrait`,
-        eyebrow:"Fibre visual identity",
-        description:"Admit this generated image as a reusable age reference. It will never replace the canonical age-25 portrait.",
-        run:async()=>{
-          approve.disabled=true;
-          try{
-            await api(prefix+"/admit",{method:"POST"});
-            pending=null;review.replaceChildren();generate.disabled=false;
-            await reload();
-            status.textContent=`Age-${targetAgeYears} portrait approved and available.`;
-          }catch(error){
-            approve.disabled=false;
-            status.textContent="Age portrait admission failed: "+error.message;
-            throw error;
-          }
-        },
-      });
-    });
-    const reviewActions=make("div","thread-age-anchor-review-actions");
-    reviewActions.append(approve,discard);
-    review.append(reviewActions);
-    status.textContent=`Review the proposed age-${targetAgeYears} portrait against the canonical identity.`;
-  }
-  async function waitForCandidate(candidateId,targetAgeYears){
-    const prefix=base(threadId)+"/candidates/"+encodeURIComponent(candidateId);
-    for(let attempt=0;attempt<40;attempt++){
-      const outcome=await api(prefix);
-      if(outcome.state==="ready"||outcome.state==="admitted"){
-        await showCandidate(candidateId,targetAgeYears);
-        return;
-      }
-      if(outcome.state==="unavailable")throw new Error("The image provider did not produce an age portrait.");
-      await new Promise(resolve=>setTimeout(resolve,3000));
-    }
-    generate.disabled=false;
-    setWaitingContent(status,`Age-${targetAgeYears} portrait is still generating; retry to resume its progress.`);
-  }
   generate.addEventListener("click",()=>{
     const targetAgeYears=ageInput.valueAsNumber;
     if(!Number.isInteger(targetAgeYears)||targetAgeYears<3||targetAgeYears>95){
-      status.textContent="Select a whole-year age from 3 to 95.";return;
+      message("Select a whole-year age from 3 to 95.","failed");return;
     }
     if(targetAgeYears===25){
-      status.textContent="Age 25 is already the canonical root.";return;
+      message("Age 25 is already the canonical root.");return;
+    }
+    if(active?.targetAgeYears===targetAgeYears){
+      // Resume the same immutable candidate; do not pay for a second image.
+      void watchCandidate(active);
+      return;
     }
     openThreadActionDialog({
       threadId,threadName,label:`Generate age ${targetAgeYears} portrait`,
       eyebrow:"Fibre visual identity",
-      description:"Generate one new OpenAI portrait from the canonical identity and any nearby admitted age anchors. Nothing is admitted until you approve the result.",
+      description:"Generate one OpenAI portrait using the canonical identity and nearby approved age anchors. Admission requires your separate review and approval.",
       run:async()=>{
-        const candidateId=pending?.targetAgeYears===targetAgeYears
-          ? pending.candidateId : newCandidateId();
-        pending={candidateId,targetAgeYears};
-        galleryStatus.hidden=true;
+        const candidateId=newCandidateId();
+        const candidate={candidateId,targetAgeYears};
+        active=candidate;
         generate.disabled=true;
-        setWaitingContent(status,`Generating age-${targetAgeYears} candidate…`);
+        galleryStatus.hidden=true;
+        working(`Generating age-${targetAgeYears} candidate…`);
         try{
-          await api(base(threadId)+"/candidates/"+encodeURIComponent(candidateId),{
+          await api(candidateUrl(threadId,candidateId),{
             method:"POST",body:{targetAgeYears},
           });
-          void waitForCandidate(candidateId,targetAgeYears).catch(error=>{
-            generate.disabled=false;status.textContent="Age portrait: "+error.message;
-          });
         }catch(error){
-          generate.disabled=false;
-          status.textContent="Age portrait: "+error.message;
+          if(root.isConnected){
+            active=null;
+            generate.disabled=false;
+            galleryStatus.hidden=false;
+            message("Age portrait request failed: "+error.message,"failed");
+          }
           throw error;
         }
+        if(root.isConnected)void watchCandidate(candidate);
       },
     });
   });
