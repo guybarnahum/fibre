@@ -123,8 +123,9 @@ happenings and individually noticeable opportunities as a single causal
 World model. Compute budgets govern materialization, not whether unobserved
 reality exists. Real actor actions are enacted at World time; speculative
 ambient events need a plausibly perceiving actor and no artificial event
-quota. A scene, rather than every arriving Thread, will own one sparse
-ambient opportunity frontier.
+quota. A scene, rather than every arriving Thread, now owns one sparse
+ambient opportunity frontier **in source**, with local and staging
+verification pending.
 
 **First bounded source cut (awaiting Guy's local validation):**
 `world-occurrence.mjs` projects actual LivedNow transit/departure/arrival
@@ -136,13 +137,22 @@ present awake counterpart in an admitted venue. The new test protects
 event-time witness discovery from sleepers and future arrivals. Historical
 situations and Encounter Stories were not modified.
 
-**Not yet implemented or claimed:** the scene-owned durable ambient
-frontier, symmetric bystander attention to an arriving actor, generalized
-human actor occurrences, unified event-time perception across scene
-boundaries, or any new staging encounter. The previous per-Thread
-arrival/stay/continuation machinery is transitional and not accepted as
-the final event model. Do not deploy and declare an overhaul complete
-from this first source cut.
+**Second source cut (awaiting Guy's local validation):** one durable
+`world_ambient_scene_frontier` row per grounded shared venue or
+Thread-scoped private scene now replaces the *producer* of new per-Thread
+stay opportunities. Co-present visitors share that scene's pending ambient
+work; its authoring/no-change decision and separately appraised observers
+reuse the existing Encounter Story and Experience authorities. An actually
+present second visitor can keep the scene eligible after its first witness
+departs. Completed scenes can rearm after subsequent enacted activity,
+without an ambient timer loop. Historical speculative arrival/stay rows
+remain temporarily processable rather than erased as history.
+
+**Not yet implemented or claimed:** independent bystander attention to
+an arriving actor, generalized human actor occurrences, unified event-time
+perception across scene boundaries, full retirement of legacy speculative
+queues and per-Story follow-ups, or any new staging encounter. This is
+source-only and must not be declared an accepted living-World overhaul.
 
 ## World encounters and private experience
 

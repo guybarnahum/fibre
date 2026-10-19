@@ -20,17 +20,23 @@ actual enacted actor actions and independently authored ambient changes. One
 objective event may be potentially perceived by many separately living
 individuals, but notice and response are their own judgments. An ambient
 opportunity is *not* an event, a quota, or an assertion that unobserved
-reality stops. Its compute work will be keyed to one active scene, not each
-Thread. The previous per-Thread minute/arrival queue is transitional.
+reality stops. Its compute work is now source-keyed to one active scene rather than
+each Thread. The previous per-Thread minute/arrival queue remains
+transitional for pending historical speculative work.
 
 **First source slice on main:** classify authentic LivedNow departure and
 arrival by the actual preceding/current World-enacted situations. An
 unchanged-place plan renewal and Genesis start do not count as arrival.
 Only an arriving Thread with independently current awake company at an
-attested venue earns the existing immediate social consideration. This is
-**not yet** independently noticed actor presence, symmetric social choice,
-the new scene-owned ambient frontier or staging acceptance. Guy must run
-local focused and full validation before deployment.
+attested venue earns the existing immediate social consideration. A second source slice adds a single `world_ambient_scene_frontier` per
+grounded venue or Thread-scoped private place, shared between independently
+arriving visitors; only actual scene eligibility earns environmental model
+work, and `no_change` remains a valid outcome. The old stay producer is
+retired in both local and Cloudflare paths, but historical pending rows and
+per-Story environmental follow-ups still run until deliberately replaced.
+This remains **source-only**, not independently noticed actor presence,
+symmetric social choice, general event-time perception or staging
+acceptance. Guy must run local focused and full validation before deployment.
 
 **Critical path remains:** one genuine independently chosen and enacted
 public-place visit; subsequent independently overlapping Thread presence;

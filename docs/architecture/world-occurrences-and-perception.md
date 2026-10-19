@@ -155,6 +155,27 @@ mechanism. Newly admitted events use existing Encounter Story and attention
 authorities. A single scene frontier is justified scheduling *work*, not
 a new objective event database.
 
+**October 18 source implementation, local/staging acceptance pending.** The
+new `world_ambient_scene_frontier` is keyed by attested physical venue, or
+by a Thread-scoped private/unverified place, and retains one pending
+consideration. Newly enacted waking residence can arm that scene; a second
+visitor cannot duplicate its pending work. On completion, later enacted
+activity may rearm it. Empty or sleeping scenes do not invoke World authoring
+cognition, and `no_change` creates no Encounter Story. One shared Story
+continues through the established independent attention/Experience seam.
+The originally scheduled visitor may leave before consideration; a distinct
+actually present venue observer is sufficient to keep the shared scene active.
+
+The new local and Cloudflare producers no longer enqueue per-Thread stay
+opportunities. Historic pending arrival/stay speculative work still drains
+through the same process for now, and existing per-Story environmental
+follow-ups remain separate. This **is not yet** a fully unified occurrence
+and perception pipeline, or a demonstrated natural meeting. The next clean
+migration must retire those legacy producers/queues after preserving already
+admitted facts and deliberate handling of unresolved speculative decisions.
+The civil-minute boundary is only sparse compute scheduling, never a World
+event time rule, quota or recurring simulation tick.
+
 ## Execution slices and acceptance
 
 1. **Actor occurrence contract.** Project actual LivedNow changes into
