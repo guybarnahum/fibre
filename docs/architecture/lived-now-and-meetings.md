@@ -538,6 +538,12 @@ World reads, wakes a Thread or presents a temporal Memory/contact chain as proof
 that Memory caused the later choice. A deployed-revision mismatch appears as
 a provenance note instead of obscuring substantive World findings. Private
 home descriptions and exact addresses are omitted from human summaries.
+A single-Thread `--thread` view intentionally **does not check concurrent
+co-presence**: no population/venue query runs, and a zero in the underlying
+sample is not a declaration that nobody else was at the venue. The friendly
+report labels that question `not checked` and grounds the current locality
+in the actually occupied verified public venue when available. A historical
+`no_co_presence` opportunity is about its own due time, not a later visit.
 
 ### Scene discovery, not caller-selected counterparties
 
