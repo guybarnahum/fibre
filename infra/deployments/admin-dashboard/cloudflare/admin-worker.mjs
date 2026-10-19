@@ -4,9 +4,11 @@ import { createCloudflareObjectPort } from "#infra/providers/cloudflare";
 import baseWorker, {
   authenticateAccessRequest,
   authorizeAdminPrincipal,
+  normalizeAdminPrincipalEmail,
 } from "./worker.mjs";
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
 import { readAdminAppearanceCoverage } from "./appearance-coverage.mjs";
+import {createAdminVisualAgeAnchors} from "./visual-age-anchors.mjs";
 import {
   admitAdminPopulationLabCalibration,
   approveAdminPopulationLabCalibration,
@@ -50,6 +52,10 @@ const THREAD_OBSERVATORY_ROUTE = /^\/api\/threads\/([^/]+)\/observatory$/u;
 const THREAD_JOURNAL_ROUTE = /^\/api\/threads\/([^/]+)\/journal$/u;
 const THREAD_MEETING_ROUTE = /^\/api\/threads\/([^/]+)\/meet-threads$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
+const THREAD_AGE_ANCHORS_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors$/u;
+const THREAD_AGE_ANCHOR_CANONICAL_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/canonical$/u;
+const THREAD_AGE_ANCHOR_CANDIDATE_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/candidates\/([^/]+)(\/portrait|\/admit)?$/u;
+const THREAD_AGE_ANCHOR_PORTRAIT_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/portraits\/([^/]+)$/u;
 const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
 const THREAD_FID_PHOTO_CORRECTION_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/photo-corrections\/([^/]+)(\/preview|\/canonical|\/approve)?$/u;
 const FIN_VERIFY_ROUTE = "/api/fid/verify";
@@ -575,6 +581,10 @@ export default {
     const journalMatch = THREAD_JOURNAL_ROUTE.exec(url.pathname);
     const meetingMatch = THREAD_MEETING_ROUTE.exec(url.pathname);
     const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
+    const ageAnchorsMatch = THREAD_AGE_ANCHORS_ROUTE.exec(url.pathname);
+    const ageAnchorCanonicalMatch = THREAD_AGE_ANCHOR_CANONICAL_ROUTE.exec(url.pathname);
+    const ageAnchorCandidateMatch = THREAD_AGE_ANCHOR_CANDIDATE_ROUTE.exec(url.pathname);
+    const ageAnchorPortraitMatch = THREAD_AGE_ANCHOR_PORTRAIT_ROUTE.exec(url.pathname);
     const fidReissueMatch = THREAD_FID_REISSUE_ROUTE.exec(url.pathname);
     const fidPhotoCorrectionMatch = THREAD_FID_PHOTO_CORRECTION_ROUTE.exec(url.pathname);
     const assetMatch = THREAD_ASSET_ROUTE.exec(url.pathname);
@@ -604,9 +614,9 @@ export default {
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (worldEvents || identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (ageAnchorsMatch || ageAnchorCanonicalMatch || ageAnchorCandidateMatch || ageAnchorPortraitMatch || worldEvents || identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
+    const adminPost = request.method === "POST" && (ageAnchorCandidateMatch || repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
     const adminDelete = request.method === "DELETE" && (appearanceExperimentMatch || appearanceExperimentAlignmentMatch);
     if (adminGet || adminPost || adminDelete) {
       const gate = await adminPrincipal(request, env);
@@ -917,6 +927,44 @@ export default {
             }),
           });
         }
+        if(ageAnchorsMatch || ageAnchorCanonicalMatch || ageAnchorCandidateMatch || ageAnchorPortraitMatch){
+          const threadId=id("threadId",decodeURIComponent((
+            ageAnchorsMatch??ageAnchorCanonicalMatch??ageAnchorCandidateMatch??ageAnchorPortraitMatch
+          )[1]));
+          const anchors=createAdminVisualAgeAnchors({env});
+          if(ageAnchorsMatch && request.method==="GET")return json(200,await anchors.list(threadId));
+          if(ageAnchorCanonicalMatch && request.method==="GET"){
+            return new Response(await anchors.canonical(threadId),{
+              headers:{"Content-Type":"image/png","Cache-Control":"no-store"},
+            });
+          }
+          if(ageAnchorPortraitMatch && request.method==="GET"){
+            return new Response(await anchors.admittedImage(threadId,id("admissionId",decodeURIComponent(ageAnchorPortraitMatch[2]))),{
+              headers:{"Content-Type":"image/png","Cache-Control":"no-store"},
+            });
+          }
+          if(ageAnchorCandidateMatch){
+            const candidateId=id("candidateId",decodeURIComponent(ageAnchorCandidateMatch[2]));
+            const action=ageAnchorCandidateMatch[3]??null;
+            if(request.method==="GET" && action===null)return json(200,await anchors.status(threadId,candidateId));
+            if(request.method==="GET" && action==="/portrait"){
+              return new Response(await anchors.image(threadId,candidateId),{
+                headers:{"Content-Type":"image/png","Cache-Control":"no-store"},
+              });
+            }
+            if(request.method==="POST" && action===null){
+              let input;
+              try{input=await request.json();}catch{return json(400,{error:"invalid_anchor_age"});}
+              return json(202,await anchors.request(threadId,candidateId,input?.targetAgeYears));
+            }
+            if(request.method==="POST" && action==="/admit"){
+              const operator=normalizeAdminPrincipalEmail(gate.principal);
+              if(!operator)throw new Error("Authenticated operator identity is missing");
+              return json(200,await anchors.admit(threadId,candidateId,operator));
+            }
+          }
+          return json(405,{error:"method_not_allowed"});
+        }
         if (finVerify) return proxyFinCardVerify(request, env);
         if (fidReissueMatch) {
           const threadId = id("threadId", decodeURIComponent(fidReissueMatch[1]));
@@ -994,6 +1042,11 @@ export default {
         }
         if (finVerify) return json(error instanceof TypeError ? 400 : 503, { error:"fid_verify_unavailable", detail:error.message });
         if (fidReissueMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_reissue_unavailable", detail:error.message });
+        if(ageAnchorsMatch || ageAnchorCanonicalMatch || ageAnchorCandidateMatch || ageAnchorPortraitMatch){
+          return json(error instanceof TypeError ? 400 : 409,{
+            error:"visual_age_anchor_unavailable",detail:error.message,
+          });
+        }
         if (fidPhotoCorrectionMatch) return json(error instanceof TypeError ? 400 : 503, { error:"fid_photo_correction_unavailable", detail:error.message });
         return json(error instanceof TypeError ? 400 : 503, {
           error: error instanceof TypeError ? "invalid_thread_resource" : "thread_identity_unavailable",
