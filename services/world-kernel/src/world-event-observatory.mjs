@@ -50,6 +50,8 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
     });
   }
 
+  const enactedArrivals=new Map(events.filter(e=>e.kind==="arrival")
+    .map(e=>[e.eventRef,e]));
   const stories=new Map();
   for(const row of storyRows){
     let event=stories.get(row.encounter_id);
@@ -58,7 +60,12 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       const refs=parse(row.visualization_source_refs_json)??[];
       const beats=story?.beats??[];
       const explicit=refs.map(ref=>eventPlace(byRef,ref)).find(Boolean)??null;
-      event={
+      const arrival=refs.map(ref=>enactedArrivals.get(ref))
+        .find(candidate=>candidate!==undefined
+          &&candidate.actorThreadId===beats[0]?.actorThreadId
+          &&beats.length===1&&beats[0]?.kind==="action"
+          &&candidate.occurredAt===row.occurred_at)??null;
+      event=arrival??{
         eventRef:row.encounter_id,kind:beats.some(b=>b.kind==="utterance"||b.kind==="action")
           ?"encounter":"ambient",
         occurredAt:row.occurred_at,placeRef:explicit?.placeRef??null,
@@ -68,6 +75,7 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
         sourcePlaceEvidence:explicit?"source_reference":null,
         witnesses:[],
       };
+      if(arrival)arrival.perceptionStoryRef=row.encounter_id;
       stories.set(row.encounter_id,event);
     }
     if(!row.thread_id)continue;
@@ -99,6 +107,7 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       witness.memoryLink=witness.memoryLinks[0]??null;
     }
     // Preserve unprojected World truth without inventing a map pin or pulse.
+    if(enactedArrivals.get(event.eventRef)===event)continue;
     (event.placeRef?events:unmappedEvents).push(event);
   }
 

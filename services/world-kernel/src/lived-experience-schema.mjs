@@ -79,6 +79,21 @@ export function createLivedExperienceTables(database) {
       ON world_ambient_scene_frontier(due_at)
       WHERE completed_at IS NULL;
 
+
+    -- An enacted physical arrival can become perceptible to people already
+    -- there. Preserve the event-time witness set for delayed sparse processing.
+    -- The objective arrival remains CurrentSituation, not this work row.
+    CREATE TABLE IF NOT EXISTS world_arrival_perception_work (
+      situation_id TEXT PRIMARY KEY,
+      venue_ref TEXT NOT NULL,
+      due_at TEXT NOT NULL,
+      witness_situations_json TEXT NOT NULL CHECK (json_valid(witness_situations_json)),
+      result_encounter_ref TEXT,
+      completed_at TEXT
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_world_arrival_perception_due
+      ON world_arrival_perception_work(due_at) WHERE completed_at IS NULL;
+
     -- Enacted co-presence may earn one bounded social consideration.
     -- Starting an attempt is durable: interrupted cognition is not silently rerolled.
     CREATE TABLE IF NOT EXISTS world_social_opportunities (

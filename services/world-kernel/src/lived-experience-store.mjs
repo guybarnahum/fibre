@@ -173,6 +173,68 @@ export class LivedExperienceStore {
 
   close() { this.#database.close(); }
 
+  enqueueArrivalPerception({situationId,venueRef,dueAt,witnesses}){
+    assertId("arrival situation",situationId);
+    assertId("arrival venue",venueRef);
+    assertIsoTimestamp("arrival occurrence time",dueAt);
+    if(!Array.isArray(witnesses)||witnesses.length<1||witnesses.length>2){
+      throw new TypeError("arrival needs one or two grounded observers");
+    }
+    const seen=new Set();
+    for(const person of witnesses){
+      assertId("arrival witness Thread",person.threadId);
+      assertId("arrival witness situation",person.situationId);
+      if(seen.has(person.threadId))throw new TypeError("arrival witnesses must be distinct");
+      seen.add(person.threadId);
+    }
+    const inserted=this.#database.prepare(`
+      INSERT OR IGNORE INTO world_arrival_perception_work(
+        situation_id,venue_ref,due_at,witness_situations_json
+      ) VALUES(?,?,?,?)
+    `).run(situationId,venueRef,dueAt,canonicalJson(witnesses)).changes===1;
+    return Object.freeze({situationId,dueAt,inserted});
+  }
+
+  nextArrivalPerceptionAt(){
+    return this.#database.prepare(`
+      SELECT due_at FROM world_arrival_perception_work
+      WHERE completed_at IS NULL ORDER BY due_at LIMIT 1
+    `).get()?.due_at??null;
+  }
+
+  listDueArrivalPerceptions({at}){
+    assertIsoTimestamp("arrival perception now",at);
+    const row=this.#database.prepare(`
+      SELECT situation_id,venue_ref,due_at,witness_situations_json
+      FROM world_arrival_perception_work WHERE completed_at IS NULL AND due_at<=?
+      ORDER BY due_at,situation_id LIMIT 1
+    `).get(at);
+    return row===undefined?[]:[Object.freeze({
+      situationId:row.situation_id,venueRef:row.venue_ref,dueAt:row.due_at,
+      witnesses:Object.freeze(JSON.parse(row.witness_situations_json)),
+    })];
+  }
+
+  completeArrivalPerception({situationId,encounterRef=null,at}){
+    assertId("arrival perception situation",situationId);
+    if(encounterRef!==null)assertId("arrival perception story",encounterRef);
+    assertIsoTimestamp("arrival perception completed",at);
+    const prior=this.#database.prepare(`
+      SELECT result_encounter_ref,completed_at FROM world_arrival_perception_work
+      WHERE situation_id=?
+    `).get(situationId);
+    if(prior===undefined)throw new TypeError("arrival perception work missing");
+    if(prior.completed_at!==null){
+      if(prior.result_encounter_ref!==encounterRef)throw new TypeError("arrival perception conflicts");
+      return;
+    }
+    this.#database.prepare(`
+      UPDATE world_arrival_perception_work
+      SET result_encounter_ref=?,completed_at=?
+      WHERE situation_id=? AND completed_at IS NULL
+    `).run(encounterRef,at,situationId);
+  }
+
   enqueueSocialOpportunity({threadId,situationId,dueAt}){
     assertId("social opportunity Thread",threadId);
     assertId("social opportunity situation",situationId);

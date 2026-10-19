@@ -45,6 +45,7 @@ import { createThreadContactProcess } from "#services/world-kernel/src/thread-co
 import { createThreadContactPerception } from "#services/world-kernel/src/thread-contact-perception.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { enactedActorOccurrence,coPresentAtActorArrival } from "#services/world-kernel/src/world-occurrence.mjs";
+import { createWorldArrivalPerception } from "#services/world-kernel/src/world-arrival-perception.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
 import { createGenesisFirstLifeProcess } from "#services/world-kernel/src/genesis-first-life-process.mjs";
 import { createWorldVenueWriteApi } from "#services/world-kernel/src/live-world-venue-write-api.mjs";
@@ -284,6 +285,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       this.worldEnvironmentEvolutionProcess=combineWorldEnvironmentProcesses(
         createWorldEnvironmentOpportunity(shared),
         createWorldEnvironmentEvolution(shared),
+        createWorldArrivalPerception(shared),
       );
       runtime.reconciliationProcess.setEnvironmentEvolutionProcess(
         this.worldEnvironmentEvolutionProcess,
@@ -785,15 +787,18 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       situation.threadId,situation.location.placeRef,{required:false},
     )?.physicalVenue?.ref??null;
     if(venue!==null&&occurrence?.kind==="arrival"){
-      const present=coPresentAtActorArrival(lived,occurrence,venue).length>0;
-      if(!present)return; // Empty venues do not manufacture a counterparty.
+      const witnesses=coPresentAtActorArrival(lived,occurrence,venue).slice(0,2)
+        .map(item=>({threadId:item.threadId,situationId:item.situationId}));
+      if(witnesses.length===0)return; // Empty venues do not manufacture company.
+      const perception=store.enqueueArrivalPerception({
+        situationId:situation.situationId,venueRef:venue,
+        dueAt:situation.establishedAt,witnesses,
+      });
       const social=store.enqueueSocialOpportunity({
         threadId:situation.threadId,situationId:situation.situationId,
-        // Arrival itself is already World history. Evaluate the resulting
-        // co-presence without inventing a 60-second delayed arrival.
         dueAt:situation.establishedAt,
       });
-      if(social.inserted)await this.runtimeForRequest()
+      if(perception.inserted||social.inserted)await this.runtimeForRequest()
         .reconciliationRuntime.requestWakeAt(Date.parse(situation.establishedAt));
     }
   }

@@ -17,6 +17,7 @@ import { openCausalContextStore } from "#services/world-kernel/src/causal-contex
 import { openSemanticStateStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openLivedNowStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { enactedActorOccurrence,coPresentAtActorArrival } from "#services/world-kernel/src/world-occurrence.mjs";
+import { createWorldArrivalPerception } from "#services/world-kernel/src/world-arrival-perception.mjs";
 import { createLivedNowService } from "#services/world-kernel/src/lived-now-service.mjs";
 import {
   nextLivedBoundary,
@@ -357,12 +358,18 @@ export async function startWorldKernelFromEnvironment(
       const venue=livedNowStore.getWorldPlace(
         situation.threadId,situation.location.placeRef,{required:false},
       )?.physicalVenue?.ref??null;
-      if(coPresentAtActorArrival(livedNowStore,occurrence,venue).length>0){
+      const witnesses=coPresentAtActorArrival(livedNowStore,occurrence,venue)
+        .slice(0,2).map(item=>({threadId:item.threadId,situationId:item.situationId}));
+      if(witnesses.length>0){
+        const perception=livedExperienceStore.enqueueArrivalPerception({
+          situationId:situation.situationId,venueRef:venue,
+          dueAt:situation.establishedAt,witnesses,
+        });
         const social=livedExperienceStore.enqueueSocialOpportunity({
           threadId:situation.threadId,situationId:situation.situationId,
           dueAt:situation.establishedAt,
         });
-        if(social.inserted)await reconciliationRuntime.requestWakeAt(
+        if(perception.inserted||social.inserted)await reconciliationRuntime.requestWakeAt(
           Date.parse(situation.establishedAt));
       }
       const place=livedNowStore.getWorldPlace(
@@ -448,6 +455,7 @@ export async function startWorldKernelFromEnvironment(
   const environmentEvolutionProcess=combineWorldEnvironmentProcesses(
     createWorldEnvironmentOpportunity(environmentInputs),
     createWorldEnvironmentEvolution(environmentInputs),
+    createWorldArrivalPerception(environmentInputs),
   );
   const livedBoundaryProcess=createLivedBoundaryProcess({
     livedNowStore,livedNow:contactLivedNow,
@@ -582,6 +590,7 @@ export async function startWorldKernelFromEnvironment(
     if (contactOutreachProcess.hasPending()
       ||contactStore.nextContactReceptionAt()!==null
       ||livedExperienceStore.nextEnvironmentalOpportunityAt()!==null
+      ||livedExperienceStore.nextArrivalPerceptionAt()!==null
       ||livedNowStore.nextLivedBoundaryAt()!==null) {
       await reconciliationRuntime.requestWake();
     }
