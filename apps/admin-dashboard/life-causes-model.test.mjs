@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {recentLifeMoments} from "./life-causes-model.mjs";
+import {recentLifeMoments,recordedLifeMoments} from "./life-causes-model.mjs";
 
 test("Life Timeline distinguishes enacted World situations from an authored plan and uncertain motive",()=>{
   const current={
@@ -45,4 +45,60 @@ test("Life Timeline distinguishes enacted World situations from an authored plan
     "the attested current public venue name disappeared");
   assert.equal(moments[1].publicVenueName,null,
     "a prior scene borrowed today's current location name");
+});
+
+test("recorded life preserves separate World history, personal Encounter experience and remembered meaning",()=>{
+  const history={
+    livedNow:{
+      currentSituation:{
+        situationId:"sit_after",establishedAt:"2026-10-19T17:45:02Z",
+        activity:"Reading at a public venue",
+        location:{kind:"place",placeRef:"wpl_a"},
+        sourcePlanRefs:["lplan_a"],
+      },
+      recentSituations:[{
+        situationId:"sit_after",establishedAt:"2026-10-19T17:45:02Z",
+        activity:"Reading at a public venue",
+        location:{kind:"place",placeRef:"wpl_a"},
+        sourcePlanRefs:["lplan_a"],
+      }],
+      recentPersonalPlans:[{
+        planId:"lplan_a",kind:"personal",
+        stops:[{physicalPlaceRef:"wpl_a",
+          startAt:"2026-10-19T17:45:00Z",endAt:"2026-10-19T19:00:00Z",
+          purpose:"To study in company"}],
+      }],
+    },
+    encounterStories:[{
+      encounterId:"story_book",occurredAt:"2026-10-18T16:00:00Z",
+      story:{beats:[{kind:"utterance",actorThreadId:"thr_a",text:"Hello."}]},
+      attention:{outcome:"noticed",experience:{
+        experienceId:"exp_book",experienceText:"I felt welcome."}},
+    },{
+      encounterId:"story_rain",occurredAt:"2026-10-17T16:00:00Z",
+      story:{beats:[{kind:"occurrence",actorThreadId:null,text:"Rain began."}]},
+      attention:{outcome:"not_noticed",experience:null},
+    }],
+    memories:[{
+      memoryId:"mem_book",subjectPeriod:{startAt:"2026-10-18T16:00:00Z"},
+      recordedAt:"2026-10-19T09:00:00Z",
+      eventRefs:["exp_book"],rememberedContent:"A friendly greeting.",
+      rememberedMeaning:"I might try greeting another visitor.",
+    }],
+  };
+  const moments=recordedLifeMoments(history);
+  assert.equal(moments.filter(item=>item.kind==="scene").length,1,
+    "a repeated enacted scene became two life events");
+  assert.equal(moments.find(item=>item.kind==="scene").planned.purpose,
+    "To study in company","a historical plan lost its authored purpose");
+  assert.equal(moments.find(item=>item.kind==="encounter").memoryLinks[0],
+    "mem_book","an explicitly linked personal Experience lost its Memory");
+  assert.equal(moments.find(item=>item.kind==="world").attention,
+    "not_noticed","an unattended occurrence was turned into an Experience");
+  assert.equal(moments.find(item=>item.kind==="memory").at,
+    "2026-10-18T16:00:00Z",
+    "a remembered episode was placed at its later consolidation time");
+  assert.equal(moments.find(item=>item.kind==="memory").meaning,
+    "I might try greeting another visitor.",
+    "the person's remembered meaning disappeared from the life inspection");
 });
