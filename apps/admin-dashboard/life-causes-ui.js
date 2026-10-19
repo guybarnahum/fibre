@@ -1,4 +1,4 @@
-import {fetchThreadObservatory,renderThreadLifeHistory,threadName} from "./thread-observatory.js";
+import {fetchThreadObservatory,renderThreadLifeHistory,renderThreadPersonHero} from "./thread-observatory.js";
 import {recentLifeMoments,recordedLifeMoments,formativeLifeMoments} from "./life-causes-model.mjs";
 
 const $=selector=>document.querySelector(selector);
@@ -456,8 +456,21 @@ export function renderLifeCausesPage(){
   function drawSummary(){
     summary.replaceChildren();
     if(loadedRecent){
-      summary.append(el("strong",null,threadName(loadedRecent.payload.identity)??threadId),
-        el("span",null,"One person · read-only World evidence · bounded history"));
+      const actions=el("div","life-causes-person-actions");
+      const change=el("button","secondary","Change Thread");
+      change.type="button";
+      change.addEventListener("click",()=>{
+        subject.hidden=false;
+        input.focus();
+        input.select();
+      });
+      const details=el("a","button-link secondary","Thread Observatory ↗");
+      details.href="/thread/"+encodeURIComponent(threadId);
+      actions.append(change,details);
+      summary.append(actions,renderThreadPersonHero(
+        loadedRecent.payload.identity,threadId,loadedRecent.payload.livedNow,
+      ));
+      subject.hidden=true;
     }
     if(historyFailure)summary.append(el("p","error-box",historyFailure));
   }
@@ -480,6 +493,7 @@ export function renderLifeCausesPage(){
       else updateUrl();
     }catch(error){
       if(request!==sequence)return;
+      subject.hidden=false;
       summary.replaceChildren(el("p","error-box",
         "Could not inspect this Thread: "+(error instanceof Error?error.message:String(error))));
       draw();
