@@ -18,7 +18,8 @@ function sceneLocation(location) {
   return `in transit from ${from} toward ${to}`;
 }
 
-function presentBrief(present, targetAgeYears, hasAdmittedAgeReferences) {
+function presentBrief(present, targetAgeYears, selectedReferences = []) {
+  const ageAnchors=selectedReferences.filter(reference=>reference.admissionId!==null);
   const people = present.participants.length === 0
     ? "No other publicly named participant is established in this scene."
     : `Publicly named participants: ${present.participants.join(", ")}.`;
@@ -30,6 +31,7 @@ function presentBrief(present, targetAgeYears, hasAdmittedAgeReferences) {
       ...(present.reason === null ? [] : [`Observed situation context: ${present.reason}`]),
       ...(present.mediatedContext === null ? [] : [`Mediated presence: ${present.mediatedContext}`]),
       people,
+      ...(ageAnchors.length===0?[]:[`Reference images in order: image 1 is the canonical age-${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} root; ${ageAnchors.map((anchor,index)=>`image ${index+2} is the admitted age-${anchor.targetAgeYears} portrait`).join("; ")}. Each image depicts this one Thread.`]),
       targetAgeYears === null
         ? `The canonical identity reference depicts the same person at normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS}; preserve identity without asserting an unsupported exact age.`
         : `Preserve the canonical identity while age-transforming naturally from normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} to ${targetAgeYears} years old for this scene.`,
@@ -38,7 +40,7 @@ function presentBrief(present, targetAgeYears, hasAdmittedAgeReferences) {
       "This image is a generated presentation reconstruction of an enacted current situation, not World evidence or a documentary photograph.",
       "Use only the supplied public scene facts; do not infer or depict private plans, regulation, emotion, memory, relationship meaning, or hidden participants.",
       "Observed situation context is not a claim about the Thread's private motive or feeling.",
-      hasAdmittedAgeReferences
+      ageAnchors.length>0
         ? "The first image is the canonical identity authority; subsequent images are approved age-local portraits of that same Thread, never separate identities. Use them to guide aging without copying their pose or background."
         : "Use the supplied canonical visual-identity reference as the complete likeness anchor; do not re-derive appearance from ancestry, family, demographic, or phenotype text.",
       "Do not add identifiable people beyond the publicly named participants.",
@@ -91,7 +93,7 @@ export function planCurrentPresentDepiction({ present, presentation, canonicalRe
     role: "present_scene",
     variant: "current",
     status: referenceReady ? "missing" : "deferred",
-    brief: referenceReady ? presentBrief(present, targetAgeYears, references.length > 1) : null,
+    brief: referenceReady ? presentBrief(present, targetAgeYears, selected?.references ?? []) : null,
     inputReferences: referenceReady
       ? [...new Set([
           present.situationId,
