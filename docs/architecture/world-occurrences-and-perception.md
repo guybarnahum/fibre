@@ -208,6 +208,37 @@ bystander contact initiation, or later history-caused social choice.
 Existing social initiation/consent remains independent, not compelled by
 the arrival or any resulting Experience.
 
+## Bystander-owned social choice — October 19 source cut
+
+A bystander who **noticed** an actual arrival now earns one additional,
+durable `world_observed_social_opportunities` consideration scoped to the
+objective Encounter Story and observer identity. Neither ordinary co-presence
+nor `not_noticed` earns that work. This is distinct from the existing
+arrival-based social consideration so a person can respond later in the
+same stay after spending an earlier chance to make contact.
+
+The existing World social reconciler claims both kinds of opportunities
+under one sparse alarm and one unrepeated attempt boundary. It verifies
+that the observer and the specific observed newcomer still inhabit the
+same attested venue, then passes the chosen target to the **existing**
+social meeting engine. The same situated salience, Body needs, individual
+initiation decision, recipient consent, Encounter Story and private
+Experience govern any subsequent conversation. A salient arrival can
+still yield `not_initiated`; the recipient can decline. An interrupted
+outward attempt is not automatically replayed.
+
+The Situated Percept's recent Encounter Stories now require the observer's
+admitted `noticed` attention before that Story can influence that
+observer's private social judgment. This prevents missed World events
+from becoming unexplained private knowledge. Noticed recent history can
+make another person's presence salient without obliging speech.
+
+**Source-only pending local validation and staging observation.** Targeted
+consideration is not evidence that a natural interaction actually happened,
+nor proof of long-term relationship formation. Observed invitations remain
+limited to recent, co-present Thread-to-Thread arrivals; broader endogenous
+life events, distant observers, and historical consequences remain deferred.
+
 ## Execution slices and acceptance
 
 1. **Actor occurrence contract.** Project actual LivedNow changes into

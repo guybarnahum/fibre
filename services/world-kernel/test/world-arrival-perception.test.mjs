@@ -7,6 +7,9 @@ import {createSqliteStateInfraDriver} from "../../../infra/providers/local/sqlit
 import {openWorldStore} from "../src/persistence.mjs";
 import {openLivedExperienceStore} from "../src/lived-experience-store.mjs";
 import {createWorldArrivalPerception} from "../src/world-arrival-perception.mjs";
+import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs";
+import {projectSituatedPercept} from "../src/situated-percept.mjs";
+import {evaluateSalience} from "../src/salience-gate.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -98,6 +101,72 @@ test("one enacted arrival permits distinct noticing and missed attention with re
       "actor was forced to experience its own action");
     assert.equal(calls,3,"replay rerolled admitted personal attention");
     assert.equal(store.nextArrivalPerceptionAt(),null,"completed event kept polling");
+
+    // An observed arrival is a personal causal input, not generic
+    // co-presence. Its impact on salience is grounded in noticed attention.
+    const perceptFor=(threadId)=>projectSituatedPercept({
+      observerThreadId:threadId,
+      situation:ctx.situations.find(x=>x.threadId===threadId),
+      observedThreads:[{
+        threadId:ids[0],name:"Newcomer",situation:ctx.situations[0],
+      }],
+      situatedLifeStore:{listCurrentPlaceEpisodes:()=>[]},
+      livedNowStore,experienceStore:store,
+    });
+    const noticedPercept=perceptFor(ids[1]);
+    const missedPercept=perceptFor(ids[2]);
+    assert.equal(noticedPercept.recentEvents.length,1,
+      "lived attention did not influence later social context");
+    assert.equal(missedPercept.recentEvents.length,0,
+      "a missed occurrence leaked into private social knowledge");
+    const salient=evaluateSalience({
+      opportunity:noticedPercept.opportunities[0],
+      situatedPercept:noticedPercept,
+    });
+    const background=evaluateSalience({
+      opportunity:missedPercept.opportunities[0],
+      situatedPercept:missedPercept,
+    });
+    assert.equal(salient.outcome,"salient",
+      "noticing a person did not matter to social consideration");
+    assert.equal(background.outcome,"background",
+      "mere co-presence forced social attention");
+
+    const bystander=store.inspectSocialOpportunities(ids[1]);
+    assert.equal(bystander.length,1,
+      "noticed arrival did not earn one personal social chance");
+    assert.equal(bystander[0].sourceEncounterRef,story.encounterId,
+      "social consideration lost its actual perceived cause");
+    assert.equal(store.inspectSocialOpportunities(ids[2]).length,0,
+      "a bystander who missed the arrival was forced into social consideration");
+    let approached=0;
+    const social=createWorldSocialOpportunity({
+      experienceStore:store,
+      livedNowStore:{
+        getCurrentSituation:id=>ctx.situations.find(x=>x.threadId===id)??null,
+        getWorldPlace:livedNowStore.getWorldPlace,
+        listCurrentVenueSituations:()=>{throw Error("targeted attention must not scan population");},
+      },
+      meetingService:{async meet(input){
+        approached++;
+        assert.equal(input.initiatorThreadId,ids[1],
+          "the wrong person initiated the observed social choice");
+        assert.equal(input.counterpartyThreadId,ids[0],
+          "observation targeted a different person");
+        return {attempts:[{outcome:"not_initiated"}]};
+      }},
+      now:()=>AT,
+    });
+    const considered=await social.runOnce();
+    assert.equal(considered.failed,0,
+      considered.results[0]?.message??"observed social choice failed");
+    assert.equal(considered.results[0]?.outcome,"not_initiated",
+      "bystander lost the freedom not to approach");
+    assert.equal(approached,1,"noticed arrival prompted repeated social inference");
+    assert.equal((await social.runOnce()).attempted,0,
+      "completed observed social choice did not settle");
+    assert.equal(store.listSocialInteractions(ids[1]).length,0,
+      "choosing not to approach created shared interaction history");
   }finally{ctx.close();}
 });
 
@@ -122,5 +191,7 @@ test("late inspection retains arrival truth without inventing old psychology",as
       "late processing invented attention");
     assert.equal(store.nextArrivalPerceptionAt(),null,
       "late historical work kept rescheduling");
+    assert.equal(store.nextSocialOpportunityAt(),null,
+      "late arrival fabricated a present-day social opportunity");
   }finally{ctx.close();}
 });

@@ -159,6 +159,14 @@ late processing preserves history but does not invent retrospective private
 appraisal. The God-view can join the bystander Story to its enacted arrival
 rather than double-count the World event.
 
+**Fourth source cut (October 19; validation pending):** when an independent
+bystander notices an enacted arrival, that personal Experience can earn a
+distinct, one-shot voluntary social opportunity. World verifies that the
+observer and the *same* newcomer are still at the same actual venue, then
+reuses the existing social meeting, salience, initiation and recipient-consent
+mechanisms. A missed arrival is excluded from that person's private recent
+social percept. This is source-only, not a demonstrated natural encounter.
+
 **Still open:** generalized human actor occurrences, physical perception
 across scenes, symmetric independent initiation by a bystander, complete
 retirement of legacy speculative queues and per-Story follow-ups, natural

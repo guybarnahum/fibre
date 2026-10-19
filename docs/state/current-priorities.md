@@ -41,6 +41,13 @@ noticed/missed attention and selective Experience path; its God-view
 projection avoids double-counting an arrival. The two-witness bound is a
 sample, not a population claim, and no interaction or Memory is forced.
 
+The independently noticed arrival now has a fourth source-only continuation:
+it can earn one targeted, nonrepeating bystander social choice. The
+existing social meeting engine remains authoritative for Thread-owned
+initiation, recipient consent, and resulting history; unperceived events no
+longer enter social recent-history cognition. It needs focused and full
+local validation, then staging evidence.
+
 This remains **source-only**, without Guy's new focused/full validation,
 staging bystander attention, endogenous bystander initiation, general
 event-time cross-scene perception or causal later-life social proof.
