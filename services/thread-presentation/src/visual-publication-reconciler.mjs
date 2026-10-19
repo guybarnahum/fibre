@@ -1,6 +1,7 @@
 import { THREAD_PRESENTATION_STREAM_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
 import { planCurrentPresentDepiction } from "./current-present-depiction.mjs";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
+import {readVisualAgeAnchorAdmissions} from "../../world-kernel/src/visual-age-anchor-catalog.mjs";
 
 function assertId(name, value) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -156,9 +157,24 @@ async function publishCurrentPresent({
   });
   await retainLatestPresent(infra.catalog, channelId, accepted.event, catalog);
 
+  // Age anchors are presentation-only evidence. Resolve them from the same
+  // admitted catalog and immutable object store as Observatory, at demand time.
+  const presentation=current.snapshot.presentation;
+  const canonicalRef=presentation.visualIdentity?.referenceObjectRefs?.length===1
+    ?presentation.visualIdentity.referenceObjectRefs[0]:null;
+  const admissions=canonicalRef!==null && presentation.subject?.birthDate
+    && typeof infra.catalog.list==="function"
+    ?await readVisualAgeAnchorAdmissions(infra.catalog,threadId):[];
+  const canonical=admissions.length>0
+    ?await infra.objects.head(canonicalRef):null;
+  if(admissions.length>0 && !canonical?.digest){
+    throw new Error("Admitted canonical portrait is unavailable for age-conditioned depiction");
+  }
   const slot = planCurrentPresentDepiction({
     present:accepted.event.payload,
-    presentation:current.snapshot.presentation,
+    presentation,
+    ageAnchorAdmissions:admissions,
+    canonicalReferenceDigest:canonical?.digest??null,
   });
   const providerProfile = selectProviderProfile({
     requiresReferenceObjects:slot.referenceObjectRefs.length > 0,
