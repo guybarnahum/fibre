@@ -223,8 +223,8 @@ function projectedOperatorLocation(livedNow,threadId,{
 function originsThreadObservatory(runtime,threadId){
   const thread=runtime.worldStore.getThread(threadId,{required:false});
   if(thread===null)return null;
-  const episodes=runtime.worldStore.listGenesisLifeEpisodes(threadId,{limit:64});
-  const publication=runtime.worldStore.getGenesisPublicationSeed(threadId);
+  const episodes=runtime.genesisStore.listGenesisLifeEpisodes(threadId,{limit:64});
+  const publication=runtime.genesisStore.getGenesisPublicationSeed(threadId);
   const memory=openAutobiographicalMemoryInspectionStore(runtime.worldStorage);
   let memories;
   try{memories=memory.listCurrentMemories(threadId,{newestFirst:true,limit:24});}
