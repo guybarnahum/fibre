@@ -100,12 +100,16 @@ export function createWorldEnvironmentOpportunity({
               ?livedNowStore.listCurrentVenueSituations({
                 venueRef:physicalVenue.ref,at:opportunity.dueAt,limit:8,
               }):[];
+            const venueObservers=venueCandidates.filter((item)=>
+              item.location?.kind==="place"
+              &&item.wakefulness!=="asleep"
+              &&Date.parse(item.establishedAt)<=Date.parse(opportunity.dueAt));
             const anchorPresent=current?.situationId===situation?.situationId
               &&current?.wakefulness!=="asleep";
             const eligible=timed
               &&(opportunity.kind==="scene"
                 ?(physicalVenue===null?anchorPresent
-                  :venueCandidates.some((item)=>item.wakefulness!=="asleep"))
+                  :venueObservers.length>0)
                 :anchorPresent
                   &&(opportunity.kind==="stay"
                     ?Date.parse(opportunity.dueAt)>Date.parse(situation.establishedAt)
@@ -146,18 +150,25 @@ export function createWorldEnvironmentOpportunity({
               :experienceStore.getSharedEnvironmentalStory?.({
                 occurredAt:opportunity.dueAt,placeRef:physicalVenue.ref,
               })??null;
-            if(!eligible||existing!==null
-              ||!candidateScenes.some((item)=>item.threadId===opportunity.threadId)){
+            const hasGroundedObserver=opportunity.kind==="scene"
+              &&physicalVenue!==null
+              ?candidateScenes.some((item)=>item.physicalVenueRef===physicalVenue.ref)
+              :candidateScenes.some((item)=>item.threadId===opportunity.threadId);
+            if(!eligible||existing!==null||!hasGroundedObserver){
               decision={
                 outcome:"not_observable",occurrenceText:null,presence:[],
                 occurredAt:opportunity.dueAt,
               };
             }else{
+              // The original scene witness may have departed. Another
+              // independently present visitor can still observe this scene.
+              const sceneWitness=opportunity.kind==="scene"&&physicalVenue!==null
+                ?venueObservers[0]:null;
               const input={
                 occurrenceAt:opportunity.dueAt,
                 initiatingSituation:{
-                  situationId:situation.situationId,
-                  activity:situation.activity??null,
+                  situationId:sceneWitness?.situationId??situation.situationId,
+                  activity:sceneWitness?.activity??situation.activity??null,
                   physicalVenue:physicalVenue===null?null:{
                     ref:physicalVenue.ref,name:physicalVenue.displayName,
                     locality:physicalVenue.locality,country:physicalVenue.country,

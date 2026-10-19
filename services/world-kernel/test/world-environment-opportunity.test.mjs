@@ -184,8 +184,14 @@ test("a scene has one sparse ambient consideration with independently perceiving
     assert.equal(store.enqueueSceneAmbientOpportunity({
       ...scene,threadId:first.threadId,situationId:first.situationId,
     }).inserted,true,"occupied scene earned no ambient consideration");
+    const sameScene=worldAmbientScene({
+      situation:second,nextBoundaryAt:"2026-10-08T13:00:00.000Z",
+      place:{physicalVenue:{ref:"venue_stay_cafe"}},
+    });
+    assert.equal(sameScene.sceneRef,scene.sceneRef,
+      "two visitors did not share one physical World scene");
     assert.equal(store.enqueueSceneAmbientOpportunity({
-      ...scene,threadId:second.threadId,situationId:second.situationId,
+      ...sameScene,threadId:second.threadId,situationId:second.situationId,
     }).inserted,false,"two visitors created duplicate ambient considerations");
 
     let at=stayDue;
