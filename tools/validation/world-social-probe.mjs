@@ -81,7 +81,8 @@ function groundedLifeSummary(threadId,person,checkedAt){
       startsAt:stop.startAt,endsAt:stop.endAt,
     }));
   return {
-    threadId,hasCurrentSituation:situation!==null,
+    threadId,displayName:person.thread?.identity?.name??null,
+    hasCurrentSituation:situation!==null,
     currentSituationId:situation?.situationId??null,
     currentSituationAt:situation?.establishedAt??null,
     currentPlaceRef:currentRef,
@@ -237,10 +238,12 @@ export function formatWorldSocialReport(evidence,evidencePath){
   const n=(value)=>Number.isFinite(value)?value:0;
   const short=(value,length=84)=>typeof value==="string"&&value.length>length
     ?value.slice(0,length-1)+"…":value??"unknown";
-  const time=(value)=>value??"not scheduled";
+  const time=(value)=>typeof value==="string"&&Number.isFinite(Date.parse(value))
+    ?value.replace("T"," ").replace(/(?:\\.\\d+)?Z$/u," UTC")
+    :"not scheduled";
   const lines=[
     "Fibre · World social observation",
-    "Environment: "+evidence.environment+"  |  Checked: "+evidence.checkedAt,
+    "Environment: "+evidence.environment+"  |  Checked: "+time(evidence.checkedAt),
     "Scope: "+(evidence.targetedThreadId??"first "+evidence.scannedThreadCount+" directory Threads"),
     "Observatories: "+evidence.availableThreadCount+"/"+evidence.scannedThreadCount+
       " read"+(evidence.unavailableThreadIds.length
@@ -264,9 +267,14 @@ export function formatWorldSocialReport(evidence,evidencePath){
           p.attestedVenueRef===person.currentAttestedVenueRef)?.description
           ??"verified public venue")
         :person.hasCurrentSituation
-          ?"not at a verified public venue"
+          ?person.currentPlaceKind==="formative_presence"
+            ?"formative place (not a verified public venue)"
+            :person.privatelyLocated
+              ?"private place (not a verified public venue)"
+              :"not at a verified public venue"
           :"no current situation";
-      lines.push("  Wakefulness: "+person.currentWakefulness,
+      lines.push("  Thread: "+short(person.displayName??person.threadId),
+        "  Wakefulness: "+person.currentWakefulness,
         "  Locality: "+locality,
         "  Current place: "+context,
         "  Next life boundary: "+time(person.nextBoundedLifeWake),
@@ -275,6 +283,11 @@ export function formatWorldSocialReport(evidence,evidencePath){
           " (bounded history)",
         "  Future public-venue stops in current plan: "+
           n(person.futureAttestedVenueStops?.length));
+      for(const visit of (person.recentPublicVenueVisits??[]).slice(0,2)){
+        const name=person.availableWorldContexts?.find(p=>
+          p.contextPlaceRef===visit.worldPlaceRef)?.description??"verified venue";
+        lines.push("  · Visited "+short(name,62)+" · "+time(visit.establishedAt));
+      }
     }else lines.push("  No current-life projection in the sampled Observatory.");
   }else{
     lines.push("  Current verified-venue visits: "+n(life.currentAttestedVenueVisitCount),
@@ -294,7 +307,7 @@ export function formatWorldSocialReport(evidence,evidencePath){
   for(const opportunity of evidence.socialOpportunities.slice(0,3)){
     lines.push("  · "+(opportunity.outcome??"pending").replaceAll("_"," ")+
       " · "+opportunity.threadId+
-      (opportunity.dueAt?" · "+opportunity.dueAt:""));
+      (opportunity.dueAt?" · "+time(opportunity.dueAt):""));
   }
   const histories=evidence.causalContinuity;
   lines.push("",
