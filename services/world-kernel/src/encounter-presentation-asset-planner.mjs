@@ -3,6 +3,7 @@ import {
   threadVisualIdentityProjectionDigest,
 } from "./thread-presentation-identity-domain.mjs";
 import { presentationAssetSourceDigest } from "./presentation-asset-demand.mjs";
+import {resolveVisualAgeReferences} from "./visual-age-anchors.mjs";
 import {
   assertId,
   assertIsoTimestamp,
@@ -30,6 +31,8 @@ function visualBindingMap(values) {
       threadId:value.threadId,
       birthDate:value.birthDate ?? null,
       visualIdentity,
+      canonicalReferenceDigest:value.canonicalReferenceDigest??null,
+      ageAnchorAdmissions:value.ageAnchorAdmissions??[],
     }));
   }
   return byThread;
@@ -60,12 +63,17 @@ function normalizedEncounter(encounterStory) {
 }
 
 function identityInstructions(depicted) {
-  return depicted.map(({ threadId, targetAgeYears }) => [
-    `Thread ${threadId}: use that Thread's supplied canonical reference image as the complete likeness anchor.`,
-    targetAgeYears === null
-      ? `Preserve this identity from normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} without asserting an unsupported exact encounter age.`
-      : `Preserve this identity while age-transforming naturally from normalized reference age ${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} to ${targetAgeYears} years old at the encounter time.`,
-  ].join(" "));
+  let imageIndex=0;
+  return depicted.map(({ threadId, targetAgeYears, references }) => {
+    const lines=[`Thread ${threadId}: image ${++imageIndex} is this Thread's canonical age-${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} identity root.`];
+    for(const reference of references.slice(1)){
+      lines.push(`Image ${++imageIndex} is Thread ${threadId}'s approved age-${reference.targetAgeYears} portrait.`);
+    }
+    lines.push(targetAgeYears === null
+      ? "Preserve this same person's identity without asserting an unsupported encounter age."
+      : `Depict this same person at age ${targetAgeYears} at the encounter time.`);
+    return lines.join(" ");
+  });
 }
 
 export function planEncounterPresentationAssetSlot({
@@ -98,17 +106,32 @@ export function planEncounterPresentationAssetSlot({
       deferredReason = "deferred_missing_visual_identity_reference";
       continue;
     }
+    const targetAgeYears=ageYearsAt(binding.birthDate,encounterStory.occurredAt);
+    const rootRef=binding.visualIdentity.referenceObjectRefs[0];
+    const resolved=targetAgeYears!==null && targetAgeYears>=0
+      &&binding.canonicalReferenceDigest!==null
+      ?resolveVisualAgeReferences({
+        threadId,targetAgeYears,
+        canonicalReferenceObjectRef:rootRef,
+        canonicalReferenceDigest:binding.canonicalReferenceDigest,
+        admissions:binding.ageAnchorAdmissions,
+      }):null;
+    const references=resolved?.references??[{
+      targetAgeYears:CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
+      objectRef:rootRef,admissionId:null,
+    }];
     depicted.push(Object.freeze({
       threadId,
       visualIdentity:binding.visualIdentity,
       visualIdentityDigest:threadVisualIdentityProjectionDigest(binding.visualIdentity),
-      targetAgeYears:ageYearsAt(binding.birthDate, encounterStory.occurredAt),
+      targetAgeYears,
+      references,
     }));
   }
 
   const ready = deferredReason === null;
   const referenceObjectRefs = ready
-    ? unique(depicted.flatMap((entry) => entry.visualIdentity.referenceObjectRefs))
+    ? unique(depicted.flatMap((entry) => entry.references.map(ref=>ref.objectRef)))
     : [];
   const identityInputs = ready
     ? unique(depicted.flatMap((entry) => [
@@ -116,6 +139,7 @@ export function planEncounterPresentationAssetSlot({
         entry.visualIdentity.provenanceRef,
         ...entry.visualIdentity.sourceReferences,
         ...entry.visualIdentity.permissionReferences,
+        ...entry.references.filter(ref=>ref.admissionId!==null).map(ref=>ref.admissionId),
       ]))
     : [];
   const source = {
@@ -126,6 +150,11 @@ export function planEncounterPresentationAssetSlot({
       threadId:entry.threadId,
       visualIdentityDigest:entry.visualIdentityDigest,
       targetAgeYears:entry.targetAgeYears,
+      referenceImages:entry.references.map(ref=>({
+        objectRef:ref.objectRef,
+        targetAgeYears:ref.targetAgeYears,
+        ...(ref.admissionId===null?{}:{admissionId:ref.admissionId,digest:ref.digest}),
+      })),
     })),
   };
   const brief = ready ? {
@@ -136,7 +165,8 @@ export function planEncounterPresentationAssetSlot({
     constraints:[
       "Use the Encounter Story visualization prompt as the objective scene authority; identity conditioning may only establish who a depicted Thread is and their encounter-time age.",
       "Generated encounter media is replaceable representation, not World evidence, Thread Experience, journal, memory, relationship state, or identity authority.",
-      "Use each supplied canonical reference only for its matching Thread; never reuse one person\'s likeness for another.",
+      "Each Thread has its own ordered group of reference images, beginning with its canonical age-25 identity root. Approved age portraits only guide that Thread's age-local likeness, never another participant's identity.",
+      "Do not copy reference portraits' neutral poses or backgrounds into the Encounter Story scene.",
       "Do not add dialogue, action, emotion, motive, or hidden participants that are absent from the admitted Encounter Story.",
       ...(assetKind === "video"
         ? ["Do not invent identity-specific voices; absent an authorized voice reference, keep spoken audio non-identifying or omit it."]
