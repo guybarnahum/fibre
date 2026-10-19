@@ -36,6 +36,8 @@ export function recentLifeMoments(livedNow){
         planned:stop===null?null:Object.freeze({
           planId:plan.planId,authoredAt:plan.authoredAt,
           activity:stop.activity??null,purpose:stop.purpose??null,
+          decisionContext:plan.cognition?.decisionContext??null,
+          selectedEvidenceRefs:plan.cognition?.selectedEvidenceRefs??[],
         }),
       });
     }));
@@ -44,7 +46,9 @@ export function recentLifeMoments(livedNow){
 
 // This view is intentionally bounded by the World Observatory's returned
 // history, not presented as a complete lifetime record.
-export function recordedLifeMoments({livedNow=null,memories=[],encounterStories=[]}={}){
+export function recordedLifeMoments({
+  livedNow=null,memories=[],encounterStories=[],socialOpportunities=[],
+}={}){
   const planById=new Map([
     ...(livedNow?.recentPersonalPlans??[]),
     ...(livedNow?.currentPersonalPlan?[livedNow.currentPersonalPlan]:[]),
@@ -70,9 +74,30 @@ export function recordedLifeMoments({livedNow=null,memories=[],encounterStories=
       planned:stop&&plan?Object.freeze({
         planId:plan.planId,authoredAt:plan.authoredAt,
         activity:stop.activity??null,purpose:stop.purpose??null,
+        decisionContext:plan.cognition?.decisionContext??null,
+        selectedEvidenceRefs:plan.cognition?.selectedEvidenceRefs??[],
       }):null,
     }));
   }
+  const decisions=(Array.isArray(socialOpportunities)?socialOpportunities:[])
+    .flatMap(item=>{
+      if(!item?.completedAt||!Number.isFinite(Date.parse(item.completedAt)))return [];
+      return [Object.freeze({
+        kind:"social_choice",
+        id:item.kind+":"+item.situationId+":"+(item.sourceEncounterRef??"arrival"),
+        at:item.completedAt,
+        title:item.outcome==="met"?"A conversation began"
+          :item.outcome==="not_initiated"?"Chose not to approach"
+          :item.outcome==="background"?"Social opportunity stayed in the background"
+          :item.outcome==="not_met"?"Conversation was not accepted"
+          :"Social consideration · "+item.outcome,
+        outcome:item.outcome,situationId:item.situationId,
+        decision:item.decision??null,
+        sourceEncounterRef:item.sourceEncounterRef??null,
+      })];
+    });
+  const byStory=new Map(decisions.filter(item=>item.decision?.encounterRef)
+    .map(item=>[item.decision.encounterRef,item.decision]));
   const episodes=new Map();
   for(const story of encounterStories){
     if(typeof story?.encounterId!=="string"
@@ -96,6 +121,7 @@ export function recordedLifeMoments({livedNow=null,memories=[],encounterStories=
       experienceText:experienced?.experienceText??null,
       experienceId:experienced?.experienceId??null,
       memoryLinks:Object.freeze(memoryLinks),
+      socialDecision:byStory.get(story.encounterId)??null,
       sceneId:story.situation?.situationId??null,
       occurrenceText:occurrence?.text??null,
       dialogue:beats.filter(beat=>["utterance","action"].includes(beat.kind))
@@ -116,7 +142,7 @@ export function recordedLifeMoments({livedNow=null,memories=[],encounterStories=
       recordedAt:memory.recordedAt??null,
     })];
   });
-  const all=[...sceneById.values(),...episodes.values(),...recalled];
+  const all=[...sceneById.values(),...episodes.values(),...decisions,...recalled];
   const ordered=all.sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)
     ||a.kind.localeCompare(b.kind)||a.id.localeCompare(b.id));
   return Object.freeze(ordered);
