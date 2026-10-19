@@ -84,7 +84,7 @@ function evidenceCandidate(ref, kind, text) {
   return Object.freeze({ ref, kind, text });
 }
 
-function selectEvidence(threadId, sourceStores, policy) {
+function selectEvidence(threadId, sourceStores, policy, at) {
   const identityStore = requireMethod(sourceStores, "identityStore", "getCurrentIdentityView");
   const memoryStore = requireMethod(sourceStores, "memoryStore", "listCurrentMemories");
   const situatedLifeStore = requireMethod(sourceStores, "situatedLifeStore", "listCurrentLifeRelations");
@@ -122,6 +122,8 @@ function selectEvidence(threadId, sourceStores, policy) {
     .map((item) => owned(threadId, "autobiographical memory", item.memoryId, item))
     .filter((item) =>
       USABLE_MEMORY_STATUS.has(item.status)
+      && Date.parse(item.asOf) <= Date.parse(at)
+      && Date.parse(item.recordedAt) <= Date.parse(at)
       && item.accessibility !== "inaccessible"
       && item.retentionState !== "unavailable"
       && memoryText(item) !== null)
@@ -243,7 +245,7 @@ export async function runInteriorCognition({
   if (thread?.threadId !== threadId) throw new TypeError("Interior Cognition Thread source mismatch");
 
   const profile = INTERIOR_COGNITION_PROFILE;
-  const selected = selectEvidence(threadId, sourceStores, profile);
+  const selected = selectEvidence(threadId, sourceStores, profile, at);
   const evidenceRefs = selected.evidence.map((item) => item.ref);
   const currentState = Object.freeze({
     selfModel:thread.currentState?.selfModel ?? null,
