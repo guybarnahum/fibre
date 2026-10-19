@@ -48,7 +48,18 @@ test("an enacted arrival permits immediate voluntary consideration without forci
       if(initiatorThreadId===people[2]){
         throw new Error("expression transport interrupted");
       }
-      return {attempts:[{outcome:"not_initiated"}]};
+      return {attempts:[{
+        counterpartyThreadId:people[2],outcome:"not_initiated",
+        salience:{outcome:"salient",anchors:["social_contact_pressure"],
+          sourceReferences:["sit_social_1"]},
+        initiation:{decision:"not_initiate",reason:"I want quiet now.",
+          decisionContext:{interoception:{
+            asOf:AT,drives:[{family:"social_contact",pressure:0.6}],
+            evidenceRefs:["sit_social_1"],
+          },observedThreadId:people[2],recentPersonalExperienceRefs:[]},
+          cognition:{selectedEvidenceRefs:["mem_private"],evidenceRefs:["mem_private"]}},
+        stance:null,encounterStory:null,
+      }]};
     },
   };
   const livedNowStore={
@@ -91,6 +102,15 @@ test("an enacted arrival permits immediate voluntary consideration without forci
     assert.equal(invoked.length,1,"social opportunity summoned multiple initiators");
     assert.equal(experience.listSocialInteractions(people[1]).length,0,
       "private non-initiation manufactured reciprocal history");
+    const witnessed=experience.inspectSocialOpportunities(people[1])[0];
+    assert.equal(witnessed.decision.initiation.decision,"not_initiate",
+      "the Thread's non-action was not retained with its opportunity");
+    assert.equal(witnessed.decision.initiation.decisionContext.interoception.drives[0].pressure,0.6,
+      "actual decision-time Body input disappeared from the completed opportunity");
+    assert.deepEqual(witnessed.decision.salience.anchors,["social_contact_pressure"],
+      "salience was incorrectly collapsed into a motive");
+    assert.equal(witnessed.decision.encounterRef,null,
+      "a non-initiation manufactured a shared Encounter Story");
 
     const interrupted=await process.runOnce();
     assert.equal(interrupted.results[0].outcome,"interrupted",
