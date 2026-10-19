@@ -13,6 +13,7 @@ import { createThreadJournalBook } from "../src/thread-journal-book.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
+import { createSocialMeetingService } from "../src/lived-social-meeting.mjs";
 
 const seed=JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8"),
@@ -513,4 +514,204 @@ test("queued experiences and interrupted consolidation recover without duplicati
     store?.close();world?.close();
     rmSync(directory,{recursive:true,force:true});
   }
+});
+
+
+test("retained lived Memory, not archived history, changes a later voluntary social act",async()=>{
+  const occurredAt="2026-10-17T10:00:00.000Z";
+  const rememberedAt="2026-10-17T11:00:00.000Z";
+  const laterAt="2026-10-18T18:00:00.000Z";
+  const memoryMeaning="I valued being welcomed into a quiet exchange at the café.";
+
+  async function liveAfterConsolidation(retain){
+    const directory=mkdtempSync(join(tmpdir(),"fibre-memory-consequence-"));
+    const storage={
+      infraDriver:createSqliteStateInfraDriver({
+        scopes:{world:join(directory,"world.sqlite")},
+      }),
+      stateScopeId:"world",
+    };
+    const world=openWorldStore(storage);
+    const experienceStore=openLivedExperienceStore(storage);
+    const memoryStore=openAutobiographicalMemoryStore(storage);
+    try{
+      const observer=activeThread();
+      observer.threadId="thr_memory_observer";
+      observer.identity.name="Kaleo";
+      observer.provenance.lastEventId="evt_memory_observer";
+      const newcomer=activeThread();
+      newcomer.threadId="thr_memory_newcomer";
+      newcomer.identity.name="Nia";
+      newcomer.provenance.lastEventId="evt_memory_newcomer";
+      world.seedThread(observer);
+      world.seedThread(newcomer);
+      const encounter=experienceStore.recordEncounterStory({
+        occurredAt,
+        threadPresence:[
+          {threadId:observer.threadId,situationId:"sit_memory_observer_arrival"},
+          {threadId:newcomer.threadId,situationId:"sit_memory_newcomer_arrival"},
+        ],
+        story:{
+          storyVersion:"encounter-story-v0.1",
+          beats:[{
+            actorThreadId:newcomer.threadId,kind:"action",
+            text:"Nia arrives at the neighborhood café.",
+          }],
+        },
+        visualization:createEncounterVisualization({
+          occurredAt,
+          story:{beats:[{actorThreadId:newcomer.threadId,kind:"action",
+            text:"Nia arrives at the neighborhood café."}]},
+          scene:"A shared neighborhood café.",
+          sourceReferences:["venue_memory_cafe"],
+          depictedThreadRefs:[],
+        }),
+      });
+      const witnessed=experience(experienceStore,{
+        threadId:observer.threadId,
+        situationId:"sit_memory_observer_arrival",
+        occurredAt,encounterRef:encounter.encounterId,
+        text:"I felt unexpectedly comfortable as Nia arrived.",
+      });
+      const consolidation=createExperienceConsolidationProcess({
+        worldReader:world,
+        livedNowStore:{getSituation:()=>({
+          situationId:"sit_memory_observer_arrival",
+          threadId:observer.threadId,establishedAt:occurredAt,
+          location:{kind:"place",placeRef:"wpl_memory_cafe"},
+          activity:"Sitting quietly.",evidenceRefs:[],
+        })},
+        semanticStateStore:{listCurrentState:()=>[]},
+        memoryStore,experienceStore,
+        modelAdapter:{async invoke({input}){
+          assert.deepEqual(input.experiences.map(item=>item.experienceId),
+            [witnessed.experienceId],"retention did not derive from lived Experience");
+          return {output:{
+            journalEntry:null,afterthoughts:[],
+            memory:retain?{
+              outcome:"retained",
+              rememberedContent:"I remember Nia's arrival at the café.",
+              rememberedMeaning:memoryMeaning,
+              confidence:0.8,salience:0.8,uncertainty:[],
+            }:{
+              outcome:"not_remembered",
+              rememberedContent:null,rememberedMeaning:null,
+              confidence:null,salience:null,uncertainty:[],
+            },
+          },provenance:{provider:"fixture",modelId:"memory-consequence"}};
+        }},
+        now:()=>rememberedAt,
+        batchLimit:1,
+      });
+      const formed=await consolidation.runOnce();
+      assert.equal(formed.failed,0,
+        formed.results[0]?.message??"consolidation failed");
+      assert.equal(formed.completed,1,"lived experience was not consolidated");
+      const admitted=memoryStore.listCurrentMemories(observer.threadId);
+      assert.equal(admitted.length,retain?1:0,
+        "memory retention did not govern durable recollection");
+      if(retain){
+        assert.deepEqual(admitted[0].eventRefs,[witnessed.experienceId],
+          "remembered meaning lost its lived provenance");
+        assert.equal(admitted[0].rememberedMeaning,memoryMeaning,
+          "actual retained meaning was replaced");
+      }
+
+      const current=new Map([observer,newcomer].map(person=>[
+        person.threadId,{
+          threadId:person.threadId,
+          situationId:`sit_next_day_${person.threadId}`,
+          establishedAt:"2026-10-18T17:30:00.000Z",
+          wakefulness:"awake",
+          activity:"Visiting the café again.",
+          location:{kind:"place",placeRef:"wpl_memory_cafe"},
+          participantRefs:person.threadId===observer.threadId
+            ?[newcomer.threadId]:[],
+        },
+      ]));
+      const place={ref:"wpl_memory_cafe",displayName:"The neighborhood café",
+        physicalVenue:{ref:"venue_memory_cafe",displayName:"The café"}};
+      let decisions=0;
+      const meeting=createSocialMeetingService({
+        worldReader:world,
+        livedNow:{ensure:async()=>{}},
+        livedNowStore:{
+          getCurrentSituation:id=>current.get(id)??null,
+          getPreviousSituation:()=>null,
+          listCurrentSituations:()=>[...current.values()],
+          listWorldPlaces:()=>[place],
+          getWorldPlace:()=>place,
+          latestPlan:()=>null,
+        },
+        identityStore:{getCurrentIdentityView:id=>({threadId:id,assertions:[]})},
+        situatedLifeStore:{
+          listCurrentLifeRelations:()=>[],
+          listCurrentPlaceEpisodes:()=>[],
+        },
+        semanticStateStore:{listCurrentState:()=>[]},
+        memoryStore,experienceStore,
+        modelAdapter:{
+          async invoke({input}){
+            const kind=input?.concern?.kind;
+            if(kind==="social_initiation"){
+              decisions++;
+              assert.deepEqual(input.concern.externalContext.recentPersonalExperiences,[],
+                "yesterday's Experience was reopened as immediate awareness");
+              assert.deepEqual(input.concern.externalContext.situatedPercept.recentEvents,[],
+                "yesterday's World event was treated as present recollection");
+              const references=input.developedSelfEvidence.filter(item=>item.kind==="memory");
+              assert.equal(references.length,retain?1:0,
+                "later judgment did not respect selective autobiographical retention");
+              if(retain){
+                assert.equal(references[0].ref,admitted[0].memoryId,
+                  "social cognition received only an opaque or unrelated Memory");
+                assert.equal(references[0].text,memoryMeaning,
+                  "the retained personal meaning did not reach private judgment");
+              }
+              return {output:{
+                result:{
+                  decision:retain?"initiate":"not_initiate",
+                  requestText:retain?"Would you like to talk for a moment?":null,
+                  reason:retain?"The remembered encounter matters to me.":
+                    "I do not feel like starting a conversation.",
+                },
+                evidenceRefs:retain?[references[0].ref]:[],
+                conflictingMotives:[],uncertainty:null,
+              },provenance:{provider:"fixture",modelId:"memory-choice"}};
+            }
+            if(kind==="social_response")return {output:{
+              result:{decision:"decline",expression:"Not right now.",
+                suggestedAt:null,reason:"I prefer quiet."},
+              evidenceRefs:[],conflictingMotives:[],uncertainty:null,
+            },provenance:{provider:"fixture",modelId:"memory-choice"}};
+            throw new Error("unexpected social cognition");
+          },
+          async *streamExpression(){throw Error("declined invitation must not speak live");},
+        },
+      });
+      const later=await meeting.meet({
+        initiatorThreadId:observer.threadId,at:laterAt,
+      });
+      assert.equal(decisions,1,"later encounter did not reach social judgment");
+      assert.equal(later.attempts[0]?.outcome,retain?"not_met":"not_initiated",
+        "remembering did not change the later choice");
+      const outward=experienceStore.listSocialInteractions(observer.threadId);
+      assert.equal(outward.length,retain?1:0,
+        "memory retention had no consequence for shared social history");
+      return {decision:later.attempts[0].initiation.decision,
+        memoryId:admitted[0]?.memoryId??null,
+        outward:outward.length};
+    }finally{
+      memoryStore.close();experienceStore.close();world.close();
+      rmSync(directory,{recursive:true,force:true});
+    }
+  }
+
+  const retained=await liveAfterConsolidation(true);
+  const unretained=await liveAfterConsolidation(false);
+  assert.deepEqual([retained.decision,unretained.decision],
+    ["initiate","not_initiate"],
+    "one objective experience led to identical later choices despite different retention");
+  assert.equal(retained.outward,1,"remembered encounter produced no social act");
+  assert.equal(unretained.outward,0,"unremembered encounter became invented contact");
 });
