@@ -99,6 +99,7 @@ function fixture({
   observedSolitudeHours = 0,
   inheritedSocialSensitivity = null,
   moveAfterAcceptance = false,
+  boundedVenueDiscovery = false,
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
@@ -448,6 +449,15 @@ function fixture({
           },
         }];
       },
+      listCurrentVenueSituations({venueRef,at,limit=8,excludeThreadId=null}){
+        return structuredClone([...situations.values()]
+          .filter(item=>item.threadId!==excludeThreadId
+            &&item.wakefulness!=="asleep"&&item.establishedAt<=at
+            &&this.getWorldPlace(item.threadId,item.location.placeRef,{
+              required:false,
+            })?.physicalVenue?.ref===venueRef)
+          .slice(0,limit));
+      },
       getWorldPlace(threadId, ref, { required = true } = {}) {
         const place = this.listWorldPlaces(threadId).find((candidate) => candidate.ref === ref) ?? null;
         if (place === null && required) throw new Error(`missing fixture World place ${ref}`);
@@ -596,6 +606,7 @@ function fixture({
       },
     },
     modelAdapter,
+    boundedVenueDiscovery,
   });
 
   return {
@@ -1077,4 +1088,35 @@ test("inherited social deprivation changes attention without commanding an encou
     "social need overrode the Thread's private decision");
   assert.equal(moreSensitive.socialInteractions.length,0,
     "social pressure fabricated a reciprocal interaction");
+});
+
+test("a noticed newcomer is considered specifically, without compelling contact",async()=>{
+  const grounded=fixture({
+    boundedVenueDiscovery:true,selaPresent:true,
+    initiationFor:()=>"not_initiate",
+  });
+  const result=await grounded.meeting.meet({
+    initiatorThreadId:mina.threadId,counterpartyThreadId:noor.threadId,at:AT,
+  });
+  assert.deepEqual(result.discoveredThreadIds,[noor.threadId],
+    "the noticed newcomer was replaced by another bystander");
+  assert.deepEqual(result.attempts.map(x=>x.counterpartyThreadId),
+    [noor.threadId],"social judgment targeted the wrong person");
+  assert.equal(result.attempts[0].outcome,"not_initiated",
+    "noticing someone compelled an encounter");
+  assert.deepEqual(grounded.initiationNames,["Mina"],
+    "the observer did not author their own initiation judgment");
+  assert.equal(grounded.stanceNames.length,0,
+    "the newcomer was asked to answer an unspoken request");
+  assert.equal(grounded.socialInteractions.length,0,
+    "private non-initiation fabricated shared history");
+
+  const absent=fixture({boundedVenueDiscovery:true,compatible:false});
+  const skipped=await absent.meeting.meet({
+    initiatorThreadId:mina.threadId,counterpartyThreadId:noor.threadId,at:AT,
+  });
+  assert.deepEqual(skipped.attempts,[],
+    "a no-longer-co-present person was contacted");
+  assert.equal(absent.modelCallCount(),0,
+    "unverified presence spent social cognition");
 });
