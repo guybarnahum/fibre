@@ -173,7 +173,7 @@ export function createWorldEnvironmentOpportunity({
                   activity:sceneWitness?.activity??situation.activity??null,
                   physicalVenue:physicalVenue===null?null:{
                     ref:physicalVenue.ref,name:physicalVenue.displayName,
-                    locality:physicalVenue.locality,country:physicalVenue.country,
+                    locality:physicalVenue.locality??null,country:physicalVenue.country??null,
                   },
                   sceneDescription:(origin?.displayName??origin?.specificPlace
                     ??"Ordinary lived setting").slice(0,320),
