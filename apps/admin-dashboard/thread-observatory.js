@@ -7,6 +7,7 @@ import { createFibreFinCard } from "./fibre-fin-card.js";
 import { packJournalPages, threadJournalPresentationModel } from "./thread-journal-presentation.mjs";
 import { buildEncounterEpisodes, buildSocialAnalytics, buildThreadWorldEvents } from "./thread-encounter-model.mjs";
 import { openThreadActionDialog } from "./thread-action-dialog.js";
+import {renderVisualAgeAnchors} from "./visual-age-anchors.js";
 import { currentThreadPlace, threadLocationText } from "./thread-person-ui.js";
 
 function el(tag, className = null, text = null) {
@@ -1848,6 +1849,7 @@ export function renderThreadObservatory({
   }
   const who = whoSection(identity); if (who) view.append(who);
   const appearance = appearanceSection(identity); if (appearance) view.append(appearance);
+  view.append(renderVisualAgeAnchors({threadId,threadName:threadName(identity)}));
   const media = mediaSection(identity); if (media) view.append(media);
   if(!deferredHistory){const dna = dnaSection(identity); if (dna) view.append(dna);}
 
