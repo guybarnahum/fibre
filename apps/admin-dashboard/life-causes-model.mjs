@@ -48,6 +48,7 @@ export function recentLifeMoments(livedNow){
 // history, not presented as a complete lifetime record.
 export function recordedLifeMoments({
   livedNow=null,memories=[],encounterStories=[],socialOpportunities=[],
+  socialInteractions=[],threadId=null,
 }={}){
   const planById=new Map([
     ...(livedNow?.recentPersonalPlans??[]),
@@ -98,6 +99,27 @@ export function recordedLifeMoments({
     });
   const byStory=new Map(decisions.filter(item=>item.decision?.encounterRef)
     .map(item=>[item.decision.encounterRef,item.decision]));
+  const responses=(Array.isArray(socialInteractions)?socialInteractions:[])
+    .flatMap(interaction=>{
+      if(typeof interaction?.interactionId!=="string"
+        ||!Number.isFinite(Date.parse(interaction.occurredAt??""))
+        ||(threadId!==null&&![interaction.initiatorThreadId,
+          interaction.recipientThreadId].includes(threadId)))return [];
+      return [Object.freeze({
+        kind:"social_interaction",id:interaction.interactionId,
+        at:interaction.occurredAt,
+        title:interaction.responseDecision==="accept"?"Accepted a social invitation"
+          :interaction.responseDecision==="decline"?"Declined a social invitation"
+          :"Deferred a social invitation",
+        role:threadId===interaction.recipientThreadId?"recipient":"initiator",
+        initiatorThreadId:interaction.initiatorThreadId,
+        recipientThreadId:interaction.recipientThreadId,
+        requestText:interaction.requestText,
+        responseDecision:interaction.responseDecision,
+        responseExpression:interaction.responseExpression,
+        suggestedAt:interaction.suggestedAt,
+      })];
+    });
   const episodes=new Map();
   for(const story of encounterStories){
     if(typeof story?.encounterId!=="string"
@@ -142,7 +164,7 @@ export function recordedLifeMoments({
       recordedAt:memory.recordedAt??null,
     })];
   });
-  const all=[...sceneById.values(),...episodes.values(),...decisions,...recalled];
+  const all=[...sceneById.values(),...episodes.values(),...decisions,...responses,...recalled];
   const ordered=all.sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)
     ||a.kind.localeCompare(b.kind)||a.id.localeCompare(b.id));
   return Object.freeze(ordered);
