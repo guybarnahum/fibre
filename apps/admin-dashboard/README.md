@@ -65,9 +65,15 @@ life must never be merged. Technical operation lineage belongs in
 no longer renders its indented Causal Trail; /life?thread=... is a
 read-only recent World-situation timeline with a selected-moment
 inspector and exact linked-plan purpose where available. Raw Activity
-retains diagnostics. The compact Thread-detail redesign, lifetime
-history, Genesis formation and Causal Witnesses remain subsequent
-slices; see [four-slice plan](../../docs/validation/life-observatory-slices.md).
+retains diagnostics. **Slice 2 source implemented:** Thread detail now has compact Overview,
+Identity & Body and Maintenance tabs and shows three enacted recent moments,
+without auto-fetching full history on scroll. Life & Causes provides a
+vertical date spine, a selected evidence inspector, and a deliberate
+Recorded history read with original Journal/Encounter/Memory presentations.
+That World history is bounded (recent situations, Encounter Stories and
+Memories); do not call it complete lifetime coverage. Genesis formation
+and Causal Witnesses remain later slices; see
+[four-slice plan](../../docs/validation/life-observatory-slices.md).
 This source is not yet a browser-accepted result.
 
 ## God's view
