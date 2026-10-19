@@ -39,7 +39,7 @@ export function currentCity(threadId,person){
     key:cityKey(location.locality,location.countryCode),
     locality:location.locality,countryCode:location.countryCode.toUpperCase(),
     situationRef:situation.situationId,
-    placeRef:ref,
+    placeRef:ref,atPlace:situation.phase==="at_place",
     wakefulness:situation.wakefulness??"unknown",
     nextLifeBoundaryAt:lived.nextAutonomousBoundary?.dueAt??null,
     plan:lived.currentPersonalPlan??null,
@@ -70,7 +70,7 @@ export function rankSocialCityCandidates({places,people,limit=DISPLAY_LIMIT}){
     const city=cityMap.get(person.key);
     if(!city)continue;
     const place=placeByRef.get(person.placeRef);
-    const currentVenue=place?.key===city.key?place.venue:null;
+    const currentVenue=person.atPlace&&place?.key===city.key?place.venue:null;
     const plannedPublicVisits=(person.plan?.stops??[]).flatMap(stop=>{
       const target=placeByRef.get(stop.physicalPlaceRef);
       if(target?.key!==city.key)return [];
