@@ -107,6 +107,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
         await showCandidate(candidateId,targetAgeYears);
         return;
       }
+      if(outcome.state==="unavailable")throw new Error("The image provider did not produce an age portrait.");
       await new Promise(resolve=>setTimeout(resolve,3000));
     }
     generate.disabled=false;
