@@ -109,6 +109,7 @@
     "fid:inspect": "node --env-file-if-exists=.env tools/fid/inspect-fid-publication.mjs",
     "appearance:diagnose": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/appearance/appearance.mjs --diagnose",
     "appearance:migrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/appearance/appearance.mjs --migrate",
+    "age-portraits:cleanup": "node --env-file-if-exists=.env tools/appearance/age-portrait-cleanup.mjs",
     "appearance:rerender": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/appearance/appearance.mjs --rerender",
     "appearance:correct": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/appearance/appearance.mjs",
     "identity:country-codes:migrate": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/migrations/thread-country-codes.mjs",
