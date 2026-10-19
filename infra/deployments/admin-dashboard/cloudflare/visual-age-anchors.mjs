@@ -18,6 +18,7 @@ import {
 
 const PROFILE="openai-gpt-image-2-medium-v1";
 const ADMISSIONS=VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX;
+const CANDIDATES="visual-age-anchor:candidate:";
 const CANDIDATE="visualagecandidate_";
 const ID=/^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 
@@ -148,8 +149,18 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       identifier("threadId",threadId);
       const current=await readSource(threadId);
       const admissions=await readVisualAgeAnchorAdmissions(infra.catalog,threadId);
+      const candidates=[];
+      let after=null;
+      do{
+        const page=await infra.catalog.list({prefix:CANDIDATES+threadId+":",after,limit:100});
+        candidates.push(...page.entries.map(({value})=>value).filter(value=>
+          value.canonicalReferenceObjectRef===current.objectRef
+          &&value.canonicalReferenceDigest===current.digest));
+        after=page.nextCursor;
+      }while(after!==null);
+      candidates.sort((a,b)=>b.requestedAt.localeCompare(a.requestedAt));
       return {canonical:{objectRef:current.objectRef,digest:current.digest,age:25},
-        anchors:applicable(current,admissions),historyCount:admissions.length};
+        anchors:applicable(current,admissions),historyCount:admissions.length,candidates};
     },
     async request(threadId,candidateId,targetAgeYears){
       identifier("threadId",threadId);identifier("candidateId",candidateId);age(targetAgeYears);
@@ -173,6 +184,11 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       }
       if(manifest.targetAgeYears!==targetAgeYears)throw new Error("Candidate ID was already used for another age");
       ensureCurrent(current,manifest);
+      await infra.catalog.upsert(CANDIDATES+threadId+":"+candidateId,{
+        candidateId,targetAgeYears,requestedAt:manifest.job.requestedAt,
+        canonicalReferenceObjectRef:manifest.canonicalReferenceObjectRef,
+        canonicalReferenceDigest:manifest.canonicalReferenceDigest,
+      });
       if(await infra.objects.head(manifest.job.receiptObjectRef)===null){
         const result=await infra.services.call("asset_generator","generation.reconcile",{job:manifest.job});
         return {candidateId,targetAgeYears,state:result.state};
@@ -191,6 +207,11 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
         ?(await infra.services.call("asset_generator","generation.reconcile",{job:manifest.job})).state
         :receipt.status==="ready"?"ready":"unavailable";
       return {candidateId,targetAgeYears:manifest.targetAgeYears,state};
+    },
+    async discard(threadId,candidateId){
+      await readManifest(infra,threadId,candidateId);
+      await infra.catalog.remove(CANDIDATES+threadId+":"+candidateId);
+      return {candidateId,state:"discarded"};
     },
     async image(threadId,candidateId){
       const manifest=await readManifest(infra,threadId,candidateId);
@@ -249,6 +270,7 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
         kind:"visual_age_anchor_admission",threadId,mediaType:"application/json",
       });
       await infra.catalog.upsert(catalogKey,record);
+      await infra.catalog.remove(CANDIDATES+threadId+":"+candidateId);
       return record;
     },
     async admittedImage(threadId,admissionId){
