@@ -13,7 +13,10 @@ test("a Thread's earlier Flight Plan and enacted travel remain distinguishable a
       {physicalPlaceRef:"wpl_lisbon",
         startAt:"2026-10-17T08:00:00Z",endAt:"2026-10-17T09:00:00Z"},
       {physicalPlaceRef:"wpl_porto",
-        startAt:"2026-10-17T12:00:00Z",endAt:"2026-10-17T14:00:00Z"},
+        startAt:"2026-10-17T12:00:00Z",endAt:"2026-10-17T14:00:00Z",
+        activity:"Reading at a public library",
+        purpose:"I want to spend an afternoon learning in new surroundings.",
+        travelFromPrevious:"Take the train."},
     ],
   };
   const scene=(kind,time,location)=>({
@@ -45,6 +48,10 @@ test("a Thread's earlier Flight Plan and enacted travel remain distinguishable a
   assert.equal(full.stage,"journey_enacted",
     "real World transitions were not joined to their Thread-owned plan");
   assert.equal(full.modelProvider,"openai");
+  assert.equal(full.purpose,travel.stops[1].purpose,
+    "the Thread's own stated purpose was lost in journey inspection");
+  assert.equal(full.activity,travel.stops[1].activity,
+    "the chosen public activity was reduced to a location reference");
   assert.equal(full.destination.authority,"world-place-v1");
   const instantPlan={
     ...travel,planId:"plan_instant",
