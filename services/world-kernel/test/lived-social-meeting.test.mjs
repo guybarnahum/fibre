@@ -177,7 +177,7 @@ function fixture({
     };
     experiences.push(structuredClone(experience));
     attentions.push({
-      threadId:mina.threadId,encounterRef,situationId:"sit_mina_earlier",
+      threadId:mina.threadId,encounterRef:encounterId,situationId:"sit_mina_earlier",
       occurredAt:earlier,outcome:"noticed",experience,
     });
   }
