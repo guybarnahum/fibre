@@ -19,6 +19,7 @@ import {
 const PROFILE="openai-gpt-image-2-medium-v1";
 const ADMISSIONS=VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX;
 const CANDIDATES="visual-age-anchor:candidate:";
+const DISCARDED_RETENTION_MS=7*24*60*60*1000;
 const CANDIDATE="visualagecandidate_";
 const ID=/^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 
@@ -162,7 +163,8 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       do{
         const page=await infra.catalog.list({prefix:CANDIDATES+threadId+":",after,limit:100});
         candidates.push(...page.entries.map(({value})=>value).filter(value=>
-          value.canonicalReferenceObjectRef===current.objectRef
+          value.state!=="discarded"&&value.state!=="cleaned"
+          &&value.canonicalReferenceObjectRef===current.objectRef
           &&value.canonicalReferenceDigest===current.digest));
         after=page.nextCursor;
       }while(after!==null);
@@ -193,6 +195,10 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       }
       if(manifest.targetAgeYears!==targetAgeYears)throw new Error("Candidate ID was already used for another age");
       ensureCurrent(current,manifest);
+      const indexed=await infra.catalog.get(CANDIDATES+threadId+":"+candidateId);
+      if(indexed?.state==="discarded"||indexed?.state==="cleaned"){
+        throw new Error("Discarded age portrait candidate cannot be restarted");
+      }
       await infra.catalog.upsert(CANDIDATES+threadId+":"+candidateId,{
         candidateId,targetAgeYears,requestedAt:manifest.job.requestedAt,
         canonicalReferenceObjectRef:manifest.canonicalReferenceObjectRef,
@@ -218,8 +224,23 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       return {candidateId,targetAgeYears:manifest.targetAgeYears,state};
     },
     async discard(threadId,candidateId){
-      await readManifest(infra,threadId,candidateId);
-      await infra.catalog.remove(CANDIDATES+threadId+":"+candidateId);
+      const manifest=await readManifest(infra,threadId,candidateId);
+      if(await infra.catalog.get(ADMISSIONS+threadId+":"+candidateId)!==null){
+        throw new Error("Approved portrait cannot be discarded");
+      }
+      const catalogKey=CANDIDATES+threadId+":"+candidateId;
+      const indexed=await infra.catalog.get(catalogKey);
+      if(indexed?.state!=="cleaned"){
+        await infra.catalog.upsert(catalogKey,{
+          ...(indexed??{
+            candidateId,targetAgeYears:manifest.targetAgeYears,
+            requestedAt:manifest.job.requestedAt,
+            canonicalReferenceObjectRef:manifest.canonicalReferenceObjectRef,
+            canonicalReferenceDigest:manifest.canonicalReferenceDigest,
+          }),
+          state:"discarded",discardedAt:indexed?.discardedAt??new Date().toISOString(),
+        });
+      }
       return {candidateId,state:"discarded"};
     },
     async image(threadId,candidateId){
@@ -242,6 +263,10 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       const catalogKey=ADMISSIONS+threadId+":"+candidateId;
       const existing=await infra.catalog.get(catalogKey);
       if(existing!==null)return normalizeVisualAgeAnchorAdmission(existing);
+      const candidateEntry=await infra.catalog.get(CANDIDATES+threadId+":"+candidateId);
+      if(candidateEntry?.state==="discarded"||candidateEntry?.state==="cleaned"){
+        throw new Error("Discarded age portrait cannot be approved");
+      }
       const result=await verifiedImage(infra,manifest,verify);
       if(result===null)throw new Error("Age anchor must be generated before approval");
       const approvalRef="visualageapproval_"+sha(threadId+"\0"+candidateId).slice(7);
@@ -281,6 +306,81 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       await infra.catalog.upsert(catalogKey,record);
       await infra.catalog.remove(CANDIDATES+threadId+":"+candidateId);
       return record;
+    },
+    /** Operator-only, targeted dry-run by default. Never scans R2 or touches admissions. */
+    async cleanup(threadId,{dryRun=true,now=new Date().toISOString()}={}){
+      identifier("threadId",threadId);
+      if(typeof dryRun!=="boolean")throw new TypeError("dryRun must be boolean");
+      const olderThan=new Date(now).getTime()-DISCARDED_RETENTION_MS;
+      if(!Number.isFinite(olderThan))throw new TypeError("cleanup date is invalid");
+      const admissions=await readVisualAgeAnchorAdmissions(infra.catalog,threadId);
+      const protectedRefs=new Set(admissions.flatMap(record=>[
+        record.portraitObjectRef,record.generationReceiptRef,
+        record.approvalRef,record.admissionId,...record.sourceAnchorRefs,
+        record.canonicalReferenceObjectRef,
+      ]));
+      const results=[];
+      let after=null;
+      do{
+        const page=await infra.catalog.list({prefix:CANDIDATES+threadId+":",after,limit:100});
+        for(const {value:entry} of page.entries){
+          if(entry.state!=="discarded" || Date.parse(entry.discardedAt)>olderThan
+            || !Number.isFinite(Date.parse(entry.discardedAt)))continue;
+          const candidateId=entry.candidateId;
+          const candidateKey=CANDIDATES+threadId+":"+candidateId;
+          const manifest=await readManifest(infra,threadId,candidateId);
+          if(await infra.catalog.get(ADMISSIONS+threadId+":"+candidateId)!==null)continue;
+          const receipt=await stored(infra,manifest.job.receiptObjectRef);
+          if(receipt===null){
+            results.push({candidateId,state:"not_complete",objects:[],bytes:0});
+            continue; // Pending or failed; no proof that the workflow has stopped.
+          }
+          const job=manifest.job;
+          if(receipt.status!=="ready"||receipt.jobId!==job.jobId
+            ||receipt.objectRef!==job.outputObjectRef
+            ||receipt.context?.threadId!==threadId){
+            results.push({candidateId,state:"invalid_receipt",objects:[],bytes:0});
+            continue;
+          }
+          const output=await infra.objects.get(job.outputObjectRef);
+          if(output===null){
+            results.push({candidateId,state:"media_already_removed",objects:[],bytes:0});
+            continue;
+          }
+          if(output.digest!==receipt.sha256||output.metadata?.kind!=="provenanced_generated_media"
+            ||output.metadata?.jobId!==job.jobId){
+            results.push({candidateId,state:"unverified_media",objects:[],bytes:0});
+            continue;
+          }
+          const outputRef=output.metadata.providerOutputObjectRef;
+          const staged=typeof outputRef==="string"?await infra.objects.get(outputRef):null;
+          const objects=[{objectRef:job.outputObjectRef,bytes:output.bytes.length}];
+          if(staged?.metadata?.kind==="staged_provider_output"
+            &&staged.metadata.jobId===job.jobId
+            &&staged.digest===output.metadata.providerOutputDigest
+            &&outputRef!==job.outputObjectRef){
+            objects.push({objectRef:outputRef,bytes:staged.bytes.length});
+          }
+          if(objects.some(object=>protectedRefs.has(object.objectRef))){
+            results.push({candidateId,state:"referenced",objects:[],bytes:0});
+            continue;
+          }
+          if(!dryRun){
+            // Recheck the admitted ledger immediately before destructive changes.
+            const latest=await readVisualAgeAnchorAdmissions(infra.catalog,threadId);
+            const nowProtected=new Set(latest.flatMap(a=>[a.portraitObjectRef,...a.sourceAnchorRefs]));
+            if(latest.some(a=>a.generationReceiptRef===job.receiptObjectRef)
+              ||objects.some(o=>nowProtected.has(o.objectRef)))continue;
+            for(const object of objects)await infra.objects.remove(object.objectRef);
+            await infra.catalog.upsert(candidateKey,{...entry,state:"cleaned",cleanedAt:now});
+          }
+          results.push({candidateId,state:dryRun?"eligible":"cleaned",objects,
+            bytes:objects.reduce((sum,item)=>sum+item.bytes,0)});
+        }
+        after=page.nextCursor;
+      }while(after!==null);
+      return {threadId,dryRun,retentionDays:7,results,
+        totalBytes:results.reduce((sum,item)=>sum+item.bytes,0)};
     },
     async admittedImage(threadId,admissionId){
       const anchors=await this.list(threadId);
