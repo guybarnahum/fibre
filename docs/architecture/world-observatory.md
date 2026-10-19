@@ -22,6 +22,20 @@ separate event authority, or a new condition for Thread life. Its purpose is
 to diagnose and demonstrate the north star: independently living people
 meet in a shared, changing World and may influence one another's lives.
 
+## Relation to Life Observatory (accepted UX direction, October 19)
+
+[Life Observatory](life-observatory.md) defines the shared **Life
+Investigation** detail and person-first UX. This World Observatory
+retains **World → City → Place → Event** as the event-first entry, but
+its selected event opens that *same* detail rather than developing a
+second, inconsistent interpretation of private decision evidence.
+One objective event may have separate participant viewpoints, including
+non-notice and non-participation. Selecting a participant pivots to their
+individual Life Timeline at the event with a return path to the shared
+scene. Birth Center and Threads use the same evidence semantics.
+The accepted navigation does not imply that the remaining World event
+index/projections or decision-time Causal Witnesses are deployed.
+
 ## Navigation and interaction
 
 **World → City → Place → Event → Individual consequence** is the principal
