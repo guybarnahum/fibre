@@ -78,3 +78,45 @@ test("Observatory redraw resumes pending age image and exposes approved review o
     globalThis.fetch=previousFetch;
   }
 });
+
+test("same-age candidate compares its current admitted likeness before replacing it",async()=>{
+  const previousDocument=globalThis.document;
+  const previousFetch=globalThis.fetch;
+  const candidateId="visual_age_candidate_replace";
+  globalThis.document={
+    createElement:fakeElement,
+    createElementNS:(_namespace,name)=>fakeElement(name),
+  };
+  globalThis.fetch=async url=>{
+    if(url.endsWith("/age-anchors")){
+      return Response.json({
+        anchors:[{targetAgeYears:12,admissionId:"age12_prior"}],
+        candidates:[{candidateId,targetAgeYears:12,requestedAt:"2026-10-19T12:00:00Z"}],
+      });
+    }
+    if(url.endsWith("/candidates/"+candidateId)){
+      return Response.json({state:"ready",candidateId,targetAgeYears:12});
+    }
+    if(url.endsWith("/candidates/"+candidateId+"/portrait")){
+      return new Response(new Uint8Array([137,80,78,71]),{
+        headers:{"content-type":"image/png"},
+      });
+    }
+    throw new Error("Unexpected request "+url);
+  };
+  try{
+    const view=renderVisualAgeAnchors({threadId:"thr_visual",threadName:"Yael"});
+    view.isConnected=true;
+    await flushUntil(()=>find(view,"thread-age-anchor-review")?.children.length===4);
+    const cards=find(view,"thread-age-anchor-review").children;
+    assert.equal(cards[0].children[1].textContent,"Canonical · 25");
+    assert.equal(cards[1].children[1].textContent,"Current · age 12");
+    assert.equal(cards[2].children[1].textContent,"Proposed · age 12");
+    const gallery=find(view,"thread-age-anchor-gallery");
+    assert.equal(gallery.children.length,2,
+      "Unapproved replacement removed the active childhood portrait");
+  }finally{
+    globalThis.document=previousDocument;
+    globalThis.fetch=previousFetch;
+  }
+});
