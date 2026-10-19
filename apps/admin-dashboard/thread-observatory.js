@@ -1810,7 +1810,7 @@ export function renderThreadObservatory({
       encounterError,experienceConsolidation,experienceJournalEntries,semanticStates,lifeRelations,
     }),
     hero(identity,threadId,livedNow),
-    lifeRecordLinks(),
+    ...(!deferredHistory?[lifeRecordLinks()]:[]),
     identitySection(identity,threadId,livedNow),
     renderFidSection(identity,threadId),
     nowSection(identity,livedNow),
@@ -1819,33 +1819,19 @@ export function renderThreadObservatory({
   if(deferredHistory){
     const placeholder=section("Lived history","On demand");
     placeholder.dataset.observatoryHistory="deferred";
-    const load=el("button","secondary","Load life history");
-    load.type="button";
-    load.dataset.loadHistory="true";
+    placeholder.classList.add("thread-history-link");
+    const link=el("a","button-link secondary","Explore Life & Causes →");
+    link.href="/life?thread="+encodeURIComponent(threadId);
     placeholder.append(el("p","thread-empty-note",
-      "Memories, encounters, relationship history and DNA are loaded only when needed."),load);
+      "View World events, encounters, Journal and Memories in the dedicated Life & Causes workspace. History loads only when requested."),link);
     deferredPlaceholder=placeholder;
   }else{
-    view.append(
-      journalSection(
-        journal,journalError,
-        [...experienceJournalEntries,
-          ...((experienceConsolidation?.consolidations??[])
-            .map(item=>item.journal).filter(Boolean))],
-      ),
-      worldEventsSection({livedNow,encounterStories,encounterError}),
-      encounterEpisodeSection({
-        identity,threadId,encounterStories,encounterError,livedNow,
-        experienceConsolidation,experienceJournalEntries,memories,
-        semanticStates,lifeRelations,
-      }),
-      socialAnalyticsSection({
-        threadId,encounterStories,socialInteractions,experienceConsolidation,
-        experienceJournalEntries,memories,semanticStates,lifeRelations,
-      }),
-      laterContactSection(contactOutreach),
-      memoriesSection(memories,firstText(identity.birthDate,identity.world?.thread?.identity?.birthDate),memoryError),
-    );
+    view.append(renderThreadLifeHistory({
+      identity,threadId,memories,memoryError,encounterStories,livedNow,
+      socialInteractions,encounterError,experienceJournalEntries,
+      experienceConsolidation,contactOutreach,semanticStates,lifeRelations,
+      journal,journalError,
+    }));
   }
   const who = whoSection(identity); if (who) view.append(who);
   const appearance = appearanceSection(identity); if (appearance) view.append(appearance);
@@ -1860,5 +1846,38 @@ export function renderThreadObservatory({
   if (identity.presentation) records.append(disclosure("Current public Presentation", identity.presentation));
   view.append(records);
   if(deferredPlaceholder!==null)view.append(deferredPlaceholder);
+  return view;
+}
+
+// Existing detailed presentations have one owner. Thread pages link here;
+// Life & Causes requests them intentionally after a bounded history read.
+export function renderThreadLifeHistory({
+  identity={},threadId,memories=[],memoryError=null,encounterStories=[],
+  livedNow=null,socialInteractions=[],encounterError=null,
+  experienceJournalEntries=[],experienceConsolidation=null,
+  contactOutreach=null,semanticStates=[],lifeRelations=[],
+  journal=null,journalError=null,
+}={}){
+  const view=el("div","thread-life-history");
+  view.append(
+    worldEventsSection({livedNow,encounterStories,encounterError}),
+    encounterEpisodeSection({
+      identity,threadId,encounterStories,encounterError,livedNow,
+      experienceConsolidation,experienceJournalEntries,memories,
+      semanticStates,lifeRelations,
+    }),
+    memoriesSection(memories,firstText(identity.birthDate,
+      identity.world?.thread?.identity?.birthDate),memoryError),
+    journalSection(journal,journalError,[
+      ...experienceJournalEntries,
+      ...((experienceConsolidation?.consolidations??[])
+        .map(item=>item.journal).filter(Boolean)),
+    ]),
+    socialAnalyticsSection({
+      threadId,encounterStories,socialInteractions,experienceConsolidation,
+      experienceJournalEntries,memories,semanticStates,lifeRelations,
+    }),
+    laterContactSection(contactOutreach),
+  );
   return view;
 }
