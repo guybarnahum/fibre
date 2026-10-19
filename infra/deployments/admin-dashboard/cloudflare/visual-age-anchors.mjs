@@ -101,14 +101,18 @@ async function verifiedImage(infra,manifest,verify){
   if(receipt===null)return null;
   if(receipt.status!=="ready")throw new Error("Age portrait generation did not produce an image");
   const proof=await verify({infra,receipt});
-  if(receipt.status!=="ready"||receipt.jobId!==manifest.job.jobId
+  const recordedJob=proof.generationRecord?.job;
+  if(receipt.jobId!==manifest.job.jobId
     ||receipt.objectRef!==manifest.job.outputObjectRef
     ||receipt.role!=="visual_age_anchor"
     ||receipt.mediaType!=="image/png"
     ||receipt.context?.threadId!==manifest.threadId
     ||receipt.context?.targetAgeYears!==manifest.targetAgeYears
     ||receipt.context?.canonicalReferenceDigest!==manifest.canonicalReferenceDigest
-    ||JSON.stringify(receipt.job.referenceObjectRefs)!==JSON.stringify(manifest.job.referenceObjectRefs)
+    ||recordedJob?.jobId!==manifest.job.jobId
+    ||recordedJob?.outputObjectRef!==manifest.job.outputObjectRef
+    ||recordedJob?.receiptObjectRef!==manifest.job.receiptObjectRef
+    ||JSON.stringify(recordedJob?.referenceObjectRefs)!==JSON.stringify(manifest.job.referenceObjectRefs)
     ||proof.generationRecord.generation.provider!=="openai"
     ||!proof.generationRecord.providerRequestWitness?.body?.referenceInputs?.some(ref=>
       ref.objectRef===manifest.canonicalReferenceObjectRef&&ref.digest===manifest.canonicalReferenceDigest)){
@@ -177,17 +181,23 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       if(manifest.targetAgeYears!==targetAgeYears)throw new Error("Candidate ID was already used for another age");
       ensureCurrent(current,manifest);
       if(await infra.objects.head(manifest.job.receiptObjectRef)===null){
-        await infra.services.call("asset_generator","generation.reconcile",{job:manifest.job});
+        const result=await infra.services.call("asset_generator","generation.reconcile",{job:manifest.job});
+        return {candidateId,targetAgeYears,state:result.state};
       }
       return this.status(threadId,candidateId);
     },
     async status(threadId,candidateId){
       const manifest=await readManifest(infra,threadId,candidateId);
       const current=await readSource(threadId);ensureCurrent(current,manifest);
-      const receipt=await stored(infra,manifest.job.receiptObjectRef);
-      const state=receipt===null?"pending":receipt.status==="ready"?"ready":"unavailable";
       const admitted=await infra.catalog.get(ADMISSIONS+threadId+":"+candidateId)!==null;
-      return {candidateId,targetAgeYears:manifest.targetAgeYears,state:admitted?"admitted":state};
+      if(admitted)return {candidateId,targetAgeYears:manifest.targetAgeYears,state:"admitted"};
+      const receipt=await stored(infra,manifest.job.receiptObjectRef);
+      // Reconcile also exposes terminal Workflow errors when no receipt exists;
+      // a missing receipt alone is not evidence of continued generation.
+      const state=receipt===null
+        ?(await infra.services.call("asset_generator","generation.reconcile",{job:manifest.job})).state
+        :receipt.status==="ready"?"ready":"unavailable";
+      return {candidateId,targetAgeYears:manifest.targetAgeYears,state};
     },
     async image(threadId,candidateId){
       const manifest=await readManifest(infra,threadId,candidateId);
