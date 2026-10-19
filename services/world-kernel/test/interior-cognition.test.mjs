@@ -240,3 +240,31 @@ test("N6.3c visitor participation is the Thread's existing social-response cogni
     "the Thread must retain agency over the visitor request");
   assert.equal(stance.expression, "Not right now, thanks.");
 });
+
+test("a later-admitted memory cannot advise an earlier decision",async()=>{
+  const prior=await runInteriorCognition({
+    threadId:"thr_person_a",
+    at:"2026-09-21T11:00:00.000Z",
+    concern:CONCERN,adapter:ADAPTER,
+    sourceStores:sourceStores({
+      threadId:"thr_person_a",
+      memoryId:"mem-person-a",
+      rememberedMeaning:"Something learned after this earlier decision.",
+    }),
+    modelAdapter:{
+      async invoke({input}){
+        assert.equal(input.developedSelfEvidence.some(item=>item.kind==="memory"),
+          false,"future Memory rewrote yesterday's social judgment");
+        return {
+          output:{
+            result:{stance:"avoid"},evidenceRefs:[],
+            conflictingMotives:[],uncertainty:null,
+          },
+          provenance:{provider:"fixture",modelId:"time-bounded-interior"},
+        };
+      },
+    },
+  });
+  assert.deepEqual(prior.evidenceRefs,[],
+    "future recollection was cited as an earlier cause");
+});
