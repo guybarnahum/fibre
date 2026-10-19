@@ -1,4 +1,6 @@
 import { normalizeThreadPresentationBundle } from "./thread-presentation-domain.mjs";
+import {resolveVisualAgeReferences} from "./visual-age-anchors.mjs";
+import {readVisualAgeAnchorAdmissions} from "./visual-age-anchor-catalog.mjs";
 import { threadVisualIdentityProjectionDigest } from "./thread-presentation-identity-domain.mjs";
 import { canonicalJson, sha256 } from "./persistence-common.mjs";
 import {
@@ -43,6 +45,7 @@ function memoryBrief(memory, {
   visualIdentity = null,
   targetAgeYears = null,
   depictsThread = false,
+  selectedAgeReferences = [],
 } = {}) {
   const uncertainty = memory.uncertainty.length > 0
     ? `Uncertain details that must not be rendered as exact facts: ${memory.uncertainty.join("; ")}.`
@@ -55,6 +58,9 @@ function memoryBrief(memory, {
       memory.rememberedContent,
       uncertainty,
       ...(hasIdentityReference ? [ageInstruction(targetAgeYears)] : []),
+      ...(selectedAgeReferences.length>1
+        ? [`Reference images in order: image 1 is the canonical age-${CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS} root; ${selectedAgeReferences.slice(1).map((reference,index)=>`image ${index+2} is the admitted age-${reference.targetAgeYears} portrait`).join("; ")}. These images all depict this Thread.`]
+        : []),
     ].join(" "),
     constraints: [
       "This is a reconstruction of remembered content, not a documentary photograph or historical fact record.",
@@ -65,6 +71,9 @@ function memoryBrief(memory, {
             "The backed life-event participation record establishes that the Thread is present in this scene; use the supplied canonical visual-identity reference as that person's facial/physical identity anchor.",
             "Age, expression, clothing, and scene may change, but the Thread must remain recognizably the same identity.",
             "Do not copy the canonical reference portrait's neutral pose or background unless the memory itself calls for them; it is an identity reference, not scene composition evidence.",
+            ...(selectedAgeReferences.length>1 ? [
+              "The canonical first image remains the sole identity authority; additional admitted portraits only guide plausible age-dependent appearance, not remembered events or the surrounding scene.",
+            ] : []),
           ]
         : depictsThread
           ? ["Do not generate this self-depicting scene without the admitted canonical visual-identity reference."]
@@ -136,6 +145,8 @@ export function planThreadPresentationAssetSlots({
   bundle,
   snapshotObjectRef,
   snapshotDigest,
+  ageAnchorAdmissions = [],
+  canonicalReferenceDigest = null,
 }) {
   const normalized = normalizeThreadPresentationBundle(bundle);
   const { presentation, media } = normalized;
@@ -225,6 +236,16 @@ export function planThreadPresentationAssetSlots({
           const visualIdentityDigest = visualIdentity === null
             ? null
             : threadVisualIdentityProjectionDigest(visualIdentity);
+          const ageReferences=visualIdentity!==null && depiction.targetAgeYears!==null
+            && depiction.targetAgeYears>=0 && canonicalReferenceDigest!==null
+            ?resolveVisualAgeReferences({
+              threadId:presentation.manifest.threadId,
+              targetAgeYears:depiction.targetAgeYears,
+              canonicalReferenceObjectRef:visualIdentity.referenceObjectRefs[0],
+              canonicalReferenceDigest,
+              admissions:ageAnchorAdmissions,
+            }):null;
+          const admittedReferences=ageReferences?.references.filter(item=>item.admissionId!==null)??[];
           semanticSource = {
             asset: baseAssetSource(asset),
             memory,
@@ -232,6 +253,10 @@ export function planThreadPresentationAssetSlots({
             depictsThread: depiction.depictsThread,
             visualIdentityDigest,
             targetAgeYears: depiction.targetAgeYears,
+            ...(admittedReferences.length>0
+              ?{ageReferenceAdmissions:admittedReferences.map(item=>({
+                admissionId:item.admissionId,objectRef:item.objectRef,digest:item.digest,
+              }))}:{ }),
             referenceAgeYears: visualIdentity === null
               ? null
               : CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
@@ -240,15 +265,18 @@ export function planThreadPresentationAssetSlots({
             visualIdentity,
             targetAgeYears: depiction.targetAgeYears,
             depictsThread: depiction.depictsThread,
+            selectedAgeReferences:ageReferences?.references??[],
           });
           extraInputReferences = eventInputReferences(depiction.sceneEvents);
           if (visualIdentity !== null) {
-            referenceObjectRefs = [...visualIdentity.referenceObjectRefs];
+            referenceObjectRefs = ageReferences===null
+              ?[...visualIdentity.referenceObjectRefs]:[...ageReferences.referenceObjectRefs];
             extraInputReferences = unique([
               ...extraInputReferences,
               visualIdentity.embodimentId,
               ...visualIdentity.sourceReferences,
               ...visualIdentity.permissionReferences,
+              ...admittedReferences.map(item=>item.admissionId),
             ]);
             stableContext = {
               kind: "thread_presentation_media",
@@ -330,6 +358,33 @@ export function planThreadPresentationAssetSlots({
     snapshotObjectRef,
     snapshotDigest,
     slots: Object.freeze(slots),
+  });
+}
+
+
+/** Resolve optional admitted likenesses once at demand time, never from private memories. */
+export async function planThreadPresentationAssetSlotsWithAdmittedAges({
+  infra,bundle,snapshotObjectRef,snapshotDigest,
+}){
+  const {presentation,media}=bundle;
+  const threadId=presentation?.manifest?.threadId;
+  const canonicalRef=presentation?.visualIdentity?.referenceObjectRefs?.length===1
+    ?presentation.visualIdentity.referenceObjectRefs[0]:null;
+  const needsAgeReferences=canonicalRef!==null
+    &&presentation.subject?.birthDate!=null
+    &&media?.assets?.some(asset=>asset.role==="memory_reconstruction");
+  let ageAnchorAdmissions=[];
+  let canonicalReferenceDigest=null;
+  if(needsAgeReferences&&typeof infra?.catalog?.list==="function"){
+    ageAnchorAdmissions=await readVisualAgeAnchorAdmissions(infra.catalog,threadId);
+    if(ageAnchorAdmissions.length>0){
+      const root=await infra.objects?.head(canonicalRef);
+      if(!root?.digest)throw new Error("Admitted canonical identity image is unavailable");
+      canonicalReferenceDigest=root.digest;
+    }
+  }
+  return planThreadPresentationAssetSlots({
+    bundle,snapshotObjectRef,snapshotDigest,ageAnchorAdmissions,canonicalReferenceDigest,
   });
 }
 
