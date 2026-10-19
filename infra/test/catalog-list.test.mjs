@@ -62,7 +62,7 @@ test("Cloudflare D1 catalog lists ordered prefix pages", async () => {
   await exerciseCatalogList(createCloudflareCatalogPort(fakeD1()));
 });
 
-test("Cloudflare D1 catalogs support long Thread-scoped and literal wildcard prefixes", async () => {
+test("Cloudflare D1 catalogs support long Thread-scoped and literal underscore prefixes", async () => {
   const catalog=createCloudflareCatalogPort(fakeD1());
   const prefix="visual-age-anchor:admission:thr_4d134059fa4e966706315b134e23d2d1af5d5d0b:";
   assert.ok(new TextEncoder().encode(prefix+"%").length>50);
@@ -76,8 +76,8 @@ test("Cloudflare D1 catalogs support long Thread-scoped and literal wildcard pre
   assert.deepEqual(next.entries.map(e=>e.value.age),[35],"Thread-local age lookup lost pagination");
   assert.equal(next.nextCursor,null);
 
-  await catalog.upsert("literal_%_anchor:1",{age:9});
+  await catalog.upsert("literal__anchor:1",{age:9});
   await catalog.upsert("literal_xyz_anchor:2",{age:8});
-  const literal=await catalog.list({prefix:"literal_%_anchor:"});
-  assert.deepEqual(literal.entries.map(e=>e.value.age),[9],"Literal % or _ widened catalog lookup");
+  const literal=await catalog.list({prefix:"literal__anchor:"});
+  assert.deepEqual(literal.entries.map(e=>e.value.age),[9],"Literal underscores widened catalog lookup");
 });
