@@ -5,6 +5,7 @@ import {
   threadVisualIdentityProjectionDigest,
 } from "fibre/world-kernel/thread-presentation-contracts";
 import { presentationAssetSourceDigest } from "fibre/world-kernel/presentation-asset-contracts";
+import {resolveVisualAgeReferences} from "../../world-kernel/src/visual-age-anchors.mjs";
 
 function sceneLocation(location) {
   if (location.kind === "place") {
@@ -17,7 +18,7 @@ function sceneLocation(location) {
   return `in transit from ${from} toward ${to}`;
 }
 
-function presentBrief(present, targetAgeYears) {
+function presentBrief(present, targetAgeYears, hasAdmittedAgeReferences) {
   const people = present.participants.length === 0
     ? "No other publicly named participant is established in this scene."
     : `Publicly named participants: ${present.participants.join(", ")}.`;
@@ -37,14 +38,16 @@ function presentBrief(present, targetAgeYears) {
       "This image is a generated presentation reconstruction of an enacted current situation, not World evidence or a documentary photograph.",
       "Use only the supplied public scene facts; do not infer or depict private plans, regulation, emotion, memory, relationship meaning, or hidden participants.",
       "Observed situation context is not a claim about the Thread's private motive or feeling.",
-      "Use the supplied canonical visual-identity reference as the complete likeness anchor; do not re-derive appearance from ancestry, family, demographic, or phenotype text.",
+      hasAdmittedAgeReferences
+        ? "The first image is the canonical identity authority; subsequent images are approved age-local portraits of that same Thread, never separate identities. Use them to guide aging without copying their pose or background."
+        : "Use the supplied canonical visual-identity reference as the complete likeness anchor; do not re-derive appearance from ancestry, family, demographic, or phenotype text.",
       "Do not add identifiable people beyond the publicly named participants.",
       "Avoid text overlays, labels, signatures, watermarks, or claims of authentic capture.",
     ],
   };
 }
 
-export function planCurrentPresentDepiction({ present, presentation }) {
+export function planCurrentPresentDepiction({ present, presentation, canonicalReferenceDigest = null, ageAnchorAdmissions = [] }) {
   if (!present || typeof present !== "object" || Array.isArray(present)) {
     throw new TypeError("public present is required");
   }
@@ -61,11 +64,22 @@ export function planCurrentPresentDepiction({ present, presentation }) {
   const visualIdentityDigest = referenceReady
     ? threadVisualIdentityProjectionDigest(visualIdentity)
     : null;
+  const selected = referenceReady && targetAgeYears !== null && canonicalReferenceDigest !== null
+    ? resolveVisualAgeReferences({
+        threadId,targetAgeYears,canonicalReferenceObjectRef:visualIdentity.referenceObjectRefs[0],
+        canonicalReferenceDigest,admissions:ageAnchorAdmissions,
+      })
+    : null;
+  const references = selected?.referenceObjectRefs ?? (referenceReady ? visualIdentity.referenceObjectRefs : []);
   const source = {
     threadId,
     present,
     visualIdentityDigest,
     targetAgeYears,
+    ...(selected?.references.length > 1
+      ? {ageReferenceAdmissions:selected.references.filter(item=>item.admissionId!==null)
+          .map(item=>({admissionId:item.admissionId,objectRef:item.objectRef,digest:item.digest}))}
+      : {}),
   };
 
   return Object.freeze({
@@ -77,7 +91,7 @@ export function planCurrentPresentDepiction({ present, presentation }) {
     role: "present_scene",
     variant: "current",
     status: referenceReady ? "missing" : "deferred",
-    brief: referenceReady ? presentBrief(present, targetAgeYears) : null,
+    brief: referenceReady ? presentBrief(present, targetAgeYears, references.length > 1) : null,
     inputReferences: referenceReady
       ? [...new Set([
           present.situationId,
@@ -85,9 +99,10 @@ export function planCurrentPresentDepiction({ present, presentation }) {
           visualIdentity.provenanceRef,
           ...visualIdentity.sourceReferences,
           ...visualIdentity.permissionReferences,
+          ...(selected?.references.filter(item=>item.admissionId!==null).map(item=>item.admissionId)??[]),
         ])]
       : [present.situationId],
-    referenceObjectRefs: referenceReady ? [...visualIdentity.referenceObjectRefs] : [],
+    referenceObjectRefs: [...references],
     sourceDigest: presentationAssetSourceDigest(source),
     provenanceRef: present.situationId,
     deferredReason: referenceReady ? null : "deferred_missing_visual_identity_reference",
