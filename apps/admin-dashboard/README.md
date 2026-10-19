@@ -48,6 +48,23 @@ local validation and **both World Kernel and Admin Dashboard staging
 deployments** before operator acceptance. It is a companion to the ongoing
 World-event runtime replacement, not proof that replacement is complete.
 
+## Life & Causes — accepted replacement design
+
+The [Life Observatory](../../docs/architecture/life-observatory.md)
+accepts a **Thread-first, meaningful-life** successor to Activity's
+existing indented Causal Trail. Threads → person → Life Overview →
+Life Timeline → selected moment opens the shared investigation of
+conditions, choice, World occurrence and individually admitted
+consequences. World Events can instead open at one shared occurrence;
+Birth Center opens at a candidate's execution or a published person's
+formative history. Genesis execution time and the child's historical
+life must never be merged. Technical operation lineage belongs in
+**Raw Activity**, not in the semantic timeline.
+
+**Implementation pending.** The current Causal Trail below remains
+the deployed/source behavior; a documented screen or Causal Witness
+does not prove the UX or decision provenance already exists.
+
 ## God's view
 
 Filtering Activity by `Thread ID` turns the same Activity records into a lifecycle-oriented operator view. It groups observed runtime work into Birth, Life, Presentation, Encounter, Experience, and Continuity and renders the causal trail chronologically.
