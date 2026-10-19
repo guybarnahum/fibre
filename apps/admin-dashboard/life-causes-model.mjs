@@ -56,7 +56,7 @@ export function recordedLifeMoments({livedNow=null,memories=[],encounterStories=
     if(sceneById.has(situation.situationId))continue;
     const actualPlaceRef=situation.location?.kind==="place"?situation.location.placeRef:null;
     const plan=(situation.sourcePlanRefs??[]).map(ref=>planById.get(ref))
-      .find(candidate=>candidate?.kind==="personal")??null;
+      .find(candidate=>candidate&&(candidate.kind===undefined||candidate.kind==="personal"))??null;
     const at=Date.parse(situation.establishedAt);
     const stop=plan?.stops?.find(item=>item.physicalPlaceRef===actualPlaceRef
       &&Date.parse(item.startAt)<=at&&at<Date.parse(item.endAt))??null;
@@ -84,6 +84,10 @@ export function recordedLifeMoments({livedNow=null,memories=[],encounterStories=
     const occurrence=beats.find(beat=>beat.kind==="occurrence");
     const first=beats.find(beat=>typeof beat.text==="string"&&beat.text.trim())??null;
     const experienced=story.attention?.experience??null;
+    const memoryLinks=(Array.isArray(memories)?memories:[]).filter(
+      memory=>typeof experienced?.experienceId==="string"
+        &&(memory.eventRefs??[]).includes(experienced.experienceId),
+    ).map(memory=>memory.memoryId).filter(Boolean);
     episodes.set(story.encounterId,Object.freeze({
       kind:social?"encounter":"world",
       id:story.encounterId,at:story.occurredAt,
@@ -91,6 +95,7 @@ export function recordedLifeMoments({livedNow=null,memories=[],encounterStories=
       attention:story.attention?.outcome??null,
       experienceText:experienced?.experienceText??null,
       experienceId:experienced?.experienceId??null,
+      memoryLinks:Object.freeze(memoryLinks),
       sceneId:story.situation?.situationId??null,
       occurrenceText:occurrence?.text??null,
       dialogue:beats.filter(beat=>["utterance","action"].includes(beat.kind))
