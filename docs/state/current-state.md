@@ -46,8 +46,8 @@ These statuses are specific to the cited evidence and **must not be promoted by 
 [ADR-0026](../decisions/ADR-0026-life-observatory.md) and
 [Life Observatory UX](../architecture/life-observatory.md) accept a
 person-first **Life & Causes** replacement for the Admin Activity
-Causal Trail. Threads → Life Overview → age/time Life Timeline →
-selected meaningful moment is the normal route. Birth Center's
+Causal Trail. Threads → compact person detail → dedicated Life &
+Causes → selected meaningful moment is the normal route. Birth Center's
 candidate execution and a Thread's historical formation are different
 clocks; World Events remains the event/place-first entrance to the
 same read-only investigation. The existing Activity operation tree is
