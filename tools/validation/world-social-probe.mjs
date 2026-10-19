@@ -221,7 +221,8 @@ export function summarizeSocialContinuity(observatories,{limit=24}={}){
   return Object.freeze({
     contract:"fibre-social-causal-inspection-v0.1",
     inspectedSharedStoryCount:episodes.length,
-    distinctExperiencePairCount:episodes.filter(item=>item.distinctPersonalExperience).length,
+    distinctExperiencePairCount:new Set(episodes.filter(item=>item.distinctPersonalExperience)
+      .map(item=>item.encounterRef)).size,
     retainedMemoryChainCount:episodes.filter(item=>item.retainedMemoryRef!==null).length,
     laterContactAfterRetentionCount:episodes.filter(item=>item.laterSocialInteractionRef!==null).length,
     causalProof:"not_established_by_observatory",
