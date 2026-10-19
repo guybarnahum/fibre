@@ -35,7 +35,7 @@ real enacted public visits and a linked Flight Plan purpose where
 admitted. A previous visit cannot inherit the newer plan's purpose.
 Raw Activity remains usable; historical co-presence is not asserted.
 
-## Slice 2 — Compact Thread detail and intentional deep history (not started)
+## Slice 2 — Compact Thread detail and intentional deep history (source implemented; local/staging validation pending)
 
 Keep Thread Overview, Identity & Body, and Maintenance small. FIN/FID,
 appearance/age-portrait actions, and health/recovery remain there.
