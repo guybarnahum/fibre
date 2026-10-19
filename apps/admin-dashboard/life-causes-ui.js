@@ -1,184 +1,342 @@
-import {fetchThreadObservatory,threadName} from "./thread-observatory.js";
-import {recentLifeMoments} from "./life-causes-model.mjs";
+import {fetchThreadObservatory,renderThreadLifeHistory,threadName} from "./thread-observatory.js";
+import {recentLifeMoments,recordedLifeMoments} from "./life-causes-model.mjs";
 
-const find=selector=>document.querySelector(selector);
+const $=selector=>document.querySelector(selector);
 const el=(tag,className=null,value=null)=>{
   const node=document.createElement(tag);
   if(className)node.className=className;
   if(value!==null)node.textContent=String(value);
   return node;
 };
-const timestamp=value=>value?new Date(value).toLocaleString(undefined,{
-  dateStyle:"medium",timeStyle:"short",
-}):"Time not established";
+const at=value=>value&&Number.isFinite(Date.parse(value))
+  ?new Date(value).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"})
+  :"Time not established";
+const day=value=>new Date(value).toLocaleDateString(undefined,{
+  weekday:"short",month:"short",day:"numeric",year:"numeric",
+});
+const validThread=value=>/^thr_[a-zA-Z0-9]+$/u.test(value??"");
+const labelFor=item=>item.kind==="memory"?"Memory"
+  :item.kind==="encounter"?"Encounter"
+  :item.kind==="world"?"World occurrence"
+  :item.phase==="in_transit"?"Travel":"World situation";
+const titleFor=item=>item.publicVenueName
+  ?item.publicVenueName+(item.activity?" · "+item.activity:"")
+  :item.title??item.activity??(item.phase==="in_transit"?"In transit":"Enacted situation");
 
 export function renderLifeCausesPage(){
   document.title="Fibre Admin · Life & Causes";
   for(const selector of [".metrics",".filters-panel",".activity-view-panel",
     ".activity-pager","#appearance-view"]){
-    const item=find(selector);
-    if(item)item.hidden=true;
+    const node=$(selector);if(node)node.hidden=true;
   }
-  find(".crumbs")?.lastElementChild?.replaceChildren("Life & Causes");
+  $(".crumbs")?.lastElementChild?.replaceChildren("Life & Causes");
   for(const link of document.querySelectorAll(".nav-item")){
     link.classList.toggle("active",link.getAttribute("href")==="/life");
   }
 
-  const head=find(".page-head");
+  const head=$(".page-head");
   head.replaceChildren();
   const intro=el("div");
-  intro.append(el("p","eyebrow","Life Observatory"),
-    el("h1",null,"Life & Causes"),
-    el("p","lede","Follow a person's enacted life; investigate decisions without inventing their motives."));
+  intro.append(el("p","eyebrow","Life Observatory"),el("h1",null,"Life & Causes"),
+    el("p","lede","An individual life, its choices, and evidence of what followed."));
   head.append(intro);
 
-  const surface=el("section","panel life-causes-workspace");
-  const selector=el("form","life-causes-subject");
-  const label=el("label",null,"Thread");
-  const input=el("input");input.name="thread";input.placeholder="thr_…";
+  const workspace=el("section","panel life-causes-workspace");
+  const subject=el("form","life-causes-subject");
+  const subjectLabel=el("label",null,"Thread");
+  const input=el("input");
+  input.name="thread";input.autocomplete="off";input.placeholder="thr_…";
   input.setAttribute("aria-label","Thread ID");
-  input.autocomplete="off";
-  label.append(input);
-  const inspect=el("button","primary","Inspect life");
-  inspect.type="submit";
+  subjectLabel.append(input);
+  const inspect=el("button","primary","Inspect life");inspect.type="submit";
   const choose=el("a","button-link secondary","Choose from Threads ↗");
   choose.href="/activity?mode=threads";
-  selector.append(label,inspect,choose);
-  const summary=el("div","life-causes-summary");
-  const detail=el("div","life-causes-layout");
-  const timeline=el("section","life-causes-timeline");
-  const moment=el("section","life-causes-inspector");
-  timeline.append(el("h2",null,"Recent enacted life"));
-  moment.append(el("h2",null,"Selected moment"));
-  detail.append(timeline,moment);
-  surface.append(selector,summary,detail);
-  find(".main").append(surface);
+  subject.append(subjectLabel,inspect,choose);
 
-  const notice=(target,message)=>{target.replaceChildren(el("p","life-causes-muted",message));};
-  let loaded=null,selected=null,sequence=0;
-  function selectedMoment(item){
-    selected=item;
+  const summary=el("div","life-causes-summary");
+  const scopes=el("nav","life-causes-scopes");
+  scopes.setAttribute("aria-label","Life history scope");
+  const recent=el("button","secondary","Recent life");
+  const historyButton=el("button","secondary","Recorded history");
+  for(const button of [recent,historyButton])button.type="button";
+  scopes.append(recent,historyButton);
+  const layout=el("div","life-causes-layout");
+  const timeline=el("section","life-causes-timeline");
+  const inspector=el("section","life-causes-inspector");
+  layout.append(timeline,inspector);
+  const source=el("div","life-causes-original");
+  workspace.append(subject,summary,scopes,layout,source);
+  $(".main").append(workspace);
+
+  let threadId=null,loadedRecent=null,loadedHistory=null;
+  let mode="recent",selected=null,sequence=0;
+  const text=(target,message,cls="life-causes-muted")=>{
+    target.replaceChildren(el("p",cls,message));
+  };
+  const activeMoments=()=>mode==="history"
+    ?loadedHistory?.moments??[]:loadedRecent?.moments??[];
+  const evidenceRow=(heading,lines)=>{
+    const section=el("section","life-causes-part");
+    section.append(el("h3",null,heading));
+    for(const line of lines.filter(Boolean))section.append(el("p",null,line));
+    inspector.append(section);
+  };
+  const updateUrl=()=>{
     const next=new URL(location.href);
-    if(item===null)next.searchParams.delete("situation");
-    else next.searchParams.set("situation",item.id);
-    history.replaceState(null,"",next);
-    redraw();
-  }
-  function redraw(){
-    const moments=loaded?.moments??[];
-    timeline.replaceChildren(el("h2",null,"Recent enacted life"));
-    if(!loaded){
-      notice(timeline,"Choose a Thread to inspect its recorded life.");
-      notice(moment,"Select a World-enacted moment to inspect the evidence.");
+    if(threadId)next.searchParams.set("thread",threadId);
+    next.searchParams.set("view",mode);
+    next.searchParams.delete("memory");
+    if(selected)next.searchParams.set("moment",selected.kind+":"+selected.id);
+    else next.searchParams.delete("moment");
+    window.history.replaceState(null,"",next);
+  };
+  const setMoment=item=>{
+    selected=item;updateUrl();draw();
+  };
+  const memoryAge=(item)=>{
+    const birth=loadedHistory?.payload?.identity?.birthDate
+      ??loadedRecent?.payload?.identity?.birthDate;
+    const years=Date.parse(item.at)-Date.parse(birth??"");
+    if(!Number.isFinite(years)||years<0)return null;
+    return "Age "+Math.floor(years/(365.2425*24*60*60*1000));
+  };
+  function drawTimeline(){
+    const previousScroll=timeline.scrollTop;
+    timeline.replaceChildren(el("h2",null,"Life Timeline"));
+    if(!loadedRecent){text(timeline,"Choose a Thread to inspect its life.");return;}
+    const moments=activeMoments();
+    timeline.append(el("p","life-causes-muted",mode==="recent"
+      ?"Current World snapshot · at most eight recent enacted situations."
+      :"Bounded World, Encounter and Memory records · not a complete lifetime archive."));
+    if(!moments.length){
+      timeline.append(el("p","life-causes-muted","No dated moments in the returned inspection window."));
       return;
     }
-    timeline.append(el("p","life-causes-muted",
-      "Up to eight recent situations · not a lifetime history."));
-    if(!moments.length)timeline.append(el("p","life-causes-muted",
-      "No enacted situations were returned in this bounded view."));
+    const list=el("div","life-causes-spine");
+    let previousDay=null;
     for(const item of moments){
-      const card=el("button","life-causes-moment");
-      card.type="button";
-      card.classList.toggle("selected",item.id===selected?.id);
-      const when=el("time",null,timestamp(item.at));
-      const title=el("strong",null,item.publicVenueName
-        ?item.publicVenueName+(item.activity?" · "+item.activity:"")
-        :item.activity??(item.phase==="in_transit"?"Travel":"Enacted situation"));
-      const context=el("small",null,
-        (item.phase==="at_place"?"At place"
-          :item.phase==="in_transit"?"In transit":"World-enacted")+
-        (item.planned?" · linked Flight Plan":""));
-      card.append(when,title,context);
-      card.addEventListener("click",()=>selectedMoment(item));
-      timeline.append(card);
-    }
-    moment.replaceChildren(el("h2",null,"Selected moment"));
-    if(!selected){notice(moment,"Choose a moment from the timeline.");return;}
-    const top=el("div","life-causes-moment-heading");
-    top.append(el("strong",null,selected.publicVenueName
-      ??selected.activity??"Enacted situation"),
-      el("span",null,timestamp(selected.at)));
-    moment.append(top);
-    const part=(title,lines)=>{
-      const block=el("section","life-causes-part");
-      block.append(el("h3",null,title));
-      for(const line of lines)block.append(el("p",null,line));
-      moment.append(block);
-    };
-    part("Before · conditions",[
-      "Planning-time Body pressure, City Guide exposure and selected memories are not captured in this current-life view.",
-      selected.planned
-        ?"Linked Thread-authored plan · "+timestamp(selected.planned.authoredAt)
-        :"No Flight Plan link has been established for this situation in the bounded view.",
-    ]);
-    part("Decision · intention",selected.planned?[
-      selected.planned.purpose?"Stated purpose: "+selected.planned.purpose:
-        "No specific purpose was retained for the matched plan stop.",
-      selected.planned.activity?"Planned activity: "+selected.planned.activity:""
-    ].filter(Boolean):["A World situation is not by itself evidence of what motivated it."]);
-    part("World · what happened",[
-      (selected.phase==="at_place"?"Presence was enacted"
-        :selected.phase==="in_transit"?"Travel was enacted"
-        :"The situation was admitted")+" at "+timestamp(selected.at)+".",
-      selected.placeKind==="verified_public"
-        ?"This situation references a World public-place identity."
-        :selected.placeKind==="private_or_unverified"
-          ?"The setting is private or not independently verified as a public venue."
-          :"No verified physical venue is established in this selected record.",
-    ]);
-    part("After · consequences",[
-      "Social interaction, attention, Experience and retained Memory are not inspected in this current-only view.",
-      "Later occurrence does not by itself demonstrate causal influence.",
-    ]);
-    const link=el("a","button-link secondary","Open Thread details ↗");
-    link.href="/thread/"+encodeURIComponent(loaded.threadId);
-    moment.append(link);
-    const evidence=el("details","life-causes-evidence");
-    evidence.append(el("summary",null,"Evidence references"),
-      el("p",null,"CurrentSituation: "+selected.id),
-      el("p",null,"Flight Plan: "+(selected.planned?.planId??"not linked")));
-    moment.append(evidence);
-  }
-  async function openThread(threadId,situationId=null){
-    const invocation=++sequence;
-    summary.replaceChildren(el("p","life-causes-muted","Reading current World life…"));
-    loaded=null;selected=null;redraw();
-    try{
-      const result=await fetchThreadObservatory(threadId,{currentOnly:true});
-      if(invocation!==sequence)return;
-      if(result.encounterError)throw new Error("Current World life unavailable: "+result.encounterError);
-      const moments=recentLifeMoments(result.livedNow);
-      loaded={threadId,moments};
-      summary.replaceChildren(
-        el("strong",null,threadName(result.identity)??threadId),
-        el("span",null,"Read-only · current World snapshot · no Thread wake or life mutation"),
+      const group=day(item.at);
+      if(group!==previousDay){
+        list.append(el("div","life-causes-day",group));
+        previousDay=group;
+      }
+      const card=el("button","life-causes-moment life-causes-kind-"+item.kind);
+      card.type="button";card.setAttribute("aria-pressed",String(item===selected));
+      card.classList.toggle("selected",item===selected);
+      card.append(
+        el("time",null,new Date(item.at).toLocaleTimeString(undefined,{
+          hour:"numeric",minute:"2-digit",
+        })),
+        el("strong",null,titleFor(item)),
+        el("small",null,labelFor(item)+(item.planned?" · plan linked":"")
+          +(item.kind==="memory"&&memoryAge(item)?" · "+memoryAge(item):"")),
       );
-      selected=moments.find(item=>item.id===situationId)??moments[0]??null;
-      redraw();
+      card.addEventListener("click",()=>setMoment(item));
+      list.append(card);
+    }
+    timeline.append(list);
+    timeline.scrollTop=previousScroll;
+  }
+  function drawInspector(){
+    inspector.replaceChildren(el("h2",null,"Selected moment"));
+    if(!selected){
+      text(inspector,"Select an event, experience or Memory from the timeline.");
+      return;
+    }
+    const heading=el("div","life-causes-moment-heading");
+    heading.append(el("strong",null,titleFor(selected)),
+      el("span",null,labelFor(selected)+" · "+at(selected.at)));
+    inspector.append(heading);
+
+    if(selected.kind==="memory"){
+      evidenceRow("Remembered",[
+        selected.title,
+        selected.meaning?"Personal meaning: "+selected.meaning:
+          "No separate remembered meaning is available in this record.",
+      ]);
+      evidenceRow("History and evidence",[
+        "The timeline uses the remembered episode's subject date, not when it was consolidated.",
+        selected.recordedAt?"Memory recorded: "+at(selected.recordedAt):null,
+        selected.eventRefs?.length
+          ?"Explicit source references: "+selected.eventRefs.join(", ")
+          :"No event references returned in this inspection.",
+      ]);
+      evidenceRow("Consequences",[
+        "Retention does not establish that this Memory changed a later decision.",
+      ]);
+    }else if(selected.kind==="encounter"||selected.kind==="world"){
+      evidenceRow("What happened",[
+        "An admitted Encounter Story records this event in a World situation.",
+        selected.occurrenceText?selected.occurrenceText:null,
+      ]);
+      if(selected.dialogue.length){
+        evidenceRow("Outward interaction",selected.dialogue.map(
+          beat=>beat.speaker+": "+beat.text,
+        ));
+      }
+      evidenceRow("This person's experience",[
+        selected.attention==="noticed"?"Attention recorded: noticed."
+          :selected.attention==="not_noticed"?"Attention recorded: not noticed."
+          :"Attention was not established by this record.",
+        selected.experienceText??"No personal Experience text established here.",
+      ]);
+      evidenceRow("After",[
+        selected.memoryLinks.length
+          ?"Explicit retained-Memory links: "+selected.memoryLinks.join(", ")
+          :"No linked Memory was identified in this bounded inspection.",
+        "A linked Memory is not yet proof of influence on a later choice.",
+      ]);
+    }else{
+      evidenceRow("Before · conditions",[
+        selected.planned?"Linked authored Flight Plan: "+at(selected.planned.authoredAt)
+          :"No matching Flight Plan was identified for this situation.",
+        "Event-time Body pressure, offered places and selected Memories were not captured for causal inspection.",
+      ]);
+      evidenceRow("Decision · intention",selected.planned?[
+        selected.planned.purpose?"Stated purpose: "+selected.planned.purpose
+          :"No stated purpose found for the matched stop.",
+        selected.planned.activity?"Planned activity: "+selected.planned.activity:null,
+      ]:["An enacted situation does not independently explain its motivation."]);
+      evidenceRow("World · what happened",[
+        (selected.phase==="at_place"?"Presence enacted"
+          :selected.phase==="in_transit"?"Travel enacted"
+          :"World situation admitted")+" · "+at(selected.at),
+        selected.placeKind==="verified_public"||selected.placeKind==="world_place"
+          ?"World place referenced; historical venue identity may require deeper authority."
+          :selected.placeKind==="private_or_unverified"
+            ?"Private or otherwise unverified place; no public venue inferred."
+            :"Location authority is not established in this record.",
+      ]);
+      evidenceRow("After · consequences",[
+        "No causal claim follows solely from what happened later.",
+        mode==="recent"?"Inspect Recorded history for bounded Encounter and Memory evidence.":null,
+      ]);
+    }
+    const refs=el("details","life-causes-evidence");
+    refs.append(el("summary",null,"Source references"),
+      el("p",null,labelFor(selected)+": "+selected.id));
+    if(selected.planned?.planId)refs.append(el("p",null,
+      "Flight Plan: "+selected.planned.planId));
+    if(selected.experienceId)refs.append(el("p",null,
+      "Experience: "+selected.experienceId));
+    inspector.append(refs);
+    const back=el("a","button-link secondary","Open Thread details ↗");
+    back.href="/thread/"+encodeURIComponent(threadId);
+    inspector.append(back);
+  }
+  function drawOriginalRecords(){
+    source.replaceChildren();
+    if(mode!=="history"||!loadedHistory)return;
+    const disclosure=el("details","life-causes-original-details");
+    disclosure.append(el("summary",null,
+      "Explore original Journal, Encounter, Memory and social records"));
+    disclosure.addEventListener("toggle",()=>{
+      if(!disclosure.open||disclosure.dataset.rendered)return;
+      disclosure.dataset.rendered="true";
+      disclosure.append(renderThreadLifeHistory({
+        ...loadedHistory.payload,threadId:loadedHistory.threadId,
+      }));
+    });
+    source.append(disclosure);
+  }
+  function draw(){
+    recent.classList.toggle("active",mode==="recent");
+    historyButton.classList.toggle("active",mode==="history");
+    scopes.hidden=!loadedRecent;
+    drawTimeline();drawInspector();drawOriginalRecords();
+  }
+  async function loadHistory(requested=null){
+    if(!loadedRecent||!threadId)return;
+    const targetThread=threadId;
+    const request=sequence;
+    mode="history";historyButton.disabled=true;
+    summary.append(el("span",null,"Reading bounded history…"));
+    draw();
+    try{
+      if(!loadedHistory){
+        const payload=await fetchThreadObservatory(targetThread);
+        if(request!==sequence)return;
+        if(payload.encounterError)throw new Error(payload.encounterError);
+        loadedHistory={
+          threadId:targetThread,payload,
+          moments:recordedLifeMoments(payload),
+        };
+      }
+      if(request!==sequence)return;
+      selected=loadedHistory.moments.find(item=>
+        item.kind+":"+item.id===requested||item.id===requested,
+      )??loadedHistory.moments[0]??null;
+      updateUrl();
     }catch(error){
-      if(invocation!==sequence)return;
+      if(request!==sequence)return;
+      mode="recent";selected=loadedRecent.moments[0]??null;
+      summary.append(el("p","error-box",
+        "History inspection unavailable: "+(error instanceof Error?error.message:String(error))));
+    }finally{
+      if(request===sequence){historyButton.disabled=false;drawSummary();draw();}
+    }
+  }
+  function drawSummary(){
+    summary.replaceChildren();
+    if(loadedRecent){
+      summary.append(el("strong",null,threadName(loadedRecent.payload.identity)??threadId),
+        el("span",null,"One person · read-only World evidence · bounded history"));
+    }
+  }
+  async function openThread(nextThread,{moment=null,memory=null,view="recent"}={}){
+    const request=++sequence;
+    threadId=nextThread;loadedRecent=null;loadedHistory=null;selected=null;
+    mode="recent";summary.replaceChildren(el("span",null,"Reading current World life…"));draw();
+    try{
+      const payload=await fetchThreadObservatory(nextThread,{currentOnly:true});
+      if(request!==sequence)return;
+      if(payload.encounterError)throw new Error(payload.encounterError);
+      loadedRecent={payload,moments:recentLifeMoments(payload.livedNow)};
+      selected=loadedRecent.moments.find(item=>
+        item.kind+":"+item.id===moment||item.id===moment,
+      )??loadedRecent.moments[0]??null;
+      drawSummary();draw();
+      if(view==="history"||memory)await loadHistory(memory??moment);
+      else updateUrl();
+    }catch(error){
+      if(request!==sequence)return;
       summary.replaceChildren(el("p","error-box",
         "Could not inspect this Thread: "+(error instanceof Error?error.message:String(error))));
-      loaded=null;redraw();
+      draw();
     }
   }
-  selector.addEventListener("submit",event=>{
-    event.preventDefault();
-    const threadId=input.value.trim();
-    if(!/^thr_[a-zA-Z0-9]+$/u.test(threadId)){
-      notice(summary,"Enter a valid Thread ID or select a person from Threads.");
-      return;
-    }
-    const next=new URL(location.href);
-    next.searchParams.set("thread",threadId);
-    next.searchParams.delete("situation");
-    history.pushState(null,"",next);
-    void openThread(threadId);
+  recent.addEventListener("click",()=>{
+    if(!loadedRecent)return;
+    mode="recent";selected=loadedRecent.moments[0]??null;
+    updateUrl();draw();
   });
+  historyButton.addEventListener("click",()=>{
+    if(!loadedRecent||historyButton.disabled)return;
+    if(loadedHistory){
+      mode="history";selected=loadedHistory.moments[0]??null;
+      updateUrl();draw();
+    }else void loadHistory();
+  });
+  subject.addEventListener("submit",event=>{
+    event.preventDefault();
+    const next=input.value.trim();
+    if(!validThread(next)){text(summary,"Enter a valid Thread ID or choose from Threads.");return;}
+    const url=new URL(location.href);
+    url.searchParams.set("thread",next);
+    url.searchParams.delete("memory");
+    url.searchParams.delete("moment");
+    url.searchParams.delete("view");
+    window.history.pushState(null,"",url);
+    void openThread(next);
+  });
+
   const params=new URLSearchParams(location.search);
-  const threadId=params.get("thread");
-  if(threadId!==null&&/^thr_[a-zA-Z0-9]+$/u.test(threadId)){
-    input.value=threadId;
-    void openThread(threadId,params.get("situation"));
-  }else redraw();
+  const initial=params.get("thread");
+  if(validThread(initial)){
+    input.value=initial;
+    void openThread(initial,{
+      moment:params.get("moment"),memory:params.get("memory"),
+      view:params.get("view")??"recent",
+    });
+  }else draw();
 }
