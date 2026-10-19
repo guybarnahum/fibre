@@ -364,6 +364,7 @@ export async function formPersonalLivedPlan({
   worldTimeZone = null,
   requiredWorkCommitments = [],
   interoception = null,
+  startingSituationId = null,
   cityGuidePlaces = [],
   resolveDestinationGeography = null,
 }) {
@@ -527,6 +528,12 @@ export async function formPersonalLivedPlan({
       selectedEvidenceRefs:[...cognition.provenance.selectedEvidenceRefs],
       evidenceRefs:[...cognition.evidenceRefs],
       contextDigest:cognition.provenance.contextDigest,
+      decisionContext:{
+        startingSituationId,
+        offeredPlaceRefs:places.map(place=>place.ref),
+        cityGuidePlaceRefs:cityGuidePlaces.map(place=>place.ref),
+        interoception:planningInteroception,
+      },
     },
     ...(materialization === undefined ? {} : { materialization }),
   };
