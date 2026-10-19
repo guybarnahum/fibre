@@ -227,7 +227,7 @@ view the operator may switch facets without losing the Genesis reference.
 
 ## Decision-time Causal Witness — only the missing evidence
 
-**Agreed design, implementation pending.** Do not create a new universal
+**Source implemented for plan input and one-shot social choices; local/staging validation pending.** Do not create a new universal
 event log or collect private reasoning. Capture a **small immutable
 decision-time witness alongside existing domain authority** at a
 consequential boundary, reusing the input already assembled for the
