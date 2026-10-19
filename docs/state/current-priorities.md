@@ -9,6 +9,19 @@ canonical: true
 
 **North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
 
+**Accepted Admin UX direction, October 19 (implementation pending):**
+[Life Observatory](../architecture/life-observatory.md) replaces the
+Activity Causal Trail's operation nesting with person-first Life
+Overview, age-anchored Timeline and selected-moment Why/After evidence
+inspector. Birth Center supplies provisional Genesis execution and
+published formative life as separate clocks; World Events supplies the
+shared occurrence-first entrance. The first practical work is a
+read-only semantic UX over existing authority; compact Causal Witness
+capture for decision-time Body/context and social choice follows only
+where missing. The accepted design is **not** a staging UI result and
+does not displace the priority of real independent World life and
+consequential encounters. See [ADR-0026](../decisions/ADR-0026-life-observatory.md).
+
 **Evidence checkpoint, October 13:** N1–N5 are closed within their stated scope; direct World dialogue and public Presentation SSE have real staging witnesses. **N6.6c's complete human browser lifecycle and N7.11's history-caused later social choice are not closed.** New typed wakefulness and Body work have separate acceptance boundaries: **Guy reports G1/D1 local validation passed**; D2 Body-to-planning/social-salience source is committed but awaits post-change local validation and staging proof. Typed wakefulness's own staging proof remains open. The earlier 1,581-test green result (October 11) predates subsequent source changes and is not blanket validation.
 
 ## One World occurrence and independent perception (October 18)
