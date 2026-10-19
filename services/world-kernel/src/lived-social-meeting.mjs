@@ -350,6 +350,7 @@ export function createSocialMeetingService({
       const perceived = projectSituatedPercept({
         observerThreadId:initiator.thread.threadId,
         situation:initiator.situation,
+        at:input.at,
         observedThreads:discovered.map(observedThread),
         situatedLifeStore,
         livedNowStore,
@@ -377,6 +378,7 @@ export function createSocialMeetingService({
         const situatedPercept = projectSituatedPercept({
           observerThreadId:initiator.thread.threadId,
           situation:initiator.situation,
+          at:input.at,
           observedThreads:[observedThread(counterparty)],
           situatedLifeStore,
           livedNowStore,
@@ -440,6 +442,7 @@ export function createSocialMeetingService({
         const inviteePercept = projectSituatedPercept({
           observerThreadId:counterparty.thread.threadId,
           situation:counterparty.situation,
+          at:input.at,
           observedThreads:[observedThread(initiator)],
           situatedLifeStore,
           livedNowStore,

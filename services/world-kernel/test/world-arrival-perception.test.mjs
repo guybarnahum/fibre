@@ -121,6 +121,7 @@ test("one enacted arrival permits distinct noticing and missed attention with re
     const perceptFor=(threadId)=>projectSituatedPercept({
       observerThreadId:threadId,
       situation:ctx.situations.find(x=>x.threadId===threadId),
+      at:AT,
       observedThreads:[{
         threadId:ids[0],name:"Newcomer",situation:ctx.situations[0],
       }],
@@ -131,6 +132,22 @@ test("one enacted arrival permits distinct noticing and missed attention with re
     const missedPercept=perceptFor(ids[2]);
     assert.equal(noticedPercept.recentEvents.length,1,
       "lived attention did not influence later social context");
+    assert.deepEqual(noticedPercept.recentEvents[0].personalExperience,{
+      experienceId:noticed.experience.experienceId,
+      experienceText:noticed.experience.experienceText,
+    },"the observer's own Experience never reached social cognition");
+    const past=projectSituatedPercept({
+      observerThreadId:ids[1],
+      situation:ctx.situations[1],
+      at:"2026-10-18T21:00:00.000Z",
+      observedThreads:[{
+        threadId:ids[0],name:"Newcomer",situation:ctx.situations[0],
+      }],
+      situatedLifeStore:{listCurrentPlaceEpisodes:()=>[]},
+      livedNowStore,experienceStore:store,
+    });
+    assert.equal(past.recentEvents.length,0,
+      "old World history was silently promoted to lifelong recollection");
     assert.equal(missedPercept.recentEvents.length,0,
       "a missed occurrence leaked into private social knowledge");
     const salient=evaluateSalience({

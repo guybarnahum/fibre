@@ -6,6 +6,9 @@ import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 
 const MAX_RECENT_EVENTS = 8;
 const MAX_ENCOUNTER_BEATS = 4;
+// Temporary bounded availability for unconsolidated immediate Experience.
+// Older episodes need retained autobiographical Memory, not archival recall.
+const RECENT_EXPERIENCE_MS = 6 * 60 * 60_000;
 
 function requireMethod(name, value, method) {
   if (value === null || typeof value !== "object" || typeof value[method] !== "function") {
@@ -51,7 +54,7 @@ function livedOpportunities(situation, observed) {
   })));
 }
 
-function recentEvents(experienceStore, observerThreadId, observedIds) {
+function recentEvents(experienceStore, observerThreadId, observedIds, at) {
   const observed = new Set(observedIds);
 
   const interactions = experienceStore.listSocialInteractions(observerThreadId, {
@@ -76,25 +79,41 @@ function recentEvents(experienceStore, observerThreadId, observedIds) {
   }).filter(Boolean);
 
   const encounters = experienceStore.listEncounterStories(observerThreadId,{limit:12})
-    .filter((story) => experienceStore.getThreadEncounterAttention?.(
-      observerThreadId,story.encounterId,
-    )?.outcome==="noticed"&&story.threadPresence.some((presence) =>
-      presence.threadId !== observerThreadId && observed.has(presence.threadId)))
+    .filter((story) => {
+      const age=Date.parse(at)-Date.parse(story.occurredAt);
+      return age>=0&&age<=RECENT_EXPERIENCE_MS
+        &&story.threadPresence.some((presence) =>
+          presence.threadId!==observerThreadId&&observed.has(presence.threadId));
+    })
+    .flatMap((story) => {
+      const attention=experienceStore.getThreadEncounterAttention?.(
+        observerThreadId,story.encounterId,
+      );
+      // A shared historical record is not this observer's recollection.
+      // Only their own admitted, still-recent Experience can enter
+      // ordinary situated cognition; long-term access is through Memory.
+      if(attention?.outcome!=="noticed"
+        ||typeof attention.experience?.experienceText!=="string")return [];
+      return [{
+        kind:"encounter",
+        ref:story.encounterId,
+        occurredAt:story.occurredAt,
+        counterpartyThreadIds:story.threadPresence
+          .map((presence) => presence.threadId)
+          .filter((threadId) => threadId!==observerThreadId&&observed.has(threadId)),
+        beats:story.story.beats.slice(0,MAX_ENCOUNTER_BEATS).map((beat) => ({
+          actorThreadId:beat.actorThreadId,
+          kind:beat.kind,
+          text:beat.text,
+        })),
+        personalExperience:{
+          experienceId:attention.experience.experienceId,
+          experienceText:attention.experience.experienceText,
+        },
+      }];
+    })
     .sort((left,right) => Date.parse(right.occurredAt) - Date.parse(left.occurredAt))
-    .slice(0,4)
-    .map((story) => ({
-      kind:"encounter",
-      ref:story.encounterId,
-      occurredAt:story.occurredAt,
-      counterpartyThreadIds:story.threadPresence
-        .map((presence) => presence.threadId)
-        .filter((threadId) => threadId !== observerThreadId && observed.has(threadId)),
-      beats:story.story.beats.slice(0,MAX_ENCOUNTER_BEATS).map((beat) => ({
-        actorThreadId:beat.actorThreadId,
-        kind:beat.kind,
-        text:beat.text,
-      })),
-    }));
+    .slice(0,4);
 
   return [...interactions,...encounters]
     .sort((left,right) =>
@@ -105,6 +124,7 @@ function recentEvents(experienceStore, observerThreadId, observedIds) {
 export function projectSituatedPercept({
   observerThreadId,
   situation,
+  at=situation.establishedAt,
   observedThreads = [],
   situatedLifeStore,
   livedNowStore = null,
@@ -142,6 +162,7 @@ export function projectSituatedPercept({
     experienceStore,
     observerThreadId,
     observed.map((candidate) => candidate.threadId),
+    at,
   );
   const opportunities = livedOpportunities(situation, observed);
   const sourceReferences = [
@@ -149,11 +170,12 @@ export function projectSituatedPercept({
     situation.location?.placeRef ?? null,
     ...observed.map((candidate) => candidate.situationRef),
     ...events.map((event) => event.ref),
+    ...events.map((event) => event.personalExperience?.experienceId).filter(Boolean),
   ].filter((value) => typeof value === "string" && value.length > 0);
 
   return Object.freeze({
     observerThreadId,
-    asOf:situation.establishedAt,
+    asOf:at,
     situationRef:situation.situationId,
     setting:Object.freeze({
       mode:typeof situation.mediatedContext === "string" && situation.mediatedContext.trim() !== ""
