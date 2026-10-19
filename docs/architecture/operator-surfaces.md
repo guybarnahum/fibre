@@ -130,6 +130,30 @@ A compound UI action such as **Fix & Recover** may sequence those operations but
 
 Dead-letter reconciliation state and its last failure should be visible in Thread Observatory and the population view. `dead_letter` is operational quarantine, not a Thread lifecycle or personhood state.
 
+### Life Observatory — accepted person-first UX (October 19)
+
+[Life Observatory](life-observatory.md) and
+[ADR-0026](../decisions/ADR-0026-life-observatory.md) accept replacing the
+low-value Activity **Causal Trail** nesting with **Life & Causes**.
+The default workflow is **Threads → person → Life Overview → age/time
+Life Timeline → selected moment → conditions/choice/World outcome/
+consequence**. Birth Center opens the same investigation at one
+candidate's **Birth execution** or a published person's historical
+**Formation**. World Events opens the same inspector from one objective
+place/event and separates each participant's subjective history.
+
+This is **accepted UX, not currently deployed functionality**:
+the old `Causal Trail` remains in the source until it is replaced;
+`Raw Activity` remains available for genuine operation trees,
+retries and errors. No new Thread/Genesis/World authority is created.
+Decision-time **Causal Witness** capture for Flight Plans and social
+choices is proposed as the smallest missing durable provenance,
+not a claim that today's historical plans stored Body pressures or
+offered City Guide entries. UI summaries only assert exact events,
+admitted memory links or demonstrated mechanisms; chronology does not
+prove influence. Use bounded current-only overviews and selected-on-demand
+history; never reread every Thread to build the Life Timeline.
+
 ### World Observatory — proposed place-centric God-view, October 18
 
 The proposed [World Observatory](world-observatory.md) is a separate top-level
