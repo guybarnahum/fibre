@@ -37,7 +37,7 @@ async function identitySource(env,infra,threadId){
 }
 
 /** Admin supplies deployed ports and the operator's current World-owned visual root. */
-export function createAdminVisualAgeAnchors({
+export function createCloudflareAgeAnchorAdapter({
   env,infra=infraFor(env),source=null,verify=verifyProvenancedAssetForPublication,
 }={}){
   const readSource=threadId=>source===null?identitySource(env,infra,threadId):source(threadId);
