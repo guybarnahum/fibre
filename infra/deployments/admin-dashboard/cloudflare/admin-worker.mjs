@@ -54,7 +54,7 @@ const THREAD_MEETING_ROUTE = /^\/api\/threads\/([^/]+)\/meet-threads$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
 const THREAD_AGE_ANCHORS_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors$/u;
 const THREAD_AGE_ANCHOR_CANONICAL_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/canonical$/u;
-const THREAD_AGE_ANCHOR_CANDIDATE_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/candidates\/([^/]+)(\/portrait|\/admit)?$/u;
+const THREAD_AGE_ANCHOR_CANDIDATE_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/candidates\/([^/]+)(\/portrait|\/admit|\/discard)?$/u;
 const THREAD_AGE_ANCHOR_PORTRAIT_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/portraits\/([^/]+)$/u;
 const THREAD_FID_REISSUE_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/reissue$/u;
 const THREAD_FID_PHOTO_CORRECTION_ROUTE = /^\/api\/threads\/([^/]+)\/fid\/photo-corrections\/([^/]+)(\/preview|\/canonical|\/approve)?$/u;
@@ -956,6 +956,9 @@ export default {
               let input;
               try{input=await request.json();}catch{return json(400,{error:"invalid_anchor_age"});}
               return json(202,await anchors.request(threadId,candidateId,input?.targetAgeYears));
+            }
+            if(request.method==="POST" && action==="/discard"){
+              return json(200,await anchors.discard(threadId,candidateId));
             }
             if(request.method==="POST" && action==="/admit"){
               const operator=normalizeAdminPrincipalEmail(gate.principal);
