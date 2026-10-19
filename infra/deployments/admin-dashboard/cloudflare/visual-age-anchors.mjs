@@ -96,10 +96,11 @@ async function readManifest(infra,threadId,candidateId){
   if(manifest.threadId!==threadId||manifest.candidateId!==candidateId)throw new Error("Candidate ownership changed");
   return manifest;
 }
-async function verifiedImage(infra,manifest){
+async function verifiedImage(infra,manifest,verify){
   const receipt=await stored(infra,manifest.job.receiptObjectRef);
   if(receipt===null)return null;
-  const proof=await verifyProvenancedAssetForPublication({infra,receipt});
+  if(receipt.status!=="ready")throw new Error("Age portrait generation did not produce an image");
+  const proof=await verify({infra,receipt});
   if(receipt.status!=="ready"||receipt.jobId!==manifest.job.jobId
     ||receipt.objectRef!==manifest.job.outputObjectRef
     ||receipt.role!=="visual_age_anchor"
@@ -143,7 +144,7 @@ function makeJob({source,candidateId,targetAgeYears,references}){
     }),
   };
 }
-export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null}={}){
+export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null,verify=verifyProvenancedAssetForPublication}={}){
   const readSource=threadId=>source===null?identitySource(env,infra,threadId):source(threadId);
   return Object.freeze({
     async list(threadId){
@@ -183,14 +184,15 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
     async status(threadId,candidateId){
       const manifest=await readManifest(infra,threadId,candidateId);
       const current=await readSource(threadId);ensureCurrent(current,manifest);
-      const ready=await infra.objects.head(manifest.job.receiptObjectRef)!==null;
+      const receipt=await stored(infra,manifest.job.receiptObjectRef);
+      const state=receipt===null?"pending":receipt.status==="ready"?"ready":"unavailable";
       const admitted=await infra.catalog.get(ADMISSIONS+threadId+":"+candidateId)!==null;
-      return {candidateId,targetAgeYears:manifest.targetAgeYears,state:admitted?"admitted":ready?"ready":"pending"};
+      return {candidateId,targetAgeYears:manifest.targetAgeYears,state:admitted?"admitted":state};
     },
     async image(threadId,candidateId){
       const manifest=await readManifest(infra,threadId,candidateId);
       ensureCurrent(await readSource(threadId),manifest);
-      const result=await verifiedImage(infra,manifest);
+      const result=await verifiedImage(infra,manifest,verify);
       if(result===null)throw new Error("Age anchor is still generating");
       return result.image.bytes;
     },
@@ -207,7 +209,7 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       const catalogKey=ADMISSIONS+threadId+":"+candidateId;
       const existing=await infra.catalog.get(catalogKey);
       if(existing!==null)return normalizeVisualAgeAnchorAdmission(existing);
-      const result=await verifiedImage(infra,manifest);
+      const result=await verifiedImage(infra,manifest,verify);
       if(result===null)throw new Error("Age anchor must be generated before approval");
       const approvalRef="visualageapproval_"+sha(threadId+"\0"+candidateId).slice(7);
       let approval=await stored(infra,approvalRef);
