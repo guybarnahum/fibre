@@ -1702,7 +1702,7 @@ function togglePopulationMigrationFilter(domain){
     : `${visible} of ${population.length} Threads need ${populationFilter} migration.`;
 }
 threadPopulationFilterMigration?.addEventListener("click",()=>togglePopulationMigrationFilter("migration"));
-for (const [id, nextMode] of [["view-causal", "causal"], ["view-raw", "raw"]]) {
+for (const [id, nextMode] of [["view-raw", "raw"]]) {
   $(`#${id}`).addEventListener("click", () => exitOperatorMode(nextMode));
 }
 $("#refresh-button").addEventListener("click", (event) => {
