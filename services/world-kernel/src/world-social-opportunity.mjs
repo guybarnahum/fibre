@@ -83,7 +83,7 @@ export function createWorldSocialOpportunity({
               outcome=attempt?.outcome??"no_co_presence";
               // One witness for the actual opportunity, not a second
               // event or a retrospective explanation model.
-              if(attempt!==null){
+              if(typeof attempt?.counterpartyThreadId==="string"){
                 const {salience,initiation,stance,encounterStory}=attempt;
                 decision={
                   counterpartyThreadId:attempt.counterpartyThreadId,
