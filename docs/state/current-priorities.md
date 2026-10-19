@@ -9,7 +9,7 @@ canonical: true
 
 **North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
 
-**Accepted Admin UX direction, October 19 (Slices 1–3 source implemented,
+**Accepted Admin UX direction, October 19 (Slices 1–4 source implemented,
 local and staging validation pending):**
 [Life Observatory](../architecture/life-observatory.md) replaces the
 Activity Causal Trail's operation nesting with compact Thread
