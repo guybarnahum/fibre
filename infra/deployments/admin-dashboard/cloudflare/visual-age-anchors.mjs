@@ -327,10 +327,11 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       const results=[];
       let after=null;
       let limited=false;
+      let eligibleCount=0;
       do{
         const page=await infra.catalog.list({prefix:CANDIDATES+threadId+":",after,limit:100});
         for(const {value:entry} of page.entries){
-          if(results.filter(item=>item.state==="eligible"||item.state==="cleaned").length>=CLEANUP_BATCH_LIMIT){
+          if(eligibleCount>=CLEANUP_BATCH_LIMIT){
             limited=true;
             break;
           }
@@ -386,6 +387,7 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
           }
           results.push({candidateId,state:dryRun?"eligible":"cleaned",objects,
             bytes:objects.reduce((sum,item)=>sum+item.bytes,0)});
+          eligibleCount++;
         }
         after=page.nextCursor;
         if(limited)break;
