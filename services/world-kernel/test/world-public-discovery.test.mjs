@@ -163,6 +163,7 @@ test("the same planning mind can choose a World-listed place or stay home",async
           memoryStore:{listCurrentMemories(){return memory?[{
             threadId,memoryId:"mem_library",status:"current",
             accessibility:"accessible",rememberedMeaning:memory,
+            asOf:"2026-10-17T12:00:00Z",recordedAt:"2026-10-17T12:00:00Z",
           }]:[];}},
           situatedLifeStore:{
             listCurrentPlaceEpisodes(){return [];},
