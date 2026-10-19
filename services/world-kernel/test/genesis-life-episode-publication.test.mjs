@@ -258,6 +258,12 @@ test("Genesis publishes Pass-A episodes as uncommanded authoritative history wit
 
     const world = openWorldStore(localWorldStateStorage(databasePath));
     const events = world.listEvents(thread.threadId);
+    const origins=world.listGenesisLifeEpisodes(thread.threadId);
+    assert.deepEqual(origins.map(item=>[item.eventId,item.occurredAt]),
+      events.slice(1).map(item=>[item.eventId,item.occurredAt]),
+      "Origins omitted an admitted childhood episode or included the publication seed");
+    assert.equal(world.listGenesisLifeEpisodes(thread.threadId,{limit:1}).length,1,
+      "Origins inspection ignored its explicit read bound");
     assert.equal(events.length, 1 + publishedEpisodes.length);
     assert.deepEqual(events.map((item) => item.eventType), [
       "THREAD_SEEDED",
