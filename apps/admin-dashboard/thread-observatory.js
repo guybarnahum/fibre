@@ -397,7 +397,7 @@ function lifeEvidence(livedNow){
   };
 }
 
-function hero(identity, threadId, livedNow=null) {
+export function renderThreadPersonHero(identity, threadId, livedNow=null) {
   const worldIdentity = identity.world?.thread?.identity ?? {};
   const name = threadName(identity);
   const sex = threadSex(identity);
@@ -1813,7 +1813,7 @@ export function renderThreadObservatory({
       identity,threadId,memories,memoryError,livedNow,encounterStories,
       encounterError,experienceConsolidation,experienceJournalEntries,semanticStates,lifeRelations,
     }),
-    hero(identity,threadId,livedNow),
+    renderThreadPersonHero(identity,threadId,livedNow),
     ...(!deferredHistory?[lifeRecordLinks()]:[]),
     identitySection(identity,threadId,livedNow),
     renderFidSection(identity,threadId),
