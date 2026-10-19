@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {summarizeSocialContinuity} from "./world-social-probe.mjs";
+import {formatWorldSocialReport,summarizeSocialContinuity} from "./world-social-probe.mjs";
 
 test("an admitted memory follows personal experience into later contact without claiming causation",()=>{
   const story={
@@ -90,4 +90,40 @@ test("an admitted memory follows personal experience into later contact without 
     "a valid subsequently admitted Memory was lost");
   assert.equal(beforeMemory.laterSocialInteractionRef,null,
     "a conversation before Memory formation was called a consequence of that Memory");
+});
+
+test("operator report separates deployed-version warning from grounded social evidence",()=>{
+  const evidence={
+    environment:"staging",checkedAt:"2026-10-19T18:35:00.000Z",
+    targetedThreadId:"thr_kisumu",scannedThreadCount:1,
+    availableThreadCount:1,unavailableThreadIds:[],
+    deployedGitSha:"dda3bf669ebf7789f3644f8af1394783bb597440",
+    runtimeSourceMatches:false,worldBlocker:"no_attested_venues_in_sample",
+    groundedLife:{
+      withVenues:[],withoutVenues:[{
+        threadId:"thr_kisumu",hasCurrentSituation:true,
+        currentWakefulness:"awake",privateWorldLocality:"Kisumu",
+        currentPlaceDescription:"Private home address that must never appear",
+        currentPlaceKind:"formative_presence",
+        attestedVenueCount:0,recentPublicVenueVisits:[],
+        futureAttestedVenueStops:[],
+        nextBoundedLifeWake:"2026-10-19T19:00:00.000Z",
+      }],
+    },
+    sharedCurrentVenues:[],socialOpportunities:[],
+    distinctExperienceWitness:null,
+    causalContinuity:{
+      inspectedSharedStoryCount:0,distinctExperiencePairCount:0,
+      retainedMemoryChainCount:0,laterContactAfterRetentionCount:0,
+      episodes:[],
+    },
+  };
+  const report=formatWorldSocialReport(evidence,"/tmp/social-evidence.json");
+  assert.match(report,/Kisumu/,"the Thread's grounded locality was omitted");
+  assert.match(report,/dda3bf6/,"deployed World provenance was lost");
+  assert.match(report,/NOT ESTABLISHED/,"unknown causal influence was overstated");
+  assert.doesNotMatch(report,/Private home address/,
+    "operator display leaked a nonpublic place description");
+  assert.match(report,/\/tmp\/social-evidence.json/,
+    "the complete evidence file was not identified");
 });
