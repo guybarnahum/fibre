@@ -11,7 +11,7 @@ import {
   populationLabComparisonHealth,
   populationLabSameCohort,
   populationLabComparisonBaselineId,
-} from "#services/population-lab/src/experiment-lifecycle-domain.mjs";
+} from "fibre/population-lab/experiment-lifecycle";
 import {
   createPopulationLabExperimentStore,
   populationLabExperimentRef,
