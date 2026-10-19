@@ -121,3 +121,42 @@ test("God-view pulses only from admitted World activity and keeps subjective con
   assert.equal(snapshot.coverage.privateCityActivity,"not_included",
     "the World claimed complete geographic coverage without source evidence");
 });
+
+
+test("God-view links arrival perspectives to the enacted action, not a second city event",()=>{
+  const snapshot=projectWorldEventOverview({
+    now:"2026-10-18T18:30:00.000Z",hours:24,placeRows:rows,
+    situationRows:[{
+      record_json:JSON.stringify(arrived),previous_json:JSON.stringify(old),
+    }],
+    storyRows:[
+      {encounter_id:"story_arrival_witness",occurred_at:when,
+        story_json:JSON.stringify({beats:[{kind:"action",actorThreadId:arrived.threadId,
+          text:"A Thread arrives at the shared venue."}]}),
+        visualization_source_refs_json:JSON.stringify([
+          arrived.situationId,place.physicalVenue.ref,
+        ]),thread_id:"thr_reader",situation_id:"sit_existing_reader",
+        attention_outcome:"noticed",experience_id:"exp_arrival",memory_id:null},
+      {encounter_id:"story_arrival_witness",occurred_at:when,
+        story_json:JSON.stringify({beats:[{kind:"action",actorThreadId:arrived.threadId,
+          text:"A Thread arrives at the shared venue."}]}),
+        visualization_source_refs_json:JSON.stringify([
+          arrived.situationId,place.physicalVenue.ref,
+        ]),thread_id:arrived.threadId,situation_id:arrived.situationId,
+        attention_outcome:null,experience_id:null,memory_id:null},
+    ],
+  });
+  assert.equal(snapshot.events.length,1,
+    "one arriving Thread caused duplicate World events");
+  const arrival=snapshot.events[0];
+  assert.equal(arrival.eventRef,arrived.situationId,
+    "World lost the actual arrival as objective source");
+  assert.equal(arrival.perceptionStoryRef,"story_arrival_witness",
+    "witness history was detached from the enacted occurrence");
+  assert.equal(arrival.witnesses.find(x=>x.threadId==="thr_reader")?.attention,
+    "noticed","arrival witness was not independently represented");
+  assert.equal(arrival.witnesses.find(x=>x.threadId===arrived.threadId)?.attention,
+    "not_appraised","actor was forced to notice its own action");
+  assert.equal(snapshot.cities.find(c=>c.name==="Lisbon")?.eventCount,1,
+    "the same action pulsed the city twice");
+});

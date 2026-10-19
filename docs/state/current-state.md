@@ -148,11 +148,23 @@ departs. Completed scenes can rearm after subsequent enacted activity,
 without an ambient timer loop. Historical speculative arrival/stay rows
 remain temporarily processable rather than erased as history.
 
-**Not yet implemented or claimed:** independent bystander attention to
-an arriving actor, generalized human actor occurrences, unified event-time
-perception across scene boundaries, full retirement of legacy speculative
-queues and per-Story follow-ups, or any new staging encounter. This is
-source-only and must not be declared an accepted living-World overhaul.
+**Third source cut (October 19; local/staging proof pending):** a genuine
+World-enacted arrival in an independently attested shared venue may now
+produce one durable perception obligation with up to two event-time
+co-present witnesses. Reconciliation projects that same actor occurrence
+through one existing Encounter Story and independently permits witnesses
+to notice or miss the arrival, generating Experience only when noticed.
+Interrupted personal attention reuses the admitted objective record; very
+late processing preserves history but does not invent retrospective private
+appraisal. The God-view can join the bystander Story to its enacted arrival
+rather than double-count the World event.
+
+**Still open:** generalized human actor occurrences, physical perception
+across scenes, symmetric independent initiation by a bystander, complete
+retirement of legacy speculative queues and per-Story follow-ups, natural
+staging Thread-to-Thread encounters, and causal later social behavior.
+The actor, ambient and bystander changes remain source-only until Guy
+reports focused/full validation and actual staging evidence.
 
 ## World encounters and private experience
 

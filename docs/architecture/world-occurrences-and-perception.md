@@ -176,6 +176,38 @@ admitted facts and deliberate handling of unresolved speculative decisions.
 The civil-minute boundary is only sparse compute scheduling, never a World
 event time rule, quota or recurring simulation tick.
 
+## Actor-arrival bystander attention — October 19 source cut
+
+An authentic World-enacted arrival overlapping an already-present waking
+person now earns at most one durable `world_arrival_perception_work` obligation
+for that enacted situation. The local and Cloudflare producers capture at
+most two independently grounded bystander situation references *at the event
+time*, before an operator, later alarm or fresh venue population query can
+rewrite the scene. An empty venue creates no obligation. This is an indexed,
+one-shot reconciliation frontier, not another event authority or a
+per-Thread polling loop.
+
+At reconciliation, the existing Encounter Story authority projects the
+enacted arrival as one objective action with the original situation ID,
+occurred time and venue evidence. The existing independent attention and
+Experience authority then allows each bystander to notice or miss it.
+Interrupted attention can retry against the same objective Story and cannot
+reroll a previously admitted observer's attention. The actor is not forced
+to appraise its own movement. When reconciliation is more than one hour late,
+the objective Story remains inspectable but *retroactive private attention
+is not invented*. World Observatory joins this Story's admitted witness
+perspectives to the enacted arrival when both sources are within its bounded
+read window, rather than counting a second city event.
+
+This slice is **source-implemented only** pending Guy's focused and complete
+local validation, schema deployment and staging evidence. The two-witness
+bound is a computational sample, not a claim that other people were absent.
+It does not yet implement general event-time witness discovery, spatially
+remote observers, actor reaction to a bystander's attention, endogenous
+bystander contact initiation, or later history-caused social choice.
+Existing social initiation/consent remains independent, not compelled by
+the arrival or any resulting Experience.
+
 ## Execution slices and acceptance
 
 1. **Actor occurrence contract.** Project actual LivedNow changes into

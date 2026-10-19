@@ -34,9 +34,17 @@ arriving visitors; only actual scene eligibility earns environmental model
 work, and `no_change` remains a valid outcome. The old stay producer is
 retired in both local and Cloudflare paths, but historical pending rows and
 per-Story environmental follow-ups still run until deliberately replaced.
-This remains **source-only**, not independently noticed actor presence,
-symmetric social choice, general event-time perception or staging
-acceptance. Guy must run local focused and full validation before deployment.
+An additional October 19 source slice now lets an authentic enacted arrival
+earn one one-shot bystander perception obligation. Its bounded event-time
+witness situations reuse the existing shared Encounter Story, independently
+noticed/missed attention and selective Experience path; its God-view
+projection avoids double-counting an arrival. The two-witness bound is a
+sample, not a population claim, and no interaction or Memory is forced.
+
+This remains **source-only**, without Guy's new focused/full validation,
+staging bystander attention, endogenous bystander initiation, general
+event-time cross-scene perception or causal later-life social proof.
+Guy must validate locally before deployment.
 
 **Critical path remains:** one genuine independently chosen and enacted
 public-place visit; subsequent independently overlapping Thread presence;
