@@ -56,6 +56,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
   root.append(actions,status,galleryStatus,gallery,review);
 
   let active=null;
+  let failed=false;
   let pollSequence=0;
 
   function message(text,kind=""){
@@ -73,6 +74,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
   }
   function settle(){
     active=null;
+    failed=false;
     ++pollSequence;
     generate.disabled=false;
     generate.textContent="Generate age portrait";
@@ -131,14 +133,16 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     const buttons=make("div","thread-age-anchor-review-actions");
     buttons.append(approve,discard);
     review.append(buttons);
-    generate.disabled=false;
-    generate.textContent="Generate another age portrait";
+    failed=false;
+    generate.disabled=true;
+    generate.textContent="Review candidate first";
     message(`Age-${age} portrait ready. Review the image before approving.`,"succeeded");
   }
   async function watchCandidate(candidate){
     const sequence=++pollSequence;
     const {candidateId,targetAgeYears}=candidate;
     active=candidate;
+    failed=false;
     ageInput.value=String(targetAgeYears);
     generate.disabled=true;
     galleryStatus.hidden=true;
@@ -157,8 +161,9 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
         if(result.state!=="pending")throw new Error("Unexpected generation state: "+result.state);
       }catch(error){
         if(sequence!==pollSequence||!root.isConnected)return;
+        failed=true;
         generate.disabled=false;
-        generate.textContent="Retry age portrait";
+        generate.textContent="Generate new portrait";
         message(`Age-${targetAgeYears} portrait: ${error.message}`,"failed");
         return;
       }
@@ -202,7 +207,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     if(targetAgeYears===25){
       message("Age 25 is already the canonical root.");return;
     }
-    if(active?.targetAgeYears===targetAgeYears){
+    if(active?.targetAgeYears===targetAgeYears && !failed){
       // Resume the same immutable candidate; do not pay for a second image.
       void watchCandidate(active);
       return;
@@ -212,6 +217,11 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
       eyebrow:"Fibre visual identity",
       description:"Generate one OpenAI portrait using the canonical identity and nearby approved age anchors. Admission requires your separate review and approval.",
       run:async()=>{
+        // A terminally failed candidate cannot become a new image by polling.
+        // Starting another one is an explicit operator action.
+        if(active!==null){
+          await api(candidateUrl(threadId,active.candidateId)+"/discard",{method:"POST"});
+        }
         const candidateId=newCandidateId();
         const candidate={candidateId,targetAgeYears};
         active=candidate;
