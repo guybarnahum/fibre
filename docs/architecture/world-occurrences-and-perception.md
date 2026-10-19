@@ -239,6 +239,37 @@ nor proof of long-term relationship formation. Observed invitations remain
 limited to recent, co-present Thread-to-Thread arrivals; broader endogenous
 life events, distant observers, and historical consequences remain deferred.
 
+## Recent Experience becomes a later social cause — October 19
+
+A Shared Encounter Story is public World evidence; the observer's noticed
+Experience is a different, private record. The current social Situated Percept
+now derives **both** from the observer's existing admission: bounded objective
+beats and that **observer's own** `thread_encounter_experiences` text. It
+never reads another person's private interpretation, and it never presents
+an unappraised or `not_noticed` occurrence as if that observer knew it.
+No new model call, event authority, long-term memory store or population
+scan is introduced by this retrieval.
+
+This implementation uses a **provisional six-hour recent-availability
+window** at the actual subsequent decision time, with the existing
+twelve-story lookup cap and four-encounter presentation cap. That is a
+reversible, low-cost runtime boundary, not a constitutional claim that human
+recollection lasts six hours. Past that boundary, ordinary social cognition
+must rely on already-retained autobiographical Memory supplied by the
+existing Interior Cognition selector; it may not mine World history and call
+the result recollection. The precise recent availability policy remains
+deferred to the epistemic access work.
+
+A local differential scenario holds the Thread, other actor, objective
+World arrival, scene, social opportunity and selector constant, then varies
+only the previously admitted first-person Experience. The same existing
+social engine must allow one later voluntary initiation and another
+`not_initiate`, with correspondingly distinct durable outward consequences.
+This proves a **bounded fixture differential**, not the standing cross-Thread
+differential gate, a naturally authored staging Experience, or a mature
+relationship/development system. Live staging testimony and real retained
+Memory changing a still-later choice remain open.
+
 ## Execution slices and acceptance
 
 1. **Actor occurrence contract.** Project actual LivedNow changes into

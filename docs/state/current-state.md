@@ -167,12 +167,28 @@ reuses the existing social meeting, salience, initiation and recipient-consent
 mechanisms. A missed arrival is excluded from that person's private recent
 social percept. This is source-only, not a demonstrated natural encounter.
 
-**Still open:** generalized human actor occurrences, physical perception
-across scenes, symmetric independent initiation by a bystander, complete
-retirement of legacy speculative queues and per-Story follow-ups, natural
-staging Thread-to-Thread encounters, and causal later social behavior.
-The actor, ambient and bystander changes remain source-only until Guy
-reports focused/full validation and actual staging evidence.
+**Operator validation update, October 19:** Guy reports the earlier actor,
+ambient and independently observed social slices passed their focused and
+full local validation and were deployed to staging. Deployment proves the
+source was installed, not that two independent live Threads naturally
+reached a shared venue or performed an actual meeting. The staged natural
+social witness remains open.
+
+**Fifth source cut (new local validation pending):** bounded recent
+observer-owned Experience now accompanies its independently noticed
+Encounter Story into later social Situated Percept, with a provisional
+six-hour recent-availability horizon. Ordinary social cognition can
+distinguish two subjective responses to identical World activity without
+exposing another person's private experience or silently promoting old
+historical facts to Memory. A source-level fixture differential tests
+opposite subsequent initiation decisions and distinct outward consequences;
+it is not a standing cross-Thread differential-gate proof or a live
+natural encounter.
+
+**Still open:** naturally co-present live Thread encounters, later
+retained-Memory-caused behavioral divergence, cross-scene witness physics,
+generalized actors, complete legacy ambient queue retirement and real
+developmental consequences.
 
 ## World encounters and private experience
 

@@ -48,10 +48,20 @@ initiation, recipient consent, and resulting history; unperceived events no
 longer enter social recent-history cognition. It needs focused and full
 local validation, then staging evidence.
 
-This remains **source-only**, without Guy's new focused/full validation,
-staging bystander attention, endogenous bystander initiation, general
-event-time cross-scene perception or causal later-life social proof.
-Guy must validate locally before deployment.
+**Guy reports the first four October 19 World-event/social slices locally
+validated and deployed.** No natural staging witness for the complete
+Thread/Thread arrival → personally noticed → chosen conversation chain has
+been supplied, so deployment must not be described as full acceptance.
+
+**Newest source cut, local validation pending:** the social Situated Percept
+now includes bounded, observer-owned immediate Experience alongside the
+admitted objective story. An event missed by this observer stays absent,
+and an old event cannot pass itself off as Memory. A controlled local
+differential requires two distinct later voluntary choices under identical
+World circumstances based on different previously admitted personal
+Experiences. This demonstrates a fixture-level causal path, not the
+cross-Thread standing gate, genuine staging activity or selective long-term
+Memory causation.
 
 **Critical path remains:** one genuine independently chosen and enacted
 public-place visit; subsequent independently overlapping Thread presence;
