@@ -182,8 +182,10 @@ test("same-age replacement never self-conditions and preserves prior approved ev
   const replacement=f.dispatched.at(-1);
   assert.deepEqual(replacement.referenceObjectRefs,["canonical_visual"],
     "Age-12 regeneration reused its own flawed age-12 reference");
-  assert.match(replacement.brief.description,/developing jaw|child or young adolescent/,
-    "Childhood reconstruction lacks developmental anatomy");
+  assert.match(replacement.brief.description,/school-age child or preteen/,
+    "Childhood reconstruction lacks its distinct preteen anatomy");
+  assert.match(replacement.brief.description,/exactly age 12/,
+    "Childhood reconstruction lost the exact requested age");
   f.complete();
   const second=await f.service.admit("thr_visual","visual_age_12_replacement","operator@example.com");
   const current=await f.service.list("thr_visual");
