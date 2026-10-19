@@ -32,6 +32,7 @@ function fixture({provider="openai"}={}){
     catalog:{
       get:async key=>catalog.get(key)??null,
       upsert:async(key,value)=>{catalog.set(key,value);},
+      remove:async key=>catalog.delete(key),
       list:async({prefix})=>({entries:[...catalog.entries()].filter(([key])=>key.startsWith(prefix))
         .map(([key,value])=>({key,value})),nextCursor:null}),
     },
@@ -71,6 +72,10 @@ test("operator request freezes a single provenance-bound generation; admission r
   assert.equal(request.state,"pending","Request falsely admitted a pending portrait");
   assert.equal(f.dispatched.length,1,"One age request dispatched multiple image jobs");
   assert.deepEqual(f.dispatched[0].referenceObjectRefs,["canonical_visual"],"Root identity was not used");
+  const interruptedView=await f.service.list("thr_visual");
+  assert.equal(interruptedView.candidates[0].candidateId,"visual_candidate_1",
+    "An Observatory refresh lost the immutable image generation");
+  assert.equal(interruptedView.candidates[0].targetAgeYears,15);
   await assert.rejects(f.service.admit("thr_visual","visual_candidate_1","operator@example.com"),
     /must be generated/,"Pending candidate was admitted");
   await f.service.request("thr_visual","visual_candidate_1",15);
@@ -78,7 +83,9 @@ test("operator request freezes a single provenance-bound generation; admission r
   f.complete();
   const admission=await f.service.admit("thr_visual","visual_candidate_1","operator@example.com");
   assert.equal(admission.targetAgeYears,15,"Admitted image lost its requested age");
-  assert.equal((await f.service.list("thr_visual")).anchors.length,1,"Approved image did not become selectable");
+  const approved=await f.service.list("thr_visual");
+  assert.equal(approved.anchors.length,1,"Approved image did not become selectable");
+  assert.equal(approved.candidates.length,0,"Approved age candidate remained pending");
   const same=await f.service.admit("thr_visual","visual_candidate_1","operator@example.com");
   assert.deepEqual(same,admission,"Repeated approval changed the admitted record");
 });
@@ -133,4 +140,15 @@ test("unfinished generation reports a terminal Workflow failure instead of appea
     /OpenAI portrait generation terminated/,"Failed generation was misreported as pending");
   assert.equal((await f.service.list("thr_visual")).anchors.length,0,
     "Failed generation became an admitted age anchor");
+});
+
+test("unapproved age portrait can be discarded without modifying canonical identity",async()=>{
+  const f=fixture();
+  await f.service.request("thr_visual","visual_candidate_discard",12);
+  assert.equal((await f.service.list("thr_visual")).candidates.length,1);
+  await f.service.discard("thr_visual","visual_candidate_discard");
+  const restored=await f.service.list("thr_visual");
+  assert.equal(restored.candidates.length,0,"Discarded candidate returned after Observatory reload");
+  assert.equal(restored.anchors.length,0,"Discarding generated image created an admission");
+  assert.equal(restored.canonical.objectRef,"canonical_visual","Candidate discard changed identity root");
 });
