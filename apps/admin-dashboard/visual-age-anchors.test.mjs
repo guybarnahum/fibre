@@ -120,3 +120,32 @@ test("same-age candidate compares its current admitted likeness before replacing
     globalThis.fetch=previousFetch;
   }
 });
+
+test("age portrait gallery places the canonical 25-year image among approved ages",async()=>{
+  const previousDocument=globalThis.document;
+  const previousFetch=globalThis.fetch;
+  globalThis.document={createElement:fakeElement};
+  globalThis.fetch=async url=>{
+    if(!url.endsWith("/age-anchors"))throw new Error("Unexpected age portrait request");
+    // Deliberately unordered input: the view, not the server, owns display order.
+    return Response.json({anchors:[
+      {targetAgeYears:85,admissionId:"age85"},
+      {targetAgeYears:45,admissionId:"age45"},
+      {targetAgeYears:12,admissionId:"age12"},
+    ],candidates:[]});
+  };
+  try{
+    const view=renderVisualAgeAnchors({threadId:"thr_visual",threadName:"Yael"});
+    view.isConnected=true;
+    await flushUntil(()=>find(view,"thread-age-anchor-gallery")?.children.length===4);
+    const gallery=find(view,"thread-age-anchor-gallery");
+    assert.deepEqual(gallery.children.map(card=>card.children[1].textContent),
+      ["Age 12","Canonical · 25","Age 45","Age 85"],
+      "Chronological portraits did not place the canonical age among admitted ages");
+    assert.ok(gallery.children[1].children[0].src.endsWith("/canonical"),
+      "Age 25 no longer references the immutable canonical image");
+  }finally{
+    globalThis.document=previousDocument;
+    globalThis.fetch=previousFetch;
+  }
+});
