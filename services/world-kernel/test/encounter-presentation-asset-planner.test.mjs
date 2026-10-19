@@ -186,4 +186,11 @@ test("admitted age portraits remain owned by each depicted Thread in one encount
     "no admitted anchors must preserve canonical-only encounter generation");
   assert.equal(canonicalOnly.context.depictedThreads.some(x=>"referenceImages" in x),false,
     "an empty age anchor registry changed legacy encounter source identity");
+  assert.throws(()=>planEncounterPresentationAssetSlot({
+    encounterStory:story,
+    visualIdentities:[visualIdentity(mina.threadId,"shared_face"),
+      visualIdentity(noor.threadId,"shared_face")],
+    mediaId:"encounter_duplicate_identity",
+  }),/reference image belongs to multiple Thread identity groups/,
+  "two Threads silently shared one identity image");
 });
