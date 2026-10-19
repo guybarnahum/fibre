@@ -56,7 +56,7 @@ test("current city comes from enacted life rather than published birthplace",()=
 });
 
 test("two independent Threads in one city are not automatically meeting",()=>{
-  const result=rankSocialCityCandidates({
+  const result=rankSocialCityCandidates({at:"2026-10-19T18:00:00.000Z",
     places,people:[person("thr_a"),person("thr_b"),person("thr_else","per:home",
       "awake","Lisbon","PT")],
   });
@@ -77,12 +77,12 @@ test("two independent Threads in one city are not automatically meeting",()=>{
 
 test("only two currently co-present non-sleeping visitors count as shared venue",()=>{
   const base=[person("thr_a","wpl_library"),person("thr_b","wpl_library")];
-  const shared=rankSocialCityCandidates({places,people:base}).pairedCities[0];
+  const shared=rankSocialCityCandidates({at:"2026-10-19T18:00:00.000Z",places,people:base}).pairedCities[0];
   assert.equal(shared.meetingEvidence,"actual_shared_public_venue",
     "real co-presence was not distinguished from city residence");
   assert.deepEqual(shared.sharedCurrentPublicVenues[0].threadIds,
     ["thr_a","thr_b"]);
-  const asleep=rankSocialCityCandidates({
+  const asleep=rankSocialCityCandidates({at:"2026-10-19T18:00:00.000Z",
     places,people:[base[0],person("thr_b","wpl_library","asleep")],
   }).pairedCities[0];
   assert.equal(asleep.sharedCurrentPublicVenues.length,0,
