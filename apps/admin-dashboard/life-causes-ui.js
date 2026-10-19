@@ -1,5 +1,5 @@
 import {fetchThreadObservatory,renderThreadLifeHistory,threadName} from "./thread-observatory.js";
-import {recentLifeMoments,recordedLifeMoments} from "./life-causes-model.mjs";
+import {recentLifeMoments,recordedLifeMoments,formativeLifeMoments} from "./life-causes-model.mjs";
 
 const $=selector=>document.querySelector(selector);
 const el=(tag,className=null,value=null)=>{
@@ -11,11 +11,13 @@ const el=(tag,className=null,value=null)=>{
 const at=value=>value&&Number.isFinite(Date.parse(value))
   ?new Date(value).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"})
   :"Time not established";
-const day=value=>new Date(value).toLocaleDateString(undefined,{
+const day=value=>new Date(/^\d{4}-\d{2}-\d{2}$/u.test(value)
+  ?value+"T12:00:00":value).toLocaleDateString(undefined,{
   weekday:"short",month:"short",day:"numeric",year:"numeric",
 });
 const validThread=value=>/^thr_[a-zA-Z0-9]+$/u.test(value??"");
-const labelFor=item=>item.kind==="memory"?"Memory"
+const labelFor=item=>item.kind==="origin"?"Origin fact"
+  :item.kind==="memory"?"Memory"
   :item.kind==="encounter"?"Encounter"
   :item.kind==="world"?"World occurrence"
   :item.phase==="in_transit"?"Travel":"World situation";
@@ -58,8 +60,9 @@ export function renderLifeCausesPage(){
   scopes.setAttribute("aria-label","Life history scope");
   const recent=el("button","secondary","Recent life");
   const historyButton=el("button","secondary","Recorded history");
-  for(const button of [recent,historyButton])button.type="button";
-  scopes.append(recent,historyButton);
+  const originsButton=el("button","secondary","Origins");
+  for(const button of [recent,historyButton,originsButton])button.type="button";
+  scopes.append(recent,historyButton,originsButton);
   const layout=el("div","life-causes-layout");
   const timeline=el("section","life-causes-timeline");
   const inspector=el("section","life-causes-inspector");
@@ -68,13 +71,15 @@ export function renderLifeCausesPage(){
   workspace.append(subject,summary,scopes,layout,source);
   $(".main").append(workspace);
 
-  let threadId=null,loadedRecent=null,loadedHistory=null;
+  let threadId=null,loadedRecent=null,loadedHistory=null,loadedOrigins=null;
   let mode="recent",selected=null,sequence=0,missingRequested=null,historyFailure=null;
   const text=(target,message,cls="life-causes-muted")=>{
     target.replaceChildren(el("p",cls,message));
   };
-  const activeMoments=()=>mode==="history"
-    ?loadedHistory?.moments??[]:loadedRecent?.moments??[];
+  const activeMoments=()=>mode==="origins"
+    ?loadedOrigins?.moments??[]
+    :mode==="history"?loadedHistory?.moments??[]
+      :loadedRecent?.moments??[];
   const evidenceRow=(heading,lines)=>{
     const section=el("section","life-causes-part");
     section.append(el("h3",null,heading));
@@ -107,7 +112,9 @@ export function renderLifeCausesPage(){
     const moments=activeMoments();
     timeline.append(el("p","life-causes-muted",mode==="recent"
       ?"Current World snapshot · at most eight recent enacted situations."
-      :"Bounded World, Encounter and Memory records · not a complete lifetime archive."));
+      :mode==="origins"
+        ?"Recorded birth facts and retained personal Memories · not complete childhood events or the Genesis execution clock."
+        :"Bounded World, Encounter and Memory records · not a complete lifetime archive."));
     if(!moments.length){
       timeline.append(el("p","life-causes-muted","No dated moments in the returned inspection window."));
       return;
@@ -124,7 +131,7 @@ export function renderLifeCausesPage(){
       card.type="button";card.setAttribute("aria-pressed",String(item===selected));
       card.classList.toggle("selected",item===selected);
       card.append(
-        el("time",null,new Date(item.at).toLocaleTimeString(undefined,{
+        el("time",null,item.kind==="origin"?"Birth date":new Date(item.at).toLocaleTimeString(undefined,{
           hour:"numeric",minute:"2-digit",
         })),
         el("strong",null,titleFor(item)),
@@ -150,14 +157,26 @@ export function renderLifeCausesPage(){
       el("span",null,labelFor(selected)+" · "+at(selected.at)));
     inspector.append(heading);
 
-    if(selected.kind==="memory"){
+    if(selected.kind==="origin"){
+      evidenceRow("Birth facts",[
+        "Recorded birth date: "+selected.birthDate,
+        selected.birthPlace?"Recorded birthplace: "+selected.birthPlace:null,
+        "This is an identity fact, not a World encounter or a compiler event.",
+      ]);
+      evidenceRow("Publication boundary",[
+        loadedOrigins?.published
+          ?"The Thread is admitted in World. This view does not establish the timestamp of atomic publication."
+          :"World publication was not established in this returned identity.",
+        "Historical formation and Genesis execution use different clocks.",
+      ]);
+    }else if(selected.kind==="memory"){
       evidenceRow("Remembered",[
         selected.title,
         selected.meaning?"Personal meaning: "+selected.meaning:
           "No separate remembered meaning is available in this record.",
       ]);
       evidenceRow("History and evidence",[
-        "The timeline uses the remembered episode's subject date, not when it was consolidated.",
+        "The timeline uses the remembered episode's subject date, not when it was consolidated. It does not prove that Genesis authored this Memory.",
         selected.recordedAt?"Memory recorded: "+at(selected.recordedAt):null,
         selected.eventRefs?.length
           ?"Explicit source references: "+selected.eventRefs.join(", ")
@@ -244,14 +263,15 @@ export function renderLifeCausesPage(){
   function draw(){
     recent.classList.toggle("active",mode==="recent");
     historyButton.classList.toggle("active",mode==="history");
+    originsButton.classList.toggle("active",mode==="origins");
     scopes.hidden=!loadedRecent;
     drawTimeline();drawInspector();drawOriginalRecords();
   }
-  async function loadHistory(requested=null){
+  async function loadHistory(requested=null,targetMode="history"){
     if(!loadedRecent||!threadId)return;
     const targetThread=threadId;
     const request=sequence;
-    mode="history";historyButton.disabled=true;
+    mode=targetMode;historyButton.disabled=true;originsButton.disabled=true;
     summary.append(el("span",null,"Reading bounded history…"));
     draw();
     try{
@@ -263,13 +283,18 @@ export function renderLifeCausesPage(){
           threadId:targetThread,payload,
           moments:recordedLifeMoments(payload),
         };
+        loadedOrigins={
+          moments:formativeLifeMoments(payload),
+          published:Boolean(payload.identity?.world?.thread),
+        };
       }
       if(request!==sequence)return;
-      const match=requested?loadedHistory.moments.find(item=>
+      const moments=activeMoments();
+      const match=requested?moments.find(item=>
         item.kind+":"+item.id===requested||item.id===requested,
       )??null:null;
       missingRequested=requested&&!match?requested:null;
-      selected=requested?match:loadedHistory.moments[0]??null;
+      selected=requested?match:moments[0]??null;
       historyFailure=null;
       if(!missingRequested)updateUrl();
     }catch(error){
@@ -278,7 +303,7 @@ export function renderLifeCausesPage(){
       historyFailure="History inspection unavailable: "+(error instanceof Error?error.message:String(error));
       updateUrl();
     }finally{
-      if(request===sequence){historyButton.disabled=false;drawSummary();draw();}
+      if(request===sequence){historyButton.disabled=false;originsButton.disabled=false;drawSummary();draw();}
     }
   }
   function drawSummary(){
@@ -291,7 +316,7 @@ export function renderLifeCausesPage(){
   }
   async function openThread(nextThread,{moment=null,memory=null,view="recent"}={}){
     const request=++sequence;
-    threadId=nextThread;loadedRecent=null;loadedHistory=null;selected=null;
+    threadId=nextThread;loadedRecent=null;loadedHistory=null;loadedOrigins=null;selected=null;
     historyFailure=null;missingRequested=null;
     mode="recent";summary.replaceChildren(el("span",null,"Reading current World life…"));draw();
     try{
@@ -303,7 +328,9 @@ export function renderLifeCausesPage(){
         item.kind+":"+item.id===moment||item.id===moment,
       )??loadedRecent.moments[0]??null;
       drawSummary();draw();
-      if(view==="history"||memory)await loadHistory(memory??moment);
+      if(view==="history"||view==="origins"||memory){
+        await loadHistory(memory??moment,view==="origins"?"origins":"history");
+      }
       else updateUrl();
     }catch(error){
       if(request!==sequence)return;
@@ -316,6 +343,13 @@ export function renderLifeCausesPage(){
     if(!loadedRecent)return;
     mode="recent";selected=loadedRecent.moments[0]??null;
     updateUrl();draw();
+  });
+  originsButton.addEventListener("click",()=>{
+    if(!loadedRecent||originsButton.disabled)return;
+    if(loadedOrigins){
+      mode="origins";selected=loadedOrigins.moments[0]??null;
+      updateUrl();draw();
+    }else void loadHistory(null,"origins");
   });
   historyButton.addEventListener("click",()=>{
     if(!loadedRecent||historyButton.disabled)return;
