@@ -364,9 +364,20 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
             continue;
           }
           const outputRef=output.metadata.providerOutputObjectRef;
+          const attemptRef=output.metadata.generationAttemptObjectRef;
           const staged=typeof outputRef==="string"?await infra.objects.get(outputRef):null;
+          const bundle=typeof attemptRef==="string"?await infra.objects.get(attemptRef):null;
           const objects=[{objectRef:job.outputObjectRef,bytes:output.bytes.length}];
-          if(staged?.metadata?.kind==="staged_provider_output"
+          // The optimized Asset Generator often co-locates the attempt and
+          // staged image in ONE R2 object; the logical outputRef is virtual.
+          if(bundle?.metadata?.kind==="generation_attempt_bundle"
+            &&bundle.metadata.jobId===job.jobId
+            &&bundle.metadata.attemptRef===attemptRef
+            &&bundle.metadata.outputRef===outputRef
+            &&bundle.metadata.outputDigest===receipt.sha256
+            &&attemptRef!==job.outputObjectRef){
+            objects.push({objectRef:attemptRef,bytes:bundle.bytes.length});
+          }else if(staged?.metadata?.kind==="staged_provider_output"
             &&staged.metadata.jobId===job.jobId
             &&staged.digest===output.metadata.providerOutputDigest
             &&outputRef!==job.outputObjectRef){
