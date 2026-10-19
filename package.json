@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     "./birth-center/genesis-development": "./services/birth-center/public/genesis-development.mjs",
+    "./thread-presentation/age-portrait-guidance": "./services/thread-presentation/public/age-portrait-guidance.mjs",
     "./thread-presentation/current-present": "./services/thread-presentation/public/current-present.mjs",
     "./thread-presentation/thread-directory": "./services/thread-presentation/public/thread-directory.mjs",
     "./world-kernel/genesis-authority-contracts": "./services/world-kernel/public/genesis-authority-contracts.mjs",
