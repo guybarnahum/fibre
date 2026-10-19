@@ -185,6 +185,10 @@ test("the same planning mind can choose a World-listed place or stay home",async
       "private history could not outweigh public discovery");
     assert.deepEqual(solitary.stops.map(s=>s.physicalPlaceRef),[homeRef],
       "listing a venue forced a visit");
+    for(const plan of [interested,reluctant,solitary]){
+      assert.deepEqual(plan.cognition.decisionContext.cityGuidePlaceRefs,[place.ref],
+        "the actual offered World listing was lost or mistaken for the choice");
+    }
     assert.ok(interested.stops.every(s=>s.companionRefs.length===0),
       "discovery invented a companion");
   }finally{db.close();}
