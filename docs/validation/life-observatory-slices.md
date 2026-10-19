@@ -91,11 +91,62 @@ Encounter Story, with two independently owned Thread viewpoints,
 choices, attention, Experience, selective Memory and demonstrated
 later effects. Legitimate non-actions remain visible as non-actions.
 
-**Acceptance:** An admitted conversation has separate personal
-perspectives; mere co-presence never becomes a conversation. An offered
-place never becomes an intentional choice automatically. Cause is
-reported only when a concrete mechanism or controlled difference
-supports it; other influence stays unresolved.
+**Implemented source contract:** A personal plan's existing cognition
+provenance now retains the actual supplied interoception (or null), the
+precise offered place refs, the subset offered by the City Guide and the
+preceding situation ref. Selected personal-evidence refs and the
+Thread-authored stop/purpose remain separate. A social opportunity
+completes its existing one-shot row with a bounded decision witness:
+actual salience anchors, initiator's Body projection and selected
+Experience refs where supplied, initiation/non-initiation, recipient's
+separate consent decision, concise self-reported reasons, and any
+admitted Encounter Story ref. Incomplete/interrupted attempts are not
+silently retried or given imaginary decisions. Two small
+`decision_json` columns are added to the existing social-opportunity
+frontier tables on schema installation; no parallel logging authority
+is introduced.
+
+Life & Causes uses the bounded World Observatory to show those
+decisions alongside enacted World situations, individual Experience
+and retained Memory. World Events links admitted Encounter Stories to
+each participant's own Life & Causes view. Only the initiating
+Thread's one-shot opportunity currently owns the combined
+initiation/response witness; the other participant's independently
+retained Experience/Memory remain in their own World records.
+The recipient's full separate decision witness is **not** independently
+indexed by Encounter Story in its own lifetime view. That narrow
+read-side linkage is deferred until a grounded user story requires it;
+do not imply the witness is available in every perspective.
+
+**Causal-status register:** Body/interoception exposure and City Guide
+offers are **Context-only/Notarial evidence** in this Slice, not
+additional behavioral capabilities. Salience's deterministic anchors
+are a **mechanism**; separately established pressure-driven differential
+planning remains the behavioral evidence and is not proved merely by
+this UI. The social initiation and response outcomes are actual
+Thread-authored decisions; the witness records their context but is
+not a causal intervention. Enacted arrival/Story/Experience/Memory
+are separate established World facts, while a Memory's impact on a
+later decision is still **Unresolved** without an admitted downstream
+consumer/effect. Who chooses context is unchanged: existing
+Fibre/Thread cognition selects personal Memory/semantic evidence; this
+operator display does not author that context or the decision.
+A model-reported reason remains a reported perspective, not
+unconscious truth.
+
+**Acceptance:** An admitted conversation opens separate per-person
+World views; mere co-presence never becomes a conversation. A
+City Guide offer never becomes an intentional choice automatically.
+A completed non-initiation retains actual Body/salience evidence without
+inventing a Story. A plan's current Body value cannot be substituted
+for the original event-time witness. Causal influence is reported
+only when a named deterministic dependency or independent controlled
+difference supports it; other influence remains unresolved.
+
+**Source implementation is pending local validation and staging
+acceptance; it is not a closed milestone or a new claim that Body or
+Memory has achieved the ambitious behavioral differential gate.**
+Existing bounded views cannot certify the absence of older histories.
 
 ## Execution discipline
 
