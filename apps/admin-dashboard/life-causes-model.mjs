@@ -126,7 +126,7 @@ export function recordedLifeMoments({livedNow=null,memories=[],encounterStories=
 // Birth date is an identity fact, not a World occurrence or a Genesis
 // compiler timestamp. Retained memories are individual perspectives,
 // never a substitute for the child's full admitted historical episodes.
-export function formativeLifeMoments({identity={},memories=[]}={}){
+export function formativeLifeMoments({identity={},memories=[],genesisEpisodes=[]}={}){
   const birthDate=identity.birthDate??identity.world?.thread?.identity?.birthDate??null;
   const place=identity.birthPlace??identity.world?.thread?.identity?.birthCity??null;
   const origin=Number.isFinite(Date.parse(birthDate??""))?[Object.freeze({
@@ -138,7 +138,20 @@ export function formativeLifeMoments({identity={},memories=[]}={}){
     .filter(moment=>moment.kind==="memory");
   // These are dated subject Memories, not all Genesis events and not a
   // proof of which life stage produced them.
-  return Object.freeze([...origin,...remembered].sort(
+  const admitted=(Array.isArray(genesisEpisodes)?genesisEpisodes:[]).flatMap(event=>{
+    if(typeof event?.eventId!=="string"
+      ||!Number.isFinite(Date.parse(event?.occurredAt??"")))return [];
+    return [Object.freeze({
+      kind:"formative_event",id:event.eventId,at:event.occurredAt,
+      title:event.observableAction??"Admitted childhood episode",
+      ageAtEvent:event.ageAtEvent??null,
+      episodeId:event.episodeId??null,
+      genesisId:event.genesisId??null,
+      placeRef:event.placeRef??null,
+      participantRefs:event.participantRefs??[],
+    })];
+  });
+  return Object.freeze([...origin,...admitted,...remembered].sort(
     (a,b)=>Date.parse(b.at)-Date.parse(a.at)||a.kind.localeCompare(b.kind),
   ));
 }
