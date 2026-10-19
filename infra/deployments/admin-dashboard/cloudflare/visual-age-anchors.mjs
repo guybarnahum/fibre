@@ -11,7 +11,7 @@ import {
   resolveVisualAgeReferences,
 } from "#services/world-kernel/src/visual-age-anchors.mjs";
 import {resolveAdminWorldThreadIdentity} from "./thread-identity.mjs";
-import {agePortraitBrief} from "./age-portrait-guidance.mjs";
+import {agePortraitBrief} from "fibre/thread-presentation/age-portrait-guidance";
 import {
   readVisualAgeAnchorAdmissions,
   VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX,
