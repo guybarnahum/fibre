@@ -121,3 +121,24 @@ export function recordedLifeMoments({livedNow=null,memories=[],encounterStories=
     ||a.kind.localeCompare(b.kind)||a.id.localeCompare(b.id));
   return Object.freeze(ordered);
 }
+
+
+// Birth date is an identity fact, not a World occurrence or a Genesis
+// compiler timestamp. Retained memories are individual perspectives,
+// never a substitute for the child's full admitted historical episodes.
+export function formativeLifeMoments({identity={},memories=[]}={}){
+  const birthDate=identity.birthDate??identity.world?.thread?.identity?.birthDate??null;
+  const place=identity.birthPlace??identity.world?.thread?.identity?.birthCity??null;
+  const origin=Number.isFinite(Date.parse(birthDate??""))?[Object.freeze({
+    kind:"origin",id:"origin:"+birthDate,at:birthDate,
+    title:place?"Born in "+place:"Recorded birth date",
+    birthDate,birthPlace:place,
+  })]:[];
+  const remembered=recordedLifeMoments({memories})
+    .filter(moment=>moment.kind==="memory");
+  // These are dated subject Memories, not all Genesis events and not a
+  // proof of which life stage produced them.
+  return Object.freeze([...origin,...remembered].sort(
+    (a,b)=>Date.parse(b.at)-Date.parse(a.at)||a.kind.localeCompare(b.kind),
+  ));
+}
