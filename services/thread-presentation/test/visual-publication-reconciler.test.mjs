@@ -225,3 +225,89 @@ test("identity-media convergence emits one observable checkpoint", async () => {
     "current identity media was not observable in Activity",
   );
 });
+
+test("admitted age portraits condition current scenes without changing canonical authority",async()=>{
+  const threadId="thr_present_age_continuity";
+  const rootRef="canonical_visual_present";
+  const rootDigest="sha256:"+"a".repeat(64);
+  const admitted=(age,ref,overrides={})=>({
+    contract:"visual-age-anchor-admission-v0.1",
+    admissionId:"age_admission_"+ref,threadId,targetAgeYears:age,
+    portraitObjectRef:ref,portraitDigest:"sha256:"+"b".repeat(64),
+    canonicalReferenceObjectRef:rootRef,canonicalReferenceDigest:rootDigest,
+    sourceAnchorRefs:[],generationReceiptRef:"receipt_"+ref,
+    approvalRef:"approval_"+ref,admittedAt:"2026-10-19T00:00:00.000Z",
+    ...overrides,
+  });
+  let approved=[admitted(10,"age_10"),admitted(35,"age_35"),admitted(40,"age_40"),
+    admitted(36,"foreign_36",{threadId:"thr_other"}),
+    admitted(36,"retired_36",{canonicalReferenceDigest:"sha256:"+"e".repeat(64)})];
+  const presentation={
+    manifest:{threadId},subject:{birthDate:"1990-01-01"},
+    visualIdentity:{
+      projectionVersion:"thread-visual-identity-projection-v0.1",
+      authority:"authorized_embodiment_projection",
+      embodimentId:"emb_present_root",embodimentRevision:1,
+      specificationDigest:"sha256:"+"f".repeat(64),
+      subjectDescription:"The same recognizable person.",
+      renderDescription:"Neutral photographic reference.",
+      sourceReferences:["emb_present_root"],
+      permissionReferences:[],referenceObjectRefs:[rootRef],
+      provenanceRef:"prov_present_root",
+    },
+  };
+  const present={
+    situationId:"sit_age_continuity",
+    depictionMediaId:"media_age_continuity",
+    establishedAt:"2026-10-19T12:00:00Z",
+    phase:"at_place",
+    location:{kind:"place",place:{displayName:"the café",region:null}},
+    activity:"Reading at a table.",reason:null,mediatedContext:null,participants:[],
+  };
+  let recorded;
+  const current={pointer:{threadId},snapshot:{presentation}};
+  const reconciler=createThreadPresentationVisualPublicationReconciler({
+    presentationServer:{
+      async getSnapshot(){return current;},
+      async publishSnapshot(){throw new Error("not reached");},
+      async appendEvent(event){return{event:{...event,sequence:1},duplicate:false};},
+    },
+    infra:{
+      objects:{async head(ref){
+        assert.equal(ref,rootRef,"noncanonical object was treated as identity root");
+        return{digest:rootDigest};
+      }},
+      catalog:{
+        async get(){return{publiclyVisible:true};},
+        async upsert(){},
+        async list({prefix}){
+          assert.equal(prefix,"visual-age-anchor:admission:"+threadId+":");
+          return{entries:approved.map((value,i)=>({key:prefix+i,value})),nextCursor:null};
+        },
+      },
+    },
+    selectProviderProfile:()=> "age-scene-provider",
+    createDemandService:()=>({async reconcile(input){recorded=input;return{changed:true};}}),
+    createVisualRewrite:()=>({}),
+    async ensureFid(){throw new Error("not reached");},
+  });
+  await reconciler.publishCurrentPresent({threadId,present});
+  const first=recorded.slots[0];
+  assert.deepEqual(first.referenceObjectRefs,[rootRef,"age_35","age_40"],
+    "Scene did not use nearest admitted ages with canonical identity first");
+  assert.ok(first.inputReferences.includes("age_admission_age_35"),
+    "Approved age anchor was not attributable");
+  const firstDigest=first.sourceDigest;
+
+  // Later operator-approved portrait at the same age changes future demand,
+  // never rewriting the original canonical root or prior depiction.
+  approved=[...approved,admitted(35,"age_35_new",{admittedAt:"2026-10-20T00:00:00.000Z"})];
+  await reconciler.publishCurrentPresent({threadId,present});
+  assert.deepEqual(recorded.slots[0].referenceObjectRefs,[rootRef,"age_35_new","age_40"]);
+  assert.notEqual(recorded.slots[0].sourceDigest,firstDigest,
+    "A newly admitted age likeness did not change future depiction identity");
+  approved=[];
+  await reconciler.publishCurrentPresent({threadId,present});
+  assert.deepEqual(recorded.slots[0].referenceObjectRefs,[rootRef],
+    "With no anchors, existing canonical-only depiction changed");
+});
