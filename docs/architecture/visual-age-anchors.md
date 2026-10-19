@@ -8,11 +8,11 @@ last-reviewed: 2026-10-19
 
 A Thread has one canonical visual root (normalized age 25) and may additionally have zero or more immutable, derived **age anchors**. An anchor helps depict that same individual at another age; it is never another canonical identity or evidence of how the Thread actually looked at that age.
 
-## Source-only read contract
+## Admission and read contract
 
 `services/world-kernel/src/visual-age-anchors.mjs` defines a portable admitted-age-anchor record: Thread and target age; portrait object reference and digest; canonical root reference and digest; references to source anchors (if any); generation receipt; operator approval reference; admission identity and time.
 
-Normalization checks record *shape*, not actual approval, image likeness, provider receipts or object bytes. **Only the future operator-approved admission boundary may produce records that the resolver is allowed to consume.** Callers must supply records read from that verified authority, not candidates or arbitrary presentation data. Durable admission and retrieval are deferred to the admin-approved generation path; Slice 1 does not expose a write route or publish any anchors.
+Normalization alone checks record *shape*, not actual approval or image provenance. The Admin age-anchor producer now freezes each candidate's current World-owned canonical root, target age, selected admitted references and exact Asset Generator job into an immutable object. Only a completed OpenAI job whose receipt, reference-input witness and image digest match that manifest may be admitted. An authenticated operator explicitly reviews the image beside the canonical portrait and approves it before an immutable approval artifact and admission record are written. The existing presentation R2 object store and D1 catalog retain the evidence; an indexed Thread-local catalog lookup supplies the resolver with admitted records, never arbitrary candidates.
 
 ## Reference selection
 
@@ -23,10 +23,12 @@ For a given Thread, canonical root and chronological target age:
 3. If an exact-age anchor exists, add it. Otherwise add the closest younger and closest older known ages, as available. Canonical age 25 participates in proximity selection without being duplicated.
 4. Return at most three object refs, compatible with the existing multi-reference Asset Generator interface. With no anchors, return precisely the canonical reference used today.
 
-There is no fixed list of anchor ages. The Observatory's future 3–95-year control is a UI affordance, not a genetic or domain constraint. All candidate generations remain derived depiction, never physical authority. Actual weight, injuries, grooming and other lived physical state remain owned by World/Embodiment; references alone cannot establish lived history.
+There is no fixed list of anchor ages. The Observatory's 3–95-year control is a UI affordance, not a genetic or domain constraint. All candidate generations remain derived depiction, never physical authority. Actual weight, injuries, grooming and other lived physical state remain owned by World/Embodiment; references alone cannot establish lived history.
 
-## Deferred execution path
+## Operator workflow — source implemented; staging proof pending
 
-Next, bind operator-approved candidate generation, exact asset provenance and immutable approval to durable admission; use the existing World/asset storage ports rather than introduce a new service. Then expose a Thread Observatory age selector and wire age-conditioned media planners to this resolver. No current renderer, FIA route, Genesis birth or memory depiction is changed by this read-side contract. Automated tests verify selection and authority exclusions; actual generation quality and approval must be validated with inspectable images at the admission boundary.
+The authenticated Admin Thread Observatory now displays active ages and the canonical root and offers **Generate age portrait**. The operator selects an integer age from 3–95; 25 remains the canonical root and cannot be generated as an extra anchor. The action creates one persistent candidate/job identity, requests reference-conditioned OpenAI generation through the existing Asset Generator, shows the candidate alongside the canonical portrait, and separately presents **Approve age portrait** or **Discard candidate**. Only approval makes an anchor active. Revisiting an existing candidate ID resumes the same immutable job rather than inventing a second render.
 
-**Causal maturity:** source-only/read-contract scaffold. No visual change happens until an authorized producer and a rendering consumer are connected. Joint generation, extrapolation quality and individual physical development remain experimental; this slice neither asserts nor excludes those capabilities.
+The new Admin endpoints are scoped under `/api/threads/:threadId/age-anchors`: a current-root/active-anchor list; canonical and admitted-image reads; and candidate request, status, preview and admission actions. They reuse Cloudflare Access administration, the existing R2 object port, the presentation D1 catalog and the Asset Generator service port. No new service, table, or World lifecycle event is introduced. Historical admissions stay immutable; a later same-age approval becomes the active source without deleting predecessors. A superseded canonical root invalidates old anchors for reference selection.
+
+**Boundary:** operator admission is **not** a new canonical identity or proof of a Thread's historical appearance. The current-present planner, FID, memories and Genesis still use their existing references; downstream anchor-aware generation is the next separate slice. The source-level authority tests have passed in an isolated execution; Guy's full local validation, Cloudflare deployment, and human review of an actual generated age portrait remain open. Joint generation, extrapolation quality and individual lived physical development remain experimental.
