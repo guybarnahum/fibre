@@ -61,6 +61,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     galleryStatus.textContent=anchors.length
       ?`${anchors.length} approved age ${anchors.length===1?"portrait":"portraits"} available.`
       :"No approved age portraits yet.";
+    galleryStatus.hidden=pending!==null;
   }
   let pending=null;
   void reload().catch(error=>{
@@ -79,6 +80,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     discard.type="button";
     discard.addEventListener("click",()=>{
       review.replaceChildren();pending=null;generate.disabled=false;
+      galleryStatus.hidden=false;
       status.textContent="Candidate discarded; canonical identity is unchanged.";
     });
     approve.addEventListener("click",()=>{
@@ -137,6 +139,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
         const candidateId=pending?.targetAgeYears===targetAgeYears
           ? pending.candidateId : newCandidateId();
         pending={candidateId,targetAgeYears};
+        galleryStatus.hidden=true;
         generate.disabled=true;
         setWaitingContent(status,`Generating age-${targetAgeYears} candidate…`);
         try{
