@@ -133,6 +133,9 @@ export function planEncounterPresentationAssetSlot({
   const referenceObjectRefs = ready
     ? unique(depicted.flatMap((entry) => entry.references.map(ref=>ref.objectRef)))
     : [];
+  if(ready && referenceObjectRefs.length!==depicted.reduce((n,entry)=>n+entry.references.length,0)){
+    throw new TypeError("Encounter reference image belongs to multiple Thread identity groups");
+  }
   const identityInputs = ready
     ? unique(depicted.flatMap((entry) => [
         entry.visualIdentity.embodimentId,
