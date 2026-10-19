@@ -41,7 +41,7 @@ The mature Whole-Person / causal-individuality claim remains subject to [standin
 
 These statuses are specific to the cited evidence and **must not be promoted by the existence of newer source alone**. See the [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md), [Body](../architecture/regulation-drive-extensions.md) and [current priorities](current-priorities.md) records for exact gates.
 
-## Life Observatory design — accepted October 19, Slices 1–2 source validation pending
+## Life Observatory design — accepted October 19, Slices 1–3 source validation pending
 
 [ADR-0026](../decisions/ADR-0026-life-observatory.md) and
 [Life Observatory UX](../architecture/life-observatory.md) accept a
