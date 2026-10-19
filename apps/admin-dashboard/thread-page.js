@@ -1,4 +1,5 @@
 import { useThumbnailFallback } from "./portrait-preview.js";
+import {recentLifeMoments} from "./life-causes-model.mjs";
 import { watchAdminLive } from "./admin-live.js";
 import { threadObservatoryViewKey } from "./view-invalidation.js";
 import { setWaitingContent } from "./fa-icons.js";
@@ -67,7 +68,7 @@ function healthSection(threadId) {
 
 // Only the current person/identity/maintenance belongs on Thread detail.
 // Full histories are explicitly selected in Life & Causes, not scroll-loaded.
-function compactThreadTabs(view,{threadId,name}){
+function compactThreadTabs(view,{threadId,name,livedNow}){
   const hero=view.querySelector(":scope > .thread-person-hero");
   const tabs=node("nav","thread-detail-tabs");
   tabs.setAttribute("aria-label","Thread detail sections");
@@ -85,6 +86,24 @@ function compactThreadTabs(view,{threadId,name}){
         ?"maintenance":"identity";
     panels.get(pane).append(section);
   }
+  const recent=recentLifeMoments(livedNow).slice(0,3);
+  const preview=node("section","thread-overview-recent");
+  preview.append(node("h3",null,"Recent enacted life"));
+  if(recent.length===0)preview.append(node("p",null,
+    "No dated enacted situation in the current World snapshot."));
+  for(const item of recent){
+    const row=node("div","thread-overview-recent-row");
+    const description=item.publicVenueName??item.activity
+      ??(item.phase==="in_transit"?"In transit":"World situation");
+    row.append(node("time",null,new Date(item.at).toLocaleString(undefined,{
+      month:"short",day:"numeric",hour:"numeric",minute:"2-digit",
+    })),node("span",null,description));
+    preview.append(row);
+  }
+  const inspect=node("a","button-link secondary","Inspect full life →");
+  inspect.href="/life?thread="+encodeURIComponent(threadId);
+  preview.append(inspect);
+  panels.get("overview").append(preview);
   panels.get("maintenance").append(
     healthSection(threadId),threadAppearanceSection(threadId,name),
   );
@@ -214,7 +233,7 @@ export async function renderThreadPage(threadId) {
       journalError:payload.journalError,
       deferredHistory:true,
     });
-    compactThreadTabs(observatory,{threadId,name});
+    compactThreadTabs(observatory,{threadId,name,livedNow:payload.livedNow});
     host.replaceChildren(observatory);
     if (location.hash === "#correct-official-id-photo"
         && focusedCorrectionThreadId !== threadId) {
