@@ -10,7 +10,7 @@ const THREAD_IDENTITY_ROUTE = /^\/api\/threads\/([^/]+)\/identity$/u;
 const THREAD_PAGE_ROUTE = /^\/thread\/[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 
 function isAdminPage(path) {
-  return path === "/" || path === "/activity" || path === "/appearance" || path === "/world-events" || THREAD_PAGE_ROUTE.test(path);
+  return path === "/" || path === "/activity" || path === "/appearance" || path === "/world-events" || path === "/life" || THREAD_PAGE_ROUTE.test(path);
 }
 
 const ACCESS_CACHE = new Map();
