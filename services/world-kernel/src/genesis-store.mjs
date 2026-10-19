@@ -406,6 +406,35 @@ export class GenesisStore {
     return this.#readOnly;
   }
 
+  // Genesis owns both the historical episodes and their publication seam.
+  // This inspects an indexed, bounded publication prefix, not a Thread's life.
+  getGenesisPublicationSeed(threadId) {
+    assertId("threadId",threadId);
+    const row=this.#database.prepare(`
+      SELECT * FROM thread_events WHERE thread_id=? AND sequence=1
+    `).get(threadId);
+    if(!row)return null;
+    const event=rowToEvent(row);
+    return event.eventType==="THREAD_SEEDED"
+      &&event.provenance?.source==="genesis_birth"
+      ?Object.freeze({eventId:event.eventId,occurredAt:event.occurredAt,
+          genesisId:event.provenance.genesisId})
+      :null;
+  }
+
+  listGenesisLifeEpisodes(threadId,{limit=64}={}) {
+    assertId("threadId",threadId);
+    if(!Number.isInteger(limit)||limit<1||limit>64) {
+      throw new TypeError("Genesis episode limit must be 1..64");
+    }
+    return this.#database.prepare(`
+      SELECT * FROM thread_events
+      WHERE thread_id=? AND sequence BETWEEN 2 AND 129
+        AND event_type=?
+      ORDER BY sequence ASC LIMIT ?
+    `).all(threadId,THREAD_LIFE_EPISODE_RECORDED,limit).map(rowToEvent);
+  }
+
   recordWorldSpec(candidate) {
     if (this.#readOnly) throw new GenesisConflictError("read-only Genesis store cannot write");
     const record = normalizeGenesisWorldSpec(candidate);
