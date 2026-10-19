@@ -2,7 +2,6 @@ import {createCloudflareInfraDriver} from "#infra/providers/cloudflare";
 import {
   withExperimentLifecycleHints,
   populationLabComparisonAlignmentInput,
-  requirePopulationLabComparisonAlignment,
   populationLabComparisonAlignmentKey,
   populationLabExperimentRequest,
   populationLabRerunRequest,
