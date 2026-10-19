@@ -53,6 +53,7 @@ const THREAD_JOURNAL_ROUTE = /^\/api\/threads\/([^/]+)\/journal$/u;
 const THREAD_MEETING_ROUTE = /^\/api\/threads\/([^/]+)\/meet-threads$/u;
 const THREAD_REPAIR_ROUTE = /^\/api\/threads\/([^/]+)\/repair$/u;
 const THREAD_AGE_ANCHORS_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors$/u;
+const THREAD_AGE_ANCHOR_CLEANUP_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/cleanup$/u;
 const THREAD_AGE_ANCHOR_CANONICAL_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/canonical$/u;
 const THREAD_AGE_ANCHOR_CANDIDATE_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/candidates\/([^/]+)(\/portrait|\/admit|\/discard)?$/u;
 const THREAD_AGE_ANCHOR_PORTRAIT_ROUTE = /^\/api\/threads\/([^/]+)\/age-anchors\/portraits\/([^/]+)$/u;
@@ -582,6 +583,7 @@ export default {
     const meetingMatch = THREAD_MEETING_ROUTE.exec(url.pathname);
     const repairMatch = THREAD_REPAIR_ROUTE.exec(url.pathname);
     const ageAnchorsMatch = THREAD_AGE_ANCHORS_ROUTE.exec(url.pathname);
+    const ageAnchorCleanupMatch = THREAD_AGE_ANCHOR_CLEANUP_ROUTE.exec(url.pathname);
     const ageAnchorCanonicalMatch = THREAD_AGE_ANCHOR_CANONICAL_ROUTE.exec(url.pathname);
     const ageAnchorCandidateMatch = THREAD_AGE_ANCHOR_CANDIDATE_ROUTE.exec(url.pathname);
     const ageAnchorPortraitMatch = THREAD_AGE_ANCHOR_PORTRAIT_ROUTE.exec(url.pathname);
@@ -616,7 +618,7 @@ export default {
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
     const adminGet = request.method === "GET" && (ageAnchorsMatch || ageAnchorCanonicalMatch || ageAnchorCandidateMatch || ageAnchorPortraitMatch || worldEvents || identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (ageAnchorCandidateMatch || repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
+    const adminPost = request.method === "POST" && (ageAnchorCleanupMatch || ageAnchorCandidateMatch || repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
     const adminDelete = request.method === "DELETE" && (appearanceExperimentMatch || appearanceExperimentAlignmentMatch);
     if (adminGet || adminPost || adminDelete) {
       const gate = await adminPrincipal(request, env);
@@ -926,6 +928,13 @@ export default {
               physicalOrigins:Object.freeze([...(migration?.physicalOrigins??[])]),
             }),
           });
+        }
+        if(ageAnchorCleanupMatch && request.method==="POST"){
+          const threadId=id("threadId",decodeURIComponent(ageAnchorCleanupMatch[1]));
+          const input=await request.json();
+          return json(200,await createAdminVisualAgeAnchors({env}).cleanup(threadId,{
+            dryRun:input?.execute!==true,
+          }));
         }
         if(ageAnchorsMatch || ageAnchorCanonicalMatch || ageAnchorCandidateMatch || ageAnchorPortraitMatch){
           const threadId=id("threadId",decodeURIComponent((
