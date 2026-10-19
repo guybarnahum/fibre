@@ -57,12 +57,15 @@ engineering diagnostic.
 **The first Admin UI source slice is committed, not yet locally or
 staging validated:** Explore/Operate navigation, removal of Activity's
 Causal Trail tree, and the separate /life?thread=... bounded recent-life
-inspector. Existing full Thread Observatory and world/genesis histories
-have not been migrated, and no new decision witness is persisted.
-Future scoped slices will join existing
-World, Genesis, Experience, Memory and social authority and capture
-only missing event-time conditions alongside consequential Flight Plan
-and social decisions. A historical plan's selected venue and stated
+inspector. Thread detail is now compact in source; selected historical
+World, Genesis, Memory and Encounter evidence opens only when requested.
+**Slice 4 now records decision-time witnesses in source, not yet staging
+verified:** plans retain actual supplied Body and City Guide input in
+their cognition provenance; completed one-shot social opportunities
+retain salience, initiation/non-initiation, recipient stance and
+admitted Story link without a parallel event log. Life & Causes renders
+those distinctions. This observability is Notarial/Context-only unless
+a separate mechanism or differential behavior demonstrates influence. A historical plan's selected venue and stated
 purpose do not prove loneliness, boredom or City Guide causation.
 The view must explicitly distinguish input exposure, reported reason,
 deterministic mechanism and tested behavioral influence.
