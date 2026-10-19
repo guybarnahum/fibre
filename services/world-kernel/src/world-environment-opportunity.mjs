@@ -32,6 +32,20 @@ export function worldStayOpportunityDueAt(situation,nextBoundaryAt){
   return boundary>due?new Date(due).toISOString():null;
 }
 
+// Ambient opportunities are keyed to an attested shared physical venue, or to
+// an individual's own scoped place. Similar descriptions cannot make co-presence.
+export function worldAmbientScene({situation,place,nextBoundaryAt}){
+  const dueAt=worldStayOpportunityDueAt(situation,nextBoundaryAt);
+  if(dueAt===null)return null;
+  const venue=place?.physicalVenue?.ref??null;
+  return Object.freeze({
+    sceneRef:venue===null
+      ?`personal:${situation.threadId}:${situation.location.placeRef}`
+      :`venue:${venue}`,
+    dueAt,
+  });
+}
+
 // One bounded earned opportunity, never a standing weather loop. A distant
 // observer is eligible for consideration: physics/scene evidence, not a radius,
 // determines whether the particular occurrence can reach them.
@@ -74,28 +88,32 @@ export function createWorldEnvironmentOpportunity({
             const current=livedNowStore.getCurrentSituation(opportunity.threadId);
             const age=Date.parse(at)-Date.parse(situation?.establishedAt??"");
             const overdue=Date.parse(at)-Date.parse(opportunity.dueAt);
-            const eligible=situation!==null
-              &&current?.situationId===situation.situationId
+            const timed=situation!==null
               &&situation.location?.kind==="place"
-              &&situation.wakefulness!=="asleep"
-              &&overdue>=0&&overdue<=FRESH_MS
-              &&age>=0
-              &&(opportunity.kind==="stay"
-                ?Date.parse(opportunity.dueAt)>Date.parse(situation.establishedAt)
-                :age<=FRESH_MS);
-            // A private scene can only expose its owner. A verified shared
-            // venue uses the presence index, including long-stayers; recent
-            // exterior situations may additionally witness a distant event
-            // when the World author finds actual perceptibility.
-            const origin=eligible
+              &&overdue>=0&&overdue<=FRESH_MS&&age>=0;
+            const origin=timed
               ?observedPlace(livedNowStore,opportunity.threadId,
                 situation.location.placeRef,opportunity.threadId):null;
             const physicalVenue=origin?.physicalVenue??null;
-            const venueCandidates=eligible&&physicalVenue!==null
+            const venueCandidates=timed&&physicalVenue!==null
               &&typeof livedNowStore.listCurrentVenueSituations==="function"
               ?livedNowStore.listCurrentVenueSituations({
                 venueRef:physicalVenue.ref,at:opportunity.dueAt,limit:8,
               }):[];
+            const anchorPresent=current?.situationId===situation?.situationId
+              &&current?.wakefulness!=="asleep";
+            const eligible=timed
+              &&(opportunity.kind==="scene"
+                ?(physicalVenue===null?anchorPresent
+                  :venueCandidates.some((item)=>item.wakefulness!=="asleep"))
+                :anchorPresent
+                  &&(opportunity.kind==="stay"
+                    ?Date.parse(opportunity.dueAt)>Date.parse(situation.establishedAt)
+                    :age<=FRESH_MS));
+            // A private scene can only expose its owner. A verified shared
+            // venue uses the presence index, including long-stayers; recent
+            // exterior situations may additionally witness a distant event
+            // when the World author finds actual perceptibility.
             const recentCandidates=eligible&&physicalVenue!==null
               ?livedNowStore.listRecentCurrentSituations({
                 at:opportunity.dueAt,
@@ -105,7 +123,8 @@ export function createWorldEnvironmentOpportunity({
             const byThread=new Map();
             for(const candidate of [current,...venueCandidates,...recentCandidates]){
               if(candidate?.location?.kind!=="place"
-                ||candidate.wakefulness==="asleep")continue;
+                ||candidate.wakefulness==="asleep"
+                ||Date.parse(candidate.establishedAt)>Date.parse(opportunity.dueAt))continue;
               if(physicalVenue===null&&candidate.threadId!==opportunity.threadId)continue;
               if(!byThread.has(candidate.threadId))byThread.set(candidate.threadId,candidate);
               if(byThread.size===8)break;
@@ -204,7 +223,8 @@ Do not invent Thread actions, inner life, conversation, emotions, or another per
               };
             }
             decision=experienceStore.recordEnvironmentalOpportunityDecision({
-              situationId:opportunity.situationId,decision,kind:opportunity.kind,
+              situationId:opportunity.situationId,sceneRef:opportunity.sceneRef,
+              decision,kind:opportunity.kind,
             });
           }
 
@@ -262,8 +282,8 @@ Do not invent Thread actions, inner life, conversation, emotions, or another per
             }
           }
           experienceStore.completeEnvironmentalOpportunity({
-            situationId:opportunity.situationId,kind:opportunity.kind,
-            resultEncounterRef:encounterId,completedAt:at,
+            situationId:opportunity.situationId,sceneRef:opportunity.sceneRef,
+            kind:opportunity.kind,resultEncounterRef:encounterId,completedAt:at,
           });
           results.push({situationId:opportunity.situationId,
             outcome:decision.outcome,encounterId});

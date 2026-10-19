@@ -63,6 +63,22 @@ export function createLivedExperienceTables(database) {
       ON world_environment_stay_opportunities(due_at)
       WHERE completed_at IS NULL;
 
+    -- A single speculative ambient consideration per grounded active scene.
+    -- Completed scenes can rearm on later enacted activity, not a timer tick.
+    CREATE TABLE IF NOT EXISTS world_ambient_scene_frontier (
+      scene_ref TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      situation_id TEXT NOT NULL,
+      due_at TEXT NOT NULL,
+      decision_json TEXT CHECK (decision_json IS NULL OR json_valid(decision_json)),
+      result_encounter_ref TEXT,
+      completed_at TEXT,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_world_ambient_scene_due
+      ON world_ambient_scene_frontier(due_at)
+      WHERE completed_at IS NULL;
+
     -- Enacted co-presence may earn one bounded social consideration.
     -- Starting an attempt is durable: interrupted cognition is not silently rerolled.
     CREATE TABLE IF NOT EXISTS world_social_opportunities (

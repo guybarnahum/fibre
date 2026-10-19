@@ -9,7 +9,7 @@ import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/worl
 import {
   combineWorldEnvironmentProcesses,
   createWorldEnvironmentOpportunity,
-  worldStayOpportunityDueAt,
+  worldAmbientScene,
 } from "#services/world-kernel/src/world-environment-opportunity.mjs";
 import { createEnvironmentalEncounterWriteApi } from "#services/world-kernel/src/lived-environmental-encounter-write-api.mjs";
 import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
@@ -767,16 +767,19 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     if(situation.location?.kind!=="place"||situation.wakefulness==="asleep")return;
     const store=openLivedExperienceStore(this.runtimeForRequest().worldStorage);
     const lived=openLivedNowStore(this.runtimeForRequest().worldStorage);
-    const stayDueAt=worldStayOpportunityDueAt(
-      situation,nextLivedBoundary(lived,situation),
+    const place=lived.getWorldPlace(
+      situation.threadId,situation.location.placeRef,{required:false},
     );
-    if(stayDueAt!==null){
-      const later=store.enqueueEnvironmentalOpportunity({
-        threadId:situation.threadId,situationId:situation.situationId,
-        dueAt:stayDueAt,kind:"stay",
+    const scene=worldAmbientScene({
+      situation,place,nextBoundaryAt:nextLivedBoundary(lived,situation),
+    });
+    if(scene!==null){
+      const later=store.enqueueSceneAmbientOpportunity({
+        sceneRef:scene.sceneRef,threadId:situation.threadId,
+        situationId:situation.situationId,dueAt:scene.dueAt,
       });
       if(later.inserted)await this.runtimeForRequest()
-        .reconciliationRuntime.requestWakeAt(Date.parse(stayDueAt));
+        .reconciliationRuntime.requestWakeAt(Date.parse(scene.dueAt));
     }
     const venue=lived.getWorldPlace(
       situation.threadId,situation.location.placeRef,{required:false},

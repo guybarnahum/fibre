@@ -41,7 +41,7 @@ import { createWorldSocialOpportunity } from "#services/world-kernel/src/world-s
 import {
   combineWorldEnvironmentProcesses,
   createWorldEnvironmentOpportunity,
-  worldStayOpportunityDueAt,
+  worldAmbientScene,
 } from "#services/world-kernel/src/world-environment-opportunity.mjs";
 import { projectCurrentLife } from "#services/world-kernel/src/current-life-projection.mjs";
 import { openGuardianCognitionStore } from "#services/world-kernel/src/guardian-cognition-store.mjs";
@@ -365,15 +365,18 @@ export async function startWorldKernelFromEnvironment(
         if(social.inserted)await reconciliationRuntime.requestWakeAt(
           Date.parse(situation.establishedAt));
       }
-      const stayDueAt=worldStayOpportunityDueAt(
-        situation,nextLivedBoundary(livedNowStore,situation),
+      const place=livedNowStore.getWorldPlace(
+        situation.threadId,situation.location.placeRef,{required:false},
       );
-      if(stayDueAt!==null){
-        const later=livedExperienceStore.enqueueEnvironmentalOpportunity({
-          threadId:situation.threadId,situationId:situation.situationId,
-          dueAt:stayDueAt,kind:"stay",
+      const scene=worldAmbientScene({
+        situation,place,nextBoundaryAt:nextLivedBoundary(livedNowStore,situation),
+      });
+      if(scene!==null){
+        const later=livedExperienceStore.enqueueSceneAmbientOpportunity({
+          sceneRef:scene.sceneRef,threadId:situation.threadId,
+          situationId:situation.situationId,dueAt:scene.dueAt,
         });
-        if(later.inserted)await reconciliationRuntime.requestWakeAt(Date.parse(stayDueAt));
+        if(later.inserted)await reconciliationRuntime.requestWakeAt(Date.parse(scene.dueAt));
       }
     },
     livedNowStore,

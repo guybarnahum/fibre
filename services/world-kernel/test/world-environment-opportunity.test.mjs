@@ -6,7 +6,7 @@ import test from "node:test";
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
-import { createWorldEnvironmentOpportunity,worldStayOpportunityDueAt } from "../src/world-environment-opportunity.mjs";
+import { createWorldEnvironmentOpportunity,worldStayOpportunityDueAt,worldAmbientScene } from "../src/world-environment-opportunity.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -177,14 +177,16 @@ test("a scene has one sparse ambient consideration with independently perceiving
       "2026-10-08T13:00:00.000Z"),null,
       "known sleeping life earned a waking encounter opportunity");
 
-     store.enqueueEnvironmentalOpportunity({
-      threadId:first.threadId,situationId:first.situationId,
-      dueAt:stayDue,kind:"stay",
+    const scene=worldAmbientScene({
+      situation:first,nextBoundaryAt:"2026-10-08T13:00:00.000Z",
+      place:{physicalVenue:{ref:"venue_stay_cafe"}},
     });
-    assert.equal(store.enqueueEnvironmentalOpportunity({
-      threadId:first.threadId,situationId:first.situationId,
-      dueAt:stayDue,kind:"stay",
-    }).inserted,false,"same long stay was scheduled twice");
+    assert.equal(store.enqueueSceneAmbientOpportunity({
+      ...scene,threadId:first.threadId,situationId:first.situationId,
+    }).inserted,true,"occupied scene earned no ambient consideration");
+    assert.equal(store.enqueueSceneAmbientOpportunity({
+      ...scene,threadId:second.threadId,situationId:second.situationId,
+    }).inserted,false,"two visitors created duplicate ambient considerations");
 
     let at=stayDue;
     const invoked=[];
@@ -195,6 +197,7 @@ test("a scene has one sparse ambient consideration with independently perceiving
       livedNowStore:{
         getSituation:id=>structuredClone(situations.get(id)??null),
         getCurrentSituation:id=>structuredClone(people[0]===id?first:second),
+        listCurrentVenueSituations:()=>[structuredClone(first),structuredClone(second)],
         getWorldPlace:()=>({
           displayName:"The neighborhood café",
           physicalVenue:{ref:"venue_stay_cafe",displayName:"The neighborhood café",

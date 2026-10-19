@@ -149,6 +149,7 @@ function normalizeStory(candidate, participantIds) {
 function environmentOpportunityTable(kind){
   if(kind==="arrival")return "world_environment_opportunities";
   if(kind==="stay")return "world_environment_stay_opportunities";
+  if(kind==="scene")return "world_ambient_scene_frontier";
   throw new TypeError("World opportunity kind must be arrival or stay");
 }
 
@@ -259,6 +260,24 @@ export class LivedExperienceStore {
     return Object.freeze({threadId,situationId,dueAt,kind,inserted});
   }
 
+  enqueueSceneAmbientOpportunity({sceneRef,threadId,situationId,dueAt}){
+    assertId("World ambient scene",sceneRef);
+    assertId("World ambient Thread",threadId);
+    assertId("World ambient situation",situationId);
+    assertIsoTimestamp("World ambient consideration",dueAt);
+    const inserted=this.#database.prepare(`
+      INSERT INTO world_ambient_scene_frontier(scene_ref,thread_id,situation_id,due_at)
+      VALUES(?,?,?,?)
+      ON CONFLICT(scene_ref) DO UPDATE SET
+        thread_id=excluded.thread_id,situation_id=excluded.situation_id,
+        due_at=excluded.due_at,decision_json=NULL,
+        result_encounter_ref=NULL,completed_at=NULL
+      WHERE world_ambient_scene_frontier.completed_at IS NOT NULL
+        AND excluded.due_at>world_ambient_scene_frontier.due_at
+    `).run(sceneRef,threadId,situationId,dueAt).changes===1;
+    return Object.freeze({sceneRef,threadId,situationId,dueAt,inserted});
+  }
+
   inspectEnvironmentalOpportunities(threadId,{limit=12}={}){
     assertId("World opportunity Thread",threadId);
     if(!Number.isSafeInteger(limit)||limit<1||limit>40){
@@ -271,8 +290,11 @@ export class LivedExperienceStore {
         UNION ALL
         SELECT 'stay' AS kind,situation_id,due_at,decision_json,result_encounter_ref,completed_at
         FROM world_environment_stay_opportunities WHERE thread_id=?
+        UNION ALL
+        SELECT 'scene' AS kind,situation_id,due_at,decision_json,result_encounter_ref,completed_at
+        FROM world_ambient_scene_frontier WHERE thread_id=?
       ) ORDER BY due_at DESC,situation_id DESC LIMIT ?
-    `).all(threadId,threadId,limit).map((row)=>Object.freeze({
+    `).all(threadId,threadId,threadId,limit).map((row)=>Object.freeze({
       kind:row.kind,
       situationId:row.situation_id,
       dueAt:row.due_at,
@@ -288,6 +310,8 @@ export class LivedExperienceStore {
         SELECT due_at FROM world_environment_opportunities WHERE completed_at IS NULL
         UNION ALL
         SELECT due_at FROM world_environment_stay_opportunities WHERE completed_at IS NULL
+        UNION ALL
+        SELECT due_at FROM world_ambient_scene_frontier WHERE completed_at IS NULL
       ) ORDER BY due_at LIMIT 1
     `).get()?.due_at??null;
   }
@@ -299,24 +323,30 @@ export class LivedExperienceStore {
     }
     return this.#database.prepare(`
       SELECT * FROM (
-        SELECT 'arrival' AS kind,thread_id,situation_id,due_at,decision_json
+        SELECT 'arrival' AS kind,NULL AS scene_ref,thread_id,situation_id,due_at,decision_json
         FROM world_environment_opportunities
         WHERE completed_at IS NULL AND due_at<=?
         UNION ALL
-        SELECT 'stay' AS kind,thread_id,situation_id,due_at,decision_json
+        SELECT 'stay' AS kind,NULL AS scene_ref,thread_id,situation_id,due_at,decision_json
         FROM world_environment_stay_opportunities
         WHERE completed_at IS NULL AND due_at<=?
+        UNION ALL
+        SELECT 'scene' AS kind,scene_ref,thread_id,situation_id,due_at,decision_json
+        FROM world_ambient_scene_frontier
+        WHERE completed_at IS NULL AND due_at<=?
       ) ORDER BY due_at,situation_id LIMIT ?
-    `).all(at,at,limit).map((row)=>Object.freeze({
-      kind:row.kind,
+    `).all(at,at,at,limit).map((row)=>Object.freeze({
+      kind:row.kind,sceneRef:row.scene_ref,
       threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
       decision:row.decision_json===null?null:JSON.parse(row.decision_json),
     }));
   }
 
-  recordEnvironmentalOpportunityDecision({situationId,decision,kind="arrival"}){
+  recordEnvironmentalOpportunityDecision({situationId,sceneRef=null,decision,kind="arrival"}){
     assertId("World opportunity situationId",situationId);
     const table=environmentOpportunityTable(kind);
+    const key=kind==="scene"?sceneRef:situationId;
+    if(kind==="scene")assertId("World ambient scene",key);
     if(!["no_change","changed","not_observable"].includes(decision?.outcome)
       ||typeof decision.occurredAt!=="string"
       ||(decision.outcome==="changed")!==
@@ -337,24 +367,26 @@ export class LivedExperienceStore {
     const body=canonicalJson(decision);
     this.#database.prepare(`
       UPDATE ${table} SET decision_json=?
-      WHERE situation_id=? AND decision_json IS NULL AND completed_at IS NULL
-    `).run(body,situationId);
+      WHERE ${kind==="scene"?"scene_ref":"situation_id"}=? AND decision_json IS NULL AND completed_at IS NULL
+    `).run(body,key);
     const recorded=this.#database.prepare(`
-      SELECT decision_json FROM ${table} WHERE situation_id=?
-    `).get(situationId);
+      SELECT decision_json FROM ${table} WHERE ${kind==="scene"?"scene_ref":"situation_id"}=?
+    `).get(key);
     if(recorded?.decision_json!==body)throw new TypeError("World initial decision conflicts");
     return Object.freeze(JSON.parse(body));
   }
 
-  completeEnvironmentalOpportunity({situationId,resultEncounterRef=null,completedAt,kind="arrival"}){
+  completeEnvironmentalOpportunity({situationId,sceneRef=null,resultEncounterRef=null,completedAt,kind="arrival"}){
     assertId("World opportunity situationId",situationId);
     const table=environmentOpportunityTable(kind);
+    const key=kind==="scene"?sceneRef:situationId;
+    if(kind==="scene")assertId("World ambient scene",key);
     if(resultEncounterRef!==null)assertId("World initial result",resultEncounterRef);
     assertIsoTimestamp("World initial completedAt",completedAt);
     const row=this.#database.prepare(`
       SELECT decision_json,result_encounter_ref,completed_at
-      FROM ${table} WHERE situation_id=?
-    `).get(situationId);
+      FROM ${table} WHERE ${kind==="scene"?"scene_ref":"situation_id"}=?
+    `).get(key);
     if(!row?.decision_json)throw new TypeError("World initial decision not recorded");
     const decision=JSON.parse(row.decision_json);
     if((decision.outcome==="changed")!==(resultEncounterRef!==null)){
@@ -368,8 +400,8 @@ export class LivedExperienceStore {
     }
     this.#database.prepare(`
       UPDATE ${table} SET result_encounter_ref=?,completed_at=?
-      WHERE situation_id=? AND completed_at IS NULL
-    `).run(resultEncounterRef,completedAt,situationId);
+      WHERE ${kind==="scene"?"scene_ref":"situation_id"}=? AND completed_at IS NULL
+    `).run(resultEncounterRef,completedAt,key);
   }
 
   getThreadEnvironmentalStory({threadId,situationId,occurredAt}){
