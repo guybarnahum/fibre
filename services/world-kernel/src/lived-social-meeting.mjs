@@ -50,6 +50,22 @@ function compatible(left, right, livedNowStore) {
   });
 }
 
+function recentPersonalExperiences(observerThreadId,percept,experienceStore){
+  return percept.recentEvents.filter(event=>event.kind==="encounter")
+    .flatMap(event=>{
+      const attention=experienceStore.getThreadEncounterAttention(
+        observerThreadId,event.ref,
+      );
+      if(attention?.outcome!=="noticed"
+        ||typeof attention.experience?.experienceText!=="string")return [];
+      return [{
+        experienceId:attention.experience.experienceId,
+        encounterRef:event.ref,occurredAt:event.occurredAt,
+        experienceText:attention.experience.experienceText,
+      }];
+    });
+}
+
 function observedThread(context) {
   return Object.freeze({
     threadId:context.thread.threadId,
@@ -408,6 +424,9 @@ export function createSocialMeetingService({
         const initiation = await formSocialEncounterRequest({
           threadId:initiator.thread.threadId,
           at:input.at,
+          recentPersonalExperiences:recentPersonalExperiences(
+            initiator.thread.threadId,situatedPercept,experienceStore,
+          ),
           plan:livedNowStore.latestPlan(initiator.thread.threadId, "personal", { at:input.at }),
           situatedPercept,
           interoception:regulationFrame===null?null:projectInteroception(regulationFrame),

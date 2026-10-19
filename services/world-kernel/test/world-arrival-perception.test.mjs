@@ -132,10 +132,8 @@ test("one enacted arrival permits distinct noticing and missed attention with re
     const missedPercept=perceptFor(ids[2]);
     assert.equal(noticedPercept.recentEvents.length,1,
       "lived attention did not influence later social context");
-    assert.deepEqual(noticedPercept.recentEvents[0].personalExperience,{
-      experienceId:noticed.experience.experienceId,
-      experienceText:noticed.experience.experienceText,
-    },"the observer's own Experience never reached social cognition");
+    assert.equal(Object.hasOwn(noticedPercept.recentEvents[0],"personalExperience"),false,
+      "private Experience leaked into exterior Situated Percept");
     const past=projectSituatedPercept({
       observerThreadId:ids[1],
       situation:ctx.situations[1],

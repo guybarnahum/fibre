@@ -40,6 +40,7 @@ Co-presence creates an opportunity, not an obligation. Initiate only when the Th
 If initiating, write the short outward request this actor would actually hear. It must make the ask clear enough that they can meaningfully decide whether to engage.
 Choose not_initiate when the Thread does not genuinely want to ask anything of them now.
 When grounded Body interoception is supplied, it may shape interest but does not assert loneliness, friendliness, consent, or an obligation to make contact. Interpret it through this person's particular life, relation and current activity.
+RecentPersonalExperiences contains this Thread's own admitted immediate interpretation of recent events, not another person's feelings and not permanent autobiographical Memory. It may influence but does not command the present choice.
 reason is a concise private operator-facing explanation of the material considerations. Do not change location, rewrite the Flight Plan, invent a relationship, expose private records, or manufacture a motive merely to make an encounter happen.`,
   resultSchema:{
     type:"object",
@@ -79,6 +80,7 @@ export async function formSocialEncounterRequest({
   plan,
   situatedPercept,
   interoception=null,
+  recentPersonalExperiences=[],
   sourceStores,
   modelAdapter,
 }) {
@@ -100,6 +102,7 @@ export async function formSocialEncounterRequest({
       question:"Do I want to ask this co-present actor for something now?",
       externalContext:{
         situatedPercept:structuredClone(situatedPercept),
+        recentPersonalExperiences:structuredClone(recentPersonalExperiences),
         ...(interoception===null?{}:{interoception:structuredClone(interoception)}),
         remainingFlightPlan:plan === null ? null : structuredClone(plan),
       },

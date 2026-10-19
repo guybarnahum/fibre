@@ -1163,14 +1163,20 @@ test("a noticed newcomer is considered specifically, without compelling contact"
 test("one noticed arrival changes later social judgment through personal Experience",async()=>{
   // Same observer, newcomer, World Story, actual café and private selector.
   // Only the Thread's earlier admitted subjective Experience differs.
-  const decide=(_name,_evidence,{situatedPercept})=>{
+  const decide=(_name,_evidence,{situatedPercept,recentPersonalExperiences})=>{
     const history=situatedPercept.recentEvents;
     assert.equal(history.length,1,
       "later social cognition did not retrieve the personally noticed event");
     assert.equal(history[0].beats[0].text,
       "Noor entered the neighborhood café.",
       "the two social judgments did not share the same World truth");
-    return history[0].personalExperience.experienceText.includes("welcome")
+    assert.equal(Object.hasOwn(history[0],"personalExperience"),false,
+      "World projected a private feeling as exterior fact");
+    assert.equal(recentPersonalExperiences.length,1,
+      "own admitted Experience was unavailable to private social judgment");
+    assert.equal(recentPersonalExperiences[0].encounterRef,history[0].ref,
+      "private lived history lost its objective cause");
+    return recentPersonalExperiences[0].experienceText.includes("welcome")
       ?"initiate":"not_initiate";
   };
   const curious=fixture({

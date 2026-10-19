@@ -89,9 +89,8 @@ function recentEvents(experienceStore, observerThreadId, observedIds, at) {
       const attention=experienceStore.getThreadEncounterAttention?.(
         observerThreadId,story.encounterId,
       );
-      // A shared historical record is not this observer's recollection.
-      // Only their own admitted, still-recent Experience can enter
-      // ordinary situated cognition; long-term access is through Memory.
+      // Exterior percept includes only this observer's noticed World facts;
+      // private interpretation belongs separately in Interior Cognition.
       if(attention?.outcome!=="noticed"
         ||typeof attention.experience?.experienceText!=="string")return [];
       return [{
@@ -106,11 +105,7 @@ function recentEvents(experienceStore, observerThreadId, observedIds, at) {
           kind:beat.kind,
           text:beat.text,
         })),
-        personalExperience:{
-          experienceId:attention.experience.experienceId,
-          experienceText:attention.experience.experienceText,
-        },
-      }];
+       }];
     })
     .sort((left,right) => Date.parse(right.occurredAt) - Date.parse(left.occurredAt))
     .slice(0,4);
@@ -170,7 +165,6 @@ export function projectSituatedPercept({
     situation.location?.placeRef ?? null,
     ...observed.map((candidate) => candidate.situationRef),
     ...events.map((event) => event.ref),
-    ...events.map((event) => event.personalExperience?.experienceId).filter(Boolean),
   ].filter((value) => typeof value === "string" && value.length > 0);
 
   return Object.freeze({
