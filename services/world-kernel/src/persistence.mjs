@@ -250,30 +250,6 @@ export class WorldStore {
       .map(rowToEvent);
   }
 
-  // Admission belongs to execution time, not the child's lived chronology.
-  getGenesisPublicationSeed(threadId){
-    assertId("threadId",threadId);
-    const seed=this.#eventAtSequence(threadId,1);
-    return seed?.eventType==="THREAD_SEEDED"
-      &&seed.provenance?.source==="genesis_birth"
-      ?Object.freeze({eventId:seed.eventId,occurredAt:seed.occurredAt,
-        genesisId:seed.provenance.genesisId}):null;
-  }
-
-  // Only explicit Origins inspection reads the bounded publication prefix.
-  // Genesis prior-life episodes are inserted immediately after THREAD_SEEDED.
-  // Scan at most 128 indexed sequences, never the whole life-event ledger.
-  listGenesisLifeEpisodes(threadId,{limit=64}={}){
-    assertId("threadId",threadId);
-    if(!Number.isInteger(limit)||limit<1||limit>64)throw new TypeError("Genesis episode limit must be 1..64");
-    return this.#database.prepare(`
-      SELECT ${EVENT_COLUMNS} FROM thread_events
-      WHERE thread_id = ? AND sequence BETWEEN 2 AND 129
-        AND event_type = 'THREAD_LIFE_EPISODE_RECORDED'
-      ORDER BY sequence ASC LIMIT ?
-    `).all(threadId,limit).map(rowToEvent);
-  }
-
   #eventAtSequence(threadId, sequence) {
     const row = this.#database
       .prepare(`SELECT ${EVENT_COLUMNS} FROM thread_events WHERE thread_id = ? AND sequence = ?`)
