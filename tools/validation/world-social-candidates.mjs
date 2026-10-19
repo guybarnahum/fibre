@@ -46,8 +46,10 @@ export function currentCity(threadId,person){
   };
 }
 
-export function rankSocialCityCandidates({places,people,limit=DISPLAY_LIMIT}){
+export function rankSocialCityCandidates({places,people,limit=DISPLAY_LIMIT,at=new Date().toISOString()}){
   if(!Number.isSafeInteger(limit)||limit<1)throw new TypeError("candidate limit must be positive");
+  const now=Date.parse(at);
+  if(!Number.isFinite(now))throw new TypeError("candidate inspection time is invalid");
   const cityMap=new Map();
   const placeByRef=new Map();
   for(const place of places){
@@ -72,6 +74,8 @@ export function rankSocialCityCandidates({places,people,limit=DISPLAY_LIMIT}){
     const place=placeByRef.get(person.placeRef);
     const currentVenue=person.atPlace&&place?.key===city.key?place.venue:null;
     const plannedPublicVisits=(person.plan?.stops??[]).flatMap(stop=>{
+      // An elapsed plan is not a future prospect or evidence of a visit.
+      if(!(Date.parse(stop.endAt)>now))return [];
       const target=placeByRef.get(stop.physicalPlaceRef);
       if(target?.key!==city.key)return [];
       return [{
@@ -111,7 +115,8 @@ export function rankSocialCityCandidates({places,people,limit=DISPLAY_LIMIT}){
       publicVenueCount:city.venues.length,
       listedVenueCount:city.venues.filter(v=>v.listed).length,
       currentThreadCount:city.threads.length,
-      awakeThreadCount:city.threads.filter(t=>t.wakefulness!=="asleep").length,
+      awakeThreadCount:city.threads.filter(t=>t.wakefulness==="awake").length,
+      unknownWakefulnessThreadCount:city.threads.filter(t=>t.wakefulness==="unknown").length,
       sharedCurrentPublicVenues:sharedVenues,
       meetingEvidence:sharedVenues.length>0?"actual_shared_public_venue"
         :city.threads.length>=2?"same_city_only":"not_enough_current_threads",
@@ -174,14 +179,15 @@ export async function runSocialCandidateScan({
         reason:String(error?.message??error).slice(0,120)});
     }
   }
-  const ranked=rankSocialCityCandidates({places:overview.places,people});
+  const checkedAt=new Date().toISOString();
+  const ranked=rankSocialCityCandidates({places:overview.places,people,at:checkedAt});
   const status=ranked.pairedCityCount>0?"candidate_cities_found"
     :ranked.matchedThreadCount>0?"public_city_without_sampled_peer"
       :overview.places.length===0?"no_attested_public_venues"
         :"no_matching_current_city_in_sample";
   const evidence={
     contract:"fibre-social-city-candidates-v0.1",
-    environment:target,checkedAt:new Date().toISOString(),
+    environment:target,checkedAt,
     deployedWorldGitSha:deployedSha,validatorGitSha:head,
     publicPlaceCount:overview.places.length,
     listedPublicPlaceCount:overview.places.filter(p=>p.discoveryListed).length,
