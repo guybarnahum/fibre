@@ -203,6 +203,19 @@ excludes autobiographical memories not yet admitted at the decision
 time. These are source/controlled-cognition proofs, not evidence of
 naturally authored staging memory or mature personhood.
 
+**Read-only staging evidence frontier (October 19; new local validation
+pending):** the existing `world-social:probe` now joins a verified shared
+Story, personally noticed Experience, completed selective consolidation,
+actually admitted autobiographical Memory citing that Experience, and a
+later outgoing social interaction with the same counterpart. The
+inspection uses existing bounded Observatory reads without new runtime
+tables or cognition. Even a complete sequence is explicitly
+`not_established_by_observatory` as causal proof until the later
+social choice can be tied to genuinely consumed autobiographical
+evidence. Guy reports the previous retained-Memory source slice
+validated and deployed; this newest read-side enhancement has not
+been locally validated or run against staging.
+
 ## World encounters and private experience
 
 An **encounter** is the common primitive; a meeting is one voluntary social form. The admitted causal distinction is:

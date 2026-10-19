@@ -80,6 +80,17 @@ Memory cannot reach an earlier choice. Guy's focused and full local
 validation is required before staging. A real live Thread remembering
 something and changing tomorrow's choice remains unproven.
 
+**Immediate natural-life check:** a read-only causal-continuity
+projection has been added to the existing `world-social:probe` output.
+After focused and full validation, run with `--thread` for a Thread with
+actual recorded social life. It requires no additional World deployment,
+only the local probe checkout. It joins authoritative Story, noticed
+Experience, completed consolidation and actually retained Memory, then
+looks for a later outward social interaction involving the same
+counterparty. Report any missing link honestly; bounded inspection is
+not evidence of global absence or proof of subjective causation.
+No live staging case has been supplied yet.
+
 ## Public World-place discovery and natural social co-presence (October 18)
 
 **Current source change — local validation and staging installation pending:**

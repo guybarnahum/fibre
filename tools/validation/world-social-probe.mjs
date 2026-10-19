@@ -156,6 +156,81 @@ function acceptedStory(observatories,threadId,opportunity){
   };
 }
 
+// Read-only evidentiary join. It deliberately never reports causation from
+// temporal proximity alone: the runtime does not yet persist the private
+// evidence consumed by each autonomous social initiation judgment.
+export function summarizeSocialContinuity(observatories,{limit=24}={}){
+  const episodes=[];
+  for(const [threadId,person] of observatories){
+    for(const story of person.encounterStories??[]){
+      const others=(story.threadPresence??[]).map(item=>item.threadId)
+        .filter(id=>id!==threadId);
+      if(others.length===0)continue;
+      const attention=story.attention??null;
+      const experience=attention?.outcome==="noticed"
+        ?attention.experience??null:null;
+      const consolidation=experience===null?null
+        :(person.experienceConsolidation?.consolidations??[])
+          .find(item=>item.experienceRefs?.includes(experience.experienceId))??null;
+      const completion=consolidation?.complete?.payload??null;
+      // Both ownership and first-person Experience linkage are mandatory.
+      // A completed decision alone is not a recalled Memory.
+      const memory=completion?.memoryOutcome==="retained"
+        ?(person.memories??[]).find(item=>
+          item.threadId===threadId&&item.memoryId===completion.memoryId
+          &&item.status==="current"
+          &&item.retentionState==="retained"
+          &&item.eventRefs?.includes(experience.experienceId)
+          &&Date.parse(item.recordedAt)>=Date.parse(story.occurredAt))??null
+        :null;
+      const later=memory===null?null
+        ?null:(person.socialInteractions??[])
+          .filter(item=>item.initiatorThreadId===threadId
+            &&others.includes(item.recipientThreadId)
+            &&Date.parse(item.occurredAt)>Date.parse(memory.recordedAt))
+          .sort((a,b)=>a.occurredAt.localeCompare(b.occurredAt))[0]??null;
+      const counterpart=others.map(id=>observatories.get(id)?.encounterStories
+        ?.find(item=>item.encounterId===story.encounterId))
+        .find(Boolean)??null;
+      const bothExperienced=experience!==null
+        &&counterpart?.attention?.outcome==="noticed"
+        &&counterpart.attention.experience?.experienceId!==undefined;
+      episodes.push({
+        threadId,encounterRef:story.encounterId,occurredAt:story.occurredAt,
+        counterpartThreadIds:others.slice(0,3),
+        corroboratedAcrossThreads:counterpart!==null,
+        distinctPersonalExperience:bothExperienced
+          &&counterpart.attention.experience.experienceId!==experience.experienceId
+          &&counterpart.attention.experience.experienceText!==experience.experienceText,
+        attention:attention?.outcome??"not_appraised",
+        experienceRef:experience?.experienceId??null,
+        consolidationRef:consolidation?.consolidationId??null,
+        consolidationOutcome:completion?.memoryOutcome
+          ??(consolidation===null?null:"pending"),
+        retainedMemoryRef:memory?.memoryId??null,
+        memoryRecordedAt:memory?.recordedAt??null,
+        laterSocialInteractionRef:later?.interactionId??null,
+        laterSocialInteractionAt:later?.occurredAt??null,
+        // Even a later outgoing request does not show which remembered
+        // content, if any, caused the internal decision to make it.
+        causalAttribution:"not_observed",
+      });
+    }
+  }
+  episodes.sort((a,b)=>b.occurredAt.localeCompare(a.occurredAt)
+    ||a.threadId.localeCompare(b.threadId));
+  return Object.freeze({
+    contract:"fibre-social-causal-inspection-v0.1",
+    inspectedSharedStoryCount:episodes.length,
+    distinctExperiencePairCount:episodes.filter(item=>item.distinctPersonalExperience).length,
+    retainedMemoryChainCount:episodes.filter(item=>item.retainedMemoryRef!==null).length,
+    laterContactAfterRetentionCount:episodes.filter(item=>item.laterSocialInteractionRef!==null).length,
+    causalProof:"not_established_by_observatory",
+    evidenceLimitations:"Each Thread Observatory caps recent stories, consolidations, memories and interactions. A missing link can be outside those windows. Later contact is temporal evidence, not proof that a Memory influenced the decision.",
+    episodes:episodes.slice(0,limit),
+  });
+}
+
 export async function runWorldSocialProbe({
   targetEnvironment,threadId=null,environment=process.env,
   emit=(entry)=>process.stdout.write(JSON.stringify(entry)+"\n"),
@@ -257,6 +332,7 @@ export async function runWorldSocialProbe({
     :shared.length>0?"shared_venue_without_social_decision"
     :"blocked_by_world_state";
   const runId="worldsocial-"+Date.now().toString(36);
+  const causalContinuity=summarizeSocialContinuity(observatories);
   const evidence={
     contract:"fibre-world-social-observation-v0.1",runId,
     checkedAt,environment:target,
@@ -286,6 +362,7 @@ export async function runWorldSocialProbe({
     },
     sharedCurrentVenues:shared,
     socialOpportunities:opportunities.slice(0,40),
+    causalContinuity,
     status,
     // A partial directory/Observatory view cannot prove absence across the World.
     evidenceLimitations:"Read-only bounded view; absent or unsampled people and older opportunities may be missing.",
@@ -306,6 +383,9 @@ export async function runWorldSocialProbe({
     recordedOpportunityCount:opportunities.length,
     voluntaryChoiceCount:choices.length,
     distinctExperienceWitness:proven?.story?.encounterId??null,
+    retainedMemoryChainCount:causalContinuity.retainedMemoryChainCount,
+    laterContactAfterRetentionCount:causalContinuity.laterContactAfterRetentionCount,
+    causalProof:causalContinuity.causalProof,
     evidencePath,
   });
   return Object.freeze({evidence,evidencePath});

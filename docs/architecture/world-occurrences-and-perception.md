@@ -308,6 +308,42 @@ retention/non-retention and later autonomous divergence, and eventually
 replace the provisional six-hour recent-availability threshold with an
 accepted ephemeral-availability policy.
 
+## Read-only natural-life causal inspection — October 19
+
+The established `world-social:probe` now includes a bounded
+`causalContinuity` section, derived solely from the existing private
+Thread Observatory response. No new runtime queries, World records,
+persistent tables or model calls are needed. Operators should begin
+with `--thread thr_...` (one World inspection) rather than scanning
+the whole published population.
+
+The read-only join follows **specific record references**:
+objective shared Encounter Story → this observer's `noticed` attention
+and Experience → completed Experience consolidation → actual retained
+autobiographical Memory containing the same Experience ID → optional
+later outgoing social interaction with someone present in that Story.
+A Memory is not inferred merely from a positive consolidation decision;
+it must be currently admitted under this Thread's own memory authority.
+A second observed Thread's attention/Experience can corroborate the
+shared event while remaining independently personal. No private experience
+text is copied into the probe evidence.
+
+This tool's evidentiary ceiling is intentional: a later invitation
+after a retained Memory is **sequence**, not proof of historical causation.
+Existing Observatory records do not show which autobiographical
+evidence the initiating Thread's cognition actually consumed. The probe
+reports `causalProof: not_established_by_observatory` even when all
+temporal links exist. All source windows are bounded and missing
+links may lie outside the inspected window; absence is not
+automatically `not_remembered`.
+
+**Source-only pending Guy's focused and full validation and targeted
+staging evidence.** The next runtime change, *only if live evidence
+justifies it*, should record a minimal already-derived cognition evidence
+reference against the ordinary social choice, then let this same probe
+link the consumed Memory to that subsequent outward decision. Do not
+synthesize conversations or memory simply to close the gate.
+
 ## Execution slices and acceptance
 
 1. **Actor occurrence contract.** Project actual LivedNow changes into
