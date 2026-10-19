@@ -85,7 +85,18 @@ export function createWorldArrivalPerception({
                     }).filter(m=>Date.parse(m.recordedAt)<=Date.parse(obligation.dueAt)):[],
                   experienceStore,modelAdapter,onExperienceQueued,
                 });
-                if(attention.outcome==="noticed")noticed++;
+                if(attention.outcome==="noticed"){
+                  noticed++;
+                  // Existing personal experience, not co-presence itself,
+                  // earns a distinct, one-shot voluntary social chance.
+                  // A repeated attention replay cannot duplicate it.
+                  experienceStore.enqueueObservedSocialOpportunity({
+                    encounterRef:encounter.encounterId,
+                    threadId:situation.threadId,situationId:situation.situationId,
+                    counterpartyThreadId:arrival.threadId,
+                    venueRef:obligation.venueRef,dueAt:obligation.dueAt,
+                  });
+                }
               }
             }
           }

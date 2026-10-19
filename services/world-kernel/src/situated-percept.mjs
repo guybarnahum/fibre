@@ -76,7 +76,9 @@ function recentEvents(experienceStore, observerThreadId, observedIds) {
   }).filter(Boolean);
 
   const encounters = experienceStore.listEncounterStories(observerThreadId,{limit:12})
-    .filter((story) => story.threadPresence.some((presence) =>
+    .filter((story) => experienceStore.getThreadEncounterAttention?.(
+      observerThreadId,story.encounterId,
+    )?.outcome==="noticed"&&story.threadPresence.some((presence) =>
       presence.threadId !== observerThreadId && observed.has(presence.threadId)))
     .sort((left,right) => Date.parse(right.occurredAt) - Date.parse(left.occurredAt))
     .slice(0,4)

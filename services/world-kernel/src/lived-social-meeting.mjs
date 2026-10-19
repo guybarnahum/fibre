@@ -118,7 +118,7 @@ export function createSocialMeetingService({
     });
   }
 
-  async function discoverCoPresent(initiator, at) {
+  async function discoverCoPresent(initiator, at, counterpartyThreadId=null) {
     // Indexed venue authority finds current people, including long-stayers.
     // Explicit /meet retains its existing general discovery semantics.
     const venue=boundedVenueDiscovery&&initiator.situation.location?.kind==="place"
@@ -126,11 +126,23 @@ export function createSocialMeetingService({
         initiator.thread.threadId,initiator.situation.location.placeRef,
         {required:false},
       )?.physicalVenue?.ref??null:null;
-    const situations=boundedVenueDiscovery
-      ?venue===null?[]:livedNowStore.listCurrentVenueSituations({
-        venueRef:venue,at,limit:8,excludeThreadId:initiator.thread.threadId,
-      })
-      :livedNowStore.listCurrentSituations({at});
+    // An arrival actually noticed by someone earns consideration of that
+    // specific other person, not an arbitrary first person at the venue.
+    // Confirm actual present place again: observation does not grant contact.
+    const target=counterpartyThreadId===null?null
+      :livedNowStore.getCurrentSituation(counterpartyThreadId);
+    const targetVenue=target?.location?.kind==="place"
+      ?livedNowStore.getWorldPlace(
+        counterpartyThreadId,target.location.placeRef,{required:false},
+      )?.physicalVenue?.ref??null:null;
+    const situations=counterpartyThreadId!==null
+      ?target!==null&&target.wakefulness!=="asleep"&&venue!==null&&venue===targetVenue
+        ?[target]:[]
+      :boundedVenueDiscovery
+        ?venue===null?[]:livedNowStore.listCurrentVenueSituations({
+          venueRef:venue,at,limit:8,excludeThreadId:initiator.thread.threadId,
+        })
+        :livedNowStore.listCurrentSituations({at});
     const candidates = situations
       .filter((situation) => situation.threadId !== initiator.thread.threadId
         &&situation.wakefulness!=="asleep");
@@ -318,12 +330,23 @@ export function createSocialMeetingService({
   return Object.freeze({
     async meet(input) {
       assertPlainObject("social meeting input", input);
-      assertExactKeys("social meeting input", input, ["initiatorThreadId","at"]);
+      const counterpartyThreadId=input.counterpartyThreadId??null;
+      assertExactKeys("social meeting input", input, counterpartyThreadId===null
+        ?["initiatorThreadId","at"]
+        :["initiatorThreadId","at","counterpartyThreadId"]);
       assertId("social meeting initiatorThreadId", input.initiatorThreadId);
       assertIsoTimestamp("social meeting at", input.at);
+      if(counterpartyThreadId!==null){
+        assertId("observed counterparty",counterpartyThreadId);
+        if(counterpartyThreadId===input.initiatorThreadId){
+          throw new TypeError("a Thread cannot socially meet itself");
+        }
+      }
 
       const initiator = await currentContext(input.initiatorThreadId, input.at);
-      const discovered = await discoverCoPresent(initiator, input.at);
+      const discovered = await discoverCoPresent(
+        initiator,input.at,counterpartyThreadId,
+      );
       const perceived = projectSituatedPercept({
         observerThreadId:initiator.thread.threadId,
         situation:initiator.situation,

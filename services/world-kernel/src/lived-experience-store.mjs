@@ -246,10 +246,33 @@ export class LivedExperienceStore {
     return Object.freeze({inserted,dueAt});
   }
 
+  enqueueObservedSocialOpportunity({
+    encounterRef,threadId,situationId,counterpartyThreadId,venueRef,dueAt,
+  }){
+    for(const [name,id] of Object.entries({
+      encounterRef,threadId,situationId,counterpartyThreadId,venueRef,
+    }))assertId(`noticed social ${name}`,id);
+    assertIsoTimestamp("noticed social time",dueAt);
+    if(threadId===counterpartyThreadId){
+      throw new TypeError("an observed arrival needs a distinct other person");
+    }
+    const inserted=this.#database.prepare(`
+      INSERT OR IGNORE INTO world_observed_social_opportunities(
+        encounter_ref,thread_id,situation_id,counterparty_thread_id,venue_ref,due_at
+      ) VALUES(?,?,?,?,?,?)
+    `).run(encounterRef,threadId,situationId,counterpartyThreadId,venueRef,dueAt)
+      .changes===1;
+    return Object.freeze({inserted,dueAt});
+  }
+
   nextSocialOpportunityAt(){
     return this.#database.prepare(`
-      SELECT due_at FROM world_social_opportunities
-      WHERE started_at IS NULL ORDER BY due_at LIMIT 1
+      SELECT due_at FROM (
+        SELECT due_at FROM world_social_opportunities WHERE started_at IS NULL
+        UNION ALL
+        SELECT due_at FROM world_observed_social_opportunities
+          WHERE started_at IS NULL
+      ) ORDER BY due_at LIMIT 1
     `).get()?.due_at??null;
   }
 
@@ -257,41 +280,68 @@ export class LivedExperienceStore {
     assertIsoTimestamp("social opportunity now",at);
     return this.#database.transaction(()=>{
       const row=this.#database.prepare(`
-        SELECT thread_id,situation_id,due_at FROM world_social_opportunities
-        WHERE started_at IS NULL AND due_at<=?
-        ORDER BY due_at,situation_id LIMIT 1
-      `).get(at);
+        SELECT * FROM (
+          SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,situation_id,
+            NULL AS counterparty_thread_id,NULL AS venue_ref,due_at
+          FROM world_social_opportunities
+          WHERE started_at IS NULL AND due_at<=?
+          UNION ALL
+          SELECT 'observed' AS kind,encounter_ref,thread_id,situation_id,
+            counterparty_thread_id,venue_ref,due_at
+          FROM world_observed_social_opportunities
+          WHERE started_at IS NULL AND due_at<=?
+        ) ORDER BY due_at,kind,situation_id LIMIT 1
+      `).get(at,at);
       if(row===undefined)return null;
-      const changed=this.#database.prepare(`
-        UPDATE world_social_opportunities SET started_at=?
-        WHERE situation_id=? AND started_at IS NULL
-      `).run(at,row.situation_id).changes;
+      const observed=row.kind==="observed";
+      const changed=observed
+        ?this.#database.prepare(`
+          UPDATE world_observed_social_opportunities SET started_at=?
+          WHERE encounter_ref=? AND thread_id=? AND started_at IS NULL
+        `).run(at,row.encounter_ref,row.thread_id).changes
+        :this.#database.prepare(`
+          UPDATE world_social_opportunities SET started_at=?
+          WHERE situation_id=? AND started_at IS NULL
+        `).run(at,row.situation_id).changes;
       if(changed!==1)return null;
       return Object.freeze({
-        threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
+        kind:row.kind,sourceEncounterRef:row.encounter_ref,
+        threadId:row.thread_id,situationId:row.situation_id,
+        counterpartyThreadId:row.counterparty_thread_id,
+        venueRef:row.venue_ref,dueAt:row.due_at,
       });
     });
   }
 
-  completeSocialOpportunity({situationId,at,outcome}){
+  completeSocialOpportunity({
+    situationId,at,outcome,sourceEncounterRef=null,threadId=null,
+  }){
     assertId("social opportunity situation",situationId);
+    const observed=sourceEncounterRef!==null;
+    if(observed){
+      assertId("observed social source",sourceEncounterRef);
+      assertId("observed social Thread",threadId);
+    }
     assertIsoTimestamp("social opportunity completion",at);
     if(!["no_co_presence","background","not_initiated","not_met","met","scene_changed"].includes(outcome)){
       throw new TypeError("social opportunity outcome is invalid");
     }
+    const table=observed
+      ?"world_observed_social_opportunities":"world_social_opportunities";
+    const where=observed?"encounter_ref=? AND thread_id=?":"situation_id=?";
+    const args=observed?[sourceEncounterRef,threadId]:[situationId];
     const row=this.#database.prepare(`
-      SELECT started_at,completed_at,outcome
-      FROM world_social_opportunities WHERE situation_id=?
-    `).get(situationId);
+      SELECT started_at,completed_at,outcome FROM ${table} WHERE ${where}
+    `).get(...args);
     if(!row?.started_at)throw new TypeError("social opportunity was not started");
     if(row.completed_at!==null){
       if(row.outcome!==outcome)throw new TypeError("social opportunity outcome conflicts");
       return;
     }
     this.#database.prepare(`
-      UPDATE world_social_opportunities SET completed_at=?,outcome=?
-      WHERE situation_id=? AND completed_at IS NULL
-    `).run(at,outcome,situationId);
+      UPDATE ${table} SET completed_at=?,outcome=?
+      WHERE ${where} AND completed_at IS NULL
+    `).run(at,outcome,...args);
   }
 
   inspectSocialOpportunities(threadId,{limit=12}={}){
@@ -300,10 +350,17 @@ export class LivedExperienceStore {
       throw new TypeError("social opportunity inspection limit must be 1-40");
     }
     return this.#database.prepare(`
-      SELECT situation_id,due_at,started_at,completed_at,outcome
-      FROM world_social_opportunities WHERE thread_id=?
-      ORDER BY due_at DESC LIMIT ?
-    `).all(threadId,limit).map(row=>Object.freeze({
+      SELECT * FROM (
+        SELECT 'arrival' AS kind,NULL AS encounter_ref,
+          situation_id,due_at,started_at,completed_at,outcome
+        FROM world_social_opportunities WHERE thread_id=?
+        UNION ALL
+        SELECT 'observed' AS kind,encounter_ref,
+          situation_id,due_at,started_at,completed_at,outcome
+        FROM world_observed_social_opportunities WHERE thread_id=?
+      ) ORDER BY due_at DESC LIMIT ?
+    `).all(threadId,threadId,limit).map(row=>Object.freeze({
+      kind:row.kind,sourceEncounterRef:row.encounter_ref,
       situationId:row.situation_id,dueAt:row.due_at,
       outcome:row.outcome??(row.started_at===null?"pending":"interrupted"),
       completedAt:row.completed_at,

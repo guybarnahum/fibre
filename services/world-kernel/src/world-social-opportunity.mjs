@@ -41,36 +41,50 @@ export function createWorldSocialOpportunity({
               opportunity.threadId,current.location.placeRef,{required:false},
             ):null;
           const venue=place?.physicalVenue?.ref??null;
-          if(current?.situationId!==opportunity.situationId
-            ||current.wakefulness==="asleep"||venue===null
-            ||overdue<0||overdue>60*60_000){
+          const observed=opportunity.kind==="observed";
+          const matching=observed?venue===opportunity.venueRef
+            :current?.situationId===opportunity.situationId;
+          const target=observed
+            ?livedNowStore.getCurrentSituation(opportunity.counterpartyThreadId)
+            :null;
+          const targetPlace=target?.location?.kind==="place"
+            ?livedNowStore.getWorldPlace(
+              target.threadId,target.location.placeRef,{required:false},
+            ):null;
+          if(!matching||current?.wakefulness==="asleep"||venue===null
+            ||overdue<0||overdue>60*60_000
+            ||(observed&&(target?.wakefulness==="asleep"
+              ||targetPlace?.physicalVenue?.ref!==venue))){
             outcome="no_co_presence";
           }else{
-            const candidates=livedNowStore.listCurrentVenueSituations({
-              venueRef:venue,at,limit:8,excludeThreadId:opportunity.threadId,
-            });
-            const other=candidates.some((situation)=>{
-              if(situation.threadId===opportunity.threadId
-                ||situation.location?.kind!=="place"
-                ||situation.wakefulness==="asleep")return false;
-              const target=livedNowStore.getWorldPlace(
-                situation.threadId,situation.location.placeRef,{required:false},
-              );
-              return target?.physicalVenue?.ref===venue;
-            });
+            const other=observed?true
+              :livedNowStore.listCurrentVenueSituations({
+                venueRef:venue,at,limit:8,excludeThreadId:opportunity.threadId,
+              }).some((situation)=>{
+                if(situation.threadId===opportunity.threadId
+                  ||situation.location?.kind!=="place"
+                  ||situation.wakefulness==="asleep")return false;
+                const place=livedNowStore.getWorldPlace(
+                  situation.threadId,situation.location.placeRef,{required:false},
+                );
+                return place?.physicalVenue?.ref===venue;
+              });
             if(!other){
               outcome="no_co_presence";
             }else{
-              // This path is server-owned. The meeting service still derives
-              // counterparty presence, salience, desire and independent consent.
-              const result=await meetingService.meet({
-                initiatorThreadId:opportunity.threadId,at,
-              });
+              // The same salience, Thread-owned initiation, recipient consent,
+              // and lived conversation apply to both causal opportunities.
+              const result=await meetingService.meet(observed
+                ?{initiatorThreadId:opportunity.threadId,at,
+                  counterpartyThreadId:opportunity.counterpartyThreadId}
+                :{initiatorThreadId:opportunity.threadId,at});
               outcome=result.attempts?.[0]?.outcome??"no_co_presence";
             }
           }
           experienceStore.completeSocialOpportunity({
             situationId:opportunity.situationId,at,outcome,
+            sourceEncounterRef:opportunity.sourceEncounterRef,
+            threadId:opportunity.threadId,
           });
         }catch(cause){
           // A speech/model call may have occurred before interruption.

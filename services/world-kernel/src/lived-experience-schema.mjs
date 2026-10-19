@@ -109,6 +109,27 @@ export function createLivedExperienceTables(database) {
       ON world_social_opportunities(due_at)
       WHERE started_at IS NULL;
 
+    -- A witnessed actor arrival can matter after a prior, separate
+    -- arrival-based social chance has already been spent. One observation,
+    -- one witnessed person, one durable chance to choose freely.
+    CREATE TABLE IF NOT EXISTS world_observed_social_opportunities (
+      encounter_ref TEXT NOT NULL,
+      thread_id TEXT NOT NULL,
+      situation_id TEXT NOT NULL,
+      counterparty_thread_id TEXT NOT NULL,
+      venue_ref TEXT NOT NULL,
+      due_at TEXT NOT NULL,
+      started_at TEXT,
+      completed_at TEXT,
+      outcome TEXT,
+      PRIMARY KEY(encounter_ref,thread_id),
+      FOREIGN KEY(encounter_ref) REFERENCES encounter_story_records(encounter_id),
+      FOREIGN KEY(thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_world_observed_social_due
+      ON world_observed_social_opportunities(due_at)
+      WHERE started_at IS NULL;
+
     CREATE TABLE IF NOT EXISTS world_environment_followups (
       source_encounter_ref TEXT PRIMARY KEY,
       place_ref TEXT NOT NULL,
