@@ -295,6 +295,9 @@ test("admitted age portraits condition current scenes without changing canonical
   const first=recorded.slots[0];
   assert.deepEqual(first.referenceObjectRefs,[rootRef,"age_35","age_40"],
     "Scene did not use nearest admitted ages with canonical identity first");
+  assert.ok(first.brief.description.includes("image 2 is the admitted age-35 portrait")
+    && first.brief.description.includes("image 3 is the admitted age-40 portrait"),
+    "Scene model lost the actual ages of its selected reference portraits");
   assert.ok(first.inputReferences.includes("age_admission_age_35"),
     "Approved age anchor was not attributable");
   const firstDigest=first.sourceDigest;
