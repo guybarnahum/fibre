@@ -120,9 +120,15 @@ only after this lightweight lookup finds a promising real candidate.
   places — already established.
 - **S1E:** source delivers World-listed venues into one ordinary planning mind;
   live endogenous interest/choice evidence remains separate.
-- **S1F:** positive-duration autonomous movement is staging-observed with
-  Victor on October 18. A real independently admitted **public venue** visit
-  is still required; the Lisbon Genesis learning context was not one.
+- **S1F:** real public-venue visits are **staging observed, October 19**:
+  Amelia Shah's provider-authored Flight Plans led to enacted arrivals at
+  the British Library (10:15 UTC) and Southbank Centre (17:45 UTC) in
+  London; Giorgi Bolkvadze's provider-authored plan led to an enacted
+  arrival at Fabrika Tbilisi (15:45 UTC). The ordinary World situation
+  timeline attests arrivals and elapsed travel; no operator-seeded
+  destination or fixture-authored plan is counted. This does **not**
+  independently establish that scheduled reconciliation alone caused
+  every life wake, or that a City Guide recommendation was decisive.
 - **S2:** independently arriving Threads share a real venue, have a genuine
   opportunity to notice and voluntarily approach or decline.
 - **S3:** one shared Encounter Story leads to distinct personal Experience and
