@@ -259,6 +259,9 @@ test("Genesis publishes Pass-A episodes as uncommanded authoritative history wit
     const world = openWorldStore(localWorldStateStorage(databasePath));
     const events = world.listEvents(thread.threadId);
     const origins=world.listGenesisLifeEpisodes(thread.threadId);
+    assert.equal(world.getGenesisPublicationSeed(thread.threadId)?.occurredAt,
+      result.manifest.publication.publishedAt,
+      "the birth execution clock was confused with a historical childhood episode");
     assert.deepEqual(origins.map(item=>[item.eventId,item.occurredAt]),
       events.slice(1).map(item=>[item.eventId,item.occurredAt]),
       "Origins omitted an admitted childhood episode or included the publication seed");
