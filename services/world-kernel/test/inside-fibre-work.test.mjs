@@ -68,6 +68,7 @@ function memory(threadId, suffix, meaning) {
     retentionState:"retained",
     salience:0.9,
     asOf:"2026-09-22T12:00:00.000Z",
+    recordedAt:"2026-09-22T12:00:00.000Z",
   };
 }
 
