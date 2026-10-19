@@ -31,6 +31,7 @@ export function createWorldSocialOpportunity({
       assertIsoTimestamp("social opportunity at",at);
       const opportunity=experienceStore.claimDueSocialOpportunity({at});
       let outcome=null;
+      let decision=null;
       let error=null;
       if(opportunity!==null){
         try{
@@ -78,13 +79,39 @@ export function createWorldSocialOpportunity({
                 ?{initiatorThreadId:opportunity.threadId,at,
                   counterpartyThreadId:opportunity.counterpartyThreadId}
                 :{initiatorThreadId:opportunity.threadId,at});
-              outcome=result.attempts?.[0]?.outcome??"no_co_presence";
+              const attempt=result.attempts?.[0]??null;
+              outcome=attempt?.outcome??"no_co_presence";
+              // One witness for the actual opportunity, not a second
+              // event or a retrospective explanation model.
+              if(attempt!==null){
+                const {salience,initiation,stance,encounterStory}=attempt;
+                decision={
+                  counterpartyThreadId:attempt.counterpartyThreadId,
+                  salience:salience===null?null:{
+                    outcome:salience.outcome,
+                    anchors:[...salience.anchors],
+                    sourceReferences:[...salience.sourceReferences],
+                  },
+                  initiation:initiation===null?null:{
+                    decision:initiation.decision,reportedReason:initiation.reason,
+                    decisionContext:initiation.decisionContext,
+                    selectedEvidenceRefs:[...initiation.cognition.selectedEvidenceRefs],
+                    evidenceRefs:[...initiation.cognition.evidenceRefs],
+                  },
+                  response:stance===null?null:{
+                    decision:stance.decision,reportedReason:stance.reason,
+                    selectedEvidenceRefs:[...stance.cognition.selectedEvidenceRefs],
+                    evidenceRefs:[...stance.cognition.evidenceRefs],
+                  },
+                  encounterRef:encounterStory?.encounterId??null,
+                };
+              }
             }
           }
           experienceStore.completeSocialOpportunity({
             situationId:opportunity.situationId,at,outcome,
             sourceEncounterRef:opportunity.sourceEncounterRef,
-            threadId:opportunity.threadId,
+            threadId:opportunity.threadId,decision,
           });
         }catch(cause){
           // A speech/model call may have occurred before interruption.
