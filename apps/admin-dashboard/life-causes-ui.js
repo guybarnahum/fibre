@@ -69,7 +69,7 @@ export function renderLifeCausesPage(){
   $(".main").append(workspace);
 
   let threadId=null,loadedRecent=null,loadedHistory=null;
-  let mode="recent",selected=null,sequence=0;
+  let mode="recent",selected=null,sequence=0,missingRequested=null,historyFailure=null;
   const text=(target,message,cls="life-causes-muted")=>{
     target.replaceChildren(el("p",cls,message));
   };
@@ -91,7 +91,7 @@ export function renderLifeCausesPage(){
     window.history.replaceState(null,"",next);
   };
   const setMoment=item=>{
-    selected=item;updateUrl();draw();
+    selected=item;missingRequested=null;updateUrl();draw();
   };
   const memoryAge=(item)=>{
     const birth=loadedHistory?.payload?.identity?.birthDate
@@ -140,7 +140,9 @@ export function renderLifeCausesPage(){
   function drawInspector(){
     inspector.replaceChildren(el("h2",null,"Selected moment"));
     if(!selected){
-      text(inspector,"Select an event, experience or Memory from the timeline.");
+      text(inspector,missingRequested
+        ?"The requested record ("+missingRequested+") was not returned in this bounded history. This does not establish lifetime absence."
+        :"Select an event, experience or Memory from the timeline.");
       return;
     }
     const heading=el("div","life-causes-moment-heading");
@@ -263,15 +265,18 @@ export function renderLifeCausesPage(){
         };
       }
       if(request!==sequence)return;
-      selected=loadedHistory.moments.find(item=>
+      const match=requested?loadedHistory.moments.find(item=>
         item.kind+":"+item.id===requested||item.id===requested,
-      )??loadedHistory.moments[0]??null;
-      updateUrl();
+      )??null:null;
+      missingRequested=requested&&!match?requested:null;
+      selected=requested?match:loadedHistory.moments[0]??null;
+      historyFailure=null;
+      if(!missingRequested)updateUrl();
     }catch(error){
       if(request!==sequence)return;
       mode="recent";selected=loadedRecent.moments[0]??null;
-      summary.append(el("p","error-box",
-        "History inspection unavailable: "+(error instanceof Error?error.message:String(error))));
+      historyFailure="History inspection unavailable: "+(error instanceof Error?error.message:String(error));
+      updateUrl();
     }finally{
       if(request===sequence){historyButton.disabled=false;drawSummary();draw();}
     }
@@ -282,10 +287,12 @@ export function renderLifeCausesPage(){
       summary.append(el("strong",null,threadName(loadedRecent.payload.identity)??threadId),
         el("span",null,"One person · read-only World evidence · bounded history"));
     }
+    if(historyFailure)summary.append(el("p","error-box",historyFailure));
   }
   async function openThread(nextThread,{moment=null,memory=null,view="recent"}={}){
     const request=++sequence;
     threadId=nextThread;loadedRecent=null;loadedHistory=null;selected=null;
+    historyFailure=null;missingRequested=null;
     mode="recent";summary.replaceChildren(el("span",null,"Reading current World life…"));draw();
     try{
       const payload=await fetchThreadObservatory(nextThread,{currentOnly:true});
