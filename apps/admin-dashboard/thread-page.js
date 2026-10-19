@@ -98,9 +98,11 @@ export async function renderThreadPage(threadId) {
   const back = node("a", "button-link secondary", "← Threads");
   back.href = "/activity?mode=threads";
   const viewer = node("a", "button-link primary", "Open as visitor ↗");
+  const life = node("a","button-link secondary","Life & Causes ↗");
+  life.href = "/life?thread="+encodeURIComponent(threadId);
   const activity = node("a", "button-link secondary", "Activity ↗");
   activity.href = `/activity?kind=thread&value=${encodeURIComponent(threadId)}&limit=100&mode=raw`;
-  pageActions.append(back, viewer, activity);
+  pageActions.append(back, viewer, life, activity);
   pageHead.append(person, pageActions);
   main.append(pageHead);
 
