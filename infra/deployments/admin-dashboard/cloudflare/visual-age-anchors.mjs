@@ -11,9 +11,13 @@ import {
   resolveVisualAgeReferences,
 } from "#services/world-kernel/src/visual-age-anchors.mjs";
 import {resolveAdminWorldThreadIdentity} from "./thread-identity.mjs";
+import {
+  readVisualAgeAnchorAdmissions,
+  VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX,
+} from "#services/world-kernel/src/visual-age-anchor-catalog.mjs";
 
 const PROFILE="openai-gpt-image-2-medium-v1";
-const ADMISSIONS="visual-age-anchor:admission:";
+const ADMISSIONS=VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX;
 const CANDIDATE="visualagecandidate_";
 const ID=/^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 
@@ -61,17 +65,6 @@ async function identitySource(env,infra,threadId){
 async function stored(infra,ref){
   const value=await infra.objects.get(ref);
   return value===null?null:decode(value.bytes);
-}
-async function listAdmissions(infra,threadId){
-  const items=[];
-  const prefix=ADMISSIONS+threadId+":";
-  let after=null;
-  do{
-    const page=await infra.catalog.list({prefix,after,limit:100});
-    items.push(...page.entries.map(entry=>normalizeVisualAgeAnchorAdmission(entry.value)));
-    after=page.nextCursor;
-  }while(after!==null);
-  return items;
 }
 function applicable(source,records){
   return admittedVisualAgeAnchors({
@@ -154,7 +147,7 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
     async list(threadId){
       identifier("threadId",threadId);
       const current=await readSource(threadId);
-      const admissions=await listAdmissions(infra,threadId);
+      const admissions=await readVisualAgeAnchorAdmissions(infra.catalog,threadId);
       return {canonical:{objectRef:current.objectRef,digest:current.digest,age:25},
         anchors:applicable(current,admissions),historyCount:admissions.length};
     },
@@ -163,7 +156,7 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       const current=await readSource(threadId);
       let manifest=await stored(infra,manifestRef(threadId,candidateId));
       if(manifest===null){
-        const previous=await listAdmissions(infra,threadId);
+        const previous=await readVisualAgeAnchorAdmissions(infra.catalog,threadId);
         const references=resolveVisualAgeReferences({
           threadId,targetAgeYears,
           canonicalReferenceObjectRef:current.objectRef,canonicalReferenceDigest:current.digest,
