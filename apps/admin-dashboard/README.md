@@ -78,8 +78,16 @@ Memories, and the actual World seed-publication time. Birth Center's
 pending/stillborn rows link to /life?birth=REQUEST_ID for bounded
 execution/disposition inspection, never a fictitious live Thread.
 This slice requires both World Kernel and Admin staging deployment.
-Causal Witnesses remain Slice 4; see
-[four-slice plan](../../docs/validation/life-observatory-slices.md).
+**Slice 4 source pass implemented:** the same bounded Flight Plan
+provenance exposes event-time Body drives and City Guide places offered
+(not proven motives); the existing one-shot social-opportunity row
+keeps a compact witnessed choice including background/non-initiation,
+salience, recipient accept/decline and any truly admitted Story. The
+recorded Life Timeline displays those facts and World Events can link
+an admitted Story to each person's separate view. Historical witnesses
+not previously captured remain unknown. The Admin and World Kernel
+require new deployment; this is not yet staging-accepted.
+See [four-slice plan](../../docs/validation/life-observatory-slices.md).
 This source is not yet a browser-accepted result.
 
 ## God's view
