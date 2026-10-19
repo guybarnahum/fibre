@@ -1709,6 +1709,7 @@ export async function fetchThreadObservatory(threadId,{currentOnly=false}={}) {
   let encounterError = null;
   let experienceJournalEntries = [];
   let socialInteractions = [];
+  let socialOpportunities = [];
   let experienceConsolidation = Object.freeze({ queued:Object.freeze([]), consolidations:Object.freeze([]) });
   let contactOutreach = Object.freeze({ attempts:Object.freeze([]), sent:Object.freeze([]) });
   let semanticStates = [];
@@ -1726,6 +1727,8 @@ export async function fetchThreadObservatory(threadId,{currentOnly=false}={}) {
     encounterStories = Array.isArray(observatory.encounterStories) ? observatory.encounterStories : [];
     livedNow = observatory.livedNow??null;
     socialInteractions = Array.isArray(observatory.socialInteractions) ? observatory.socialInteractions : [];
+    socialOpportunities=Array.isArray(observatory.socialOpportunities)
+      ?observatory.socialOpportunities:[];
     experienceJournalEntries = Array.isArray(observatory.experienceJournalEntries)
       ? observatory.experienceJournalEntries
       : [];
@@ -1768,6 +1771,7 @@ export async function fetchThreadObservatory(threadId,{currentOnly=false}={}) {
     encounterStories:Object.freeze(encounterStories),
     livedNow,
     socialInteractions:Object.freeze(socialInteractions),
+    socialOpportunities:Object.freeze(socialOpportunities),
     encounterError,
     experienceJournalEntries:Object.freeze(experienceJournalEntries),
     experienceConsolidation:Object.freeze({
