@@ -250,6 +250,16 @@ export class WorldStore {
       .map(rowToEvent);
   }
 
+  // Admission belongs to execution time, not the child's lived chronology.
+  getGenesisPublicationSeed(threadId){
+    assertId("threadId",threadId);
+    const seed=this.#eventAtSequence(threadId,1);
+    return seed?.eventType==="THREAD_SEEDED"
+      &&seed.provenance?.source==="genesis_birth"
+      ?Object.freeze({eventId:seed.eventId,occurredAt:seed.occurredAt,
+        genesisId:seed.provenance.genesisId}):null;
+  }
+
   // Only explicit Origins inspection reads the bounded publication prefix.
   // Genesis prior-life episodes are inserted immediately after THREAD_SEEDED.
   // Scan at most 128 indexed sequences, never the whole life-event ledger.
