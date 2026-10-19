@@ -90,9 +90,13 @@ require new deployment; this is not yet staging-accepted.
 See [four-slice plan](../../docs/validation/life-observatory-slices.md).
 This source is not yet a browser-accepted result.
 
-## God's view
+## Operator evidence
 
-Filtering Activity by `Thread ID` turns the same Activity records into a lifecycle-oriented operator view. It groups observed runtime work into Birth, Life, Presentation, Encounter, Experience, and Continuity and renders the causal trail chronologically.
+Life & Causes is the person-first view of enacted World events, recorded
+choices and individual Experience; World Events supplies the shared
+event-first entry. Activity retains unmodified operational records
+and is not a source of personal motivation or lived World truth.
+The old indented Causal Trail is retired as primary navigation.
 
 This is an observability projection, not a second Thread model:
 
