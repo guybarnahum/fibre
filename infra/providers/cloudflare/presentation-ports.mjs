@@ -128,8 +128,10 @@ function normalizeCatalogListOptions({ prefix = "", after = null, limit = 100 } 
   return { prefix, after, limit };
 }
 
-function likePrefix(prefix) {
-  return `${prefix.replace(/[\\%_]/g, (value) => `\\${value}`)}%`;
+// Indexed, literal prefix range: Cloudflare D1 caps LIKE patterns at 50 bytes.
+// Fibre catalog identifiers use ASCII, so this upper bound includes any suffix.
+function prefixEnd(prefix) {
+  return prefix + "\uFFFF";
 }
 
 function isD1WriteQuotaError(error) {
@@ -212,11 +214,12 @@ export function createCloudflareCatalogPort(databaseBinding) {
       const result = await database.prepare(`
         SELECT catalog_key, value_json
         FROM fibre_catalog
-        WHERE catalog_key LIKE ? ESCAPE '\\'
+        WHERE catalog_key >= ?
+          AND catalog_key < ?
           AND catalog_key > ?
         ORDER BY catalog_key ASC
         LIMIT ?
-      `).bind(likePrefix(prefix), after ?? "", limit + 1).all();
+      `).bind(prefix, prefixEnd(prefix), after ?? "", limit + 1).all();
       const rows = Array.isArray(result?.results) ? result.results : [];
       const selected = rows.slice(0, limit);
       return {
