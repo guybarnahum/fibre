@@ -11,9 +11,9 @@ canonical: true
 
 **Accepted Admin UX direction, October 19 (implementation pending):**
 [Life Observatory](../architecture/life-observatory.md) replaces the
-Activity Causal Trail's operation nesting with person-first Life
-Overview, age-anchored Timeline and selected-moment Why/After evidence
-inspector. Birth Center supplies provisional Genesis execution and
+Activity Causal Trail's operation nesting with compact Thread
+detail and a separate Life & Causes Timeline/selected-moment
+Why/After inspector. Birth Center supplies provisional Genesis execution and
 published formative life as separate clocks; World Events supplies the
 shared occurrence-first entrance. The first practical work is a
 read-only semantic UX over existing authority; compact Causal Witness
