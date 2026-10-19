@@ -218,6 +218,30 @@ function projectedOperatorLocation(livedNow,threadId,{
   });
 }
 
+// A deliberately selected Origins read has a bounded publication-prefix
+// query, separate from normal current life and from all-time event replay.
+function originsThreadObservatory(runtime,threadId){
+  const thread=runtime.worldStore.getThread(threadId,{required:false});
+  if(thread===null)return null;
+  const episodes=runtime.worldStore.listGenesisLifeEpisodes(threadId,{limit:64});
+  return Object.freeze({
+    threadId,origin:{
+      admitted:true,scannedSequenceThrough:129,
+      limit:64,truncated:episodes.length===64,
+      genesisEpisodes:episodes.map(event=>Object.freeze({
+        eventId:event.eventId,sequence:event.sequence,
+        occurredAt:event.occurredAt,
+        ageAtEvent:event.payload?.ageAtEvent??null,
+        observableAction:event.payload?.observableAction??null,
+        episodeId:event.payload?.episodeId??null,
+        genesisId:event.provenance?.genesisId??null,
+        placeRef:event.payload?.placeRef??null,
+        participantRefs:event.payload?.participantRefs??[],
+      })),
+    },
+  });
+}
+
 // The default operator view needs present life, not a lifetime dossier.
 // Detailed memories, genomes, and social evidence are requested separately.
 function currentThreadObservatory(runtime,threadId){
@@ -833,7 +857,7 @@ export class FibreWorldDurableObject extends DurableObject {
     const observatoryMatch = THREAD_OBSERVATORY_ROUTE.exec(url.pathname);
     if (observatoryMatch !== null) {
       const view=url.searchParams.get("view")??"full";
-      if(!["full","current"].includes(view)
+      if(!["full","current","origins"].includes(view)
         || [...url.searchParams.keys()].some(key=>key!=="view")){
         return Response.json({error:{code:"QUERY_NOT_SUPPORTED"}},{status:400});
       }
@@ -844,7 +868,9 @@ export class FibreWorldDurableObject extends DurableObject {
       const threadId = decodeURIComponent(observatoryMatch[1]);
       const observatory=view==="current"
         ?currentThreadObservatory(this.runtimeForRequest(),threadId)
-        :threadObservatory(this.runtimeForRequest(),threadId);
+        :view==="origins"
+          ?originsThreadObservatory(this.runtimeForRequest(),threadId)
+          :threadObservatory(this.runtimeForRequest(),threadId);
       if (observatory === null) return Response.json({ error:{ code:"THREAD_NOT_FOUND" } }, { status:404 });
       return Response.json({
         contract:"fibre-world-thread-observatory-v0.10",
