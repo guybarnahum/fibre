@@ -81,8 +81,9 @@ export function renderLifeCausesPage(){
       card.type="button";
       card.classList.toggle("selected",item.id===selected?.id);
       const when=el("time",null,timestamp(item.at));
-      const title=el("strong",null,item.activity
-        ??(item.phase==="in_transit"?"Travel":"Enacted situation"));
+      const title=el("strong",null,item.publicVenueName
+        ?item.publicVenueName+(item.activity?" · "+item.activity:"")
+        :item.activity??(item.phase==="in_transit"?"Travel":"Enacted situation"));
       const context=el("small",null,
         (item.phase==="at_place"?"At place"
           :item.phase==="in_transit"?"In transit":"World-enacted")+
@@ -94,7 +95,8 @@ export function renderLifeCausesPage(){
     moment.replaceChildren(el("h2",null,"Selected moment"));
     if(!selected){notice(moment,"Choose a moment from the timeline.");return;}
     const top=el("div","life-causes-moment-heading");
-    top.append(el("strong",null,selected.activity??"Enacted situation"),
+    top.append(el("strong",null,selected.publicVenueName
+      ??selected.activity??"Enacted situation"),
       el("span",null,timestamp(selected.at)));
     moment.append(top);
     const part=(title,lines)=>{
