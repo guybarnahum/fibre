@@ -259,7 +259,7 @@ export function renderWorldEventsPage(){
           }
           for(const memoryId of witness.memoryLinks??(witness.memoryLink?[witness.memoryLink]:[])){
             const memory=el("a",null,"View retained Memory ↗");
-            memory.href=`/thread/${encodeURIComponent(witness.threadId)}?memory=${encodeURIComponent(memoryId)}`;
+            memory.href=`/life?thread=${encodeURIComponent(witness.threadId)}&memory=${encodeURIComponent(memoryId)}`;
             memory.title="A current autobiographical Memory explicitly linked through experience consolidation.";
             row.append(memory);
           }
