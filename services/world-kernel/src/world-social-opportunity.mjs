@@ -87,21 +87,21 @@ export function createWorldSocialOpportunity({
                 const {salience,initiation,stance,encounterStory}=attempt;
                 decision={
                   counterpartyThreadId:attempt.counterpartyThreadId,
-                  salience:salience===null?null:{
+                  salience:salience==null?null:{
                     outcome:salience.outcome,
                     anchors:[...salience.anchors],
                     sourceReferences:[...salience.sourceReferences],
                   },
-                  initiation:initiation===null?null:{
+                  initiation:initiation==null?null:{
                     decision:initiation.decision,reportedReason:initiation.reason,
-                    decisionContext:initiation.decisionContext,
-                    selectedEvidenceRefs:[...initiation.cognition.selectedEvidenceRefs],
-                    evidenceRefs:[...initiation.cognition.evidenceRefs],
+                    decisionContext:initiation.decisionContext??null,
+                    selectedEvidenceRefs:[...(initiation.cognition?.selectedEvidenceRefs??[])],
+                    evidenceRefs:[...(initiation.cognition?.evidenceRefs??[])],
                   },
-                  response:stance===null?null:{
+                  response:stance==null?null:{
                     decision:stance.decision,reportedReason:stance.reason,
-                    selectedEvidenceRefs:[...stance.cognition.selectedEvidenceRefs],
-                    evidenceRefs:[...stance.cognition.evidenceRefs],
+                    selectedEvidenceRefs:[...(stance.cognition?.selectedEvidenceRefs??[])],
+                    evidenceRefs:[...(stance.cognition?.evidenceRefs??[])],
                   },
                   encounterRef:encounterStory?.encounterId??null,
                 };
