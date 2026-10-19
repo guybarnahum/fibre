@@ -231,6 +231,113 @@ export function summarizeSocialContinuity(observatories,{limit=24}={}){
   });
 }
 
+// Operator report is a projection of recorded evidence, never additional
+// World truth. No private addresses or long autobiographical text are printed.
+export function formatWorldSocialReport(evidence,evidencePath){
+  const n=(value)=>Number.isFinite(value)?value:0;
+  const short=(value,length=84)=>typeof value==="string"&&value.length>length
+    ?value.slice(0,length-1)+"…":value??"unknown";
+  const time=(value)=>value??"not scheduled";
+  const lines=[
+    "Fibre · World social observation",
+    "Environment: "+evidence.environment+"  |  Checked: "+evidence.checkedAt,
+    "Scope: "+(evidence.targetedThreadId??"first "+evidence.scannedThreadCount+" directory Threads"),
+    "Observatories: "+evidence.availableThreadCount+"/"+evidence.scannedThreadCount+
+      " read"+(evidence.unavailableThreadIds.length
+        ?" ("+evidence.unavailableThreadIds.length+" unavailable)":""),
+    "Runtime: "+short(evidence.deployedGitSha?.slice(0,7)??null)+
+      (evidence.runtimeSourceMatches
+        ?" · source matches checkout"
+        :" · checkout includes later runtime changes; observations are from deployed World"),
+    "",
+    "CURRENT LIFE",
+  ];
+  const life=evidence.groundedLife;
+  if(evidence.targetedThreadId!==null){
+    const person=[...(life.withVenues??[]),...(life.withoutVenues??[])]
+      .find(item=>item.threadId===evidence.targetedThreadId);
+    if(person){
+      const locality=person.privateWorldLocality
+        ??person.coarseKnownLocalities?.[0]??"locality not established";
+      const context=person.currentAtAttestedVenue
+        ?short(person.availableWorldContexts?.find(p=>
+          p.attestedVenueRef===person.currentAttestedVenueRef)?.description
+          ??"verified public venue")
+        :person.hasCurrentSituation
+          ?"not at a verified public venue"
+          :"no current situation";
+      lines.push("  Wakefulness: "+person.currentWakefulness,
+        "  Locality: "+locality,
+        "  Current place: "+context,
+        "  Next life boundary: "+time(person.nextBoundedLifeWake),
+        "  Verified venues in current World context: "+n(person.attestedVenueCount),
+        "  Recent public-venue situations: "+n(person.recentPublicVenueVisits?.length)+
+          " (bounded history)",
+        "  Future public-venue stops in current plan: "+
+          n(person.futureAttestedVenueStops?.length));
+    }else lines.push("  No current-life projection in the sampled Observatory.");
+  }else{
+    lines.push("  Current verified-venue visits: "+n(life.currentAttestedVenueVisitCount),
+      "  Recent public-venue visitors: "+n(life.recentlyVisitedPublicVenueThreadCount)+
+        " (bounded history)",
+      "  Threads with future public-venue stops: "+n(life.futureAttestedVenuePlanCount));
+  }
+  lines.push("",
+    "SOCIAL LIFE",
+    "  Shared public venues now: "+n(evidence.sharedCurrentVenues.length),
+    "  Recorded social opportunities: "+n(evidence.socialOpportunities.length)+
+      " (bounded inspection)");
+  for(const shared of evidence.sharedCurrentVenues.slice(0,3)){
+    lines.push("  · "+short(shared.venueName)+" · "+shared.threads.length+
+      " co-present Threads ("+shared.threads.map(p=>p.threadId).join(", ")+")");
+  }
+  for(const opportunity of evidence.socialOpportunities.slice(0,3)){
+    lines.push("  · "+(opportunity.outcome??"pending").replaceAll("_"," ")+
+      " · "+opportunity.threadId+
+      (opportunity.dueAt?" · "+opportunity.dueAt:""));
+  }
+  const histories=evidence.causalContinuity;
+  lines.push("",
+    "EXPERIENCE → MEMORY → LATER CHOICE",
+    "  Shared stories in inspected history: "+n(histories.inspectedSharedStoryCount),
+    "  Stories with distinct personal Experiences: "+n(histories.distinctExperiencePairCount),
+    "  Verified retained-Memory chains: "+n(histories.retainedMemoryChainCount),
+    "  Later contact after retention: "+n(histories.laterContactAfterRetentionCount));
+  for(const episode of histories.episodes.slice(0,2)){
+    lines.push("  · "+episode.threadId+" · Story "+short(episode.encounterRef,25)+
+      " · attention: "+episode.attention+
+      " · retention: "+(episode.consolidationOutcome??"not established")+
+      (episode.laterSocialInteractionRef?" · later contact recorded":""));
+  }
+  lines.push("  Causal influence of Memory on a later decision: NOT ESTABLISHED",
+    "",
+    "ASSESSMENT");
+  const conclusions={
+    observatory_unavailable:"No sampled Observatory was available.",
+    no_attested_venues_in_sample:
+      "No verified public venue appears in the sampled personal World records.",
+    no_current_attested_venue_visits_in_sample:
+      "No sampled Thread is currently at a verified public venue.",
+    all_current_attested_venue_visitors_asleep:
+      "All sampled occupants of verified venues are asleep.",
+    no_shared_current_attested_venue_in_sample:
+      "No two sampled Threads currently share the same verified venue.",
+    shared_venue_without_recorded_decision:
+      "Shared venue presence exists; inspect the bounded social decisions above.",
+  };
+  lines.push("  "+(evidence.distinctExperienceWitness
+    ?"Shared meeting Story with independent personal Experiences recorded."
+    :evidence.socialOpportunities.some(o=>o.outcome==="met")
+      ?"A meeting outcome is recorded, but its Story was not fully corroborated."
+      :evidence.socialOpportunities.length
+        ?"Social opportunities exist; their outcomes are listed above."
+        :conclusions[evidence.worldBlocker]??"No additional social conclusion established."),
+    "  Missing evidence in this bounded view does not establish lifetime absence.",
+    "",
+    "Full evidence: "+evidencePath);
+  return lines.join("\n");
+}
+
 export async function runWorldSocialProbe({
   targetEnvironment,threadId=null,environment=process.env,
   emit=(entry)=>process.stdout.write(JSON.stringify(entry)+"\n"),
@@ -393,16 +500,23 @@ export async function runWorldSocialProbe({
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
   try{
-    let targetEnvironment=null,threadId=null;
+    let targetEnvironment=null,threadId=null,json=false;
     for(let index=2;index<process.argv.length;index++){
       if(process.argv[index]==="--env")targetEnvironment=process.argv[++index];
       else if(process.argv[index]==="--thread")threadId=process.argv[++index];
+      else if(process.argv[index]==="--json")json=true;
       else throw new TypeError("unsupported social probe argument");
     }
     if(targetEnvironment===null){
-      throw new TypeError("usage: npm run world-social:probe -- --env staging [--thread thr_...]");
+      throw new TypeError("usage: npm run world-social:probe -- --env staging [--thread thr_...] [--json]");
     }
-    await runWorldSocialProbe({targetEnvironment,threadId});
+    let machineEvent=null;
+    const {evidence,evidencePath}=await runWorldSocialProbe({
+      targetEnvironment,threadId,
+      emit:event=>{machineEvent=event;},
+    });
+    process.stdout.write((json?JSON.stringify(machineEvent)
+      :formatWorldSocialReport(evidence,evidencePath))+"\n");
   }catch(error){
     process.stderr.write(JSON.stringify({
       event:"world-social-probe-failed",
