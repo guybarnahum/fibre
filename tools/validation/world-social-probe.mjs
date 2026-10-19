@@ -36,7 +36,7 @@ function runtimeSourceMatches(deployedSha,head){
   }
 }
 
-function groundedLifeSummary(threadId,person,checkedAt){
+export function groundedLifeSummary(threadId,person,checkedAt){
   const lived=person.livedNow??{};
   const situation=lived.currentSituation??null;
   const privatePlace=lived.privatelyKnownCurrentPlace??null;
@@ -45,6 +45,10 @@ function groundedLifeSummary(threadId,person,checkedAt){
     ?situation.location.placeRef:null;
   const place=currentRef===null?null:
     bound.find((candidate)=>candidate.ref===currentRef)??null;
+  const currentPublicLocality=situation?.phase==="at_place"
+    &&place?.authority==="world-public-place-v1"
+    &&place.locality&&place.countryCode
+    ?place.locality+", "+place.countryCode:null;
   const currentEpisode=currentRef===null?null:
     (lived.placeEpisodes??[]).find((candidate)=>
       placeEpisodeRevisionRef(candidate)===currentRef)??null;
@@ -88,6 +92,7 @@ function groundedLifeSummary(threadId,person,checkedAt){
     currentPlaceRef:currentRef,
     currentPlaceDescription:description?.displayName??description?.place?.displayName??null,
     currentPlaceKind:currentEpisode?.episodeKind??description?.placeKind??null,
+    currentPublicLocality,
     privatelyLocated:privatePlace!==null,
     preciseResidentialAddressKnown:privatePlace?.streetAddress!==null
       &&privatePlace?.streetAddress!==undefined,
@@ -260,7 +265,7 @@ export function formatWorldSocialReport(evidence,evidencePath){
     const person=[...(life.withVenues??[]),...(life.withoutVenues??[])]
       .find(item=>item.threadId===evidence.targetedThreadId);
     if(person){
-      const locality=person.privateWorldLocality
+      const locality=person.currentPublicLocality??person.privateWorldLocality
         ??person.coarseKnownLocalities?.[0]??"locality not established";
       const context=person.currentAtAttestedVenue
         ?short(person.availableWorldContexts?.find(p=>
@@ -297,7 +302,9 @@ export function formatWorldSocialReport(evidence,evidencePath){
   }
   lines.push("",
     "SOCIAL LIFE",
-    "  Shared public venues now: "+n(evidence.sharedCurrentVenues.length),
+    "  Shared public venues now: "+(evidence.coPresenceChecked??evidence.targetedThreadId===null
+      ?n(evidence.sharedCurrentVenues.length)
+      :"not checked (single-Thread inspection)"),
     "  Recorded social opportunities: "+n(evidence.socialOpportunities.length)+
       " (bounded inspection)");
   for(const shared of evidence.sharedCurrentVenues.slice(0,3)){
@@ -335,6 +342,8 @@ export function formatWorldSocialReport(evidence,evidencePath){
       "All sampled occupants of verified venues are asleep.",
     no_shared_current_attested_venue_in_sample:
       "No two sampled Threads currently share the same verified venue.",
+    co_presence_not_scanned:
+      "Current co-presence was not checked; only this Thread's own history was inspected.",
     shared_venue_without_recorded_decision:
       "Shared venue presence exists; inspect the bounded social decisions above.",
   };
@@ -343,7 +352,9 @@ export function formatWorldSocialReport(evidence,evidencePath){
     :evidence.socialOpportunities.some(o=>o.outcome==="met")
       ?"A meeting outcome is recorded, but its Story was not fully corroborated."
       :evidence.socialOpportunities.length
-        ?"Social opportunities exist; their outcomes are listed above."
+        ?evidence.socialOpportunities.some(o=>o.outcome==="no_co_presence")
+          ?"An earlier social consideration found no eligible peer then; it does not assess later visits."
+          :"Social opportunities exist; their outcomes are listed above."
         :conclusions[evidence.worldBlocker]??"No additional social conclusion established."),
     "  Missing evidence in this bounded view does not establish lifetime absence.",
     "",
@@ -442,6 +453,7 @@ export async function runWorldSocialProbe({
     :attested.length===0?"no_attested_venues_in_sample"
     :present.length===0?"no_current_attested_venue_visits_in_sample"
     :awakePresent.length===0?"all_current_attested_venue_visitors_asleep"
+    :threadId!==null?"co_presence_not_scanned"
     :shared.length===0?"no_shared_current_attested_venue_in_sample"
     :"shared_venue_without_recorded_decision";
   const status=!runtimeMatches?"deployment_outdated"
@@ -458,6 +470,7 @@ export async function runWorldSocialProbe({
     checkedAt,environment:target,
     validatorGitSha:head,deployedGitSha:deployedSha,
     runtimeSourceMatches:runtimeMatches,worldBlocker,
+    coPresenceChecked:threadId===null,
     scannedThreadCount:scan.length,availableThreadCount:observatories.size,
     totalDiscoverableThreadCount:threadId===null?cards.length:null,
     targetedThreadId:threadId,
@@ -491,7 +504,8 @@ export async function runWorldSocialProbe({
   mkdirSync(dirname(evidencePath),{recursive:true});
   writeFileSync(evidencePath,JSON.stringify(evidence,null,2)+"\n");
   emit({
-    event:"world-social-probe-complete",status,worldBlocker,deployedGitSha:deployedSha,
+    event:"world-social-probe-complete",status,worldBlocker,
+    coPresenceChecked:threadId===null,deployedGitSha:deployedSha,
     runtimeSourceMatches:runtimeMatches,
     scannedThreadCount:scan.length,unavailableThreadCount:unavailable.length,
     attestedVenueThreadCount:attested.length,
