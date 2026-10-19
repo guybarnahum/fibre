@@ -50,7 +50,7 @@ auto-fetch triggered by merely scrolling Thread details.
 entire life. Choosing Lifetime or a meaningful moment does; a Memory
 is not merged into a World occurrence merely by nearby time.
 
-## Slice 3 — Genesis formation versus birth execution (source implemented; local/staging validation pending)
+## Slice 3 — Genesis formation versus birth execution (bounded source pass; local/staging validation pending)
 
 Birth Center's candidate/request opens actual compiler milestones,
 retries, blockers, recovery and publication status. A completed birth
@@ -61,9 +61,24 @@ An unadmitted candidate never appears as a live Thread; an execution
 retry never becomes an event the historical child experienced.
 Reuse Genesis and World source references instead of cloning histories.
 
-**Acceptance:** A failed birth has a truthful last completed stage and
-no phantom World life. A published Thread's childhood and today's birth
-compilation remain two distinct clocks.
+**Source boundary:** The first pass exposes an existing Birth Center
+request's latest observed state, optional model invocation count,
+failure/disposition, and World-admission outcome. The current inspection
+contract does **not** enumerate every Genesis historical-realization,
+memory-selection or meaning-formation milestone; do not mark those
+unobserved stages completed. For published Threads the explicit
+Origins-only World read covers at most 64 Genesis episodes from the
+first 128 indexed post-seed event sequences and 24 current Memories.
+The original seed event provides the true World publication timestamp.
+Childhood events use their own historical occurredAt timestamps.
+A full lifetime cursor and per-stage Genesis development trail remain
+deferred until an authoritative bounded source exists.
+
+**Acceptance:** A failed birth cannot become a phantom World life;
+the observed Birth Center stage remains distinct from unverified
+historical compiler phases. A published Thread's admitted childhood,
+selective Memories and atomic World publication remain different
+sources and clocks.
 
 ## Slice 4 — Decision witness and consequence (not started)
 
