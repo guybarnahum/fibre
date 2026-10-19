@@ -54,8 +54,10 @@ Thread/Thread arrival → personally noticed → chosen conversation chain has
 been supplied, so deployment must not be described as full acceptance.
 
 **Newest source cut, local validation pending:** the social Situated Percept
-now includes bounded, observer-owned immediate Experience alongside the
-admitted objective story. An event missed by this observer stays absent,
+now includes only actually noticed exterior history, and private social
+Interior Cognition separately retrieves bounded observer-owned
+immediate Experience linked to that history. An event missed by this
+observer stays absent,
 and an old event cannot pass itself off as Memory. A controlled local
 differential requires two distinct later voluntary choices under identical
 World circumstances based on different previously admitted personal

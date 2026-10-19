@@ -241,14 +241,16 @@ life events, distant observers, and historical consequences remain deferred.
 
 ## Recent Experience becomes a later social cause — October 19
 
-A Shared Encounter Story is public World evidence; the observer's noticed
-Experience is a different, private record. The current social Situated Percept
-now derives **both** from the observer's existing admission: bounded objective
-beats and that **observer's own** `thread_encounter_experiences` text. It
-never reads another person's private interpretation, and it never presents
-an unappraised or `not_noticed` occurrence as if that observer knew it.
-No new model call, event authority, long-term memory store or population
-scan is introduced by this retrieval.
+A shared Encounter Story is public World evidence; the observer's noticed
+Experience is a different, private record. Situated Percept continues to
+carry only the observer's bounded, **actually noticed exterior events**.
+Separately, Fibre retrieves that observer's own admitted
+`thread_encounter_experiences` into **private social Interior Cognition**
+as `recentPersonalExperiences` tied to the same World event references.
+This keeps private feelings out of the exterior World projection, prevents
+another observer's interpretation leaking across persons, and excludes
+unappraised or `not_noticed` episodes from private knowledge. No new model
+call, event authority, long-term memory store or population scan is added.
 
 This implementation uses a **provisional six-hour recent-availability
 window** at the actual subsequent decision time, with the existing

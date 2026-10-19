@@ -175,9 +175,10 @@ reached a shared venue or performed an actual meeting. The staged natural
 social witness remains open.
 
 **Fifth source cut (new local validation pending):** bounded recent
-observer-owned Experience now accompanies its independently noticed
-Encounter Story into later social Situated Percept, with a provisional
-six-hour recent-availability horizon. Ordinary social cognition can
+observer-owned Experience now accompanies independently noticed exterior
+Encounter Story evidence into **private social Interior Cognition** (not
+into the exterior Situated Percept), with a provisional six-hour
+recent-availability horizon. Ordinary social cognition can
 distinguish two subjective responses to identical World activity without
 exposing another person's private experience or silently promoting old
 historical facts to Memory. A source-level fixture differential tests
