@@ -66,3 +66,11 @@
 .thread-overview-recent-row time{color:var(--muted);font-size:10px}
 .thread-overview-recent>.button-link{justify-self:start}
 @media(max-width:620px){.thread-overview-recent-row{grid-template-columns:1fr;gap:2px}}
+
+.life-genesis-step{position:relative;display:grid;gap:6px;padding:10px 12px;margin:0 0 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-subtle)}
+.life-genesis-step:before{content:"";position:absolute;left:-19px;top:15px;width:9px;height:9px;background:var(--accent);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--border-strong);border-radius:50%}
+.life-genesis-step small{font-size:10px;color:var(--muted)}
+.life-genesis-step strong{font-size:12px}
+.life-causes-kind-formative_event:before{background:var(--blue)!important}
+.life-causes-kind-origin:before{background:var(--warning)!important}
+.thread-birth-pending-status .thread-birth-investigate{font-size:10px;white-space:nowrap}
