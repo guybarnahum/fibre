@@ -5,7 +5,7 @@ export const VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX="visual-age-anchor:admis
 /** Read only admitted, immutable age portraits for one Thread; never candidates. */
 export async function readVisualAgeAnchorAdmissions(catalog,threadId){
   if(!catalog||typeof catalog.list!=="function")throw new TypeError("age anchor catalog reader is required");
-  if(typeof threadId!=="string"||!/^thr_[A-Za-z0-9._:-]+$/.test(threadId)){
+  if(typeof threadId!=="string"||!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/.test(threadId)){
     throw new TypeError("age anchor threadId is invalid");
   }
   const prefix=VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX+threadId+":";
