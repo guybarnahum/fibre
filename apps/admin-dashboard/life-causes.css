@@ -76,3 +76,22 @@
 .thread-birth-pending-status .thread-birth-investigate{font-size:10px;white-space:nowrap}
 
 .life-causes-kind-social_choice:before{background:var(--success)!important}
+
+/* The same person identity card anchors Life & Causes and Thread Observatory. */
+.life-causes-subject[hidden]{display:none}
+.life-causes-summary{display:block;padding:8px 0 19px}
+.life-causes-person-actions{display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px}
+.life-causes-person-actions button,.life-causes-person-actions .button-link{padding:6px 10px;font-size:10px}
+.life-causes-summary .thread-person-hero{grid-template-columns:minmax(160px,220px) minmax(0,1fr);gap:22px;align-items:center}
+.life-causes-summary .thread-person-portrait{min-height:205px;max-height:265px;aspect-ratio:1 / 1;align-self:start}
+.life-causes-summary .thread-person-portrait img{height:100%;min-height:0}
+.life-causes-summary .thread-person-hero-copy h2{font-size:27px}
+.life-causes-summary .thread-person-id{margin:7px 0 11px}
+.life-causes-summary>.error-box{margin-top:12px}
+@media(max-width:600px){
+  .life-causes-summary .thread-person-hero{grid-template-columns:112px minmax(0,1fr);gap:14px}
+  .life-causes-summary .thread-person-portrait{min-height:150px;max-height:200px}
+  .life-causes-summary .thread-person-hero-copy h2{font-size:21px}
+  .life-causes-summary .thread-person-meta{font-size:11px;margin-bottom:8px}
+  .life-causes-summary .thread-person-summary{font-size:11px;margin-bottom:5px}
+}
