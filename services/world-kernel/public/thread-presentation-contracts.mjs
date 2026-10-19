@@ -12,3 +12,13 @@ export {
   CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS,
   ageYearsAt,
 } from "../src/visual-identity-reference-domain.mjs";
+export {
+  readVisualAgeAnchorAdmissions,
+  VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX,
+} from "../src/visual-age-anchor-catalog.mjs";
+export {
+  admittedVisualAgeAnchors,
+  normalizeVisualAgeAnchorAdmission,
+  resolveVisualAgeReferences,
+  VISUAL_AGE_ANCHOR_ADMISSION_VERSION,
+} from "../src/visual-age-anchors.mjs";
