@@ -19,6 +19,7 @@ function fixture({provider="openai"}={}){
     objects:{
       get:async key=>objects.get(key)??null,
       head:async key=>objects.get(key)??null,
+      remove:async key=>objects.delete(key),
       putImmutable:async(key,bytes,sha)=>{
         const existing=objects.get(key);
         if(existing){
@@ -60,7 +61,16 @@ function fixture({provider="openai"}={}){
       context:job.context,
     };
     objects.set(job.receiptObjectRef,{bytes:encoded(receipt),digest:digest("c")});
-    objects.set(job.outputObjectRef,{bytes:encoded({photo:true}),digest:digest("b")});
+    const stagedRef="staged_"+job.jobId;
+    objects.set(stagedRef,{
+      bytes:encoded({photo:true}),digest:digest("b"),
+      metadata:{kind:"staged_provider_output",jobId:job.jobId},
+    });
+    objects.set(job.outputObjectRef,{
+      bytes:encoded({photo:true}),digest:digest("b"),
+      metadata:{kind:"provenanced_generated_media",jobId:job.jobId,
+        providerOutputObjectRef:stagedRef,providerOutputDigest:digest("b")},
+    });
   };
   return {service,infra,objects,catalog,dispatched,complete,
     setCanonical:(value)=>{current=value;},setWorkflowError:(error)=>{workflowError=error;}};
@@ -151,4 +161,80 @@ test("unapproved age portrait can be discarded without modifying canonical ident
   assert.equal(restored.candidates.length,0,"Discarded candidate returned after Observatory reload");
   assert.equal(restored.anchors.length,0,"Discarding generated image created an admission");
   assert.equal(restored.canonical.objectRef,"canonical_visual","Candidate discard changed identity root");
+});
+
+test("same-age replacement never self-conditions and preserves prior approved evidence",async()=>{
+  const f=fixture();
+  await f.service.request("thr_visual","visual_age_12_first",12);
+  f.complete();
+  const first=await f.service.admit("thr_visual","visual_age_12_first","operator@example.com");
+  await f.service.request("thr_visual","visual_age_12_replacement",12);
+  const replacement=f.dispatched.at(-1);
+  assert.deepEqual(replacement.referenceObjectRefs,["canonical_visual"],
+    "Age-12 regeneration reused its own flawed age-12 reference");
+  assert.match(replacement.brief.description,/developing jaw|child or young adolescent/,
+    "Childhood reconstruction lacks developmental anatomy");
+  f.complete();
+  const second=await f.service.admit("thr_visual","visual_age_12_replacement","operator@example.com");
+  const current=await f.service.list("thr_visual");
+  assert.equal(current.anchors.length,1,"More than one age-12 anchor became active");
+  assert.equal(current.anchors[0].admissionId,second.admissionId,
+    "Newly admitted age-12 likeness did not supersede the old one");
+  assert.ok(f.objects.has(first.portraitObjectRef),
+    "Regeneration destroyed the older immutable age-12 portrait");
+  await assert.rejects(f.service.discard("thr_visual","visual_age_12_replacement"),
+    /Approved portrait/,"Discard deleted an approved admission");
+  await f.service.request("thr_visual","visual_age_85_new",85);
+  assert.match(f.dispatched.at(-1).brief.description,/advanced old age|soft tissue/,
+    "Age-85 reconstruction lacks real anatomical aging");
+});
+
+test("discarded completed age portraits are eligible for delayed targeted media cleanup only",async()=>{
+  const f=fixture();
+  await f.service.request("thr_visual","visual_candidate_unused",12);
+  f.complete();
+  await f.service.discard("thr_visual","visual_candidate_unused");
+  const index=f.catalog.get("visual-age-anchor:candidate:thr_visual:visual_candidate_unused");
+  assert.equal(index.state,"discarded","Discard did not retain a cleanup ledger");
+  await assert.rejects(f.service.request("thr_visual","visual_candidate_unused",12),
+    /Discarded/,"Discarded immutable job was restarted");
+  const later=new Date(Date.parse(index.discardedAt)+8*24*3600*1000).toISOString();
+  const dry=await f.service.cleanup("thr_visual",{now:later});
+  assert.equal(dry.dryRun,true);
+  assert.equal(dry.results[0].state,"eligible",
+    "Unapproved completed portrait was not selected for delayed cleanup");
+  assert.equal(dry.results[0].objects.length,2,
+    "Cleanup did not identify the two disposable media objects");
+  const job=f.dispatched[0];
+  assert.ok(f.objects.has(job.outputObjectRef),"Dry run deleted the rendered image");
+  assert.ok(f.objects.has(job.receiptObjectRef),"Dry run deleted provenance");
+  const deleted=await f.service.cleanup("thr_visual",{now:later,dryRun:false});
+  assert.equal(deleted.results[0].state,"cleaned");
+  assert.equal(f.objects.has(job.outputObjectRef),false,
+    "Discarded final image remained in R2");
+  assert.equal(f.objects.has("staged_"+job.jobId),false,
+    "Discarded provider output remained in R2");
+  assert.ok(f.objects.has(job.receiptObjectRef),"Cleanup deleted the generation receipt");
+  assert.equal(f.catalog.get("visual-age-anchor:candidate:thr_visual:visual_candidate_unused").state,"cleaned",
+    "Deleted media remained eligible on subsequent cleanup");
+  assert.equal((await f.service.cleanup("thr_visual",{now:later})).results.length,0,
+    "Cleaned candidate was offered again");
+});
+
+test("pending candidates and approved references are never deleted during cleanup",async()=>{
+  const f=fixture();
+  await f.service.request("thr_visual","visual_pending_discard",45);
+  await f.service.discard("thr_visual","visual_pending_discard");
+  const entry=f.catalog.get("visual-age-anchor:candidate:thr_visual:visual_pending_discard");
+  const later=new Date(Date.parse(entry.discardedAt)+8*24*3600*1000).toISOString();
+  const report=await f.service.cleanup("thr_visual",{dryRun:false,now:later});
+  assert.equal(report.results[0].state,"not_complete",
+    "Cleanup treated an unfinished job as terminal");
+  assert.ok(f.objects.has(f.dispatched[0].receiptObjectRef)===false);
+  await f.service.request("thr_visual","visual_approved_45",45);
+  f.complete();
+  const admission=await f.service.admit("thr_visual","visual_approved_45","operator@example.com");
+  await f.service.cleanup("thr_visual",{dryRun:false,now:later});
+  assert.ok(f.objects.has(admission.portraitObjectRef),
+    "Cleanup removed the approved portrait");
 });
