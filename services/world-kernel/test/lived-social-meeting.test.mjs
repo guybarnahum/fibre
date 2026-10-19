@@ -90,6 +90,7 @@ function fixture({
   placeProvenance = "genesis_created",
   sharedWorldPlace = true,
   recentSocialInteractions = [],
+  priorArrivalExperience = null,
   noorActivity = "Sketching at the same café table.",
   mediatedContext = null,
   plannedCompanions = true,
@@ -153,6 +154,33 @@ function fixture({
   const stories = [];
   const attentions = [];
   const experiences = [];
+  // Test prehistory is a previous admitted, observer-owned encounter,
+  // not a caller-provided selection at the next social cognition boundary.
+  if(priorArrivalExperience!==null){
+    const encounterId="story_prior_noor_arrival";
+    const earlier="2026-09-21T17:45:00.000Z";
+    stories.push({
+      encounterId,occurredAt:earlier,
+      threadPresence:[
+        {threadId:mina.threadId,situationId:"sit_mina_earlier"},
+        {threadId:noor.threadId,situationId:"sit_noor_earlier"},
+      ],
+      story:{storyVersion:"encounter-story-v0.1",
+        beats:[{actorThreadId:noor.threadId,kind:"action",
+          text:"Noor entered the neighborhood café."}]},
+    });
+    const experience={
+      experienceId:"exp_mina_prior_noor_arrival",
+      threadId:mina.threadId,encounterRef:encounterId,
+      situationId:"sit_mina_earlier",occurredAt:earlier,
+      experienceText:priorArrivalExperience,
+    };
+    experiences.push(structuredClone(experience));
+    attentions.push({
+      threadId:mina.threadId,encounterRef,situationId:"sit_mina_earlier",
+      occurredAt:earlier,outcome:"noticed",experience,
+    });
+  }
   const initiationNames = [];
   const stanceNames = [];
   const liveContributionNames = [];
@@ -1130,4 +1158,45 @@ test("a noticed newcomer is considered specifically, without compelling contact"
     "a chosen approach did not become shared reciprocal history");
   assert.equal(willing.stories.length,1,
     "mutual consent did not produce an objective Encounter Story");
+});
+
+test("one noticed arrival changes later social judgment through personal Experience",async()=>{
+  // Same observer, newcomer, World Story, actual café and private selector.
+  // Only the Thread's earlier admitted subjective Experience differs.
+  const decide=(_name,_evidence,{situatedPercept})=>{
+    const history=situatedPercept.recentEvents;
+    assert.equal(history.length,1,
+      "later social cognition did not retrieve the personally noticed event");
+    assert.equal(history[0].beats[0].text,
+      "Noor entered the neighborhood café.",
+      "the two social judgments did not share the same World truth");
+    return history[0].personalExperience.experienceText.includes("welcome")
+      ?"initiate":"not_initiate";
+  };
+  const curious=fixture({
+    plannedCompanions:false,
+    priorArrivalExperience:"I felt unexpectedly welcome when Noor arrived.",
+    initiationFor:decide,
+  });
+  const uneasy=fixture({
+    plannedCompanions:false,
+    priorArrivalExperience:"I felt uneasy and needed quiet when Noor arrived.",
+    initiationFor:decide,
+  });
+  const yes=await curious.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  const no=await uneasy.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  assert.equal(yes.attempts[0]?.outcome,"met",
+    "a receptive lived experience had no path to chosen contact");
+  assert.equal(no.attempts[0]?.outcome,"not_initiated",
+    "an uneasy lived experience could not preserve solitude");
+  assert.deepEqual(curious.initiationNames,["Mina"]);
+  assert.deepEqual(uneasy.initiationNames,["Mina"]);
+  assert.equal(curious.socialInteractions.length,1,
+    "chosen contact did not become objective social history");
+  assert.equal(uneasy.socialInteractions.length,0,
+    "an unchosen request was manufactured as social history");
+  assert.equal(curious.stories.length,2,
+    "chosen encounter did not create a new World Story");
+  assert.equal(uneasy.stories.length,1,
+    "a refusal to initiate created a new World Story");
 });
