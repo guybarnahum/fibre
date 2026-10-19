@@ -242,6 +242,14 @@ export function renderLifeCausesPage(){
           :"No admitted conversation is established by this opportunity.",
         "Not initiating, declining and background attention are meaningful non-actions.",
       ]);
+      const admitted=loadedHistory?.moments.find(item=>
+        item.id===decision?.encounterRef&&item.kind==="encounter");
+      if(admitted){
+        const open=el("button","secondary","Inspect admitted conversation →");
+        open.type="button";
+        open.addEventListener("click",()=>setMoment(admitted));
+        inspector.append(open);
+      }
     }else if(selected.kind==="encounter"||selected.kind==="world"){
       evidenceRow("What happened",[
         "An admitted Encounter Story records this event in a World situation.",
