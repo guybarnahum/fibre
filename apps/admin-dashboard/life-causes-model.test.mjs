@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {recentLifeMoments,recordedLifeMoments} from "./life-causes-model.mjs";
+import {recentLifeMoments,recordedLifeMoments,formativeLifeMoments} from "./life-causes-model.mjs";
 
 test("Life Timeline distinguishes enacted World situations from an authored plan and uncertain motive",()=>{
   const current={
@@ -101,4 +101,23 @@ test("recorded life preserves separate World history, personal Encounter experie
   assert.equal(moments.find(item=>item.kind==="memory").meaning,
     "I might try greeting another visitor.",
     "the person's remembered meaning disappeared from the life inspection");
+});
+
+
+test("Origins stays a birth fact and a selective Memory, not synthetic childhood",()=>{
+  const moments=formativeLifeMoments({
+    identity:{birthDate:"2011-02-08",birthPlace:"Tbilisi, Georgia",
+      world:{thread:{threadId:"thr_one"}}},
+    memories:[{
+      memoryId:"mem_child",subjectPeriod:{startAt:"2019-03-02T10:00:00Z"},
+      recordedAt:"2026-10-19T19:00:00Z",
+      rememberedContent:"I remember a school corridor.",
+      rememberedMeaning:"I learned to listen.",
+    }],
+  });
+  assert.deepEqual(moments.map(item=>item.kind),["memory","origin"],
+    "a recorded identity or recalled childhood became a fabricated World event");
+  assert.equal(moments[0].at,"2019-03-02T10:00:00Z",
+    "remembered childhood was moved to Genesis execution time");
+  assert.equal(moments[1].birthPlace,"Tbilisi, Georgia");
 });
