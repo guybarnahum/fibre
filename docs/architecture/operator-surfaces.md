@@ -144,10 +144,14 @@ candidate's **Birth execution** or a published person's historical
 **Formation**. World Events opens the same inspector from one objective
 place/event and separates each participant's subjective history.
 
-This is **accepted UX, not currently deployed functionality**:
-the old `Causal Trail` remains in the source until it is replaced;
-`Raw Activity` remains available for genuine operation trees,
-retries and errors. No new Thread/Genesis/World authority is created.
+**Slice 1 is source-implemented; local and staging acceptance pending.**
+The dedicated /life?thread=... page reads bounded recent World
+situations, selects an admitted moment and shows a linked Flight Plan
+purpose only where exact plan/situation evidence matches. The old
+Causal Trail presentation has been removed from Activity; Raw
+Activity remains for operations, retries and errors. Four slices are
+specified in [Life Observatory slices](../validation/life-observatory-slices.md).
+Slices 2–4 remain unimplemented. No new Thread/Genesis/World authority is created.
 Decision-time **Causal Witness** capture for Flight Plans and social
 choices is proposed as the smallest missing durable provenance,
 not a claim that today's historical plans stored Body pressures or
