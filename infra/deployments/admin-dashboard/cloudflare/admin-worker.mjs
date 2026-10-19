@@ -83,6 +83,8 @@ const THREAD_LABELS_ROUTE = "/api/threads/labels";
 const THREAD_POPULATION_ENTRY_ROUTE = /^\/api\/threads\/([^/]+)\/population$/u;
 const THREAD_BIRTH_ROUTE = "/api/threads/birth";
 const THREAD_PENDING_BIRTHS_ROUTE = "/api/threads/births/pending";
+const THREAD_STILLBORN_BIRTHS_ROUTE = "/api/threads/births/stillborn";
+const THREAD_BIRTH_INSPECTION_ROUTE = /^\/api\/threads\/births\/develop\/([A-Za-z0-9][A-Za-z0-9._:-]{0,127})\/inspection$/u;
 const THREAD_BIRTHPLACES_ROUTE = "/api/threads/births/places";
 const THREAD_BIRTH_PLACE_SEARCH_ROUTE = "/api/threads/births/place-search";
 const INFRA_MONITOR_ROUTE = "/api/infra-monitor";
@@ -612,11 +614,13 @@ export default {
     const threadPopulationEntryMatch = THREAD_POPULATION_ENTRY_ROUTE.exec(url.pathname);
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
     const pendingBirths = url.pathname === THREAD_PENDING_BIRTHS_ROUTE;
+    const stillbornBirthsRequest = url.pathname === THREAD_STILLBORN_BIRTHS_ROUTE;
+    const birthInspectionMatch = THREAD_BIRTH_INSPECTION_ROUTE.exec(url.pathname);
     const birthplaces = url.pathname === THREAD_BIRTHPLACES_ROUTE;
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (ageAnchorsMatch || ageAnchorCanonicalMatch || ageAnchorCandidateMatch || ageAnchorPortraitMatch || worldEvents || identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (ageAnchorsMatch || ageAnchorCanonicalMatch || ageAnchorCandidateMatch || ageAnchorPortraitMatch || worldEvents || identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || stillbornBirthsRequest || birthInspectionMatch || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
     const adminPost = request.method === "POST" && (ageAnchorCleanupMatch || ageAnchorCandidateMatch || repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
     const adminDelete = request.method === "DELETE" && (appearanceExperimentMatch || appearanceExperimentAlignmentMatch);
@@ -860,6 +864,9 @@ export default {
         }
         if (threadBirth) return proxyThreadBirth(request, env);
         if (pendingBirths) return proxyBirthCenterGet(env, "/internal/births/pending");
+        if (stillbornBirthsRequest) return proxyBirthCenterGet(env, "/internal/births/stillborn");
+        if (birthInspectionMatch) return proxyBirthCenterGet(env,
+          "/internal/births/develop/"+birthInspectionMatch[1]+"/inspection");
         if (birthplaces) return proxyBirthCenterGet(env, "/internal/births/places");
         if (birthPlaceSearch) return searchBirthPlaces(request, env);
         if(worldEvents){
@@ -1046,7 +1053,9 @@ export default {
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
         if (threadLabels) return json(error instanceof TypeError ? 400 : 503, { error:"thread_labels_unavailable", detail:error.message });
         if (threadBirth) return json(error instanceof TypeError ? 400 : 503, { error:"thread_birth_unavailable", detail:error.message });
-        if (pendingBirths || birthplaces) return json(503, { error:"thread_birth_data_unavailable", detail:error.message });
+        if (pendingBirths || stillbornBirthsRequest || birthInspectionMatch || birthplaces) {
+          return json(503, {error:"thread_birth_data_unavailable",detail:error.message});
+        }
         if (threadPopulation || threadPopulationEntryMatch) return json(503, { error:"thread_population_unavailable", detail:error.message });
         if (appearanceCoverageRequest) return json(503, { error:"appearance_coverage_unavailable", detail:error.message });
         if (appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch) {
