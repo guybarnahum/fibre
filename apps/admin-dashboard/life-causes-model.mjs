@@ -29,6 +29,10 @@ export function recentLifeMoments(livedNow){
         placeRef:actualPlaceRef,
         placeKind:actualPlaceRef?.startsWith("wpl_")?"verified_public"
           :actualPlaceRef===null?"unspecified":"private_or_unverified",
+        publicVenueName:actualPlaceRef?.startsWith("wpl_")
+          &&situation.situationId===current?.situationId
+          &&livedNow?.currentLocation?.placeRef===actualPlaceRef
+          ?livedNow.currentLocation.displayName??null:null,
         planned:stop===null?null:Object.freeze({
           planId:plan.planId,authoredAt:plan.authoredAt,
           activity:stop.activity??null,purpose:stop.purpose??null,
