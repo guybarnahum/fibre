@@ -181,3 +181,17 @@
 .thread-contact-head strong{font-size:10px}
 .thread-contact-message{border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:9px}
 .thread-contact-message p{margin:0;font-size:11px;line-height:1.5;white-space:pre-wrap}
+
+/* Age portraits: a compact operator control and equal-size, inspectable photographs. */
+.thread-visual-age-anchors{border-top:1px solid var(--border);padding-top:14px;min-width:0}
+.thread-visual-age-anchors h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px}
+.thread-age-anchor-actions{display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;margin:12px 0}
+.thread-age-anchor-field{display:flex;flex-direction:column;gap:5px;font-size:10px;font-weight:700;color:var(--muted)}
+.thread-age-anchor-input{width:82px;height:32px;padding:0 10px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--text);font-size:12px;font-variant-numeric:tabular-nums}
+.thread-age-anchor-input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.thread-age-anchor-actions>.thread-repair-button{min-height:32px}
+.thread-age-anchor-gallery,.thread-age-anchor-review{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;align-items:start;margin-top:10px}
+.thread-age-anchor-gallery .thread-fid-photo,.thread-age-anchor-review .thread-fid-photo{min-width:0}
+.thread-age-anchor-portrait{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--surface)}
+.thread-age-anchor-review-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px}
+@media(max-width:650px){.thread-age-anchor-gallery,.thread-age-anchor-review{grid-template-columns:repeat(2,minmax(0,1fr))}}
