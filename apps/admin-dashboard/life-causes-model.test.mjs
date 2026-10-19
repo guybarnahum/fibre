@@ -108,6 +108,12 @@ test("Origins stays a birth fact and a selective Memory, not synthetic childhood
   const moments=formativeLifeMoments({
     identity:{birthDate:"2011-02-08",birthPlace:"Tbilisi, Georgia",
       world:{thread:{threadId:"thr_one"}}},
+    genesisEpisodes:[{
+      eventId:"evt_child",occurredAt:"2018-04-01T12:00:00Z",
+      ageAtEvent:7,observableAction:"Asked a librarian for a book.",
+      episodeId:"episode_child",genesisId:"gen_child",placeRef:"place_library",
+      participantRefs:["person_librarian"],
+    }],
     memories:[{
       memoryId:"mem_child",subjectPeriod:{startAt:"2019-03-02T10:00:00Z"},
       recordedAt:"2026-10-19T19:00:00Z",
@@ -115,9 +121,12 @@ test("Origins stays a birth fact and a selective Memory, not synthetic childhood
       rememberedMeaning:"I learned to listen.",
     }],
   });
-  assert.deepEqual(moments.map(item=>item.kind),["memory","origin"],
-    "a recorded identity or recalled childhood became a fabricated World event");
+  assert.deepEqual(moments.map(item=>item.kind),
+    ["memory","formative_event","origin"],
+    "an admitted childhood episode was lost or mistaken for Memory");
+  assert.equal(moments[1].title,"Asked a librarian for a book.");
+  assert.equal(moments[1].genesisId,"gen_child");
   assert.equal(moments[0].at,"2019-03-02T10:00:00Z",
     "remembered childhood was moved to Genesis execution time");
-  assert.equal(moments[1].birthPlace,"Tbilisi, Georgia");
+  assert.equal(moments[2].birthPlace,"Tbilisi, Georgia");
 });
