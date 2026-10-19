@@ -252,6 +252,14 @@ export function renderWorldEventsPage(){
             witness.attention==="not_appraised"?"No attention record":
               witness.attention==="noticed"?"Noticed":"Did not notice");
           row.append(link,attention);
+          if(event.source==="encounter_story"){
+            const inspect=el("a",null,"Life & Causes ↗");
+            inspect.href="/life?thread="+encodeURIComponent(witness.threadId)
+              +"&view=history&moment="+encodeURIComponent(
+                (event.kind==="encounter"?"encounter:":"world:")+event.eventRef);
+            inspect.title="Inspect this person's evidence and perspective; a shared Story does not imply shared motives.";
+            row.append(inspect);
+          }
           if(witness.experienceId){
             const experience=el("span",null,`Experience · ${witness.experienceId}`);
             experience.title="Admitted personal Experience; not proof of later behavior.";
