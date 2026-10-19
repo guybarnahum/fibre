@@ -343,6 +343,8 @@ test("the shared World scene stays observable after its first visitor leaves",as
       now:()=>at,
     });
     const result=await process.runOnce();
+    assert.equal(result.failed,0,
+      result.results[0]?.message??"shared World scene processing failed");
     assert.equal(result.results[0]?.outcome,"no_change",
       "World lost an active scene when its first visitor departed");
     assert.equal(calls,1,"World did not consider the still-observed scene");
