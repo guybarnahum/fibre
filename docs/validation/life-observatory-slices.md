@@ -50,7 +50,7 @@ auto-fetch triggered by merely scrolling Thread details.
 entire life. Choosing Lifetime or a meaningful moment does; a Memory
 is not merged into a World occurrence merely by nearby time.
 
-## Slice 3 — Genesis formation versus birth execution (not started)
+## Slice 3 — Genesis formation versus birth execution (source implemented; local/staging validation pending)
 
 Birth Center's candidate/request opens actual compiler milestones,
 retries, blockers, recovery and publication status. A completed birth
