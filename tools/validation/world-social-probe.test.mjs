@@ -79,4 +79,15 @@ test("an admitted memory follows personal experience into later contact without 
   assert.equal(summarizeSocialContinuity(views).episodes
     .find(item=>item.threadId==="thr_reader").retainedMemoryRef,null,
   "another Experience was substituted for this Thread's actual Memory");
+
+  const laterFormed=structuredClone(invented);
+  laterFormed.memories[0].eventRefs=["exp_reader"];
+  laterFormed.memories[0].recordedAt="2026-10-19T10:00:00.000Z";
+  views.set("thr_reader",laterFormed);
+  const beforeMemory=summarizeSocialContinuity(views).episodes
+    .find(item=>item.threadId==="thr_reader");
+  assert.equal(beforeMemory.retainedMemoryRef,"mem_cafe",
+    "a valid subsequently admitted Memory was lost");
+  assert.equal(beforeMemory.laterSocialInteractionRef,null,
+    "a conversation before Memory formation was called a consequence of that Memory");
 });
