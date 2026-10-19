@@ -178,7 +178,7 @@ export function summarizeSocialContinuity(observatories,{limit=24}={}){
       const memory=completion?.memoryOutcome==="retained"
         ?(person.memories??[]).find(item=>
           item.threadId===threadId&&item.memoryId===completion.memoryId
-          &&item.status==="current"
+          &&["current","corrected"].includes(item.status)
           &&item.retentionState==="retained"
           &&item.eventRefs?.includes(experience.experienceId)
           &&Date.parse(item.recordedAt)>=Date.parse(story.occurredAt))??null
