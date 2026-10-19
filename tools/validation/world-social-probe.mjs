@@ -183,8 +183,7 @@ export function summarizeSocialContinuity(observatories,{limit=24}={}){
           &&item.eventRefs?.includes(experience.experienceId)
           &&Date.parse(item.recordedAt)>=Date.parse(story.occurredAt))??null
         :null;
-      const later=memory===null?null
-        ?null:(person.socialInteractions??[])
+      const later=memory===null?null:(person.socialInteractions??[])
           .filter(item=>item.initiatorThreadId===threadId
             &&others.includes(item.recipientThreadId)
             &&Date.parse(item.occurredAt)>Date.parse(memory.recordedAt))
