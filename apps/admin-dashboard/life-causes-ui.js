@@ -18,6 +18,7 @@ const day=value=>new Date(/^\d{4}-\d{2}-\d{2}$/u.test(value)
 const validThread=value=>/^thr_[a-zA-Z0-9]+$/u.test(value??"");
 const labelFor=item=>item.kind==="formative_event"?"Admitted childhood event"
   :item.kind==="origin"?"Origin fact"
+  :item.kind==="social_choice"?"Social choice"
   :item.kind==="memory"?"Memory"
   :item.kind==="encounter"?"Encounter"
   :item.kind==="world"?"World occurrence"
@@ -81,6 +82,25 @@ export function renderLifeCausesPage(){
     ?loadedOrigins?.moments??[]
     :mode==="history"?loadedHistory?.moments??[]
       :loadedRecent?.moments??[];
+  const bodyLines=interoception=>interoception===null
+    ?["No planning-time Body signal was supplied."]
+    :interoception===undefined
+      ?["No decision-time Body witness was retained."]
+      :[
+        ...(interoception.drives??[]).map(drive=>
+          drive.family+" pressure "+drive.pressure+
+          (drive.orientation?" · "+drive.orientation:"")),
+        "Regulatory evidence: "+(interoception.evidenceRefs??[]).join(", "),
+        "Pressure is an input, not a diagnosis or proven behavioral cause.",
+      ];
+  const socialLines=(choice,role)=>choice===null
+    ?[role+" was not evaluated at this decision boundary."]
+    :[
+      role+" chose: "+choice.decision,
+      choice.reportedReason?"Thread-reported reason: "+choice.reportedReason:null,
+      choice.selectedEvidenceRefs?.length
+        ?"Selected personal evidence: "+choice.selectedEvidenceRefs.join(", "):null,
+    ];
   const evidenceRow=(heading,lines)=>{
     const section=el("section","life-causes-part");
     section.append(el("h3",null,heading));
@@ -199,6 +219,29 @@ export function renderLifeCausesPage(){
       evidenceRow("Consequences",[
         "Retention does not establish that this Memory changed a later decision.",
       ]);
+    }else if(selected.kind==="social_choice"){
+      const decision=selected.decision;
+      evidenceRow("Before · grounded social opportunity",[
+        "A social consideration was completed against an enacted situation.",
+        "Situation: "+selected.situationId,
+        decision?.counterpartyThreadId
+          ?"Observed candidate: "+decision.counterpartyThreadId:null,
+        decision?.salience?"Salience: "+decision.salience.outcome
+          +" · "+(decision.salience.anchors??[]).join(", "):
+          "No salience evidence was retained for this attempt.",
+        ...(decision?.initiation?bodyLines(decision.initiation.decisionContext?.interoception):[]),
+      ]);
+      evidenceRow("Decision · individually authored",[
+        ...socialLines(decision?.initiation??null,"Initiator"),
+        ...socialLines(decision?.response??null,"Recipient"),
+      ]);
+      evidenceRow("World · outcome",[
+        "Recorded outcome: "+selected.outcome,
+        decision?.encounterRef
+          ?"Admitted Encounter Story: "+decision.encounterRef
+          :"No admitted conversation is established by this opportunity.",
+        "Not initiating, declining and background attention are meaningful non-actions.",
+      ]);
     }else if(selected.kind==="encounter"||selected.kind==="world"){
       evidenceRow("What happened",[
         "An admitted Encounter Story records this event in a World situation.",
@@ -209,7 +252,17 @@ export function renderLifeCausesPage(){
           beat=>beat.speaker+": "+beat.text,
         ));
       }
-      evidenceRow("This person's experience",[
+      if(selected.socialDecision){
+        evidenceRow("Why they talked · decision evidence",[
+          "The initiator's social choice is linked to this admitted Story.",
+          "Salience anchors: "+(selected.socialDecision.salience?.anchors??[]).join(", "),
+          ...bodyLines(selected.socialDecision.initiation?.decisionContext?.interoception),
+          ...socialLines(selected.socialDecision.initiation??null,"Initiator"),
+          ...socialLines(selected.socialDecision.response??null,"Recipient"),
+          "Reported reasons describe each person's perspective, not a proven unconscious cause.",
+        ]);
+      }
+      evidenceRow("This person's experience",[ 
         selected.attention==="noticed"?"Attention recorded: noticed."
           :selected.attention==="not_noticed"?"Attention recorded: not noticed."
           :"Attention was not established by this record.",
@@ -225,7 +278,16 @@ export function renderLifeCausesPage(){
       evidenceRow("Before · conditions",[
         selected.planned?"Linked authored Flight Plan: "+at(selected.planned.authoredAt)
           :"No matching Flight Plan was identified for this situation.",
-        "Event-time Body pressure, offered places and selected Memories were not captured for causal inspection.",
+        ...(selected.planned?.decisionContext?[
+          "Actual decision-time context was retained with the Flight Plan.",
+          ...bodyLines(selected.planned.decisionContext.interoception),
+          "Offered World places: "+selected.planned.decisionContext.offeredPlaceRefs.join(", "),
+          "City Guide suggestions offered: "+(
+            selected.planned.decisionContext.cityGuidePlaceRefs.join(", ")||"none"),
+          selected.planned.selectedEvidenceRefs?.length
+            ?"Selected personal evidence: "+selected.planned.selectedEvidenceRefs.join(", "):null,
+          "A City Guide listing is exposure, not evidence that it caused the visit.",
+        ]:["Decision-time Body and City Guide inputs were not retained for this historical plan."]),
       ]);
       evidenceRow("Decision · intention",selected.planned?[
         selected.planned.purpose?"Stated purpose: "+selected.planned.purpose
