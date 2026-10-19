@@ -281,7 +281,11 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
           throw new Error("Prior operator approval does not match this candidate");
         }
       }else{
-        approval={threadId,candidateId,approvedBy,approvedAt:new Date().toISOString(),
+        const previous=await readVisualAgeAnchorAdmissions(infra.catalog,threadId);
+        const lastAt=previous.filter(a=>a.targetAgeYears===manifest.targetAgeYears)
+          .reduce((time,a)=>Math.max(time,Date.parse(a.admittedAt)),0);
+        const approvedAt=new Date(Math.max(Date.now(),lastAt+1)).toISOString();
+        approval={threadId,candidateId,approvedBy,approvedAt,
           canonicalReferenceObjectRef:source.objectRef,canonicalReferenceDigest:source.digest,
           portraitObjectRef:result.receipt.objectRef,portraitDigest:result.receipt.sha256,
           generationReceiptRef:manifest.job.receiptObjectRef};
