@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-import { planThreadPresentationAssetSlots } from "../src/thread-presentation-asset-planner.mjs";
+import { planThreadPresentationAssetSlots, planThreadPresentationAssetSlotsWithAdmittedAges } from "../src/thread-presentation-asset-planner.mjs";
 import { CANONICAL_VISUAL_IDENTITY_REFERENCE_AGE_YEARS } from "../src/visual-identity-reference-domain.mjs";
 
 async function canonicalReferenceBundle() {
@@ -111,4 +111,66 @@ test("one immutable canonical visual-identity root conditions current and histor
   assert.equal(memory.context.targetAgeYears, 10, "memory uses age at its referenced historical event");
   assert.notEqual(official.context.targetAgeYears, memory.context.targetAgeYears);
 
+});
+
+
+test("approved age portraits influence a historical memory but never replace identity authority",async()=>{
+  const bundle=await canonicalReferenceBundle();
+  const threadId=bundle.presentation.manifest.threadId;
+  const canonicalRef=bundle.presentation.visualIdentity.referenceObjectRefs[0];
+  const rootDigest="sha256:"+"c".repeat(64);
+  const admitted=(age,objectRef,overrides={})=>({
+    contract:"visual-age-anchor-admission-v0.1",threadId,
+    admissionId:"admission_"+objectRef,targetAgeYears:age,
+    portraitObjectRef:objectRef,portraitDigest:"sha256:"+"d".repeat(64),
+    canonicalReferenceObjectRef:canonicalRef,canonicalReferenceDigest:rootDigest,
+    sourceAnchorRefs:[],generationReceiptRef:"receipt_"+objectRef,
+    approvalRef:"approval_"+objectRef,admittedAt:"2026-10-19T00:00:00Z",
+    ...overrides,
+  });
+  let admissions=[
+    admitted(7,"portrait_7"),admitted(12,"portrait_12"),
+    admitted(10,"foreign_portrait",{threadId:"thr_not_this_thread"}),
+    admitted(10,"retired_portrait",{canonicalReferenceDigest:"sha256:"+"e".repeat(64)}),
+  ];
+  const infra={
+    catalog:{async list({prefix}){
+      assert.equal(prefix,"visual-age-anchor:admission:"+threadId+":");
+      return {entries:admissions.map(value=>({value})),nextCursor:null};
+    }},
+    objects:{async head(ref){
+      assert.equal(ref,canonicalRef);
+      return {digest:rootDigest};
+    }},
+  };
+  const request=()=>planThreadPresentationAssetSlotsWithAdmittedAges({
+    bundle,snapshotObjectRef:"snapshot_age_anchor_memory",
+    snapshotDigest:"sha256:"+"b".repeat(64),infra,
+  });
+  const initial=await request();
+  const memory=initial.slots.find(slot=>slot.mediaId==="media_memory_tomatoes");
+  const idPhoto=initial.slots.find(slot=>slot.role==="official_id_photo");
+  assert.equal(memory.context.targetAgeYears,10,"memory's experienced age was lost");
+  assert.deepEqual(memory.referenceObjectRefs,[canonicalRef,"portrait_7","portrait_12"],
+    "historical likeness did not interpolate between approved ages");
+  assert.ok(memory.brief.description.includes("image 2 is the admitted age-7 portrait")
+    &&memory.brief.description.includes("image 3 is the admitted age-12 portrait"),
+    "historical depiction was not told the selected reference ages");
+  assert.deepEqual(idPhoto.referenceObjectRefs,[canonicalRef],
+    "age anchors changed official civil identity imagery");
+  const previousDigest=memory.sourceDigest;
+
+  admissions.push(admitted(12,"portrait_12_new",{admittedAt:"2026-10-20T00:00:00Z"}));
+  const newer=(await request()).slots.find(slot=>slot.mediaId==="media_memory_tomatoes");
+  assert.deepEqual(newer.referenceObjectRefs,[canonicalRef,"portrait_7","portrait_12_new"],
+    "later approval could not guide a future reconstruction");
+  assert.notEqual(newer.sourceDigest,previousDigest,
+    "a newly admitted portrait was not reflected in future demand identity");
+
+  admissions=[];
+  const fallback=(await request()).slots.find(slot=>slot.mediaId==="media_memory_tomatoes");
+  assert.deepEqual(fallback.referenceObjectRefs,[canonicalRef],
+    "memory depiction did not preserve canonical-only behavior without anchors");
+  assert.equal(fallback.brief.description.includes("image 2 is the admitted"),false,
+    "unavailable age portraits were invented in memory generation");
 });
