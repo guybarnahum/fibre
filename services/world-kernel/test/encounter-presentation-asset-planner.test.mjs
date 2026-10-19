@@ -115,3 +115,75 @@ test("E4 encounter rendering defers rather than inventing a missing Thread liken
   assert.equal(slot.deferredReason, "deferred_missing_visual_identity_reference");
   assert.deepEqual(slot.referenceObjectRefs, [], "partial identity binding must not render");
 });
+
+test("admitted age portraits remain owned by each depicted Thread in one encounter",()=>{
+  const story=encounter();
+  const mina=visualIdentity("thr_e4_mina","asset_identity_mina");
+  const noor=visualIdentity("thr_e4_noor","asset_identity_noor");
+  const minaRoot="sha256:"+"a".repeat(64);
+  const noorRoot="sha256:"+"b".repeat(64);
+  const anchor=(threadId,canonicalRef,canonicalDigest,age,portrait,patch={})=>({
+    contract:"visual-age-anchor-admission-v0.1",
+    admissionId:"admission_"+portrait,threadId,targetAgeYears:age,
+    portraitObjectRef:portrait,portraitDigest:"sha256:"+"c".repeat(64),
+    canonicalReferenceObjectRef:canonicalRef,canonicalReferenceDigest:canonicalDigest,
+    sourceAnchorRefs:[],generationReceiptRef:"receipt_"+portrait,
+    approvalRef:"approval_"+portrait,admittedAt:"2026-10-19T00:00:00Z",
+    ...patch,
+  });
+  mina.canonicalReferenceDigest=minaRoot;
+  mina.ageAnchorAdmissions=[
+    anchor(mina.threadId,"asset_identity_mina",minaRoot,34,"mina_34"),
+    anchor(mina.threadId,"asset_identity_mina",minaRoot,40,"mina_40"),
+    anchor(noor.threadId,"asset_identity_noor",noorRoot,36,"foreign_36"),
+    anchor(mina.threadId,"asset_identity_mina","sha256:"+"d".repeat(64),36,"retired_36"),
+  ];
+  noor.canonicalReferenceDigest=noorRoot;
+  noor.ageAnchorAdmissions=[
+    anchor(noor.threadId,"asset_identity_noor",noorRoot,31,"noor_31"),
+    anchor(noor.threadId,"asset_identity_noor",noorRoot,28,"noor_28"),
+  ];
+  const plan=()=>planEncounterPresentationAssetSlot({
+    encounterStory:story,visualIdentities:[mina,noor],mediaId:"encounter_age_continuity",
+  });
+  const before=plan();
+  assert.deepEqual(before.referenceObjectRefs,[
+    "asset_identity_mina","mina_34","mina_40",
+    "asset_identity_noor","noor_31",
+  ],"two Threads' approved likenesses were mixed or ignored");
+  const [minaRefs,noorRefs]=before.context.depictedThreads.map(item=>item.referenceImages);
+  assert.deepEqual(minaRefs.map(x=>x.targetAgeYears),[25,34,40],
+    "Mina's reference group lost its true ages");
+  assert.deepEqual(noorRefs.map(x=>x.targetAgeYears),[25,31],
+    "Noor's exact-age anchor was not selected");
+  assert.match(before.brief.description,/image 2 is Thread thr_e4_mina's approved age-34 portrait/i,
+    "Mina's reference image was not attributed to her");
+  assert.match(before.brief.description,/Image 5 is Thread thr_e4_noor's approved age-31 portrait/u,
+    "Noor's reference image was not attributed to him");
+  assert.equal(before.brief.description.includes("foreign_36"),false,
+    "A foreign person's portrait contaminated the encounter");
+  assert.ok(before.inputReferences.includes("admission_mina_40")
+    &&before.inputReferences.includes("admission_noor_31"),
+    "Encounter generation lacks admission provenance");
+
+  mina.ageAnchorAdmissions.push(anchor(mina.threadId,"asset_identity_mina",minaRoot,40,
+    "mina_40_revised",{admittedAt:"2026-10-20T00:00:00Z"}));
+  const revised=plan();
+  assert.deepEqual(revised.referenceObjectRefs,[
+    "asset_identity_mina","mina_34","mina_40_revised",
+    "asset_identity_noor","noor_31",
+  ],"a new Mina approval changed Noor's reference group");
+  assert.notEqual(revised.sourceDigest,before.sourceDigest,
+    "approved visual development did not affect the next encounter generation");
+
+  const canonicalOnly=planEncounterPresentationAssetSlot({
+    encounterStory:story,
+    visualIdentities:[visualIdentity(mina.threadId,"asset_identity_mina"),
+      visualIdentity(noor.threadId,"asset_identity_noor")],
+    mediaId:"encounter_age_continuity",
+  });
+  assert.deepEqual(canonicalOnly.referenceObjectRefs,["asset_identity_mina","asset_identity_noor"],
+    "no admitted anchors must preserve canonical-only encounter generation");
+  assert.equal(canonicalOnly.context.depictedThreads.some(x=>"referenceImages" in x),false,
+    "an empty age anchor registry changed legacy encounter source identity");
+});
