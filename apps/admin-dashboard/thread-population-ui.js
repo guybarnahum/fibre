@@ -1454,24 +1454,36 @@ function operatorUrl(mode) {
 }
 
 function syncOperatorNavigation() {
-  const appearance = $("#appearance-nav-link");
-  const activity = document.querySelector('.nav-item[href="/activity"]');
-  const appearanceActive=populationMode === "appearance";
-  appearance?.classList.toggle("active", appearanceActive);
-  activity?.classList.toggle("active", !appearanceActive);
-  document.title=appearanceActive ? "Fibre Admin · Appearance" : "Fibre Admin · Activity";
+  const appearanceActive=populationMode==="appearance";
+  const title=appearanceActive?"Appearance"
+    :populationMode==="birth-center"?"Birth Center"
+    :populationMode==="stillborn"?"Unrecoverable"
+    :active?"Threads":"Activity";
+  const navHref=appearanceActive?"/appearance"
+    :populationMode==="birth-center"&&active?"/activity?mode=birth-center"
+    :active?"/activity?mode=threads":"/activity";
+  for(const link of document.querySelectorAll(".sidebar .nav-item")){
+    link.classList.toggle("active",link.getAttribute("href")===navHref);
+  }
+  document.title="Fibre Admin · "+title;
   const crumb=document.querySelector(".crumbs strong");
-  if(crumb)crumb.textContent=appearanceActive ? "Appearance" : "Activity";
+  if(crumb)crumb.textContent=title;
 
   const pageHead=document.querySelector(".page-head");
   const pageEyebrow=pageHead?.querySelector(".eyebrow");
   const pageTitle=pageHead?.querySelector("h1");
   const pageLede=pageHead?.querySelector(".lede");
-  if(pageEyebrow)pageEyebrow.textContent=appearanceActive ? "Population Lab" : "Operations";
-  if(pageTitle)pageTitle.textContent=appearanceActive ? "Appearance" : "Activity";
+  if(pageEyebrow)pageEyebrow.textContent=appearanceActive?"Population Lab"
+    :active?"World population":"Operations";
+  if(pageTitle)pageTitle.textContent=title;
   if(pageLede)pageLede.textContent=appearanceActive
-    ? "Inspect actual Thread ancestry demand, calibration coverage, and targeted migration impact."
-    : "See Fibre as one operating system: birth, publication, situated meetings, cognition, experience, and what continues.";
+    ?"Inspect actual Thread ancestry demand, calibration coverage, and targeted migration impact."
+    :active&&populationMode==="birth-center"
+      ?"Initiate and follow Genesis candidates through publication into World."
+    :active&&populationMode==="threads"
+      ?"Admitted people, present life and World-backed maintenance."
+    :active?"Investigate unadmitted or unrecoverable Thread records."
+      :"Inspect service operations, failures and retries.";
 
   for(const selector of [".metrics",".page-actions"]){
     const node=document.querySelector(selector);
@@ -1487,7 +1499,6 @@ function holdOperatorMode() {
   const appearanceActive=populationMode === "appearance";
   activityViewPanel.hidden=appearanceActive;
   activityViewPanel.style.display=appearanceActive?"none":"";
-  $("#causal-view").hidden = true;
   $("#raw-view").hidden = true;
   birthCenterView.hidden = populationMode !== "birth-center";
   view.hidden = populationMode !== "threads";
@@ -1661,7 +1672,7 @@ function exitOperatorMode(nextMode) {
   stillbornView.hidden = true;
   setActivityChrome(false);
   renderActivitySummaryLabels();
-  $("#metric-view").textContent = nextMode === "causal" ? "Causal" : "Raw";
+  $("#metric-view").textContent = "Raw";
   $("#auto-refresh").checked = priorAutoRefresh;
   $("#auto-refresh").dispatchEvent(new Event("change"));
 
