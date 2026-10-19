@@ -103,6 +103,7 @@ export function createLivedExperienceTables(database) {
       started_at TEXT,
       completed_at TEXT,
       outcome TEXT,
+      decision_json TEXT CHECK (decision_json IS NULL OR json_valid(decision_json)),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
     CREATE INDEX IF NOT EXISTS idx_world_social_opportunities_due
@@ -122,6 +123,7 @@ export function createLivedExperienceTables(database) {
       started_at TEXT,
       completed_at TEXT,
       outcome TEXT,
+      decision_json TEXT CHECK (decision_json IS NULL OR json_valid(decision_json)),
       PRIMARY KEY(encounter_ref,thread_id),
       FOREIGN KEY(encounter_ref) REFERENCES encounter_story_records(encounter_id),
       FOREIGN KEY(thread_id) REFERENCES threads(thread_id)
@@ -511,6 +513,15 @@ export function createLivedExperienceTables(database) {
         SELECT RAISE(ABORT, 'thread_journal_entries is append-only');
       END;
   `);
+  // Keep the durable one-shot opportunity row as the witness owner.
+  // Existing rows remain truthful "not captured"; no replay or backfill.
+  for(const table of ["world_social_opportunities","world_observed_social_opportunities"]){
+    if(!database.prepare(`PRAGMA table_info(${table})`).all()
+      .some(column=>column.name==="decision_json")){
+      database.exec(`ALTER TABLE ${table} ADD COLUMN decision_json TEXT
+        CHECK (decision_json IS NULL OR json_valid(decision_json))`);
+    }
+  }
   if(needsStoryTimeline){
     database.exec(`
       INSERT INTO thread_encounter_story_timeline(thread_id,encounter_ref,occurred_at)
