@@ -108,6 +108,31 @@ does not itself establish any real social contact.
 
 ## Public World-place discovery and natural social co-presence (October 18)
 
+**October 19 live staging checkpoint — real public-venue visits now observed.**
+Guy reports the friendly read-only social probe passed focused tests (2/2)
+and `npm run slice:validate` (1,691/1,691, 434 files). His
+`thread-journey:probe` recorded provider-authored personal Flight Plans
+and enacted arrivals at World-attested public venues: Amelia Shah at the
+British Library (10:15 UTC) and Southbank Centre (17:45 UTC) in London;
+Giorgi Bolkvadze at Fabrika Tbilisi (15:45 UTC), with enacted return home.
+The bounded `world-social:candidates` scan read 42 Threads and identified
+11 currently situated in Tbilisi, three in London and three in Addis Ababa
+with listed venues, but **no observed shared public-venue presence**.
+Amelia's targeted `world-social:probe` reported a separate October 18
+`no_co_presence` opportunity and no shared Story in its bounded history.
+A one-Thread probe cannot determine whether someone else was at Southbank
+Centre on October 19. S1F actual venue arrivals have live evidence;
+genuine independent venue overlap, S2 social choice, S3 personal
+Experience/Memory and consequential later choices remain open. Model
+provenance plus enacted World history do not independently prove City Guide
+causation or the autonomous origin of each scheduler wake.
+
+**Operator-report correction (source, local validation pending):**
+the friendly social probe now derives locality from the current attested
+public venue, labels single-Thread concurrent co-presence `not checked`,
+and keeps a prior `no_co_presence` outcome separate from later visits.
+It makes no additional World queries or Thread-state changes.
+
 **Current source change — local validation and staging installation pending:**
 Fibre's City Guide is now an editorial *view of the existing verified World
 public venues*, not a repository JSON source. `world_public_places` keeps
