@@ -11,6 +11,7 @@ import {
   resolveVisualAgeReferences,
 } from "#services/world-kernel/src/visual-age-anchors.mjs";
 import {resolveAdminWorldThreadIdentity} from "./thread-identity.mjs";
+import {agePortraitBrief} from "./age-portrait-guidance.mjs";
 import {
   readVisualAgeAnchorAdmissions,
   VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX,
@@ -118,13 +119,6 @@ async function verifiedImage(infra,manifest,verify){
   if(image===null||image.digest!==receipt.sha256)throw new Error("Age-anchor image bytes do not match generation receipt");
   return {receipt,image};
 }
-function ageAnatomy(targetAgeYears){
-  if(targetAgeYears<=15)return "Reconstruct a believable child or young adolescent, not a softened adult face: age-appropriate shorter facial proportions, developing jaw, nose and midface, and naturally youthful skin. Preserve familial likeness rather than adult face geometry.";
-  if(targetAgeYears<=21)return "Render realistic late-adolescent facial development, with age-appropriate contours and proportions rather than an adult face with smoothing.";
-  if(targetAgeYears>=75)return "Render advanced old age with anatomically credible facial-volume loss, skin laxity, eyelid and neck aging, lines and age-related changes to soft tissue. Do not merely gray the hair or retain a digitally youthful face.";
-  if(targetAgeYears>=60)return "Allow mature aging in facial volume, skin texture, eyelids, neck and contours without caricature or beautification.";
-  return "Allow natural age-dependent changes to facial structure, soft tissue, skin texture and hair without retaining frozen age-25 geometry.";
-}
 function makeJob({source,candidateId,targetAgeYears,references}){
   const canonical={canonicalReferenceObjectRef:source.objectRef,canonicalReferenceDigest:source.digest};
   const sourceAnchorRefs=references.references.filter(x=>x.admissionId!==null).map(x=>x.objectRef);
@@ -134,16 +128,7 @@ function makeJob({source,candidateId,targetAgeYears,references}){
     sourceAnchorRefs,
     job:createAssetGenerationJobFromIdentity({
       identityDigest:identity,assetKind:"image",role:"visual_age_anchor",variant:"lifelong-portrait",
-      brief:{
-        description:`Generate a natural head-and-shoulders portrait of the SAME individual at age ${targetAgeYears}. The canonical root depicts the person at age 25. Other references, if supplied, are approved portraits at DIFFERENT ages. Preserve distinctive identity, not the exact facial geometry of a 25-year-old. ${ageAnatomy(targetAgeYears)}`,
-        constraints:[
-          "The canonical reference is identity authority; age-local references only guide development.",
-          "Preserve recognizable individual features and natural asymmetry while allowing real development of facial proportions.",
-          "Do not use cosmetic de-aging, superficial wrinkle filters, or age-inappropriate beauty retouching.",
-          "Use ordinary neutral portrait lighting, simple background, no beauty retouching.",
-          "No text, labels, cards, graphics or watermark.",
-        ],
-      },
+      brief:agePortraitBrief(targetAgeYears),
       inputReferences:[source.objectRef,source.digest,...sourceAnchorRefs],
       referenceObjectRefs:references.referenceObjectRefs,
       requestedAt:new Date().toISOString(),providerProfile:PROFILE,
