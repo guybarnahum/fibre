@@ -106,6 +106,8 @@ Changing the canonical specification manually remains an exceptional correction 
 
 Admin **Appearance** is the operator UI over the shared Population Lab coverage engine. It does not own phenotype logic, ancestry inference or calibration authority.
 
+Population Lab owns experiment request construction, deterministic cohort provenance, shadow-calibration lineage checks, and numerical comparison/alignment rules in `services/population-lab/src/experiment-lifecycle-domain.mjs` (public `fibre/population-lab/experiment-lifecycle`). The Admin Cloudflare adapter dispatches those decisions through the existing experiment catalog, Asset Generator, Workflow and Admin-live ports. The remaining operator-facing review and calibration admission orchestration still runs in the Admin adapter; future extraction must preserve the existing Population Lab approval and registry contracts rather than create duplicate policy.
+
 One bounded World scan supplies authoritative Thread facts: admitted Thread identity/location plus durable maternal/paternal physical-ancestry evidence. Population Lab classifies those facts against the current versioned reference-population hierarchy and returns:
 
 - explicit, partial, broad, fallback and missing coverage counts;
