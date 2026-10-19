@@ -10,7 +10,10 @@ export function parseAgePortraitCleanupArgs(flags){
   for(let index=0;index<flags.length;index++){
     if(flags[index]==="--env")environment=flags[++index]??null;
     else if(flags[index]==="--thread-id")threadId=flags[++index]??null;
-    else if(flags[index]==="--file")file=flags[++index]??null;
+    else if(flags[index]==="--file"){
+      file=flags[++index]??null;
+      if(!file||file.startsWith("--"))throw new TypeError("--file requires an operator-config path");
+    }
     else if(flags[index]==="--execute")execute=true;
     else if(flags[index]==="--dry-run")execute=false;
     else throw new TypeError(`Unknown age-portrait cleanup argument: ${flags[index]}`);
@@ -19,7 +22,6 @@ export function parseAgePortraitCleanupArgs(flags){
     throw new TypeError("Specify --env staging or --env production");
   if(!/^thr_[A-Za-z0-9._:-]+$/.test(threadId??""))
     throw new TypeError("Specify --thread-id thr_...");
-  if(file==="")throw new TypeError("--file requires an operator-config path");
   return {environment,threadId,file,execute};
 }
 
