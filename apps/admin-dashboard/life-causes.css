@@ -74,3 +74,5 @@
 .life-causes-kind-formative_event:before{background:var(--blue)!important}
 .life-causes-kind-origin:before{background:var(--warning)!important}
 .thread-birth-pending-status .thread-birth-investigate{font-size:10px;white-space:nowrap}
+
+.life-causes-kind-social_choice:before{background:var(--success)!important}
