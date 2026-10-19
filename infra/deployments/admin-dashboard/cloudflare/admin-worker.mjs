@@ -8,7 +8,7 @@ import baseWorker, {
 } from "./worker.mjs";
 import { readAdminInfraMonitor, readCachedInfraHealth } from "./infra-monitor.mjs";
 import { readAdminAppearanceCoverage } from "./appearance-coverage.mjs";
-import {createAdminVisualAgeAnchors} from "./visual-age-anchors.mjs";
+import {createCloudflareAgeAnchorAdapter} from "./visual-age-anchors.mjs";
 import {
   admitAdminPopulationLabCalibration,
   approveAdminPopulationLabCalibration,
@@ -932,7 +932,7 @@ export default {
         if(ageAnchorCleanupMatch && request.method==="POST"){
           const threadId=id("threadId",decodeURIComponent(ageAnchorCleanupMatch[1]));
           const input=await request.json();
-          return json(200,await createAdminVisualAgeAnchors({env}).cleanup(threadId,{
+          return json(200,await createCloudflareAgeAnchorAdapter({env}).cleanup(threadId,{
             dryRun:input?.execute!==true,
           }));
         }
@@ -940,7 +940,7 @@ export default {
           const threadId=id("threadId",decodeURIComponent((
             ageAnchorsMatch??ageAnchorCanonicalMatch??ageAnchorCandidateMatch??ageAnchorPortraitMatch
           )[1]));
-          const anchors=createAdminVisualAgeAnchors({env});
+          const anchors=createCloudflareAgeAnchorAdapter({env});
           if(ageAnchorsMatch && request.method==="GET")return json(200,await anchors.list(threadId));
           if(ageAnchorCanonicalMatch && request.method==="GET"){
             return new Response(await anchors.canonical(threadId),{
