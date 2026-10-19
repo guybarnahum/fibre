@@ -19,6 +19,7 @@ test("Life Timeline distinguishes enacted World situations from an authored plan
   };
   const livedNow={
     currentSituation:current,
+    currentLocation:{placeRef:"wpl_southbank",displayName:"Southbank Centre"},
     recentSituations:[current,other],
     currentPersonalPlan:{
       planId:"lplan_amelia",authoredAt:"2026-10-19T15:41:51.963Z",
@@ -40,4 +41,8 @@ test("Life Timeline distinguishes enacted World situations from an authored plan
     "an unrelated past visit borrowed the current plan's motives");
   assert.equal(moments[0].placeKind,"verified_public",
     "the verified World venue was confused with a private place");
+  assert.equal(moments[0].publicVenueName,"Southbank Centre",
+    "the attested current public venue name disappeared");
+  assert.equal(moments[1].publicVenueName,null,
+    "a prior scene borrowed today's current location name");
 });
