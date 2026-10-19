@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     "./birth-center/genesis-development": "./services/birth-center/public/genesis-development.mjs",
+    "./population-lab/experiment-lifecycle": "./services/population-lab/public/experiment-lifecycle.mjs",
     "./thread-presentation/age-portrait-guidance": "./services/thread-presentation/public/age-portrait-guidance.mjs",
     "./thread-presentation/visual-age-anchor-lifecycle": "./services/thread-presentation/public/visual-age-anchor-lifecycle.mjs",
     "./thread-presentation/current-present": "./services/thread-presentation/public/current-present.mjs",
